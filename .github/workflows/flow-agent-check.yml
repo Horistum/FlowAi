@@ -40,32 +40,39 @@ jobs:
       - name: Generate Flow Agent Context
         run: python3 tools/flow_agent_runner.py
 
-      - name: Prepare Gradle Wrapper
-        run: |
-          if [ -f ./gradlew ]; then
-            chmod +x ./gradlew
-          fi
-
-      - name: Run Offline Tests When Cache Is Available
-        run: |
-          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon test --offline
-          else
-            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions."
-          fi
-
-      - name: Run Offline Conformance When Cache Is Available
-        run: |
-          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon run --args="conformance" --offline
-          else
-            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions."
-          fi
       - name: Compile and Test
-        run: ./gradlew --no-daemon clean test --stacktrace --console=plain
+        shell: bash
+        run: |
+          mkdir -p build/ci
+          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee build/ci/gradle-test.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload Gradle Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-reports
+          path: |
+            build/ci/gradle-test.log
+            build/reports/tests/test/
+            build/test-results/test/
+          if-no-files-found: warn
 
       - name: Run Conformance
-        run: ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain
+        shell: bash
+        run: |
+          mkdir -p build/ci
+          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee build/ci/conformance.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload Conformance Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-report
+          path: |
+            build/ci/conformance.log
+          if-no-files-found: warn
 
       - name: Write CI Summary
         if: always()
@@ -81,3 +88,7 @@ jobs:
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Artifacts uploaded:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- gradle-test-reports" >> "$GITHUB_STEP_SUMMARY"
+          echo "- conformance-report" >> "$GITHUB_STEP_SUMMARY"
