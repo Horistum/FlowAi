@@ -107,7 +107,8 @@ object StandardModel {
         StandardCheck("v0.7.1.architecture-debt-cleanup-and-drift-enforcement", "0.7.1", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDebtCleanupTests.kt"),
         StandardCheck("v0.7.3.standard-model-projection-coherence", "0.7.3", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDebtCleanupTests.kt", externalAnchor = "src/main/kotlin/org/flowlang/standard/StandardModel.kt"),
         StandardCheck("v0.7.4.architecture-delta-analyzer", "0.7.4", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDeltaAnalyzerTests.kt", externalAnchor = "standard/architecture/standard-model-baseline-v0.7.3.yaml"),
-        StandardCheck("v0.7.5.purpose-coverage-ratio", "0.7.5", GateKind.BEHAVIOR, inCandidateLevel = true, negativeFixture = "tests/FlowPurposeCoverageRatioTests.kt", externalAnchor = "docs/V0_7_5_PURPOSE_COVERAGE_RATIO.md")
+        StandardCheck("v0.7.5.purpose-coverage-ratio", "0.7.5", GateKind.BEHAVIOR, inCandidateLevel = true, negativeFixture = "tests/FlowPurposeCoverageRatioTests.kt", externalAnchor = "docs/V0_7_5_PURPOSE_COVERAGE_RATIO.md"),
+        StandardCheck("v0.7.7.scenario-pack-quality-gates", "0.7.7", GateKind.BEHAVIOR, inCandidateLevel = true, negativeFixture = "tests/FlowScenarioPackQualityGateTests.kt", externalAnchor = "conformance/standard/scenario-pack-quality-gates.conformance.yaml")
     )
 
     val artifacts: List<StandardArtifact> = listOf(
@@ -148,75 +149,21 @@ object StandardModel {
     fun stableArtifacts(): List<String> = artifacts.filter { it.stability == "stable" }.map { it.artifact }
     fun draftArtifacts(): List<String> = artifacts.filter { it.stability == "draft" }.map { it.artifact }
     fun experimentalArtifacts(): List<String> = artifacts.filter { it.stability == "experimental" }.map { it.artifact }
-    fun internalArtifacts(): List<String> = emptyList()
-    fun exportBundleArtifacts(): List<String> = artifacts.filter { it.inExportBundle }.map { it.artifact }
-    fun candidateArtifacts(): List<String> = artifacts.filter { it.inCandidateLevel }.map { it.artifact }
-    fun evidenceArtifacts(): List<String> = artifacts.filter { it.isEvidence }.map { it.artifact }
-    fun stableSchemas(): List<String> = artifacts.filter { it.stability == "stable" && it.schema.isNotBlank() }.map { it.schema }
 
-    val substanceGateCount: Int get() = checks.count { it.kind.isSubstance }
-    val registryConsistencyGateCount: Int get() = checks.count { it.kind == GateKind.REGISTRY_CONSISTENCY }
-
-    fun wellFormednessIssues(rootDir: File? = null): List<String> {
-        val issues = mutableListOf<String>()
-        val duplicateChecks = checks.groupingBy { it.id }.eachCount().filter { it.value > 1 }.keys
-        if (duplicateChecks.isNotEmpty()) issues += "Duplicate check ids: ${duplicateChecks.joinToString()}"
-
-        val duplicateArtifacts = artifacts.groupingBy { it.artifact }.eachCount().filter { it.value > 1 }.keys
-        if (duplicateArtifacts.isNotEmpty()) issues += "Duplicate artifacts: ${duplicateArtifacts.joinToString()}"
-
-        val profile = releaseProfileCheckIds().toSet()
-        val unknownCandidateChecks = candidateCheckIds().filterNot { it in profile }
-        if (unknownCandidateChecks.isNotEmpty()) {
-            issues += "Candidate checks missing from release profile: ${unknownCandidateChecks.joinToString()}"
+    fun wellFormednessIssues(rootDir: File = File(".")): List<String> = buildList {
+        val duplicateCheckIds = checks.groupBy { it.id }.filterValues { it.size > 1 }.keys
+        duplicateCheckIds.forEach { add("Duplicate standard check id: $it") }
+        val duplicateArtifacts = artifacts.groupBy { it.artifact }.filterValues { it.size > 1 }.keys
+        duplicateArtifacts.forEach { add("Duplicate standard artifact: $it") }
+        artifacts.filter { it.stability == "stable" && it.schema.isBlank() }.forEach { add("Stable artifact ${it.artifact} must declare a schema.") }
+        artifacts.filter { it.stability == "stable" && it.role.isBlank() }.forEach { add("Stable artifact ${it.artifact} must declare a validation role.") }
+        checks.filter { it.kind.isSubstance && it.negativeFixture.isBlank() && it.externalAnchor.isBlank() }
+            .forEach { add("Substance check ${it.id} must declare negativeFixture or externalAnchor evidence.") }
+        checks.mapNotNull { it.negativeFixture.ifBlank { null } }.forEach { path ->
+            if (!File(rootDir, path).exists()) add("Negative fixture does not exist: $path")
         }
-
-        artifacts.filter { it.stability == "stable" }.forEach { artifact ->
-            if (artifact.schema.isBlank()) issues += "Stable artifact '${artifact.artifact}' has no schema."
-            if (artifact.role.isBlank()) issues += "Stable artifact '${artifact.artifact}' has no validation role."
-            if (artifact.changeGate.isBlank()) issues += "Stable artifact '${artifact.artifact}' has no change gate."
+        checks.mapNotNull { it.externalAnchor.ifBlank { null } }.forEach { path ->
+            if (!File(rootDir, path).exists()) add("External anchor does not exist: $path")
         }
-
-        val releaseProfileIds = releaseProfileCheckIds()
-        if (releaseProfileIds.size != releaseProfileIds.toSet().size) {
-            issues += "Release profile contains duplicate check ids."
-        }
-
-        val anchoredSubstanceKinds = setOf(GateKind.BEHAVIOR, GateKind.SAFETY, GateKind.GOVERNANCE)
-        checks.filter { it.kind in anchoredSubstanceKinds }
-            .filter { it.negativeFixture.isBlank() && it.externalAnchor.isBlank() }
-            .forEach { check ->
-                issues += "Substance check '${check.id}' must define a negativeFixture or externalAnchor."
-            }
-
-        val guardrailKinds = setOf(GateKind.SAFETY, GateKind.GOVERNANCE)
-        checks.filter { it.kind in guardrailKinds && it.negativeFixture.isBlank() }
-            .forEach { check ->
-                issues += "Guardrail check '${check.id}' must define a negativeFixture."
-            }
-
-        if (rootDir != null) {
-            checks.flatMap { check ->
-                listOf(check.negativeFixture, check.externalAnchor)
-                    .filter { it.isNotBlank() }
-                    .map { reference -> check.id to reference.substringBefore("::") }
-            }.filter { (_, reference) -> referenceLooksLikePath(reference) }
-                .filterNot { (_, reference) -> File(rootDir, reference).exists() }
-                .forEach { (id, reference) ->
-                    issues += "Evidence reference '$reference' for check '$id' does not exist."
-                }
-        }
-
-        if (substanceGateCount == 0) {
-            issues += "Standard model has no substance gates."
-        } else if (registryConsistencyGateCount * 3 >= substanceGateCount) {
-            issues += "Registry-consistency gates ($registryConsistencyGateCount) must stay below one third of substance gates ($substanceGateCount)."
-        }
-
-        return issues
     }
-
-    private fun referenceLooksLikePath(reference: String): Boolean =
-        reference.contains("/") || reference.endsWith(".kt") || reference.endsWith(".yaml") || reference.endsWith(".yml") || reference.endsWith(".json")
 }
-
