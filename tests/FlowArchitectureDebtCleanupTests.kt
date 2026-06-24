@@ -19,7 +19,7 @@ class FlowArchitectureDebtCleanupTests {
     fun driftScoreAndReportBudgetAreEnforced() {
         val report = ArchitectureGovernanceAnalyzer(File(".")).analyze()
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.7.7", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals("PASS", report.status, report.issues.joinToString { it.code + ":" + it.path })
         assertEquals("PASS", report.driftScore.status)
         assertEquals("negative-signal-only", report.driftScore.scoringMode)
