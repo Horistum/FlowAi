@@ -1,0 +1,20 @@
+version: "0.7.7"
+name: "Scenario Pack Quality Gates"
+objective: "Add measurable scenario-pack quality gates for metadata, examples, negative coverage and non-decorative automation evidence."
+status: "in-progress"
+architecturePurpose: "Strengthen scenario pack quality without changing Flow syntax, runtime boundaries or target-specific public behavior."
+scope:
+  include:
+    - "Scenario pack quality report."
+    - "Required metadata checks."
+    - "Negative corpus coverage checks."
+    - "Tests for pass and failure paths."
+    - "Conformance runner gate and public vector."
+  exclude:
+    - "No workflow execution behavior."
+    - "No public syntax expansion."
+    - "No target-specific public language."
+validationPlan:
+  - "Run Flow CI compile and tests."
+  - "Run Flow conformance."
+nextVersion: "0.8.0"
