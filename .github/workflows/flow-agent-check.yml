@@ -40,6 +40,27 @@ jobs:
       - name: Generate Flow Agent Context
         run: python3 tools/flow_agent_runner.py
 
+      - name: Prepare Gradle Wrapper
+        run: |
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+          fi
+
+      - name: Run Offline Tests When Cache Is Available
+        run: |
+          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
+            ./gradlew --no-daemon test --offline
+          else
+            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions."
+          fi
+
+      - name: Run Offline Conformance When Cache Is Available
+        run: |
+          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
+            ./gradlew --no-daemon run --args="conformance" --offline
+          else
+            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions."
+          fi
       - name: Compile and Test
         run: ./gradlew --no-daemon clean test --stacktrace --console=plain
 
