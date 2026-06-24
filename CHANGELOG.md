@@ -1,3 +1,13 @@
+# 0.7.6-semantic-correctness-hardening-fix2
+
+- Fixed full offline Gradle test failure caused by stale exact rendered snapshots for GitHub Actions and Tekton.
+- Regenerated `conformance/snapshots/build-test-deploy/github-actions.yml` and `conformance/snapshots/build-test-deploy/tekton-pipeline.yaml` from the reviewed v0.7.6 rendering path.
+- Preserved exact snapshot conformance instead of weakening or bypassing the gate.
+- Verified `./gradlew --offline --no-daemon clean test --stacktrace --console=plain`: 151 tests, 0 failures, 0 errors, 0 skipped.
+- Verified `./gradlew --offline --no-daemon run --args="conformance" --console=plain`: 76 passed, 0 failed.
+- Kept the active standard version at `0.7.6`; this is a corrective package fix, not a new standard feature layer.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 # 0.7.6-semantic-correctness-hardening-fix1
 
 - Fixed Kotlin compilation in `TargetExpressionTranslator` by avoiding an invalid smart-cast on `BinaryExpressionNode.right`.
