@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "org.flowlang"
-version = "0.7.6"
+version = "0.7.7"
 
 application { mainClass.set("org.flowlang.cli.FlowCliKt") }
 
@@ -16,7 +16,6 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-jsonSchema:2.17.2")
     testImplementation(kotlin("test"))
 }
-
 
 sourceSets {
     test {
