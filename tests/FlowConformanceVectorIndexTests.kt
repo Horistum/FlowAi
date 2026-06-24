@@ -15,7 +15,7 @@ class FlowConformanceVectorIndexTests {
             releaseProfileChecks = releaseChecks
         )
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.7.7", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, index.standardVersion)
         assertEquals("PASS", index.status, index.vectorsMissingRequiredCheck.joinToString())
         assertTrue(index.vectorCount > 0)
@@ -42,23 +42,15 @@ class FlowConformanceVectorIndexTests {
         try {
             val dir = File(root, "conformance/intent")
             dir.mkdirs()
-            File(dir, "bad.conformance.yaml").writeText(
-                """
-                kind: FlowConformanceVector
-                version: "1.0"
-                id: bad.vector
-                expected:
-                  status: PASS
-                """.trimIndent()
-            )
+            File(dir, "missing-check.conformance.yaml").writeText("kind: FlowConformanceVector\nversion: \"1.0\"\nid: missing.check\nexpected:\n  status: PASS\n")
 
             val index = ConformanceVectorIndexBuilder(root).build(
-                runnerChecks = listOf("bad.vector"),
+                runnerChecks = listOf("missing.check"),
                 releaseProfileChecks = emptyList()
             )
 
             assertEquals("FAIL", index.status)
-            assertTrue(index.vectorsMissingRequiredCheck.contains("conformance/intent/bad.conformance.yaml"))
+            assertTrue(index.vectorsMissingRequiredCheck.contains("conformance/intent/missing-check.conformance.yaml"))
         } finally {
             root.deleteRecursively()
         }
