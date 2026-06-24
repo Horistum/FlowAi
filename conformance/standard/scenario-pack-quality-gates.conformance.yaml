@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.scenario-pack-quality-gates
+introducedIn: "0.7.7"
+area: standard
+summary: Scenario pack quality gate checks metadata, examples and negative coverage.
+expected:
+  status: PASS
+  requiredCheck: scenario-packs.catalog
+  standardVersion: "0.7.7"
+  invariants:
+    - metadata is complete
+    - examples are relevant
+    - risk capabilities have blocked scenarios
+    - duplicate ids fail
