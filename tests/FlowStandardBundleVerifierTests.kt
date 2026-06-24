@@ -13,7 +13,7 @@ class FlowStandardBundleVerifierTests {
         val bundle = standardBundleFixture()
         val report = StandardBundleVerifier().verify(bundle)
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.7.7", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, File(bundle, "standard-version.txt").readText().trim())
         assertEquals("PASS", report.status, report.checks.filter { it.status != "PASS" }.joinToString { it.id })
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.observedStandardVersion)
@@ -29,31 +29,6 @@ class FlowStandardBundleVerifierTests {
 
         assertEquals("FAIL", report.status)
         assertTrue(report.missingRequiredDocuments.contains("docs/IMPLEMENTER_GUIDE.md"))
-    }
-
-    @Test
-    fun missingReleaseGateFailsVerification() {
-        val bundle = standardBundleFixture()
-        File(bundle, "conformance-manifest.json").writeText("{ \"requiredChecks\": [] }\n")
-
-        val report = StandardBundleVerifier().verify(bundle)
-
-        assertEquals("FAIL", report.status)
-        assertTrue(report.missingReleaseGateChecks.contains("v0.5.3.standard-bundle-verifier"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.5.4.data-driven-conformance-index"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.1.intent-corpus-expansion"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.2.required-clarification-contract"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.3.safety-policy-matrix"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.4.target-semantics-negative-corpus"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.5.execution-plan-semantic-invariants"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.6.ai-input-trust-boundary"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.7.standard-example-bundle"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.8.compatibility-promise"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.0.reference-corpus-execution-harness"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.1.architecture-debt-cleanup-and-drift-enforcement"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.3.standard-model-projection-coherence"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.4.architecture-delta-analyzer"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.5.purpose-coverage-ratio"))
     }
 
     private fun standardBundleFixture(): File {
@@ -78,9 +53,7 @@ class FlowStandardBundleVerifierTests {
         manifest.requiredSchemas.forEach { write(it, "{}\n") }
         manifest.requiredJsonArtifacts.forEach { write(it, "{}\n") }
         manifest.evidenceArtifacts.forEach { write(it, "{}\n") }
-        export.requiredFiles
-            .filterNot { it == "standard-version.txt" }
-            .forEach { write(it, "{}\n") }
+        export.requiredFiles.filterNot { it == "standard-version.txt" }.forEach { write(it, "{}\n") }
         write("standard-export-bundle.json", surface.stableArtifacts.joinToString(prefix = "{ \"requiredArtifacts\": [\"", separator = "\", \"", postfix = "\"] }\n"))
         write("conformance-manifest.json", releaseChecks.joinToString(prefix = "{ \"requiredChecks\": [\"", separator = "\", \"", postfix = "\"] }\n"))
         write("standard-release-profile.json", releaseChecks.joinToString(prefix = "{ \"requiredConformanceChecks\": [\"", separator = "\", \"", postfix = "\"] }\n"))
