@@ -1,30 +1,41 @@
-# Flow v0.7.6 Semantic Correctness Hardening
+# Flow v0.7.6 Semantic Correctness Hardening - Fix 1
 
-This release fixes semantic defects found in v0.7.5 without changing Flow's main architectural direction. Flow remains an AI-first standardization layer for DevOps/IT automation intent, not a runtime executor, SDK API, plugin lifecycle or target-specific DSL.
+This package is a compile and validation correction for the v0.7.6 semantic-correctness-hardening source tree.
 
-## Fixed behavior
+Flow remains an AI-first standardization layer for DevOps/IT automation intent. This fix does not introduce a runtime executor, SDK-first architecture, plugin lifecycle, target-specific public DSL or new Flow syntax.
 
-- Kubernetes deploy lowering now preserves the application identity through an explicit `app` parameter instead of relying on a literal `app` fallback in the renderer.
-- Runtime input references such as `environment` and `version` are rendered as target-specific runtime parameters instead of shell literals.
-- Parameter interpolation is centralized for target command rendering so equivalent values behave consistently across shell, git, docker, helm, Kubernetes, ArgoCD, REST, database, file and notification actions.
-- Mandatory safety requirements are enforced in the core intent validator, so manual intent files and AI-normalized intents receive the same verdict.
-- Flow validator block scopes now preserve sibling declarations inside `else`, `parallel`, `match`, `try`, `retry` and local error handlers.
-- Mixed safe-navigation paths preserve per-segment semantics instead of converting the whole reference into fully safe navigation.
-- Condition parsing no longer rewrites quotes globally; the lexer supports both single-quoted and double-quoted string literals.
-- Exact `${name}` values in intent YAML now load as `IntentRef(name)`, not as a malformed `{name}` reference.
-- Jenkins `matches <named pattern>` no longer falls back to `/.*/`; supported named patterns are mapped explicitly and unsupported dynamic patterns fail loudly.
-- Intent `requires` no longer implicitly converts independent steps into parallel execution. Ordering remains deterministic unless parallelism is explicit in Flow source.
-- Intent step dependency cycle diagnostics are deduplicated and no longer depend on traversal side effects.
-- End-to-end rendered snapshots are now compared exactly against regenerated Jenkins/GitHub Actions/Tekton output in conformance.
-- Tekton conditional rendering now keeps `when` and `taskSpec` at valid YAML levels.
+## Fixed in this package
 
-## Validation performed in this sandbox
+- Fixed `TargetExpressionTranslator` Kotlin compilation by avoiding an invalid smart-cast on the public `BinaryExpressionNode.right` property.
+- Reworked mandatory safety enforcement so `DATABASE_MIGRATE` and `DEPROVISION` obligations are reported by the core intent validator instead of being silently synthesized before validation.
+- Preserved the intended v0.7.6 semantic fixes:
+  - Kubernetes deploy uses explicit application identity instead of a literal `app` fallback.
+  - Runtime references such as `environment` and `version` render as target-native runtime parameters.
+  - Target command interpolation remains centralized across action families.
+  - Validator block scopes preserve sibling declarations inside control-flow blocks.
+  - Mixed safe-navigation paths preserve per-segment semantics.
+  - Exact `${name}` YAML intent values load as references without malformed braces.
+  - Jenkins named patterns no longer fall back to a match-everything regex.
+  - Intent `requires` remains deterministic ordering, not hidden parallelization.
 
-- Core semantic Kotlin subset compiled successfully with `kotlinc`.
-- Manifest renderers compiled successfully with the core subset.
-- `IntentYamlLoader` compiled with minimal Jackson stubs to verify source-level Kotlin correctness in the offline sandbox.
-- Rendered Jenkins, GitHub Actions and Tekton snapshots were regenerated from the fixed planning/rendering path.
+## Why mandatory safety was changed again
 
-## Validation not completed here
+The previous implementation tried to normalize missing mandatory safety into the intent before validation. That looked convenient, which is usually where production bugs put on a little hat and wave.
 
-Full Gradle test execution could not run because this source package does not contain the Gradle distribution/cache and the sandbox has no internet access. The wrapper attempts to download `gradle-8.10.2-bin.zip` from `services.gradle.org` even with `--offline`, which fails with `UnknownHostException`.
+The corrected behavior is stricter and clearer:
+
+- The validator reports missing mandatory safety mitigations.
+- The planner refuses to lower invalid intents.
+- Manual intent files and AI-normalized intents receive the same safety verdict.
+- No hidden policy is invented behind the user's back.
+
+## Validation performed
+
+- Dependency-ordered source compilation with `kotlinc 1.9.0` completed for the main source surface.
+- Target manifest generator sources compiled after the smart-cast fix.
+- A semantic smoke program executed successfully and verified Kubernetes deploy identity, Jenkins runtime input rendering, mandatory database migration safety, safe-navigation preservation and Jenkins named-pattern rendering.
+
+## Validation limitation
+
+The uploaded full-offline package contains the Gradle wrapper but not a usable local Gradle distribution/cache in the sandbox. `./gradlew --offline` still attempts to download Gradle from `services.gradle.org`, so full Gradle test execution could not be completed here.
+

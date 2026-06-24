@@ -10,35 +10,48 @@ package org.flowlang.intent
  * cleverness production systems punish with interest.
  */
 object MandatorySafetyPolicy {
-    private val mandatedSafety: Map<StandardCapability, List<SafetyRequirement>> = mapOf(
-        StandardCapability.DATABASE_MIGRATE to listOf(SafetyRequirement.REQUIRES_BACKUP),
-        StandardCapability.DEPROVISION to listOf(SafetyRequirement.REQUIRES_APPROVAL)
-    )
-
     /**
-     * Returns an intent with standard-mandated safety policies present exactly once.
-     * Existing user policies are preserved and never rewritten.
+     * Validates safety obligations implied by high-risk capabilities.
+     *
+     * The validator reports missing mitigations; it does not silently synthesize
+     * policies. Silent synthesis would let a manual intent pass the gate while the
+     * lowered AST still lacks the human-visible backup/approval evidence.
      */
-    fun apply(intent: IntentDocument): IntentDocument {
-        val capabilities = intent.workflows.flatMap { it.steps }.map { it.capability }.toSet()
-        val required = capabilities.flatMap { mandatedSafety[it].orEmpty() }.toSet()
-        if (required.isEmpty()) return intent
+    fun validate(intent: IntentDocument): List<IntentValidationIssue> {
+        val issues = mutableListOf<IntentValidationIssue>()
+        val steps = intent.workflows.flatMap { it.steps }
 
-        val present = intent.policies
-            .filter { it.type == IntentPolicyType.SAFETY }
-            .mapNotNull { (PolicyCondition.parse(it.condition) as? PolicyCondition.Requirement)?.kind }
-            .toSet()
-        val missing = required - present
-        if (missing.isEmpty()) return intent
-
-        val injected = missing.sortedBy { it.normalized }.map { requirement ->
-            IntentPolicy(
-                name = "mandated-${requirement.normalized}",
-                type = IntentPolicyType.SAFETY,
-                condition = requirement.normalized,
-                message = "Mandated by capability contract for an irreversible operation (${requirement.name})."
+        if (steps.any { it.capability == StandardCapability.DATABASE_MIGRATE } && !hasBackup(steps)) {
+            issues += error(
+                "SAFETY_REQUIRES_BACKUP",
+                "DATABASE_MIGRATE requires an explicit BACKUP step or confirmed backup parameter before lowering."
             )
         }
-        return intent.copy(policies = intent.policies + injected)
+
+        if (steps.any { it.capability == StandardCapability.DEPROVISION } && !hasApproval(intent, steps)) {
+            issues += error(
+                "SAFETY_REQUIRES_APPROVAL",
+                "DEPROVISION requires an APPROVE step or approval policy before lowering."
+            )
+        }
+
+        return issues
     }
+
+    private fun hasBackup(steps: List<IntentStep>): Boolean =
+        steps.any { it.capability == StandardCapability.BACKUP } ||
+            steps.any { step -> step.params["backup"].asConfirmedText() }
+
+    private fun hasApproval(intent: IntentDocument, steps: List<IntentStep>): Boolean =
+        steps.any { it.capability == StandardCapability.APPROVE } ||
+            intent.policies.any { it.type == IntentPolicyType.APPROVAL }
+
+    private fun IntentValue?.asConfirmedText(): Boolean {
+        val raw = asTextOrNull()?.trim().orEmpty()
+        if (raw.isBlank()) return false
+        return raw.lowercase() !in setOf("false", "no", "none", "not-confirmed", "unspecified")
+    }
+
+    private fun error(code: String, message: String): IntentValidationIssue =
+        IntentValidationIssue("error", code, message)
 }

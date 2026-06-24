@@ -90,7 +90,12 @@ object TargetExpressionTranslator {
                 "==" -> "when:\n  - input: ${yamlScalar(left)}\n    operator: in\n    values:\n      - ${yamlScalar(right)}\n"
                 "!=" -> "when:\n  - input: ${yamlScalar(left)}\n    operator: notin\n    values:\n      - ${yamlScalar(right)}\n"
                 "in" -> {
-                    val values = if (e.right is ListLiteralNode) e.right.items.mapNotNull { tektonValue(it, inputs) } else listOf(right)
+                    val rightNode = e.right
+                    val values = if (rightNode is ListLiteralNode) {
+                        rightNode.items.mapNotNull { tektonValue(it, inputs) }
+                    } else {
+                        listOf(right)
+                    }
                     "when:\n  - input: ${yamlScalar(left)}\n    operator: in\n    values:\n" + values.joinToString("") { "      - ${yamlScalar(it)}\n" }
                 }
                 else -> null

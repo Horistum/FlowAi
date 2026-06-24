@@ -16,13 +16,12 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
     private val safetyPolicyValidator = SafetyPolicyValidator()
 
     fun validate(intent: IntentDocument): IntentValidationReport {
-        val effectiveIntent = MandatorySafetyPolicy.apply(intent)
         val issues = mutableListOf<IntentValidationIssue>()
-        val systemsByName = effectiveIntent.systems.associateBy { it.name }
-        val steps = effectiveIntent.workflows.flatMap { it.steps }
+        val systemsByName = intent.systems.associateBy { it.name }
+        val steps = intent.workflows.flatMap { it.steps }
         val stepIds = steps.map { it.id }
 
-        if (effectiveIntent.name.isBlank()) issues += err("INTENT_NAME_EMPTY", "Intent name must not be empty.")
+        if (intent.name.isBlank()) issues += err("INTENT_NAME_EMPTY", "Intent name must not be empty.")
         stepIds.groupBy { it }.filterValues { it.size > 1 }.keys.forEach { id ->
             issues += err("DUPLICATE_INTENT_STEP", "Intent step '$id' is declared more than once.")
         }
@@ -32,7 +31,7 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
             }
         }
 
-        effectiveIntent.systems.forEach { system ->
+        intent.systems.forEach { system ->
             val normalizedType = normalizeSystemType(system.type)
             val resolved = registry.findSystemType(normalizedType)
             if (resolved == null) {
@@ -43,7 +42,8 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
             }
         }
 
-        issues += safetyPolicyValidator.validate(effectiveIntent)
+        issues += MandatorySafetyPolicy.validate(intent)
+        issues += safetyPolicyValidator.validate(intent)
 
         steps.forEach { step ->
             val contract = StandardCapabilityContracts.requireContract(step.capability)

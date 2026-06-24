@@ -1,3 +1,12 @@
+# 0.7.6-semantic-correctness-hardening-fix1
+
+- Fixed Kotlin compilation in `TargetExpressionTranslator` by avoiding an invalid smart-cast on `BinaryExpressionNode.right`.
+- Corrected mandatory safety enforcement so high-risk capability obligations are reported by `IntentCapabilityValidator` instead of being silently synthesized before validation.
+- Verified the main source surface through dependency-ordered `kotlinc` compilation in the offline sandbox.
+- Added semantic smoke validation for Kubernetes deploy identity, Jenkins runtime input rendering, mandatory database migration safety, safe-navigation preservation and Jenkins named-pattern rendering.
+- Kept the active standard version at `0.7.6`; this is a corrective fix for the semantic-correctness-hardening release, not a new standard feature layer.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 # 0.7.6-semantic-correctness-hardening
 
 - Bumped the active standard version to `0.7.6`.

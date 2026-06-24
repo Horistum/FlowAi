@@ -1,0 +1,7 @@
+# --- Kompilace a sestavení (Build) ---
+build/
+out/
+.gradle/
+.incremental/
+bin/
+.gradle-user-home/
