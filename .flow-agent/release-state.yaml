@@ -1,10 +1,10 @@
 project: Flow Core
 stateVersion: 1
 
-currentVersion: "0.7.5"
-currentPackage: "flow-core-prod-v0_7_5.zip"
-nextExpectedVersion: "0.7.6"
-activeStandardVersion: "0.7.5"
+currentVersion: "0.7.6"
+currentPackage: "flow-core-prod-v0_7_6_semantic_correctness_hardening_fix2.zip"
+nextExpectedVersion: "0.7.7"
+activeStandardVersion: "0.7.6"
 
 repositoryRules:
   sourceLanguage: "English"
@@ -28,8 +28,10 @@ qualityPrinciples:
   - "Reduce technical debt instead of carrying it forward."
 
 lastKnownValidation:
-  fullOfflineGradle: "unknown"
-  targetedCompilation: "unknown"
-  conformance: "unknown"
+  fullOfflineGradle: "passed"
+  targetedCompilation: "passed"
+  conformance: "passed"
   notes:
-    - "Update this file after each completed version."
+    - "Full offline Gradle tests passed for v0.7.6 semantic-correctness-hardening-fix2."
+    - "Conformance passed for v0.7.6 semantic-correctness-hardening-fix2."
+    - "The release remains within the standardization-layer boundary."
