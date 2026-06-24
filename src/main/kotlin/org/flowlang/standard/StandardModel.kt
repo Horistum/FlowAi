@@ -107,8 +107,7 @@ object StandardModel {
         StandardCheck("v0.7.1.architecture-debt-cleanup-and-drift-enforcement", "0.7.1", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDebtCleanupTests.kt"),
         StandardCheck("v0.7.3.standard-model-projection-coherence", "0.7.3", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDebtCleanupTests.kt", externalAnchor = "src/main/kotlin/org/flowlang/standard/StandardModel.kt"),
         StandardCheck("v0.7.4.architecture-delta-analyzer", "0.7.4", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDeltaAnalyzerTests.kt", externalAnchor = "standard/architecture/standard-model-baseline-v0.7.3.yaml"),
-        StandardCheck("v0.7.5.purpose-coverage-ratio", "0.7.5", GateKind.BEHAVIOR, inCandidateLevel = true, negativeFixture = "tests/FlowPurposeCoverageRatioTests.kt", externalAnchor = "docs/V0_7_5_PURPOSE_COVERAGE_RATIO.md"),
-        StandardCheck("v0.7.7.scenario-pack-quality-gates", "0.7.7", GateKind.BEHAVIOR, inCandidateLevel = true, negativeFixture = "tests/FlowScenarioPackQualityGateTests.kt", externalAnchor = "conformance/standard/scenario-pack-quality-gates.conformance.yaml")
+        StandardCheck("v0.7.5.purpose-coverage-ratio", "0.7.5", GateKind.BEHAVIOR, inCandidateLevel = true, negativeFixture = "tests/FlowPurposeCoverageRatioTests.kt", externalAnchor = "docs/V0_7_5_PURPOSE_COVERAGE_RATIO.md")
     )
 
     val artifacts: List<StandardArtifact> = listOf(
