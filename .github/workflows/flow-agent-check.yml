@@ -1,16 +1,38 @@
-name: Flow Agent Check
+name: Flow CI
 
 on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+      - 'chore/**'
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  flow-agent-check:
+  compile-test-conformance:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare Gradle Wrapper
+        run: chmod +x ./gradlew
 
       - name: Validate Flow Agent Structure
         run: python3 tools/flow_agent_validate.py
@@ -18,24 +40,23 @@ jobs:
       - name: Generate Flow Agent Context
         run: python3 tools/flow_agent_runner.py
 
-      - name: Prepare Gradle Wrapper
-        run: |
-          if [ -f ./gradlew ]; then
-            chmod +x ./gradlew
-          fi
+      - name: Compile and Test
+        run: ./gradlew --no-daemon clean test --stacktrace --console=plain
 
-      - name: Run Offline Tests When Cache Is Available
-        run: |
-          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon test --offline
-          else
-            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions."
-          fi
+      - name: Run Conformance
+        run: ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain
 
-      - name: Run Offline Conformance When Cache Is Available
+      - name: Write CI Summary
+        if: always()
         run: |
-          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon run --args="conformance" --offline
-          else
-            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions."
-          fi
+          echo "# Flow CI Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branch/ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
+          echo "Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
