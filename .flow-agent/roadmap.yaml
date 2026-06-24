@@ -1,0 +1,163 @@
+project: Flow Core
+roadmapVersion: 1
+currentTrack: "0.7.x-to-1.0.0"
+
+rules:
+  - "Follow versions in order unless explicitly overridden."
+  - "Every version must have a measurable purpose."
+  - "Every version must preserve the architecture constitution."
+  - "No version may introduce runtime execution into Flow Core."
+  - "No version may introduce target-specific public DSL syntax."
+  - "No version may bend code only to satisfy tests."
+
+roadmap:
+  - version: "0.7.3"
+    name: "Standard Model Collapse"
+    purpose: "Collapse duplicated or conflicting standard model paths into a single canonical source of truth."
+    type: "debt-reduction"
+    status: "completed"
+    requiredOutcome:
+      - "Single canonical standard model path."
+      - "Removed or deprecated duplicated semantic definitions."
+      - "No public syntax expansion."
+      - "Conformance remains compatible."
+
+  - version: "0.7.4"
+    name: "Architecture Delta Analyzer"
+    purpose: "Measure architectural changes against the approved constitution and detect drift."
+    type: "architecture-quality"
+    status: "completed"
+    requiredOutcome:
+      - "Architecture delta analyzer."
+      - "Forbidden-direction checks."
+      - "Conformance vector coverage."
+      - "Release report integration."
+
+  - version: "0.7.5"
+    name: "Purpose Coverage Ratio"
+    purpose: "Measure how much of the original Flow purpose is behaviorally covered."
+    type: "purpose-verification"
+    status: "completed"
+    requiredOutcome:
+      - "Purpose coverage model."
+      - "Accepted and rejected purpose scenarios."
+      - "Coverage report."
+      - "Tests proving coverage calculation."
+
+  - version: "0.7.6"
+    name: "Reference Corpus Expansion I"
+    purpose: "Expand real-world automation intent coverage using practical DevOps and IT automation scenarios."
+    type: "intent-coverage"
+    status: "next"
+    requiredOutcome:
+      - "Additional reference intent scenarios."
+      - "Expected capabilities and entities for each scenario."
+      - "Negative scenarios for unsafe or unsupported intent."
+      - "No custom fallback lowering."
+      - "No production auto-approval."
+      - "Updated tests and conformance vectors."
+
+  - version: "0.7.7"
+    name: "Scenario Pack Quality Gates"
+    purpose: "Validate scenario pack consistency, usefulness, safety metadata, and non-decorative coverage."
+    type: "quality-gate"
+    status: "planned"
+    requiredOutcome:
+      - "Scenario pack validation rules."
+      - "Negative corpus checks."
+      - "Required metadata checks."
+      - "Scenario quality conformance vector."
+
+  - version: "0.8.0"
+    name: "Core Standard Contract Freeze"
+    purpose: "Freeze the public core standard contract before target compatibility expansion."
+    type: "contract-freeze"
+    status: "planned"
+    requiredOutcome:
+      - "Frozen core standard contract."
+      - "Compatibility policy."
+      - "Breaking-change policy."
+      - "Public standard surface report."
+
+  - version: "0.8.1"
+    name: "Target Capability Matrix"
+    purpose: "Define a stable matrix of target capabilities across supported platforms."
+    type: "capability-contract"
+    status: "planned"
+    requiredOutcome:
+      - "Capability matrix model."
+      - "Target capability definitions."
+      - "Unsupported capability representation."
+      - "Tests for known targets."
+
+  - version: "0.8.2"
+    name: "Target Negotiation Report"
+    purpose: "Produce reports explaining how intent maps or fails to map to target capabilities."
+    type: "capability-negotiation"
+    status: "planned"
+    requiredOutcome:
+      - "Negotiation report model."
+      - "Supported, degraded, and unsupported capability outcomes."
+      - "Clear rejection reasons."
+
+  - version: "0.8.3"
+    name: "Planner Capability Constraints"
+    purpose: "Ensure the planner respects target capability constraints before projection."
+    type: "planner-hardening"
+    status: "planned"
+    requiredOutcome:
+      - "Planner capability checks."
+      - "No unsupported lowering."
+      - "Negative tests for unsupported targets."
+
+  - version: "0.8.4"
+    name: "Safety Boundary Hardening"
+    purpose: "Strengthen safety behavior for destructive, production, credential, and rollback-sensitive operations."
+    type: "safety"
+    status: "planned"
+    requiredOutcome:
+      - "Safety boundary model hardening."
+      - "Production approval guarantees."
+      - "Negative tests for unsafe lowering."
+
+  - version: "0.9.0"
+    name: "Generator Projection Contract"
+    purpose: "Define the stable contract between ExecutionPlan and target generators."
+    type: "projection-contract"
+    status: "planned"
+    requiredOutcome:
+      - "Generator projection contract."
+      - "Manifest rendering boundaries."
+      - "Target-specific behavior kept outside public syntax."
+
+  - version: "0.9.1"
+    name: "Jenkins/GitHub/Tekton Projection Stability"
+    purpose: "Stabilize projections for the main supported target platforms."
+    type: "target-stability"
+    status: "planned"
+    requiredOutcome:
+      - "Stable Jenkins projection smoke tests."
+      - "Stable GitHub Actions projection smoke tests."
+      - "Stable Tekton projection smoke tests."
+      - "No public target-specific DSL."
+
+  - version: "0.9.5"
+    name: "End-to-End Standard Scenarios"
+    purpose: "Prove full standard flow across realistic end-to-end automation scenarios."
+    type: "e2e-standard"
+    status: "planned"
+    requiredOutcome:
+      - "End-to-end reference scenarios."
+      - "Intent to AST to plan to projection validation."
+      - "Release readiness report."
+
+  - version: "1.0.0"
+    name: "Public Flow Standard"
+    purpose: "Publish the first stable Flow standard contract."
+    type: "public-standard"
+    status: "planned"
+    requiredOutcome:
+      - "Stable public standard."
+      - "Compatibility statement."
+      - "Conformance suite."
+      - "Reference documentation."

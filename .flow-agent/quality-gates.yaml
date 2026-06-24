@@ -1,0 +1,60 @@
+qualityGates:
+  architecture:
+    - id: "architecture-purpose-check"
+      rule: "Every change must support the original Flow purpose."
+      severity: "blocker"
+
+    - id: "no-runtime-executor"
+      rule: "Flow Core must not execute workflows."
+      severity: "blocker"
+
+    - id: "no-target-specific-public-dsl"
+      rule: "Public Flow syntax must not expose target-specific constructs."
+      severity: "blocker"
+
+    - id: "single-source-of-truth"
+      rule: "Standard concepts must not have multiple independent definitions."
+      severity: "major"
+
+    - id: "target-boundary-preserved"
+      rule: "Target-specific behavior must remain in target generators or projection layers."
+      severity: "blocker"
+
+  code:
+    - id: "minimal-diff"
+      rule: "Prefer minimal, reviewable patches."
+      severity: "major"
+
+    - id: "no-large-rewrite-without-justification"
+      rule: "Large rewrites require explicit architectural justification."
+      severity: "blocker"
+
+    - id: "no-test-only-hacks"
+      rule: "Do not modify production code only to satisfy tests."
+      severity: "blocker"
+
+    - id: "clear-errors"
+      rule: "Validation failures must produce useful, stable error codes or explanations."
+      severity: "major"
+
+  tests:
+    - id: "behavior-covered"
+      rule: "Every new public behavior must be covered by tests or conformance vectors."
+      severity: "blocker"
+
+    - id: "negative-scenarios"
+      rule: "Forbidden behavior must have negative tests."
+      severity: "major"
+
+    - id: "no-fallback-lowering"
+      rule: "The planner must not silently lower unsupported or unknown intent through fallback behavior."
+      severity: "blocker"
+
+  docs:
+    - id: "public-contract-docs"
+      rule: "Every public contract change must be documented."
+      severity: "major"
+
+    - id: "release-report"
+      rule: "Every version must include a release report."
+      severity: "major"

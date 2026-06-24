@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Agent Work Package",
+  "type": "object",
+  "required": [
+    "version",
+    "name",
+    "objective",
+    "scope",
+    "architecturePurpose",
+    "validationPlan"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "objective": {
+      "type": "string"
+    },
+    "roadmapReference": {
+      "type": "object"
+    },
+    "architecturePurpose": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "object"
+    },
+    "nonGoals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expectedFilesToInspect": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expectedFilesToChange": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expectedFilesToAdd": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "testsToAddOrUpdate": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "conformanceToAddOrUpdate": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "documentationToUpdate": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "architectureChecks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validationPlan": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "riskAssessment": {
+      "type": "object"
+    },
+    "releaseArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

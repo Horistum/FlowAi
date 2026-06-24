@@ -1,0 +1,27 @@
+name: Flow Agent Check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  flow-agent-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Flow Agent Structure
+        run: python3 tools/flow_agent_validate.py
+
+      - name: Generate Flow Agent Context
+        run: python3 tools/flow_agent_runner.py
+
+      - name: Run Offline Tests When Available
+        run: |
+          if [ -x ./gradlew ]; then
+            ./gradlew --no-daemon test --offline
+          else
+            echo "Gradle wrapper not found or not executable. Skipping project tests."
+          fi

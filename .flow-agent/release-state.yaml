@@ -1,0 +1,35 @@
+project: Flow Core
+stateVersion: 1
+
+currentVersion: "0.7.5"
+currentPackage: "flow-core-prod-v0_7_5.zip"
+nextExpectedVersion: "0.7.6"
+activeStandardVersion: "0.7.5"
+
+repositoryRules:
+  sourceLanguage: "English"
+  chatLanguage: "User-preferred language allowed outside repository artifacts"
+
+architectureConstraints:
+  noRuntimeExecutor: true
+  noSdkFirstArchitecture: true
+  noPluginLifecycle: true
+  noTargetSpecificPublicDsl: true
+  noJenkinsSpecificLanguage: true
+  noTestOnlyHacks: true
+
+qualityPrinciples:
+  - "Do not bend code only to make tests pass."
+  - "Prefer small reviewable changes."
+  - "Every public behavior change must have tests."
+  - "Every public contract change must have documentation."
+  - "Every release must include a release report."
+  - "Every architectural change must be justified."
+  - "Reduce technical debt instead of carrying it forward."
+
+lastKnownValidation:
+  fullOfflineGradle: "unknown"
+  targetedCompilation: "unknown"
+  conformance: "unknown"
+  notes:
+    - "Update this file after each completed version."

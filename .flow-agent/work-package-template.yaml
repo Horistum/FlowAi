@@ -1,0 +1,56 @@
+version: ""
+name: ""
+
+objective: ""
+
+roadmapReference:
+  version: ""
+  name: ""
+  type: ""
+
+architecturePurpose: ""
+
+scope:
+  include: []
+  exclude: []
+
+nonGoals:
+  - "No runtime executor."
+  - "No SDK-first architecture."
+  - "No plugin lifecycle."
+  - "No target-specific public DSL."
+  - "No Jenkins-specific language drift."
+  - "No test-only hacks."
+
+expectedFilesToInspect: []
+expectedFilesToChange: []
+expectedFilesToAdd: []
+
+testsToAddOrUpdate: []
+conformanceToAddOrUpdate: []
+documentationToUpdate: []
+
+architectureChecks:
+  - "The change supports the original Flow purpose."
+  - "The change does not move target-specific behavior into the public standard."
+  - "The change does not duplicate standard concepts."
+  - "The change reduces or avoids technical debt."
+
+validationPlan:
+  - "Run targeted compilation."
+  - "Run unit tests."
+  - "Run conformance checks."
+  - "Verify release report."
+  - "Verify release state consistency."
+
+riskAssessment:
+  risks: []
+  mitigations: []
+
+releaseArtifacts:
+  - "Updated source code."
+  - "Updated tests."
+  - "Updated conformance vectors when applicable."
+  - "Updated documentation when applicable."
+  - "Release report."
+  - "Packaged release archive."

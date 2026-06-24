@@ -1,0 +1,36 @@
+forbiddenDirections:
+  - id: "runtime-executor"
+    description: "Flow Core must not execute workflows or become a runtime engine."
+    severity: "blocker"
+
+  - id: "sdk-first-architecture"
+    description: "Flow Core must not be organized primarily as an SDK product."
+    severity: "blocker"
+
+  - id: "plugin-lifecycle"
+    description: "Flow Core must not introduce plugin lifecycle management as part of the public standard."
+    severity: "blocker"
+
+  - id: "target-specific-public-dsl"
+    description: "Flow public syntax must not expose Jenkins, GitHub Actions, Tekton, Argo, or other platform-specific constructs."
+    severity: "blocker"
+
+  - id: "jenkins-specific-language"
+    description: "Flow must not become a Jenkins-specific DSL."
+    severity: "blocker"
+
+  - id: "test-only-hack"
+    description: "Implementation must not be bent only to satisfy tests."
+    severity: "blocker"
+
+  - id: "duplicated-standard-model"
+    description: "The same standard concept must not have multiple independent sources of truth."
+    severity: "major"
+
+  - id: "undocumented-compatibility-alias"
+    description: "Compatibility aliases must not be added without documentation and migration reason."
+    severity: "major"
+
+  - id: "self-referential-governance"
+    description: "Governance features must measure behavior, quality, drift, compatibility, or coverage. Ceremony-only controls are not allowed."
+    severity: "major"
