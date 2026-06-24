@@ -1,0 +1,19 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: modules.capability.contract-report
+description: Capability module contract report must expose action semantics, target implications and safety metadata without owning runtime hooks or renderer templates.
+input:
+  fixture: modules/
+expected:
+  requiredCheck: v0.3.4.capability-module-contracts
+  moduleContractVersion: "1.2"
+  valid: true
+  totals:
+    modulesAtLeast: 5
+    actionsAtLeast: 1
+    targetImplicationActionsAtLeast: 1
+  safety:
+    destructiveActionsRequireSafety: true
+  architecture:
+    moduleDescriptorsDoNotOwnRuntimeHooks: true
+    moduleDescriptorsDoNotOwnRendererTemplates: true

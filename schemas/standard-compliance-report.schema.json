@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/standard-compliance-report/1.0/standard-compliance-report.schema.json",
+  "title": "Flow Standard Compliance Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "complianceReportVersion", "profile", "flowName", "target", "status", "gates", "failedGates"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "complianceReportVersion": { "type": "string" },
+    "profile": { "type": "string" },
+    "flowName": { "type": "string" },
+    "target": { "type": "string" },
+    "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "gates": { "type": "array", "items": { "$ref": "#/$defs/gate" } },
+    "failedGates": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "artifact", "status", "message"],
+      "properties": {
+        "id": { "type": "string" },
+        "artifact": { "type": "string" },
+        "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}

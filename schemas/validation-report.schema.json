@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/validation-report/1.0/validation-report.schema.json",
+  "title": "Flow AST Validation Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["valid", "issues"],
+  "properties": {
+    "valid": { "type": "boolean" },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["level", "code", "message"],
+        "properties": {
+          "level": { "type": "string" },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "location": {
+            "anyOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "additionalProperties": true
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/conformance-manifest/1.0/conformance-manifest.schema.json",
+  "title": "Flow Conformance Manifest v1.0",
+  "type": "object",
+  "required": [
+    "standardVersion",
+    "conformanceManifestVersion",
+    "implementation",
+    "status",
+    "totalChecks",
+    "passed",
+    "failed",
+    "areas",
+    "requiredChecks",
+    "failedChecks",
+    "vectors",
+    "publicSchemas",
+    "requiredArtifacts"
+  ],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "conformanceManifestVersion": { "type": "string" },
+    "implementation": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "totalChecks": { "type": "integer" },
+    "passed": { "type": "integer" },
+    "failed": { "type": "integer" },
+    "areas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "requiredChecks", "passed", "failed"],
+        "properties": {
+          "area": { "type": "string" },
+          "requiredChecks": { "type": "integer" },
+          "passed": { "type": "integer" },
+          "failed": { "type": "integer" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "requiredChecks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "failedChecks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "vectors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "area", "required"],
+        "properties": {
+          "path": { "type": "string" },
+          "area": { "type": "string" },
+          "required": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "publicSchemas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["artifact", "schema", "required"],
+        "properties": {
+          "artifact": { "type": "string" },
+          "schema": { "type": "string" },
+          "required": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "requiredArtifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

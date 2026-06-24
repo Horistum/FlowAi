@@ -1,0 +1,1 @@
+Deploy application billing-api to Kubernetes. Require approval in production. Verify health after deploy and rollback on failure. Notify the team if anything fails.

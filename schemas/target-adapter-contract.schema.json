@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/target-adapter-contract/1.0/target-adapter-contract.schema.json",
+  "title": "Flow Target Adapter Contract v1.0",
+  "type": "object",
+  "required": [
+    "standardVersion",
+    "adapterContractVersion",
+    "flowName",
+    "target",
+    "planVersion",
+    "strict",
+    "generationAllowed",
+    "productionReady",
+    "allowedInputArtifacts",
+    "expectedOutputArtifacts",
+    "forbiddenInputArtifacts",
+    "invariants",
+    "diagnostics"
+  ],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "adapterContractVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "target": { "type": "string" },
+    "planVersion": { "type": "string" },
+    "strict": { "type": "boolean" },
+    "generationAllowed": { "type": "boolean" },
+    "productionReady": { "type": "boolean" },
+    "allowedInputArtifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "expectedOutputArtifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "forbiddenInputArtifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "severity", "description"],
+        "properties": {
+          "code": { "type": "string" },
+          "severity": { "enum": ["MUST", "SHOULD"] },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "diagnostics": { "$ref": "#/$defs/diagnostics" }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["name", "role", "schema", "required"],
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "enum": ["INPUT", "OUTPUT", "DIAGNOSTIC"] },
+        "schema": { "type": "string" },
+        "required": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "diagnostics": {
+      "type": "object",
+      "required": ["standardVersion", "diagnosticsVersion", "flowName", "target", "status", "generationAllowed", "issues"],
+      "properties": {
+        "standardVersion": { "type": "string" },
+        "diagnosticsVersion": { "type": "string" },
+        "flowName": { "type": "string" },
+        "target": { "type": "string" },
+        "status": { "enum": ["READY", "DEGRADED", "BLOCKED"] },
+        "generationAllowed": { "type": "boolean" },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "severity", "artifact", "message"],
+            "properties": {
+              "code": { "type": "string" },
+              "severity": { "enum": ["INFO", "WARNING", "ERROR"] },
+              "artifact": { "type": "string" },
+              "message": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

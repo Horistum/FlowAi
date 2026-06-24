@@ -1,0 +1,9 @@
+kind: FlowConformanceVector
+version: "1.0"
+name: target.strict.tekton-approval-unsupported
+input: examples/intent/build-test-deploy.intent.yaml
+target: tekton
+strict: true
+expect:
+  compatibility: unsupported
+  hasErrors: true

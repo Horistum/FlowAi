@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.valid.cleanup-with-retention
+description: Cleanup scenario must lower only when a retention or safety rule is explicit.
+input:
+  text: Cleanup docker images older than 14 days.
+expected:
+  requiredCheck: v0.3.2.safety-policy-validation
+  scenario: cleanup
+  capabilities:
+    - CLEANUP
+  requiredQuestions: []
+  lowering: valid
+  safety:
+    retention: 14d

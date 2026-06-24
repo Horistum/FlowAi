@@ -1,0 +1,19 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.ai-input-trust-boundary.v066
+introducedIn: "0.6.6"
+description: AI/user text remains a proposal until deterministic normalization, required clarification and validation gates pass.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.6.6.ai-input-trust-boundary
+  standardVersion: "0.7.5"
+  rules:
+    includes:
+      - ai.proposal-only
+      - ai.required-clarification-blocks
+      - ai.no-critical-defaults
+      - ai.validation-before-plan
+      - ai.target-syntax-after-plan
+      - ai.audit-trace
+

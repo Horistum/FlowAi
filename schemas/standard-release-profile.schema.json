@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/standard-release-profile/1.0/standard-release-profile.schema.json",
+  "title": "Flow Standard Release Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "standardVersion",
+    "releaseProfileVersion",
+    "profile",
+    "minimumStandardVersion",
+    "requirements",
+    "requiredArtifacts",
+    "requiredConformanceChecks"
+  ],
+  "properties": {
+    "standardVersion": {
+      "type": "string"
+    },
+    "releaseProfileVersion": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "string"
+    },
+    "minimumStandardVersion": {
+      "type": "string"
+    },
+    "checkIdSemantics": {
+      "type": "string"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/requirement"
+      }
+    },
+    "requiredArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "requiredConformanceChecks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "gateClassifications": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/gateClassification"
+      }
+    },
+    "registryConsistencyChecks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "behaviorSafetyNormalizationChecks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "governanceChecks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "area",
+        "artifact",
+        "required",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "area": {
+          "type": "string"
+        },
+        "artifact": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "gateClassification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "introducedIn",
+        "activeQualityGate",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "introducedIn": {
+          "type": "string"
+        },
+        "activeQualityGate": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

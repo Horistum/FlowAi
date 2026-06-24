@@ -1,0 +1,7 @@
+{
+  "manifestVersion" : "1.0",
+  "standardVersion" : "0.7.6",
+  "target" : "jenkins",
+  "flowName" : "build-test-deploy",
+  "jobs" : [ { "id" : "build-test-deploy", "steps" : [] } ]
+}

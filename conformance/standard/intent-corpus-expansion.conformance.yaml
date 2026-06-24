@@ -1,0 +1,23 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.intent-corpus-expansion.v061
+introducedIn: "0.6.1"
+description: Reference intent corpus must cover accepted and blocked real-world automation intents without adding new Flow syntax.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.6.1.intent-corpus-expansion
+  standardVersion: "0.7.5"
+  requiredScenarioIds:
+    includes:
+      - deploy-with-approval-and-rollback
+      - database-migration-with-backup
+      - certificate-renewal-with-window
+      - secret-rotation-with-audit
+      - kubernetes-maintenance-dry-run
+      - cleanup-with-retention
+      - rollback-with-verification
+      - portable-build-test-deploy
+      - database-migration-without-backup
+      - kubernetes-maintenance-without-dry-run
+

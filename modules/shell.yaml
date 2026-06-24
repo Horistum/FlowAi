@@ -1,0 +1,32 @@
+kind: FlowModule
+name: shell
+version: "1.0"
+description: "Local shell command execution"
+systemTypes:
+  shell:
+    input: {}
+actions:
+  run:
+    kind: action
+    targetTypes:
+      - shell
+    input:
+      command:
+        type: text
+        required: true
+    output:
+      ok:
+        type: boolean
+      code:
+        type: number
+      text:
+        type: text
+    effects:
+      executes:
+        - shell.command
+    safety:
+      destructive: false
+    retry:
+      supported: true
+    timeout:
+      supported: true

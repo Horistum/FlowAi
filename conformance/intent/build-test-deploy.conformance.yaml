@@ -1,0 +1,9 @@
+kind: FlowConformanceVector
+version: "1.0"
+name: intent.valid.build-test-deploy
+input: examples/intent/build-test-deploy.intent.yaml
+expect:
+  intentValidation: valid
+  astValidation: valid
+  executionPlan:
+    minTasks: 1

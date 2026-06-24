@@ -1,0 +1,41 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.standard-bundle-verifier.v053
+introducedIn: "0.5.3"
+description: Standard bundle verifier must deterministically verify an exported standard bundle without executing workflows.
+input:
+  command: standard-verify
+expected:
+  requiredCheck: v0.5.3.standard-bundle-verifier
+  standardVersion: "0.7.5"
+  report: standard-bundle-verification.json
+  schema: schemas/standard-bundle-verification.schema.json
+  passChecks:
+    includes:
+      - bundle.required-documents-present
+      - bundle.required-json-artifacts-present
+      - bundle.required-bundle-files-present
+      - bundle.required-schemas-present
+      - bundle.required-directories-present
+      - bundle.release-gates-in-conformance-manifest
+      - bundle.stable-surface-covered-by-export-bundle
+      - bundle.standard-version-matches
+  requiredChecks:
+    includes:
+      - v0.5.4.data-driven-conformance-index
+      - v0.6.1.intent-corpus-expansion
+      - v0.6.2.required-clarification-contract
+      - v0.6.3.safety-policy-matrix
+      - v0.6.4.target-semantics-negative-corpus
+      - v0.6.5.execution-plan-semantic-invariants
+      - v0.6.6.ai-input-trust-boundary
+      - v0.6.7.standard-example-bundle
+      - v0.6.8.compatibility-promise
+      - v0.7.0.reference-corpus-execution-harness
+      - v0.7.1.architecture-debt-cleanup-and-drift-enforcement
+      - v0.7.3.standard-model-projection-coherence
+      - v0.7.4.architecture-delta-analyzer
+      - v0.7.5.purpose-coverage-ratio
+  negativeCase:
+    missingDocument: docs/IMPLEMENTER_GUIDE.md
+    expectedStatus: FAIL

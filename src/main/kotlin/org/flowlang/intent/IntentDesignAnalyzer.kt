@@ -1,0 +1,144 @@
+package org.flowlang.intent
+
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.standard.StandardIntentCatalog
+
+/**
+ * Design-time analysis for human/AI intent before lowering.
+ *
+ * This is intentionally not a low-level validation report. It explains what the
+ * automation wants, what systems/configuration it requires and which questions
+ * still need architectural decisions. The goal is to keep the user in the role
+ * of solution architect, not syntax janitor.
+ */
+data class IntentDesignReport(
+    val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
+    val intentName: String,
+    val summary: String,
+    val capabilities: List<IntentCapabilityUse> = emptyList(),
+    val requiredSystems: List<IntentRequiredSystem> = emptyList(),
+    val missingDecisions: List<String> = emptyList(),
+    val assumptions: List<String> = emptyList(),
+    val portabilityNotes: List<String> = emptyList()
+)
+
+data class IntentCapabilityUse(
+    val stepId: String,
+    val capability: String,
+    val category: String,
+    val maturity: String,
+    val description: String
+)
+
+data class IntentRequiredSystem(
+    val name: String,
+    val type: String,
+    val declared: Boolean,
+    val requiredConfig: List<String> = emptyList(),
+    val missingConfig: List<String> = emptyList(),
+    val reason: String
+)
+
+class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry()) {
+    fun analyze(intent: IntentDocument): IntentDesignReport {
+        val declaredSystems = intent.systems.associateBy { it.name }
+        val steps = intent.workflows.flatMap { it.steps }
+        val capabilities = steps.map { step ->
+            val def = StandardIntentCatalog.byCapability[step.capability]
+            IntentCapabilityUse(
+                stepId = step.id,
+                capability = step.capability.name,
+                category = def?.category ?: "extension",
+                maturity = def?.maturity ?: "unknown",
+                description = def?.description ?: "Custom or unknown capability."
+            )
+        }
+
+        val required = linkedMapOf<String, IntentRequiredSystem>()
+        fun requireSystem(name: String, type: String, reason: String) {
+            val declared = declaredSystems[name]
+            val contract = registry.findSystemType(type)?.second
+            val requiredFields = contract?.input?.filter { it.value.required }?.keys?.toList().orEmpty()
+            val missing = if (declared == null) requiredFields else requiredFields.filter { it !in declared.config }
+            required[name] = IntentRequiredSystem(
+                name = name,
+                type = type,
+                declared = declared != null,
+                requiredConfig = requiredFields,
+                missingConfig = missing,
+                reason = reason
+            )
+        }
+
+        declaredSystems.values.forEach { sys ->
+            val normalizedType = normalizeSystemType(sys.type)
+            val contract = registry.findSystemType(normalizedType)?.second
+            val requiredFields = contract?.input?.filter { it.value.required }?.keys?.toList().orEmpty()
+            required[sys.name] = IntentRequiredSystem(
+                name = sys.name,
+                type = normalizedType,
+                declared = true,
+                requiredConfig = requiredFields,
+                missingConfig = requiredFields.filter { it !in sys.config },
+                reason = "Declared by intent."
+            )
+        }
+
+        steps.forEach { step ->
+            val explicit = step.params["system"].asTextOrNull()
+            when (step.capability) {
+                StandardCapability.CHECKOUT -> requireSystem(explicit ?: "source", "git", "Source checkout step '${step.id}'.")
+                StandardCapability.BUILD, StandardCapability.TEST, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND -> requireSystem(explicit ?: "local", "shell", "Command execution step '${step.id}'.")
+                StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE -> requireSystem(explicit ?: "registry", "docker", "Container image step '${step.id}'.")
+                StandardCapability.DEPLOY -> {
+                    val engine = step.params["engine"].asTextOrNull() ?: step.params["tool"].asTextOrNull()
+                    when (engine?.lowercase()) {
+                        "argocd" -> requireSystem(explicit ?: "argo", "argocd", "ArgoCD deployment step '${step.id}'.")
+                        "helm" -> requireSystem(explicit ?: "helm", "helm", "Helm deployment step '${step.id}'.")
+                        else -> requireSystem(explicit ?: "cluster", "kubernetes", "Deployment step '${step.id}'.")
+                    }
+                }
+                StandardCapability.VERIFY -> requireSystem(explicit ?: "cluster", "kubernetes", "Verification step '${step.id}'.")
+                StandardCapability.NOTIFY -> requireSystem(explicit ?: "notifier", "notify", "Notification step '${step.id}'.")
+                else -> requireSystem(explicit ?: "standard", "standard", "Semantic standard capability '${step.capability}' in step '${step.id}'.")
+            }
+        }
+
+        if (intent.failure.notify) requireSystem("notifier", "notify", "Failure notification policy.")
+        if (intent.failure.rollback) requireSystem("standard", "standard", "Failure rollback policy.")
+
+        val missingDecisions = mutableListOf<String>()
+        steps.filter { it.capability == StandardCapability.CUSTOM }.forEach { missingDecisions += "Step '${it.id}' uses CUSTOM capability. Define an organization/module contract before production use." }
+        required.values.filter { !it.declared }.forEach { missingDecisions += "Required system '${it.name}' of type '${it.type}' is not declared. Flow can infer the need, but credentials/config must be supplied by policy, environment or system catalog." }
+        required.values.filter { it.missingConfig.isNotEmpty() }.forEach { missingDecisions += "System '${it.name}' is missing required config: ${it.missingConfig.joinToString()}." }
+
+        val assumptions = ConventionResolver.assumptions(intent)
+
+        val portability = mutableListOf<String>()
+        if (steps.any { it.capability == StandardCapability.APPROVE } || intent.policies.any { it.type == IntentPolicyType.APPROVAL }) {
+            portability += "Approval semantics differ by target. Jenkins/GitHub/Azure have native options; Tekton usually requires an external gate."
+        }
+        if (steps.any { it.requires.isNotEmpty() }) portability += "Intent uses DAG dependencies through requires; target generator must preserve dependency semantics."
+        if (steps.any { it.capability in setOf(StandardCapability.BACKUP, StandardCapability.RESTORE, StandardCapability.SECRET_ROTATE, StandardCapability.RUNBOOK, StandardCapability.INCIDENT) }) {
+            portability += "Operational intents may require organization-specific modules or policies. This is expected and should be modeled through capability contracts, not custom parser syntax."
+        }
+
+        return IntentDesignReport(
+            intentName = intent.name,
+            summary = intent.description ?: "Flow intent '${intent.name}' with ${steps.size} step(s) across ${intent.workflows.size} workflow(s).",
+            capabilities = capabilities,
+            requiredSystems = required.values.toList(),
+            missingDecisions = missingDecisions,
+            assumptions = assumptions,
+            portabilityNotes = portability
+        )
+    }
+}
+
+private fun normalizeSystemType(type: String): String = when (type) {
+    "dockerRegistry", "containerRegistry" -> "docker"
+    "notification", "email" -> "notify"
+    else -> type
+}
+

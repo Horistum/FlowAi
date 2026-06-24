@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/capability-module-contract-report/1.0/capability-module-contract-report.schema.json",
+  "title": "Flow Capability Module Contract Report v1.0",
+  "type": "object",
+  "required": ["standardVersion", "moduleContractVersion", "totals", "modules", "issues", "valid"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "moduleContractVersion": { "type": "string" },
+    "valid": { "type": "boolean" },
+    "totals": {
+      "type": "object",
+      "required": ["modules", "systemTypes", "actions", "destructiveActions", "targetImplicationActions"],
+      "properties": {
+        "modules": { "type": "integer" },
+        "systemTypes": { "type": "integer" },
+        "actions": { "type": "integer" },
+        "destructiveActions": { "type": "integer" },
+        "targetImplicationActions": { "type": "integer" }
+      },
+      "additionalProperties": false
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "description", "systemTypes", "actions"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "description": { "type": "string" },
+          "systemTypes": { "type": "array", "items": { "type": "string" } },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "targetTypes", "inputs", "outputs", "effects", "destructive", "requiresSafety", "secrets", "requiredCapabilities", "targetImplications", "retrySupported", "timeoutSupported"],
+              "properties": {
+                "name": { "type": "string" },
+                "targetTypes": { "type": "array", "items": { "type": "string" } },
+                "inputs": { "type": "array", "items": { "type": "string" } },
+                "outputs": { "type": "array", "items": { "type": "string" } },
+                "effects": { "type": "array", "items": { "type": "string" } },
+                "destructive": { "type": "boolean" },
+                "requiresSafety": { "type": "boolean" },
+                "secrets": { "type": "array", "items": { "type": "string" } },
+                "requiredCapabilities": { "type": "array", "items": { "type": "string" } },
+                "targetImplications": { "type": "object", "additionalProperties": { "type": "string" } },
+                "retrySupported": { "type": "boolean" },
+                "timeoutSupported": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["level", "module", "code", "message"],
+        "properties": {
+          "level": { "enum": ["info", "warning", "error"] },
+          "module": { "type": "string" },
+          "action": { "type": ["string", "null"] },
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

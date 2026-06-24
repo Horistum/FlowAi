@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/capability-negotiation-report/1.1/capability-negotiation-report.schema.json",
+  "title": "Flow Target Capability Negotiation Report v1.1",
+  "type": "object",
+  "required": [
+    "planVersion",
+    "flowName",
+    "requiredCapabilities",
+    "portabilityScore",
+    "portableCapabilities",
+    "targetSpecificCapabilities",
+    "blockingPortabilityIssues",
+    "requiredWorkarounds",
+    "targets",
+    "recommendedTargets",
+    "blockedTargets"
+  ],
+  "properties": {
+    "planVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "requiredCapabilities": { "type": "array", "items": { "type": "string" } },
+    "portabilityScore": { "type": "number" },
+    "portableCapabilities": { "type": "array", "items": { "type": "string" } },
+    "targetSpecificCapabilities": { "type": "array", "items": { "type": "string" } },
+    "blockingPortabilityIssues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target", "capability", "level", "message"],
+        "properties": {
+          "target": { "type": "string" },
+          "capability": { "type": "string" },
+          "level": { "enum": ["SUPPORTED", "PARTIAL", "UNSUPPORTED", "REQUIRES_RUNTIME"] },
+          "message": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "requiredWorkarounds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target", "capability", "support", "recommendation"],
+        "properties": {
+          "target": { "type": "string" },
+          "capability": { "type": "string" },
+          "support": { "enum": ["SUPPORTED", "PARTIAL", "UNSUPPORTED", "REQUIRES_RUNTIME"] },
+          "recommendation": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "recommendedTargets": { "type": "array", "items": { "type": "string" } },
+    "blockedTargets": { "type": "array", "items": { "type": "string" } },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target", "status", "portabilityScore"],
+        "properties": {
+          "target": { "type": "string" },
+          "status": { "enum": ["SUPPORTED", "PARTIAL", "UNSUPPORTED", "REQUIRES_RUNTIME"] },
+          "portabilityScore": { "type": "number" },
+          "supported": { "type": "array", "items": { "type": "string" } },
+          "partial": { "type": "array", "items": { "type": "string" } },
+          "unsupported": { "type": "array", "items": { "type": "string" } },
+          "requiresRuntime": { "type": "array", "items": { "type": "string" } },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["level", "target", "nodeId", "feature", "message"],
+              "properties": {
+                "level": { "enum": ["INFO", "WARNING", "ERROR"] },
+                "target": { "type": "string" },
+                "nodeId": { "type": "string" },
+                "feature": { "type": "string" },
+                "message": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "notes": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

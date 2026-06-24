@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.org/schemas/intent-design-report.schema.json",
+  "title": "Flow Intent Design Report",
+  "type": "object",
+  "required": ["standardVersion", "intentName", "summary", "capabilities", "requiredSystems"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "intentName": { "type": "string" },
+    "summary": { "type": "string" },
+    "capabilities": { "type": "array", "items": { "type": "object" } },
+    "requiredSystems": { "type": "array", "items": { "type": "object" } },
+    "missingDecisions": { "type": "array", "items": { "type": "string" } },
+    "portabilityNotes": { "type": "array", "items": { "type": "string" } }
+  }
+}

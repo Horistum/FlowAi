@@ -1,0 +1,21 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: diagnostics.coverage.reference-pipeline
+description: Diagnostic coverage report must prove that public report diagnostic codes are known by the standard diagnostic catalog.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.3.14.diagnostic-coverage-report
+  artifact: diagnostic-coverage-report.json
+  schema: schemas/diagnostic-coverage-report.schema.json
+  status: PASS
+  observedCodes:
+    includes:
+      - ADAPTER_CONTRACT_READY
+      - ADAPTER_MUST_NOT_READ_INTENT
+  unknownCodes:
+    count: 0
+  catalogCodes:
+    includes:
+      - DIAGNOSTIC_CODE_UNKNOWN

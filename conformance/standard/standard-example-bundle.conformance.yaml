@@ -1,0 +1,18 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.standard-example-bundle.v067
+introducedIn: "0.6.7"
+description: Standard examples must provide accepted and blocked golden examples tied to public artifacts.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.6.7.standard-example-bundle
+  standardVersion: "0.7.5"
+  examples:
+    includes:
+      - example.valid-deploy
+      - example.blocked-migration
+      - example.degraded-target
+      - example.safety-rejection
+      - example.portable-plan
+

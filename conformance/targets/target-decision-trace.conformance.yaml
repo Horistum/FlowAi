@@ -1,0 +1,30 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: target.decision-trace.reference-deployment
+description: Target decision trace must explain how capability negotiation, readiness and target selection produced the final recommendation.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  requestedTarget: jenkins
+expected:
+  requiredCheck: v0.3.9.target-decision-trace
+  finalDecision: PASSED
+  recommendedTarget: jenkins
+  trace:
+    includes:
+      - execution-plan
+      - capability-negotiation
+      - execution-readiness
+      - target-selection
+  targetExplanations:
+    recommended:
+      - jenkins
+    degraded:
+      - github-actions
+    blocked:
+      - tekton
+  publicArtifacts:
+    includes:
+      - capability-negotiation-report.json
+      - execution-readiness-report.json
+      - target-selection-report.json
+      - target-decision-trace-report.json

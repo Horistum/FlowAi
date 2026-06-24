@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/intent/1.0/intent.schema.json",
+  "title": "Flow Standard Intent Document v1.0 draft",
+  "type": "object",
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "intentVersion": {
+      "type": "string",
+      "default": "1.0"
+    },
+    "kind": {
+      "const": "FlowIntentDocument"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/input"
+      }
+    },
+    "systems": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/system"
+      }
+    },
+    "workflows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/workflow"
+      }
+    },
+    "policies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/policy"
+      }
+    },
+    "failure": {
+      "$ref": "#/$defs/failure"
+    }
+  },
+  "$defs": {
+    "input": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "default": {
+          "$ref": "#/$defs/intentValue"
+        }
+      }
+    },
+    "system": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "object",
+              "array",
+              "null"
+            ]
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "workflow": {
+      "type": "object",
+      "required": [
+        "name",
+        "steps"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": [
+        "id",
+        "capability"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+        },
+        "capability": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "uses": {
+          "type": "string"
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "produces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "condition": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "intentValue": {
+      "description": "Structured intent value. YAML block/flow maps and lists remain structured; secret/ref/expr string prefixes are normalized by the loader.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/intentValue"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/intentValue"
+          }
+        }
+      ]
+    },
+    "failure": {
+      "type": "object",
+      "properties": {
+        "notify": {
+          "type": "boolean"
+        },
+        "rollback": {
+          "type": "boolean"
+        },
+        "stopOnError": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.compatibility-promise.v068
+introducedIn: "0.6.8"
+description: Compatibility promise must define patch/minor/major expectations and require conformance coverage for release gates.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.6.8.compatibility-promise
+  standardVersion: "0.7.5"
+  categories:
+    includes:
+      - patch
+      - minor
+      - major
+      - all
+

@@ -1,0 +1,28 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.standard-export-bundle.public-export
+introducedIn: "0.4.9"
+description: Standard export bundle must package public docs, schemas, vectors, standard data, targets and examples.
+input:
+  command: standard-export
+expected:
+  artifact: standard-export-bundle.json
+  schema: schemas/standard-export-bundle.schema.json
+  requiredCheck: v0.4.9.standard-export-bundle
+  requiredDirectories:
+    includes:
+      - docs/
+      - schemas/
+      - conformance/
+      - standard/
+      - targets/
+      - examples/
+  requiredFiles:
+    includes:
+      - standard-index.json
+      - public-standard-surface.json
+      - standard-export-bundle.json
+      - conformance-levels.json
+      - standard-export-manifest.json
+      - conformance-manifest.json
+      - conformance-vector-index.json

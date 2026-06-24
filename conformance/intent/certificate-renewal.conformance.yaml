@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.valid.certificate-renewal
+description: Certificate renewal scenario must normalize to CERTIFICATE_RENEW and avoid guessing provider or affected service.
+input:
+  text: Renew certificate api-gateway in namespace edge and verify service gateway after renewal.
+expected:
+  requiredCheck: v0.3.1.scenario-packs
+  scenario: certificate-renewal
+  capabilities:
+    - CERTIFICATE_RENEW
+    - VALIDATE
+  requiredClarifications: []
+  recommendedClarifications:
+    - entities.certificate.provider

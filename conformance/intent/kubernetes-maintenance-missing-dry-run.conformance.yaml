@@ -1,0 +1,16 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.invalid.kubernetes-maintenance-missing-dry-run
+description: Kubernetes maintenance that can drain nodes must require an explicit dry-run.
+input:
+  text: Run Kubernetes maintenance in namespace payments, drain nodes with approval and verify pods are healthy.
+expected:
+  requiredCheck: v0.3.2.safety-policy-validation
+  scenario: kubernetes-maintenance
+  capabilities:
+    - APPROVE
+    - KUBERNETES_MAINTENANCE
+    - VALIDATE
+  validationErrors:
+    - SAFETY_REQUIRES_DRY_RUN
+  lowering: blocked

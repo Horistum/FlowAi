@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/target-selection-report/1.0/target-selection-report.schema.json",
+  "title": "Flow Target Selection Report v1.0",
+  "type": "object",
+  "required": [
+    "standardVersion",
+    "selectionModelVersion",
+    "planVersion",
+    "flowName",
+    "strict",
+    "recommendedTarget",
+    "decision",
+    "readyTargets",
+    "degradedTargets",
+    "blockedTargets",
+    "candidates"
+  ],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "selectionModelVersion": { "type": "string" },
+    "planVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "strict": { "type": "boolean" },
+    "recommendedTarget": { "type": "string" },
+    "decision": { "type": "string" },
+    "readyTargets": { "type": "array", "items": { "type": "string" } },
+    "degradedTargets": { "type": "array", "items": { "type": "string" } },
+    "blockedTargets": { "type": "array", "items": { "type": "string" } },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rank",
+          "target",
+          "readiness",
+          "generationAllowed",
+          "productionReady",
+          "compatibilityStatus",
+          "targetPortabilityScore",
+          "blockerCount",
+          "warningCount",
+          "recommendation"
+        ],
+        "properties": {
+          "rank": { "type": "integer" },
+          "target": { "type": "string" },
+          "readiness": { "enum": ["READY", "DEGRADED", "BLOCKED"] },
+          "generationAllowed": { "type": "boolean" },
+          "productionReady": { "type": "boolean" },
+          "compatibilityStatus": { "enum": ["SUPPORTED", "PARTIAL", "UNSUPPORTED", "REQUIRES_RUNTIME"] },
+          "targetPortabilityScore": { "type": "number" },
+          "blockerCount": { "type": "integer" },
+          "warningCount": { "type": "integer" },
+          "recommendation": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

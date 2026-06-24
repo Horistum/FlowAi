@@ -1,0 +1,359 @@
+version: 1.0
+standardVersion: "0.7.4"
+purpose: Frozen StandardModel snapshot used by v0.7.5 Purpose Coverage Ratio and future delta checks.
+checks:
+  - id: v0.3.16.standard-contract-index
+    introducedIn: "0.3.16"
+    kind: CONTRACT
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.3.17.standard-release-profile
+    introducedIn: "0.3.17"
+    kind: CONTRACT
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.3.18.artifact-evidence-report
+    introducedIn: "0.3.18"
+    kind: ARTIFACT_INTEGRITY
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.3.19.standard-compliance-report
+    introducedIn: "0.3.19"
+    kind: CONTRACT
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.3.20.standard-freeze-report
+    introducedIn: "0.3.20"
+    kind: ARTIFACT_INTEGRITY
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.3.21.compatibility-policy
+    introducedIn: "0.3.21"
+    kind: COMPATIBILITY
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.3.22.reference-corpus
+    introducedIn: "0.3.22"
+    kind: BEHAVIOR
+    inReleaseProfile: true
+    inCandidateLevel: false
+    externalAnchor: conformance/artifacts/reference-corpus-index.conformance.yaml
+  - id: v0.3.23.negative-conformance-corpus
+    introducedIn: "0.3.23"
+    kind: BEHAVIOR
+    inReleaseProfile: true
+    inCandidateLevel: false
+    negativeFixture: conformance/artifacts/negative-conformance-corpus.conformance.yaml
+  - id: v0.4.2.target-conformance-profile
+    introducedIn: "0.4.2"
+    kind: PORTABILITY
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.4.0.public-standard-draft
+    introducedIn: "0.4.0"
+    kind: CONTRACT
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.4.1.semantic-correctness-hardening
+    introducedIn: "0.4.1"
+    kind: BEHAVIOR
+    inReleaseProfile: true
+    inCandidateLevel: false
+    externalAnchor: conformance/intent/semantic-correctness-hardening.conformance.yaml
+  - id: v0.4.2.standard-boundary-no-sdk-runtime
+    introducedIn: "0.4.2"
+    kind: GOVERNANCE
+    inReleaseProfile: true
+    inCandidateLevel: false
+    negativeFixture: conformance/architecture/standard-boundary-no-sdk-runtime.conformance.yaml
+  - id: v0.4.3.architecture-governance-guardrails
+    introducedIn: "0.4.3"
+    kind: GOVERNANCE
+    inReleaseProfile: true
+    inCandidateLevel: false
+    negativeFixture: conformance/architecture/architecture-governance-guardrails.conformance.yaml
+  - id: v0.4.4.ai-proposal-review
+    introducedIn: "0.4.4"
+    kind: NORMALIZATION
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.4.4.condition-expression-readiness
+    introducedIn: "0.4.4"
+    kind: EXECUTION_PLAN
+    inReleaseProfile: true
+    inCandidateLevel: false
+  - id: v0.4.4.no-silent-condition-fallback
+    introducedIn: "0.4.4"
+    kind: PORTABILITY
+    inReleaseProfile: true
+    inCandidateLevel: false
+    negativeFixture: conformance/targets/no-silent-condition-fallback.conformance.yaml
+  - id: v0.4.4.behavioral-generator-equivalence
+    introducedIn: "0.4.4"
+    kind: BEHAVIOR
+    inReleaseProfile: true
+    inCandidateLevel: false
+    externalAnchor: conformance/generators/behavioral-generator-equivalence.conformance.yaml
+  - id: v0.4.5.standard-surface-freeze
+    introducedIn: "0.4.5"
+    kind: CONTRACT
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.4.6.compatibility-migration-policy
+    introducedIn: "0.4.6"
+    kind: COMPATIBILITY
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.4.7.reference-intent-corpus
+    introducedIn: "0.4.7"
+    kind: BEHAVIOR
+    inReleaseProfile: true
+    inCandidateLevel: true
+    externalAnchor: conformance/intent/reference-intent-corpus.conformance.yaml
+  - id: v0.4.8.target-semantics-matrix
+    introducedIn: "0.4.8"
+    kind: PORTABILITY
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.4.9.standard-export-bundle
+    introducedIn: "0.4.9"
+    kind: ARTIFACT_INTEGRITY
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.5.0.standard-export-manifest
+    introducedIn: "0.5.0"
+    kind: CONTRACT
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.5.3.standard-bundle-verifier
+    introducedIn: "0.5.3"
+    kind: ARTIFACT_INTEGRITY
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.5.4.data-driven-conformance-index
+    introducedIn: "0.5.4"
+    kind: ARTIFACT_INTEGRITY
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.6.1.intent-corpus-expansion
+    introducedIn: "0.6.1"
+    kind: BEHAVIOR
+    inReleaseProfile: true
+    inCandidateLevel: true
+    externalAnchor: conformance/standard/intent-corpus-expansion.conformance.yaml
+  - id: v0.6.2.required-clarification-contract
+    introducedIn: "0.6.2"
+    kind: NORMALIZATION
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.6.3.safety-policy-matrix
+    introducedIn: "0.6.3"
+    kind: SAFETY
+    inReleaseProfile: true
+    inCandidateLevel: true
+    negativeFixture: conformance/standard/safety-policy-matrix.conformance.yaml
+  - id: v0.6.4.target-semantics-negative-corpus
+    introducedIn: "0.6.4"
+    kind: PORTABILITY
+    inReleaseProfile: true
+    inCandidateLevel: true
+    negativeFixture: conformance/standard/target-semantics-negative-corpus.conformance.yaml
+  - id: v0.6.5.execution-plan-semantic-invariants
+    introducedIn: "0.6.5"
+    kind: EXECUTION_PLAN
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.6.6.ai-input-trust-boundary
+    introducedIn: "0.6.6"
+    kind: SAFETY
+    inReleaseProfile: true
+    inCandidateLevel: true
+    negativeFixture: conformance/standard/ai-input-trust-boundary.conformance.yaml
+  - id: v0.6.7.standard-example-bundle
+    introducedIn: "0.6.7"
+    kind: BEHAVIOR
+    inReleaseProfile: true
+    inCandidateLevel: true
+    externalAnchor: conformance/standard/standard-example-bundle.conformance.yaml
+  - id: v0.6.8.compatibility-promise
+    introducedIn: "0.6.8"
+    kind: COMPATIBILITY
+    inReleaseProfile: true
+    inCandidateLevel: true
+  - id: v0.7.0.reference-corpus-execution-harness
+    introducedIn: "0.7.0"
+    kind: BEHAVIOR
+    inReleaseProfile: true
+    inCandidateLevel: true
+    externalAnchor: src/main/kotlin/org/flowlang/conformance/ReferenceCorpusExecutionHarness.kt
+  - id: v0.7.1.architecture-debt-cleanup-and-drift-enforcement
+    introducedIn: "0.7.1"
+    kind: GOVERNANCE
+    inReleaseProfile: true
+    inCandidateLevel: true
+    negativeFixture: tests/FlowArchitectureDebtCleanupTests.kt
+  - id: v0.7.3.standard-model-projection-coherence
+    introducedIn: "0.7.3"
+    kind: GOVERNANCE
+    inReleaseProfile: true
+    inCandidateLevel: true
+    negativeFixture: tests/FlowArchitectureDebtCleanupTests.kt
+    externalAnchor: src/main/kotlin/org/flowlang/standard/StandardModel.kt
+  - id: v0.7.4.architecture-delta-analyzer
+    introducedIn: "0.7.4"
+    kind: GOVERNANCE
+    inReleaseProfile: true
+    inCandidateLevel: true
+    negativeFixture: tests/FlowArchitectureDeltaAnalyzerTests.kt
+    externalAnchor: standard/architecture/standard-model-baseline-v0.7.3.yaml
+artifacts:
+  - artifact: intent.schema.json
+    schema: schemas/intent.schema.json
+    stability: stable
+    area: intent
+    introducedIn: "pre-0.3.10"
+    changeGate: additive-only
+    role: intent-contract
+    inExportBundle: true
+    inCandidateLevel: false
+    isEvidence: false
+  - artifact: execution-plan.schema.json
+    schema: schemas/execution-plan.schema.json
+    stability: stable
+    area: plan
+    introducedIn: "0.3.2"
+    changeGate: additive-only
+    role: execution-plan-contract
+    inExportBundle: true
+    inCandidateLevel: false
+    isEvidence: false
+  - artifact: target-manifest.schema.json
+    schema: schemas/target-manifest.schema.json
+    stability: stable
+    area: target
+    introducedIn: "pre-0.3.10"
+    changeGate: additive-only
+    role: target-manifest-contract
+    inExportBundle: true
+    inCandidateLevel: false
+    isEvidence: false
+  - artifact: conformance-manifest.json
+    schema: schemas/conformance-manifest.schema.json
+    stability: stable
+    area: conformance
+    introducedIn: "0.3.11"
+    changeGate: release-gate
+    role: conformance-manifest-contract
+    inExportBundle: true
+    inCandidateLevel: false
+    isEvidence: true
+  - artifact: standard-contract-index.json
+    schema: schemas/standard-contract-index.schema.json
+    stability: stable
+    area: standard
+    introducedIn: "0.3.16"
+    changeGate: release-gate
+    role: contract-index
+    inExportBundle: true
+    inCandidateLevel: false
+    isEvidence: false
+  - artifact: standard-release-profile.json
+    schema: schemas/standard-release-profile.schema.json
+    stability: stable
+    area: release
+    introducedIn: "0.3.17"
+    changeGate: release-gate
+    role: release-profile-contract
+    inExportBundle: true
+    inCandidateLevel: false
+    isEvidence: false
+  - artifact: public-standard-surface.json
+    schema: schemas/public-standard-surface.schema.json
+    stability: stable
+    area: standard
+    introducedIn: "0.4.5"
+    changeGate: surface-freeze
+    role: public-surface-contract
+    inExportBundle: true
+    inCandidateLevel: true
+    isEvidence: false
+  - artifact: compatibility-migration-policy.json
+    schema: schemas/compatibility-migration-policy.schema.json
+    stability: stable
+    area: compatibility
+    introducedIn: "0.4.6"
+    changeGate: compatibility-gate
+    role: compatibility-contract
+    inExportBundle: true
+    inCandidateLevel: true
+    isEvidence: false
+  - artifact: reference-intent-corpus.json
+    schema: schemas/reference-intent-corpus.schema.json
+    stability: stable
+    area: intent
+    introducedIn: "0.4.7"
+    changeGate: reference-corpus-gate
+    role: behavioral-corpus-contract
+    inExportBundle: true
+    inCandidateLevel: true
+    isEvidence: false
+  - artifact: target-semantics-matrix.json
+    schema: schemas/target-semantics-matrix.schema.json
+    stability: stable
+    area: target
+    introducedIn: "0.4.8"
+    changeGate: target-semantics-gate
+    role: portability-contract
+    inExportBundle: true
+    inCandidateLevel: true
+    isEvidence: false
+  - artifact: standard-export-bundle.json
+    schema: schemas/standard-export-bundle.schema.json
+    stability: stable
+    area: export
+    introducedIn: "0.4.9"
+    changeGate: export-bundle-gate
+    role: export-bundle-contract
+    inExportBundle: true
+    inCandidateLevel: true
+    isEvidence: false
+  - artifact: conformance-levels.json
+    schema: schemas/conformance-levels.schema.json
+    stability: stable
+    area: conformance
+    introducedIn: "0.5.0"
+    changeGate: public-standard-candidate-gate
+    role: conformance-levels-contract
+    inExportBundle: true
+    inCandidateLevel: true
+    isEvidence: false
+  - artifact: standard-export-manifest.json
+    schema: schemas/standard-export-manifest.schema.json
+    stability: stable
+    area: export
+    introducedIn: "0.5.0"
+    changeGate: public-standard-candidate-gate
+    role: export-manifest-contract
+    inExportBundle: true
+    inCandidateLevel: true
+    isEvidence: false
+  - artifact: conformance-vector-index.json
+    schema: schemas/conformance-vector-index.schema.json
+    stability: stable
+    area: conformance
+    introducedIn: "0.5.4"
+    changeGate: data-driven-conformance-gate
+    role: vector-index-contract
+    inExportBundle: true
+    inCandidateLevel: true
+    isEvidence: true
+  - artifact: flow-standard-draft.json
+    schema: schemas/flow-standard-draft.schema.json
+    stability: draft
+    area: standard
+    introducedIn: "0.4.0"
+    changeGate: draft-review
+    role: draft-contract
+    inExportBundle: false
+    inCandidateLevel: false
+    isEvidence: false

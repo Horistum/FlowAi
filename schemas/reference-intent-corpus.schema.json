@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/reference-intent-corpus.schema.json",
+  "title": "Flow Reference Intent Corpus",
+  "type": "object",
+  "required": ["standardVersion", "corpusVersion", "status", "scenarios", "requiredScenarioIds", "negativeScenarioIds"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "corpusVersion": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "inputText", "expectedStatus", "expectedCapabilities", "expectedRequiredClarifications", "expectedRejectionCodes", "expectedEntities"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "inputText": { "type": "string" },
+          "expectedStatus": { "enum": ["ACCEPTED", "BLOCKED"] },
+          "expectedCapabilities": { "type": "array", "items": { "type": "string" } },
+          "expectedRequiredClarifications": { "type": "array", "items": { "type": "string" } },
+          "expectedRejectionCodes": { "type": "array", "items": { "type": "string" } },
+          "expectedEntities": { "type": "object", "additionalProperties": { "type": "string" } },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "requiredScenarioIds": { "type": "array", "items": { "type": "string" } },
+    "negativeScenarioIds": { "type": "array", "items": { "type": "string" } }
+  }
+}

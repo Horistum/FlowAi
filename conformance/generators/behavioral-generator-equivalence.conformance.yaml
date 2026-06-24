@@ -1,0 +1,17 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: generators.behavioral-generator-equivalence
+introducedIn: "0.4.4"
+description: The same execution plan preserves every task and the conditional guard across Jenkins, GitHub Actions and Tekton manifests.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.4.4.behavioral-generator-equivalence
+  plan: build-test-deploy-notify
+  targets:
+    includes:
+      - jenkins
+      - github-actions
+      - tekton
+  taskSetPreserved: true
+  conditionalGuardPreserved: true

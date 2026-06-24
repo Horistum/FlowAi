@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/negative-conformance-corpus/1.0/negative-conformance-corpus.schema.json",
+  "title": "Flow Negative Conformance Corpus",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "corpusVersion", "corpus", "cases"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "corpusVersion": { "type": "string" },
+    "corpus": { "type": "string" },
+    "cases": { "type": "array", "items": { "$ref": "#/$defs/case" } }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason", "expectedDiagnostic", "expectedBlocked"],
+      "properties": {
+        "id": { "type": "string" },
+        "reason": { "type": "string" },
+        "expectedDiagnostic": { "type": "string" },
+        "expectedBlocked": { "type": "boolean" }
+      }
+    }
+  }
+}

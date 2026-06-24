@@ -1,0 +1,25 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.safety-policy-matrix.v063
+introducedIn: "0.6.3"
+description: High-risk capabilities must map to explicit mitigations and blocking diagnostics.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.6.3.safety-policy-matrix
+  standardVersion: "0.7.5"
+  capabilities:
+    includes:
+      - DATABASE_MIGRATE
+      - CLEANUP
+      - KUBERNETES_MAINTENANCE
+      - SECRET_ROTATE
+      - DEPLOY
+      - CERTIFICATE_RENEW
+  diagnostics:
+    includes:
+      - SAFETY_REQUIRES_BACKUP
+      - SAFETY_CLEANUP_REQUIRES_RETENTION
+      - SAFETY_REQUIRES_DRY_RUN
+      - SAFETY_REQUIRES_APPROVAL
+

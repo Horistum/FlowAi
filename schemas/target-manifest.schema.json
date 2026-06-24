@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/target-manifest.schema.json",
+  "title": "Flow Target Manifest",
+  "type": "object",
+  "required": ["manifestVersion", "standardVersion", "target", "flowName", "jobs"],
+  "properties": {
+    "manifestVersion": { "type": "string" },
+    "standardVersion": { "type": "string" },
+    "target": { "type": "string" },
+    "flowName": { "type": "string" },
+    "mappingNotes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mappingNote" }
+    },
+    "jobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "steps"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "dependsOn": { "type": "array", "items": { "type": "string" } },
+          "mappingNotes": { "type": "array", "items": { "$ref": "#/$defs/mappingNote" } },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "type"],
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "type": { "type": "string" },
+                "module": { "type": "string" },
+                "action": { "type": "string" },
+                "target": { "type": "string" },
+                "run": { "type": "string" },
+                "dependsOn": { "type": "array", "items": { "type": "string" } },
+                "mappingNotes": { "type": "array", "items": { "$ref": "#/$defs/mappingNote" } },
+                "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
+              }
+            }
+          },
+          "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+      }
+    },
+    "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
+  },
+  "$defs": {
+    "mappingNote": {
+      "type": "object",
+      "required": ["level", "target", "nodeId", "feature", "message"],
+      "properties": {
+        "level": { "type": "string" },
+        "target": { "type": "string" },
+        "nodeId": { "type": "string" },
+        "feature": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}

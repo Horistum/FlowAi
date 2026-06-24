@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: targets.no-silent-condition-fallback
+introducedIn: "0.4.4"
+description: The target expression-support model never disagrees with the translator, and an unsupported guard is never silently resolved to a passing condition.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.4.4.no-silent-condition-fallback
+  supportModelMatchesTranslator: true
+  tektonNeverSilentlyTrue: true
+  unsupportedExample:
+    target: tekton
+    condition: "count > 1"
+    nativeWhenEmitted: false

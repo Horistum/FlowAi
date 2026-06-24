@@ -1,0 +1,21 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.target-conformance-profile.public-draft
+description: Target conformance profile must define verifiable target-output obligations without adding an SDK or runtime executor.
+input:
+  command: standard-draft
+expected:
+  requiredCheck: v0.4.2.target-conformance-profile
+  artifact: target-conformance-profile.json
+  schema: schemas/target-conformance-profile.schema.json
+  levels:
+    includes:
+      - plan-reader
+      - manifest-compatible
+      - compliance-ready
+  forbiddenInputs:
+    includes:
+      - normalized-intent.json
+  requiredDiagnostics:
+    includes:
+      - ADAPTER_CONTRACT_BLOCKED

@@ -1,0 +1,16 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.invalid.cleanup-without-retention
+description: Destructive cleanup without retention/safety must ask a required question and block lowering.
+input:
+  text: Cleanup old docker images.
+expected:
+  requiredCheck: v0.3.2.safety-policy-validation
+  scenario: cleanup
+  capabilities:
+    - CLEANUP
+  requiredQuestions:
+    - safety.cleanup.retention
+  validationErrors:
+    - SAFETY_CLEANUP_REQUIRES_RETENTION
+  lowering: blocked

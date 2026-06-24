@@ -1,0 +1,26 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: architecture.governance-guardrails
+introducedIn: "0.4.3"
+description: Architecture governance files must exist and block SDK, runtime, plugin and silent semantic fallback drift.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.4.3.architecture-governance-guardrails
+  requiredFiles:
+    includes:
+      - docs/ARCHITECTURE_CONSTITUTION.md
+      - docs/adr/ADR_TEMPLATE.md
+      - standard/architecture/forbidden-directions.yaml
+      - standard/architecture/feature-classification.yaml
+      - standard/architecture/release-checklist.yaml
+      - standard/architecture/drift-score.yaml
+  forbiddenDirections:
+    includes:
+      - runtime-executor
+      - sdk-framework
+      - plugin-framework
+      - target-template-ownership
+      - silent-semantic-fallback
+  negativeConformanceRequired: true
+  driftScoreMinimum: 0

@@ -1,0 +1,17 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.evidence.reference-deployment
+description: Artifact evidence report must describe provenance for public artifacts.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.3.18.artifact-evidence-report
+  artifact: artifact-evidence-report.json
+  schema: schemas/artifact-evidence-report.schema.json
+  missingEvidence:
+    count: 0
+  evidence:
+    includes:
+      - standard-compliance-report.json
+      - standard-version.txt

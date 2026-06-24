@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/target-registry.schema.json",
+  "title": "Flow Target Registry",
+  "type": "object",
+  "required": [
+    "kind",
+    "version",
+    "targets"
+  ],
+  "properties": {
+    "kind": {
+      "const": "FlowTargetRegistry"
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "capabilities"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": [
+                "supported",
+                "full",
+                "partial",
+                "unsupported",
+                "none",
+                "requires_runtime"
+              ]
+            }
+          },
+          "features": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": [
+                "supported",
+                "full",
+                "partial",
+                "unsupported",
+                "none",
+                "requires_runtime"
+              ]
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

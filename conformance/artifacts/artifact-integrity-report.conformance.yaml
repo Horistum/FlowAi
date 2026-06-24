@@ -1,0 +1,22 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.integrity.reference-deployment
+description: Artifact integrity report must verify required artifact presence, standard version consistency and diagnostic coverage status for the public artifact set.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.3.15.artifact-integrity-report
+  artifact: artifact-integrity-report.json
+  schema: schemas/artifact-integrity-report.schema.json
+  status: PASS
+  requiredArtifactsExpected:
+    includes:
+      - diagnostic-coverage-report.json
+      - artifact-integrity-report.json
+      - flow-artifact-bundle.json
+  missingRequiredArtifacts:
+    count: 0
+  standardVersionMismatches:
+    count: 0
+  diagnosticCoverageStatus: PASS

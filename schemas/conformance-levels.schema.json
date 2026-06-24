@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/conformance-levels.schema.json",
+  "title": "Flow Conformance Levels",
+  "type": "object",
+  "required": ["standardVersion", "conformanceLevelsVersion", "status", "defaultLevel", "levels", "levelOrder"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "conformanceLevelsVersion": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "defaultLevel": { "type": "string" },
+    "levels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "requiredChecks", "requiredArtifacts", "description"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "requiredChecks": { "type": "array", "items": { "type": "string" } },
+          "requiredArtifacts": { "type": "array", "items": { "type": "string" } },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "levelOrder": { "type": "array", "items": { "type": "string" } }
+  }
+}

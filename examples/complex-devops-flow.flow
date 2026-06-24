@@ -1,0 +1,145 @@
+version "1.0"
+
+use module "git" version "1.0"
+use module "shell" version "1.0"
+use module "docker" version "1.0"
+use module "helm" version "1.0"
+use module "argocd" version "1.0"
+use module "kubernetes" version "1.0"
+use module "notify" version "1.0"
+
+flow "complex-devops-delivery" {
+  input {
+    app: text required
+    environment: option ["dev", "test", "prod"] required
+    version: text required
+  }
+
+  vars {
+    image: "${app}:${version}"
+    namespace: "${app}-${environment}"
+  }
+
+  systems {
+    system "repo" {
+      type: git
+      url: "git@example.com/company/${app}.git"
+    }
+
+    system "local" {
+      type: shell
+    }
+
+    system "registry" {
+      type: docker
+      url: secret("REGISTRY_URL")
+    }
+
+    system "helmLocal" {
+      type: helm
+    }
+
+    system "argo" {
+      type: argocd
+      url: secret("ARGOCD_URL")
+      token: secret("ARGOCD_TOKEN")
+    }
+
+    system "cluster" {
+      type: kubernetes
+      context: environment
+    }
+
+    system "mailer" {
+      type: notify
+      channel: email
+    }
+  }
+
+  steps {
+    git.checkout repo { } -> source
+
+    parallel failFast true {
+      branch "unit-tests" {
+        shell.run local {
+          command: "mvn test"
+        } -> unitTests {
+          expect {
+            ok == true
+            code == 0
+          }
+        }
+      }
+
+      branch "static-checks" {
+        shell.run local {
+          command: "mvn verify -DskipTests"
+        } -> staticChecks {
+          expect {
+            ok == true
+            code == 0
+          }
+        }
+      }
+    }
+
+    docker.build registry {
+      image: image
+      path: "."
+    } -> imageResult
+
+    helm.template helmLocal {
+      chart: "./chart"
+      values: "values.yaml"
+    } -> helmResult {
+      expect {
+        ok == true
+        code == 0
+        text not contains "nil pointer"
+        text not contains "YAML parse error"
+      }
+    }
+
+    if environment == "prod" {
+      approve manual {
+        message: "Deploy ${app} ${version} to production?"
+        timeout: "1h"
+      } -> approval
+    }
+
+    argocd.sync argo {
+      app: app
+      wait: true
+      timeout: "10m"
+    } -> syncResult {
+      expect {
+        ok == true
+        health == "Healthy"
+        sync == "Synced"
+      }
+    }
+
+    kubernetes.get cluster {
+      resource: "pods"
+      namespace: namespace
+      selector: "app=${app}"
+    } -> pods {
+      expect {
+        ok == true
+        json.items not empty
+      }
+    }
+
+    notify.send mailer {
+      subject: "Delivery finished"
+      body: "${app} ${version} delivered to ${environment}."
+    }
+  }
+
+  on error {
+    notify.send mailer {
+      subject: "Delivery failed"
+      body: error.message
+    }
+  }
+}

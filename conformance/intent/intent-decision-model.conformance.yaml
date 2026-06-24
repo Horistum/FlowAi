@@ -1,0 +1,19 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.decision-model.core-decisions
+description: Intent Decision Model must surface missing decisions instead of silently guessing critical automation values.
+expected:
+  requiredCheck: v0.3.5.intent-decision-model
+  cleanupWithoutRetention:
+    missingDecision: safety.cleanup.retention
+    blocksLowering: true
+  backupWithoutTimezone:
+    missingDecision: schedule.timezone
+    severity: recommended
+    blocksLowering: false
+  databaseMigrationWithoutBackup:
+    missingDecision: safety.backup
+    blocksLowering: true
+  productionDeployWithoutApproval:
+    safetyGate: forbidProductionWithoutApproval
+    blocksLowering: true

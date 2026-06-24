@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: execution-plan.canonical.lowercase-kinds
+description: Canonical execution plan export must expose stable lowercase node kinds for adapter/runtime consumers.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+expected:
+  requiredCheck: v0.3.2.execution-plan.canonical
+  executionPlanVersion: "1.1"
+  nodeKinds:
+    lowercase: true
+    includes:
+      - task
+      - approval
+      - parallel

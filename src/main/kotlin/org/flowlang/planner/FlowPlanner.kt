@@ -1,0 +1,198 @@
+package org.flowlang.planner
+
+import org.flowlang.ast.*
+import org.flowlang.modules.ModuleRegistry
+
+/**
+ * Converts validated Flow AST into a platform-neutral ExecutionPlan.
+ *
+ * RC4 rule: dependencies are semantic, not textual. The planner no longer adds
+ * false sequential dependencies between independent tasks. Edges come from:
+ *  - explicit Action/Approval dependsOn names produced by intent lowering,
+ *  - data-flow references to previous result bindings.
+ *
+ * This keeps Flow portable: generators may exploit DAG parallelism instead of
+ * serializing work merely because two statements appeared on adjacent lines.
+ */
+class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
+
+    fun plan(document: FlowDocument): ExecutionPlan {
+        val ctx = Ctx(document.flow.input.map { it.name }.toSet())
+        val nodes = planStatements(document.flow.steps, ctx)
+        val tail = document.flow.errorHandler?.let {
+            listOf(TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(it.steps, ctx)))
+        } ?: emptyList()
+        val allNodes = nodes + tail
+        return ExecutionPlan(
+            flowName = document.flow.name,
+            inputs = document.flow.input.map { it.toPlanInput() },
+            outputs = ctx.outputs.toList(),
+            dependencies = collectDependencies(allNodes),
+            requiredCapabilities = collectRequiredCapabilities(allNodes),
+            assumptions = ctx.assumptions.toList(),
+            nodes = allNodes
+        )
+    }
+
+    private fun InputNode.toPlanInput(): PlanInput {
+        val choices = valueType.values.filterIsInstance<StringLiteralNode>().map { it.value }
+        val defaultValue = default?.let { ExpressionRenderer.render(it).trim('"') }
+        return PlanInput(name = name, type = valueType.kind, required = required, defaultValue = defaultValue, choices = choices)
+    }
+
+    private fun planStatements(stmts: List<StatementNode>, ctx: Ctx): List<PlanNode> = stmts.map { planStatement(it, ctx) }
+
+    private fun planStatement(stmt: StatementNode, ctx: Ctx): PlanNode = when (stmt) {
+        is ActionNode -> planAction(stmt, ctx)
+        is IfNode -> ConditionNode(
+            id = ctx.id("if"),
+            condition = ExpressionRenderer.render(stmt.condition),
+            then = planStatements(stmt.then, ctx),
+            otherwise = planStatements(stmt.otherwise, ctx)
+        )
+        is ForNode -> LoopNode(
+            id = ctx.id("for"), item = stmt.item,
+            source = ExpressionRenderer.render(stmt.source),
+            body = planStatements(stmt.body, ctx)
+        )
+        is ParallelNode -> ParallelGroupNode(
+            id = ctx.id("parallel"), failFast = stmt.failFast,
+            branches = stmt.branches.map { PlanBranch(it.name, planStatements(it.steps, ctx)) }
+        )
+        is MatchNode -> MatchPlanNode(
+            id = ctx.id("match"), source = ExpressionRenderer.render(stmt.source),
+            cases = stmt.cases.map { MatchCase(it.condition?.let(ExpressionRenderer::render) ?: "_", planStatements(it.steps, ctx)) },
+            errorCase = stmt.errorCase?.let { planStatements(it, ctx) } ?: emptyList(),
+            defaultSteps = planStatements(stmt.defaultSteps, ctx)
+        )
+        is RetryNode -> RetryGroupNode(
+            id = ctx.id("retry"), max = stmt.policy.max, delay = stmt.policy.delay, backoff = stmt.policy.backoff,
+            body = planStatements(stmt.steps, ctx)
+        )
+        is TryNode -> TryPlanNode(
+            id = ctx.id("try"), body = planStatements(stmt.steps, ctx),
+            errorHandler = planStatements(stmt.errorHandler.steps, ctx)
+        )
+        is ApproveNode -> {
+            val explicitDeps = stmt.dependsOn.mapNotNull { ctx.results[it.replace('-', '_')] ?: ctx.results[it] }.distinct()
+            val id = ctx.id("approve")
+            stmt.result?.let { ctx.results[it.name] = id }
+            ApprovalNode(id = id, mode = stmt.mode,
+                message = (stmt.params["message"])?.let(ExpressionRenderer::render)?.trim('"'),
+                resultName = stmt.result?.name,
+                dependsOn = explicitDeps)
+        }
+        is TransformNode -> { ctx.results[stmt.target] = ""; DataOpNode(ctx.id("transform"), "Transform", stmt.target, ExpressionRenderer.render(stmt.source)) }
+        is AggregateNode -> { ctx.results[stmt.target] = ""; DataOpNode(ctx.id("aggregate"), "Aggregate", stmt.target, ExpressionRenderer.render(stmt.source)) }
+        is ValidateNode -> DataOpNode(ctx.id("validate"), "Validate", null, ExpressionRenderer.render(stmt.target))
+        is SetNode -> { ctx.results[stmt.name] = ""; ControlNode(ctx.id("set"), "Set", "${stmt.name} = ${ExpressionRenderer.render(stmt.value)}") }
+        is FailNode -> ControlNode(ctx.id("fail"), "Fail", ExpressionRenderer.render(stmt.message))
+        is SkipNode -> ControlNode(ctx.id("skip"), "Skip", ExpressionRenderer.render(stmt.message))
+        is ExpectNode -> ControlNode(ctx.id("expect"), "Expect", stmt.expressions.joinToString("; ") { ExpressionRenderer.render(it) })
+        is ErrorHandlerNode -> TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(stmt.steps, ctx))
+    }
+
+    private fun planAction(action: ActionNode, ctx: Ctx): TaskNode {
+        val id = ctx.id("${action.module}_${action.action}")
+        val contract = registry.findAction(action.module, action.action)
+        val effects = contract?.effects?.let { e ->
+            (e.reads + e.writes + e.creates + e.updates + e.deletes + e.executes + e.network + e.filesystem)
+        } ?: emptyList()
+
+        val referenced = mutableSetOf<String>()
+        action.params.values.forEach { collectRoots(it, referenced) }
+        action.target.path.firstOrNull()?.let { referenced += it }
+        val dataDeps = referenced.mapNotNull { ctx.results[it]?.takeIf { taskId -> taskId.isNotEmpty() } }
+        val explicitDeps = action.dependsOn.mapNotNull { raw ->
+            val normalized = raw.replace('-', '_')
+            ctx.results[normalized] ?: ctx.results[raw]
+        }
+        val deps = (dataDeps + explicitDeps).distinct().filter { it != id }
+
+        val task = TaskNode(
+            id = id, module = action.module, action = action.action,
+            target = action.target.path.joinToString("."),
+            resultName = action.result?.name, dependsOn = deps, effects = effects,
+            inputs = action.params.mapValues { (_, expr) -> RuntimeParamRenderer.render(expr, ctx.inputNames) },
+            outputs = action.result?.let { listOf(it.name) } ?: emptyList(),
+            destructive = contract?.safety?.destructive ?: false,
+            safety = action.safety?.let { it.rule + (it.condition?.let { c -> " " + ExpressionRenderer.render(c) } ?: "") },
+            params = action.params.mapValues { (_, expr) -> RuntimeParamRenderer.render(expr, ctx.inputNames) },
+            requiredCapabilities = inferRequiredCapabilities(action, contract?.safety?.destructive ?: false)
+        )
+        action.result?.let {
+            ctx.results[it.name] = id
+            ctx.outputs += PlanOutput(it.name, sourceNodeId = id)
+        }
+        return task
+    }
+
+    private fun inferRequiredCapabilities(action: ActionNode, destructive: Boolean): List<String> = buildList {
+        add("task.execute")
+        if (action.module == "standard") {
+            val operation = action.params["operation"]?.let(ExpressionRenderer::render)?.trim('"')
+            if (!operation.isNullOrBlank()) add("standard.$operation")
+        }
+        if (action.module == "kubernetes") add("kubernetes.api")
+        if (action.module == "docker") add("container.image")
+        if (action.module == "notify") add("notification.send")
+        if (destructive) add("safety.destructiveOperation")
+    }.distinct()
+
+    private fun collectDependencies(nodes: List<PlanNode>): List<String> = nodes.flatMap { node ->
+        when (node) {
+            is TaskNode -> node.dependsOn
+            is ApprovalNode -> node.dependsOn
+            is ConditionNode -> collectDependencies(node.then) + collectDependencies(node.otherwise)
+            is LoopNode -> collectDependencies(node.body)
+            is ParallelGroupNode -> node.branches.flatMap { collectDependencies(it.steps) }
+            is MatchPlanNode -> node.cases.flatMap { collectDependencies(it.steps) } + collectDependencies(node.errorCase) + collectDependencies(node.defaultSteps)
+            is RetryGroupNode -> collectDependencies(node.body)
+            is TryPlanNode -> collectDependencies(node.body) + collectDependencies(node.errorHandler)
+            else -> emptyList()
+        }
+    }.distinct()
+
+    private fun collectRequiredCapabilities(nodes: List<PlanNode>): List<String> = nodes.flatMap { node ->
+        when (node) {
+            is TaskNode -> node.requiredCapabilities
+            is ApprovalNode -> node.requiredCapabilities
+            is ConditionNode -> listOf("condition.evaluate") + collectRequiredCapabilities(node.then) + collectRequiredCapabilities(node.otherwise)
+            is LoopNode -> listOf("loop.dynamic") + collectRequiredCapabilities(node.body)
+            is ParallelGroupNode -> listOf("parallel.dag") + node.branches.flatMap { collectRequiredCapabilities(it.steps) }
+            is MatchPlanNode -> listOf("match.basic") + node.cases.flatMap { collectRequiredCapabilities(it.steps) } + collectRequiredCapabilities(node.errorCase) + collectRequiredCapabilities(node.defaultSteps)
+            is RetryGroupNode -> listOf("retry.task") + collectRequiredCapabilities(node.body)
+            is TryPlanNode -> listOf("errorHandlers.finally") + collectRequiredCapabilities(node.body) + collectRequiredCapabilities(node.errorHandler)
+            else -> emptyList()
+        }
+    }.distinct()
+
+    private fun collectRoots(e: ExpressionNode, into: MutableSet<String>) {
+        when (e) {
+            is ReferenceNode -> e.path.firstOrNull()?.let { into += it }
+            is BinaryExpressionNode -> { collectRoots(e.left, into); collectRoots(e.right, into) }
+            is UnaryExpressionNode -> collectRoots(e.operand, into)
+            is UnaryPostfixExpressionNode -> collectRoots(e.operand, into)
+            is LogicalExpressionNode -> e.operands.forEach { collectRoots(it, into) }
+            is ListLiteralNode -> e.items.forEach { collectRoots(it, into) }
+            is MapLiteralNode -> e.entries.values.forEach { collectRoots(it, into) }
+            is TemplateStringNode -> e.parts.forEach { collectRoots(it, into) }
+            is CallExpressionNode -> e.args.forEach { collectRoots(it, into) }
+            is IndexExpressionNode -> { collectRoots(e.target, into); collectRoots(e.index, into) }
+            is MemberExpressionNode -> collectRoots(e.target, into)
+            else -> Unit
+        }
+    }
+
+    private class Ctx(val inputNames: Set<String>) {
+        val results = mutableMapOf<String, String>()   // result/binding name -> producing task id
+        val outputs = mutableListOf<PlanOutput>()
+        val assumptions = mutableListOf<PlanAssumption>()
+        private val counters = mutableMapOf<String, Int>()
+        fun id(prefix: String): String {
+            val n = (counters[prefix] ?: 0) + 1
+            counters[prefix] = n
+            return "${prefix}_$n"
+        }
+    }
+}

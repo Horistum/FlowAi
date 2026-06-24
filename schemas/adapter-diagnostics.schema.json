@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/adapter-diagnostics/1.0/adapter-diagnostics.schema.json",
+  "title": "Flow Adapter Diagnostics v1.0",
+  "type": "object",
+  "required": ["standardVersion", "diagnosticsVersion", "flowName", "target", "status", "generationAllowed", "issues"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "diagnosticsVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "target": { "type": "string" },
+    "status": { "enum": ["READY", "DEGRADED", "BLOCKED"] },
+    "generationAllowed": { "type": "boolean" },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "severity", "artifact", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "severity": { "enum": ["INFO", "WARNING", "ERROR"] },
+          "artifact": { "type": "string" },
+          "message": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

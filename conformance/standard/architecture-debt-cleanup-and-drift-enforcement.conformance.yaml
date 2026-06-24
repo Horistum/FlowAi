@@ -1,0 +1,25 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.architecture-debt-cleanup-and-drift-enforcement.v071
+introducedIn: "0.7.1"
+description: Architecture debt cleanup must enforce drift-score evaluation, report-budget checks, release-gate classification and compatibility alias invariants without adding runtime, SDK or plugin behavior.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.7.1.architecture-debt-cleanup-and-drift-enforcement
+  standardVersion: "0.7.5"
+  governance:
+    includes:
+      - drift-score-enforced
+      - drift-score-has-no-positive-baseline-floor
+      - report-budget-enforced
+      - registry-consistency-collapsed-to-zero
+      - gate-category-classification
+      - public-alias-invariants
+      - ast-boundary-adr
+  nonGoals:
+    includes:
+      - no runtime executor
+      - no SDK API
+      - no plugin lifecycle
+      - no target-specific public DSL

@@ -1,0 +1,48 @@
+version: 1.2
+purpose: Score active architecture risk from negative signals without crediting existing baseline artifacts as a positive floor.
+minimumScore: 0
+scoringMode: negative-signal-only
+baselineSignals:
+  - id: semantic-correctness
+    description: Existing reference-corpus execution coverage is reported as context, not added to the score.
+  - id: safety-validation
+    description: Existing safety validation is reported as context, not added to the score.
+  - id: conformance-coverage
+    description: Existing conformance coverage is reported as context, not added to the score.
+  - id: artifact-stability
+    description: Existing public artifact stability is reported as context, not added to the score.
+  - id: portability-explanation
+    description: Existing portability explanation is reported as context, not added to the score.
+positiveSignals:
+  - id: semantic-correctness
+    score: 2
+    description: Strengthens preservation of Human/AI intent semantics. Reported as baseline context unless the proposal supplies delta evidence.
+  - id: safety-validation
+    score: 2
+    description: Strengthens safety or destructive-operation validation. Reported as baseline context unless the proposal supplies delta evidence.
+  - id: conformance-coverage
+    score: 1
+    description: Adds meaningful conformance coverage. Reported as baseline context unless the proposal supplies delta evidence.
+  - id: artifact-stability
+    score: 1
+    description: Stabilizes public artifacts or schemas. Reported as baseline context unless the proposal supplies delta evidence.
+  - id: portability-explanation
+    score: 1
+    description: Improves target portability explanation without target lock-in. Reported as baseline context unless the proposal supplies delta evidence.
+negativeSignals:
+  - id: runtime-direction
+    score: -3
+    description: Introduces workflow execution, task execution, or runtime lifecycle wording.
+  - id: sdk-direction
+    score: -3
+    description: Introduces SDK, base classes, extension points, or plugin lifecycle.
+  - id: target-specific-standard
+    score: -2
+    description: Couples the public standard to a specific target implementation.
+  - id: report-without-validation-purpose
+    score: -2
+    description: Adds public reporting or registry-consistency bookkeeping beyond the report budget without a behavior, safety, normalization or governance role.
+  - id: silent-semantic-fallback
+    score: -4
+    description: Allows unsupported semantics to degrade silently.
+rule: A proposal with any negative signal score is rejected unless an Architecture Decision records an explicit exception and adds a falsifying conformance fixture.

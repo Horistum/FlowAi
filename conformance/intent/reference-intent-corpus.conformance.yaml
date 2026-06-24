@@ -1,0 +1,23 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.reference-intent-corpus.public-corpus
+introducedIn: "0.4.7"
+description: Reference intent corpus must replay positive and negative portable intent scenarios through the real normalizer and proposal-review gate.
+input:
+  command: standard-draft
+expected:
+  artifact: reference-intent-corpus.json
+  schema: schemas/reference-intent-corpus.schema.json
+  requiredCheck: v0.4.7.reference-intent-corpus
+  requiredScenarioIds:
+    includes:
+      - build-and-test
+      - deploy-with-approval-and-rollback
+      - cleanup-with-retention
+      - kubernetes-maintenance-dry-run
+      - deploy-missing-application
+      - cleanup-without-retention
+      - secret-rotation-unnamed-secret
+      - certificate-renewal
+      - database-migration-without-backup
+      - database-migration-with-backup

@@ -1,0 +1,17 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.execution-plan-semantic-invariants.v065
+introducedIn: "0.6.5"
+description: Canonical execution plans must preserve DAG semantics, dependency integrity and target-neutrality.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.6.5.execution-plan-semantic-invariants
+  standardVersion: "0.7.5"
+  invariants:
+    includes:
+      - plan.node-ids-unique
+      - plan.dependencies-known
+      - plan.no-cycles
+      - plan.no-target-specific-leakage
+

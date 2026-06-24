@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/module/1.2/module.schema.json",
+  "title": "Flow Capability Module Descriptor v1.2 draft",
+  "type": "object",
+  "required": ["kind", "name", "version"],
+  "properties": {
+    "kind": {"const": "FlowModule"},
+    "name": {"type": "string"},
+    "version": {"type": "string"},
+    "description": {"type": "string"},
+    "systemTypes": {"type": "object", "additionalProperties": true},
+    "actions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "kind": {"type": "string"},
+          "targetTypes": {"type": "array", "items": {"type": "string"}},
+          "input": {"type": "object", "additionalProperties": true},
+          "output": {"type": "object", "additionalProperties": true},
+          "effects": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+          "secrets": {"type": "array", "items": {"type": "string"}},
+          "requiredCapabilities": {"type": "array", "items": {"type": "string"}},
+          "safety": {
+            "type": "object",
+            "properties": {
+              "destructive": {"type": "boolean"},
+              "requires": {"type": "array", "items": {"type": "string"}}
+            },
+            "additionalProperties": true
+          },
+          "targetImplications": {"$ref": "#/$defs/targetImplications"},
+          "additionalParams": {"type": "boolean"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "targetImplications": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "support": {"type": "string"},
+          "supported": {"type": ["string", "boolean"]},
+          "requiredCapabilities": {"type": "array", "items": {"type": "string"}},
+          "notes": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}

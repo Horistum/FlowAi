@@ -1,0 +1,13 @@
+intentVersion: "1.0"
+kind: FlowIntentDocument
+name: bad-argocd-missing-config
+systems:
+  - name: argo
+    type: argocd
+workflows:
+  - name: cd
+    kind: DEPLOY
+    steps:
+      - id: deploy
+        capability: DEPLOY
+        params: { engine: argocd, system: argo, app: demo-app }

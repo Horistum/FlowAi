@@ -1,0 +1,57 @@
+kind: FlowModule
+name: docker
+version: "1.0"
+description: "Docker image build/push"
+systemTypes:
+  docker:
+    input:
+      url:
+        type: text
+        sensitive: true
+actions:
+  build:
+    kind: action
+    targetTypes:
+      - docker
+    input:
+      image:
+        type: text
+        required: true
+      path:
+        type: text
+      dockerfile:
+        type: text
+      push:
+        type: boolean
+    output:
+      ok:
+        type: boolean
+      tag:
+        type: text
+      digest:
+        type: text
+    effects:
+      creates:
+        - docker.image
+      executes:
+        - docker.build
+    safety:
+      destructive: false
+    retry:
+      supported: true
+  push:
+    kind: action
+    targetTypes:
+      - docker
+    input:
+      image:
+        type: text
+        required: true
+    output:
+      ok:
+        type: boolean
+    effects:
+      network:
+        - docker.registry
+    safety:
+      destructive: false

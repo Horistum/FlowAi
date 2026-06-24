@@ -1,0 +1,157 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: conformance.manifest.public-profile
+description: Conformance manifest must describe implementation status, required checks, vector files, public schemas and required artifacts.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.3.11.conformance-manifest
+  artifact: conformance-manifest.json
+  status: PASS
+  areas:
+    includes:
+      - intent
+      - target
+      - schemas
+      - v0
+  requiredChecks:
+    includes:
+      - schemas.public-outputs
+      - v0.3.10.public-artifact-bundle
+      - v0.3.14.diagnostic-coverage-report
+      - v0.3.15.artifact-integrity-report
+      - v0.3.16.standard-contract-index
+      - v0.3.17.standard-release-profile
+      - v0.3.18.artifact-evidence-report
+      - v0.3.19.standard-compliance-report
+      - v0.3.20.standard-freeze-report
+      - v0.3.21.compatibility-policy
+      - v0.3.22.reference-corpus
+      - v0.3.23.negative-conformance-corpus
+      - v0.4.2.target-conformance-profile
+      - v0.4.0.public-standard-draft
+      - v0.4.1.semantic-correctness-hardening
+      - v0.4.2.standard-boundary-no-sdk-runtime
+      - v0.4.3.architecture-governance-guardrails
+      - v0.4.4.ai-proposal-review
+      - v0.4.4.condition-expression-readiness
+      - v0.4.4.no-silent-condition-fallback
+      - v0.4.4.behavioral-generator-equivalence
+      - v0.4.5.standard-surface-freeze
+      - v0.4.6.compatibility-migration-policy
+      - v0.4.7.reference-intent-corpus
+      - v0.4.8.target-semantics-matrix
+      - v0.4.9.standard-export-bundle
+      - v0.5.0.standard-export-manifest
+      - v0.5.3.standard-bundle-verifier
+      - v0.5.4.data-driven-conformance-index
+      - v0.6.1.intent-corpus-expansion
+      - v0.6.2.required-clarification-contract
+      - v0.6.3.safety-policy-matrix
+      - v0.6.4.target-semantics-negative-corpus
+      - v0.6.5.execution-plan-semantic-invariants
+      - v0.6.6.ai-input-trust-boundary
+      - v0.6.7.standard-example-bundle
+      - v0.6.8.compatibility-promise
+      - v0.7.0.reference-corpus-execution-harness
+      - v0.7.1.architecture-debt-cleanup-and-drift-enforcement
+      - v0.7.3.standard-model-projection-coherence
+      - v0.7.4.architecture-delta-analyzer
+      - v0.7.5.purpose-coverage-ratio
+  vectors:
+    includes:
+      - conformance/artifacts/public-artifact-bundle.conformance.yaml
+      - conformance/targets/target-decision-trace.conformance.yaml
+      - conformance/diagnostics/diagnostic-coverage-report.conformance.yaml
+      - conformance/artifacts/artifact-integrity-report.conformance.yaml
+      - conformance/artifacts/standard-contract-index.conformance.yaml
+      - conformance/artifacts/standard-release-profile.conformance.yaml
+      - conformance/artifacts/artifact-evidence-report.conformance.yaml
+      - conformance/artifacts/standard-compliance-report.conformance.yaml
+      - conformance/artifacts/standard-freeze-report.conformance.yaml
+      - conformance/artifacts/compatibility-policy.conformance.yaml
+      - conformance/artifacts/reference-corpus-index.conformance.yaml
+      - conformance/artifacts/negative-conformance-corpus.conformance.yaml
+      - conformance/artifacts/target-conformance-profile.conformance.yaml
+      - conformance/artifacts/flow-standard-draft.conformance.yaml
+      - conformance/intent/semantic-correctness-hardening.conformance.yaml
+      - conformance/architecture/standard-boundary-no-sdk-runtime.conformance.yaml
+      - conformance/architecture/architecture-governance-guardrails.conformance.yaml
+      - conformance/artifacts/public-standard-surface.conformance.yaml
+      - conformance/artifacts/compatibility-migration-policy.conformance.yaml
+      - conformance/intent/reference-intent-corpus.conformance.yaml
+      - conformance/targets/target-semantics-matrix.conformance.yaml
+      - conformance/artifacts/standard-export-bundle.conformance.yaml
+      - conformance/artifacts/standard-export-manifest.conformance.yaml
+      - conformance/standard/standard-bundle-verifier.conformance.yaml
+      - conformance/standard/data-driven-conformance-index.conformance.yaml
+      - conformance/standard/intent-corpus-expansion.conformance.yaml
+      - conformance/standard/required-clarification-contract.conformance.yaml
+      - conformance/standard/safety-policy-matrix.conformance.yaml
+      - conformance/standard/target-semantics-negative-corpus.conformance.yaml
+      - conformance/standard/execution-plan-semantic-invariants.conformance.yaml
+      - conformance/standard/ai-input-trust-boundary.conformance.yaml
+      - conformance/standard/standard-example-bundle.conformance.yaml
+      - conformance/standard/compatibility-promise.conformance.yaml
+      - conformance/standard/reference-corpus-execution-harness.conformance.yaml
+      - conformance/standard/architecture-debt-cleanup-and-drift-enforcement.conformance.yaml
+      - conformance/standard/standard-model-projection-coherence.conformance.yaml
+      - conformance/standard/architecture-delta-analyzer.conformance.yaml
+  publicSchemas:
+    includes:
+      - schemas/flow-artifact-bundle.schema.json
+      - schemas/target-adapter-contract.schema.json
+      - schemas/adapter-diagnostics.schema.json
+      - schemas/diagnostic-coverage-report.schema.json
+      - schemas/artifact-integrity-report.schema.json
+      - schemas/standard-contract-index.schema.json
+      - schemas/standard-release-profile.schema.json
+      - schemas/artifact-evidence-report.schema.json
+      - schemas/standard-compliance-report.schema.json
+      - schemas/standard-freeze-report.schema.json
+      - schemas/compatibility-policy.schema.json
+      - schemas/reference-corpus-index.schema.json
+      - schemas/negative-conformance-corpus.schema.json
+      - schemas/target-conformance-profile.schema.json
+      - schemas/public-standard-surface.schema.json
+      - schemas/compatibility-migration-policy.schema.json
+      - schemas/reference-intent-corpus.schema.json
+      - schemas/target-semantics-matrix.schema.json
+      - schemas/standard-export-bundle.schema.json
+      - schemas/conformance-levels.schema.json
+      - schemas/standard-export-manifest.schema.json
+      - schemas/conformance-vector-index.schema.json
+      - schemas/standard-index.schema.json
+      - schemas/conformance-suite.schema.json
+      - schemas/flow-standard-draft.schema.json
+      - schemas/standard-diagnostic-catalog.schema.json
+      - schemas/conformance-manifest.schema.json
+      - schemas/standard-bundle-verification.schema.json
+  requiredArtifacts:
+    includes:
+      - flow-artifact-bundle.json
+      - target-adapter-contract.json
+      - diagnostic-coverage-report.json
+      - artifact-integrity-report.json
+      - standard-contract-index.json
+      - standard-release-profile.json
+      - artifact-evidence-report.json
+      - standard-compliance-report.json
+      - standard-freeze-report.json
+      - compatibility-policy.json
+      - reference-corpus-index.json
+      - negative-conformance-corpus.json
+      - target-conformance-profile.json
+      - public-standard-surface.json
+      - compatibility-migration-policy.json
+      - reference-intent-corpus.json
+      - target-semantics-matrix.json
+      - standard-export-bundle.json
+      - conformance-levels.json
+      - standard-export-manifest.json
+      - conformance-vector-index.json
+      - standard-index.json
+      - conformance-suite.json
+      - flow-standard-draft.json
+      - standard-diagnostic-catalog.json
+      - conformance-manifest.json

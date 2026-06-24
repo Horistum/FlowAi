@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/diagnostic-coverage-report/1.0/diagnostic-coverage-report.schema.json",
+  "title": "Flow Diagnostic Coverage Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "standardVersion",
+    "diagnosticCoverageVersion",
+    "diagnosticCatalogVersion",
+    "status",
+    "totalObservedCodes",
+    "totalUnknownCodes",
+    "catalogCodes",
+    "observedCodes",
+    "unknownCodes",
+    "unusedCatalogCodes"
+  ],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "diagnosticCoverageVersion": { "type": "string" },
+    "diagnosticCatalogVersion": { "type": "string" },
+    "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "totalObservedCodes": { "type": "integer", "minimum": 0 },
+    "totalUnknownCodes": { "type": "integer", "minimum": 0 },
+    "catalogCodes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "observedCodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/observedCode" }
+    },
+    "unknownCodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/unknownCode" }
+    },
+    "unusedCatalogCodes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "observedCode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "code", "source", "severity"],
+      "properties": {
+        "artifact": { "type": "string" },
+        "code": { "type": "string" },
+        "source": { "type": "string" },
+        "severity": { "type": "string" }
+      }
+    },
+    "unknownCode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "code", "source", "severity"],
+      "properties": {
+        "artifact": { "type": "string" },
+        "code": { "type": "string" },
+        "source": { "type": "string" },
+        "severity": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+kind: FlowModule
+name: kubernetes
+version: "1.0"
+description: "Kubernetes resource operations"
+systemTypes:
+  kubernetes:
+    input:
+      context:
+        type: text
+actions:
+  get:
+    kind: action
+    targetTypes:
+      - kubernetes
+    input:
+      resource:
+        type: text
+        required: true
+      namespace:
+        type: text
+      name:
+        type: text
+      selector:
+        type: text
+    output:
+      ok:
+        type: boolean
+      json:
+        type: json
+    effects:
+      reads:
+        - kubernetes.resource
+      network:
+        - kubernetes.api
+    safety:
+      destructive: false
+  deploy:
+    kind: action
+    targetTypes:
+      - kubernetes
+    input:
+      app:
+        type: text
+      name:
+        type: text
+      namespace:
+        type: text
+      image:
+        type: text
+      manifest:
+        type: text
+    output:
+      ok:
+        type: boolean
+    effects:
+      creates:
+        - kubernetes.workload
+      updates:
+        - kubernetes.workload
+    safety:
+      destructive: false
+    retry:
+      supported: true
+  delete:
+    kind: action
+    targetTypes:
+      - kubernetes
+    input:
+      resource:
+        type: text
+        required: true
+      name:
+        type: text
+        required: true
+      namespace:
+        type: text
+    output:
+      ok:
+        type: boolean
+    effects:
+      deletes:
+        - kubernetes.resource
+    safety:
+      destructive: true
+      requires:
+        - safety

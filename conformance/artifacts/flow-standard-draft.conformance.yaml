@@ -1,0 +1,19 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.flow-standard-draft.public-draft
+description: Flow Standard Draft 0.4 must aggregate public artifacts, profiles, corpora and compliance without adding runtime behavior.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.4.0.public-standard-draft
+  artifact: flow-standard-draft.json
+  schema: schemas/flow-standard-draft.schema.json
+  status: PASS
+  purpose:
+    contains: Human/AI intent
+  requiredProfiles:
+    includes:
+      - standard-public-release
+      - target-conformance-profile
+      - architecture-governance

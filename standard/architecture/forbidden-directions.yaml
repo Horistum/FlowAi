@@ -1,0 +1,58 @@
+version: 1.0
+purpose: Prevent Flow from drifting into an SDK, runtime executor, plugin framework, or target-specific workflow language.
+forbiddenDirections:
+  - id: runtime-executor
+    reason: Flow must describe and validate plans, not execute workflows.
+    forbiddenTerms:
+      - org.flowlang.runtime
+      - LocalRuntime
+      - WorkflowExecutor
+      - TaskExecutor
+      - executeWorkflow
+      - runWorkflow
+      - runPlan
+      - taskRunner
+    allowedTerms:
+      - PlanPreview
+      - nativeRuntime
+  - id: sdk-framework
+    reason: Flow defines public contracts and conformance profiles, not implementation SDKs.
+    forbiddenTerms:
+      - ModuleSDK
+      - ModuleSdk
+      - AdapterSDK
+      - AdapterSdk
+      - BaseAdapter
+      - BasePlugin
+      - ExtensionPoint
+      - ExtensionRegistry
+    allowedTerms:
+      - Capability Module Contract
+      - TargetConformanceProfile
+  - id: plugin-framework
+    reason: Flow must not define adapter lifecycle hooks or plugin ownership.
+    forbiddenTerms:
+      - PluginLifecycle
+      - lifecycleHook
+      - beforeExecute
+      - afterExecute
+      - onRenderHook
+      - pluginFactory
+    allowedTerms: []
+  - id: target-template-ownership
+    reason: Public standard contracts must not become target template APIs.
+    forbiddenTerms:
+      - templateHook
+      - renderPlugin
+      - templatePath
+      - generatorHook
+      - targetTemplateSdk
+    allowedTerms: []
+  - id: silent-semantic-fallback
+    reason: Unsupported semantics must produce diagnostics or blocked readiness, not hidden true/false behavior.
+    forbiddenTerms:
+      - fallbackToTrue
+      - fallbackToFalse
+      - unsupportedConditionAsTrue
+      - unsupportedConditionAsFalse
+    allowedTerms: []

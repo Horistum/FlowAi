@@ -1,0 +1,30 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.reference-corpus-execution-harness.v070
+introducedIn: "0.7.0"
+description: Reference corpus execution harness must replay every public reference intent through the real normalizer, review gate, validation, AST lowering and execution-plan planning.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.7.0.reference-corpus-execution-harness
+  standardVersion: "0.7.5"
+  harness:
+    stages:
+      includes:
+        - normalize scenario input with ScenarioPackIntentNormalizer
+        - review normalized intent through IntentProposalReview
+        - lower accepted scenarios through intent validation, AST validation and execution-plan planning
+        - prove blocked scenarios are not lowerable
+    assertions:
+      includes:
+        - corpus.accepted-lowers
+        - corpus.blocked-stays-blocked
+        - corpus.no-auto-approval
+        - corpus.rollback-review-lowerable
+        - corpus.semantic-capabilities
+  scenarios:
+    includes:
+      - prod-deploy-without-approval
+      - rollback-with-verification
+      - secret-rotation-with-audit
+      - portable-build-test-deploy

@@ -1,0 +1,24 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.purpose-coverage-ratio
+introducedIn: "0.7.5"
+area: standard
+summary: Purpose Coverage Ratio keeps public standard growth tied to executable automation intent evidence instead of bookkeeping growth.
+expected:
+  status: PASS
+  requiredCheck: v0.7.5.purpose-coverage-ratio
+  standardVersion: "0.7.5"
+  baselineVersion: "0.7.4"
+  invariants:
+    - referenceScenarioCount >= 20
+    - required purpose capabilities are all covered by the reference intent corpus
+    - risk-sensitive capabilities have blocked reference scenarios
+    - automationPurposeRatio >= 0.50
+    - governanceRatio <= 0.15
+    - evidenceBackedPurposeRatio >= 0.60
+    - registryConsistencyCheckGrowth == 0
+    - stablePublicArtifactGrowth == 0
+  noRuntimeExecutor: true
+  noSdkApi: true
+  noPluginLifecycle: true
+  noTargetSpecificPublicDsl: true

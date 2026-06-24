@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/target-semantics-matrix.schema.json",
+  "title": "Flow Target Semantics Matrix",
+  "type": "object",
+  "required": ["standardVersion", "matrixVersion", "status", "targetIds", "entries", "portabilityRule"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "matrixVersion": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "targetIds": { "type": "array", "items": { "type": "string" } },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature", "jenkins", "githubActions", "tekton", "requiredDiagnosticWhenUnsupported"],
+        "properties": {
+          "feature": { "type": "string" },
+          "jenkins": { "type": "string" },
+          "githubActions": { "type": "string" },
+          "tekton": { "type": "string" },
+          "requiredDiagnosticWhenUnsupported": { "type": "string" }
+        }
+      }
+    },
+    "portabilityRule": { "type": "string" }
+  }
+}

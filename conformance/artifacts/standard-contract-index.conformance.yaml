@@ -1,0 +1,20 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.standard-contract-index.reference-deployment
+description: Standard contract index must inventory public artifacts, schemas and required contracts.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.3.16.standard-contract-index
+  artifact: standard-contract-index.json
+  schema: schemas/standard-contract-index.schema.json
+  contracts:
+    includes:
+      - execution-plan.json
+      - standard-compliance-report.json
+  requiredContracts:
+    includes:
+      - standard-contract-index.json
+  introducedIn:
+    standard-compliance-report.json: "0.3.19"

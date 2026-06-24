@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/flow-standard-draft/0.4/flow-standard-draft.schema.json",
+  "title": "Flow Standard Draft 0.4",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "draftVersion", "status", "purpose", "publicArtifacts", "requiredProfiles", "complianceStatus"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "draftVersion": { "type": "string" },
+    "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "purpose": { "type": "string" },
+    "publicArtifacts": { "type": "array", "items": { "type": "string" } },
+    "requiredProfiles": { "type": "array", "items": { "type": "string" } },
+    "complianceStatus": { "type": "string", "enum": ["PASS", "FAIL"] }
+  }
+}

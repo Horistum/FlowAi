@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/target-conformance-profile/1.0/target-conformance-profile.schema.json",
+  "title": "Flow Target Conformance Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "conformanceProfileVersion", "profile", "levels", "forbiddenInputs", "requiredDiagnostics"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "conformanceProfileVersion": { "type": "string" },
+    "profile": { "type": "string" },
+    "levels": { "type": "array", "items": { "$ref": "#/$defs/level" } },
+    "forbiddenInputs": { "type": "array", "items": { "type": "string" } },
+    "requiredDiagnostics": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "requiredArtifacts", "requiredInvariants"],
+      "properties": {
+        "level": { "type": "string" },
+        "requiredArtifacts": { "type": "array", "items": { "type": "string" } },
+        "requiredInvariants": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

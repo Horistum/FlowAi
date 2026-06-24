@@ -1,0 +1,32 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.data-driven-conformance-index.v054
+introducedIn: "0.5.4"
+description: Conformance vector index must read public vector metadata and reconcile required checks with the runner and release profile.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.5.4.data-driven-conformance-index
+  standardVersion: "0.7.5"
+  artifact: conformance-vector-index.json
+  schema: schemas/conformance-vector-index.schema.json
+  status: PASS
+  requiredChecks:
+    includes:
+      - v0.5.4.data-driven-conformance-index
+      - v0.5.3.standard-bundle-verifier
+      - v0.6.1.intent-corpus-expansion
+      - v0.6.2.required-clarification-contract
+      - v0.6.3.safety-policy-matrix
+      - v0.6.4.target-semantics-negative-corpus
+      - v0.6.5.execution-plan-semantic-invariants
+      - v0.6.6.ai-input-trust-boundary
+      - v0.6.7.standard-example-bundle
+      - v0.6.8.compatibility-promise
+      - v0.7.0.reference-corpus-execution-harness
+      - v0.7.1.architecture-debt-cleanup-and-drift-enforcement
+      - v0.7.3.standard-model-projection-coherence
+      - v0.7.4.architecture-delta-analyzer
+      - v0.7.5.purpose-coverage-ratio
+  negativeCase:
+    vectorWithoutRequiredCheck: FAIL

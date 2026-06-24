@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/standard-export-bundle.schema.json",
+  "title": "Flow Standard Export Bundle",
+  "type": "object",
+  "required": ["standardVersion", "exportBundleVersion", "status", "command", "requiredDirectories", "requiredFiles", "requiredArtifacts", "packageName"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "exportBundleVersion": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "command": { "type": "string" },
+    "requiredDirectories": { "type": "array", "items": { "type": "string" } },
+    "requiredFiles": { "type": "array", "items": { "type": "string" } },
+    "requiredArtifacts": { "type": "array", "items": { "type": "string" } },
+    "packageName": { "type": "string" }
+  }
+}

@@ -1,0 +1,8 @@
+kind: FlowConformanceVector
+version: "1.0"
+name: generator.manifest.jenkins
+input: examples/intent/build-test-deploy.intent.yaml
+target: jenkins
+expect:
+  manifestTarget: jenkins
+  minSteps: 1

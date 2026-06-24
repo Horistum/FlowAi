@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/reference-corpus-index/1.0/reference-corpus-index.schema.json",
+  "title": "Flow Reference Corpus Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "corpusVersion", "corpus", "examples"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "corpusVersion": { "type": "string" },
+    "corpus": { "type": "string" },
+    "examples": { "type": "array", "items": { "$ref": "#/$defs/example" } }
+  },
+  "$defs": {
+    "example": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "intent", "expectedArtifacts", "expectedStatus"],
+      "properties": {
+        "id": { "type": "string" },
+        "intent": { "type": "string" },
+        "expectedArtifacts": { "type": "array", "items": { "type": "string" } },
+        "expectedStatus": { "type": "string" }
+      }
+    }
+  }
+}

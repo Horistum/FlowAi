@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/execution-readiness-report/1.0/execution-readiness-report.schema.json",
+  "title": "Flow Execution Readiness Report v1.0",
+  "type": "object",
+  "required": [
+    "standardVersion",
+    "readinessModelVersion",
+    "planVersion",
+    "flowName",
+    "target",
+    "strict",
+    "readiness",
+    "generationAllowed",
+    "productionReady",
+    "decision",
+    "compatibilityStatus",
+    "targetPortabilityScore",
+    "planPortabilityScore",
+    "blockers",
+    "warnings",
+    "requiredActions"
+  ],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "readinessModelVersion": { "type": "string" },
+    "planVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "target": { "type": "string" },
+    "strict": { "type": "boolean" },
+    "readiness": { "enum": ["READY", "DEGRADED", "BLOCKED"] },
+    "generationAllowed": { "type": "boolean" },
+    "productionReady": { "type": "boolean" },
+    "decision": { "type": "string" },
+    "compatibilityStatus": { "enum": ["SUPPORTED", "PARTIAL", "UNSUPPORTED", "REQUIRES_RUNTIME"] },
+    "targetPortabilityScore": { "type": "number" },
+    "planPortabilityScore": { "type": "number" },
+    "blockers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "requiredActions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["code", "severity", "target", "capability", "nodeId", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "severity": { "enum": ["INFO", "WARNING", "BLOCKER"] },
+        "target": { "type": "string" },
+        "capability": { "type": "string" },
+        "nodeId": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

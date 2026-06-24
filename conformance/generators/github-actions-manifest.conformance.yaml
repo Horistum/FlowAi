@@ -1,0 +1,8 @@
+kind: FlowConformanceVector
+version: "1.0"
+name: generator.manifest.github-actions
+input: examples/intent/build-test-deploy.intent.yaml
+target: github-actions
+expect:
+  manifestTarget: github-actions
+  minJobs: 1

@@ -1,0 +1,23 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: target.execution-plan-portability.approval-gap
+description: ExecutionPlan portability report must score the plan and explain portable, target-specific, workaround and blocking capabilities.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+expected:
+  requiredCheck: v0.3.6.execution-plan-portability
+  portabilityScore:
+    normalized: true
+  portableCapabilities:
+    includes:
+      - task.execute
+      - parallel.dag
+  targetSpecificCapabilities:
+    includes:
+      - approval.manual
+  blockingPortabilityIssues:
+    - target: tekton
+      capability: approval.manual
+  requiredWorkarounds:
+    - target: github-actions
+      capability: approval.manual

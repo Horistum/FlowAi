@@ -1,0 +1,77 @@
+kind: FlowModule
+name: database
+version: "1.0"
+description: "Relational database operations"
+systemTypes:
+  database:
+    input:
+      engine:
+        type: text
+      url:
+        type: text
+        sensitive: true
+actions:
+  upsert:
+    kind: action
+    targetTypes:
+      - database
+    input:
+      table:
+        type: text
+        required: true
+      key:
+        type: any
+        required: true
+      values:
+        type: any
+        required: true
+    output:
+      ok:
+        type: boolean
+    effects:
+      writes:
+        - database.row
+    idempotent: true
+    retry:
+      supported: true
+    safety:
+      destructive: false
+  query:
+    kind: action
+    targetTypes:
+      - database
+    input:
+      sql:
+        type: text
+        required: true
+    output:
+      ok:
+        type: boolean
+      json:
+        type: json
+    effects:
+      reads:
+        - database.row
+    safety:
+      destructive: false
+  delete:
+    kind: action
+    targetTypes:
+      - database
+    input:
+      table:
+        type: text
+        required: true
+      key:
+        type: any
+        required: true
+    output:
+      ok:
+        type: boolean
+    effects:
+      deletes:
+        - database.row
+    safety:
+      destructive: true
+      requires:
+        - safety

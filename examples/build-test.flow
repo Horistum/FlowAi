@@ -1,0 +1,36 @@
+version "1.0"
+
+use module "git" version "1.0"
+use module "shell" version "1.0"
+
+flow "build-test" {
+  input {
+    branch: text default "main"
+  }
+
+  systems {
+    system "repo" {
+      type: git
+      url: "git@example.com/company/app.git"
+      branch: branch
+    }
+
+    system "local" {
+      type: shell
+    }
+  }
+
+  steps {
+    git.checkout repo { } -> source
+
+    shell.run local {
+      command: "mvn test"
+    } -> tests {
+      expect {
+        ok == true
+        code == 0
+        text not contains "BUILD FAILURE"
+      }
+    }
+  }
+}

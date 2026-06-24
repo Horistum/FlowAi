@@ -1,0 +1,21 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.target-semantics-negative-corpus.v064
+introducedIn: "0.6.4"
+description: Target portability failures must be represented as diagnostics or blocked/degraded readiness, not silent renderer behavior.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.6.4.target-semantics-negative-corpus
+  standardVersion: "0.7.5"
+  features:
+    includes:
+      - strict-manual-approval
+      - unsupported-condition-fallback
+      - rollback-portability
+  diagnostics:
+    includes:
+      - approval.strict
+      - condition.expression
+      - rollback.capability
+

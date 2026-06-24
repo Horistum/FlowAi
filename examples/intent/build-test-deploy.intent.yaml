@@ -1,0 +1,56 @@
+intentVersion: "1.0"
+kind: FlowIntentDocument
+name: build-test-deploy
+description: High-level deployment intent. AI should produce this layer before low-level Flow.
+inputs:
+  - name: environment
+    type: option[dev,test,prod]
+    required: true
+  - name: version
+    type: text
+    required: true
+systems:
+  - name: source
+    type: git
+    purpose: Application source repository
+  - name: registry
+    type: dockerRegistry
+    purpose: Image registry
+  - name: cluster
+    type: kubernetes
+    purpose: Deployment target
+workflows:
+  - name: application-lifecycle
+    kind: DEPLOY
+    steps:
+      - id: checkout
+        capability: CHECKOUT
+        uses: git
+      - id: test
+        capability: TEST
+        uses: shell
+        requires: [checkout]
+      - id: build-image
+        capability: BUILD_IMAGE
+        uses: docker
+        requires: [test]
+      - id: approve-prod
+        capability: APPROVE
+        requires: [build-image]
+      - id: deploy
+        capability: DEPLOY
+        uses: kubernetes
+        requires: [approve-prod]
+      - id: verify
+        capability: VERIFY
+        uses: kubernetes
+        requires: [deploy]
+policies:
+  - name: production-approval
+    type: APPROVAL
+    condition: environment == 'prod'
+    message: Production deployment requires approval.
+failure:
+  notify: true
+  rollback: true
+  stopOnError: true

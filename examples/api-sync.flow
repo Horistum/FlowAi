@@ -1,0 +1,77 @@
+version "1.0"
+
+use module "rest" version "1.0"
+use module "database" version "1.0"
+use module "notify" version "1.0"
+
+flow "sync-customers" {
+  input {
+    environment: option ["dev", "test", "prod"] required
+  }
+
+  systems {
+    system "crm" {
+      type: rest
+      baseUrl: secret("CRM_URL")
+      token: secret("CRM_TOKEN")
+    }
+
+    system "warehouse" {
+      type: database
+      engine: postgres
+      url: secret("WAREHOUSE_URL")
+    }
+
+    system "mailer" {
+      type: notify
+      channel: email
+    }
+  }
+
+  steps {
+    rest.call crm {
+      method: GET
+      path: "/customers"
+    } -> crmResponse {
+      expect {
+        ok == true
+        code == 200
+        json.items not empty
+      }
+    }
+
+    transform crmResponse.json.items -> customers {
+      where item.deleted != true
+      select {
+        id: item.id
+        name: item.name
+        email: item.email
+        active: item.status == "ACTIVE"
+      }
+    }
+
+    validate customers {
+      required item.id
+      required item.email
+      item.email matches email
+    }
+
+    for customer in customers {
+      database.upsert warehouse {
+        table: "customers"
+        key: customer.id
+        values: customer
+      } -> writeResult
+    }
+
+    aggregate customers -> summary {
+      total: count()
+      active: count(where item.active == true)
+    }
+
+    notify.send mailer {
+      subject: "Customer sync finished"
+      body: "Total: ${summary.total}, active: ${summary.active}"
+    }
+  }
+}

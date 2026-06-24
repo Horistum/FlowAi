@@ -1,0 +1,12 @@
+{
+  "planVersion" : "1.1",
+  "flowName" : "build-test-deploy",
+  "nodes" : [
+    { "kind" : "Task", "module" : "git", "action" : "checkout" },
+    { "kind" : "Task", "module" : "shell", "action" : "run" },
+    { "kind" : "Task", "module" : "docker", "action" : "build" },
+    { "kind" : "Approval" },
+    { "kind" : "Task", "module" : "kubernetes", "action" : "deploy" },
+    { "kind" : "Task", "module" : "kubernetes", "action" : "get" }
+  ]
+}

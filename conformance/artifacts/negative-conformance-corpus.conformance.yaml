@@ -1,0 +1,17 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.negative-corpus.public-draft
+description: Negative corpus must define invalid cases where Flow should block lowering or target generation.
+input:
+  command: standard-draft
+expected:
+  requiredCheck: v0.3.23.negative-conformance-corpus
+  artifact: negative-conformance-corpus.json
+  schema: schemas/negative-conformance-corpus.schema.json
+  diagnostics:
+    includes:
+      - SAFETY_CLEANUP_REQUIRES_RETENTION
+      - ADAPTER_MUST_NOT_READ_INTENT
+      - ARTIFACT_REQUIRED_MISSING
+      - ARCHITECTURE_RUNTIME_PACKAGE_FORBIDDEN
+      - ARCHITECTURE_FORBIDDEN_TERM_IN_SOURCE

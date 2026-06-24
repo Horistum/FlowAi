@@ -1,0 +1,20 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.ai-proposal-review
+introducedIn: "0.4.4"
+description: The standard re-derives validation and safety from a proposed intent independently of the AI provider's self-report, and rejects an irreversible operation that omits a mandated safety obligation.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.4.4.ai-proposal-review
+  trustBoundary:
+    providerSelfReportTrusted: false
+    verdictReDerivedByStandard: true
+  mandatedSafety:
+    includes:
+      - capability: DATABASE_MIGRATE
+        requires: backup
+      - capability: DEPROVISION
+        requires: approval
+  rejectsMigrationWithoutBackup: true
+  rejectionCode: SAFETY_REQUIRES_BACKUP

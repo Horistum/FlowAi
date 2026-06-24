@@ -1,0 +1,18 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.compatibility-migration-policy.public-policy
+introducedIn: "0.4.6"
+description: Compatibility and migration policy must distinguish additive minor changes from breaking changes.
+input:
+  command: standard-draft
+expected:
+  artifact: compatibility-migration-policy.json
+  schema: schemas/compatibility-migration-policy.schema.json
+  requiredCheck: v0.4.6.compatibility-migration-policy
+  rules:
+    includes:
+      - minor.add-optional-field
+      - breaking.remove-public-field
+  migrationArtifacts:
+    includes:
+      - CHANGELOG.md

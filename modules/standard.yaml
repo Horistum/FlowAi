@@ -1,0 +1,63 @@
+kind: FlowModule
+name: standard
+version: "1.0"
+description: "Semantic standard operations used by high-level intents before target-specific lowering exists."
+systemTypes:
+  standard:
+    input: {}
+actions:
+  execute:
+    kind: action
+    targetTypes:
+      - standard
+    additionalParams: true
+    input:
+      operation:
+        type: text
+        required: true
+      capability:
+        type: text
+      description:
+        type: text
+      flow:
+        type: text
+    output:
+      ok:
+        type: boolean
+      status:
+        type: text
+      data:
+        type: any
+    effects:
+      executes:
+        - flow.standard.operation
+    safety:
+      destructive: false
+    retry:
+      supported: true
+    timeout:
+      supported: true
+  rollback:
+    kind: action
+    targetTypes:
+      - standard
+    additionalParams: true
+    input:
+      operation:
+        type: text
+      reason:
+        type: text
+      flow:
+        type: text
+    output:
+      ok:
+        type: boolean
+      status:
+        type: text
+    effects:
+      updates:
+        - flow.rollback
+    safety:
+      destructive: false
+    retry:
+      supported: true

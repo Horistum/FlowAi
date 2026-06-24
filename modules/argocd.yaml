@@ -1,0 +1,100 @@
+kind: FlowModule
+name: argocd
+version: "1.0"
+description: "ArgoCD integration module"
+
+systemTypes:
+  argocd:
+    input:
+      url:
+        type: text
+        required: true
+        sensitive: false
+      token:
+        type: secret
+        required: true
+        sensitive: true
+
+actions:
+  sync:
+    kind: action
+    targetTypes:
+      - argocd
+
+    input:
+      app:
+        type: text
+        required: true
+      wait:
+        type: boolean
+        default: true
+      timeout:
+        type: duration
+        default: "5m"
+
+    output:
+      ok:
+        type: boolean
+      health:
+        type: text
+      sync:
+        type: text
+      revision:
+        type: text
+      raw:
+        type: json
+
+    effects:
+      reads:
+        - argocd.application
+      writes:
+        - argocd.application.sync
+      network:
+        - argocd.api
+
+    requiredCapabilities:
+      - argocd.api
+      - secrets.runtime
+
+    safety:
+      destructive: false
+
+    idempotent: true
+
+    retry:
+      supported: true
+      default:
+        max: 3
+        delay: "10s"
+
+    timeout:
+      supported: true
+      default: "5m"
+      max: "30m"
+
+    errors:
+      unhealthy:
+        when: health != "Healthy"
+        message: "Application is not healthy"
+      outOfSync:
+        when: sync != "Synced"
+        message: "Application is not synced"
+
+    targetImplications:
+      jenkins:
+        support: supported
+        requiredCapabilities:
+          - secrets.runtime
+          - shell.command
+      githubActions:
+        support: partial
+        requiredCapabilities:
+          - secrets.runtime
+      tekton:
+        support: supported
+        requiredCapabilities:
+          - secrets.runtime
+      argoWorkflows:
+        support: supported
+        requiredCapabilities:
+          - secrets.runtime

@@ -1,0 +1,21 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: target.selection.reference-deployment
+description: Target selection must rank registered targets from execution readiness and portability facts, not from renderer preference.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+expected:
+  requiredCheck: v0.3.8.target-selection
+  recommendedTarget: jenkins
+  readyTargets:
+    includes:
+      - jenkins
+  degradedTargets:
+    includes:
+      - github-actions
+  blockedTargets:
+    includes:
+      - tekton
+  ranking:
+    top: jenkins
+    contiguousRanks: true

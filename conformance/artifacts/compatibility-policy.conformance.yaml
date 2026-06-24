@@ -1,0 +1,17 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.compatibility-policy.public-draft
+description: Compatibility policy must define breaking-change rules for public Flow contracts.
+input:
+  command: release-profile
+expected:
+  requiredCheck: v0.3.21.compatibility-policy
+  artifact: compatibility-policy.json
+  schema: schemas/compatibility-policy.schema.json
+  rules:
+    includes:
+      - new-required-field
+      - diagnostic-code-stability
+  breakingChangeTriggers:
+    includes:
+      - drop-required-artifact

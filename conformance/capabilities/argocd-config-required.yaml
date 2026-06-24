@@ -1,0 +1,14 @@
+kind: FlowConformanceVector
+version: "1.0"
+name: argocd-config-required
+area: capabilities
+input:
+  intent: ../../examples/intent/bad-argocd-missing-config.intent.yaml
+expected:
+  requiredCheck: intent.invalid.argocd-missing-config
+  valid: false
+  issues:
+    - code: MISSING_SYSTEM_CONFIG
+      field: url
+    - code: MISSING_SYSTEM_CONFIG
+      field: token

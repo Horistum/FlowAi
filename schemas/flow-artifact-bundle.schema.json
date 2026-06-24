@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/flow-artifact-bundle/1.0/flow-artifact-bundle.schema.json",
+  "title": "Flow Public Artifact Bundle v1.0",
+  "type": "object",
+  "required": [
+    "standardVersion",
+    "bundleModelVersion",
+    "flowName",
+    "target",
+    "strict",
+    "artifacts",
+    "requiredArtifacts",
+    "optionalArtifacts",
+    "pipeline"
+  ],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "bundleModelVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "target": { "type": "string" },
+    "strict": { "type": "boolean" },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "role", "schema", "required", "derived", "pipelineIndex", "derivedFrom"],
+        "properties": {
+          "name": { "type": "string" },
+          "role": { "enum": ["METADATA", "MODEL", "REPORT", "PLAN", "MANIFEST", "RENDERED"] },
+          "schema": { "type": "string" },
+          "required": { "type": "boolean" },
+          "derived": { "type": "boolean" },
+          "pipelineIndex": { "type": "integer" },
+          "derivedFrom": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "requiredArtifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "optionalArtifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "pipeline": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

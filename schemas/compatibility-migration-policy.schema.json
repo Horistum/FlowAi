@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/compatibility-migration-policy.schema.json",
+  "title": "Flow Compatibility and Migration Policy",
+  "type": "object",
+  "required": ["standardVersion", "policyVersion", "status", "compatibilityRules", "deprecationWindowMinorReleases", "migrationArtifacts", "breakingChangeGate"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "policyVersion": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "compatibilityRules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "allowedInMinor", "requiresMigrationNote", "requiresDeprecationWindow", "description"],
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "enum": ["minor", "breaking", "deprecation"] },
+          "allowedInMinor": { "type": "boolean" },
+          "requiresMigrationNote": { "type": "boolean" },
+          "requiresDeprecationWindow": { "type": "boolean" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "deprecationWindowMinorReleases": { "type": "integer", "minimum": 1 },
+    "migrationArtifacts": { "type": "array", "items": { "type": "string" } },
+    "breakingChangeGate": { "type": "string" }
+  }
+}

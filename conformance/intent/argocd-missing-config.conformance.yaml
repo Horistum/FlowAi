@@ -1,0 +1,7 @@
+kind: FlowConformanceVector
+version: "1.0"
+name: intent.invalid.argocd-missing-config
+input: examples/intent/bad-argocd-missing-config.intent.yaml
+expect:
+  intentValidation: invalid
+  issueCode: MISSING_SYSTEM_CONFIG

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.org/schemas/ai-normalization-report.schema.json",
+  "title": "Flow AI Normalization Report",
+  "type": "object",
+  "required": ["standardVersion", "mode", "classification", "confidence", "guardrails"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "mode": { "type": "string" },
+    "classification": { "type": "object" },
+    "confidence": { "type": "object" },
+    "entities": { "type": "object" },
+    "extractedEntities": { "type": "object" },
+    "missingDecisions": { "type": "array" },
+    "assumptions": { "type": "array" },
+    "openQuestions": { "type": "array" },
+    "risks": { "type": "array" },
+    "safetyGates": { "type": "array", "items": { "type": "string" } },
+    "targetPortability": { "type": "object" },
+    "scenarioSelection": { "type": "object" },
+    "confidenceByArea": { "type": "object" },
+    "explanation": { "type": "array", "items": { "type": "string" } },
+    "guardrails": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -1,0 +1,47 @@
+kind: FlowModule
+name: rest
+version: "1.0"
+description: "REST/HTTP client"
+systemTypes:
+  rest:
+    input:
+      baseUrl:
+        type: text
+        sensitive: false
+      token:
+        type: secret
+        sensitive: true
+actions:
+  call:
+    kind: action
+    targetTypes:
+      - rest
+    input:
+      method:
+        type: text
+        required: true
+      path:
+        type: text
+        required: true
+      body:
+        type: any
+      headers:
+        type: map
+      query:
+        type: map
+    output:
+      ok:
+        type: boolean
+      code:
+        type: number
+      json:
+        type: json
+    effects:
+      network:
+        - http.request
+    safety:
+      destructive: false
+    retry:
+      supported: true
+    timeout:
+      supported: true

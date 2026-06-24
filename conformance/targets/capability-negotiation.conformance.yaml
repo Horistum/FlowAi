@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: target.capability-negotiation.approval-gap
+description: Capability negotiation must explain target portability instead of silently lowering unsupported approval semantics.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+expected:
+  requiredCheck: v0.3.1.capability-negotiation
+  requiredCapabilities:
+    - approval.manual
+    - parallel.dag
+  targets:
+    jenkins: supported
+    github-actions: partial
+    tekton: unsupported

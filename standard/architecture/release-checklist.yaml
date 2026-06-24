@@ -1,0 +1,21 @@
+version: 1.0
+purpose: Gate every Flow release against architectural drift.
+requiredChecks:
+  - id: strengthens-core-pipeline
+    description: The change strengthens at least one part of the Flow core pipeline.
+  - id: no-runtime-executor
+    description: The change does not introduce workflow execution or task execution APIs.
+  - id: no-sdk-framework
+    description: The change does not introduce SDK, adapter base classes, or plugin lifecycle.
+  - id: no-target-specific-standard
+    description: The public standard is not coupled to a single target implementation.
+  - id: no-silent-semantic-fallback
+    description: Unsupported semantics become diagnostics or blocked readiness, never hidden true/false fallback.
+  - id: negativeConformanceTest
+    description: The release includes a negative conformance vector or documents why it is documentation-only.
+  - id: architectureDecisionRequired
+    description: Larger changes include an Architecture Decision record.
+  - id: reportBudgetRule
+    description: New public reports are rejected unless an existing report cannot represent the contract.
+  - id: driftScoreRequired
+    description: Larger feature proposals include a Drift Score.

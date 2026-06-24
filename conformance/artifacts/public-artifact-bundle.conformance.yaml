@@ -1,0 +1,80 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.public-bundle.reference-deployment
+description: Public artifact bundle must describe exported Flow artifacts, their schemas, pipeline order and required/optional status.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.3.10.public-artifact-bundle
+  bundle: flow-artifact-bundle.json
+  pipeline:
+    first: standard-version.txt
+    last: flow-artifact-bundle.json
+  requiredArtifacts:
+    includes:
+      - standard-diagnostic-catalog.json
+      - normalized-intent.json
+      - execution-plan.json
+      - capability-negotiation-report.json
+      - execution-readiness-report.json
+      - target-selection-report.json
+      - target-decision-trace-report.json
+      - target-adapter-contract.json
+      - adapter-diagnostics.json
+      - diagnostic-coverage-report.json
+      - artifact-integrity-report.json
+      - standard-contract-index.json
+      - standard-release-profile.json
+      - artifact-evidence-report.json
+      - standard-compliance-report.json
+      - standard-freeze-report.json
+      - compatibility-policy.json
+      - reference-corpus-index.json
+      - negative-conformance-corpus.json
+      - target-conformance-profile.json
+      - public-standard-surface.json
+      - compatibility-migration-policy.json
+      - reference-intent-corpus.json
+      - target-semantics-matrix.json
+      - standard-export-bundle.json
+      - conformance-levels.json
+      - standard-export-manifest.json
+      - standard-index.json
+      - conformance-suite.json
+      - flow-standard-draft.json
+      - flow-artifact-bundle.json
+  optionalArtifacts:
+    includes:
+      - target-manifest.json
+      - Jenkinsfile
+  schemas:
+    includes:
+      - schemas/intent.schema.json
+      - schemas/standard-diagnostic-catalog.schema.json
+      - schemas/execution-plan.schema.json
+      - schemas/target-decision-trace-report.schema.json
+      - schemas/target-adapter-contract.schema.json
+      - schemas/adapter-diagnostics.schema.json
+      - schemas/diagnostic-coverage-report.schema.json
+      - schemas/artifact-integrity-report.schema.json
+      - schemas/standard-contract-index.schema.json
+      - schemas/standard-release-profile.schema.json
+      - schemas/artifact-evidence-report.schema.json
+      - schemas/standard-compliance-report.schema.json
+      - schemas/standard-freeze-report.schema.json
+      - schemas/compatibility-policy.schema.json
+      - schemas/reference-corpus-index.schema.json
+      - schemas/negative-conformance-corpus.schema.json
+      - schemas/target-conformance-profile.schema.json
+      - schemas/public-standard-surface.schema.json
+      - schemas/compatibility-migration-policy.schema.json
+      - schemas/reference-intent-corpus.schema.json
+      - schemas/target-semantics-matrix.schema.json
+      - schemas/standard-export-bundle.schema.json
+      - schemas/conformance-levels.schema.json
+      - schemas/standard-export-manifest.schema.json
+      - schemas/standard-index.schema.json
+      - schemas/conformance-suite.schema.json
+      - schemas/flow-standard-draft.schema.json
+      - schemas/flow-artifact-bundle.schema.json

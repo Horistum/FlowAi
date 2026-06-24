@@ -1,0 +1,16 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.valid.kubernetes-maintenance
+description: Kubernetes maintenance scenario must preserve scope, approval/dry-run safety and health verification.
+input:
+  text: Run Kubernetes maintenance in namespace payments, drain nodes with approval, dry-run first and verify pods are healthy.
+expected:
+  requiredCheck: v0.3.1.scenario-packs
+  scenario: kubernetes-maintenance
+  capabilities:
+    - APPROVE
+    - KUBERNETES_MAINTENANCE
+    - VALIDATE
+  safety:
+    - requiresApproval
+    - requiresDryRun

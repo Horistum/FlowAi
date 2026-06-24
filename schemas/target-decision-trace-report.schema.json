@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/target-decision-trace-report/1.0/target-decision-trace-report.schema.json",
+  "title": "Flow Target Decision Trace Report v1.0",
+  "type": "object",
+  "required": [
+    "standardVersion",
+    "traceModelVersion",
+    "planVersion",
+    "flowName",
+    "strict",
+    "requestedTarget",
+    "recommendedTarget",
+    "finalDecision",
+    "generationAllowed",
+    "decision",
+    "trace",
+    "targetExplanations",
+    "publicArtifacts"
+  ],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "traceModelVersion": { "type": "string" },
+    "planVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "strict": { "type": "boolean" },
+    "requestedTarget": { "type": "string" },
+    "recommendedTarget": { "type": "string" },
+    "finalDecision": { "enum": ["PASSED", "WARNING", "BLOCKED"] },
+    "generationAllowed": { "type": "boolean" },
+    "decision": { "type": "string" },
+    "trace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "artifact", "status", "summary"],
+        "properties": {
+          "id": { "type": "string" },
+          "artifact": { "type": "string" },
+          "status": { "enum": ["PASSED", "WARNING", "BLOCKED"] },
+          "summary": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "targetExplanations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target", "rank", "readiness", "decision", "reason"],
+        "properties": {
+          "target": { "type": "string" },
+          "rank": { "type": "integer" },
+          "readiness": { "enum": ["READY", "DEGRADED", "BLOCKED"] },
+          "decision": { "enum": ["RECOMMENDED", "READY_ALTERNATIVE", "DEGRADED", "BLOCKED"] },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "publicArtifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

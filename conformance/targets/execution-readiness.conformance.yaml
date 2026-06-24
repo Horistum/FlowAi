@@ -1,0 +1,24 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: target.execution-readiness.reference-deployment
+description: Execution readiness must produce a concrete target-generation decision from compatibility and portability facts.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+expected:
+  requiredCheck: v0.3.7.execution-readiness
+  jenkins:
+    readiness: READY
+    generationAllowed: true
+    productionReady: true
+  github-actions:
+    readiness: DEGRADED
+    generationAllowed: true
+    productionReady: false
+    warnings:
+      includesCapability: approval.manual
+  tekton:
+    readiness: BLOCKED
+    generationAllowed: false
+    productionReady: false
+    blockers:
+      includesCapability: approval.manual

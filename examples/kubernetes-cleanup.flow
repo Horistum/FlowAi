@@ -1,0 +1,40 @@
+version "1.0"
+
+use module "kubernetes" version "1.0"
+use module "notify" version "1.0"
+
+flow "cleanup-old-namespace" {
+  input {
+    environment: option ["dev", "test", "prod"] required
+    namespace: text required
+  }
+
+  systems {
+    system "cluster" {
+      type: kubernetes
+      context: environment
+    }
+
+    system "mailer" {
+      type: notify
+      channel: email
+    }
+  }
+
+  steps {
+    kubernetes.delete cluster {
+      resource: "namespace"
+      name: namespace
+      safety: onlyIf environment != "prod"
+    } -> deleteResult {
+      expect {
+        ok == true
+      }
+    }
+
+    notify.send mailer {
+      subject: "Cleanup finished"
+      body: "Namespace ${namespace} was deleted in ${environment}."
+    }
+  }
+}

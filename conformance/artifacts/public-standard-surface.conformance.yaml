@@ -1,0 +1,21 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.public-standard-surface.freeze
+introducedIn: "0.4.5"
+description: Public standard surface must identify stable contracts and required change gates.
+input:
+  command: standard-draft
+expected:
+  artifact: public-standard-surface.json
+  schema: schemas/public-standard-surface.schema.json
+  requiredCheck: v0.4.5.standard-surface-freeze
+  stableArtifacts:
+    includes:
+      - intent.schema.json
+      - execution-plan.schema.json
+      - public-standard-surface.json
+      - conformance-levels.json
+      - standard-export-manifest.json
+  requiredChangeGates:
+    includes:
+      - negative-conformance-review

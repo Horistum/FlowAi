@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/standard-freeze-report/1.0/standard-freeze-report.schema.json",
+  "title": "Flow Standard Freeze Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "freezeReportVersion", "profile", "status", "stableContracts", "experimentalContracts", "deprecatedContracts", "breakingChangeRules", "issues"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "freezeReportVersion": { "type": "string" },
+    "profile": { "type": "string" },
+    "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "stableContracts": { "type": "array", "items": { "$ref": "#/$defs/contract" } },
+    "experimentalContracts": { "type": "array", "items": { "$ref": "#/$defs/contract" } },
+    "deprecatedContracts": { "type": "array", "items": { "$ref": "#/$defs/contract" } },
+    "breakingChangeRules": { "type": "array", "items": { "type": "string" } },
+    "issues": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "stability", "schema"],
+      "properties": {
+        "artifact": { "type": "string" },
+        "stability": { "type": "string" },
+        "schema": { "type": "string" }
+      }
+    }
+  }
+}

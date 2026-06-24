@@ -1,0 +1,39 @@
+intentVersion: "1.0"
+kind: FlowIntentDocument
+name: nightly-backup
+
+description: Nightly backup intent showing that Flow is not limited to CI/CD.
+
+inputs:
+  - name: environment
+    type: option[dev,test,prod]
+    required: true
+
+systems:
+  - name: database
+    type: database
+    engine: postgres
+    url: secret:DATABASE_URL
+  - name: backupStore
+    type: file
+    path: /backup
+
+workflows:
+  - name: backup
+    kind: BACKUP
+    steps:
+      - id: create-backup
+        capability: BACKUP
+        params:
+          subject: database
+          destination: backupStore
+      - id: verify-backup
+        capability: VERIFY
+        requires: [create-backup]
+        params:
+          system: backupStore
+          resource: backup-artifact
+
+failure:
+  notify: true
+  rollback: false

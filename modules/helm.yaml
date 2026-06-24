@@ -1,0 +1,57 @@
+kind: FlowModule
+name: helm
+version: "1.0"
+description: "Helm templating and releases"
+systemTypes:
+  helm:
+    input: {}
+actions:
+  template:
+    kind: action
+    targetTypes:
+      - helm
+    input:
+      chart:
+        type: text
+        required: true
+      values:
+        type: text
+      namespace:
+        type: text
+    output:
+      ok:
+        type: boolean
+      code:
+        type: number
+      text:
+        type: text
+    effects:
+      executes:
+        - helm.template
+    safety:
+      destructive: false
+  upgrade:
+    kind: action
+    targetTypes:
+      - helm
+    input:
+      chart:
+        type: text
+        required: true
+      release:
+        type: text
+        required: true
+      values:
+        type: text
+      namespace:
+        type: text
+    output:
+      ok:
+        type: boolean
+    effects:
+      updates:
+        - helm.release
+    safety:
+      destructive: false
+    retry:
+      supported: true

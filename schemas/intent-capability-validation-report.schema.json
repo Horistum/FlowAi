@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/intent-capability-validation-report/1.0/intent-capability-validation-report.schema.json",
+  "title": "Flow Intent Capability Validation Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["valid", "issues"],
+  "properties": {
+    "valid": { "type": "boolean" },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["level", "code", "message"],
+        "properties": {
+          "level": { "type": "string" },
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}

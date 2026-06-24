@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/standard-index/1.0/standard-index.schema.json",
+  "title": "Flow Standard Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "standardIndexVersion", "draft", "artifacts", "schemas", "conformanceVectors", "profiles"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "standardIndexVersion": { "type": "string" },
+    "draft": { "type": "string" },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "schemas": { "type": "array", "items": { "type": "string" } },
+    "conformanceVectors": { "type": "array", "items": { "type": "string" } },
+    "profiles": { "type": "array", "items": { "type": "string" } }
+  }
+}

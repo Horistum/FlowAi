@@ -1,0 +1,39 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: target.adapter-contract.reference-deployment
+description: Target adapter contract must define allowed input artifacts, expected outputs, forbidden intent inputs and invariants without introducing an SDK/runtime.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.3.12.target-adapter-contract
+  artifact: target-adapter-contract.json
+  allowedInputArtifacts:
+    includes:
+      - execution-plan.json
+      - canonical-execution-plan.json
+      - execution-readiness-report.json
+      - target-selection-report.json
+      - target-decision-trace-report.json
+    excludes:
+      - normalized-intent.json
+      - intent-decision-report.json
+  expectedOutputArtifacts:
+    includes:
+      - target-manifest.json
+      - adapter-diagnostics.json
+  forbiddenInputArtifacts:
+    includes:
+      - human-ai-intent
+      - normalized-intent.json
+      - intent-decision-report.json
+  invariants:
+    includes:
+      - ADAPTER_MUST_NOT_READ_INTENT
+      - ADAPTER_MUST_PRESERVE_PLAN_NODE_IDS
+      - ADAPTER_MUST_RESPECT_READINESS
+  blockedTarget:
+    target: tekton
+    diagnostics:
+      includes:
+        - ADAPTER_CONTRACT_BLOCKED

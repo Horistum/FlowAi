@@ -1,0 +1,24 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: targets.target-semantics-matrix.public-matrix
+introducedIn: "0.4.8"
+description: Target semantics matrix must declare portable semantics and unsupported diagnostics.
+input:
+  command: standard-draft
+expected:
+  artifact: target-semantics-matrix.json
+  schema: schemas/target-semantics-matrix.schema.json
+  requiredCheck: v0.4.8.target-semantics-matrix
+  targets:
+    includes:
+      - jenkins
+      - github-actions
+      - tekton
+  features:
+    includes:
+      - conditions
+      - approvals
+      - secrets
+      - artifacts
+      - parallelism
+      - rollback

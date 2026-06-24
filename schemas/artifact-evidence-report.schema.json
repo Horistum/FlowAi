@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/artifact-evidence-report/1.0/artifact-evidence-report.schema.json",
+  "title": "Flow Artifact Evidence Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "evidenceReportVersion", "flowName", "target", "evidence", "missingEvidence"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "evidenceReportVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "target": { "type": "string" },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+    "missingEvidence": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "derivedFrom", "evidenceType", "producer", "schema", "required"],
+      "properties": {
+        "artifact": { "type": "string" },
+        "derivedFrom": { "type": "array", "items": { "type": "string" } },
+        "evidenceType": { "type": "string", "enum": ["source", "derived"] },
+        "producer": { "type": "string" },
+        "schema": { "type": "string" },
+        "required": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/standard-contract-index/1.0/standard-contract-index.schema.json",
+  "title": "Flow Standard Contract Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "contractIndexVersion", "flowName", "target", "contracts", "requiredContracts", "optionalContracts", "publicSchemas", "conformanceVectors"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "contractIndexVersion": { "type": "string" },
+    "flowName": { "type": "string" },
+    "target": { "type": "string" },
+    "contracts": { "type": "array", "items": { "$ref": "#/$defs/contract" } },
+    "requiredContracts": { "type": "array", "items": { "type": "string" } },
+    "optionalContracts": { "type": "array", "items": { "type": "string" } },
+    "publicSchemas": { "type": "array", "items": { "type": "string" } },
+    "conformanceVectors": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "role", "schema", "required", "derived", "pipelineIndex", "introducedIn", "derivedFrom"],
+      "properties": {
+        "artifact": { "type": "string" },
+        "role": { "type": "string" },
+        "schema": { "type": "string" },
+        "required": { "type": "boolean" },
+        "derived": { "type": "boolean" },
+        "pipelineIndex": { "type": "integer", "minimum": 1 },
+        "introducedIn": { "type": "string" },
+        "derivedFrom": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

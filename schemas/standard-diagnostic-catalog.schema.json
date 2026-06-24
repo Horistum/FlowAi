@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/standard-diagnostic-catalog/1.0/standard-diagnostic-catalog.schema.json",
+  "title": "Flow Standard Diagnostic Catalog v1.0",
+  "type": "object",
+  "required": ["standardVersion", "diagnosticCatalogVersion", "codes"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "diagnosticCatalogVersion": { "type": "string" },
+    "codes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "area", "severity", "stability", "usedBy", "description"],
+        "properties": {
+          "code": { "type": "string" },
+          "area": { "type": "string" },
+          "severity": { "enum": ["error", "warning", "info", "invariant"] },
+          "stability": { "enum": ["stable", "experimental", "deprecated"] },
+          "usedBy": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

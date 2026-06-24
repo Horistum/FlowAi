@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: architecture.standard-boundary-no-sdk-runtime
+description: Active Flow standard code must not expose an SDK, plugin lifecycle or runtime executor path.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.4.2.standard-boundary-no-sdk-runtime
+  forbiddenActiveSource:
+    - src/main/kotlin/org/flowlang/runtime
+    - LocalRuntime
+  requiredPublicArtifact:
+    - target-conformance-profile.json
+  forbiddenPublicArtifact:
+    - target-adapter-certification-profile.json

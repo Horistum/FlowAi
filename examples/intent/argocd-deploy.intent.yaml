@@ -1,0 +1,14 @@
+intentVersion: "1.0"
+kind: FlowIntentDocument
+name: argocd-deploy
+systems:
+  - name: argo
+    type: argocd
+    config: { url: secret:ARGOCD_URL, token: secret:ARGOCD_TOKEN }
+workflows:
+  - name: cd
+    kind: DEPLOY
+    steps:
+      - id: deploy
+        capability: DEPLOY
+        params: { engine: argocd, system: argo, app: demo-app, wait: true }

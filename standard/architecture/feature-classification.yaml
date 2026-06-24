@@ -1,0 +1,18 @@
+version: 1.0
+purpose: Classify proposed changes before implementation.
+allowedCategories:
+  - STANDARD_CONTRACT
+  - VALIDATION_STRENGTHENING
+  - SEMANTIC_CORRECTNESS
+  - SAFETY_CORRECTNESS
+  - CONFORMANCE_COVERAGE
+  - PORTABILITY_EXPLANATION
+  - PUBLIC_ARTIFACT_STABILITY
+suspiciousCategories:
+  - RUNTIME_EXECUTION
+  - SDK_CONVENIENCE
+  - PLUGIN_EXTENSION
+  - TARGET_SPECIFIC_HELPER
+  - TEMPLATE_RENDERING
+  - LANGUAGE_SYNTAX_EXPANSION
+rule: Suspicious categories are rejected by default unless an Architecture Decision records the exception and adds a conformance guardrail.

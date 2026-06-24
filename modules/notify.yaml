@@ -1,0 +1,59 @@
+kind: FlowModule
+name: notify
+version: "1.0"
+description: "Notifications"
+systemTypes:
+  notify:
+    input:
+      channel:
+        type: text
+  email:
+    input:
+      channel:
+        type: text
+actions:
+  send:
+    kind: action
+    targetTypes:
+      - notify
+      - email
+    input:
+      subject:
+        type: text
+        required: true
+      body:
+        type: text
+      to:
+        type: text
+      channel:
+        type: text
+    output:
+      ok:
+        type: boolean
+    effects:
+      network:
+        - notify.send
+    safety:
+      destructive: false
+  email:
+    kind: action
+    targetTypes:
+      - notify
+      - email
+    input:
+      to:
+        type: text
+        required: true
+      subject:
+        type: text
+        required: true
+      body:
+        type: text
+    output:
+      ok:
+        type: boolean
+    effects:
+      network:
+        - email.send
+    safety:
+      destructive: false

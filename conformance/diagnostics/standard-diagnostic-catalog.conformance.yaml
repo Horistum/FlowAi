@@ -1,0 +1,21 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: diagnostics.standard-catalog.public-codes
+description: Standard diagnostic catalog must publish stable diagnostic codes used by intent, safety, target, adapter, schema and conformance reports.
+input:
+  command: diagnostics
+expected:
+  requiredCheck: v0.3.13.standard-diagnostic-catalog
+  artifact: standard-diagnostic-catalog.json
+  schema: schemas/standard-diagnostic-catalog.schema.json
+  codes:
+    includes:
+      - MISSING_SYSTEM_CONFIG
+      - SAFETY_REQUIRES_DRY_RUN
+      - TARGET_UNSUPPORTED_CAPABILITY
+      - ADAPTER_CONTRACT_BLOCKED
+      - DIAGNOSTIC_CODE_UNKNOWN
+      - CONFORMANCE_CHECK_FAILED
+  stability: stable
+  usedBy:
+    nonEmpty: true

@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+name: tekton-approval-unsupported
+area: targets
+input:
+  target: tekton
+  intent: ../../examples/intent/build-test-deploy.intent.yaml
+expected:
+  requiredCheck: target.strict.tekton-approval-unsupported
+  status: unsupported
+  issue:
+    feature: approvals
+    level: error
+notes:
+  - Tekton has no native inline manual approval capability in Flow v0.2.0-alpha.

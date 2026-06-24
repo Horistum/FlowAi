@@ -1,0 +1,18 @@
+{
+  "intentVersion" : "1.0",
+  "kind" : "FlowIntentDocument",
+  "name" : "build-test-deploy",
+  "description" : "Canonical build, test, image, approval, deploy and verify intent snapshot.",
+  "inputs" : [ { "name" : "environment", "type" : "option[dev,test,prod]", "required" : true }, { "name" : "version", "type" : "text", "required" : true } ],
+  "systems" : [],
+  "workflows" : [ { "name" : "delivery", "kind" : "DEPLOY", "steps" : [
+    { "id" : "checkout", "capability" : "CHECKOUT" },
+    { "id" : "unit-tests", "capability" : "TEST", "requires" : ["checkout"] },
+    { "id" : "build-image", "capability" : "BUILD_IMAGE", "requires" : ["unit-tests"] },
+    { "id" : "approval", "capability" : "APPROVE", "requires" : ["build-image"] },
+    { "id" : "deploy", "capability" : "DEPLOY", "requires" : ["approval", "build-image"] },
+    { "id" : "verify", "capability" : "VERIFY", "requires" : ["deploy"] }
+  ] } ],
+  "policies" : [ { "name" : "prod-approval", "type" : "APPROVAL", "condition" : "environment == 'prod'", "message" : "Deploy to production?" } ],
+  "failure" : { "notify" : true, "rollback" : true, "stopOnError" : true }
+}

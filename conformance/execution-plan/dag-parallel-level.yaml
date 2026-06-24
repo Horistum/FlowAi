@@ -1,0 +1,11 @@
+kind: FlowConformanceVector
+version: "1.0"
+name: intent-dag-ordered-dependencies
+area: execution-plan
+input:
+  description: Intent step dependencies must preserve deterministic ordering without creating implicit parallel branches.
+expected:
+  requiredCheck: v0.3.2.execution-plan.canonical
+  forbidsImplicitParallel: true
+notes:
+  - This protects Flow from silently turning ordinary intent dependencies into target-level races.

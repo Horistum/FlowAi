@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: targets.condition-expression-readiness
+introducedIn: "0.4.4"
+description: A Flow guard whose expression a target cannot enforce natively blocks execution readiness and is refused at the generation gate, rather than being silently dropped.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.4.4.condition-expression-readiness
+  example:
+    target: tekton
+    condition: "count > 1"
+  readinessStatus: BLOCKED
+  blockerCapability: condition.expression
+  generationGateRefuses: true

@@ -1,0 +1,19 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.standard-compliance.reference-deployment
+description: Standard compliance report must aggregate contract, evidence, integrity and conformance release gates.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.3.19.standard-compliance-report
+  artifact: standard-compliance-report.json
+  schema: schemas/standard-compliance-report.schema.json
+  status: PASS
+  gates:
+    includes:
+      - contract-index.present
+      - artifact-integrity.pass
+      - bundle.contains-compliance
+  failedGates:
+    count: 0

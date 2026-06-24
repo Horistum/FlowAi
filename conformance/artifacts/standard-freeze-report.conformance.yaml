@@ -1,0 +1,20 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.standard-freeze.public-draft
+description: Standard freeze report must mark the public 0.4 draft contracts stable and expose breaking-change rules.
+input:
+  fixture: examples/intent/build-test-deploy.intent.yaml
+  target: jenkins
+expected:
+  requiredCheck: v0.3.20.standard-freeze-report
+  artifact: standard-freeze-report.json
+  schema: schemas/standard-freeze-report.schema.json
+  status: PASS
+  stableContracts:
+    includes:
+      - execution-plan.json
+      - standard-compliance-report.json
+  breakingChangeRules:
+    includes:
+      - add-required-field
+      - drop-required-artifact

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/intent-decision-report/1.0/intent-decision-report.schema.json",
+  "title": "Flow Intent Decision Report v1.0",
+  "type": "object",
+  "required": ["standardVersion", "decisionModelVersion", "intentName", "extractedDecisions", "missingDecisions", "assumptions", "risks", "safetyGates", "loweringDecision", "validForLowering"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "decisionModelVersion": { "type": "string" },
+    "intentName": { "type": "string" },
+    "validForLowering": { "type": "boolean" },
+    "extractedDecisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "field", "value", "source", "confidence"],
+        "properties": {
+          "id": { "type": "string" },
+          "field": { "type": "string" },
+          "value": { "type": "string" },
+          "source": { "type": "string" },
+          "confidence": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "missingDecisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "field", "severity", "question", "reason", "blocksLowering"],
+        "properties": {
+          "id": { "type": "string" },
+          "field": { "type": "string" },
+          "severity": { "enum": ["required", "recommended", "optional"] },
+          "question": { "type": "string" },
+          "reason": { "type": "string" },
+          "blocksLowering": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "field", "value", "reason", "confidence"],
+        "properties": {
+          "id": { "type": "string" },
+          "field": { "type": "string" },
+          "value": { "type": "string" },
+          "reason": { "type": "string" },
+          "confidence": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "message", "mitigated"],
+        "properties": {
+          "id": { "type": "string" },
+          "severity": { "enum": ["low", "medium", "high"] },
+          "message": { "type": "string" },
+          "mitigation": { "type": ["string", "null"] },
+          "mitigated": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "safetyGates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "policy", "status", "reason", "blocksLowering"],
+        "properties": {
+          "id": { "type": "string" },
+          "policy": { "type": "string" },
+          "status": { "enum": ["satisfied", "blocked"] },
+          "reason": { "type": "string" },
+          "blocksLowering": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "loweringDecision": {
+      "type": "object",
+      "required": ["allowed", "reason", "blockingDecisionIds", "blockingSafetyGateIds"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "blockingDecisionIds": { "type": "array", "items": { "type": "string" } },
+        "blockingSafetyGateIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

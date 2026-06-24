@@ -1,0 +1,16 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: artifacts.reference-corpus.public-draft
+description: Reference corpus must cover the core DevOps automation families used by Flow standard conformance.
+input:
+  command: standard-draft
+expected:
+  requiredCheck: v0.3.22.reference-corpus
+  artifact: reference-corpus-index.json
+  schema: schemas/reference-corpus-index.schema.json
+  examples:
+    includes:
+      - deploy-with-approval
+      - database-migration-with-backup
+      - kubernetes-maintenance-dry-run
+      - incident-response

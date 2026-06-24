@@ -1,0 +1,7 @@
+{
+  "astVersion" : "1.0",
+  "sourceVersion" : "1.0",
+  "kind" : "FlowDocument",
+  "flow" : { "type" : "Flow", "name" : "build-test-deploy" },
+  "metadata" : { "createdBy" : "intent-to-ast-planner" }
+}

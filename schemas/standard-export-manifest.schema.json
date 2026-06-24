@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/standard-export-manifest.schema.json",
+  "title": "Flow Standard Export Manifest",
+  "type": "object",
+  "required": ["standardVersion", "manifestVersion", "status", "candidate", "requiredDocuments", "requiredJsonArtifacts", "requiredSchemas", "requiredDirectories", "implementationBoundary", "nonGoals"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "manifestVersion": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "candidate": { "type": "string" },
+    "requiredDocuments": { "type": "array", "items": { "type": "string" } },
+    "requiredJsonArtifacts": { "type": "array", "items": { "type": "string" } },
+    "requiredSchemas": { "type": "array", "items": { "type": "string" } },
+    "requiredDirectories": { "type": "array", "items": { "type": "string" } },
+    "implementationBoundary": { "type": "array", "items": { "type": "string" } },
+    "nonGoals": { "type": "array", "items": { "type": "string" } },
+    "acceptanceCriteria": { "type": "array", "items": { "type": "string" } },
+    "releaseGateChecks": { "type": "array", "items": { "type": "string" } },
+    "evidenceArtifacts": { "type": "array", "items": { "type": "string" } },
+    "selfVerificationCommands": { "type": "array", "items": { "type": "string" } },
+    "bundleVerificationChecks": { "type": "array", "items": { "type": "string" } },
+    "verificationInputs": { "type": "array", "items": { "type": "string" } }
+  }
+}

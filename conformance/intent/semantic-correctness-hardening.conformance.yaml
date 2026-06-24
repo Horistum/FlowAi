@@ -1,0 +1,18 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.semantic-correctness-hardening
+description: Adversarial free-text normalization must not turn temporal, pronominal or quantifier words into concrete entities.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.4.1.semantic-correctness-hardening
+  normalization:
+    mustAskRequiredClarificationFor:
+      - "Backup now. -> entities.backup.subject"
+      - "Deploy now. -> entities.application.name"
+      - "Run kubernetes maintenance daily. -> entities.kubernetes.scope"
+      - "Sync from here to there. -> entities.source/entities.destination"
+      - "Prune everything. -> entities.cleanup.resource"
+  targetExpressions:
+    unsupportedOperatorsMustFail:
+      - matches

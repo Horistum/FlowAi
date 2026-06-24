@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/conformance-vector-index.schema.json",
+  "title": "Flow Conformance Vector Index",
+  "type": "object",
+  "required": [
+    "standardVersion",
+    "indexVersion",
+    "status",
+    "vectorCount",
+    "entries",
+    "requiredChecksFromVectors",
+    "vectorsMissingRequiredCheck",
+    "checksMissingFromRunner",
+    "releaseProfileChecksMissingVector"
+  ],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "indexVersion": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "vectorCount": { "type": "integer" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "area", "id", "introducedIn", "requiredCheck", "hasRequiredCheck"],
+        "properties": {
+          "path": { "type": "string" },
+          "area": { "type": "string" },
+          "id": { "type": "string" },
+          "introducedIn": { "type": "string" },
+          "requiredCheck": { "type": "string" },
+          "hasRequiredCheck": { "type": "boolean" }
+        }
+      }
+    },
+    "requiredChecksFromVectors": { "type": "array", "items": { "type": "string" } },
+    "vectorsMissingRequiredCheck": { "type": "array", "items": { "type": "string" } },
+    "checksMissingFromRunner": { "type": "array", "items": { "type": "string" } },
+    "releaseProfileChecksMissingVector": { "type": "array", "items": { "type": "string" } }
+  }
+}

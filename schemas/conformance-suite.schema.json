@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/conformance-suite/1.0/conformance-suite.schema.json",
+  "title": "Flow Conformance Suite",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "conformanceSuiteVersion", "suite", "vectors", "requiredChecks", "referenceCorpus", "negativeCorpus"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "conformanceSuiteVersion": { "type": "string" },
+    "suite": { "type": "string" },
+    "vectors": { "type": "array", "items": { "type": "string" } },
+    "requiredChecks": { "type": "array", "items": { "type": "string" } },
+    "referenceCorpus": { "type": "string" },
+    "negativeCorpus": { "type": "string" }
+  }
+}

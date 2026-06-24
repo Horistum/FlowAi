@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/public-standard-surface.schema.json",
+  "title": "Flow Public Standard Surface",
+  "type": "object",
+  "required": ["standardVersion", "surfaceVersion", "status", "entries", "stableArtifacts", "requiredChangeGates"],
+  "properties": {
+    "standardVersion": { "type": "string" },
+    "surfaceVersion": { "type": "string" },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["artifact", "schema", "stability", "area", "introducedIn", "changeGate"],
+        "properties": {
+          "artifact": { "type": "string" },
+          "schema": { "type": "string" },
+          "stability": { "enum": ["stable", "draft", "experimental", "internal"] },
+          "area": { "type": "string" },
+          "introducedIn": { "type": "string" },
+          "changeGate": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "stableArtifacts": { "type": "array", "items": { "type": "string" } },
+    "draftArtifacts": { "type": "array", "items": { "type": "string" } },
+    "experimentalArtifacts": { "type": "array", "items": { "type": "string" } },
+    "internalArtifacts": { "type": "array", "items": { "type": "string" } },
+    "requiredChangeGates": { "type": "array", "items": { "type": "string" } }
+  }
+}

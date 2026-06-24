@@ -1,0 +1,180 @@
+kind: FlowTargetRegistry
+version: "1.0"
+description: Built-in target capability registry for Flow v0.4.4.
+targets:
+  - name: local
+    description: Reference local target used to validate plan semantics before platform generation.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: supported
+      match: supported
+      retry: supported
+      approvals: partial
+      errorHandlers: supported
+      artifacts: partial
+      secrets: partial
+      nativeRuntime: supported
+    features:
+      approval.inline: partial
+      approval.manual: partial
+      parallel.dag: supported
+      retry.task: supported
+      errorHandlers.finally: supported
+      secrets.runtime: partial
+      rollback.native: partial
+      cron.schedule: partial
+      safety.destructiveOperation: partial
+    notes:
+      - Manual approvals require an interactive or external gate when running locally.
+
+  - name: jenkins
+    description: Jenkins Pipeline generator target. Good scripted support, weaker portability.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: supported
+      match: supported
+      retry: supported
+      approvals: supported
+      errorHandlers: supported
+      artifacts: supported
+      secrets: supported
+      nativeRuntime: supported
+    features:
+      approval.inline: supported
+      approval.manual: supported
+      parallel.dag: supported
+      retry.task: supported
+      errorHandlers.finally: supported
+      secrets.runtime: supported
+      artifacts.uploadDownload: supported
+      rollback.native: supported
+      cron.schedule: supported
+      safety.destructiveOperation: supported
+      kubernetes.api: supported
+      container.image: supported
+      notification.send: supported
+
+  - name: github-actions
+    description: GitHub Actions generator target. Good for simple CI/CD, limited dynamic control-flow semantics.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: partial
+      match: partial
+      retry: partial
+      approvals: supported
+      errorHandlers: partial
+      artifacts: supported
+      secrets: supported
+      nativeRuntime: partial
+    features:
+      approval.inline: partial
+      approval.manual: partial
+      approval.environmentGate: supported
+      parallel.dag: supported
+      retry.task: partial
+      loops.dynamic: partial
+      errorHandlers.finally: partial
+      secrets.runtime: supported
+      artifacts.uploadDownload: supported
+      rollback.native: partial
+      cron.schedule: supported
+      safety.destructiveOperation: partial
+      container.image: supported
+      notification.send: supported
+    notes:
+      - Approvals are normally modeled through protected environments, not inline workflow syntax.
+
+  - name: tekton
+    description: Tekton Pipelines target. Strong Kubernetes-native task model, limited dynamic loops and manual gates.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: partial
+      match: partial
+      retry: partial
+      approvals: unsupported
+      errorHandlers: partial
+      artifacts: partial
+      secrets: supported
+      nativeRuntime: partial
+    features:
+      approval.inline: unsupported
+      approval.manual: unsupported
+      approval.externalGate: partial
+      parallel.dag: supported
+      retry.task: partial
+      loops.dynamic: partial
+      errorHandlers.finally: partial
+      secrets.runtime: supported
+      artifacts.workspace: partial
+      rollback.native: unsupported
+      cron.schedule: partial
+      safety.destructiveOperation: partial
+      kubernetes.api: supported
+      container.image: supported
+
+  - name: argo-workflows
+    description: Argo Workflows target. Strong DAG, artifacts and suspend support.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: partial
+      match: partial
+      retry: supported
+      approvals: partial
+      errorHandlers: supported
+      artifacts: supported
+      secrets: supported
+      nativeRuntime: partial
+    features:
+      approval.inline: partial
+      approval.manual: partial
+      approval.suspend: supported
+      parallel.dag: supported
+      retry.task: supported
+      loops.dynamic: partial
+      errorHandlers.finally: supported
+      secrets.runtime: supported
+      artifacts.uploadDownload: supported
+      rollback.native: partial
+      cron.schedule: supported
+      safety.destructiveOperation: partial
+      kubernetes.api: supported
+    notes:
+      - Manual gates are typically represented with suspend templates.
+
+  - name: azure-devops
+    description: Azure DevOps Pipelines target. Strong stage/job model, platform-specific approvals/checks.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: partial
+      match: partial
+      retry: partial
+      approvals: supported
+      errorHandlers: partial
+      artifacts: supported
+      secrets: supported
+      nativeRuntime: partial
+    features:
+      approval.inline: partial
+      approval.manual: partial
+      approval.environmentGate: supported
+      parallel.dag: supported
+      retry.task: partial
+      loops.dynamic: partial
+      errorHandlers.finally: partial
+      secrets.runtime: supported
+      artifacts.uploadDownload: supported
+      rollback.native: partial
+      cron.schedule: supported
+      safety.destructiveOperation: partial

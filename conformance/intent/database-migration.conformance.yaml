@@ -1,0 +1,16 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: intent.valid.database-migration
+description: Database migration scenario must normalize to DATABASE_MIGRATE and require explicit database, backup and rollback decisions.
+input:
+  text: Run database migration for orders database to version 2026.06, create backup first, require approval, rollback on failure and verify schema after migration.
+expected:
+  requiredCheck: v0.3.1.scenario-packs
+  scenario: database-migration
+  capabilities:
+    - BACKUP
+    - APPROVE
+    - DATABASE_MIGRATE
+    - VALIDATE
+    - ROLLBACK
+  lowering: valid

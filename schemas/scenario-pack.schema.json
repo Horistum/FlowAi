@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/scenario-pack.schema.json",
+  "title": "Flow Scenario Pack Definition",
+  "type": "object",
+  "required": ["id", "title", "category", "maturity", "description", "triggers", "capabilities"],
+  "properties": {
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "category": { "type": "string" },
+    "maturity": { "type": "string" },
+    "description": { "type": "string" },
+    "triggers": { "type": "array", "items": { "type": "string" } },
+    "capabilities": { "type": "array", "items": { "type": "string" } },
+    "requiredEntities": { "type": "array", "items": { "type": "string" } },
+    "optionalEntities": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "exampleRequests": { "type": "array", "items": { "type": "string" } }
+  }
+}

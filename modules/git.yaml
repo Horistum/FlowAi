@@ -1,0 +1,38 @@
+kind: FlowModule
+name: git
+version: "1.0"
+description: "Git source control"
+systemTypes:
+  git:
+    input:
+      url:
+        type: text
+        sensitive: false
+      branch:
+        type: text
+actions:
+  checkout:
+    kind: action
+    targetTypes:
+      - git
+    input:
+      branch:
+        type: text
+      url:
+        type: text
+      depth:
+        type: number
+    output:
+      ok:
+        type: boolean
+      path:
+        type: text
+    effects:
+      reads:
+        - git.repository
+      filesystem:
+        - workspace.write
+    safety:
+      destructive: false
+    retry:
+      supported: true

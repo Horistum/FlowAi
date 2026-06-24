@@ -1,0 +1,21 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.required-clarification-contract.v062
+introducedIn: "0.6.2"
+description: Critical missing decisions must be represented as blocking required clarifications or safety rejections before lowering.
+input:
+  command: conformance
+expected:
+  requiredCheck: v0.6.2.required-clarification-contract
+  standardVersion: "0.7.5"
+  fields:
+    includes:
+      - entities.application.name
+      - entities.environment
+      - safety.backup
+      - safety.cleanup.retention
+      - approval.owner
+      - safety.maintenance.window
+      - entities.secret.name
+      - entities.certificate
+

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/compatibility-report/1.0/compatibility-report.schema.json",
+  "title": "Flow Target Compatibility Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["target", "status", "issues"],
+  "properties": {
+    "target": { "type": "string" },
+    "status": { "type": "string" },
+    "hasErrors": { "type": "boolean" },
+    "hasWarnings": { "type": "boolean" },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["level", "target", "nodeId", "feature", "message"],
+        "properties": {
+          "level": { "type": "string" },
+          "target": { "type": "string" },
+          "nodeId": { "type": "string" },
+          "feature": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}
