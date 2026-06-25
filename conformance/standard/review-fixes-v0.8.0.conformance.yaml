@@ -1,0 +1,15 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.review-fixes-v0.8.0
+introducedIn: "0.8.0"
+area: standard
+summary: Review fixes are covered by unit regressions and scenario catalog conformance.
+expected:
+  status: PASS
+  requiredCheck: scenario-packs.catalog
+  standardVersion: "0.7.6"
+  invariants:
+    - deploy example has explicit app identity
+    - builtin url regex is slash-safe in Jenkins Groovy
+    - result member interpolation is not rewritten to params
+    - scenario pack quality analyzer has regression tests
