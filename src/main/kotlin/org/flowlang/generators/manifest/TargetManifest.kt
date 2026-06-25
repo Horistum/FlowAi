@@ -211,7 +211,7 @@ private fun PlanNode.toTargetJobs(out: MutableList<TargetJob>, condition: String
         }
         is ParallelGroupNode -> branches.flatMap { it.steps }.forEach { it.toTargetJobs(out, condition, targetName) }
         is RetryGroupNode -> body.forEach { it.toTargetJobs(out, condition, targetName) }
-        is TryPlanNode -> { body.forEach { it.toTargetJobs(out, condition, targetName) }; errorHandler.forEach { it.toTargetJobs(out, condition, targetName) } }
+        is TryPlanNode -> { body.forEach { it.toTargetJobs(out, condition, targetName) }; errorHandler.forEach { it.toTargetJobs(out, condition) } }
         is LoopNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial"))
         is MatchPlanNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial"))
         is DataOpNode, is ControlNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition))
@@ -355,7 +355,7 @@ private fun standardExecuteCommand(task: TaskNode, targetName: String): String {
 }
 
 private fun targetInterpolated(value: String, targetName: String): String =
-    Regex("""\$\{([A-Za-z_][A-Za-z0-9_.-]*)}""").replace(value) { match ->
+    Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*)}""").replace(value) { match ->
         val name = match.groupValues[1]
         when (targetName) {
             "jenkins" -> "\${params.$name}"
@@ -367,7 +367,7 @@ private fun targetInterpolated(value: String, targetName: String): String =
 
 private fun combineConditions(a: String?, b: String): String = if (a.isNullOrBlank()) b else "($a) and ($b)"
 
-private fun mapOfNotNull(vararg pairs: Pair<String, String?>): Map<String, String> = pairs.mapNotNull { (k, v) -> v?.takeIf { it.isNotBlank() }?.let { k to it } }.toMap()
+private fun mapOfNotNull(vararg pairs: Pair<String, String?>): Map<String, String> = pairs.mapNotNull { (k, v) -> v?.takeIf { it.isNotBlank() }?.let { k to v } }.toMap()
 
 internal fun sanitizeId(value: String): String = value.lowercase().replace(Regex("[^a-z0-9_-]+"), "-").trim('-').ifBlank { "flow-job" }
 
