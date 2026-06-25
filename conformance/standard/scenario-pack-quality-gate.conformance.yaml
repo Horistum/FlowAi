@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.scenario-pack-quality-gate
+introducedIn: "0.8.0"
+area: standard
+summary: Scenario pack quality analysis is executed by the conformance run.
+expected:
+  status: PASS
+  requiredCheck: v0.8.0.scenario-pack-quality-gate
+  standardVersion: "0.7.6"
