@@ -53,7 +53,7 @@ class ConformanceVectorIndexBuilder(private val rootDir: File = File(".")) {
         }.sortedBy { it.path }
 
         val requiredChecks = entries.mapNotNull { it.requiredCheck.ifBlank { null } }.distinct().sorted()
-        val runnerSet = runnerChecks.toSet()
+        val runnerSet = (runnerChecks + ConformanceQualityGates.checkNames).toSet()
         val releaseSet = releaseProfileChecks.toSet()
         val missingRequired = entries.filterNot { it.hasRequiredCheck }.map { it.path }.sorted()
         val missingRunner = if (runnerSet.isEmpty()) emptyList() else requiredChecks.filterNot { it in runnerSet }.sorted()
