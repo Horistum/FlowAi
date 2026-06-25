@@ -37,7 +37,8 @@ data class ConformanceManifestReport(
     val requiredArtifacts: List<String>
 )
 
-data class ConformanceSummary(val checks: List<ConformanceCheck>) {
+class ConformanceSummary(sourceChecks: List<ConformanceCheck>) {
+    val checks: List<ConformanceCheck> = ConformanceQualityGates.appendToFullRunnerSummary(sourceChecks)
     val passed: Int get() = checks.count { it.passed }
     val failed: Int get() = checks.count { !it.passed }
     val ok: Boolean get() = failed == 0
