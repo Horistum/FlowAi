@@ -1,0 +1,3 @@
+package org.flowlang.conformance
+
+object ConformanceQualityGatesPlaceholder
