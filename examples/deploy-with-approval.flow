@@ -62,6 +62,7 @@ flow "deploy-with-approval" {
     }
 
     kubernetes.deploy cluster {
+      app: app
       namespace: namespace
       image: image.tag
     } -> deployResult {
