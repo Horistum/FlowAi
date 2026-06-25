@@ -10,8 +10,8 @@ object ConformanceQualityGates {
         if (!isFullRunnerSummary(sourceChecks)) return sourceChecks
         val names = sourceChecks.map { it.name }.toSet()
         val result = sourceChecks.toMutableList()
-        if (!names.contains(CORE_CONTRACT_CHECK)) result.add(ConformanceCheck(CORE_CONTRACT_CHECK, true))
-        if (!names.contains(SCENARIO_PACK_QUALITY_GATE)) result.add(ConformanceCheck(SCENARIO_PACK_QUALITY_GATE, true))
+        if (!names.contains(CORE_CONTRACT_CHECK)) result.add(CoreQualityCheck.run())
+        if (!names.contains(SCENARIO_PACK_QUALITY_GATE)) result.add(ScenarioQualityCheck.run())
         return result
     }
 
