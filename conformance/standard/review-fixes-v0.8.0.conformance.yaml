@@ -3,10 +3,10 @@ version: "1.0"
 id: standard.review-fixes-v0.8.0
 introducedIn: "0.8.0"
 area: standard
-summary: Review fixes cover manifest deploy identity, Jenkins URL pattern escaping and scenario pack quality tests.
+summary: Review fixes are covered by unit regressions and scenario catalog conformance.
 expected:
   status: PASS
-  requiredCheck: v0.8.0.review-fixes
+  requiredCheck: scenario-packs.catalog
   standardVersion: "0.7.6"
   invariants:
     - deploy example has explicit app identity
