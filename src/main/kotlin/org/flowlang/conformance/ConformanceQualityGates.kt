@@ -14,19 +14,26 @@ object ConformanceQualityGates {
         scenarioPackQualityCheck()
     )
 
-    private fun coreContractCheck(): ConformanceCheck = runCheck(ConformanceQualityGateNames.CORE_CONTRACT_CHECK) {
+    private fun coreContractCheck(): ConformanceCheck = runGate(ConformanceQualityGateNames.CORE_CONTRACT_CHECK) {
         val report = CoreContractCheck.report()
         require(report.status == "PASS") { report.issues.joinToString() }
         require(report.requiredArtifacts.all { it in report.stableArtifacts }) { "Core contract required artifacts are not fully stable." }
         require(report.candidateChecks.isNotEmpty()) { "Standard candidate checks must not be empty." }
     }
 
-    private fun scenarioPackQualityCheck(): ConformanceCheck = runCheck(ConformanceQualityGateNames.SCENARIO_PACK_QUALITY) {
+    private fun scenarioPackQualityCheck(): ConformanceCheck = runGate(ConformanceQualityGateNames.SCENARIO_PACK_QUALITY) {
         val report = ScenarioPackQualityAnalyzer().analyze()
         require(report.status == "PASS") { report.issues.joinToString { it.code + ":" + it.packId + ":" + it.message } }
         require(report.packCount > 0) { "Scenario pack registry must not be empty." }
         require(report.metadataCompletePackCount == report.packCount) { "Every scenario pack must have complete metadata." }
         require(report.usefulExamplePackCount == report.packCount) { "Every scenario pack must have at least one useful example." }
         require(report.requiredBlockedCapabilities == report.coveredBlockedCapabilities) { "Every risk-sensitive capability must have blocked corpus coverage." }
+    }
+
+    private fun runGate(name: String, body: () -> Unit): ConformanceCheck = try {
+        body()
+        ConformanceCheck(name, true)
+    } catch (t: Throwable) {
+        ConformanceCheck(name, false, t.message ?: t::class.simpleName.orEmpty())
     }
 }
