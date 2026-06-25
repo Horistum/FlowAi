@@ -65,13 +65,15 @@ class GroovyExpr(private val inputs: Set<String>) {
 
     /** Resolves Flow builtin pattern names to explicit Groovy regex fragments. */
     private fun patternFor(node: ExpressionNode): String = when (node) {
-        is ReferenceNode -> builtinPattern(node.path.singleOrNull())
+        is ReferenceNode -> builtinPattern(node.path.singleOrNull())?.let(::slashRegex)
             ?: error("Unsupported Jenkins matches pattern reference '${node.path.joinToString(".")}'. Use a string regex literal or a Flow builtin pattern.")
-        is IdentifierLiteralNode -> builtinPattern(node.value)
+        is IdentifierLiteralNode -> builtinPattern(node.value)?.let(::slashRegex)
             ?: error("Unsupported Jenkins matches pattern '${node.value}'. Use a string regex literal or a Flow builtin pattern.")
-        is StringLiteralNode -> node.value.replace("/", "\\/")
+        is StringLiteralNode -> slashRegex(node.value)
         else -> error("Unsupported Jenkins matches right-hand expression '${node.type}'. Use a string regex literal or a Flow builtin pattern.")
     }
+
+    private fun slashRegex(value: String): String = value.replace("/", "\\/")
 
     private fun builtinPattern(name: String?): String? = when (name) {
         "email" -> "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
