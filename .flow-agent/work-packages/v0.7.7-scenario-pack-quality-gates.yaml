@@ -1,0 +1,13 @@
+version: "0.7.7"
+name: "Scenario Pack Quality Gates"
+objective: "Add measurable scenario-pack quality checks for metadata, examples, duplicate identifiers and negative coverage."
+status: "in-progress"
+scope:
+  include:
+    - "Scenario pack quality analyzer."
+    - "Unit tests for valid and invalid scenario pack quality paths."
+    - "Public conformance vector tied to the existing scenario pack catalog check."
+validationPlan:
+  - "Run Flow CI compile and tests."
+  - "Run Flow conformance."
+nextVersion: "0.8.0"
