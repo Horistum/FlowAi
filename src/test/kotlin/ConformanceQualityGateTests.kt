@@ -6,9 +6,8 @@ import org.flowlang.conformance.ConformanceQualityGates
 
 class ConformanceQualityGateTests {
     @Test
-    fun b2QualityGatesExposeStableCheckNamesAndPass() {
-        val checks = ConformanceQualityGates.run()
-        val names = checks.map { it.name }
+    fun b2QualityGatesExposeStableCheckNames() {
+        val names = ConformanceQualityGates.run().map { it.name }
 
         assertEquals(
             listOf(
@@ -17,6 +16,13 @@ class ConformanceQualityGateTests {
             ),
             names
         )
-        assertTrue(checks.all { it.passed }, checks.joinToString { it.name + ":" + (it.message ?: "") })
+    }
+
+    @Test
+    fun b2QualityGatesPassOnCurrentRepositoryState() {
+        val checks = ConformanceQualityGates.run()
+        val failures = checks.filterNot { it.passed }
+
+        assertTrue(failures.isEmpty(), failures.joinToString { it.name + ":" + (it.message ?: "") })
     }
 }
