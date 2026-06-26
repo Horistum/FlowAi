@@ -166,6 +166,7 @@ class ConformanceRunner(
         checks += checkV073StandardModelProjectionCoherence()
         checks += checkV074ArchitectureDeltaAnalyzer()
         checks += checkV075PurposeCoverageRatio()
+        checks += ConformanceQualityGates.run()
         return ConformanceSummary(checks)
     }
 
@@ -1932,7 +1933,9 @@ class ConformanceRunner(
         "v0.7.1.architecture-debt-cleanup-and-drift-enforcement",
         "v0.7.3.standard-model-projection-coherence",
         "v0.7.4.architecture-delta-analyzer",
-        "v0.7.5.purpose-coverage-ratio"
+        "v0.7.5.purpose-coverage-ratio",
+        ConformanceQualityGateNames.CORE_CONTRACT_CHECK,
+        ConformanceQualityGateNames.SCENARIO_PACK_QUALITY
     )
 
     private fun allRunnerChecksForVectorIndex(): List<String> =
