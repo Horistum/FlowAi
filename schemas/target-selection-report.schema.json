@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/target-selection-report/1.0/target-selection-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/target-selection-report/1.0/target-selection-report.schema.json",
   "title": "Flow Target Selection Report v1.0",
   "type": "object",
   "required": [

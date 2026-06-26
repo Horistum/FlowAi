@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/standard-diagnostic-catalog/1.0/standard-diagnostic-catalog.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/standard-diagnostic-catalog/1.0/standard-diagnostic-catalog.schema.json",
   "title": "Flow Standard Diagnostic Catalog v1.0",
   "type": "object",
   "required": ["standardVersion", "diagnosticCatalogVersion", "codes"],

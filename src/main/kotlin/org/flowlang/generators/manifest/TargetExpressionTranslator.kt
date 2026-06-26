@@ -42,7 +42,7 @@ object TargetExpressionTranslator {
         is MemberExpressionNode -> renderGitHub(e.target, inputs) + "." + e.member
         is IndexExpressionNode -> "${renderGitHub(e.target, inputs)}[${renderGitHub(e.index, inputs)}]"
         is TemplateStringNode -> "'" + e.parts.joinToString("") { part -> if (part is StringLiteralNode) part.value else "${'$'}{{ ${renderGitHub(part, inputs)} }}" }.replace("'", "''") + "'"
-        is ListLiteralNode -> e.items.joinToString(", ", "fromJSON('[", "]')") { renderGitHub(it, inputs).trim('\'') }
+        is ListLiteralNode -> renderGitHubJsonArray(e, inputs)
         is MapLiteralNode -> unsupported("GitHub Actions conditions do not support Flow map literals.")
         is CallExpressionNode -> when (e.function) {
             "secret" -> e.args.firstOrNull()?.let { renderGitHub(it, inputs).trim('\'').let { name -> "secrets.$name" } } ?: "null"
@@ -73,6 +73,26 @@ object TargetExpressionTranslator {
     }
 
 
+
+
+    private fun renderGitHubJsonArray(node: ListLiteralNode, inputs: Set<String>): String {
+        val json = node.items.joinToString(",", "[", "]") { githubJsonValue(it, inputs) }
+        return "fromJSON('${json.replace("'", "''")}')"
+    }
+
+    private fun githubJsonValue(node: ExpressionNode, inputs: Set<String>): String = when (node) {
+        is StringLiteralNode -> jsonString(node.value)
+        is IdentifierLiteralNode -> jsonString(node.value)
+        is NumberLiteralNode -> if (node.isInteger) node.value.toLong().toString() else node.value.toString()
+        is BooleanLiteralNode -> node.value.toString()
+        is NullLiteralNode -> "null"
+        else -> jsonString(renderGitHub(node, inputs).trim('\''))
+    }
+
+    private fun jsonString(value: String): String = "\"" + value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n") + "\""
 
     fun tektonWhen(condition: String, inputs: List<TargetInput>): String? = try {
         val parsed = parse(condition)

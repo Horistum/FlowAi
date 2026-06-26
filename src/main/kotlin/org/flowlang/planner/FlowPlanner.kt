@@ -82,10 +82,10 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                 resultName = stmt.result?.name,
                 dependsOn = explicitDeps)
         }
-        is TransformNode -> { ctx.results[stmt.target] = ""; DataOpNode(ctx.id("transform"), "Transform", stmt.target, ExpressionRenderer.render(stmt.source)) }
-        is AggregateNode -> { ctx.results[stmt.target] = ""; DataOpNode(ctx.id("aggregate"), "Aggregate", stmt.target, ExpressionRenderer.render(stmt.source)) }
+        is TransformNode -> { val id = ctx.id("transform"); ctx.results[stmt.target] = id; DataOpNode(id, "Transform", stmt.target, ExpressionRenderer.render(stmt.source)) }
+        is AggregateNode -> { val id = ctx.id("aggregate"); ctx.results[stmt.target] = id; DataOpNode(id, "Aggregate", stmt.target, ExpressionRenderer.render(stmt.source)) }
         is ValidateNode -> DataOpNode(ctx.id("validate"), "Validate", null, ExpressionRenderer.render(stmt.target))
-        is SetNode -> { ctx.results[stmt.name] = ""; ControlNode(ctx.id("set"), "Set", "${stmt.name} = ${ExpressionRenderer.render(stmt.value)}") }
+        is SetNode -> { val id = ctx.id("set"); ctx.results[stmt.name] = id; ControlNode(id, "Set", "${stmt.name} = ${ExpressionRenderer.render(stmt.value)}") }
         is FailNode -> ControlNode(ctx.id("fail"), "Fail", ExpressionRenderer.render(stmt.message))
         is SkipNode -> ControlNode(ctx.id("skip"), "Skip", ExpressionRenderer.render(stmt.message))
         is ExpectNode -> ControlNode(ctx.id("expect"), "Expect", stmt.expressions.joinToString("; ") { ExpressionRenderer.render(it) })

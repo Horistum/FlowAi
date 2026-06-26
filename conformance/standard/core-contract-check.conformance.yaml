@@ -1,12 +1,12 @@
 kind: FlowConformanceVector
 version: "1.0"
 id: standard.core-contract-check
-introducedIn: "0.8.x"
+introducedIn: "0.8.0"
 area: standard
 summary: Core public contract quality gate must pass through the conformance runner.
 expected:
   status: PASS
-  requiredCheck: v0.8.x.core-contract-check
+  requiredCheck: v0.8.0.core-contract-check
   standardVersion: "0.7.6"
   invariants:
     - required stable artifacts exist

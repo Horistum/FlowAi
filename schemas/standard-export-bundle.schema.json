@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/standard-export-bundle.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/standard-export-bundle.schema.json",
   "title": "Flow Standard Export Bundle",
   "type": "object",
   "required": ["standardVersion", "exportBundleVersion", "status", "command", "requiredDirectories", "requiredFiles", "requiredArtifacts", "packageName"],

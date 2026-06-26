@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/conformance-vector-index.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/conformance-vector-index.schema.json",
   "title": "Flow Conformance Vector Index",
   "type": "object",
   "required": [

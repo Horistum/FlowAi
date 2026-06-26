@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/module/1.2/module.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/module/1.2/module.schema.json",
   "title": "Flow Capability Module Descriptor v1.2 draft",
   "type": "object",
   "required": ["kind", "name", "version"],

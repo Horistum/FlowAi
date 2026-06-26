@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/compatibility-migration-policy.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/compatibility-migration-policy.schema.json",
   "title": "Flow Compatibility and Migration Policy",
   "type": "object",
   "required": ["standardVersion", "policyVersion", "status", "compatibilityRules", "deprecationWindowMinorReleases", "migrationArtifacts", "breakingChangeGate"],

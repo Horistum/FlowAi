@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/target-manifest.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/target-manifest.schema.json",
   "title": "Flow Target Manifest",
   "type": "object",
   "required": ["manifestVersion", "standardVersion", "target", "flowName", "jobs"],

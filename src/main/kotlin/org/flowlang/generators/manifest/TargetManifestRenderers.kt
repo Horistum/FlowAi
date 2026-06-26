@@ -13,11 +13,14 @@ class JenkinsManifestRenderer {
         sb.appendLine("  options { timestamps() }")
         renderJenkinsParameters(manifest, sb)
         sb.appendLine("  stages {")
+        val topLevelErrorHandlers = manifest.jobs.flatMap { it.steps }.filter { it.type == "error-handler" }
         manifest.jobs.forEach { job ->
-            if (job.steps.isEmpty()) renderJenkinsStage(job.name, listOf("echo 'No Flow steps generated'"), sb)
-            else job.steps.forEach { renderJenkinsNode(it, manifest, sb, indent = "    ") }
+            val stageSteps = job.steps.filterNot { it.type == "error-handler" }
+            if (stageSteps.isEmpty() && job.steps.isEmpty()) renderJenkinsStage(job.name, listOf("echo 'No Flow steps generated'"), sb)
+            else stageSteps.forEach { renderJenkinsNode(it, manifest, sb, indent = "    ") }
         }
         sb.appendLine("  }")
+        renderJenkinsPostFailure(topLevelErrorHandlers, manifest, sb)
         sb.appendLine("}")
         return sb.toString()
     }
@@ -60,8 +63,39 @@ class JenkinsManifestRenderer {
                 sb.appendLine("${indent}}")
             }
             "approval" -> renderJenkinsStage(step.name, listOf("input message: ${groovyString(step.params["message"] ?: "Approval required")}"), sb, indent, shell = false)
+            "try" -> renderJenkinsTryStage(step, manifest, sb, indent)
+            "error-handler" -> Unit
             else -> renderJenkinsStage(step.name, step.toShellLines(), sb, indent)
         }
+    }
+
+
+    private fun renderJenkinsTryStage(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        val body = step.children.firstOrNull { it.type == "try-body" }?.children.orEmpty()
+        val handler = step.children.firstOrNull { it.type == "error-handler" }?.children.orEmpty()
+        sb.appendLine("${indent}stage(${groovyString(step.name)}) {")
+        sb.appendLine("${indent}  steps { script {")
+        sb.appendLine("${indent}    try {")
+        body.forEach { renderJenkinsScriptLine(it, manifest, sb, "${indent}      ") }
+        sb.appendLine("${indent}    } catch (flowError) {")
+        sb.appendLine("${indent}      def error = [message: flowError.getMessage()]")
+        handler.forEach { renderJenkinsScriptLine(it, manifest, sb, "${indent}      ") }
+        sb.appendLine("${indent}      throw flowError")
+        sb.appendLine("${indent}    }")
+        sb.appendLine("${indent}  } }")
+        sb.appendLine("${indent}}")
+    }
+
+    private fun renderJenkinsPostFailure(handlers: List<TargetStep>, manifest: TargetManifest, sb: StringBuilder) {
+        if (handlers.isEmpty()) return
+        sb.appendLine("  post {")
+        sb.appendLine("    failure {")
+        sb.appendLine("      script {")
+        sb.appendLine("        def error = [message: currentBuild.currentResult]")
+        handlers.flatMap { it.children }.forEach { renderJenkinsScriptLine(it, manifest, sb, "        ") }
+        sb.appendLine("      }")
+        sb.appendLine("    }")
+        sb.appendLine("  }")
     }
 
     private fun renderJenkinsScriptLine(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
@@ -98,7 +132,7 @@ class JenkinsManifestRenderer {
 
     private fun TargetStep.toShellLines(): List<String> = when (type) {
         "action" -> listOf(run ?: "echo Flow: ${module}.${action} on ${target}")
-        "try", "retry", "match", "loop" -> if (children.isEmpty()) listOf("echo 'Flow ${type}: ${name}'") else children.flatMap { it.toShellLines() }
+        "retry", "match", "loop", "try-body" -> if (children.isEmpty()) listOf("echo 'Flow ${type}: ${name}'") else children.flatMap { it.toShellLines() }
         "set", "expect", "validate", "transform", "aggregate" -> listOf("echo 'Flow ${type}: ${params["detail"] ?: name}'")
         else -> listOf(run ?: "echo 'Flow ${type}: ${name}'")
     }
@@ -152,6 +186,13 @@ class GitHubActionsManifestRenderer {
 
     private fun githubJobIf(job: TargetJob, manifest: TargetManifest): String? {
         val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs) }
+        if (job.metadata["errorHandler"] == "true") {
+            val failureNeeds = job.dependsOn.map { dep -> "needs.${sanitizeId(dep)}.result == 'failure'" }
+            val parts = mutableListOf("always()")
+            parts += if (failureNeeds.isEmpty()) "failure()" else "(" + failureNeeds.joinToString(" || ") + ")"
+            if (!own.isNullOrBlank()) parts += "($own)"
+            return parts.joinToString(" && ")
+        }
         val needs = job.dependsOn.map { dep ->
             val safeDep = sanitizeId(dep)
             val isApproval = manifest.jobs.firstOrNull { sanitizeId(it.id) == safeDep }?.metadata?.get("approval") == "true"
@@ -177,7 +218,7 @@ class GitHubActionsManifestRenderer {
             return
         }
         if (step.children.isNotEmpty()) {
-            step.children.forEach { renderGitHubStep(it, manifest, sb) }
+            step.children.filterNot { it.type == "error-handler" }.forEach { renderGitHubStep(it, manifest, sb) }
             return
         }
         sb.appendLine("      - name: ${yamlScalar(step.name)}")

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/scenario-pack.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/scenario-pack.schema.json",
   "title": "Flow Scenario Pack Definition",
   "type": "object",
   "required": ["id", "title", "category", "maturity", "description", "triggers", "capabilities"],

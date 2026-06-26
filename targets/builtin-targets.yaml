@@ -1,6 +1,6 @@
 kind: FlowTargetRegistry
 version: "1.0"
-description: Built-in target capability registry for Flow v0.4.4.
+description: Built-in target capability registry for the current Flow capability-contract line.
 targets:
   - name: local
     description: Reference local target used to validate plan semantics before platform generation.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/adapter-diagnostics/1.0/adapter-diagnostics.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/adapter-diagnostics/1.0/adapter-diagnostics.schema.json",
   "title": "Flow Adapter Diagnostics v1.0",
   "type": "object",
   "required": ["standardVersion", "diagnosticsVersion", "flowName", "target", "status", "generationAllowed", "issues"],

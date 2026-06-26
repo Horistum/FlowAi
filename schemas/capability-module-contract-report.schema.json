@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/capability-module-contract-report/1.0/capability-module-contract-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/capability-module-contract-report/1.0/capability-module-contract-report.schema.json",
   "title": "Flow Capability Module Contract Report v1.0",
   "type": "object",
   "required": ["standardVersion", "moduleContractVersion", "totals", "modules", "issues", "valid"],

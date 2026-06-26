@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/intent-decision-report/1.0/intent-decision-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/intent-decision-report/1.0/intent-decision-report.schema.json",
   "title": "Flow Intent Decision Report v1.0",
   "type": "object",
   "required": ["standardVersion", "decisionModelVersion", "intentName", "extractedDecisions", "missingDecisions", "assumptions", "risks", "safetyGates", "loweringDecision", "validForLowering"],

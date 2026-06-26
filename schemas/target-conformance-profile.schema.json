@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/target-conformance-profile/1.0/target-conformance-profile.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/target-conformance-profile/1.0/target-conformance-profile.schema.json",
   "title": "Flow Target Conformance Profile",
   "type": "object",
   "additionalProperties": false,

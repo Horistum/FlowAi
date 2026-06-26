@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/target-registry.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/target-registry.schema.json",
   "title": "Flow Target Registry",
   "type": "object",
   "required": [

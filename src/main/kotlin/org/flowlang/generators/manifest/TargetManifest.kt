@@ -189,7 +189,33 @@ internal fun PlanNode.toTargetSteps(targetName: String = "portable-shell"): List
     ))
     is MatchPlanNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "match", params = mapOf("source" to source), children = cases.flatMap { c -> c.steps.flatMap { it.toTargetSteps(targetName) } } + errorCase.flatMap { it.toTargetSteps(targetName) } + defaultSteps.flatMap { it.toTargetSteps(targetName) }, metadata = mapOf("sourceNodeKind" to kind, "supportLevel" to "partial")))
     is RetryGroupNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "retry", params = mapOf("max" to max.toString(), "delay" to delay, "backoff" to backoff), children = body.flatMap { it.toTargetSteps(targetName) }, metadata = mapOf("sourceNodeKind" to kind)))
-    is TryPlanNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "try", children = body.flatMap { it.toTargetSteps(targetName) } + errorHandler.flatMap { it.toTargetSteps(targetName) }, metadata = mapOf("sourceNodeKind" to kind, "errorHandlerCount" to errorHandler.size.toString())))
+    is TryPlanNode -> {
+        val bodyStep = TargetStep(
+            id = sanitizeId("${id}_body"),
+            name = "$id body",
+            type = "try-body",
+            children = body.flatMap { it.toTargetSteps(targetName) },
+            metadata = mapOf("sourceNodeKind" to kind, "tryRole" to "body")
+        )
+        val handlerStep = TargetStep(
+            id = sanitizeId("${id}_handler"),
+            name = "$id error handler",
+            type = "error-handler",
+            children = errorHandler.flatMap { it.toTargetSteps(targetName) },
+            metadata = mapOf("sourceNodeKind" to kind, "tryRole" to "errorHandler")
+        )
+        if (body.isEmpty()) {
+            listOf(handlerStep)
+        } else {
+            listOf(TargetStep(
+                id = sanitizeId(id),
+                name = id,
+                type = "try",
+                children = listOf(bodyStep, handlerStep),
+                metadata = mapOf("sourceNodeKind" to kind, "errorHandlerCount" to errorHandler.size.toString())
+            ))
+        }
+    }
     is ApprovalNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "approval", dependsOn = dependsOn.map(::sanitizeId), params = mapOf("mode" to mode) + (message?.let { mapOf("message" to it) } ?: emptyMap()), metadata = mapOf("sourceNodeKind" to kind, "resultName" to (resultName ?: "")).filterValues { it.isNotBlank() }))
     is DataOpNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("target" to (target ?: ""), "detail" to (detail ?: "")).filterValues { it.isNotBlank() }, metadata = mapOf("sourceNodeKind" to kind)))
     is ControlNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("detail" to (detail ?: "")).filterValues { it.isNotBlank() }, metadata = mapOf("sourceNodeKind" to kind)))
@@ -211,7 +237,23 @@ private fun PlanNode.toTargetJobs(out: MutableList<TargetJob>, condition: String
         }
         is ParallelGroupNode -> branches.flatMap { it.steps }.forEach { it.toTargetJobs(out, condition, targetName) }
         is RetryGroupNode -> body.forEach { it.toTargetJobs(out, condition, targetName) }
-        is TryPlanNode -> { body.forEach { it.toTargetJobs(out, condition, targetName) }; errorHandler.forEach { it.toTargetJobs(out, condition) } }
+        is TryPlanNode -> {
+            val previousJobIds = out.map { it.id }
+            val bodyJobs = mutableListOf<TargetJob>()
+            body.forEach { it.toTargetJobs(bodyJobs, condition, targetName) }
+            out += bodyJobs
+            if (targetName != "tekton") {
+                val guardDependencies = bodyJobs.map { it.id }.ifEmpty { previousJobIds }
+                val handlerJobs = mutableListOf<TargetJob>()
+                errorHandler.forEach { it.toTargetJobs(handlerJobs, condition, targetName) }
+                out += handlerJobs.map { job ->
+                    job.copy(
+                        dependsOn = (job.dependsOn + guardDependencies).distinct(),
+                        metadata = job.metadata + ("errorHandler" to "true")
+                    )
+                }
+            }
+        }
         is LoopNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial"))
         is MatchPlanNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial"))
         is DataOpNode, is ControlNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition))

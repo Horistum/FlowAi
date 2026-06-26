@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/capability-negotiation-report/1.1/capability-negotiation-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/capability-negotiation-report/1.1/capability-negotiation-report.schema.json",
   "title": "Flow Target Capability Negotiation Report v1.1",
   "type": "object",
   "required": [

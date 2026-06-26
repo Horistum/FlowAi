@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/execution-plan/1.1/execution-plan.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/execution-plan/1.1/execution-plan.schema.json",
   "title": "Flow Execution Plan v1.1",
   "description": "Public, target-neutral execution contract produced after intent/AST validation and before target-specific rendering.",
   "type": "object",

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/compatibility-report/1.0/compatibility-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/1.0/compatibility-report/1.0/compatibility-report.schema.json",
   "title": "Flow Target Compatibility Report",
   "type": "object",
   "additionalProperties": false,
