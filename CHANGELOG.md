@@ -2,6 +2,22 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.8.2 - Target negotiation report
+
+### Added
+
+- Added `TargetNegotiationReportAnalyzer` as an explanation layer over the existing compatibility negotiation model.
+- Added `TargetNegotiationExplanationReport`, `TargetNegotiationExplanation`, `TargetNegotiationRejectionReason` and `TargetNegotiationOutcome`.
+- Added tests for supported, degraded, blocked and runtime-required target outcomes.
+- Added `docs/V0_8_2_TARGET_NEGOTIATION_REPORT.md`.
+- Added `.flow-agent/reports/v0.8.2-release-report.md`.
+- Bumped Gradle package version to `0.8.2` while keeping the active public standard version at `0.7.6`.
+
+### Notes
+
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion, planner change or Flow syntax change was added.
+- The report is explanatory. Planner enforcement is intentionally left for v0.8.3.
+
 ## 0.8.1 - Target capability matrix
 
 ### Added
