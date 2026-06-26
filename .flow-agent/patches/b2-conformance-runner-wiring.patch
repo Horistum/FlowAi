@@ -1,0 +1,65 @@
+diff --git a/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt b/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
+index 1cdf8ea..0000000 100644
+--- a/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
++++ b/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
+@@ -167,6 +167,7 @@ class ConformanceRunner(
+         checks += checkV073StandardModelProjectionCoherence()
+         checks += checkV074ArchitectureDeltaAnalyzer()
+         checks += checkV075PurposeCoverageRatio()
++        checks += ConformanceQualityGates.run()
+         return ConformanceSummary(checks)
+     }
+ 
+@@ -1944,7 +1945,9 @@ class ConformanceRunner(
+         "v0.7.1.architecture-debt-cleanup-and-drift-enforcement",
+         "v0.7.3.standard-model-projection-coherence",
+         "v0.7.4.architecture-delta-analyzer",
+-        "v0.7.5.purpose-coverage-ratio"
++        "v0.7.5.purpose-coverage-ratio",
++        ConformanceQualityGateNames.CORE_CONTRACT_CHECK,
++        ConformanceQualityGateNames.SCENARIO_PACK_QUALITY
+     )
+ 
+     private fun allRunnerChecksForVectorIndex(): List<String> =
+diff --git a/conformance/standard/core-contract-check.conformance.yaml b/conformance/standard/core-contract-check.conformance.yaml
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/conformance/standard/core-contract-check.conformance.yaml
+@@ -0,0 +1,17 @@
++kind: FlowConformanceVector
++version: "1.0"
++id: standard.core-contract-check
++introducedIn: "0.8.x"
++area: standard
++summary: Core public contract quality gate must pass through the conformance runner.
++expected:
++  status: PASS
++  requiredCheck: v0.8.x.core-contract-check
++  standardVersion: "0.7.6"
++  invariants:
++    - required stable artifacts exist
++    - stable artifact ids are unique
++    - standard candidate checks are unique
++    - StandardModel is well formed
+diff --git a/conformance/standard/scenario-pack-quality.conformance.yaml b/conformance/standard/scenario-pack-quality.conformance.yaml
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/conformance/standard/scenario-pack-quality.conformance.yaml
+@@ -0,0 +1,17 @@
++kind: FlowConformanceVector
++version: "1.0"
++id: standard.scenario-pack-quality
++introducedIn: "0.8.x"
++area: standard
++summary: Scenario pack quality gate must pass through the conformance runner.
++expected:
++  status: PASS
++  requiredCheck: v0.8.x.scenario-pack-quality
++  standardVersion: "0.7.6"
++  invariants:
++    - scenario pack ids are unique
++    - scenario pack metadata is complete
++    - scenario pack examples are useful
++    - risk-sensitive capabilities have blocked corpus coverage
