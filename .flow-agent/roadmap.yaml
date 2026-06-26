@@ -64,7 +64,7 @@ roadmap:
     name: "Scenario Pack Quality Gates"
     purpose: "Validate scenario pack consistency, usefulness, safety metadata, and non-decorative coverage."
     type: "quality-gate"
-    status: "next"
+    status: "completed"
     requiredOutcome:
       - "Scenario pack validation rules."
       - "Negative corpus checks."
@@ -75,7 +75,7 @@ roadmap:
     name: "Core Standard Contract Freeze"
     purpose: "Freeze the public core standard contract before target compatibility expansion."
     type: "contract-freeze"
-    status: "planned"
+    status: "completed"
     requiredOutcome:
       - "Frozen core standard contract."
       - "Compatibility policy."
@@ -86,7 +86,7 @@ roadmap:
     name: "Target Capability Matrix"
     purpose: "Define a stable matrix of target capabilities across supported platforms."
     type: "capability-contract"
-    status: "planned"
+    status: "in-progress"
     requiredOutcome:
       - "Capability matrix model."
       - "Target capability definitions."
@@ -97,7 +97,7 @@ roadmap:
     name: "Target Negotiation Report"
     purpose: "Produce reports explaining how intent maps or fails to map to target capabilities."
     type: "capability-negotiation"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "Negotiation report model."
       - "Supported, degraded, and unsupported capability outcomes."

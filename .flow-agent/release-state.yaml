@@ -1,9 +1,9 @@
 project: Flow Core
 stateVersion: 1
 
-currentVersion: "0.7.6"
-currentPackage: "flow-core-prod-v0_7_6_semantic_correctness_hardening_fix2.zip"
-nextExpectedVersion: "0.7.7"
+currentVersion: "0.8.1"
+currentPackage: "flow-core-prod-v0_8_1_target_capability_matrix.zip"
+nextExpectedVersion: "0.8.2"
 activeStandardVersion: "0.7.6"
 
 repositoryRules:
@@ -28,10 +28,10 @@ qualityPrinciples:
   - "Reduce technical debt instead of carrying it forward."
 
 lastKnownValidation:
-  fullOfflineGradle: "passed"
-  targetedCompilation: "passed"
-  conformance: "passed"
+  fullOfflineGradle: "pending-ci"
+  targetedCompilation: "pending-ci"
+  conformance: "pending-ci"
   notes:
-    - "Full offline Gradle tests passed for v0.7.6 semantic-correctness-hardening-fix2."
-    - "Conformance passed for v0.7.6 semantic-correctness-hardening-fix2."
-    - "The release remains within the standardization-layer boundary."
+    - "v0.8.1 introduces the target capability matrix package-level work."
+    - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
+    - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."
