@@ -21,12 +21,17 @@ class FlowArchitectureDeltaAnalyzerTests {
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, delta.currentVersion)
         assertTrue("v0.7.4.architecture-delta-analyzer" in delta.addedChecks)
         assertTrue("v0.7.5.purpose-coverage-ratio" in delta.addedChecks)
+        assertTrue("v0.7.6.semantic-correctness-hardening" in delta.addedChecks)
+        assertTrue("v0.7.7.scenario-pack-quality-gates" in delta.addedChecks)
+        assertTrue("v0.8.0.core-contract-check" in delta.addedChecks)
+        assertTrue("v0.8.1.target-capability-matrix" in delta.addedChecks)
+        assertTrue("v0.8.2.target-negotiation-report" in delta.addedChecks)
         assertEquals(emptyList(), delta.removedChecks)
         assertEquals(emptyList(), delta.changedCheckKinds)
         assertEquals(0, delta.registryConsistencyCheckGrowth)
         assertEquals(0, delta.stablePublicArtifactGrowth)
         assertEquals(1, delta.governanceCheckGrowth)
-        assertEquals(1, delta.behaviorCoverageGrowth)
+        assertEquals(3, delta.behaviorCoverageGrowth)
     }
 
     @Test
@@ -36,11 +41,21 @@ class FlowArchitectureDeltaAnalyzerTests {
 
         assertEquals("PASS", delta.status, delta.issues.joinToString { it.code + ":" + it.subject })
         assertEquals("0.7.4", delta.previousVersion)
-        assertEquals(listOf("v0.7.5.purpose-coverage-ratio"), delta.addedChecks)
+        assertEquals(
+            listOf(
+                "v0.7.5.purpose-coverage-ratio",
+                "v0.7.6.semantic-correctness-hardening",
+                "v0.7.7.scenario-pack-quality-gates",
+                "v0.8.0.core-contract-check",
+                "v0.8.1.target-capability-matrix",
+                "v0.8.2.target-negotiation-report"
+            ),
+            delta.addedChecks
+        )
         assertEquals(0, delta.registryConsistencyCheckGrowth)
         assertEquals(0, delta.stablePublicArtifactGrowth)
         assertEquals(0, delta.governanceCheckGrowth)
-        assertEquals(1, delta.behaviorCoverageGrowth)
+        assertEquals(3, delta.behaviorCoverageGrowth)
     }
 
     @Test
