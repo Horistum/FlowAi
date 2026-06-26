@@ -86,7 +86,7 @@ roadmap:
     name: "Target Capability Matrix"
     purpose: "Define a stable matrix of target capabilities across supported platforms."
     type: "capability-contract"
-    status: "in-progress"
+    status: "completed"
     requiredOutcome:
       - "Capability matrix model."
       - "Target capability definitions."
@@ -97,7 +97,7 @@ roadmap:
     name: "Target Negotiation Report"
     purpose: "Produce reports explaining how intent maps or fails to map to target capabilities."
     type: "capability-negotiation"
-    status: "next"
+    status: "in-progress"
     requiredOutcome:
       - "Negotiation report model."
       - "Supported, degraded, and unsupported capability outcomes."
@@ -107,7 +107,7 @@ roadmap:
     name: "Planner Capability Constraints"
     purpose: "Ensure the planner respects target capability constraints before projection."
     type: "planner-hardening"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "Planner capability checks."
       - "No unsupported lowering."
