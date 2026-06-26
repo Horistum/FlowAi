@@ -44,6 +44,27 @@ class FlowArchitectureDeltaAnalyzerTests {
     }
 
     @Test
+    fun packageLineChecksOutsideReleaseProfileDoNotAffectPublicDelta() {
+        val previous = minimalSnapshot("0.7.5")
+        val current = previous.copy(
+            standardVersion = "0.7.6",
+            checks = previous.checks + StandardCheckSnapshot(
+                id = "v9.package-observation",
+                introducedIn = "9.0.0",
+                kind = GateKind.BEHAVIOR,
+                inReleaseProfile = false,
+                externalAnchor = "docs/example.md"
+            )
+        )
+
+        val delta = ArchitectureDeltaAnalyzer(previous, current).analyze()
+
+        assertEquals("PASS", delta.status, delta.issues.joinToString { it.code + ":" + it.subject })
+        assertEquals(emptyList(), delta.addedChecks)
+        assertEquals(0, delta.behaviorCoverageGrowth)
+    }
+
+    @Test
     fun addingRegistryConsistencyGateFailsDelta() {
         val previous = minimalSnapshot("0.7.3")
         val current = previous.copy(

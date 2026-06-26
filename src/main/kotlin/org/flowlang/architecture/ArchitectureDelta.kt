@@ -130,23 +130,25 @@ data class StandardModelDeltaReport(
 )
 
 /**
- * Compares two StandardModel snapshots and reports whether the change moves the
- * public standard in a useful direction.
+ * Compares two StandardModel snapshots and reports whether the public release
+ * profile moves in a useful direction.
  *
- * The analyzer deliberately uses explicit model snapshots. It does not infer
- * delta from the current repository state, because that was exactly how the old
- * drift score managed to pat itself on the back for files that already existed.
+ * Package-line checks may be listed in StandardModel for traceability, but they
+ * do not participate in this public delta until deliberately promoted into the
+ * release profile.
  */
 class ArchitectureDeltaAnalyzer(
     private val previous: StandardModelSnapshot,
     private val current: StandardModelSnapshot = StandardModelSnapshot.current()
 ) {
     fun analyze(): StandardModelDeltaReport {
-        val previousChecks = previous.checks.associateBy { it.id }
-        val currentChecks = current.checks.associateBy { it.id }
-        val addedChecks = current.checks.filterNot { it.id in previousChecks }
-        val removedChecks = previous.checks.filterNot { it.id in currentChecks }
-        val changedKinds = current.checks.mapNotNull { check ->
+        val previousProfileChecks = previous.checks.filter { it.inReleaseProfile }
+        val currentProfileChecks = current.checks.filter { it.inReleaseProfile }
+        val previousChecks = previousProfileChecks.associateBy { it.id }
+        val currentChecks = currentProfileChecks.associateBy { it.id }
+        val addedChecks = currentProfileChecks.filterNot { it.id in previousChecks }
+        val removedChecks = previousProfileChecks.filterNot { it.id in currentChecks }
+        val changedKinds = currentProfileChecks.mapNotNull { check ->
             val previousCheck = previousChecks[check.id] ?: return@mapNotNull null
             if (previousCheck.kind != check.kind) "${check.id}:${previousCheck.kind.name}->${check.kind.name}" else null
         }

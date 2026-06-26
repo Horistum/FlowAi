@@ -67,6 +67,10 @@ data class StandardArtifact(
  * profile are projections of this model. Cross-artifact agreement should hold by
  * construction, not because several hand-maintained lists are forced to stare at
  * each other until one of them blinks.
+ *
+ * Package-level roadmap checks after the active public standard line are also
+ * listed here, but they remain outside the public release profile until their
+ * runner/vector contracts are intentionally promoted.
  */
 object StandardModel {
     val checks: List<StandardCheck> = listOf(
@@ -107,7 +111,12 @@ object StandardModel {
         StandardCheck("v0.7.1.architecture-debt-cleanup-and-drift-enforcement", "0.7.1", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDebtCleanupTests.kt"),
         StandardCheck("v0.7.3.standard-model-projection-coherence", "0.7.3", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDebtCleanupTests.kt", externalAnchor = "src/main/kotlin/org/flowlang/standard/StandardModel.kt"),
         StandardCheck("v0.7.4.architecture-delta-analyzer", "0.7.4", GateKind.GOVERNANCE, inCandidateLevel = true, negativeFixture = "tests/FlowArchitectureDeltaAnalyzerTests.kt", externalAnchor = "standard/architecture/standard-model-baseline-v0.7.3.yaml"),
-        StandardCheck("v0.7.5.purpose-coverage-ratio", "0.7.5", GateKind.BEHAVIOR, inCandidateLevel = true, negativeFixture = "tests/FlowPurposeCoverageRatioTests.kt", externalAnchor = "docs/V0_7_5_PURPOSE_COVERAGE_RATIO.md")
+        StandardCheck("v0.7.5.purpose-coverage-ratio", "0.7.5", GateKind.BEHAVIOR, inCandidateLevel = true, negativeFixture = "tests/FlowPurposeCoverageRatioTests.kt", externalAnchor = "docs/V0_7_5_PURPOSE_COVERAGE_RATIO.md"),
+        StandardCheck("v0.7.6.semantic-correctness-hardening", "0.7.6", GateKind.BEHAVIOR, inReleaseProfile = false, externalAnchor = "FIX_SUMMARY.md"),
+        StandardCheck("v0.7.7.scenario-pack-quality-gates", "0.7.7", GateKind.BEHAVIOR, inReleaseProfile = false, externalAnchor = "src/main/kotlin/org/flowlang/standard/ScenarioPackQualityAnalyzer.kt"),
+        StandardCheck("v0.8.0.core-contract-check", "0.8.0", GateKind.CONTRACT, inReleaseProfile = false, externalAnchor = "docs/V0_8_0_CORE_CONTRACT_CHECK.md"),
+        StandardCheck("v0.8.1.target-capability-matrix", "0.8.1", GateKind.COMPATIBILITY, inReleaseProfile = false, externalAnchor = "src/main/kotlin/org/flowlang/capabilities/TargetCapabilityMatrix.kt"),
+        StandardCheck("v0.8.2.target-negotiation-report", "0.8.2", GateKind.COMPATIBILITY, inReleaseProfile = false, externalAnchor = "src/main/kotlin/org/flowlang/capabilities/TargetNegotiationReportAnalyzer.kt")
     )
 
     val artifacts: List<StandardArtifact> = listOf(
@@ -219,4 +228,3 @@ object StandardModel {
     private fun referenceLooksLikePath(reference: String): Boolean =
         reference.contains("/") || reference.endsWith(".kt") || reference.endsWith(".yaml") || reference.endsWith(".yml") || reference.endsWith(".json")
 }
-
