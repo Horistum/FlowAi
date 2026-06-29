@@ -86,8 +86,8 @@ jobs:
   notify_send_1:
     name: "notify_send_1"
     runs-on: ubuntu-latest
-    needs: [git_checkout_1, shell_run_1, docker_build_1, approve_1, kubernetes_deploy_1, kubernetes_get_1]
-    if: ${{ always() && (needs.git_checkout_1.result != 'success' || needs.shell_run_1.result != 'success' || needs.docker_build_1.result != 'success' || (needs.approve_1.result != 'success' && needs.approve_1.result != 'skipped') || needs.kubernetes_deploy_1.result != 'success' || needs.kubernetes_get_1.result != 'success') }}
+    needs: [standard_rollback_1, git_checkout_1, shell_run_1, docker_build_1, approve_1, kubernetes_deploy_1, kubernetes_get_1]
+    if: ${{ always() && (needs.standard_rollback_1.result != 'success' || needs.git_checkout_1.result != 'success' || needs.shell_run_1.result != 'success' || needs.docker_build_1.result != 'success' || (needs.approve_1.result != 'success' && needs.approve_1.result != 'skipped') || needs.kubernetes_deploy_1.result != 'success' || needs.kubernetes_get_1.result != 'success') }}
     steps:
       - name: "notify_send_1"
         run: |
