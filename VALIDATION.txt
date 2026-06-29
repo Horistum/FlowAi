@@ -1,8 +1,7 @@
-Flow v0.7.6-fix1 validation summary
+Historical validation note
 
-- Source package inspected from flow-core-prod-v0_7_6_full-offline.zip.
-- Gradle wrapper bootstrap cannot run in this sandbox because the package does not contain a locally usable Gradle distribution/cache and tries to download gradle-8.10.2-bin.zip from services.gradle.org.
-- Main source surface was compiled in dependency-ordered kotlinc chunks with local Jackson compile-check stubs.
-- Semantic smoke validation executed successfully: SMOKE_OK.
+This file records the old v0.7.6-fix1 package validation context. It is not the current repository validation source.
 
-See BUILD_VALIDATION.md for details.
+Current validation must be read from GitHub Actions on the relevant pull request or main commit, especially the Compile and Test and Run Conformance steps.
+
+For release-specific details, use CHANGELOG.md, .flow-agent/reports/, and pull request history.
