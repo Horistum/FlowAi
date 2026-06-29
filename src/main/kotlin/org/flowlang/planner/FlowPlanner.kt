@@ -192,7 +192,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             is UnaryPostfixExpressionNode -> collectRoots(e.operand, into)
             is LogicalExpressionNode -> e.operands.forEach { collectRoots(it, into) }
             is ListLiteralNode -> e.items.forEach { collectRoots(it, into) }
-            is MapLiteralNode -> e.entries.values.forEach { collectRoots(it, into) }
+            is MapLiteralNode -> e.entries.forEach { (key, value) -> collectRoots(key, into); collectRoots(value, into) }
             is TemplateStringNode -> e.parts.forEach { collectRoots(it, into) }
             is CallExpressionNode -> e.args.forEach { collectRoots(it, into) }
             is IndexExpressionNode -> { collectRoots(e.target, into); collectRoots(e.index, into) }
