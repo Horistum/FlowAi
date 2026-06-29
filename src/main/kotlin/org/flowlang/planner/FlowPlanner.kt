@@ -181,29 +181,29 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     private fun collectRoots(e: ExpressionNode, into: MutableSet<String>) {
         when (e) {
             is ReferenceNode -> e.path.firstOrNull()?.let { into += it }
-            is MemberExpressionNode -> collectRoots(e.target, into)
-            is IndexExpressionNode -> { collectRoots(e.target, into); collectRoots(e.index, into) }
-            is CallExpressionNode -> e.args.forEach { collectRoots(it, into) }
-            is ListLiteralNode -> e.items.forEach { collectRoots(it, into) }
-            is MapLiteralNode -> e.entries.forEach { (k, v) -> collectRoots(k, into); collectRoots(v, into) }
             is BinaryExpressionNode -> { collectRoots(e.left, into); collectRoots(e.right, into) }
-            is LogicalExpressionNode -> e.operands.forEach { collectRoots(it, into) }
             is UnaryExpressionNode -> collectRoots(e.operand, into)
             is UnaryPostfixExpressionNode -> collectRoots(e.operand, into)
+            is LogicalExpressionNode -> e.operands.forEach { collectRoots(it, into) }
+            is ListLiteralNode -> e.items.forEach { collectRoots(it, into) }
+            is MapLiteralNode -> e.entries.values.forEach { collectRoots(it, into) }
             is TemplateStringNode -> e.parts.forEach { collectRoots(it, into) }
+            is CallExpressionNode -> e.args.forEach { collectRoots(it, into) }
+            is IndexExpressionNode -> { collectRoots(e.target, into); collectRoots(e.index, into) }
+            is MemberExpressionNode -> collectRoots(e.target, into)
             else -> Unit
         }
     }
 
     private class Ctx(val inputNames: Set<String>) {
-        private val counts = mutableMapOf<String, Int>()
         val results = mutableMapOf<String, String>()
         val outputs = mutableListOf<PlanOutput>()
-        val assumptions = mutableListOf<String>()
+        val assumptions = mutableListOf<PlanAssumption>()
+        private val counters = mutableMapOf<String, Int>()
         fun id(prefix: String): String {
-            val n = (counts[prefix] ?: 0) + 1
-            counts[prefix] = n
-            return if (n == 1) prefix else "${prefix}_$n"
+            val n = (counters[prefix] ?: 0) + 1
+            counters[prefix] = n
+            return "${prefix}_$n"
         }
     }
 }
