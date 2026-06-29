@@ -5,6 +5,8 @@
 # Flow mapping note [error] standard.rollback standard_rollback_1: Feature 'standard.rollback' is not supported by target 'tekton'.
 # Flow mapping note [warning] notification.send notify_send_1: Feature 'notification.send' is only partially supported by target 'tekton'. Generator/runtime may need a workaround.
 # Flow mapping note [warning] target.partial manifest: Tekton renderer is a partial generator and intentionally emits mapping notes for features that require platform-specific adapters.
+# Flow mapping note [error] errorHandlers.partial standard_rollback_1: Tekton does not natively run this Flow error handler only after an upstream failure. The generated task is guarded from unconditional execution and needs an explicit platform adapter.
+# Flow mapping note [error] errorHandlers.partial notify_send_1: Tekton does not natively run this Flow error handler only after an upstream failure. The generated task is guarded from unconditional execution and needs an explicit platform adapter.
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
@@ -82,6 +84,13 @@ spec:
               set -eu
               kubectl get 'pods' -n '$(params.environment)' -l 'app=build-test-deploy'
     - name: standard_rollback_1
+      runAfter: [git_checkout_1, shell_run_1, docker_build_1, approve_1, kubernetes_deploy_1, kubernetes_get_1]
+      # Flow error handler is intentionally blocked from unconditional Tekton execution; see errorHandlers.partial mapping note.
+      when:
+        - input: "flow-error-handler"
+          operator: in
+          values:
+            - "external-adapter-required"
       taskSpec:
         steps:
           - name: standard_rollback_1
@@ -91,6 +100,13 @@ spec:
               set -eu
               echo 'Flow rollback requested for build-test-deploy. Configure a target-specific rollback adapter for production.'
     - name: notify_send_1
+      runAfter: [git_checkout_1, shell_run_1, docker_build_1, approve_1, kubernetes_deploy_1, kubernetes_get_1]
+      # Flow error handler is intentionally blocked from unconditional Tekton execution; see errorHandlers.partial mapping note.
+      when:
+        - input: "flow-error-handler"
+          operator: in
+          values:
+            - "external-adapter-required"
       taskSpec:
         steps:
           - name: notify_send_1
@@ -99,4 +115,3 @@ spec:
               #!/bin/sh
               set -eu
               printf %s 'error?.message' | mail -s 'Flow notification: Flow failed: build-test-deploy' 'team@example.com' || echo 'Notification adapter is not configured'
-
