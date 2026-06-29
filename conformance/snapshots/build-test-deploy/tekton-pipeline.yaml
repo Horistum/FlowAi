@@ -81,22 +81,3 @@ spec:
               #!/bin/sh
               set -eu
               kubectl get 'pods' -n '$(params.environment)' -l 'app=build-test-deploy'
-    - name: standard_rollback_1
-      taskSpec:
-        steps:
-          - name: standard_rollback_1
-            image: alpine:3.20
-            script: |
-              #!/bin/sh
-              set -eu
-              echo 'Flow rollback requested for build-test-deploy. Configure a target-specific rollback adapter for production.'
-    - name: notify_send_1
-      taskSpec:
-        steps:
-          - name: notify_send_1
-            image: alpine:3.20
-            script: |
-              #!/bin/sh
-              set -eu
-              printf %s 'error?.message' | mail -s 'Flow notification: Flow failed: build-test-deploy' 'team@example.com' || echo 'Notification adapter is not configured'
-
