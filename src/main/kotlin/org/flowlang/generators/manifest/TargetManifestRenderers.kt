@@ -13,8 +13,9 @@ class JenkinsManifestRenderer {
         sb.appendLine("  options { timestamps() }")
         renderJenkinsParameters(manifest, sb)
         sb.appendLine("  stages {")
-        val topLevelErrorHandlers = manifest.jobs.flatMap { it.steps }.filter { it.type == "error-handler" }
-        manifest.jobs.forEach { job ->
+        val errorHandlerJobs = manifest.jobs.filter { it.metadata["errorHandler"] == "true" }
+        val topLevelErrorHandlers = manifest.jobs.flatMap { it.steps }.filter { it.type == "error-handler" } + errorHandlerJobs.flatMap { it.steps }
+        manifest.jobs.filterNot { it.metadata["errorHandler"] == "true" }.forEach { job ->
             val stageSteps = job.steps.filterNot { it.type == "error-handler" }
             if (stageSteps.isEmpty() && job.steps.isEmpty()) renderJenkinsStage(job.name, listOf("echo 'No Flow steps generated'"), sb)
             else stageSteps.forEach { renderJenkinsNode(it, manifest, sb, indent = "    ") }
@@ -91,7 +92,7 @@ class JenkinsManifestRenderer {
         sb.appendLine("    failure {")
         sb.appendLine("      script {")
         sb.appendLine("        def error = [message: currentBuild.currentResult]")
-        handlers.flatMap { it.children }.forEach { renderJenkinsScriptLine(it, manifest, sb, "        ") }
+        handlers.flatMap { if (it.children.isEmpty()) listOf(it) else it.children }.forEach { renderJenkinsScriptLine(it, manifest, sb, "        ") }
         sb.appendLine("      }")
         sb.appendLine("    }")
         sb.appendLine("  }")
