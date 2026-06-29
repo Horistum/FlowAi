@@ -11,6 +11,19 @@ object ModuleYamlLoader {
 
     class LoadException(message: String) : RuntimeException(message)
 
+    private val builtInOrder = listOf(
+        "shell.yaml",
+        "git.yaml",
+        "rest.yaml",
+        "notify.yaml",
+        "docker.yaml",
+        "helm.yaml",
+        "argocd.yaml",
+        "kubernetes.yaml",
+        "database.yaml",
+        "standard.yaml"
+    )
+
     fun loadText(yaml: String): FlowModule {
         val root = MiniYaml.parseMap(yaml)
         val kind = root["kind"]?.toString()
@@ -34,7 +47,10 @@ object ModuleYamlLoader {
     fun loadDirectory(dir: File): List<FlowModule> {
         if (!dir.isDirectory) return emptyList()
         return dir.listFiles { f -> f.isFile && (f.extension == "yaml" || f.extension == "yml") }
-            ?.sortedBy { it.name }
+            ?.sortedWith(compareBy<File> { file ->
+                val index = builtInOrder.indexOf(file.name)
+                if (index >= 0) index else Int.MAX_VALUE
+            }.thenBy { it.name })
             ?.map { loadFile(it) }
             ?: emptyList()
     }
