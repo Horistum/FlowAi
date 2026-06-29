@@ -100,7 +100,7 @@ spec:
               set -eu
               echo 'Flow rollback requested for build-test-deploy. Configure a target-specific rollback adapter for production.'
     - name: notify_send_1
-      runAfter: [git_checkout_1, shell_run_1, docker_build_1, approve_1, kubernetes_deploy_1, kubernetes_get_1]
+      runAfter: [standard_rollback_1, git_checkout_1, shell_run_1, docker_build_1, approve_1, kubernetes_deploy_1, kubernetes_get_1]
       # Flow error handler is intentionally blocked from unconditional Tekton execution; see errorHandlers.partial mapping note.
       when:
         - input: "flow-error-handler"
