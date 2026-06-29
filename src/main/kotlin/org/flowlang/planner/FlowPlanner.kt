@@ -19,15 +19,10 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     fun plan(document: FlowDocument): ExecutionPlan {
         val ctx = Ctx(document.flow.input.map { it.name }.toSet())
         val nodes = planStatements(document.flow.steps, ctx)
-        val allNodes = document.flow.errorHandler?.let { handler ->
-            listOf(
-                TryPlanNode(
-                    id = ctx.id("flow"),
-                    body = nodes,
-                    errorHandler = planStatements(handler.steps, ctx)
-                )
-            )
-        } ?: nodes
+        val tail = document.flow.errorHandler?.let {
+            listOf(TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(it.steps, ctx)))
+        } ?: emptyList()
+        val allNodes = nodes + tail
         return ExecutionPlan(
             flowName = document.flow.name,
             inputs = document.flow.input.map { it.toPlanInput() },
