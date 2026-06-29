@@ -59,9 +59,27 @@ class JenkinsManifestRenderer {
                 sb.appendLine("${indent}  } }")
                 sb.appendLine("${indent}}")
             }
+            "try" -> renderJenkinsTryStage(step, manifest, sb, indent)
             "approval" -> renderJenkinsStage(step.name, listOf("input message: ${groovyString(step.params["message"] ?: "Approval required")}"), sb, indent, shell = false)
             else -> renderJenkinsStage(step.name, step.toShellLines(), sb, indent)
         }
+    }
+
+    private fun renderJenkinsTryStage(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        val body = step.children.filterNot { it.metadata["onFailure"] == "true" }
+        val handler = step.children.filter { it.metadata["onFailure"] == "true" }
+        sb.appendLine("${indent}stage(${groovyString(step.name)}) {")
+        sb.appendLine("${indent}  steps { script {")
+        sb.appendLine("${indent}    try {")
+        if (body.isEmpty()) sb.appendLine("${indent}      echo 'Flow try body is empty'")
+        body.forEach { renderJenkinsScriptLine(it, manifest, sb, "${indent}      ") }
+        sb.appendLine("${indent}    } catch (flowError) {")
+        if (handler.isEmpty()) sb.appendLine("${indent}      throw flowError")
+        handler.forEach { renderJenkinsScriptLine(it, manifest, sb, "${indent}      ") }
+        sb.appendLine("${indent}      throw flowError")
+        sb.appendLine("${indent}    }")
+        sb.appendLine("${indent}  } }")
+        sb.appendLine("${indent}}")
     }
 
     private fun renderJenkinsScriptLine(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
@@ -98,7 +116,8 @@ class JenkinsManifestRenderer {
 
     private fun TargetStep.toShellLines(): List<String> = when (type) {
         "action" -> listOf(run ?: "echo Flow: ${module}.${action} on ${target}")
-        "try", "retry", "match", "loop" -> if (children.isEmpty()) listOf("echo 'Flow ${type}: ${name}'") else children.flatMap { it.toShellLines() }
+        "try" -> if (children.isEmpty()) listOf("echo 'Flow try: ${name}'") else children.filterNot { it.metadata["onFailure"] == "true" }.flatMap { it.toShellLines() }
+        "retry", "match", "loop" -> if (children.isEmpty()) listOf("echo 'Flow ${type}: ${name}'") else children.flatMap { it.toShellLines() }
         "set", "expect", "validate", "transform", "aggregate" -> listOf("echo 'Flow ${type}: ${params["detail"] ?: name}'")
         else -> listOf(run ?: "echo 'Flow ${type}: ${name}'")
     }
@@ -158,6 +177,13 @@ class GitHubActionsManifestRenderer {
             if (isApproval) "(needs.$safeDep.result == 'success' || needs.$safeDep.result == 'skipped')"
             else "needs.$safeDep.result == 'success'"
         }
+        if (job.metadata["onFailure"] == "true") {
+            val failureNeeds = job.dependsOn.map { "needs.${sanitizeId(it)}.result != 'success'" }
+            val parts = mutableListOf("always()")
+            if (!own.isNullOrBlank()) parts += "($own)"
+            parts += failureNeeds.ifEmpty { listOf("failure()") }
+            return parts.joinToString(" && ")
+        }
         val parts = mutableListOf<String>()
         if (job.dependsOn.isNotEmpty()) parts += "always()"
         if (!own.isNullOrBlank()) parts += "($own)"
@@ -212,6 +238,14 @@ class TektonManifestRenderer {
         val step = job.steps.firstOrNull()
         sb.appendLine("    - name: ${sanitizeId(job.id)}")
         if (job.dependsOn.isNotEmpty()) sb.appendLine("      runAfter: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
+        if (job.metadata["onFailure"] == "true") {
+            sb.appendLine("      # Flow error handler is intentionally blocked from unconditional Tekton execution; see errorHandlers.partial mapping note.")
+            sb.appendLine("      when:")
+            sb.appendLine("        - input: \"flow-error-handler\"")
+            sb.appendLine("          operator: in")
+            sb.appendLine("          values:")
+            sb.appendLine("            - \"external-adapter-required\"")
+        }
         job.metadata["condition"]?.let { condition ->
             val whenBlock = TargetExpressionTranslator.tektonWhen(condition, manifest.inputs)
             if (whenBlock != null) {
