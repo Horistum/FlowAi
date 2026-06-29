@@ -273,7 +273,7 @@ class TektonManifestRenderer {
 private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 private fun groovyString(value: String): String = "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r") + "'"
 private fun groovyEscape(value: String): String = value.replace("'", "\\'")
-private fun githubExpression(value: String): String = "$" + "{{ $value }}"
+private fun githubExpression(value: String): String = 36.toChar().toString() + "{{ $value }}"
 
 private fun groovyScriptString(value: String): String =
     if (value.contains("\${params.")) {
