@@ -20,9 +20,9 @@ import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetExpressionTranslator
 import org.flowlang.generators.manifest.TargetInput
-import org.flowlang.parser.FlowParser
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.planner.FlowPlanner
-import org.flowlang.planner.TryPlanNode
 import java.io.File
 
 class MainMissingReviewFixesTests {
@@ -38,21 +38,21 @@ class MainMissingReviewFixesTests {
     }
 
     @Test
-    fun flowLevelErrorHandlerWrapsRealFlowBody() {
-        val plan = planWithFlowLevelErrorHandler()
-        val boundary = plan.nodes.single() as TryPlanNode
+    fun jenkinsManifestWrapsFlowLevelErrorHandlerAroundRealBody() {
+        val boundary = jenkinsManifestWithFlowLevelErrorHandler()
+            .jobs.single()
+            .steps.single { it.type == "try" }
 
-        assertTrue(boundary.body.isNotEmpty(), "Flow-level error handler must wrap the real flow body.")
-        assertTrue(boundary.errorHandler.isNotEmpty(), "Flow-level error handler must preserve handler steps.")
+        val body = boundary.children.single { it.type == "try-body" }
+        val handler = boundary.children.single { it.type == "error-handler" }
+
+        assertTrue(body.children.isNotEmpty(), "Flow-level error handler must wrap the real flow body in the Jenkins manifest.")
+        assertTrue(handler.children.isNotEmpty(), "Flow-level error handler must preserve handler steps in the Jenkins manifest.")
     }
 
     @Test
     fun jenkinsFlowLevelErrorHandlerRendersScriptedTryCatch() {
-        val manifest = JenkinsManifestGenerator().generate(
-            planWithFlowLevelErrorHandler(),
-            CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED)
-        )
-        val rendered = JenkinsManifestRenderer().render(manifest)
+        val rendered = JenkinsManifestRenderer().render(jenkinsManifestWithFlowLevelErrorHandler())
 
         assertTrue(rendered.contains("try {"), rendered)
         assertTrue(rendered.contains("catch (flowError)"), rendered)
@@ -72,41 +72,44 @@ class MainMissingReviewFixesTests {
         }
     }
 
-    private fun planWithFlowLevelErrorHandler() = FlowPlanner().plan(
-        FlowDocument(
-            imports = listOf(
-                ModuleImportNode(name = "shell", version = "1.0"),
-                ModuleImportNode(name = "notify", version = "1.0")
+    private fun jenkinsManifestWithFlowLevelErrorHandler(): TargetManifest = JenkinsManifestGenerator().generate(
+        FlowPlanner().plan(flowWithErrorHandler()),
+        CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED)
+    )
+
+    private fun flowWithErrorHandler(): FlowDocument = FlowDocument(
+        imports = listOf(
+            ModuleImportNode(name = "shell", version = "1.0"),
+            ModuleImportNode(name = "notify", version = "1.0")
+        ),
+        flow = FlowNode(
+            name = "flow-error-boundary",
+            input = listOf(InputNode(name = "environment", valueType = ValueTypeNode(kind = "text"), required = true)),
+            systems = listOf(
+                SystemNode(name = "local", systemType = "shell"),
+                SystemNode(name = "mailer", systemType = "notify")
             ),
-            flow = FlowNode(
-                name = "flow-error-boundary",
-                input = listOf(InputNode(name = "environment", valueType = ValueTypeNode(kind = "text"), required = true)),
-                systems = listOf(
-                    SystemNode(name = "local", systemType = "shell"),
-                    SystemNode(name = "mailer", systemType = "notify")
-                ),
-                steps = listOf(
-                    IfNode(
-                        condition = BinaryExpressionNode(
-                            operator = "==",
-                            left = ReferenceNode(path = listOf("environment")),
-                            right = StringLiteralNode(value = "prod")
-                        ),
-                        then = listOf(shellAction("echo deploy", "deployResult"))
+            steps = listOf(
+                IfNode(
+                    condition = BinaryExpressionNode(
+                        operator = "==",
+                        left = ReferenceNode(path = listOf("environment")),
+                        right = StringLiteralNode(value = "prod")
+                    ),
+                    then = listOf(shellAction("echo deploy", "deployResult"))
+                )
+            ),
+            errorHandler = ErrorHandlerNode(steps = listOf(
+                ActionNode(
+                    module = "notify",
+                    action = "send",
+                    target = ReferenceNode(path = listOf("mailer")),
+                    params = mapOf(
+                        "subject" to StringLiteralNode(value = "Failed"),
+                        "body" to ReferenceNode(path = listOf("error", "message"), scope = "error", safe = true)
                     )
-                ),
-                errorHandler = ErrorHandlerNode(steps = listOf(
-                    ActionNode(
-                        module = "notify",
-                        action = "send",
-                        target = ReferenceNode(path = listOf("mailer")),
-                        params = mapOf(
-                            "subject" to StringLiteralNode(value = "Failed"),
-                            "body" to ReferenceNode(path = listOf("error", "message"), scope = "error", safe = true)
-                        )
-                    )
-                ))
-            )
+                )
+            ))
         )
     )
 
