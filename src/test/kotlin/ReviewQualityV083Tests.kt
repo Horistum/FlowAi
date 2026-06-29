@@ -21,7 +21,7 @@ class ReviewQualityV083Tests {
     @Test
     fun githubListLiteralRendersValidJsonArray() {
         val rendered = TargetExpressionTranslator.github(
-            "region in [\"eu\", \"us\"]",
+            "region in ['eu', 'us']",
             listOf(TargetInput(name = "region"))
         )
 
