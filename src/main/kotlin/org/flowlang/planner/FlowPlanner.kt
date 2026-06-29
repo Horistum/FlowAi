@@ -21,7 +21,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val nodes = planStatements(document.flow.steps, ctx)
         val allNodes = document.flow.errorHandler?.let {
             listOf(TryPlanNode(id = ctx.id("onError"), body = nodes, errorHandler = planStatements(it.steps, ctx)))
-        } ?: nodes
+        } ?: hoistTrailingErrorHandler(nodes)
         return ExecutionPlan(
             flowName = document.flow.name,
             inputs = document.flow.input.map { it.toPlanInput() },
@@ -31,6 +31,12 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             assumptions = ctx.assumptions.toList(),
             nodes = allNodes
         )
+    }
+
+    private fun hoistTrailingErrorHandler(nodes: List<PlanNode>): List<PlanNode> {
+        val trailingHandler = nodes.lastOrNull() as? TryPlanNode ?: return nodes
+        if (nodes.size <= 1 || trailingHandler.body.isNotEmpty() || trailingHandler.errorHandler.isEmpty()) return nodes
+        return listOf(trailingHandler.copy(body = nodes.dropLast(1)))
     }
 
     private fun InputNode.toPlanInput(): PlanInput {
