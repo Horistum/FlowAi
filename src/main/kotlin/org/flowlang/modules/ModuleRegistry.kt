@@ -1,11 +1,9 @@
 package org.flowlang.modules
 
 /**
- * Module registry for Flow module contracts.
- *
- * The production default prefers module descriptors from the checked-out
- * `modules/*.yaml` directory or bundled resources. The hardcoded module list is
- * retained only as a deterministic fallback for embedded or stripped-down builds.
+ * In-memory module registry. The default set matches the modules referenced by the
+ * draft's canonical examples (docs/02 plus the examples directory), so those examples validate.
+ * A future version should load `module.yaml` descriptors (docs/06 work-in-progress).
  */
 class ModuleRegistry(
     private val modules: Map<String, FlowModule> = defaultModules().associateBy { it.name }
@@ -57,36 +55,9 @@ class ModuleRegistry(
             "artifacts" to SchemaField("map")
         )
 
-        fun defaultModules(): List<FlowModule> = descriptorModules().ifEmpty { hardcodedDefaultModules() }
-
-        private fun descriptorModules(): List<FlowModule> {
-            val workingTreeModules = ModuleYamlLoader.loadDirectory(java.io.File("modules"))
-            if (workingTreeModules.isNotEmpty()) return workingTreeModules
-
-            val resourceNames = listOf(
-                "shell.yaml",
-                "git.yaml",
-                "rest.yaml",
-                "notify.yaml",
-                "docker.yaml",
-                "helm.yaml",
-                "argocd.yaml",
-                "kubernetes.yaml",
-                "database.yaml",
-                "standard.yaml"
-            )
-            val loader = ModuleRegistry::class.java.classLoader
-            val resourceModules = resourceNames.mapNotNull { name ->
-                loader.getResourceAsStream("modules/$name")?.bufferedReader()?.use { reader ->
-                    ModuleYamlLoader.loadText(reader.readText())
-                }
-            }
-            return if (resourceModules.size == resourceNames.size) resourceModules else emptyList()
-        }
-
-        private fun hardcodedDefaultModules(): List<FlowModule> = listOf(
+        fun defaultModules(): List<FlowModule> = listOf(
             FlowModule(
-                name = "shell", version = "1.0", description = "Shell command execution module.",
+                name = "shell", version = "1.0",
                 systemTypes = mapOf("shell" to SystemTypeContract("shell")),
                 actions = mapOf(
                     "run" to ModuleActionContract(
@@ -99,7 +70,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "git", version = "1.0", description = "Git repository access module.",
+                name = "git", version = "1.0",
                 systemTypes = mapOf("git" to SystemTypeContract("git", input = mapOf(
                     "url" to SchemaField("text"), "branch" to SchemaField("text")
                 ))),
@@ -114,7 +85,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "rest", version = "1.0", description = "HTTP REST request module.",
+                name = "rest", version = "1.0",
                 systemTypes = mapOf("rest" to SystemTypeContract("rest", input = mapOf(
                     "baseUrl" to SchemaField("text", sensitive = false),
                     "token" to SchemaField("secret", sensitive = true)
@@ -136,7 +107,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "notify", version = "1.0", description = "Notification and email delivery module.",
+                name = "notify", version = "1.0",
                 systemTypes = mapOf(
                     "notify" to SystemTypeContract("notify", input = mapOf("channel" to SchemaField("text"))),
                     "email" to SystemTypeContract("email", input = mapOf("channel" to SchemaField("text")))
@@ -164,7 +135,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "docker", version = "1.0", description = "Container image build and push module.",
+                name = "docker", version = "1.0",
                 systemTypes = mapOf("docker" to SystemTypeContract("docker", input = mapOf(
                     "url" to SchemaField("text", sensitive = true)
                 ))),
@@ -189,7 +160,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "helm", version = "1.0", description = "Helm chart rendering and release module.",
+                name = "helm", version = "1.0",
                 systemTypes = mapOf("helm" to SystemTypeContract("helm")),
                 actions = mapOf(
                     "template" to ModuleActionContract(
@@ -216,7 +187,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "argocd", version = "1.0", description = "Argo CD application synchronization module.",
+                name = "argocd", version = "1.0",
                 systemTypes = mapOf("argocd" to SystemTypeContract("argocd", input = mapOf(
                     "url" to SchemaField("text", required = true, sensitive = false),
                     "token" to SchemaField("secret", required = true, sensitive = true)
@@ -238,7 +209,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "kubernetes", version = "1.0", description = "Kubernetes resource operation module.",
+                name = "kubernetes", version = "1.0",
                 systemTypes = mapOf("kubernetes" to SystemTypeContract("kubernetes", input = mapOf(
                     "context" to SchemaField("text")
                 ))),
@@ -280,7 +251,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "database", version = "1.0", description = "Database query and row mutation module.",
+                name = "database", version = "1.0",
                 systemTypes = mapOf("database" to SystemTypeContract("database", input = mapOf(
                     "engine" to SchemaField("text"),
                     "url" to SchemaField("text", sensitive = true)
@@ -311,7 +282,7 @@ class ModuleRegistry(
                 )
             ),
             FlowModule(
-                name = "standard", version = "1.0", description = "Portable semantic Flow standard operation module.",
+                name = "standard", version = "1.0",
                 systemTypes = mapOf("standard" to SystemTypeContract("standard")),
                 actions = mapOf(
                     "execute" to ModuleActionContract(
