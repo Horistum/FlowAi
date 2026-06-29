@@ -7,7 +7,7 @@ import org.flowlang.planner.*
 /**
  * Generates a Jenkins declarative pipeline.
  *
- * The primary entry point, [generate]\(document, registry\), works from the Flow AST
+ * The primary entry point, [generate](document, registry), works from the Flow AST
  * (full fidelity: parameters, vars, systems, action params, safety, result handlers,
  * control flow). The pipeline shell is declarative; the flow body is emitted as
  * scripted Groovy inside `stage(...) { steps { script { ... } } }`, which is the robust
@@ -221,7 +221,6 @@ class JenkinsGenerator {
 
     private fun emitAction(a: ActionNode, indent: Int, ctx: Ctx) {
         val sb = ctx.sb
-        // safety: onlyIf wraps the action; requiresApproval injects an input gate
         val onlyIf = a.safety?.takeIf { it.rule == "onlyIf" }?.condition
         val requiresApproval = a.safety?.rule == "requiresApproval"
         var ind = indent
@@ -233,7 +232,6 @@ class JenkinsGenerator {
 
         emitActionCall(a, ind, ctx)
 
-        // expectations (documented as comments; result-field semantics need the runtime)
         a.handler?.rules?.filterIsInstance<ExpectNode>()?.forEach { ex ->
             ex.expressions.forEach { line(sb, ind, "// expect: ${ctx.flowRender(it)}") }
         }
@@ -301,8 +299,6 @@ class JenkinsGenerator {
     ) {
         fun flowRender(e: ExpressionNode): String = ExpressionRenderer.render(e).replace("*/", "* /")
     }
-
-    // -------------------------------------------------------------- plan-based (legacy draft)
 
     fun generate(plan: ExecutionPlan): String {
         val sb = StringBuilder()

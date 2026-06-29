@@ -1792,11 +1792,9 @@ class ConformanceRunner(
         require(requiredGate in delta.addedChecks) {
             "Architecture delta history must include the v0.7.4 gate. Added checks: ${delta.addedChecks}."
         }
-        if (FlowStandardVersions.FLOW_STANDARD_VERSION == "0.7.4") {
-            require(delta.addedChecks == listOf(requiredGate)) {
-                "v0.7.4 must add only the architecture delta analyzer gate, not unrelated surface area: ${delta.addedChecks}."
-            }
-        }
+        // The exact v0.7.4-only delta invariant is covered by the frozen
+        // standard-model-baseline-v0.7.4 tests. Keeping a runtime branch for an
+        // inactive active standard version only made the current runner harder to audit.
         require(delta.registryConsistencyCheckGrowth == 0) {
             "Architecture delta must not reintroduce registry-consistency gates."
         }
