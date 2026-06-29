@@ -13,10 +13,7 @@ class JenkinsManifestRenderer {
         sb.appendLine("  options { timestamps() }")
         renderJenkinsParameters(manifest, sb)
         sb.appendLine("  stages {")
-        manifest.jobs.forEach { job ->
-            if (job.steps.isEmpty()) renderJenkinsStage(job.name, listOf("echo 'No Flow steps generated'"), sb)
-            else job.steps.forEach { renderJenkinsNode(it, manifest, sb, indent = "    ") }
-        }
+        manifest.jobs.forEach { job -> if (job.steps.isEmpty()) renderJenkinsStage(job.name, listOf("echo 'No Flow steps generated'"), sb) else job.steps.forEach { renderJenkinsNode(it, manifest, sb, indent = "    ") } }
         sb.appendLine("  }")
         sb.appendLine("}")
         return sb.toString()
@@ -98,25 +95,18 @@ class JenkinsManifestRenderer {
             step.type == "fail" -> listOf("error ${groovyString(step.params["detail"] ?: step.name)}")
             else -> step.toShellLines().map { "sh(script: ${groovyScriptString(it)})" }
         }
-        if (step.children.isNotEmpty()) {
-            step.children.forEach { renderJenkinsScriptLine(it, manifest, sb, indent) }
-            return
-        }
+        if (step.children.isNotEmpty()) { step.children.forEach { renderJenkinsScriptLine(it, manifest, sb, indent) }; return }
         if (condition != null) {
             sb.appendLine("${indent}if (${TargetExpressionTranslator.groovy(condition, manifest.inputs)}) {")
             lines?.forEach { sb.appendLine("${indent}  $it") }
             sb.appendLine("${indent}}")
-        } else {
-            lines?.forEach { sb.appendLine("${indent}$it") }
-        }
+        } else lines?.forEach { sb.appendLine("${indent}$it") }
     }
 
     private fun renderJenkinsStage(name: String, scriptLines: List<String>, sb: StringBuilder, indent: String = "    ", shell: Boolean = true) {
         sb.appendLine("${indent}stage(${groovyString(name)}) {")
         sb.appendLine("${indent}  steps {")
-        scriptLines.forEach { line ->
-            if (shell) sb.appendLine("${indent}    sh(script: ${groovyScriptString(line)})") else sb.appendLine("${indent}    $line")
-        }
+        scriptLines.forEach { line -> if (shell) sb.appendLine("${indent}    sh(script: ${groovyScriptString(line)})") else sb.appendLine("${indent}    $line") }
         sb.appendLine("${indent}  }")
         sb.appendLine("${indent}}")
     }
@@ -154,10 +144,7 @@ class GitHubActionsManifestRenderer {
             sb.appendLine("        required: ${input.required}")
             val type = when (input.type) { "boolean" -> "boolean"; "option" -> "choice"; else -> "string" }
             sb.appendLine("        type: $type")
-            if (input.choices.isNotEmpty()) {
-                sb.appendLine("        options:")
-                input.choices.forEach { sb.appendLine("          - ${yamlScalar(it)}") }
-            }
+            if (input.choices.isNotEmpty()) { sb.appendLine("        options:"); input.choices.forEach { sb.appendLine("          - ${yamlScalar(it)}") } }
             input.defaultValue?.let { sb.appendLine("        default: ${yamlScalar(it)}") }
         }
     }
@@ -170,25 +157,14 @@ class GitHubActionsManifestRenderer {
         githubJobIf(job, manifest)?.let { sb.appendLine("    if: \${{ $it }}") }
         if (job.metadata["approval"] == "true") sb.appendLine("    environment: production")
         sb.appendLine("    steps:")
-        if (job.steps.isEmpty()) {
-            sb.appendLine("      - name: No steps")
-            sb.appendLine("        run: echo 'No Flow steps generated'")
-        } else job.steps.forEach { renderGitHubStep(it, manifest, sb) }
+        if (job.steps.isEmpty()) { sb.appendLine("      - name: No steps"); sb.appendLine("        run: echo 'No Flow steps generated'") } else job.steps.forEach { renderGitHubStep(it, manifest, sb) }
     }
 
     private fun githubJobIf(job: TargetJob, manifest: TargetManifest): String? {
         val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs) }
-        val needs = job.dependsOn.map { dep ->
-            val safeDep = sanitizeId(dep)
-            val isApproval = manifest.jobs.firstOrNull { sanitizeId(it.id) == safeDep }?.metadata?.get("approval") == "true"
-            if (isApproval) "(needs.$safeDep.result == 'success' || needs.$safeDep.result == 'skipped')"
-            else "needs.$safeDep.result == 'success'"
-        }
+        val needs = job.dependsOn.map { successGateFor(it, manifest) }
         if (job.metadata["onFailure"] == "true") {
-            val failureGate = job.dependsOn.map { "needs.${sanitizeId(it)}.result != 'success'" }
-                .takeIf { it.isNotEmpty() }
-                ?.joinToString(" || ", "(", ")")
-                ?: "failure()"
+            val failureGate = job.dependsOn.map { failureGateFor(it, manifest) }.takeIf { it.isNotEmpty() }?.joinToString(" || ", "(", ")") ?: "failure()"
             val parts = mutableListOf("always()")
             if (!own.isNullOrBlank()) parts += "($own)"
             parts += failureGate
@@ -201,21 +177,22 @@ class GitHubActionsManifestRenderer {
         return parts.takeIf { it.isNotEmpty() }?.joinToString(" && ")
     }
 
+    private fun successGateFor(dep: String, manifest: TargetManifest): String {
+        val safeDep = sanitizeId(dep)
+        val isApproval = manifest.jobs.firstOrNull { sanitizeId(it.id) == safeDep }?.metadata?.get("approval") == "true"
+        return if (isApproval) "(needs.$safeDep.result == 'success' || needs.$safeDep.result == 'skipped')" else "needs.$safeDep.result == 'success'"
+    }
+
+    private fun failureGateFor(dep: String, manifest: TargetManifest): String {
+        val safeDep = sanitizeId(dep)
+        val isApproval = manifest.jobs.firstOrNull { sanitizeId(it.id) == safeDep }?.metadata?.get("approval") == "true"
+        return if (isApproval) "!(needs.$safeDep.result == 'success' || needs.$safeDep.result == 'skipped')" else "needs.$safeDep.result != 'success'"
+    }
+
     private fun renderGitHubStep(step: TargetStep, manifest: TargetManifest, sb: StringBuilder) {
-        if (step.module == "git" && step.action == "checkout") {
-            sb.appendLine("      - name: ${yamlScalar(step.name)}")
-            sb.appendLine("        uses: actions/checkout@v4")
-            return
-        }
-        if (step.type == "approval") {
-            sb.appendLine("      - name: ${yamlScalar(step.name)}")
-            sb.appendLine("        run: echo ${yamlScalar("Approval gate is represented by GitHub environment protection: ${step.params["message"] ?: "Approval required"}")}")
-            return
-        }
-        if (step.children.isNotEmpty()) {
-            step.children.forEach { renderGitHubStep(it, manifest, sb) }
-            return
-        }
+        if (step.module == "git" && step.action == "checkout") { sb.appendLine("      - name: ${yamlScalar(step.name)}"); sb.appendLine("        uses: actions/checkout@v4"); return }
+        if (step.type == "approval") { sb.appendLine("      - name: ${yamlScalar(step.name)}"); sb.appendLine("        run: echo ${yamlScalar("Approval gate is represented by GitHub environment protection: ${step.params["message"] ?: "Approval required"}")}"); return }
+        if (step.children.isNotEmpty()) { step.children.forEach { renderGitHubStep(it, manifest, sb) }; return }
         sb.appendLine("      - name: ${yamlScalar(step.name)}")
         step.metadata["condition"]?.let { sb.appendLine("        if: \${{ ${TargetExpressionTranslator.github(it, manifest.inputs)} }}") }
         val run = step.run?.takeIf { it.isNotBlank() } ?: "echo 'Flow: ${step.module}.${step.action} on ${step.target}'"
@@ -235,10 +212,7 @@ class TektonManifestRenderer {
         sb.appendLine("metadata:")
         sb.appendLine("  name: ${sanitizeId(manifest.flowName)}")
         sb.appendLine("spec:")
-        if (manifest.inputs.isNotEmpty()) {
-            sb.appendLine("  params:")
-            manifest.inputs.forEach { sb.appendLine("    - name: ${sanitizeId(it.name)}\n      type: string") }
-        }
+        if (manifest.inputs.isNotEmpty()) { sb.appendLine("  params:"); manifest.inputs.forEach { sb.appendLine("    - name: ${sanitizeId(it.name)}\n      type: string") } }
         sb.appendLine("  tasks:")
         manifest.jobs.forEach { job -> renderTektonTask(job, manifest, sb) }
         return sb.toString()
@@ -258,11 +232,7 @@ class TektonManifestRenderer {
         }
         job.metadata["condition"]?.let { condition ->
             val whenBlock = TargetExpressionTranslator.tektonWhen(condition, manifest.inputs)
-            if (whenBlock != null) {
-                sb.appendLine(whenBlock.prependIndent("      ").trimEnd())
-            } else {
-                sb.appendLine("      # Flow condition is NOT enforced here (unsupported as native Tekton when) - see [error] condition.unsupported mapping note above: $condition")
-            }
+            if (whenBlock != null) sb.appendLine(whenBlock.prependIndent("      ").trimEnd()) else sb.appendLine("      # Flow condition is NOT enforced here (unsupported as native Tekton when) - see [error] condition.unsupported mapping note above: $condition")
         }
         sb.appendLine("      taskSpec:")
         sb.appendLine("        steps:")
@@ -280,11 +250,6 @@ private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\
 private fun groovyString(value: String): String = "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r") + "'"
 private fun groovyEscape(value: String): String = value.replace("'", "\\'")
 
-private fun groovyScriptString(value: String): String =
-    if (value.contains("\${params.")) {
-        "\"" + value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r") + "\""
-    } else groovyString(value)
+private fun groovyScriptString(value: String): String = if (value.contains("\${params.")) {
+    "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\""
+} else groovyString(value)
