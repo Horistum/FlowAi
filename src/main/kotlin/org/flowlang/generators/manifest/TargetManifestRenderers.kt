@@ -69,7 +69,6 @@ class JenkinsManifestRenderer {
         }
     }
 
-
     private fun renderJenkinsTryStage(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
         val body = step.children.firstOrNull { it.type == "try-body" }?.children.orEmpty()
         val handler = step.children.firstOrNull { it.type == "error-handler" }?.children.orEmpty()
@@ -175,7 +174,7 @@ class GitHubActionsManifestRenderer {
         sb.appendLine("    name: ${yamlScalar(job.name)}")
         sb.appendLine("    runs-on: ubuntu-latest")
         if (job.dependsOn.isNotEmpty()) sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
-        githubJobIf(job, manifest)?.let { sb.appendLine("    if: \${{ $it }}") }
+        githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
         if (job.metadata["approval"] == "true") sb.appendLine("    environment: production")
         sb.appendLine("    steps:")
         if (job.steps.isEmpty()) {
@@ -187,9 +186,7 @@ class GitHubActionsManifestRenderer {
     private fun githubJobIf(job: TargetJob, manifest: TargetManifest): String? {
         val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs) }
         if (job.metadata["errorHandler"] == "true") {
-            val failureNeeds = job.dependsOn.map { dep -> "needs.${sanitizeId(dep)}.result == 'failure'" }
-            val parts = mutableListOf("always()")
-            parts += if (failureNeeds.isEmpty()) "failure()" else "(" + failureNeeds.joinToString(" || ") + ")"
+            val parts = mutableListOf("always()", "failure()")
             if (!own.isNullOrBlank()) parts += "($own)"
             return parts.joinToString(" && ")
         }
@@ -222,7 +219,7 @@ class GitHubActionsManifestRenderer {
             return
         }
         sb.appendLine("      - name: ${yamlScalar(step.name)}")
-        step.metadata["condition"]?.let { sb.appendLine("        if: \${{ ${TargetExpressionTranslator.github(it, manifest.inputs)} }}") }
+        step.metadata["condition"]?.let { sb.appendLine("        if: ${githubExpression(TargetExpressionTranslator.github(it, manifest.inputs))}") }
         val run = step.run?.takeIf { it.isNotBlank() } ?: "echo 'Flow: ${step.module}.${step.action} on ${step.target}'"
         sb.appendLine("        run: |")
         run.lines().forEach { sb.appendLine("          ${it.replace("\t", "  ")}") }
@@ -276,6 +273,7 @@ class TektonManifestRenderer {
 private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 private fun groovyString(value: String): String = "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r") + "'"
 private fun groovyEscape(value: String): String = value.replace("'", "\\'")
+private fun githubExpression(value: String): String = "$" + "{{ $value }}"
 
 private fun groovyScriptString(value: String): String =
     if (value.contains("\${params.")) {
