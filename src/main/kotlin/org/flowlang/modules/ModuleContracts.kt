@@ -7,7 +7,7 @@ package org.flowlang.modules
 data class FlowModule(
     val name: String,
     val version: String,
-    val description: String = "",
+    val description: String = "Built-in Flow module contract.",
     val systemTypes: Map<String, SystemTypeContract> = emptyMap(),
     val actions: Map<String, ModuleActionContract> = emptyMap()
 ) {
@@ -73,5 +73,6 @@ data class Effects(
 
 data class SafetyContract(
     val destructive: Boolean = false,
+    val requiresApproval: Boolean = false,
     val requiresSafety: Boolean = false
 )
