@@ -4,8 +4,8 @@ import org.flowlang.standard.CoreContractCheck
 import org.flowlang.standard.ScenarioPackQualityAnalyzer
 
 object ConformanceQualityGateNames {
-    const val CORE_CONTRACT_CHECK = "v0.8.0.core-contract-check"
-    const val SCENARIO_PACK_QUALITY = "v0.7.7.scenario-pack-quality-gates"
+    const val CORE_CONTRACT_CHECK = "v0.8.x.core-contract-check"
+    const val SCENARIO_PACK_QUALITY = "v0.8.x.scenario-pack-quality"
 }
 
 object ConformanceQualityGates {
