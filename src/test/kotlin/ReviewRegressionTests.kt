@@ -31,7 +31,7 @@ class ReviewRegressionTests {
             CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED)
         )
         val deployRun = manifest.jobs
-            .flatMap { it.steps.flatMap(::flattenSteps) }
+            .flatMap { job -> job.steps.flatMap { step -> flattenSteps(step) } }
             .single { it.module == "kubernetes" && it.action == "deploy" }
             .run.orEmpty()
 
@@ -73,5 +73,5 @@ class ReviewRegressionTests {
     }
 
     private fun flattenSteps(step: TargetStep): List<TargetStep> =
-        listOf(step) + step.children.flatMap(::flattenSteps)
+        listOf(step) + step.children.flatMap { child -> flattenSteps(child) }
 }
