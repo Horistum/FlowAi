@@ -50,6 +50,18 @@ class MainMissingReviewFixesTests {
         assertFalse(rendered.contains("post {"), rendered)
     }
 
+    @Test
+    fun inconsistentSchemaDomainsAreNormalizedToFlowlangDev() {
+        listOf(
+            File("schemas/ai-normalization-report.schema.json"),
+            File("schemas/intent-design-report.schema.json")
+        ).forEach { schema ->
+            val text = schema.readText()
+            assertTrue(text.contains("\"\$id\": \"https://flowlang.dev/schemas/"), schema.path)
+            assertFalse(text.contains("https://flowlang.org/schemas/"), schema.path)
+        }
+    }
+
     private fun planWithFlowLevelErrorHandler() = FlowPlanner(registry).plan(
         FlowParser().parse(File("examples/deploy-with-approval.flow"))
     )
