@@ -186,7 +186,7 @@ class GitHubActionsManifestRenderer {
     private fun failureGateFor(dep: String, manifest: TargetManifest): String {
         val safeDep = sanitizeId(dep)
         val isApproval = manifest.jobs.firstOrNull { sanitizeId(it.id) == safeDep }?.metadata?.get("approval") == "true"
-        return if (isApproval) "!(needs.$safeDep.result == 'success' || needs.$safeDep.result == 'skipped')" else "needs.$safeDep.result != 'success'"
+        return if (isApproval) "(needs.$safeDep.result != 'success' && needs.$safeDep.result != 'skipped')" else "needs.$safeDep.result != 'success'"
     }
 
     private fun renderGitHubStep(step: TargetStep, manifest: TargetManifest, sb: StringBuilder) {
