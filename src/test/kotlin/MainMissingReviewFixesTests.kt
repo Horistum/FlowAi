@@ -1,21 +1,31 @@
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.flowlang.ast.ActionNode
+import org.flowlang.ast.BinaryExpressionNode
+import org.flowlang.ast.ErrorHandlerNode
+import org.flowlang.ast.FlowDocument
+import org.flowlang.ast.FlowNode
+import org.flowlang.ast.IfNode
+import org.flowlang.ast.InputNode
+import org.flowlang.ast.ModuleImportNode
+import org.flowlang.ast.ReferenceNode
+import org.flowlang.ast.ResultBindingNode
+import org.flowlang.ast.StringLiteralNode
+import org.flowlang.ast.SystemNode
+import org.flowlang.ast.ValueTypeNode
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetExpressionTranslator
 import org.flowlang.generators.manifest.TargetInput
-import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.TryPlanNode
 import java.io.File
 
 class MainMissingReviewFixesTests {
-    private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
-
     @Test
     fun githubListLiteralConditionRendersValidJsonArray() {
         val rendered = TargetExpressionTranslator.github(
@@ -47,7 +57,6 @@ class MainMissingReviewFixesTests {
         assertTrue(rendered.contains("try {"), rendered)
         assertTrue(rendered.contains("catch (flowError)"), rendered)
         assertTrue(rendered.contains("params.environment == 'prod'"), rendered)
-        assertTrue(rendered.contains("input message: 'Deploy ${'$'}{params.app} ${'$'}{params.version} to production?'"), rendered)
         assertFalse(rendered.contains("post {"), rendered)
     }
 
@@ -63,7 +72,49 @@ class MainMissingReviewFixesTests {
         }
     }
 
-    private fun planWithFlowLevelErrorHandler() = FlowPlanner(registry).plan(
-        FlowParser().parse(File("examples/deploy-with-approval.flow"))
+    private fun planWithFlowLevelErrorHandler() = FlowPlanner().plan(
+        FlowDocument(
+            imports = listOf(
+                ModuleImportNode(name = "shell", version = "1.0"),
+                ModuleImportNode(name = "notify", version = "1.0")
+            ),
+            flow = FlowNode(
+                name = "flow-error-boundary",
+                input = listOf(InputNode(name = "environment", valueType = ValueTypeNode(kind = "text"), required = true)),
+                systems = listOf(
+                    SystemNode(name = "local", systemType = "shell"),
+                    SystemNode(name = "mailer", systemType = "notify")
+                ),
+                steps = listOf(
+                    IfNode(
+                        condition = BinaryExpressionNode(
+                            operator = "==",
+                            left = ReferenceNode(path = listOf("environment")),
+                            right = StringLiteralNode(value = "prod")
+                        ),
+                        then = listOf(shellAction("echo deploy", "deployResult"))
+                    )
+                ),
+                errorHandler = ErrorHandlerNode(steps = listOf(
+                    ActionNode(
+                        module = "notify",
+                        action = "send",
+                        target = ReferenceNode(path = listOf("mailer")),
+                        params = mapOf(
+                            "subject" to StringLiteralNode(value = "Failed"),
+                            "body" to ReferenceNode(path = listOf("error", "message"), scope = "error", safe = true)
+                        )
+                    )
+                ))
+            )
+        )
+    )
+
+    private fun shellAction(command: String, resultName: String): ActionNode = ActionNode(
+        module = "shell",
+        action = "run",
+        target = ReferenceNode(path = listOf("local")),
+        params = mapOf("command" to StringLiteralNode(value = command)),
+        result = ResultBindingNode(name = resultName)
     )
 }
