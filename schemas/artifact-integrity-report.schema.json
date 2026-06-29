@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/artifact-integrity-report/1.0/artifact-integrity-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/artifact-integrity-report/1.0/artifact-integrity-report.schema.json",
   "title": "Flow Artifact Integrity Report",
   "type": "object",
   "additionalProperties": false,

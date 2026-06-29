@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/flow-artifact-bundle/1.0/flow-artifact-bundle.schema.json",
+  "$id": "https://flowlang.dev/schemas/flow-artifact-bundle/1.0/flow-artifact-bundle.schema.json",
   "title": "Flow Public Artifact Bundle v1.0",
   "type": "object",
   "required": [

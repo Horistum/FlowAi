@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/negative-conformance-corpus/1.0/negative-conformance-corpus.schema.json",
+  "$id": "https://flowlang.dev/schemas/negative-conformance-corpus/1.0/negative-conformance-corpus.schema.json",
   "title": "Flow Negative Conformance Corpus",
   "type": "object",
   "additionalProperties": false,

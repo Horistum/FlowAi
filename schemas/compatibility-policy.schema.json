@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/compatibility-policy/1.0/compatibility-policy.schema.json",
+  "$id": "https://flowlang.dev/schemas/compatibility-policy/1.0/compatibility-policy.schema.json",
   "title": "Flow Compatibility Policy",
   "type": "object",
   "additionalProperties": false,

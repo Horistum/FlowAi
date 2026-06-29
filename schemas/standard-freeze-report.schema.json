@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/standard-freeze-report/1.0/standard-freeze-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/standard-freeze-report/1.0/standard-freeze-report.schema.json",
   "title": "Flow Standard Freeze Report",
   "type": "object",
   "additionalProperties": false,

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/ast/1.0/ast.schema.json",
+  "$id": "https://flowlang.dev/schemas/ast/1.0/ast.schema.json",
   "title": "Flow AST v1.0 draft",
   "type": "object",
   "required": ["astVersion", "sourceVersion", "kind", "imports", "flow"],

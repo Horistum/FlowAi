@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/ai-normalization-report.schema.json",
+  "$id": "https://flowlang.org/schemas/ai-normalization-report.schema.json",
   "title": "Flow AI Normalization Report",
   "type": "object",
   "required": ["standardVersion", "mode", "classification", "confidence", "guardrails"],

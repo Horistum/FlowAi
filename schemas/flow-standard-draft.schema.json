@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/flow-standard-draft/0.4/flow-standard-draft.schema.json",
+  "$id": "https://flowlang.dev/schemas/flow-standard-draft/0.4/flow-standard-draft.schema.json",
   "title": "Flow Standard Draft 0.4",
   "type": "object",
   "additionalProperties": false,

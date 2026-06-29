@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/reference-intent-corpus.schema.json",
+  "$id": "https://flowlang.dev/schemas/reference-intent-corpus.schema.json",
   "title": "Flow Reference Intent Corpus",
   "type": "object",
   "required": ["standardVersion", "corpusVersion", "status", "scenarios", "requiredScenarioIds", "negativeScenarioIds"],

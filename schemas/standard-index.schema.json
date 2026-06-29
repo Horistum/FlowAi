@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/standard-index/1.0/standard-index.schema.json",
+  "$id": "https://flowlang.dev/schemas/standard-index/1.0/standard-index.schema.json",
   "title": "Flow Standard Index",
   "type": "object",
   "additionalProperties": false,

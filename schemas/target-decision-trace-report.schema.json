@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/target-decision-trace-report/1.0/target-decision-trace-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/target-decision-trace-report/1.0/target-decision-trace-report.schema.json",
   "title": "Flow Target Decision Trace Report v1.0",
   "type": "object",
   "required": [

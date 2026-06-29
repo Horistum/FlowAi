@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/standard-release-profile/1.0/standard-release-profile.schema.json",
+  "$id": "https://flowlang.dev/schemas/standard-release-profile/1.0/standard-release-profile.schema.json",
   "title": "Flow Standard Release Profile",
   "type": "object",
   "additionalProperties": false,

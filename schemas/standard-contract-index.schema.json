@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/standard-contract-index/1.0/standard-contract-index.schema.json",
+  "$id": "https://flowlang.dev/schemas/standard-contract-index/1.0/standard-contract-index.schema.json",
   "title": "Flow Standard Contract Index",
   "type": "object",
   "additionalProperties": false,

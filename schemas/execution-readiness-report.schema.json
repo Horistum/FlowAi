@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/execution-readiness-report/1.0/execution-readiness-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/execution-readiness-report/1.0/execution-readiness-report.schema.json",
   "title": "Flow Execution Readiness Report v1.0",
   "type": "object",
   "required": [

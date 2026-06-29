@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/conformance-manifest/1.0/conformance-manifest.schema.json",
+  "$id": "https://flowlang.dev/schemas/conformance-manifest/1.0/conformance-manifest.schema.json",
   "title": "Flow Conformance Manifest v1.0",
   "type": "object",
   "required": [

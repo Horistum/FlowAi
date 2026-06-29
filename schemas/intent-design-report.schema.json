@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/intent-design-report.schema.json",
+  "$id": "https://flowlang.org/schemas/intent-design-report.schema.json",
   "title": "Flow Intent Design Report",
   "type": "object",
   "required": ["standardVersion", "intentName", "summary", "capabilities", "requiredSystems"],

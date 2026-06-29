@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/intent/1.0/intent.schema.json",
+  "$id": "https://flowlang.dev/schemas/intent/1.0/intent.schema.json",
   "title": "Flow Standard Intent Document v1.0 draft",
   "type": "object",
   "required": [

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/target-semantics-matrix.schema.json",
+  "$id": "https://flowlang.dev/schemas/target-semantics-matrix.schema.json",
   "title": "Flow Target Semantics Matrix",
   "type": "object",
   "required": ["standardVersion", "matrixVersion", "status", "targetIds", "entries", "portabilityRule"],

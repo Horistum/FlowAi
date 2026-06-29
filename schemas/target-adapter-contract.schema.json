@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/target-adapter-contract/1.0/target-adapter-contract.schema.json",
+  "$id": "https://flowlang.dev/schemas/target-adapter-contract/1.0/target-adapter-contract.schema.json",
   "title": "Flow Target Adapter Contract v1.0",
   "type": "object",
   "required": [

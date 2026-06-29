@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/public-standard-surface.schema.json",
+  "$id": "https://flowlang.dev/schemas/public-standard-surface.schema.json",
   "title": "Flow Public Standard Surface",
   "type": "object",
   "required": ["standardVersion", "surfaceVersion", "status", "entries", "stableArtifacts", "requiredChangeGates"],

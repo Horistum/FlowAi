@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/diagnostic-coverage-report/1.0/diagnostic-coverage-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/diagnostic-coverage-report/1.0/diagnostic-coverage-report.schema.json",
   "title": "Flow Diagnostic Coverage Report",
   "type": "object",
   "additionalProperties": false,

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/intent-capability-validation-report/1.0/intent-capability-validation-report.schema.json",
+  "$id": "https://flowlang.dev/schemas/intent-capability-validation-report/1.0/intent-capability-validation-report.schema.json",
   "title": "Flow Intent Capability Validation Report",
   "type": "object",
   "additionalProperties": false,

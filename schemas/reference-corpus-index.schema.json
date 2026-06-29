@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/reference-corpus-index/1.0/reference-corpus-index.schema.json",
+  "$id": "https://flowlang.dev/schemas/reference-corpus-index/1.0/reference-corpus-index.schema.json",
   "title": "Flow Reference Corpus Index",
   "type": "object",
   "additionalProperties": false,

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/1.0/conformance-suite/1.0/conformance-suite.schema.json",
+  "$id": "https://flowlang.dev/schemas/conformance-suite/1.0/conformance-suite.schema.json",
   "title": "Flow Conformance Suite",
   "type": "object",
   "additionalProperties": false,
