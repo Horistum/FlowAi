@@ -84,6 +84,13 @@ class JenkinsManifestRenderer {
 
     private fun renderJenkinsScriptLine(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
         val condition = step.metadata["condition"]
+        if (step.type == "condition" && step.children.isNotEmpty()) {
+            val guard = step.params["condition"] ?: condition ?: "true"
+            sb.appendLine("${indent}if (${TargetExpressionTranslator.groovy(guard, manifest.inputs)}) {")
+            step.children.forEach { renderJenkinsScriptLine(it, manifest, sb, "${indent}  ") }
+            sb.appendLine("${indent}}")
+            return
+        }
         val lines = when {
             step.children.isNotEmpty() -> null
             step.type == "approval" -> listOf("input message: ${groovyString(step.params["message"] ?: "Approval required")}")
