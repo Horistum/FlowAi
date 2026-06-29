@@ -39,8 +39,11 @@ pipeline {
         sh(script: "kubectl get 'pods' -n '${params.environment}' -l 'app=build-test-deploy'")
       }
     }
-    stage('onError_1') {
-      steps {
+  }
+  post {
+    failure {
+      script {
+        def error = [message: currentBuild.currentResult]
         sh(script: 'echo \'Flow rollback requested for build-test-deploy. Configure a target-specific rollback adapter for production.\'')
         sh(script: 'printf %s \'error?.message\' | mail -s \'Flow notification: Flow failed: build-test-deploy\' \'team@example.com\' || echo \'Notification adapter is not configured\'')
       }
