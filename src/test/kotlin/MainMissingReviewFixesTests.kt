@@ -46,7 +46,8 @@ class MainMissingReviewFixesTests {
 
         assertTrue(rendered.contains("try {"), rendered)
         assertTrue(rendered.contains("catch (flowError)"), rendered)
-        assertTrue(rendered.contains("if ((params.environment == 'prod'))"), rendered)
+        assertTrue(rendered.contains("params.environment == 'prod'"), rendered)
+        assertTrue(rendered.contains("input message: 'Deploy ${'$'}{params.app} ${'$'}{params.version} to production?'"), rendered)
         assertFalse(rendered.contains("post {"), rendered)
     }
 
