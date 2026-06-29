@@ -19,10 +19,9 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     fun plan(document: FlowDocument): ExecutionPlan {
         val ctx = Ctx(document.flow.input.map { it.name }.toSet())
         val nodes = planStatements(document.flow.steps, ctx)
-        val tail = document.flow.errorHandler?.let {
-            listOf(TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(it.steps, ctx)))
-        } ?: emptyList()
-        val allNodes = nodes + tail
+        val allNodes = document.flow.errorHandler?.let {
+            listOf(TryPlanNode(id = ctx.id("onError"), body = nodes, errorHandler = planStatements(it.steps, ctx)))
+        } ?: nodes
         return ExecutionPlan(
             flowName = document.flow.name,
             inputs = document.flow.input.map { it.toPlanInput() },
@@ -82,10 +81,22 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                 resultName = stmt.result?.name,
                 dependsOn = explicitDeps)
         }
-        is TransformNode -> { ctx.results[stmt.target] = ""; DataOpNode(ctx.id("transform"), "Transform", stmt.target, ExpressionRenderer.render(stmt.source)) }
-        is AggregateNode -> { ctx.results[stmt.target] = ""; DataOpNode(ctx.id("aggregate"), "Aggregate", stmt.target, ExpressionRenderer.render(stmt.source)) }
+        is TransformNode -> {
+            val id = ctx.id("transform")
+            ctx.results[stmt.target] = id
+            DataOpNode(id, "Transform", stmt.target, ExpressionRenderer.render(stmt.source))
+        }
+        is AggregateNode -> {
+            val id = ctx.id("aggregate")
+            ctx.results[stmt.target] = id
+            DataOpNode(id, "Aggregate", stmt.target, ExpressionRenderer.render(stmt.source))
+        }
         is ValidateNode -> DataOpNode(ctx.id("validate"), "Validate", null, ExpressionRenderer.render(stmt.target))
-        is SetNode -> { ctx.results[stmt.name] = ""; ControlNode(ctx.id("set"), "Set", "${stmt.name} = ${ExpressionRenderer.render(stmt.value)}") }
+        is SetNode -> {
+            val id = ctx.id("set")
+            ctx.results[stmt.name] = id
+            ControlNode(id, "Set", "${stmt.name} = ${ExpressionRenderer.render(stmt.value)}")
+        }
         is FailNode -> ControlNode(ctx.id("fail"), "Fail", ExpressionRenderer.render(stmt.message))
         is SkipNode -> ControlNode(ctx.id("skip"), "Skip", ExpressionRenderer.render(stmt.message))
         is ExpectNode -> ControlNode(ctx.id("expect"), "Expect", stmt.expressions.joinToString("; ") { ExpressionRenderer.render(it) })
@@ -170,29 +181,29 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     private fun collectRoots(e: ExpressionNode, into: MutableSet<String>) {
         when (e) {
             is ReferenceNode -> e.path.firstOrNull()?.let { into += it }
+            is MemberExpressionNode -> collectRoots(e.target, into)
+            is IndexExpressionNode -> { collectRoots(e.target, into); collectRoots(e.index, into) }
+            is CallExpressionNode -> e.args.forEach { collectRoots(it, into) }
+            is ListLiteralNode -> e.items.forEach { collectRoots(it, into) }
+            is MapLiteralNode -> e.entries.forEach { (k, v) -> collectRoots(k, into); collectRoots(v, into) }
             is BinaryExpressionNode -> { collectRoots(e.left, into); collectRoots(e.right, into) }
+            is LogicalExpressionNode -> e.operands.forEach { collectRoots(it, into) }
             is UnaryExpressionNode -> collectRoots(e.operand, into)
             is UnaryPostfixExpressionNode -> collectRoots(e.operand, into)
-            is LogicalExpressionNode -> e.operands.forEach { collectRoots(it, into) }
-            is ListLiteralNode -> e.items.forEach { collectRoots(it, into) }
-            is MapLiteralNode -> e.entries.values.forEach { collectRoots(it, into) }
             is TemplateStringNode -> e.parts.forEach { collectRoots(it, into) }
-            is CallExpressionNode -> e.args.forEach { collectRoots(it, into) }
-            is IndexExpressionNode -> { collectRoots(e.target, into); collectRoots(e.index, into) }
-            is MemberExpressionNode -> collectRoots(e.target, into)
             else -> Unit
         }
     }
 
     private class Ctx(val inputNames: Set<String>) {
-        val results = mutableMapOf<String, String>()   // result/binding name -> producing task id
+        private val counts = mutableMapOf<String, Int>()
+        val results = mutableMapOf<String, String>()
         val outputs = mutableListOf<PlanOutput>()
-        val assumptions = mutableListOf<PlanAssumption>()
-        private val counters = mutableMapOf<String, Int>()
+        val assumptions = mutableListOf<String>()
         fun id(prefix: String): String {
-            val n = (counters[prefix] ?: 0) + 1
-            counters[prefix] = n
-            return "${prefix}_$n"
+            val n = (counts[prefix] ?: 0) + 1
+            counts[prefix] = n
+            return if (n == 1) prefix else "${prefix}_$n"
         }
     }
 }
