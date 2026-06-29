@@ -178,10 +178,13 @@ class GitHubActionsManifestRenderer {
             else "needs.$safeDep.result == 'success'"
         }
         if (job.metadata["onFailure"] == "true") {
-            val failureNeeds = job.dependsOn.map { "needs.${sanitizeId(it)}.result != 'success'" }
+            val failureGate = job.dependsOn.map { "needs.${sanitizeId(it)}.result != 'success'" }
+                .takeIf { it.isNotEmpty() }
+                ?.joinToString(" || ", "(", ")")
+                ?: "failure()"
             val parts = mutableListOf("always()")
             if (!own.isNullOrBlank()) parts += "($own)"
-            parts += failureNeeds.ifEmpty { listOf("failure()") }
+            parts += failureGate
             return parts.joinToString(" && ")
         }
         val parts = mutableListOf<String>()
