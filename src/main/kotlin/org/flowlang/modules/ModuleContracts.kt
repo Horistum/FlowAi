@@ -31,7 +31,7 @@ data class ModuleActionContract(
     val timeoutSupported: Boolean = false,
     val additionalParams: Boolean = false,
     val errors: Map<String, ModuleErrorRule> = emptyMap(),
-    val credentialNames: List<String> = emptyList(),
+    val secrets: List<String> = emptyList(),
     val requiredCapabilities: List<String> = emptyList(),
     val targetImplications: Map<String, TargetImplication> = emptyMap()
 )
