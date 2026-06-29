@@ -114,6 +114,15 @@ class TektonManifestGenerator : TargetManifestGenerator {
         val resolvedJobs = jobs.ifEmpty { listOf(TargetJob(id = sanitizeId(plan.flowName), name = plan.flowName)) }
         val inputs = plan.inputs.map { it.toTargetInput() }
         val partialNote = TargetMappingNote("warning", target, "manifest", "target.partial", "Tekton renderer is a partial generator and intentionally emits mapping notes for features that require platform-specific adapters.")
+        val failureHandlerNotes = resolvedJobs.filter { it.metadata["onFailure"] == "true" }.map {
+            TargetMappingNote(
+                level = "error",
+                target = target,
+                nodeId = it.id,
+                feature = "errorHandlers.partial",
+                message = "Tekton does not natively run this Flow error handler only after an upstream failure. The generated task is guarded from unconditional execution and needs an explicit platform adapter."
+            )
+        }
         // Silent-semantic-fallback guard (standard/architecture/forbidden-directions.yaml#silent-semantic-fallback):
         // a Flow condition that cannot be expressed as a native Tekton 'when' must surface as an explicit
         // diagnostic, never be dropped so the task silently runs unconditionally.
@@ -135,7 +144,7 @@ class TektonManifestGenerator : TargetManifestGenerator {
             compatibility = compatibility,
             inputs = inputs,
             jobs = resolvedJobs,
-            mappingNotes = compatibility.toMappingNotes(target) + partialNote + untranslatableConditionNotes,
+            mappingNotes = compatibility.toMappingNotes(target) + partialNote + failureHandlerNotes + untranslatableConditionNotes,
             metadata = baseMetadata(plan, "TektonManifestGenerator") + mapOf("supportLevel" to "partial", "jobPerTask" to "true")
         )
     }
@@ -189,7 +198,11 @@ internal fun PlanNode.toTargetSteps(targetName: String = "portable-shell"): List
     ))
     is MatchPlanNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "match", params = mapOf("source" to source), children = cases.flatMap { c -> c.steps.flatMap { it.toTargetSteps(targetName) } } + errorCase.flatMap { it.toTargetSteps(targetName) } + defaultSteps.flatMap { it.toTargetSteps(targetName) }, metadata = mapOf("sourceNodeKind" to kind, "supportLevel" to "partial")))
     is RetryGroupNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "retry", params = mapOf("max" to max.toString(), "delay" to delay, "backoff" to backoff), children = body.flatMap { it.toTargetSteps(targetName) }, metadata = mapOf("sourceNodeKind" to kind)))
-    is TryPlanNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "try", children = body.flatMap { it.toTargetSteps(targetName) } + errorHandler.flatMap { it.toTargetSteps(targetName) }, metadata = mapOf("sourceNodeKind" to kind, "errorHandlerCount" to errorHandler.size.toString())))
+    is TryPlanNode -> {
+        val bodySteps = body.flatMap { it.toTargetSteps(targetName) }
+        val handlerSteps = errorHandler.flatMap { it.toTargetSteps(targetName) }.map { it.copy(metadata = it.metadata + ("onFailure" to "true")) }
+        listOf(TargetStep(id = sanitizeId(id), name = id, type = "try", children = bodySteps + handlerSteps, metadata = mapOf("sourceNodeKind" to kind, "errorHandlerCount" to errorHandler.size.toString())))
+    }
     is ApprovalNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "approval", dependsOn = dependsOn.map(::sanitizeId), params = mapOf("mode" to mode) + (message?.let { mapOf("message" to it) } ?: emptyMap()), metadata = mapOf("sourceNodeKind" to kind, "resultName" to (resultName ?: "")).filterValues { it.isNotBlank() }))
     is DataOpNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("target" to (target ?: ""), "detail" to (detail ?: "")).filterValues { it.isNotBlank() }, metadata = mapOf("sourceNodeKind" to kind)))
     is ControlNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("detail" to (detail ?: "")).filterValues { it.isNotBlank() }, metadata = mapOf("sourceNodeKind" to kind)))
@@ -211,7 +224,21 @@ private fun PlanNode.toTargetJobs(out: MutableList<TargetJob>, condition: String
         }
         is ParallelGroupNode -> branches.flatMap { it.steps }.forEach { it.toTargetJobs(out, condition, targetName) }
         is RetryGroupNode -> body.forEach { it.toTargetJobs(out, condition, targetName) }
-        is TryPlanNode -> { body.forEach { it.toTargetJobs(out, condition, targetName) }; errorHandler.forEach { it.toTargetJobs(out, condition) } }
+        is TryPlanNode -> {
+            val beforeBody = out.size
+            body.forEach { it.toTargetJobs(out, condition, targetName) }
+            val bodyJobIds = out.drop(beforeBody).map { it.id }
+            val handlerJobs = mutableListOf<TargetJob>()
+            errorHandler.forEach { it.toTargetJobs(handlerJobs, condition, targetName) }
+            val failureDeps = bodyJobIds.ifEmpty { out.map { it.id } }
+            out += handlerJobs.map { job ->
+                job.copy(
+                    dependsOn = (job.dependsOn + failureDeps).distinct(),
+                    steps = job.steps.map { step -> step.copy(metadata = step.metadata + ("onFailure" to "true")) },
+                    metadata = job.metadata + ("onFailure" to "true")
+                )
+            }
+        }
         is LoopNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial"))
         is MatchPlanNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial"))
         is DataOpNode, is ControlNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition))
@@ -317,7 +344,7 @@ internal fun runCommandFor(task: TaskNode, targetName: String = "portable-shell"
     "notify" to "send" -> {
         val subject = shellQuote("Flow notification: ${taskParam(task, "subject", task.id, targetName)}")
         val body = shellQuote(taskParam(task, "body", "Flow notification from ${task.id}", targetName))
-        "printf %s $body | mail -s $subject ${shellQuote(taskParam(task, "to", "team@example.com", targetName))} || echo ${shellQuote("Notification adapter is not configured")}"
+        "printf %s $body | mail -s $subject ${shellQuote(taskParam(task, "to", "team@example.com", targetName))} || echo ${shellQuote("Notification adapter is not configured")}" 
     }
     "standard" to "rollback" -> "echo ${shellQuote("Flow rollback requested for ${taskParam(task, "flow", task.id, targetName)}. Configure a target-specific rollback adapter for production.")}"
     "standard" to "execute" -> standardExecuteCommand(task, targetName)
@@ -366,7 +393,6 @@ private fun targetInterpolated(value: String, targetName: String): String =
     }
 
 private fun combineConditions(a: String?, b: String): String = if (a.isNullOrBlank()) b else "($a) and ($b)"
-
 private fun mapOfNotNull(vararg pairs: Pair<String, String?>): Map<String, String> = pairs.mapNotNull { (k, v) -> v?.takeIf { it.isNotBlank() }?.let { k to v } }.toMap()
 
 internal fun sanitizeId(value: String): String = value.lowercase().replace(Regex("[^a-z0-9_-]+"), "-").trim('-').ifBlank { "flow-job" }
