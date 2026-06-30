@@ -2,6 +2,28 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.8.4 - Planner capability constraints
+
+### Added
+
+- Added `PlannerCapabilityConstraintGate` as a pre-projection gate over planner output and target capability compatibility.
+- Added `PlannerCapabilityConstraintReport` and `PlannerCapabilityConstraintStatus` to make allowed, degraded and blocked projection states explicit.
+- Added tests proving supported targets are allowed, unsupported target semantics are blocked before rendering, partial support is degraded outside strict mode, strict mode blocks partial support, and unknown targets are blocked.
+- Added `docs/V0_8_4_PLANNER_CAPABILITY_CONSTRAINTS.md`.
+- Added `.flow-agent/reports/v0.8.4-planner-capability-constraints.md`.
+
+### Changed
+
+- Bumped the Gradle package version to `0.8.4`.
+- Updated `REPORT.md`, `.flow-agent/release-state.yaml`, `.flow-agent/roadmap.yaml`, and version consistency tests for the v0.8.4 package line.
+
+### Notes
+
+- The planner remains platform-neutral; the new gate does not rewrite plans or invent target workarounds.
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.8.3 - Package version and release integrity
 
 ### Added
