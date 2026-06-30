@@ -1,9 +1,8 @@
 package org.flowlang.generators.manifest
 
-import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.capabilities.PlannerCapabilityConstraintGate
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.PlannerCapabilityConstraintGate
 
 /**
  * Safe manifest projection helper.
@@ -16,7 +15,7 @@ fun TargetManifestGenerator.generateWithCapabilityConstraints(
     targets: Map<String, TargetCapability>,
     strict: Boolean = false
 ): TargetManifest {
-    val gate = PlannerCapabilityConstraintGate(CompatibilityAnalyzer(targets))
-    val constraint = gate.requireProjectionAllowed(plan, target, strict)
-    return generate(plan, constraint.compatibility)
+    val gate = PlannerCapabilityConstraintGate(targets)
+    val compatibility = gate.compatibilityForProjection(plan, target, strict)
+    return generate(plan, compatibility)
 }
