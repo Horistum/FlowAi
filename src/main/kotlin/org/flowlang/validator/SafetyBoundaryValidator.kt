@@ -77,10 +77,10 @@ internal class SafetyBoundaryValidator(private val registry: ModuleRegistry = Mo
                 else -> "Action contract"
             }
             issues += ValidationIssue(
-                level = "error",
-                code = code,
-                message = "$reason '${action.module}.${action.action}' requires safety: requiresApproval before target projection.",
-                location = action.sourceLocation
+                "error",
+                code,
+                "$reason '${action.module}.${action.action}' requires safety: requiresApproval before target projection.",
+                action.sourceLocation
             )
         }
     }
