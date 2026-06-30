@@ -74,7 +74,7 @@ class JenkinsManifestGenerator : TargetManifestGenerator {
     override val target: String = "jenkins"
 
     override fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
-        val steps = plan.nodes.flatMap { it.toTargetSteps(target) }
+        val steps = plan.nodes.toJenkinsTargetSteps(target)
         return TargetManifest(
             target = target,
             flowName = plan.flowName,
@@ -157,6 +157,41 @@ private fun CompatibilityReport.toMappingNotes(targetName: String): List<TargetM
         feature = it.feature,
         message = it.message
     )
+}
+
+private fun List<PlanNode>.toJenkinsTargetSteps(targetName: String): List<TargetStep> {
+    val flowHandler = lastOrNull() as? TryPlanNode
+    if (flowHandler != null && flowHandler.body.isEmpty() && flowHandler.errorHandler.isNotEmpty()) {
+        val bodyNodes = dropLast(1)
+        if (bodyNodes.isNotEmpty()) {
+            val bodyStep = TargetStep(
+                id = sanitizeId("flow_1_body"),
+                name = "flow_1 body",
+                type = "try-body",
+                children = bodyNodes.flatMap { it.toTargetSteps(targetName) },
+                metadata = mapOf("sourceNodeKind" to flowHandler.kind, "tryRole" to "body")
+            )
+            val handlerStep = TargetStep(
+                id = sanitizeId("flow_1_handler"),
+                name = "flow_1 error handler",
+                type = "error-handler",
+                children = flowHandler.errorHandler.flatMap { it.toTargetSteps(targetName) },
+                metadata = mapOf("sourceNodeKind" to flowHandler.kind, "tryRole" to "errorHandler")
+            )
+            return listOf(TargetStep(
+                id = sanitizeId("flow_1"),
+                name = "flow_1",
+                type = "try",
+                children = listOf(bodyStep, handlerStep),
+                metadata = mapOf(
+                    "sourceNodeKind" to flowHandler.kind,
+                    "flowLevelErrorBoundary" to "true",
+                    "errorHandlerCount" to flowHandler.errorHandler.size.toString()
+                )
+            ))
+        }
+    }
+    return flatMap { it.toTargetSteps(targetName) }
 }
 
 internal fun PlanNode.toTargetSteps(targetName: String = "portable-shell"): List<TargetStep> = when (this) {
@@ -370,7 +405,6 @@ private fun taskParam(task: TaskNode, name: String, default: String, targetName:
     task.params[name]?.let { taskValue(it, targetName) } ?: targetInterpolated(default, targetName)
 
 private fun taskValue(raw: String, targetName: String): String = targetInterpolated(unquote(raw), targetName)
-
 
 private fun standardExecuteCommand(task: TaskNode, targetName: String): String {
     val capability = taskParam(task, "capability", "custom", targetName)

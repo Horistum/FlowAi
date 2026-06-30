@@ -7,6 +7,7 @@ import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.GroovyExpr
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.runCommandFor
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
@@ -29,7 +30,10 @@ class ReviewRegressionTests {
             plan,
             CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED)
         )
-        val deployRun = manifest.jobs.flatMap { it.steps }.single { it.module == "kubernetes" && it.action == "deploy" }.run.orEmpty()
+        val deployRun = manifest.jobs
+            .flatMap { job -> job.steps.flatMap { step -> flattenSteps(step) } }
+            .single { it.module == "kubernetes" && it.action == "deploy" }
+            .run.orEmpty()
 
         assertTrue(deployRun.contains("deployment/'${'$'}{params.app}'"), deployRun)
     }
@@ -67,4 +71,7 @@ class ReviewRegressionTests {
         assertFalse(run.contains("${'$'}{params.deploy.status}"), run)
         assertTrue(run.contains("${'$'}{deploy.status}"), run)
     }
+
+    private fun flattenSteps(step: TargetStep): List<TargetStep> =
+        listOf(step) + step.children.flatMap { child -> flattenSteps(child) }
 }
