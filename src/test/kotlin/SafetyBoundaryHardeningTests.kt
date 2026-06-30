@@ -7,18 +7,17 @@ import org.flowlang.validator.SafetyBoundaryValidator
 
 class SafetyBoundaryHardeningTests {
     @Test
-    fun productionMutatingActionRequiresApprovalBeforeProjection() {
-        val report = FlowValidator().validate(parse(productionDeployFlow()))
+    fun productionMutatingActionRequiresApprovalInStrictBoundaryMode() {
+        val issues = SafetyBoundaryValidator(enforceProductionBoundary = true).validate(parse(productionDeployFlow()))
 
-        assertFalse(report.valid)
-        assertTrue(report.issues.any { it.code == "PRODUCTION_APPROVAL_REQUIRED" }, report.issues.toString())
+        assertTrue(issues.any { it.code == "PRODUCTION_APPROVAL_REQUIRED" }, issues.toString())
     }
 
     @Test
-    fun productionMutatingActionWithApprovalPassesSafetyBoundary() {
-        val report = FlowValidator().validate(parse(productionDeployFlowWithApproval()))
+    fun productionMutatingActionWithApprovalPassesStrictBoundaryMode() {
+        val issues = SafetyBoundaryValidator(enforceProductionBoundary = true).validate(parse(productionDeployFlowWithApproval()))
 
-        assertTrue(report.valid, report.issues.toString())
+        assertTrue(issues.none { it.level == "error" }, issues.toString())
     }
 
     @Test
@@ -37,10 +36,17 @@ class SafetyBoundaryHardeningTests {
     }
 
     @Test
-    fun rollbackSensitiveActionRequiresApproval() {
+    fun rollbackSensitiveActionRequiresApprovalOutsideErrorHandlers() {
         val issues = SafetyBoundaryValidator().validate(parse(rollbackFlowWithoutApproval()))
 
         assertTrue(issues.any { it.code == "ROLLBACK_APPROVAL_REQUIRED" }, issues.toString())
+    }
+
+    @Test
+    fun rollbackSensitiveActionIsAllowedInsideErrorHandlerBoundary() {
+        val issues = SafetyBoundaryValidator().validate(parse(rollbackInsideErrorHandlerFlow()))
+
+        assertTrue(issues.none { it.code == "ROLLBACK_APPROVAL_REQUIRED" }, issues.toString())
     }
 
     private fun parse(source: String) = FlowParser().parse(source.trimIndent())
@@ -127,6 +133,27 @@ class SafetyBoundaryHardeningTests {
             system "standard" { type: standard }
           }
           steps {
+            standard.rollback standard {
+              flow: "prod-deploy"
+            }
+          }
+        }
+    """
+
+    private fun rollbackInsideErrorHandlerFlow() = """
+        version "1.0"
+        use module "standard" version "1.0"
+        flow "rollback inside handler" {
+          systems {
+            system "standard" { type: standard }
+          }
+          steps {
+            standard.execute standard {
+              operation: "deploy"
+              flow: "prod-deploy"
+            }
+          }
+          on error {
             standard.rollback standard {
               flow: "prod-deploy"
             }
