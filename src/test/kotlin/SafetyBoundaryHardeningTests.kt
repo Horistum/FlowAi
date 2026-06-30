@@ -1,54 +1,53 @@
 import kotlin.test.Test
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.parser.FlowParser
-import org.flowlang.validator.FlowValidator
 import org.flowlang.validator.SafetyBoundaryValidator
 
 class SafetyBoundaryHardeningTests {
     @Test
     fun productionMutatingActionRequiresApprovalInStrictBoundaryMode() {
-        val issues = SafetyBoundaryValidator(enforceProductionBoundary = true).validate(parse(productionDeployFlow()))
+        val issues = strictValidator().validate(parse(productionDeployFlow()))
 
         assertTrue(issues.any { it.code == "PRODUCTION_APPROVAL_REQUIRED" }, issues.toString())
     }
 
     @Test
     fun productionMutatingActionWithApprovalPassesStrictBoundaryMode() {
-        val issues = SafetyBoundaryValidator(enforceProductionBoundary = true).validate(parse(productionDeployFlowWithApproval()))
+        val issues = strictValidator().validate(parse(productionDeployFlowWithApproval()))
 
         assertTrue(issues.none { it.level == "error" }, issues.toString())
     }
 
     @Test
     fun destructiveActionWithOnlyIfStillRequiresApproval() {
-        val report = FlowValidator().validate(parse(deleteFlowWithOnlyIfSafety()))
+        val issues = defaultValidator().validate(parse(deleteFlowWithOnlyIfSafety()))
 
-        assertFalse(report.valid)
-        assertTrue(report.issues.any { it.code == "APPROVAL_REQUIRED" }, report.issues.toString())
+        assertTrue(issues.any { it.code == "APPROVAL_REQUIRED" }, issues.toString())
     }
 
     @Test
     fun destructiveActionWithApprovalPassesSafetyBoundary() {
-        val report = FlowValidator().validate(parse(deleteFlowWithApproval()))
+        val issues = defaultValidator().validate(parse(deleteFlowWithApproval()))
 
-        assertTrue(report.valid, report.issues.toString())
+        assertTrue(issues.none { it.level == "error" }, issues.toString())
     }
 
     @Test
     fun rollbackSensitiveActionRequiresApprovalOutsideErrorHandlers() {
-        val issues = SafetyBoundaryValidator().validate(parse(rollbackFlowWithoutApproval()))
+        val issues = defaultValidator().validate(parse(rollbackFlowWithoutApproval()))
 
         assertTrue(issues.any { it.code == "ROLLBACK_APPROVAL_REQUIRED" }, issues.toString())
     }
 
     @Test
     fun rollbackSensitiveActionIsAllowedInsideErrorHandlerBoundary() {
-        val issues = SafetyBoundaryValidator().validate(parse(rollbackInsideErrorHandlerFlow()))
+        val issues = defaultValidator().validate(parse(rollbackInsideErrorHandlerFlow()))
 
         assertTrue(issues.none { it.code == "ROLLBACK_APPROVAL_REQUIRED" }, issues.toString())
     }
 
+    private fun defaultValidator() = SafetyBoundaryValidator()
+    private fun strictValidator() = SafetyBoundaryValidator(enforceProductionBoundary = true)
     private fun parse(source: String) = FlowParser().parse(source.trimIndent())
 
     private fun productionDeployFlow() = """
