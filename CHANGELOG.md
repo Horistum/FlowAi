@@ -105,3 +105,50 @@ All project source text is written in English. The changelog records architectur
 ### Notes
 
 - No SDK API, runtime executor, plugin lifecycle, target-specific public DSL or Flow syntax change was added.
+
+## 0.8.0 - Core contract check
+
+### Added
+
+- Added `CoreContractCheck` for validating the public core standard contract.
+- Added `CoreContractCheckTests`.
+- Added `docs/V0_8_0_CORE_CONTRACT_CHECK.md`.
+- Bumped Gradle package version to `0.8.0` while leaving the active public standard version controlled by `FlowStandardVersions.FLOW_STANDARD_VERSION`.
+
+### Notes
+
+- The active public standard version was not bumped because that is tied to rendered snapshots and conformance gates.
+- No Flow syntax, target rendering semantics, execution behavior, SDK API, runtime executor or plugin lifecycle was added.
+
+## 0.7.7 - Scenario pack quality analyzer
+
+### Added
+
+- Added `ScenarioPackQualityAnalyzer` for scenario pack metadata, useful examples, duplicate identifiers and blocked-coverage checks.
+- Added a v0.7.7 work package for scenario pack quality gates.
+
+### Notes
+
+- The analyzer was later covered by direct tests in the 0.8.0 review-fix line.
+- The active public standard version remained unchanged.
+
+## 0.7.6 semantic correctness hardening fix 2
+
+### Fixed
+
+- Fixed full offline Gradle test failure caused by stale rendered snapshots for GitHub Actions and Tekton.
+- Regenerated rendered snapshots from the reviewed v0.7.6 rendering path.
+- Preserved exact snapshot conformance instead of weakening or bypassing the gate.
+
+### Verified
+
+- `./gradlew --offline --no-daemon clean test --stacktrace --console=plain`: 151 tests, 0 failures, 0 errors, 0 skipped.
+- `./gradlew --offline --no-daemon run --args="conformance" --console=plain`: 76 passed, 0 failed.
+
+## 0.7.6 semantic correctness hardening fix 1
+
+### Fixed
+
+- Fixed Kotlin compilation in `TargetExpressionTranslator` by avoiding an invalid smart cast on `BinaryExpressionNode.right`.
+- Corrected mandatory safety enforcement so high-risk capability obligations are reported by `IntentCapabilityValidator` instead of being silently synthesized before validation.
+- Added semantic smoke validation for Kubernetes deploy identity, Jenkins runtime input rendering, mandatory database migration safety, safe-navigation preservation and Jenkins named-pattern rendering.
