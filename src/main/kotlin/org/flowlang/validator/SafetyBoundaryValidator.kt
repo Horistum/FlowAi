@@ -43,7 +43,7 @@ internal class SafetyBoundaryValidator(private val registry: ModuleRegistry = Mo
             is ParallelNode -> stmt.branches.flatMap { it.steps }.forEach { validateStatement(it, issues) }
             is MatchNode -> {
                 stmt.cases.flatMap { it.steps }.forEach { validateStatement(it, issues) }
-                stmt.errorCase.forEach { validateStatement(it, issues) }
+                stmt.errorCase?.forEach { validateStatement(it, issues) }
                 stmt.defaultSteps.forEach { validateStatement(it, issues) }
             }
             is RetryNode -> stmt.steps.forEach { validateStatement(it, issues) }
