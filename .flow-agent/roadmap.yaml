@@ -119,7 +119,7 @@ roadmap:
     name: "Planner Capability Constraints"
     purpose: "Ensure the planner respects target capability constraints before projection."
     type: "planner-hardening"
-    status: "in-progress"
+    status: "completed"
     requiredOutcome:
       - "Planner capability checks."
       - "No unsupported lowering."
@@ -129,19 +129,20 @@ roadmap:
 
   - version: "0.8.5"
     name: "Safety Boundary Hardening"
-    purpose: "Strengthen safety behavior for destructive, production, credential, and rollback-sensitive operations."
+    purpose: "Strengthen pre-projection safety checks for high-risk operations."
     type: "safety"
-    status: "next"
+    status: "in-progress"
     requiredOutcome:
       - "Safety boundary model hardening."
-      - "Production approval guarantees."
-      - "Negative tests for unsafe lowering."
+      - "Approval guarantees for high-risk operations."
+      - "Negative tests for missing approval boundaries."
+      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.9.0"
     name: "Generator Projection Contract"
     purpose: "Define the stable contract between ExecutionPlan and target generators."
     type: "projection-contract"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "Generator projection contract."
       - "Manifest rendering boundaries."
