@@ -62,7 +62,6 @@ class PlannerCapabilityConstraintGateTests {
         assertEquals(PlannerCapabilityConstraintStatus.DEGRADED, report.status)
         assertTrue(report.allowedForProjection)
         assertTrue(report.warnings.any { it.feature == "dynamicLoops" }, report.warnings.toString())
-        gate.compatibilityForProjection(plan, "github-actions", strict = false)
     }
 
     @Test
