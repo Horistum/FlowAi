@@ -10,10 +10,13 @@ import org.flowlang.planner.ExecutionPlan
  * makes that boundary explicit instead of relying on each renderer to rediscover the
  * same unsupported features after projection has already started.
  */
+enum class PlannerCapabilityConstraintStatus { ALLOWED, DEGRADED, BLOCKED }
+
 data class PlannerCapabilityConstraintReport(
     val target: String,
     val strict: Boolean,
     val projectionAllowed: Boolean,
+    val constraintStatus: PlannerCapabilityConstraintStatus,
     val status: SupportLevel,
     val blockingIssues: List<CompatibilityIssue>,
     val compatibility: CompatibilityReport
@@ -32,10 +35,16 @@ class PlannerCapabilityConstraintGate(private val targets: Map<String, TargetCap
     fun check(plan: ExecutionPlan, targetName: String, strict: Boolean = false): PlannerCapabilityConstraintReport {
         val compatibility = analyzer.analyze(plan, targetName, strict = strict)
         val blocking = compatibility.issues.filter { it.level == CompatibilityLevel.ERROR }
+        val status = when {
+            blocking.isNotEmpty() -> PlannerCapabilityConstraintStatus.BLOCKED
+            compatibility.issues.any { it.level == CompatibilityLevel.WARNING } -> PlannerCapabilityConstraintStatus.DEGRADED
+            else -> PlannerCapabilityConstraintStatus.ALLOWED
+        }
         return PlannerCapabilityConstraintReport(
             target = targetName,
             strict = strict,
-            projectionAllowed = blocking.isEmpty(),
+            projectionAllowed = status != PlannerCapabilityConstraintStatus.BLOCKED,
+            constraintStatus = status,
             status = compatibility.status,
             blockingIssues = blocking,
             compatibility = compatibility
