@@ -5,6 +5,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityLevel
+import org.flowlang.capabilities.CompatibilityReport
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetManifestGenerator
+import org.flowlang.generators.manifest.generateWithCapabilityConstraints
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.LoopNode
@@ -51,6 +55,21 @@ class PlannerCapabilityConstraintGateTests {
     }
 
     @Test
+    fun constrainedProjectionDoesNotInvokeGeneratorWhenGateBlocksTarget() {
+        val plan = ExecutionPlan(
+            flowName = "manual-approval-flow",
+            nodes = listOf(ApprovalNode(id = "approve_1", mode = "manual"))
+        )
+        val generator = RecordingGenerator(target = "tekton")
+
+        assertFailsWith<IllegalStateException> {
+            generator.generateWithCapabilityConstraints(plan, targets)
+        }
+
+        assertFalse(generator.invoked, "Generator must not be invoked when the capability gate blocks projection.")
+    }
+
+    @Test
     fun partialTargetSupportIsDegradedButAllowedOutsideStrictMode() {
         val plan = ExecutionPlan(
             flowName = "dynamic-loop-flow",
@@ -62,6 +81,7 @@ class PlannerCapabilityConstraintGateTests {
         assertEquals(PlannerCapabilityConstraintStatus.DEGRADED, report.status)
         assertTrue(report.allowedForProjection)
         assertTrue(report.warnings.any { it.feature == "dynamicLoops" }, report.warnings.toString())
+        gate.compatibilityForProjection(plan, "github-actions", strict = false)
     }
 
     @Test
@@ -91,5 +111,14 @@ class PlannerCapabilityConstraintGateTests {
 
         assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.status)
         assertTrue(report.blockingIssues.any { it.feature == "target" }, report.blockingIssues.toString())
+    }
+
+    private class RecordingGenerator(override val target: String) : TargetManifestGenerator {
+        var invoked: Boolean = false
+
+        override fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
+            invoked = true
+            return TargetManifest(target = target, flowName = plan.flowName, compatibility = compatibility)
+        }
     }
 }
