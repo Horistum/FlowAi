@@ -14,6 +14,7 @@ Examples:
 - `0.8.2` target negotiation report
 - `0.8.3` package version and release integrity
 - `0.8.4` planner capability constraints
+- `0.8.5` safety boundary hardening
 
 Package versions may change for implementation, documentation, release metadata, report, test or internal quality work.
 
@@ -70,7 +71,7 @@ Every release PR must state:
 
 ## Current package-line policy decision
 
-The v0.8.4 release adds planner capability constraints as a pre-projection gate over existing target compatibility analysis.
+The v0.8.5 release adds safety boundary hardening as a pre-projection validation gate over Flow AST and module contracts.
 
 It does not bump:
 
@@ -93,4 +94,5 @@ It also does not introduce:
 
 ## Historical package-line policy decisions
 
+- v0.8.4 added planner capability constraints as a pre-projection gate over existing target compatibility analysis.
 - v0.8.3 aligned package and release metadata only.
