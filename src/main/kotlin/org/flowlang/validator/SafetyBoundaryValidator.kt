@@ -30,39 +30,39 @@ import org.flowlang.modules.ModuleRegistry
 class SafetyBoundaryValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
     fun validate(document: FlowDocument): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()
-        document.flow.steps.forEach { validateStatement(it, issues) }
-        document.flow.errorHandler?.steps?.forEach { validateStatement(it, issues) }
+        document.flow.steps.forEach { validateStatement(it, issues, insideErrorHandler = false) }
+        document.flow.errorHandler?.steps?.forEach { validateStatement(it, issues, insideErrorHandler = true) }
         return issues
     }
 
-    private fun validateStatement(stmt: StatementNode, issues: MutableList<ValidationIssue>) {
+    private fun validateStatement(stmt: StatementNode, issues: MutableList<ValidationIssue>, insideErrorHandler: Boolean) {
         when (stmt) {
-            is ActionNode -> validateAction(stmt, issues)
-            is IfNode -> (stmt.then + stmt.otherwise).forEach { validateStatement(it, issues) }
-            is ForNode -> stmt.body.forEach { validateStatement(it, issues) }
-            is ParallelNode -> stmt.branches.flatMap { it.steps }.forEach { validateStatement(it, issues) }
+            is ActionNode -> validateAction(stmt, issues, insideErrorHandler)
+            is IfNode -> (stmt.then + stmt.otherwise).forEach { validateStatement(it, issues, insideErrorHandler) }
+            is ForNode -> stmt.body.forEach { validateStatement(it, issues, insideErrorHandler) }
+            is ParallelNode -> stmt.branches.flatMap { it.steps }.forEach { validateStatement(it, issues, insideErrorHandler) }
             is MatchNode -> {
-                stmt.cases.flatMap { it.steps }.forEach { validateStatement(it, issues) }
-                stmt.errorCase?.forEach { validateStatement(it, issues) }
-                stmt.defaultSteps.forEach { validateStatement(it, issues) }
+                stmt.cases.flatMap { it.steps }.forEach { validateStatement(it, issues, insideErrorHandler) }
+                stmt.errorCase?.forEach { validateStatement(it, issues, insideErrorHandler = true) }
+                stmt.defaultSteps.forEach { validateStatement(it, issues, insideErrorHandler) }
             }
-            is RetryNode -> stmt.steps.forEach { validateStatement(it, issues) }
+            is RetryNode -> stmt.steps.forEach { validateStatement(it, issues, insideErrorHandler) }
             is TryNode -> {
-                stmt.steps.forEach { validateStatement(it, issues) }
-                stmt.errorHandler.steps.forEach { validateStatement(it, issues) }
+                stmt.steps.forEach { validateStatement(it, issues, insideErrorHandler) }
+                stmt.errorHandler.steps.forEach { validateStatement(it, issues, insideErrorHandler = true) }
             }
-            is ErrorHandlerNode -> stmt.steps.forEach { validateStatement(it, issues) }
+            is ErrorHandlerNode -> stmt.steps.forEach { validateStatement(it, issues, insideErrorHandler = true) }
             is TransformNode, is AggregateNode -> Unit
             else -> Unit
         }
     }
 
-    private fun validateAction(action: ActionNode, issues: MutableList<ValidationIssue>) {
+    private fun validateAction(action: ActionNode, issues: MutableList<ValidationIssue>, insideErrorHandler: Boolean) {
         val contract = registry.findAction(action.module, action.action) ?: return
         val hasApproval = action.safety?.rule == "requiresApproval"
         val rollbackSensitive = isRollbackSensitive(action)
         val productionSensitive = isProductionSensitiveMutation(action, contract)
-        val approvalSensitive = contract.safety.requiresApproval || contract.safety.destructive || rollbackSensitive || productionSensitive
+        val approvalSensitive = contract.safety.requiresApproval || contract.safety.destructive || productionSensitive || (rollbackSensitive && !insideErrorHandler)
 
         if (approvalSensitive && !hasApproval) {
             val code = when {
