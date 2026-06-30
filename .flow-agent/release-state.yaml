@@ -1,9 +1,9 @@
 project: Flow Core
 stateVersion: 1
 
-currentVersion: "0.8.2"
-currentPackage: "flow-core-prod-v0_8_2_target_negotiation_report.zip"
-nextExpectedVersion: "0.8.3"
+currentVersion: "0.8.3"
+currentPackage: "flow-core-prod-v0_8_3_release_integrity.zip"
+nextExpectedVersion: "0.8.4"
 activeStandardVersion: "0.7.6"
 
 repositoryRules:
@@ -32,6 +32,7 @@ lastKnownValidation:
   targetedCompilation: "pending-ci"
   conformance: "pending-ci"
   notes:
-    - "v0.8.2 introduces a target negotiation explanation report over the existing compatibility negotiation model."
+    - "v0.8.3 aligns package versioning and release metadata after package-line review fixes."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
+    - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
     - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."
