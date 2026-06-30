@@ -1,6 +1,6 @@
 # Flow Core Report
 
-Current package line: `0.8.2`
+Current package line: `0.8.3`
 Active public standard version: `0.7.6`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
@@ -14,7 +14,7 @@ The current package line includes:
 - v0.8.0 core contract check
 - v0.8.1 target capability matrix
 - v0.8.2 target negotiation explanation report
-- consolidated review fixes for package-line metadata, module contracts, expression rendering, error-handler projection, planner data dependencies, schema ids, and legacy generator facades
+- v0.8.3 package version and release metadata integrity
 
 ## Current validation source
 
@@ -25,6 +25,18 @@ The current validation source is the local Gradle run performed by the reviewer 
 - `Compile and Test`
 - `Run Conformance`
 
+## Versioning boundary
+
+- Package version: `0.8.3`
+- Active public standard version: `0.7.6`
+- Intent artifact version: `1.0`
+- AST artifact version: `1.0`
+- Execution plan artifact version: `1.1`
+- Target manifest artifact version: `1.0`
+- Target registry artifact version: `1.0`
+
+The v0.8.3 package line does not bump the public standard or artifact schema versions.
+
 ## Architecture boundary
 
-No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced by the package-line review fixes.
+No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced by the v0.8.3 release integrity package line.
