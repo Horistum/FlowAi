@@ -9,9 +9,8 @@ import org.flowlang.modules.ModuleRegistry
  * Checks: imports & versions, system uniqueness & types, secret typing
  * ("secrets are not plain strings"), per-action module/action/target/params,
  * destructive-action safety, result-binding uniqueness, handler/result coherence,
- * reference resolution against scope, expression operator validity and v0.8.5
- * safety-boundary constraints before target projection. Recurses through every
- * control-flow and data statement.
+ * reference resolution against scope, and expression operator validity. Recurses
+ * through every control-flow and data statement.
  */
 class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
 
@@ -32,6 +31,7 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
         if (document.kind != "FlowDocument") issues += err("INVALID_KIND", "AST kind must be FlowDocument")
         if (document.flow.name.isBlank()) issues += err("FLOW_NAME_EMPTY", "Flow name must not be empty")
 
+        // imports
         document.imports.forEach { imp ->
             val module = registry.findModule(imp.name)
             if (module == null) issues += err("MODULE_NOT_FOUND", "Module '${imp.name}' is not registered", imp.sourceLocation)
@@ -40,11 +40,13 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
         }
         val imported = document.imports.map { it.name }.toSet()
 
+        // base scope: inputs + vars + systems
         val scope = Scope()
         document.flow.input.forEach { scope.declare(it.name) }
         document.flow.vars.forEach { scope.declare(it.name) }
         document.flow.systems.forEach { scope.declare(it.name) }
 
+        // input defaults
         document.flow.input.forEach { input ->
             val d = input.default
             if (d != null && input.valueType.kind == "option") {
@@ -55,6 +57,7 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
             }
         }
 
+        // vars / systems expressions reference inputs+vars+systems
         document.flow.vars.forEach { checkExpr(it.value, scope, "auto", null, issues) }
 
         val systemNames = mutableSetOf<String>()
@@ -73,6 +76,10 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
                     val field = contract.input[key]
                     if (field == null) {
                         issues += warn("UNKNOWN_SYSTEM_CONFIG", "System '${system.name}' type '${system.systemType}' does not define config '$key'", system.sourceLocation)
+                        // Unknown config values are intentionally not scope-checked here:
+                        // without a schema we cannot know whether a bareword is meant as a
+                        // symbolic value (channel: email) or a reference. The warning above
+                        // is the signal; later schema tightening can make this an error.
                     } else {
                         validateSchemaValue("System '${system.name}.$key'", value, field, scope, system.sourceLocation, issues)
                     }
@@ -80,15 +87,15 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
             }
         }
 
+        // steps
         val results = mutableSetOf<String>()
         document.flow.steps.forEach { validateStatement(it, imported, document.flow.systems, scope, results, issues) }
 
+        // global error handler scope has `error`
         document.flow.errorHandler?.let { eh ->
             val ehScope = scope.child().also { it.declare("error") }
             eh.steps.forEach { validateStatement(it, imported, document.flow.systems, ehScope, results, issues) }
         }
-
-        issues += SafetyBoundaryValidator(registry).validate(document)
 
         return ValidationReport(valid = issues.none { it.level == "error" }, issues = issues)
     }
@@ -211,9 +218,15 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
                 issues += err("SAFETY_REQUIRED", "Destructive action '${action.module}.${action.action}' requires a safety rule", action.sourceLocation)
         }
 
+        // Action parameters are executable expressions. A bareword in an action
+        // parameter remains a reference, so typos such as `command: undefinedVar`
+        // are still caught. Symbolic lowercase barewords are only tolerated in
+        // schema-bound system config values, where values like `engine: postgres`
+        // and `channel: email` are common configuration literals.
         action.params.values.forEach { checkExpr(it, scope, "auto", null, issues) }
         action.safety?.condition?.let { checkExpr(it, scope, "auto", null, issues) }
 
+        // result binding
         action.result?.let {
             if (!results.add(it.name)) issues += err("DUPLICATE_RESULT", "Result '${it.name}' is already defined", action.sourceLocation)
             scope.declare(it.name)
@@ -221,6 +234,7 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
         if (action.handler != null && action.result == null)
             issues += err("HANDLER_WITHOUT_RESULT", "Result handler requires a result binding", action.sourceLocation)
 
+        // result handler scope = standard fields + module outputs
         val outputs = standardResultFields + (registry.findAction(action.module, action.action)?.output?.keys ?: emptySet())
         action.handler?.rules?.forEach { rule ->
             when (rule) {
@@ -233,6 +247,8 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
             }
         }
     }
+
+    // --- expression checking --------------------------------------------------
 
     private fun checkExpr(
         expr: ExpressionNode, scope: Scope, defaultScope: String,
@@ -268,10 +284,20 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
             is CallExpressionNode -> expr.args.forEach { checkExpr(it, scope, defaultScope, resultFields, issues) }
             is IndexExpressionNode -> { checkExpr(expr.target, scope, defaultScope, resultFields, issues); checkExpr(expr.index, scope, defaultScope, resultFields, issues) }
             is MemberExpressionNode -> checkExpr(expr.target, scope, defaultScope, resultFields, issues)
-            else -> Unit
+            else -> Unit  // literals, secret refs, identifier literals
         }
     }
 
+    /**
+     * Validates expression references for a value that is constrained by a module schema.
+     *
+     * Important design rule:
+     * - In normal expressions, a bareword is a reference.
+     * - In schema-bound text/duration fields, a single unresolved bareword is allowed
+     *   as a symbolic string literal. This keeps user-friendly config like
+     *   `engine: postgres` or `channel: email` without forcing quotes everywhere.
+     * - Dotted/member/index expressions are still treated as references and checked.
+     */
     private fun checkSchemaExpression(
         expr: ExpressionNode,
         field: org.flowlang.modules.SchemaField,
@@ -321,6 +347,8 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
     private fun isCompatible(expr: ExpressionNode, expectedRaw: String): Boolean {
         val expected = expectedRaw.lowercase()
         if (expected == "any") return true
+        // References/calls are runtime values; module schema validation can only prove
+        // literal mismatches now. Stronger inferred typing belongs to a later phase.
         if (expr is ReferenceNode || expr is MemberExpressionNode || expr is IndexExpressionNode || expr is CallExpressionNode) return true
         return when (expected) {
             "text", "string" -> expr is StringLiteralNode || expr is TemplateStringNode || expr is IdentifierLiteralNode || expr is SecretRefNode
@@ -338,6 +366,7 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
     private fun err(code: String, message: String, loc: org.flowlang.ast.SourceLocation? = null) = ValidationIssue("error", code, message, loc)
     private fun warn(code: String, message: String, loc: org.flowlang.ast.SourceLocation? = null) = ValidationIssue("warning", code, message, loc)
 
+    /** Lexical scope with parent chaining. */
     private class Scope(private val parent: Scope? = null) {
         private val names = mutableSetOf<String>()
         fun declare(name: String) { names += name }
