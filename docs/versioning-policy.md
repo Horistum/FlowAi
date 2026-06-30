@@ -13,6 +13,7 @@ Examples:
 - `0.8.1` target capability matrix
 - `0.8.2` target negotiation report
 - `0.8.3` package version and release integrity
+- `0.8.4` planner capability constraints
 
 Package versions may change for implementation, documentation, release metadata, report, test or internal quality work.
 
@@ -67,9 +68,9 @@ Every release PR must state:
 - conformance impact
 - architecture boundary
 
-## v0.8.3 policy decision
+## Current package-line policy decision
 
-The v0.8.3 release aligns package and release metadata only.
+The v0.8.4 release adds planner capability constraints as a pre-projection gate over existing target compatibility analysis.
 
 It does not bump:
 
@@ -89,3 +90,7 @@ It also does not introduce:
 - target-specific public DSL
 - renderer expansion
 - Flow syntax expansion
+
+## Historical package-line policy decisions
+
+- v0.8.3 aligned package and release metadata only.
