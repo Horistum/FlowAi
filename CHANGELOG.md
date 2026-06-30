@@ -2,6 +2,26 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.8.3 - Package version and release integrity
+
+### Added
+
+- Added `docs/versioning-policy.md` to define the distinction between package, public standard, artifact schema and conformance gate versions.
+- Added `VersionConsistencyTests` to guard package metadata, top-level report metadata, release-state metadata and artifact version boundaries.
+- Added `.flow-agent/reports/v0.8.3-release-integrity.md` as the package-line release integrity report.
+
+### Changed
+
+- Bumped the Gradle package version to `0.8.3`.
+- Updated `REPORT.md` to make `0.8.3` the current package line while keeping the active public standard version at `0.7.6`.
+- Updated `.flow-agent/release-state.yaml` and `.flow-agent/roadmap.yaml` for the v0.8.3 release-integrity package line.
+
+### Notes
+
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.8.2 - Target negotiation report
 
 ### Added
