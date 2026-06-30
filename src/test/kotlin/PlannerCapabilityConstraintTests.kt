@@ -5,10 +5,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.PlannerCapabilityConstraintGate
+import org.flowlang.capabilities.PlannerCapabilityConstraintStatus
 import org.flowlang.capabilities.PlannerCapabilityConstraintViolation
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.CompatibilityReport
-import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerator
 import org.flowlang.generators.manifest.generateWithCapabilityConstraints
@@ -26,6 +26,7 @@ class PlannerCapabilityConstraintTests {
         val report = PlannerCapabilityConstraintGate(targets).check(approvalPlan(), "tekton")
 
         assertFalse(report.projectionAllowed, "Tekton must not project inline/manual approval semantics.")
+        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.constraintStatus)
         assertEquals(SupportLevel.UNSUPPORTED, report.status)
         assertTrue(report.blockingIssues.any { it.feature == "approvals" && it.nodeId == "approve_1" })
     }
@@ -35,7 +36,18 @@ class PlannerCapabilityConstraintTests {
         val report = PlannerCapabilityConstraintGate(targets).check(approvalPlan(), "jenkins")
 
         assertTrue(report.projectionAllowed, report.blockingIssues.joinToString())
+        assertEquals(PlannerCapabilityConstraintStatus.ALLOWED, report.constraintStatus)
         assertEquals(SupportLevel.SUPPORTED, report.status)
+    }
+
+    @Test
+    fun githubActionsPartialErrorHandlerSupportIsDegradedOutsideStrictMode() {
+        val report = PlannerCapabilityConstraintGate(targets).check(errorHandlerPlan(), "github-actions", strict = false)
+
+        assertTrue(report.projectionAllowed, report.blockingIssues.joinToString())
+        assertEquals(PlannerCapabilityConstraintStatus.DEGRADED, report.constraintStatus)
+        assertEquals(SupportLevel.PARTIAL, report.status)
+        assertTrue(report.compatibility.issues.any { it.feature == "errorHandlers" && it.nodeId == "try_1" })
     }
 
     @Test
@@ -60,8 +72,19 @@ class PlannerCapabilityConstraintTests {
         val report = PlannerCapabilityConstraintGate(targets).check(errorHandlerPlan(), "github-actions", strict = true)
 
         assertFalse(report.projectionAllowed, "Strict mode must block partial error-handler support before projection.")
+        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.constraintStatus)
         assertEquals(SupportLevel.UNSUPPORTED, report.status)
         assertTrue(report.blockingIssues.any { it.feature == "errorHandlers" && it.nodeId == "try_1" })
+    }
+
+    @Test
+    fun unknownTargetIsBlockedBeforeProjection() {
+        val report = PlannerCapabilityConstraintGate(targets).check(approvalPlan(), "made-up-target")
+
+        assertFalse(report.projectionAllowed)
+        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.constraintStatus)
+        assertEquals(SupportLevel.UNSUPPORTED, report.status)
+        assertTrue(report.blockingIssues.any { it.feature == "target" })
     }
 
     private fun approvalPlan(): ExecutionPlan = ExecutionPlan(
