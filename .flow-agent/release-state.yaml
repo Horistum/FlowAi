@@ -1,9 +1,9 @@
 project: Flow Core
 stateVersion: 1
 
-currentVersion: "0.8.4"
-currentPackage: "flow-core-prod-v0_8_4_planner_capability_constraints.zip"
-nextExpectedVersion: "0.8.5"
+currentVersion: "0.8.5"
+currentPackage: "flow-core-prod-v0_8_5_safety_boundary_hardening.zip"
+nextExpectedVersion: "0.9.0"
 activeStandardVersion: "0.7.6"
 
 repositoryRules:
@@ -32,7 +32,7 @@ lastKnownValidation:
   targetedCompilation: "pending-ci"
   conformance: "pending-ci"
   notes:
-    - "v0.8.4 adds a pre-projection planner capability constraint gate over target compatibility analysis."
+    - "v0.8.5 adds a pre-projection safety boundary gate over Flow AST and module contracts."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
     - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."
