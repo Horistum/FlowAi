@@ -23,8 +23,10 @@ Flow must not allow renderers to invent semantics.
 
 The new `PlannerCapabilityConstraintGate` wraps the existing `CompatibilityAnalyzer` and exposes two operations:
 
-- `analyze(plan, targetName, strict)` returns a `PlannerCapabilityConstraintReport`.
-- `compatibilityForProjection(plan, targetName, strict)` returns the `CompatibilityReport` only when projection is allowed.
+- `check(plan, targetName, strict)` returns a `PlannerCapabilityConstraintReport`.
+- `requireProjectionAllowed(plan, targetName, strict)` returns the report only when projection is allowed and throws `PlannerCapabilityConstraintViolation` when the selected target is blocked.
+
+For manifest projection callers, `generateWithCapabilityConstraints(plan, targets, strict)` provides a safe helper that runs the gate before invoking the target manifest generator.
 
 The gate classifies planner output as:
 
