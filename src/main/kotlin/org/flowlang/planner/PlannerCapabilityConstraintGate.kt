@@ -17,8 +17,6 @@ import org.flowlang.standard.FlowStandardVersions
  * after this gate has accepted the plan-target pair.
  */
 data class PlannerCapabilityConstraintReport(
-    val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
-    val reportVersion: String = "1.0",
     val flowName: String,
     val target: String,
     val strict: Boolean,
@@ -28,7 +26,9 @@ data class PlannerCapabilityConstraintReport(
     val blockingIssues: List<CompatibilityIssue>,
     val warnings: List<CompatibilityIssue>,
     val compatibility: CompatibilityReport,
-    val summary: String
+    val summary: String,
+    val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
+    val reportVersion: String = "1.0"
 )
 
 enum class PlannerCapabilityConstraintStatus {
@@ -50,11 +50,7 @@ class PlannerCapabilityConstraintGate(
         val compatibility = compatibilityAnalyzer.analyze(plan, targetName, strict = strict)
         val blockingIssues = compatibility.issues.filter { it.level == CompatibilityLevel.ERROR }
         val warnings = compatibility.issues.filter { it.level == CompatibilityLevel.WARNING }
-        val status = when {
-            compatibility.status == SupportLevel.UNSUPPORTED || blockingIssues.isNotEmpty() -> PlannerCapabilityConstraintStatus.BLOCKED
-            compatibility.status == SupportLevel.PARTIAL || compatibility.status == SupportLevel.REQUIRES_RUNTIME || warnings.isNotEmpty() -> PlannerCapabilityConstraintStatus.DEGRADED
-            else -> PlannerCapabilityConstraintStatus.ALLOWED
-        }
+        val status = statusFor(compatibility, blockingIssues, warnings)
         val allowedForProjection = status != PlannerCapabilityConstraintStatus.BLOCKED
         return PlannerCapabilityConstraintReport(
             flowName = plan.flowName,
@@ -80,6 +76,16 @@ class PlannerCapabilityConstraintGate(
         return report.compatibility
     }
 
+    private fun statusFor(
+        compatibility: CompatibilityReport,
+        blockingIssues: List<CompatibilityIssue>,
+        warnings: List<CompatibilityIssue>
+    ): PlannerCapabilityConstraintStatus = when {
+        compatibility.status == SupportLevel.UNSUPPORTED || blockingIssues.isNotEmpty() -> PlannerCapabilityConstraintStatus.BLOCKED
+        compatibility.status == SupportLevel.PARTIAL || compatibility.status == SupportLevel.REQUIRES_RUNTIME || warnings.isNotEmpty() -> PlannerCapabilityConstraintStatus.DEGRADED
+        else -> PlannerCapabilityConstraintStatus.ALLOWED
+    }
+
     private fun summaryFor(
         flowName: String,
         targetName: String,
@@ -90,10 +96,12 @@ class PlannerCapabilityConstraintGate(
     ): String = when (status) {
         PlannerCapabilityConstraintStatus.ALLOWED ->
             "Flow '$flowName' is allowed for projection to target '$targetName'."
-        PlannerCapabilityConstraintStatus.DEGRADED ->
-            "Flow '$flowName' can be projected to target '$targetName' with degraded capability support: ${warnings.joinToString { it.feature + " at " + it.nodeId }}."
+        PlannerCapabilityConstraintStatus.DEGRADED -> {
+            val degraded = warnings.joinToString { issue -> "${issue.feature} at ${issue.nodeId}" }
+            "Flow '$flowName' can be projected to target '$targetName' with degraded capability support: $degraded."
+        }
         PlannerCapabilityConstraintStatus.BLOCKED -> {
-            val reason = blockingIssues.joinToString { it.feature + " at " + it.nodeId + ": " + it.message }
+            val reason = blockingIssues.joinToString { issue -> "${issue.feature} at ${issue.nodeId}: ${issue.message}" }
             val strictSuffix = if (strict) " Strict mode is enabled." else ""
             "Flow '$flowName' is blocked before projection to target '$targetName': $reason.$strictSuffix"
         }
