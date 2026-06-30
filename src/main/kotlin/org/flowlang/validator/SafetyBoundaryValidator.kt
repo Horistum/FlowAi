@@ -27,7 +27,10 @@ import org.flowlang.modules.ModuleRegistry
  * execute anything and it does not invent target-specific syntax. It only blocks
  * high-risk Flow semantics that are already visible in the AST/module contracts.
  */
-class SafetyBoundaryValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
+class SafetyBoundaryValidator(
+    private val registry: ModuleRegistry = ModuleRegistry(),
+    private val enforceProductionBoundary: Boolean = false
+) {
     fun validate(document: FlowDocument): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()
         document.flow.steps.forEach { validateStatement(it, issues, insideErrorHandler = false) }
@@ -61,7 +64,7 @@ class SafetyBoundaryValidator(private val registry: ModuleRegistry = ModuleRegis
         val contract = registry.findAction(action.module, action.action) ?: return
         val hasApproval = action.safety?.rule == "requiresApproval"
         val rollbackSensitive = isRollbackSensitive(action)
-        val productionSensitive = isProductionSensitiveMutation(action, contract)
+        val productionSensitive = enforceProductionBoundary && isProductionSensitiveMutation(action, contract)
         val approvalSensitive = contract.safety.requiresApproval || contract.safety.destructive || productionSensitive || (rollbackSensitive && !insideErrorHandler)
 
         if (approvalSensitive && !hasApproval) {
