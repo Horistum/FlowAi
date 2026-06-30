@@ -1,5 +1,0 @@
-package org.flowlang.planner
-
-typealias PlannerCapabilityConstraintGate = org.flowlang.capabilities.PlannerCapabilityConstraintGate
-typealias PlannerCapabilityConstraintReport = org.flowlang.capabilities.PlannerCapabilityConstraintReport
-typealias PlannerCapabilityConstraintStatus = org.flowlang.capabilities.PlannerCapabilityConstraintStatus
