@@ -104,6 +104,18 @@ roadmap:
       - "Clear rejection reasons."
 
   - version: "0.8.3"
+    name: "Package Version and Release Integrity"
+    purpose: "Align package version, release metadata, versioning policy and release integrity tests after package-line review fixes."
+    type: "release-integrity"
+    status: "in-progress"
+    requiredOutcome:
+      - "Gradle package version is aligned with release metadata."
+      - "Top-level report and release-state metadata agree on the current package line."
+      - "Versioning policy documents package, public standard, artifact and conformance gate version boundaries."
+      - "Release integrity tests guard against future metadata drift."
+      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
+
+  - version: "0.8.4"
     name: "Planner Capability Constraints"
     purpose: "Ensure the planner respects target capability constraints before projection."
     type: "planner-hardening"
@@ -113,7 +125,7 @@ roadmap:
       - "No unsupported lowering."
       - "Negative tests for unsupported targets."
 
-  - version: "0.8.4"
+  - version: "0.8.5"
     name: "Safety Boundary Hardening"
     purpose: "Strengthen safety behavior for destructive, production, credential, and rollback-sensitive operations."
     type: "safety"
