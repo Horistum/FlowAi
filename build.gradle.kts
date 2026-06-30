@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "org.flowlang"
-version = "0.8.2"
+version = "0.8.3"
 
 application { mainClass.set("org.flowlang.cli.FlowCliKt") }
 
