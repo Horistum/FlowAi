@@ -2,6 +2,28 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.8.4 - Planner capability constraints
+
+### Added
+
+- Added `PlannerCapabilityConstraintGate` as a pre-projection gate over planner output and target capability compatibility.
+- Added `PlannerCapabilityConstraintReport` and `PlannerCapabilityConstraintStatus` to make allowed, degraded and blocked projection states explicit.
+- Added tests proving supported targets are allowed, unsupported target semantics are blocked before rendering, partial support is degraded outside strict mode, strict mode blocks partial support, and unknown targets are blocked.
+- Added `docs/V0_8_4_PLANNER_CAPABILITY_CONSTRAINTS.md`.
+- Added `.flow-agent/reports/v0.8.4-planner-capability-constraints.md`.
+
+### Changed
+
+- Bumped the Gradle package version to `0.8.4`.
+- Updated `REPORT.md`, `.flow-agent/release-state.yaml`, `.flow-agent/roadmap.yaml`, and version consistency tests for the v0.8.4 package line.
+
+### Notes
+
+- The planner remains platform-neutral; the new gate does not rewrite plans or invent target workarounds.
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.8.3 - Package version and release integrity
 
 ### Added
@@ -83,50 +105,3 @@ All project source text is written in English. The changelog records architectur
 ### Notes
 
 - No SDK API, runtime executor, plugin lifecycle, target-specific public DSL or Flow syntax change was added.
-
-## 0.8.0 - Core contract check
-
-### Added
-
-- Added `CoreContractCheck` for validating the public core standard contract.
-- Added `CoreContractCheckTests`.
-- Added `docs/V0_8_0_CORE_CONTRACT_CHECK.md`.
-- Bumped Gradle package version to `0.8.0` while leaving the active public standard version controlled by `FlowStandardVersions.FLOW_STANDARD_VERSION`.
-
-### Notes
-
-- The active public standard version was not bumped because that is tied to rendered snapshots and conformance gates.
-- No Flow syntax, target rendering semantics, execution behavior, SDK API, runtime executor or plugin lifecycle was added.
-
-## 0.7.7 - Scenario pack quality analyzer
-
-### Added
-
-- Added `ScenarioPackQualityAnalyzer` for scenario pack metadata, useful examples, duplicate identifiers and blocked-coverage checks.
-- Added a v0.7.7 work package for scenario pack quality gates.
-
-### Notes
-
-- The analyzer was later covered by direct tests in the 0.8.0 review-fix line.
-- The active public standard version remained unchanged.
-
-## 0.7.6 semantic correctness hardening fix 2
-
-### Fixed
-
-- Fixed full offline Gradle test failure caused by stale rendered snapshots for GitHub Actions and Tekton.
-- Regenerated rendered snapshots from the reviewed v0.7.6 rendering path.
-- Preserved exact snapshot conformance instead of weakening or bypassing the gate.
-
-### Verified
-
-- `./gradlew --offline --no-daemon clean test --stacktrace --console=plain`: 151 tests, 0 failures, 0 errors, 0 skipped.
-- `./gradlew --offline --no-daemon run --args="conformance" --console=plain`: 76 passed, 0 failed.
-
-## 0.7.6 semantic correctness hardening fix 1
-
-### Fixed
-
-- Fixed Kotlin compilation in `TargetExpressionTranslator` by avoiding an invalid smart cast on `BinaryExpressionNode.right`.
-- Corrected mandatory safety enforcement so high-risk capability obligations are reported by `IntentCapabilityValidator` instead of being silently synthesized before validation.
-- Added semantic smoke validation for Kubernetes deploy identity, Jenkins runtime input rendering, mandatory database migration safety, safe-navigation preservation and Jenkins named-pattern rendering.
