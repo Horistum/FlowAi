@@ -62,7 +62,18 @@ jobs:
             echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions."
           fi
       - name: Compile and Test
-        run: ./gradlew --no-daemon clean test --stacktrace --console=plain
+        run: ./gradlew --no-daemon clean test --stacktrace --console=plain | tee flow-ci-test.log
+
+      - name: Upload CI diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-ci-diagnostics
+          path: |
+            flow-ci-test.log
+            build/reports/tests/test
+            build/test-results/test
+          if-no-files-found: ignore
 
       - name: Run Conformance
         run: ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain
