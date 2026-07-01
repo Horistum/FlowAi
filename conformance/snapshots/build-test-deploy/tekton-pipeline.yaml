@@ -62,7 +62,7 @@ spec:
             script: |
               #!/bin/sh
               set -eu
-              echo 'Flow approval approve_1'
+              echo 'Flow approval: approve_1'
     - name: kubernetes_deploy_1
       runAfter: [approve_1]
       taskSpec:
