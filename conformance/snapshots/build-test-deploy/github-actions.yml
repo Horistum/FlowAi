@@ -42,10 +42,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [shell_run_1]
     if: ${{ always() && needs.shell_run_1.result == 'success' }}
+    env:
+      FLOW_VERSION: ${{ inputs.version }}
     steps:
       - name: "docker_build_1"
         run: |
-          docker build -t 'build-test-deploy:${{ inputs.version }}' '.'
+          docker build -t 'build-test-deploy:'"$FLOW_VERSION" '.'
   approve_1:
     name: "approve_1"
     runs-on: ubuntu-latest
@@ -60,20 +62,25 @@ jobs:
     runs-on: ubuntu-latest
     needs: [approve_1]
     if: ${{ always() && (needs.approve_1.result == 'success' || needs.approve_1.result == 'skipped') }}
+    env:
+      FLOW_ENVIRONMENT: ${{ inputs.environment }}
+      FLOW_VERSION: ${{ inputs.version }}
     steps:
       - name: "kubernetes_deploy_1"
         run: |
-          kubectl set image deployment/'build-test-deploy' *='build-test-deploy:${{ inputs.version }}' -n '${{ inputs.environment }}'
-          kubectl rollout status deployment/'build-test-deploy' -n '${{ inputs.environment }}'
+          kubectl set image deployment/'build-test-deploy' *='build-test-deploy:'"$FLOW_VERSION" -n "$FLOW_ENVIRONMENT"
+          kubectl rollout status deployment/'build-test-deploy' -n "$FLOW_ENVIRONMENT"
   kubernetes_get_1:
     name: "kubernetes_get_1"
     runs-on: ubuntu-latest
     needs: [kubernetes_deploy_1]
     if: ${{ always() && needs.kubernetes_deploy_1.result == 'success' }}
+    env:
+      FLOW_ENVIRONMENT: ${{ inputs.environment }}
     steps:
       - name: "kubernetes_get_1"
         run: |
-          kubectl get 'pods' -n '${{ inputs.environment }}' -l 'app=build-test-deploy'
+          kubectl get 'pods' -n "$FLOW_ENVIRONMENT" -l 'app=build-test-deploy'
   standard_rollback_1:
     name: "standard_rollback_1"
     runs-on: ubuntu-latest
