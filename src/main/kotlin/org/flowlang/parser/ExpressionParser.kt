@@ -261,14 +261,21 @@ class ExpressionParser(private val ts: TokenStream, private val scope: String = 
         return false
     }
 
-    /** index of '{' is at `open`; returns index of the matching '}'. */
+    /** index of '{' is at `open`; returns index of the matching '}', ignoring braces inside string literals. */
     private fun matchingBrace(s: String, open: Int): Int {
         var depth = 0
         var i = open
+        var quote: Char? = null
         while (i < s.length) {
-            when (s[i]) {
-                '{' -> depth++
-                '}' -> { depth--; if (depth == 0) return i }
+            val c = s[i]
+            when {
+                quote != null -> when {
+                    c == '\\' && i + 1 < s.length -> i++   // skip escaped char inside a string literal
+                    c == quote -> quote = null
+                }
+                c == '"' || c == '\'' -> quote = c
+                c == '{' -> depth++
+                c == '}' -> { depth--; if (depth == 0) return i }
             }
             i++
         }
