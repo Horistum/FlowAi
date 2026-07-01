@@ -35,7 +35,7 @@ class ReviewRegressionTests {
             .single { it.module == "kubernetes" && it.action == "deploy" }
             .run.orEmpty()
 
-        assertTrue(deployRun.contains("deployment/'${'$'}{params.app}'"), deployRun)
+        assertTrue(deployRun.contains("deployment/\"\$FLOW_APP\""), deployRun)
     }
 
     @Test

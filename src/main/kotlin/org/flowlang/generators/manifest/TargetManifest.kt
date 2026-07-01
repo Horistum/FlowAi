@@ -320,97 +320,110 @@ private fun commandMappingNotes(task: TaskNode): List<TargetMappingNote> = when 
     else -> emptyList()
 }
 
+/**
+ * Builds the shell command for a task. The produced command is target-neutral: runtime
+ * input values are referenced through shell environment variables ("$FLOW_NAME") rather
+ * than spliced into the script text. Each target renderer binds those variables to its
+ * own parameter expression (Jenkins params, GitHub inputs, Tekton params) in a scope that
+ * covers the command, so the value is delivered via the environment and is never able to
+ * break out of quoting or inject additional shell. The `targetName` parameter is retained
+ * for backwards compatibility but no longer influences interpolation.
+ */
 internal fun runCommandFor(task: TaskNode, targetName: String = "portable-shell"): String = when (task.module to task.action) {
-    "shell" to "run" -> taskParam(task, "command", "echo Flow shell.run missing command", targetName)
+    "shell" to "run" -> interpolateShellVars(taskRaw(task, "command", "echo Flow shell.run missing command"))
     "git" to "checkout" -> {
-        val url = taskParam(task, "url", ".", targetName)
-        val branch = task.params["branch"]?.let { " --branch ${shellQuote(taskValue(it, targetName))}" } ?: ""
-        "git clone$branch ${shellQuote(url)} ."
+        val url = taskArg(task, "url", ".")
+        val branch = task.params["branch"]?.let { " --branch ${shellArg(unquote(it))}" } ?: ""
+        "git clone$branch $url ."
     }
     "docker" to "build" -> {
-        val image = shellQuote(taskParam(task, "image", "image:latest", targetName))
-        val path = shellQuote(taskParam(task, "path", ".", targetName))
-        val dockerfile = task.params["dockerfile"]?.let { " -f ${shellQuote(taskValue(it, targetName))}" } ?: ""
+        val image = taskArg(task, "image", "image:latest")
+        val path = taskArg(task, "path", ".")
+        val dockerfile = task.params["dockerfile"]?.let { " -f ${shellArg(unquote(it))}" } ?: ""
         "docker build$dockerfile -t $image $path"
     }
-    "docker" to "push" -> "docker push ${shellQuote(taskParam(task, "image", "image:latest", targetName))}"
+    "docker" to "push" -> "docker push ${taskArg(task, "image", "image:latest")}"
     "helm" to "template" -> {
-        val chart = shellQuote(taskParam(task, "chart", ".", targetName))
-        val values = task.params["values"]?.let { " -f ${shellQuote(taskValue(it, targetName))}" } ?: ""
+        val chart = taskArg(task, "chart", ".")
+        val values = task.params["values"]?.let { " -f ${shellArg(unquote(it))}" } ?: ""
         "helm template $chart$values"
     }
     "helm" to "upgrade" -> {
-        val release = shellQuote(taskParam(task, "release", task.target, targetName))
-        val chart = shellQuote(taskParam(task, "chart", ".", targetName))
-        val ns = task.params["namespace"]?.let { " --namespace ${shellQuote(taskValue(it, targetName))}" } ?: ""
-        val values = task.params["values"]?.let { " -f ${shellQuote(taskValue(it, targetName))}" } ?: ""
+        val release = taskArg(task, "release", task.target)
+        val chart = taskArg(task, "chart", ".")
+        val ns = task.params["namespace"]?.let { " --namespace ${shellArg(unquote(it))}" } ?: ""
+        val values = task.params["values"]?.let { " -f ${shellArg(unquote(it))}" } ?: ""
         "helm upgrade --install $release $chart$ns$values"
     }
     "kubernetes" to "deploy" -> {
-        val manifest = task.params["manifest"]?.let { taskValue(it, targetName) }
-        val ns = shellQuote(taskParam(task, "namespace", "default", targetName))
+        val manifest = task.params["manifest"]?.let { shellArg(unquote(it)) }
+        val ns = taskArg(task, "namespace", "default")
         if (!manifest.isNullOrBlank()) {
-            "kubectl apply -n $ns -f ${shellQuote(manifest)}"
+            "kubectl apply -n $ns -f $manifest"
         } else {
             val appParam = task.params["app"] ?: task.params["name"]
                 ?: error("kubernetes.deploy without manifest requires an explicit app or name parameter")
-            val app = shellQuote(taskValue(appParam, targetName))
-            val rawImage = taskParam(task, "image", "", targetName)
-            val image = shellQuote(rawImage)
+            val app = shellArg(unquote(appParam))
+            val rawImage = taskRaw(task, "image", "")
             if (rawImage.isNotBlank()) {
-                "kubectl set image deployment/$app *=${image} -n $ns\nkubectl rollout status deployment/$app -n $ns"
+                val image = shellArg(rawImage)
+                "kubectl set image deployment/$app *=$image -n $ns\nkubectl rollout status deployment/$app -n $ns"
             } else {
                 "kubectl rollout status deployment/$app -n $ns"
             }
         }
     }
     "kubernetes" to "get" -> {
-        val resource = shellQuote(taskParam(task, "resource", "pods", targetName))
-        val ns = shellQuote(taskParam(task, "namespace", "default", targetName))
-        val selector = task.params["selector"]?.let { " -l ${shellQuote(taskValue(it, targetName))}" } ?: ""
+        val resource = taskArg(task, "resource", "pods")
+        val ns = taskArg(task, "namespace", "default")
+        val selector = task.params["selector"]?.let { " -l ${shellArg(unquote(it))}" } ?: ""
         "kubectl get $resource -n $ns$selector"
     }
     "argocd" to "sync" -> {
-        val app = shellQuote(taskParam(task, "app", task.target, targetName))
-        val timeout = task.params["timeout"]?.let { " --timeout ${shellQuote(taskValue(it, targetName).removeSuffix("m"))}" } ?: ""
+        val app = taskArg(task, "app", task.target)
+        val timeout = task.params["timeout"]?.let { " --timeout ${shellArg(unquote(it).removeSuffix("m"))}" } ?: ""
         "argocd app sync $app\nargocd app wait $app --health --sync$timeout"
     }
-    "argocd" to "status" -> "argocd app get ${shellQuote(taskParam(task, "app", task.target, targetName))} -o json"
+    "argocd" to "status" -> "argocd app get ${taskArg(task, "app", task.target)} -o json"
     "rest" to "call" -> {
-        val method = taskParam(task, "method", "GET", targetName)
-        val path = taskParam(task, "path", "/", targetName)
-        val body = task.params["body"]?.let { " --data ${shellQuote(taskValue(it, targetName))}" } ?: ""
-        "curl --fail --show-error --silent -X ${shellQuote(method)} ${shellQuote(path)}$body"
+        val method = taskArg(task, "method", "GET")
+        val base = task.params["baseUrl"]?.let { unquote(it) }?.takeIf { it.isNotBlank() }
+        val rawPath = taskRaw(task, "path", "/")
+        val urlArg = if (base != null) shellArg(base.trimEnd('/') + "/" + rawPath.trimStart('/')) else shellArg(rawPath)
+        val body = task.params["body"]?.let { " --data ${shellArg(unquote(it))}" } ?: ""
+        "curl --fail --show-error --silent -X $method $urlArg$body"
     }
     "database" to "query" -> {
-        val sql = taskParam(task, "sql", "select 1", targetName)
-        "psql --set ON_ERROR_STOP=1 -c ${shellQuote(sql)}"
+        val sql = taskArg(task, "sql", "select 1")
+        "psql --set ON_ERROR_STOP=1 -c $sql"
     }
     "file" to "write" -> {
-        val path = shellQuote(taskParam(task, "path", "flow-output.txt", targetName))
-        val content = shellQuote(taskParam(task, "content", "", targetName))
+        val path = taskArg(task, "path", "flow-output.txt")
+        val content = taskArg(task, "content", "")
         "printf %s $content > $path"
     }
     "notify" to "send" -> {
-        val subject = shellQuote("Flow notification: ${taskParam(task, "subject", task.id, targetName)}")
-        val body = shellQuote(taskParam(task, "body", "Flow notification from ${task.id}", targetName))
-        "printf %s $body | mail -s $subject ${shellQuote(taskParam(task, "to", "team@example.com", targetName))} || echo ${shellQuote("Notification adapter is not configured")}"
+        val subject = shellArg("Flow notification: " + taskRaw(task, "subject", task.id))
+        val body = taskArg(task, "body", "Flow notification from ${task.id}")
+        val to = taskArg(task, "to", "team@example.com")
+        "printf %s $body | mail -s $subject $to || echo ${shellArg("Notification adapter is not configured")}"
     }
-    "standard" to "rollback" -> "echo ${shellQuote("Flow rollback requested for ${taskParam(task, "flow", task.id, targetName)}. Configure a target-specific rollback adapter for production.")}"
-    "standard" to "execute" -> standardExecuteCommand(task, targetName)
-    else -> "echo ${shellQuote("Flow executes ${task.module}.${task.action} on ${task.target}")}"
+    "standard" to "rollback" -> "echo ${shellArg("Flow rollback requested for ${taskRaw(task, "flow", task.id)}. Configure a target-specific rollback adapter for production.")}"
+    "standard" to "execute" -> standardExecuteCommand(task)
+    else -> "echo ${shellArg("Flow executes ${task.module}.${task.action} on ${task.target}")}"
 }
 
-private fun taskParam(task: TaskNode, name: String, default: String, targetName: String): String =
-    task.params[name]?.let { taskValue(it, targetName) } ?: targetInterpolated(default, targetName)
+private fun taskRaw(task: TaskNode, name: String, default: String): String =
+    task.params[name]?.let { unquote(it) } ?: default
 
-private fun taskValue(raw: String, targetName: String): String = targetInterpolated(unquote(raw), targetName)
+/** A single shell-safe command argument with runtime inputs bound through "$FLOW_NAME". */
+private fun taskArg(task: TaskNode, name: String, default: String): String = shellArg(taskRaw(task, name, default))
 
-private fun standardExecuteCommand(task: TaskNode, targetName: String): String {
-    val capability = taskParam(task, "capability", "custom", targetName)
-    val op = taskParam(task, "operation", capability, targetName)
-    fun p(name: String, default: String = ""): String = taskParam(task, name, default, targetName)
-    fun echo(message: String): String = "echo ${shellQuote(message)}"
+private fun standardExecuteCommand(task: TaskNode): String {
+    val capability = taskRaw(task, "capability", "custom")
+    val op = taskRaw(task, "operation", capability)
+    fun p(name: String, default: String = ""): String = taskRaw(task, name, default)
+    fun echo(message: String): String = "echo ${shellArg(message)}"
 
     val message = when (op) {
         "schedule" -> "Flow schedule requested: cadence=${p("cadence")} cron=${p("cron")} timezone=${p("timezone")}"
@@ -430,17 +443,6 @@ private fun standardExecuteCommand(task: TaskNode, targetName: String): String {
     return echo(message.trim())
 }
 
-private fun targetInterpolated(value: String, targetName: String): String =
-    Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*)}""").replace(value) { match ->
-        val name = match.groupValues[1]
-        when (targetName) {
-            "jenkins" -> "\${params.$name}"
-            "github-actions" -> "\${{ inputs.$name }}"
-            "tekton" -> "$(params.$name)"
-            else -> "\${$name}"
-        }
-    }
-
 private fun combineConditions(a: String?, b: String): String = if (a.isNullOrBlank()) b else "($a) and ($b)"
 
 private fun mapOfNotNull(vararg pairs: Pair<String, String?>): Map<String, String> = pairs.mapNotNull { (k, v) -> v?.takeIf { it.isNotBlank() }?.let { k to v } }.toMap()
@@ -455,3 +457,38 @@ internal fun unquote(value: String): String {
 }
 
 internal fun shellQuote(value: String): String = "'" + value.replace("'", "'\"'\"'") + "'"
+
+private val FLOW_INPUT_TOKEN = Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*)}""")
+
+/** Deterministic shell environment-variable name that carries a Flow input's runtime value. */
+internal fun flowEnvVar(name: String): String = "FLOW_" + name.uppercase().replace(Regex("[^A-Z0-9_]"), "_")
+
+/** The exact shell token a command uses to reference a Flow input value: "$FLOW_NAME" (double-quoted). */
+internal fun flowVarToken(name: String): String = "\"$" + flowEnvVar(name) + "\""
+
+/**
+ * Renders one shell command ARGUMENT that is safe regardless of runtime input values.
+ * Literal segments are POSIX single-quoted; each `${name}` interpolation token becomes a
+ * double-quoted variable reference ("$FLOW_NAME"). The variable is bound to the target's
+ * native parameter expression by the renderer, so the value is passed through the
+ * environment and can never terminate quoting or inject further shell.
+ */
+internal fun shellArg(value: String): String {
+    val out = StringBuilder()
+    var last = 0
+    for (m in FLOW_INPUT_TOKEN.findAll(value)) {
+        if (m.range.first > last) out.append(shellQuote(value.substring(last, m.range.first)))
+        out.append(flowVarToken(m.groupValues[1]))
+        last = m.range.last + 1
+    }
+    if (last < value.length) out.append(shellQuote(value.substring(last)))
+    return if (out.isEmpty()) shellQuote("") else out.toString()
+}
+
+/**
+ * Substitutes `${name}` interpolation tokens for "$FLOW_NAME" inside a whole shell command line
+ * (e.g. shell.run), leaving the author's surrounding shell verbatim. Used where the value is an
+ * entire command rather than a single argument.
+ */
+internal fun interpolateShellVars(value: String): String =
+    FLOW_INPUT_TOKEN.replace(value) { m -> flowVarToken(m.groupValues[1]) }
