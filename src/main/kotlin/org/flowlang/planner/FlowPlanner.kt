@@ -17,7 +17,7 @@ import org.flowlang.modules.ModuleRegistry
 class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     fun plan(document: FlowDocument): ExecutionPlan {
-        val ctx = Ctx(document.flow.input.map { it.name }.toSet())
+        val ctx = Ctx(document.flow.input.map { it.name }.toSet(), document.flow.systems.associateBy { it.name })
         val nodes = planStatements(document.flow.steps, ctx)
         val tail = document.flow.errorHandler?.let {
             listOf(TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(it.steps, ctx)))
@@ -109,15 +109,21 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         }
         val deps = (dataDeps + explicitDeps).distinct().filter { it != id }
 
+        // Fix: system configuration (git url/branch, REST baseUrl, k8s/helm namespace) is no longer
+        // dropped at the planning boundary. Non-secret values configured on the target system act as
+        // defaults for the action's params; explicit action params still win. Secret-valued endpoints
+        // are intentionally left out because they require runtime secret resolution, not a literal value.
+        val renderedParams = mergeSystemConfig(action, ctx)
+
         val task = TaskNode(
             id = id, module = action.module, action = action.action,
             target = action.target.path.joinToString("."),
             resultName = action.result?.name, dependsOn = deps, effects = effects,
-            inputs = action.params.mapValues { (_, expr) -> RuntimeParamRenderer.render(expr, ctx.inputNames) },
+            inputs = renderedParams,
             outputs = action.result?.let { listOf(it.name) } ?: emptyList(),
             destructive = contract?.safety?.destructive ?: false,
             safety = action.safety?.let { it.rule + (it.condition?.let { c -> " " + ExpressionRenderer.render(c) } ?: "") },
-            params = action.params.mapValues { (_, expr) -> RuntimeParamRenderer.render(expr, ctx.inputNames) },
+            params = renderedParams,
             requiredCapabilities = inferRequiredCapabilities(action, contract?.safety?.destructive ?: false)
         )
         action.result?.let {
@@ -125,6 +131,29 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             ctx.outputs += PlanOutput(it.name, sourceNodeId = id)
         }
         return task
+    }
+
+    /**
+     * Renders the action's params and layers in defaults from the targeted system's configuration
+     * for the keys each module consumes. Only non-secret config is merged, and only when the action
+     * does not already provide the key, so explicit params are never overridden and secret endpoints
+     * are deferred to a runtime adapter rather than spliced in as a literal `secret("…")` string.
+     */
+    private fun mergeSystemConfig(action: ActionNode, ctx: Ctx): Map<String, String> {
+        val rendered = action.params.mapValues { (_, expr) -> RuntimeParamRenderer.render(expr, ctx.inputNames) }.toMutableMap()
+        val system = action.target.path.firstOrNull()?.let { ctx.systems[it] } ?: return rendered
+        fun pull(key: String) {
+            if (key in rendered) return
+            val expr = system.config[key] ?: return
+            if (expr is SecretRefNode) return
+            rendered[key] = RuntimeParamRenderer.render(expr, ctx.inputNames)
+        }
+        when (action.module) {
+            "git" -> { pull("url"); pull("branch") }
+            "rest" -> pull("baseUrl")
+            "kubernetes", "helm" -> pull("namespace")
+        }
+        return rendered
     }
 
     private fun inferRequiredCapabilities(action: ActionNode, destructive: Boolean): List<String> = buildList {
@@ -184,7 +213,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         }
     }
 
-    private class Ctx(val inputNames: Set<String>) {
+    private class Ctx(val inputNames: Set<String>, val systems: Map<String, SystemNode> = emptyMap()) {
         val results = mutableMapOf<String, String>()   // result/binding name -> producing task id
         val outputs = mutableListOf<PlanOutput>()
         val assumptions = mutableListOf<PlanAssumption>()
