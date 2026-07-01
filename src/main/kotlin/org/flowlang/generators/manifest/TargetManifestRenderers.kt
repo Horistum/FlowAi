@@ -12,6 +12,7 @@ class JenkinsManifestRenderer {
         sb.appendLine("  agent any")
         sb.appendLine("  options { timestamps() }")
         renderJenkinsParameters(manifest, sb)
+        renderJenkinsEnvironment(manifest, sb)
         sb.appendLine("  stages {")
         val errorHandlerJobs = manifest.jobs.filter { it.metadata["errorHandler"] == "true" }
         val topLevelErrorHandlers = manifest.jobs.flatMap { it.steps }.filter { it.type == "error-handler" } + errorHandlerJobs.flatMap { it.steps }
@@ -35,6 +36,20 @@ class JenkinsManifestRenderer {
                 "option" -> sb.appendLine("    choice(name: '${groovyEscape(input.name)}', choices: [${input.choices.joinToString(", ") { groovyString(it) }}])")
                 else -> sb.appendLine("    string(name: '${groovyEscape(input.name)}', defaultValue: ${groovyString(input.defaultValue ?: "")})")
             }
+        }
+        sb.appendLine("  }")
+    }
+
+    /**
+     * Binds every declared input to a FLOW_* environment variable at the pipeline level.
+     * Commands reference these via "$FLOW_NAME", so runtime values are delivered through the
+     * environment instead of being interpolated into the script body.
+     */
+    private fun renderJenkinsEnvironment(manifest: TargetManifest, sb: StringBuilder) {
+        if (manifest.inputs.isEmpty()) return
+        sb.appendLine("  environment {")
+        manifest.inputs.forEach { input ->
+            sb.appendLine("    ${flowEnvVar(input.name)} = \"\${params.${input.name}}\"")
         }
         sb.appendLine("  }")
     }
@@ -136,13 +151,6 @@ class JenkinsManifestRenderer {
         sb.appendLine("${indent}  }")
         sb.appendLine("${indent}}")
     }
-
-    private fun TargetStep.toShellLines(): List<String> = when (type) {
-        "action" -> listOf(run ?: "echo Flow: ${module}.${action} on ${target}")
-        "retry", "match", "loop", "try-body" -> if (children.isEmpty()) listOf("echo 'Flow ${type}: ${name}'") else children.flatMap { it.toShellLines() }
-        "set", "expect", "validate", "transform", "aggregate" -> listOf("echo 'Flow ${type}: ${params["detail"] ?: name}'")
-        else -> listOf(run ?: "echo 'Flow ${type}: ${name}'")
-    }
 }
 
 class GitHubActionsManifestRenderer {
@@ -184,6 +192,11 @@ class GitHubActionsManifestRenderer {
         if (job.dependsOn.isNotEmpty()) sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
         if (job.metadata["approval"] == "true") sb.appendLine("    environment: production")
+        val jobInputs = referencedInputs(job.steps.flatMap { it.collectRuns() }, manifest.inputs)
+        if (jobInputs.isNotEmpty()) {
+            sb.appendLine("    env:")
+            jobInputs.forEach { input -> sb.appendLine("      ${flowEnvVar(input.name)}: ${githubExpression("inputs.${sanitizeId(input.name)}")}") }
+        }
         sb.appendLine("    steps:")
         if (job.steps.isEmpty()) {
             sb.appendLine("      - name: No steps")
@@ -270,11 +283,23 @@ class TektonManifestRenderer {
         sb.appendLine("        steps:")
         sb.appendLine("          - name: ${sanitizeId(step?.id ?: job.id)}")
         sb.appendLine("            image: alpine:3.20")
+        val stepInputs = referencedInputs(step?.collectRuns().orEmpty(), manifest.inputs)
+        if (stepInputs.isNotEmpty()) {
+            sb.appendLine("            env:")
+            stepInputs.forEach { input ->
+                sb.appendLine("              - name: ${flowEnvVar(input.name)}")
+                sb.appendLine("                value: \"\$(params.${sanitizeId(input.name)})\"")
+            }
+        }
         sb.appendLine("            script: |")
         sb.appendLine("              #!/bin/sh")
         sb.appendLine("              set -eu")
-        val run = step?.run ?: "echo 'Flow ${step?.type ?: "job"} ${job.name}'"
-        run.lines().forEach { sb.appendLine("              ${it.replace("\t", "  ")}") }
+        if (step?.type == "loop" || step?.type == "match") {
+            val unit = if (step.type == "loop") "per-item iteration" else "branch selection"
+            sb.appendLine("              # Flow ${step.type} body is projected inline; native $unit is NOT enforced in this partial Tekton projection (see mapping notes).")
+        }
+        val lines = step?.toShellLines() ?: listOf("echo 'Flow job ${job.name}'")
+        lines.flatMap { it.lines() }.forEach { sb.appendLine("              ${it.replace("\t", "  ")}") }
     }
 }
 
@@ -283,11 +308,26 @@ private fun groovyString(value: String): String = "'" + value.replace("\\", "\\\
 private fun groovyEscape(value: String): String = value.replace("'", "\\'")
 private fun githubExpression(value: String): String = 36.toChar().toString() + "{{ $value }}"
 
-private fun groovyScriptString(value: String): String =
-    if (value.contains("\${params.")) {
-        "\"" + value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r") + "\""
-    } else groovyString(value)
+private fun groovyScriptString(value: String): String = groovyString(value)
+
+/**
+ * Flattens a step (and, for container steps, its descendants) into shell command lines.
+ * Loop/match bodies are recursed into rather than dropped, so partial targets still emit the
+ * real body instead of silently discarding it.
+ */
+private fun TargetStep.toShellLines(): List<String> = when (type) {
+    "action" -> listOf(run ?: "echo Flow: ${module}.${action} on ${target}")
+    "retry", "match", "loop", "try-body" -> if (children.isEmpty()) listOf("echo 'Flow ${type}: ${name}'") else children.flatMap { it.toShellLines() }
+    "set", "expect", "validate", "transform", "aggregate" -> listOf("echo 'Flow ${type}: ${params["detail"] ?: name}'")
+    else -> listOf(run ?: "echo 'Flow ${type}: ${name}'")
+}
+
+/** All shell command strings produced anywhere in this step subtree. */
+private fun TargetStep.collectRuns(): List<String> = listOfNotNull(run) + children.flatMap { it.collectRuns() }
+
+/** The Flow inputs actually referenced (as "$FLOW_NAME") by the given command strings, in declared order. */
+private fun referencedInputs(runs: List<String>, inputs: List<TargetInput>): List<TargetInput> {
+    if (inputs.isEmpty()) return emptyList()
+    val text = runs.joinToString("\n")
+    return inputs.filter { text.contains(flowVarToken(it.name)) }
+}
