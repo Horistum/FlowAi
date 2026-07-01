@@ -62,7 +62,9 @@ jobs:
             echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions."
           fi
       - name: Compile and Test
-        run: ./gradlew --no-daemon clean test --stacktrace --console=plain | tee flow-ci-test.log
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon clean test --stacktrace --console=plain | tee flow-ci-test.log
 
       - name: Upload CI diagnostic log
         if: always()
