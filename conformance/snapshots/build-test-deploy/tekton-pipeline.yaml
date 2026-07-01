@@ -41,10 +41,13 @@ spec:
         steps:
           - name: docker_build_1
             image: alpine:3.20
+            env:
+              - name: FLOW_VERSION
+                value: "$(params.version)"
             script: |
               #!/bin/sh
               set -eu
-              docker build -t 'build-test-deploy:$(params.version)' '.'
+              docker build -t 'build-test-deploy:'"$FLOW_VERSION" '.'
     - name: approve_1
       runAfter: [docker_build_1]
       when:
@@ -66,18 +69,26 @@ spec:
         steps:
           - name: kubernetes_deploy_1
             image: alpine:3.20
+            env:
+              - name: FLOW_ENVIRONMENT
+                value: "$(params.environment)"
+              - name: FLOW_VERSION
+                value: "$(params.version)"
             script: |
               #!/bin/sh
               set -eu
-              kubectl set image deployment/'build-test-deploy' *='build-test-deploy:$(params.version)' -n '$(params.environment)'
-              kubectl rollout status deployment/'build-test-deploy' -n '$(params.environment)'
+              kubectl set image deployment/'build-test-deploy' *='build-test-deploy:'"$FLOW_VERSION" -n "$FLOW_ENVIRONMENT"
+              kubectl rollout status deployment/'build-test-deploy' -n "$FLOW_ENVIRONMENT"
     - name: kubernetes_get_1
       runAfter: [kubernetes_deploy_1]
       taskSpec:
         steps:
           - name: kubernetes_get_1
             image: alpine:3.20
+            env:
+              - name: FLOW_ENVIRONMENT
+                value: "$(params.environment)"
             script: |
               #!/bin/sh
               set -eu
-              kubectl get 'pods' -n '$(params.environment)' -l 'app=build-test-deploy'
+              kubectl get 'pods' -n "$FLOW_ENVIRONMENT" -l 'app=build-test-deploy'
