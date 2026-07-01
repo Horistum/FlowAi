@@ -43,8 +43,8 @@ class FlowSemanticCorrectnessHardeningTests {
 
         assertTrue(run.contains("deployment/'build-test-deploy'"), run)
         assertFalse(run.contains("deployment/'app'"), run)
-        assertTrue(run.contains("-n '\${params.environment}'"), run)
-        assertTrue(run.contains("'build-test-deploy:\${params.version}'"), run)
+        assertTrue(run.contains("-n \"\$FLOW_ENVIRONMENT\""), run)
+        assertTrue(run.contains("'build-test-deploy:'\"\$FLOW_VERSION\""), run)
     }
 
     @Test
