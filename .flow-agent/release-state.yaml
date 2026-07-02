@@ -1,9 +1,9 @@
 project: Flow Core
 stateVersion: 1
 
-currentVersion: "0.9.0"
-currentPackage: "flow-core-prod-v0_9_0_generator_projection_contract.zip"
-nextExpectedVersion: "0.9.1"
+currentVersion: "0.9.1"
+currentPackage: "flow-core-prod-v0_9_1_projection_stability.zip"
+nextExpectedVersion: "0.9.5"
 activeStandardVersion: "0.7.6"
 
 repositoryRules:
@@ -32,8 +32,8 @@ lastKnownValidation:
   targetedCompilation: "pending-ci"
   conformance: "pending-ci"
   notes:
-    - "v0.9.0 adds a structural generator projection contract over TargetManifest artifacts."
-    - "The contract validates the manifest boundary between ExecutionPlan and target renderers without executing target work."
+    - "v0.9.1 adds smoke-level projection stability guards for Jenkins, GitHub Actions and Tekton."
+    - "The tests validate renderer determinism, target structure, runtime secret binding and absence of green placebo commands."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
     - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."
