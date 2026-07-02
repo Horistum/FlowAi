@@ -18,6 +18,7 @@ Examples:
 - `0.8.6` review hardening fixes
 - `0.8.7` safety-boundary result handler coverage
 - `0.9.0` generator projection contract
+- `0.9.1` Jenkins/GitHub/Tekton projection stability
 
 Package versions may change for implementation, documentation, release metadata, report, test or internal quality work.
 
@@ -74,7 +75,7 @@ Every release PR must state:
 
 ## Current package-line policy decision
 
-The v0.9.0 release adds a generator projection contract as a structural validation layer over `TargetManifest` artifacts.
+The v0.9.1 release adds smoke-level projection stability guards for Jenkins, GitHub Actions and Tekton renderers.
 
 It does not bump:
 
@@ -97,6 +98,7 @@ It also does not introduce:
 
 ## Historical package-line policy decisions
 
+- v0.9.0 added a generator projection contract over TargetManifest artifacts.
 - v0.8.7 added safety-boundary result handler coverage.
 - v0.8.6 added review hardening fixes around manifest honesty, runtime secrets, rollback negation and concrete output validation.
 - v0.8.5 added safety boundary hardening as a pre-projection validation gate over Flow AST and module contracts.
