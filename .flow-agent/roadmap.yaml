@@ -175,7 +175,7 @@ roadmap:
     name: "Jenkins/GitHub/Tekton Projection Stability"
     purpose: "Stabilize projections for the main supported target platforms."
     type: "target-stability"
-    status: "next"
+    status: "completed"
     requiredOutcome:
       - "Stable Jenkins projection smoke tests."
       - "Stable GitHub Actions projection smoke tests."
@@ -186,7 +186,7 @@ roadmap:
     name: "End-to-End Standard Scenarios"
     purpose: "Prove full standard flow across realistic end-to-end automation scenarios."
     type: "e2e-standard"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "End-to-end reference scenarios."
       - "Intent to AST to plan to projection validation."
