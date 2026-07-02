@@ -15,6 +15,9 @@ Examples:
 - `0.8.3` package version and release integrity
 - `0.8.4` planner capability constraints
 - `0.8.5` safety boundary hardening
+- `0.8.6` review hardening fixes
+- `0.8.7` safety-boundary result handler coverage
+- `0.9.0` generator projection contract
 
 Package versions may change for implementation, documentation, release metadata, report, test or internal quality work.
 
@@ -71,7 +74,7 @@ Every release PR must state:
 
 ## Current package-line policy decision
 
-The v0.8.5 release adds safety boundary hardening as a pre-projection validation gate over Flow AST and module contracts.
+The v0.9.0 release adds a generator projection contract as a structural validation layer over `TargetManifest` artifacts.
 
 It does not bump:
 
@@ -94,5 +97,8 @@ It also does not introduce:
 
 ## Historical package-line policy decisions
 
+- v0.8.7 added safety-boundary result handler coverage.
+- v0.8.6 added review hardening fixes around manifest honesty, runtime secrets, rollback negation and concrete output validation.
+- v0.8.5 added safety boundary hardening as a pre-projection validation gate over Flow AST and module contracts.
 - v0.8.4 added planner capability constraints as a pre-projection gate over existing target compatibility analysis.
 - v0.8.3 aligned package and release metadata only.

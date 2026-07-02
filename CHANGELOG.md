@@ -2,6 +2,73 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.9.0 - Generator projection contract
+
+### Added
+
+- Added `TargetManifestContractValidator` as a structural contract gate for the boundary between `ExecutionPlan` and target renderers.
+- Added `TargetManifestContractReport` and `TargetManifestContractIssue` for auditable projection-contract diagnostics.
+- Added tests proving generated Jenkins, GitHub Actions and Tekton manifests satisfy the contract.
+- Added negative tests for malformed manifests, missing release metadata, invalid mapping notes, duplicate step ids and green placebo action commands.
+- Added `docs/V0_9_0_GENERATOR_PROJECTION_CONTRACT.md`.
+- Added `.flow-agent/reports/v0.9.0-generator-projection-contract.md`.
+
+### Changed
+
+- Bumped the Gradle package version to `0.9.0`.
+- Updated release metadata for the v0.9.0 package line.
+- Advanced roadmap state from the v0.8 safety-hardening line to the v0.9 projection-contract line.
+
+### Notes
+
+- The projection contract validates manifest structure only. It does not execute target work and does not introduce a runtime executor.
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
+## 0.8.7 - Safety-boundary result handler coverage
+
+### Added
+
+- Added regression tests proving destructive actions inside action result handlers still require approval.
+- Added regression coverage proving rollback inside `when error` handler branches remains allowed as an error-handler context.
+
+### Changed
+
+- Extended `SafetyBoundaryValidator` so it descends into action result handlers.
+- Treated `when error { ... }` result-handler branches as error-handler context.
+
+### Notes
+
+- The safety gate remains a pre-projection validator over Flow AST and module contracts.
+- No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change was added.
+
+## 0.8.6 - Review hardening fixes
+
+### Added
+
+- Added regression tests for runtime secret materialisation, rollback negation and remaining review findings.
+- Added manifest honesty regression tests for unmapped actions, non-materialised data operations, runtime result interpolation and database system URLs.
+- Added `.flow-agent/reports/v0.8.6-review-hardening-fixes.md`.
+
+### Changed
+
+- Preserved `secret("NAME")` system configuration through planning and materialised it through target-native secret mechanisms.
+- Replaced green placeholder commands for unmapped actions with explicit failing diagnostics and mapping notes.
+- Added mapping notes for Flow-layer data operations that are not materialised by target projection.
+- Made notify delivery failures non-zero.
+- Preserved explicit rollback negation during scenario-pack normalisation.
+- Kept HTTP method literals while treating non-HTTP all-caps tokens as references.
+- Isolated mutually exclusive branch result bindings while preserving duplicate detection for sequential bindings.
+- Promoted unknown result fields to errors when module output schema is concrete.
+- Moved deprecated legacy draft generators out of production source.
+
+### Notes
+
+- The active public standard version remains `0.7.6`.
+- Artifact schema versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.8.5 - Safety boundary hardening
 
 ### Added
@@ -45,7 +112,7 @@ All project source text is written in English. The changelog records architectur
 - The planner remains platform-neutral; the new gate does not rewrite plans or invent target workarounds.
 - The active public standard version remains `0.7.6`.
 - Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change was added.
 
 ## 0.8.3 - Package version and release integrity
 
@@ -65,7 +132,7 @@ All project source text is written in English. The changelog records architectur
 
 - The active public standard version remains `0.7.6`.
 - Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change was added.
 
 ## 0.8.2 - Target negotiation report
 

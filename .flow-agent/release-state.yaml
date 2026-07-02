@@ -1,9 +1,9 @@
 project: Flow Core
 stateVersion: 1
 
-currentVersion: "0.8.5"
-currentPackage: "flow-core-prod-v0_8_5_safety_boundary_hardening.zip"
-nextExpectedVersion: "0.9.0"
+currentVersion: "0.9.0"
+currentPackage: "flow-core-prod-v0_9_0_generator_projection_contract.zip"
+nextExpectedVersion: "0.9.1"
 activeStandardVersion: "0.7.6"
 
 repositoryRules:
@@ -32,7 +32,8 @@ lastKnownValidation:
   targetedCompilation: "pending-ci"
   conformance: "pending-ci"
   notes:
-    - "v0.8.5 adds a pre-projection safety boundary gate over Flow AST and module contracts."
+    - "v0.9.0 adds a structural generator projection contract over TargetManifest artifacts."
+    - "The contract validates the manifest boundary between ExecutionPlan and target renderers without executing target work."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
     - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."
