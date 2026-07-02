@@ -16,6 +16,7 @@ import org.flowlang.ast.StatementNode
 import org.flowlang.ast.StringLiteralNode
 import org.flowlang.ast.TransformNode
 import org.flowlang.ast.TryNode
+import org.flowlang.ast.WhenNode
 import org.flowlang.modules.Effects
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleRegistry
@@ -40,7 +41,18 @@ class SafetyBoundaryValidator(
 
     private fun validateStatement(stmt: StatementNode, issues: MutableList<ValidationIssue>, insideErrorHandler: Boolean) {
         when (stmt) {
-            is ActionNode -> validateAction(stmt, issues, insideErrorHandler)
+            is ActionNode -> {
+                validateAction(stmt, issues, insideErrorHandler)
+                // Result handlers can nest further actions (`when ok == false { ... }`, `when error { ... }`).
+                // The safety boundary must inspect them too: a destructive or approval-required action
+                // does not become safe by being moved into a handler branch. Error branches are treated
+                // as error handlers because rollback-sensitive actions are legitimate there.
+                stmt.handler?.rules?.forEach { rule ->
+                    if (rule is WhenNode) {
+                        rule.steps.forEach { validateStatement(it, issues, insideErrorHandler || rule.isError) }
+                    }
+                }
+            }
             is IfNode -> (stmt.then + stmt.otherwise).forEach { validateStatement(it, issues, insideErrorHandler) }
             is ForNode -> stmt.body.forEach { validateStatement(it, issues, insideErrorHandler) }
             is ParallelNode -> stmt.branches.flatMap { it.steps }.forEach { validateStatement(it, issues, insideErrorHandler) }
