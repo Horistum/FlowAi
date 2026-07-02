@@ -16,6 +16,11 @@ class ExpressionParser(private val ts: TokenStream, private val scope: String = 
         private val WORD_COMPARATORS = setOf("in", "contains", "matches", "startsWith", "endsWith")
         private val ALL_CAPS = Regex("^[A-Z][A-Z0-9_]*$")
 
+        // Only these symbolic all-caps barewords are literals; any other all-caps token (PROD, ENV, a
+        // typo'd or user-named symbol) is parsed as a reference so it resolves against scope instead of
+        // silently becoming the string "PROD".
+        private val HTTP_METHODS = setOf("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT")
+
         /** Parse a standalone expression from source text (used for template interpolation). */
         fun parseSource(source: String, scope: String = "auto"): ExpressionNode {
             val ts = TokenStream(Lexer(source).tokenize())
@@ -165,8 +170,10 @@ class ExpressionParser(private val ts: TokenStream, private val scope: String = 
             }
         }
         if (compactActive) {
-            // single all-caps bareword is a symbolic identifier literal (e.g. GET, POST)
-            if (compactPath.size == 1 && ALL_CAPS.matches(compactPath[0])) return IdentifierLiteralNode(value = compactPath[0])
+            // A single all-caps bareword is a symbolic identifier literal only for known HTTP verbs
+            // (e.g. GET, POST); anything else is treated as a reference so a name like PROD resolves
+            // against scope instead of silently becoming a string literal.
+            if (compactPath.size == 1 && ALL_CAPS.matches(compactPath[0]) && compactPath[0] in HTTP_METHODS) return IdentifierLiteralNode(value = compactPath[0])
             return ReferenceNode(path = compactPath, safe = compactSafe == true, scope = scope, location = first.location())
         }
         return expr

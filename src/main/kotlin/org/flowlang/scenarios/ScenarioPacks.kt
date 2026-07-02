@@ -236,6 +236,29 @@ abstract class BaseScenarioPack : ScenarioPack {
     ).any { lower.contains(it) }
 
     /**
+     * Rollback, like approval, must respect explicit negation. The word "rollback" appears in both
+     * "rollback on failure" (wanted) and "deploy without rollback" (explicitly refused); a bare
+     * substring test would enable a rollback handler the author asked NOT to have. Mirrors
+     * [approvalExplicitlyDenied] so the negative-intent corpus stays reachable.
+     */
+    protected fun rollbackExplicitlyDenied(lower: String): Boolean = listOf(
+        "without rollback",
+        "without a rollback",
+        "without any rollback",
+        "without roll back",
+        "no rollback",
+        "no roll back",
+        "skip rollback",
+        "skip the rollback",
+        "skip roll back",
+        "bypass rollback",
+        "do not rollback",
+        "don't rollback",
+        "do not roll back",
+        "don't roll back"
+    ).any { lower.contains(it) }
+
+    /**
      * Owner extraction is intentionally narrow. A generic "require approval" is a valid
      * standard-level approval policy, while "after approval" without an owner is ambiguous
      * enough to require clarification in the reference corpus.
@@ -460,7 +483,7 @@ object DeploymentScenarioPack : BaseScenarioPack() {
         val approvalDenied = approvalExplicitlyDenied(lower)
         val wantsApproval = explicitApprovalRequested(lower)
         val requiresApprovalPolicy = prod && !wantsApproval
-        val wantsRollback = lower.contains("rollback")
+        val wantsRollback = lower.contains("rollback") && !rollbackExplicitlyDenied(lower)
         val wantsNotify = lower.contains("notify") || lower.contains("email") || lower.contains("slack") || lower.contains("team")
         val name = app ?: "deployment"
         val questions = mutableListOf<ClarificationQuestion>()
@@ -782,7 +805,7 @@ object DatabaseMigrationScenarioPack : BaseScenarioPack() {
         val version = Regex("(?i)(?:version|to)\\s+([a-z0-9._-]+)").find(text)?.groupValues?.getOrNull(1)
         val wantsApproval = explicitApprovalRequested(lower)
         val wantsNotify = lower.contains("notify") || lower.contains("team") || lower.contains("email") || lower.contains("slack")
-        val wantsRollback = lower.contains("rollback")
+        val wantsRollback = lower.contains("rollback") && !rollbackExplicitlyDenied(lower)
         val questions = mutableListOf<ClarificationQuestion>()
         if (database == null) questions += requiredQuestion("missing-database", "entities.database", "Which database should be migrated?")
         if (!lower.contains("backup")) questions += recommendedQuestion("migration-backup", "safety.backup", "Should a backup be created before the migration?")

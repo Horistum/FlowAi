@@ -252,7 +252,12 @@ internal fun PlanNode.toTargetSteps(targetName: String = "portable-shell"): List
         }
     }
     is ApprovalNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = "approval", dependsOn = dependsOn.map(::sanitizeId), params = mapOf("mode" to mode) + (message?.let { mapOf("message" to it) } ?: emptyMap()), metadata = mapOf("sourceNodeKind" to kind, "resultName" to (resultName ?: "")).filterValues { it.isNotBlank() }))
-    is DataOpNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("target" to (target ?: ""), "detail" to (detail ?: "")).filterValues { it.isNotBlank() }, metadata = mapOf("sourceNodeKind" to kind)))
+    is DataOpNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("target" to (target ?: ""), "detail" to (detail ?: "")).filterValues { it.isNotBlank() }, mappingNotes = listOf(
+        // A Flow data operation (transform/validate/aggregate) has no target-side execution: its result
+        // exists only in the Flow layer. Without this note the projected step looks like a green no-op
+        // and downstream commands appear to "use" a value that was never computed on the target.
+        TargetMappingNote("warning", "all", id, "dataop.not-materialised", "Flow ${kind.lowercase()} is a Flow-layer data operation and is not materialised by this projection; downstream steps must not depend on its result at runtime without a target-specific adapter.")
+    ), metadata = mapOf("sourceNodeKind" to kind)))
     is ControlNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("detail" to (detail ?: "")).filterValues { it.isNotBlank() }, metadata = mapOf("sourceNodeKind" to kind)))
 }
 
@@ -315,9 +320,31 @@ private fun TaskNode.toTargetStep(targetName: String = "portable-shell"): Target
     ).filterValues { it.isNotBlank() }
 )
 
-private fun commandMappingNotes(task: TaskNode): List<TargetMappingNote> = when (task.module to task.action) {
-    "standard" to "execute" -> listOf(TargetMappingNote("info", "all", task.id, "semantic.standard-execute", "Standard capability is rendered as an auditable semantic command. Add a module-specific adapter when real external side effects are required."))
-    else -> emptyList()
+/** Action pairs for which [runCommandFor] emits a real portable command (kept in sync with its branches). */
+private val PORTABLE_ACTIONS = setOf(
+    "shell" to "run", "git" to "checkout", "docker" to "build", "docker" to "push",
+    "helm" to "template", "helm" to "upgrade", "kubernetes" to "deploy", "kubernetes" to "get",
+    "argocd" to "sync", "argocd" to "status", "rest" to "call", "database" to "query",
+    "file" to "write", "notify" to "send", "standard" to "rollback", "standard" to "execute"
+)
+
+// A ${ref.path} interpolation whose root is not a plain input token: step results, aggregates and
+// other runtime values that only exist in the Flow layer. The manifest cannot materialise them.
+private val RUNTIME_RESULT_REF = Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*\.[^}]+)}""")
+
+private fun commandMappingNotes(task: TaskNode): List<TargetMappingNote> {
+    val notes = mutableListOf<TargetMappingNote>()
+    when (task.module to task.action) {
+        "standard" to "execute" -> notes += TargetMappingNote("info", "all", task.id, "semantic.standard-execute", "Standard capability is rendered as an auditable semantic command. Add a module-specific adapter when real external side effects are required.")
+        "standard" to "rollback" -> notes += TargetMappingNote("info", "all", task.id, "semantic.rollback-adapter", "Rollback is rendered as an auditable semantic command only; no state is reverted until a target-specific rollback adapter is configured.")
+        !in PORTABLE_ACTIONS -> notes += TargetMappingNote("error", "all", task.id, "command.unmapped", "No portable command mapping exists for ${task.module}.${task.action}; the generated step fails at runtime instead of silently succeeding without the intended side effect. Provide a target-specific adapter.")
+        else -> Unit
+    }
+    val unresolved = task.params.values.flatMap { RUNTIME_RESULT_REF.findAll(it).map { m -> m.groupValues[1] } }.distinct()
+    if (unresolved.isNotEmpty()) {
+        notes += TargetMappingNote("warning", "all", task.id, "interpolation.runtime-result", "Runtime result reference(s) ${unresolved.joinToString(", ") { "\${$it}" }} exist only in the Flow layer and are not materialised by this projection; they render as literal text in the command.")
+    }
+    return notes
 }
 
 /**
@@ -395,7 +422,9 @@ internal fun runCommandFor(task: TaskNode, targetName: String = "portable-shell"
     }
     "database" to "query" -> {
         val sql = taskArg(task, "sql", "select 1")
-        "psql --set ON_ERROR_STOP=1 -c $sql"
+        val url = task.params["url"]?.let { unquote(it) }?.takeIf { it.isNotBlank() }
+        val conn = url?.let { " -d ${shellArg(it)}" } ?: ""
+        "psql --set ON_ERROR_STOP=1$conn -c $sql"
     }
     "file" to "write" -> {
         val path = taskArg(task, "path", "flow-output.txt")
@@ -406,11 +435,14 @@ internal fun runCommandFor(task: TaskNode, targetName: String = "portable-shell"
         val subject = shellArg("Flow notification: " + taskRaw(task, "subject", task.id))
         val body = taskArg(task, "body", "Flow notification from ${task.id}")
         val to = taskArg(task, "to", "team@example.com")
-        "printf %s $body | mail -s $subject $to || echo ${shellArg("Notification adapter is not configured")}"
+        "printf %s $body | mail -s $subject $to || { echo ${shellArg("Flow notify delivery failed: mail adapter not configured")} >&2; exit 1; }"
     }
     "standard" to "rollback" -> "echo ${shellArg("Flow rollback requested for ${taskRaw(task, "flow", task.id)}. Configure a target-specific rollback adapter for production.")}"
     "standard" to "execute" -> standardExecuteCommand(task)
-    else -> "echo ${shellArg("Flow executes ${task.module}.${task.action} on ${task.target}")}"
+    // No portable command mapping exists for this action. A pipeline step that silently succeeds
+    // while performing no side effect is a semantic lie (the flow's data writes or effects simply
+    // do not happen), so the step fails loudly instead; the mapping note carries the explanation.
+    else -> "echo ${shellArg("Flow has no portable command mapping for ${task.module}.${task.action} on ${task.target}; provide a target-specific adapter")} >&2; exit 1"
 }
 
 private fun taskRaw(task: TaskNode, name: String, default: String): String =
@@ -458,7 +490,10 @@ internal fun unquote(value: String): String {
 
 internal fun shellQuote(value: String): String = "'" + value.replace("'", "'\"'\"'") + "'"
 
-private val FLOW_INPUT_TOKEN = Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*)}""")
+// Recognises the two runtime references Flow can place in a command: an input token ${name} and a
+// system secret reference secret("NAME"). Both are delivered through the environment (never spliced
+// into the script text) — inputs via FLOW_<NAME>, secrets via FLOW_SECRET_<NAME>.
+private val FLOW_RUNTIME_TOKEN = Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*)}|secret\("([A-Za-z_][A-Za-z0-9_]*)"\)""")
 
 /** Deterministic shell environment-variable name that carries a Flow input's runtime value. */
 internal fun flowEnvVar(name: String): String = "FLOW_" + name.uppercase().replace(Regex("[^A-Z0-9_]"), "_")
@@ -466,19 +501,29 @@ internal fun flowEnvVar(name: String): String = "FLOW_" + name.uppercase().repla
 /** The exact shell token a command uses to reference a Flow input value: "$FLOW_NAME" (double-quoted). */
 internal fun flowVarToken(name: String): String = "\"$" + flowEnvVar(name) + "\""
 
+/** Environment-variable name that carries a materialised secret; the suffix is the exact secret name. */
+internal fun flowSecretEnvVar(name: String): String = "FLOW_SECRET_$name"
+
+/** The shell token a command uses to reference a materialised secret value: "$FLOW_SECRET_NAME". */
+internal fun flowSecretToken(name: String): String = "\"$" + flowSecretEnvVar(name) + "\""
+
+private fun runtimeTokenReplacement(m: MatchResult): String =
+    if (m.groupValues[1].isNotEmpty()) flowVarToken(m.groupValues[1]) else flowSecretToken(m.groupValues[2])
+
 /**
- * Renders one shell command ARGUMENT that is safe regardless of runtime input values.
+ * Renders one shell command ARGUMENT that is safe regardless of runtime values.
  * Literal segments are POSIX single-quoted; each `${name}` interpolation token becomes a
- * double-quoted variable reference ("$FLOW_NAME"). The variable is bound to the target's
- * native parameter expression by the renderer, so the value is passed through the
- * environment and can never terminate quoting or inject further shell.
+ * double-quoted input variable ("$FLOW_NAME") and each `secret("NAME")` becomes a double-quoted
+ * secret variable ("$FLOW_SECRET_NAME"). The renderer binds those variables to the target's native
+ * parameter/secret mechanism, so values pass through the environment and can never terminate
+ * quoting or inject further shell.
  */
 internal fun shellArg(value: String): String {
     val out = StringBuilder()
     var last = 0
-    for (m in FLOW_INPUT_TOKEN.findAll(value)) {
+    for (m in FLOW_RUNTIME_TOKEN.findAll(value)) {
         if (m.range.first > last) out.append(shellQuote(value.substring(last, m.range.first)))
-        out.append(flowVarToken(m.groupValues[1]))
+        out.append(runtimeTokenReplacement(m))
         last = m.range.last + 1
     }
     if (last < value.length) out.append(shellQuote(value.substring(last)))
@@ -486,9 +531,9 @@ internal fun shellArg(value: String): String {
 }
 
 /**
- * Substitutes `${name}` interpolation tokens for "$FLOW_NAME" inside a whole shell command line
- * (e.g. shell.run), leaving the author's surrounding shell verbatim. Used where the value is an
- * entire command rather than a single argument.
+ * Substitutes `${name}` and `secret("NAME")` tokens for their environment references inside a whole
+ * shell command line (e.g. shell.run), leaving the author's surrounding shell verbatim. Used where
+ * the value is an entire command rather than a single argument.
  */
 internal fun interpolateShellVars(value: String): String =
-    FLOW_INPUT_TOKEN.replace(value) { m -> flowVarToken(m.groupValues[1]) }
+    FLOW_RUNTIME_TOKEN.replace(value) { runtimeTokenReplacement(it) }

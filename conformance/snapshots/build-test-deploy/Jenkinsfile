@@ -26,7 +26,7 @@ pipeline {
         } catch (flowError) {
           def error = [message: flowError.getMessage()]
           sh(script: 'echo \'Flow rollback requested for build-test-deploy. Configure a target-specific rollback adapter for production.\'')
-          sh(script: 'printf %s \'error?.message\' | mail -s \'Flow notification: Flow failed: build-test-deploy\' \'team@example.com\' || echo \'Notification adapter is not configured\'')
+          sh(script: 'printf %s \'error?.message\' | mail -s \'Flow notification: Flow failed: build-test-deploy\' \'team@example.com\' || { echo \'Flow notify delivery failed: mail adapter not configured\' >&2; exit 1; }')
           throw flowError
         }
       } }

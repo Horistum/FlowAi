@@ -41,15 +41,20 @@ class JenkinsManifestRenderer {
     }
 
     /**
-     * Binds every declared input to a FLOW_* environment variable at the pipeline level.
-     * Commands reference these via "$FLOW_NAME", so runtime values are delivered through the
-     * environment instead of being interpolated into the script body.
+     * Binds every declared input to a FLOW_* environment variable at the pipeline level, and every
+     * secret referenced by a command to a FLOW_SECRET_* variable via Jenkins `credentials()`.
+     * Commands reference these through "$FLOW_NAME"/"$FLOW_SECRET_NAME", so runtime values are
+     * delivered via the environment instead of being interpolated into the script body.
      */
     private fun renderJenkinsEnvironment(manifest: TargetManifest, sb: StringBuilder) {
-        if (manifest.inputs.isEmpty()) return
+        val secretNames = referencedSecretNames(manifest.jobs.flatMap { it.steps }.flatMap { it.collectRuns() })
+        if (manifest.inputs.isEmpty() && secretNames.isEmpty()) return
         sb.appendLine("  environment {")
         manifest.inputs.forEach { input ->
             sb.appendLine("    ${flowEnvVar(input.name)} = \"\${params.${input.name}}\"")
+        }
+        secretNames.forEach { name ->
+            sb.appendLine("    ${flowSecretEnvVar(name)} = credentials('$name')")
         }
         sb.appendLine("  }")
     }
@@ -192,10 +197,13 @@ class GitHubActionsManifestRenderer {
         if (job.dependsOn.isNotEmpty()) sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
         if (job.metadata["approval"] == "true") sb.appendLine("    environment: production")
-        val jobInputs = referencedInputs(job.steps.flatMap { it.collectRuns() }, manifest.inputs)
-        if (jobInputs.isNotEmpty()) {
+        val jobRuns = job.steps.flatMap { it.collectRuns() }
+        val jobInputs = referencedInputs(jobRuns, manifest.inputs)
+        val jobSecrets = referencedSecretNames(jobRuns)
+        if (jobInputs.isNotEmpty() || jobSecrets.isNotEmpty()) {
             sb.appendLine("    env:")
             jobInputs.forEach { input -> sb.appendLine("      ${flowEnvVar(input.name)}: ${githubExpression("inputs.${sanitizeId(input.name)}")}") }
+            jobSecrets.forEach { name -> sb.appendLine("      ${flowSecretEnvVar(name)}: ${githubExpression("secrets.$name")}") }
         }
         sb.appendLine("    steps:")
         if (job.steps.isEmpty()) {
@@ -283,12 +291,22 @@ class TektonManifestRenderer {
         sb.appendLine("        steps:")
         sb.appendLine("          - name: ${sanitizeId(step?.id ?: job.id)}")
         sb.appendLine("            image: alpine:3.20")
-        val stepInputs = referencedInputs(step?.collectRuns().orEmpty(), manifest.inputs)
-        if (stepInputs.isNotEmpty()) {
+        val stepRuns = step?.collectRuns().orEmpty()
+        val stepInputs = referencedInputs(stepRuns, manifest.inputs)
+        val stepSecrets = referencedSecretNames(stepRuns)
+        if (stepInputs.isNotEmpty() || stepSecrets.isNotEmpty()) {
             sb.appendLine("            env:")
             stepInputs.forEach { input ->
                 sb.appendLine("              - name: ${flowEnvVar(input.name)}")
                 sb.appendLine("                value: \"\$(params.${sanitizeId(input.name)})\"")
+            }
+            // Secrets are sourced from a 'flow-secrets' Kubernetes Secret (one key per secret name).
+            stepSecrets.forEach { name ->
+                sb.appendLine("              - name: ${flowSecretEnvVar(name)}")
+                sb.appendLine("                valueFrom:")
+                sb.appendLine("                  secretKeyRef:")
+                sb.appendLine("                    name: flow-secrets")
+                sb.appendLine("                    key: $name")
             }
         }
         sb.appendLine("            script: |")
@@ -330,4 +348,12 @@ private fun referencedInputs(runs: List<String>, inputs: List<TargetInput>): Lis
     if (inputs.isEmpty()) return emptyList()
     val text = runs.joinToString("\n")
     return inputs.filter { text.contains(flowVarToken(it.name)) }
+}
+
+private val RENDERED_SECRET_TOKEN = Regex("\"\\\$FLOW_SECRET_([A-Za-z_][A-Za-z0-9_]*)\"")
+
+/** Names of the secrets actually referenced (as "$FLOW_SECRET_NAME") by the given command strings, in first-seen order. */
+private fun referencedSecretNames(runs: List<String>): List<String> {
+    val text = runs.joinToString("\n")
+    return RENDERED_SECRET_TOKEN.findAll(text).map { it.groupValues[1] }.distinct().toList()
 }

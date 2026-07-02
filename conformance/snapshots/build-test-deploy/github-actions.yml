@@ -98,4 +98,4 @@ jobs:
     steps:
       - name: "notify_send_1"
         run: |
-          printf %s 'error?.message' | mail -s 'Flow notification: Flow failed: build-test-deploy' 'team@example.com' || echo 'Notification adapter is not configured'
+          printf %s 'error?.message' | mail -s 'Flow notification: Flow failed: build-test-deploy' 'team@example.com' || { echo 'Flow notify delivery failed: mail adapter not configured' >&2; exit 1; }

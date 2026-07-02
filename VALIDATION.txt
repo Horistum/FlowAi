@@ -1,6 +1,8 @@
 Flow package-line validation note
 
-This repository currently uses package line 0.8.2 with active public standard version 0.7.6.
+The package line is defined solely by `version` in build.gradle.kts, and the active public standard
+version by FLOW_STANDARD_VERSION in src/main/kotlin/org/flowlang/standard/FlowStandardVersions.kt.
+Do not restate either number here; a hardcoded copy only drifts out of date.
 
 Do not rely on historical hardcoded test counts in this file. Validate the current checkout with:
 
