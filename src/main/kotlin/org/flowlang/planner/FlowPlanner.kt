@@ -135,9 +135,10 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     /**
      * Renders the action's params and layers in defaults from the targeted system's configuration
-     * for the keys each module consumes. Only non-secret config is merged, and only when the action
-     * does not already provide the key, so explicit params are never overridden and secret endpoints
-     * are deferred to a runtime adapter rather than spliced in as a literal `secret("…")` string.
+     * for the keys each module consumes. Values are merged only when the action does not already
+     * provide the key, so explicit params always win. Secret-valued config (`secret("NAME")`) is
+     * kept and rendered as-is; the manifest layer materialises it through the target's secret
+     * mechanism (Jenkins credentials, GitHub secrets, Tekton secretKeyRef) rather than dropping it.
      */
     private fun mergeSystemConfig(action: ActionNode, ctx: Ctx): Map<String, String> {
         val rendered = action.params.mapValues { (_, expr) -> RuntimeParamRenderer.render(expr, ctx.inputNames) }.toMutableMap()
@@ -145,12 +146,12 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         fun pull(key: String) {
             if (key in rendered) return
             val expr = system.config[key] ?: return
-            if (expr is SecretRefNode) return
             rendered[key] = RuntimeParamRenderer.render(expr, ctx.inputNames)
         }
         when (action.module) {
             "git" -> { pull("url"); pull("branch") }
             "rest" -> pull("baseUrl")
+            "database" -> pull("url")
             "kubernetes", "helm" -> pull("namespace")
         }
         return rendered

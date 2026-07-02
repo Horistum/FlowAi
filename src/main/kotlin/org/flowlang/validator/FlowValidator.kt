@@ -108,10 +108,17 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
             is ActionNode -> validateAction(stmt, imported, systems, scope, results, issues)
             is IfNode -> {
                 checkExpr(stmt.condition, scope, "auto", null, issues)
+                // then/otherwise are mutually exclusive: each validates against its own copy of the
+                // result names, so the same binding name in both branches is not a false
+                // DUPLICATE_RESULT. New names from both branches merge back for later statements.
                 val thenScope = scope.child()
-                stmt.then.forEach { validateStatement(it, imported, systems, thenScope, results, issues) }
+                val thenResults = results.toMutableSet()
+                stmt.then.forEach { validateStatement(it, imported, systems, thenScope, thenResults, issues) }
                 val otherwiseScope = scope.child()
-                stmt.otherwise.forEach { validateStatement(it, imported, systems, otherwiseScope, results, issues) }
+                val otherwiseResults = results.toMutableSet()
+                stmt.otherwise.forEach { validateStatement(it, imported, systems, otherwiseScope, otherwiseResults, issues) }
+                results += thenResults
+                results += otherwiseResults
             }
             is ForNode -> {
                 checkExpr(stmt.source, scope, "auto", null, issues)
@@ -124,14 +131,21 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
             }
             is MatchNode -> {
                 checkExpr(stmt.source, scope, "auto", null, issues)
+                // Cases and the error case are mutually exclusive; each validates against the pre-match
+                // result snapshot so a shared binding name is not a false duplicate. New names merge back.
+                val baseResults = results.toSet()
                 stmt.cases.forEach { c ->
                     c.condition?.let { checkExpr(it, scope, "implicitResult", null, issues) }
                     val caseScope = scope.child()
-                    c.steps.forEach { validateStatement(it, imported, systems, caseScope, results, issues) }
+                    val caseResults = baseResults.toMutableSet()
+                    c.steps.forEach { validateStatement(it, imported, systems, caseScope, caseResults, issues) }
+                    results += caseResults
                 }
                 stmt.errorCase?.let { steps ->
                     val errorScope = scope.child().also { s -> s.declare("error") }
-                    steps.forEach { validateStatement(it, imported, systems, errorScope, results, issues) }
+                    val errorResults = baseResults.toMutableSet()
+                    steps.forEach { validateStatement(it, imported, systems, errorScope, errorResults, issues) }
+                    results += errorResults
                 }
                 val defaultScope = scope.child()
                 stmt.defaultSteps.forEach { validateStatement(it, imported, systems, defaultScope, results, issues) }
@@ -234,13 +248,16 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
         if (action.handler != null && action.result == null)
             issues += err("HANDLER_WITHOUT_RESULT", "Result handler requires a result binding", action.sourceLocation)
 
-        // result handler scope = standard fields + module outputs
-        val outputs = standardResultFields + (registry.findAction(action.module, action.action)?.output?.keys ?: emptySet())
+        // result handler scope = standard fields + module outputs. When the module declares a concrete
+        // output schema, unknown field references become errors (typo detection); an open output stays lenient.
+        val moduleOutputs = registry.findAction(action.module, action.action)?.output?.keys ?: emptySet()
+        val outputs = standardResultFields + moduleOutputs
+        val strictOutputs = moduleOutputs.isNotEmpty()
         action.handler?.rules?.forEach { rule ->
             when (rule) {
-                is ExpectNode -> rule.expressions.forEach { checkExpr(it, scope, "implicitResult", outputs, issues) }
+                is ExpectNode -> rule.expressions.forEach { checkExpr(it, scope, "implicitResult", outputs, issues, strictOutputs) }
                 is WhenNode -> {
-                    rule.condition?.let { checkExpr(it, scope, "implicitResult", outputs, issues) }
+                    rule.condition?.let { checkExpr(it, scope, "implicitResult", outputs, issues, strictOutputs) }
                     val s = scope.child().also { if (rule.isError) it.declare("error") }
                     rule.steps.forEach { validateStatement(it, imported, systems, s, results, issues) }
                 }
@@ -252,7 +269,8 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     private fun checkExpr(
         expr: ExpressionNode, scope: Scope, defaultScope: String,
-        resultFields: Set<String>?, issues: MutableList<ValidationIssue>
+        resultFields: Set<String>?, issues: MutableList<ValidationIssue>,
+        strictResultFields: Boolean = false
     ) {
         when (expr) {
             is ReferenceNode -> {
@@ -260,8 +278,15 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
                 val effScope = if (expr.scope == "auto") defaultScope else expr.scope
                 if (effScope == "implicitResult") {
                     val allowed = (resultFields ?: standardResultFields)
-                    if (root !in allowed && root != "item" && root != "error" && root !in builtinPatterns && !scope.has(root))
-                        issues += warn("UNKNOWN_RESULT_FIELD", "Reference '$root' is not a standard result field or known output", expr.location)
+                    if (root !in allowed && root != "item" && root != "error" && root !in builtinPatterns && !scope.has(root)) {
+                        // When the module declares a concrete output schema, an unknown field is almost
+                        // certainly a typo (result.statuss vs status) and must fail; modules with an open
+                        // ("any") output stay a warning because the field set cannot be checked.
+                        if (strictResultFields)
+                            issues += err("UNKNOWN_RESULT_FIELD", "Reference '$root' is not a declared output of this module (possible typo)", expr.location)
+                        else
+                            issues += warn("UNKNOWN_RESULT_FIELD", "Reference '$root' is not a standard result field or known output", expr.location)
+                    }
                 } else {
                     if (!scope.has(root))
                         issues += err("UNRESOLVED_REFERENCE", "Reference '$root' is not defined in scope", expr.location)
@@ -269,21 +294,21 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
             }
             is BinaryExpressionNode -> {
                 if (expr.operator !in validOperators) issues += err("UNKNOWN_OPERATOR", "Unknown operator '${expr.operator}'", expr.location)
-                checkExpr(expr.left, scope, defaultScope, resultFields, issues)
-                checkExpr(expr.right, scope, defaultScope, resultFields, issues)
+                checkExpr(expr.left, scope, defaultScope, resultFields, issues, strictResultFields)
+                checkExpr(expr.right, scope, defaultScope, resultFields, issues, strictResultFields)
             }
             is LogicalExpressionNode -> {
                 if (expr.operator !in setOf("and", "or")) issues += err("UNKNOWN_OPERATOR", "Unknown logical operator '${expr.operator}'", expr.location)
-                expr.operands.forEach { checkExpr(it, scope, defaultScope, resultFields, issues) }
+                expr.operands.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
             }
-            is UnaryExpressionNode -> checkExpr(expr.operand, scope, defaultScope, resultFields, issues)
-            is UnaryPostfixExpressionNode -> checkExpr(expr.operand, scope, defaultScope, resultFields, issues)
-            is ListLiteralNode -> expr.items.forEach { checkExpr(it, scope, defaultScope, resultFields, issues) }
-            is MapLiteralNode -> expr.entries.values.forEach { checkExpr(it, scope, defaultScope, resultFields, issues) }
-            is TemplateStringNode -> expr.parts.forEach { checkExpr(it, scope, defaultScope, resultFields, issues) }
-            is CallExpressionNode -> expr.args.forEach { checkExpr(it, scope, defaultScope, resultFields, issues) }
-            is IndexExpressionNode -> { checkExpr(expr.target, scope, defaultScope, resultFields, issues); checkExpr(expr.index, scope, defaultScope, resultFields, issues) }
-            is MemberExpressionNode -> checkExpr(expr.target, scope, defaultScope, resultFields, issues)
+            is UnaryExpressionNode -> checkExpr(expr.operand, scope, defaultScope, resultFields, issues, strictResultFields)
+            is UnaryPostfixExpressionNode -> checkExpr(expr.operand, scope, defaultScope, resultFields, issues, strictResultFields)
+            is ListLiteralNode -> expr.items.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
+            is MapLiteralNode -> expr.entries.values.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
+            is TemplateStringNode -> expr.parts.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
+            is CallExpressionNode -> expr.args.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
+            is IndexExpressionNode -> { checkExpr(expr.target, scope, defaultScope, resultFields, issues, strictResultFields); checkExpr(expr.index, scope, defaultScope, resultFields, issues, strictResultFields) }
+            is MemberExpressionNode -> checkExpr(expr.target, scope, defaultScope, resultFields, issues, strictResultFields)
             else -> Unit  // literals, secret refs, identifier literals
         }
     }
