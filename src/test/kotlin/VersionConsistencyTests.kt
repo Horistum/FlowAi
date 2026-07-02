@@ -6,7 +6,7 @@ import org.flowlang.standard.FlowStandardVersions
 import java.io.File
 
 class VersionConsistencyTests {
-    private val packageVersion = "0.8.5"
+    private val packageVersion = "0.9.0"
     private val activeStandardVersion = "0.7.6"
 
     @Test
@@ -14,13 +14,13 @@ class VersionConsistencyTests {
         assertEquals(packageVersion, gradlePackageVersion())
         assertFileContains("REPORT.md", "Current package line: `$packageVersion`")
         assertFileContains("REPORT.md", "Active public standard version: `$activeStandardVersion`")
-        assertFileContains("CHANGELOG.md", "## $packageVersion - Safety boundary hardening")
+        assertFileContains("CHANGELOG.md", "## $packageVersion - Generator projection contract")
         assertFileContains(".flow-agent/release-state.yaml", "currentVersion: \"$packageVersion\"")
         assertFileContains(".flow-agent/release-state.yaml", "activeStandardVersion: \"$activeStandardVersion\"")
-        assertFileContains(".flow-agent/release-state.yaml", "nextExpectedVersion: \"0.9.0\"")
+        assertFileContains(".flow-agent/release-state.yaml", "nextExpectedVersion: \"0.9.1\"")
         assertFileContains(".flow-agent/roadmap.yaml", "version: \"$packageVersion\"")
-        assertFileContains(".flow-agent/roadmap.yaml", "name: \"Safety Boundary Hardening\"")
-        assertTrue(File(".flow-agent/reports/v0.8.5-safety-boundary-hardening.md").isFile, "v0.8.5 release report must exist.")
+        assertFileContains(".flow-agent/roadmap.yaml", "name: \"Generator Projection Contract\"")
+        assertTrue(File(".flow-agent/reports/v0.9.0-generator-projection-contract.md").isFile, "v0.9.0 release report must exist.")
     }
 
     @Test
@@ -32,8 +32,8 @@ class VersionConsistencyTests {
         assertEquals("1.0", FlowStandardVersions.TARGET_MANIFEST_VERSION)
         assertEquals("1.0", FlowStandardVersions.TARGET_REGISTRY_VERSION)
 
-        assertFileContains("REPORT.md", "The v0.8.5 package line does not bump the public standard or artifact schema versions.")
-        assertFileContains("docs/versioning-policy.md", "The v0.8.5 release adds safety boundary hardening")
+        assertFileContains("REPORT.md", "The v0.9.0 package line does not bump the public standard or artifact schema versions.")
+        assertFileContains("docs/versioning-policy.md", "The v0.9.0 release adds a generator projection contract")
     }
 
     @Test
@@ -44,7 +44,7 @@ class VersionConsistencyTests {
         assertTrue(policy.contains("### Public Flow standard version"), "Versioning policy must define public standard version.")
         assertTrue(policy.contains("### Artifact contract versions"), "Versioning policy must define artifact contract versions.")
         assertTrue(policy.contains("### Conformance gate identifiers"), "Versioning policy must define conformance gate identifiers.")
-        assertFalse(policy.contains("bump the public Flow standard version to 0.8.5"), "Policy must not imply a public standard bump for v0.8.5.")
+        assertFalse(policy.contains("bump the public Flow standard version to 0.9.0"), "Policy must not imply a public standard bump for v0.9.0.")
     }
 
     private fun gradlePackageVersion(): String {
