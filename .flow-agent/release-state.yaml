@@ -3,7 +3,7 @@ stateVersion: 1
 
 currentVersion: "0.9.1"
 currentPackage: "flow-core-prod-v0_9_1_projection_stability.zip"
-nextExpectedVersion: "0.9.5"
+nextExpectedVersion: "0.9.2"
 activeStandardVersion: "0.7.6"
 
 repositoryRules:
@@ -34,6 +34,7 @@ lastKnownValidation:
   notes:
     - "v0.9.1 adds smoke-level projection stability guards for Jenkins, GitHub Actions and Tekton."
     - "The tests validate renderer determinism, target structure, runtime secret binding and absence of green placebo commands."
+    - "The next expected package line is v0.9.2 renderer contract hardening, not v0.9.5 end-to-end readiness."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
     - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."
