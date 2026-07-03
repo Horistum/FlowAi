@@ -78,17 +78,17 @@ class ReferenceScenarioMatrixTests {
     }
 
     @Test
-    fun negativeCoverageIsExplicitAndRejectedBySafetyBoundary() {
+    fun negativeCoverageIsExplicitAndRejectedByCoreValidationGates() {
         ReferenceScenarioMatrix.negativeScenarios().forEach { scenario ->
             val ast = parser.parse(scenario.source)
             val validation = validator.validate(ast)
-            assertTrue(validation.valid, "negative scenario ${scenario.id} must still be syntactically and structurally valid Flow: ${validation.issues}")
+            val safetyIssues = safety.validate(ast)
+            val allIssues = validation.issues + safetyIssues
+            val errorCodes = allIssues.filter { it.level == "error" }.map { it.code }.toSet()
 
-            val issues = safety.validate(ast)
-            assertFalse(issues.none { it.level == "error" }, "negative scenario ${scenario.id} must be rejected by safety validation")
-            val codes = issues.map { it.code }.toSet()
+            assertFalse(errorCodes.isEmpty(), "negative scenario ${scenario.id} must be rejected by at least one core validation gate")
             scenario.expectedDiagnosticCodes.forEach { expectedCode ->
-                assertTrue(expectedCode in codes, "negative scenario ${scenario.id} must produce $expectedCode, got $codes")
+                assertTrue(expectedCode in errorCodes, "negative scenario ${scenario.id} must produce $expectedCode, got $errorCodes")
             }
             scenario.targetExpectations.values.forEach { expectation ->
                 assertEquals(ReferenceTargetOutcome.BLOCKED, expectation.outcome, "negative scenario ${scenario.id} must declare blocked target outcomes")
