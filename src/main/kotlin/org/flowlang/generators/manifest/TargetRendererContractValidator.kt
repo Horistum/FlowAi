@@ -38,8 +38,9 @@ object TargetRendererContractValidator {
                 if (dep !in jobIds) error("JOB_DEPENDENCY_UNKNOWN", "$jobPath.dependsOn", "Job '${job.id}' depends on unknown job '$dep'.")
             }
             val stepIds = job.steps.flatMap { it.collectStepIds() }.toSet()
+            val knownDependencyIds = jobIds + stepIds
             job.steps.forEachIndexed { stepIndex, step ->
-                validateStep(step, "$jobPath.steps[$stepIndex]", stepIds, issues)
+                validateStep(step, "$jobPath.steps[$stepIndex]", knownDependencyIds, issues)
             }
         }
 
@@ -67,7 +68,7 @@ object TargetRendererContractValidator {
     private fun validateStep(
         step: TargetStep,
         path: String,
-        stepIds: Set<String>,
+        knownDependencyIds: Set<String>,
         issues: MutableList<TargetRendererContractIssue>
     ) {
         fun error(code: String, p: String, message: String) {
@@ -82,7 +83,7 @@ object TargetRendererContractValidator {
             )
         }
         step.dependsOn.forEach { dep ->
-            if (dep !in stepIds) error("STEP_DEPENDENCY_UNKNOWN", "$path.dependsOn", "Step '${step.id}' depends on unknown sibling step '$dep'.")
+            if (dep !in knownDependencyIds) error("STEP_DEPENDENCY_UNKNOWN", "$path.dependsOn", "Step '${step.id}' depends on unknown projected id '$dep'.")
         }
         when (step.type) {
             "parallel" -> if (step.children.isEmpty()) error("PARALLEL_STEP_EMPTY", "$path.children", "Parallel step '${step.id}' must contain branches.")
@@ -100,7 +101,7 @@ object TargetRendererContractValidator {
             "try-body" -> if (step.children.isEmpty()) error("TRY_BODY_EMPTY", "$path.children", "Try body '${step.id}' must contain projected work.")
             "error-handler" -> if (step.children.isEmpty()) error("ERROR_HANDLER_EMPTY", "$path.children", "Error handler '${step.id}' must contain projected work.")
         }
-        step.children.forEachIndexed { index, child -> validateStep(child, "$path.children[$index]", stepIds, issues) }
+        step.children.forEachIndexed { index, child -> validateStep(child, "$path.children[$index]", knownDependencyIds, issues) }
     }
 
     private fun TargetStep.collectStepIds(): List<String> = listOf(id) + children.flatMap { it.collectStepIds() }
