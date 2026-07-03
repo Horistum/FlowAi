@@ -27,7 +27,7 @@ object ReferenceScenarioMatrix {
         expectedCapabilities = setOf("git.checkout", "shell.command", "kubernetes.deploy", "notify.send", "approval.required"),
         risks = setOf(ReferenceScenarioRisk.PRODUCTION_CHANGE, ReferenceScenarioRisk.SECRET_ACCESS),
         safetyRequirements = setOf("production deployment requires explicit approval", "deployment must keep target projection reviewable"),
-        targetExpectations = mainTargetExpectations(),
+        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "git" version "1.0"
@@ -39,10 +39,22 @@ object ReferenceScenarioMatrix {
                 environment: option ["dev", "test", "prod"] required
               }
               systems {
-                system "repo" { type: git url: "https://example.invalid/app.git" branch: "main" }
-                system "local" { type: shell }
-                system "k8s" { type: kubernetes context: "prod" }
-                system "mailer" { type: notify channel: email }
+                system "repo" {
+                  type: git
+                  url: "https://example.invalid/app.git"
+                  branch: "main"
+                }
+                system "local" {
+                  type: shell
+                }
+                system "k8s" {
+                  type: kubernetes
+                  context: "prod"
+                }
+                system "mailer" {
+                  type: notify
+                  channel: email
+                }
               }
               steps {
                 git.checkout repo {
@@ -85,9 +97,20 @@ object ReferenceScenarioMatrix {
                 environment: option ["dev", "test", "prod"] required
               }
               systems {
-                system "crm" { type: rest baseUrl: secret("CRM_URL") token: secret("CRM_TOKEN") }
-                system "warehouse" { type: database engine: postgres url: secret("WAREHOUSE_URL") }
-                system "mailer" { type: notify channel: email }
+                system "crm" {
+                  type: rest
+                  baseUrl: secret("CRM_URL")
+                  token: secret("CRM_TOKEN")
+                }
+                system "warehouse" {
+                  type: database
+                  engine: postgres
+                  url: secret("WAREHOUSE_URL")
+                }
+                system "mailer" {
+                  type: notify
+                  channel: email
+                }
               }
               steps {
                 rest.call crm {
@@ -139,15 +162,22 @@ object ReferenceScenarioMatrix {
         expectedCapabilities = setOf("database.query", "database.upsert", "notify.send"),
         risks = setOf(ReferenceScenarioRisk.DATA_WRITE, ReferenceScenarioRisk.SECRET_ACCESS),
         safetyRequirements = setOf("migration records an audit row", "database URL is represented as a secret"),
-        targetExpectations = mainTargetExpectations(),
+        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "database" version "1.0"
             use module "notify" version "1.0"
             flow "database-migration" {
               systems {
-                system "db" { type: database engine: postgres url: secret("DB_URL") }
-                system "mailer" { type: notify channel: email }
+                system "db" {
+                  type: database
+                  engine: postgres
+                  url: secret("DB_URL")
+                }
+                system "mailer" {
+                  type: notify
+                  channel: email
+                }
               }
               steps {
                 database.query db {
@@ -181,8 +211,13 @@ object ReferenceScenarioMatrix {
             use module "notify" version "1.0"
             flow "rollback-workflow" {
               systems {
-                system "standard" { type: standard }
-                system "mailer" { type: notify channel: email }
+                system "standard" {
+                  type: standard
+                }
+                system "mailer" {
+                  type: notify
+                  channel: email
+                }
               }
               steps {
                 standard.execute standard {
@@ -211,13 +246,16 @@ object ReferenceScenarioMatrix {
         expectedCapabilities = setOf("kubernetes.delete", "approval.required"),
         risks = setOf(ReferenceScenarioRisk.DESTRUCTIVE_CHANGE),
         safetyRequirements = setOf("destructive cleanup requires explicit approval"),
-        targetExpectations = mainTargetExpectations(),
+        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "kubernetes" version "1.0"
             flow "cleanup-approved" {
               systems {
-                system "k8s" { type: kubernetes context: "maintenance" }
+                system "k8s" {
+                  type: kubernetes
+                  context: "maintenance"
+                }
               }
               steps {
                 kubernetes.delete k8s {
@@ -245,8 +283,13 @@ object ReferenceScenarioMatrix {
             use module "notify" version "1.0"
             flow "secret-rotation" {
               systems {
-                system "standard" { type: standard }
-                system "mailer" { type: notify channel: email }
+                system "standard" {
+                  type: standard
+                }
+                system "mailer" {
+                  type: notify
+                  channel: email
+                }
               }
               steps {
                 standard.execute standard {
@@ -270,13 +313,16 @@ object ReferenceScenarioMatrix {
         expectedCapabilities = setOf("notify.send"),
         risks = setOf(ReferenceScenarioRisk.NOTIFICATION_ONLY),
         safetyRequirements = setOf("notification content remains explicit"),
-        targetExpectations = mainTargetExpectations(),
+        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "notify" version "1.0"
             flow "notification-workflow" {
               systems {
-                system "mailer" { type: notify channel: email }
+                system "mailer" {
+                  type: notify
+                  channel: email
+                }
               }
               steps {
                 notify.send mailer {
@@ -307,7 +353,10 @@ object ReferenceScenarioMatrix {
             use module "kubernetes" version "1.0"
             flow "cleanup-without-approval-negative" {
               systems {
-                system "k8s" { type: kubernetes context: "maintenance" }
+                system "k8s" {
+                  type: kubernetes
+                  context: "maintenance"
+                }
               }
               steps {
                 kubernetes.delete k8s {
