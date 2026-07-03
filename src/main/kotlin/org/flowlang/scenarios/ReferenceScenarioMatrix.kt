@@ -347,7 +347,7 @@ object ReferenceScenarioMatrix {
             "tekton" to ReferenceTargetExpectation(ReferenceTargetOutcome.BLOCKED, "destructive cleanup lacks approval")
         ),
         negativeCoverage = true,
-        expectedDiagnosticCodes = setOf("APPROVAL_REQUIRED"),
+        expectedDiagnosticCodes = setOf("SAFETY_REQUIRED", "APPROVAL_REQUIRED"),
         source = """
             version "1.0"
             use module "kubernetes" version "1.0"
