@@ -198,7 +198,7 @@ roadmap:
     name: "Capability Degradation Semantics"
     purpose: "Make degraded and unsupported target behavior precise enough for realistic automation review."
     type: "capability-hardening"
-    status: "next"
+    status: "completed"
     requiredOutcome:
       - "Explicit tests for supported, degraded and blocked semantics across the main targets."
       - "Coverage for conditions, loops, match branches, error handlers, approvals, secrets and runtime inputs."
@@ -210,7 +210,7 @@ roadmap:
     name: "Reference Scenario Matrix"
     purpose: "Build a deeper reference scenario matrix before claiming end-to-end readiness."
     type: "scenario-hardening"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "Reference scenarios cover build/test/deploy, API sync, database migration, rollback, cleanup, secret rotation and notification workflows."
       - "Each scenario declares expected capabilities, risks, safety requirements and target compatibility outcomes."
