@@ -17,9 +17,11 @@ class VersionConsistencyTests {
         assertFileContains("CHANGELOG.md", "## $packageVersion - Jenkins/GitHub/Tekton projection stability")
         assertFileContains(".flow-agent/release-state.yaml", "currentVersion: \"$packageVersion\"")
         assertFileContains(".flow-agent/release-state.yaml", "activeStandardVersion: \"$activeStandardVersion\"")
-        assertFileContains(".flow-agent/release-state.yaml", "nextExpectedVersion: \"0.9.5\"")
+        assertFileContains(".flow-agent/release-state.yaml", "nextExpectedVersion: \"0.9.2\"")
         assertFileContains(".flow-agent/roadmap.yaml", "version: \"$packageVersion\"")
         assertFileContains(".flow-agent/roadmap.yaml", "name: \"Jenkins/GitHub/Tekton Projection Stability\"")
+        assertFileContains(".flow-agent/roadmap.yaml", "version: \"0.9.2\"")
+        assertFileContains(".flow-agent/roadmap.yaml", "name: \"Renderer Contract Hardening\"")
         assertTrue(File(".flow-agent/reports/v0.9.1-projection-stability.md").isFile, "v0.9.1 release report must exist.")
     }
 
