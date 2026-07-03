@@ -186,7 +186,7 @@ roadmap:
     name: "Renderer Contract Hardening"
     purpose: "Harden renderer-level contracts before adding broader end-to-end scenario coverage."
     type: "target-stability"
-    status: "next"
+    status: "completed"
     requiredOutcome:
       - "Renderer output structure checks for Jenkins, GitHub Actions and Tekton."
       - "Negative tests for malformed TargetManifest rendering inputs."
@@ -198,7 +198,7 @@ roadmap:
     name: "Capability Degradation Semantics"
     purpose: "Make degraded and unsupported target behavior precise enough for realistic automation review."
     type: "capability-hardening"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "Explicit tests for supported, degraded and blocked semantics across the main targets."
       - "Coverage for conditions, loops, match branches, error handlers, approvals, secrets and runtime inputs."
