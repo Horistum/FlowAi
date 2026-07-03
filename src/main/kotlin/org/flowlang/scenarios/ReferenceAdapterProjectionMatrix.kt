@@ -17,11 +17,10 @@ object ReferenceAdapterProjectionMatrix {
     fun forScenario(scenarioId: String): List<ReferenceAdapterProjectionExpectation> = all().filter { it.scenarioId == scenarioId }
 
     private fun expectationFor(scenario: ReferenceScenario, target: String): ReferenceAdapterProjectionExpectation {
-        val outcome = when {
-            scenario.negativeCoverage -> ReferenceAdapterProjectionOutcome.BLOCKED
-            target == "tekton" -> ReferenceAdapterProjectionOutcome.REVIEW_REQUIRED
-            scenario.semanticExpectation.portabilityClass == ReferencePortabilityClass.UNIVERSAL -> ReferenceAdapterProjectionOutcome.SUPPORTED
-            else -> ReferenceAdapterProjectionOutcome.REVIEW_REQUIRED
+        val outcome = if (scenario.negativeCoverage) {
+            ReferenceAdapterProjectionOutcome.BLOCKED
+        } else {
+            ReferenceAdapterProjectionOutcome.REVIEW_REQUIRED
         }
         return ReferenceAdapterProjectionExpectation(
             scenarioId = scenario.id,
