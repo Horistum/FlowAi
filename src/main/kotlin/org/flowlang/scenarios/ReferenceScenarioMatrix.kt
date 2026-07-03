@@ -3,9 +3,10 @@ package org.flowlang.scenarios
 /**
  * v0.9.4 reference scenario matrix.
  *
- * The matrix is intentionally declarative. It records realistic scenario coverage, expected
- * capabilities, risks, safety requirements and target outcomes without introducing a runtime
- * executor or target-specific public Flow syntax.
+ * This matrix is the target-neutral source of truth for realistic Flow automation semantics. It
+ * records scenario intent, required universal capabilities, risks, safety requirements and
+ * portability expectations without naming concrete renderer targets as part of the core scenario
+ * model. Target adapter expectations live in ReferenceAdapterProjectionMatrix.
  */
 object ReferenceScenarioMatrix {
     fun all(): List<ReferenceScenario> = positiveScenarios() + negativeScenarios()
@@ -24,10 +25,13 @@ object ReferenceScenarioMatrix {
         id = "build-test-deploy",
         name = "Build, test and deploy service",
         kind = ReferenceScenarioKind.BUILD_TEST_DEPLOY,
-        expectedCapabilities = setOf("git.checkout", "shell.command", "kubernetes.deploy", "notify.send", "approval.required"),
+        semanticExpectation = ReferenceSemanticExpectation(
+            requiredCapabilities = setOf("source.checkout", "command.run", "deployment.apply", "notification.send", "approval.require"),
+            portabilityClass = ReferencePortabilityClass.UNIVERSAL_WITH_ADAPTER_REQUIREMENTS,
+            notes = setOf("production deployment requires an approval boundary before target projection")
+        ),
         risks = setOf(ReferenceScenarioRisk.PRODUCTION_CHANGE, ReferenceScenarioRisk.SECRET_ACCESS),
         safetyRequirements = setOf("production deployment requires explicit approval", "deployment must keep target projection reviewable"),
-        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "git" version "1.0"
@@ -83,10 +87,13 @@ object ReferenceScenarioMatrix {
         id = "api-sync",
         name = "Synchronize API data into a warehouse",
         kind = ReferenceScenarioKind.API_SYNC,
-        expectedCapabilities = setOf("rest.call", "database.upsert", "data.transform", "data.validate", "data.aggregate", "notify.send"),
+        semanticExpectation = ReferenceSemanticExpectation(
+            requiredCapabilities = setOf("api.call", "data.transform", "data.validate", "data.write", "data.aggregate", "notification.send", "secret.consume"),
+            portabilityClass = ReferencePortabilityClass.UNIVERSAL_WITH_ADAPTER_REQUIREMENTS,
+            notes = setOf("runtime secrets stay external", "data operations remain explicit even when a target cannot materialise them natively")
+        ),
         risks = setOf(ReferenceScenarioRisk.SECRET_ACCESS, ReferenceScenarioRisk.DATA_WRITE),
         safetyRequirements = setOf("runtime secrets stay external", "data operations must be explicit when not materialised by the target"),
-        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "rest" version "1.0"
@@ -159,10 +166,13 @@ object ReferenceScenarioMatrix {
         id = "database-migration",
         name = "Database migration with audit notification",
         kind = ReferenceScenarioKind.DATABASE_MIGRATION,
-        expectedCapabilities = setOf("database.query", "database.upsert", "notify.send"),
+        semanticExpectation = ReferenceSemanticExpectation(
+            requiredCapabilities = setOf("data.read", "data.write", "notification.send", "secret.consume"),
+            portabilityClass = ReferencePortabilityClass.UNIVERSAL_WITH_ADAPTER_REQUIREMENTS,
+            notes = setOf("database URL is represented as a secret", "migration action remains auditable")
+        ),
         risks = setOf(ReferenceScenarioRisk.DATA_WRITE, ReferenceScenarioRisk.SECRET_ACCESS),
         safetyRequirements = setOf("migration records an audit row", "database URL is represented as a secret"),
-        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "database" version "1.0"
@@ -201,10 +211,13 @@ object ReferenceScenarioMatrix {
         id = "rollback-workflow",
         name = "Rollback on deployment failure",
         kind = ReferenceScenarioKind.ROLLBACK,
-        expectedCapabilities = setOf("standard.execute", "standard.rollback", "notify.send", "error.handler"),
+        semanticExpectation = ReferenceSemanticExpectation(
+            requiredCapabilities = setOf("workflow.execute", "rollback.perform", "notification.send", "error.handle"),
+            portabilityClass = ReferencePortabilityClass.UNIVERSAL_WITH_ADAPTER_REQUIREMENTS,
+            notes = setOf("rollback is only valid as an error-handler behavior")
+        ),
         risks = setOf(ReferenceScenarioRisk.PRODUCTION_CHANGE, ReferenceScenarioRisk.ROLLBACK),
         safetyRequirements = setOf("rollback is only allowed inside an error handler", "failure path remains explicit"),
-        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "standard" version "1.0"
@@ -241,12 +254,15 @@ object ReferenceScenarioMatrix {
 
     private fun cleanupWorkflow() = ReferenceScenario(
         id = "cleanup-approved",
-        name = "Approved Kubernetes cleanup",
+        name = "Approved cleanup",
         kind = ReferenceScenarioKind.CLEANUP,
-        expectedCapabilities = setOf("kubernetes.delete", "approval.required"),
+        semanticExpectation = ReferenceSemanticExpectation(
+            requiredCapabilities = setOf("resource.delete", "approval.require"),
+            portabilityClass = ReferencePortabilityClass.UNIVERSAL_WITH_ADAPTER_REQUIREMENTS,
+            notes = setOf("destructive cleanup requires explicit approval regardless of target adapter")
+        ),
         risks = setOf(ReferenceScenarioRisk.DESTRUCTIVE_CHANGE),
         safetyRequirements = setOf("destructive cleanup requires explicit approval"),
-        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "kubernetes" version "1.0"
@@ -273,10 +289,13 @@ object ReferenceScenarioMatrix {
         id = "secret-rotation",
         name = "Rotate application secret",
         kind = ReferenceScenarioKind.SECRET_ROTATION,
-        expectedCapabilities = setOf("standard.execute", "notify.send", "secret.rotation"),
+        semanticExpectation = ReferenceSemanticExpectation(
+            requiredCapabilities = setOf("secret.rotate", "notification.send", "workflow.execute"),
+            portabilityClass = ReferencePortabilityClass.ADAPTER_REQUIRED,
+            notes = setOf("secret values are never embedded in Flow source", "rotation is represented as an auditable workflow intent")
+        ),
         risks = setOf(ReferenceScenarioRisk.SECRET_ACCESS, ReferenceScenarioRisk.PRODUCTION_CHANGE),
         safetyRequirements = setOf("secret value is not embedded in Flow source", "rotation must stay auditable"),
-        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "standard" version "1.0"
@@ -310,10 +329,13 @@ object ReferenceScenarioMatrix {
         id = "notification-workflow",
         name = "Send operational notification",
         kind = ReferenceScenarioKind.NOTIFICATION,
-        expectedCapabilities = setOf("notify.send"),
+        semanticExpectation = ReferenceSemanticExpectation(
+            requiredCapabilities = setOf("notification.send"),
+            portabilityClass = ReferencePortabilityClass.UNIVERSAL,
+            notes = setOf("notification content remains explicit")
+        ),
         risks = setOf(ReferenceScenarioRisk.NOTIFICATION_ONLY),
         safetyRequirements = setOf("notification content remains explicit"),
-        targetExpectations = mainTargetExpectations(reviewRequired = true),
         source = """
             version "1.0"
             use module "notify" version "1.0"
@@ -338,14 +360,13 @@ object ReferenceScenarioMatrix {
         id = "cleanup-without-approval-negative",
         name = "Unsafe cleanup without approval",
         kind = ReferenceScenarioKind.CLEANUP,
-        expectedCapabilities = setOf("kubernetes.delete"),
+        semanticExpectation = ReferenceSemanticExpectation(
+            requiredCapabilities = setOf("resource.delete"),
+            portabilityClass = ReferencePortabilityClass.BLOCKED_BY_POLICY,
+            notes = setOf("negative coverage proves destructive cleanup is rejected without approval")
+        ),
         risks = setOf(ReferenceScenarioRisk.DESTRUCTIVE_CHANGE),
         safetyRequirements = setOf("negative coverage proves destructive cleanup is rejected without approval"),
-        targetExpectations = mapOf(
-            "jenkins" to ReferenceTargetExpectation(ReferenceTargetOutcome.BLOCKED, "destructive cleanup lacks approval"),
-            "github-actions" to ReferenceTargetExpectation(ReferenceTargetOutcome.BLOCKED, "destructive cleanup lacks approval"),
-            "tekton" to ReferenceTargetExpectation(ReferenceTargetOutcome.BLOCKED, "destructive cleanup lacks approval")
-        ),
         negativeCoverage = true,
         expectedDiagnosticCodes = setOf("SAFETY_REQUIRED", "APPROVAL_REQUIRED"),
         source = """
@@ -368,12 +389,6 @@ object ReferenceScenarioMatrix {
             }
         """.trimIndent()
     )
-
-    private fun mainTargetExpectations(reviewRequired: Boolean = false): Map<String, ReferenceTargetExpectation> = mapOf(
-        "jenkins" to ReferenceTargetExpectation(if (reviewRequired) ReferenceTargetOutcome.REVIEW_REQUIRED else ReferenceTargetOutcome.SUPPORTED, "Jenkins projection must remain structurally renderable."),
-        "github-actions" to ReferenceTargetExpectation(if (reviewRequired) ReferenceTargetOutcome.REVIEW_REQUIRED else ReferenceTargetOutcome.SUPPORTED, "GitHub Actions projection must remain structurally renderable."),
-        "tekton" to ReferenceTargetExpectation(ReferenceTargetOutcome.REVIEW_REQUIRED, "Tekton remains a partial projection and requires review.")
-    )
 }
 
 data class ReferenceScenario(
@@ -381,13 +396,25 @@ data class ReferenceScenario(
     val name: String,
     val kind: ReferenceScenarioKind,
     val source: String,
-    val expectedCapabilities: Set<String>,
+    val semanticExpectation: ReferenceSemanticExpectation,
     val risks: Set<ReferenceScenarioRisk>,
     val safetyRequirements: Set<String>,
-    val targetExpectations: Map<String, ReferenceTargetExpectation>,
     val negativeCoverage: Boolean = false,
     val expectedDiagnosticCodes: Set<String> = emptySet()
 )
+
+data class ReferenceSemanticExpectation(
+    val requiredCapabilities: Set<String>,
+    val portabilityClass: ReferencePortabilityClass,
+    val notes: Set<String> = emptySet()
+)
+
+enum class ReferencePortabilityClass {
+    UNIVERSAL,
+    UNIVERSAL_WITH_ADAPTER_REQUIREMENTS,
+    ADAPTER_REQUIRED,
+    BLOCKED_BY_POLICY
+}
 
 enum class ReferenceScenarioKind {
     BUILD_TEST_DEPLOY,
@@ -407,14 +434,3 @@ enum class ReferenceScenarioRisk {
     ROLLBACK,
     NOTIFICATION_ONLY
 }
-
-enum class ReferenceTargetOutcome {
-    SUPPORTED,
-    REVIEW_REQUIRED,
-    BLOCKED
-}
-
-data class ReferenceTargetExpectation(
-    val outcome: ReferenceTargetOutcome,
-    val rationale: String
-)
