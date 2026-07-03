@@ -2,6 +2,30 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.9.2 - Renderer contract hardening
+
+### Added
+
+- Added `TargetRendererContractValidator` as a pre-render gate for target renderer inputs.
+- Added `TargetRendererContractReport` and `TargetRendererContractIssue` for auditable renderer-boundary diagnostics.
+- Added renderer contract tests for valid manifests, target mismatch, unknown job dependencies, manifest-contract violations and ambiguous run-plus-children steps.
+- Added `docs/V0_9_2_RENDERER_CONTRACT_HARDENING.md`.
+- Added `.flow-agent/reports/v0.9.2-renderer-contract-hardening.md`.
+
+### Changed
+
+- Bumped the Gradle package version to `0.9.2`.
+- Updated release metadata for the v0.9.2 package line.
+- Guarded Jenkins, GitHub Actions and Tekton renderers with renderer contract validation before serialization.
+- Advanced roadmap state from renderer contract hardening to capability degradation semantics.
+
+### Notes
+
+- Renderers now reject malformed, mismatched or dependency-inconsistent manifests before output is produced.
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.9.1 - Jenkins/GitHub/Tekton projection stability
 
 ### Added
@@ -78,125 +102,3 @@ All project source text is written in English. The changelog records architectur
 
 - Preserved `secret("NAME")` system configuration through planning and materialised it through target-native secret mechanisms.
 - Replaced green placeholder commands for unmapped actions with explicit failing diagnostics and mapping notes.
-- Added mapping notes for Flow-layer data operations that are not materialised by target projection.
-- Made notify delivery failures non-zero.
-- Preserved explicit rollback negation during scenario-pack normalisation.
-- Kept HTTP method literals while treating non-HTTP all-caps tokens as references.
-- Isolated mutually exclusive branch result bindings while preserving duplicate detection for sequential bindings.
-- Promoted unknown result fields to errors when module output schema is concrete.
-- Moved deprecated legacy draft generators out of production source.
-
-### Notes
-
-- The active public standard version remains `0.7.6`.
-- Artifact schema versions are unchanged.
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
-
-## 0.8.5 - Safety boundary hardening
-
-### Added
-
-- Added `SafetyBoundaryValidator` as a pre-projection safety gate over Flow AST and module contracts.
-- Added tests for production-sensitive mutation, approval-backed high-risk actions and rollback-sensitive actions.
-- Added `SafetyBoundaryHardeningTests`.
-- Added `docs/V0_8_5_SAFETY_BOUNDARY_HARDENING.md`.
-- Added `.flow-agent/reports/v0.8.5-safety-boundary-hardening.md`.
-
-### Changed
-
-- Bumped the Gradle package version to `0.8.5`.
-- Updated release metadata for the v0.8.5 package line.
-- Wired safety-boundary validation into `FlowValidator` so high-risk semantics are blocked before target projection.
-
-### Notes
-
-- The safety gate does not execute anything and does not rewrite plans or renderer output.
-- The active public standard version remains `0.7.6`.
-- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
-
-## 0.8.4 - Planner capability constraints
-
-### Added
-
-- Added `PlannerCapabilityConstraintGate` as a pre-projection gate over planner output and target capability compatibility.
-- Added `PlannerCapabilityConstraintReport` and `PlannerCapabilityConstraintStatus` to make allowed, degraded and blocked projection states explicit.
-- Added tests proving supported targets are allowed, unsupported target semantics are blocked before rendering, partial support is degraded outside strict mode, strict mode blocks partial support, and unknown targets are blocked.
-- Added `docs/V0_8_4_PLANNER_CAPABILITY_CONSTRAINTS.md`.
-- Added `.flow-agent/reports/v0.8.4-planner-capability-constraints.md`.
-
-### Changed
-
-- Bumped the Gradle package version to `0.8.4`.
-- Updated `REPORT.md`, `.flow-agent/release-state.yaml`, `.flow-agent/roadmap.yaml`, and version consistency tests for the v0.8.4 package line.
-
-### Notes
-
-- The planner remains platform-neutral; the new gate does not rewrite plans or invent target workarounds.
-- The active public standard version remains `0.7.6`.
-- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change was added.
-
-## 0.8.3 - Package version and release integrity
-
-### Added
-
-- Added `docs/versioning-policy.md` to define the distinction between package, public standard, artifact schema and conformance gate versions.
-- Added `VersionConsistencyTests` to guard package metadata, top-level report metadata, release-state metadata and artifact version boundaries.
-- Added `.flow-agent/reports/v0.8.3-release-integrity.md` as the package-line release integrity report.
-
-### Changed
-
-- Bumped the Gradle package version to `0.8.3`.
-- Updated `REPORT.md` to make `0.8.3` the current package line while keeping the active public standard version at `0.7.6`.
-- Updated `.flow-agent/release-state.yaml` and `.flow-agent/roadmap.yaml` for the v0.8.3 release-integrity package line.
-
-### Notes
-
-- The active public standard version remains `0.7.6`.
-- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change was added.
-
-## 0.8.2 - Target negotiation report
-
-### Added
-
-- Added `TargetNegotiationReportAnalyzer` as an explanation layer over the existing compatibility negotiation model.
-- Added `TargetNegotiationExplanationReport`, `TargetNegotiationExplanation`, `TargetNegotiationRejectionReason` and `TargetNegotiationOutcome`.
-- Added tests for supported, degraded, blocked and runtime-required target outcomes.
-- Added `docs/V0_8_2_TARGET_NEGOTIATION_REPORT.md`.
-- Added `.flow-agent/reports/v0.8.2-release-report.md`.
-- Bumped Gradle package version to `0.8.2` while keeping the active public standard version at `0.7.6`.
-
-### Notes
-
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion, planner change or Flow syntax change was added.
-- The report is explanatory. Planner enforcement is intentionally left for v0.8.3.
-
-## 0.8.1 - Target capability matrix
-
-### Added
-
-- Added `TargetCapabilityMatrixAnalyzer` as a descriptive capability matrix over registered targets.
-- Added `TargetCapabilityMatrixReport` and `TargetCapabilityMatrixEntry`.
-- Added tests for repository target coverage, missing required targets, blank target metadata and explicit unsupported capability representation.
-- Added `docs/V0_8_1_TARGET_CAPABILITY_MATRIX.md`.
-- Added `.flow-agent/reports/v0.8.1-release-report.md`.
-- Bumped Gradle package version to `0.8.1` while keeping the active public standard version at `0.7.6`.
-
-### Notes
-
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
-- The matrix is descriptive. It does not change target rendering behavior.
-
-## 0.8.x B2 conformance quality-gate wiring
-
-### Added
-
-- Added `ConformanceQualityGates` with stable quality-gate check names:
-  - `v0.8.x.core-contract-check`
-  - `v0.8.x.scenario-pack-quality`
-- Added regression tests proving both B2 quality gates expose stable names and pass on the current repository state.
-- Rewrote `README.md` as the primary project documentation document instead of a version-history dump.
-- Added Apache License 2.0 licensing metadata through `LICENSE`.
-- Wired B2 quality gates into `ConformanceRunner` and added public conformance vectors for those checks.
