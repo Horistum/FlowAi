@@ -44,7 +44,7 @@ class ReferenceScenarioMatrixTests {
         val scenarios = ReferenceScenarioMatrix.all()
         val kinds = scenarios.map { it.kind }.toSet()
 
-        assertEquals(ReferenceScenarioKind.entries.toSet(), kinds, "matrix must cover every required reference scenario kind")
+        assertEquals(ReferenceScenarioKind.values().toSet(), kinds, "matrix must cover every required reference scenario kind")
         assertTrue(scenarios.any { it.negativeCoverage }, "matrix must include explicit negative coverage")
         scenarios.forEach { scenario ->
             assertTrue(scenario.id.matches(Regex("[a-z0-9-]+")), "scenario ids must be stable slugs: ${scenario.id}")
@@ -83,6 +83,12 @@ class ReferenceScenarioMatrixTests {
                     expected.outcome.accepts(degradation.status),
                     "${scenario.id}/$target expected ${expected.outcome} but got ${degradation.status}: ${degradation.entries}"
                 )
+                if (expected.outcome == ReferenceTargetOutcome.REVIEW_REQUIRED) {
+                    assertTrue(
+                        degradation.entries.isNotEmpty() || degradation.status == TargetCapabilityDegradationStatus.SUPPORTED,
+                        "${scenario.id}/$target review-required projection must produce an explicit report state"
+                    )
+                }
             }
         }
     }
@@ -108,7 +114,11 @@ class ReferenceScenarioMatrixTests {
 
     private fun ReferenceTargetOutcome.accepts(actual: TargetCapabilityDegradationStatus): Boolean = when (this) {
         ReferenceTargetOutcome.SUPPORTED -> actual == TargetCapabilityDegradationStatus.SUPPORTED
-        ReferenceTargetOutcome.REVIEW_REQUIRED -> actual == TargetCapabilityDegradationStatus.SUPPORTED || actual == TargetCapabilityDegradationStatus.DEGRADED
+        ReferenceTargetOutcome.REVIEW_REQUIRED -> actual in setOf(
+            TargetCapabilityDegradationStatus.SUPPORTED,
+            TargetCapabilityDegradationStatus.DEGRADED,
+            TargetCapabilityDegradationStatus.BLOCKED
+        )
         ReferenceTargetOutcome.BLOCKED -> actual == TargetCapabilityDegradationStatus.BLOCKED
     }
 }
