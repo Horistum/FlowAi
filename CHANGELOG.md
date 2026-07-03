@@ -2,6 +2,29 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.9.1 - Jenkins/GitHub/Tekton projection stability
+
+### Added
+
+- Added `ProjectionStabilitySmokeTests` for the main supported renderer targets.
+- Added smoke coverage for Jenkins, GitHub Actions and Tekton rendering from a real Flow example through parser, planner, manifest generation and renderer output.
+- Added stability checks for deterministic renderer output, target artifact structure, runtime secret binding and absence of green placebo action commands.
+- Added `docs/V0_9_1_PROJECTION_STABILITY.md`.
+- Added `.flow-agent/reports/v0.9.1-projection-stability.md`.
+
+### Changed
+
+- Bumped the Gradle package version to `0.9.1`.
+- Updated release metadata for the v0.9.1 package line.
+- Advanced roadmap state from projection contract to projection stability.
+
+### Notes
+
+- The projection stability tests are smoke-level guards, not byte-for-byte conformance snapshots.
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.9.0 - Generator projection contract
 
 ### Added
