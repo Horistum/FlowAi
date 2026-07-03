@@ -210,7 +210,7 @@ roadmap:
     name: "Reference Scenario Matrix"
     purpose: "Build a deeper reference scenario matrix before claiming end-to-end readiness."
     type: "scenario-hardening"
-    status: "next"
+    status: "completed"
     requiredOutcome:
       - "Reference scenarios cover build/test/deploy, API sync, database migration, rollback, cleanup, secret rotation and notification workflows."
       - "Each scenario declares expected capabilities, risks, safety requirements and target compatibility outcomes."
@@ -222,7 +222,7 @@ roadmap:
     name: "End-to-End Standard Scenarios"
     purpose: "Prove full standard flow across realistic end-to-end automation scenarios after renderer and capability hardening."
     type: "e2e-standard"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "End-to-end reference scenarios."
       - "Intent to AST to plan to projection validation."

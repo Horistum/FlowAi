@@ -2,6 +2,36 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.9.4 - Reference scenario matrix
+
+### Added
+
+- Added `ReferenceScenarioMatrix` as a target-neutral matrix for realistic reference automation scenarios.
+- Added `ReferenceScenario`, `ReferenceSemanticExpectation`, `ReferencePortabilityClass`, `ReferenceScenarioKind` and `ReferenceScenarioRisk`.
+- Added `ReferenceAdapterProjectionMatrix`, `ReferenceAdapterProjectionExpectation` and `ReferenceAdapterProjectionOutcome` to keep concrete target expectations outside the core scenario model.
+- Added reference scenarios for build/test/deploy, API sync, database migration, rollback, cleanup, secret rotation and notification workflows.
+- Added explicit negative coverage for destructive cleanup without approval.
+- Added tests proving positive scenarios pass the target-neutral core pipeline through parser, validator, safety validator and planner.
+- Added separate adapter projection tests for compatibility analysis, manifest generation and degradation analysis.
+- Added tests proving negative coverage is rejected by core validation gates instead of being skipped.
+- Added `docs/V0_9_4_REFERENCE_SCENARIO_MATRIX.md`.
+- Added `.flow-agent/reports/v0.9.4-reference-scenario-matrix.md`.
+
+### Changed
+
+- Bumped the Gradle package version to `0.9.4`.
+- Updated release metadata for the v0.9.4 package line.
+- Advanced roadmap state from reference scenario matrix to end-to-end standard scenarios.
+- Replaced implementation-specific semantic capability names with universal capability names such as `deployment.apply`, `notification.send`, `resource.delete`, `approval.require`, `secret.consume` and `rollback.perform`.
+
+### Notes
+
+- The scenario matrix is declarative, target-neutral and does not introduce a runtime executor.
+- Jenkins, GitHub Actions and Tekton expectations are adapter projection checks, not the source of scenario meaning.
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.9.3 - Capability degradation semantics
 
 ### Added
