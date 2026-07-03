@@ -1,9 +1,9 @@
 project: Flow Core
 stateVersion: 1
 
-currentVersion: "0.9.2"
-currentPackage: "flow-core-prod-v0_9_2_renderer_contract_hardening.zip"
-nextExpectedVersion: "0.9.3"
+currentVersion: "0.9.3"
+currentPackage: "flow-core-prod-v0_9_3_capability_degradation_semantics.zip"
+nextExpectedVersion: "0.9.4"
 activeStandardVersion: "0.7.6"
 
 repositoryRules:
@@ -32,9 +32,10 @@ lastKnownValidation:
   targetedCompilation: "pending-ci"
   conformance: "pending-ci"
   notes:
-    - "v0.9.2 adds renderer contract hardening before renderer output serialization."
-    - "Jenkins, GitHub Actions and Tekton renderers now reject malformed, mismatched or dependency-inconsistent manifests before output is produced."
-    - "The next expected package line is v0.9.3 capability degradation semantics."
+    - "v0.9.3 adds capability degradation semantics over TargetManifest outputs."
+    - "The degradation report explains supported, degraded and blocked target behavior with preserved, approximated and blocked explanations."
+    - "Strict mode rejects degraded and blocked semantics before rendering."
+    - "The next expected package line is v0.9.4 reference scenario matrix."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
     - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."

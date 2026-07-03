@@ -20,6 +20,7 @@ Examples:
 - `0.9.0` generator projection contract
 - `0.9.1` Jenkins/GitHub/Tekton projection stability
 - `0.9.2` renderer contract hardening
+- `0.9.3` capability degradation semantics
 
 Package versions may change for implementation, documentation, release metadata, report, test or internal quality work.
 
@@ -76,7 +77,7 @@ Every release PR must state:
 
 ## Current package-line policy decision
 
-The v0.9.2 release adds renderer contract hardening before Jenkins, GitHub Actions or Tekton serialization.
+The v0.9.3 release adds capability degradation semantics over TargetManifest outputs.
 
 It does not bump:
 
@@ -99,6 +100,7 @@ It also does not introduce:
 
 ## Historical package-line policy decisions
 
+- v0.9.2 added renderer contract hardening before Jenkins, GitHub Actions or Tekton serialization.
 - v0.9.1 added smoke-level projection stability guards for Jenkins, GitHub Actions and Tekton renderers.
 - v0.9.0 added a generator projection contract over TargetManifest artifacts.
 - v0.8.7 added safety-boundary result handler coverage.

@@ -2,6 +2,31 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.9.3 - Capability degradation semantics
+
+### Added
+
+- Added `TargetCapabilityDegradationAnalyzer` as an explanation layer over `TargetManifest` outputs.
+- Added `TargetCapabilityDegradationReport`, `TargetCapabilityDegradationEntry` and `TargetCapabilityDegradationStatus`.
+- Added tests for supported, degraded and blocked target behavior.
+- Added strict-mode tests proving degraded semantics are rejected before rendering.
+- Added explanation coverage for preserved, approximated and blocked semantics.
+- Added `docs/V0_9_3_CAPABILITY_DEGRADATION_SEMANTICS.md`.
+- Added `.flow-agent/reports/v0.9.3-capability-degradation-semantics.md`.
+
+### Changed
+
+- Bumped the Gradle package version to `0.9.3`.
+- Updated release metadata for the v0.9.3 package line.
+- Advanced roadmap state from capability degradation semantics to reference scenario matrix.
+
+### Notes
+
+- The degradation analyzer operates at the `TargetManifest` boundary and does not re-plan Flow.
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.9.2 - Renderer contract hardening
 
 ### Added
@@ -100,7 +125,7 @@ All project source text is written in English. The changelog records architectur
 
 ### Changed
 
-- Preserved `secret("NAME")` system configuration through planning and materialised it through target-native secret mechanisms.
+- Preserved `secret("NAME")` system configuration through planning and materialised it through target-native mechanisms.
 - Replaced green placeholder commands for unmapped actions with explicit failing diagnostics and mapping notes.
 - Added mapping notes for Flow-layer data operations that are not materialised by target projection.
 - Made notify delivery failures non-zero.

@@ -1,6 +1,6 @@
 # Flow Core Report
 
-Current package line: `0.9.2`
+Current package line: `0.9.3`
 Active public standard version: `0.7.6`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
@@ -22,6 +22,7 @@ The current package line includes:
 - v0.9.0 generator projection contract
 - v0.9.1 Jenkins/GitHub/Tekton projection stability
 - v0.9.2 renderer contract hardening
+- v0.9.3 capability degradation semantics
 
 ## Current validation source
 
@@ -34,7 +35,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 
 ## Versioning boundary
 
-- Package version: `0.9.2`
+- Package version: `0.9.3`
 - Active public standard version: `0.7.6`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
@@ -42,8 +43,8 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Target manifest artifact version: `1.0`
 - Target registry artifact version: `1.0`
 
-The v0.9.2 package line does not bump the public standard or artifact schema versions.
+The v0.9.3 package line does not bump the public standard or artifact schema versions.
 
 ## Architecture boundary
 
-No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced by the v0.9.2 renderer contract hardening package line.
+No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced by the v0.9.3 capability degradation semantics package line.
