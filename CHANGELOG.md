@@ -2,6 +2,30 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## 0.9.2 - Renderer contract hardening
+
+### Added
+
+- Added `TargetRendererContractValidator` as a pre-render gate for target renderer inputs.
+- Added `TargetRendererContractReport` and `TargetRendererContractIssue` for auditable renderer-boundary diagnostics.
+- Added renderer contract tests for valid manifests, target mismatch, unknown job dependencies, manifest-contract violations and ambiguous run-plus-children steps.
+- Added `docs/V0_9_2_RENDERER_CONTRACT_HARDENING.md`.
+- Added `.flow-agent/reports/v0.9.2-renderer-contract-hardening.md`.
+
+### Changed
+
+- Bumped the Gradle package version to `0.9.2`.
+- Updated release metadata for the v0.9.2 package line.
+- Guarded Jenkins, GitHub Actions and Tekton renderers with renderer contract validation before serialization.
+- Advanced roadmap state from renderer contract hardening to capability degradation semantics.
+
+### Notes
+
+- Renderers now reject malformed, mismatched or dependency-inconsistent manifests before output is produced.
+- The active public standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged.
+- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change was added.
+
 ## 0.9.1 - Jenkins/GitHub/Tekton projection stability
 
 ### Added
