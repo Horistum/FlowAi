@@ -2,6 +2,8 @@
 
 Current package line: `0.9.4`
 Active public standard version: `0.7.6`
+Next expected package line: `0.9.5`
+First scoped correction item: `0.9.5.0`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -25,6 +27,21 @@ The current package line includes:
 - v0.9.3 capability degradation semantics
 - v0.9.4 reference scenario matrix
 
+## Architecture recenter direction
+
+The next umbrella package line is `0.9.5`, and the first scoped correction item is `0.9.5.0 Architecture Recenter - Notes-Driven Flow`.
+
+This is a correction track before any end-to-end readiness claim. Flow Core must be re-centered around the original architecture:
+
+- Flow is a language and universal automation standardization model.
+- Flow uses a universal decision, validation and generation engine over declarative notes packages.
+- Flow Core is not an SDK, framework, plugin lifecycle or CI/CD transpiler.
+- Domain, capability, runtime, safety, target and projection behavior must be declared through structured notes packages before it is treated as supported.
+- CI/CD target projections are adapter concerns, not the semantic source of truth.
+- Semantic-only placeholders must not be reported as successful automation materialization.
+
+The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until the `0.9.5.x` correction track is complete.
+
 ## Current validation source
 
 Release-specific validation details are kept in `.flow-agent/reports/`, `CHANGELOG.md`, and pull request CI history. This top-level report intentionally avoids hardcoded historical test counts because the test and conformance counts change as gates are added.
@@ -38,6 +55,8 @@ The current validation source is the local Gradle run performed by the reviewer 
 
 - Package version: `0.9.4`
 - Active public standard version: `0.7.6`
+- Next expected package line: `0.9.5`
+- First scoped correction item: `0.9.5.0`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
