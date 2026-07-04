@@ -4,9 +4,9 @@ package org.flowlang.generators.manifest
  * v0.9.2 renderer contract hardening.
  *
  * Renderers are serialization boundaries. They must only render manifests that are already valid,
- * targeted at the renderer being invoked, dependency-consistent, and structurally unambiguous. This
- * guard prevents target renderers from silently accepting malformed projection artifacts and inventing
- * behavior during rendering.
+ * targeted at the renderer being invoked, dependency-consistent, and structurally unambiguous. v0.9.5.x
+ * removes command text from this contract, so renderers validate structure and materialization status
+ * instead of accepting shell-oriented fields.
  */
 object TargetRendererContractValidator {
     fun validate(manifest: TargetManifest, rendererTarget: String): TargetRendererContractReport {
@@ -75,13 +75,6 @@ object TargetRendererContractValidator {
             issues += TargetRendererContractIssue("error", code, p, message)
         }
 
-        if (step.run != null && step.children.isNotEmpty()) {
-            error(
-                "STEP_RUN_AND_CHILDREN",
-                path,
-                "Step '${step.id}' mixes renderer command text and child steps; renderer boundaries must stay structurally unambiguous."
-            )
-        }
         step.dependsOn.forEach { dep ->
             if (dep !in knownDependencyIds) error("STEP_DEPENDENCY_UNKNOWN", "$path.dependsOn", "Step '${step.id}' depends on unknown projected id '$dep'.")
         }
