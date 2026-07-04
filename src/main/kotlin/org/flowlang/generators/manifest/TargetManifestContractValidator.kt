@@ -70,6 +70,10 @@ object TargetManifestContractValidator {
         if (!stepIds.add(step.id)) error("STEP_ID_DUPLICATE", "$path.id", "Step id '${step.id}' is duplicated in the manifest.")
         if (step.type.isBlank()) error("STEP_TYPE_BLANK", "$path.type", "TargetStep.type must be present.")
         validateNotes(step.mappingNotes, "$path.mappingNotes", issues)
+        if (step.run != null) {
+            error("ACTION_COMMAND_TEXT_UNSUPPORTED", "$path.run", "TargetStep.run is a legacy compatibility field and must not carry command text in Flow Core projection.")
+            if (step.run.contains("Flow executes")) error("ACTION_PLACEBO_COMMAND", "$path.run", "Action step must not use a green placeholder command that claims Flow executed work without materialization.")
+        }
 
         if (step.type == "action") {
             if (step.module.isNullOrBlank()) error("ACTION_MODULE_BLANK", "$path.module", "Action step must carry the source module.")
