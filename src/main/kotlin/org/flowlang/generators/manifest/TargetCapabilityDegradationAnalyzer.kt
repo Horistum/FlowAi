@@ -18,9 +18,9 @@ object TargetCapabilityDegradationAnalyzer {
                 nodeId = "manifest",
                 feature = "target.partial",
                 status = TargetCapabilityDegradationStatus.DEGRADED,
-                preserved = "The manifest is still renderable as a target artifact.",
-                approximated = "Some Flow semantics require review or external target adaptation before production use.",
-                blocked = "None in non-strict mode.",
+                preserved = "The manifest is still reviewable as a target artifact.",
+                approximated = "Some Flow semantics require notes-driven target materialization before production use.",
+                blocked = "Strict mode blocks this partial projection.",
                 message = "Target '${manifest.target}' is marked as a partial projection."
             )
         }
@@ -35,7 +35,7 @@ object TargetCapabilityDegradationAnalyzer {
                     status = TargetCapabilityDegradationStatus.DEGRADED,
                     preserved = "The job remains present in the projected manifest.",
                     approximated = "The job carries semantics that are only partially represented by the target.",
-                    blocked = "None in non-strict mode.",
+                    blocked = "Strict mode blocks this partial job projection.",
                     message = "Job '${job.id}' is marked as a partial projection."
                 )
             }
@@ -82,6 +82,7 @@ object TargetCapabilityDegradationAnalyzer {
         entries: MutableList<TargetCapabilityDegradationEntry>
     ) {
         step.mappingNotes.forEach { note -> entries += note.toDegradationEntry(target, "step:${step.id}") }
+        entries += step.materialization.toDegradationEntry(target, step.id)
         step.metadata["supportLevel"]?.takeIf { it == "partial" }?.let {
             val feature = when (step.type) {
                 "loop" -> "loop.partial"
@@ -95,11 +96,45 @@ object TargetCapabilityDegradationAnalyzer {
                 status = TargetCapabilityDegradationStatus.DEGRADED,
                 preserved = "The step body remains present in the projected manifest.",
                 approximated = "The target projection does not fully preserve native Flow ${step.type} semantics.",
-                blocked = "None in non-strict mode.",
+                blocked = "Strict mode blocks this degraded feature.",
                 message = "Step '${step.id}' is marked as a partial ${step.type} projection."
             )
         }
         step.children.forEach { collectStepEntries(it, target, entries) }
+    }
+
+    private fun TargetMaterialization.toDegradationEntry(targetName: String, stepId: String): TargetCapabilityDegradationEntry {
+        val degradationStatus = when (status) {
+            TargetMaterializationStatus.NATIVE,
+            TargetMaterializationStatus.NOTES_PROJECTED -> TargetCapabilityDegradationStatus.SUPPORTED
+            TargetMaterializationStatus.ADAPTER_REQUIRED,
+            TargetMaterializationStatus.DECLARATIVE_ONLY,
+            TargetMaterializationStatus.SEMANTIC_ONLY -> TargetCapabilityDegradationStatus.DEGRADED
+            TargetMaterializationStatus.UNSUPPORTED,
+            TargetMaterializationStatus.BLOCKED -> TargetCapabilityDegradationStatus.BLOCKED
+        }
+        return TargetCapabilityDegradationEntry(
+            target = targetName,
+            nodeId = stepId,
+            feature = "materialization.${status.name.lowercase().replace('_', '-')}",
+            status = degradationStatus,
+            preserved = when (degradationStatus) {
+                TargetCapabilityDegradationStatus.SUPPORTED -> "The action has declared target materialization."
+                TargetCapabilityDegradationStatus.DEGRADED -> "The action remains visible but is not yet executable target work."
+                TargetCapabilityDegradationStatus.BLOCKED -> "The action must not be rendered as executable target work."
+            },
+            approximated = when (degradationStatus) {
+                TargetCapabilityDegradationStatus.SUPPORTED -> "No materialization approximation is recorded."
+                TargetCapabilityDegradationStatus.DEGRADED -> "Notes-driven materialization or an explicit target adapter is required."
+                TargetCapabilityDegradationStatus.BLOCKED -> "The current projection blocks this action."
+            },
+            blocked = when (degradationStatus) {
+                TargetCapabilityDegradationStatus.SUPPORTED -> "Nothing is blocked by this materialization status."
+                TargetCapabilityDegradationStatus.DEGRADED -> "Strict mode blocks this materialization status."
+                TargetCapabilityDegradationStatus.BLOCKED -> "Standard and strict modes block this materialization status."
+            },
+            message = reason
+        )
     }
 
     private fun TargetMappingNote.toDegradationEntry(targetName: String, fallbackNodeId: String): TargetCapabilityDegradationEntry {
