@@ -20,10 +20,9 @@ import org.flowlang.planner.FlowPlanner
 /**
  * v0.9.1 projection-stability smoke tests.
  *
- * These tests intentionally stay at the renderer boundary. They do not assert every byte of each
- * target artifact; conformance snapshots cover exact outputs elsewhere. The goal here is to keep the
- * main supported projections structurally stable and honest enough that v0.9.1 work can proceed
- * without silently degrading Jenkins, GitHub Actions or Tekton rendering.
+ * These tests intentionally stay at the renderer boundary. v0.9.5.x removes shell command output from
+ * the core manifest projection path, so stability now means deterministic no-command target artifacts
+ * that honestly report materialization requirements.
  */
 class ProjectionStabilitySmokeTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
@@ -53,10 +52,9 @@ class ProjectionStabilitySmokeTests {
         assertEquals(rendered, JenkinsManifestRenderer().render(manifest), "Jenkins rendering must be deterministic.")
         assertTrue(rendered.contains("pipeline {"), "Jenkins projection must render a pipeline block.")
         assertTrue(rendered.contains("parameters {"), "Jenkins projection must expose Flow inputs as parameters.")
-        assertTrue(rendered.contains("environment {"), "Jenkins projection must bind runtime environment values.")
-        assertTrue(rendered.contains("FLOW_SECRET_CRM_URL = credentials('CRM_URL')"), "Jenkins projection must bind runtime secrets through credentials().")
         assertTrue(rendered.contains("stages {"), "Jenkins projection must render stages.")
-        assertTrue(rendered.contains("sh(script:"), "Jenkins projection must render shell steps.")
+        assertTrue(rendered.contains("notes-driven materialization"), "Jenkins projection must declare the projection model.")
+        assertFalse(rendered.contains("sh(script:"), "Jenkins projection must not render shell steps.")
         assertFalse(rendered.contains("Flow executes"), "Jenkins projection must not emit green placebo action commands.")
     }
 
@@ -68,10 +66,10 @@ class ProjectionStabilitySmokeTests {
         assertEquals(rendered, GitHubActionsManifestRenderer().render(manifest), "GitHub Actions rendering must be deterministic.")
         assertTrue(rendered.contains("on:\n  workflow_dispatch:"), "GitHub Actions projection must render workflow_dispatch.")
         assertTrue(rendered.contains("jobs:"), "GitHub Actions projection must render jobs.")
-        assertTrue(rendered.contains("runs-on: ubuntu-latest"), "GitHub Actions projection must choose a runner.")
-        assertTrue(rendered.contains("env:"), "GitHub Actions projection must bind runtime environment values.")
-        assertTrue(rendered.contains("FLOW_SECRET_CRM_URL: ${'$'}{{ secrets.CRM_URL }}"), "GitHub Actions projection must bind runtime secrets through secrets context.")
-        assertTrue(rendered.contains("run: |"), "GitHub Actions projection must render run blocks.")
+        assertTrue(rendered.contains("runs-on: ubuntu-latest"), "GitHub Actions projection must choose a runner until runtime notes replace this target default.")
+        assertTrue(rendered.contains("steps: []"), "GitHub Actions projection must avoid command steps when actions are not materialized.")
+        assertTrue(rendered.contains("materialization="), "GitHub Actions projection must report materialization status.")
+        assertFalse(rendered.contains("run: |"), "GitHub Actions projection must not render run blocks.")
         assertFalse(rendered.contains("Flow executes"), "GitHub Actions projection must not emit green placebo action commands.")
     }
 
@@ -83,10 +81,11 @@ class ProjectionStabilitySmokeTests {
         assertEquals(rendered, TektonManifestRenderer().render(manifest), "Tekton rendering must be deterministic.")
         assertTrue(rendered.contains("apiVersion: tekton.dev/v1"), "Tekton projection must render a Tekton pipeline apiVersion.")
         assertTrue(rendered.contains("kind: Pipeline"), "Tekton projection must render a Pipeline kind.")
-        assertTrue(rendered.contains("taskSpec:"), "Tekton projection must render taskSpec blocks.")
-        assertTrue(rendered.contains("secretKeyRef:"), "Tekton projection must bind runtime secrets through secretKeyRef.")
-        assertTrue(rendered.contains("name: flow-secrets"), "Tekton projection must use the documented shared secret name.")
-        assertTrue(rendered.contains("script: |"), "Tekton projection must render script blocks.")
+        assertTrue(rendered.contains("taskRef:"), "Tekton projection must point at a materialization-required task boundary.")
+        assertTrue(rendered.contains("flow-materialization-required"), "Tekton projection must not pretend unmapped work is directly executable.")
+        assertTrue(rendered.contains("materialization="), "Tekton projection must report materialization status.")
+        assertFalse(rendered.contains("script: |"), "Tekton projection must not render script blocks.")
+        assertFalse(rendered.contains("#!/bin/sh"), "Tekton projection must not render shell scripts.")
         assertFalse(rendered.contains("Flow executes"), "Tekton projection must not emit green placebo action commands.")
     }
 }
