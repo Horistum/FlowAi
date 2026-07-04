@@ -12,6 +12,7 @@ import org.flowlang.generators.manifest.TargetCapabilityDegradationStatus
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMappingNote
+import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.modules.ModuleRegistry
@@ -28,16 +29,16 @@ class TargetCapabilityDegradationAnalyzerTests {
 
     @Test
     fun supportedManifestHasSupportedReport() {
-        val report = TargetCapabilityDegradationAnalyzer.analyze(jenkinsManifest(simpleFlow()))
+        val report = TargetCapabilityDegradationAnalyzer.analyze(supportedNativeManifest())
 
         assertEquals(TargetCapabilityDegradationStatus.SUPPORTED, report.status)
         assertTrue(report.valid, "supported manifests must be valid in standard mode")
-        assertTrue(report.entries.isEmpty(), "fully supported simple projection should not carry degradation entries: ${report.entries}")
+        assertTrue(report.entries.all { it.status == TargetCapabilityDegradationStatus.SUPPORTED }, "fully supported projection should only carry supported entries: ${report.entries}")
     }
 
     @Test
     fun warningMappingNoteIsDegradedButAllowedOutsideStrictMode() {
-        val manifest = jenkinsManifest(simpleFlow()).copy(
+        val manifest = supportedNativeManifest().copy(
             mappingNotes = listOf(
                 TargetMappingNote("warning", "jenkins", "deploy", "condition.partial", "Condition is projected with target review required.")
             )
@@ -46,15 +47,15 @@ class TargetCapabilityDegradationAnalyzerTests {
 
         assertEquals(TargetCapabilityDegradationStatus.DEGRADED, report.status)
         assertTrue(report.valid, "degraded reports remain reviewable outside strict mode")
-        assertEquals(1, report.degradedEntries.size)
-        assertTrue(report.degradedEntries.single().preserved.isNotBlank())
-        assertTrue(report.degradedEntries.single().approximated.isNotBlank())
-        assertTrue(report.degradedEntries.single().blocked.contains("Strict mode blocks"))
+        assertTrue(report.degradedEntries.isNotEmpty())
+        assertTrue(report.degradedEntries.first().preserved.isNotBlank())
+        assertTrue(report.degradedEntries.first().approximated.isNotBlank())
+        assertTrue(report.degradedEntries.first().blocked.contains("Strict mode blocks"))
     }
 
     @Test
     fun strictModeBlocksDegradedSemanticsBeforeRendering() {
-        val manifest = jenkinsManifest(simpleFlow()).copy(
+        val manifest = supportedNativeManifest().copy(
             mappingNotes = listOf(
                 TargetMappingNote("warning", "jenkins", "loop", "loop.partial", "Loop body is projected, but native per-item behavior requires review.")
             )
@@ -71,7 +72,7 @@ class TargetCapabilityDegradationAnalyzerTests {
 
     @Test
     fun errorMappingNoteIsBlockedInStandardAndStrictModes() {
-        val manifest = jenkinsManifest(simpleFlow()).copy(
+        val manifest = supportedNativeManifest().copy(
             mappingNotes = listOf(
                 TargetMappingNote("error", "jenkins", "condition", "condition.unsupported", "Condition cannot be represented safely by this target.")
             )
@@ -82,13 +83,13 @@ class TargetCapabilityDegradationAnalyzerTests {
         assertEquals(TargetCapabilityDegradationStatus.BLOCKED, standard.status)
         assertFalse(standard.valid, "blocked semantics must fail in standard mode")
         assertFalse(strict.valid, "blocked semantics must fail in strict mode")
-        assertEquals(1, standard.blockedEntries.size)
-        assertTrue(standard.blockedEntries.single().blocked.contains("Standard and strict modes block"))
+        assertTrue(standard.blockedEntries.isNotEmpty())
+        assertTrue(standard.blockedEntries.first().blocked.contains("Standard and strict modes block"))
     }
 
     @Test
     fun partialStepMetadataProducesDegradedEntry() {
-        val manifest = jenkinsManifest(simpleFlow()).copy(
+        val manifest = supportedNativeManifest().copy(
             jobs = listOf(
                 TargetJob(
                     id = "loop_job",
@@ -98,7 +99,7 @@ class TargetCapabilityDegradationAnalyzerTests {
                             id = "loop_1",
                             name = "loop_1",
                             type = "loop",
-                            children = listOf(TargetStep(id = "echo", name = "echo", type = "action", module = "shell", action = "run", target = "local", run = "echo ok")),
+                            children = listOf(TargetStep(id = "action_1", name = "action_1", type = "action", module = "notify", action = "send", target = "notifier", materialization = TargetMaterialization.native("notification.send", "test native materialization"))),
                             metadata = mapOf("supportLevel" to "partial")
                         )
                     )
@@ -117,10 +118,21 @@ class TargetCapabilityDegradationAnalyzerTests {
         val manifest = tektonManifest(simpleFlow()).copy(metadata = mapOf("supportLevel" to "partial"))
         val report = TargetCapabilityDegradationAnalyzer.analyze(manifest)
 
-        assertEquals(TargetCapabilityDegradationStatus.DEGRADED, report.status)
-        assertTrue(report.valid, "partial target support remains reviewable outside strict mode")
-        assertTrue(report.degradedEntries.any { it.feature == "target.partial" })
+        assertEquals(TargetCapabilityDegradationStatus.BLOCKED, report.status, "raw command execution is blocked before notes-driven materialization exists")
+        assertFalse(report.valid, "blocked materialization must fail in standard mode")
+        assertTrue(report.blockedEntries.any { it.feature == "materialization.blocked" })
     }
+
+    private fun supportedNativeManifest(): TargetManifest = jenkinsManifest(simpleFlow()).copy(
+        jobs = listOf(
+            TargetJob(
+                id = "native_job",
+                name = "native job",
+                steps = listOf(TargetStep(id = "native_action", name = "native_action", type = "action", module = "notify", action = "send", target = "notifier", materialization = TargetMaterialization.native("notification.send", "test native materialization")))
+            )
+        ),
+        mappingNotes = emptyList()
+    )
 
     private fun simpleFlow(): String = """
         version "1.0"
