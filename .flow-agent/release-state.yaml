@@ -3,7 +3,7 @@ stateVersion: 1
 
 currentVersion: "0.9.4"
 currentPackage: "flow-core-prod-v0_9_4_reference_scenario_matrix.zip"
-nextExpectedVersion: "0.9.5"
+nextExpectedVersion: "0.9.5.0"
 activeStandardVersion: "0.7.6"
 
 repositoryRules:
@@ -32,11 +32,9 @@ lastKnownValidation:
   targetedCompilation: "pending-ci"
   conformance: "pending-ci"
   notes:
-    - "v0.9.4 adds a reference scenario matrix before end-to-end readiness work."
-    - "The matrix covers build/test/deploy, API sync, database migration, rollback, cleanup, secret rotation and notification workflows."
-    - "Each scenario declares capabilities, risks, safety requirements and target expectations."
-    - "Negative coverage is represented explicitly instead of being skipped."
-    - "The next expected package line is v0.9.5 end-to-end standard scenarios."
+    - "v0.9.4 adds a target-neutral reference scenario matrix before end-to-end readiness work."
+    - "The next expected package line is v0.9.5.0 Architecture Recenter - Notes-Driven Flow."
+    - "The v0.9.5.x correction track replaces the former direct jump to end-to-end standard scenarios."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
     - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."
