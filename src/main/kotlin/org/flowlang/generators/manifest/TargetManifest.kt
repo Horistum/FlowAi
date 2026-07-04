@@ -56,6 +56,7 @@ data class TargetStep(
     val action: String? = null,
     val target: String? = null,
     val materialization: TargetMaterialization = TargetMaterialization.semanticOnly("No materialization attached to this non-action projection step."),
+    val run: String? = null,
     val dependsOn: List<String> = emptyList(),
     val params: Map<String, String> = emptyMap(),
     val children: List<TargetStep> = emptyList(),
