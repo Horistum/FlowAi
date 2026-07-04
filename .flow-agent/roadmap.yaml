@@ -1,5 +1,5 @@
 project: Flow Core
-roadmapVersion: 1
+roadmapVersion: 2
 currentTrack: "0.7.x-to-1.0.0"
 
 rules:
@@ -9,6 +9,28 @@ rules:
   - "No version may introduce runtime execution into Flow Core."
   - "No version may introduce target-specific public DSL syntax."
   - "No version may bend code only to satisfy tests."
+  - "Flow Core is not an SDK, framework, plugin lifecycle, shell command generator or CI/CD transpiler."
+  - "Flow Core is a notes-driven universal automation language and standardization model."
+  - "Flow Core must not use shell commands as the universal action or projection representation."
+  - "Flow Core must not treat semantic-only placeholders, echo output or unmapped work as successful materialization."
+  - "Domain, capability, runtime, safety, target and projection behavior must be declared through structured notes packages before it is treated as supported."
+
+architectureConstitution:
+  identity:
+    - "Flow is a language and universal automation standardization model."
+    - "Flow uses a universal decision, validation and generation engine over declarative notes packages."
+    - "Flow must support current and future automation domains and targets beyond CI/CD."
+  forbiddenDirections:
+    - "No shell as core projection."
+    - "No command string as universal action representation."
+    - "No echo or placeholder output as successful materialization."
+    - "No hardcoded target names in semantic models."
+    - "No Maven, Kubernetes, Docker, PostgreSQL, mail or other concrete tool default as universal lowering truth."
+    - "No registry target may be marked production-supported without projection and conformance coverage."
+    - "No unknown target may be treated as capable by default."
+    - "No CI/CD-only scenario may be accepted as proof of universal automation."
+    - "No target renderer may invent runtime environment requirements."
+    - "No future feature may bypass notes contracts."
 
 roadmap:
   - version: "0.7.3"
@@ -50,19 +72,12 @@ roadmap:
     type: "semantic-hardening"
     status: "completed"
     requiredOutcome:
-      - "Kubernetes deploy lowering preserves the intent application identity."
-      - "Runtime input references render as target-native parameters."
-      - "Mandatory safety enforcement happens in the core intent validator."
-      - "Validator block scoping works across sibling statements."
-      - "Safe-navigation semantics are preserved per path segment."
-      - "Exact interpolation references are parsed correctly."
-      - "Jenkins named-pattern rendering does not fall back to match-everything regex."
-      - "Rendered end-to-end snapshots remain exact."
+      - "Semantic correctness hardening is in place."
       - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change."
 
   - version: "0.7.7"
     name: "Scenario Pack Quality Gates"
-    purpose: "Validate scenario pack consistency, usefulness, safety metadata, and non-decorative coverage."
+    purpose: "Validate scenario pack consistency, usefulness, safety metadata and non-decorative coverage."
     type: "quality-gate"
     status: "completed"
     requiredOutcome:
@@ -100,7 +115,7 @@ roadmap:
     status: "completed"
     requiredOutcome:
       - "Negotiation report model."
-      - "Supported, degraded, and unsupported capability outcomes."
+      - "Supported, degraded and unsupported capability outcomes."
       - "Clear rejection reasons."
 
   - version: "0.8.3"
@@ -112,8 +127,6 @@ roadmap:
       - "Gradle package version is aligned with release metadata."
       - "Top-level report and release-state metadata agree on the current package line."
       - "Versioning policy documents package, public standard, artifact and conformance gate version boundaries."
-      - "Release integrity tests guard against future metadata drift."
-      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.8.4"
     name: "Planner Capability Constraints"
@@ -124,8 +137,6 @@ roadmap:
       - "Planner capability checks."
       - "No unsupported lowering."
       - "Negative tests for unsupported targets."
-      - "A pre-projection gate prevents unsupported target semantics from reaching renderer projection."
-      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.8.5"
     name: "Safety Boundary Hardening"
@@ -136,7 +147,6 @@ roadmap:
       - "Safety boundary model hardening."
       - "Approval guarantees for high-risk operations."
       - "Negative tests for missing approval boundaries."
-      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.8.6"
     name: "Review Hardening Fixes"
@@ -147,8 +157,6 @@ roadmap:
       - "Runtime secrets are preserved through planning and materialised through target-native mechanisms."
       - "Unmapped actions fail loudly instead of rendering green placeholder commands."
       - "Flow-layer data operations carry explicit non-materialisation notes."
-      - "Result-field validation is strict for concrete module outputs."
-      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.8.7"
     name: "Safety Boundary Handler Coverage"
@@ -158,7 +166,6 @@ roadmap:
     requiredOutcome:
       - "Destructive actions inside result handlers do not bypass approval checks."
       - "Error-handler branches remain a legitimate rollback context."
-      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.9.0"
     name: "Generator Projection Contract"
@@ -169,11 +176,10 @@ roadmap:
       - "Generator projection contract."
       - "Manifest rendering boundaries."
       - "Target-specific behavior kept outside public syntax."
-      - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.9.1"
     name: "Jenkins/GitHub/Tekton Projection Stability"
-    purpose: "Stabilize projections for the main supported target platforms."
+    purpose: "Stabilize projections for the first implemented target platforms while keeping them adapter concerns, not semantic truth."
     type: "target-stability"
     status: "completed"
     requiredOutcome:
@@ -184,7 +190,7 @@ roadmap:
 
   - version: "0.9.2"
     name: "Renderer Contract Hardening"
-    purpose: "Harden renderer-level contracts before adding broader end-to-end scenario coverage."
+    purpose: "Harden renderer-level contracts before adding broader scenario coverage."
     type: "target-stability"
     status: "completed"
     requiredOutcome:
@@ -192,7 +198,6 @@ roadmap:
       - "Negative tests for malformed TargetManifest rendering inputs."
       - "Renderer-level diagnostics remain explicit for unsupported or degraded semantics."
       - "No renderer may re-plan Flow semantics or hide unsupported work."
-      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.9.3"
     name: "Capability Degradation Semantics"
@@ -201,33 +206,191 @@ roadmap:
     status: "completed"
     requiredOutcome:
       - "Explicit tests for supported, degraded and blocked semantics across the main targets."
-      - "Coverage for conditions, loops, match branches, error handlers, approvals, secrets and runtime inputs."
       - "Target degradation reports explain what is preserved, approximated or blocked."
       - "Strict mode blocks unsafe degraded semantics before rendering."
-      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
   - version: "0.9.4"
     name: "Reference Scenario Matrix"
-    purpose: "Build a deeper reference scenario matrix before claiming end-to-end readiness."
+    purpose: "Build a deeper target-neutral reference scenario matrix before claiming end-to-end readiness."
     type: "scenario-hardening"
     status: "completed"
     requiredOutcome:
       - "Reference scenarios cover build/test/deploy, API sync, database migration, rollback, cleanup, secret rotation and notification workflows."
-      - "Each scenario declares expected capabilities, risks, safety requirements and target compatibility outcomes."
-      - "Scenario matrix tests run through parser, validator, planner, compatibility analysis and manifest generation."
+      - "Scenario matrix is target-neutral."
+      - "Adapter projection expectations are separate from reference scenario meaning."
       - "Known unsupported cases are represented as explicit negative coverage rather than skipped examples."
-      - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
 
-  - version: "0.9.5"
-    name: "End-to-End Standard Scenarios"
-    purpose: "Prove full standard flow across realistic end-to-end automation scenarios after renderer and capability hardening."
-    type: "e2e-standard"
+  - version: "0.9.5.0"
+    name: "Architecture Recenter - Notes-Driven Flow"
+    purpose: "Stop the drift toward shell, framework and CI/CD-transpiler behavior and re-center Flow as a notes-driven universal automation language."
+    type: "architecture-recenter"
     status: "next"
     requiredOutcome:
-      - "End-to-end reference scenarios."
-      - "Intent to AST to plan to projection validation."
-      - "Release readiness report."
+      - "Define Flow as a notes-driven universal automation language and standardization model."
+      - "State that Flow Core is not an SDK, framework, plugin lifecycle, shell command generator or CI/CD transpiler."
+      - "Define declarative notes packages as the source of domain, capability, runtime, safety, target and projection rules."
+      - "Explicitly forbid shell as a core projection model."
+      - "Explicitly forbid command strings as the universal action representation."
+      - "Document all known drift areas before further feature work."
+      - "Replace the old v0.9.5 end-to-end step with the v0.9.5.x correction track."
       - "No public standard version, schema artifact version, runtime executor, SDK API, plugin lifecycle, target-specific public DSL or Flow syntax change."
+
+  - version: "0.9.5.1"
+    name: "Shell Usage Inventory and Prohibition"
+    purpose: "Inventory every shell, script, command-string, echo and CLI fallback path and prevent new shell projection from entering Flow Core."
+    type: "architecture-correction"
+    status: "planned"
+    requiredOutcome:
+      - "Inventory TargetManifest.run, runCommandFor, PORTABLE_ACTIONS, shell.run, echo-based standard.execute, renderer script blocks and shell-oriented tests."
+      - "Mark existing shell paths as legacy defects scheduled for removal."
+      - "Add tests preventing new core shell projection."
+      - "No shell command may be introduced into core projection."
+
+  - version: "0.9.5.2"
+    name: "CI/CD Bias Inventory"
+    purpose: "Inventory hardcoded CI/CD, Kubernetes, Docker, Maven, PostgreSQL, GitHub Actions, Jenkins, Tekton and ArgoCD assumptions."
+    type: "architecture-correction"
+    status: "planned"
+    requiredOutcome:
+      - "Inventory hardcoded target names and target dispatch."
+      - "Inventory hardcoded build, test, deploy and verify defaults."
+      - "Inventory registry-only targets and untested target claims."
+      - "Add drift tests proving Flow Core must not encode target-specific names as semantic truth."
+
+  - version: "0.9.5.3"
+    name: "Notes Package Contract Model"
+    purpose: "Introduce declarative notes packages as the contract for domains, capabilities, safety, runtime, targets, projections and conformance."
+    type: "contract-design"
+    status: "planned"
+    requiredOutcome:
+      - "Define Domain Notes."
+      - "Define Capability Notes."
+      - "Define Safety Notes."
+      - "Define Runtime Notes."
+      - "Define Target Notes."
+      - "Define Projection Notes."
+      - "Define Conformance Notes."
+      - "Keep notes declarative; do not introduce SDK, plugin framework or template hook architecture."
+
+  - version: "0.9.5.4"
+    name: "Universal Semantic Action Graph"
+    purpose: "Replace command-oriented projection with structured semantic actions."
+    type: "semantic-model"
+    status: "planned"
+    requiredOutcome:
+      - "Add a SemanticActionGraph model."
+      - "Lower Intent and AST into semantic actions, not commands."
+      - "Preserve capability identity independent of target."
+      - "Remove concrete tool defaults from semantic truth."
+      - "Add diagnostics for unresolved action materialization."
+
+  - version: "0.9.5.5"
+    name: "Materialization Negotiation"
+    purpose: "Require every semantic action to have an explicit materialization status before it can be treated as executable."
+    type: "materialization"
+    status: "planned"
+    requiredOutcome:
+      - "Define NATIVE, NOTES_PROJECTED, ADAPTER_REQUIRED, DECLARATIVE_ONLY, SEMANTIC_ONLY, UNSUPPORTED and BLOCKED statuses."
+      - "Echo, placeholder output, implicit shell fallback and unknown target assumptions must not count as successful materialization."
+      - "If Flow cannot prove how an action is materialized, it must be blocked or require review."
+
+  - version: "0.9.5.6"
+    name: "No-Shell Target Projection"
+    purpose: "Remove shell as the default target projection strategy and require target artifacts to come from target/projection notes."
+    type: "projection-correction"
+    status: "planned"
+    requiredOutcome:
+      - "Renderers do not generate shell as default behavior."
+      - "GitHub Actions, Jenkins, Tekton, Argo and Azure DevOps projections are target-native or notes-projected."
+      - "Strict and standard conformance forbid shell projection."
+      - "Existing shell paths are removed or isolated as explicitly unsupported legacy defects."
+
+  - version: "0.9.5.7"
+    name: "Target Registry Honesty"
+    purpose: "Separate declared targets from implemented, tested and production-supported targets."
+    type: "registry-honesty"
+    status: "planned"
+    requiredOutcome:
+      - "Add implemented, declared-only, experimental, deprecated and blocked target statuses."
+      - "No target is marked supported without projection and conformance coverage."
+      - "Unknown target support defaults to blocked or review-required."
+      - "Registry capability data is no longer allowed to be optimistic YAML."
+
+  - version: "0.9.5.8"
+    name: "Policy-Driven Safety and Environment Classification"
+    purpose: "Replace hardcoded production string guessing with declarative safety and environment notes."
+    type: "safety-policy"
+    status: "planned"
+    requiredOutcome:
+      - "Define environment classification policy through notes."
+      - "Allow production values and patterns to be declared as data."
+      - "Propagate risk class through semantic actions."
+      - "Approval requirements are policy-driven, not string-guessing."
+
+  - version: "0.9.5.9"
+    name: "Trigger and Schedule Notes"
+    purpose: "Replace schedule-as-echo behavior with target-neutral trigger semantics."
+    type: "trigger-model"
+    status: "planned"
+    requiredOutcome:
+      - "Define manual, cron, webhook, event, dependency and external-signal triggers."
+      - "SCHEDULE no longer lowers to standard.execute echo."
+      - "Target projection reports trigger support explicitly."
+
+  - version: "0.9.5.10"
+    name: "Conformance Honesty Gates"
+    purpose: "Ensure conformance validates that Flow does not lie about materialization, target support or shell-free projection."
+    type: "conformance-hardening"
+    status: "planned"
+    requiredOutcome:
+      - "Add no-shell-core gate."
+      - "Add no-semantic-echo-success gate."
+      - "Add materialization-required gate."
+      - "Add notes-contract gate."
+      - "Add target-registry-honesty gate."
+      - "Add unknown-target-blocked gate."
+      - "Add CI/CD-bias-detection gate."
+
+  - version: "0.9.6"
+    name: "Notes-Driven Domain Expansion"
+    purpose: "Add the first non-CI/CD domain notes after the architecture correction track."
+    type: "domain-expansion"
+    status: "planned"
+    requiredOutcome:
+      - "Add at least certificate, secret, backup and incident domain notes."
+      - "Domain support is declared through notes packages, not core hardcoding."
+      - "No shell-based materialization."
+
+  - version: "0.9.7"
+    name: "Notes-Driven Target Projection"
+    purpose: "Generate target artifacts from projection notes instead of hardcoded renderer assumptions."
+    type: "target-projection"
+    status: "planned"
+    requiredOutcome:
+      - "Projection profiles are notes-driven."
+      - "Target artifacts are generated from declared target/projection rules."
+      - "Hardcoded target dispatch is removed from public behavior."
+
+  - version: "0.9.8"
+    name: "Cross-Domain Reference Scenarios"
+    purpose: "Validate CI/CD and non-CI/CD automation domains with target-neutral reference scenarios."
+    type: "scenario-hardening"
+    status: "planned"
+    requiredOutcome:
+      - "Reference scenarios cover CI/CD, certificate renewal, secret rotation, backup/restore, incident workflow and policy check."
+      - "Scenarios validate notes-driven materialization."
+      - "No semantic-only placeholder may pass as executable automation."
+
+  - version: "0.9.9"
+    name: "Standard Readiness Hardening"
+    purpose: "Freeze the notes-driven model and honesty gates before public standard publication."
+    type: "readiness"
+    status: "planned"
+    requiredOutcome:
+      - "Stable notes contract."
+      - "Stable semantic action graph."
+      - "Stable materialization negotiation."
+      - "Stable target honesty model."
 
   - version: "1.0.0"
     name: "Public Flow Standard"
@@ -235,7 +398,8 @@ roadmap:
     type: "public-standard"
     status: "planned"
     requiredOutcome:
-      - "Stable public standard."
+      - "Stable public Flow language and standardization model."
+      - "Stable notes package contract."
       - "Compatibility statement."
       - "Conformance suite."
       - "Reference documentation."
