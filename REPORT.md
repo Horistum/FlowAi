@@ -2,7 +2,8 @@
 
 Current package line: `0.9.4`
 Active public standard version: `0.7.6`
-Next expected package line: `0.9.5.0`
+Next expected package line: `0.9.5`
+First scoped correction item: `0.9.5.0`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -28,7 +29,7 @@ The current package line includes:
 
 ## Architecture recenter direction
 
-The next package line is `0.9.5.0 Architecture Recenter - Notes-Driven Flow`.
+The next umbrella package line is `0.9.5`, and the first scoped correction item is `0.9.5.0 Architecture Recenter - Notes-Driven Flow`.
 
 This is a correction track before any end-to-end readiness claim. Flow Core must be re-centered around the original architecture:
 
@@ -39,7 +40,7 @@ This is a correction track before any end-to-end readiness claim. Flow Core must
 - CI/CD target projections are adapter concerns, not the semantic source of truth.
 - Semantic-only placeholders must not be reported as successful automation materialization.
 
-The former direct `0.9.5 End-to-End Standard Scenarios` step is replaced by the `0.9.5.x` correction track in `.flow-agent/roadmap.yaml`.
+The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until the `0.9.5.x` correction track is complete.
 
 ## Current validation source
 
@@ -54,7 +55,8 @@ The current validation source is the local Gradle run performed by the reviewer 
 
 - Package version: `0.9.4`
 - Active public standard version: `0.7.6`
-- Next expected package line: `0.9.5.0`
+- Next expected package line: `0.9.5`
+- First scoped correction item: `0.9.5.0`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
