@@ -75,6 +75,9 @@ object TargetRendererContractValidator {
             issues += TargetRendererContractIssue("error", code, p, message)
         }
 
+        if (step.type == "action" && step.children.isNotEmpty()) {
+            error("ACTION_CHILDREN_UNSUPPORTED", path, "Action step '${step.id}' must be a leaf semantic action; nested work must be represented by a structural parent step.")
+        }
         step.dependsOn.forEach { dep ->
             if (dep !in knownDependencyIds) error("STEP_DEPENDENCY_UNKNOWN", "$path.dependsOn", "Step '${step.id}' depends on unknown projected id '$dep'.")
         }
