@@ -29,9 +29,9 @@ data class StandardCapabilityDefinition(
 object StandardIntentCatalog {
     val definitions: List<StandardCapabilityDefinition> = listOf(
         def(StandardCapability.CHECKOUT, "source", "stable", "Fetch or prepare source input.", listOf("git"), listOf("Where is the source located?")),
-        def(StandardCapability.BUILD, "ci", "stable", "Build application or project artifacts.", listOf("shell"), listOf("Which build tool should be used?")),
-        def(StandardCapability.TEST, "ci", "stable", "Run tests or validation commands.", listOf("shell"), listOf("Which test command or test suite should run?")),
-        def(StandardCapability.PACKAGE, "ci", "stable", "Package build outputs into distributable artifacts.", listOf("shell", "file")),
+        def(StandardCapability.BUILD, "ci", "stable", "Build application or project artifacts.", listOf("standard"), listOf("Which build semantics or artifact should be produced?")),
+        def(StandardCapability.TEST, "ci", "stable", "Represent test or validation intent without choosing a runtime command.", listOf("standard"), listOf("Which test suite or validation intent should be represented?")),
+        def(StandardCapability.PACKAGE, "ci", "stable", "Package build outputs into distributable artifacts.", listOf("standard", "file")),
         def(StandardCapability.BUILD_IMAGE, "delivery", "stable", "Build a container image.", listOf("docker"), listOf("Which image name and tag should be produced?")),
         def(StandardCapability.PUSH_IMAGE, "delivery", "stable", "Push a container image to a registry.", listOf("docker"), listOf("Which registry should receive the image?")),
         def(StandardCapability.DEPLOY, "delivery", "stable", "Deploy application/configuration to a target environment.", listOf("kubernetes", "argocd", "helm"), listOf("What is the target environment?", "What deployment engine should be used?")),
@@ -53,11 +53,11 @@ object StandardIntentCatalog {
         def(StandardCapability.DATABASE_MIGRATE, "data", "draft", "Apply database schema or data migrations with backup, validation and rollback planning.", listOf("database", "standard"), listOf("Which database is targeted?", "Which migration source/version should be applied?", "What backup and rollback plan is required?")),
         def(StandardCapability.CERTIFICATE_RENEW, "security", "draft", "Renew, deploy and verify a certificate without fabricating provider or expiry details.", listOf("standard", "kubernetes", "rest"), listOf("Which certificate should be renewed?", "Which provider or secret store owns it?", "Which service must be verified after renewal?")),
         def(StandardCapability.KUBERNETES_MAINTENANCE, "operations", "draft", "Run Kubernetes maintenance with explicit scope, dry-run/approval and verification.", listOf("kubernetes", "standard"), listOf("Which cluster/namespace/resource scope is affected?", "Is the operation destructive or production-impacting?", "What verification confirms recovery?")),
-        def(StandardCapability.RUNBOOK, "operations", "draft", "Execute a guided operational runbook.", listOf("standard", "shell", "rest")),
+        def(StandardCapability.RUNBOOK, "operations", "draft", "Execute a guided operational runbook.", listOf("standard", "rest")),
         def(StandardCapability.INCIDENT, "operations", "draft", "Handle an incident workflow.", listOf("standard", "notify", "rest")),
         def(StandardCapability.SECRET_ROTATE, "security", "draft", "Rotate secrets or credentials.", listOf("standard", "rest", "kubernetes"), listOf("Which secret provider owns the credential?")),
         def(StandardCapability.POLICY_CHECK, "governance", "draft", "Evaluate policy before execution.", listOf("standard")),
-        def(StandardCapability.RUN_COMMAND, "technical", "stable", "Run an explicit command. Low-level escape hatch, not preferred for high-level intent.", listOf("shell"), notes = listOf("Prefer semantic capabilities when possible.")),
+        def(StandardCapability.RUN_COMMAND, "technical", "stable", "Represent a low-level runtime request as unresolved semantic intent.", listOf("standard"), notes = listOf("Requires notes-driven materialization. Prefer semantic capabilities when possible.")),
         def(StandardCapability.CALL_API, "technical", "stable", "Call an API directly. Low-level escape hatch.", listOf("rest"), notes = listOf("Prefer semantic capabilities when possible.")),
         def(StandardCapability.CUSTOM, "extension", "draft", "Custom extension capability.", listOf("standard"), notes = listOf("Should be documented by a module or organization-specific catalog."))
     )
