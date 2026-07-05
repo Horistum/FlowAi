@@ -34,6 +34,9 @@ jobs:
       - name: Prepare Gradle Wrapper
         run: chmod +x ./gradlew
 
+      - name: Prepare CI Log Directory
+        run: mkdir -p build/reports/ci
+
       - name: Validate Flow Agent Structure
         run: python3 tools/flow_agent_validate.py
 
@@ -47,28 +50,44 @@ jobs:
           fi
 
       - name: Run Offline Tests When Cache Is Available
+        shell: bash
         run: |
+          set -o pipefail
           if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon test --offline
+            ./gradlew --no-daemon test --offline --stacktrace --console=plain 2>&1 | tee build/reports/ci/offline-test.log
+            exit ${PIPESTATUS[0]}
           else
-            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions."
+            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions." | tee build/reports/ci/offline-test.log
           fi
 
       - name: Run Offline Conformance When Cache Is Available
+        shell: bash
         run: |
+          set -o pipefail
           if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon run --args="conformance" --offline
+            ./gradlew --no-daemon run --args="conformance" --offline --stacktrace --console=plain 2>&1 | tee build/reports/ci/offline-conformance.log
+            exit ${PIPESTATUS[0]}
           else
-            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions."
+            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions." | tee build/reports/ci/offline-conformance.log
           fi
+
       - name: Compile and Test
-        run: ./gradlew --no-daemon clean test --stacktrace --console=plain
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee build/reports/ci/gradle-clean-test.log
+          exit ${PIPESTATUS[0]}
 
       - name: Run Conformance
-        run: ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee build/reports/ci/gradle-conformance.log
+          exit ${PIPESTATUS[0]}
 
       - name: Write CI Summary
         if: always()
+        shell: bash
         run: |
           echo "# Flow CI Result" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -79,5 +98,26 @@ jobs:
           echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline Gradle test when cache is available" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline Flow conformance when cache is available" >> "$GITHUB_STEP_SUMMARY"
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          for file in build/reports/ci/*.log; do
+            if [ -f "$file" ]; then
+              echo "## ${file}" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo '```text' >> "$GITHUB_STEP_SUMMARY"
+              tail -n 120 "$file" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+      - name: Upload CI Gradle Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-ci-gradle-logs
+          path: build/reports/ci/*.log
+          if-no-files-found: warn
