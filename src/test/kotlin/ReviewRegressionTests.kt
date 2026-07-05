@@ -1,4 +1,6 @@
+import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.ast.BinaryExpressionNode
@@ -7,14 +9,14 @@ import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.GroovyExpr
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.generators.manifest.runCommandFor
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
+import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.TaskNode
 import org.flowlang.validator.FlowValidator
-import java.io.File
 
 class ReviewRegressionTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
@@ -30,12 +32,15 @@ class ReviewRegressionTests {
             plan,
             CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED)
         )
-        val deployRun = manifest.jobs
+        val deployStep = manifest.jobs
             .flatMap { job -> job.steps.flatMap { step -> flattenSteps(step) } }
             .single { it.module == "kubernetes" && it.action == "deploy" }
-            .run.orEmpty()
 
-        assertTrue(deployRun.contains("deployment/\"\$FLOW_APP\""), deployRun)
+        assertTrue(deployStep.run == null, "Manifest action projection must not carry legacy executable text: $deployStep")
+        assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, deployStep.materialization.status)
+        assertEquals("app", deployStep.params["app"])
+        assertEquals("namespace", deployStep.params["namespace"])
+        assertEquals("image.tag", deployStep.params["image"])
     }
 
     @Test
@@ -53,23 +58,33 @@ class ReviewRegressionTests {
     }
 
     @Test
-    fun targetInterpolationDoesNotInventParamsForResultMemberPaths() {
-        val run = runCommandFor(
-            TaskNode(
-                id = "notify_1",
-                module = "notify",
-                action = "send",
-                target = "mailer",
-                params = mapOf(
-                    "subject" to "\"Status\"",
-                    "body" to "\"Status: ${'$'}{deploy.status}\""
+    fun targetParamsPreserveResultMemberTemplatePathsWithoutProjection() {
+        val manifest = JenkinsManifestGenerator().generate(
+            ExecutionPlan(
+                flowName = "interpolation-regression",
+                nodes = listOf(
+                    TaskNode(
+                        id = "notify_1",
+                        module = "notify",
+                        action = "send",
+                        target = "mailer",
+                        params = mapOf(
+                            "subject" to "\"Status\"",
+                            "body" to "\"Status: ${'$'}{deploy.status}\""
+                        )
+                    )
                 )
             ),
-            targetName = "jenkins"
+            CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED)
         )
+        val notifyStep = manifest.jobs
+            .flatMap { job -> job.steps.flatMap { step -> flattenSteps(step) } }
+            .single { it.module == "notify" && it.action == "send" }
+        val body = notifyStep.params["body"].orEmpty()
 
-        assertFalse(run.contains("${'$'}{params.deploy.status}"), run)
-        assertTrue(run.contains("${'$'}{deploy.status}"), run)
+        assertTrue(notifyStep.run == null, "Manifest projection must not recreate executable text: $notifyStep")
+        assertFalse(body.contains("${'$'}{params.deploy.status}"), body)
+        assertTrue(body.contains("${'$'}{deploy.status}"), body)
     }
 
     private fun flattenSteps(step: TargetStep): List<TargetStep> =
