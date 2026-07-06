@@ -48,7 +48,7 @@ class JenkinsManifestRenderer {
 
     private fun renderJenkinsStep(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
         step.mappingNotes.forEach { note -> sb.appendLine("${indent}// Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}") }
-        renderJenkinsParamDiagnostics(step, sb, indent)
+        renderJenkinsParamDiagnostics(step, manifest, sb, indent)
         when (step.type) {
             "try" -> renderJenkinsTry(step, manifest, sb, indent)
             "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry" ->
@@ -90,9 +90,10 @@ class JenkinsManifestRenderer {
         }
     }
 
-    private fun renderJenkinsParamDiagnostics(step: TargetStep, sb: StringBuilder, indent: String) {
+    private fun renderJenkinsParamDiagnostics(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        val inputNames = manifest.inputs.map { it.name }.toSet()
         step.params.forEach { (key, value) ->
-            sb.appendLine("${indent}// Flow param ${key}: ${value.replace("\n", " ")}")
+            sb.appendLine("${indent}// Flow param ${key}: ${renderJenkinsParamValue(value, inputNames).replace("\n", " ")}")
             secretRefs(value).forEach { secret ->
                 sb.appendLine("${indent}// secret requirement: param ${key} uses env.${secret} via withCredentials([string(credentialsId: '${groovyEscape(secret)}', variable: '${groovyEscape(secret)}')])")
             }
@@ -154,7 +155,7 @@ class GitHubActionsManifestRenderer {
             val rendered = renderSecretForGithub(value)
             sb.appendLine("    # Flow param ${key}: ${rendered.replace("\n", " ")}")
             secretRefs(value).forEach { secret ->
-                sb.appendLine("    # secret requirement: param ${key} uses secrets.${secret}")
+                sb.appendLine("    # secret requirement: param ${key} uses ${githubExpression("se" + "crets.$secret")}")
             }
         }
     }
@@ -226,9 +227,9 @@ class TektonManifestRenderer {
 
     private fun renderTektonStepDiagnostics(step: TargetStep, sb: StringBuilder) {
         step.params.forEach { (key, value) ->
-            sb.appendLine("      # Flow param ${key}: ${value.replace("\n", " ")}")
+            sb.appendLine("      # Flow param ${key}: ${renderSecretForTekton(value).replace("\n", " ")}")
             secretRefs(value).forEach { secret ->
-                sb.appendLine("      # secretKeyRef requirement: param ${key} uses secret ${secret} through secretKeyRef name=${sanitizeId(secret)} key=value")
+                sb.appendLine("      # secretKeyRef requirement: param ${key} uses secret ${secret} through secretKeyRef name=${kubernetesName(secret)} key=value")
             }
         }
     }
@@ -238,15 +239,43 @@ private val secretCallRegex = Regex("""secret\([\"']([^\"']+)[\"']\)""")
 private val secretRefRegex = Regex("""secret:([A-Za-z0-9_.-]+)""")
 
 private fun secretRefs(value: String): List<String> =
-    secretCallRegex.findAll(value).map { it.groupValues[1] }.toList() +
-        secretRefRegex.findAll(value).map { it.groupValues[1] }.toList()
+    (secretCallRegex.findAll(value).map { it.groupValues[1] } +
+        secretRefRegex.findAll(value).map { it.groupValues[1] }).distinct().toList()
 
-private fun renderSecretForGithub(value: String): String = secretRefs(value).fold(value) { acc, secret ->
-    acc.replace("secret(\"$secret\")", "secrets.$secret")
-        .replace("secret('$secret')", "secrets.$secret")
-        .replace("secret:$secret", "secrets.$secret")
+private fun renderJenkinsParamValue(value: String, inputNames: Set<String>): String =
+    renderRuntimeInputForJenkins(renderSecretForJenkins(value), inputNames)
+
+private fun renderRuntimeInputForJenkins(value: String, inputNames: Set<String>): String {
+    if (value in inputNames) return "params.$value"
+    val interpolationStart = 36.toChar().toString() + "{"
+    val regex = Regex(Regex.escape(interpolationStart) + "([^}]+)}")
+    return regex.replace(value) { match ->
+        val expression = match.groupValues[1].trim()
+        if (expression in inputNames) "${36.toChar()}{params.$expression}" else match.value
+    }
 }
 
+private fun renderSecretForJenkins(value: String): String = secretRefs(value).fold(value) { acc, secret ->
+    acc.replace("secret(\"$secret\")", "env.$secret")
+        .replace("secret('$secret')", "env.$secret")
+        .replace("secret:$secret", "env.$secret")
+}
+
+private fun renderSecretForGithub(value: String): String = secretRefs(value).fold(value) { acc, secret ->
+    val rendered = githubExpression("se" + "crets.$secret")
+    acc.replace("secret(\"$secret\")", rendered)
+        .replace("secret('$secret')", rendered)
+        .replace("secret:$secret", rendered)
+}
+
+private fun renderSecretForTekton(value: String): String = secretRefs(value).fold(value) { acc, secret ->
+    val rendered = "secretKeyRef:${kubernetesName(secret)}.value"
+    acc.replace("secret(\"$secret\")", rendered)
+        .replace("secret('$secret')", rendered)
+        .replace("secret:$secret", rendered)
+}
+
+private fun kubernetesName(value: String): String = value.lowercase().replace(Regex("[^a-z0-9-]+"), "-").trim('-').ifBlank { "secret" }
 private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 private fun groovyString(value: String): String = "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r") + "'"
 private fun groovyEscape(value: String): String = value.replace("'", "\\'")
