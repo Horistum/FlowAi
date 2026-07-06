@@ -103,6 +103,33 @@ jobs:
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
+          if compgen -G "build/test-results/test/*.xml" > /dev/null; then
+            echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import glob
+          import html
+          import xml.etree.ElementTree as ET
+          for path in sorted(glob.glob('build/test-results/test/*.xml')):
+              root = ET.parse(path).getroot()
+              for case in root.findall('testcase'):
+                  failure = case.find('failure') or case.find('error')
+                  if failure is None:
+                      continue
+                  cls = case.attrib.get('classname', '')
+                  name = case.attrib.get('name', '')
+                  message = failure.attrib.get('message', '')
+                  text = (failure.text or '').strip().splitlines()
+                  print(f"### {cls}.{name}")
+                  print("")
+                  print("```text")
+                  print(html.unescape(message)[:2000])
+                  for line in text[:12]:
+                      print(html.unescape(line)[:2000])
+                  print("```")
+                  print("")
+          PY
+          fi
           for file in ci-logs/*.log; do
             if [ -f "$file" ]; then
               echo "## ${file}" >> "$GITHUB_STEP_SUMMARY"
@@ -121,3 +148,13 @@ jobs:
           name: flow-ci-gradle-logs
           path: ci-logs/*.log
           if-no-files-found: error
+
+      - name: Upload CI Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-ci-test-reports
+          path: |
+            build/test-results/test/*.xml
+            build/reports/tests/test/**
+          if-no-files-found: warn
