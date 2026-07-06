@@ -23,7 +23,7 @@ object ExpressionRenderer {
         is CallExpressionNode -> "${e.function}(${e.args.joinToString(", ") { render(it) }})"
         is IndexExpressionNode -> "${render(e.target)}[${render(e.index)}]"
         is MemberExpressionNode -> "${render(e.target)}${if (e.safe) "?." else "."}${e.member}"
-        is SecretRefNode -> "opaque:${e.name}"
+        is SecretRefNode -> "secret:${e.name}"
     }
 
     private fun escape(s: String): String =
