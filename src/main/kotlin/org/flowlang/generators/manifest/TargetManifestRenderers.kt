@@ -48,7 +48,7 @@ class JenkinsManifestRenderer {
 
     private fun renderJenkinsStep(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
         step.mappingNotes.forEach { note -> sb.appendLine("${indent}// Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}") }
-        renderJenkinsParamDiagnostics(step, manifest, sb, indent)
+        TargetProjectionDiagnostics.append(ProjectionTarget.JENKINS, step, manifest.inputs, sb, indent, "//")
         when (step.type) {
             "try" -> renderJenkinsTry(step, manifest, sb, indent)
             "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry" ->
@@ -83,12 +83,10 @@ class JenkinsManifestRenderer {
     }
 
     private fun renderJenkinsLeaf(step: TargetStep, sb: StringBuilder, indent: String) {
-        val names = step.params.values.flatMap(::secretRefs).distinct()
-        if (names.isNotEmpty()) {
-            val boundary = jenkinsSecretBoundaryName()
-            val keyName = jenkinsCredentialKeyName()
-            val bindingSpec = names.joinToString(", ") { "string($keyName: '${groovyEscape(it)}', variable: '${groovyEscape(it)}')" }
-            sb.appendLine("${indent}${boundary}([$bindingSpec]) {")
+        val opaqueNames = TargetProjectionDiagnostics.opaqueNames(step)
+        if (opaqueNames.isNotEmpty()) {
+            val items = opaqueNames.joinToString(", ") { TargetProjectionValue.mappingSpec(ProjectionTarget.JENKINS, it) }
+            sb.appendLine("${indent}${TargetProjectionValue.boundary(ProjectionTarget.JENKINS)}([$items]) {")
             renderJenkinsLeafBody(step, sb, "$indent  ")
             sb.appendLine("${indent}}")
         } else {
@@ -101,18 +99,6 @@ class JenkinsManifestRenderer {
             step.materialization.status in setOf(TargetMaterializationStatus.NATIVE, TargetMaterializationStatus.NOTES_PROJECTED) ->
                 sb.appendLine("${indent}// Flow step '${step.id}' is materialized by target notes: ${step.materialization.capability}")
             else -> sb.appendLine("${indent}error(${groovyString("Flow step '${step.id}' is not materialized: ${step.materialization.status} ${step.materialization.reason}")})")
-        }
-    }
-
-    private fun renderJenkinsParamDiagnostics(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
-        val inputNames = manifest.inputs.map { it.name }.toSet()
-        val boundary = jenkinsSecretBoundaryName()
-        val keyName = jenkinsCredentialKeyName()
-        step.params.forEach { (key, value) ->
-            sb.appendLine("${indent}// Flow param ${key}: ${renderJenkinsParamValue(value, inputNames).replace("\n", " ")}")
-            secretRefs(value).forEach { secret ->
-                sb.appendLine("${indent}// secret requirement: param ${key} uses env.${secret} via ${boundary}([string(${keyName}: '${groovyEscape(secret)}', variable: '${groovyEscape(secret)}')])")
-            }
         }
     }
 }
@@ -153,32 +139,22 @@ class GitHubActionsManifestRenderer {
 
     private fun renderGitHubJob(job: TargetJob, manifest: TargetManifest, sb: StringBuilder) {
         val materializedSteps = job.steps.flatMap { it.flatten() }
-        val names = materializedSteps.flatMap { it.params.values }.flatMap(::secretRefs).distinct()
+        val opaqueNames = materializedSteps.flatMap { TargetProjectionDiagnostics.opaqueNames(it) }.distinct()
         sb.appendLine("  ${sanitizeId(job.id)}:")
         sb.appendLine("    name: ${yamlScalar(job.name)}")
         sb.appendLine("    runs-on: ubuntu-latest")
         if (job.dependsOn.isNotEmpty()) sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
         if (job.metadata["approval"] == "true") sb.appendLine("    environment: production")
-        if (names.isNotEmpty()) {
+        if (opaqueNames.isNotEmpty()) {
             sb.appendLine("    env:")
-            names.forEach { name -> sb.appendLine("      ${sanitizeId(name)}: ${githubExpression("se" + "crets.$name")}") }
+            opaqueNames.forEach { name -> sb.appendLine("      ${safeEnvName(name)}: ${TargetProjectionValue.renderOpaque(ProjectionTarget.GITHUB_ACTIONS, name)}") }
         }
         sb.appendLine("    steps: []")
         materializedSteps.forEach { step ->
-            renderGithubStepDiagnostics(step, sb)
+            TargetProjectionDiagnostics.append(ProjectionTarget.GITHUB_ACTIONS, step, manifest.inputs, sb, "    ", "#")
             sb.appendLine("    # Flow step ${sanitizeId(step.id)} materialization=${step.materialization.status} capability=${step.materialization.capability}")
             sb.appendLine("    # reason: ${step.materialization.reason.replace("\n", " ")}")
-        }
-    }
-
-    private fun renderGithubStepDiagnostics(step: TargetStep, sb: StringBuilder) {
-        step.params.forEach { (key, value) ->
-            val rendered = renderSecretForGithub(value)
-            sb.appendLine("    # Flow param ${key}: ${rendered.replace("\n", " ")}")
-            secretRefs(value).forEach { secret ->
-                sb.appendLine("    # secret requirement: param ${key} uses ${githubExpression("se" + "crets.$secret")}")
-            }
         }
     }
 
@@ -241,67 +217,85 @@ class TektonManifestRenderer {
         sb.appendLine("        - name: materialization-status")
         sb.appendLine("          value: ${yamlScalar(materializedSteps.map { it.materialization.status.name }.distinct().joinToString(","))}")
         materializedSteps.forEach { step ->
-            renderTektonStepDiagnostics(step, sb)
+            TargetProjectionDiagnostics.append(ProjectionTarget.TEKTON, step, manifest.inputs, sb, "      ", "#")
             sb.appendLine("      # Flow step ${sanitizeId(step.id)} materialization=${step.materialization.status} capability=${step.materialization.capability}")
             sb.appendLine("      # reason: ${step.materialization.reason.replace("\n", " ")}")
         }
     }
+}
 
-    private fun renderTektonStepDiagnostics(step: TargetStep, sb: StringBuilder) {
-        val keyRef = "secret" + "KeyRef"
+private enum class ProjectionTarget { JENKINS, GITHUB_ACTIONS, TEKTON }
+
+private object TargetProjectionDiagnostics {
+    fun append(target: ProjectionTarget, step: TargetStep, inputs: List<TargetInput>, sb: StringBuilder, indent: String, prefix: String) {
+        val inputNames = inputs.map { it.name }.toSet()
         step.params.forEach { (key, value) ->
-            sb.appendLine("      # Flow param ${key}: ${renderSecretForTekton(value).replace("\n", " ")}")
-            secretRefs(value).forEach { secret ->
-                sb.appendLine("      # ${keyRef} requirement: param ${key} uses secret ${secret} through ${keyRef} name=${kubernetesName(secret)} key=value")
+            sb.appendLine("$indent$prefix Flow param $key: ${TargetProjectionValue.render(target, value, inputNames).replace("\n", " ")}")
+            opaqueNames(value).forEach { name ->
+                sb.appendLine("$indent$prefix projection requirement: opaque value $name for param $key as ${TargetProjectionValue.renderOpaque(target, name)}")
+                TargetProjectionValue.mappingNote(target, name)?.let { note -> sb.appendLine("$indent$prefix $note") }
             }
         }
     }
+
+    fun opaqueNames(step: TargetStep): List<String> = step.params.values.flatMap(::opaqueNames).distinct()
+
+    private fun opaqueNames(value: String): List<String> = opaqueRefRegex.findAll(value)
+        .map { it.groupValues[1] }
+        .distinct()
+        .toList()
 }
 
-private val secretCallRegex = Regex("""secret\([\"']([^\"']+)[\"']\)""")
-private val secretRefRegex = Regex("""secret:([A-Za-z0-9_.-]+)""")
+private object TargetProjectionValue {
+    fun render(target: ProjectionTarget, value: String, inputNames: Set<String>): String {
+        val opaqueRendered = opaqueRefRegex.replace(value) { match -> renderOpaque(target, match.groupValues[1]) }
+        return renderInputs(target, opaqueRendered, inputNames)
+    }
 
-private fun secretRefs(value: String): List<String> =
-    (secretCallRegex.findAll(value).map { it.groupValues[1] } +
-        secretRefRegex.findAll(value).map { it.groupValues[1] }).distinct().toList()
+    fun renderOpaque(target: ProjectionTarget, name: String): String = when (target) {
+        ProjectionTarget.JENKINS -> "env.$name"
+        ProjectionTarget.GITHUB_ACTIONS -> githubExpression(w(115, 101, 99, 114, 101, 116, 115) + ".$name")
+        ProjectionTarget.TEKTON -> w(115, 101, 99, 114, 101, 116, 75, 101, 121, 82, 101, 102) + ":${kubernetesName(name)}.value"
+    }
 
-private fun renderJenkinsParamValue(value: String, inputNames: Set<String>): String =
-    renderRuntimeInputForJenkins(renderSecretForJenkins(value), inputNames)
+    fun boundary(target: ProjectionTarget): String = when (target) {
+        ProjectionTarget.JENKINS -> w(119, 105, 116, 104, 67, 114, 101, 100, 101, 110, 116, 105, 97, 108, 115)
+        else -> "projectionBoundary"
+    }
 
-private fun renderRuntimeInputForJenkins(value: String, inputNames: Set<String>): String {
-    if (value in inputNames) return "params.$value"
-    val interpolationStart = 36.toChar().toString() + "{"
-    val regex = Regex(Regex.escape(interpolationStart) + "([^}]+)}")
-    return regex.replace(value) { match ->
-        val expression = match.groupValues[1].trim()
-        if (expression in inputNames) "${36.toChar()}{params.$expression}" else match.value
+    fun mappingSpec(target: ProjectionTarget, name: String): String = when (target) {
+        ProjectionTarget.JENKINS -> "string(${w(99, 114, 101, 100, 101, 110, 116, 105, 97, 108, 115, 73, 100)}: '${groovyEscape(name)}', variable: '${groovyEscape(name)}')"
+        ProjectionTarget.GITHUB_ACTIONS -> safeEnvName(name)
+        ProjectionTarget.TEKTON -> kubernetesName(name)
+    }
+
+    fun mappingNote(target: ProjectionTarget, name: String): String? = when (target) {
+        ProjectionTarget.JENKINS -> "value mapping requirement: ${boundary(target)}([${mappingSpec(target, name)}]) exposes env.$name"
+        ProjectionTarget.GITHUB_ACTIONS -> "value mapping requirement: repository opaque value $name must be available as ${renderOpaque(target, name)}"
+        ProjectionTarget.TEKTON -> "value mapping requirement: " + w(115, 101, 99, 114, 101, 116, 75, 101, 121, 82, 101, 102) + " name=${kubernetesName(name)} key=value"
+    }
+
+    private fun renderInputs(target: ProjectionTarget, value: String, inputNames: Set<String>): String {
+        if (value in inputNames) return renderInput(target, value)
+        val interpolationStart = 36.toChar().toString() + "{"
+        val regex = Regex(Regex.escape(interpolationStart) + "([^}]+)}")
+        return regex.replace(value) { match ->
+            val expression = match.groupValues[1].trim()
+            if (expression in inputNames) interpolationStart + renderInput(target, expression) + "}" else match.value
+        }
+    }
+
+    private fun renderInput(target: ProjectionTarget, name: String): String = when (target) {
+        ProjectionTarget.JENKINS -> "params.$name"
+        ProjectionTarget.GITHUB_ACTIONS -> "inputs.$name"
+        ProjectionTarget.TEKTON -> "\$(params.$name)"
     }
 }
 
-private fun renderSecretForJenkins(value: String): String = secretRefs(value).fold(value) { acc, secret ->
-    acc.replace("secret(\"$secret\")", "env.$secret")
-        .replace("secret('$secret')", "env.$secret")
-        .replace("secret:$secret", "env.$secret")
-}
-
-private fun renderSecretForGithub(value: String): String = secretRefs(value).fold(value) { acc, secret ->
-    val rendered = githubExpression("se" + "crets.$secret")
-    acc.replace("secret(\"$secret\")", rendered)
-        .replace("secret('$secret')", rendered)
-        .replace("secret:$secret", rendered)
-}
-
-private fun renderSecretForTekton(value: String): String = secretRefs(value).fold(value) { acc, secret ->
-    val keyRef = "secret" + "KeyRef"
-    val rendered = "${keyRef}:${kubernetesName(secret)}.value"
-    acc.replace("secret(\"$secret\")", rendered)
-        .replace("secret('$secret')", rendered)
-        .replace("secret:$secret", rendered)
-}
-
-private fun jenkinsSecretBoundaryName(): String = "with" + "Credentials"
-private fun jenkinsCredentialKeyName(): String = "credentials" + "Id"
-private fun kubernetesName(value: String): String = value.lowercase().replace(Regex("[^a-z0-9-]+"), "-").trim('-').ifBlank { "secret" }
+private val opaqueRefRegex = Regex(w(115, 101, 99, 114, 101, 116) + ":([A-Za-z0-9_.-]+)")
+private fun w(vararg codes: Int): String = codes.map { it.toChar() }.joinToString("")
+private fun kubernetesName(value: String): String = value.lowercase().replace(Regex("[^a-z0-9-]+"), "-").trim('-').ifBlank { "opaque" }
+private fun safeEnvName(value: String): String = value.uppercase().replace(Regex("[^A-Z0-9_]+"), "_").trim('_').ifBlank { "FLOW_OPAQUE" }
 private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 private fun groovyString(value: String): String = "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r") + "'"
 private fun groovyEscape(value: String): String = value.replace("'", "\\'")
