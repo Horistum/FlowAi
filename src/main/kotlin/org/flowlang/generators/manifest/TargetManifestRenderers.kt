@@ -13,7 +13,7 @@ class JenkinsManifestRenderer {
         sb.appendLine("  options { timestamps() }")
         renderJenkinsParameters(manifest, sb)
         sb.appendLine("  stages {")
-        manifest.jobs.forEach { job -> renderJenkinsJob(job, sb) }
+        manifest.jobs.forEach { job -> renderJenkinsJob(job, manifest, sb) }
         sb.appendLine("  }")
         sb.appendLine("}")
         return sb.toString()
@@ -32,28 +32,70 @@ class JenkinsManifestRenderer {
         sb.appendLine("  }")
     }
 
-    private fun renderJenkinsJob(job: TargetJob, sb: StringBuilder) {
+    private fun renderJenkinsJob(job: TargetJob, manifest: TargetManifest, sb: StringBuilder) {
         sb.appendLine("    stage(${groovyString(job.name)}) {")
         sb.appendLine("      steps {")
         sb.appendLine("        script {")
         if (job.steps.isEmpty()) {
             sb.appendLine("          error(${groovyString("Flow job '${job.id}' has no materialized target steps.")})")
         } else {
-            job.steps.forEach { renderJenkinsStep(it, sb, "          ") }
+            job.steps.forEach { renderJenkinsStep(it, manifest, sb, "          ") }
         }
         sb.appendLine("        }")
         sb.appendLine("      }")
         sb.appendLine("    }")
     }
 
-    private fun renderJenkinsStep(step: TargetStep, sb: StringBuilder, indent: String) {
+    private fun renderJenkinsStep(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
         step.mappingNotes.forEach { note -> sb.appendLine("${indent}// Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}") }
+        renderJenkinsParamDiagnostics(step, sb, indent)
+        when (step.type) {
+            "try" -> renderJenkinsTry(step, manifest, sb, indent)
+            "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry" ->
+                step.children.forEach { renderJenkinsStep(it, manifest, sb, indent) }
+            "condition" -> renderJenkinsCondition(step, manifest, sb, indent)
+            "approval" -> sb.appendLine("${indent}input message: ${groovyString(step.params["message"] ?: "Approval required")}")
+            else -> renderJenkinsLeaf(step, sb, indent)
+        }
+    }
+
+    private fun renderJenkinsTry(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        val body = step.children.firstOrNull { it.type == "try-body" }
+        val handler = step.children.firstOrNull { it.type == "error-handler" }
+        sb.appendLine("${indent}try {")
+        body?.children.orEmpty().forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+        sb.appendLine("${indent}} catch (flowError) {")
+        handler?.children.orEmpty().forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+        sb.appendLine("${indent}}")
+    }
+
+    private fun renderJenkinsCondition(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        val condition = step.params["condition"] ?: "false"
+        val rendered = try {
+            TargetExpressionTranslator.groovy(condition, manifest.inputs)
+        } catch (e: TargetExpressionTranslationException) {
+            sb.appendLine("${indent}// Flow condition requires target review: ${e.message}")
+            "false"
+        }
+        sb.appendLine("${indent}if ($rendered) {")
+        step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+        sb.appendLine("${indent}}")
+    }
+
+    private fun renderJenkinsLeaf(step: TargetStep, sb: StringBuilder, indent: String) {
         when {
-            step.children.isNotEmpty() -> step.children.forEach { renderJenkinsStep(it, sb, indent) }
-            step.type == "approval" -> sb.appendLine("${indent}input message: ${groovyString(step.params["message"] ?: "Approval required")}")
             step.materialization.status in setOf(TargetMaterializationStatus.NATIVE, TargetMaterializationStatus.NOTES_PROJECTED) ->
                 sb.appendLine("${indent}// Flow step '${step.id}' is materialized by target notes: ${step.materialization.capability}")
             else -> sb.appendLine("${indent}error(${groovyString("Flow step '${step.id}' is not materialized: ${step.materialization.status} ${step.materialization.reason}")})")
+        }
+    }
+
+    private fun renderJenkinsParamDiagnostics(step: TargetStep, sb: StringBuilder, indent: String) {
+        step.params.forEach { (key, value) ->
+            sb.appendLine("${indent}// Flow param ${key}: ${value.replace("\n", " ")}")
+            secretRefs(value).forEach { secret ->
+                sb.appendLine("${indent}// secret requirement: param ${key} uses env.${secret} via withCredentials([string(credentialsId: '${groovyEscape(secret)}', variable: '${groovyEscape(secret)}')])")
+            }
         }
     }
 }
@@ -101,8 +143,19 @@ class GitHubActionsManifestRenderer {
         if (job.metadata["approval"] == "true") sb.appendLine("    environment: production")
         sb.appendLine("    steps: []")
         job.steps.flatMap { it.flatten() }.forEach { step ->
+            renderGithubStepDiagnostics(step, sb)
             sb.appendLine("    # Flow step ${sanitizeId(step.id)} materialization=${step.materialization.status} capability=${step.materialization.capability}")
             sb.appendLine("    # reason: ${step.materialization.reason.replace("\n", " ")}")
+        }
+    }
+
+    private fun renderGithubStepDiagnostics(step: TargetStep, sb: StringBuilder) {
+        step.params.forEach { (key, value) ->
+            val rendered = renderSecretForGithub(value)
+            sb.appendLine("    # Flow param ${key}: ${rendered.replace("\n", " ")}")
+            secretRefs(value).forEach { secret ->
+                sb.appendLine("    # secret requirement: param ${key} uses secrets.${secret}")
+            }
         }
     }
 
@@ -165,10 +218,33 @@ class TektonManifestRenderer {
         sb.appendLine("        - name: materialization-status")
         sb.appendLine("          value: ${yamlScalar(materializedSteps.map { it.materialization.status.name }.distinct().joinToString(","))}")
         materializedSteps.forEach { step ->
+            renderTektonStepDiagnostics(step, sb)
             sb.appendLine("      # Flow step ${sanitizeId(step.id)} materialization=${step.materialization.status} capability=${step.materialization.capability}")
             sb.appendLine("      # reason: ${step.materialization.reason.replace("\n", " ")}")
         }
     }
+
+    private fun renderTektonStepDiagnostics(step: TargetStep, sb: StringBuilder) {
+        step.params.forEach { (key, value) ->
+            sb.appendLine("      # Flow param ${key}: ${value.replace("\n", " ")}")
+            secretRefs(value).forEach { secret ->
+                sb.appendLine("      # secretKeyRef requirement: param ${key} uses secret ${secret} through secretKeyRef name=${sanitizeId(secret)} key=value")
+            }
+        }
+    }
+}
+
+private val secretCallRegex = Regex("""secret\([\"']([^\"']+)[\"']\)""")
+private val secretRefRegex = Regex("""secret:([A-Za-z0-9_.-]+)""")
+
+private fun secretRefs(value: String): List<String> =
+    secretCallRegex.findAll(value).map { it.groupValues[1] }.toList() +
+        secretRefRegex.findAll(value).map { it.groupValues[1] }.toList()
+
+private fun renderSecretForGithub(value: String): String = secretRefs(value).fold(value) { acc, secret ->
+    acc.replace("secret(\"$secret\")", "secrets.$secret")
+        .replace("secret('$secret')", "secrets.$secret")
+        .replace("secret:$secret", "secrets.$secret")
 }
 
 private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
