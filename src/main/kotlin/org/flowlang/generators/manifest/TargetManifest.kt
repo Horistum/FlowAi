@@ -285,10 +285,10 @@ internal fun PlanNode.toTargetSteps(targetName: String = "notes-driven"): List<T
         materialization = TargetMaterialization.native("approval.require", "Approval is represented as a target-native review boundary when the target supports it."),
         metadata = mapOf("sourceNodeKind" to kind, "resultName" to (resultName ?: "")).filterValues { it.isNotBlank() }
     ))
-    is DataOpNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("target" to (target ?: ""), "detail" to (detail ?: "")).filterValues { it.isNotBlank() }, mappingNotes = listOf(
+    is DataOpNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("target" to (target ?: ""), "detail" to (detail ?: "")).filterValues { it.isNotBlank() }.mapValues { (_, value) -> normalizeTargetParam(value) }, mappingNotes = listOf(
         TargetMappingNote("warning", "all", id, "dataop.not-materialised", "Flow ${kind.lowercase()} is a Flow-layer data operation and is not materialised by this projection; downstream steps must not depend on its result at runtime without notes-driven materialization.")
     ), materialization = TargetMaterialization.semanticOnly("Flow-layer data operation is not materialized as target execution.", "data.${kind.lowercase()}"), metadata = mapOf("sourceNodeKind" to kind)))
-    is ControlNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("detail" to (detail ?: "")).filterValues { it.isNotBlank() }, materialization = TargetMaterialization.semanticOnly("Control node is represented structurally and has no executable command."), metadata = mapOf("sourceNodeKind" to kind)))
+    is ControlNode -> listOf(TargetStep(id = sanitizeId(id), name = id, type = kind.lowercase(), params = mapOf("detail" to (detail ?: "")).filterValues { it.isNotBlank() }.mapValues { (_, value) -> normalizeTargetParam(value) }, materialization = TargetMaterialization.semanticOnly("Control node is represented structurally and has no executable command."), metadata = mapOf("sourceNodeKind" to kind)))
 }
 
 private fun PlanNode.toTargetJobs(out: MutableList<TargetJob>, condition: String?, targetName: String) {
@@ -339,7 +339,7 @@ private fun TaskNode.toTargetStep(targetName: String = "notes-driven"): TargetSt
     target = target,
     materialization = materializationFor(this),
     dependsOn = dependsOn.map(::sanitizeId),
-    params = params,
+    params = params.mapValues { (_, value) -> normalizeTargetParam(value) },
     mappingNotes = materializationMappingNotes(this, targetName),
     metadata = mapOf(
         "sourceTask" to id,
@@ -390,6 +390,12 @@ private fun emptyProjectionStep(flowName: String): TargetStep = TargetStep(
 private fun combineConditions(a: String?, b: String): String = if (a.isNullOrBlank()) b else "($a) and ($b)"
 
 private fun mapOfNotNull(vararg pairs: Pair<String, String?>): Map<String, String> = pairs.mapNotNull { (k, v) -> v?.takeIf { it.isNotBlank() }?.let { k to v } }.toMap()
+
+private fun normalizeTargetParam(value: String): String {
+    val unquoted = unquote(value)
+    val exactInterpolation = Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)}""").matchEntire(unquoted)
+    return exactInterpolation?.groupValues?.get(1) ?: unquoted
+}
 
 internal fun sanitizeId(value: String): String = value.lowercase().replace(Regex("[^a-z0-9_-]+"), "-").trim('-').ifBlank { "flow-job" }
 
