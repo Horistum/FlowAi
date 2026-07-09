@@ -39,12 +39,13 @@ class FlowSemanticCorrectnessHardeningTests {
         val ast = IntentToAstPlanner(registry).plan(intent)
         val plan = FlowPlanner(registry).plan(ast)
         val manifest = JenkinsManifestGenerator().generate(plan, CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED))
-        val run = manifest.jobs.flatMap { it.steps }.single { it.module == "kubernetes" && it.action == "deploy" }.run.orEmpty()
+        val deploy = manifest.jobs.flatMap { it.steps }.single { it.module == "kubernetes" && it.action == "deploy" }
 
-        assertTrue(run.contains("deployment/'build-test-deploy'"), run)
-        assertFalse(run.contains("deployment/'app'"), run)
-        assertTrue(run.contains("-n \"\$FLOW_ENVIRONMENT\""), run)
-        assertTrue(run.contains("'build-test-deploy:'\"\$FLOW_VERSION\""), run)
+        assertTrue(deploy.run == null, "Flow Core must not emit target command projection for kubernetes.deploy: ${deploy.run}")
+        assertEquals("build-test-deploy", deploy.params["app"])
+        assertEquals("environment", deploy.params["namespace"])
+        assertEquals("build-test-deploy:\${version}", deploy.params["image"])
+        assertFalse(deploy.params.values.any { it.contains("deployment/'app'") }, deploy.params.toString())
     }
 
     @Test

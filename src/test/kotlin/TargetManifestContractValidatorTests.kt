@@ -10,6 +10,7 @@ import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestContractValidator
 import org.flowlang.generators.manifest.TargetMappingNote
+import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.modules.ModuleRegistry
@@ -55,7 +56,7 @@ class TargetManifestContractValidatorTests {
                             module = "database",
                             action = "upsert",
                             target = "warehouse",
-                            run = "echo 'Flow executes database.upsert on warehouse'"
+                            materialization = TargetMaterialization.adapterRequired("database.upsert", "")
                         ),
                         TargetStep(
                             id = "same",
@@ -63,7 +64,7 @@ class TargetManifestContractValidatorTests {
                             module = "database",
                             action = "query",
                             target = "warehouse",
-                            run = "psql --set ON_ERROR_STOP=1 -c 'select 1'"
+                            materialization = TargetMaterialization.adapterRequired("database.query", "notes-driven materialization required")
                         )
                     )
                 )
@@ -77,7 +78,7 @@ class TargetManifestContractValidatorTests {
         assertTrue("MANIFEST_METADATA_MISSING" in codes, "required metadata must be validated: $codes")
         assertTrue("JOB_ID_INVALID" in codes, "job ids must be renderer-safe: $codes")
         assertTrue("STEP_ID_DUPLICATE" in codes, "duplicate step ids must be rejected: $codes")
-        assertTrue("ACTION_PLACEBO_COMMAND" in codes, "green placeholder action commands must be rejected: $codes")
+        assertTrue("ACTION_MATERIALIZATION_REASON_BLANK" in codes, "action materialization must explain its status: $codes")
     }
 
     @Test

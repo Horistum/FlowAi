@@ -11,6 +11,7 @@ import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetRendererContractValidator
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TektonManifestGenerator
@@ -70,27 +71,29 @@ class TargetRendererContractValidatorTests {
     @Test
     fun rendererRejectsManifestContractViolationsBeforeRendering() {
         val manifest = manifest("tekton")
-        val broken = manifest.copy(jobs = manifest.jobs.mapFirstAction { it.copy(run = null) })
+        val broken = manifest.copy(jobs = manifest.jobs.mapFirstAction { action ->
+            action.copy(materialization = TargetMaterialization.adapterRequired(action.materialization.capability, ""))
+        })
         val report = TargetRendererContractValidator.validate(broken, "tekton")
 
         assertFalse(report.valid, "renderer contract must include manifest contract failures")
-        assertTrue(report.issues.any { it.code == "MANIFEST_ACTION_RUN_BLANK" }, "missing action run must be explicit: ${report.issues}")
+        assertTrue(report.issues.any { it.code == "MANIFEST_ACTION_MATERIALIZATION_REASON_BLANK" }, "missing materialization reason must be explicit: ${report.issues}")
         val ex = assertFailsWith<IllegalArgumentException> { TektonManifestRenderer().render(broken) }
-        assertTrue(ex.message!!.contains("MANIFEST_ACTION_RUN_BLANK"))
+        assertTrue(ex.message!!.contains("MANIFEST_ACTION_MATERIALIZATION_REASON_BLANK"))
     }
 
     @Test
-    fun rendererRejectsAmbiguousStepWithRunAndChildren() {
+    fun rendererRejectsActionStepsWithNestedChildren() {
         val manifest = manifest("jenkins")
         val broken = manifest.copy(jobs = manifest.jobs.mapFirstAction { action ->
             action.copy(children = listOf(TargetStep(id = "nested", name = "nested", type = "skip", params = mapOf("detail" to "nested"))))
         })
         val report = TargetRendererContractValidator.validate(broken, "jenkins")
 
-        assertFalse(report.valid, "renderer contract must reject ambiguous run-plus-children steps")
-        assertTrue(report.issues.any { it.code == "STEP_RUN_AND_CHILDREN" }, "ambiguous step shape must be explicit: ${report.issues}")
+        assertFalse(report.valid, "renderer contract must reject action steps with nested children")
+        assertTrue(report.issues.any { it.code == "ACTION_CHILDREN_UNSUPPORTED" }, "ambiguous action shape must be explicit: ${report.issues}")
         val ex = assertFailsWith<IllegalArgumentException> { JenkinsManifestRenderer().render(broken) }
-        assertTrue(ex.message!!.contains("STEP_RUN_AND_CHILDREN"))
+        assertTrue(ex.message!!.contains("ACTION_CHILDREN_UNSUPPORTED"))
     }
 
     private fun manifest(target: String): TargetManifest {

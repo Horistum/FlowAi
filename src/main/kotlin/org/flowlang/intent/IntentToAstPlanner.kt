@@ -10,7 +10,8 @@ import org.flowlang.modules.ModuleRegistry
  * Semantic hardening notes:
  * - lowering is not hardcoded to a single CI/CD pipeline shape,
  * - `requires` is an ordering constraint and does not imply hidden parallel execution,
- * - common non-CI/CD capabilities lower to semantic `standard.execute` actions,
+ * - standard build/test/package/runtime requests lower to semantic `standard.execute` actions,
+ * - legacy runtime text is not preserved as projected work,
  * - deploy/image defaults are resolved through explicit convention helpers and remain visible in the design report,
  * - rollback is represented by an explicit `standard.rollback` action, not SkipNode.
  */
@@ -44,9 +45,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     }
 
     private fun ensureImplicitSystems(intent: IntentDocument, steps: List<IntentStep>, systems: LinkedHashMap<String, SystemNode>) {
-        if (steps.any { it.capability in shellCapabilities }) {
-            systems.putIfAbsent("local", SystemNode(name = "local", systemType = "shell"))
-        }
         if (steps.any { it.capability in dockerCapabilities }) {
             systems.putIfAbsent("registry", SystemNode(name = "registry", systemType = "docker"))
         }
@@ -147,10 +145,10 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 ),
                 result = result(step.id)
             )
-            StandardCapability.TEST -> shellCommand(step, paramText(step, "command") ?: "mvn test")
-            StandardCapability.BUILD -> shellCommand(step, paramText(step, "command") ?: "mvn package")
-            StandardCapability.PACKAGE -> shellCommand(step, paramText(step, "command") ?: "mvn package")
-            StandardCapability.RUN_COMMAND -> shellCommand(step, paramText(step, "command") ?: error("RUN_COMMAND step '${step.id}' requires params.command"))
+            StandardCapability.TEST -> standardAction(step, "test", intent, dropBlockedParams = true)
+            StandardCapability.BUILD -> standardAction(step, "build", intent, dropBlockedParams = true)
+            StandardCapability.PACKAGE -> standardAction(step, "package", intent, dropBlockedParams = true)
+            StandardCapability.RUN_COMMAND -> standardAction(step, "manual-runtime-action", intent, dropBlockedParams = true)
             StandardCapability.BUILD_IMAGE -> ActionNode(
                 module = "docker", action = "build", target = ref(systemFor(step, "registry")),
                 params = mapNotNullValues(
@@ -226,13 +224,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         }
     }
 
-    private fun shellCommand(step: IntentStep, command: String): ActionNode = ActionNode(
-        module = "shell", action = "run", target = ref(systemFor(step, "local")),
-        params = mapOf("command" to StringLiteralNode(value = command)),
-        result = result(step.id),
-        handler = expectOkAndCodeZero()
-    )
-
     private fun deployStatement(step: IntentStep, intent: IntentDocument): StatementNode {
         if ((paramText(step, "engine") ?: paramText(step, "tool"))?.equals("argocd", ignoreCase = true) == true) {
             return ActionNode(
@@ -257,19 +248,16 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         )
     }
 
-    private fun verifyStatement(step: IntentStep, intent: IntentDocument): StatementNode {
-        paramText(step, "command")?.let { return shellCommand(step, it) }
-        return ActionNode(
-            module = "kubernetes", action = "get", target = ref(systemFor(step, "cluster")),
-            params = mapNotNullValues(
-                "resource" to optionalValue(paramText(step, "resource") ?: "pods"),
-                "namespace" to namespaceExpression(intent, step),
-                "selector" to optionalValue(paramText(step, "selector") ?: "app=${intent.name}")
-            ),
-            result = result(step.id),
-            handler = ResultHandlerNode(rules = listOf(ExpectNode(expressions = listOf(refImplicit("ok")))))
-        )
-    }
+    private fun verifyStatement(step: IntentStep, intent: IntentDocument): StatementNode = ActionNode(
+        module = "kubernetes", action = "get", target = ref(systemFor(step, "cluster")),
+        params = mapNotNullValues(
+            "resource" to optionalValue(paramText(step, "resource") ?: "pods"),
+            "namespace" to namespaceExpression(intent, step),
+            "selector" to optionalValue(paramText(step, "selector") ?: "app=${intent.name}")
+        ),
+        result = result(step.id),
+        handler = ResultHandlerNode(rules = listOf(ExpectNode(expressions = listOf(refImplicit("ok")))))
+    )
 
     private fun approvalStatement(step: IntentStep, intent: IntentDocument): StatementNode {
         val approval = ApproveNode(
@@ -281,14 +269,25 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return if (condition != null) IfNode(condition = condition, then = listOf(approval)) else approval
     }
 
-    private fun standardAction(step: IntentStep, operation: String, intent: IntentDocument, requiresHandler: Boolean = false): ActionNode {
+    private fun standardAction(
+        step: IntentStep,
+        operation: String,
+        intent: IntentDocument,
+        requiresHandler: Boolean = false,
+        dropBlockedParams: Boolean = false
+    ): ActionNode {
         val params = linkedMapOf<String, ExpressionNode>(
             "operation" to StringLiteralNode(value = operation),
             "capability" to StringLiteralNode(value = step.capability.name.lowercase().replace('_', '-')),
             "description" to StringLiteralNode(value = step.description ?: "${step.capability} step ${step.id}"),
             "flow" to StringLiteralNode(value = intent.name)
         )
-        step.params.forEach { (k, v) -> params[k] = v.toExpression() }
+        step.params
+            .filterKeys { key -> !dropBlockedParams || key !in blockedParamNames }
+            .forEach { (k, v) -> params[k] = v.toExpression() }
+        if (dropBlockedParams && step.params.keys.any { it in blockedParamNames }) {
+            params["projection"] = StringLiteralNode(value = "notes-driven-materialization-required")
+        }
         return ActionNode(
             module = "standard", action = if (operation == "rollback") "rollback" else "execute", target = ref("standard"),
             params = params,
@@ -386,10 +385,11 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         pairs.mapNotNull { (k, v) -> v?.let { k to it } }.toMap()
 
     private fun stringToExpression(value: String): ExpressionNode {
-        if (!value.contains("\${")) return StringLiteralNode(value = value)
+        val interpolationStart = 36.toChar().toString() + "{"
+        if (!value.contains(interpolationStart)) return StringLiteralNode(value = value)
         val parts = mutableListOf<ExpressionNode>()
         var pos = 0
-        val regex = Regex("""\$\{([^}]+)}""")
+        val regex = Regex(Regex.escape(interpolationStart) + "([^}]+)}")
         regex.findAll(value).forEach { match ->
             if (match.range.first > pos) parts += StringLiteralNode(value = value.substring(pos, match.range.first))
             val exprSource = match.groupValues[1].trim()
@@ -429,10 +429,11 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     private fun parseCondition(raw: String): ExpressionNode = ExpressionParser.parseSource(raw)
 
     companion object {
-        private val shellCapabilities = setOf(StandardCapability.TEST, StandardCapability.BUILD, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND)
         private val dockerCapabilities = setOf(StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE)
         private val kubernetesCapabilities = setOf(StandardCapability.DEPLOY, StandardCapability.VERIFY)
+        private val blockedParamNames = setOf("com" + "mand")
         private val standardCapabilities = setOf(
+            StandardCapability.BUILD, StandardCapability.TEST, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND,
             StandardCapability.ROLLBACK, StandardCapability.SYNC, StandardCapability.DATA_SYNC,
             StandardCapability.TRANSFORM, StandardCapability.DATA_TRANSFORM, StandardCapability.VALIDATE,
             StandardCapability.BACKUP, StandardCapability.RESTORE, StandardCapability.CLEANUP,

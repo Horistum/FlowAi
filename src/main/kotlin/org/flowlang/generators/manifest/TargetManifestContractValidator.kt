@@ -3,11 +3,9 @@ package org.flowlang.generators.manifest
 /**
  * v0.9.0 Generator Projection Contract.
  *
- * The manifest is the only supported boundary between the platform-neutral ExecutionPlan and concrete
- * target renderers. Renderers may translate TargetManifest into Jenkins, GitHub Actions, Tekton, etc.,
- * but they must not silently invent planning semantics, hide unsupported work, or accept malformed
- * manifests. This validator checks the structural contract of that boundary without executing anything
- * and without introducing a target-specific public DSL.
+ * The manifest is the supported boundary between the platform-neutral ExecutionPlan and concrete
+ * target renderers. v0.9.5.x removes raw command strings from this boundary: action steps must carry
+ * structured materialization status and must not rely on command text as execution truth.
  */
 object TargetManifestContractValidator {
     private val idPattern = Regex("^[a-z0-9][a-z0-9_-]*$")
@@ -47,7 +45,7 @@ object TargetManifestContractValidator {
             validateId(job.id, "$path.id", "JOB_ID_INVALID", issues)
             if (!jobIds.add(job.id)) error("JOB_ID_DUPLICATE", "$path.id", "Job id '${job.id}' is duplicated in the manifest.")
             validateNotes(job.mappingNotes, "$path.mappingNotes", issues)
-            if (job.steps.isEmpty()) error("JOB_STEPS_EMPTY", "$path.steps", "A projected job must carry at least one step or an explicit placeholder job must be explained before rendering.")
+            if (job.steps.isEmpty()) error("JOB_STEPS_EMPTY", "$path.steps", "A projected job must carry at least one structural step or explicit blocked projection step before rendering.")
             job.steps.forEachIndexed { stepIndex, step -> validateStep(step, "$path.steps[$stepIndex]", stepIds, issues) }
         }
 
@@ -72,16 +70,17 @@ object TargetManifestContractValidator {
         if (!stepIds.add(step.id)) error("STEP_ID_DUPLICATE", "$path.id", "Step id '${step.id}' is duplicated in the manifest.")
         if (step.type.isBlank()) error("STEP_TYPE_BLANK", "$path.type", "TargetStep.type must be present.")
         validateNotes(step.mappingNotes, "$path.mappingNotes", issues)
+        if (step.run != null) {
+            error("ACTION_COMMAND_TEXT_UNSUPPORTED", "$path.run", "TargetStep.run is a legacy compatibility field and must not carry command text in Flow Core projection.")
+            if (step.run.contains("Flow executes")) error("ACTION_PLACEBO_COMMAND", "$path.run", "Action step must not use a green placeholder command that claims Flow executed work without materialization.")
+        }
 
         if (step.type == "action") {
             if (step.module.isNullOrBlank()) error("ACTION_MODULE_BLANK", "$path.module", "Action step must carry the source module.")
             if (step.action.isNullOrBlank()) error("ACTION_NAME_BLANK", "$path.action", "Action step must carry the source action.")
             if (step.target.isNullOrBlank()) error("ACTION_TARGET_BLANK", "$path.target", "Action step must carry the target system path.")
-            val run = step.run.orEmpty()
-            if (run.isBlank()) error("ACTION_RUN_BLANK", "$path.run", "Action step must carry the command or explicit failing diagnostic rendered by the manifest layer.")
-            if (run.contains("Flow executes")) {
-                error("ACTION_PLACEBO_COMMAND", "$path.run", "Action step must not use a green placeholder command that claims Flow executed work without a real mapping or failing diagnostic.")
-            }
+            if (step.materialization.capability.isBlank()) error("ACTION_MATERIALIZATION_CAPABILITY_BLANK", "$path.materialization.capability", "Action step must declare the semantic capability being materialized or blocked.")
+            if (step.materialization.reason.isBlank()) error("ACTION_MATERIALIZATION_REASON_BLANK", "$path.materialization.reason", "Action step must explain its materialization status.")
         }
 
         step.children.forEachIndexed { index, child -> validateStep(child, "$path.children[$index]", stepIds, issues) }
@@ -96,9 +95,7 @@ object TargetManifestContractValidator {
     private fun validateNotes(notes: List<TargetMappingNote>, path: String, issues: MutableList<TargetManifestContractIssue>) {
         notes.forEachIndexed { index, note ->
             val notePath = "$path[$index]"
-            if (note.level !in noteLevels) {
-                issues += TargetManifestContractIssue("error", "MAPPING_NOTE_LEVEL_INVALID", "$notePath.level", "Mapping note level must be one of ${noteLevels.joinToString()}.")
-            }
+            if (note.level !in noteLevels) issues += TargetManifestContractIssue("error", "MAPPING_NOTE_LEVEL_INVALID", "$notePath.level", "Mapping note level must be one of ${noteLevels.joinToString()}.")
             if (note.target.isBlank()) issues += TargetManifestContractIssue("error", "MAPPING_NOTE_TARGET_BLANK", "$notePath.target", "Mapping note target must be present.")
             if (note.nodeId.isBlank()) issues += TargetManifestContractIssue("error", "MAPPING_NOTE_NODE_BLANK", "$notePath.nodeId", "Mapping note nodeId must be present.")
             if (note.feature.isBlank()) issues += TargetManifestContractIssue("error", "MAPPING_NOTE_FEATURE_BLANK", "$notePath.feature", "Mapping note feature must be present.")

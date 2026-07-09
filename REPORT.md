@@ -4,6 +4,7 @@ Current package line: `0.9.4`
 Active public standard version: `0.7.6`
 Next expected package line: `0.9.5`
 First scoped correction item: `0.9.5.0`
+Current scoped correction item: `0.9.5.1`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -42,6 +43,12 @@ This is a correction track before any end-to-end readiness claim. Flow Core must
 
 The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until the `0.9.5.x` correction track is complete.
 
+## Current correction progress
+
+`0.9.5.1 Shell Usage Inventory and Prohibition` records the known command-oriented projection paths and classifies them as legacy defects scheduled for removal.
+
+The next scoped item is `0.9.5.2 CI/CD Bias Inventory`.
+
 ## Current validation source
 
 Release-specific validation details are kept in `.flow-agent/reports/`, `CHANGELOG.md`, and pull request CI history. This top-level report intentionally avoids hardcoded historical test counts because the test and conformance counts change as gates are added.
@@ -57,6 +64,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Active public standard version: `0.7.6`
 - Next expected package line: `0.9.5`
 - First scoped correction item: `0.9.5.0`
+- Current scoped correction item: `0.9.5.1`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
@@ -67,4 +75,4 @@ The v0.9.4 package line does not bump the public standard or artifact schema ver
 
 ## Architecture boundary
 
-No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced by the v0.9.4 reference scenario matrix package line.
+No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced by this inventory work.

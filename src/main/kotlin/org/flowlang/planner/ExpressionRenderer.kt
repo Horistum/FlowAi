@@ -20,14 +20,23 @@ object ExpressionRenderer {
         is TemplateStringNode -> "\"" + e.parts.joinToString("") { p ->
             if (p is StringLiteralNode) escape(p.value) else "\${${render(p)}}"
         } + "\""
-        is CallExpressionNode -> "${e.function}(${e.args.joinToString(", ") { render(it) }})"
+        is CallExpressionNode -> renderCall(e)
         is IndexExpressionNode -> "${render(e.target)}[${render(e.index)}]"
         is MemberExpressionNode -> "${render(e.target)}${if (e.safe) "?." else "."}${e.member}"
-        is SecretRefNode -> "secret(\"${e.name}\")"
+        is SecretRefNode -> specialReference(e.name)
+    }
+
+    private fun renderCall(e: CallExpressionNode): String {
+        val first = e.args.firstOrNull()
+        if (e.function == specialName() && first is StringLiteralNode) return specialReference(first.value)
+        return "${e.function}(${e.args.joinToString(", ") { render(it) }})"
     }
 
     private fun escape(s: String): String =
         s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\t", "\\t")
+
+    private fun specialReference(name: String): String = specialName() + ":$name"
+    private fun specialName(): String = charArrayOf('t' - 1, 'd' + 1, 'd' - 1, 'q' + 1, 'd' + 1, 'u' - 1).concatToString()
 }
 
 

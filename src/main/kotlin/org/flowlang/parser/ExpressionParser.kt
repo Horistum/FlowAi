@@ -117,6 +117,11 @@ class ExpressionParser(private val ts: TokenStream, private val scope: String = 
             "false" -> return BooleanLiteralNode(value = false)
             "null" -> return NullLiteralNode()
         }
+        // canonical sensitive reference form emitted by ExpressionRenderer: secret:NAME
+        if (first.text == "secret" && ts.match(TokenType.COLON)) {
+            val name = ts.expect(TokenType.IDENT, "secret name")
+            return SecretRefNode(name = name.text)
+        }
         // function call?
         if (ts.check(TokenType.LPAREN)) {
             val args = parseArgs()

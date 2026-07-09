@@ -34,6 +34,9 @@ jobs:
       - name: Prepare Gradle Wrapper
         run: chmod +x ./gradlew
 
+      - name: Prepare CI Log Directory
+        run: mkdir -p ci-logs
+
       - name: Validate Flow Agent Structure
         run: python3 tools/flow_agent_validate.py
 
@@ -47,28 +50,44 @@ jobs:
           fi
 
       - name: Run Offline Tests When Cache Is Available
+        shell: bash
         run: |
+          set -o pipefail
           if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon test --offline
+            ./gradlew --no-daemon test --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-test.log
+            exit ${PIPESTATUS[0]}
           else
-            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions."
+            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions." | tee ci-logs/offline-test.log
           fi
 
       - name: Run Offline Conformance When Cache Is Available
+        shell: bash
         run: |
+          set -o pipefail
           if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon run --args="conformance" --offline
+            ./gradlew --no-daemon run --args="conformance" --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-conformance.log
+            exit ${PIPESTATUS[0]}
           else
-            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions."
+            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions." | tee ci-logs/offline-conformance.log
           fi
+
       - name: Compile and Test
-        run: ./gradlew --no-daemon clean test --stacktrace --console=plain
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          exit ${PIPESTATUS[0]}
 
       - name: Run Conformance
-        run: ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-conformance.log
+          exit ${PIPESTATUS[0]}
 
       - name: Write CI Summary
         if: always()
+        shell: bash
         run: |
           echo "# Flow CI Result" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -79,5 +98,63 @@ jobs:
           echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline Gradle test when cache is available" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline Flow conformance when cache is available" >> "$GITHUB_STEP_SUMMARY"
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if compgen -G "build/test-results/test/*.xml" > /dev/null; then
+            echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import glob
+          import html
+          import xml.etree.ElementTree as ET
+          for path in sorted(glob.glob('build/test-results/test/*.xml')):
+              root = ET.parse(path).getroot()
+              for case in root.findall('testcase'):
+                  failure = case.find('failure') or case.find('error')
+                  if failure is None:
+                      continue
+                  cls = case.attrib.get('classname', '')
+                  name = case.attrib.get('name', '')
+                  message = failure.attrib.get('message', '')
+                  text = (failure.text or '').strip().splitlines()
+                  print(f"### {cls}.{name}")
+                  print("")
+                  print("```text")
+                  print(html.unescape(message)[:2000])
+                  for line in text[:12]:
+                      print(html.unescape(line)[:2000])
+                  print("```")
+                  print("")
+          PY
+          fi
+          for file in ci-logs/*.log; do
+            if [ -f "$file" ]; then
+              echo "## ${file}" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo '```text' >> "$GITHUB_STEP_SUMMARY"
+              tail -n 120 "$file" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+      - name: Upload CI Gradle Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-ci-gradle-logs
+          path: ci-logs/*.log
+          if-no-files-found: error
+
+      - name: Upload CI Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-ci-test-reports
+          path: |
+            build/test-results/test/*.xml
+            build/reports/tests/test/**
+          if-no-files-found: warn
