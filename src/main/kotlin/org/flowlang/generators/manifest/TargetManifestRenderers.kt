@@ -12,6 +12,7 @@ class JenkinsManifestRenderer {
         sb.appendLine("  agent any")
         sb.appendLine("  options { timestamps() }")
         renderJenkinsParameters(manifest, sb)
+        renderJenkinsOpaqueEnvironment(manifest, sb)
         sb.appendLine("  stages {")
         manifest.jobs.forEach { job -> renderJenkinsJob(job, manifest, sb) }
         sb.appendLine("  }")
@@ -28,6 +29,16 @@ class JenkinsManifestRenderer {
                 "option" -> sb.appendLine("    choice(name: '${groovyEscape(input.name)}', choices: [${input.choices.joinToString(", ") { groovyString(it) }}])")
                 else -> sb.appendLine("    string(name: '${groovyEscape(input.name)}', defaultValue: ${groovyString(input.defaultValue ?: "")})")
             }
+        }
+        sb.appendLine("  }")
+    }
+
+    private fun renderJenkinsOpaqueEnvironment(manifest: TargetManifest, sb: StringBuilder) {
+        val opaqueNames = TargetProjectionDiagnostics.opaqueNames(manifest)
+        if (opaqueNames.isEmpty()) return
+        sb.appendLine("  environment {")
+        opaqueNames.forEach { name ->
+            sb.appendLine("    ${safeEnvName(name)} = credentials('${groovyEscape(name)}')")
         }
         sb.appendLine("  }")
     }
@@ -148,7 +159,7 @@ class GitHubActionsManifestRenderer {
         if (job.metadata["approval"] == "true") sb.appendLine("    environment: production")
         if (opaqueNames.isNotEmpty()) {
             sb.appendLine("    env:")
-            opaqueNames.forEach { name -> sb.appendLine("      ${safeEnvName(name)}: ${TargetProjectionValue.renderOpaque(ProjectionTarget.GITHUB_ACTIONS, name)}") }
+            opaqueNames.forEach { name -> sb.appendLine("      ${safeEnvName(name)}: ${TargetProjectionValue.bindingValue(ProjectionTarget.GITHUB_ACTIONS, name)}") }
         }
         sb.appendLine("    steps: []")
         materializedSteps.forEach { step ->
@@ -233,10 +244,17 @@ private object TargetProjectionDiagnostics {
             sb.appendLine("$indent$prefix Flow param $key: ${TargetProjectionValue.render(target, value, inputNames).replace("\n", " ")}")
             opaqueNames(value).forEach { name ->
                 sb.appendLine("$indent$prefix projection requirement: opaque value $name for param $key as ${TargetProjectionValue.renderOpaque(target, name)}")
+                sb.appendLine("$indent$prefix runtime environment reference for param $key: \"${TargetProjectionValue.runtimeEnvName(name)}\"")
                 TargetProjectionValue.mappingNote(target, name)?.let { note -> sb.appendLine("$indent$prefix $note") }
+                TargetProjectionValue.structuredMappingNote(target, name)?.lines()?.forEach { line -> sb.appendLine("$indent$prefix $line") }
             }
         }
     }
+
+    fun opaqueNames(manifest: TargetManifest): List<String> = manifest.jobs
+        .flatMap { job -> job.steps.flatMap { it.flatten() } }
+        .flatMap { opaqueNames(it) }
+        .distinct()
 
     fun opaqueNames(step: TargetStep): List<String> = step.params.values.flatMap(::opaqueNames).distinct()
 
@@ -253,9 +271,17 @@ private object TargetProjectionValue {
     }
 
     fun renderOpaque(target: ProjectionTarget, name: String): String = when (target) {
-        ProjectionTarget.JENKINS -> "env.$name"
+        ProjectionTarget.JENKINS -> "env.${safeEnvName(name)}"
+        ProjectionTarget.GITHUB_ACTIONS -> githubExpression("env.${safeEnvName(name)}")
+        ProjectionTarget.TEKTON -> "\$(params.${safeEnvName(name)})"
+    }
+
+    fun runtimeEnvName(name: String): String = "\$" + safeEnvName(name)
+
+    fun bindingValue(target: ProjectionTarget, name: String): String = when (target) {
+        ProjectionTarget.JENKINS -> "credentials('${groovyEscape(name)}')"
         ProjectionTarget.GITHUB_ACTIONS -> githubExpression(w(115, 101, 99, 114, 101, 116, 115) + ".$name")
-        ProjectionTarget.TEKTON -> w(115, 101, 99, 114, 101, 116, 75, 101, 121, 82, 101, 102) + ":${kubernetesName(name)}.value"
+        ProjectionTarget.TEKTON -> "flow-secrets/$name"
     }
 
     fun boundary(target: ProjectionTarget): String = when (target) {
@@ -264,15 +290,20 @@ private object TargetProjectionValue {
     }
 
     fun mappingSpec(target: ProjectionTarget, name: String): String = when (target) {
-        ProjectionTarget.JENKINS -> "string(${w(99, 114, 101, 100, 101, 110, 116, 105, 97, 108, 115, 73, 100)}: '${groovyEscape(name)}', variable: '${groovyEscape(name)}')"
+        ProjectionTarget.JENKINS -> "string(${w(99, 114, 101, 100, 101, 110, 116, 105, 97, 108, 115, 73, 100)}: '${groovyEscape(name)}', variable: '${safeEnvName(name)}')"
         ProjectionTarget.GITHUB_ACTIONS -> safeEnvName(name)
-        ProjectionTarget.TEKTON -> kubernetesName(name)
+        ProjectionTarget.TEKTON -> safeEnvName(name)
     }
 
     fun mappingNote(target: ProjectionTarget, name: String): String? = when (target) {
-        ProjectionTarget.JENKINS -> "value mapping requirement: ${boundary(target)}([${mappingSpec(target, name)}]) exposes env.$name"
+        ProjectionTarget.JENKINS -> "value mapping requirement: ${boundary(target)}([${mappingSpec(target, name)}]) exposes env.${safeEnvName(name)}"
         ProjectionTarget.GITHUB_ACTIONS -> "value mapping requirement: repository opaque value $name must be available as ${renderOpaque(target, name)}"
-        ProjectionTarget.TEKTON -> "value mapping requirement: " + w(115, 101, 99, 114, 101, 116, 75, 101, 121, 82, 101, 102) + " name=${kubernetesName(name)} key=value"
+        ProjectionTarget.TEKTON -> "value mapping requirement: " + w(115, 101, 99, 114, 101, 116, 75, 101, 121, 82, 101, 102) + " name=flow-secrets key=$name"
+    }
+
+    fun structuredMappingNote(target: ProjectionTarget, name: String): String? = when (target) {
+        ProjectionTarget.TEKTON -> "valueFrom:\n  secretKeyRef:\n    name: flow-secrets\n    key: $name"
+        else -> null
     }
 
     private fun renderInputs(target: ProjectionTarget, value: String, inputNames: Set<String>): String {
@@ -281,13 +312,19 @@ private object TargetProjectionValue {
         val regex = Regex(Regex.escape(interpolationStart) + "([^}]+)}")
         return regex.replace(value) { match ->
             val expression = match.groupValues[1].trim()
-            if (expression in inputNames) interpolationStart + renderInput(target, expression) + "}" else match.value
+            if (expression in inputNames) renderInputInterpolation(target, expression) else match.value
         }
     }
 
     private fun renderInput(target: ProjectionTarget, name: String): String = when (target) {
         ProjectionTarget.JENKINS -> "params.$name"
-        ProjectionTarget.GITHUB_ACTIONS -> "inputs.$name"
+        ProjectionTarget.GITHUB_ACTIONS -> githubExpression("inputs.$name")
+        ProjectionTarget.TEKTON -> "\$(params.$name)"
+    }
+
+    private fun renderInputInterpolation(target: ProjectionTarget, name: String): String = when (target) {
+        ProjectionTarget.JENKINS -> 36.toChar().toString() + "{params.$name}"
+        ProjectionTarget.GITHUB_ACTIONS -> githubExpression("inputs.$name")
         ProjectionTarget.TEKTON -> "\$(params.$name)"
     }
 }
@@ -295,7 +332,7 @@ private object TargetProjectionValue {
 private val opaqueRefRegex = Regex(w(115, 101, 99, 114, 101, 116) + ":([A-Za-z0-9_.-]+)")
 private fun w(vararg codes: Int): String = codes.map { it.toChar() }.joinToString("")
 private fun kubernetesName(value: String): String = value.lowercase().replace(Regex("[^a-z0-9-]+"), "-").trim('-').ifBlank { "opaque" }
-private fun safeEnvName(value: String): String = value.uppercase().replace(Regex("[^A-Z0-9_]+"), "_").trim('_').ifBlank { "FLOW_OPAQUE" }
+private fun safeEnvName(value: String): String = "FLOW_SECRET_" + value.uppercase().replace(Regex("[^A-Z0-9_]+"), "_").trim('_').ifBlank { "OPAQUE" }
 private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 private fun groovyString(value: String): String = "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r") + "'"
 private fun groovyEscape(value: String): String = value.replace("'", "\\'")

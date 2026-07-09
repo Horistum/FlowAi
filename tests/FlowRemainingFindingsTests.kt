@@ -40,9 +40,11 @@ class FlowRemainingFindingsTests {
         assertTrue(FlowValidator(registry).validate(ast).valid)
         val plan = FlowPlanner(registry).plan(ast)
         val manifest = JenkinsManifestGenerator().generate(plan, CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED))
-        val notifyRun = manifest.jobs.flatMap { it.steps }.flatMap { flatten(it) }.mapNotNull { it.run }.single { it.contains("mail -s") }
-        assertTrue(notifyRun.contains(">&2") && notifyRun.contains("exit 1"), "notify failure must surface on stderr and be non-zero: $notifyRun")
-        assertFalse(notifyRun.contains("|| echo "), "notify failure must not be masked by '|| echo': $notifyRun")
+        val notifyStep = manifest.jobs.flatMap { it.steps }.flatMap { flatten(it) }.single { it.module == "notify" && it.action == "send" }
+        assertTrue(notifyStep.run == null, "notify.send must not be lowered into a shell mail command: ${notifyStep.run}")
+        assertTrue(notifyStep.materialization.status.name == "ADAPTER_REQUIRED", notifyStep.toString())
+        assertTrue(notifyStep.materialization.reason.contains("notes-driven target projection"), notifyStep.materialization.reason)
+        assertFalse(notifyStep.params.values.any { it.contains("|| echo ") }, "notify failure masking must not survive as a projected command: ${notifyStep.params}")
     }
 
     @Test
