@@ -209,7 +209,7 @@ class TargetRegistryHonestyValidator {
 
     companion object {
         private val REGISTRY_ID = Regex("[a-z][a-z0-9]*(\\.[a-z][a-z0-9-]*)*")
-        private val TARGET_ID = Regex("[a-z][a-z0-9]*(\\.[a-z][a-z0-9-]*)*")
+        private val TARGET_ID = Regex("[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*")
         private val EXECUTION_CLAIM_EVIDENCE = setOf(
             TargetRegistryEvidenceKind.IMPLEMENTATION,
             TargetRegistryEvidenceKind.PROJECTION_PLAN,
