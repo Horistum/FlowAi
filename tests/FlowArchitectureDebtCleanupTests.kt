@@ -78,7 +78,7 @@ class FlowArchitectureDebtCleanupTests {
                 package org.flowlang.example
 
                 class BadRuntimeDirection {
-                    val executor = "WorkflowExecutor"
+                    val executor = WorkflowExecutor()
                 }
                 """.trimIndent()
             )
