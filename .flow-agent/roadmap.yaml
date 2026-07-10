@@ -204,13 +204,17 @@ roadmap:
     name: "No-Shell Target Projection"
     purpose: "Remove shell as the default target projection strategy and require target artifacts to come from target/projection notes."
     type: "projection-correction"
-    status: "next"
-    requiredOutcome: ["Target projections are target-native or notes-projected."]
+    status: "completed"
+    requiredOutcome:
+      - "Added a TargetProjectionPlan contract."
+      - "Required one projection artifact record per materialization decision."
+      - "Rejected shell, command and script vocabulary as projection representation."
+      - "Kept unavailable and adapter-required decisions out of target-native artifacts."
   - version: "0.9.5.7"
     name: "Target Registry Honesty"
     purpose: "Separate declared targets from implemented, tested and production-supported targets."
     type: "registry-honesty"
-    status: "planned"
+    status: "next"
     requiredOutcome: ["Add implemented, declared-only, experimental, deprecated and blocked target statuses."]
   - version: "0.9.5.8"
     name: "Policy-Driven Safety and Environment Classification"
