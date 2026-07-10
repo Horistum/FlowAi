@@ -86,7 +86,7 @@ class ManifestHonestyTests {
     }
 
     @Test
-    fun rollbackIsSemanticOnlyUntilNotesDeclareMaterialization() {
+    fun rollbackIsNotesProjectedOnlyAfterConnectedMaterializationEvidenceExists() {
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
         val ast = IntentToAstPlanner(registry).plan(intent)
         val plan = FlowPlanner(registry).plan(ast)
@@ -94,7 +94,8 @@ class ManifestHonestyTests {
         val steps = allSteps(JenkinsManifestGenerator().generate(plan, compatibility))
         val rollback = steps.firstOrNull { it.module == "standard" && it.action == "rollback" }
         assertNotNull(rollback, "build-test-deploy must contain the standard.rollback step")
-        assertTrue(rollback.materialization.status == TargetMaterializationStatus.SEMANTIC_ONLY, "rollback must stay semantic-only without notes-driven materialization: ${rollback.materialization}")
-        assertTrue(rollback.mappingNotes.any { it.feature == "materialization.semantic-only" }, "rollback must carry a semantic-only materialization note; got ${rollback.mappingNotes}")
+        assertTrue(rollback.materialization.status == TargetMaterializationStatus.NOTES_PROJECTED, "rollback must use connected notes-backed materialization evidence: ${rollback.materialization}")
+        assertTrue(rollback.mappingNotes.any { it.feature == "materialization.notes-projected" }, "rollback must carry a notes-projected materialization note; got ${rollback.mappingNotes}")
+        assertNotNull(rollback.materialization.requirements["projectionPlan"], "rollback must cite the projection plan created by materialization resolver")
     }
 }

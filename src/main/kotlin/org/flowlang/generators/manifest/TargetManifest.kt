@@ -330,55 +330,37 @@ private fun PlanNode.toTargetJobs(out: MutableList<TargetJob>, condition: String
     }
 }
 
-private fun TaskNode.toTargetStep(targetName: String = "notes-driven"): TargetStep = TargetStep(
-    id = sanitizeId(id),
-    name = id,
-    type = "action",
-    module = module,
-    action = action,
-    target = target,
-    materialization = materializationFor(this),
-    dependsOn = dependsOn.map(::sanitizeId),
-    params = params.mapValues { (_, value) -> normalizeTargetParam(value) },
-    mappingNotes = materializationMappingNotes(this, targetName),
-    metadata = mapOf(
-        "sourceTask" to id,
-        "sourceNodeKind" to kind,
-        "resultName" to (resultName ?: ""),
-        "destructive" to destructive.toString(),
-        "safety" to (safety ?: "")
-    ).filterValues { it.isNotBlank() }
+private fun TaskNode.toTargetStep(targetName: String = "notes-driven"): TargetStep {
+    val resolution = TargetMaterializationResolver.resolve(this, targetName)
+    return TargetStep(
+        id = sanitizeId(id),
+        name = id,
+        type = "action",
+        module = module,
+        action = action,
+        target = target,
+        materialization = resolution.materialization,
+        dependsOn = dependsOn.map(::sanitizeId),
+        params = params.mapValues { (_, value) -> normalizeTargetParam(value) },
+        mappingNotes = listOf(resolution.mappingNote(targetName, id)),
+        metadata = (mapOf(
+            "sourceTask" to id,
+            "sourceNodeKind" to kind,
+            "resultName" to (resultName ?: ""),
+            "destructive" to destructive.toString(),
+            "safety" to (safety ?: "")
+        ).filterValues { it.isNotBlank() } + materializationMetadata(resolution))
+    )
+}
+
+private fun materializationMetadata(resolution: TargetMaterializationResolution): Map<String, String> = mapOf(
+    "semanticGraph" to resolution.semanticGraph.graphId,
+    "semanticNode" to resolution.negotiation.decisions.single().nodeId,
+    "materializationNegotiation" to resolution.negotiation.negotiationId,
+    "projectionPlan" to resolution.projectionPlan.planId,
+    "projectionArtifact" to resolution.artifact.artifactId,
+    "projectionArtifactKind" to resolution.artifact.kind.name
 )
-
-private fun materializationFor(task: TaskNode): TargetMaterialization {
-    val capability = listOfNotNull(task.module, task.action).joinToString(".").ifBlank { "flow.action" }
-    return when (task.module to task.action) {
-        "shell" to "run" -> TargetMaterialization.blocked(capability, "Raw command execution is removed from Flow Core projection. Use notes-driven capability materialization instead.")
-        "standard" to "execute" -> TargetMaterialization.semanticOnly(capability = capability, reason = "Standard capability is semantic-only until a notes package declares materialization.")
-        "standard" to "rollback" -> TargetMaterialization.semanticOnly(capability = capability, reason = "Rollback intent is semantic-only until target rollback materialization is declared through notes.")
-        else -> TargetMaterialization.adapterRequired(capability, "No core command is generated. This action requires notes-driven target projection before it can be treated as executable.")
-    }
-}
-
-private fun materializationMappingNotes(task: TaskNode, targetName: String): List<TargetMappingNote> {
-    val materialization = materializationFor(task)
-    val level = when (materialization.status) {
-        TargetMaterializationStatus.NATIVE,
-        TargetMaterializationStatus.NOTES_PROJECTED -> "info"
-        TargetMaterializationStatus.ADAPTER_REQUIRED,
-        TargetMaterializationStatus.DECLARATIVE_ONLY,
-        TargetMaterializationStatus.SEMANTIC_ONLY -> "warning"
-        TargetMaterializationStatus.UNSUPPORTED,
-        TargetMaterializationStatus.BLOCKED -> "error"
-    }
-    val feature = when (materialization.status) {
-        TargetMaterializationStatus.BLOCKED -> "materialization.blocked"
-        TargetMaterializationStatus.SEMANTIC_ONLY -> "materialization.semantic-only"
-        TargetMaterializationStatus.ADAPTER_REQUIRED -> "materialization.adapter-required"
-        else -> "materialization.${materialization.status.name.lowercase().replace('_', '-')}"
-    }
-    return listOf(TargetMappingNote(level, targetName, task.id, feature, materialization.reason))
-}
 
 private fun emptyProjectionStep(flowName: String): TargetStep = TargetStep(
     id = sanitizeId("${flowName}_projection"),

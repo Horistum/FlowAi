@@ -13,45 +13,45 @@ pipeline {
       steps {
         script {
           try {
-            // Flow mapping note [warning] materialization.adapter-required git_checkout_1: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+            // Flow mapping note [warning] materialization.adapter-required git_checkout_1: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
             // Flow param branch: main
-            error('Flow step \'git_checkout_1\' is not materialized: ADAPTER_REQUIRED No core command is generated. This action requires notes-driven target projection before it can be treated as executable.')
-            // Flow mapping note [warning] materialization.semantic-only standard_execute_1: Standard capability is semantic-only until a notes package declares materialization.
+            error('Flow step \'git_checkout_1\' is not materialized: ADAPTER_REQUIRED Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.')
+            // Flow mapping note [info] materialization.notes-projected standard_execute_1: Standard execution is declared as notes-backed semantic work and may advance to projection review.
             // Flow param operation: test
             // Flow param capability: test
             // Flow param description: TEST step test
             // Flow param flow: build-test-deploy
-            error('Flow step \'standard_execute_1\' is not materialized: SEMANTIC_ONLY Standard capability is semantic-only until a notes package declares materialization.')
-            // Flow mapping note [warning] materialization.adapter-required docker_build_1: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+            // Flow step 'standard_execute_1' is materialized by target notes: standard.execute
+            // Flow mapping note [warning] materialization.adapter-required docker_build_1: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
             // Flow param image: build-test-deploy:${params.version}
             // Flow param path: .
-            error('Flow step \'docker_build_1\' is not materialized: ADAPTER_REQUIRED No core command is generated. This action requires notes-driven target projection before it can be treated as executable.')
+            error('Flow step \'docker_build_1\' is not materialized: ADAPTER_REQUIRED Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.')
             // Flow param condition: environment == "prod"
             if ((params.environment == 'prod')) {
               // Flow param mode: manual
               // Flow param message: Production deployment requires approval.
               input message: 'Production deployment requires approval.'
             }
-            // Flow mapping note [warning] materialization.adapter-required kubernetes_deploy_1: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+            // Flow mapping note [warning] materialization.adapter-required kubernetes_deploy_1: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
             // Flow param app: build-test-deploy
             // Flow param namespace: params.environment
             // Flow param image: build-test-deploy:${params.version}
-            error('Flow step \'kubernetes_deploy_1\' is not materialized: ADAPTER_REQUIRED No core command is generated. This action requires notes-driven target projection before it can be treated as executable.')
-            // Flow mapping note [warning] materialization.adapter-required kubernetes_get_1: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+            error('Flow step \'kubernetes_deploy_1\' is not materialized: ADAPTER_REQUIRED Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.')
+            // Flow mapping note [warning] materialization.adapter-required kubernetes_get_1: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
             // Flow param resource: pods
             // Flow param namespace: params.environment
             // Flow param selector: app=build-test-deploy
-            error('Flow step \'kubernetes_get_1\' is not materialized: ADAPTER_REQUIRED No core command is generated. This action requires notes-driven target projection before it can be treated as executable.')
+            error('Flow step \'kubernetes_get_1\' is not materialized: ADAPTER_REQUIRED Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.')
           } catch (flowError) {
-            // Flow mapping note [warning] materialization.semantic-only standard_rollback_1: Rollback intent is semantic-only until target rollback materialization is declared through notes.
+            // Flow mapping note [info] materialization.notes-projected standard_rollback_1: Rollback intent is preserved as notes-backed semantic work and may advance to projection review.
             // Flow param operation: rollback
             // Flow param reason: error?.message
             // Flow param flow: build-test-deploy
-            error('Flow step \'standard_rollback_1\' is not materialized: SEMANTIC_ONLY Rollback intent is semantic-only until target rollback materialization is declared through notes.')
-            // Flow mapping note [warning] materialization.adapter-required notify_send_1: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+            // Flow step 'standard_rollback_1' is materialized by target notes: standard.rollback
+            // Flow mapping note [warning] materialization.adapter-required notify_send_1: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
             // Flow param subject: Flow failed: build-test-deploy
             // Flow param body: error?.message
-            error('Flow step \'notify_send_1\' is not materialized: ADAPTER_REQUIRED No core command is generated. This action requires notes-driven target projection before it can be treated as executable.')
+            error('Flow step \'notify_send_1\' is not materialized: ADAPTER_REQUIRED Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.')
           }
         }
       }

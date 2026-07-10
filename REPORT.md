@@ -4,7 +4,7 @@ Current package line: `0.9.4`
 Active public standard version: `0.7.6`
 Next expected package line: `0.9.5`
 First scoped correction item: `0.9.5.0`
-Current scoped correction item: `0.9.5.7`
+Current scoped correction item: `0.9.5.7.1`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -59,7 +59,9 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.7 Target Registry Honesty` separates declared, experimental, implemented, tested, production-supported, deprecated and blocked target states so target names cannot imply support by default.
 
-The next scoped item is `0.9.5.8 Policy-Driven Safety and Environment Classification`.
+`0.9.5.7.1 Connect Materialization Pipeline` starts the repair subtrack by wiring real execution-plan tasks into semantic graph, materialization negotiation and projection artifact evidence before target manifest emission.
+
+The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml` and continues through `0.9.5.7.9` before the project resumes the broader `0.9.5.8` safety-policy step.
 
 ## Current validation source
 
@@ -76,7 +78,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Active public standard version: `0.7.6`
 - Next expected package line: `0.9.5`
 - First scoped correction item: `0.9.5.0`
-- Current scoped correction item: `0.9.5.7`
+- Current scoped correction item: `0.9.5.7.1`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
@@ -87,4 +89,4 @@ The v0.9.4 package line does not bump the public standard or artifact schema ver
 
 ## Architecture boundary
 
-v0.9.5.7 is a registry honesty model. It records target support state and evidence before later safety and environment policy work.
+v0.9.5.7.1 is a wiring repair. It connects existing notes, semantic, materialization and projection contract models to manifest task materialization without claiming broad executable target readiness.

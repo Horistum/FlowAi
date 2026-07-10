@@ -30,7 +30,7 @@ jobs:
     steps: []
     # Flow param branch: main
     # Flow step git_checkout_1 materialization=ADAPTER_REQUIRED capability=git.checkout
-    # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+    # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
   standard_execute_1:
     name: "standard_execute_1"
     runs-on: ubuntu-latest
@@ -41,8 +41,8 @@ jobs:
     # Flow param capability: test
     # Flow param description: TEST step test
     # Flow param flow: build-test-deploy
-    # Flow step standard_execute_1 materialization=SEMANTIC_ONLY capability=standard.execute
-    # reason: Standard capability is semantic-only until a notes package declares materialization.
+    # Flow step standard_execute_1 materialization=NOTES_PROJECTED capability=standard.execute
+    # reason: Standard execution is declared as notes-backed semantic work and may advance to projection review.
   docker_build_1:
     name: "docker_build_1"
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
     # Flow param image: build-test-deploy:${{ inputs.version }}
     # Flow param path: .
     # Flow step docker_build_1 materialization=ADAPTER_REQUIRED capability=docker.build
-    # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+    # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
   approve_1:
     name: "approve_1"
     runs-on: ubuntu-latest
@@ -74,7 +74,7 @@ jobs:
     # Flow param namespace: ${{ inputs.environment }}
     # Flow param image: build-test-deploy:${{ inputs.version }}
     # Flow step kubernetes_deploy_1 materialization=ADAPTER_REQUIRED capability=kubernetes.deploy
-    # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+    # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
   kubernetes_get_1:
     name: "kubernetes_get_1"
     runs-on: ubuntu-latest
@@ -85,7 +85,7 @@ jobs:
     # Flow param namespace: ${{ inputs.environment }}
     # Flow param selector: app=build-test-deploy
     # Flow step kubernetes_get_1 materialization=ADAPTER_REQUIRED capability=kubernetes.get
-    # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+    # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
   standard_rollback_1:
     name: "standard_rollback_1"
     runs-on: ubuntu-latest
@@ -95,8 +95,8 @@ jobs:
     # Flow param operation: rollback
     # Flow param reason: error?.message
     # Flow param flow: build-test-deploy
-    # Flow step standard_rollback_1 materialization=SEMANTIC_ONLY capability=standard.rollback
-    # reason: Rollback intent is semantic-only until target rollback materialization is declared through notes.
+    # Flow step standard_rollback_1 materialization=NOTES_PROJECTED capability=standard.rollback
+    # reason: Rollback intent is preserved as notes-backed semantic work and may advance to projection review.
   notify_send_1:
     name: "notify_send_1"
     runs-on: ubuntu-latest
@@ -106,4 +106,4 @@ jobs:
     # Flow param subject: Flow failed: build-test-deploy
     # Flow param body: error?.message
     # Flow step notify_send_1 materialization=ADAPTER_REQUIRED capability=notify.send
-    # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+    # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
