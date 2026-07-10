@@ -1,8 +1,8 @@
 package org.flowlang.intent
 
 import org.flowlang.ast.*
-import org.flowlang.parser.ExpressionParser
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.parser.ExpressionParser
 
 /**
  * Lowers the high-level Standard Intent Model into canonical Flow AST.
@@ -110,7 +110,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         val ordered = mutableListOf<IntentStep>()
         while (remaining.isNotEmpty()) {
             val ready = remaining.values
-                .filter { it.requires.all { r -> r in completed } }
+                .filter { it.requires.all { requirement -> requirement in completed } }
                 .minByOrNull { orderIndex[it.id] ?: Int.MAX_VALUE }
                 ?: error(
                     "Internal planner invariant: unresolved or cyclic step dependencies must be rejected by " +
@@ -284,7 +284,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         )
         step.params
             .filterKeys { key -> !dropBlockedParams || key !in blockedParamNames }
-            .forEach { (k, v) -> params[k] = v.toExpression() }
+            .forEach { (key, value) -> params[key] = value.toExpression() }
         if (dropBlockedParams && step.params.keys.any { it in blockedParamNames }) {
             params["projection"] = StringLiteralNode(value = "notes-driven-materialization-required")
         }
@@ -338,20 +338,26 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
 
     private fun collectModules(statements: List<StatementNode>, systems: Collection<SystemNode>): Set<String> {
         val out = linkedSetOf<String>()
-        systems.forEach { sys -> out += when (sys.systemType) {
-            "email" -> "notify"
-            else -> sys.systemType
-        } }
-        fun visit(s: StatementNode) {
-            when (s) {
-                is ActionNode -> out += s.module
-                is IfNode -> { s.then.forEach(::visit); s.otherwise.forEach(::visit) }
-                is ForNode -> s.body.forEach(::visit)
-                is ParallelNode -> s.branches.flatMap { it.steps }.forEach(::visit)
-                is MatchNode -> { s.cases.flatMap { it.steps }.forEach(::visit); s.errorCase?.forEach(::visit); s.defaultSteps.forEach(::visit) }
-                is RetryNode -> s.steps.forEach(::visit)
-                is TryNode -> { s.steps.forEach(::visit); s.errorHandler.steps.forEach(::visit) }
-                is ErrorHandlerNode -> s.steps.forEach(::visit)
+        systems.forEach { system ->
+            out += when (system.systemType) {
+                "email" -> "notify"
+                else -> system.systemType
+            }
+        }
+        fun visit(statement: StatementNode) {
+            when (statement) {
+                is ActionNode -> out += statement.module
+                is IfNode -> { statement.then.forEach(::visit); statement.otherwise.forEach(::visit) }
+                is ForNode -> statement.body.forEach(::visit)
+                is ParallelNode -> statement.branches.flatMap { it.steps }.forEach(::visit)
+                is MatchNode -> {
+                    statement.cases.flatMap { it.steps }.forEach(::visit)
+                    statement.errorCase?.forEach(::visit)
+                    statement.defaultSteps.forEach(::visit)
+                }
+                is RetryNode -> statement.steps.forEach(::visit)
+                is TryNode -> { statement.steps.forEach(::visit); statement.errorHandler.steps.forEach(::visit) }
+                is ErrorHandlerNode -> statement.steps.forEach(::visit)
                 else -> Unit
             }
         }
@@ -382,10 +388,10 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     }
 
     private fun mapNotNullValues(vararg pairs: Pair<String, ExpressionNode?>): Map<String, ExpressionNode> =
-        pairs.mapNotNull { (k, v) -> v?.let { k to it } }.toMap()
+        pairs.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
 
     private fun stringToExpression(value: String): ExpressionNode {
-        val interpolationStart = 36.toChar().toString() + "{"
+        val interpolationStart = "\${"
         if (!value.contains(interpolationStart)) return StringLiteralNode(value = value)
         val parts = mutableListOf<ExpressionNode>()
         var pos = 0
@@ -411,16 +417,20 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         } else StringLiteralNode(value = "${intent.name}:latest")
 
     private fun imageOrDependency(intent: IntentDocument, step: IntentStep): ExpressionNode =
-        optionalValue(paramText(step, "image")) ?: imageProducerFromRequires(intent, step)?.let { ReferenceNode(path = listOf(it, "tag")) } ?: imageExpression(intent, step)
+        optionalValue(paramText(step, "image"))
+            ?: imageProducerFromRequires(intent, step)?.let { ReferenceNode(path = listOf(it, "tag")) }
+            ?: imageExpression(intent, step)
 
     private fun imageProducerFromRequires(intent: IntentDocument, step: IntentStep): String? {
         val byId = intent.workflows.flatMap { it.steps }.associateBy { it.id }
-        val explicit = step.requires.mapNotNull { byId[it] }.lastOrNull { it.capability in setOf(StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE) }
+        val explicit = step.requires.mapNotNull { byId[it] }
+            .lastOrNull { it.capability in setOf(StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE) }
         return explicit?.id?.replace('-', '_')
     }
 
     private fun namespaceExpression(intent: IntentDocument, step: IntentStep): ExpressionNode? =
-        optionalValue(paramText(step, "namespace")) ?: if (hasInput(intent, "environment")) ReferenceNode(path = listOf("environment")) else StringLiteralNode(value = "default")
+        optionalValue(paramText(step, "namespace"))
+            ?: if (hasInput(intent, "environment")) ReferenceNode(path = listOf("environment")) else StringLiteralNode(value = "default")
 
     private fun hasInput(intent: IntentDocument, name: String): Boolean = intent.inputs.any { it.name == name }
     private fun approvalPolicy(intent: IntentDocument): IntentPolicy? = intent.policies.firstOrNull { it.type == IntentPolicyType.APPROVAL }
@@ -431,7 +441,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     companion object {
         private val dockerCapabilities = setOf(StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE)
         private val kubernetesCapabilities = setOf(StandardCapability.DEPLOY, StandardCapability.VERIFY)
-        private val blockedParamNames = setOf("com" + "mand")
+        private val blockedParamNames = setOf("command")
         private val standardCapabilities = setOf(
             StandardCapability.BUILD, StandardCapability.TEST, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND,
             StandardCapability.ROLLBACK, StandardCapability.SYNC, StandardCapability.DATA_SYNC,
