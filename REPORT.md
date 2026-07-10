@@ -4,7 +4,7 @@ Current package line: `0.9.4`
 Active public standard version: `0.7.6`
 Next expected package line: `0.9.5`
 First scoped correction item: `0.9.5.0`
-Current scoped correction item: `0.9.5.2`
+Current scoped correction item: `0.9.5.3`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -49,7 +49,9 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.2 CI/CD Bias Inventory` records remaining hardcoded CI/CD, target, infrastructure, data-system and workflow vocabulary assumptions and adds drift tests that keep adapter-boundary evidence separate from semantic-core debt.
 
-The next scoped item is `0.9.5.3 Notes Package Contract Model`.
+`0.9.5.3 Notes Package Contract Model` defines the first internal contract surface for declarative domain, capability, safety, runtime, target, projection and conformance notes packages.
+
+The next scoped item is `0.9.5.4 Universal Semantic Action Graph`.
 
 ## Current validation source
 
@@ -66,7 +68,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Active public standard version: `0.7.6`
 - Next expected package line: `0.9.5`
 - First scoped correction item: `0.9.5.0`
-- Current scoped correction item: `0.9.5.2`
+- Current scoped correction item: `0.9.5.3`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
@@ -77,4 +79,4 @@ The v0.9.4 package line does not bump the public standard or artifact schema ver
 
 ## Architecture boundary
 
-No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced by this inventory work.
+No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced by this contract-model work.
