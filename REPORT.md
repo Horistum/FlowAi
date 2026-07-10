@@ -4,7 +4,7 @@ Current package line: `0.9.4`
 Active public standard version: `0.7.6`
 Next expected package line: `0.9.5`
 First scoped correction item: `0.9.5.0`
-Current scoped correction item: `0.9.5.5`
+Current scoped correction item: `0.9.5.6`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -55,7 +55,9 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.5 Materialization Negotiation` adds explicit per-node materialization decisions so semantic actions cannot be inferred as fulfilled without evidence.
 
-The next scoped item is `0.9.5.6 No-Shell Target Projection`.
+`0.9.5.6 No-Shell Target Projection` adds projection artifact records that must be target-native, notes-backed, adapter-boundary, review or conformance records instead of generic command representation.
+
+The next scoped item is `0.9.5.7 Target Registry Honesty`.
 
 ## Current validation source
 
@@ -72,7 +74,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Active public standard version: `0.7.6`
 - Next expected package line: `0.9.5`
 - First scoped correction item: `0.9.5.0`
-- Current scoped correction item: `0.9.5.5`
+- Current scoped correction item: `0.9.5.6`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
@@ -83,4 +85,4 @@ The v0.9.4 package line does not bump the public standard or artifact schema ver
 
 ## Architecture boundary
 
-v0.9.5.5 is a negotiation model only. It records materialization status and evidence; it does not render or perform target work.
+v0.9.5.6 is a projection contract model. It records projection artifact shape and honesty checks before renderer tightening work.
