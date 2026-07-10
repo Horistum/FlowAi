@@ -12,8 +12,6 @@ import org.flowlang.planner.TaskNode
 import org.flowlang.projection.TargetProjectionArtifact
 import org.flowlang.projection.TargetProjectionArtifactKind
 import org.flowlang.projection.TargetProjectionPlan
-import org.flowlang.semantic.SemanticActionEdge
-import org.flowlang.semantic.SemanticActionEdgeKind
 import org.flowlang.semantic.SemanticActionGraph
 import org.flowlang.semantic.SemanticActionKind
 import org.flowlang.semantic.SemanticActionNode
@@ -72,7 +70,7 @@ internal object TargetMaterializationResolver {
             description = "Task capability derived from the execution plan.",
             attributes = mapOf(
                 "sourceTask" to task.id,
-                "sourceAction" to "${task.module}.${task.action}",
+                "sourceCapability" to capability,
                 "targetBoundary" to targetName
             )
         )
