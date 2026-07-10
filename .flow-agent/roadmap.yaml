@@ -170,19 +170,23 @@ roadmap:
     name: "CI/CD Bias Inventory"
     purpose: "Inventory hardcoded CI/CD, Kubernetes, Docker, Maven, PostgreSQL, GitHub Actions, Jenkins, Tekton and ArgoCD assumptions."
     type: "architecture-correction"
-    status: "next"
-    requiredOutcome: ["Complete CI/CD bias inventory and drift tests."]
+    status: "completed"
+    requiredOutcome:
+      - "CI/CD bias inventory recorded in docs/V0_9_5_2_CICD_BIAS_INVENTORY.md."
+      - "Drift tests separate adapter-boundary evidence from active semantic-source debt."
   - version: "0.9.5.3"
     name: "Notes Package Contract Model"
     purpose: "Introduce declarative notes packages as the contract for domains, capabilities, safety, runtime, targets, projections and conformance."
     type: "contract-design"
-    status: "planned"
-    requiredOutcome: ["Define Domain, Capability, Safety, Runtime, Target, Projection and Conformance Notes."]
+    status: "completed"
+    requiredOutcome:
+      - "Defined Domain, Capability, Safety, Runtime, Target, Projection and Conformance Notes as contract kinds."
+      - "Added validation for package identity, dependencies, boundaries and ownership constraints."
   - version: "0.9.5.4"
     name: "Universal Semantic Action Graph"
     purpose: "Replace command-oriented projection with structured semantic actions."
     type: "semantic-model"
-    status: "planned"
+    status: "next"
     requiredOutcome: ["Add a SemanticActionGraph model."]
   - version: "0.9.5.5"
     name: "Materialization Negotiation"
@@ -219,39 +223,4 @@ roadmap:
     purpose: "Ensure conformance validates honest materialization, target support and notes-driven projection."
     type: "conformance-hardening"
     status: "planned"
-    requiredOutcome: ["Add honesty gates for materialization, target support, notes contracts and unknown targets."]
-  - version: "0.9.6"
-    name: "Notes-Driven Domain Expansion"
-    purpose: "Add the first non-CI/CD domain notes after the architecture correction track."
-    type: "domain-expansion"
-    status: "planned"
-    requiredOutcome: ["Add at least certificate, secret, backup and incident domain notes."]
-  - version: "0.9.7"
-    name: "Notes-Driven Target Projection"
-    purpose: "Generate target artifacts from projection notes instead of hardcoded renderer assumptions."
-    type: "target-projection"
-    status: "planned"
-    requiredOutcome: ["Projection profiles are notes-driven."]
-  - version: "0.9.8"
-    name: "Cross-Domain Reference Scenarios"
-    purpose: "Validate CI/CD and non-CI/CD automation domains with target-neutral reference scenarios."
-    type: "scenario-hardening"
-    status: "planned"
-    requiredOutcome: ["Scenarios validate notes-driven materialization."]
-  - version: "0.9.9"
-    name: "Standard Readiness Hardening"
-    purpose: "Freeze the notes-driven model and honesty gates before public standard publication."
-    type: "readiness"
-    status: "planned"
-    requiredOutcome: ["Stable notes contract, semantic action graph, materialization negotiation and target honesty model."]
-  - version: "1.0.0"
-    name: "Public Flow Standard"
-    purpose: "Publish the first stable Flow standard contract."
-    type: "public-standard"
-    status: "planned"
-    requiredOutcome:
-      - "Stable public Flow language and standardization model."
-      - "Stable notes package contract."
-      - "Compatibility statement."
-      - "Conformance suite."
-      - "Reference documentation."
+    requiredOutcome: ["Add conformance gates for materialization honesty and notes-driven projection."]
