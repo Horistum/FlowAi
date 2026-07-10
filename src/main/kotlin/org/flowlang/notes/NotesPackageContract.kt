@@ -6,7 +6,7 @@ package org.flowlang.notes
  * Notes packages declare meaning, constraints and projection requirements. They
  * are not plugins, SDK entrypoints, runtime executors or target-specific public
  * DSLs. The model is deliberately small because this layer is a contract
- * boundary, not another lifecycle framework wearing a fake moustache.
+ * boundary rather than a package loading or execution framework.
  */
 enum class NotesPackageKind {
     DOMAIN,
@@ -114,17 +114,17 @@ class NotesPackageContractValidator {
 
     private fun validateDependencies(contract: NotesPackageContract): List<NotesPackageContractIssue> =
         contract.dependencies.flatMap { dependency ->
-            buildList {
-                if (!PACKAGE_ID.matches(dependency.packageId)) {
-                    add(issue("notes.dependency.id.invalid", contract.packageId, "Dependency id '${dependency.packageId}' is not a valid notes package id."))
-                }
-                if (dependency.packageId == contract.packageId) {
-                    add(issue("notes.dependency.self", contract.packageId, "Notes package must not depend on itself."))
-                }
-                if (dependency.versionConstraint.isBlank()) {
-                    add(issue("notes.dependency.version.missing", contract.packageId, "Dependency '${dependency.packageId}' must declare a version constraint."))
-                }
+            val dependencyIssues = mutableListOf<NotesPackageContractIssue>()
+            if (!PACKAGE_ID.matches(dependency.packageId)) {
+                dependencyIssues += issue("notes.dependency.id.invalid", contract.packageId, "Dependency id '${dependency.packageId}' is not a valid notes package id.")
             }
+            if (dependency.packageId == contract.packageId) {
+                dependencyIssues += issue("notes.dependency.self", contract.packageId, "Notes package must not depend on itself.")
+            }
+            if (dependency.versionConstraint.isBlank()) {
+                dependencyIssues += issue("notes.dependency.version.missing", contract.packageId, "Dependency '${dependency.packageId}' must declare a version constraint.")
+            }
+            dependencyIssues
         }
 
     private fun validateNoRuntimeOrSdkClaims(contract: NotesPackageContract): List<NotesPackageContractIssue> {
@@ -136,16 +136,18 @@ class NotesPackageContractValidator {
         }
     }
 
-    private fun validateProjectionHonesty(contract: NotesPackageContract): List<NotesPackageContractIssue> = buildList {
+    private fun validateProjectionHonesty(contract: NotesPackageContract): List<NotesPackageContractIssue> {
+        val issues = mutableListOf<NotesPackageContractIssue>()
         if (contract.kind != NotesPackageKind.PROJECTION && contract.projectionRules.isNotEmpty()) {
-            add(issue("notes.projection.kind-mismatch", contract.packageId, "Only projection notes packages may declare projection rules."))
+            issues += issue("notes.projection.kind-mismatch", contract.packageId, "Only projection notes packages may declare projection rules.")
         }
         if (contract.kind != NotesPackageKind.TARGET && contract.targetCapabilities.isNotEmpty()) {
-            add(issue("notes.target.kind-mismatch", contract.packageId, "Only target notes packages may declare target capabilities."))
+            issues += issue("notes.target.kind-mismatch", contract.packageId, "Only target notes packages may declare target capabilities.")
         }
         if (contract.kind == NotesPackageKind.PROJECTION && contract.runtimeRequirements.isNotEmpty()) {
-            add(issue("notes.projection.runtime-ownership", contract.packageId, "Projection notes must not own runtime requirements."))
+            issues += issue("notes.projection.runtime-ownership", contract.packageId, "Projection notes must not own runtime requirements.")
         }
+        return issues
     }
 
     private fun NotesPackageContract.allText(): List<String> = listOf(
