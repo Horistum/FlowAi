@@ -16,7 +16,7 @@ rules:
 items:
   - version: "0.9.5.7.1"
     name: Connect Materialization Pipeline
-    status: active
+    status: completed
     purpose: Connect real ExecutionPlan tasks to semantic graph, materialization negotiation and projection artifact evidence.
     requiredOutcome:
       - TargetManifest task materialization is resolved through a resolver instead of a local hardcoded switch.
@@ -26,16 +26,17 @@ items:
 
   - version: "0.9.5.7.2"
     name: Governance Scanner Honesty
-    status: planned
+    status: completed
     purpose: Replace word-obfuscation and text-only scanner compliance with structural mechanism checks.
     requiredOutcome:
-      - Remove ASCII/string-concatenation obfuscation for legitimate target concepts.
-      - Allow legitimate secret binding vocabulary in typed target contexts.
-      - Forbid shell or command execution mechanisms by structure, not by raw word presence.
+      - ASCII and string-concatenation obfuscation is removed from target renderers and planner constants.
+      - Legitimate secret binding vocabulary is readable in typed target contexts.
+      - Architecture governance scans Kotlin symbols outside comments and string literals.
+      - Semantic and projection validators reject raw runtime mechanisms by structured fields and declarations, not diagnostic wording.
 
   - version: "0.9.5.7.3"
     name: Renderer Failure Semantics Unification
-    status: planned
+    status: next
     purpose: Make all target renderers report unresolved materialization consistently.
     requiredOutcome:
       - GitHub Actions must not emit green no-op jobs for unresolved work.
