@@ -90,7 +90,7 @@ class FlowNotesPackageContractTests {
             packageId = "flow.runtime.empty",
             packageVersion = "0.9.5.3",
             kind = NotesPackageKind.RUNTIME,
-            description = "Runtime package without runtime declarations. A contract-shaped void, very fashionable, still useless."
+            description = "Runtime package without runtime declarations."
         )
 
         val report = NotesPackageContractValidator().validate(contract)
@@ -101,5 +101,5 @@ class FlowNotesPackageContractTests {
     }
 
     private fun NotesPackageContract.allDeclarationText(): List<String> =
-        declaredSemantics.toList() + declaredCapabilities + safetyPolicies + runtimeRequirements + targetCapabilities + projectionRules + conformanceChecks
+        declaredSemantics.toList() + declaredCapabilities.toList() + safetyPolicies.toList() + runtimeRequirements.toList() + targetCapabilities.toList() + projectionRules.toList() + conformanceChecks.toList()
 }
