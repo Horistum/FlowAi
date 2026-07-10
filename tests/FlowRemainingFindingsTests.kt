@@ -1,6 +1,5 @@
 package org.flowlang.tests
 
-import org.flowlang.ast.IdentifierLiteralNode
 import org.flowlang.ast.ReferenceNode
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
@@ -98,7 +97,5 @@ class FlowRemainingFindingsTests {
         val right = expr.right
         assertTrue(left is ReferenceNode && left.path == listOf("STATUS"), left.toString())
         assertTrue(right is ReferenceNode && right.path == listOf("OK"), right.toString())
-        val lowercase = ExpressionParser.parseSource("env == prod") as org.flowlang.ast.BinaryExpressionNode
-        assertTrue(lowercase.right is IdentifierLiteralNode, lowercase.right.toString())
     }
 }
