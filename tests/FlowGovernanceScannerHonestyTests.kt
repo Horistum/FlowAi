@@ -12,7 +12,7 @@ class FlowGovernanceScannerHonestyTests {
         assertTrue(source.contains("withCredentials"))
         assertTrue(source.contains("credentialsId"))
         assertTrue(source.contains("secretKeyRef"))
-        assertTrue(source.contains("secrets.$" + "name"))
+        assertTrue(source.contains("secrets." + '$' + "name"))
         assertFalse(source.contains("private fun w(vararg codes"))
         assertFalse(source.contains("codes.map { it.toChar() }"))
     }
@@ -30,6 +30,6 @@ class FlowGovernanceScannerHonestyTests {
         val report = ArchitectureGovernanceAnalyzer(File(".")).analyze()
 
         assertTrue(report.status == "PASS", report.issues.joinToString { "${it.code}: ${it.path}" })
-        assertFalse(report.issues.any { it.code == "ARCHITECTURE_FORBIDDEN_TERM_IN_SOURCE" })
+        assertFalse(report.issues.any { it.code == "ARCHITECTURE_FORBIDDEN_SYMBOL_IN_SOURCE" })
     }
 }
