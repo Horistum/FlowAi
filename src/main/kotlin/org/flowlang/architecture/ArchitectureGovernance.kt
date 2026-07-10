@@ -1,10 +1,10 @@
 package org.flowlang.architecture
 
+import java.io.File
 import org.flowlang.artifacts.StandardSurface
-import org.flowlang.standard.StandardModel
 import org.flowlang.modules.MiniYaml
 import org.flowlang.standard.FlowStandardVersions
-import java.io.File
+import org.flowlang.standard.StandardModel
 
 data class ArchitectureGovernanceFileStatus(
     val path: String,
@@ -59,7 +59,7 @@ data class ArchitectureReportBudgetStatus(
 
 data class ArchitectureGovernanceReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
-    val governanceVersion: String = "1.1",
+    val governanceVersion: String = "1.2",
     val status: String,
     val driftScoreMinimum: Int = 0,
     val driftScore: ArchitectureDriftScoreStatus,
@@ -70,11 +70,11 @@ data class ArchitectureGovernanceReport(
 )
 
 /**
- * Validates the architecture governance guardrails that keep Flow a standard.
+ * Validates repository architecture contracts and active-source ownership.
  *
- * This analyzer intentionally checks repository contracts and naming boundaries.
- * It does not introduce a public runtime, SDK or adapter framework. Humanity may
- * survive one more day without inventing a lifecycle hook.
+ * Forbidden direction terms are checked as Kotlin symbols in structural source.
+ * Comments, diagnostic messages and target-native string literals are not treated
+ * as architecture mechanisms.
  */
 class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
     fun analyze(): ArchitectureGovernanceReport {
@@ -85,12 +85,12 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
                 path = path,
                 present = file.isFile,
                 requiredTerms = terms,
-                missingRequiredTerms = if (file.isFile) terms.filterNot { text.contains(it) } else terms
+                missingRequiredTerms = if (file.isFile) terms.filterNot(text::contains) else terms
             )
         }
 
         val issues = mutableListOf<ArchitectureGovernanceIssue>()
-        files.filter { !it.present }.forEach { file ->
+        files.filterNot { it.present }.forEach { file ->
             issues += ArchitectureGovernanceIssue(
                 code = "ARCHITECTURE_GOVERNANCE_FILE_MISSING",
                 severity = "error",
@@ -119,7 +119,7 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
                     forbiddenTerms = forbiddenDirectionTerms[id].orEmpty()
                 )
             }
-        directions.filter { !it.documented }.forEach { direction ->
+        directions.filterNot { it.documented }.forEach { direction ->
             issues += ArchitectureGovernanceIssue(
                 code = "ARCHITECTURE_FORBIDDEN_DIRECTION_MISSING",
                 severity = "error",
@@ -218,9 +218,9 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         val root = MiniYaml.parseMap(catalog.readText())
         val items = root["forbiddenDirections"] as? List<Any?> ?: return emptyMap()
         val directions = linkedMapOf<String, List<String>>()
-        for (item in items) {
-            val map = item as? Map<String, Any?> ?: continue
-            val id = map["id"] as? String ?: continue
+        items.forEach { item ->
+            val map = item as? Map<String, Any?> ?: return@forEach
+            val id = map["id"] as? String ?: return@forEach
             val forbiddenTerms = (map["forbiddenTerms"] as? List<Any?>)
                 .orEmpty()
                 .mapNotNull { it as? String }
@@ -229,7 +229,6 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         }
         return directions
     }
-
 
     @Suppress("UNCHECKED_CAST")
     private fun analyzeDriftScore(
@@ -270,10 +269,7 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
             )
         }
 
-        // Positive signals are reported as baseline context only. They deliberately
-        // do not add to the score because drift is about the proposed movement,
-        // not about the fact that useful standard artifacts already exist.
-        val baselinePositiveSignals = positiveSignals.map { signal -> signal.copy(score = 0) }
+        val baselinePositiveSignals = positiveSignals.map { it.copy(score = 0) }
         val finalScore = negativeSignals.sumOf { it.score }
         val exceptionRecorded = architectureDecisionExceptionRecorded()
         val status = if (finalScore >= minimumScore || exceptionRecorded) "PASS" else "FAIL"
@@ -357,7 +353,9 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
     ): List<String> = when (id) {
         "runtime-direction" -> sourceFilesContaining(forbiddenDirectionTerms["runtime-executor"].orEmpty()) +
             existingPaths("src/main/kotlin/org/flowlang/runtime")
-        "sdk-direction" -> sourceFilesContaining(forbiddenDirectionTerms["sdk-framework"].orEmpty() + forbiddenDirectionTerms["plugin-framework"].orEmpty())
+        "sdk-direction" -> sourceFilesContaining(
+            forbiddenDirectionTerms["sdk-framework"].orEmpty() + forbiddenDirectionTerms["plugin-framework"].orEmpty()
+        )
         "target-specific-standard" -> sourceFilesContaining(forbiddenDirectionTerms["target-template-ownership"].orEmpty())
         "report-without-validation-purpose" -> reportBudget.missingContractRole +
             reportBudget.missingSchema +
@@ -374,13 +372,11 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         if (terms.isEmpty()) return emptyList()
         val src = File(rootDir, "src/main/kotlin")
         if (!src.isDirectory) return emptyList()
-        return src.walkTopDown()
-            .filter { it.isFile && it.extension == "kt" }
-            .filterNot { file ->
-                val rel = file.relativeTo(rootDir).path.replace(File.separatorChar, '/')
-                rel.startsWith("src/main/kotlin/org/flowlang/architecture/") || rel.startsWith("src/main/kotlin/org/flowlang/conformance/")
+        return activeKotlinSources(src)
+            .filter { file ->
+                val source = file.readText()
+                terms.any { term -> KotlinSourceBoundaryScanner.containsSymbol(source, term) }
             }
-            .filter { file -> terms.any { term -> file.readText().contains(term) } }
             .map { it.relativeTo(rootDir).path.replace(File.separatorChar, '/') }
             .toList()
     }
@@ -412,23 +408,25 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         val src = File(rootDir, "src/main/kotlin")
         if (!src.isDirectory) return issues
         val forbidden = forbiddenDirectionTerms.values.flatten().distinct()
-        src.walkTopDown()
-            .filter { it.isFile && it.extension == "kt" }
-            .filterNot { file ->
-                val rel = file.relativeTo(rootDir).path.replace(File.separatorChar, '/')
-                rel.startsWith("src/main/kotlin/org/flowlang/architecture/") || rel.startsWith("src/main/kotlin/org/flowlang/conformance/")
+        activeKotlinSources(src).forEach { file ->
+            val source = file.readText()
+            forbidden.filter { term -> KotlinSourceBoundaryScanner.containsSymbol(source, term) }.forEach { term ->
+                issues += ArchitectureGovernanceIssue(
+                    code = "ARCHITECTURE_FORBIDDEN_SYMBOL_IN_SOURCE",
+                    severity = "error",
+                    message = "Forbidden architecture direction symbol found: $term",
+                    path = file.relativeTo(rootDir).path.replace(File.separatorChar, '/')
+                )
             }
-            .forEach { file ->
-                val text = file.readText()
-                forbidden.filter { term -> text.contains(term) }.forEach { term ->
-                    issues += ArchitectureGovernanceIssue(
-                        code = "ARCHITECTURE_FORBIDDEN_TERM_IN_SOURCE",
-                        severity = "error",
-                        message = "Forbidden architecture direction term found: $term",
-                        path = file.relativeTo(rootDir).path.replace(File.separatorChar, '/')
-                    )
-                }
-            }
+        }
         return issues
     }
+
+    private fun activeKotlinSources(src: File): Sequence<File> = src.walkTopDown()
+        .filter { it.isFile && it.extension == "kt" }
+        .filterNot { file ->
+            val relative = file.relativeTo(rootDir).path.replace(File.separatorChar, '/')
+            relative.startsWith("src/main/kotlin/org/flowlang/architecture/") ||
+                relative.startsWith("src/main/kotlin/org/flowlang/conformance/")
+        }
 }
