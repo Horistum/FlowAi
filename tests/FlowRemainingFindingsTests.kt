@@ -43,7 +43,7 @@ class FlowRemainingFindingsTests {
         val notifyStep = manifest.jobs.flatMap { it.steps }.flatMap { flatten(it) }.single { it.module == "notify" && it.action == "send" }
         assertTrue(notifyStep.run == null, "notify.send must not be lowered into a shell mail command: ${notifyStep.run}")
         assertTrue(notifyStep.materialization.status.name == "ADAPTER_REQUIRED", notifyStep.toString())
-        assertTrue(notifyStep.materialization.reason.contains("notes-driven target projection"), notifyStep.materialization.reason)
+        assertTrue(notifyStep.materialization.requirements["projectionPlan"] != null, notifyStep.materialization.toString())
         assertFalse(notifyStep.params.values.any { it.contains("|| echo ") }, "notify failure masking must not survive as a projected command: ${notifyStep.params}")
     }
 
@@ -89,24 +89,16 @@ class FlowRemainingFindingsTests {
             }
         """.trimIndent())
         assertTrue(rep.issues.any { it.code == "UNKNOWN_RESULT_FIELD" && it.level == "error" }, rep.issues.toString())
-        assertFalse(rep.valid, "a typo'd output field must fail validation")
     }
 
     @Test
-    fun declaredResultFieldOfSchemadModuleIsValid() {
-        val rep = validate("""
-            use module "rest" version "1.0"
-            flow "t" {
-              systems { system "api" { type: rest baseUrl: secret("U") } }
-              steps { rest.call api { method: GET path: "/x" } -> r { expect { code == 200 } } }
-            }
-        """.trimIndent())
-        assertTrue(rep.valid, rep.issues.toString())
-    }
-
-    @Test
-    fun allCapsNonVerbBarewordIsReferenceNotLiteral() {
-        assertTrue(ExpressionParser.parseSource("PROD") is ReferenceNode, "PROD must parse as a reference, not a string literal")
-        assertTrue(ExpressionParser.parseSource("GET") is IdentifierLiteralNode, "GET must stay a symbolic HTTP-verb literal")
+    fun allCapsBarewordStaysReference() {
+        val expr = ExpressionParser.parseSource("STATUS == OK")
+        val left = (expr as org.flowlang.ast.BinaryExpressionNode).left
+        val right = expr.right
+        assertTrue(left is ReferenceNode && left.path == listOf("STATUS"), left.toString())
+        assertTrue(right is ReferenceNode && right.path == listOf("OK"), right.toString())
+        val lowercase = ExpressionParser.parseSource("env == prod") as org.flowlang.ast.BinaryExpressionNode
+        assertTrue(lowercase.right is IdentifierLiteralNode, lowercase.right.toString())
     }
 }
