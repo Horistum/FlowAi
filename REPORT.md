@@ -4,7 +4,7 @@ Current package line: `0.9.4`
 Active public standard version: `0.7.6`
 Next expected package line: `0.9.5`
 First scoped correction item: `0.9.5.0`
-Current scoped correction item: `0.9.5.7.1`
+Current scoped correction item: `0.9.5.7.2`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -51,7 +51,7 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.3 Notes Package Contract Model` defines the first internal contract surface for declarative domain, capability, safety, runtime, target, projection and conformance notes packages.
 
-`0.9.5.4 Universal Semantic Action Graph` defines a target-neutral action graph over notes declarations and prevents command or shell vocabulary from becoming universal semantic action meaning.
+`0.9.5.4 Universal Semantic Action Graph` defines a target-neutral action graph over notes declarations.
 
 `0.9.5.5 Materialization Negotiation` adds explicit per-node materialization decisions so semantic actions cannot be inferred as fulfilled without evidence.
 
@@ -59,9 +59,11 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.7 Target Registry Honesty` separates declared, experimental, implemented, tested, production-supported, deprecated and blocked target states so target names cannot imply support by default.
 
-`0.9.5.7.1 Connect Materialization Pipeline` starts the repair subtrack by wiring real execution-plan tasks into semantic graph, materialization negotiation and projection artifact evidence before target manifest emission.
+`0.9.5.7.1 Connect Materialization Pipeline` wires real execution-plan tasks into semantic graph, materialization negotiation and projection artifact evidence before target manifest emission.
 
-The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml` and continues through `0.9.5.7.9` before the project resumes the broader `0.9.5.8` safety-policy step.
+`0.9.5.7.2 Governance Scanner Honesty` removes source vocabulary obfuscation and replaces text-only forbidden-word checks with structural Kotlin symbol, semantic declaration and projection field validation.
+
+The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml`. The next scoped repair item is `0.9.5.7.3 Renderer Failure Semantics Unification`.
 
 ## Current validation source
 
@@ -78,7 +80,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Active public standard version: `0.7.6`
 - Next expected package line: `0.9.5`
 - First scoped correction item: `0.9.5.0`
-- Current scoped correction item: `0.9.5.7.1`
+- Current scoped correction item: `0.9.5.7.2`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
@@ -89,4 +91,4 @@ The v0.9.4 package line does not bump the public standard or artifact schema ver
 
 ## Architecture boundary
 
-v0.9.5.7.1 is a wiring repair. It connects existing notes, semantic, materialization and projection contract models to manifest task materialization without claiming broad executable target readiness.
+v0.9.5.7.2 changes governance matching and source readability. It does not claim that unresolved target artifacts are executable. Renderer failure behavior is the next repair item.
