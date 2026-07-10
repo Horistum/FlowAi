@@ -193,15 +193,18 @@ roadmap:
       - "Prevented command and shell vocabulary from becoming universal semantic action meaning."
   - version: "0.9.5.5"
     name: "Materialization Negotiation"
-    purpose: "Require every semantic action to have an explicit materialization status before it can be treated as executable."
+    purpose: "Require every semantic action to have an explicit materialization status before it can advance toward projection."
     type: "materialization"
-    status: "next"
-    requiredOutcome: ["Define and enforce materialization statuses."]
+    status: "completed"
+    requiredOutcome:
+      - "Defined and enforced materialization statuses."
+      - "Required one explicit materialization decision per semantic action node."
+      - "Required evidence for materializable, adapter-required and blocked statuses."
   - version: "0.9.5.6"
     name: "No-Shell Target Projection"
     purpose: "Remove shell as the default target projection strategy and require target artifacts to come from target/projection notes."
     type: "projection-correction"
-    status: "planned"
+    status: "next"
     requiredOutcome: ["Target projections are target-native or notes-projected."]
   - version: "0.9.5.7"
     name: "Target Registry Honesty"
