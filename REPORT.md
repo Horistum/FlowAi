@@ -4,7 +4,7 @@ Current package line: `0.9.4`
 Active public standard version: `0.7.6`
 Next expected package line: `0.9.5`
 First scoped correction item: `0.9.5.0`
-Current scoped correction item: `0.9.5.1`
+Current scoped correction item: `0.9.5.2`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -47,7 +47,9 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.1 Shell Usage Inventory and Prohibition` records the known command-oriented projection paths and classifies them as legacy defects scheduled for removal.
 
-The next scoped item is `0.9.5.2 CI/CD Bias Inventory`.
+`0.9.5.2 CI/CD Bias Inventory` records remaining hardcoded CI/CD, target, infrastructure, data-system and workflow vocabulary assumptions and adds drift tests that keep adapter-boundary evidence separate from semantic-core debt.
+
+The next scoped item is `0.9.5.3 Notes Package Contract Model`.
 
 ## Current validation source
 
@@ -64,7 +66,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Active public standard version: `0.7.6`
 - Next expected package line: `0.9.5`
 - First scoped correction item: `0.9.5.0`
-- Current scoped correction item: `0.9.5.1`
+- Current scoped correction item: `0.9.5.2`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
