@@ -1,0 +1,97 @@
+track: v0.9.5.7-repair-track
+name: Materialization and projection honesty repair track
+status: active
+purpose: >-
+  Repair the architectural gap identified after v0.9.5.7: notes, semantic,
+  materialization, projection and registry models must be wired into real Flow
+  behavior instead of remaining disconnected governance fixtures.
+
+rules:
+  - Do not reintroduce shell or command projection as Flow Core semantics.
+  - Preserve explicit user intent even when runtime execution is blocked or review-required.
+  - Treat target support, materialization, projection and executable readiness as separate statuses.
+  - Replace text-scanner ceremony with structural validation of emitted mechanisms.
+  - Do not mark generated target artifacts executable when any required semantic action is not materialized.
+
+items:
+  - version: "0.9.5.7.1"
+    name: Connect Materialization Pipeline
+    status: active
+    purpose: Connect real ExecutionPlan tasks to semantic graph, materialization negotiation and projection artifact evidence.
+    requiredOutcome:
+      - TargetManifest task materialization is resolved through a resolver instead of a local hardcoded switch.
+      - Each action step carries semantic graph, negotiation and projection artifact metadata.
+      - NOTES_PROJECTED becomes reachable only through explicit materialization evidence.
+      - Adapter-required actions remain non-executable but carry auditable projection evidence.
+
+  - version: "0.9.5.7.2"
+    name: Governance Scanner Honesty
+    status: planned
+    purpose: Replace word-obfuscation and text-only scanner compliance with structural mechanism checks.
+    requiredOutcome:
+      - Remove ASCII/string-concatenation obfuscation for legitimate target concepts.
+      - Allow legitimate secret binding vocabulary in typed target contexts.
+      - Forbid shell or command execution mechanisms by structure, not by raw word presence.
+
+  - version: "0.9.5.7.3"
+    name: Renderer Failure Semantics Unification
+    status: planned
+    purpose: Make all target renderers report unresolved materialization consistently.
+    requiredOutcome:
+      - GitHub Actions must not emit green no-op jobs for unresolved work.
+      - Tekton must not reference phantom tasks that Flow does not provide.
+      - Jenkins, GitHub Actions and Tekton share the same review-only / fail-fast / executable policy.
+
+  - version: "0.9.5.7.4"
+    name: Remove Legacy Shell Generator Fixtures
+    status: planned
+    purpose: Remove or quarantine legacy test generators that still encode shell execution as the expected behavior.
+    requiredOutcome:
+      - Legacy Jenkins shell generator is deleted or moved into explicit archived negative fixtures.
+      - Tests no longer assert sh/docker/kubectl/helm/argocd shell projection as active Flow behavior.
+      - Shell-based examples are reclassified as blocked or review-required scenarios.
+
+  - version: "0.9.5.7.5"
+    name: Compatibility and Readiness Honesty
+    status: planned
+    purpose: Prevent capability compatibility from being reported as executable readiness.
+    requiredOutcome:
+      - Compatibility reports include materialization readiness and projection readiness.
+      - SUPPORTED cannot appear on artifacts where required steps are unresolved.
+      - Recommended targets must account for materialization and projection evidence.
+
+  - version: "0.9.5.7.6"
+    name: Release Metadata Reconciliation
+    status: planned
+    purpose: Reconcile package version, changelog, reports and correction-track metadata.
+    requiredOutcome:
+      - CHANGELOG records the v0.9.5.x correction track.
+      - build.gradle.kts, REPORT.md and roadmap metadata have a documented version boundary.
+      - Production analyzers do not hardcode future roadmap version lists.
+
+  - version: "0.9.5.7.7"
+    name: Policy-Driven Safety Prelude
+    status: planned
+    purpose: Remove hardcoded environment and production assumptions before the full v0.9.5.8 safety-policy step.
+    requiredOutcome:
+      - Hardcoded production literal detection is replaced or isolated behind policy notes.
+      - GitHub Actions approval environment is not always forced to production.
+      - Environment classification becomes evidence-driven.
+
+  - version: "0.9.5.7.8"
+    name: Target Expression and Unknown Target Safety
+    status: planned
+    purpose: Ensure unknown targets and expression support gaps do not imply capability by default.
+    requiredOutcome:
+      - Unknown targets do not silently pass expression support checks.
+      - Expression support must be declared by target notes or registry evidence.
+      - Closed target expression assumptions are isolated from universal semantics.
+
+  - version: "0.9.5.7.9"
+    name: Reference Scenario and Snapshot Honesty Reset
+    status: planned
+    purpose: Align reference scenarios and snapshots with the repaired materialization and readiness model.
+    requiredOutcome:
+      - Reference scenarios no longer use active shell.run as the flagship build/test path.
+      - Snapshots distinguish review-only artifacts from executable artifacts.
+      - End-to-end examples stop claiming support when they only document unresolved materialization.
