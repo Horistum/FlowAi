@@ -186,13 +186,16 @@ roadmap:
     name: "Universal Semantic Action Graph"
     purpose: "Replace command-oriented projection with structured semantic actions."
     type: "semantic-model"
-    status: "next"
-    requiredOutcome: ["Add a SemanticActionGraph model."]
+    status: "completed"
+    requiredOutcome:
+      - "Added a SemanticActionGraph model."
+      - "Validated graph nodes against notes package declarations."
+      - "Prevented command and shell vocabulary from becoming universal semantic action meaning."
   - version: "0.9.5.5"
     name: "Materialization Negotiation"
     purpose: "Require every semantic action to have an explicit materialization status before it can be treated as executable."
     type: "materialization"
-    status: "planned"
+    status: "next"
     requiredOutcome: ["Define and enforce materialization statuses."]
   - version: "0.9.5.6"
     name: "No-Shell Target Projection"
