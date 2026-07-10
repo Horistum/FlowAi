@@ -7,7 +7,7 @@ import org.flowlang.notes.NotesPackageKind
  * Target-neutral semantic action graph.
  *
  * The graph represents what Flow means before any target projection. It is not
- * an executable plan, command representation, runtime bridge or renderer model.
+ * an executable plan, raw runtime representation or renderer model.
  */
 enum class SemanticActionKind {
     DOMAIN,
@@ -132,10 +132,41 @@ class SemanticActionGraphValidator(
             }
         }
 
-        node.allText().forEach { text ->
-            val lowered = text.lowercase()
-            FORBIDDEN_UNIVERSAL_TERMS.filter { lowered.contains(it) }.forEach { term ->
-                issues += issue(graph, "semantic.node.forbidden-universal-term", "Semantic node '${node.id}' must not use '$term' as universal action meaning.")
+        issues += validateUniversalRepresentation(graph, node)
+        return issues
+    }
+
+    private fun validateUniversalRepresentation(
+        graph: SemanticActionGraph,
+        node: SemanticActionNode
+    ): List<SemanticActionGraphIssue> {
+        val issues = mutableListOf<SemanticActionGraphIssue>()
+        val declaration = node.declaration.lowercase()
+        if (FORBIDDEN_DECLARATION_PREFIXES.any { declaration == it.removeSuffix(".") || declaration.startsWith(it) }) {
+            issues += issue(
+                graph,
+                "semantic.node.forbidden-universal-mechanism",
+                "Semantic node '${node.id}' must not use raw runtime mechanism '${node.declaration}' as universal action meaning."
+            )
+        }
+
+        val rawPayloadKeys = node.attributes.keys.filter { it.lowercase() in FORBIDDEN_RAW_PAYLOAD_KEYS }
+        rawPayloadKeys.forEach { key ->
+            issues += issue(
+                graph,
+                "semantic.node.forbidden-universal-mechanism",
+                "Semantic node '${node.id}' must not carry raw runtime payload field '$key'."
+            )
+        }
+
+        REPRESENTATION_KEYS.mapNotNull { key -> node.attributes[key] }.forEach { representation ->
+            val lowered = representation.lowercase()
+            if (FORBIDDEN_REPRESENTATION_VALUES.any { term -> lowered == term || lowered.startsWith("$term.") }) {
+                issues += issue(
+                    graph,
+                    "semantic.node.forbidden-universal-mechanism",
+                    "Semantic node '${node.id}' declares raw runtime representation '$representation'."
+                )
             }
         }
         return issues
@@ -194,16 +225,31 @@ class SemanticActionGraphValidator(
         SemanticActionKind.CONFORMANCE_REQUIREMENT -> NotesPackageKind.CONFORMANCE
     }
 
-    private fun SemanticActionNode.allText(): List<String> =
-        listOf(id, declaration, notesPackageId, description) + attributes.keys + attributes.values
-
     private fun issue(graph: SemanticActionGraph, code: String, message: String) =
         SemanticActionGraphIssue(code = code, graphId = graph.graphId, message = message)
 
     companion object {
         private val GRAPH_ID = Regex("[a-z][a-z0-9]*(\\.[a-z][a-z0-9-]*)*")
         private val NODE_ID = Regex("[a-z][a-z0-9]*(\\.[a-z][a-z0-9-]*)*")
-        private val FORBIDDEN_UNIVERSAL_TERMS = listOf(
+        private val FORBIDDEN_DECLARATION_PREFIXES = setOf(
+            "shell.",
+            "command.",
+            "script.",
+            "bash.",
+            "powershell."
+        )
+        private val FORBIDDEN_RAW_PAYLOAD_KEYS = setOf(
+            "command",
+            "script",
+            "shell",
+            "run"
+        )
+        private val REPRESENTATION_KEYS = setOf(
+            "representation",
+            "universalRepresentation",
+            "executionMode"
+        )
+        private val FORBIDDEN_REPRESENTATION_VALUES = setOf(
             "shell",
             "command",
             "script",
@@ -258,7 +304,7 @@ object StandardSemanticActionGraphs {
             SemanticActionEdge("domain.automation-intent", "capability.approval-require", SemanticActionEdgeKind.REFINES, "Intent may refine into a capability requirement."),
             SemanticActionEdge("capability.approval-require", "safety.approval-required", SemanticActionEdgeKind.CONSTRAINS, "Safety policy constrains the capability."),
             SemanticActionEdge("safety.approval-required", "runtime.human-approval", SemanticActionEdgeKind.REQUIRES, "Approval safety requires a runtime input boundary."),
-            SemanticActionEdge("runtime.human-approval", "conformance.notes-contract-valid", SemanticActionEdgeKind.EVIDENCES, "Conformance records the contract evidence boundary.")
+            SemanticActionEdge("runtime.human-approval", "conformance.notes-contract-valid", SemanticActionEdgeKind.EVIDENCES, "Conformance records the unresolved runtime boundary.")
         )
     )
 }
