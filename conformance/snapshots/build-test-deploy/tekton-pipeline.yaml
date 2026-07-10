@@ -27,7 +27,7 @@ spec:
           value: "ADAPTER_REQUIRED"
       # Flow param branch: main
       # Flow step git_checkout_1 materialization=ADAPTER_REQUIRED capability=git.checkout
-      # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+      # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
     - name: standard_execute_1
       runAfter: [git_checkout_1]
       taskRef:
@@ -36,13 +36,13 @@ spec:
         - name: flow-job
           value: "standard_execute_1"
         - name: materialization-status
-          value: "SEMANTIC_ONLY"
+          value: "NOTES_PROJECTED"
       # Flow param operation: test
       # Flow param capability: test
       # Flow param description: TEST step test
       # Flow param flow: build-test-deploy
-      # Flow step standard_execute_1 materialization=SEMANTIC_ONLY capability=standard.execute
-      # reason: Standard capability is semantic-only until a notes package declares materialization.
+      # Flow step standard_execute_1 materialization=NOTES_PROJECTED capability=standard.execute
+      # reason: Standard execution is declared as notes-backed semantic work and may advance to projection review.
     - name: docker_build_1
       runAfter: [standard_execute_1]
       taskRef:
@@ -55,7 +55,7 @@ spec:
       # Flow param image: build-test-deploy:$(params.version)
       # Flow param path: .
       # Flow step docker_build_1 materialization=ADAPTER_REQUIRED capability=docker.build
-      # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+      # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
     - name: approve_1
       runAfter: [docker_build_1]
       when:
@@ -87,7 +87,7 @@ spec:
       # Flow param namespace: $(params.environment)
       # Flow param image: build-test-deploy:$(params.version)
       # Flow step kubernetes_deploy_1 materialization=ADAPTER_REQUIRED capability=kubernetes.deploy
-      # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+      # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
     - name: kubernetes_get_1
       runAfter: [kubernetes_deploy_1]
       taskRef:
@@ -101,4 +101,4 @@ spec:
       # Flow param namespace: $(params.environment)
       # Flow param selector: app=build-test-deploy
       # Flow step kubernetes_get_1 materialization=ADAPTER_REQUIRED capability=kubernetes.get
-      # reason: No core command is generated. This action requires notes-driven target projection before it can be treated as executable.
+      # reason: Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.
