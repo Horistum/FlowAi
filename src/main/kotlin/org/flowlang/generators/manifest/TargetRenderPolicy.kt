@@ -21,7 +21,7 @@ data class TargetRenderReadiness(
 }
 
 class TargetRenderBlockedException(val readiness: TargetRenderReadiness) : IllegalStateException(
-    "Target '${readiness.target}' is not executable: " +
+    "Target '${readiness.target}' rendering is blocked: " +
         readiness.findings.joinToString("; ") { "${it.nodeId} ${it.status}: ${it.reason}" }
 )
 
@@ -31,13 +31,8 @@ object TargetRenderPolicy {
 
     fun evaluate(manifest: TargetManifest): TargetRenderReadiness {
         val steps = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForReadiness() } }
-        val blocking = buildList {
-            steps.filter { it.materialization.status in blockedStatuses }.forEach { step ->
-                add(TargetRenderFinding(step.id, step.materialization.status.name, step.materialization.reason))
-            }
-            manifest.allMappingNotes().filter { it.level == "error" }.forEach { note ->
-                add(TargetRenderFinding(note.nodeId, note.feature, note.message))
-            }
+        val blocking = steps.filter { it.materialization.status in blockedStatuses }.map { step ->
+            TargetRenderFinding(step.id, step.materialization.status.name, step.materialization.reason)
         }.distinct()
         if (blocking.isNotEmpty()) return TargetRenderReadiness(manifest.target, TargetRenderMode.FAIL_FAST, blocking)
 
@@ -74,6 +69,12 @@ object TargetRenderPolicy {
         }
     }
 
+    fun requireSafe(manifest: TargetManifest): TargetRenderReadiness {
+        val readiness = evaluate(manifest)
+        if (readiness.mode == TargetRenderMode.FAIL_FAST) throw TargetRenderBlockedException(readiness)
+        return readiness
+    }
+
     fun requireExecutable(manifest: TargetManifest): TargetRenderReadiness {
         val readiness = evaluate(manifest)
         if (!readiness.executable) throw TargetRenderBlockedException(readiness)
@@ -85,50 +86,22 @@ object TargetRenderPolicy {
     )
 
     private fun TargetStep.flattenForReadiness(): List<TargetStep> = listOf(this) + children.flatMap { it.flattenForReadiness() }
-
-    private fun TargetManifest.allMappingNotes(): List<TargetMappingNote> = mappingNotes +
-        jobs.flatMap { job -> job.mappingNotes + job.steps.flatMap { it.allStepNotes() } }
-
-    private fun TargetStep.allStepNotes(): List<TargetMappingNote> = mappingNotes + children.flatMap { it.allStepNotes() }
 }
 
 object TargetReviewArtifactRenderer {
     fun render(manifest: TargetManifest, readiness: TargetRenderReadiness): String {
         require(readiness.mode == TargetRenderMode.REVIEW_ONLY) { "Review artifact requires REVIEW_ONLY readiness." }
-        return TargetStatusArtifactRenderer.render(
-            manifest = manifest,
-            readiness = readiness,
-            kind = "TargetProjectionReview",
-            reason = "Target syntax was not emitted because required renderer payloads are unresolved."
-        )
-    }
-}
-
-object TargetFailureArtifactRenderer {
-    fun render(manifest: TargetManifest, readiness: TargetRenderReadiness): String {
-        require(readiness.mode == TargetRenderMode.FAIL_FAST) { "Failure artifact requires FAIL_FAST readiness." }
-        return TargetStatusArtifactRenderer.render(
-            manifest = manifest,
-            readiness = readiness,
-            kind = "TargetProjectionFailure",
-            reason = "Target syntax was not emitted because projection is blocked or unsupported."
-        )
-    }
-}
-
-private object TargetStatusArtifactRenderer {
-    fun render(manifest: TargetManifest, readiness: TargetRenderReadiness, kind: String, reason: String): String {
         val sb = StringBuilder()
         sb.appendLine("apiVersion: flowlang.org/v1alpha1")
-        sb.appendLine("kind: $kind")
+        sb.appendLine("kind: TargetProjectionReview")
         sb.appendLine("metadata:")
         sb.appendLine("  name: ${quoted(sanitizeId(manifest.flowName))}")
         sb.appendLine("spec:")
         sb.appendLine("  target: ${quoted(manifest.target)}")
-        sb.appendLine("  renderMode: ${readiness.mode.name}")
+        sb.appendLine("  renderMode: REVIEW_ONLY")
         sb.appendLine("  executable: false")
         sb.appendLine("  compatibility: ${quoted(manifest.compatibility.status.name)}")
-        sb.appendLine("  reason: ${quoted(reason)}")
+        sb.appendLine("  reason: ${quoted("Target syntax was not emitted because required renderer payloads are unresolved.")}")
         sb.appendLine("  findings:")
         readiness.findings.forEach { finding ->
             sb.appendLine("    - nodeId: ${quoted(finding.nodeId)}")
