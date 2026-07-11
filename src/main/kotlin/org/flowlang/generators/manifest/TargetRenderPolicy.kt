@@ -21,7 +21,7 @@ data class TargetRenderReadiness(
 }
 
 class TargetRenderBlockedException(val readiness: TargetRenderReadiness) : IllegalStateException(
-    "Target '${readiness.target}' rendering is blocked: " +
+    "Target '${readiness.target}' is not executable: " +
         readiness.findings.joinToString("; ") { "${it.nodeId} ${it.status}: ${it.reason}" }
 )
 
@@ -74,9 +74,9 @@ object TargetRenderPolicy {
         }
     }
 
-    fun requireSafe(manifest: TargetManifest): TargetRenderReadiness {
+    fun requireExecutable(manifest: TargetManifest): TargetRenderReadiness {
         val readiness = evaluate(manifest)
-        if (readiness.mode == TargetRenderMode.FAIL_FAST) throw TargetRenderBlockedException(readiness)
+        if (!readiness.executable) throw TargetRenderBlockedException(readiness)
         return readiness
     }
 
@@ -95,17 +95,40 @@ object TargetRenderPolicy {
 object TargetReviewArtifactRenderer {
     fun render(manifest: TargetManifest, readiness: TargetRenderReadiness): String {
         require(readiness.mode == TargetRenderMode.REVIEW_ONLY) { "Review artifact requires REVIEW_ONLY readiness." }
+        return TargetStatusArtifactRenderer.render(
+            manifest = manifest,
+            readiness = readiness,
+            kind = "TargetProjectionReview",
+            reason = "Target syntax was not emitted because required renderer payloads are unresolved."
+        )
+    }
+}
+
+object TargetFailureArtifactRenderer {
+    fun render(manifest: TargetManifest, readiness: TargetRenderReadiness): String {
+        require(readiness.mode == TargetRenderMode.FAIL_FAST) { "Failure artifact requires FAIL_FAST readiness." }
+        return TargetStatusArtifactRenderer.render(
+            manifest = manifest,
+            readiness = readiness,
+            kind = "TargetProjectionFailure",
+            reason = "Target syntax was not emitted because projection is blocked or unsupported."
+        )
+    }
+}
+
+private object TargetStatusArtifactRenderer {
+    fun render(manifest: TargetManifest, readiness: TargetRenderReadiness, kind: String, reason: String): String {
         val sb = StringBuilder()
         sb.appendLine("apiVersion: flowlang.org/v1alpha1")
-        sb.appendLine("kind: TargetProjectionReview")
+        sb.appendLine("kind: $kind")
         sb.appendLine("metadata:")
         sb.appendLine("  name: ${quoted(sanitizeId(manifest.flowName))}")
         sb.appendLine("spec:")
         sb.appendLine("  target: ${quoted(manifest.target)}")
-        sb.appendLine("  renderMode: REVIEW_ONLY")
+        sb.appendLine("  renderMode: ${readiness.mode.name}")
         sb.appendLine("  executable: false")
         sb.appendLine("  compatibility: ${quoted(manifest.compatibility.status.name)}")
-        sb.appendLine("  reason: ${quoted("Target syntax was not emitted because required renderer payloads are unresolved.")}")
+        sb.appendLine("  reason: ${quoted(reason)}")
         sb.appendLine("  findings:")
         readiness.findings.forEach { finding ->
             sb.appendLine("    - nodeId: ${quoted(finding.nodeId)}")
