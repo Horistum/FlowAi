@@ -36,16 +36,17 @@ items:
 
   - version: "0.9.5.7.3"
     name: Renderer Failure Semantics Unification
-    status: next
+    status: completed
     purpose: Make all target renderers report unresolved materialization consistently.
     requiredOutcome:
-      - GitHub Actions must not emit green no-op jobs for unresolved work.
-      - Tekton must not reference phantom tasks that Flow does not provide.
-      - Jenkins, GitHub Actions and Tekton share the same review-only / fail-fast / executable policy.
+      - GitHub Actions no longer emits green no-op jobs for unresolved work.
+      - Tekton no longer references phantom tasks that Flow does not provide.
+      - Jenkins, GitHub Actions and Tekton return the same review-only artifact contract when executable evidence is incomplete.
+      - NOTES_PROJECTED is not treated as target-native executable projection.
 
   - version: "0.9.5.7.4"
     name: Remove Legacy Shell Generator Fixtures
-    status: planned
+    status: next
     purpose: Remove or quarantine legacy test generators that still encode shell execution as the expected behavior.
     requiredOutcome:
       - Legacy Jenkins shell generator is deleted or moved into explicit archived negative fixtures.
