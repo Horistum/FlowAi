@@ -40,7 +40,7 @@ jobs:
         type: "approval"
         materialization: NATIVE
         capability: "approval.require"
-        reason: "Approval is represented as a target-native review boundary when the target supports it."
+        reason: "Native materialization is declared, but the step does not carry explicit target-native projection evidence."
   - id: "kubernetes_deploy_1"
     unresolved:
       - step: "kubernetes_deploy_1"
