@@ -6,9 +6,9 @@ class ConformanceRunnerDiagnosticExportTest {
     @Test
     fun exportCurrentRunnerSourceForReviewedPatch() {
         val source = File("src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt")
-        val target = File("build/test-results/test/diagnostics/ConformanceRunner.kt")
-        target.parentFile.mkdirs()
-        source.copyTo(target, overwrite = true)
-        assertTrue(target.isFile && target.length() == source.length())
+        assertTrue(source.isFile)
+        println("FLOW_CONFORMANCE_RUNNER_SOURCE_BEGIN")
+        print(source.readText())
+        println("FLOW_CONFORMANCE_RUNNER_SOURCE_END")
     }
 }
