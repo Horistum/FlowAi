@@ -4,6 +4,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.flowlang.adapters.yaml.IntentYamlLoader
+import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
@@ -20,9 +22,12 @@ import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.generators.manifest.TektonManifestRenderer
+import org.flowlang.intent.IntentCapabilityValidator
+import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
+import org.flowlang.validator.FlowValidator
 
 class FlowRendererFailureSemanticsTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
@@ -47,6 +52,31 @@ class FlowRendererFailureSemanticsTests {
             assertTrue(output.contains("findings:"))
             assertFalse(output.contains("steps: []"))
             assertFalse(output.contains("flow-materialization-required"))
+        }
+    }
+
+    @Test
+    fun referenceReviewPreservesSameSemanticNodeInventoryForEveryTarget() {
+        val expectedNodeIds = setOf(
+            "git_checkout_1",
+            "standard_execute_1",
+            "docker_build_1",
+            "approve_1",
+            "kubernetes_deploy_1",
+            "kubernetes_get_1",
+            "standard_rollback_1",
+            "notify_send_1"
+        )
+        val outputs = listOf(
+            JenkinsManifestRenderer().render(referenceManifest("jenkins")),
+            GitHubActionsManifestRenderer().render(referenceManifest("github-actions")),
+            TektonManifestRenderer().render(referenceManifest("tekton"))
+        )
+
+        outputs.forEach { output ->
+            expectedNodeIds.forEach { nodeId ->
+                assertTrue(output.contains("nodeId: \"$nodeId\""), "Review artifact silently dropped $nodeId:\n$output")
+            }
         }
     }
 
@@ -101,6 +131,23 @@ class FlowRendererFailureSemanticsTests {
             "github-actions" -> GitHubActionsManifestGenerator().generate(plan, compatibility)
             "tekton" -> TektonManifestGenerator().generate(plan, compatibility)
             else -> error("unsupported test target: $target")
+        }
+    }
+
+    private fun referenceManifest(target: String): TargetManifest {
+        val targetRegistry = TargetRegistryYamlLoader.loadDirectory(File("targets"))
+        val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
+        IntentCapabilityValidator(registry).validate(intent).assertValid()
+        val ast = IntentToAstPlanner(registry).plan(intent)
+        val validation = FlowValidator(registry).validate(ast)
+        assertTrue(validation.valid, validation.issues.joinToString { it.code + ": " + it.message })
+        val plan = FlowPlanner(registry).plan(ast)
+        val compatibility = CompatibilityAnalyzer(targetRegistry).analyze(plan, target, strict = false)
+        return when (target) {
+            "jenkins" -> JenkinsManifestGenerator().generate(plan, compatibility)
+            "github-actions" -> GitHubActionsManifestGenerator().generate(plan, compatibility)
+            "tekton" -> TektonManifestGenerator().generate(plan, compatibility)
+            else -> error("unsupported reference target: $target")
         }
     }
 
