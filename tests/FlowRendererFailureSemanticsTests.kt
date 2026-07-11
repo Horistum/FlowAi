@@ -1,0 +1,94 @@
+import java.io.File
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import org.flowlang.capabilities.CompatibilityAnalyzer
+import org.flowlang.capabilities.TargetCapability
+import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
+import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
+import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetMaterialization
+import org.flowlang.generators.manifest.TargetRenderBlockedException
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.generators.manifest.TektonManifestGenerator
+import org.flowlang.generators.manifest.TektonManifestRenderer
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.parser.FlowParser
+import org.flowlang.planner.FlowPlanner
+
+class FlowRendererFailureSemanticsTests {
+    private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
+    private val targets = mapOf(
+        "jenkins" to TargetCapability(target = "jenkins", description = "test"),
+        "github-actions" to TargetCapability(target = "github-actions", description = "test"),
+        "tekton" to TargetCapability(target = "tekton", description = "test")
+    )
+
+    @Test
+    fun unresolvedManifestUsesSameReviewOnlyPolicyForEveryRenderer() {
+        val outputs = listOf(
+            JenkinsManifestRenderer().render(manifest("jenkins")),
+            GitHubActionsManifestRenderer().render(manifest("github-actions")),
+            TektonManifestRenderer().render(manifest("tekton"))
+        )
+
+        outputs.forEach { output ->
+            assertTrue(output.contains("kind: TargetProjectionReview"))
+            assertTrue(output.contains("renderMode: REVIEW_ONLY"))
+            assertTrue(output.contains("executable: false"))
+            assertTrue(output.contains("TARGET_PAYLOAD_MISSING") || output.contains("ADAPTER_REQUIRED"))
+            assertFalse(output.contains("steps: []"))
+            assertFalse(output.contains("flow-materialization-required"))
+        }
+    }
+
+    @Test
+    fun blockedMaterializationFailsBeforeAnyTargetArtifactIsReturned() {
+        val manifests = listOf("jenkins", "github-actions", "tekton").associateWith { target -> blocked(manifest(target)) }
+
+        val jenkins = assertFailsWith<TargetRenderBlockedException> { JenkinsManifestRenderer().render(manifests.getValue("jenkins")) }
+        val github = assertFailsWith<TargetRenderBlockedException> { GitHubActionsManifestRenderer().render(manifests.getValue("github-actions")) }
+        val tekton = assertFailsWith<TargetRenderBlockedException> { TektonManifestRenderer().render(manifests.getValue("tekton")) }
+
+        listOf(jenkins, github, tekton).forEach { failure ->
+            assertEquals(TargetRenderMode.FAIL_FAST, failure.readiness.mode)
+            assertTrue(failure.readiness.findings.any { it.status == "BLOCKED" })
+        }
+    }
+
+    @Test
+    fun notesMaterializationWithoutRendererPayloadRemainsReviewOnly() {
+        val manifest = manifest("jenkins")
+        val readiness = TargetRenderPolicy.evaluate(manifest)
+
+        assertEquals(TargetRenderMode.REVIEW_ONLY, readiness.mode)
+        assertFalse(readiness.executable)
+        assertTrue(readiness.findings.any { it.status == "TARGET_PAYLOAD_MISSING" })
+    }
+
+    private fun manifest(target: String): TargetManifest {
+        val ast = FlowParser().parse(File("examples/api-sync.flow"))
+        val plan = FlowPlanner(registry).plan(ast)
+        val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
+        return when (target) {
+            "jenkins" -> JenkinsManifestGenerator().generate(plan, compatibility)
+            "github-actions" -> GitHubActionsManifestGenerator().generate(plan, compatibility)
+            "tekton" -> TektonManifestGenerator().generate(plan, compatibility)
+            else -> error("unsupported test target: $target")
+        }
+    }
+
+    private fun blocked(manifest: TargetManifest): TargetManifest {
+        val firstJob = manifest.jobs.first()
+        val firstStep = firstJob.steps.first()
+        val blockedStep = firstStep.copy(
+            materialization = TargetMaterialization.blocked("test.blocked", "Test fixture blocks rendering before target syntax is emitted.")
+        )
+        return manifest.copy(jobs = listOf(firstJob.copy(steps = listOf(blockedStep))) + manifest.jobs.drop(1))
+    }
+}
