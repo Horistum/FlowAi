@@ -4,7 +4,7 @@ Current package line: `0.9.4`
 Active public standard version: `0.7.6`
 Next expected package line: `0.9.5`
 First scoped correction item: `0.9.5.0`
-Current scoped correction item: `0.9.5.7.2`
+Current scoped correction item: `0.9.5.7.3`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -63,7 +63,9 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.7.2 Governance Scanner Honesty` removes source vocabulary obfuscation and replaces text-only forbidden-word checks with structural Kotlin symbol, semantic declaration and projection field validation.
 
-The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml`. The next scoped repair item is `0.9.5.7.3 Renderer Failure Semantics Unification`.
+`0.9.5.7.3 Renderer Failure Semantics Unification` adds one shared executable-readiness gate. Jenkins, GitHub Actions and Tekton now reject unresolved manifests before target serialization instead of emitting fail-later, green no-op or phantom-dependency artifacts.
+
+The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml`. The next scoped repair item is `0.9.5.7.4 Remove Legacy Shell Generator Fixtures`.
 
 ## Current validation source
 
@@ -80,7 +82,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Active public standard version: `0.7.6`
 - Next expected package line: `0.9.5`
 - First scoped correction item: `0.9.5.0`
-- Current scoped correction item: `0.9.5.7.2`
+- Current scoped correction item: `0.9.5.7.3`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
@@ -91,4 +93,4 @@ The v0.9.4 package line does not bump the public standard or artifact schema ver
 
 ## Architecture boundary
 
-v0.9.5.7.2 changes governance matching and source readability. It does not claim that unresolved target artifacts are executable. Renderer failure behavior is the next repair item.
+v0.9.5.7.3 changes renderer admission behavior. Unresolved target work is rejected before serialization and is not represented as an executable target artifact.
