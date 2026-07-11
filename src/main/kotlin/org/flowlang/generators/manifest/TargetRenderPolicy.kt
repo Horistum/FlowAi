@@ -58,6 +58,11 @@ object TargetRenderPolicy {
                     "TARGET_PAYLOAD_MISMATCH",
                     "Renderer payload is not bound to target '${manifest.target}'."
                 )
+                step.metadata["rendererPayloadId"].isNullOrBlank() -> TargetRenderFinding(
+                    step.id,
+                    "TARGET_PAYLOAD_ID_MISSING",
+                    "Renderer readiness requires a concrete target payload identifier."
+                )
                 else -> null
             }
         }.distinct()
