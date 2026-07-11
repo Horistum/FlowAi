@@ -97,6 +97,8 @@ object TargetReviewArtifactRenderer {
         sb.appendLine("metadata:")
         sb.appendLine("  name: ${quoted(sanitizeId(manifest.flowName))}")
         sb.appendLine("spec:")
+        sb.appendLine("  standardVersion: ${quoted(manifest.standardVersion)}")
+        sb.appendLine("  manifestVersion: ${quoted(manifest.manifestVersion)}")
         sb.appendLine("  target: ${quoted(manifest.target)}")
         sb.appendLine("  renderMode: REVIEW_ONLY")
         sb.appendLine("  executable: false")
@@ -108,8 +110,62 @@ object TargetReviewArtifactRenderer {
             sb.appendLine("      status: ${quoted(finding.status)}")
             sb.appendLine("      reason: ${quoted(finding.reason)}")
         }
+        val requirements = manifest.bindingRequirements()
+        if (requirements.isNotEmpty()) {
+            sb.appendLine("  requirements:")
+            requirements.forEach { requirement -> requirement.appendTo(sb) }
+        }
         return sb.toString()
     }
 
+    private data class BindingRequirement(
+        val nodeId: String,
+        val parameter: String,
+        val opaqueReference: String,
+        val target: String
+    ) {
+        fun appendTo(sb: StringBuilder) {
+            val envName = safeEnvName(opaqueReference)
+            sb.appendLine("    - nodeId: ${quoted(nodeId)}")
+            sb.appendLine("      parameter: ${quoted(parameter)}")
+            sb.appendLine("      opaqueReference: ${quoted(opaqueReference)}")
+            sb.appendLine("      runtimeReference: ${quoted("\$$envName")}")
+            when (target) {
+                "jenkins" -> sb.appendLine("      targetBinding: ${quoted("$envName = credentials('$opaqueReference')")}")
+                "github-actions" -> {
+                    val expression = "\$" + "{{ secrets.$opaqueReference }}"
+                    sb.appendLine("      targetBinding: ${quoted("$envName: $expression")}")
+                }
+                "tekton" -> {
+                    sb.appendLine("      targetBinding:")
+                    sb.appendLine("        secretKeyRef:")
+                    sb.appendLine("          name: flow-secrets")
+                    sb.appendLine("          key: $opaqueReference")
+                }
+                else -> sb.appendLine("      targetBinding: ${quoted("Target binding notes are required for '$target'.")}")
+            }
+        }
+    }
+
+    private fun TargetManifest.bindingRequirements(): List<BindingRequirement> = jobs
+        .flatMap { job -> job.steps.flatMap { it.flattenForReview() } }
+        .flatMap { step ->
+            step.params.flatMap { (parameter, value) ->
+                opaqueReferenceRegex.findAll(value).map { match ->
+                    BindingRequirement(step.id, parameter, match.groupValues[1], target)
+                }.toList()
+            }
+        }
+        .distinct()
+
+    private fun TargetStep.flattenForReview(): List<TargetStep> = listOf(this) + children.flatMap { it.flattenForReview() }
+
+    private fun safeEnvName(value: String): String = "FLOW_SECRET_" + value.uppercase()
+        .replace(Regex("[^A-Z0-9_]+"), "_")
+        .trim('_')
+        .ifBlank { "OPAQUE" }
+
     private fun quoted(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
+
+    private val opaqueReferenceRegex = Regex("secret:([A-Za-z0-9_.-]+)")
 }
