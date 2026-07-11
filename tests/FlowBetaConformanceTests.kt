@@ -5,6 +5,7 @@ import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
 import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -64,7 +65,9 @@ fun rc4SemanticGeneratorRegressionTests() {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
         val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
         val rendered = JenkinsManifestRenderer().render(manifest)
-        val conditions = manifest.jobs.mapNotNull { it.metadata["condition"] }
+        val conditions = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForConformance() } }
+            .filter { it.type == "condition" }
+            .mapNotNull { it.params["condition"] }
         H.ok("rc4/jenkins-condition/not-dead", conditions.none { it == "true" })
         H.ok("rc4/jenkins-condition/manifest", conditions.any { it.contains("environment") && it.contains("prod") })
         H.ok("rc4/jenkins-render/review", rendered.contains("kind: TargetProjectionReview"))
@@ -93,3 +96,5 @@ fun rc4SemanticGeneratorRegressionTests() {
         H.ok("rc4/planner/no-false-dep", second.dependsOn.isEmpty())
     }
 }
+
+private fun TargetStep.flattenForConformance(): List<TargetStep> = listOf(this) + children.flatMap { it.flattenForConformance() }
