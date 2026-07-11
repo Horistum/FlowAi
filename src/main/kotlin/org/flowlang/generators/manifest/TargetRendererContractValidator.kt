@@ -3,10 +3,9 @@ package org.flowlang.generators.manifest
 /**
  * v0.9.2 renderer contract hardening.
  *
- * Renderers are serialization boundaries. They must only render manifests that are already valid,
- * targeted at the renderer being invoked, dependency-consistent, structurally unambiguous and
- * executable-ready. Unresolved materialization is rejected before target syntax is produced so
- * Jenkins, GitHub Actions and Tekton share one failure policy.
+ * Renderers are serialization boundaries. Structural validity and executable
+ * readiness are reported separately. A structurally valid unresolved manifest
+ * may be serialized only as a non-executable review artifact.
  */
 object TargetRendererContractValidator {
     fun validate(manifest: TargetManifest, rendererTarget: String): TargetRendererContractReport {
@@ -46,8 +45,9 @@ object TargetRendererContractValidator {
 
         val readiness = TargetRendererReadinessAnalyzer.analyze(manifest)
         if (!readiness.executable) {
-            error(
-                code = "TARGET_ARTIFACT_NOT_EXECUTABLE",
+            issues += TargetRendererContractIssue(
+                level = "warning",
+                code = "TARGET_ARTIFACT_REVIEW_ONLY",
                 path = "materialization",
                 message = "${readiness.mode}: ${readiness.reason} unresolved=${readiness.unresolvedSteps.joinToString(",")} blocked=${readiness.blockedSteps.joinToString(",")}"
             )
@@ -70,14 +70,10 @@ object TargetRendererContractValidator {
 
     fun requireRenderable(manifest: TargetManifest, rendererTarget: String) {
         val report = validate(manifest, rendererTarget)
-        val readiness = TargetRendererReadinessAnalyzer.analyze(manifest)
-        val structuralIssues = report.issues.filterNot { it.code == "TARGET_ARTIFACT_NOT_EXECUTABLE" }
-        if (structuralIssues.any { it.level == "error" }) {
-            val message = structuralIssues.joinToString("; ") { "${it.code} at ${it.path}: ${it.message}" }
+        val errors = report.issues.filter { it.level == "error" }
+        if (errors.isNotEmpty()) {
+            val message = errors.joinToString("; ") { "${it.code} at ${it.path}: ${it.message}" }
             throw IllegalArgumentException("TargetManifest is not renderable by '$rendererTarget': $message")
-        }
-        if (!readiness.executable) {
-            throw TargetManifestNotExecutableException(rendererTarget, readiness)
         }
     }
 
