@@ -31,6 +31,8 @@ data class TargetRenderDecision(
 
 object TargetRenderPolicy {
     fun evaluate(manifest: TargetManifest): TargetRenderDecision {
+        requireContractValidity(manifest)
+
         val findings = mutableListOf<TargetRenderFinding>()
         val explicitManifestProjection = manifest.metadata["executableProjection"] == "true"
 
@@ -97,6 +99,22 @@ object TargetRenderPolicy {
             },
             findings = findings
         )
+    }
+
+    private fun requireContractValidity(manifest: TargetManifest) {
+        val generatedTarget = when (manifest.metadata["generator"]) {
+            "JenkinsManifestGenerator" -> "jenkins"
+            "GitHubActionsManifestGenerator" -> "github-actions"
+            "TektonManifestGenerator" -> "tekton"
+            else -> null
+        }
+        if (generatedTarget != null && generatedTarget != manifest.target) {
+            throw IllegalArgumentException(
+                "TargetManifest is not renderable: RENDERER_TARGET_MISMATCH at target: " +
+                    "generator '$generatedTarget' produced a manifest now labelled '${manifest.target}'."
+            )
+        }
+        TargetRendererContractValidator.requireRenderable(manifest, manifest.target)
     }
 
     private fun hasRendererEvidence(target: String, step: TargetStep): Boolean = when (target) {
