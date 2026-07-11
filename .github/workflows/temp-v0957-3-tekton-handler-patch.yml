@@ -1,0 +1,35 @@
+name: Temporary v0.9.5.7.3 Tekton handler patch
+
+on:
+  push:
+    branches:
+      - feature/v0957-3-renderer-failure-semantics
+    paths:
+      - .github/workflows/temp-v0957-3-tekton-handler-patch.yml
+      - .flow-agent/tmp/v0957_3_tekton_handler.patch
+
+permissions:
+  contents: write
+
+jobs:
+  apply-reviewed-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/v0957-3-renderer-failure-semantics
+          fetch-depth: 0
+
+      - name: Apply reviewed Tekton handler patch
+        run: |
+          git apply --check .flow-agent/tmp/v0957_3_tekton_handler.patch
+          git apply .flow-agent/tmp/v0957_3_tekton_handler.patch
+
+      - name: Commit exact patch result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt
+          git commit -m "Preserve Tekton error handler semantics"
+          git push origin HEAD:feature/v0957-3-renderer-failure-semantics
