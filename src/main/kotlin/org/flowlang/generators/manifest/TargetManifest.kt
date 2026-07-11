@@ -312,16 +312,14 @@ private fun PlanNode.toTargetJobs(out: MutableList<TargetJob>, condition: String
             val bodyJobs = mutableListOf<TargetJob>()
             body.forEach { it.toTargetJobs(bodyJobs, condition, targetName) }
             out += bodyJobs
-            if (targetName != "tekton") {
-                val guardDependencies = bodyJobs.map { it.id }.ifEmpty { previousJobIds }
-                val handlerJobs = mutableListOf<TargetJob>()
-                errorHandler.forEach { it.toTargetJobs(handlerJobs, condition, targetName) }
-                out += handlerJobs.map { job ->
-                    job.copy(
-                        dependsOn = (job.dependsOn + guardDependencies).distinct(),
-                        metadata = job.metadata + ("errorHandler" to "true")
-                    )
-                }
+            val guardDependencies = bodyJobs.map { it.id }.ifEmpty { previousJobIds }
+            val handlerJobs = mutableListOf<TargetJob>()
+            errorHandler.forEach { it.toTargetJobs(handlerJobs, condition, targetName) }
+            out += handlerJobs.map { job ->
+                job.copy(
+                    dependsOn = (job.dependsOn + guardDependencies).distinct(),
+                    metadata = job.metadata + ("errorHandler" to "true")
+                )
             }
         }
         is LoopNode -> out += TargetJob(id = sanitizeId(id), name = id, steps = toTargetSteps(targetName), metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial"))
