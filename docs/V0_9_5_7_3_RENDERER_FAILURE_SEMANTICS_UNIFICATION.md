@@ -9,8 +9,9 @@ Before this repair:
 - Jenkins emitted runtime `error(...)` calls.
 - GitHub Actions emitted empty jobs that could appear successful while doing no work.
 - Tekton referenced a task that Flow did not provide.
+- Tekton manifest generation omitted flow-level error-handler actions before rendering.
 
-Those outputs represented three different failure models for the same semantic state.
+Those outputs represented different failure models and, for Tekton, a different semantic inventory for the same source intent.
 
 ## Unified render modes
 
@@ -33,6 +34,8 @@ spec:
 ```
 
 The document lists every unresolved node and reason. It is deliberately not valid Jenkins, GitHub Actions or Tekton syntax, so it cannot be mistaken for a runnable target artifact.
+
+Review output also preserves opaque-value binding requirements as requirements rather than claiming that credentials or secret references were materialized. The reference build/test/deploy scenario produces the same eight semantic node findings for all three targets, including rollback and notification error-handler actions.
 
 ## Fail-fast behavior
 
