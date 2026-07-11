@@ -22,18 +22,21 @@ Those outputs represented the same unresolved semantic state with three incompat
 
 Approval steps may remain target-native control points. Other actions are executable only when their materialization status is `NATIVE` and their projection evidence identifies a `TARGET_NATIVE` artifact.
 
-## Shared renderer gate
+## Shared renderer policy
 
-`TargetRendererContractValidator.requireRenderable()` now performs two separate checks:
+`TargetRendererContractValidator` performs structural validation and reports executable readiness separately.
 
-1. structural renderer-contract validation
-2. executable-readiness validation
+Malformed manifests still fail before rendering with renderer-contract diagnostics.
 
-Malformed manifests still produce an `IllegalArgumentException` with renderer-contract diagnostics.
+Structurally valid but unresolved manifests are serialized as a deterministic comment-only review artifact. The review artifact contains:
 
-Structurally valid but unresolved manifests produce `TargetManifestNotExecutableException` with the target, readiness mode, unresolved step ids and blocked step ids.
+- target and compatibility identity
+- readiness mode
+- `Executable: false`
+- unresolved and blocked step ids
+- an explicit statement that target syntax was intentionally withheld
 
-The exception is raised before Jenkins, GitHub Actions or Tekton syntax is serialized.
+It is not a Jenkins pipeline, GitHub Actions workflow or Tekton resource.
 
 ## Result
 
@@ -43,7 +46,7 @@ The correction removes:
 - Tekton phantom Task references
 - Jenkins fail-later placeholder pipelines for unresolved work
 
-The same semantic state now has one meaning across all implemented renderers: the target artifact is not executable and target serialization is withheld.
+The same semantic state now has one meaning across all implemented renderers: the target artifact is not executable and only review evidence is emitted.
 
 ## Follow-up
 
