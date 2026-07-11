@@ -4,9 +4,9 @@ package org.flowlang.generators.manifest
  * v0.9.2 renderer contract hardening.
  *
  * Renderers are serialization boundaries. They must only render manifests that are already valid,
- * targeted at the renderer being invoked, dependency-consistent, and structurally unambiguous. v0.9.5.x
- * removes command text from this contract, so renderers validate structure and materialization status
- * instead of accepting shell-oriented fields.
+ * targeted at the renderer being invoked, dependency-consistent, structurally unambiguous and
+ * executable-ready. Unresolved materialization is rejected before target syntax is produced so
+ * Jenkins, GitHub Actions and Tekton share one failure policy.
  */
 object TargetRendererContractValidator {
     fun validate(manifest: TargetManifest, rendererTarget: String): TargetRendererContractReport {
@@ -44,6 +44,15 @@ object TargetRendererContractValidator {
             }
         }
 
+        val readiness = TargetRendererReadinessAnalyzer.analyze(manifest)
+        if (!readiness.executable) {
+            error(
+                code = "TARGET_ARTIFACT_NOT_EXECUTABLE",
+                path = "materialization",
+                message = "${readiness.mode}: ${readiness.reason} unresolved=${readiness.unresolvedSteps.joinToString(",")} blocked=${readiness.blockedSteps.joinToString(",")}"
+            )
+        }
+
         return TargetRendererContractReport(
             target = manifest.target,
             rendererTarget = rendererTarget,
@@ -52,16 +61,23 @@ object TargetRendererContractValidator {
             metadata = mapOf(
                 "manifestTarget" to manifest.target,
                 "rendererTarget" to rendererTarget,
-                "jobCount" to manifest.jobs.size.toString()
+                "jobCount" to manifest.jobs.size.toString(),
+                "renderMode" to readiness.mode.name,
+                "executable" to readiness.executable.toString()
             )
         )
     }
 
     fun requireRenderable(manifest: TargetManifest, rendererTarget: String) {
         val report = validate(manifest, rendererTarget)
-        if (!report.valid) {
-            val message = report.issues.joinToString("; ") { "${it.code} at ${it.path}: ${it.message}" }
+        val readiness = TargetRendererReadinessAnalyzer.analyze(manifest)
+        val structuralIssues = report.issues.filterNot { it.code == "TARGET_ARTIFACT_NOT_EXECUTABLE" }
+        if (structuralIssues.any { it.level == "error" }) {
+            val message = structuralIssues.joinToString("; ") { "${it.code} at ${it.path}: ${it.message}" }
             throw IllegalArgumentException("TargetManifest is not renderable by '$rendererTarget': $message")
+        }
+        if (!readiness.executable) {
+            throw TargetManifestNotExecutableException(rendererTarget, readiness)
         }
     }
 
