@@ -12,6 +12,8 @@ import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMaterialization
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererContractValidator
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TektonManifestGenerator
@@ -29,7 +31,7 @@ class TargetRendererContractValidatorTests {
     )
 
     @Test
-    fun generatedManifestsRemainRenderableForTheirOwnRenderer() {
+    fun generatedManifestsRemainValidAndUseReviewRenderingUntilExecutableEvidenceExists() {
         val jenkins = manifest("jenkins")
         val github = manifest("github-actions")
         val tekton = manifest("tekton")
@@ -37,10 +39,13 @@ class TargetRendererContractValidatorTests {
         assertTrue(TargetRendererContractValidator.validate(jenkins, "jenkins").valid)
         assertTrue(TargetRendererContractValidator.validate(github, "github-actions").valid)
         assertTrue(TargetRendererContractValidator.validate(tekton, "tekton").valid)
+        assertTrue(TargetRenderPolicy.evaluate(jenkins).mode == TargetRenderMode.REVIEW_ONLY)
+        assertTrue(TargetRenderPolicy.evaluate(github).mode == TargetRenderMode.REVIEW_ONLY)
+        assertTrue(TargetRenderPolicy.evaluate(tekton).mode == TargetRenderMode.REVIEW_ONLY)
 
-        assertTrue(JenkinsManifestRenderer().render(jenkins).contains("pipeline {"))
-        assertTrue(GitHubActionsManifestRenderer().render(github).contains("workflow_dispatch"))
-        assertTrue(TektonManifestRenderer().render(tekton).contains("kind: Pipeline"))
+        assertTrue(JenkinsManifestRenderer().render(jenkins).contains("mode: REVIEW_ONLY"))
+        assertTrue(GitHubActionsManifestRenderer().render(github).contains("mode: REVIEW_ONLY"))
+        assertTrue(TektonManifestRenderer().render(tekton).contains("mode: REVIEW_ONLY"))
     }
 
     @Test
