@@ -18,7 +18,8 @@ data class TargetRenderFinding(
     val stepType: String,
     val materializationStatus: TargetMaterializationStatus,
     val capability: String,
-    val reason: String
+    val reason: String,
+    val opaqueReferences: List<String> = emptyList()
 )
 
 data class TargetRenderDecision(
@@ -76,7 +77,10 @@ object TargetRenderPolicy {
                             nativeStatus && !rendererEvidence ->
                                 "Native materialization is declared, but renderer-specific executable metadata is missing."
                             else -> step.materialization.reason
-                        }
+                        },
+                        opaqueReferences = step.params.values
+                            .flatMap { value -> OPAQUE_REFERENCE.findAll(value).map { it.groupValues[1] }.toList() }
+                            .distinct()
                     )
                 }
             }
@@ -104,6 +108,8 @@ object TargetRenderPolicy {
 
     private fun TargetStep.leafSteps(): List<TargetStep> =
         if (children.isEmpty()) listOf(this) else children.flatMap { it.leafSteps() }
+
+    private val OPAQUE_REFERENCE = Regex("secret:([A-Za-z0-9_.-]+)")
 }
 
 object TargetReviewArtifactRenderer {
@@ -145,6 +151,12 @@ object TargetReviewArtifactRenderer {
                         sb.appendLine("        materialization: ${finding.materializationStatus}")
                         sb.appendLine("        capability: ${quoted(finding.capability)}")
                         sb.appendLine("        reason: ${quoted(finding.reason)}")
+                        if (finding.opaqueReferences.isNotEmpty()) {
+                            sb.appendLine("        opaqueRequirements:")
+                            finding.opaqueReferences.forEach { reference ->
+                                sb.appendLine("          - ${quoted(reference)}")
+                            }
+                        }
                     }
                 }
             }
