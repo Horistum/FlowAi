@@ -48,15 +48,20 @@ class MainMissingReviewFixesTests {
 
         assertTrue(body.children.isNotEmpty(), "Flow-level error handler must wrap the real flow body in the Jenkins manifest.")
         assertTrue(handler.children.isNotEmpty(), "Flow-level error handler must preserve handler steps in the Jenkins manifest.")
+        assertTrue(body.children.flatMap { it.flatten() }.any { it.type == "condition" })
+        assertTrue(handler.children.flatMap { it.flatten() }.any { it.module == "notify" && it.action == "send" })
     }
 
     @Test
-    fun jenkinsFlowLevelErrorHandlerRendersScriptedTryCatch() {
+    fun unresolvedFlowLevelErrorHandlerProducesReviewEvidenceInsteadOfScriptedPipeline() {
         val rendered = JenkinsManifestRenderer().render(jenkinsManifestWithFlowLevelErrorHandler())
 
-        assertTrue(rendered.contains("try {"), rendered)
-        assertTrue(rendered.contains("catch (flowError)"), rendered)
-        assertTrue(rendered.contains("params.environment == 'prod'"), rendered)
+        assertTrue(rendered.contains("mode: REVIEW_ONLY"), rendered)
+        assertTrue(rendered.contains("executable: false"), rendered)
+        assertTrue(rendered.contains("capability: \"manual.runtime.action\""), rendered)
+        assertTrue(rendered.contains("capability: \"notify.send\""), rendered)
+        assertFalse(rendered.contains("try {"), rendered)
+        assertFalse(rendered.contains("catch (flowError)"), rendered)
         assertFalse(rendered.contains("post {"), rendered)
     }
 
@@ -120,4 +125,6 @@ class MainMissingReviewFixesTests {
         params = mapOf("command" to StringLiteralNode(value = command)),
         result = ResultBindingNode(name = resultName)
     )
+
+    private fun TargetStep.flatten(): List<TargetStep> = listOf(this) + children.flatMap { it.flatten() }
 }
