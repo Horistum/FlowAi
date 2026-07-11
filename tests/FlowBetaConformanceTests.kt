@@ -5,6 +5,8 @@ import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
 import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -30,8 +32,9 @@ fun betaConformanceTests() {
         val manifest = GitHubActionsManifestGenerator().generate(plan, compatibility)
         val rendered = GitHubActionsManifestRenderer().render(manifest)
         H.eq("beta/github-manifest/target", manifest.target, "github-actions")
-        H.ok("beta/github-render/name", rendered.contains("name:"))
-        H.ok("beta/github-render/jobs", rendered.contains("jobs:"))
+        H.ok("beta/github-review/mode", TargetRenderPolicy.evaluate(manifest).mode == TargetRenderMode.REVIEW_ONLY)
+        H.ok("beta/github-review/jobs", rendered.contains("jobs:") && rendered.contains("unresolved:"))
+        H.ok("beta/github-review/non-executable", rendered.contains("executable: false") && !rendered.contains("runs-on:"))
     }
     H.scenario {
         val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
@@ -43,8 +46,9 @@ fun betaConformanceTests() {
         val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
         val rendered = JenkinsManifestRenderer().render(manifest)
         H.eq("beta/jenkins-manifest/target", manifest.target, "jenkins")
-        H.ok("beta/jenkins-render/pipeline", rendered.contains("pipeline {"))
-        H.ok("beta/jenkins-render/stages", rendered.contains("stages {"))
+        H.ok("beta/jenkins-review/mode", TargetRenderPolicy.evaluate(manifest).mode == TargetRenderMode.REVIEW_ONLY)
+        H.ok("beta/jenkins-review/requested-format", rendered.contains("requestedArtifact: \"Jenkinsfile\"") && rendered.contains("requested-syntax: \"pipeline {\""))
+        H.ok("beta/jenkins-review/non-executable", rendered.contains("executable: false") && !rendered.lines().any { it.trim() == "pipeline {" })
     }
 }
 
@@ -58,9 +62,11 @@ fun rc4SemanticGeneratorRegressionTests() {
 
     H.scenario {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
-        val rendered = JenkinsManifestRenderer().render(JenkinsManifestGenerator().generate(plan, compatibility))
-        H.ok("rc4/jenkins-condition/not-dead", !rendered.contains("true /* Flow condition"))
-        H.ok("rc4/jenkins-condition/params", rendered.contains("params.environment") && rendered.contains("== 'prod'"))
+        val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
+        val rendered = JenkinsManifestRenderer().render(manifest)
+        H.ok("rc4/jenkins-condition/not-dead", manifest.jobs.any { it.metadata["condition"]?.contains("environment") == true })
+        H.ok("rc4/jenkins-review/parameter-reference", rendered.contains("\${params.environment}"))
+        H.ok("rc4/jenkins-review/non-executable", rendered.contains("mode: REVIEW_ONLY") && !rendered.contains("if ((params.environment"))
     }
     H.scenario {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "github-actions")
@@ -68,8 +74,8 @@ fun rc4SemanticGeneratorRegressionTests() {
         val rendered = GitHubActionsManifestRenderer().render(manifest)
         H.ok("rc4/gha/job-per-task", manifest.jobs.size >= plan.tasks.size)
         H.ok("rc4/gha/has-dag-dependencies", manifest.jobs.any { it.dependsOn.isNotEmpty() })
-        H.ok("rc4/gha/renders-needs", rendered.contains("needs:"))
-        H.ok("rc4/gha/condition/not-always-only", !rendered.contains("if: ${'$'}{{ always() }} # Flow condition"))
+        H.ok("rc4/gha/review-preserves-jobs", rendered.contains("jobs:") && manifest.jobs.all { rendered.contains("id: \"${it.id}\"") })
+        H.ok("rc4/gha/review-not-runnable", rendered.contains("mode: REVIEW_ONLY") && !rendered.contains("runs-on:"))
     }
     H.scenario {
         val p = FlowParser().parse("""
