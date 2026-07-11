@@ -7,6 +7,7 @@ import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -64,7 +65,8 @@ fun rc4SemanticGeneratorRegressionTests() {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
         val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
         val rendered = JenkinsManifestRenderer().render(manifest)
-        H.ok("rc4/jenkins-condition/not-dead", manifest.jobs.any { it.metadata["condition"]?.contains("environment") == true })
+        val conditions = manifest.jobs.flatMap { it.steps }.flatMap { it.flattenTargetSteps() }.filter { it.type == "condition" }
+        H.ok("rc4/jenkins-condition/preserved", conditions.any { it.params["condition"]?.contains("environment") == true })
         H.ok("rc4/jenkins-review/parameter-reference", rendered.contains("\${params.environment}"))
         H.ok("rc4/jenkins-review/non-executable", rendered.contains("mode: REVIEW_ONLY") && !rendered.contains("if ((params.environment"))
     }
@@ -90,3 +92,5 @@ fun rc4SemanticGeneratorRegressionTests() {
         H.ok("rc4/planner/no-false-dep", second.dependsOn.isEmpty())
     }
 }
+
+private fun TargetStep.flattenTargetSteps(): List<TargetStep> = listOf(this) + children.flatMap { it.flattenTargetSteps() }
