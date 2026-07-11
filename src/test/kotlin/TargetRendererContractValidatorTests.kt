@@ -1,5 +1,6 @@
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
@@ -12,6 +13,8 @@ import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMaterialization
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererContractValidator
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TektonManifestGenerator
@@ -29,18 +32,20 @@ class TargetRendererContractValidatorTests {
     )
 
     @Test
-    fun generatedManifestsRemainRenderableForTheirOwnRenderer() {
-        val jenkins = manifest("jenkins")
-        val github = manifest("github-actions")
-        val tekton = manifest("tekton")
+    fun generatedManifestsRemainStructurallyRenderableAndHonestlyReviewOnly() {
+        val cases = listOf(
+            Triple(manifest("jenkins"), "jenkins", JenkinsManifestRenderer()::render),
+            Triple(manifest("github-actions"), "github-actions", GitHubActionsManifestRenderer()::render),
+            Triple(manifest("tekton"), "tekton", TektonManifestRenderer()::render)
+        )
 
-        assertTrue(TargetRendererContractValidator.validate(jenkins, "jenkins").valid)
-        assertTrue(TargetRendererContractValidator.validate(github, "github-actions").valid)
-        assertTrue(TargetRendererContractValidator.validate(tekton, "tekton").valid)
-
-        assertTrue(JenkinsManifestRenderer().render(jenkins).contains("pipeline {"))
-        assertTrue(GitHubActionsManifestRenderer().render(github).contains("workflow_dispatch"))
-        assertTrue(TektonManifestRenderer().render(tekton).contains("kind: Pipeline"))
+        cases.forEach { (manifest, target, renderer) ->
+            assertTrue(TargetRendererContractValidator.validate(manifest, target).valid)
+            assertEquals(TargetRenderMode.REVIEW_ONLY, TargetRenderPolicy.evaluate(manifest).mode)
+            val rendered = renderer(manifest)
+            assertTrue(rendered.contains("kind: TargetProjectionReview"), rendered)
+            assertTrue(rendered.contains("executable: false"), rendered)
+        }
     }
 
     @Test
