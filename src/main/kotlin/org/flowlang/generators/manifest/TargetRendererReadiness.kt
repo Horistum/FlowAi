@@ -1,0 +1,90 @@
+package org.flowlang.generators.manifest
+
+enum class TargetRenderMode {
+    EXECUTABLE,
+    REVIEW_ONLY,
+    BLOCKED
+}
+
+data class TargetRenderReadiness(
+    val mode: TargetRenderMode,
+    val unresolvedSteps: List<String>,
+    val blockedSteps: List<String>,
+    val reason: String
+) {
+    val executable: Boolean = mode == TargetRenderMode.EXECUTABLE
+}
+
+object TargetRendererReadinessAnalyzer {
+    fun analyze(manifest: TargetManifest): TargetRenderReadiness {
+        val actionableSteps = manifest.jobs
+            .flatMap { job -> job.steps.flatMap { it.flattenForReadiness() } }
+            .filter { it.isActionableForReadiness() }
+
+        val blocked = actionableSteps
+            .filter { it.materialization.status in setOf(TargetMaterializationStatus.BLOCKED, TargetMaterializationStatus.UNSUPPORTED) }
+            .map { it.id }
+
+        val unresolved = actionableSteps
+            .filterNot { it.isExecutableForRenderer() }
+            .map { it.id }
+
+        return when {
+            blocked.isNotEmpty() -> TargetRenderReadiness(
+                mode = TargetRenderMode.BLOCKED,
+                unresolvedSteps = unresolved,
+                blockedSteps = blocked,
+                reason = "Target serialization is blocked because one or more semantic actions are explicitly blocked or unsupported."
+            )
+            unresolved.isNotEmpty() -> TargetRenderReadiness(
+                mode = TargetRenderMode.REVIEW_ONLY,
+                unresolvedSteps = unresolved,
+                blockedSteps = emptyList(),
+                reason = "Target serialization is withheld because one or more semantic actions lack target-native materialization."
+            )
+            actionableSteps.isEmpty() -> TargetRenderReadiness(
+                mode = TargetRenderMode.REVIEW_ONLY,
+                unresolvedSteps = emptyList(),
+                blockedSteps = emptyList(),
+                reason = "Target serialization is withheld because the manifest contains no executable semantic actions."
+            )
+            else -> TargetRenderReadiness(
+                mode = TargetRenderMode.EXECUTABLE,
+                unresolvedSteps = emptyList(),
+                blockedSteps = emptyList(),
+                reason = "Every actionable step has explicit target-native materialization evidence."
+            )
+        }
+    }
+
+    private fun TargetStep.isExecutableForRenderer(): Boolean {
+        if (type == "approval") return true
+        return materialization.status == TargetMaterializationStatus.NATIVE &&
+            materialization.requirements["projectionArtifactKind"] == "TARGET_NATIVE"
+    }
+
+    private fun TargetStep.isActionableForReadiness(): Boolean = type !in STRUCTURAL_STEP_TYPES
+
+    private fun TargetStep.flattenForReadiness(): List<TargetStep> =
+        listOf(this) + children.flatMap { it.flattenForReadiness() }
+
+    private val STRUCTURAL_STEP_TYPES = setOf(
+        "try",
+        "try-body",
+        "error-handler",
+        "parallel",
+        "parallel-branch",
+        "loop",
+        "match",
+        "retry",
+        "condition"
+    )
+}
+
+class TargetManifestNotExecutableException(
+    val rendererTarget: String,
+    val readiness: TargetRenderReadiness
+) : IllegalStateException(
+    "TargetManifest is not executable for '$rendererTarget': ${readiness.mode} ${readiness.reason} " +
+        "unresolved=${readiness.unresolvedSteps.joinToString(",")} blocked=${readiness.blockedSteps.joinToString(",")}"
+)
