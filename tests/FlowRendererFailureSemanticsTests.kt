@@ -3,6 +3,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
@@ -14,6 +15,7 @@ import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.generators.manifest.TektonManifestRenderer
+import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
@@ -41,13 +43,13 @@ class FlowRendererFailureSemanticsTests {
 
     @Test
     fun notesProjectedIsNotTreatedAsTargetNativeExecution() {
-        val manifest = manifest("jenkins")
+        val manifest = intentManifest("jenkins")
         val decision = TargetRenderPolicy.evaluate(manifest)
 
         assertTrue(decision.findings.any {
             it.materializationStatus.name == "NOTES_PROJECTED" &&
                 it.reason.contains("no target-native executable projection")
-        })
+        }, decision.findings.joinToString { "${it.stepId}:${it.materializationStatus}:${it.reason}" })
     }
 
     @Test
@@ -70,7 +72,16 @@ class FlowRendererFailureSemanticsTests {
 
     private fun manifest(target: String): TargetManifest {
         val ast = FlowParser().parse(File("examples/api-sync.flow"))
-        val plan = FlowPlanner(registry).plan(ast)
+        return generate(target, FlowPlanner(registry).plan(ast))
+    }
+
+    private fun intentManifest(target: String): TargetManifest {
+        val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
+        val ast = IntentToAstPlanner(registry).plan(intent)
+        return generate(target, FlowPlanner(registry).plan(ast))
+    }
+
+    private fun generate(target: String, plan: org.flowlang.planner.ExecutionPlan): TargetManifest {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
         return when (target) {
             "jenkins" -> JenkinsManifestGenerator().generate(plan, compatibility)
