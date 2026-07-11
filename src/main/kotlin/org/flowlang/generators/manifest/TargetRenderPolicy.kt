@@ -5,7 +5,7 @@ package org.flowlang.generators.manifest
  * artifact or must remain a review-only Flow artifact.
  *
  * Materialization status alone is not executable evidence. A target-native
- * projection must be explicit at both manifest and leaf-step boundaries.
+ * projection must be explicit at manifest, leaf-step and renderer boundaries.
  */
 enum class TargetRenderMode {
     EXECUTABLE,
@@ -57,8 +57,10 @@ object TargetRenderPolicy {
                 )
             }
             leaves.forEach { step ->
-                val targetNative = step.materialization.status == TargetMaterializationStatus.NATIVE &&
-                    step.metadata["targetNativeProjection"] == "true"
+                val nativeStatus = step.materialization.status == TargetMaterializationStatus.NATIVE
+                val explicitStepProjection = step.metadata["targetNativeProjection"] == "true"
+                val rendererEvidence = hasRendererEvidence(manifest.target, step)
+                val targetNative = nativeStatus && explicitStepProjection && rendererEvidence
                 if (!targetNative) {
                     findings += TargetRenderFinding(
                         jobId = job.id,
@@ -66,9 +68,13 @@ object TargetRenderPolicy {
                         stepType = step.type,
                         materializationStatus = step.materialization.status,
                         capability = step.materialization.capability,
-                        reason = when (step.materialization.status) {
-                            TargetMaterializationStatus.NOTES_PROJECTED ->
+                        reason = when {
+                            step.materialization.status == TargetMaterializationStatus.NOTES_PROJECTED ->
                                 "Notes-backed semantic materialization exists, but no target-native executable projection is attached."
+                            nativeStatus && !explicitStepProjection ->
+                                "Native materialization is declared, but the step does not carry explicit target-native projection evidence."
+                            nativeStatus && !rendererEvidence ->
+                                "Native materialization is declared, but renderer-specific executable metadata is missing."
                             else -> step.materialization.reason
                         }
                     )
@@ -87,6 +93,13 @@ object TargetRenderPolicy {
             },
             findings = findings
         )
+    }
+
+    private fun hasRendererEvidence(target: String, step: TargetStep): Boolean = when (target) {
+        "jenkins" -> step.type == "approval" || !step.metadata["jenkinsDirective"].isNullOrBlank()
+        "github-actions" -> !step.metadata["githubUses"].isNullOrBlank()
+        "tekton" -> !step.metadata["tektonTaskRef"].isNullOrBlank()
+        else -> false
     }
 
     private fun TargetStep.leafSteps(): List<TargetStep> =
