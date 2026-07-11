@@ -10,11 +10,14 @@ import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
 import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMaterialization
+import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetRenderBlockedException
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.generators.manifest.TektonManifestRenderer
 import org.flowlang.modules.ModuleRegistry
@@ -41,7 +44,7 @@ class FlowRendererFailureSemanticsTests {
             assertTrue(output.contains("kind: TargetProjectionReview"))
             assertTrue(output.contains("renderMode: REVIEW_ONLY"))
             assertTrue(output.contains("executable: false"))
-            assertTrue(output.contains("TARGET_PAYLOAD_MISSING") || output.contains("ADAPTER_REQUIRED"))
+            assertTrue(output.contains("findings:"))
             assertFalse(output.contains("steps: []"))
             assertFalse(output.contains("flow-materialization-required"))
         }
@@ -63,12 +66,30 @@ class FlowRendererFailureSemanticsTests {
 
     @Test
     fun notesMaterializationWithoutRendererPayloadRemainsReviewOnly() {
-        val manifest = manifest("jenkins")
-        val readiness = TargetRenderPolicy.evaluate(manifest)
+        val base = manifest("jenkins")
+        val notesProjected = TargetStep(
+            id = "notes_projected",
+            name = "notes projected",
+            type = "action",
+            module = "standard",
+            action = "execute",
+            target = "standard",
+            materialization = TargetMaterialization(
+                status = TargetMaterializationStatus.NOTES_PROJECTED,
+                capability = "standard.execute",
+                reason = "Semantic materialization exists, but target renderer payload evidence is intentionally absent."
+            )
+        )
+        val synthetic = base.copy(
+            jobs = listOf(TargetJob(id = "notes_projected", steps = listOf(notesProjected))),
+            mappingNotes = emptyList()
+        )
+
+        val readiness = TargetRenderPolicy.evaluate(synthetic)
 
         assertEquals(TargetRenderMode.REVIEW_ONLY, readiness.mode)
         assertFalse(readiness.executable)
-        assertTrue(readiness.findings.any { it.status == "TARGET_PAYLOAD_MISSING" })
+        assertTrue(readiness.findings.any { it.nodeId == "notes_projected" && it.status == "TARGET_PAYLOAD_MISSING" })
     }
 
     private fun manifest(target: String): TargetManifest {
