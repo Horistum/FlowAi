@@ -10,9 +10,9 @@ import org.flowlang.semantic.SemanticActionKind
 /**
  * Target projection plan contract.
  *
- * This model describes the artifacts that may be produced after semantic action
- * graph validation and materialization negotiation. It records projection intent
- * without treating a command string as the universal representation of work.
+ * This model describes artifacts that may be produced after semantic validation
+ * and materialization negotiation. It validates structured projection ownership
+ * instead of banning ordinary diagnostic words.
  */
 enum class TargetProjectionArtifactKind {
     TARGET_NATIVE,
@@ -123,13 +123,12 @@ class TargetProjectionPlanValidator(
                 issues += issue(plan, "projection.artifact.id.duplicate", "Projection artifact id '${artifact.artifactId}' is duplicated.")
             }
 
-            val decision = decisionsByNode[artifact.nodeId]
-            if (decision != null) {
+            decisionsByNode[artifact.nodeId]?.let { decision ->
                 issues += validateStatusAlignment(plan, artifact, decision)
             }
 
             issues += validateArtifactShape(plan, artifact)
-            issues += validateNoCommandRepresentation(plan, artifact)
+            issues += validateProjectionMechanism(plan, artifact)
         }
         return issues
     }
@@ -186,19 +185,42 @@ class TargetProjectionPlanValidator(
         return issues
     }
 
-    private fun validateNoCommandRepresentation(plan: TargetProjectionPlan, artifact: TargetProjectionArtifact): List<TargetProjectionPlanIssue> {
+    private fun validateProjectionMechanism(
+        plan: TargetProjectionPlan,
+        artifact: TargetProjectionArtifact
+    ): List<TargetProjectionPlanIssue> {
+        if (artifact.kind !in MATERIALIZABLE_PROJECTION_ARTIFACTS) return emptyList()
+
         val issues = mutableListOf<TargetProjectionPlanIssue>()
-        artifact.allText().forEach { text ->
-            val lowered = text.lowercase()
-            FORBIDDEN_PROJECTION_TERMS.filter { lowered.contains(it) }.forEach { term ->
-                issues += issue(plan, "projection.artifact.forbidden-term", "Projection artifact '${artifact.artifactId}' must not use '$term' as target projection representation.")
+        artifact.fields.keys.filter { it.lowercase() in FORBIDDEN_RAW_PAYLOAD_KEYS }.forEach { key ->
+            issues += issue(
+                plan,
+                "projection.artifact.forbidden-mechanism",
+                "Materializable projection artifact '${artifact.artifactId}' must not carry raw runtime payload field '$key'."
+            )
+        }
+
+        REPRESENTATION_KEYS.mapNotNull { key -> artifact.fields[key] }.forEach { representation ->
+            val lowered = representation.lowercase()
+            if (FORBIDDEN_REPRESENTATION_VALUES.any { term -> lowered == term || lowered.startsWith("$term.") }) {
+                issues += issue(
+                    plan,
+                    "projection.artifact.forbidden-mechanism",
+                    "Materializable projection artifact '${artifact.artifactId}' declares raw runtime representation '$representation'."
+                )
             }
+        }
+
+        val notesReference = artifact.notesReference.lowercase()
+        if (FORBIDDEN_NOTES_PREFIXES.any { notesReference == it.removeSuffix(".") || notesReference.startsWith(it) }) {
+            issues += issue(
+                plan,
+                "projection.artifact.forbidden-mechanism",
+                "Materializable projection artifact '${artifact.artifactId}' must not use raw runtime notes reference '${artifact.notesReference}'."
+            )
         }
         return issues
     }
-
-    private fun TargetProjectionArtifact.allText(): List<String> =
-        listOf(artifactId, nodeId, target, notesReference, description) + fields.keys + fields.values
 
     private fun issue(plan: TargetProjectionPlan, code: String, message: String) =
         TargetProjectionPlanIssue(code = code, planId = plan.planId, message = message)
@@ -211,13 +233,33 @@ class TargetProjectionPlanValidator(
             TargetProjectionArtifactKind.NOTES_BACKED,
             TargetProjectionArtifactKind.CONFORMANCE_RECORD
         )
-        private val FORBIDDEN_PROJECTION_TERMS = listOf(
+        private val MATERIALIZABLE_PROJECTION_ARTIFACTS = setOf(
+            TargetProjectionArtifactKind.TARGET_NATIVE,
+            TargetProjectionArtifactKind.NOTES_BACKED
+        )
+        private val FORBIDDEN_RAW_PAYLOAD_KEYS = setOf(
+            "command",
+            "script",
+            "shell",
+            "run"
+        )
+        private val REPRESENTATION_KEYS = setOf(
+            "representation",
+            "projectionMechanism",
+            "executionMode"
+        )
+        private val FORBIDDEN_REPRESENTATION_VALUES = setOf(
             "shell",
             "command",
             "script",
             "bash",
             "cmd.exe",
             "powershell"
+        )
+        private val FORBIDDEN_NOTES_PREFIXES = setOf(
+            "shell.",
+            "command.",
+            "script."
         )
     }
 }

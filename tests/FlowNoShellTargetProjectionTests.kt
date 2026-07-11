@@ -10,7 +10,6 @@ import org.flowlang.materialization.MaterializationStatus
 import org.flowlang.materialization.StandardMaterializationNegotiations
 import org.flowlang.notes.StandardNotesPackageContracts
 import org.flowlang.projection.StandardTargetProjectionPlans
-import org.flowlang.projection.TargetProjectionArtifact
 import org.flowlang.projection.TargetProjectionArtifactKind
 import org.flowlang.projection.TargetProjectionPlan
 import org.flowlang.projection.TargetProjectionPlanStatus
@@ -49,20 +48,38 @@ class FlowNoShellTargetProjectionTests {
     }
 
     @Test
-    fun projectionArtifactsMustNotUseShellCommandOrScriptAsRepresentation() {
-        val badArtifact = StandardTargetProjectionPlans.baseline(negotiation).artifacts.first().copy(
-            artifactId = "artifact.bad-command",
-            description = "Use shell command as projection representation."
+    fun materializableProjectionArtifactRejectsRawRuntimePayloadField() {
+        val baseline = StandardTargetProjectionPlans.baseline(negotiation)
+        val badArtifact = baseline.artifacts.first().copy(
+            artifactId = "artifact.bad-runtime-payload",
+            fields = baseline.artifacts.first().fields + ("command" to "execute arbitrary text")
         )
-        val plan = StandardTargetProjectionPlans.baseline(negotiation).copy(
-            planId = "flow.projection.bad-command",
-            artifacts = listOf(badArtifact) + StandardTargetProjectionPlans.baseline(negotiation).artifacts.drop(1)
+        val plan = baseline.copy(
+            planId = "flow.projection.bad-runtime-payload",
+            artifacts = listOf(badArtifact) + baseline.artifacts.drop(1)
         )
 
         val report = TargetProjectionPlanValidator(notes).validate(plan)
 
         assertEquals(TargetProjectionPlanStatus.FAIL, report.status)
-        assertTrue(report.issues.any { it.code == "projection.artifact.forbidden-term" })
+        assertTrue(report.issues.any { it.code == "projection.artifact.forbidden-mechanism" })
+    }
+
+    @Test
+    fun reviewDescriptionMayNameRejectedRuntimeMechanisms() {
+        val baseline = StandardTargetProjectionPlans.baseline(negotiation)
+        val artifacts = baseline.artifacts.map { artifact ->
+            if (artifact.kind == TargetProjectionArtifactKind.ADAPTER_BOUNDARY) {
+                artifact.copy(description = "A shell command is not materialized by this adapter boundary.")
+            } else {
+                artifact
+            }
+        }
+        val plan = baseline.copy(planId = "flow.projection.diagnostic-language", artifacts = artifacts)
+
+        val report = TargetProjectionPlanValidator(notes).validate(plan)
+
+        assertEquals(TargetProjectionPlanStatus.PASS, report.status, report.issues.toString())
     }
 
     @Test

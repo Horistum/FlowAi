@@ -280,17 +280,17 @@ private object TargetProjectionValue {
 
     fun bindingValue(target: ProjectionTarget, name: String): String = when (target) {
         ProjectionTarget.JENKINS -> "credentials('${groovyEscape(name)}')"
-        ProjectionTarget.GITHUB_ACTIONS -> githubExpression(w(115, 101, 99, 114, 101, 116, 115) + ".$name")
+        ProjectionTarget.GITHUB_ACTIONS -> githubExpression("secrets.$name")
         ProjectionTarget.TEKTON -> "flow-secrets/$name"
     }
 
     fun boundary(target: ProjectionTarget): String = when (target) {
-        ProjectionTarget.JENKINS -> w(119, 105, 116, 104, 67, 114, 101, 100, 101, 110, 116, 105, 97, 108, 115)
+        ProjectionTarget.JENKINS -> "withCredentials"
         else -> "projectionBoundary"
     }
 
     fun mappingSpec(target: ProjectionTarget, name: String): String = when (target) {
-        ProjectionTarget.JENKINS -> "string(${w(99, 114, 101, 100, 101, 110, 116, 105, 97, 108, 115, 73, 100)}: '${groovyEscape(name)}', variable: '${safeEnvName(name)}')"
+        ProjectionTarget.JENKINS -> "string(credentialsId: '${groovyEscape(name)}', variable: '${safeEnvName(name)}')"
         ProjectionTarget.GITHUB_ACTIONS -> safeEnvName(name)
         ProjectionTarget.TEKTON -> safeEnvName(name)
     }
@@ -298,7 +298,7 @@ private object TargetProjectionValue {
     fun mappingNote(target: ProjectionTarget, name: String): String? = when (target) {
         ProjectionTarget.JENKINS -> "value mapping requirement: ${boundary(target)}([${mappingSpec(target, name)}]) exposes env.${safeEnvName(name)}"
         ProjectionTarget.GITHUB_ACTIONS -> "value mapping requirement: repository opaque value $name must be available as ${renderOpaque(target, name)}"
-        ProjectionTarget.TEKTON -> "value mapping requirement: " + w(115, 101, 99, 114, 101, 116, 75, 101, 121, 82, 101, 102) + " name=flow-secrets key=$name"
+        ProjectionTarget.TEKTON -> "value mapping requirement: secretKeyRef name=flow-secrets key=$name"
     }
 
     fun structuredMappingNote(target: ProjectionTarget, name: String): String? = when (target) {
@@ -308,7 +308,7 @@ private object TargetProjectionValue {
 
     private fun renderInputs(target: ProjectionTarget, value: String, inputNames: Set<String>): String {
         if (value in inputNames) return renderInput(target, value)
-        val interpolationStart = 36.toChar().toString() + "{"
+        val interpolationStart = "\${"
         val regex = Regex(Regex.escape(interpolationStart) + "([^}]+)}")
         return regex.replace(value) { match ->
             val expression = match.groupValues[1].trim()
@@ -323,19 +323,17 @@ private object TargetProjectionValue {
     }
 
     private fun renderInputInterpolation(target: ProjectionTarget, name: String): String = when (target) {
-        ProjectionTarget.JENKINS -> 36.toChar().toString() + "{params.$name}"
+        ProjectionTarget.JENKINS -> "\${params.$name}"
         ProjectionTarget.GITHUB_ACTIONS -> githubExpression("inputs.$name")
         ProjectionTarget.TEKTON -> "\$(params.$name)"
     }
 }
 
-private val opaqueRefRegex = Regex(w(115, 101, 99, 114, 101, 116) + ":([A-Za-z0-9_.-]+)")
-private fun w(vararg codes: Int): String = codes.map { it.toChar() }.joinToString("")
-private fun kubernetesName(value: String): String = value.lowercase().replace(Regex("[^a-z0-9-]+"), "-").trim('-').ifBlank { "opaque" }
+private val opaqueRefRegex = Regex("secret:([A-Za-z0-9_.-]+)")
 private fun safeEnvName(value: String): String = "FLOW_SECRET_" + value.uppercase().replace(Regex("[^A-Z0-9_]+"), "_").trim('_').ifBlank { "OPAQUE" }
 private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 private fun groovyString(value: String): String = "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r") + "'"
 private fun groovyEscape(value: String): String = value.replace("'", "\\'")
-private fun githubExpression(value: String): String = 36.toChar().toString() + "{{ $value }}"
+private fun githubExpression(value: String): String = "\${{ $value }}"
 
 private fun TargetStep.flatten(): List<TargetStep> = listOf(this) + children.flatMap { it.flatten() }
