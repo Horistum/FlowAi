@@ -6,6 +6,7 @@ import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
 import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.generators.manifest.TektonManifestRenderer
 import org.flowlang.modules.ModuleRegistry
@@ -17,14 +18,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Regression guard for system-secret materialisation.
+ * Regression guard for opaque configuration references.
  *
- * A system configuration value bound to a secret (e.g. the REST `baseUrl: secret("CRM_URL")` in
- * examples/api-sync.flow) must be delivered into the rendered pipeline through the target's own
- * secret mechanism (Jenkins credentials, GitHub secrets context, Tekton secretKeyRef) and referenced
- * in the command through the environment ("$FLOW_SECRET_CRM_URL"). Before this fix the value was
- * silently dropped, so the request rendered as `curl ... -X 'GET' '/customers'` with no host —
- * a manifest that could never run and gave no diagnostic.
+ * Review-only target artifacts must preserve the requirement for an opaque value
+ * without pretending that a target-native runtime binding has already been
+ * generated. Binding syntax belongs to executable target projection evidence.
  */
 class FlowSecretMaterializationTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
@@ -34,50 +32,51 @@ class FlowSecretMaterializationTests {
         "tekton" to TargetCapability(target = "tekton", description = "test")
     )
 
-    private fun render(target: String): String {
+    private fun manifest(target: String): TargetManifest {
         val ast = FlowParser().parse(File("examples/api-sync.flow"))
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
         return when (target) {
-            "jenkins" -> JenkinsManifestRenderer().render(JenkinsManifestGenerator().generate(plan, compatibility))
-            "github-actions" -> GitHubActionsManifestRenderer().render(GitHubActionsManifestGenerator().generate(plan, compatibility))
-            "tekton" -> TektonManifestRenderer().render(TektonManifestGenerator().generate(plan, compatibility))
+            "jenkins" -> JenkinsManifestGenerator().generate(plan, compatibility)
+            "github-actions" -> GitHubActionsManifestGenerator().generate(plan, compatibility)
+            "tekton" -> TektonManifestGenerator().generate(plan, compatibility)
             else -> error("unknown target $target")
         }
     }
 
+    private fun render(target: String): String = when (target) {
+        "jenkins" -> JenkinsManifestRenderer().render(manifest(target))
+        "github-actions" -> GitHubActionsManifestRenderer().render(manifest(target))
+        "tekton" -> TektonManifestRenderer().render(manifest(target))
+        else -> error("unknown target $target")
+    }
+
     @Test
-    fun secretBaseUrlIsMaterialisedNotDropped() {
+    fun opaqueBaseUrlRequirementIsPreservedInManifest() {
         for (target in targets.keys) {
-            val rendered = render(target)
-            assertTrue(
-                rendered.contains("\"\$FLOW_SECRET_CRM_URL\""),
-                "[$target] rest.call must reference the materialised baseUrl secret through the environment:\n$rendered"
-            )
-            assertFalse(
-                Regex("""curl[^\n]*secret\(""").containsMatchIn(rendered),
-                "[$target] the raw secret(...) expression must never be spliced into the curl command:\n$rendered"
-            )
+            val params = manifest(target).jobs
+                .flatMap { it.steps }
+                .flatMap { it.flatten() }
+                .flatMap { it.params.values }
+
+            assertTrue(params.any { it.contains("secret:CRM_URL") }, "[$target] opaque CRM_URL requirement disappeared from the target manifest.")
         }
     }
 
     @Test
-    fun jenkinsBindsSecretThroughCredentials() {
-        val rendered = render("jenkins")
-        assertTrue(rendered.contains("FLOW_SECRET_CRM_URL = credentials('CRM_URL')"), rendered)
+    fun reviewArtifactReportsOpaqueRequirementWithoutClaimingRuntimeBinding() {
+        for (target in targets.keys) {
+            val rendered = render(target)
+
+            assertTrue(rendered.contains("mode: REVIEW_ONLY"), rendered)
+            assertTrue(rendered.contains("opaqueRequirements:"), rendered)
+            assertTrue(rendered.contains("- \"CRM_URL\""), rendered)
+            assertFalse(rendered.contains("withCredentials"), rendered)
+            assertFalse(rendered.contains("\${{ secrets.CRM_URL }}"), rendered)
+            assertFalse(rendered.contains("secretKeyRef"), rendered)
+        }
     }
 
-    @Test
-    fun githubBindsSecretThroughSecretsContext() {
-        val rendered = render("github-actions")
-        assertTrue(rendered.contains("FLOW_SECRET_CRM_URL: \${{ secrets.CRM_URL }}"), rendered)
-    }
-
-    @Test
-    fun tektonBindsSecretThroughSecretKeyRef() {
-        val rendered = render("tekton")
-        assertTrue(rendered.contains("secretKeyRef"), rendered)
-        assertTrue(rendered.contains("name: flow-secrets"), rendered)
-        assertTrue(rendered.contains("key: CRM_URL"), rendered)
-    }
+    private fun org.flowlang.generators.manifest.TargetStep.flatten(): List<org.flowlang.generators.manifest.TargetStep> =
+        listOf(this) + children.flatMap { it.flatten() }
 }
