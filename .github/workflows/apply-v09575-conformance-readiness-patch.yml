@@ -1,0 +1,209 @@
+name: Apply v0.9.5.7.5 conformance readiness patch
+
+on:
+  push:
+    branches:
+      - feature/v0957-5-compatibility-readiness-honesty
+
+permissions:
+  contents: write
+
+jobs:
+  apply-patch:
+    if: github.event.head_commit.message != 'Align conformance checks with concrete readiness'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/v0957-5-compatibility-readiness-honesty
+          fetch-depth: 0
+
+      - name: Patch conformance readiness checks
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt')
+          source = path.read_text()
+
+          import_anchor = 'import org.flowlang.generators.manifest.TargetManifest\n'
+          import_line = 'import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer\n'
+          if import_line not in source:
+              if import_anchor not in source:
+                  raise SystemExit('TargetManifest import anchor not found')
+              source = source.replace(import_anchor, import_anchor + import_line, 1)
+
+          old = '''    private fun checkV037ExecutionReadinessReport(): ConformanceCheck = runCheck("v0.3.7.execution-readiness") {
+              val artifacts = buildPipeline("jenkins", strict = false)
+              val analyzer = ExecutionReadinessAnalyzer(targets)
+              val jenkins = analyzer.analyze(artifacts.plan, "jenkins", strict = false)
+              require(jenkins.readiness == ExecutionReadinessStatus.READY) { "Jenkins should be ready for the reference deployment plan." }
+              require(jenkins.generationAllowed) { "Ready target must allow manifest generation." }
+              require(jenkins.productionReady) { "Ready target must be production-ready." }
+
+              val github = analyzer.analyze(artifacts.plan, "github-actions", strict = false)
+              require(github.readiness == ExecutionReadinessStatus.DEGRADED) { "GitHub Actions should be degraded because manual approval is target-specific." }
+              require(github.generationAllowed) { "Degraded target may still generate a manifest with documented limitations." }
+              require(!github.productionReady) { "Degraded target is not production-ready without an explicit workaround decision." }
+              require(github.warnings.any { it.capability == "approval.manual" }) { "GitHub readiness must expose approval workaround." }
+
+              val tekton = analyzer.analyze(artifacts.plan, "tekton", strict = false)
+              require(tekton.readiness == ExecutionReadinessStatus.BLOCKED) { "Tekton should be blocked because it cannot represent manual approval." }
+              require(!tekton.generationAllowed) { "Blocked target must not allow manifest generation." }
+              require(tekton.blockers.any { it.capability == "approval.manual" || it.capability == "approvals" }) {
+                  "Tekton readiness must expose manual approval blocker."
+              }
+          }
+
+          private fun checkV038TargetSelectionReport(): ConformanceCheck = runCheck("v0.3.8.target-selection") {
+              val artifacts = buildPipeline("jenkins", strict = false)
+              val report = TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false)
+              require(report.candidates.size == targets.size) { "Target selection must evaluate every registered target." }
+              require(report.recommendedTarget == "jenkins") { "Reference deployment should recommend Jenkins as the strongest ready target." }
+              require(report.readyTargets.contains("jenkins")) { "Jenkins must be classified as ready." }
+              require(report.degradedTargets.contains("github-actions")) { "GitHub Actions must be classified as degraded." }
+              require(report.blockedTargets.contains("tekton")) { "Tekton must be classified as blocked." }
+              require(report.candidates.first().target == report.recommendedTarget) { "Top ranked target must match recommendedTarget." }
+              require(report.candidates.map { it.rank } == (1..report.candidates.size).toList()) { "Candidate ranks must be contiguous." }
+          }
+
+          private fun checkV039TargetDecisionTraceReport(): ConformanceCheck = runCheck("v0.3.9.target-decision-trace") {
+              val artifacts = buildPipeline("jenkins", strict = false)
+              val report = TargetDecisionTraceAnalyzer(targets).analyze(artifacts.plan, requestedTarget = "jenkins", strict = false)
+              require(report.finalDecision == DecisionTraceStatus.PASSED) { "Reference trace should pass because Jenkins is ready." }
+              require(report.generationAllowed) { "Passed trace must allow generation." }
+              require(report.recommendedTarget == "jenkins") { "Trace must preserve selected recommended target." }
+              require(report.trace.map { it.id }.containsAll(listOf("execution-plan", "capability-negotiation", "execution-readiness", "target-selection"))) {
+                  "Trace must cover the standard decision pipeline."
+              }
+              require(report.publicArtifacts.contains("target-selection-report.json")) { "Trace must cite target-selection-report.json." }
+              require(report.publicArtifacts.contains("target-decision-trace-report.json")) { "Trace must cite itself as a public artifact." }
+              require(report.targetExplanations.any { it.target == "jenkins" && it.decision == TargetDecisionKind.RECOMMENDED }) {
+                  "Trace must explain Jenkins as recommended."
+              }
+              require(report.targetExplanations.any { it.target == "github-actions" && it.decision == TargetDecisionKind.DEGRADED }) {
+                  "Trace must explain GitHub Actions as degraded."
+              }
+              require(report.targetExplanations.any { it.target == "tekton" && it.decision == TargetDecisionKind.BLOCKED }) {
+                  "Trace must explain Tekton as blocked."
+              }
+          }
+          '''
+
+          new = '''    private fun checkV037ExecutionReadinessReport(): ConformanceCheck = runCheck("v0.3.7.execution-readiness") {
+              val artifacts = buildPipeline("jenkins", strict = false)
+              val compatibility = CompatibilityAnalyzer(targets)
+              val analyzer = ExecutionReadinessAnalyzer(targets)
+
+              val preliminaryJenkins = analyzer.analyze(artifacts.plan, "jenkins", strict = false)
+              require(preliminaryJenkins.readiness == ExecutionReadinessStatus.READY) { "Jenkins capability readiness should pass before manifest evaluation." }
+              require(!preliminaryJenkins.productionReady) { "Capability readiness alone must not claim production readiness." }
+              require(!preliminaryJenkins.readinessEvidenceAvailable) { "Preliminary readiness must expose missing artifact evidence." }
+              val jenkins = TargetCompatibilityReadinessAnalyzer.reconcile(preliminaryJenkins, artifacts.manifest)
+              require(jenkins.readiness == ExecutionReadinessStatus.DEGRADED) { "Reference Jenkins manifest must be review-only." }
+              require(!jenkins.productionReady && !jenkins.executable) { "Review-only Jenkins manifest must not be production-ready." }
+              require(jenkins.readinessEvidenceAvailable) { "Concrete Jenkins readiness must carry manifest evidence." }
+
+              val githubManifest = GitHubActionsManifestGenerator().generate(
+                  artifacts.plan,
+                  compatibility.analyze(artifacts.plan, "github-actions", strict = false)
+              )
+              val github = TargetCompatibilityReadinessAnalyzer.reconcile(
+                  analyzer.analyze(artifacts.plan, "github-actions", strict = false),
+                  githubManifest
+              )
+              require(github.readiness == ExecutionReadinessStatus.DEGRADED) { "GitHub Actions reference manifest must remain degraded." }
+              require(!github.productionReady && !github.executable) { "GitHub Actions review artifact must not be production-ready." }
+
+              val tektonManifest = TektonManifestGenerator().generate(
+                  artifacts.plan,
+                  compatibility.analyze(artifacts.plan, "tekton", strict = false)
+              )
+              val tekton = TargetCompatibilityReadinessAnalyzer.reconcile(
+                  analyzer.analyze(artifacts.plan, "tekton", strict = false),
+                  tektonManifest
+              )
+              require(tekton.readiness == ExecutionReadinessStatus.BLOCKED) { "Tekton must remain blocked by effective compatibility." }
+              require(!tekton.generationAllowed && !tekton.productionReady) { "Blocked Tekton target must not allow executable generation." }
+          }
+
+          private fun checkV038TargetSelectionReport(): ConformanceCheck = runCheck("v0.3.8.target-selection") {
+              val artifacts = buildPipeline("jenkins", strict = false)
+              val compatibility = CompatibilityAnalyzer(targets)
+              val preliminary = TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false)
+              require(preliminary.recommendedTarget.isEmpty()) { "Capability-only selection must not recommend a target." }
+              val manifests = listOf(
+                  artifacts.manifest,
+                  GitHubActionsManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "github-actions")),
+                  TektonManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "tekton"))
+              )
+              val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
+              require(report.candidates.size == targets.size) { "Target selection must evaluate every registered target." }
+              require(report.recommendedTarget.isEmpty()) { "Reference deployment has no executable target recommendation." }
+              require(report.readyTargets.isEmpty()) { "Review-only reference manifests must not be classified as ready." }
+              require(report.degradedTargets.containsAll(listOf("jenkins", "github-actions"))) { "Jenkins and GitHub Actions must be classified as review-only degraded targets." }
+              require(report.blockedTargets.contains("tekton")) { "Tekton must be classified as blocked." }
+              require(report.candidates.all { it.readinessEvidenceAvailable }) { "Every reconciled candidate must carry concrete readiness evidence." }
+              require(report.candidates.map { it.rank } == (1..report.candidates.size).toList()) { "Candidate ranks must be contiguous." }
+          }
+
+          private fun checkV039TargetDecisionTraceReport(): ConformanceCheck = runCheck("v0.3.9.target-decision-trace") {
+              val artifacts = buildPipeline("jenkins", strict = false)
+              val compatibility = CompatibilityAnalyzer(targets)
+              val manifests = listOf(
+                  artifacts.manifest,
+                  GitHubActionsManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "github-actions")),
+                  TektonManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "tekton"))
+              )
+              val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
+                  compatibility.negotiate(artifacts.plan, strict = false),
+                  manifests
+              )
+              val selection = TargetCompatibilityReadinessAnalyzer.reconcile(
+                  TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false),
+                  manifests
+              )
+              val report = TargetDecisionTraceAnalyzer(targets).analyze(
+                  plan = artifacts.plan,
+                  requestedTarget = "jenkins",
+                  strict = false,
+                  negotiation = negotiation,
+                  selection = selection
+              )
+              require(report.finalDecision == DecisionTraceStatus.BLOCKED) { "Reference trace must block because no target artifact is executable." }
+              require(!report.generationAllowed) { "Blocked trace must not allow executable generation." }
+              require(report.recommendedTarget.isEmpty()) { "Trace must not preserve a capability-only target recommendation." }
+              require(report.trace.map { it.id }.containsAll(listOf("execution-plan", "capability-negotiation", "execution-readiness", "target-selection"))) {
+                  "Trace must cover the standard decision pipeline."
+              }
+              require(report.publicArtifacts.contains("target-selection-report.json")) { "Trace must cite target-selection-report.json." }
+              require(report.publicArtifacts.contains("target-decision-trace-report.json")) { "Trace must cite itself as a public artifact." }
+              require(report.targetExplanations.any { it.target == "jenkins" && it.decision == TargetDecisionKind.DEGRADED }) {
+                  "Trace must explain Jenkins as review-only degraded."
+              }
+              require(report.targetExplanations.any { it.target == "github-actions" && it.decision == TargetDecisionKind.DEGRADED }) {
+                  "Trace must explain GitHub Actions as degraded."
+              }
+              require(report.targetExplanations.any { it.target == "tekton" && it.decision == TargetDecisionKind.BLOCKED }) {
+                  "Trace must explain Tekton as blocked."
+              }
+          }
+          '''
+
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected one readiness block, found {source.count(old)}')
+          source = source.replace(old, new, 1)
+          path.write_text(source)
+          PY
+
+      - name: Commit patched conformance checks
+        shell: bash
+        run: |
+          rm .github/workflows/apply-v09575-conformance-readiness-patch.yml
+          git config user.name "flow-readiness-bot"
+          git config user.email "flow-readiness-bot@users.noreply.github.com"
+          git add src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt .github/workflows/apply-v09575-conformance-readiness-patch.yml
+          git commit -m "Align conformance checks with concrete readiness"
+          git push origin HEAD:feature/v0957-5-compatibility-readiness-honesty
