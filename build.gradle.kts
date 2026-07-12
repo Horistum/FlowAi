@@ -17,6 +17,7 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
+
 sourceSets {
     test {
         kotlin.srcDirs("src/test/kotlin", "tests")
@@ -24,18 +25,8 @@ sourceSets {
     }
 }
 
-val exportConformanceRunnerSource by tasks.registering {
-    doLast {
-        val source = file("src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt")
-        val destination = layout.buildDirectory.file("reports/tests/test/conformance-runner-source.kt").get().asFile
-        destination.parentFile.mkdirs()
-        source.copyTo(destination, overwrite = true)
-    }
-}
-
 tasks.test {
     useJUnitPlatform()
-    finalizedBy(exportConformanceRunnerSource)
     testLogging {
         events("passed", "skipped", "failed")
     }
