@@ -486,11 +486,18 @@ fun roundTripTests() {
             H.ok("rt/$s :: ${ex.message}", false)
         }
     }
-    // generator smoke (no exceptions, non-empty output)
+    // canonical manifest smoke; target rendering is governed separately by readiness policy
     run {
         val d = FlowParser().parse(exampleFile("complex-devops-flow.flow"))
         val plan = FlowPlanner().plan(d)
-        H.ok("gen/jenkins", legacyJenkinsGeneratorOutput(plan).isNotBlank())
+        val jenkinsManifest = org.flowlang.generators.manifest.JenkinsManifestGenerator().generate(
+            plan,
+            org.flowlang.capabilities.CompatibilityReport(
+                target = "jenkins",
+                status = org.flowlang.capabilities.SupportLevel.SUPPORTED
+            )
+        )
+        H.ok("gen/jenkins/manifest", jenkinsManifest.jobs.isNotEmpty())
         H.ok("gen/github", legacyGitHubActionsGeneratorOutput(plan).isNotBlank())
     }
 }
