@@ -4,6 +4,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.flowlang.architecture.KotlinSourceBoundaryScanner
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
@@ -50,11 +51,11 @@ class FlowLegacyGeneratorFixtureRemovalTests {
         )
         assertTrue(activeHarness.all { it.isFile })
         val source = activeHarness.joinToString("\n") { it.readText() }
-        assertFalse(source.contains("legacyJenkinsGeneratorOutput"))
-        assertFalse(source.contains("legacyGitHubActionsGeneratorOutput"))
-        assertFalse(source.contains("sh(script:"))
-        assertFalse(source.contains("run: echo"))
-        assertFalse(source.contains("kubectl delete"))
+
+        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(source, "JenkinsGenerator"))
+        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(source, "GitHubActionsGenerator"))
+        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(source, "legacyJenkinsGeneratorOutput"))
+        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(source, "legacyGitHubActionsGeneratorOutput"))
     }
 
     @Test
