@@ -17,14 +17,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Regression guard for system-secret materialisation.
+ * Regression guard for opaque-value projection requirements.
  *
- * A system configuration value bound to a secret (e.g. the REST `baseUrl: secret("CRM_URL")` in
- * examples/api-sync.flow) must be delivered into the rendered pipeline through the target's own
- * secret mechanism (Jenkins credentials, GitHub secrets context, Tekton secretKeyRef) and referenced
- * in the command through the environment ("$FLOW_SECRET_CRM_URL"). Before this fix the value was
- * silently dropped, so the request rendered as `curl ... -X 'GET' '/customers'` with no host —
- * a manifest that could never run and gave no diagnostic.
+ * A review-only artifact must preserve the source secret reference, runtime
+ * reference and target binding requirement without claiming that the binding or
+ * the action was executed.
  */
 class FlowSecretMaterializationTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
@@ -47,34 +44,31 @@ class FlowSecretMaterializationTests {
     }
 
     @Test
-    fun secretBaseUrlIsMaterialisedNotDropped() {
+    fun secretBaseUrlRequirementIsPreservedNotDropped() {
         for (target in targets.keys) {
             val rendered = render(target)
-            assertTrue(
-                rendered.contains("\"\$FLOW_SECRET_CRM_URL\""),
-                "[$target] rest.call must reference the materialised baseUrl secret through the environment:\n$rendered"
-            )
-            assertFalse(
-                Regex("""curl[^\n]*secret\(""").containsMatchIn(rendered),
-                "[$target] the raw secret(...) expression must never be spliced into the curl command:\n$rendered"
-            )
+            assertTrue(rendered.contains("kind: TargetProjectionReview"), rendered)
+            assertTrue(rendered.contains("opaqueReference: \"CRM_URL\""), rendered)
+            assertTrue(rendered.contains("runtimeReference: \"\$FLOW_SECRET_CRM_URL\""), rendered)
+            assertFalse(rendered.contains("secret(\"CRM_URL\")"), rendered)
+            assertTrue(rendered.contains("executable: false"), rendered)
         }
     }
 
     @Test
-    fun jenkinsBindsSecretThroughCredentials() {
+    fun jenkinsReviewRecordsCredentialsRequirement() {
         val rendered = render("jenkins")
         assertTrue(rendered.contains("FLOW_SECRET_CRM_URL = credentials('CRM_URL')"), rendered)
     }
 
     @Test
-    fun githubBindsSecretThroughSecretsContext() {
+    fun githubReviewRecordsSecretsContextRequirement() {
         val rendered = render("github-actions")
         assertTrue(rendered.contains("FLOW_SECRET_CRM_URL: \${{ secrets.CRM_URL }}"), rendered)
     }
 
     @Test
-    fun tektonBindsSecretThroughSecretKeyRef() {
+    fun tektonReviewRecordsSecretKeyRefRequirement() {
         val rendered = render("tekton")
         assertTrue(rendered.contains("secretKeyRef"), rendered)
         assertTrue(rendered.contains("name: flow-secrets"), rendered)

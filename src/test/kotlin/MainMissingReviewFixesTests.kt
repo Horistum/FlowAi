@@ -1,4 +1,6 @@
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.ast.ActionNode
@@ -21,7 +23,8 @@ import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetExpressionTranslator
 import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetStep
+import org.flowlang.generators.manifest.TargetRenderBlockedException
+import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.planner.FlowPlanner
 import java.io.File
 
@@ -51,13 +54,14 @@ class MainMissingReviewFixesTests {
     }
 
     @Test
-    fun jenkinsFlowLevelErrorHandlerRendersScriptedTryCatch() {
-        val rendered = JenkinsManifestRenderer().render(jenkinsManifestWithFlowLevelErrorHandler())
+    fun blockedFlowLevelBodyFailsBeforeJenkinsSyntaxIsReturned() {
+        val failure = assertFailsWith<TargetRenderBlockedException> {
+            JenkinsManifestRenderer().render(jenkinsManifestWithFlowLevelErrorHandler())
+        }
 
-        assertTrue(rendered.contains("try {"), rendered)
-        assertTrue(rendered.contains("catch (flowError)"), rendered)
-        assertTrue(rendered.contains("params.environment == 'prod'"), rendered)
-        assertFalse(rendered.contains("post {"), rendered)
+        assertEquals(TargetRenderMode.FAIL_FAST, failure.readiness.mode)
+        assertTrue(failure.readiness.findings.any { it.status == "BLOCKED" })
+        assertTrue(failure.readiness.findings.any { it.nodeId.contains("shell") || it.reason.contains("runtime", ignoreCase = true) })
     }
 
     @Test

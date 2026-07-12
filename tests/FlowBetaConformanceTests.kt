@@ -5,6 +5,7 @@ import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
 import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -30,8 +31,10 @@ fun betaConformanceTests() {
         val manifest = GitHubActionsManifestGenerator().generate(plan, compatibility)
         val rendered = GitHubActionsManifestRenderer().render(manifest)
         H.eq("beta/github-manifest/target", manifest.target, "github-actions")
-        H.ok("beta/github-render/name", rendered.contains("name:"))
-        H.ok("beta/github-render/jobs", rendered.contains("jobs:"))
+        H.ok("beta/github-manifest/jobs-preserved", manifest.jobs.isNotEmpty())
+        H.ok("beta/github-render/review", rendered.contains("kind: TargetProjectionReview"))
+        H.ok("beta/github-render/non-executable", rendered.contains("executable: false"))
+        H.ok("beta/github-render/no-vendor-jobs", !rendered.contains("jobs:"))
     }
     H.scenario {
         val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
@@ -43,8 +46,10 @@ fun betaConformanceTests() {
         val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
         val rendered = JenkinsManifestRenderer().render(manifest)
         H.eq("beta/jenkins-manifest/target", manifest.target, "jenkins")
-        H.ok("beta/jenkins-render/pipeline", rendered.contains("pipeline {"))
-        H.ok("beta/jenkins-render/stages", rendered.contains("stages {"))
+        H.ok("beta/jenkins-manifest/jobs-preserved", manifest.jobs.isNotEmpty())
+        H.ok("beta/jenkins-render/review", rendered.contains("kind: TargetProjectionReview"))
+        H.ok("beta/jenkins-render/non-executable", rendered.contains("executable: false"))
+        H.ok("beta/jenkins-render/no-pipeline", !rendered.contains("pipeline {"))
     }
 }
 
@@ -58,9 +63,15 @@ fun rc4SemanticGeneratorRegressionTests() {
 
     H.scenario {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
-        val rendered = JenkinsManifestRenderer().render(JenkinsManifestGenerator().generate(plan, compatibility))
-        H.ok("rc4/jenkins-condition/not-dead", !rendered.contains("true /* Flow condition"))
-        H.ok("rc4/jenkins-condition/params", rendered.contains("params.environment") && rendered.contains("== 'prod'"))
+        val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
+        val rendered = JenkinsManifestRenderer().render(manifest)
+        val conditions = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForConformance() } }
+            .filter { it.type == "condition" }
+            .mapNotNull { it.params["condition"] }
+        H.ok("rc4/jenkins-condition/not-dead", conditions.none { it == "true" })
+        H.ok("rc4/jenkins-condition/manifest", conditions.any { it.contains("environment") && it.contains("prod") })
+        H.ok("rc4/jenkins-render/review", rendered.contains("kind: TargetProjectionReview"))
+        H.ok("rc4/jenkins-render/no-vendor-condition", !rendered.contains("params.environment"))
     }
     H.scenario {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "github-actions")
@@ -68,7 +79,8 @@ fun rc4SemanticGeneratorRegressionTests() {
         val rendered = GitHubActionsManifestRenderer().render(manifest)
         H.ok("rc4/gha/job-per-task", manifest.jobs.size >= plan.tasks.size)
         H.ok("rc4/gha/has-dag-dependencies", manifest.jobs.any { it.dependsOn.isNotEmpty() })
-        H.ok("rc4/gha/renders-needs", rendered.contains("needs:"))
+        H.ok("rc4/gha/render-review", rendered.contains("kind: TargetProjectionReview"))
+        H.ok("rc4/gha/no-vendor-needs", !rendered.contains("needs:"))
         H.ok("rc4/gha/condition/not-always-only", !rendered.contains("if: ${'$'}{{ always() }} # Flow condition"))
     }
     H.scenario {
@@ -84,3 +96,5 @@ fun rc4SemanticGeneratorRegressionTests() {
         H.ok("rc4/planner/no-false-dep", second.dependsOn.isEmpty())
     }
 }
+
+private fun TargetStep.flattenForConformance(): List<TargetStep> = listOf(this) + children.flatMap { it.flattenForConformance() }
