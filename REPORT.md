@@ -65,7 +65,7 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.7.3 Renderer Failure Semantics Unification` introduces one renderer readiness policy. Unresolved target payloads produce a non-executable Flow review artifact, blocked materialization fails before target syntax is returned, and vendor syntax requires explicit renderer payload evidence.
 
-`0.9.5.7.4 Remove Legacy Shell Generator Fixtures` replaces the retired Jenkins shell generator with a fail-fast compatibility tombstone, removes its scenarios from the active JUnit bridge and behaviorally classifies every remaining `shell.run` example as preserved but blocked runtime intent.
+`0.9.5.7.4 Remove Legacy Shell Generator Fixtures` deletes the legacy Jenkins and GitHub Actions test generators, removes shell-output assertions from the active specification harness, preserves language, validation, planner, module, location and stress coverage in responsibility-based test files, and requires every remaining shell example to fail at the materialization boundary across Jenkins, GitHub Actions and Tekton.
 
 The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml`. The next scoped repair item is `0.9.5.7.5 Compatibility and Readiness Honesty`.
 
@@ -95,4 +95,4 @@ The v0.9.4 package line does not bump the public standard or artifact schema ver
 
 ## Architecture boundary
 
-v0.9.5.7.4 changes test and fixture ownership. It does not convert blocked shell intent into executable target work and does not claim additional target implementation coverage.
+v0.9.5.7.4 removes obsolete test projection implementations and their output assertions. Explicit runtime command intent remains available for migration and review coverage, but materialization policy continues to block it from target rendering.
