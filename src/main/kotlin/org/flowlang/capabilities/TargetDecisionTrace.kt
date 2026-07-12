@@ -68,9 +68,9 @@ class TargetDecisionTraceAnalyzer(private val targets: Map<String, TargetCapabil
         val recommended = selection.recommendedTarget
         val recommendedCandidate = selection.candidates.firstOrNull { it.target == recommended }
         val finalDecision = finalDecisionFor(recommendedCandidate)
-        val generationAllowed = recommendedCandidate?.generationAllowed == true &&
-            recommendedCandidate.productionReady &&
-            recommendedCandidate.executable
+        val generationAllowed = recommendedCandidate?.let {
+            it.generationAllowed && it.productionReady && it.executable
+        } == true
 
         return TargetDecisionTraceReport(
             planVersion = plan.planVersion,
