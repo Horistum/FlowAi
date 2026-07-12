@@ -15,6 +15,7 @@ import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetRenderBlockedException
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.generators.manifest.TektonManifestRenderer
 import org.flowlang.parser.FlowParser
@@ -26,6 +27,13 @@ class FlowLegacyGeneratorFixtureRemovalTests {
         "jenkins" to TargetCapability(target = "jenkins", description = "test"),
         "github-actions" to TargetCapability(target = "github-actions", description = "test"),
         "tekton" to TargetCapability(target = "tekton", description = "test")
+    )
+
+    private val expectedShellCommands = mapOf(
+        "build-test.flow" to setOf("mvn test"),
+        "complex-devops-flow.flow" to setOf("mvn test", "mvn verify -DskipTests"),
+        "deploy-with-approval.flow" to setOf("mvn test"),
+        "hello.flow" to setOf("echo hello")
     )
 
     @Test
@@ -50,13 +58,40 @@ class FlowLegacyGeneratorFixtureRemovalTests {
     }
 
     @Test
-    fun shellBasedCanonicalExamplesAreExplicitlyBlockedAcrossTargets() {
-        for (example in listOf("build-test.flow", "complex-devops-flow.flow")) {
-            val plan = FlowPlanner().plan(FlowParser().parse(File("examples/$example")))
-            for (target in targets.keys) {
-                val manifest = manifest(plan, target)
-                val readiness = TargetRenderPolicy.evaluate(manifest)
+    fun everyShellExampleIsPreservedAndBlockedAcrossTargets() {
+        val discovered = File("examples")
+            .listFiles { file -> file.isFile && file.extension == "flow" }
+            .orEmpty()
+            .filter { it.readText().contains("shell.run") }
+            .map { it.name }
+            .toSet()
 
+        assertEquals(
+            expectedShellCommands.keys,
+            discovered,
+            "Every shell syntax example must be explicitly classified by the blocked-intent contract."
+        )
+
+        discovered.sorted().forEach { example ->
+            val plan = FlowPlanner().plan(FlowParser().parse(File("examples/$example")))
+            targets.keys.forEach { target ->
+                val manifest = manifest(plan, target)
+                val shellSteps = manifest.jobs
+                    .flatMap { job -> job.steps.flatMap { it.flattenForTest() } }
+                    .filter { it.module == "shell" && it.action == "run" }
+
+                assertTrue(shellSteps.isNotEmpty(), "$example must preserve its shell runtime intent for $target review.")
+                assertEquals(
+                    expectedShellCommands.getValue(example),
+                    shellSteps.mapNotNull { it.params["command"] }.toSet(),
+                    "$example command content must not be silently discarded for $target."
+                )
+                assertTrue(
+                    shellSteps.all { it.materialization.status == TargetMaterializationStatus.BLOCKED },
+                    "$example shell actions must remain blocked for $target."
+                )
+
+                val readiness = TargetRenderPolicy.evaluate(manifest)
                 assertEquals(TargetRenderMode.FAIL_FAST, readiness.mode, "$example must be blocked for $target")
                 assertTrue(readiness.findings.any { it.status == TargetMaterializationStatus.BLOCKED.name })
                 assertFailsWith<TargetRenderBlockedException> { render(manifest) }
@@ -80,4 +115,7 @@ class FlowLegacyGeneratorFixtureRemovalTests {
         "tekton" -> TektonManifestRenderer().render(manifest)
         else -> error("Unsupported target: ${manifest.target}")
     }
+
+    private fun TargetStep.flattenForTest(): List<TargetStep> =
+        listOf(this) + children.flatMap { it.flattenForTest() }
 }
