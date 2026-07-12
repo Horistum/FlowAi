@@ -50,12 +50,23 @@ class FlowLegacyGeneratorFixtureRemovalTests {
             File("tests/FlowSpecHarnessMain.kt")
         )
         assertTrue(activeHarness.all { it.isFile })
-        val source = activeHarness.joinToString("\n") { it.readText() }
 
-        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(source, "JenkinsGenerator"))
-        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(source, "GitHubActionsGenerator"))
-        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(source, "legacyJenkinsGeneratorOutput"))
-        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(source, "legacyGitHubActionsGeneratorOutput"))
+        val activeKotlinSources = listOf(
+            File("src/main/kotlin"),
+            File("src/test/kotlin"),
+            File("tests")
+        ).flatMap { root ->
+            root.walkTopDown()
+                .filter { file -> file.isFile && file.extension == "kt" }
+                .toList()
+        }
+        assertTrue(activeKotlinSources.isNotEmpty())
+        val activeSource = activeKotlinSources.joinToString("\n") { it.readText() }
+
+        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(activeSource, "JenkinsGenerator"))
+        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(activeSource, "GitHubActionsGenerator"))
+        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(activeSource, "legacyJenkinsGeneratorOutput"))
+        assertFalse(KotlinSourceBoundaryScanner.containsSymbol(activeSource, "legacyGitHubActionsGeneratorOutput"))
     }
 
     @Test
