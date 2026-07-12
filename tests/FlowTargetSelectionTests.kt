@@ -55,14 +55,19 @@ class FlowTargetSelectionTests {
         )
 
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
+        val diagnostic = "Reconciled selection report: $report"
 
-        assertTrue(report.recommendedTarget.isEmpty())
-        assertTrue(report.readyTargets.isEmpty())
-        assertTrue(report.degradedTargets.contains("jenkins"))
-        assertTrue(report.degradedTargets.contains("github-actions"))
-        assertTrue(report.blockedTargets.contains("tekton"))
-        assertEquals(ExecutionReadinessStatus.DEGRADED, report.candidates.first { it.target == "jenkins" }.readiness)
-        assertTrue(report.candidates.all { it.readinessEvidenceAvailable })
-        assertTrue(report.candidates.none { it.productionReady && it.executable })
+        assertTrue(report.recommendedTarget.isEmpty()) { diagnostic }
+        assertTrue(report.readyTargets.isEmpty()) { diagnostic }
+        assertTrue(report.degradedTargets.contains("jenkins")) { diagnostic }
+        assertTrue(report.degradedTargets.contains("github-actions")) { diagnostic }
+        assertTrue(report.blockedTargets.contains("tekton")) { diagnostic }
+        assertEquals(
+            ExecutionReadinessStatus.DEGRADED,
+            report.candidates.first { it.target == "jenkins" }.readiness,
+            diagnostic
+        )
+        assertTrue(report.candidates.all { it.readinessEvidenceAvailable }) { diagnostic }
+        assertTrue(report.candidates.none { it.productionReady && it.executable }) { diagnostic }
     }
 }
