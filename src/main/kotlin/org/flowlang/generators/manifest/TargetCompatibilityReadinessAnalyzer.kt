@@ -36,7 +36,7 @@ object TargetCompatibilityReadinessAnalyzer {
             .filter { it.isCompatibilityReadinessLeaf() }
         val capabilityStatus = manifest.metadata["capabilityCompatibility"]
             ?.let { value -> runCatching { SupportLevel.valueOf(value) }.getOrNull() }
-            ?: manifest.compatibility.status
+            ?: manifest.compatibility.capabilityStatus
 
         val materialization = when {
             leaves.any { it.materialization.status in blockedMaterialization } -> MaterializationReadinessStatus.BLOCKED
@@ -107,7 +107,6 @@ object TargetCompatibilityReadinessAnalyzer {
         val warnings = (readiness.warnings + concreteFindings.filter { it.severity == ReadinessSeverity.WARNING }).distinct()
         val effectiveReadiness = when {
             concrete.effectiveStatus == SupportLevel.UNSUPPORTED -> ExecutionReadinessStatus.BLOCKED
-            concrete.recommendationEligible && blockers.isEmpty() && warnings.isEmpty() -> ExecutionReadinessStatus.READY
             concrete.recommendationEligible && blockers.isEmpty() -> ExecutionReadinessStatus.READY
             else -> ExecutionReadinessStatus.DEGRADED
         }
@@ -183,7 +182,8 @@ object TargetCompatibilityReadinessAnalyzer {
         return negotiation.copy(
             targets = entries,
             recommendedTargets = recommended,
-            blockedTargets = blocked
+            blockedTargets = blocked,
+            readinessEvidenceAvailable = true
         )
     }
 
