@@ -114,7 +114,7 @@ class JenkinsManifestGenerator : TargetManifestGenerator {
             jobs = listOf(TargetJob(id = sanitizeId(plan.flowName), name = plan.flowName, steps = steps)),
             mappingNotes = compatibility.toMappingNotes(target),
             metadata = baseMetadata(plan, "JenkinsManifestGenerator") + ("nodePreserving" to "true")
-        )
+        ).reconcileCompatibilityReadiness()
     }
 }
 
@@ -132,7 +132,7 @@ class GitHubActionsManifestGenerator : TargetManifestGenerator {
             jobs = jobs.ifEmpty { listOf(TargetJob(id = sanitizeId(plan.flowName), name = plan.flowName, steps = listOf(emptyProjectionStep(plan.flowName)))) },
             mappingNotes = compatibility.toMappingNotes(target),
             metadata = baseMetadata(plan, "GitHubActionsManifestGenerator") + ("jobPerTask" to "true")
-        )
+        ).reconcileCompatibilityReadiness()
     }
 }
 
@@ -165,7 +165,7 @@ class TektonManifestGenerator : TargetManifestGenerator {
             jobs = resolvedJobs,
             mappingNotes = compatibility.toMappingNotes(target) + partialNote + untranslatableConditionNotes,
             metadata = baseMetadata(plan, "TektonManifestGenerator") + mapOf("supportLevel" to "partial", "jobPerTask" to "true")
-        )
+        ).reconcileCompatibilityReadiness()
     }
 }
 
