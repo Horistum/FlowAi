@@ -18,6 +18,8 @@ import org.flowlang.capabilities.TargetSelectionReport
  *
  * This analyzer does not materialize work and does not add renderer payloads. It
  * only prevents capability optimism from being presented as executable readiness.
+ * Reconciliation is monotonic: concrete evidence may confirm or reduce readiness,
+ * but it must never erase an existing capability blocker.
  */
 object TargetCompatibilityReadinessAnalyzer {
     private val completedMaterialization = setOf(
@@ -106,12 +108,14 @@ object TargetCompatibilityReadinessAnalyzer {
         val blockers = (readiness.blockers + concreteFindings.filter { it.severity == ReadinessSeverity.BLOCKER }).distinct()
         val warnings = (readiness.warnings + concreteFindings.filter { it.severity == ReadinessSeverity.WARNING }).distinct()
         val effectiveReadiness = when {
+            readiness.readiness == ExecutionReadinessStatus.BLOCKED || blockers.isNotEmpty() -> ExecutionReadinessStatus.BLOCKED
             concrete.effectiveStatus == SupportLevel.UNSUPPORTED -> ExecutionReadinessStatus.BLOCKED
-            concrete.recommendationEligible && blockers.isEmpty() -> ExecutionReadinessStatus.READY
+            concrete.recommendationEligible -> ExecutionReadinessStatus.READY
             else -> ExecutionReadinessStatus.DEGRADED
         }
         val generationAllowed = effectiveReadiness != ExecutionReadinessStatus.BLOCKED
-        val productionReady = concrete.recommendationEligible && blockers.isEmpty()
+        val productionReady = effectiveReadiness == ExecutionReadinessStatus.READY &&
+            concrete.recommendationEligible && blockers.isEmpty()
 
         return readiness.copy(
             readiness = effectiveReadiness,
@@ -122,7 +126,7 @@ object TargetCompatibilityReadinessAnalyzer {
                 ExecutionReadinessStatus.DEGRADED -> "Concrete target manifest for '${manifest.target}' is review-only or otherwise non-executable."
                 ExecutionReadinessStatus.BLOCKED -> "Concrete target manifest for '${manifest.target}' is blocked and must not produce target syntax."
             },
-            compatibilityStatus = concrete.effectiveStatus,
+            compatibilityStatus = stricterSupport(readiness.compatibilityStatus, concrete.effectiveStatus),
             blockers = blockers,
             warnings = warnings,
             requiredActions = buildList {
@@ -132,7 +136,7 @@ object TargetCompatibilityReadinessAnalyzer {
             }.distinct(),
             materializationReadiness = concrete.materializationReadiness,
             projectionReadiness = concrete.projectionReadiness,
-            executable = concrete.executable,
+            executable = concrete.executable && effectiveReadiness != ExecutionReadinessStatus.BLOCKED,
             readinessEvidenceAvailable = true
         )
     }
@@ -162,7 +166,7 @@ object TargetCompatibilityReadinessAnalyzer {
             } else {
                 val concrete = analyze(manifest)
                 entry.copy(
-                    status = concrete.effectiveStatus,
+                    status = stricterSupport(entry.status, concrete.effectiveStatus),
                     notes = (entry.notes + readinessNotes(concrete)).distinct()
                 )
             }
@@ -170,7 +174,10 @@ object TargetCompatibilityReadinessAnalyzer {
         val reports = manifestsByTarget.mapValues { (_, manifest) -> analyze(manifest) }
         val recommended = entries.mapNotNull { entry ->
             reports[entry.target]
-                ?.takeIf { it.recommendationEligible }
+                ?.takeIf {
+                    entry.status == SupportLevel.SUPPORTED &&
+                        it.recommendationEligible
+                }
                 ?.let { entry.target }
         }.sorted()
         val blocked = entries.filter { entry ->
@@ -203,6 +210,7 @@ object TargetCompatibilityReadinessAnalyzer {
                         ExecutionReadinessStatus.DEGRADED
                     },
                     productionReady = false,
+                    executable = false,
                     recommendation = "No concrete target manifest evidence is available; this target cannot be recommended."
                 )
             } else {
@@ -234,17 +242,24 @@ object TargetCompatibilityReadinessAnalyzer {
         concrete: CompatibilityReadinessReport
     ): TargetSelectionCandidate {
         val readiness = when {
+            this.readiness == ExecutionReadinessStatus.BLOCKED -> ExecutionReadinessStatus.BLOCKED
             concrete.effectiveStatus == SupportLevel.UNSUPPORTED -> ExecutionReadinessStatus.BLOCKED
             concrete.recommendationEligible -> ExecutionReadinessStatus.READY
             else -> ExecutionReadinessStatus.DEGRADED
         }
         val blockerDelta = if (readiness == ExecutionReadinessStatus.BLOCKED) concrete.findings.size.coerceAtLeast(1) else 0
         val warningDelta = if (readiness == ExecutionReadinessStatus.DEGRADED) concrete.findings.size.coerceAtLeast(1) else 0
+        val effectiveCompatibility = if (readiness == ExecutionReadinessStatus.BLOCKED) {
+            SupportLevel.UNSUPPORTED
+        } else {
+            stricterSupport(compatibilityStatus, concrete.effectiveStatus)
+        }
+        val recommendationEligible = readiness == ExecutionReadinessStatus.READY && concrete.recommendationEligible
         return copy(
             readiness = readiness,
             generationAllowed = readiness != ExecutionReadinessStatus.BLOCKED,
-            productionReady = concrete.recommendationEligible,
-            compatibilityStatus = concrete.effectiveStatus,
+            productionReady = recommendationEligible,
+            compatibilityStatus = effectiveCompatibility,
             blockerCount = blockerCount + blockerDelta,
             warningCount = warningCount + warningDelta,
             recommendation = when (readiness) {
@@ -254,7 +269,7 @@ object TargetCompatibilityReadinessAnalyzer {
             },
             materializationReadiness = concrete.materializationReadiness,
             projectionReadiness = concrete.projectionReadiness,
-            executable = concrete.executable,
+            executable = concrete.executable && readiness != ExecutionReadinessStatus.BLOCKED,
             readinessEvidenceAvailable = true
         )
     }
@@ -263,6 +278,16 @@ object TargetCompatibilityReadinessAnalyzer {
         ExecutionReadinessStatus.READY -> 0
         ExecutionReadinessStatus.DEGRADED -> 1
         ExecutionReadinessStatus.BLOCKED -> 2
+    }
+
+    private fun stricterSupport(left: SupportLevel, right: SupportLevel): SupportLevel =
+        if (supportSeverity(left) >= supportSeverity(right)) left else right
+
+    private fun supportSeverity(level: SupportLevel): Int = when (level) {
+        SupportLevel.SUPPORTED -> 0
+        SupportLevel.PARTIAL -> 1
+        SupportLevel.REQUIRES_RUNTIME -> 2
+        SupportLevel.UNSUPPORTED -> 3
     }
 
     private fun effectiveStatus(
