@@ -6,7 +6,6 @@ import org.flowlang.capabilities.MaterializationReadinessStatus
 import org.flowlang.capabilities.ProjectionReadinessStatus
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapabilityNegotiationReport
-import org.flowlang.capabilities.TargetNegotiationEntry
 
 /**
  * Reconciles target capability declarations with concrete manifest evidence.
@@ -29,6 +28,9 @@ object TargetCompatibilityReadinessAnalyzer {
         val leaves = manifest.jobs
             .flatMap { job -> job.steps.flatMap { it.flattenForCompatibilityReadiness() } }
             .filter { it.isCompatibilityReadinessLeaf() }
+        val capabilityStatus = manifest.metadata["capabilityCompatibility"]
+            ?.let { value -> runCatching { SupportLevel.valueOf(value) }.getOrNull() }
+            ?: manifest.compatibility.status
 
         val materialization = when {
             leaves.any { it.materialization.status in blockedMaterialization } -> MaterializationReadinessStatus.BLOCKED
@@ -41,7 +43,7 @@ object TargetCompatibilityReadinessAnalyzer {
             TargetRenderMode.FAIL_FAST -> ProjectionReadinessStatus.FAIL_FAST
         }
         val effectiveStatus = effectiveStatus(
-            capabilityStatus = manifest.compatibility.status,
+            capabilityStatus = capabilityStatus,
             materialization = materialization,
             projection = projectionStatus
         )
@@ -64,7 +66,7 @@ object TargetCompatibilityReadinessAnalyzer {
 
         return CompatibilityReadinessReport(
             target = manifest.target,
-            capabilityStatus = manifest.compatibility.status,
+            capabilityStatus = capabilityStatus,
             effectiveStatus = effectiveStatus,
             materializationReadiness = materialization,
             projectionReadiness = projectionStatus,
