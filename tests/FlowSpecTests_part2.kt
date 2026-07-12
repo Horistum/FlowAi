@@ -7,16 +7,8 @@ import org.flowlang.generators.*
 import java.io.File
 
 @Suppress("DEPRECATION")
-private fun legacyJenkinsGeneratorOutput(plan: org.flowlang.planner.ExecutionPlan): String =
-    JenkinsGenerator().generate(plan)
-
-@Suppress("DEPRECATION")
 private fun legacyGitHubActionsGeneratorOutput(plan: org.flowlang.planner.ExecutionPlan): String =
     GitHubActionsGenerator().generate(plan)
-
-@Suppress("DEPRECATION")
-private fun legacyJenkinsGeneratorOutput(document: FlowDocument): String =
-    JenkinsGenerator().generate(document, ModuleRegistry())
 
 /* ============================ statements ============================ */
 fun actionTests() {
@@ -845,104 +837,13 @@ fun sourceLocationTests() {
     }
 }
 
-/* ============================ Jenkins generator (#1) ============================ */
-fun jenkinsOf(file: String): String =
-    legacyJenkinsGeneratorOutput(FlowParser().parse(exampleFile(file)))
-
-fun jenkinsSrc(src: String): String =
-    legacyJenkinsGeneratorOutput(FlowParser().parse(dollarize(src)))
-
-fun balancedBraces(s: String): Boolean = s.count { it == '{' } == s.count { it == '}' }
-
-fun jenkinsGeneratorTests() {
-    // every canonical example produces a real (not legacy) declarative shell with balanced braces
-    for (f in listOf("api-sync.flow", "build-test.flow", "complex-devops-flow.flow", "deploy-with-approval.flow", "kubernetes-cleanup.flow")) {
-        val out = jenkinsOf(f)
-        H.ok("genj/$f/real-header", out.startsWith("// Generated Jenkins pipeline for flow"))
-        H.ok("genj/$f/pipeline", out.contains("pipeline {") && out.contains("agent any") && out.contains("stages {"))
-        H.ok("genj/$f/script", out.contains("script {"))
-        H.ok("genj/$f/braces", balancedBraces(out))
-        H.ok("genj/$f/no-legacy-placeholder", !out.contains("steps { echo '"))
-    }
-
-    // build-test: parameters + git + sh + expect comments
-    run {
-        val o = jenkinsOf("build-test.flow")
-        H.ok("genj/build/param-branch", o.contains("string(name: 'branch', defaultValue: 'main')"))
-        H.ok("genj/build/git", o.contains("git(url:") && o.contains("branch: params.branch"))
-        H.ok("genj/build/sh", o.contains("sh(script: 'mvn test', returnStdout: true).trim()"))
-        H.ok("genj/build/expect-comment", o.contains("// expect: ok == true"))
-    }
-
-    // deploy: choice param, vars as GString, approve input gate, on-error try/catch, secret env
-    run {
-        val o = jenkinsOf("deploy-with-approval.flow")
-        H.ok("genj/deploy/choice", o.contains("choice(name: 'environment', choices: ['dev', 'test', 'prod'])"))
-        H.ok("genj/deploy/var-gstring", o.contains("def imageName = \"\${params.app}:\${params.version}\""))
-        H.ok("genj/deploy/approve-gate", o.contains("if ((params.environment == 'prod')) {") && o.contains("input(message:"))
-        H.ok("genj/deploy/on-error", o.contains("try {") && o.contains("catch (flowError)"))
-        H.ok("genj/deploy/secret-env", o.contains("environment {") && o.contains("credentials('REGISTRY_URL')"))
-    }
-
-    // complex: scripted parallel with named branches, argocd secret env
-    run {
-        val o = jenkinsOf("complex-devops-flow.flow")
-        H.ok("genj/complex/parallel", o.contains("parallel(") && o.contains("'unit-tests': {") && o.contains("'static-checks': {"))
-        H.ok("genj/complex/argocd-secret", o.contains("credentials('ARGOCD_TOKEN')"))
-        H.ok("genj/complex/git-template", o.contains("git(url: \"git@example.com/company/\${params.app}.git\""))
-    }
-
-    // kubernetes-cleanup: onlyIf safety wraps the destructive delete; real kubectl
-    run {
-        val o = jenkinsOf("kubernetes-cleanup.flow")
-        H.ok("genj/k8s/onlyif", o.contains("if ((params.environment != 'prod')) {"))
-        H.ok("genj/k8s/kubectl", o.contains("kubectl delete"))
-        H.ok("genj/k8s/choice", o.contains("choice(name: 'environment'"))
-    }
-
-    // synthetic control flow maps to scripted Groovy
-    run {
-        val o = jenkinsSrc("""
-            use module "shell" version "1.0"
-            flow "t" {
-              systems { system "l" { type: shell } }
-              steps {
-                if a == b { shell.run l { command: "x" } } else { skip "no" }
-                for i in items { shell.run l { command: "y" } }
-                retry { max: 3 } { shell.run l { command: "z" } }
-                try { shell.run l { command: "t" } } on error { skip "e" }
-                match code { when code == 1 { skip "one" } when error { skip "err" } }
-              }
-            }
-        """)
-        H.ok("genj/cf/if", o.contains("if ((a == b)) {") && o.contains("} else {"))
-        H.ok("genj/cf/for", o.contains("for (i in items) {"))
-        H.ok("genj/cf/retry", o.contains("retry(3) {"))
-        H.ok("genj/cf/try", o.contains("try {") && o.contains("catch (tryError)"))
-        H.ok("genj/cf/match-error", o.contains("catch (matchError)"))
-        H.ok("genj/cf/skip", o.contains("echo 'SKIP: '"))
-        H.ok("genj/cf/braces", balancedBraces(o))
-    }
-
-    // requiresApproval safety injects an input gate before the action
-    run {
-        val o = jenkinsSrc("""
-            use module "kubernetes" version "1.0"
-            flow "t" { systems { system "c" { type: kubernetes } } steps {
-              kubernetes.delete c { resource: "ns"
-              name: "x"
-              safety: requiresApproval } -> r
-            } }
-        """)
-        H.ok("genj/approval/input", o.contains("input(message: 'Approve kubernetes.delete on c?')"))
-    }
-
-    // fail -> error(...)
-    run {
-        val o = jenkinsSrc("flow \"t\" { steps { fail \"boom\" } }")
-        H.ok("genj/fail", o.contains("error('boom')"))
-    }
-}
+/* ============================ archived projection fixtures ============================ */
+/*
+ * The executable-looking Jenkins generator assertions formerly stored here were
+ * removed by v0.9.5.7.4. Legacy shell/CLI mappings now live as structured negative
+ * fixture cases under conformance/negative-fixtures and are evaluated through the
+ * canonical materialization and renderer-readiness contracts.
+ */
 
 /* ============================ main ============================ */
 fun main() {
@@ -962,7 +863,6 @@ fun main() {
     moduleLoaderTests()
     descriptorRegistryParityTests()
     sourceLocationTests()
-    jenkinsGeneratorTests()
     stressTests()
     betaConformanceTests()
     rc4SemanticGeneratorRegressionTests()

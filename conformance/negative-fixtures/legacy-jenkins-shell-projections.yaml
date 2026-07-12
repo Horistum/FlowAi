@@ -1,0 +1,59 @@
+fixtureVersion: "1.0"
+kind: LegacyProjectionNegativeFixture
+classification: ARCHIVED_NEGATIVE
+compiled: false
+purpose: >-
+  Preserve historical Jenkins shell and CLI projection cases only as negative
+  conformance evidence. Every case is evaluated through the canonical
+  materialization resolver and unified renderer readiness policy.
+cases:
+  - id: shell-run
+    module: shell
+    action: run
+    expectedMaterialization: BLOCKED
+    expectedRenderMode: FAIL_FAST
+  - id: docker-build
+    module: docker
+    action: build
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY
+  - id: helm-template
+    module: helm
+    action: template
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY
+  - id: helm-upgrade
+    module: helm
+    action: upgrade
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY
+  - id: argocd-sync
+    module: argocd
+    action: sync
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY
+  - id: kubernetes-get
+    module: kubernetes
+    action: get
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY
+  - id: kubernetes-deploy
+    module: kubernetes
+    action: deploy
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY
+  - id: kubernetes-delete
+    module: kubernetes
+    action: delete
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY
+  - id: database-query
+    module: database
+    action: query
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY
+  - id: notify-send
+    module: notify
+    action: send
+    expectedMaterialization: ADAPTER_REQUIRED
+    expectedRenderMode: REVIEW_ONLY

@@ -46,16 +46,16 @@ items:
 
   - version: "0.9.5.7.4"
     name: Remove Legacy Shell Generator Fixtures
-    status: next
+    status: completed
     purpose: Remove or quarantine legacy test generators that still encode shell execution as the expected behavior.
     requiredOutcome:
-      - Legacy Jenkins shell generator is deleted or moved into explicit archived negative fixtures.
-      - Tests no longer assert sh/docker/kubectl/helm/argocd shell projection as active Flow behavior.
-      - Shell-based examples are reclassified as blocked or review-required scenarios.
+      - Legacy Jenkins shell generator was removed from compiled test sources.
+      - Historical shell and concrete-tool cases are stored only as structured archived negative fixtures.
+      - Tests classify shell execution as blocked and unresolved adapter work as review-only.
 
   - version: "0.9.5.7.5"
     name: Compatibility and Readiness Honesty
-    status: planned
+    status: next
     purpose: Prevent capability compatibility from being reported as executable readiness.
     requiredOutcome:
       - Compatibility reports include materialization readiness and projection readiness.
