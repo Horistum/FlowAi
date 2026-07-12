@@ -6,11 +6,19 @@ import kotlin.test.assertTrue
 import kotlin.test.assertEquals
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
+import org.flowlang.capabilities.MaterializationReadinessStatus
+import org.flowlang.capabilities.ProjectionReadinessStatus
+import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
+import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
+import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import java.io.File
 
@@ -18,39 +26,75 @@ class FlowExecutionReadinessTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
     private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
 
-    private fun referencePlan() =
+    private fun referencePlan(): ExecutionPlan =
         IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
             .also { IntentCapabilityValidator(registry).validate(it).assertValid() }
             .let { IntentToAstPlanner(registry).plan(it) }
             .let { FlowPlanner(registry).plan(it) }
 
     @Test
-    fun jenkinsReferencePlanIsReady() {
+    fun jenkinsCapabilityReadinessIsPreliminaryUntilManifestExists() {
         val report = ExecutionReadinessAnalyzer(targets).analyze(referencePlan(), "jenkins")
 
         assertEquals(ExecutionReadinessStatus.READY, report.readiness)
         assertTrue(report.generationAllowed)
-        assertTrue(report.productionReady)
+        assertFalse(report.productionReady)
+        assertFalse(report.executable)
+        assertFalse(report.readinessEvidenceAvailable)
         assertTrue(report.blockers.isEmpty())
     }
 
     @Test
-    fun githubReferencePlanIsDegradedButGeneratable() {
-        val report = ExecutionReadinessAnalyzer(targets).analyze(referencePlan(), "github-actions")
+    fun jenkinsReferenceManifestIsReviewOnlyNotProductionReady() {
+        val plan = referencePlan()
+        val preliminary = ExecutionReadinessAnalyzer(targets).analyze(plan, "jenkins")
+        val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
+        val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
+
+        val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifest)
 
         assertEquals(ExecutionReadinessStatus.DEGRADED, report.readiness)
         assertTrue(report.generationAllowed)
         assertFalse(report.productionReady)
-        assertTrue(report.warnings.any { it.capability == "approval.manual" })
+        assertFalse(report.executable)
+        assertTrue(report.readinessEvidenceAvailable)
+        assertEquals(MaterializationReadinessStatus.REVIEW_REQUIRED, report.materializationReadiness)
+        assertEquals(ProjectionReadinessStatus.REVIEW_ONLY, report.projectionReadiness)
     }
 
     @Test
-    fun tektonReferencePlanIsBlocked() {
-        val report = ExecutionReadinessAnalyzer(targets).analyze(referencePlan(), "tekton")
+    fun githubReferencePlanIsDegradedAndConcreteManifestRemainsReviewOnly() {
+        val plan = referencePlan()
+        val preliminary = ExecutionReadinessAnalyzer(targets).analyze(plan, "github-actions")
+        val manifest = GitHubActionsManifestGenerator().generate(
+            plan,
+            CompatibilityAnalyzer(targets).analyze(plan, "github-actions")
+        )
+        val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifest)
+
+        assertEquals(ExecutionReadinessStatus.DEGRADED, report.readiness)
+        assertTrue(report.generationAllowed)
+        assertFalse(report.productionReady)
+        assertFalse(report.executable)
+        assertTrue(report.readinessEvidenceAvailable)
+        assertTrue(report.warnings.isNotEmpty())
+    }
+
+    @Test
+    fun tektonReferencePlanAndManifestRemainBlocked() {
+        val plan = referencePlan()
+        val preliminary = ExecutionReadinessAnalyzer(targets).analyze(plan, "tekton")
+        val manifest = TektonManifestGenerator().generate(
+            plan,
+            CompatibilityAnalyzer(targets).analyze(plan, "tekton")
+        )
+        val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifest)
 
         assertEquals(ExecutionReadinessStatus.BLOCKED, report.readiness)
         assertFalse(report.generationAllowed)
         assertFalse(report.productionReady)
+        assertFalse(report.executable)
+        assertTrue(report.readinessEvidenceAvailable)
         assertTrue(report.blockers.any { it.capability == "approval.manual" || it.capability == "approvals" })
     }
 }
