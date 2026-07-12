@@ -1,0 +1,67 @@
+name: Remove remaining v0.9.5.7.4 legacy call
+
+on:
+  push:
+    branches:
+      - feature/v0957-4-remove-legacy-shell-generator-fixtures
+
+permissions:
+  contents: write
+
+jobs:
+  patch-spec:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v0957-4-remove-legacy-shell-generator-fixtures
+          fetch-depth: 0
+      - name: Replace legacy smoke assertion
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('tests/FlowSpecTests_part2.kt')
+          text = path.read_text()
+          old = '''    // generator smoke (no exceptions, non-empty output)
+              run {
+                  val d = FlowParser().parse(exampleFile("complex-devops-flow.flow"))
+                  val plan = FlowPlanner().plan(d)
+                  H.ok("gen/jenkins", legacyJenkinsGeneratorOutput(plan).isNotBlank())
+                  H.ok("gen/github", legacyGitHubActionsGeneratorOutput(plan).isNotBlank())
+              }
+          '''
+          new = '''    // canonical manifest smoke; target rendering is governed separately by readiness policy
+              run {
+                  val d = FlowParser().parse(exampleFile("complex-devops-flow.flow"))
+                  val plan = FlowPlanner().plan(d)
+                  val jenkinsManifest = org.flowlang.generators.manifest.JenkinsManifestGenerator().generate(
+                      plan,
+                      org.flowlang.capabilities.CompatibilityReport(
+                          target = "jenkins",
+                          status = org.flowlang.capabilities.SupportLevel.SUPPORTED
+                      )
+                  )
+                  H.ok("gen/jenkins/manifest", jenkinsManifest.jobs.isNotEmpty())
+                  H.ok("gen/github", legacyGitHubActionsGeneratorOutput(plan).isNotBlank())
+              }
+          '''
+          if old not in text:
+              raise SystemExit('Expected round-trip generator smoke block was not found')
+          text = text.replace(old, new, 1)
+          if 'legacyJenkinsGeneratorOutput' in text:
+              raise SystemExit('legacyJenkinsGeneratorOutput reference remains')
+          path.write_text(text)
+          Path('.github/workflows/v0957-4-remove-last-legacy-call.yml').unlink()
+          PY
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Remove final legacy Jenkins generator smoke call"
+          git push origin HEAD:feature/v0957-4-remove-legacy-shell-generator-fixtures
