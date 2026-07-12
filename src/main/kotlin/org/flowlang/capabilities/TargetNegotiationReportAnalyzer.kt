@@ -6,9 +6,8 @@ import org.flowlang.standard.FlowStandardVersions
  * Human-readable target negotiation report built on top of the lower-level
  * compatibility negotiation model.
  *
- * This report explains why a target is usable, degraded, or blocked. It does not
- * add execution behavior, renderer behavior, SDK APIs or target-specific public
- * Flow syntax.
+ * This report explains why a target is usable, degraded, or blocked. Capability
+ * compatibility remains preliminary until concrete manifest evidence is present.
  */
 data class TargetNegotiationExplanationReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
@@ -20,7 +19,8 @@ data class TargetNegotiationExplanationReport(
     val blockedTargets: List<String>,
     val targets: List<TargetNegotiationExplanation>,
     val rejectionReasons: List<TargetNegotiationRejectionReason>,
-    val warnings: List<String>
+    val warnings: List<String>,
+    val readinessEvidenceAvailable: Boolean = false
 )
 
 data class TargetNegotiationExplanation(
@@ -55,7 +55,7 @@ object TargetNegotiationReportAnalyzer {
             val reasons = rejectionReasonsFor(entry)
             TargetNegotiationExplanation(
                 target = entry.target,
-                outcome = outcomeFor(entry),
+                outcome = outcomeFor(entry, report.readinessEvidenceAvailable),
                 portabilityScore = entry.portabilityScore,
                 supportedCapabilities = entry.supported.sorted(),
                 degradedCapabilities = entry.partial.sorted(),
@@ -72,12 +72,18 @@ object TargetNegotiationReportAnalyzer {
                 .thenBy { it.capability }
                 .thenBy { it.message }
         )
-        val warnings = targetExplanations
-            .filter { it.outcome == TargetNegotiationOutcome.DEGRADED }
-            .map { "Target '${it.target}' is degraded and requires explicit workarounds for: ${it.degradedCapabilities.joinToString()}${runtimeSuffix(it.runtimeRequiredCapabilities)}" }
-            .sorted()
+        val warnings = buildList {
+            targetExplanations
+                .filter { it.outcome == TargetNegotiationOutcome.DEGRADED }
+                .forEach {
+                    add("Target '${it.target}' is degraded and requires explicit workarounds for: ${it.degradedCapabilities.joinToString()}${runtimeSuffix(it.runtimeRequiredCapabilities)}")
+                }
+            if (!report.readinessEvidenceAvailable) {
+                add("Target recommendation is unavailable until materialization and projection readiness are evaluated on concrete manifests.")
+            }
+        }.distinct().sorted()
         val status = when {
-            targetExplanations.any { it.outcome == TargetNegotiationOutcome.SUPPORTED } -> "PASS"
+            report.readinessEvidenceAvailable && targetExplanations.any { it.outcome == TargetNegotiationOutcome.SUPPORTED } -> "PASS"
             targetExplanations.any { it.outcome == TargetNegotiationOutcome.DEGRADED } -> "DEGRADED"
             else -> "BLOCKED"
         }
@@ -90,12 +96,17 @@ object TargetNegotiationReportAnalyzer {
             blockedTargets = report.blockedTargets.sorted(),
             targets = targetExplanations,
             rejectionReasons = rejectionReasons,
-            warnings = warnings
+            warnings = warnings,
+            readinessEvidenceAvailable = report.readinessEvidenceAvailable
         )
     }
 
-    private fun outcomeFor(entry: TargetNegotiationEntry): TargetNegotiationOutcome = when {
+    private fun outcomeFor(
+        entry: TargetNegotiationEntry,
+        readinessEvidenceAvailable: Boolean
+    ): TargetNegotiationOutcome = when {
         entry.unsupported.isNotEmpty() || entry.status == SupportLevel.UNSUPPORTED -> TargetNegotiationOutcome.BLOCKED
+        !readinessEvidenceAvailable -> TargetNegotiationOutcome.DEGRADED
         entry.partial.isNotEmpty() || entry.requiresRuntime.isNotEmpty() || entry.status == SupportLevel.PARTIAL || entry.status == SupportLevel.REQUIRES_RUNTIME -> TargetNegotiationOutcome.DEGRADED
         else -> TargetNegotiationOutcome.SUPPORTED
     }
