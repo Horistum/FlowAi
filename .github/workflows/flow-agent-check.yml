@@ -19,139 +19,17 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v4
         with:
           ref: feature/v0957-5-compatibility-readiness-honesty
           fetch-depth: 0
 
-      - name: Apply readiness conformance alignment
+      - name: Apply exact readiness patch
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path('src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt')
-          source = path.read_text()
-
-          import_anchor = 'import org.flowlang.generators.manifest.TargetManifest\n'
-          readiness_import = 'import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer\n'
-          if readiness_import not in source:
-              if import_anchor not in source:
-                  raise SystemExit('TargetManifest import anchor not found')
-              source = source.replace(import_anchor, import_anchor + readiness_import, 1)
-
-          start_marker = '    private fun checkV037ExecutionReadinessReport()'
-          end_marker = '    private fun checkV0310PublicArtifactBundle()'
-          start = source.find(start_marker)
-          end = source.find(end_marker, start)
-          if start < 0 or end < 0:
-              raise SystemExit('Conformance readiness method boundaries not found')
-
-          replacement = '''    private fun checkV037ExecutionReadinessReport(): ConformanceCheck = runCheck("v0.3.7.execution-readiness") {
-              val artifacts = buildPipeline("jenkins", strict = false)
-              val compatibility = CompatibilityAnalyzer(targets)
-              val analyzer = ExecutionReadinessAnalyzer(targets)
-
-              val preliminaryJenkins = analyzer.analyze(artifacts.plan, "jenkins", strict = false)
-              require(preliminaryJenkins.readiness == ExecutionReadinessStatus.READY) { "Jenkins capability readiness should pass before manifest evaluation." }
-              require(!preliminaryJenkins.productionReady) { "Capability readiness alone must not claim production readiness." }
-              require(!preliminaryJenkins.readinessEvidenceAvailable) { "Preliminary readiness must expose missing artifact evidence." }
-              val jenkins = TargetCompatibilityReadinessAnalyzer.reconcile(preliminaryJenkins, artifacts.manifest)
-              require(jenkins.readiness == ExecutionReadinessStatus.DEGRADED) { "Reference Jenkins manifest must be review-only." }
-              require(!jenkins.productionReady && !jenkins.executable) { "Review-only Jenkins manifest must not be production-ready." }
-              require(jenkins.readinessEvidenceAvailable) { "Concrete Jenkins readiness must carry manifest evidence." }
-
-              val githubManifest = GitHubActionsManifestGenerator().generate(
-                  artifacts.plan,
-                  compatibility.analyze(artifacts.plan, "github-actions", strict = false)
-              )
-              val github = TargetCompatibilityReadinessAnalyzer.reconcile(
-                  analyzer.analyze(artifacts.plan, "github-actions", strict = false),
-                  githubManifest
-              )
-              require(github.readiness == ExecutionReadinessStatus.DEGRADED) { "GitHub Actions reference manifest must remain degraded." }
-              require(!github.productionReady && !github.executable) { "GitHub Actions review artifact must not be production-ready." }
-
-              val tektonManifest = TektonManifestGenerator().generate(
-                  artifacts.plan,
-                  compatibility.analyze(artifacts.plan, "tekton", strict = false)
-              )
-              val tekton = TargetCompatibilityReadinessAnalyzer.reconcile(
-                  analyzer.analyze(artifacts.plan, "tekton", strict = false),
-                  tektonManifest
-              )
-              require(tekton.readiness == ExecutionReadinessStatus.BLOCKED) { "Tekton must remain blocked by effective compatibility." }
-              require(!tekton.generationAllowed && !tekton.productionReady) { "Blocked Tekton target must not allow executable generation." }
-          }
-
-          private fun checkV038TargetSelectionReport(): ConformanceCheck = runCheck("v0.3.8.target-selection") {
-              val artifacts = buildPipeline("jenkins", strict = false)
-              val compatibility = CompatibilityAnalyzer(targets)
-              val preliminary = TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false)
-              require(preliminary.recommendedTarget.isEmpty()) { "Capability-only selection must not recommend a target." }
-              val manifests = listOf(
-                  artifacts.manifest,
-                  GitHubActionsManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "github-actions")),
-                  TektonManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "tekton"))
-              )
-              val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
-              require(report.candidates.size == targets.size) { "Target selection must evaluate every registered target." }
-              require(report.recommendedTarget.isEmpty()) { "Reference deployment has no executable target recommendation." }
-              require(report.readyTargets.isEmpty()) { "Review-only reference manifests must not be classified as ready." }
-              require(report.degradedTargets.containsAll(listOf("jenkins", "github-actions"))) { "Jenkins and GitHub Actions must be classified as review-only degraded targets." }
-              require(report.blockedTargets.contains("tekton")) { "Tekton must be classified as blocked." }
-              require(report.candidates.all { it.readinessEvidenceAvailable }) { "Every reconciled candidate must carry concrete readiness evidence." }
-              require(report.candidates.map { it.rank } == (1..report.candidates.size).toList()) { "Candidate ranks must be contiguous." }
-          }
-
-          private fun checkV039TargetDecisionTraceReport(): ConformanceCheck = runCheck("v0.3.9.target-decision-trace") {
-              val artifacts = buildPipeline("jenkins", strict = false)
-              val compatibility = CompatibilityAnalyzer(targets)
-              val manifests = listOf(
-                  artifacts.manifest,
-                  GitHubActionsManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "github-actions")),
-                  TektonManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "tekton"))
-              )
-              val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
-                  compatibility.negotiate(artifacts.plan, strict = false),
-                  manifests
-              )
-              val selection = TargetCompatibilityReadinessAnalyzer.reconcile(
-                  TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false),
-                  manifests
-              )
-              val report = TargetDecisionTraceAnalyzer(targets).analyze(
-                  plan = artifacts.plan,
-                  requestedTarget = "jenkins",
-                  strict = false,
-                  negotiation = negotiation,
-                  selection = selection
-              )
-              require(report.finalDecision == DecisionTraceStatus.BLOCKED) { "Reference trace must block because no target artifact is executable." }
-              require(!report.generationAllowed) { "Blocked trace must not allow executable generation." }
-              require(report.recommendedTarget.isEmpty()) { "Trace must not preserve a capability-only target recommendation." }
-              require(report.trace.map { it.id }.containsAll(listOf("execution-plan", "capability-negotiation", "execution-readiness", "target-selection"))) {
-                  "Trace must cover the standard decision pipeline."
-              }
-              require(report.publicArtifacts.contains("target-selection-report.json")) { "Trace must cite target-selection-report.json." }
-              require(report.publicArtifacts.contains("target-decision-trace-report.json")) { "Trace must cite itself as a public artifact." }
-              require(report.targetExplanations.any { it.target == "jenkins" && it.decision == TargetDecisionKind.DEGRADED }) {
-                  "Trace must explain Jenkins as review-only degraded."
-              }
-              require(report.targetExplanations.any { it.target == "github-actions" && it.decision == TargetDecisionKind.DEGRADED }) {
-                  "Trace must explain GitHub Actions as degraded."
-              }
-              require(report.targetExplanations.any { it.target == "tekton" && it.decision == TargetDecisionKind.BLOCKED }) {
-                  "Trace must explain Tekton as blocked."
-              }
-          }
-
-'''
-
-          source = source[:start] + replacement + source[end:]
-          path.write_text(source)
-          PY
+          git apply --check .flow-agent/patches/v0.9.5.7.5-conformance-readiness.patch
+          git apply .flow-agent/patches/v0.9.5.7.5-conformance-readiness.patch
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -174,28 +52,6 @@ jobs:
       - name: Generate Flow Agent Context
         run: python3 tools/flow_agent_runner.py
 
-      - name: Run Offline Tests When Cache Is Available
-        shell: bash
-        run: |
-          set -o pipefail
-          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon test --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-test.log
-            exit ${PIPESTATUS[0]}
-          else
-            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions." | tee ci-logs/offline-test.log
-          fi
-
-      - name: Run Offline Conformance When Cache Is Available
-        shell: bash
-        run: |
-          set -o pipefail
-          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon run --args="conformance" --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-conformance.log
-            exit ${PIPESTATUS[0]}
-          else
-            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions." | tee ci-logs/offline-conformance.log
-          fi
-
       - name: Compile and Test
         shell: bash
         run: |
@@ -217,9 +73,10 @@ jobs:
           git fetch origin main
           git show origin/main:.github/workflows/flow-agent-check.yml > .github/workflows/flow-agent-check.yml
           git show origin/main:build.gradle.kts > build.gradle.kts
+          rm .flow-agent/patches/v0.9.5.7.5-conformance-readiness.patch
           git config user.name "flow-readiness-bot"
           git config user.email "flow-readiness-bot@users.noreply.github.com"
-          git add src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt .github/workflows/flow-agent-check.yml build.gradle.kts
+          git add src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt .github/workflows/flow-agent-check.yml build.gradle.kts .flow-agent/patches/v0.9.5.7.5-conformance-readiness.patch
           git commit -m "Align conformance checks with concrete readiness"
           git push origin HEAD:feature/v0957-5-compatibility-readiness-honesty
 
@@ -233,66 +90,19 @@ jobs:
           echo "Branch/ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
           echo "Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Offline Gradle test when cache is available" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Offline Flow conformance when cache is available" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          if compgen -G "build/test-results/test/*.xml" > /dev/null; then
-            echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import glob
-          import html
-          import xml.etree.ElementTree as ET
-          for path in sorted(glob.glob('build/test-results/test/*.xml')):
-              root = ET.parse(path).getroot()
-              for case in root.findall('testcase'):
-                  failure = case.find('failure') or case.find('error')
-                  if failure is None:
-                      continue
-                  cls = case.attrib.get('classname', '')
-                  name = case.attrib.get('name', '')
-                  message = failure.attrib.get('message', '')
-                  text = (failure.text or '').strip().splitlines()
-                  print(f"### {cls}.{name}")
-                  print("")
-                  print("```text")
-                  print(html.unescape(message)[:2000])
-                  for line in text[:12]:
-                      print(html.unescape(line)[:2000])
-                  print("```")
-                  print("")
-          PY
-          fi
           for file in ci-logs/*.log; do
             if [ -f "$file" ]; then
               echo "## ${file}" >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
               echo '```text' >> "$GITHUB_STEP_SUMMARY"
               tail -n 120 "$file" >> "$GITHUB_STEP_SUMMARY"
               echo '```' >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
 
-      - name: Upload CI Gradle Logs
+      - name: Upload CI Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flow-ci-gradle-logs
+          name: flow-ci-readiness-logs
           path: ci-logs/*.log
-          if-no-files-found: error
-
-      - name: Upload CI Test Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flow-ci-test-reports
-          path: |
-            build/test-results/test/*.xml
-            build/reports/tests/test/**
           if-no-files-found: warn
