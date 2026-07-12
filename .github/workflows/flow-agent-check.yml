@@ -22,7 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: feature/v0957-5-compatibility-readiness-honesty
           fetch-depth: 0
 
       - name: Apply readiness conformance alignment
@@ -211,7 +211,7 @@ jobs:
           exit ${PIPESTATUS[0]}
 
       - name: Persist validated readiness alignment
-        if: success() && github.event_name == 'push' && github.ref_name == 'feature/v0957-5-compatibility-readiness-honesty'
+        if: success()
         shell: bash
         run: |
           git fetch origin main
