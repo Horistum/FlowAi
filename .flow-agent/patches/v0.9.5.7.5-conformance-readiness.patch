@@ -8,7 +8,7 @@
  import org.flowlang.generators.manifest.TargetRenderMode
  import org.flowlang.generators.manifest.TargetRenderPolicy
  import org.flowlang.generators.manifest.TargetExpressionTranslator
-@@ -634,51 +635,94 @@
+@@ -634,51 +635,100 @@
  
      private fun checkV037ExecutionReadinessReport(): ConformanceCheck = runCheck("v0.3.7.execution-readiness") {
          val artifacts = buildPipeline("jenkins", strict = false)
@@ -75,6 +75,7 @@
 +            GitHubActionsManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "github-actions")),
 +            TektonManifestGenerator().generate(artifacts.plan, compatibility.analyze(artifacts.plan, "tekton"))
 +        )
++        val manifestTargets = manifests.map { it.target }.toSet()
 +        val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
          require(report.candidates.size == targets.size) { "Target selection must evaluate every registered target." }
 -        require(report.recommendedTarget == "jenkins") { "Reference deployment should recommend Jenkins as the strongest ready target." }
@@ -85,7 +86,12 @@
 +        require(report.degradedTargets.containsAll(listOf("jenkins", "github-actions"))) { "Jenkins and GitHub Actions must be classified as review-only degraded targets." }
          require(report.blockedTargets.contains("tekton")) { "Tekton must be classified as blocked." }
 -        require(report.candidates.first().target == report.recommendedTarget) { "Top ranked target must match recommendedTarget." }
-+        require(report.candidates.all { it.readinessEvidenceAvailable }) { "Every reconciled candidate must carry concrete readiness evidence." }
++        require(report.candidates.filter { it.target in manifestTargets }.all { it.readinessEvidenceAvailable }) {
++            "Candidates with concrete manifests must carry readiness evidence."
++        }
++        require(report.candidates.filter { it.target !in manifestTargets }.none { it.readinessEvidenceAvailable }) {
++            "Candidates without concrete manifests must remain explicitly unevaluated."
++        }
          require(report.candidates.map { it.rank } == (1..report.candidates.size).toList()) { "Candidate ranks must be contiguous." }
      }
  
