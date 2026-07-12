@@ -6,9 +6,12 @@ spec:
   standardVersion: "0.7.6"
   manifestVersion: "1.0"
   target: "jenkins"
+  capabilityCompatibility: "SUPPORTED"
+  effectiveCompatibility: "PARTIAL"
+  materializationReadiness: "REVIEW_REQUIRED"
+  projectionReadiness: "REVIEW_ONLY"
   renderMode: REVIEW_ONLY
   executable: false
-  compatibility: "SUPPORTED"
   reason: "Target syntax was not emitted because required renderer payloads are unresolved."
   findings:
     - nodeId: "git_checkout_1"
