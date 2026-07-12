@@ -6,8 +6,8 @@ import org.flowlang.capabilities.SupportLevel
 
 /**
  * Applies materialization and projection evidence to a canonical target manifest.
- * The capability-only status is retained in metadata for audit, while the public
- * compatibility status becomes the effective status of the concrete artifact.
+ * The capability-only status is retained for audit, while the public compatibility
+ * status becomes the effective status of the concrete artifact.
  */
 fun TargetManifest.reconcileCompatibilityReadiness(): TargetManifest {
     val readiness = TargetCompatibilityReadinessAnalyzer.analyze(this)
@@ -27,7 +27,12 @@ fun TargetManifest.reconcileCompatibilityReadiness(): TargetManifest {
     return copy(
         compatibility = compatibility.copy(
             status = readiness.effectiveStatus,
-            issues = (compatibility.issues + readinessIssues).distinct()
+            issues = (compatibility.issues + readinessIssues).distinct(),
+            capabilityStatus = readiness.capabilityStatus,
+            materializationReadiness = readiness.materializationReadiness,
+            projectionReadiness = readiness.projectionReadiness,
+            executable = readiness.executable,
+            readinessEvidenceAvailable = true
         ),
         metadata = metadata + mapOf(
             "capabilityCompatibility" to readiness.capabilityStatus.name,
