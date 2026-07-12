@@ -91,6 +91,7 @@ object TargetRenderPolicy {
 object TargetReviewArtifactRenderer {
     fun render(manifest: TargetManifest, readiness: TargetRenderReadiness): String {
         require(readiness.mode == TargetRenderMode.REVIEW_ONLY) { "Review artifact requires REVIEW_ONLY readiness." }
+        val compatibilityReadiness = TargetCompatibilityReadinessAnalyzer.analyze(manifest)
         val sb = StringBuilder()
         sb.appendLine("apiVersion: flowlang.org/v1alpha1")
         sb.appendLine("kind: TargetProjectionReview")
@@ -100,9 +101,12 @@ object TargetReviewArtifactRenderer {
         sb.appendLine("  standardVersion: ${quoted(manifest.standardVersion)}")
         sb.appendLine("  manifestVersion: ${quoted(manifest.manifestVersion)}")
         sb.appendLine("  target: ${quoted(manifest.target)}")
+        sb.appendLine("  capabilityCompatibility: ${quoted(compatibilityReadiness.capabilityStatus.name)}")
+        sb.appendLine("  effectiveCompatibility: ${quoted(compatibilityReadiness.effectiveStatus.name)}")
+        sb.appendLine("  materializationReadiness: ${quoted(compatibilityReadiness.materializationReadiness.name)}")
+        sb.appendLine("  projectionReadiness: ${quoted(compatibilityReadiness.projectionReadiness.name)}")
         sb.appendLine("  renderMode: REVIEW_ONLY")
         sb.appendLine("  executable: false")
-        sb.appendLine("  compatibility: ${quoted(manifest.compatibility.status.name)}")
         sb.appendLine("  reason: ${quoted("Target syntax was not emitted because required renderer payloads are unresolved.")}")
         sb.appendLine("  findings:")
         readiness.findings.forEach { finding ->
