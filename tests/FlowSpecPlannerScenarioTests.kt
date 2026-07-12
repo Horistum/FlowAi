@@ -260,8 +260,7 @@ fun stressTests() {
         Combo("database", "database", "database.upsert s { table: \"t\"\nkey: \"k\"\nvalues: \"v\" }")
     )
     fun systemConfig(sys: String): String = when (sys) {
-        "argocd" -> """url: secret("ARGOCD_URL")
-token: secret("ARGOCD_TOKEN")"""
+        "argocd" -> "\nurl: secret(\"ARGOCD_URL\")\ntoken: secret(\"ARGOCD_TOKEN\")"
         else -> ""
     }
     for ((i, c) in combos.withIndex()) {
