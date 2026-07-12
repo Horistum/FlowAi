@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
@@ -65,6 +66,11 @@ class LegacyShellGeneratorFixtureTests {
         assertFalse(fixture.compiled)
         assertTrue(fixture.purpose.contains("canonical materialization resolver"))
         assertTrue(fixture.cases.isNotEmpty())
+        assertEquals(fixture.cases.size, fixture.cases.map { it.id }.toSet().size, "Fixture case ids must be unique.")
+        assertTrue(
+            fixture.cases.map { it.module }.toSet().containsAll(setOf("shell", "docker", "helm", "argocd", "kubernetes")),
+            "Archived fixture must cover every concrete legacy projection family named by the repair scope."
+        )
     }
 
     @Test
@@ -89,7 +95,7 @@ class LegacyShellGeneratorFixtureTests {
             val expectedRenderMode = TargetRenderMode.valueOf(case.expectedRenderMode)
 
             assertEquals(expectedMaterialization, step.materialization.status, case.id)
-            assertEquals(null, step.run, "${case.id} must not carry legacy executable text")
+            assertNull(step.run, "${case.id} must not carry legacy executable text")
 
             val readiness = TargetRenderPolicy.evaluate(manifest)
             assertEquals(expectedRenderMode, readiness.mode, case.id)
