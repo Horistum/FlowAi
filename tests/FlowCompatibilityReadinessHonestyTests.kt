@@ -4,10 +4,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.CompatibilityReport
+import org.flowlang.capabilities.ExecutionReadinessAnalyzer
+import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.MaterializationReadinessStatus
 import org.flowlang.capabilities.ProjectionReadinessStatus
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
@@ -84,27 +87,23 @@ class FlowCompatibilityReadinessHonestyTests {
     }
 
     @Test
+    fun preliminaryNegotiationDoesNotRecommendWithoutManifestEvidence() {
+        val targets = readinessTargets()
+        val plan = readinessPlan()
+
+        val negotiation = CompatibilityAnalyzer(targets).negotiate(plan)
+
+        assertTrue(negotiation.recommendedTargets.isEmpty())
+        assertFalse(negotiation.readinessEvidenceAvailable)
+        assertTrue(negotiation.targets.all { entry -> entry.notes.any { it.contains("preliminary") } })
+    }
+
+    @Test
     fun reconciledNegotiationRecommendsOnlyExecutableSupportedTargets() {
-        val targets = mapOf(
-            "jenkins" to TargetCapability(target = "jenkins", description = "test"),
-            "github-actions" to TargetCapability(target = "github-actions", description = "test")
-        )
-        val plan = ExecutionPlan(
-            flowName = "readiness-negotiation",
-            requiredCapabilities = listOf("task.execute"),
-            nodes = listOf(
-                TaskNode(
-                    id = "task_1",
-                    module = "standard",
-                    action = "execute",
-                    target = "standard",
-                    requiredCapabilities = listOf("task.execute")
-                )
-            )
-        )
+        val targets = readinessTargets()
+        val plan = readinessPlan()
         val analyzer = CompatibilityAnalyzer(targets)
         val capabilityNegotiation = analyzer.negotiate(plan)
-        assertEquals(listOf("github-actions", "jenkins"), capabilityNegotiation.recommendedTargets.sorted())
 
         val reviewOnly = manifest(
             target = "jenkins",
@@ -128,23 +127,61 @@ class FlowCompatibilityReadinessHonestyTests {
     }
 
     @Test
+    fun executionReadinessBecomesConcreteOnlyAfterManifestReconciliation() {
+        val targets = readinessTargets()
+        val plan = readinessPlan()
+        val preliminary = ExecutionReadinessAnalyzer(targets).analyze(plan, "jenkins")
+        assertFalse(preliminary.productionReady)
+        assertFalse(preliminary.readinessEvidenceAvailable)
+
+        val reviewOnly = manifest(
+            target = "jenkins",
+            compatibility = SupportLevel.SUPPORTED,
+            step = notesProjectedStep("jenkins", rendererReady = false)
+        )
+        val concrete = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, reviewOnly)
+
+        assertEquals(ExecutionReadinessStatus.DEGRADED, concrete.readiness)
+        assertFalse(concrete.productionReady)
+        assertFalse(concrete.executable)
+        assertTrue(concrete.readinessEvidenceAvailable)
+        assertEquals(ProjectionReadinessStatus.REVIEW_ONLY, concrete.projectionReadiness)
+    }
+
+    @Test
+    fun targetSelectionRecommendsOnlyConcreteExecutableCandidate() {
+        val targets = readinessTargets()
+        val plan = readinessPlan()
+        val analyzer = CompatibilityAnalyzer(targets)
+        val preliminary = TargetSelectionAnalyzer(targets).analyze(plan)
+        assertTrue(preliminary.recommendedTarget.isEmpty())
+
+        val manifests = listOf(
+            manifest(
+                target = "jenkins",
+                compatibility = analyzer.analyze(plan, "jenkins").status,
+                step = notesProjectedStep("jenkins", rendererReady = false)
+            ),
+            manifest(
+                target = "github-actions",
+                compatibility = analyzer.analyze(plan, "github-actions").status,
+                step = notesProjectedStep("github-actions", rendererReady = true)
+            )
+        )
+        val reconciled = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
+
+        assertEquals("github-actions", reconciled.recommendedTarget)
+        assertEquals(listOf("github-actions"), reconciled.readyTargets)
+        assertEquals(listOf("jenkins"), reconciled.degradedTargets)
+        assertTrue(reconciled.candidates.first { it.target == "github-actions" }.executable)
+    }
+
+    @Test
     fun safeProjectionStoresEffectiveCompatibilityOnManifest() {
         val targets = mapOf(
             "jenkins" to TargetCapability(target = "jenkins", description = "test")
         )
-        val plan = ExecutionPlan(
-            flowName = "safe-projection",
-            requiredCapabilities = listOf("task.execute"),
-            nodes = listOf(
-                TaskNode(
-                    id = "task_1",
-                    module = "standard",
-                    action = "execute",
-                    target = "standard",
-                    requiredCapabilities = listOf("task.execute")
-                )
-            )
-        )
+        val plan = readinessPlan()
         val generator = object : TargetManifestGenerator {
             override val target: String = "jenkins"
 
@@ -160,6 +197,11 @@ class FlowCompatibilityReadinessHonestyTests {
         val manifest = generator.generateWithCapabilityConstraints(plan, targets)
 
         assertEquals(SupportLevel.PARTIAL, manifest.compatibility.status)
+        assertEquals(SupportLevel.SUPPORTED, manifest.compatibility.capabilityStatus)
+        assertEquals(MaterializationReadinessStatus.COMPLETE, manifest.compatibility.materializationReadiness)
+        assertEquals(ProjectionReadinessStatus.REVIEW_ONLY, manifest.compatibility.projectionReadiness)
+        assertFalse(manifest.compatibility.executable)
+        assertTrue(manifest.compatibility.readinessEvidenceAvailable)
         assertEquals("SUPPORTED", manifest.metadata["capabilityCompatibility"])
         assertEquals("PARTIAL", manifest.metadata["effectiveCompatibility"])
         assertEquals("COMPLETE", manifest.metadata["materializationReadiness"])
@@ -185,6 +227,25 @@ class FlowCompatibilityReadinessHonestyTests {
         assertTrue(rendered.contains("projectionReadiness: \"REVIEW_ONLY\""))
         assertFalse(rendered.contains("compatibility: \"SUPPORTED\""))
     }
+
+    private fun readinessTargets(): Map<String, TargetCapability> = mapOf(
+        "jenkins" to TargetCapability(target = "jenkins", description = "test"),
+        "github-actions" to TargetCapability(target = "github-actions", description = "test")
+    )
+
+    private fun readinessPlan(): ExecutionPlan = ExecutionPlan(
+        flowName = "readiness-negotiation",
+        requiredCapabilities = listOf("task.execute"),
+        nodes = listOf(
+            TaskNode(
+                id = "task_1",
+                module = "standard",
+                action = "execute",
+                target = "standard",
+                requiredCapabilities = listOf("task.execute")
+            )
+        )
+    )
 
     private fun manifest(
         target: String,
