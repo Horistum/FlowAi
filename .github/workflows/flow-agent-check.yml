@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/v0957-5-compatibility-readiness-honesty
+  pull_request:
+    types:
+      - reopened
 
 permissions:
   contents: write
