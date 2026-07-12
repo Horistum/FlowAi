@@ -47,12 +47,12 @@ items:
   - version: "0.9.5.7.4"
     name: Remove Legacy Shell Generator Fixtures
     status: completed
-    purpose: Remove or quarantine legacy test generators that still encode shell execution as the expected behavior.
+    purpose: Remove legacy test generators and assertions that encode shell or echo execution as expected Flow behavior.
     requiredOutcome:
-      - The legacy Jenkins shell generator is replaced by a non-executing compatibility tombstone.
-      - The active JUnit bridge no longer runs shell-oriented Jenkins generator assertions.
-      - Tests discover every shell-based example and require blocked materialization plus fail-fast readiness.
-      - Explicit runtime command intent remains preserved for review instead of being silently removed.
+      - Legacy Jenkins and GitHub Actions generator source files are deleted from the active test source set.
+      - The monolithic specification harness is split without dropping language, validation, planner, module, location or stress coverage.
+      - Active tests no longer assert sh, run-echo, kubectl, Helm or Argo CD command projection.
+      - Shell-based examples remain preserved as explicit runtime intent but are required to produce BLOCKED materialization and FAIL_FAST readiness across all implemented renderers.
 
   - version: "0.9.5.7.5"
     name: Compatibility and Readiness Honesty
