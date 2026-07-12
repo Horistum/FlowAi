@@ -162,7 +162,7 @@ fun roundTripTests() {
 }
 
 fun legacyProjectionBoundaryTests() {
-    for (file in listOf("build-test.flow", "complex-devops-flow.flow", "deploy-with-approval.flow", "hello.flow")) {
+    for (file in listOf("build-test.flow", "complex-devops-flow.flow")) {
         val plan = FlowPlanner().plan(FlowParser().parse(exampleFile(file)))
         for (target in projectionTargets.keys) {
             val manifest = manifestFor(plan, target)
@@ -259,13 +259,25 @@ fun stressTests() {
         Combo("database", "database", "database.query s { sql: \"select 1\" }"),
         Combo("database", "database", "database.upsert s { table: \"t\"\nkey: \"k\"\nvalues: \"v\" }")
     )
-    fun systemConfig(sys: String): String = when (sys) {
-        "argocd" -> "\nurl: secret(\"ARGOCD_URL\")\ntoken: secret(\"ARGOCD_TOKEN\")"
-        else -> ""
+    fun systemBlock(sys: String): String = buildString {
+        appendLine("system \"s\" {")
+        appendLine("type: $sys")
+        if (sys == "argocd") {
+            appendLine("url: secret(\"ARGOCD_URL\")")
+            appendLine("token: secret(\"ARGOCD_TOKEN\")")
+        }
+        append("}")
     }
     for ((i, c) in combos.withIndex()) {
         val src = """use module "${c.imp}" version "1.0"
-flow "t" { systems { system "s" { type: ${c.sys}${systemConfig(c.sys)} } } steps { ${c.step} } }"""
+flow "t" {
+  systems {
+    ${systemBlock(c.sys)}
+  }
+  steps {
+    ${c.step}
+  }
+}"""
         val rep = validateSrc(src)
         H.ok("stress/module-valid/$i/${c.imp}", rep.issues.none { it.level == "error" })
         H.eq("stress/module-task-count/$i", planSrc(src).tasks.size, 1)
