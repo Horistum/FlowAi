@@ -55,6 +55,7 @@ class FlowTargetSelectionTests {
         )
 
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
+        val manifestTargets = manifests.map { it.target }.toSet()
         val diagnostic = "Reconciled selection report: $report"
 
         assertTrue(report.recommendedTarget.isEmpty(), diagnostic)
@@ -67,7 +68,14 @@ class FlowTargetSelectionTests {
             report.candidates.first { it.target == "jenkins" }.readiness,
             diagnostic
         )
-        assertTrue(report.candidates.all { it.readinessEvidenceAvailable }, diagnostic)
+        assertTrue(
+            report.candidates.filter { it.target in manifestTargets }.all { it.readinessEvidenceAvailable },
+            diagnostic
+        )
+        assertTrue(
+            report.candidates.filter { it.target !in manifestTargets }.none { it.readinessEvidenceAvailable },
+            diagnostic
+        )
         assertTrue(report.candidates.none { it.productionReady && it.executable }, diagnostic)
     }
 }
