@@ -1,7 +1,6 @@
 import org.flowlang.ast.*
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
-import org.flowlang.generators.ExpressionRenderer
 import org.flowlang.generators.manifest.*
 import org.flowlang.parser.*
 import org.flowlang.planner.*
@@ -163,7 +162,7 @@ fun roundTripTests() {
 }
 
 fun legacyProjectionBoundaryTests() {
-    for (file in listOf("build-test.flow", "complex-devops-flow.flow")) {
+    for (file in listOf("build-test.flow", "complex-devops-flow.flow", "deploy-with-approval.flow", "hello.flow")) {
         val plan = FlowPlanner().plan(FlowParser().parse(exampleFile(file)))
         for (target in projectionTargets.keys) {
             val manifest = manifestFor(plan, target)
