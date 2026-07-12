@@ -4,7 +4,7 @@ Current package line: `0.9.4`
 Active public standard version: `0.7.6`
 Next expected package line: `0.9.5`
 First scoped correction item: `0.9.5.0`
-Current scoped correction item: `0.9.5.7.3`
+Current scoped correction item: `0.9.5.7.4`
 
 The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
 
@@ -65,7 +65,9 @@ The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until t
 
 `0.9.5.7.3 Renderer Failure Semantics Unification` introduces one renderer readiness policy. Unresolved target payloads produce a non-executable Flow review artifact, blocked materialization fails before target syntax is returned, and vendor syntax requires explicit renderer payload evidence.
 
-The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml`. The next scoped repair item is `0.9.5.7.4 Remove Legacy Shell Generator Fixtures`.
+`0.9.5.7.4 Remove Legacy Shell Generator Fixtures` deletes the legacy Jenkins and GitHub Actions test generators, removes shell-output assertions from the active specification harness, preserves language, validation, planner, module, location and stress coverage in responsibility-based test files, and requires every remaining shell example to fail at the materialization boundary across Jenkins, GitHub Actions and Tekton.
+
+The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml`. The next scoped repair item is `0.9.5.7.5 Compatibility and Readiness Honesty`.
 
 ## Current validation source
 
@@ -82,7 +84,7 @@ The current validation source is the local Gradle run performed by the reviewer 
 - Active public standard version: `0.7.6`
 - Next expected package line: `0.9.5`
 - First scoped correction item: `0.9.5.0`
-- Current scoped correction item: `0.9.5.7.3`
+- Current scoped correction item: `0.9.5.7.4`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
@@ -93,4 +95,4 @@ The v0.9.4 package line does not bump the public standard or artifact schema ver
 
 ## Architecture boundary
 
-v0.9.5.7.3 changes renderer output honesty. It does not add renderer payload implementations; it prevents incomplete materialization from being serialized as apparently executable vendor artifacts.
+v0.9.5.7.4 removes obsolete test projection implementations and their output assertions. Explicit runtime command intent remains available for migration and review coverage, but materialization policy continues to block it from target rendering.

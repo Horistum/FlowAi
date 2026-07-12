@@ -5,9 +5,9 @@ import kotlin.test.assertTrue
  * JUnit bridge for the core scenario-based Flow specification suite.
  *
  * This is not advisory coverage. It exercises parser, validator, planner,
- * AST handling, expression engine and legacy generator compatibility scenarios.
- * Conformance bridges are covered by dedicated blocking JUnit tests, so failures
- * are reported at the correct layer instead of being hidden inside one giant wrapper.
+ * AST handling and the expression engine. Target projection behavior is covered
+ * by dedicated manifest, materialization and renderer-readiness tests so an
+ * obsolete generator fixture cannot define active Flow semantics.
  */
 class FlowSpecJUnitTest {
     @Test
@@ -29,7 +29,6 @@ class FlowSpecJUnitTest {
         moduleLoaderTests()
         descriptorRegistryParityTests()
         sourceLocationTests()
-        jenkinsGeneratorTests()
         stressTests()
 
         val ok = H.report()
