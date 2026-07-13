@@ -1,0 +1,976 @@
+diff --git a/src/main/kotlin/org/flowlang/capabilities/TargetCapabilities.kt b/src/main/kotlin/org/flowlang/capabilities/TargetCapabilities.kt
+index 8c677b460980e7414beaec78832370ebea1dba3e..47a20fb3d1ad84bb6c9de95f24a6cd1bf5387ce2 100644
+--- a/src/main/kotlin/org/flowlang/capabilities/TargetCapabilities.kt
++++ b/src/main/kotlin/org/flowlang/capabilities/TargetCapabilities.kt
+@@ -24,7 +24,8 @@ data class TargetCapability(
+     val secrets: SupportLevel = SupportLevel.PARTIAL,
+     val nativeRuntime: SupportLevel = SupportLevel.PARTIAL,
+     val notes: List<String> = emptyList(),
+-    val features: Map<String, SupportLevel> = emptyMap()
++    val features: Map<String, SupportLevel> = emptyMap(),
++    val expressionSupport: TargetExpressionSupportDeclaration? = null
+ ) {
+     fun feature(name: String, fallback: SupportLevel): SupportLevel = features[name] ?: fallback
+ }
+@@ -56,7 +57,8 @@ data class CompatibilityReport(
+     val materializationReadiness: MaterializationReadinessStatus = MaterializationReadinessStatus.NOT_EVALUATED,
+     val projectionReadiness: ProjectionReadinessStatus = ProjectionReadinessStatus.NOT_EVALUATED,
+     val executable: Boolean = false,
+-    val readinessEvidenceAvailable: Boolean = false
++    val readinessEvidenceAvailable: Boolean = false,
++    val expressionSupport: TargetExpressionSupportDeclaration? = null
+ ) {
+     val hasErrors: Boolean get() = issues.any { it.level == CompatibilityLevel.ERROR }
+     val hasWarnings: Boolean get() = issues.any { it.level == CompatibilityLevel.WARNING }
+@@ -228,7 +230,8 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>)
+             target = target.target,
+             status = status,
+             issues = effectiveIssues,
+-            capabilityStatus = status
++            capabilityStatus = status,
++            expressionSupport = target.expressionSupport
+         )
+     }
+ 
+@@ -250,7 +253,7 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>)
+             }
+             is ConditionNode -> {
+                 addIfLimited(target, node.id, "conditions", target.feature("conditions.inline", target.conditions), issues)
+-                TargetExpressionSupport.unsupportedReason(target.target, node.condition)?.let { reason ->
++                TargetExpressionSupport.unsupportedReason(target, node.condition)?.let { reason ->
+                     issues += CompatibilityIssue(
+                         CompatibilityLevel.ERROR,
+                         target.target,
+diff --git a/src/main/kotlin/org/flowlang/capabilities/TargetCapabilityMatrix.kt b/src/main/kotlin/org/flowlang/capabilities/TargetCapabilityMatrix.kt
+index 3112591c2b6641ea2e3c4457e7a1d073c31fe873..d3eec678252c358b75f5c34e63c0c0383f9a9705 100644
+--- a/src/main/kotlin/org/flowlang/capabilities/TargetCapabilityMatrix.kt
++++ b/src/main/kotlin/org/flowlang/capabilities/TargetCapabilityMatrix.kt
+@@ -52,6 +52,14 @@ class TargetCapabilityMatrixAnalyzer(
+         targets.values.forEach { target ->
+             if (target.target.isBlank()) issues += "Target name must not be blank."
+             if (target.description.isBlank()) issues += "Target '${target.target}' must declare a description."
++            if (target.conditions != SupportLevel.UNSUPPORTED && target.expressionSupport == null) {
++                issues += "Target '${target.target}' declares condition support without expression-support evidence."
++            }
++            target.expressionSupport?.let { declaration ->
++                TargetExpressionSupport.declarationValidationReason(declaration)?.let { reason ->
++                    issues += "Target '${target.target}' has invalid expression-support evidence: $reason"
++                }
++            }
+         }
+ 
+         val entries = targets.values
+diff --git a/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt b/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
+index bf500c9ea4f76ee8dde02ad6d8711594ee062a6e..1ff036acb23139d75c82e72fd7bd2a228896c911 100644
+--- a/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
++++ b/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
+@@ -941,7 +941,11 @@ class ConformanceRunner(private val rootDir: File = File(".")) {
+             "Database migration without a concrete database must ask a required question."
+         }
+         val unsupportedGithub = runCatching {
+-            TargetExpressionTranslator.github("environment matches 'prod.*'", listOf(TargetInput("environment")))
++            TargetExpressionTranslator.github(
++                "environment matches 'prod.*'",
++                listOf(TargetInput("environment")),
++                targets.getValue("github-actions").expressionSupport
++            )
+         }
+         require(unsupportedGithub.isFailure) { "Unsupported condition operators must not be translated to silent true/false." }
+     }
+@@ -1139,19 +1143,21 @@ class ConformanceRunner(private val rootDir: File = File(".")) {
+     private fun checkV044NoSilentConditionFallback(): ConformanceCheck = runCheck("v0.4.4.no-silent-condition-fallback") {
+         val supported = "env == 'prod'"
+         val unsupported = "count > 1"
++        val github = targets.getValue("github-actions")
++        val tekton = targets.getValue("tekton")
+         fun gitHubTranslatorOk(condition: String): Boolean = try {
+-            TargetExpressionTranslator.github(condition, emptyList()); true
++            TargetExpressionTranslator.github(condition, emptyList(), github.expressionSupport); true
+         } catch (_: TargetExpressionTranslationException) { false }
+-        require((TargetExpressionSupport.unsupportedReason("github-actions", supported) == null) == gitHubTranslatorOk(supported)) {
++        require((TargetExpressionSupport.unsupportedReason(github, supported) == null) == gitHubTranslatorOk(supported)) {
+             "GitHub support model and translator disagree on a supported condition."
+         }
+-        require((TargetExpressionSupport.unsupportedReason("github-actions", unsupported) == null) == gitHubTranslatorOk(unsupported)) {
++        require((TargetExpressionSupport.unsupportedReason(github, unsupported) == null) == gitHubTranslatorOk(unsupported)) {
+             "GitHub support model and translator disagree on an unsupported condition."
+         }
+-        require(TargetExpressionSupport.unsupportedReason("tekton", unsupported) != null) {
++        require(TargetExpressionSupport.unsupportedReason(tekton, unsupported) != null) {
+             "The model must report that Tekton cannot express the condition."
+         }
+-        require(TargetExpressionTranslator.tektonWhen(unsupported, emptyList()) == null) {
++        require(TargetExpressionTranslator.tektonWhen(unsupported, emptyList(), tekton.expressionSupport) == null) {
+             "Tekton must not silently translate an unsupported condition into a passing guard."
+         }
+     }
+@@ -1290,7 +1296,8 @@ class ConformanceRunner(private val rootDir: File = File(".")) {
+         // guard expressions a target can enforce natively, rather than a hand-maintained label.
+         val referenceConditions = listOf("env == 'prod'", "stage != 'dev'", "count > 1", "name matches '^prod-'", "region in ['eu', 'us']")
+         fun derivedConditionSupport(target: String): String {
+-            val unsupported = referenceConditions.count { TargetExpressionSupport.unsupportedReason(target, it) != null }
++            val capability = targets.getValue(target)
++            val unsupported = referenceConditions.count { TargetExpressionSupport.unsupportedReason(capability, it) != null }
+             return when {
+                 unsupported == 0 -> "native"
+                 unsupported < referenceConditions.size -> "partial"
+@@ -1313,11 +1320,14 @@ class ConformanceRunner(private val rootDir: File = File(".")) {
+         // Reference case (formerly the unsupported-target-condition corpus entry), verified in the layer
+         // that owns target semantics: a guard expression Tekton cannot express natively must be reported
+         // as unsupported, while a target that can express it natively must not be.
+-        val unsupportedReference = referenceConditions.firstOrNull { TargetExpressionSupport.unsupportedReason("tekton", it) != null }
++        val unsupportedReference = referenceConditions.firstOrNull {
++            TargetExpressionSupport.unsupportedReason(targets.getValue("tekton"), it) != null
++        }
+         require(unsupportedReference != null) {
+             "Tekton must report at least one unsupported reference guard expression."
+         }
+-        require(TargetExpressionSupport.unsupportedReason("jenkins", unsupportedReference) == null) {
++        require(TargetExpressionSupport.unsupportedReason(targets.getValue("jenkins"), unsupportedReference) == null) {
+             "Jenkins must natively express the reference guard expression '$unsupportedReference'."
+         }
+     }
+diff --git a/src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt b/src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt
+index 145728168b61f38960a6bce8c11db363ba5a2168..54085f88959747db9301a285435f786d263f8336 100644
+--- a/src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt
++++ b/src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt
+@@ -4,14 +4,19 @@ package org.flowlang.generators.manifest
+ import org.flowlang.ast.*
+ import org.flowlang.capabilities.TargetExpressionSupport
++import org.flowlang.capabilities.TargetExpressionSupportDeclaration
+ import org.flowlang.generators.GroovyExpr
+ import org.flowlang.parser.ExpressionParser
+ 
+ /** Strict translation of Flow condition expressions into target syntax. */
+ class TargetExpressionTranslationException(message: String, cause: Throwable? = null) : IllegalArgumentException(message, cause)
+ 
+ object TargetExpressionTranslator {
+-    fun groovy(condition: String, inputs: List<TargetInput>): String = try {
++    fun groovy(
++        condition: String,
++        inputs: List<TargetInput>,
++        expressionSupport: TargetExpressionSupportDeclaration?
++    ): String = try {
+         val parsed = parse(condition)
+-        TargetExpressionSupport.unsupportedReason("jenkins", parsed)?.let { throw TargetExpressionTranslationException(it) }
++        TargetExpressionSupport.unsupportedReason("jenkins", expressionSupport, parsed)?.let { throw TargetExpressionTranslationException(it) }
+         GroovyExpr(inputs.map { it.name }.toSet()).render(parsed)
+     } catch (e: TargetExpressionTranslationException) {
+         throw e
+@@ -19,9 +24,13 @@ object TargetExpressionTranslator {
+         throw TargetExpressionTranslationException("Unable to translate Flow condition to Groovy: $condition", e)
+     }
+ 
+-    fun github(condition: String, inputs: List<TargetInput>): String = try {
++    fun github(
++        condition: String,
++        inputs: List<TargetInput>,
++        expressionSupport: TargetExpressionSupportDeclaration?
++    ): String = try {
+         val parsed = parse(condition)
+-        TargetExpressionSupport.unsupportedReason("github-actions", parsed)?.let { throw TargetExpressionTranslationException(it) }
++        TargetExpressionSupport.unsupportedReason("github-actions", expressionSupport, parsed)?.let { throw TargetExpressionTranslationException(it) }
+         renderGitHub(parsed, inputs.map { it.name }.toSet())
+     } catch (e: TargetExpressionTranslationException) {
+         throw e
+@@ -96,9 +105,13 @@ object TargetExpressionTranslator {
+         .replace("\"", "\\\"")
+         .replace("\n", "\\n") + "\""
+ 
+-    fun tektonWhen(condition: String, inputs: List<TargetInput>): String? = try {
++    fun tektonWhen(
++        condition: String,
++        inputs: List<TargetInput>,
++        expressionSupport: TargetExpressionSupportDeclaration?
++    ): String? = try {
+         val parsed = parse(condition)
+-        if (TargetExpressionSupport.unsupportedReason("tekton", parsed) != null) null
++        if (TargetExpressionSupport.unsupportedReason("tekton", expressionSupport, parsed) != null) null
+         else renderTektonWhen(parsed, inputs.map { it.name }.toSet())
+     } catch (_: Exception) {
+         null
+diff --git a/src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt b/src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt
+index 0a3452ab4246fd3e6e7f13c5cd4420649c1737e7..d5d624f579b35bbc62f9abf2eb48031d5eec05aa 100644
+--- a/src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt
++++ b/src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt
+@@ -147,7 +147,7 @@ class TektonManifestGenerator : TargetManifestGenerator {
+         val inputs = plan.inputs.map { it.toTargetInput() }
+         val partialNote = TargetMappingNote("warning", target, "manifest", "target.partial", "Tekton renderer is a partial generator and requires notes-driven target projection before production use.")
+         val untranslatableConditionNotes = resolvedJobs.mapNotNull { job ->
+             val condition = job.metadata["condition"]
+-            if (condition != null && TargetExpressionTranslator.tektonWhen(condition, inputs) == null) {
++            if (condition != null && TargetExpressionTranslator.tektonWhen(condition, inputs, compatibility.expressionSupport) == null) {
+                 TargetMappingNote(
+                     level = "error",
+                     target = target,
+diff --git a/src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt b/src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt
+index 4c7af1d1fde2e0524be5f83e75d893e1f2c2049f..9f02f38450b0c4d4a3d9608fae59d645e270263b 100644
+--- a/src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt
++++ b/src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt
+@@ -86,13 +86,11 @@ class JenkinsManifestRenderer {
+ 
+     private fun renderJenkinsCondition(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+         val condition = step.params["condition"] ?: "false"
+-        val rendered = try {
+-            TargetExpressionTranslator.groovy(condition, manifest.inputs)
+-        } catch (e: TargetExpressionTranslationException) {
+-            sb.appendLine("${indent}// Flow condition requires target review: ${e.message}")
+-            "false"
+-        }
++        val rendered = TargetExpressionTranslator.groovy(
++            condition,
++            manifest.inputs,
++            manifest.compatibility.expressionSupport
++        )
+         sb.appendLine("${indent}if ($rendered) {")
+         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+         sb.appendLine("${indent}}")
+@@ -191,7 +189,7 @@ class GitHubActionsManifestRenderer(
+     }
+ 
+     private fun githubJobIf(job: TargetJob, manifest: TargetManifest): String? {
+-        val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs) }
++        val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs, manifest.compatibility.expressionSupport) }
+         if (job.metadata["errorHandler"] == "true") {
+             val parts = mutableListOf("always()", "failure()")
+             if (!own.isNullOrBlank()) parts += "($own)"
+@@ -241,9 +239,15 @@ class TektonManifestRenderer {
+         sb.appendLine("    - name: ${sanitizeId(job.id)}")
+         if (job.dependsOn.isNotEmpty()) sb.appendLine("      runAfter: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
+         job.metadata["condition"]?.let { condition ->
+-            val whenBlock = TargetExpressionTranslator.tektonWhen(condition, manifest.inputs)
+-            if (whenBlock != null) sb.appendLine(whenBlock.prependIndent("      ").trimEnd())
+-            else sb.appendLine("      # Flow condition is NOT enforced here - see condition.unsupported mapping note: $condition")
++            val whenBlock = TargetExpressionTranslator.tektonWhen(
++                condition,
++                manifest.inputs,
++                manifest.compatibility.expressionSupport
++            ) ?: throw TargetExpressionTranslationException(
++                "Target 'tekton' cannot enforce Flow condition with the supplied expression-support evidence: $condition"
++            )
++            sb.appendLine(whenBlock.prependIndent("      ").trimEnd())
+         }
+         sb.appendLine("      taskRef:")
+         sb.appendLine("        name: flow-materialization-required")
+diff --git a/src/main/kotlin/org/flowlang/targets/TargetRegistry.kt b/src/main/kotlin/org/flowlang/targets/TargetRegistry.kt
+index 336bedb9270e2a261785d390ce2b9d880a2e919f..85ddc3c87c4541f997a615d2c5398e040af8a6a4 100644
+--- a/src/main/kotlin/org/flowlang/targets/TargetRegistry.kt
++++ b/src/main/kotlin/org/flowlang/targets/TargetRegistry.kt
+@@ -8,6 +8,9 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+ import org.flowlang.capabilities.SupportLevel
+ import org.flowlang.capabilities.TargetCapability
++import org.flowlang.capabilities.TargetExpressionEvidenceKind
++import org.flowlang.capabilities.TargetExpressionSupport
++import org.flowlang.capabilities.TargetExpressionSupportDeclaration
+ import java.io.File
+ 
+ /**
+@@ -22,15 +25,36 @@ data class TargetRegistryDocument(
+     val kind: String = "FlowTargetRegistry",
+     val version: String = "1.0",
+     val description: String? = null,
++    val expressionProfiles: List<TargetExpressionProfileDescriptor> = emptyList(),
+     val targets: List<TargetDescriptor> = emptyList()
+ )
+ 
++data class TargetExpressionProfileDescriptor(
++    val id: String = "",
++    val description: String = "",
++    val supportsAll: Boolean = false,
++    val features: Set<String> = emptySet()
++) {
++    fun toDeclaration(reference: String): TargetExpressionSupportDeclaration =
++        TargetExpressionSupportDeclaration(
++            profileId = id,
++            evidenceKind = TargetExpressionEvidenceKind.TARGET_REGISTRY,
++            evidenceReference = reference,
++            supportsAll = supportsAll,
++            features = features
++        )
++}
++
+ data class TargetDescriptor(
+     val name: String = "",
+     val description: String = "",
+     val capabilities: Map<String, String> = emptyMap(),
+     val notes: List<String> = emptyList(),
+-    val features: Map<String, String> = emptyMap()
++    val features: Map<String, String> = emptyMap(),
++    val expressionProfile: String? = null
+ ) {
+-    fun toCapability(): TargetCapability = TargetCapability(
+-        target = name,
+-        description = description,
+-        sequentialTasks = support("sequentialTasks", SupportLevel.SUPPORTED),
+-        parallel = support("parallel", SupportLevel.SUPPORTED),
+-        conditions = support("conditions", SupportLevel.SUPPORTED),
+-        dynamicLoops = support("dynamicLoops", SupportLevel.PARTIAL),
+-        match = support("match", SupportLevel.PARTIAL),
+-        retry = support("retry", SupportLevel.PARTIAL),
+-        approvals = support("approvals", SupportLevel.PARTIAL),
+-        errorHandlers = support("errorHandlers", SupportLevel.PARTIAL),
+-        artifacts = support("artifacts", SupportLevel.PARTIAL),
+-        secrets = support("secrets", SupportLevel.PARTIAL),
+-        nativeRuntime = support("nativeRuntime", SupportLevel.PARTIAL),
+-        notes = notes,
+-        features = features.mapValues { (_, raw) -> parseSupport(raw, name) }
+-    )
++    fun toCapability(expressionProfiles: Map<String, TargetExpressionSupportDeclaration> = emptyMap()): TargetCapability {
++        val expressionDeclaration = expressionProfile?.let { profileId ->
++            expressionProfiles[profileId]
++                ?: error("Unknown expression profile '$profileId' for target '$name'.")
++        }
++        return TargetCapability(
++            target = name,
++            description = description,
++            sequentialTasks = support("sequentialTasks", SupportLevel.SUPPORTED),
++            parallel = support("parallel", SupportLevel.SUPPORTED),
++            conditions = support("conditions", SupportLevel.SUPPORTED),
++            dynamicLoops = support("dynamicLoops", SupportLevel.PARTIAL),
++            match = support("match", SupportLevel.PARTIAL),
++            retry = support("retry", SupportLevel.PARTIAL),
++            approvals = support("approvals", SupportLevel.PARTIAL),
++            errorHandlers = support("errorHandlers", SupportLevel.PARTIAL),
++            artifacts = support("artifacts", SupportLevel.PARTIAL),
++            secrets = support("secrets", SupportLevel.PARTIAL),
++            nativeRuntime = support("nativeRuntime", SupportLevel.PARTIAL),
++            notes = notes,
++            features = features.mapValues { (_, raw) -> parseSupport(raw, name) },
++            expressionSupport = expressionDeclaration
++        )
++    }
+ 
+     private fun support(name: String, default: SupportLevel): SupportLevel {
+         val raw = capabilities[name] ?: return default
+@@ -78,13 +102,52 @@ object TargetRegistryYamlLoader {
+             ?.sortedBy { it.name }
+             ?: emptyList()
+         val out = linkedMapOf<String, TargetCapability>()
+-        docs.forEach { file ->
++        docs.forEach { file ->
+             val doc = load(file)
+             require(doc.kind == "FlowTargetRegistry") { "Invalid target registry kind '${doc.kind}' in ${file.path}." }
++            val profiles = expressionProfiles(doc, file)
+             doc.targets.forEach { descriptor ->
+                 require(descriptor.name.isNotBlank()) { "Target name must not be blank in ${file.path}." }
+-                out[descriptor.name] = descriptor.toCapability()
++                require(descriptor.expressionProfile?.isNotBlank() == true) {
++                    "Target '${descriptor.name}' must declare expressionProfile in ${file.path}; missing expression evidence fails closed."
++                }
++                require(descriptor.name !in out) { "Target '${descriptor.name}' is declared more than once across target registry files." }
++                out[descriptor.name] = descriptor.toCapability(profiles)
+             }
+         }
+         return out
+     }
++
++    private fun expressionProfiles(
++        doc: TargetRegistryDocument,
++        file: File
++    ): Map<String, TargetExpressionSupportDeclaration> {
++        val profiles = linkedMapOf<String, TargetExpressionSupportDeclaration>()
++        doc.expressionProfiles.forEach { descriptor ->
++            require(descriptor.id.isNotBlank()) { "Expression profile id must not be blank in ${file.path}." }
++            require(descriptor.description.isNotBlank()) {
++                "Expression profile '${descriptor.id}' must declare a description in ${file.path}."
++            }
++            require(descriptor.id !in profiles) {
++                "Expression profile '${descriptor.id}' is duplicated in ${file.path}."
++            }
++            val reference = file.path.replace(File.separatorChar, '/') + "#expressionProfiles.${descriptor.id}"
++            val declaration = descriptor.toDeclaration(reference)
++            TargetExpressionSupport.declarationValidationReason(declaration)?.let { reason ->
++                error("Invalid expression profile '${descriptor.id}' in ${file.path}: $reason")
++            }
++            profiles[descriptor.id] = declaration
++        }
++        return profiles
++    }
+ }
+diff --git a/src/test/kotlin/MainMissingReviewFixesTests.kt b/src/test/kotlin/MainMissingReviewFixesTests.kt
+index a12708a150565cd45beeb27a5e4d61391e0f9d82..a941f8828c8ff8ebf7d96dcc153a9901e5d1c730 100644
+--- a/src/test/kotlin/MainMissingReviewFixesTests.kt
++++ b/src/test/kotlin/MainMissingReviewFixesTests.kt
+@@ -23,6 +23,7 @@ import org.flowlang.generators.manifest.TargetInput
+ import org.flowlang.generators.manifest.TargetManifest
+ import org.flowlang.generators.manifest.TargetRenderBlockedException
+ import org.flowlang.generators.manifest.TargetRenderMode
++import org.flowlang.tests.TargetExpressionTestEvidence
+ import org.flowlang.planner.FlowPlanner
+ import java.io.File
+ 
+@@ -33,7 +34,8 @@ class MainMissingReviewFixesTests {
+         val rendered = TargetExpressionTranslator.github(
+             "region in [\"eu\", \"us\"]",
+-            listOf(TargetInput(name = "region", type = "text"))
++            listOf(TargetInput(name = "region", type = "text")),
++            TargetExpressionTestEvidence.declaration("github-actions")
+         )
+ 
+         assertTrue(rendered.contains("fromJSON('[\"eu\",\"us\"]')"), rendered)
+diff --git a/src/test/kotlin/TargetCapabilityMatrixTests.kt b/src/test/kotlin/TargetCapabilityMatrixTests.kt
+index 689dc1c31ae16949ab61097a01d1e2530a61d43f..517fcf4ae4094dd486959b166397a072301868c6 100644
+--- a/src/test/kotlin/TargetCapabilityMatrixTests.kt
++++ b/src/test/kotlin/TargetCapabilityMatrixTests.kt
+@@ -19,6 +19,7 @@ class TargetCapabilityMatrixTests {
+         assertTrue(report.targets.containsAll(listOf("jenkins", "github-actions", "tekton")))
+         assertTrue(report.capabilityNames.containsAll(listOf("sequentialTasks", "conditions", "approvals", "secrets", "nativeRuntime")))
+         assertTrue(report.entries.any { it.target == "tekton" && it.support == SupportLevel.UNSUPPORTED })
++        assertTrue(targets.values.all { it.expressionSupport != null })
+     }
+ 
+     @Test
+diff --git a/targets/builtin-targets.yaml b/targets/builtin-targets.yaml
+index 3eee097622bfb0a2ccdb9641bf9a57202215df28..f201f51c2ca28a9c42f5974f8d3878f9e0d723ae 100644
+--- a/targets/builtin-targets.yaml
++++ b/targets/builtin-targets.yaml
+@@ -3,8 +3,55 @@ kind: FlowTargetRegistry
+ version: "1.0"
+ description: Built-in target capability registry for the current Flow capability-contract line.
++expressionProfiles:
++  - id: flow-full
++    description: Complete Flow expression language support declared by target evidence.
++    supportsAll: true
++
++  - id: workflow-condition
++    description: Workflow condition expressions without regex or map literal support.
++    features:
++      - node.literal
++      - node.reference
++      - node.secret-reference
++      - node.member-access
++      - node.index-access
++      - node.template
++      - node.list
++      - call.any
++      - operator.unary.not
++      - operator.postfix.exists
++      - operator.postfix.empty
++      - operator.logical.and
++      - operator.logical.or
++      - operator.binary.==
++      - operator.binary.!=
++      - operator.binary.>
++      - operator.binary.>=
++      - operator.binary.<
++      - operator.binary.<=
++      - operator.binary.contains
++      - operator.binary.in
++      - operator.binary.startsWith
++      - operator.binary.endsWith
++
++  - id: equality-membership-condition
++    description: Equality and membership conditions over native scalar target values.
++    features:
++      - node.literal
++      - node.reference
++      - node.member-access
++      - operator.logical.and
++      - operator.binary.==
++      - operator.binary.!=
++      - operator.binary.in
++
++  - id: unavailable
++    description: No target expression adapter evidence is currently declared.
++    features: []
++
+ targets:
+   - name: local
++    expressionProfile: flow-full
+     description: Reference local target used to validate plan semantics before platform generation.
+     capabilities:
+       sequentialTasks: supported
+@@ -32,6 +79,7 @@ targets:
+       - Manual approvals require an interactive or external gate when running locally.
+ 
+   - name: jenkins
++    expressionProfile: flow-full
+     description: Jenkins Pipeline generator target. Good scripted support, weaker portability.
+     capabilities:
+       sequentialTasks: supported
+@@ -61,6 +109,7 @@ targets:
+       notification.send: supported
+ 
+   - name: github-actions
++    expressionProfile: workflow-condition
+     description: GitHub Actions generator target. Good for simple CI/CD, limited dynamic control-flow semantics.
+     capabilities:
+       sequentialTasks: supported
+@@ -93,6 +142,7 @@ targets:
+       - Approvals are normally modeled through protected environments, not inline workflow syntax.
+ 
+   - name: tekton
++    expressionProfile: equality-membership-condition
+     description: Tekton Pipelines target. Strong Kubernetes-native task model, limited dynamic loops and manual gates.
+     capabilities:
+       sequentialTasks: supported
+@@ -123,6 +173,7 @@ targets:
+       container.image: supported
+ 
+   - name: argo-workflows
++    expressionProfile: unavailable
+     description: Argo Workflows target. Strong DAG, artifacts and suspend support.
+     capabilities:
+       sequentialTasks: supported
+@@ -154,6 +205,7 @@ targets:
+       - Manual gates are typically represented with suspend templates.
+ 
+   - name: azure-devops
++    expressionProfile: unavailable
+     description: Azure DevOps Pipelines target. Strong stage/job model, platform-specific approvals/checks.
+     capabilities:
+       sequentialTasks: supported
+diff --git a/tests/FlowBehavioralConformanceTests.kt b/tests/FlowBehavioralConformanceTests.kt
+index 7d7247668770381cf4a24d7cfe2599c02346e72f..0156601c2825dfe473a8f3d92ed77823be27a030 100644
+--- a/tests/FlowBehavioralConformanceTests.kt
++++ b/tests/FlowBehavioralConformanceTests.kt
+@@ -1,8 +1,7 @@
+ package org.flowlang.tests
+ 
+ import org.flowlang.capabilities.CompatibilityAnalyzer
+-import org.flowlang.capabilities.SupportLevel
+-import org.flowlang.capabilities.TargetCapability
++import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+ import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
+ import org.flowlang.generators.manifest.JenkinsManifestGenerator
+ import org.flowlang.generators.manifest.TargetManifest
+@@ -15,6 +14,7 @@ import org.flowlang.planner.RetryGroupNode
+ import org.flowlang.planner.TaskNode
+ import org.flowlang.planner.TryPlanNode
++import java.io.File
+ import kotlin.test.Test
+ import kotlin.test.assertEquals
+ import kotlin.test.assertTrue
+@@ -37,11 +37,8 @@ import kotlin.test.assertTrue
+  */
+ class FlowBehavioralConformanceTests {
+ 
+-    private val targets = mapOf(
+-        "jenkins" to TargetCapability("jenkins", "Jenkins", conditions = SupportLevel.SUPPORTED),
+-        "github-actions" to TargetCapability("github-actions", "GitHub Actions", conditions = SupportLevel.SUPPORTED),
+-        "tekton" to TargetCapability("tekton", "Tekton", conditions = SupportLevel.PARTIAL)
+-    )
++    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
++        .filterKeys { it in setOf("jenkins", "github-actions", "tekton") }
+     private val generators = mapOf(
+         "jenkins" to JenkinsManifestGenerator(),
+         "github-actions" to GitHubActionsManifestGenerator(),
+diff --git a/tests/FlowExpressionPortabilityRobustnessTests.kt b/tests/FlowExpressionPortabilityRobustnessTests.kt
+index 90958a31c1dc36e6705fa6ba76e83f09ca88964c..a5b47c823b481534986291f58cedbfbe472ea3e1 100644
+--- a/tests/FlowExpressionPortabilityRobustnessTests.kt
++++ b/tests/FlowExpressionPortabilityRobustnessTests.kt
+@@ -40,7 +40,7 @@ class FlowExpressionPortabilityRobustnessTests {
+     @Test
+     fun gitHubRejectsUnsupportedConditionInsteadOfSilentlyTranslating() {
+         assertFailsWith<TargetExpressionTranslationException> {
+-            TargetExpressionTranslator.github("value matches '^prod-'", emptyList())
++            TargetExpressionTranslator.github("value matches '^prod-'", emptyList(), TargetExpressionTestEvidence.declaration("github-actions"))
+         }
+     }
+ 
+@@ -48,11 +48,11 @@ class FlowExpressionPortabilityRobustnessTests {
+     @Test
+     fun tektonReportsUntranslatableConditionInsteadOfGuessing() {
+         assertTrue(
+-            TargetExpressionTranslator.tektonWhen("count > 1", emptyList()) == null,
++            TargetExpressionTranslator.tektonWhen("count > 1", emptyList(), TargetExpressionTestEvidence.declaration("tekton")) == null,
+             "Unsupported Tekton comparison must be reported as untranslatable, not silently mapped."
+         )
+         assertTrue(
+-            TargetExpressionTranslator.tektonWhen("env == 'prod'", emptyList()) != null,
++            TargetExpressionTranslator.tektonWhen("env == 'prod'", emptyList(), TargetExpressionTestEvidence.declaration("tekton")) != null,
+             "Supported Tekton equality must still translate."
+         )
+     }
+@@ -61,7 +61,7 @@ class FlowExpressionPortabilityRobustnessTests {
+     @Test
+     fun tektonManifestSurfacesDroppedGuardAsErrorDiagnostic() {
+         val manifest = TektonManifestGenerator()
+-            .generate(conditionPlan("unsupported-condition-flow", "count > 1"), CompatibilityReport("tekton", SupportLevel.PARTIAL))
++            .generate(conditionPlan("unsupported-condition-flow", "count > 1"), TargetExpressionTestEvidence.compatibility("tekton", SupportLevel.PARTIAL))
+         assertTrue(
+             manifest.mappingNotes.any { it.level == "error" && it.feature == "condition.unsupported" },
+             "An unsupported Tekton condition must produce an explicit error mapping note (no silent guard drop)."
+@@ -72,7 +72,7 @@ class FlowExpressionPortabilityRobustnessTests {
+     @Test
+     fun supportedTektonConditionProducesNoUnsupportedDiagnostic() {
+         val manifest = TektonManifestGenerator()
+-            .generate(conditionPlan("supported-condition-flow", "env == 'prod'"), CompatibilityReport("tekton", SupportLevel.PARTIAL))
++            .generate(conditionPlan("supported-condition-flow", "env == 'prod'"), TargetExpressionTestEvidence.compatibility("tekton", SupportLevel.PARTIAL))
+         assertTrue(
+             manifest.mappingNotes.none { it.feature == "condition.unsupported" },
+             "A translatable condition must not be flagged as unsupported."
+diff --git a/tests/FlowExpressionSupportModelTests.kt b/tests/FlowExpressionSupportModelTests.kt
+index 20ae648cce188b227905e18de92b7731cc2dbd0a..101c5430e1815c5bfd3e74897e1cfb86e42410b8 100644
+--- a/tests/FlowExpressionSupportModelTests.kt
++++ b/tests/FlowExpressionSupportModelTests.kt
+@@ -1,36 +1,28 @@
+ package org.flowlang.tests
+ 
++import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+ import org.flowlang.capabilities.CompatibilityAnalyzer
+ import org.flowlang.capabilities.ExecutionReadinessAnalyzer
+ import org.flowlang.capabilities.ExecutionReadinessStatus
+-import org.flowlang.capabilities.SupportLevel
+-import org.flowlang.capabilities.TargetCapability
+ import org.flowlang.capabilities.TargetExpressionSupport
+ import org.flowlang.generators.manifest.TargetExpressionTranslationException
+ import org.flowlang.generators.manifest.TargetExpressionTranslator
+ import org.flowlang.planner.ConditionNode
+ import org.flowlang.planner.ExecutionPlan
+ import org.flowlang.planner.TaskNode
++import java.io.File
+ import kotlin.test.Test
+ import kotlin.test.assertEquals
+ import kotlin.test.assertFailsWith
+ import kotlin.test.assertTrue
+ 
+ /**
+- * Tests the per-target expression support model and its consequences:
+- *  - an untranslatable guard becomes a BLOCKED execution-readiness decision
+- *    (never a silently dropped guard), and
+- *  - the model is the single source of truth: its verdict always agrees with what
+- *    the target expression translator actually does, so readiness and the generated
+- *    manifest can never diverge.
++ * Tests the evidence-driven per-target expression support model and its consequences:
++ * unsupported or undeclared guards block readiness, and the model agrees with the
++ * target translator that consumes the same registry declaration.
+  */
+ class FlowExpressionSupportModelTests {
+-
+-    private val targets = mapOf(
+-        "tekton" to TargetCapability(target = "tekton", description = "Tekton", conditions = SupportLevel.PARTIAL),
+-        "jenkins" to TargetCapability(target = "jenkins", description = "Jenkins", conditions = SupportLevel.SUPPORTED),
+-        "github-actions" to TargetCapability(target = "github-actions", description = "GitHub Actions", conditions = SupportLevel.SUPPORTED)
+-    )
++    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
+ 
+     private fun guardedPlan(condition: String): ExecutionPlan =
+         ExecutionPlan(
+@@ -47,48 +39,52 @@ class FlowExpressionSupportModelTests {
+         assertEquals(ExecutionReadinessStatus.BLOCKED, report.readiness)
+         assertTrue(!report.generationAllowed, "Generation must not be allowed when a guard cannot be enforced.")
+-        assertTrue(
+-            report.blockers.any { it.capability == "condition.expression" },
+-            "Blocker must identify the unsupported condition expression."
+-        )
++        assertTrue(report.blockers.any { it.capability == "condition.expression" })
+     }
+ 
+-    /** The same guard is fully expressible on Jenkins, so it must NOT block for the expression reason. */
+     @Test
+-    fun jenkinsExpressesConditionThatTektonCannot() {
++    fun jenkinsExpressionEvidenceCoversConditionThatTektonCannot() {
+         val report = ExecutionReadinessAnalyzer(targets).analyze(guardedPlan("count > 1"), "jenkins")
+-        assertTrue(
+-            report.blockers.none { it.capability == "condition.expression" },
+-            "Jenkins expresses the full condition language; it must not raise a condition.expression blocker."
+-        )
++        assertTrue(report.blockers.none { it.capability == "condition.expression" })
++        assertEquals("flow-full", targets.getValue("jenkins").expressionSupport?.profileId)
+     }
+ 
+-    /** A supported equality guard must not raise the unsupported-condition blocker on Tekton. */
+     @Test
+     fun supportedConditionDoesNotBlockTektonForExpression() {
+         val report = ExecutionReadinessAnalyzer(targets).analyze(guardedPlan("env == 'prod'"), "tekton")
+         assertTrue(report.blockers.none { it.capability == "condition.expression" })
+     }
+ 
+-    /** No drift: the model's verdict must match what the translator actually does, for every target. */
+     @Test
+-    fun supportModelAgreesWithTranslator() {
++    fun supportModelAgreesWithTranslatorsUsingTheSameEvidence() {
+         val conditions = listOf(
+             "env == 'prod'",
+             "stage != 'dev'",
+@@ -87,31 +83,28 @@ class FlowExpressionSupportModelTests {
+             "env == 'prod' and tier == 'gold'",
+             "ready exists"
+         )
+-        for (c in conditions) {
+-            // Tekton: model-supported iff translator returns a non-null when block.
+-            val tektonModelOk = TargetExpressionSupport.unsupportedReason("tekton", c) == null
+-            val tektonTranslatorOk = TargetExpressionTranslator.tektonWhen(c, emptyList()) != null
+-            assertEquals(tektonTranslatorOk, tektonModelOk, "Tekton model/translator disagree on: $c")
++        val tekton = targets.getValue("tekton")
++        val github = targets.getValue("github-actions")
++        for (condition in conditions) {
++            val tektonModelOk = TargetExpressionSupport.unsupportedReason(tekton, condition) == null
++            val tektonTranslatorOk = TargetExpressionTranslator.tektonWhen(
++                condition,
++                emptyList(),
++                tekton.expressionSupport
++            ) != null
++            assertEquals(tektonTranslatorOk, tektonModelOk, "Tekton model/translator disagree on: $condition")
+ 
+-            // GitHub: model-supported iff translator does not throw.
+-            val gitHubModelOk = TargetExpressionSupport.unsupportedReason("github-actions", c) == null
++            val githubModelOk = TargetExpressionSupport.unsupportedReason(github, condition) == null
+             val gitHubTranslatorOk = try {
+-                TargetExpressionTranslator.github(c, emptyList()); true
++                TargetExpressionTranslator.github(condition, emptyList(), github.expressionSupport)
++                true
+             } catch (_: TargetExpressionTranslationException) {
+                 false
+             }
+-            assertEquals(gitHubTranslatorOk, gitHubModelOk, "GitHub model/translator disagree on: $c")
++            assertEquals(githubTranslatorOk, githubModelOk, "GitHub model/translator disagree on: $condition")
+         }
+     }
+ 
+-    /**
+-     * Enforcement at the generation boundary. The CLI calls compatibility.assertAllowed()
+-     * before generating; an untranslatable guard is a compatibility ERROR, so the gate throws
+-     * and generation is refused. This complements untranslatableConditionBlocksTektonReadiness
+-     * (which locks the readiness *report*) by locking the *enforcement* that actually stops generation.
+-     */
+     @Test
+     fun untranslatableConditionThrowsAtTheGenerationGate() {
+         val report = CompatibilityAnalyzer(targets).analyze(guardedPlan("count > 1"), "tekton")
+-        assertTrue(report.hasErrors, "Untranslatable guard must be a compatibility error.")
++        assertTrue(report.hasErrors)
+         assertFailsWith<IllegalStateException> { report.assertAllowed() }
+     }
+diff --git a/tests/FlowGeneratorEquivalenceTests.kt b/tests/FlowGeneratorEquivalenceTests.kt
+index 09c88220c1ccfc283e2aab042249f34761bc81f9..29964b9b4e17892382bdc78d95ac0a041c8f296a 100644
+--- a/tests/FlowGeneratorEquivalenceTests.kt
++++ b/tests/FlowGeneratorEquivalenceTests.kt
+@@ -1,8 +1,7 @@
+ package org.flowlang.tests
+ 
+ import org.flowlang.capabilities.CompatibilityAnalyzer
+-import org.flowlang.capabilities.SupportLevel
+-import org.flowlang.capabilities.TargetCapability
++import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+ import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
+ import org.flowlang.generators.manifest.JenkinsManifestGenerator
+ import org.flowlang.generators.manifest.TargetManifest
+@@ -12,6 +11,7 @@ import org.flowlang.planner.ConditionNode
+ import org.flowlang.planner.ExecutionPlan
+ import org.flowlang.planner.TaskNode
++import java.io.File
+ import kotlin.test.Test
+ import kotlin.test.assertTrue
+ 
+@@ -25,11 +25,8 @@ import kotlin.test.assertTrue
+  */
+ class FlowGeneratorEquivalenceTests {
+ 
+-    private val targets = mapOf(
+-        "jenkins" to TargetCapability(target = "jenkins", description = "Jenkins", conditions = SupportLevel.SUPPORTED),
+-        "github-actions" to TargetCapability(target = "github-actions", description = "GitHub Actions", conditions = SupportLevel.SUPPORTED),
+-        "tekton" to TargetCapability(target = "tekton", description = "Tekton", conditions = SupportLevel.PARTIAL)
+-    )
++    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
++        .filterKeys { it in setOf("jenkins", "github-actions", "tekton") }
+ 
+     private val generators: Map<String, TargetManifestGenerator> = mapOf(
+         "jenkins" to JenkinsManifestGenerator(),
+diff --git a/tests/FlowRc5RegressionTests.kt b/tests/FlowRc5RegressionTests.kt
+index 899b7c4cfa56eb4f3fa3b3c6d021568cbb631ba9..ce6b54d2732545ab886c91d80c5233649cd14260 100644
+--- a/tests/FlowRc5RegressionTests.kt
++++ b/tests/FlowRc5RegressionTests.kt
+@@ -8,6 +8,7 @@ import org.flowlang.intent.StandardCapability
+ import org.flowlang.generators.manifest.TargetExpressionTranslator
+ import org.flowlang.generators.manifest.TargetExpressionTranslationException
+ import org.flowlang.generators.manifest.TargetInput
++import org.flowlang.tests.TargetExpressionTestEvidence
+ 
+ class FlowRc5RegressionTests {
+     @Test
+@@ -20,7 +21,7 @@ class FlowRc5RegressionTests {
+ 
+     @Test
+     fun githubConditionTranslatorUsesWorkflowInputs() {
+-        val expr = TargetExpressionTranslator.github("environment == 'prod'", listOf(TargetInput("environment")))
++        val expr = TargetExpressionTranslator.github("environment == 'prod'", listOf(TargetInput("environment")), TargetExpressionTestEvidence.declaration("github-actions"))
+         assertTrue(expr.contains("inputs.environment"))
+         assertTrue(expr.contains("'prod'"))
+     }
+@@ -28,7 +29,7 @@ class FlowRc5RegressionTests {
+     @Test
+     fun tektonConditionTranslatorMapsSimpleInputEquality() {
+-        val yaml = TargetExpressionTranslator.tektonWhen("environment == 'prod'", listOf(TargetInput("environment")))
++        val yaml = TargetExpressionTranslator.tektonWhen("environment == 'prod'", listOf(TargetInput("environment")), TargetExpressionTestEvidence.declaration("tekton"))
+         assertNotNull(yaml)
+         assertTrue(yaml.contains("$(params.environment)"))
+         assertTrue(yaml.contains("operator: in"))
+@@ -37,7 +38,7 @@ class FlowRc5RegressionTests {
+     @Test
+     fun githubConditionTranslatorRejectsUnsupportedRegexInsteadOfFailOpen() {
+         assertFailsWith<TargetExpressionTranslationException> {
+-            TargetExpressionTranslator.github("environment matches 'prod.*'", listOf(TargetInput("environment")))
++            TargetExpressionTranslator.github("environment matches 'prod.*'", listOf(TargetInput("environment")), TargetExpressionTestEvidence.declaration("github-actions"))
+         }
+     }
+ }
+diff --git a/tests/FlowTargetExpressionEvidenceTests.kt b/tests/FlowTargetExpressionEvidenceTests.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..02ece83f60901313db735c044cdf59c1a746ff3a
+--- /dev/null
++++ b/tests/FlowTargetExpressionEvidenceTests.kt
+@@ -0,0 +1,127 @@
++package org.flowlang.tests
++
++import java.io.File
++import java.nio.file.Files
++import kotlin.test.Test
++import kotlin.test.assertEquals
++import kotlin.test.assertFailsWith
++import kotlin.test.assertFalse
++import kotlin.test.assertNotNull
++import kotlin.test.assertTrue
++import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
++import org.flowlang.capabilities.CompatibilityAnalyzer
++import org.flowlang.capabilities.SupportLevel
++import org.flowlang.capabilities.TargetCapability
++import org.flowlang.capabilities.TargetExpressionEvidenceKind
++import org.flowlang.capabilities.TargetExpressionFeatures
++import org.flowlang.capabilities.TargetExpressionSupport
++import org.flowlang.capabilities.TargetExpressionSupportDeclaration
++import org.flowlang.planner.ConditionNode
++import org.flowlang.planner.ExecutionPlan
++import org.flowlang.planner.TaskNode
++
++class FlowTargetExpressionEvidenceTests {
++    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
++
++    @Test
++    fun everyConditionCapableBuiltInTargetCarriesValidRegistryEvidence() {
++        assertTrue(targets.isNotEmpty())
++        targets.values.filter { it.conditions != SupportLevel.UNSUPPORTED }.forEach { target ->
++            val declaration = assertNotNull(target.expressionSupport, "${target.target} must declare expression evidence")
++            assertEquals(TargetExpressionEvidenceKind.TARGET_REGISTRY, declaration.evidenceKind)
++            assertTrue(declaration.evidenceReference.contains("targets/builtin-targets.yaml#expressionProfiles."))
++            assertEquals(null, TargetExpressionSupport.declarationValidationReason(declaration))
++        }
++    }
++
++    @Test
++    fun unknownOrUndeclaredTargetFailsClosed() {
++        val target = TargetCapability(target = "future-target", description = "No expression notes yet")
++        val decision = TargetExpressionSupport.evaluate(target, "env == 'prod'")
++
++        assertFalse(decision.supported)
++        assertTrue(decision.reason.contains("no declared expression-support evidence"))
++        assertTrue(decision.missingFeatures.contains(TargetExpressionFeatures.binary("==")))
++    }
++
++    @Test
++    fun genericEvidenceWorksWithoutTargetIdWhitelisting() {
++        val declaration = TargetExpressionSupportDeclaration(
++            profileId = "custom-equality",
++            evidenceKind = TargetExpressionEvidenceKind.TARGET_NOTES,
++            evidenceReference = "notes/custom-target/expression.yaml#custom-equality",
++            features = setOf(
++                TargetExpressionFeatures.LITERAL,
++                TargetExpressionFeatures.REFERENCE,
++                TargetExpressionFeatures.binary("==")
++            )
++        )
++        val target = TargetCapability(
++            target = "future-target",
++            description = "Target with explicit expression notes",
++            expressionSupport = declaration
++        )
++
++        val decision = TargetExpressionSupport.evaluate(target, "env == 'prod'")
++
++        assertTrue(decision.supported, decision.reason)
++        assertEquals("custom-equality", decision.profileId)
++        assertEquals(TargetExpressionEvidenceKind.TARGET_NOTES, decision.evidenceKind)
++    }
++
++    @Test
++    fun declaredUnavailableAdaptersBlockConditionsWithEvidence() {
++        for (targetName in listOf("argo-workflows", "azure-devops")) {
++            val target = targets.getValue(targetName)
++            val decision = TargetExpressionSupport.evaluate(target, "env == 'prod'")
++            assertFalse(decision.supported)
++            assertEquals("unavailable", decision.profileId)
++            assertTrue(decision.reason.contains(target.expressionSupport!!.evidenceReference))
++
++            val report = CompatibilityAnalyzer(targets).analyze(guardedPlan("env == 'prod'"), targetName)
++            assertTrue(report.hasErrors)
++            assertTrue(report.issues.any { it.feature == "condition.expression" })
++        }
++    }
++
++    @Test
++    fun unknownTargetCompatibilityRemainsUnsupportedBeforeProjection() {
++        val report = CompatibilityAnalyzer(targets).analyze(guardedPlan("env == 'prod'"), "future-target")
++        assertEquals(SupportLevel.UNSUPPORTED, report.status)
++        assertTrue(report.issues.any { it.feature == "target" && it.message.contains("Unknown target") })
++    }
++
++    @Test
++    fun registryRejectsTargetsWithoutExpressionProfile() {
++        val root = Files.createTempDirectory("flow-expression-registry").toFile()
++        try {
++            File(root, "target.yaml").writeText(
++                """
++                kind: FlowTargetRegistry
++                version: "1.0"
++                targets:
++                  - name: unsafe-target
++                    description: Missing expression evidence
++                    capabilities:
++                      conditions: supported
++                """.trimIndent()
++            )
++            val error = assertFailsWith<IllegalArgumentException> {
++                TargetRegistryYamlLoader.loadDirectory(root)
++            }
++            assertTrue(error.message.orEmpty().contains("must declare expressionProfile"))
++        } finally {
++            root.deleteRecursively()
++        }
++    }
++
++    private fun guardedPlan(condition: String): ExecutionPlan = ExecutionPlan(
++        flowName = "expression-evidence",
++        nodes = listOf(
++            ConditionNode(
++                id = "gate",
++                condition = condition,
++                then = listOf(TaskNode(id = "task", module = "standard", action = "execute", target = "all"))
++            )
++        )
++    )
++}
+diff --git a/tests/TargetExpressionTestEvidence.kt b/tests/TargetExpressionTestEvidence.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..42c36ea52c90930f3830f3ac5bd6b4e0a58b7e23
+--- /dev/null
++++ b/tests/TargetExpressionTestEvidence.kt
+@@ -0,0 +1,32 @@
++package org.flowlang.tests
++
++import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
++import org.flowlang.capabilities.CompatibilityReport
++import org.flowlang.capabilities.SupportLevel
++import org.flowlang.capabilities.TargetCapability
++import org.flowlang.capabilities.TargetExpressionSupportDeclaration
++import java.io.File
++
++object TargetExpressionTestEvidence {
++    val targets: Map<String, TargetCapability> by lazy {
++        TargetRegistryYamlLoader.loadDirectory(File("targets"))
++    }
++
++    fun target(target: String): TargetCapability = targets.getValue(target)
++
++    fun declaration(target: String): TargetExpressionSupportDeclaration =
++        target(target).expressionSupport
++            ?: error("Test target '$target' has no expression-support evidence.")
++
++    fun compatibility(
++        target: String,
++        status: SupportLevel = SupportLevel.SUPPORTED
++    ): CompatibilityReport = CompatibilityReport(
++        target = target,
++        status = status,
++        expressionSupport = declaration(target)
++    )
++}
