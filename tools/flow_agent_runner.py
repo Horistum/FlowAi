@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
 
 from flow_agent_roadmap import find_scalar, find_unique_next_roadmap_item
 
