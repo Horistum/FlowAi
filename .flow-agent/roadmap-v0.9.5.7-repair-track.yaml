@@ -6,12 +6,21 @@ purpose: >-
   materialization, projection and registry models must be wired into real Flow
   behavior instead of remaining disconnected governance fixtures.
 
+versionBoundary:
+  publishedPackageVersion: "0.9.4"
+  correctionTrack: "v0.9.5.x"
+  currentCorrectionItem: "0.9.5.7.6"
+  correctionTrackStatus: "unreleased"
+  correctionItemsArePackageVersions: false
+  activePublicStandardVersion: "0.7.6"
+
 rules:
   - Do not reintroduce shell or command projection as Flow Core semantics.
   - Preserve explicit user intent even when runtime execution is blocked or review-required.
   - Treat target support, materialization, projection and executable readiness as separate statuses.
   - Replace text-scanner ceremony with structural validation of emitted mechanisms.
   - Do not mark generated target artifacts executable when any required semantic action is not materialized.
+  - Do not use correction-item identifiers as package, public-standard or artifact-contract versions.
 
 items:
   - version: "0.9.5.7.1"
@@ -66,16 +75,17 @@ items:
 
   - version: "0.9.5.7.6"
     name: Release Metadata Reconciliation
-    status: next
-    purpose: Reconcile package version, changelog, reports and correction-track metadata.
+    status: completed
+    purpose: Reconcile package, correction-scope, changelog, report and roadmap metadata without publishing an unfinished package line.
     requiredOutcome:
-      - CHANGELOG records the v0.9.5.x correction track.
-      - build.gradle.kts, REPORT.md and roadmap metadata have a documented version boundary.
-      - Production analyzers do not hardcode future roadmap version lists.
+      - CHANGELOG records the unreleased v0.9.5.x correction track.
+      - build.gradle.kts, REPORT.md, release state and roadmap metadata document that correction items are not package versions.
+      - Production analyzers expose evidence-driven follow-up areas instead of hardcoded future roadmap version lists.
+      - Package 0.9.4, public standard 0.7.6 and current artifact contract versions remain unchanged.
 
   - version: "0.9.5.7.7"
     name: Policy-Driven Safety Prelude
-    status: planned
+    status: next
     purpose: Remove hardcoded environment and production assumptions before the full v0.9.5.8 safety-policy step.
     requiredOutcome:
       - Hardcoded production literal detection is replaced or isolated behind policy notes.

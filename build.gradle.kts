@@ -4,6 +4,9 @@ plugins {
 }
 
 group = "org.flowlang"
+
+// Published implementation package line. Internal v0.9.5.x correction items
+// remain unreleased roadmap scopes until the package line is deliberately promoted.
 version = "0.9.4"
 
 application { mainClass.set("org.flowlang.cli.FlowCliKt") }

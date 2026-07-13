@@ -34,7 +34,7 @@ This distinction matters. A Jenkins renderer may mention Jenkins. The Flow seman
 
 ## Findings
 
-The current repository still contains CI/CD-shaped vocabulary in several valid but architecturally important places:
+The repository still contains CI/CD-shaped vocabulary in several valid but architecturally important places:
 
 - adapter and renderer boundaries for the currently implemented projection targets
 - scenario packs and reference conformance fixtures focused on deployment, Kubernetes maintenance and build/test/deploy examples
@@ -42,20 +42,21 @@ The current repository still contains CI/CD-shaped vocabulary in several valid b
 - documentation explaining historical target support and correction-track boundaries
 - active semantic source that still contains scenario-pack and conformance helper wording tied to concrete CI/CD examples
 
-These are not hidden as successful materialization. They are carried forward as correction-track evidence.
+These are not hidden as successful materialization. They remain visible architecture evidence.
 
-## Required follow-up
+## Evidence-driven follow-up
 
-The inventory feeds the remaining v0.9.5.x correction track:
+`CiCdBiasInventoryAnalyzer` reports stable architectural follow-up areas derived from current repository evidence:
 
-- v0.9.5.3 Notes Package Contract Model
-- v0.9.5.4 Universal Semantic Action Graph
-- v0.9.5.5 Materialization Negotiation
-- v0.9.5.6 No-Shell Target Projection
-- v0.9.5.7 Target Registry Honesty
-- v0.9.5.8 Policy-Driven Safety and Environment Classification
-- v0.9.5.9 Trigger and Schedule Notes
-- v0.9.5.10 Conformance Honesty Gates
+- `SEMANTIC_MODEL`
+- `ADAPTER_BOUNDARY`
+- `SCENARIO_AND_CONFORMANCE`
+- `DOCUMENTATION`
+- `NOTES_AND_TARGET_DECLARATIONS`
+
+The analyzer does not schedule roadmap work and does not embed future release numbers. Roadmap ordering belongs in `.flow-agent/roadmap.yaml` and the active repair-track metadata, where scheduling can change without changing production analysis behavior.
+
+This separation keeps the analyzer factual: it reports where evidence exists now. It does not pretend to know which future package or correction item will resolve it.
 
 ## Prohibition
 
@@ -66,11 +67,12 @@ Future Flow Core changes must not introduce:
 - deployment scenarios as proof that Flow is universal
 - runner or workflow assumptions outside declared runtime and projection notes
 - target support claims without notes, materialization status and conformance evidence
+- future roadmap version lists inside production analyzers
 
 ## Versioning boundary
 
-- Current package version remains `0.9.4`.
-- Active public standard version remains `0.7.6`.
-- This is roadmap correction work inside the v0.9.5.x correction track.
-- No artifact schema version is changed.
-- No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is introduced.
+- The published package version remains `0.9.4`.
+- The active correction track is the unreleased `v0.9.5.x` roadmap scope.
+- The active public standard version remains `0.7.6`.
+- No artifact contract version is changed.
+- No runtime executor, SDK API, framework or plugin lifecycle, shell projection, target-specific public DSL, renderer expansion or Flow syntax change is introduced.

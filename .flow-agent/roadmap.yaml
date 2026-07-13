@@ -2,6 +2,17 @@ project: Flow Core
 roadmapVersion: 2
 currentTrack: "0.7.x-to-1.0.0"
 
+versionBoundary:
+  publishedPackageVersion: "0.9.4"
+  nextPackageVersion: "0.9.5"
+  activePublicStandardVersion: "0.7.6"
+  activeCorrectionTrack: "v0.9.5.x"
+  currentCorrectionItem: "0.9.5.7.6"
+  correctionTrackStatus: "unreleased"
+  correctionItemsArePackageVersions: false
+  activeRepairTrack: ".flow-agent/roadmap-v0.9.5.7-repair-track.yaml"
+  nextUmbrellaItemAfterRepair: "0.9.5.8"
+
 rules:
   - "Follow versions in order unless explicitly overridden."
   - "Every version must have a measurable purpose."
@@ -223,7 +234,7 @@ roadmap:
     name: "Policy-Driven Safety and Environment Classification"
     purpose: "Replace hardcoded production string guessing with declarative safety and environment notes."
     type: "safety-policy"
-    status: "next"
+    status: "planned"
     requiredOutcome: ["Define environment classification policy through notes."]
   - version: "0.9.5.9"
     name: "Trigger and Schedule Notes"

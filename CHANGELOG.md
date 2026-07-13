@@ -2,6 +2,58 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## Unreleased - v0.9.5.x architecture correction track
+
+### Added
+
+- Added the notes-driven architecture recenter and explicit shell/command projection prohibition.
+- Added declarative notes package contracts for domain, capability, safety, runtime, target, projection and conformance ownership.
+- Added a universal semantic action graph and explicit materialization negotiation with auditable evidence.
+- Added no-shell target projection records and target registry lifecycle honesty.
+- Added structural governance checks, unified renderer failure semantics and compatibility/readiness reconciliation.
+- Added release metadata boundaries that distinguish the published package, unreleased correction scope, public standard and artifact contract versions.
+
+### Changed
+
+- Connected real execution-plan tasks to semantic graph, materialization and projection evidence.
+- Removed legacy Jenkins and GitHub Actions shell generator fixtures and their shell-output assertions.
+- Reclassified unresolved target work as review-only or fail-fast instead of executable success.
+- Required target recommendations to use concrete materialization and renderer evidence rather than capability declarations alone.
+- Replaced the production CI/CD bias analyzer's hardcoded future roadmap version list with evidence-driven architectural follow-up areas.
+- Reconciled `REPORT.md`, `.flow-agent/release-state.yaml`, both roadmap files, versioning policy and correction reports around one explicit version boundary.
+
+### Correction items recorded
+
+- `0.9.5.0` Architecture Recenter - Notes-Driven Flow
+- `0.9.5.1` Shell Usage Inventory and Prohibition
+- `0.9.5.2` CI/CD Bias Inventory
+- `0.9.5.3` Notes Package Contract Model
+- `0.9.5.4` Universal Semantic Action Graph
+- `0.9.5.5` Materialization Negotiation
+- `0.9.5.6` No-Shell Target Projection
+- `0.9.5.7` Target Registry Honesty
+- `0.9.5.7.1` Connect Materialization Pipeline
+- `0.9.5.7.2` Governance Scanner Honesty
+- `0.9.5.7.3` Renderer Failure Semantics Unification
+- `0.9.5.7.4` Remove Legacy Shell Generator Fixtures
+- `0.9.5.7.5` Compatibility and Readiness Honesty
+- `0.9.5.7.6` Release Metadata Reconciliation
+
+### Version boundary
+
+- The published Gradle package version remains `0.9.4`.
+- The v0.9.5.x identifiers describe an unreleased architecture correction track, not published package versions.
+- The next expected package line remains `0.9.5` and requires an explicit package-promotion decision.
+- The active public Flow standard version remains `0.7.6`.
+- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry contract versions are unchanged.
+- Existing conformance gate identifiers remain stable.
+
+### Architecture boundary
+
+- No runtime executor, SDK API, framework or plugin lifecycle is introduced.
+- No shell generator, command projection or target-specific public Flow DSL is introduced.
+- Current renderer payload gaps remain visible as review-only or blocked evidence rather than being hidden by release metadata.
+
 ## 0.9.4 - Reference scenario matrix
 
 ### Added
