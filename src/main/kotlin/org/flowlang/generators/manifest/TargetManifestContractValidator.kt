@@ -35,6 +35,7 @@ object TargetManifestContractValidator {
         if (!metadataStandard.isNullOrBlank() && metadataStandard != manifest.standardVersion) {
             error("MANIFEST_STANDARD_VERSION_MISMATCH", "metadata.standardVersion", "Manifest metadata standardVersion must match TargetManifest.standardVersion.")
         }
+        validateReadinessMetadata(manifest, issues)
 
         validateNotes(manifest.mappingNotes, "mappingNotes", issues)
 
@@ -60,6 +61,62 @@ object TargetManifestContractValidator {
                 "jobCount" to manifest.jobs.size.toString()
             )
         )
+    }
+
+    private fun validateReadinessMetadata(manifest: TargetManifest, issues: MutableList<TargetManifestContractIssue>) {
+        fun error(code: String, path: String, message: String) {
+            issues += TargetManifestContractIssue("error", code, path, message)
+        }
+        if (manifest.metadata["generator"].isNullOrBlank()) return
+
+        val required = listOf(
+            "capabilityCompatibility",
+            "effectiveCompatibility",
+            "materializationReadiness",
+            "projectionReadiness",
+            "executable"
+        )
+        required.forEach { key ->
+            if (manifest.metadata[key].isNullOrBlank()) {
+                error("READINESS_METADATA_MISSING", "metadata.$key", "Generated target manifests must expose '$key'.")
+            }
+        }
+
+        val effective = manifest.metadata["effectiveCompatibility"]
+        if (!effective.isNullOrBlank() && effective != manifest.compatibility.status.name) {
+            error(
+                "EFFECTIVE_COMPATIBILITY_MISMATCH",
+                "metadata.effectiveCompatibility",
+                "Manifest compatibility status must match readiness-reconciled effective compatibility."
+            )
+        }
+        val executable = manifest.metadata["executable"]
+        if (!executable.isNullOrBlank() && executable !in setOf("true", "false")) {
+            error("EXECUTABLE_METADATA_INVALID", "metadata.executable", "Executable readiness metadata must be a boolean string.")
+        }
+        if (manifest.compatibility.status.name == "SUPPORTED") {
+            if (executable != "true") {
+                error(
+                    "SUPPORTED_WITHOUT_EXECUTABLE_READINESS",
+                    "compatibility.status",
+                    "A generated manifest cannot be SUPPORTED without executable projection evidence."
+                )
+            }
+            if (manifest.metadata["materializationReadiness"] != "COMPLETE") {
+                error(
+                    "SUPPORTED_WITHOUT_COMPLETE_MATERIALIZATION",
+                    "metadata.materializationReadiness",
+                    "A generated manifest cannot be SUPPORTED while materialization is incomplete."
+                )
+            }
+            if (manifest.metadata["projectionReadiness"] != "EXECUTABLE") {
+                error(
+                    "SUPPORTED_WITHOUT_EXECUTABLE_PROJECTION",
+                    "metadata.projectionReadiness",
+                    "A generated manifest cannot be SUPPORTED while projection is non-executable."
+                )
+            }
+        }
     }
 
     private fun validateStep(step: TargetStep, path: String, stepIds: MutableSet<String>, issues: MutableList<TargetManifestContractIssue>) {

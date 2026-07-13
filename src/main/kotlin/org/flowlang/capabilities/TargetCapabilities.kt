@@ -41,10 +41,22 @@ data class CompatibilityIssue(
 
 enum class CompatibilityLevel { INFO, WARNING, ERROR }
 
+/**
+ * Compatibility status for a target decision.
+ *
+ * [capabilityStatus] is the platform declaration. [status] is the effective
+ * status of the report. Before a concrete manifest is evaluated, readiness
+ * fields remain NOT_EVALUATED and executable remains false.
+ */
 data class CompatibilityReport(
     val target: String,
     val status: SupportLevel,
-    val issues: List<CompatibilityIssue> = emptyList()
+    val issues: List<CompatibilityIssue> = emptyList(),
+    val capabilityStatus: SupportLevel = status,
+    val materializationReadiness: MaterializationReadinessStatus = MaterializationReadinessStatus.NOT_EVALUATED,
+    val projectionReadiness: ProjectionReadinessStatus = ProjectionReadinessStatus.NOT_EVALUATED,
+    val executable: Boolean = false,
+    val readinessEvidenceAvailable: Boolean = false
 ) {
     val hasErrors: Boolean get() = issues.any { it.level == CompatibilityLevel.ERROR }
     val hasWarnings: Boolean get() = issues.any { it.level == CompatibilityLevel.WARNING }
@@ -65,7 +77,8 @@ data class TargetCapabilityNegotiationReport(
     val requiredWorkarounds: List<TargetWorkaround>,
     val targets: List<TargetNegotiationEntry>,
     val recommendedTargets: List<String>,
-    val blockedTargets: List<String>
+    val blockedTargets: List<String>,
+    val readinessEvidenceAvailable: Boolean = false
 )
 
 data class TargetNegotiationEntry(
@@ -97,8 +110,9 @@ data class TargetWorkaround(
 /**
  * Checks whether an ExecutionPlan can be represented on a target.
  *
- * This is the first practical guardrail that keeps Flow platform-neutral:
- * generators should never silently degrade unsupported semantics.
+ * Capability negotiation is preliminary. It identifies platform candidates but
+ * does not recommend a target until concrete materialization and projection
+ * evidence is reconciled.
  */
 class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) {
     fun negotiate(plan: ExecutionPlan, strict: Boolean = false): TargetCapabilityNegotiationReport {
@@ -127,7 +141,7 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
                 unsupported = unsupported.distinct(),
                 requiresRuntime = requiresRuntime.distinct(),
                 issues = report.issues,
-                notes = target.notes
+                notes = (target.notes + "Capability compatibility is preliminary until materialization and projection evidence is evaluated.").distinct()
             )
         }
         val portableCapabilities = required.filter { capability ->
@@ -182,8 +196,9 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             blockingPortabilityIssues = blockingIssues.distinct(),
             requiredWorkarounds = workarounds.distinct(),
             targets = entries,
-            recommendedTargets = entries.filter { it.status == SupportLevel.SUPPORTED }.map { it.target },
-            blockedTargets = entries.filter { it.status == SupportLevel.UNSUPPORTED || it.unsupported.isNotEmpty() }.map { it.target }
+            recommendedTargets = emptyList(),
+            blockedTargets = entries.filter { it.status == SupportLevel.UNSUPPORTED || it.unsupported.isNotEmpty() }.map { it.target },
+            readinessEvidenceAvailable = false
         )
     }
 
@@ -209,7 +224,12 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             effectiveIssues.any { it.level == CompatibilityLevel.WARNING } -> SupportLevel.PARTIAL
             else -> SupportLevel.SUPPORTED
         }
-        return CompatibilityReport(target.target, status, effectiveIssues)
+        return CompatibilityReport(
+            target = target.target,
+            status = status,
+            issues = effectiveIssues,
+            capabilityStatus = status
+        )
     }
 
     private fun inspect(node: PlanNode, target: TargetCapability, issues: MutableList<CompatibilityIssue>) {

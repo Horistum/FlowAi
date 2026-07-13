@@ -1,5 +1,6 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.SupportLevel
@@ -11,7 +12,7 @@ import org.flowlang.planner.TaskNode
 
 class TargetNegotiationReportAnalyzerTests {
     @Test
-    fun supportedTargetProducesPassingExplanation() {
+    fun capabilitySupportedTargetRemainsPreliminaryWithoutManifestEvidence() {
         val plan = planWith("task.execute", "container.image")
         val negotiation = CompatibilityAnalyzer(
             mapOf(
@@ -25,10 +26,11 @@ class TargetNegotiationReportAnalyzerTests {
 
         val report = TargetNegotiationReportAnalyzer.explain(negotiation)
 
-        assertEquals("PASS", report.status)
-        assertEquals(listOf("jenkins"), report.recommendedTargets)
-        assertTrue(report.rejectionReasons.isEmpty())
-        assertEquals(TargetNegotiationOutcome.SUPPORTED, report.targets.single().outcome)
+        assertEquals("DEGRADED", report.status)
+        assertTrue(report.recommendedTargets.isEmpty())
+        assertFalse(report.readinessEvidenceAvailable)
+        assertEquals(TargetNegotiationOutcome.DEGRADED, report.targets.single().outcome)
+        assertTrue(report.warnings.any { it.contains("materialization and projection readiness") })
     }
 
     @Test
@@ -82,9 +84,9 @@ class TargetNegotiationReportAnalyzerTests {
         val plan = planWith("standard.execute")
         val negotiation = CompatibilityAnalyzer(
             mapOf(
-                "portable-shell" to TargetCapability(
-                    target = "portable-shell",
-                    description = "Portable shell target",
+                "portable-target" to TargetCapability(
+                    target = "portable-target",
+                    description = "Portable target",
                     nativeRuntime = SupportLevel.REQUIRES_RUNTIME
                 )
             )

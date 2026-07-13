@@ -9,7 +9,8 @@ import org.flowlang.planner.ExecutionPlan
  *
  * Direct generator classes remain small render-projection units, but callers that
  * have a target registry should use this helper so unsupported planner semantics
- * are stopped before target projection starts.
+ * are stopped before target projection starts. Reconciliation is intentionally
+ * idempotent so custom generators cannot bypass the compatibility-readiness gate.
  */
 fun TargetManifestGenerator.generateWithCapabilityConstraints(
     plan: ExecutionPlan,
@@ -19,4 +20,5 @@ fun TargetManifestGenerator.generateWithCapabilityConstraints(
     val constraintReport = PlannerCapabilityConstraintGate(targets)
         .requireProjectionAllowed(plan, target, strict)
     return generate(plan, constraintReport.compatibility)
+        .reconcileCompatibilityReadiness()
 }

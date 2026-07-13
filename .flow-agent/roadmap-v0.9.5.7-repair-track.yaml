@@ -56,16 +56,17 @@ items:
 
   - version: "0.9.5.7.5"
     name: Compatibility and Readiness Honesty
-    status: next
-    purpose: Prevent capability compatibility from being reported as executable readiness.
+    status: completed
+    purpose: Reconcile capability compatibility with concrete materialization and projection evidence before artifacts or target recommendations are trusted.
     requiredOutcome:
-      - Compatibility reports include materialization readiness and projection readiness.
-      - SUPPORTED cannot appear on artifacts where required steps are unresolved.
-      - Recommended targets must account for materialization and projection evidence.
+      - Compatibility readiness reports expose capability, materialization, projection and effective compatibility states separately.
+      - Review-only and fail-fast artifacts cannot present capability-only SUPPORTED as effective readiness.
+      - Safe manifest projection stores effective compatibility while retaining capability compatibility as audit metadata.
+      - Target recommendations require both effective SUPPORTED status and executable renderer evidence.
 
   - version: "0.9.5.7.6"
     name: Release Metadata Reconciliation
-    status: planned
+    status: next
     purpose: Reconcile package version, changelog, reports and correction-track metadata.
     requiredOutcome:
       - CHANGELOG records the v0.9.5.x correction track.

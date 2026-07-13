@@ -32,14 +32,17 @@ data class ExecutionReadinessReport(
     val planPortabilityScore: Double,
     val blockers: List<ReadinessFinding> = emptyList(),
     val warnings: List<ReadinessFinding> = emptyList(),
-    val requiredActions: List<String> = emptyList()
+    val requiredActions: List<String> = emptyList(),
+    val materializationReadiness: MaterializationReadinessStatus = MaterializationReadinessStatus.NOT_EVALUATED,
+    val projectionReadiness: ProjectionReadinessStatus = ProjectionReadinessStatus.NOT_EVALUATED,
+    val executable: Boolean = false,
+    val readinessEvidenceAvailable: Boolean = false
 )
 
 /**
- * Converts compatibility and portability facts into a concrete target-generation
- * decision. This keeps renderer invocation downstream from standard validation:
- * target adapters should consume this report rather than silently deciding how
- * much semantic degradation is acceptable.
+ * Converts compatibility and portability facts into a preliminary target decision.
+ * Concrete materialization and projection evidence is reconciled after a target
+ * manifest exists; until then this report must not be treated as executable proof.
  */
 class ExecutionReadinessAnalyzer(private val targets: Map<String, TargetCapability>) {
     fun analyze(plan: ExecutionPlan, target: String, strict: Boolean = false): ExecutionReadinessReport {
@@ -125,30 +128,30 @@ class ExecutionReadinessAnalyzer(private val targets: Map<String, TargetCapabili
             strict = strict,
             readiness = readiness,
             generationAllowed = readiness != ExecutionReadinessStatus.BLOCKED,
-            productionReady = readiness == ExecutionReadinessStatus.READY,
-            decision = decisionText(readiness, target),
+            productionReady = false,
+            decision = preliminaryDecisionText(readiness, target),
             compatibilityStatus = compatibility.status,
             targetPortabilityScore = targetEntry?.portabilityScore ?: 0.0,
             planPortabilityScore = negotiation.portabilityScore,
             blockers = effectiveBlockers,
             warnings = effectiveWarnings,
-            requiredActions = requiredActions(readiness, effectiveBlockers, effectiveWarnings)
+            requiredActions = preliminaryRequiredActions(readiness, effectiveBlockers, effectiveWarnings)
         )
     }
 
-    private fun decisionText(readiness: ExecutionReadinessStatus, target: String): String = when (readiness) {
-        ExecutionReadinessStatus.READY -> "ExecutionPlan is ready for target '$target'."
-        ExecutionReadinessStatus.DEGRADED -> "ExecutionPlan can be generated for target '$target' only with documented target-specific limitations."
+    private fun preliminaryDecisionText(readiness: ExecutionReadinessStatus, target: String): String = when (readiness) {
+        ExecutionReadinessStatus.READY -> "Capability checks passed for target '$target'; concrete materialization and projection readiness are not evaluated yet."
+        ExecutionReadinessStatus.DEGRADED -> "Capability checks for target '$target' require documented target-specific limitations; concrete artifact readiness is not evaluated yet."
         ExecutionReadinessStatus.BLOCKED -> "ExecutionPlan must not be generated for target '$target' until blocking compatibility issues are resolved."
     }
 
-    private fun requiredActions(
+    private fun preliminaryRequiredActions(
         readiness: ExecutionReadinessStatus,
         blockers: List<ReadinessFinding>,
         warnings: List<ReadinessFinding>
     ): List<String> = buildList {
         if (blockers.isNotEmpty()) add("Resolve blocking target incompatibilities before target manifest generation.")
         if (warnings.isNotEmpty()) add("Document target-specific workaround or choose a target with stronger native support.")
-        if (readiness == ExecutionReadinessStatus.READY) add("No target readiness action required.")
+        if (readiness != ExecutionReadinessStatus.BLOCKED) add("Generate and evaluate a concrete target manifest before claiming executable readiness.")
     }.distinct()
 }
