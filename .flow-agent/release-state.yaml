@@ -39,13 +39,18 @@ qualityPrinciples:
   - "Reduce technical debt instead of carrying it forward."
 
 lastKnownValidation:
-  fullOfflineGradle: "pending-current-branch-ci"
-  targetedCompilation: "pending-current-branch-ci"
-  conformance: "pending-current-branch-ci"
+  flowAgentTooling: "passed"
+  flowAgentStructure: "passed"
+  flowAgentContextGeneration: "passed"
+  offlineCacheAwareChecks: "passed"
+  cleanTest: "passed"
+  conformance: "passed"
+  validationSource: "GitHub Actions Flow CI on the v0.9.5.7.6 pull request branch"
   notes:
     - "The published package remains v0.9.4 while v0.9.5.x identifiers describe unreleased correction scopes."
     - "The current scoped correction item is v0.9.5.7.6 Release Metadata Reconciliation."
     - "The next scoped correction item is v0.9.5.7.7 Policy-Driven Safety Prelude."
+    - "Flow Agent roadmap resolution follows the declared active repair track and requires exactly one next item across active roadmap sources."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
     - "No runtime executor, SDK API, plugin lifecycle, shell projection, target-specific public DSL, renderer expansion or Flow syntax change is added."
