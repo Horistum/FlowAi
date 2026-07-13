@@ -4,6 +4,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from flow_agent_roadmap import find_unique_next_roadmap_item
+
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENT_DIR = ROOT / ".flow-agent"
@@ -53,10 +55,7 @@ def assert_immutable_principles() -> None:
 
 
 def assert_next_roadmap_item_exists() -> None:
-    roadmap = read(AGENT_DIR / "roadmap.yaml")
-    has_next = 'status: "next"' in roadmap or "status: next" in roadmap or "status: 'next'" in roadmap
-    if not has_next:
-        raise AssertionError("No roadmap item with status: next found.")
+    find_unique_next_roadmap_item(ROOT, AGENT_DIR / "roadmap.yaml")
 
 
 def assert_no_obvious_forbidden_contract_terms() -> None:
