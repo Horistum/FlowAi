@@ -86,12 +86,11 @@ class JenkinsManifestRenderer {
 
     private fun renderJenkinsCondition(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
         val condition = step.params["condition"] ?: "false"
-        val rendered = try {
-            TargetExpressionTranslator.groovy(condition, manifest.inputs)
-        } catch (e: TargetExpressionTranslationException) {
-            sb.appendLine("${indent}// Flow condition requires target review: ${e.message}")
-            "false"
-        }
+        val rendered = TargetExpressionTranslator.groovy(
+            condition,
+            manifest.inputs,
+            manifest.compatibility.expressionSupport
+        )
         sb.appendLine("${indent}if ($rendered) {")
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
         sb.appendLine("${indent}}")
@@ -191,7 +190,7 @@ class GitHubActionsManifestRenderer(
     }
 
     private fun githubJobIf(job: TargetJob, manifest: TargetManifest): String? {
-        val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs) }
+        val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs, manifest.compatibility.expressionSupport) }
         if (job.metadata["errorHandler"] == "true") {
             val parts = mutableListOf("always()", "failure()")
             if (!own.isNullOrBlank()) parts += "($own)"
@@ -241,9 +240,14 @@ class TektonManifestRenderer {
         sb.appendLine("    - name: ${sanitizeId(job.id)}")
         if (job.dependsOn.isNotEmpty()) sb.appendLine("      runAfter: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         job.metadata["condition"]?.let { condition ->
-            val whenBlock = TargetExpressionTranslator.tektonWhen(condition, manifest.inputs)
-            if (whenBlock != null) sb.appendLine(whenBlock.prependIndent("      ").trimEnd())
-            else sb.appendLine("      # Flow condition is NOT enforced here - see condition.unsupported mapping note: $condition")
+            val whenBlock = TargetExpressionTranslator.tektonWhen(
+                condition,
+                manifest.inputs,
+                manifest.compatibility.expressionSupport
+            ) ?: throw TargetExpressionTranslationException(
+                "Target 'tekton' cannot enforce Flow condition with the supplied expression-support evidence: $condition"
+            )
+            sb.appendLine(whenBlock.prependIndent("      ").trimEnd())
         }
         sb.appendLine("      taskRef:")
         sb.appendLine("        name: flow-materialization-required")

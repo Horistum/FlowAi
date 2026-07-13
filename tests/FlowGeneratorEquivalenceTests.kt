@@ -1,8 +1,7 @@
 package org.flowlang.tests
 
 import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.capabilities.SupportLevel
-import org.flowlang.capabilities.TargetCapability
+import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetManifest
@@ -12,6 +11,7 @@ import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -26,11 +26,8 @@ import kotlin.test.assertTrue
  */
 class FlowGeneratorEquivalenceTests {
 
-    private val targets = mapOf(
-        "jenkins" to TargetCapability(target = "jenkins", description = "Jenkins", conditions = SupportLevel.SUPPORTED),
-        "github-actions" to TargetCapability(target = "github-actions", description = "GitHub Actions", conditions = SupportLevel.SUPPORTED),
-        "tekton" to TargetCapability(target = "tekton", description = "Tekton", conditions = SupportLevel.PARTIAL)
-    )
+    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
+        .filterKeys { it in setOf("jenkins", "github-actions", "tekton") }
 
     private val generators: Map<String, TargetManifestGenerator> = mapOf(
         "jenkins" to JenkinsManifestGenerator(),

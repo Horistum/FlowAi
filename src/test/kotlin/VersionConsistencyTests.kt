@@ -8,8 +8,8 @@ import java.io.File
 class VersionConsistencyTests {
     private val packageVersion = "0.9.4"
     private val correctionTrack = "v0.9.5.x"
-    private val currentCorrectionItem = "0.9.5.7.7"
-    private val nextCorrectionItem = "0.9.5.7.8"
+    private val currentCorrectionItem = "0.9.5.7.8"
+    private val nextCorrectionItem = "0.9.5.7.9"
     private val activeStandardVersion = "0.7.6"
 
     @Test
@@ -43,9 +43,9 @@ class VersionConsistencyTests {
 
         val repairTrack = File(".flow-agent/roadmap-v0.9.5.7-repair-track.yaml").readText()
         assertTrue(repairTrack.contains("version: \"$currentCorrectionItem\""))
-        assertTrue(repairTrack.contains("name: Policy-Driven Safety Prelude"))
-        assertTrue(repairTrack.contains("version: \"$nextCorrectionItem\""))
         assertTrue(repairTrack.contains("name: Target Expression and Unknown Target Safety"))
+        assertTrue(repairTrack.contains("version: \"$nextCorrectionItem\""))
+        assertTrue(repairTrack.contains("name: Reference Scenario and Snapshot Honesty Reset"))
         assertTrue(repairTrack.contains("status: next"))
     }
 
@@ -62,7 +62,7 @@ class VersionConsistencyTests {
         assertFileContains("docs/versioning-policy.md", "Roadmap correction identifiers describe bounded internal work. They are not package versions.")
         assertFileContains("docs/versioning-policy.md", "### Roadmap correction scope")
         assertFalse(
-            File("docs/versioning-policy.md").readText().contains("bump the public Flow standard version to 0.9.5.7.7"),
+            File("docs/versioning-policy.md").readText().contains("bump the public Flow standard version to 0.9.5.7.8"),
             "Correction scope must not imply a public standard bump."
         )
     }
@@ -70,12 +70,12 @@ class VersionConsistencyTests {
     @Test
     fun correctionItemHasDocumentationAndReleaseReport() {
         assertTrue(
-            File("docs/V0_9_5_7_7_POLICY_DRIVEN_SAFETY_PRELUDE.md").isFile,
-            "v0.9.5.7.7 documentation must exist."
+            File("docs/V0_9_5_7_8_TARGET_EXPRESSION_AND_UNKNOWN_TARGET_SAFETY.md").isFile,
+            "v0.9.5.7.8 documentation must exist."
         )
         assertTrue(
-            File(".flow-agent/reports/v0.9.5.7.7-policy-driven-safety-prelude.md").isFile,
-            "v0.9.5.7.7 correction report must exist."
+            File(".flow-agent/reports/v0.9.5.7.8-target-expression-and-unknown-target-safety.md").isFile,
+            "v0.9.5.7.8 correction report must exist."
         )
     }
 

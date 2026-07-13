@@ -40,7 +40,7 @@ class FlowExpressionPortabilityRobustnessTests {
     @Test
     fun gitHubRejectsUnsupportedConditionInsteadOfSilentlyTranslating() {
         assertFailsWith<TargetExpressionTranslationException> {
-            TargetExpressionTranslator.github("value matches '^prod-'", emptyList())
+            TargetExpressionTranslator.github("value matches '^prod-'", emptyList(), TargetExpressionTestEvidence.declaration("github-actions"))
         }
     }
 
@@ -48,11 +48,11 @@ class FlowExpressionPortabilityRobustnessTests {
     @Test
     fun tektonReportsUntranslatableConditionInsteadOfGuessing() {
         assertTrue(
-            TargetExpressionTranslator.tektonWhen("count > 1", emptyList()) == null,
+            TargetExpressionTranslator.tektonWhen("count > 1", emptyList(), TargetExpressionTestEvidence.declaration("tekton")) == null,
             "Unsupported Tekton comparison must be reported as untranslatable, not silently mapped."
         )
         assertTrue(
-            TargetExpressionTranslator.tektonWhen("env == 'prod'", emptyList()) != null,
+            TargetExpressionTranslator.tektonWhen("env == 'prod'", emptyList(), TargetExpressionTestEvidence.declaration("tekton")) != null,
             "Supported Tekton equality must still translate."
         )
     }
@@ -61,7 +61,7 @@ class FlowExpressionPortabilityRobustnessTests {
     @Test
     fun tektonManifestSurfacesDroppedGuardAsErrorDiagnostic() {
         val manifest = TektonManifestGenerator()
-            .generate(conditionPlan("unsupported-condition-flow", "count > 1"), CompatibilityReport("tekton", SupportLevel.PARTIAL))
+            .generate(conditionPlan("unsupported-condition-flow", "count > 1"), TargetExpressionTestEvidence.compatibility("tekton", SupportLevel.PARTIAL))
         assertTrue(
             manifest.mappingNotes.any { it.level == "error" && it.feature == "condition.unsupported" },
             "An unsupported Tekton condition must produce an explicit error mapping note (no silent guard drop)."
@@ -72,7 +72,7 @@ class FlowExpressionPortabilityRobustnessTests {
     @Test
     fun supportedTektonConditionProducesNoUnsupportedDiagnostic() {
         val manifest = TektonManifestGenerator()
-            .generate(conditionPlan("supported-condition-flow", "env == 'prod'"), CompatibilityReport("tekton", SupportLevel.PARTIAL))
+            .generate(conditionPlan("supported-condition-flow", "env == 'prod'"), TargetExpressionTestEvidence.compatibility("tekton", SupportLevel.PARTIAL))
         assertTrue(
             manifest.mappingNotes.none { it.feature == "condition.unsupported" },
             "A translatable condition must not be flagged as unsupported."

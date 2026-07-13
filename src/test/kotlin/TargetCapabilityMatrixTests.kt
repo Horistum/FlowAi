@@ -17,6 +17,7 @@ class TargetCapabilityMatrixTests {
         assertTrue(report.targets.containsAll(listOf("jenkins", "github-actions", "tekton")))
         assertTrue(report.capabilityNames.containsAll(listOf("sequentialTasks", "conditions", "approvals", "secrets", "nativeRuntime")))
         assertTrue(report.entries.any { it.target == "tekton" && it.support == SupportLevel.UNSUPPORTED })
+        assertTrue(targets.values.all { it.expressionSupport != null })
     }
 
     @Test

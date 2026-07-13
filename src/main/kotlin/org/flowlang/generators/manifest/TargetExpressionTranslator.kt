@@ -2,6 +2,7 @@ package org.flowlang.generators.manifest
 
 import org.flowlang.ast.*
 import org.flowlang.capabilities.TargetExpressionSupport
+import org.flowlang.capabilities.TargetExpressionSupportDeclaration
 import org.flowlang.generators.GroovyExpr
 import org.flowlang.parser.ExpressionParser
 
@@ -9,9 +10,13 @@ import org.flowlang.parser.ExpressionParser
 class TargetExpressionTranslationException(message: String, cause: Throwable? = null) : IllegalArgumentException(message, cause)
 
 object TargetExpressionTranslator {
-    fun groovy(condition: String, inputs: List<TargetInput>): String = try {
+    fun groovy(
+        condition: String,
+        inputs: List<TargetInput>,
+        expressionSupport: TargetExpressionSupportDeclaration?
+    ): String = try {
         val parsed = parse(condition)
-        TargetExpressionSupport.unsupportedReason("jenkins", parsed)?.let { throw TargetExpressionTranslationException(it) }
+        TargetExpressionSupport.unsupportedReason("jenkins", expressionSupport, parsed)?.let { throw TargetExpressionTranslationException(it) }
         GroovyExpr(inputs.map { it.name }.toSet()).render(parsed)
     } catch (e: TargetExpressionTranslationException) {
         throw e
@@ -19,9 +24,13 @@ object TargetExpressionTranslator {
         throw TargetExpressionTranslationException("Unable to translate Flow condition to Groovy: $condition", e)
     }
 
-    fun github(condition: String, inputs: List<TargetInput>): String = try {
+    fun github(
+        condition: String,
+        inputs: List<TargetInput>,
+        expressionSupport: TargetExpressionSupportDeclaration?
+    ): String = try {
         val parsed = parse(condition)
-        TargetExpressionSupport.unsupportedReason("github-actions", parsed)?.let { throw TargetExpressionTranslationException(it) }
+        TargetExpressionSupport.unsupportedReason("github-actions", expressionSupport, parsed)?.let { throw TargetExpressionTranslationException(it) }
         renderGitHub(parsed, inputs.map { it.name }.toSet())
     } catch (e: TargetExpressionTranslationException) {
         throw e
@@ -94,9 +103,13 @@ object TargetExpressionTranslator {
         .replace("\"", "\\\"")
         .replace("\n", "\\n") + "\""
 
-    fun tektonWhen(condition: String, inputs: List<TargetInput>): String? = try {
+    fun tektonWhen(
+        condition: String,
+        inputs: List<TargetInput>,
+        expressionSupport: TargetExpressionSupportDeclaration?
+    ): String? = try {
         val parsed = parse(condition)
-        if (TargetExpressionSupport.unsupportedReason("tekton", parsed) != null) null
+        if (TargetExpressionSupport.unsupportedReason("tekton", expressionSupport, parsed) != null) null
         else renderTektonWhen(parsed, inputs.map { it.name }.toSet())
     } catch (_: Exception) {
         null

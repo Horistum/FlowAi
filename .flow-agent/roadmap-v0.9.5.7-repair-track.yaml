@@ -9,7 +9,7 @@ purpose: >-
 versionBoundary:
   publishedPackageVersion: "0.9.4"
   correctionTrack: "v0.9.5.x"
-  currentCorrectionItem: "0.9.5.7.7"
+  currentCorrectionItem: "0.9.5.7.8"
   correctionTrackStatus: "unreleased"
   correctionItemsArePackageVersions: false
   activePublicStandardVersion: "0.7.6"
@@ -22,6 +22,7 @@ rules:
   - Do not mark generated target artifacts executable when any required semantic action is not materialized.
   - Do not use correction-item identifiers as package, public-standard or artifact-contract versions.
   - Do not infer sensitive environments or target approval environments without policy evidence.
+  - Do not infer target expression support from target identifiers or missing declarations.
 
 items:
   - version: "0.9.5.7.1"
@@ -96,16 +97,17 @@ items:
 
   - version: "0.9.5.7.8"
     name: Target Expression and Unknown Target Safety
-    status: next
+    status: completed
     purpose: Ensure unknown targets and expression support gaps do not imply capability by default.
     requiredOutcome:
       - Unknown targets do not silently pass expression support checks.
       - Expression support must be declared by target notes or registry evidence.
       - Closed target expression assumptions are isolated from universal semantics.
+      - Renderers consume the same expression-support evidence as compatibility analysis and fail instead of weakening guards.
 
   - version: "0.9.5.7.9"
     name: Reference Scenario and Snapshot Honesty Reset
-    status: planned
+    status: next
     purpose: Align reference scenarios and snapshots with the repaired materialization and readiness model.
     requiredOutcome:
       - Reference scenarios no longer use active shell.run as the flagship build/test path.

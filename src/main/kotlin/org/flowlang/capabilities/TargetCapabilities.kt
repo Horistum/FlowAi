@@ -24,7 +24,8 @@ data class TargetCapability(
     val secrets: SupportLevel = SupportLevel.PARTIAL,
     val nativeRuntime: SupportLevel = SupportLevel.PARTIAL,
     val notes: List<String> = emptyList(),
-    val features: Map<String, SupportLevel> = emptyMap()
+    val features: Map<String, SupportLevel> = emptyMap(),
+    val expressionSupport: TargetExpressionSupportDeclaration? = null
 ) {
     fun feature(name: String, fallback: SupportLevel): SupportLevel = features[name] ?: fallback
 }
@@ -56,7 +57,8 @@ data class CompatibilityReport(
     val materializationReadiness: MaterializationReadinessStatus = MaterializationReadinessStatus.NOT_EVALUATED,
     val projectionReadiness: ProjectionReadinessStatus = ProjectionReadinessStatus.NOT_EVALUATED,
     val executable: Boolean = false,
-    val readinessEvidenceAvailable: Boolean = false
+    val readinessEvidenceAvailable: Boolean = false,
+    val expressionSupport: TargetExpressionSupportDeclaration? = null
 ) {
     val hasErrors: Boolean get() = issues.any { it.level == CompatibilityLevel.ERROR }
     val hasWarnings: Boolean get() = issues.any { it.level == CompatibilityLevel.WARNING }
@@ -228,7 +230,8 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             target = target.target,
             status = status,
             issues = effectiveIssues,
-            capabilityStatus = status
+            capabilityStatus = status,
+            expressionSupport = target.expressionSupport
         )
     }
 
@@ -250,7 +253,7 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             }
             is ConditionNode -> {
                 addIfLimited(target, node.id, "conditions", target.feature("conditions.inline", target.conditions), issues)
-                TargetExpressionSupport.unsupportedReason(target.target, node.condition)?.let { reason ->
+                TargetExpressionSupport.unsupportedReason(target, node.condition)?.let { reason ->
                     issues += CompatibilityIssue(
                         CompatibilityLevel.ERROR,
                         target.target,

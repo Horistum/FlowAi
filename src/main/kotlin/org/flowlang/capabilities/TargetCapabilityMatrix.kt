@@ -57,6 +57,14 @@ class TargetCapabilityMatrixAnalyzer(
         targets.values.forEach { target ->
             if (target.target.isBlank()) issues += "Target name must not be blank."
             if (target.description.isBlank()) issues += "Target '${target.target}' must declare a description."
+            if (target.conditions != SupportLevel.UNSUPPORTED && target.expressionSupport == null) {
+                issues += "Target '${target.target}' declares condition support without expression-support evidence."
+            }
+            target.expressionSupport?.let { declaration ->
+                TargetExpressionSupport.declarationValidationReason(declaration)?.let { reason ->
+                    issues += "Target '${target.target}' has invalid expression-support evidence: $reason"
+                }
+            }
         }
 
         val entries = targets.values

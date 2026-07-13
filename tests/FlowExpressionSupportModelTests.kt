@@ -1,36 +1,28 @@
 package org.flowlang.tests
 
+import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
-import org.flowlang.capabilities.SupportLevel
-import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.generators.manifest.TargetExpressionTranslationException
 import org.flowlang.generators.manifest.TargetExpressionTranslator
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Tests the per-target expression support model and its consequences:
- *  - an untranslatable guard becomes a BLOCKED execution-readiness decision
- *    (never a silently dropped guard), and
- *  - the model is the single source of truth: its verdict always agrees with what
- *    the target expression translator actually does, so readiness and the generated
- *    manifest can never diverge.
+ * Tests the evidence-driven per-target expression support model and its consequences:
+ * unsupported or undeclared guards block readiness, and the model agrees with the
+ * target translator that consumes the same registry declaration.
  */
 class FlowExpressionSupportModelTests {
-
-    private val targets = mapOf(
-        "tekton" to TargetCapability(target = "tekton", description = "Tekton", conditions = SupportLevel.PARTIAL),
-        "jenkins" to TargetCapability(target = "jenkins", description = "Jenkins", conditions = SupportLevel.SUPPORTED),
-        "github-actions" to TargetCapability(target = "github-actions", description = "GitHub Actions", conditions = SupportLevel.SUPPORTED)
-    )
+    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
 
     private fun guardedPlan(condition: String): ExecutionPlan =
         ExecutionPlan(
@@ -44,38 +36,29 @@ class FlowExpressionSupportModelTests {
             )
         )
 
-    /** An untranslatable Tekton guard must BLOCK readiness, not be silently dropped. */
     @Test
     fun untranslatableConditionBlocksTektonReadiness() {
         val report = ExecutionReadinessAnalyzer(targets).analyze(guardedPlan("count > 1"), "tekton")
         assertEquals(ExecutionReadinessStatus.BLOCKED, report.readiness)
         assertTrue(!report.generationAllowed, "Generation must not be allowed when a guard cannot be enforced.")
-        assertTrue(
-            report.blockers.any { it.capability == "condition.expression" },
-            "Blocker must identify the unsupported condition expression."
-        )
+        assertTrue(report.blockers.any { it.capability == "condition.expression" })
     }
 
-    /** The same guard is fully expressible on Jenkins, so it must NOT block for the expression reason. */
     @Test
-    fun jenkinsExpressesConditionThatTektonCannot() {
+    fun jenkinsExpressionEvidenceCoversConditionThatTektonCannot() {
         val report = ExecutionReadinessAnalyzer(targets).analyze(guardedPlan("count > 1"), "jenkins")
-        assertTrue(
-            report.blockers.none { it.capability == "condition.expression" },
-            "Jenkins expresses the full condition language; it must not raise a condition.expression blocker."
-        )
+        assertTrue(report.blockers.none { it.capability == "condition.expression" })
+        assertEquals("flow-full", targets.getValue("jenkins").expressionSupport?.profileId)
     }
 
-    /** A supported equality guard must not raise the unsupported-condition blocker on Tekton. */
     @Test
     fun supportedConditionDoesNotBlockTektonForExpression() {
         val report = ExecutionReadinessAnalyzer(targets).analyze(guardedPlan("env == 'prod'"), "tekton")
         assertTrue(report.blockers.none { it.capability == "condition.expression" })
     }
 
-    /** No drift: the model's verdict must match what the translator actually does, for every target. */
     @Test
-    fun supportModelAgreesWithTranslator() {
+    fun supportModelAgreesWithTranslatorsUsingTheSameEvidence() {
         val conditions = listOf(
             "env == 'prod'",
             "stage != 'dev'",
@@ -85,33 +68,32 @@ class FlowExpressionSupportModelTests {
             "env == 'prod' and tier == 'gold'",
             "ready exists"
         )
-        for (c in conditions) {
-            // Tekton: model-supported iff translator returns a non-null when block.
-            val tektonModelOk = TargetExpressionSupport.unsupportedReason("tekton", c) == null
-            val tektonTranslatorOk = TargetExpressionTranslator.tektonWhen(c, emptyList()) != null
-            assertEquals(tektonTranslatorOk, tektonModelOk, "Tekton model/translator disagree on: $c")
+        val tekton = targets.getValue("tekton")
+        val github = targets.getValue("github-actions")
+        for (condition in conditions) {
+            val tektonModelOk = TargetExpressionSupport.unsupportedReason(tekton, condition) == null
+            val tektonTranslatorOk = TargetExpressionTranslator.tektonWhen(
+                condition,
+                emptyList(),
+                tekton.expressionSupport
+            ) != null
+            assertEquals(tektonTranslatorOk, tektonModelOk, "Tekton model/translator disagree on: $condition")
 
-            // GitHub: model-supported iff translator does not throw.
-            val gitHubModelOk = TargetExpressionSupport.unsupportedReason("github-actions", c) == null
-            val gitHubTranslatorOk = try {
-                TargetExpressionTranslator.github(c, emptyList()); true
+            val githubModelOk = TargetExpressionSupport.unsupportedReason(github, condition) == null
+            val githubTranslatorOk = try {
+                TargetExpressionTranslator.github(condition, emptyList(), github.expressionSupport)
+                true
             } catch (_: TargetExpressionTranslationException) {
                 false
             }
-            assertEquals(gitHubTranslatorOk, gitHubModelOk, "GitHub model/translator disagree on: $c")
+            assertEquals(githubTranslatorOk, githubModelOk, "GitHub model/translator disagree on: $condition")
         }
     }
 
-    /**
-     * Enforcement at the generation boundary. The CLI calls compatibility.assertAllowed()
-     * before generating; an untranslatable guard is a compatibility ERROR, so the gate throws
-     * and generation is refused. This complements untranslatableConditionBlocksTektonReadiness
-     * (which locks the readiness *report*) by locking the *enforcement* that actually stops generation.
-     */
     @Test
     fun untranslatableConditionThrowsAtTheGenerationGate() {
         val report = CompatibilityAnalyzer(targets).analyze(guardedPlan("count > 1"), "tekton")
-        assertTrue(report.hasErrors, "Untranslatable guard must be a compatibility error.")
+        assertTrue(report.hasErrors)
         assertFailsWith<IllegalStateException> { report.assertAllowed() }
     }
 }
