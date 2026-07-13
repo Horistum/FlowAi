@@ -12,6 +12,7 @@ All project source text is written in English. The changelog records architectur
 - Added no-shell target projection records and target registry lifecycle honesty.
 - Added structural governance checks, unified renderer failure semantics and compatibility/readiness reconciliation.
 - Added release metadata boundaries that distinguish the published package, unreleased correction scope, public standard and artifact contract versions.
+- Added evidence-driven target expression profiles with registry or notes provenance and fail-closed support decisions.
 
 ### Changed
 
@@ -21,6 +22,7 @@ All project source text is written in English. The changelog records architectur
 - Required target recommendations to use concrete materialization and renderer evidence rather than capability declarations alone.
 - Replaced the production CI/CD bias analyzer's hardcoded future roadmap version list with evidence-driven architectural follow-up areas.
 - Reconciled `REPORT.md`, `.flow-agent/release-state.yaml`, both roadmap files, versioning policy and correction reports around one explicit version boundary.
+- Removed target-name expression assumptions and renderer fallbacks that weakened unsupported conditions to false or unenforced comments.
 
 ### Correction items recorded
 
@@ -38,6 +40,8 @@ All project source text is written in English. The changelog records architectur
 - `0.9.5.7.4` Remove Legacy Shell Generator Fixtures
 - `0.9.5.7.5` Compatibility and Readiness Honesty
 - `0.9.5.7.6` Release Metadata Reconciliation
+- `0.9.5.7.7` Policy-Driven Safety Prelude
+- `0.9.5.7.8` Target Expression and Unknown Target Safety
 
 ### Version boundary
 
