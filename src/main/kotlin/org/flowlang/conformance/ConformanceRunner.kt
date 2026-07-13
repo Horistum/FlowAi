@@ -941,7 +941,11 @@ class ConformanceRunner(
             "Database migration without a concrete database must ask a required question."
         }
         val unsupportedGithub = runCatching {
-            TargetExpressionTranslator.github("environment matches 'prod.*'", listOf(TargetInput("environment")))
+            TargetExpressionTranslator.github(
+                "environment matches 'prod.*'",
+                listOf(TargetInput("environment")),
+                targets.getValue("github-actions").expressionSupport
+            )
         }
         require(unsupportedGithub.isFailure) { "Unsupported condition operators must not be translated to silent true/false." }
     }
@@ -1137,19 +1141,21 @@ class ConformanceRunner(
     private fun checkV044NoSilentConditionFallback(): ConformanceCheck = runCheck("v0.4.4.no-silent-condition-fallback") {
         val supported = "env == 'prod'"
         val unsupported = "count > 1"
+        val github = targets.getValue("github-actions")
+        val tekton = targets.getValue("tekton")
         fun gitHubTranslatorOk(condition: String): Boolean = try {
-            TargetExpressionTranslator.github(condition, emptyList()); true
+            TargetExpressionTranslator.github(condition, emptyList(), github.expressionSupport); true
         } catch (_: TargetExpressionTranslationException) { false }
-        require((TargetExpressionSupport.unsupportedReason("github-actions", supported) == null) == gitHubTranslatorOk(supported)) {
+        require((TargetExpressionSupport.unsupportedReason(github, supported) == null) == gitHubTranslatorOk(supported)) {
             "GitHub support model and translator disagree on a supported condition."
         }
-        require((TargetExpressionSupport.unsupportedReason("github-actions", unsupported) == null) == gitHubTranslatorOk(unsupported)) {
+        require((TargetExpressionSupport.unsupportedReason(github, unsupported) == null) == gitHubTranslatorOk(unsupported)) {
             "GitHub support model and translator disagree on an unsupported condition."
         }
-        require(TargetExpressionSupport.unsupportedReason("tekton", unsupported) != null) {
+        require(TargetExpressionSupport.unsupportedReason(tekton, unsupported) != null) {
             "The model must report that Tekton cannot express the condition."
         }
-        require(TargetExpressionTranslator.tektonWhen(unsupported, emptyList()) == null) {
+        require(TargetExpressionTranslator.tektonWhen(unsupported, emptyList(), tekton.expressionSupport) == null) {
             "Tekton must not silently translate an unsupported condition into a passing guard."
         }
     }
@@ -1290,7 +1296,8 @@ class ConformanceRunner(
         // guard expressions a target can enforce natively, rather than a hand-maintained label.
         val referenceConditions = listOf("env == 'prod'", "stage != 'dev'", "count > 1", "name matches '^prod-'", "region in ['eu', 'us']")
         fun derivedConditionSupport(target: String): String {
-            val unsupported = referenceConditions.count { TargetExpressionSupport.unsupportedReason(target, it) != null }
+            val capability = targets.getValue(target)
+            val unsupported = referenceConditions.count { TargetExpressionSupport.unsupportedReason(capability, it) != null }
             return when {
                 unsupported == 0 -> "native"
                 unsupported < referenceConditions.size -> "partial"
@@ -1313,11 +1320,13 @@ class ConformanceRunner(
         // Reference case (formerly the unsupported-target-condition corpus entry), verified in the layer
         // that owns target semantics: a guard expression Tekton cannot express natively must be reported
         // as unsupported, while a target that can express it natively must not be.
-        val unsupportedReference = referenceConditions.firstOrNull { TargetExpressionSupport.unsupportedReason("tekton", it) != null }
+        val unsupportedReference = referenceConditions.firstOrNull {
+            TargetExpressionSupport.unsupportedReason(targets.getValue("tekton"), it) != null
+        }
         require(unsupportedReference != null) {
             "Tekton must report at least one unsupported reference guard expression."
         }
-        require(TargetExpressionSupport.unsupportedReason("jenkins", unsupportedReference) == null) {
+        require(TargetExpressionSupport.unsupportedReason(targets.getValue("jenkins"), unsupportedReference) == null) {
             "Jenkins must natively express the reference guard expression '$unsupportedReference'."
         }
     }

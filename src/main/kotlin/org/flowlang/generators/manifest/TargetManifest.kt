@@ -147,7 +147,7 @@ class TektonManifestGenerator : TargetManifestGenerator {
         val partialNote = TargetMappingNote("warning", target, "manifest", "target.partial", "Tekton renderer is a partial generator and requires notes-driven target projection before production use.")
         val untranslatableConditionNotes = resolvedJobs.mapNotNull { job ->
             val condition = job.metadata["condition"]
-            if (condition != null && TargetExpressionTranslator.tektonWhen(condition, inputs) == null) {
+            if (condition != null && TargetExpressionTranslator.tektonWhen(condition, inputs, compatibility.expressionSupport) == null) {
                 TargetMappingNote(
                     level = "error",
                     target = target,

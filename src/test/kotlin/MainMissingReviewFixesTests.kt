@@ -23,6 +23,7 @@ import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetExpressionTranslator
 import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.tests.TargetExpressionTestEvidence
 import org.flowlang.generators.manifest.TargetRenderBlockedException
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.planner.FlowPlanner
@@ -33,7 +34,8 @@ class MainMissingReviewFixesTests {
     fun githubListLiteralConditionRendersValidJsonArray() {
         val rendered = TargetExpressionTranslator.github(
             "region in [\"eu\", \"us\"]",
-            listOf(TargetInput(name = "region", type = "text"))
+            listOf(TargetInput(name = "region", type = "text")),
+            TargetExpressionTestEvidence.declaration("github-actions")
         )
 
         assertTrue(rendered.contains("fromJSON('[\"eu\",\"us\"]')"), rendered)

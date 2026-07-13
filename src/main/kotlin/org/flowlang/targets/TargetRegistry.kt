@@ -6,6 +6,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.capabilities.TargetExpressionEvidenceKind
+import org.flowlang.capabilities.TargetExpressionSupport
+import org.flowlang.capabilities.TargetExpressionSupportDeclaration
 import java.io.File
 
 /**
@@ -20,33 +23,58 @@ data class TargetRegistryDocument(
     val kind: String = "FlowTargetRegistry",
     val version: String = "1.0",
     val description: String? = null,
+    val expressionProfiles: List<TargetExpressionProfileDescriptor> = emptyList(),
     val targets: List<TargetDescriptor> = emptyList()
 )
+
+data class TargetExpressionProfileDescriptor(
+    val id: String = "",
+    val description: String = "",
+    val supportsAll: Boolean = false,
+    val features: Set<String> = emptySet()
+) {
+    fun toDeclaration(reference: String): TargetExpressionSupportDeclaration =
+        TargetExpressionSupportDeclaration(
+            profileId = id,
+            evidenceKind = TargetExpressionEvidenceKind.TARGET_REGISTRY,
+            evidenceReference = reference,
+            supportsAll = supportsAll,
+            features = features
+        )
+}
 
 data class TargetDescriptor(
     val name: String = "",
     val description: String = "",
     val capabilities: Map<String, String> = emptyMap(),
     val notes: List<String> = emptyList(),
-    val features: Map<String, String> = emptyMap()
+    val features: Map<String, String> = emptyMap(),
+    val expressionProfile: String? = null
 ) {
-    fun toCapability(): TargetCapability = TargetCapability(
-        target = name,
-        description = description,
-        sequentialTasks = support("sequentialTasks", SupportLevel.SUPPORTED),
-        parallel = support("parallel", SupportLevel.SUPPORTED),
-        conditions = support("conditions", SupportLevel.SUPPORTED),
-        dynamicLoops = support("dynamicLoops", SupportLevel.PARTIAL),
-        match = support("match", SupportLevel.PARTIAL),
-        retry = support("retry", SupportLevel.PARTIAL),
-        approvals = support("approvals", SupportLevel.PARTIAL),
-        errorHandlers = support("errorHandlers", SupportLevel.PARTIAL),
-        artifacts = support("artifacts", SupportLevel.PARTIAL),
-        secrets = support("secrets", SupportLevel.PARTIAL),
-        nativeRuntime = support("nativeRuntime", SupportLevel.PARTIAL),
-        notes = notes,
-        features = features.mapValues { (_, raw) -> parseSupport(raw, name) }
-    )
+    fun toCapability(expressionProfiles: Map<String, TargetExpressionSupportDeclaration> = emptyMap()): TargetCapability {
+        val expressionDeclaration = expressionProfile?.let { profileId ->
+            expressionProfiles[profileId]
+                ?: error("Unknown expression profile '$profileId' for target '$name'.")
+        }
+        return TargetCapability(
+            target = name,
+            description = description,
+            sequentialTasks = support("sequentialTasks", SupportLevel.SUPPORTED),
+            parallel = support("parallel", SupportLevel.SUPPORTED),
+            conditions = support("conditions", SupportLevel.SUPPORTED),
+            dynamicLoops = support("dynamicLoops", SupportLevel.PARTIAL),
+            match = support("match", SupportLevel.PARTIAL),
+            retry = support("retry", SupportLevel.PARTIAL),
+            approvals = support("approvals", SupportLevel.PARTIAL),
+            errorHandlers = support("errorHandlers", SupportLevel.PARTIAL),
+            artifacts = support("artifacts", SupportLevel.PARTIAL),
+            secrets = support("secrets", SupportLevel.PARTIAL),
+            nativeRuntime = support("nativeRuntime", SupportLevel.PARTIAL),
+            notes = notes,
+            features = features.mapValues { (_, raw) -> parseSupport(raw, name) },
+            expressionSupport = expressionDeclaration
+        )
+    }
 
     private fun support(name: String, default: SupportLevel): SupportLevel {
         val raw = capabilities[name] ?: return default
@@ -78,11 +106,39 @@ object TargetRegistryYamlLoader {
         docs.forEach { file ->
             val doc = load(file)
             require(doc.kind == "FlowTargetRegistry") { "Invalid target registry kind '${doc.kind}' in ${file.path}." }
+            val profiles = expressionProfiles(doc, file)
             doc.targets.forEach { descriptor ->
                 require(descriptor.name.isNotBlank()) { "Target name must not be blank in ${file.path}." }
-                out[descriptor.name] = descriptor.toCapability()
+                require(descriptor.expressionProfile?.isNotBlank() == true) {
+                    "Target '${descriptor.name}' must declare expressionProfile in ${file.path}; missing expression evidence fails closed."
+                }
+                require(descriptor.name !in out) { "Target '${descriptor.name}' is declared more than once across target registry files." }
+                out[descriptor.name] = descriptor.toCapability(profiles)
             }
         }
         return out
+    }
+
+    private fun expressionProfiles(
+        doc: TargetRegistryDocument,
+        file: File
+    ): Map<String, TargetExpressionSupportDeclaration> {
+        val profiles = linkedMapOf<String, TargetExpressionSupportDeclaration>()
+        doc.expressionProfiles.forEach { descriptor ->
+            require(descriptor.id.isNotBlank()) { "Expression profile id must not be blank in ${file.path}." }
+            require(descriptor.description.isNotBlank()) {
+                "Expression profile '${descriptor.id}' must declare a description in ${file.path}."
+            }
+            require(descriptor.id !in profiles) {
+                "Expression profile '${descriptor.id}' is duplicated in ${file.path}."
+            }
+            val reference = file.path.replace(File.separatorChar, '/') + "#expressionProfiles.${descriptor.id}"
+            val declaration = descriptor.toDeclaration(reference)
+            TargetExpressionSupport.declarationValidationReason(declaration)?.let { reason ->
+                error("Invalid expression profile '${descriptor.id}' in ${file.path}: $reason")
+            }
+            profiles[descriptor.id] = declaration
+        }
+        return profiles
     }
 }
