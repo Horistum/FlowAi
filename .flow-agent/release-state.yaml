@@ -1,10 +1,20 @@
 project: Flow Core
-stateVersion: 1
+stateVersion: 2
 
 currentVersion: "0.9.4"
 currentPackage: "flow-core-prod-v0_9_4_reference_scenario_matrix.zip"
 nextExpectedVersion: "0.9.5"
 activeStandardVersion: "0.7.6"
+
+versionBoundary:
+  publishedPackageVersion: "0.9.4"
+  publishedPackageStatus: "published"
+  activeCorrectionTrack: "v0.9.5.x"
+  currentCorrectionItem: "0.9.5.7.6"
+  correctionTrackStatus: "unreleased"
+  correctionItemIsPackageVersion: false
+  nextPackageVersion: "0.9.5"
+  publicStandardVersion: "0.7.6"
 
 repositoryRules:
   sourceLanguage: "English"
@@ -17,6 +27,7 @@ architectureConstraints:
   noTargetSpecificPublicDsl: true
   noJenkinsSpecificLanguage: true
   noTestOnlyHacks: true
+  noShellProjection: true
 
 qualityPrinciples:
   - "Do not bend code only to make tests pass."
@@ -28,14 +39,18 @@ qualityPrinciples:
   - "Reduce technical debt instead of carrying it forward."
 
 lastKnownValidation:
-  fullOfflineGradle: "pending-ci"
-  targetedCompilation: "pending-ci"
-  conformance: "pending-ci"
+  flowAgentTooling: "passed"
+  flowAgentStructure: "passed"
+  flowAgentContextGeneration: "passed"
+  offlineCacheAwareChecks: "passed"
+  cleanTest: "passed"
+  conformance: "passed"
+  validationSource: "GitHub Actions Flow CI on the v0.9.5.7.6 pull request branch"
   notes:
-    - "v0.9.4 adds a target-neutral reference scenario matrix before end-to-end readiness work."
-    - "The next expected package line remains v0.9.5 as an umbrella correction track."
-    - "The first scoped correction item is v0.9.5.0 Architecture Recenter - Notes-Driven Flow."
-    - "The former direct end-to-end readiness work is deferred until the v0.9.5.x correction track is complete."
+    - "The published package remains v0.9.4 while v0.9.5.x identifiers describe unreleased correction scopes."
+    - "The current scoped correction item is v0.9.5.7.6 Release Metadata Reconciliation."
+    - "The next scoped correction item is v0.9.5.7.7 Policy-Driven Safety Prelude."
+    - "Flow Agent roadmap resolution follows the declared active repair track and requires exactly one next item across active roadmap sources."
     - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
-    - "No runtime executor, SDK API, plugin lifecycle, target-specific public DSL, renderer expansion or Flow syntax change is added."
+    - "No runtime executor, SDK API, plugin lifecycle, shell projection, target-specific public DSL, renderer expansion or Flow syntax change is added."

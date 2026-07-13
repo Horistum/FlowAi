@@ -1,16 +1,19 @@
 # Flow Core Report
 
-Current package line: `0.9.4`
-Active public standard version: `0.7.6`
+Current published package line: `0.9.4`
+Package release status: `published`
+Active correction track: `v0.9.5.x`
+Correction-track release status: `unreleased`
+Current scoped correction item: `0.9.5.7.6`
+Next scoped correction item: `0.9.5.7.7`
 Next expected package line: `0.9.5`
-First scoped correction item: `0.9.5.0`
-Current scoped correction item: `0.9.5.7.5`
+Active public standard version: `0.7.6`
 
-The version difference is intentional. Package releases may continue roadmap work while the active public standard version remains pinned until snapshot, export and conformance contracts are deliberately advanced together.
+The version axes are intentionally separate. `0.9.5.7.6` is a roadmap correction identifier, not the Gradle package version, public Flow standard version or an artifact contract version. The published package remains `0.9.4` until the v0.9.5 correction line is deliberately promoted as a release.
 
-## Current scope
+## Current package scope
 
-The current package line includes:
+The published `0.9.4` package line includes:
 
 - v0.7.6 semantic correctness hardening
 - v0.7.7 scenario pack quality analysis
@@ -28,73 +31,65 @@ The current package line includes:
 - v0.9.3 capability degradation semantics
 - v0.9.4 reference scenario matrix
 
-## Architecture recenter direction
+## Unreleased correction direction
 
-The next umbrella package line is `0.9.5`, and the first scoped correction item is `0.9.5.0 Architecture Recenter - Notes-Driven Flow`.
-
-This is a correction track before any end-to-end readiness claim. Flow Core must be re-centered around the original architecture:
+The next package line is `0.9.5`, but the former direct `0.9.5 End-to-End Standard Scenarios` milestone is deferred. Before any end-to-end readiness claim, Flow Core is being repaired through the v0.9.5.x correction track:
 
 - Flow is a language and universal automation standardization model.
 - Flow uses a universal decision, validation and generation engine over declarative notes packages.
-- Flow Core is not an SDK, framework, plugin lifecycle or CI/CD transpiler.
+- Flow Core is not an SDK, framework, plugin lifecycle, runtime executor or CI/CD transpiler.
 - Domain, capability, runtime, safety, target and projection behavior must be declared through structured notes packages before it is treated as supported.
 - CI/CD target projections are adapter concerns, not the semantic source of truth.
 - Semantic-only placeholders must not be reported as successful automation materialization.
 
-The former direct `0.9.5 End-to-End Standard Scenarios` step is deferred until the `0.9.5.x` correction track is complete.
+## Correction-track progress
 
-## Current correction progress
+- `0.9.5.0 Architecture Recenter - Notes-Driven Flow` re-established the project identity and correction direction.
+- `0.9.5.1 Shell Usage Inventory and Prohibition` recorded and prohibited command-oriented projection paths.
+- `0.9.5.2 CI/CD Bias Inventory` separated concrete domain vocabulary from universal semantics.
+- `0.9.5.3 Notes Package Contract Model` introduced declarative domain, capability, safety, runtime, target, projection and conformance notes contracts.
+- `0.9.5.4 Universal Semantic Action Graph` introduced a target-neutral semantic graph over notes declarations.
+- `0.9.5.5 Materialization Negotiation` required explicit materialization decisions and evidence.
+- `0.9.5.6 No-Shell Target Projection` replaced generic command representation with structured projection artifacts.
+- `0.9.5.7 Target Registry Honesty` separated declared, implemented, tested and production-supported target states.
+- `0.9.5.7.1 Connect Materialization Pipeline` connected real plan tasks to semantic, materialization and projection evidence.
+- `0.9.5.7.2 Governance Scanner Honesty` replaced wording obfuscation and text-only ceremony with structural checks.
+- `0.9.5.7.3 Renderer Failure Semantics Unification` unified executable, review-only and fail-fast renderer behavior.
+- `0.9.5.7.4 Remove Legacy Shell Generator Fixtures` removed obsolete test generators and shell-output assertions.
+- `0.9.5.7.5 Compatibility and Readiness Honesty` reconciled capability claims with concrete materialization and projection evidence.
+- `0.9.5.7.6 Release Metadata Reconciliation` documents the package/correction boundary, records the unreleased correction track and removes future roadmap schedules from production analyzers.
 
-`0.9.5.1 Shell Usage Inventory and Prohibition` records the known command-oriented projection paths and classifies them as legacy defects scheduled for removal.
+The next scoped repair item is `0.9.5.7.7 Policy-Driven Safety Prelude`.
 
-`0.9.5.2 CI/CD Bias Inventory` records remaining hardcoded CI/CD, target, infrastructure, data-system and workflow vocabulary assumptions and adds drift tests that keep adapter-boundary evidence separate from semantic-core debt.
+## Validation source
 
-`0.9.5.3 Notes Package Contract Model` defines the first internal contract surface for declarative domain, capability, safety, runtime, target, projection and conformance notes packages.
+Release-specific validation details are kept in `.flow-agent/reports/`, `CHANGELOG.md` and pull request CI history. This top-level report intentionally avoids hardcoded historical test counts because test and conformance totals change as gates are added.
 
-`0.9.5.4 Universal Semantic Action Graph` defines a target-neutral action graph over notes declarations.
+Authoritative branch validation consists of:
 
-`0.9.5.5 Materialization Negotiation` adds explicit per-node materialization decisions so semantic actions cannot be inferred as fulfilled without evidence.
-
-`0.9.5.6 No-Shell Target Projection` adds projection artifact records that must be target-native, notes-backed, adapter-boundary, review or conformance records instead of generic command representation.
-
-`0.9.5.7 Target Registry Honesty` separates declared, experimental, implemented, tested, production-supported, deprecated and blocked target states so target names cannot imply support by default.
-
-`0.9.5.7.1 Connect Materialization Pipeline` wires real execution-plan tasks into semantic graph, materialization negotiation and projection artifact evidence before target manifest emission.
-
-`0.9.5.7.2 Governance Scanner Honesty` removes source vocabulary obfuscation and replaces text-only forbidden-word checks with structural Kotlin symbol, semantic declaration and projection field validation.
-
-`0.9.5.7.3 Renderer Failure Semantics Unification` introduces one renderer readiness policy. Unresolved target payloads produce a non-executable Flow review artifact, blocked materialization fails before target syntax is returned, and vendor syntax requires explicit renderer payload evidence.
-
-`0.9.5.7.4 Remove Legacy Shell Generator Fixtures` deletes the legacy Jenkins and GitHub Actions test generators, removes shell-output assertions from the active specification harness, preserves language, validation, planner, module, location and stress coverage in responsibility-based test files, and requires every remaining shell example to fail at the materialization boundary across Jenkins, GitHub Actions and Tekton.
-
-`0.9.5.7.5 Compatibility and Readiness Honesty` separates platform capability declarations from concrete materialization and projection evidence. Review-only manifests become effectively partial, blocked manifests become effectively unsupported, and target recommendation requires an effectively supported manifest with executable renderer payload evidence.
-
-The repair subtrack is recorded in `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml`. The next scoped repair item is `0.9.5.7.6 Release Metadata Reconciliation`.
-
-## Current validation source
-
-Release-specific validation details are kept in `.flow-agent/reports/`, `CHANGELOG.md`, and pull request CI history. This top-level report intentionally avoids hardcoded historical test counts because the test and conformance counts change as gates are added.
-
-The current validation source is the local Gradle run performed by the reviewer or GitHub Actions on the branch commit:
-
-- `Compile and Test`
-- `Run Conformance`
+- Flow Agent structure validation
+- Flow Agent context generation
+- offline tests when the dependency cache is available
+- offline conformance when the dependency cache is available
+- clean compile and test
+- full conformance
 
 ## Versioning boundary
 
-- Package version: `0.9.4`
+- Published package version: `0.9.4`
+- Active correction track: `v0.9.5.x`
+- Current correction item: `0.9.5.7.6`
+- Correction item is a package version: `false`
+- Next expected package version: `0.9.5`
 - Active public standard version: `0.7.6`
-- Next expected package line: `0.9.5`
-- First scoped correction item: `0.9.5.0`
-- Current scoped correction item: `0.9.5.7.5`
 - Intent artifact version: `1.0`
 - AST artifact version: `1.0`
 - Execution plan artifact version: `1.1`
 - Target manifest artifact version: `1.0`
 - Target registry artifact version: `1.0`
 
-The v0.9.4 package line does not bump the public standard or artifact schema versions.
+The unreleased v0.9.5.x correction track does not bump the public standard or artifact schema versions. Package promotion must be an explicit release decision after the correction boundary is complete enough to support the package claim.
 
 ## Architecture boundary
 
-v0.9.5.7.5 changes compatibility reporting and recommendation honesty. It does not add renderer payload implementations, runtime execution, an SDK surface, a framework lifecycle, a shell generator or target-specific public Flow syntax.
+v0.9.5.7.6 changes release metadata and removes roadmap scheduling from production analysis. It does not add renderer payload implementations, runtime execution, an SDK surface, a framework lifecycle, a shell generator or target-specific public Flow syntax.

@@ -8,8 +8,9 @@ import java.io.File
  * automation standard.
  *
  * This is an inventory, not a renderer, adapter SDK, runtime bridge or target
- * ownership model. The point is to make existing bias visible before later
- * v0.9.5.x items move capability meaning and materialization rules into notes.
+ * ownership model. The point is to make existing bias visible and classify the
+ * architectural areas that still require attention without embedding roadmap
+ * scheduling or future release numbers in production analysis.
  */
 data class CiCdBiasTerm(
     val term: String,
@@ -26,6 +27,14 @@ data class CiCdBiasEvidence(
     val snippet: String
 )
 
+enum class CiCdBiasFollowUpArea {
+    SEMANTIC_MODEL,
+    ADAPTER_BOUNDARY,
+    SCENARIO_AND_CONFORMANCE,
+    DOCUMENTATION,
+    NOTES_AND_TARGET_DECLARATIONS
+}
+
 data class CiCdBiasInventoryReport(
     val status: String,
     val scannedFiles: Int,
@@ -36,7 +45,7 @@ data class CiCdBiasInventoryReport(
     val documentationEvidence: List<CiCdBiasEvidence>,
     val moduleAndTargetNoteEvidence: List<CiCdBiasEvidence>,
     val categories: Map<String, Int>,
-    val requiredFollowUpVersions: List<String>
+    val requiredFollowUpAreas: List<CiCdBiasFollowUpArea>
 )
 
 class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
@@ -53,19 +62,30 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         val evidence = files.flatMap { file -> evidenceIn(file) }
             .sortedWith(compareBy<CiCdBiasEvidence> { it.classification }.thenBy { it.path }.thenBy { it.line }.thenBy { it.term })
 
+        val activeSemanticEvidence = evidence.filter { it.classification == ACTIVE_SEMANTIC_SOURCE }
+        val adapterBoundaryEvidence = evidence.filter { it.classification == ADAPTER_BOUNDARY }
+        val scenarioAndConformanceEvidence = evidence.filter { it.classification == SCENARIO_OR_CONFORMANCE }
+        val documentationEvidence = evidence.filter { it.classification == DOCUMENTATION }
+        val moduleAndTargetNoteEvidence = evidence.filter { it.classification == MODULE_OR_TARGET_NOTE }
         val categories = evidence.groupingBy { it.category }.eachCount().toSortedMap()
 
         return CiCdBiasInventoryReport(
             status = if (evidence.isNotEmpty()) "PASS" else "FAIL",
             scannedFiles = files.size,
             evidence = evidence,
-            activeSemanticEvidence = evidence.filter { it.classification == ACTIVE_SEMANTIC_SOURCE },
-            adapterBoundaryEvidence = evidence.filter { it.classification == ADAPTER_BOUNDARY },
-            scenarioAndConformanceEvidence = evidence.filter { it.classification == SCENARIO_OR_CONFORMANCE },
-            documentationEvidence = evidence.filter { it.classification == DOCUMENTATION },
-            moduleAndTargetNoteEvidence = evidence.filter { it.classification == MODULE_OR_TARGET_NOTE },
+            activeSemanticEvidence = activeSemanticEvidence,
+            adapterBoundaryEvidence = adapterBoundaryEvidence,
+            scenarioAndConformanceEvidence = scenarioAndConformanceEvidence,
+            documentationEvidence = documentationEvidence,
+            moduleAndTargetNoteEvidence = moduleAndTargetNoteEvidence,
             categories = categories,
-            requiredFollowUpVersions = listOf("0.9.5.3", "0.9.5.4", "0.9.5.5", "0.9.5.6", "0.9.5.7", "0.9.5.8", "0.9.5.9", "0.9.5.10")
+            requiredFollowUpAreas = buildList {
+                if (activeSemanticEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.SEMANTIC_MODEL)
+                if (adapterBoundaryEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.ADAPTER_BOUNDARY)
+                if (scenarioAndConformanceEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.SCENARIO_AND_CONFORMANCE)
+                if (documentationEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.DOCUMENTATION)
+                if (moduleAndTargetNoteEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.NOTES_AND_TARGET_DECLARATIONS)
+            }
         )
     }
 

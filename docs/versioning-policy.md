@@ -1,35 +1,46 @@
 # Flow Versioning Policy
 
-Flow uses multiple version axes. They are intentionally separate so package work can continue without accidentally publishing a new public standard or changing artifact contracts.
+Flow uses multiple version axes. They are intentionally separate so implementation and correction work can continue without accidentally publishing a new package, public standard or artifact contract.
 
 ## Version axes
 
 ### Package version
 
-The package version is the implementation and distribution line. It is the value in `build.gradle.kts`.
+The package version is the implementation and distribution line. It is the value assigned to `version` in `build.gradle.kts`.
 
-Examples:
+The currently published package version is:
 
-- `0.8.1` target capability matrix
-- `0.8.2` target negotiation report
-- `0.8.3` package version and release integrity
-- `0.8.4` planner capability constraints
-- `0.8.5` safety boundary hardening
-- `0.8.6` review hardening fixes
-- `0.8.7` safety-boundary result handler coverage
-- `0.9.0` generator projection contract
-- `0.9.1` Jenkins/GitHub/Tekton projection stability
-- `0.9.2` renderer contract hardening
-- `0.9.3` capability degradation semantics
-- `0.9.4` reference scenario matrix
+```text
+0.9.4
+```
 
-Package versions may change for implementation, documentation, release metadata, report, test or internal quality work.
+Package versions may change for implementation, documentation, release metadata, report, test or internal quality work, but only through an explicit package promotion. A roadmap item does not change the package version by existing.
+
+### Roadmap correction scope
+
+Roadmap correction identifiers describe bounded internal work. They are not package versions.
+
+The active correction track is:
+
+```text
+v0.9.5.x
+```
+
+The current scoped correction item is:
+
+```text
+0.9.5.7.6
+```
+
+This identifier means "the Release Metadata Reconciliation item inside the v0.9.5.x correction track." It does not mean that Gradle, a published archive, the public Flow standard or any artifact schema has version `0.9.5.7.6`.
+
+The correction track remains unreleased. The published package stays `0.9.4` until package `0.9.5` is deliberately promoted with aligned metadata and validated release evidence.
 
 ### Public Flow standard version
 
 The public Flow standard version is `FlowStandardVersions.FLOW_STANDARD_VERSION`.
 
-It must not change merely because the package version changes. It changes only when the public standard contract, exported standard surface, rendered snapshots and conformance expectations are intentionally advanced together.
+It must not change merely because the package version or roadmap correction scope changes. It changes only when the public standard contract, exported standard surface, rendered snapshots and conformance expectations are intentionally advanced together.
 
 Current active public standard version:
 
@@ -39,7 +50,7 @@ Current active public standard version:
 
 ### Artifact contract versions
 
-Artifact contract versions are independent from the package version. They are versioned in `FlowStandardVersions`:
+Artifact contract versions are independent from the package version and correction scope. They are versioned in `FlowStandardVersions`:
 
 ```text
 Intent: 1.0
@@ -49,7 +60,7 @@ TargetManifest: 1.0
 TargetRegistry: 1.0
 ```
 
-These values change only when the corresponding artifact contract changes. They must not be bumped for release metadata cleanup, documentation cleanup, report generation or package-only fixes.
+These values change only when the corresponding artifact contract changes. They must not be bumped for release metadata cleanup, documentation cleanup, report generation, correction-track scheduling or package-only fixes.
 
 ### Conformance gate identifiers
 
@@ -57,7 +68,7 @@ Conformance gate identifiers are stable contract names. Existing gate identifier
 
 ## Required release metadata
 
-Every package release must keep these files aligned:
+Every published package release must keep these files aligned:
 
 - `build.gradle.kts`
 - `REPORT.md`
@@ -66,11 +77,18 @@ Every package release must keep these files aligned:
 - `.flow-agent/roadmap.yaml`
 - `.flow-agent/reports/<version>-*.md`
 
+Every active correction item must additionally keep these files aligned:
+
+- `.flow-agent/roadmap-v0.9.5.7-repair-track.yaml`
+- the correction-item report in `.flow-agent/reports/`
+- documentation that states whether the package line is promoted or remains unchanged
+
 ## Release PR declaration
 
-Every release PR must state:
+Every release or correction PR must state:
 
-- package version target
+- published package version impact
+- roadmap correction scope
 - active public standard version impact
 - artifact version impact
 - conformance impact
@@ -78,10 +96,11 @@ Every release PR must state:
 
 ## Current package-line policy decision
 
-The v0.9.4 release adds a reference scenario matrix before end-to-end readiness work.
+The published package remains `0.9.4`, which introduced the reference scenario matrix before end-to-end readiness work.
 
-It does not bump:
+The unreleased v0.9.5.x correction track repairs architecture and metadata before package `0.9.5` can be claimed. Correction item `0.9.5.7.6` therefore does not bump:
 
+- Gradle package version
 - public Flow standard version
 - Intent version
 - AST version
@@ -92,15 +111,21 @@ It does not bump:
 
 It also does not introduce:
 
-- runtime executor
+- runtime execution
 - SDK API
-- plugin lifecycle
+- framework or plugin lifecycle
+- shell projection
 - target-specific public DSL
-- renderer expansion
+- renderer payload expansion
 - Flow syntax expansion
+
+## Analyzer boundary
+
+Production analyzers report current repository evidence and stable architectural follow-up areas. They must not contain lists of future roadmap versions. Roadmap scheduling belongs in roadmap metadata, where it can change without changing production analysis behavior.
 
 ## Historical package-line policy decisions
 
+- v0.9.4 added a target-neutral reference scenario matrix.
 - v0.9.3 added capability degradation semantics over TargetManifest outputs.
 - v0.9.2 added renderer contract hardening before Jenkins, GitHub Actions or Tekton serialization.
 - v0.9.1 added smoke-level projection stability guards for Jenkins, GitHub Actions and Tekton renderers.
