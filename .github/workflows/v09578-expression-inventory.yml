@@ -27,6 +27,10 @@ jobs:
             echo '# Built-in target registry'
             cat targets/builtin-targets.yaml || true
             echo
+            echo '# Expression AST files and definitions'
+            find src/main/kotlin/org/flowlang -type f -path '*ast*' -print | sort || true
+            grep -RInE 'class (StringLiteralNode|NumberLiteralNode|BooleanLiteralNode|NullLiteralNode|IdentifierLiteralNode|SecretRefNode|ReferenceNode|MemberExpressionNode|IndexExpressionNode|TemplateStringNode|ListLiteralNode|MapLiteralNode|CallExpressionNode|UnaryExpressionNode|UnaryPostfixExpressionNode|LogicalExpressionNode|BinaryExpressionNode)' src/main/kotlin/org/flowlang || true
+            echo
             echo '# Target expression support references'
             grep -RInE 'TargetExpressionSupport|condition\.expression|conditions\.inline|expression support|expression-support|supports.*expression|expression.*support' src/main src/test tests targets modules standard conformance docs .flow-agent || true
             echo
