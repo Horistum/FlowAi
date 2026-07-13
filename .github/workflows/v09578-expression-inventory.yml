@@ -24,11 +24,20 @@ jobs:
             echo '# Files under targets'
             find targets -type f -maxdepth 2 -print | sort || true
             echo
+            echo '# Built-in target registry'
+            cat targets/builtin-targets.yaml || true
+            echo
             echo '# Target expression support references'
             grep -RInE 'TargetExpressionSupport|condition\.expression|conditions\.inline|expression support|expression-support|supports.*expression|expression.*support' src/main src/test tests targets modules standard conformance docs .flow-agent || true
             echo
             echo '# Unknown target handling'
             grep -RInE 'Unknown target|unknown target|targets\[|getValue\(target|when \(target\)|when \(targetName\)' src/main src/test tests || true
+            echo
+            echo '# Target capability constructors'
+            grep -RIn 'TargetCapability(' src/main src/test tests || true
+            echo
+            echo '# Target registry loading and descriptors'
+            grep -RInE 'TargetDescriptor|TargetRegistryYamlLoader|loadDirectory\(File\("targets"\)' src/main src/test tests || true
             echo
             echo '# Target capability declarations'
             grep -RInE 'conditions:|features:|condition\.|expression\.' targets modules src/main src/test tests || true
