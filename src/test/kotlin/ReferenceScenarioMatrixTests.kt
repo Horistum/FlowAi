@@ -14,6 +14,7 @@ import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.scenarios.ReferenceAdapterProjectionMatrix
 import org.flowlang.scenarios.ReferenceAdapterProjectionOutcome
 import org.flowlang.scenarios.ReferencePortabilityClass
@@ -27,7 +28,10 @@ class ReferenceScenarioMatrixTests {
     private val parser = FlowParser()
     private val planner = FlowPlanner(registry)
     private val validator = FlowValidator(registry)
-    private val safety = SafetyBoundaryValidator(enforceProductionBoundary = true)
+    private val safety = SafetyBoundaryValidator(
+        registry = registry,
+        environmentPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
+    )
     private val targets = mapOf(
         "jenkins" to TargetCapability(target = "jenkins", description = "test"),
         "github-actions" to TargetCapability(target = "github-actions", description = "test"),

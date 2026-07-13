@@ -118,7 +118,9 @@ class JenkinsManifestRenderer {
     }
 }
 
-class GitHubActionsManifestRenderer {
+class GitHubActionsManifestRenderer(
+    private val environmentEvidenceResolver: TargetEnvironmentSafetyEvidenceResolver = TargetEnvironmentSafetyEvidenceResolver()
+) {
     fun render(manifest: TargetManifest): String {
         TargetRendererContractValidator.requireRenderable(manifest, "github-actions")
         val readiness = TargetRenderPolicy.requireSafe(manifest)
@@ -164,7 +166,18 @@ class GitHubActionsManifestRenderer {
         sb.appendLine("    runs-on: ubuntu-latest")
         if (job.dependsOn.isNotEmpty()) sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
-        if (job.metadata["approval"] == "true") sb.appendLine("    environment: production")
+        if (job.metadata["approval"] == "true") {
+            val environmentEvidence = environmentEvidenceResolver.resolve(manifest, job)
+            sb.appendLine("    # Flow environment sensitivity: ${environmentEvidence.sensitivity}")
+            sb.appendLine("    # Flow environment policy: ${environmentEvidence.policyPackageId}@${environmentEvidence.policyPackageVersion}")
+            if (environmentEvidence.parameterEvidence.isNotEmpty()) {
+                sb.appendLine("    # Flow environment evidence: ${environmentEvidence.parameterEvidence.sorted().joinToString(", ")}")
+            }
+            sb.appendLine("    # Flow environment decision: ${environmentEvidence.reason}")
+            environmentEvidence.approvalEnvironment?.let { environment ->
+                sb.appendLine("    environment: ${yamlScalar(environment)}")
+            }
+        }
         if (opaqueNames.isNotEmpty()) {
             sb.appendLine("    env:")
             opaqueNames.forEach { name -> sb.appendLine("      ${safeEnvName(name)}: ${TargetProjectionValue.bindingValue(ProjectionTarget.GITHUB_ACTIONS, name)}") }
@@ -288,7 +301,7 @@ private object TargetProjectionValue {
         ProjectionTarget.TEKTON -> "\$(params.${safeEnvName(name)})"
     }
 
-    fun runtimeEnvName(name: String): String = "\$" + safeEnvName(name)
+    fun runtimeEnvName(name: String): String = "$" + safeEnvName(name)
 
     fun bindingValue(target: ProjectionTarget, name: String): String = when (target) {
         ProjectionTarget.JENKINS -> "credentials('${groovyEscape(name)}')"

@@ -9,7 +9,7 @@ purpose: >-
 versionBoundary:
   publishedPackageVersion: "0.9.4"
   correctionTrack: "v0.9.5.x"
-  currentCorrectionItem: "0.9.5.7.6"
+  currentCorrectionItem: "0.9.5.7.7"
   correctionTrackStatus: "unreleased"
   correctionItemsArePackageVersions: false
   activePublicStandardVersion: "0.7.6"
@@ -21,6 +21,7 @@ rules:
   - Replace text-scanner ceremony with structural validation of emitted mechanisms.
   - Do not mark generated target artifacts executable when any required semantic action is not materialized.
   - Do not use correction-item identifiers as package, public-standard or artifact-contract versions.
+  - Do not infer sensitive environments or target approval environments without policy evidence.
 
 items:
   - version: "0.9.5.7.1"
@@ -85,16 +86,17 @@ items:
 
   - version: "0.9.5.7.7"
     name: Policy-Driven Safety Prelude
-    status: next
+    status: completed
     purpose: Remove hardcoded environment and production assumptions before the full v0.9.5.8 safety-policy step.
     requiredOutcome:
-      - Hardcoded production literal detection is replaced or isolated behind policy notes.
-      - GitHub Actions approval environment is not always forced to production.
-      - Environment classification becomes evidence-driven.
+      - Environment aliases and sensitivity are declared by safety policy notes rather than the validator.
+      - GitHub Actions approval environments are emitted only when downstream sensitive-environment evidence resolves uniquely.
+      - Unknown and non-sensitive environments do not silently become production approvals.
+      - Environment classification reports policy package, rule and parameter evidence.
 
   - version: "0.9.5.7.8"
     name: Target Expression and Unknown Target Safety
-    status: planned
+    status: next
     purpose: Ensure unknown targets and expression support gaps do not imply capability by default.
     requiredOutcome:
       - Unknown targets do not silently pass expression support checks.

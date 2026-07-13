@@ -4,12 +4,12 @@ Current published package line: `0.9.4`
 Package release status: `published`
 Active correction track: `v0.9.5.x`
 Correction-track release status: `unreleased`
-Current scoped correction item: `0.9.5.7.6`
-Next scoped correction item: `0.9.5.7.7`
+Current scoped correction item: `0.9.5.7.7`
+Next scoped correction item: `0.9.5.7.8`
 Next expected package line: `0.9.5`
 Active public standard version: `0.7.6`
 
-The version axes are intentionally separate. `0.9.5.7.6` is a roadmap correction identifier, not the Gradle package version, public Flow standard version or an artifact contract version. The published package remains `0.9.4` until the v0.9.5 correction line is deliberately promoted as a release.
+The version axes are intentionally separate. `0.9.5.7.7` is a roadmap correction identifier, not the Gradle package version, public Flow standard version or an artifact contract version. The published package remains `0.9.4` until the v0.9.5 correction line is deliberately promoted as a release.
 
 ## Current package scope
 
@@ -57,9 +57,10 @@ The next package line is `0.9.5`, but the former direct `0.9.5 End-to-End Standa
 - `0.9.5.7.3 Renderer Failure Semantics Unification` unified executable, review-only and fail-fast renderer behavior.
 - `0.9.5.7.4 Remove Legacy Shell Generator Fixtures` removed obsolete test generators and shell-output assertions.
 - `0.9.5.7.5 Compatibility and Readiness Honesty` reconciled capability claims with concrete materialization and projection evidence.
-- `0.9.5.7.6 Release Metadata Reconciliation` documents the package/correction boundary, records the unreleased correction track and removes future roadmap schedules from production analyzers.
+- `0.9.5.7.6 Release Metadata Reconciliation` documented the package/correction boundary and removed future roadmap schedules from production analyzers.
+- `0.9.5.7.7 Policy-Driven Safety Prelude` moves environment sensitivity and approval-environment selection behind explicit safety-policy evidence.
 
-The next scoped repair item is `0.9.5.7.7 Policy-Driven Safety Prelude`.
+The next scoped repair item is `0.9.5.7.8 Target Expression and Unknown Target Safety`.
 
 ## Validation source
 
@@ -67,6 +68,7 @@ Release-specific validation details are kept in `.flow-agent/reports/`, `CHANGEL
 
 Authoritative branch validation consists of:
 
+- Flow Agent tooling tests
 - Flow Agent structure validation
 - Flow Agent context generation
 - offline tests when the dependency cache is available
@@ -78,7 +80,7 @@ Authoritative branch validation consists of:
 
 - Published package version: `0.9.4`
 - Active correction track: `v0.9.5.x`
-- Current correction item: `0.9.5.7.6`
+- Current correction item: `0.9.5.7.7`
 - Correction item is a package version: `false`
 - Next expected package version: `0.9.5`
 - Active public standard version: `0.7.6`
@@ -92,4 +94,4 @@ The unreleased v0.9.5.x correction track does not bump the public standard or ar
 
 ## Architecture boundary
 
-v0.9.5.7.6 changes release metadata and removes roadmap scheduling from production analysis. It does not add renderer payload implementations, runtime execution, an SDK surface, a framework lifecycle, a shell generator or target-specific public Flow syntax.
+v0.9.5.7.7 changes safety-policy evidence and target approval-environment selection. It does not add renderer payload implementations, runtime execution, an SDK surface, a framework lifecycle, a shell generator or target-specific public Flow syntax.
