@@ -16,6 +16,7 @@ import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.scenarios.ReferenceAdapterProjectionMatrix
+import org.flowlang.scenarios.ReferenceAdapterProjectionOutcome
 import org.flowlang.scenarios.ReferencePortabilityClass
 import org.flowlang.scenarios.ReferenceScenarioKind
 import org.flowlang.scenarios.ReferenceScenarioMatrix
@@ -99,5 +100,55 @@ class ReferenceScenarioMatrixTests {
         expectations.forEach { expectation ->
             assertTrue(expectation.rationale.isNotBlank(), "${expectation.scenarioId}/${expectation.target} must explain adapter expectation")
         }
+    }
+
+    @Test
+    fun positiveAdapterExpectationsRemainProjectableWithoutBecomingCoreSemantics() {
+        ReferenceScenarioMatrix.positiveScenarios().forEach { scenario ->
+            val ast = parser.parse(scenario.source)
+            val plan = planner.plan(ast)
+            ReferenceAdapterProjectionMatrix.forScenario(scenario.id).forEach { expectation ->
+                val generator = generators.getValue(expectation.target)
+                val compatibility = CompatibilityAnalyzer(targets).analyze(plan, expectation.target)
+                val manifest = generator.generate(plan, compatibility)
+                assertEquals(expectation.target, manifest.target, "${scenario.id}/${expectation.target} manifest must retain target identity")
+                assertTrue(manifest.jobs.isNotEmpty(), "${scenario.id}/${expectation.target} must generate at least one target job")
+                val degradation = TargetCapabilityDegradationAnalyzer.analyze(manifest)
+                assertTrue(
+                    expectation.outcome.accepts(degradation.status),
+                    "${scenario.id}/${expectation.target} expected ${expectation.outcome} but got ${degradation.status}: ${degradation.entries}"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun negativeCoverageIsExplicitAndRejectedByCoreValidationGates() {
+        ReferenceScenarioMatrix.negativeScenarios().forEach { scenario ->
+            val ast = parser.parse(scenario.source)
+            val validation = validator.validate(ast)
+            val safetyIssues = safety.validate(ast)
+            val allIssues = validation.issues + safetyIssues
+            val errorCodes = allIssues.filter { it.level == "error" }.map { it.code }.toSet()
+
+            assertFalse(errorCodes.isEmpty(), "negative scenario ${scenario.id} must be rejected by at least one core validation gate")
+            assertTrue(
+                scenario.expectedDiagnosticCodes.any { it in errorCodes },
+                "negative scenario ${scenario.id} must produce at least one expected diagnostic from ${scenario.expectedDiagnosticCodes}, got $errorCodes"
+            )
+            ReferenceAdapterProjectionMatrix.forScenario(scenario.id).forEach { expectation ->
+                assertEquals(ReferenceAdapterProjectionOutcome.BLOCKED, expectation.outcome, "negative scenario ${scenario.id} must declare blocked adapter outcomes")
+            }
+        }
+    }
+
+    private fun ReferenceAdapterProjectionOutcome.accepts(status: TargetCapabilityDegradationStatus): Boolean = when (this) {
+        ReferenceAdapterProjectionOutcome.SUPPORTED -> status == TargetCapabilityDegradationStatus.SUPPORTED
+        ReferenceAdapterProjectionOutcome.REVIEW_REQUIRED -> status in setOf(
+            TargetCapabilityDegradationStatus.SUPPORTED,
+            TargetCapabilityDegradationStatus.DEGRADED,
+            TargetCapabilityDegradationStatus.BLOCKED
+        )
+        ReferenceAdapterProjectionOutcome.BLOCKED -> status == TargetCapabilityDegradationStatus.BLOCKED
     }
 }
