@@ -1,21 +1,30 @@
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.flowlang.parser.FlowParser
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.validator.SafetyBoundaryValidator
 
 class SafetyBoundaryHardeningTests {
     @Test
-    fun productionMutatingActionRequiresApprovalInStrictBoundaryMode() {
+    fun sensitiveEnvironmentMutationRequiresApprovalWhenPolicyEvidenceMatches() {
         val issues = strictValidator().validate(parse(productionDeployFlow()))
 
-        assertTrue(issues.any { it.code == "PRODUCTION_APPROVAL_REQUIRED" }, issues.toString())
+        assertTrue(issues.any { it.code == "ENVIRONMENT_APPROVAL_REQUIRED" }, issues.toString())
+        assertTrue(issues.any { it.message.contains("flow.safety.core@0.9.5.7.7") }, issues.toString())
     }
 
     @Test
-    fun productionMutatingActionWithApprovalPassesStrictBoundaryMode() {
+    fun sensitiveEnvironmentMutationWithApprovalPassesPolicyBoundary() {
         val issues = strictValidator().validate(parse(productionDeployFlowWithApproval()))
 
         assertTrue(issues.none { it.level == "error" }, issues.toString())
+    }
+
+    @Test
+    fun unknownEnvironmentDoesNotBecomeSensitiveByNameGuessing() {
+        val issues = strictValidator().validate(parse(customEnvironmentDeployFlow()))
+
+        assertTrue(issues.none { it.code == "ENVIRONMENT_APPROVAL_REQUIRED" }, issues.toString())
     }
 
     @Test
@@ -47,7 +56,7 @@ class SafetyBoundaryHardeningTests {
     }
 
     private fun defaultValidator() = SafetyBoundaryValidator()
-    private fun strictValidator() = SafetyBoundaryValidator(enforceProductionBoundary = true)
+    private fun strictValidator() = SafetyBoundaryValidator(environmentPolicy = StandardEnvironmentSafetyPolicyNotes.policy())
     private fun parse(source: String) = FlowParser().parse(source.trimIndent())
 
     private fun productionDeployFlow() = """
@@ -80,6 +89,23 @@ class SafetyBoundaryHardeningTests {
               namespace: "prod"
               image: "demo:1"
               safety: requiresApproval
+            }
+          }
+        }
+    """
+
+    private fun customEnvironmentDeployFlow() = """
+        version "1.0"
+        use module "kubernetes" version "1.0"
+        flow "custom environment deploy" {
+          systems {
+            system "k8s" { type: kubernetes }
+          }
+          steps {
+            kubernetes.deploy k8s {
+              app: "demo"
+              namespace: "customer-a"
+              image: "demo:1"
             }
           }
         }
