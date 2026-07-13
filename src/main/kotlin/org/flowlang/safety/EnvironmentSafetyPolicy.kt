@@ -121,7 +121,7 @@ object StandardEnvironmentSafetyPolicyNotes {
         val contract = StandardNotesPackageContracts.baseline().singleSafetyContract()
         return EnvironmentSafetyPolicyNotes(
             packageId = contract.packageId,
-            packageVersion = "0.9.5.7.7",
+            packageVersion = contract.packageVersion,
             rules = listOf(
                 EnvironmentPolicyRule(
                     ruleId = "environment.sensitive.production-like",
