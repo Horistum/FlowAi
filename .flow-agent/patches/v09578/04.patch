@@ -1,0 +1,182 @@
+diff --git a/targets/builtin-targets.yaml b/targets/builtin-targets.yaml
+index 3eee097622bfb0a2ccdb9641bf9a57202215df28..85e8d204e4c2db9f3e057abb8638072b1bdfd22a 100644
+--- a/targets/builtin-targets.yaml
++++ b/targets/builtin-targets.yaml
+@@ -1,8 +1,56 @@
+ kind: FlowTargetRegistry
+ version: "1.0"
+ description: Built-in target capability registry for the current Flow capability-contract line.
++expressionProfiles:
++  - id: flow-full
++    description: Complete Flow expression language support declared by target evidence.
++    supportsAll: true
++
++  - id: workflow-condition
++    description: Workflow condition expressions without regex or map literal support.
++    features:
++      - node.literal
++      - node.reference
++      - node.secret-reference
++      - node.member-access
++      - node.index-access
++      - node.template
++      - node.list
++      - call.any
++      - operator.unary.not
++      - operator.postfix.exists
++      - operator.postfix.empty
++      - operator.logical.and
++      - operator.logical.or
++      - operator.binary.==
++      - operator.binary.!=
++      - operator.binary.>
++      - operator.binary.>=
++      - operator.binary.<
++      - operator.binary.<=
++      - operator.binary.contains
++      - operator.binary.in
++      - operator.binary.startsWith
++      - operator.binary.endsWith
++
++  - id: equality-membership-condition
++    description: Equality and membership conditions over native scalar target values.
++    features:
++      - node.literal
++      - node.reference
++      - node.member-access
++      - operator.logical.and
++      - operator.binary.==
++      - operator.binary.!=
++      - operator.binary.in
++
++  - id: unavailable
++    description: No target expression adapter evidence is currently declared.
++    features: []
++
+ targets:
+   - name: local
++    expressionProfile: flow-full
+     description: Reference local target used to validate plan semantics before platform generation.
+     capabilities:
+       sequentialTasks: supported
+@@ -30,6 +78,7 @@ targets:
+       - Manual approvals require an interactive or external gate when running locally.
+ 
+   - name: jenkins
++    expressionProfile: flow-full
+     description: Jenkins Pipeline generator target. Good scripted support, weaker portability.
+     capabilities:
+       sequentialTasks: supported
+@@ -59,6 +108,7 @@ targets:
+       notification.send: supported
+ 
+   - name: github-actions
++    expressionProfile: workflow-condition
+     description: GitHub Actions generator target. Good for simple CI/CD, limited dynamic control-flow semantics.
+     capabilities:
+       sequentialTasks: supported
+@@ -91,6 +141,7 @@ targets:
+       - Approvals are normally modeled through protected environments, not inline workflow syntax.
+ 
+   - name: tekton
++    expressionProfile: equality-membership-condition
+     description: Tekton Pipelines target. Strong Kubernetes-native task model, limited dynamic loops and manual gates.
+     capabilities:
+       sequentialTasks: supported
+@@ -121,6 +172,7 @@ targets:
+       container.image: supported
+ 
+   - name: argo-workflows
++    expressionProfile: unavailable
+     description: Argo Workflows target. Strong DAG, artifacts and suspend support.
+     capabilities:
+       sequentialTasks: supported
+@@ -152,6 +204,7 @@ targets:
+       - Manual gates are typically represented with suspend templates.
+ 
+   - name: azure-devops
++    expressionProfile: unavailable
+     description: Azure DevOps Pipelines target. Strong stage/job model, platform-specific approvals/checks.
+     capabilities:
+       sequentialTasks: supported
+diff --git a/tests/FlowBehavioralConformanceTests.kt b/tests/FlowBehavioralConformanceTests.kt
+index 8cc93d7ed2dfd6cb84d3f128c9898573795dc49e..12617cf528ae25fb3bfcd3d159bcc9cdc3975a65 100644
+--- a/tests/FlowBehavioralConformanceTests.kt
++++ b/tests/FlowBehavioralConformanceTests.kt
+@@ -1,8 +1,7 @@
+ package org.flowlang.tests
+ 
+ import org.flowlang.capabilities.CompatibilityAnalyzer
+-import org.flowlang.capabilities.SupportLevel
+-import org.flowlang.capabilities.TargetCapability
++import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+ import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
+ import org.flowlang.generators.manifest.JenkinsManifestGenerator
+ import org.flowlang.generators.manifest.TargetManifest
+@@ -17,6 +16,7 @@ import org.flowlang.planner.PlanNode
+ import org.flowlang.planner.RetryGroupNode
+ import org.flowlang.planner.TaskNode
+ import org.flowlang.planner.TryPlanNode
++import java.io.File
+ import kotlin.test.Test
+ import kotlin.test.assertEquals
+ import kotlin.test.assertTrue
+@@ -37,11 +37,8 @@ import kotlin.test.assertTrue
+  */
+ class FlowBehavioralConformanceTests {
+ 
+-    private val targets = mapOf(
+-        "jenkins" to TargetCapability("jenkins", "Jenkins", conditions = SupportLevel.SUPPORTED),
+-        "github-actions" to TargetCapability("github-actions", "GitHub Actions", conditions = SupportLevel.SUPPORTED),
+-        "tekton" to TargetCapability("tekton", "Tekton", conditions = SupportLevel.PARTIAL)
+-    )
++    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
++        .filterKeys { it in setOf("jenkins", "github-actions", "tekton") }
+     private val generators = mapOf(
+         "jenkins" to JenkinsManifestGenerator(),
+         "github-actions" to GitHubActionsManifestGenerator(),
+diff --git a/tests/FlowExpressionPortabilityRobustnessTests.kt b/tests/FlowExpressionPortabilityRobustnessTests.kt
+index 85f6f1e9448db5f512c6e0a39aaafebce1c158d9..5da51e455b98c1fa6aa01db02ae14b59482454bc 100644
+--- a/tests/FlowExpressionPortabilityRobustnessTests.kt
++++ b/tests/FlowExpressionPortabilityRobustnessTests.kt
+@@ -40,7 +40,7 @@ class FlowExpressionPortabilityRobustnessTests {
+     @Test
+     fun gitHubRejectsUnsupportedConditionInsteadOfSilentlyTranslating() {
+         assertFailsWith<TargetExpressionTranslationException> {
+-            TargetExpressionTranslator.github("value matches '^prod-'", emptyList())
++            TargetExpressionTranslator.github("value matches '^prod-'", emptyList(), TargetExpressionTestEvidence.declaration("github-actions"))
+         }
+     }
+ 
+@@ -48,11 +48,11 @@ class FlowExpressionPortabilityRobustnessTests {
+     @Test
+     fun tektonReportsUntranslatableConditionInsteadOfGuessing() {
+         assertTrue(
+-            TargetExpressionTranslator.tektonWhen("count > 1", emptyList()) == null,
++            TargetExpressionTranslator.tektonWhen("count > 1", emptyList(), TargetExpressionTestEvidence.declaration("tekton")) == null,
+             "Unsupported Tekton comparison must be reported as untranslatable, not silently mapped."
+         )
+         assertTrue(
+-            TargetExpressionTranslator.tektonWhen("env == 'prod'", emptyList()) != null,
++            TargetExpressionTranslator.tektonWhen("env == 'prod'", emptyList(), TargetExpressionTestEvidence.declaration("tekton")) != null,
+             "Supported Tekton equality must still translate."
+         )
+     }
+@@ -61,7 +61,7 @@ class FlowExpressionPortabilityRobustnessTests {
+     @Test
+     fun tektonManifestSurfacesDroppedGuardAsErrorDiagnostic() {
+         val manifest = TektonManifestGenerator()
+-            .generate(conditionPlan("unsupported-condition-flow", "count > 1"), CompatibilityReport("tekton", SupportLevel.PARTIAL))
++            .generate(conditionPlan("unsupported-condition-flow", "count > 1"), TargetExpressionTestEvidence.compatibility("tekton", SupportLevel.PARTIAL))
+         assertTrue(
+             manifest.mappingNotes.any { it.level == "error" && it.feature == "condition.unsupported" },
+             "An unsupported Tekton condition must produce an explicit error mapping note (no silent guard drop)."
+@@ -72,7 +72,7 @@ class FlowExpressionPortabilityRobustnessTests {
+     @Test
+     fun supportedTektonConditionProducesNoUnsupportedDiagnostic() {
+         val manifest = TektonManifestGenerator()
+-            .generate(conditionPlan("supported-condition-flow", "env == 'prod'"), CompatibilityReport("tekton", SupportLevel.PARTIAL))
++            .generate(conditionPlan("supported-condition-flow", "env == 'prod'"), TargetExpressionTestEvidence.compatibility("tekton", SupportLevel.PARTIAL))
+         assertTrue(
+             manifest.mappingNotes.none { it.feature == "condition.unsupported" },
+             "A translatable condition must not be flagged as unsupported."
