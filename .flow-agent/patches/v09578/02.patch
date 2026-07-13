@@ -1,0 +1,122 @@
+diff --git a/src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt b/src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt
+index 145728168b61f38960a6bce8c11db363ba5a2168..4f4d4ca35815297d8987bc2d40247f75137c61e2 100644
+--- a/src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt
++++ b/src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt
+@@ -2,6 +2,7 @@ package org.flowlang.generators.manifest
+ 
+ import org.flowlang.ast.*
+ import org.flowlang.capabilities.TargetExpressionSupport
++import org.flowlang.capabilities.TargetExpressionSupportDeclaration
+ import org.flowlang.generators.GroovyExpr
+ import org.flowlang.parser.ExpressionParser
+ 
+@@ -9,9 +10,13 @@ import org.flowlang.parser.ExpressionParser
+ class TargetExpressionTranslationException(message: String, cause: Throwable? = null) : IllegalArgumentException(message, cause)
+ 
+ object TargetExpressionTranslator {
+-    fun groovy(condition: String, inputs: List<TargetInput>): String = try {
++    fun groovy(
++        condition: String,
++        inputs: List<TargetInput>,
++        expressionSupport: TargetExpressionSupportDeclaration?
++    ): String = try {
+         val parsed = parse(condition)
+-        TargetExpressionSupport.unsupportedReason("jenkins", parsed)?.let { throw TargetExpressionTranslationException(it) }
++        TargetExpressionSupport.unsupportedReason("jenkins", expressionSupport, parsed)?.let { throw TargetExpressionTranslationException(it) }
+         GroovyExpr(inputs.map { it.name }.toSet()).render(parsed)
+     } catch (e: TargetExpressionTranslationException) {
+         throw e
+@@ -19,9 +24,13 @@ object TargetExpressionTranslator {
+         throw TargetExpressionTranslationException("Unable to translate Flow condition to Groovy: $condition", e)
+     }
+ 
+-    fun github(condition: String, inputs: List<TargetInput>): String = try {
++    fun github(
++        condition: String,
++        inputs: List<TargetInput>,
++        expressionSupport: TargetExpressionSupportDeclaration?
++    ): String = try {
+         val parsed = parse(condition)
+-        TargetExpressionSupport.unsupportedReason("github-actions", parsed)?.let { throw TargetExpressionTranslationException(it) }
++        TargetExpressionSupport.unsupportedReason("github-actions", expressionSupport, parsed)?.let { throw TargetExpressionTranslationException(it) }
+         renderGitHub(parsed, inputs.map { it.name }.toSet())
+     } catch (e: TargetExpressionTranslationException) {
+         throw e
+@@ -94,9 +103,13 @@ object TargetExpressionTranslator {
+         .replace("\"", "\\\"")
+         .replace("\n", "\\n") + "\""
+ 
+-    fun tektonWhen(condition: String, inputs: List<TargetInput>): String? = try {
++    fun tektonWhen(
++        condition: String,
++        inputs: List<TargetInput>,
++        expressionSupport: TargetExpressionSupportDeclaration?
++    ): String? = try {
+         val parsed = parse(condition)
+-        if (TargetExpressionSupport.unsupportedReason("tekton", parsed) != null) null
++        if (TargetExpressionSupport.unsupportedReason("tekton", expressionSupport, parsed) != null) null
+         else renderTektonWhen(parsed, inputs.map { it.name }.toSet())
+     } catch (_: Exception) {
+         null
+diff --git a/src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt b/src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt
+index 0a3452ab4246fd3e6e7f13c5cd4420649c1737e7..b963ae99037c387c8be2d05e9dabd7d1c86456f4 100644
+--- a/src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt
++++ b/src/main/kotlin/org/flowlang/generators/manifest/TargetManifest.kt
+@@ -147,7 +147,7 @@ class TektonManifestGenerator : TargetManifestGenerator {
+         val partialNote = TargetMappingNote("warning", target, "manifest", "target.partial", "Tekton renderer is a partial generator and requires notes-driven target projection before production use.")
+         val untranslatableConditionNotes = resolvedJobs.mapNotNull { job ->
+             val condition = job.metadata["condition"]
+-            if (condition != null && TargetExpressionTranslator.tektonWhen(condition, inputs) == null) {
++            if (condition != null && TargetExpressionTranslator.tektonWhen(condition, inputs, compatibility.expressionSupport) == null) {
+                 TargetMappingNote(
+                     level = "error",
+                     target = target,
+diff --git a/src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt b/src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt
+index 4c7af1d1fde2e0524be5f83e75d893e1f2c2049f..87fce37fe20c039bfe397b363383020f0e1fda03 100644
+--- a/src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt
++++ b/src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt
+@@ -86,12 +86,11 @@ class JenkinsManifestRenderer {
+ 
+     private fun renderJenkinsCondition(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+         val condition = step.params["condition"] ?: "false"
+-        val rendered = try {
+-            TargetExpressionTranslator.groovy(condition, manifest.inputs)
+-        } catch (e: TargetExpressionTranslationException) {
+-            sb.appendLine("${indent}// Flow condition requires target review: ${e.message}")
+-            "false"
+-        }
++        val rendered = TargetExpressionTranslator.groovy(
++            condition,
++            manifest.inputs,
++            manifest.compatibility.expressionSupport
++        )
+         sb.appendLine("${indent}if ($rendered) {")
+         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+         sb.appendLine("${indent}}")
+@@ -191,7 +190,7 @@ class GitHubActionsManifestRenderer(
+     }
+ 
+     private fun githubJobIf(job: TargetJob, manifest: TargetManifest): String? {
+-        val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs) }
++        val own = job.metadata["condition"]?.let { TargetExpressionTranslator.github(it, manifest.inputs, manifest.compatibility.expressionSupport) }
+         if (job.metadata["errorHandler"] == "true") {
+             val parts = mutableListOf("always()", "failure()")
+             if (!own.isNullOrBlank()) parts += "($own)"
+@@ -241,9 +240,14 @@ class TektonManifestRenderer {
+         sb.appendLine("    - name: ${sanitizeId(job.id)}")
+         if (job.dependsOn.isNotEmpty()) sb.appendLine("      runAfter: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
+         job.metadata["condition"]?.let { condition ->
+-            val whenBlock = TargetExpressionTranslator.tektonWhen(condition, manifest.inputs)
+-            if (whenBlock != null) sb.appendLine(whenBlock.prependIndent("      ").trimEnd())
+-            else sb.appendLine("      # Flow condition is NOT enforced here - see condition.unsupported mapping note: $condition")
++            val whenBlock = TargetExpressionTranslator.tektonWhen(
++                condition,
++                manifest.inputs,
++                manifest.compatibility.expressionSupport
++            ) ?: throw TargetExpressionTranslationException(
++                "Target 'tekton' cannot enforce Flow condition with the supplied expression-support evidence: $condition"
++            )
++            sb.appendLine(whenBlock.prependIndent("      ").trimEnd())
+         }
+         sb.appendLine("      taskRef:")
+         sb.appendLine("        name: flow-materialization-required")
