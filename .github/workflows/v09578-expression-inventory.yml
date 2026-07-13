@@ -50,7 +50,8 @@ jobs:
       - name: Export working tree
         shell: bash
         run: |
-          tar --exclude=.git --exclude=build --exclude=.gradle -czf inventory/flow-v09578-working-tree.tar.gz .
+          tar --exclude=.git --exclude=build --exclude=.gradle --exclude=inventory -czf /tmp/flow-v09578-working-tree.tar.gz .
+          mv /tmp/flow-v09578-working-tree.tar.gz inventory/
 
       - name: Upload inventory
         uses: actions/upload-artifact@v4
