@@ -1,0 +1,41 @@
+name: v0.9.5.7.8 Expression Inventory
+
+on:
+  push:
+    branches:
+      - feature/v0957-8-target-expression-unknown-target-safety
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Collect expression and target evidence
+        shell: bash
+        run: |
+          mkdir -p inventory
+          {
+            echo '# Files under targets'
+            find targets -type f -maxdepth 2 -print | sort || true
+            echo
+            echo '# Target expression support references'
+            grep -RInE 'TargetExpressionSupport|condition\.expression|conditions\.inline|expression support|expression-support|supports.*expression|expression.*support' src/main src/test tests targets modules standard conformance docs .flow-agent || true
+            echo
+            echo '# Unknown target handling'
+            grep -RInE 'Unknown target|unknown target|targets\[|getValue\(target|when \(target\)|when \(targetName\)' src/main src/test tests || true
+            echo
+            echo '# Target capability declarations'
+            grep -RInE 'conditions:|features:|condition\.|expression\.' targets modules src/main src/test tests || true
+          } > inventory/expression-inventory.txt
+
+      - name: Upload inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: v09578-expression-inventory
+          path: inventory/expression-inventory.txt
