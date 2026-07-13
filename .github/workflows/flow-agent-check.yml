@@ -37,6 +37,9 @@ jobs:
       - name: Prepare CI Log Directory
         run: mkdir -p ci-logs
 
+      - name: Test Flow Agent Tooling
+        run: python3 -m unittest discover -s tools/tests -p 'test_*.py'
+
       - name: Validate Flow Agent Structure
         run: python3 tools/flow_agent_validate.py
 
@@ -96,6 +99,7 @@ jobs:
           echo "Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent tooling unit tests" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Offline Gradle test when cache is available" >> "$GITHUB_STEP_SUMMARY"
@@ -147,7 +151,7 @@ jobs:
         with:
           name: flow-ci-gradle-logs
           path: ci-logs/*.log
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Upload CI Test Reports
         if: always()
