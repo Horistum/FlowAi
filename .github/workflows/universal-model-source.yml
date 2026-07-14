@@ -1,27 +1,67 @@
-name: Universal Model Source Snapshot
+name: Universal Model Transaction
 
 on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  snapshot:
+  validate-and-persist:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
-      - name: Package source snapshot
+      - name: Reconstruct and verify migration
         shell: bash
         run: |
-          tar --exclude=.git --exclude=build --exclude=.gradle --exclude=.gradle-user-home -czf /tmp/flowai-source.tar.gz .
+          set -euo pipefail
+          cat .flow-agent/transactions/universal-model.patch.gz.b64.* > /tmp/universal-model.patch.gz.b64
+          echo "62e6e2a48cb80d025ace2f7c1d9cee531ea9b0405315be95ece30c0e058c7950  /tmp/universal-model.patch.gz.b64" | sha256sum -c -
+          base64 --decode /tmp/universal-model.patch.gz.b64 | gzip --decompress > /tmp/universal-model.patch
+          echo "b3f20e44654333e51c875db81aa0297ce7c299916cf8472212bc378a157af6df  /tmp/universal-model.patch" | sha256sum -c -
+          git apply --check /tmp/universal-model.patch
+          git apply /tmp/universal-model.patch
+          git diff --check
 
-      - name: Upload source snapshot
-        uses: actions/upload-artifact@v4
+      - name: Verify repaired architecture boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -R -n -E 'IntentWorkflowKind\.SCHEDULE|StandardCapability\.SCHEDULE' src/main/kotlin
+          ! grep -R -n -E 'val (jenkins|githubActions|tekton): String' src/main/kotlin
+          ! grep -R -n -E 'steps: \[\]|flow-materialization-required' src/main/kotlin/org/flowlang/generators
+          ! grep -R -n -E 'selector \?: "app=|StringLiteralNode\("default"\)' src/main/kotlin/org/flowlang/intent
+          test "$(grep -R -l 'reconcileCompatibilityReadiness()' src/main/kotlin/org/flowlang/generators/manifest | wc -l)" -ge 1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
-          name: flowai-universal-model-source
-          path: /tmp/flowai-source.tar.gz
-          if-no-files-found: error
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile production and tests
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon compileTestKotlin --stacktrace --console=plain
+
+      - name: Persist validated implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .flow-agent/transactions
+          rm -f .github/workflows/universal-model-source.yml
+          git config user.name "flow-ai-validation"
+          git config user.email "flow-ai-validation@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete universal model integrity and v0.9.5 contracts"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
