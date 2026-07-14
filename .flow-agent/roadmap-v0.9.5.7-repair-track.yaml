@@ -1,6 +1,6 @@
 track: v0.9.5.7-repair-track
 name: Materialization and projection honesty repair track
-status: active
+status: completed
 purpose: >-
   Repair the architectural gap identified after v0.9.5.7: notes, semantic,
   materialization, projection and registry models must be wired into real Flow
@@ -9,7 +9,7 @@ purpose: >-
 versionBoundary:
   publishedPackageVersion: "0.9.4"
   correctionTrack: "v0.9.5.x"
-  currentCorrectionItem: "0.9.5.7.8"
+  currentCorrectionItem: "0.9.5.7.9"
   correctionTrackStatus: "unreleased"
   correctionItemsArePackageVersions: false
   activePublicStandardVersion: "0.7.6"
@@ -107,7 +107,7 @@ items:
 
   - version: "0.9.5.7.9"
     name: Reference Scenario and Snapshot Honesty Reset
-    status: next
+    status: completed
     purpose: Align reference scenarios and snapshots with the repaired materialization and readiness model.
     requiredOutcome:
       - Reference scenarios no longer use active shell.run as the flagship build/test path.

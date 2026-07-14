@@ -1,0 +1,66 @@
+{
+  "snapshotVersion" : "1.0",
+  "standardVersion" : "0.7.6",
+  "scenarioId" : "build-test-deploy",
+  "overallState" : "REVIEW_ONLY",
+  "executable" : false,
+  "artifacts" : [ {
+    "file" : "normalized-intent.json",
+    "layer" : "SEMANTIC_INPUT",
+    "state" : "SEMANTIC_ONLY",
+    "executable" : false
+  }, {
+    "file" : "flow-ast.json",
+    "layer" : "SEMANTIC_AST",
+    "state" : "SEMANTIC_ONLY",
+    "executable" : false
+  }, {
+    "file" : "execution-plan.json",
+    "layer" : "SEMANTIC_PLAN",
+    "state" : "SEMANTIC_ONLY",
+    "executable" : false
+  }, {
+    "file" : "github-actions.review.yaml",
+    "layer" : "TARGET_PROJECTION",
+    "state" : "REVIEW_ONLY",
+    "executable" : false,
+    "target" : "github-actions"
+  }, {
+    "file" : "jenkins.review.yaml",
+    "layer" : "TARGET_PROJECTION",
+    "state" : "REVIEW_ONLY",
+    "executable" : false,
+    "target" : "jenkins"
+  }, {
+    "file" : "tekton.review.yaml",
+    "layer" : "TARGET_PROJECTION",
+    "state" : "REVIEW_ONLY",
+    "executable" : false,
+    "target" : "tekton"
+  } ],
+  "targets" : [ {
+    "target" : "github-actions",
+    "capabilityCompatibility" : "PARTIAL",
+    "effectiveCompatibility" : "PARTIAL",
+    "materializationReadiness" : "REVIEW_REQUIRED",
+    "projectionReadiness" : "REVIEW_ONLY",
+    "renderMode" : "REVIEW_ONLY",
+    "executable" : false
+  }, {
+    "target" : "jenkins",
+    "capabilityCompatibility" : "SUPPORTED",
+    "effectiveCompatibility" : "PARTIAL",
+    "materializationReadiness" : "REVIEW_REQUIRED",
+    "projectionReadiness" : "REVIEW_ONLY",
+    "renderMode" : "REVIEW_ONLY",
+    "executable" : false
+  }, {
+    "target" : "tekton",
+    "capabilityCompatibility" : "UNSUPPORTED",
+    "effectiveCompatibility" : "UNSUPPORTED",
+    "materializationReadiness" : "REVIEW_REQUIRED",
+    "projectionReadiness" : "REVIEW_ONLY",
+    "renderMode" : "REVIEW_ONLY",
+    "executable" : false
+  } ]
+}
