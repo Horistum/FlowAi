@@ -28,10 +28,87 @@ jobs:
           git apply --check /tmp/universal-test-fix.patch
           git apply /tmp/universal-test-fix.patch
 
-          base64 --decode .flow-agent/transactions/universal-review-inventory-fix.patch.gz.b64 | gzip --decompress > /tmp/universal-review-inventory-fix.patch
-          echo "b1e6e41766aa5e8405c78c6a0e1984142573bb2d87bdd3eb5c18c4652f8b9cf8  /tmp/universal-review-inventory-fix.patch" | sha256sum -c -
-          git apply --check /tmp/universal-review-inventory-fix.patch
-          git apply /tmp/universal-review-inventory-fix.patch
+          python3 - <<'PY'
+          from pathlib import Path
+
+          policy = Path("src/main/kotlin/org/flowlang/generators/manifest/TargetRenderPolicy.kt")
+          text = policy.read_text(encoding="utf-8")
+          old = '''        sb.appendLine("  findings:")
+                  readiness.findings.forEach { finding ->
+                      sb.appendLine("    - nodeId: ${quoted(finding.nodeId)}")
+                      sb.appendLine("      status: ${quoted(finding.status)}")
+                      sb.appendLine("      reason: ${quoted(finding.reason)}")
+                  }
+                  val requirements = manifest.bindingRequirements()
+          '''
+          new = '''        sb.appendLine("  findings:")
+                  readiness.findings.forEach { finding ->
+                      sb.appendLine("    - nodeId: ${quoted(finding.nodeId)}")
+                      sb.appendLine("      status: ${quoted(finding.status)}")
+                      sb.appendLine("      reason: ${quoted(finding.reason)}")
+                  }
+                  sb.appendLine("  semanticInventory:")
+                  manifest.reviewInventoryLeaves().forEach { step ->
+                      sb.appendLine("    - nodeId: ${quoted(step.id)}")
+                      sb.appendLine("      module: ${quoted(step.module)}")
+                      sb.appendLine("      action: ${quoted(step.action)}")
+                      sb.appendLine("      materializationStatus: ${quoted(step.materialization.status.name)}")
+                      sb.appendLine("      materializationEvidence: ${quoted(step.materialization.evidenceReference.orEmpty())}")
+                      sb.appendLine("      rendererPayloadPresent: ${step.rendererPayload != null}")
+                      step.rendererPayload?.let { payload ->
+                          sb.appendLine("      rendererPayloadKind: ${quoted(payload.kind.name)}")
+                          sb.appendLine("      rendererPayloadReference: ${quoted(payload.reference)}")
+                          sb.appendLine("      rendererPayloadEvidence: ${quoted(payload.evidenceReference)}")
+                      }
+                  }
+                  val requirements = manifest.bindingRequirements()
+          '''
+          if old not in text:
+              raise SystemExit("Target review findings block did not match the expected validated source.")
+          text = text.replace(old, new, 1)
+          marker = '''    private data class BindingRequirement(
+          '''
+          helpers = '''    private fun TargetManifest.reviewInventoryLeaves(): List<TargetStep> = jobs
+                  .flatMap { job -> job.steps.flatMap { it.flattenForReviewInventory() } }
+                  .filter { it.isReviewInventoryLeaf() }
+
+              private fun TargetStep.isReviewInventoryLeaf(): Boolean = children.isEmpty() && type !in setOf(
+                  "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry", "condition"
+              )
+
+              private fun TargetStep.flattenForReviewInventory(): List<TargetStep> =
+                  listOf(this) + children.flatMap { it.flattenForReviewInventory() }
+
+              private data class BindingRequirement(
+          '''
+          if marker not in text:
+              raise SystemExit("Target review helper insertion point was not found.")
+          policy.write_text(text.replace(marker, helpers, 1), encoding="utf-8")
+
+          tests = Path("tests/FlowRendererFailureSemanticsTests.kt")
+          text = tests.read_text(encoding="utf-8")
+          old = '''        outputs.forEach { output ->
+                      expectedNodeIds.forEach { nodeId ->
+                          assertTrue(output.contains("nodeId: \\"$nodeId\\""), "Review artifact silently dropped $nodeId:\\n$output")
+                      }
+                  }
+          '''
+          new = '''        outputs.forEach { output ->
+                      assertTrue(output.contains("semanticInventory:"), "Review artifact must expose complete semantic inventory:\\n$output")
+                      expectedNodeIds.forEach { nodeId ->
+                          assertTrue(output.contains("nodeId: \\"$nodeId\\""), "Review artifact silently dropped $nodeId:\\n$output")
+                      }
+                  }
+                  val jenkinsOutput = outputs.first()
+                  assertTrue(jenkinsOutput.contains("nodeId: \\"git_checkout_1\\""))
+                  assertTrue(jenkinsOutput.contains("materializationStatus: \\"NATIVE\\""))
+                  assertTrue(jenkinsOutput.contains("rendererPayloadPresent: true"))
+          '''
+          if old not in text:
+              raise SystemExit("Renderer semantic inventory assertion block did not match the expected source.")
+          tests.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+
           git diff --check
 
       - name: Set up JDK 21
