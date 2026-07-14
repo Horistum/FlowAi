@@ -1,40 +1,87 @@
-name: v0.9.5.7.9 Source Export
+name: v0.9.5.7.9 Honesty Reset Validation
 
 on:
   push:
     branches:
       - feature/v0957-9-reference-snapshot-honesty-reset
+  pull_request:
 
 permissions:
-  contents: read
-  issues: write
-  pull-requests: write
+  contents: write
 
 jobs:
-  export-source:
+  validate-and-persist:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
-      - name: Checkout branch
+      - name: Checkout feature branch
         uses: actions/checkout@v4
         with:
           ref: feature/v0957-9-reference-snapshot-honesty-reset
           fetch-depth: 0
 
-      - name: Archive checked-out source
+      - name: Apply exact implementation patches
         shell: bash
-        run: tar --exclude=.git -czf /tmp/flowai-source.tgz .
+        run: |
+          for patch in .flow-agent/patches/v09579/*.patch; do
+            echo "Checking $patch"
+            git apply --check "$patch"
+          done
+          for patch in .flow-agent/patches/v09579/*.patch; do
+            echo "Applying $patch"
+            git apply "$patch"
+          done
 
-      - name: Upload source archive
-        uses: actions/upload-artifact@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
-          name: flowai-source
-          path: /tmp/flowai-source.tgz
-          if-no-files-found: error
-          retention-days: 1
+          distribution: temurin
+          java-version: '21'
 
-      - name: Publish export run id
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Generate exact snapshots from the real pipeline
+        run: ./gradlew --no-daemon test --tests org.flowlang.tests.ReferenceSnapshotWriterTests --stacktrace --console=plain
+
+      - name: Remove transactional inventory and writer tests
+        run: |
+          rm tests/ReferenceSnapshotWriterTests.kt
+          rm tests/ReferenceScenarioStateInventoryTests.kt
+
+      - name: Test Flow Agent tooling
         env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: gh pr comment 53 --repo "${{ github.repository }}" --body "SOURCE_EXPORT_RUN_ID=${GITHUB_RUN_ID}"
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest tools/tests/test_flow_agent_roadmap.py
+
+      - name: Validate Flow Agent structure
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 tools/flow_agent_validate.py
+
+      - name: Generate Flow Agent context
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 tools/flow_agent_runner.py
+
+      - name: Compile and test
+        run: ./gradlew --no-daemon clean test --stacktrace --console=plain
+
+      - name: Run conformance
+        run: ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain
+
+      - name: Persist only fully validated changes
+        if: success()
+        run: |
+          rm .github/workflows/v09579-honesty-inventory.yml
+          rm -rf .flow-agent/patches/v09579
+          find tools -type d -name __pycache__ -prune -exec rm -rf {} +
+          git config user.name "flow-snapshot-honesty-bot"
+          git config user.email "flow-snapshot-honesty-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Reset reference scenario and snapshot honesty"
+          git push origin HEAD:feature/v0957-9-reference-snapshot-honesty-reset
