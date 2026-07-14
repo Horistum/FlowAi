@@ -1,0 +1,102 @@
+diff --git a/conformance/README.md b/conformance/README.md
+index b86247e..b29d88a 100644
+--- a/conformance/README.md
++++ b/conformance/README.md
+@@ -193,15 +193,17 @@ v0.3.2 adds vectors for:
+ - cleanup allowed with explicit retention,
+ - Kubernetes maintenance blocked without required dry-run.
+ 
+-## v0.2.0-rc3 Snapshots
++## Reference snapshots
+ 
+-End-to-end snapshots are stored under:
++The build/test/deploy reference snapshot set is stored under:
+ 
+ ```text
+ conformance/snapshots/build-test-deploy/
+ ```
+ 
+-They document the public standard path from normalized intent to rendered target output. Exact canonical diffing is planned for a later release; rc1 verifies snapshot presence and standard version metadata.
++It records semantic artifacts and current target projection evidence. The directory is not an end-to-end execution proof. `snapshot-index.json` declares each artifact as semantic-only, review-only, fail-fast or executable, and the current target outputs are committed under `.review.yaml` names with `executable: false`.
++
++Conformance compares normalized intent, Flow AST, canonical Execution Plan, snapshot evidence and rendered review artifacts against the real pipeline. Executable-looking vendor file names are forbidden until complete materialization and renderer payload evidence exists.
+ 
+ 
+ v0.7.0 adds a vector for:
+diff --git a/conformance/snapshots/build-test-deploy/README.md b/conformance/snapshots/build-test-deploy/README.md
+index 85f4df0..4cd74d5 100644
+--- a/conformance/snapshots/build-test-deploy/README.md
++++ b/conformance/snapshots/build-test-deploy/README.md
+@@ -1,9 +1,24 @@
+-# Build/Test/Deploy End-to-End Snapshot
++# Build/Test/Deploy Review-Only Reference Snapshot
+ 
+-This directory contains the first public end-to-end Flow conformance snapshot.
++This directory records the public semantic path for the `build-test-deploy` reference scenario and the current target projection evidence.
+ 
+-The snapshot represents the platform-neutral pipeline:
++It is **not** an end-to-end execution proof. The current Jenkins, GitHub Actions and Tekton outputs are review-only artifacts because required materialization and renderer payload evidence is incomplete.
+ 
+-`Intent YAML -> normalized intent -> Flow AST -> Execution Plan -> Compatibility Report -> Target Manifest -> Rendered Output`
++The committed files represent:
+ 
+-The files are intentionally committed as standard artifacts. Future releases should compare generated outputs against these snapshots or update them explicitly when the standard changes.
++```text
++Intent YAML
++  -> normalized intent snapshot (SEMANTIC_ONLY, non-executable)
++  -> Flow AST snapshot (SEMANTIC_ONLY, non-executable)
++  -> canonical Execution Plan snapshot (SEMANTIC_ONLY, non-executable)
++  -> target projection evidence
++       -> jenkins.review.yaml (REVIEW_ONLY, non-executable)
++       -> github-actions.review.yaml (REVIEW_ONLY, non-executable)
++       -> tekton.review.yaml (REVIEW_ONLY, non-executable)
++```
++
++`snapshot-index.json` is the authoritative claim for this snapshot set. It records capability compatibility, effective compatibility, materialization readiness, projection readiness, render mode and executable state for each target.
++
++Review-only files deliberately do not use executable-looking names such as `Jenkinsfile`, `github-actions.yml` or `tekton-pipeline.yaml`. Those names are reserved for artifacts backed by complete materialization and concrete renderer payload evidence.
++
++Snapshot updates must be generated from the real parser, intent planner, Flow planner, compatibility analyzer, manifest generators and render policy. A snapshot must never be edited merely to make conformance green.
+diff --git a/docs/V0_9_4_REFERENCE_SCENARIO_MATRIX.md b/docs/V0_9_4_REFERENCE_SCENARIO_MATRIX.md
+index 5c7d39b..8221066 100644
+--- a/docs/V0_9_4_REFERENCE_SCENARIO_MATRIX.md
++++ b/docs/V0_9_4_REFERENCE_SCENARIO_MATRIX.md
+@@ -40,7 +40,7 @@ Universal capabilities use names such as:
+ 
+ ```text
+ source.checkout
+-command.run
++software.test
+ deployment.apply
+ data.write
+ notification.send
+@@ -51,7 +51,7 @@ secret.consume
+ secret.rotate
+ ```
+ 
+-Implementation-specific module names such as `git.checkout`, `kubernetes.deploy`, `notify.send`, `database.upsert` or `shell.run` may appear inside Flow source examples, but they are not the semantic source of truth for the matrix.
++Implementation-specific module names such as `git.checkout`, `kubernetes.deploy`, `notify.send` or `database.upsert` may appear inside Flow source examples, but they are not the semantic source of truth for the matrix. The flagship build/test path uses `standard.execute` with the universal `software.test` capability and does not use active `shell.run`.
+ 
+ ## Adapter projection matrix
+ 
+@@ -83,14 +83,18 @@ Flow source
+   -> planner
+   -> target compatibility analysis
+   -> target manifest generation
+-  -> TargetCapabilityDegradationAnalyzer
++  -> compatibility-readiness analysis
++  -> render policy
++  -> exact review-only or executable expectation
+ ```
+ 
++A review-only expectation accepts only `REVIEW_ONLY` render mode with `executable=false` and degraded evidence. It no longer accepts blocked or executable output as an interchangeable success.
++
+ Negative scenarios are parsed and then required to fail at a core validation gate with explicit diagnostic codes. The exact gate may be the Flow validator or the safety boundary, depending on where the violation is detected first.
+ 
+ ## Why this matters
+ 
+-End-to-end readiness should not be claimed from one friendly example or from a matrix that is secretly shaped by a few orchestrators. The matrix creates a broader target-neutral reference set before v0.9.5 by covering normal workflows, risky workflows and known negative behavior.
++End-to-end readiness must not be claimed from one friendly example or from a matrix that is secretly shaped by a few orchestrators. The matrix creates a broader target-neutral reference set while keeping unresolved target projections explicitly review-only or blocked.
+ 
+ This keeps unsupported or unsafe cases visible without turning Flow Core into a Jenkins, GitHub Actions or Tekton abstraction layer.
+ 
