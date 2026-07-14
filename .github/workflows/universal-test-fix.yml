@@ -28,8 +28,6 @@ jobs:
           git apply --check /tmp/universal-test-fix.patch
           git apply /tmp/universal-test-fix.patch
 
-          test "$(git hash-object .flow-agent/transactions/universal-review-inventory-fix.patch.gz.b64)" = "1ef6cfaf5a45bf649cc0f8b9d72cee3e12c6e28f"
-          echo "e8e3eaae6696cd454dcefc522b190812f572a2c6653159888da4e5df15a1a69e  .flow-agent/transactions/universal-review-inventory-fix.patch.gz.b64" | sha256sum -c -
           base64 --decode .flow-agent/transactions/universal-review-inventory-fix.patch.gz.b64 | gzip --decompress > /tmp/universal-review-inventory-fix.patch
           echo "b1e6e41766aa5e8405c78c6a0e1984142573bb2d87bdd3eb5c18c4652f8b9cf8  /tmp/universal-review-inventory-fix.patch" | sha256sum -c -
           git apply --check /tmp/universal-review-inventory-fix.patch
