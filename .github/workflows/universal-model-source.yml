@@ -21,7 +21,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "b257f4aa7638965f30f97f07eca53f56de0cd1ac  .flow-agent/transactions/universal-model.patch.gz.b64.00" | git hash-object --stdin >/dev/null
           test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.00)" = "b257f4aa7638965f30f97f07eca53f56de0cd1ac"
           test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.01)" = "00495eaf0b0419d93a8b55e15e047a8c1cd892b6"
           test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.02a)" = "20aff9564169aa857560142112f978ec49884177"
@@ -67,12 +66,25 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Compile production and tests
+        id: compile
         shell: bash
         run: |
+          set +e
           chmod +x gradlew
-          ./gradlew --no-daemon compileTestKotlin --stacktrace --console=plain
+          ./gradlew --no-daemon compileTestKotlin --stacktrace --console=plain 2>&1 | tee /tmp/universal-model-compile.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+
+      - name: Upload compile diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-model-compile-diagnostics
+          path: /tmp/universal-model-compile.log
+          if-no-files-found: error
 
       - name: Persist validated implementation
+        if: steps.compile.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
