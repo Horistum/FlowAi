@@ -1,0 +1,22 @@
+version "1.0"
+
+use module "shell" version "1.0"
+
+flow "hello" {
+  systems {
+    system "local" {
+      type: shell
+    }
+  }
+
+  steps {
+    shell.run local {
+      command: "echo hello"
+    } -> result {
+      expect {
+        ok == true
+        code == 0
+      }
+    }
+  }
+}

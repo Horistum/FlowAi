@@ -1,86 +1,88 @@
 package org.flowlang.tests
 
 import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.flowlang.adapters.yaml.IntentYamlLoader
-import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
-import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.cli.Json
+import org.flowlang.conformance.ReferenceSnapshotBundleGenerator
 import org.flowlang.conformance.ReferenceSnapshotHonesty
 import org.flowlang.conformance.ReferenceSnapshotSet
 import org.flowlang.conformance.ReferenceSnapshotSetState
-import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
-import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetRenderMode
-import org.flowlang.generators.manifest.TektonManifestGenerator
-import org.flowlang.intent.IntentCapabilityValidator
-import org.flowlang.intent.IntentToAstPlanner
-import org.flowlang.modules.ModuleRegistry
-import org.flowlang.planner.ExecutionPlanCanonicalizer
-import org.flowlang.planner.FlowPlanner
-import org.flowlang.standard.FlowStandardVersions
 
 class FlowReferenceSnapshotHonestyTests {
     private val root = File("conformance/snapshots/build-test-deploy")
-    private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
-    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
 
     @Test
-    fun committedSnapshotIndexMatchesConcreteProjectionEvidence() {
-        val expected = ReferenceSnapshotHonesty.build("build-test-deploy", FlowStandardVersions.FLOW_STANDARD_VERSION, manifests())
-        val committed = Json.mapper.readValue(File(root, "snapshot-index.json"), ReferenceSnapshotSet::class.java)
-        assertEquals(expected, committed)
-        assertTrue(ReferenceSnapshotHonesty.validate(committed).isEmpty())
-        assertEquals(ReferenceSnapshotSetState.REVIEW_ONLY, committed.overallState)
-        assertFalse(committed.executable)
-        assertTrue(committed.targets.all { it.renderMode == TargetRenderMode.REVIEW_ONLY && !it.executable })
+    fun committedSnapshotIndexMatchesCanonicalGeneratedEvidence() {
+        val generated = Files.createTempDirectory("flow-reference-honesty").toFile()
+        try {
+            val expected = ReferenceSnapshotBundleGenerator().generate(
+                intentFile = File("examples/intent/build-test-deploy.intent.yaml"),
+                outputDir = generated,
+                scenarioId = "build-test-deploy"
+            )
+            val committed = Json.mapper.readValue(File(root, "snapshot-index.json"), ReferenceSnapshotSet::class.java)
+            assertEquals(expected, committed)
+            assertTrue(ReferenceSnapshotHonesty.validate(committed).isEmpty())
+            assertEquals(ReferenceSnapshotSetState.MIXED, committed.overallState)
+            assertFalse(committed.executable)
+            assertEquals(TargetRenderMode.REVIEW_ONLY, committed.targets.single { it.target == "jenkins" }.renderMode)
+            assertEquals(TargetRenderMode.REVIEW_ONLY, committed.targets.single { it.target == "github-actions" }.renderMode)
+            val tekton = committed.targets.single { it.target == "tekton" }
+            assertEquals(TargetRenderMode.FAIL_FAST, tekton.renderMode)
+            assertFalse(tekton.manifestPresent)
+            assertFalse(tekton.renderedArtifactPresent)
+        } finally {
+            generated.deleteRecursively()
+        }
     }
 
     @Test
-    fun reviewOnlySnapshotsDoNotUseExecutableLookingVendorFileNames() {
+    fun stateSpecificSnapshotsDoNotUseExecutableLookingOrBlockedYamlNames() {
         ReferenceSnapshotHonesty.legacyExecutableLookingFiles.forEach { legacy ->
             assertFalse(File(root, legacy).exists(), "Legacy snapshot '$legacy' must not remain committed.")
         }
-        listOf("jenkins.review.yaml", "github-actions.review.yaml", "tekton.review.yaml").forEach { name ->
-            val file = File(root, name)
-            assertTrue(file.isFile, "Missing review-only snapshot $name")
-            val content = file.readText()
+        listOf("jenkins.review.yaml", "github-actions.review.yaml").forEach { name ->
+            val content = File(root, name).readText()
             assertTrue(content.contains("renderMode: REVIEW_ONLY"))
             assertTrue(content.contains("executable: false"))
         }
+        val blocked = File(root, "tekton.blocked.json")
+        assertTrue(blocked.isFile)
+        assertFalse(File(root, "tekton.blocked.yaml").exists())
+        val content = blocked.readText()
+        assertTrue(content.contains("\"renderMode\" : \"FAIL_FAST\""))
+        assertTrue(content.contains("\"manifestPresent\" : false"))
+        assertTrue(content.contains("\"renderedArtifactPresent\" : false"))
     }
 
     @Test
-    fun semanticSnapshotsAreExactAndContainNoShellProjection() {
-        val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
-        IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val plan = FlowPlanner(registry).plan(ast)
-        assertEquals(Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(intent), Json.mapper.readTree(File(root, "normalized-intent.json")))
-        assertEquals(Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(ast), Json.mapper.readTree(File(root, "flow-ast.json")))
-        assertEquals(
-            Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(ExecutionPlanCanonicalizer.canonicalize(plan)),
-            Json.mapper.readTree(File(root, "execution-plan.json"))
-        )
-        val text = File(root, "execution-plan.json").readText()
-        assertFalse(text.contains("\"module\" : \"shell\""))
-        assertFalse(text.contains("\"action\" : \"run\""))
-        assertTrue(text.contains("\"module\" : \"standard\""))
-    }
-
-    private fun manifests(): List<TargetManifest> {
-        val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
-        IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
-        val compatibility = CompatibilityAnalyzer(targets)
-        return listOf(
-            JenkinsManifestGenerator().generate(plan, compatibility.analyze(plan, "jenkins")),
-            GitHubActionsManifestGenerator().generate(plan, compatibility.analyze(plan, "github-actions")),
-            TektonManifestGenerator().generate(plan, compatibility.analyze(plan, "tekton"))
-        )
+    fun committedSnapshotDirectoryMatchesCanonicalGeneratorFileForFile() {
+        val generated = Files.createTempDirectory("flow-reference-directory").toFile()
+        try {
+            ReferenceSnapshotBundleGenerator().generate(
+                intentFile = File("examples/intent/build-test-deploy.intent.yaml"),
+                outputDir = generated,
+                scenarioId = "build-test-deploy"
+            )
+            val generatedNames = generated.listFiles().orEmpty().filter { it.isFile }.map { it.name }.sorted()
+            val committedNames = root.listFiles().orEmpty().filter { it.isFile && it.name != "README.md" }.map { it.name }.sorted()
+            assertEquals(generatedNames, committedNames)
+            generatedNames.forEach { name ->
+                val generatedFile = File(generated, name)
+                val committedFile = File(root, name)
+                if (name.endsWith(".json")) {
+                    assertEquals(Json.mapper.readTree(generatedFile), Json.mapper.readTree(committedFile), name)
+                } else {
+                    assertEquals(generatedFile.readText().trimEnd(), committedFile.readText().trimEnd(), name)
+                }
+            }
+        } finally {
+            generated.deleteRecursively()
+        }
     }
 }

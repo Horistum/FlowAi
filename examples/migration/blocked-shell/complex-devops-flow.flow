@@ -1,7 +1,7 @@
 version "1.0"
 
 use module "git" version "1.0"
-use module "standard" version "1.0"
+use module "shell" version "1.0"
 use module "docker" version "1.0"
 use module "helm" version "1.0"
 use module "argocd" version "1.0"
@@ -26,8 +26,8 @@ flow "complex-devops-delivery" {
       url: "git@example.com/company/${app}.git"
     }
 
-    system "standard" {
-      type: standard
+    system "local" {
+      type: shell
     }
 
     system "registry" {
@@ -61,27 +61,23 @@ flow "complex-devops-delivery" {
 
     parallel failFast true {
       branch "unit-tests" {
-        standard.execute standard {
-          operation: "test"
-          capability: "software.test"
-          description: "Run unit-test intent through notes-driven target materialization"
-          suite: "unit"
+        shell.run local {
+          command: "mvn test"
         } -> unitTests {
           expect {
             ok == true
+            code == 0
           }
         }
       }
 
       branch "static-checks" {
-        standard.execute standard {
-          operation: "verify"
-          capability: "software.verify"
-          description: "Run static verification intent without embedding a tool command"
-          suite: "static"
+        shell.run local {
+          command: "mvn verify -DskipTests"
         } -> staticChecks {
           expect {
             ok == true
+            code == 0
           }
         }
       }

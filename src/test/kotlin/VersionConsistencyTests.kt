@@ -22,6 +22,7 @@ class VersionConsistencyTests {
 
     @Test
     fun publicContractVersionsMatchTheDocumentedBreakingMigration() {
+        assertEquals(packageVersion, FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION)
         assertEquals(publicStandardVersion, FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals(contractVersion, FlowStandardVersions.INTENT_VERSION)
         assertEquals(contractVersion, FlowStandardVersions.AST_VERSION)

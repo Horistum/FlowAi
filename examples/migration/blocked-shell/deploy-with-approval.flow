@@ -1,7 +1,7 @@
 version "1.0"
 
 use module "git" version "1.0"
-use module "standard" version "1.0"
+use module "shell" version "1.0"
 use module "docker" version "1.0"
 use module "kubernetes" version "1.0"
 use module "notify" version "1.0"
@@ -19,8 +19,8 @@ flow "deploy-with-approval" {
   }
 
   systems {
-    system "standard" {
-      type: standard
+    system "local" {
+      type: shell
     }
 
     system "registry" {
@@ -40,14 +40,12 @@ flow "deploy-with-approval" {
   }
 
   steps {
-    standard.execute standard {
-      operation: "test"
-      capability: "software.test"
-      description: "Validate application behavior before image materialization"
-      suite: "unit"
+    shell.run local {
+      command: "mvn test"
     } -> tests {
       expect {
         ok == true
+        code == 0
       }
     }
 

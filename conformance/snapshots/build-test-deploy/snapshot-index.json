@@ -1,8 +1,14 @@
 {
-  "snapshotVersion" : "1.0",
+  "snapshotVersion" : "2.0",
+  "versionBoundary" : {
+    "implementationPackageVersion" : "0.9.5",
+    "publicStandardVersion" : "0.8.0",
+    "artifactContractVersion" : "2.0",
+    "targetManifestVersion" : "2.0"
+  },
   "standardVersion" : "0.8.0",
   "scenarioId" : "build-test-deploy",
-  "overallState" : "REVIEW_ONLY",
+  "overallState" : "MIXED",
   "executable" : false,
   "artifacts" : [ {
     "file" : "normalized-intent.json",
@@ -32,9 +38,9 @@
     "executable" : false,
     "target" : "jenkins"
   }, {
-    "file" : "tekton.review.yaml",
+    "file" : "tekton.blocked.json",
     "layer" : "TARGET_PROJECTION",
-    "state" : "REVIEW_ONLY",
+    "state" : "FAIL_FAST",
     "executable" : false,
     "target" : "tekton"
   } ],
@@ -45,7 +51,10 @@
     "materializationReadiness" : "REVIEW_REQUIRED",
     "projectionReadiness" : "REVIEW_ONLY",
     "renderMode" : "REVIEW_ONLY",
-    "executable" : false
+    "executable" : false,
+    "manifestPresent" : true,
+    "renderedArtifactPresent" : true,
+    "blockers" : [ ]
   }, {
     "target" : "jenkins",
     "capabilityCompatibility" : "SUPPORTED",
@@ -53,14 +62,56 @@
     "materializationReadiness" : "REVIEW_REQUIRED",
     "projectionReadiness" : "REVIEW_ONLY",
     "renderMode" : "REVIEW_ONLY",
-    "executable" : false
+    "executable" : false,
+    "manifestPresent" : true,
+    "renderedArtifactPresent" : true,
+    "blockers" : [ ]
   }, {
     "target" : "tekton",
     "capabilityCompatibility" : "UNSUPPORTED",
     "effectiveCompatibility" : "UNSUPPORTED",
-    "materializationReadiness" : "REVIEW_REQUIRED",
-    "projectionReadiness" : "REVIEW_ONLY",
-    "renderMode" : "REVIEW_ONLY",
-    "executable" : false
+    "materializationReadiness" : "NOT_EVALUATED",
+    "projectionReadiness" : "FAIL_FAST",
+    "renderMode" : "FAIL_FAST",
+    "executable" : false,
+    "manifestPresent" : false,
+    "renderedArtifactPresent" : false,
+    "blockers" : [ {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "approve_1",
+      "feature" : "approvals",
+      "message" : "Feature 'approvals' is not supported by target 'tekton'.",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "standard_rollback_1",
+      "feature" : "standard.rollback",
+      "message" : "Feature 'standard.rollback' is not supported by target 'tekton'.",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_CAPABILITY",
+      "nodeId" : "",
+      "feature" : "approval.manual",
+      "message" : "Target 'tekton' does not support required capability 'approval.manual'.",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_CAPABILITY",
+      "nodeId" : "",
+      "feature" : "standard.rollback",
+      "message" : "Target 'tekton' does not support required capability 'standard.rollback'.",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "approve_1",
+      "feature" : "approvals",
+      "message" : "Feature 'approvals' is not supported by target 'tekton'.",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "standard_rollback_1",
+      "feature" : "standard.rollback",
+      "message" : "Feature 'standard.rollback' is not supported by target 'tekton'.",
+      "source" : "execution-readiness-report.json"
+    } ]
   } ]
 }
