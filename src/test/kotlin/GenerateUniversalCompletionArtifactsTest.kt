@@ -54,9 +54,8 @@ class GenerateUniversalCompletionArtifactsTest {
         val oldPlanner = plannerFile.readText()
         val oldBranch = "            StandardCapability.CUSTOM -> customAction(step, intent)"
         val newBranch = "            StandardCapability.CUSTOM -> standardAction(step, \"custom\", intent)"
-        require(oldPlanner.count { false } == 0)
         require(oldPlanner.contains(oldBranch)) { "Expected legacy CUSTOM lowering branch was not found." }
-        val correctedPlanner = oldPlanner.replace(oldBranch, newBranch, limit = 1)
+        val correctedPlanner = oldPlanner.replaceFirst(oldBranch, newBranch)
 
         val artifacts = linkedMapOf<String, ByteArray>()
         listOf(
