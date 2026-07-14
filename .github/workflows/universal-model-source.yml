@@ -29,6 +29,7 @@ jobs:
           test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.02d)" = "6f6aecd33003e8ec4e00bd39fd6a99b6fef5e17a"
           test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.03)" = "881966ea0f012fb27f86ecacabf999f7b795f0b3"
           test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.04)" = "254f6953a185fc0cf6ad3c48e1cdf14e9f636d82"
+          test "$(git hash-object .flow-agent/transactions/universal-model-compile-fix.patch.gz.b64)" = "fd6b74845cc2a30655409f56b4fa820ba49384b7"
           cat \
             .flow-agent/transactions/universal-model.patch.gz.b64.00 \
             .flow-agent/transactions/universal-model.patch.gz.b64.01 \
@@ -44,6 +45,11 @@ jobs:
           echo "b3f20e44654333e51c875db81aa0297ce7c299916cf8472212bc378a157af6df  /tmp/universal-model.patch" | sha256sum -c -
           git apply --check /tmp/universal-model.patch
           git apply /tmp/universal-model.patch
+          echo "591071c5f12381857e9c5edb5ccc98f080a1cb50701c9428473fffea41774fa5  .flow-agent/transactions/universal-model-compile-fix.patch.gz.b64" | sha256sum -c -
+          base64 --decode .flow-agent/transactions/universal-model-compile-fix.patch.gz.b64 | gzip --decompress > /tmp/universal-model-compile-fix.patch
+          echo "b8d170fa989024b231846725541febc49049063c2939054992e66e0e12f67d57  /tmp/universal-model-compile-fix.patch" | sha256sum -c -
+          git apply --check /tmp/universal-model-compile-fix.patch
+          git apply /tmp/universal-model-compile-fix.patch
           git diff --check
 
       - name: Verify repaired architecture boundaries
