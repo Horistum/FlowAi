@@ -73,6 +73,12 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         issues += safetyPolicyValidator.validate(intent)
 
         steps.forEach { step ->
+            if (!step.uses.isNullOrBlank() && !step.uses.contains('.')) {
+                issues += err(
+                    "USES_REQUIRES_MODULE_ACTION",
+                    "Step '${step.id}' must declare uses as '<module>.<action>'; bare module or tool hints are ambiguous."
+                )
+            }
             if (step.capability in setOf(StandardCapability.DEPLOY, StandardCapability.VERIFY) &&
                 step.uses.isNullOrBlank() &&
                 (step.params["engine"] != null || step.params["tool"] != null)

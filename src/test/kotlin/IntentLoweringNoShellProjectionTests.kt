@@ -38,7 +38,7 @@ class IntentLoweringNoShellProjectionTests {
     }
 
     @Test
-    fun verifyLoweringKeepsStructuredKubernetesAction() {
+    fun verifyLoweringRemainsTargetNeutralWithoutExplicitUse() {
         val intent = IntentDocument(
             name = "verify-structured",
             workflows = listOf(IntentWorkflow(
@@ -51,8 +51,10 @@ class IntentLoweringNoShellProjectionTests {
         val ast = IntentToAstPlanner().plan(intent)
         val action = ast.flow.steps.single() as ActionNode
 
-        assertEquals("kubernetes", action.module)
-        assertEquals("get", action.action)
+        assertEquals("standard", action.module)
+        assertEquals("execute", action.action)
+        assertEquals("verify", (action.params["operation"] as StringLiteralNode).value)
         assertFalse(action.module == "shell", "Verify lowering must not synthesize shell actions: $action")
+        assertTrue(ast.flow.systems.none { it.systemType == "kubernetes" }, "Neutral verify must not invent a Kubernetes system: ${ast.flow.systems}")
     }
 }

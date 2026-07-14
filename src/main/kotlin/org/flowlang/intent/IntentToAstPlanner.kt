@@ -144,7 +144,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     }
 
     private fun lowerStep(step: IntentStep, intent: IntentDocument, dependencyIds: List<String>): List<StatementNode> {
-        val node: StatementNode = if (!step.uses.isNullOrBlank()) {
+        val node: StatementNode = if (step.uses?.contains('.') == true) {
             customAction(step, intent)
         } else when (step.capability) {
             StandardCapability.CHECKOUT -> ActionNode(
@@ -271,10 +271,13 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     }
 
     private fun customAction(step: IntentStep, intent: IntentDocument): ActionNode {
-        val uses = step.uses ?: return standardAction(step, "custom", intent)
+        val uses = requireNotNull(step.uses) { "Explicit action lowering requires uses: <module>.<action>." }
         val parts = uses.split('.', limit = 2)
-        val module = parts.getOrNull(0) ?: "standard"
-        val action = parts.getOrNull(1) ?: "execute"
+        require(parts.size == 2 && parts.all { it.isNotBlank() }) {
+            "Step '${step.id}' must declare uses: <module>.<action>, got '$uses'."
+        }
+        val module = parts[0]
+        val action = parts[1]
         return ActionNode(
             module = module,
             action = action,

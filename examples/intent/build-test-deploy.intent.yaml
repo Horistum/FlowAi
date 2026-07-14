@@ -28,25 +28,20 @@ workflows:
     steps:
       - id: checkout
         capability: CHECKOUT
-        uses: git
       - id: test
         capability: TEST
-        uses: standard
         requires: [checkout]
       - id: build-image
         capability: BUILD_IMAGE
-        uses: docker
         requires: [test]
       - id: approve-prod
         capability: APPROVE
         requires: [build-image]
       - id: deploy
         capability: DEPLOY
-        uses: kubernetes
         requires: [approve-prod]
       - id: verify
         capability: VERIFY
-        uses: kubernetes
         requires: [deploy]
 policies:
   - name: production-approval

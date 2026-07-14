@@ -1,5 +1,5 @@
 import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.capabilities.TargetCapability
+import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMaterializationStatus
@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 
 class ManifestHonestyTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
-    private val targets = mapOf("jenkins" to TargetCapability(target = "jenkins", description = "test"))
+    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
 
     private fun jenkinsManifest(flowFile: String): TargetManifest {
         val ast = FlowParser().parse(File(flowFile))

@@ -133,7 +133,7 @@ object TargetReviewArtifactRenderer {
         sb.appendLine("  projectionReadiness: ${quoted(compatibilityReadiness.projectionReadiness.name)}")
         sb.appendLine("  renderMode: REVIEW_ONLY")
         sb.appendLine("  executable: false")
-        sb.appendLine("  reason: ${quoted("Target syntax was not emitted because required trigger or renderer payload evidence is unresolved.")}")
+        sb.appendLine("  reason: ${quoted("Target syntax was not emitted because required materialization, trigger, or renderer payload evidence is unresolved.")}")
         if (manifest.triggers.isNotEmpty()) {
             sb.appendLine("  triggers:")
             manifest.triggers.forEach { trigger ->
@@ -151,6 +151,21 @@ object TargetReviewArtifactRenderer {
             sb.appendLine("      status: ${quoted(finding.status)}")
             sb.appendLine("      reason: ${quoted(finding.reason)}")
         }
+        sb.appendLine("  semanticInventory:")
+        manifest.reviewInventoryLeaves().forEach { step ->
+            sb.appendLine("    - nodeId: ${quoted(step.id)}")
+            sb.appendLine("      module: ${quoted(step.module.orEmpty())}")
+            sb.appendLine("      action: ${quoted(step.action.orEmpty())}")
+            sb.appendLine("      materializationStatus: ${quoted(step.materialization.status.name)}")
+            sb.appendLine("      materializationSource: ${quoted(step.materialization.metadata["materializationSource"].orEmpty())}")
+            sb.appendLine("      projectionArtifact: ${quoted(step.materialization.requirements["projectionArtifact"].orEmpty())}")
+            sb.appendLine("      rendererPayloadPresent: ${step.rendererPayload != null}")
+            step.rendererPayload?.let { payload ->
+                sb.appendLine("      rendererPayloadKind: ${quoted(payload.kind.name)}")
+                sb.appendLine("      rendererPayloadReference: ${quoted(payload.reference)}")
+                sb.appendLine("      rendererPayloadEvidence: ${quoted(payload.evidenceReference)}")
+            }
+        }
         val requirements = manifest.bindingRequirements()
         if (requirements.isNotEmpty()) {
             sb.appendLine("  requirements:")
@@ -158,6 +173,17 @@ object TargetReviewArtifactRenderer {
         }
         return sb.toString()
     }
+
+    private fun TargetManifest.reviewInventoryLeaves(): List<TargetStep> = jobs
+        .flatMap { job -> job.steps.flatMap { it.flattenForReviewInventory() } }
+        .filter { it.isReviewInventoryLeaf() }
+
+    private fun TargetStep.isReviewInventoryLeaf(): Boolean = children.isEmpty() && type !in setOf(
+        "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry", "condition"
+    )
+
+    private fun TargetStep.flattenForReviewInventory(): List<TargetStep> =
+        listOf(this) + children.flatMap { it.flattenForReviewInventory() }
 
     private data class BindingRequirement(
         val nodeId: String,
