@@ -50,10 +50,11 @@ jobs:
                   sb.appendLine("  semanticInventory:")
                   manifest.reviewInventoryLeaves().forEach { step ->
                       sb.appendLine("    - nodeId: ${quoted(step.id)}")
-                      sb.appendLine("      module: ${quoted(step.module)}")
-                      sb.appendLine("      action: ${quoted(step.action)}")
+                      sb.appendLine("      module: ${quoted(step.module.orEmpty())}")
+                      sb.appendLine("      action: ${quoted(step.action.orEmpty())}")
                       sb.appendLine("      materializationStatus: ${quoted(step.materialization.status.name)}")
-                      sb.appendLine("      materializationEvidence: ${quoted(step.materialization.evidenceReference.orEmpty())}")
+                      sb.appendLine("      materializationSource: ${quoted(step.materialization.metadata[\"materializationSource\"].orEmpty())}")
+                      sb.appendLine("      projectionArtifact: ${quoted(step.materialization.requirements[\"projectionArtifact\"].orEmpty())}")
                       sb.appendLine("      rendererPayloadPresent: ${step.rendererPayload != null}")
                       step.rendererPayload?.let { payload ->
                           sb.appendLine("      rendererPayloadKind: ${quoted(payload.kind.name)}")
