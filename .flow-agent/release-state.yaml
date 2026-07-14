@@ -49,5 +49,5 @@ lastKnownValidation:
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry advance to 2.0."
     - "Manifest generation reconciliation is mandatory for CLI, conformance and library callers."
     - "Target-native output requires declarative registry or notes evidence and structured renderer payloads."
-    - "Only a successful final standard Flow CI workflow establishes release validation for the persisted head."
+    - "The final persisted head must pass the unmodified standard Flow CI workflow."
     - "No runtime executor, SDK lifecycle, shell projection or fabricated payload is introduced."
