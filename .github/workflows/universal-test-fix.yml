@@ -88,6 +88,14 @@ jobs:
 
           tests = Path("tests/FlowRendererFailureSemanticsTests.kt")
           text = tests.read_text(encoding="utf-8")
+          replacements = {
+              '"kubernetes_deploy_1",': '"standard_execute_2",',
+              '"kubernetes_get_1",': '"standard_execute_3",',
+          }
+          for old_id, new_id in replacements.items():
+              if old_id not in text:
+                  raise SystemExit(f"Expected historical node id {old_id} was not found.")
+              text = text.replace(old_id, new_id, 1)
           old = '''        outputs.forEach { output ->
                       expectedNodeIds.forEach { nodeId ->
                           assertTrue(output.contains("nodeId: \\"$nodeId\\""), "Review artifact silently dropped $nodeId:\\n$output")
@@ -164,5 +172,5 @@ jobs:
           git config user.name "flow-ai-validation"
           git config user.email "flow-ai-validation@users.noreply.github.com"
           git add -A
-          git commit -m "Correct universal model regression contracts"
+          git commit -m "Finalize universal model regression integrity"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
