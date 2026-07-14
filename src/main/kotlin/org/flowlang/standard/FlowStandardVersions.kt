@@ -7,10 +7,10 @@ package org.flowlang.standard
  * undocumented dialect. Tiny mercy, but still mercy.
  */
 object FlowStandardVersions {
-    const val FLOW_STANDARD_VERSION = "0.7.6"
-    const val INTENT_VERSION = "1.0"
-    const val AST_VERSION = "1.0"
-    const val EXECUTION_PLAN_VERSION = "1.1"
-    const val TARGET_MANIFEST_VERSION = "1.0"
-    const val TARGET_REGISTRY_VERSION = "1.0"
+    const val FLOW_STANDARD_VERSION = "0.8.0"
+    const val INTENT_VERSION = "2.0"
+    const val AST_VERSION = "2.0"
+    const val EXECUTION_PLAN_VERSION = "2.0"
+    const val TARGET_MANIFEST_VERSION = "2.0"
+    const val TARGET_REGISTRY_VERSION = "2.0"
 }

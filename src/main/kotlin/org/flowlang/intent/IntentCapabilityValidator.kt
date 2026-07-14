@@ -22,6 +22,33 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         val stepIds = steps.map { it.id }
 
         if (intent.name.isBlank()) issues += err("INTENT_NAME_EMPTY", "Intent name must not be empty.")
+        val workflowNames = intent.workflows.map { it.name }.toSet()
+        intent.triggers.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { id ->
+            issues += err("DUPLICATE_INTENT_TRIGGER", "Intent trigger '$id' is declared more than once.")
+        }
+        intent.triggers.forEach { trigger ->
+            trigger.workflows.filter { it !in workflowNames }.forEach { workflow ->
+                issues += err("UNKNOWN_TRIGGER_WORKFLOW", "Trigger '${trigger.id}' references unknown workflow '$workflow'.")
+            }
+            when (trigger.type) {
+                IntentTriggerType.SCHEDULE -> {
+                    val schedule = trigger.schedule
+                    if (schedule == null) issues += err("SCHEDULE_TRIGGER_MISSING_SCHEDULE", "Schedule trigger '${trigger.id}' must declare schedule evidence.")
+                    else {
+                        if (schedule.expression.isBlank()) issues += err("SCHEDULE_EXPRESSION_EMPTY", "Schedule trigger '${trigger.id}' must declare a non-empty expression.")
+                        if (schedule.kind == IntentScheduleKind.INTERVAL && !ISO_INTERVAL.matches(schedule.expression)) {
+                            issues += err("SCHEDULE_INTERVAL_INVALID", "Interval trigger '${trigger.id}' must use an ISO-8601 duration such as P30D.")
+                        }
+                    }
+                }
+                IntentTriggerType.EVENT, IntentTriggerType.WEBHOOK -> if (trigger.event.isNullOrBlank()) {
+                    issues += err("EVENT_TRIGGER_MISSING_EVENT", "Trigger '${trigger.id}' must declare event.")
+                }
+                IntentTriggerType.MANUAL -> if (trigger.schedule != null || !trigger.event.isNullOrBlank()) {
+                    issues += err("MANUAL_TRIGGER_HAS_EXTERNAL_CONDITION", "Manual trigger '${trigger.id}' must not declare schedule or event conditions.")
+                }
+            }
+        }
         stepIds.groupBy { it }.filterValues { it.size > 1 }.keys.forEach { id ->
             issues += err("DUPLICATE_INTENT_STEP", "Intent step '$id' is declared more than once.")
         }
@@ -46,6 +73,15 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         issues += safetyPolicyValidator.validate(intent)
 
         steps.forEach { step ->
+            if (step.capability in setOf(StandardCapability.DEPLOY, StandardCapability.VERIFY) &&
+                step.uses.isNullOrBlank() &&
+                (step.params["engine"] != null || step.params["tool"] != null)
+            ) {
+                issues += err(
+                    "TARGET_TOOL_HINT_REQUIRES_USES",
+                    "Step '${step.id}' must express target-specific lowering through 'uses: <module>.<action>'; engine/tool hints are not target-neutral semantics."
+                )
+            }
             val contract = StandardCapabilityContracts.requireContract(step.capability)
             contract.requiredParams.forEach { required ->
                 if (step.params[required].isBlankIntent()) {
@@ -69,19 +105,6 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
                 }
             }
 
-            // ArgoCD is selected by capability DEPLOY with engine/tool=argocd, not by a generic deploy alone.
-            if (step.capability == StandardCapability.DEPLOY && (step.params["engine"].asTextOrNull() ?: step.params["tool"].asTextOrNull())?.equals("argocd", ignoreCase = true) == true) {
-                val argoName = explicitSystem ?: "argo"
-                val argo = systemsByName[argoName]
-                if (argo == null) {
-                    issues += err("MISSING_REQUIRED_SYSTEM", "ArgoCD deploy step '${step.id}' requires system '$argoName' of type 'argocd'.")
-                } else if (normalizeSystemType(argo.type) != "argocd") {
-                    issues += err("INTENT_SYSTEM_TYPE_MISMATCH", "ArgoCD deploy step '${step.id}' targets '$argoName', but it is '${normalizeSystemType(argo.type)}'.")
-                } else {
-                    val argocdContract = registry.findSystemType("argocd")?.second
-                    if (argocdContract != null) validateConfig("System '$argoName'", argo.config, argocdContract.input, issues)
-                }
-            }
         }
 
         detectCycles(steps, issues)
@@ -158,13 +181,15 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
 
     private enum class VisitState { VISITING, DONE }
 
-    private fun requiredSystemType(step: IntentStep): String? = when (step.capability) {
-        StandardCapability.CHECKOUT -> "git"
-        StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE -> "docker"
-        StandardCapability.DEPLOY, StandardCapability.VERIFY -> if ((step.params["engine"].asTextOrNull() ?: step.params["tool"].asTextOrNull())?.equals("argocd", true) == true) "argocd" else "kubernetes"
-        StandardCapability.NOTIFY -> "notify"
-        StandardCapability.CALL_API -> "rest"
-        else -> null
+    private fun requiredSystemType(step: IntentStep): String? {
+        step.uses?.substringBefore('.')?.takeIf { it.isNotBlank() }?.let { return normalizeSystemType(it) }
+        return when (step.capability) {
+            StandardCapability.CHECKOUT -> "git"
+            StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE -> "docker"
+            StandardCapability.NOTIFY -> "notify"
+            StandardCapability.CALL_API -> "rest"
+            else -> null
+        }
     }
 
     private fun normalizeSystemType(type: String): String = when (type) {
@@ -174,6 +199,10 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
     }
 
     private fun err(code: String, message: String) = IntentValidationIssue("error", code, message)
+
+    companion object {
+        private val ISO_INTERVAL = Regex("""^P(?=\d|T\d)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$""")
+    }
     private fun warn(code: String, message: String) = IntentValidationIssue("warning", code, message)
 }
 

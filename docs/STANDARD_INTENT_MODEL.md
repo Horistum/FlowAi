@@ -1,99 +1,114 @@
-# Flow Standard Intent Model v1.0
+# Flow Standard Intent Model v2.0
 
-The Standard Intent Model is the high-level layer above low-level Flow source syntax.
+The Standard Intent Model is Flow's target-neutral contract for describing what should happen before any target adapter decides how it can be represented.
 
-It captures what the user wants before the system lowers it to canonical Flow AST and then to an Execution Plan.
-
-## Why this layer exists
-
-Low-level Flow can express precise actions:
-
-```flow
-shell.run local {
-  command: "mvn test"
-} -> tests
-```
-
-But the original Flow vision is higher-level:
+It sits above the concrete Flow source language and below human or AI-authored requests:
 
 ```text
-Build the application.
-Run tests.
-Deploy to production only after approval.
-Verify health.
-Rollback on failure.
+Human or AI intent
+  -> Standard Intent Model 2.0
+  -> intent validation
+  -> Flow AST 2.0
+  -> Flow validation
+  -> Execution Plan 2.0
+  -> compatibility and materialization negotiation
+  -> Target Manifest 2.0
 ```
 
-The Standard Intent Model keeps Flow from becoming only a technical parser DSL.
+The model does not execute work and does not choose a vendor by guessing. Target selection, projection evidence and renderer payloads are separate contracts.
 
-## Intent pipeline
-
-```text
-Human Intent
-  -> AI Draft Intent
-  -> Standard Intent Model
-  -> Intent Validator
-  -> Flow AST
-  -> Flow Validator
-  -> Execution Plan
-```
-
-## Model shape
+## Document shape
 
 ```yaml
-intentVersion: "1.0"
+intentVersion: "2.0"
 kind: FlowIntentDocument
 name: build-test-deploy
+
 inputs:
   - name: environment
     type: option[dev,test,prod]
     required: true
+
 systems:
   - name: source
     type: git
-  - name: registry
-    type: dockerRegistry
-  - name: cluster
-    type: kubernetes
+  - name: standard
+    type: standard
+
+triggers:
+  - id: manual-run
+    type: MANUAL
+    workflows: [application-lifecycle]
+
 workflows:
   - name: application-lifecycle
     kind: DEPLOY
     steps:
       - id: checkout
         capability: CHECKOUT
-        uses: git
+        uses: git.checkout
+        params:
+          system: source
+          url: https://example.invalid/application.git
       - id: test
         capability: TEST
-        uses: shell
         requires: [checkout]
-      - id: build-image
-        capability: BUILD_IMAGE
-        uses: docker
-        requires: [test]
-      - id: approve-prod
-        capability: APPROVE
-        requires: [build-image]
       - id: deploy
         capability: DEPLOY
-        uses: kubernetes
-        requires: [approve-prod]
+        requires: [test]
       - id: verify
         capability: VERIFY
-        uses: kubernetes
         requires: [deploy]
+
 policies:
   - name: production-approval
     type: APPROVAL
     condition: environment == 'prod'
+
 failure:
   notify: true
   rollback: true
   stopOnError: true
 ```
 
+`uses` is explicit. Without it, a standard capability lowers to target-neutral `standard.execute` intent. Flow does not silently invent Kubernetes, a shell command or another vendor implementation.
+
+## First-class triggers
+
+Triggers are top-level orchestration intent, not workflow steps.
+
+### Interval schedule
+
+```yaml
+triggers:
+  - id: renew-every-30-days
+    type: SCHEDULE
+    workflows: [renew-certificate]
+    schedule:
+      kind: INTERVAL
+      expression: P30D
+```
+
+### Cron schedule
+
+```yaml
+triggers:
+  - id: nightly-backup
+    type: SCHEDULE
+    workflows: [backup]
+    schedule:
+      kind: CRON
+      expression: "0 2 * * *"
+      timezone: Europe/Prague
+```
+
+### Other trigger kinds
+
+Intent 2.0 defines `MANUAL`, `SCHEDULE`, `EVENT` and `WEBHOOK`. Target compatibility must state whether a trigger can be represented. Unsupported trigger semantics fail closed or remain review-only; they are never converted into an ordinary `SCHEDULE` task.
+
 ## Standard capabilities
 
-Initial standard capabilities:
+The public capability vocabulary includes target-neutral work such as:
 
 - CHECKOUT
 - BUILD
@@ -112,24 +127,45 @@ Initial standard capabilities:
 - BACKUP
 - RESTORE
 - CLEANUP
-- RUN_COMMAND
+- CERTIFICATE_RENEW
 - CALL_API
 - CUSTOM
 
-## Important design rule
+`SCHEDULE` is deliberately absent because scheduling belongs to the trigger model. `RUN_COMMAND` may represent preserved legacy or migration intent, but Flow Core does not project it through a shell execution path.
 
-The Standard Intent Model does not replace modules. It selects and organizes capabilities. Modules provide concrete implementations.
+## Lowering rules
 
-Example:
+A step with an explicit implementation reference preserves that intent:
 
-```text
-Intent: TEST
-  -> could lower to shell.run, maven.test, gradle.test, npm.test, or a target-native task
+```yaml
+- id: checkout
+  capability: CHECKOUT
+  uses: git.checkout
 ```
 
-## Work in progress
+A step without `uses` remains semantic:
 
-- Full intent-to-AST lowering is not implemented yet.
-- Intent validation is only represented by data classes in this version.
-- AI prompt contracts for producing this model are not implemented yet.
-- Capability selection rules are not implemented yet.
+```yaml
+- id: deploy
+  capability: DEPLOY
+```
+
+This lowers to a standard operation, not to `kubernetes.deploy`. A target may later provide declarative projection evidence for that semantic operation. Missing evidence remains `ADAPTER_REQUIRED`.
+
+## Validation boundary
+
+Intent validation covers, among other things:
+
+- document and contract version,
+- unique workflow, trigger and step identifiers,
+- valid dependency references,
+- trigger-to-workflow references,
+- schedule form and ISO-8601 interval syntax,
+- explicit implementation references,
+- policy and failure structure.
+
+Domain loaders parse YAML; intent validation determines whether the resulting document is a valid Flow intent contract.
+
+## Version migration
+
+Intent 1.x documents are not silently accepted as Intent 2.0. They require explicit migration because triggers and target-neutral lowering change serialized semantics. In particular, legacy `SCHEDULE` workflow steps must move to top-level `triggers`.

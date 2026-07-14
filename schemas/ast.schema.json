@@ -1,16 +1,42 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/ast/1.0/ast.schema.json",
-  "title": "Flow AST v1.0 draft",
+  "$id": "https://flowlang.dev/schemas/ast/2.0/ast.schema.json",
+  "title": "Flow AST v2.0",
   "type": "object",
   "required": ["astVersion", "sourceVersion", "kind", "imports", "flow"],
   "properties": {
-    "astVersion": {"type": "string"},
-    "sourceVersion": {"type": "string"},
-    "kind": {"const": "FlowDocument"},
-    "imports": {"type": "array"},
-    "flow": {"type": "object"},
-    "metadata": {"type": "object"}
+    "astVersion": {"const":"2.0"},
+    "sourceVersion": {"type":"string"},
+    "kind": {"const":"FlowDocument"},
+    "imports": {"type":"array"},
+    "flow": {
+      "type":"object",
+      "required":["name","triggers","steps"],
+      "properties": {
+        "name":{"type":"string"},
+        "input":{"type":"array"},
+        "vars":{"type":"array"},
+        "systems":{"type":"array"},
+        "triggers":{"type":"array","items":{"$ref":"#/$defs/trigger"}},
+        "steps":{"type":"array"},
+        "errorHandler":{"type":["object","null"]}
+      },
+      "additionalProperties": true
+    },
+    "metadata": {"type":"object"}
+  },
+  "$defs": {
+    "trigger": {
+      "type":"object",
+      "required":["type","id","triggerType","workflows"],
+      "properties": {
+        "type":{"const":"Trigger"}, "id":{"type":"string"},
+        "triggerType":{"enum":["MANUAL","SCHEDULE","EVENT","WEBHOOK"]},
+        "workflows":{"type":"array","items":{"type":"string"}},
+        "schedule":{"type":["object","null"]}, "event":{"type":["string","null"]},
+        "params":{"type":"object"}
+      }
+    }
   },
   "additionalProperties": true
 }

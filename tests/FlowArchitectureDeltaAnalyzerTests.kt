@@ -15,7 +15,7 @@ class FlowArchitectureDeltaAnalyzerTests {
         val baseline = StandardModelSnapshot.fromYaml(File("standard/architecture/standard-model-baseline-v0.7.3.yaml"))
         val delta = ArchitectureDeltaAnalyzer(baseline).analyze()
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals("PASS", delta.status, delta.issues.joinToString { it.code + ":" + it.subject })
         assertEquals("0.7.3", delta.previousVersion)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, delta.currentVersion)

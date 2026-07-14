@@ -10,7 +10,7 @@ class FlowStandardExportSelfVerificationTests {
     fun manifestDefinesSelfVerificationCommandsAndInputs() {
         val manifest = StandardSurface.standardExportManifest()
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals("1.3", manifest.manifestVersion)
         assertTrue(manifest.selfVerificationCommands.contains("./gradlew clean test"))
         assertTrue(manifest.selfVerificationCommands.any { it.contains("conformance") })

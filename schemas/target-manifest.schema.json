@@ -1,64 +1,80 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/target-manifest.schema.json",
-  "title": "Flow Target Manifest",
+  "$id": "https://flowlang.dev/schemas/target-manifest/2.0/target-manifest.schema.json",
+  "title": "Flow Target Manifest v2.0",
   "type": "object",
-  "required": ["manifestVersion", "standardVersion", "target", "flowName", "jobs"],
+  "required": ["manifestVersion", "standardVersion", "target", "flowName", "compatibility", "triggers", "jobs"],
   "properties": {
-    "manifestVersion": { "type": "string" },
-    "standardVersion": { "type": "string" },
-    "target": { "type": "string" },
-    "flowName": { "type": "string" },
-    "mappingNotes": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/mappingNote" }
-    },
-    "jobs": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "steps"],
-        "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "dependsOn": { "type": "array", "items": { "type": "string" } },
-          "mappingNotes": { "type": "array", "items": { "$ref": "#/$defs/mappingNote" } },
-          "steps": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["id", "type"],
-              "properties": {
-                "id": { "type": "string" },
-                "name": { "type": "string" },
-                "type": { "type": "string" },
-                "module": { "type": "string" },
-                "action": { "type": "string" },
-                "target": { "type": "string" },
-                "run": { "type": "string" },
-                "dependsOn": { "type": "array", "items": { "type": "string" } },
-                "mappingNotes": { "type": "array", "items": { "$ref": "#/$defs/mappingNote" } },
-                "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
-              }
-            }
-          },
-          "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
-        }
-      }
-    },
+    "manifestVersion": { "const": "2.0" },
+    "standardVersion": { "const": "0.8.0" },
+    "target": { "type": "string", "minLength": 1 },
+    "flowName": { "type": "string", "minLength": 1 },
+    "compatibility": { "type": "object" },
+    "inputs": { "type": "array" },
+    "triggers": { "type": "array", "items": { "$ref": "#/$defs/trigger" } },
+    "mappingNotes": { "type": "array", "items": { "$ref": "#/$defs/mappingNote" } },
+    "jobs": { "type": "array", "items": { "$ref": "#/$defs/job" } },
     "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
   },
   "$defs": {
-    "mappingNote": {
+    "trigger": {
       "type": "object",
-      "required": ["level", "target", "nodeId", "feature", "message"],
+      "required": ["id", "type", "workflows"],
       "properties": {
-        "level": { "type": "string" },
-        "target": { "type": "string" },
-        "nodeId": { "type": "string" },
-        "feature": { "type": "string" },
-        "message": { "type": "string" }
-      }
+        "id": {"type":"string"}, "type":{"enum":["MANUAL","SCHEDULE","EVENT","WEBHOOK"]},
+        "workflows":{"type":"array","items":{"type":"string"}},
+        "scheduleKind":{"type":["string","null"]}, "scheduleExpression":{"type":["string","null"]},
+        "timezone":{"type":["string","null"]}, "event":{"type":["string","null"]},
+        "params":{"type":"object","additionalProperties":{"type":"string"}}
+      }, "additionalProperties": false
+    },
+    "job": {
+      "type":"object", "required":["id","steps"],
+      "properties": {
+        "id":{"type":"string"}, "name":{"type":"string"},
+        "dependsOn":{"type":"array","items":{"type":"string"}},
+        "steps":{"type":"array","items":{"$ref":"#/$defs/step"}},
+        "mappingNotes":{"type":"array","items":{"$ref":"#/$defs/mappingNote"}},
+        "metadata":{"type":"object","additionalProperties":{"type":"string"}}
+      }, "additionalProperties": false
+    },
+    "step": {
+      "type":"object", "required":["id","type","materialization"],
+      "properties": {
+        "id":{"type":"string"}, "name":{"type":"string"}, "type":{"type":"string"},
+        "module":{"type":["string","null"]}, "action":{"type":["string","null"]}, "target":{"type":["string","null"]},
+        "materialization":{"$ref":"#/$defs/materialization"},
+        "rendererPayload":{"oneOf":[{"$ref":"#/$defs/rendererPayload"},{"type":"null"}]},
+        "dependsOn":{"type":"array","items":{"type":"string"}},
+        "params":{"type":"object","additionalProperties":{"type":"string"}},
+        "children":{"type":"array","items":{"$ref":"#/$defs/step"}},
+        "mappingNotes":{"type":"array","items":{"$ref":"#/$defs/mappingNote"}},
+        "metadata":{"type":"object","additionalProperties":{"type":"string"}}
+      }, "additionalProperties": false
+    },
+    "materialization": {
+      "type":"object", "required":["status","capability","reason","requirements","metadata"],
+      "properties": {
+        "status":{"enum":["NATIVE","NOTES_PROJECTED","ADAPTER_REQUIRED","DECLARATIVE_ONLY","SEMANTIC_ONLY","UNSUPPORTED","BLOCKED"]},
+        "capability":{"type":"string"}, "reason":{"type":"string","minLength":1},
+        "requirements":{"type":"object","additionalProperties":{"type":"string"}},
+        "metadata":{"type":"object","additionalProperties":{"type":"string"}}
+      }, "additionalProperties": false
+    },
+    "rendererPayload": {
+      "type":"object", "required":["kind","target","reference","parameters","evidenceReference"],
+      "properties": {
+        "kind":{"enum":["JENKINS_STEP","GITHUB_ACTION","TEKTON_TASK"]},
+        "target":{"type":"string"}, "reference":{"type":"string","minLength":1},
+        "parameters":{"type":"object","additionalProperties":{"type":"string"}},
+        "evidenceReference":{"type":"string","minLength":1}
+      }, "additionalProperties": false
+    },
+    "mappingNote": {
+      "type":"object", "required":["level","target","nodeId","feature","message"],
+      "properties": { "level":{"type":"string"}, "target":{"type":"string"}, "nodeId":{"type":"string"}, "feature":{"type":"string"}, "message":{"type":"string"} },
+      "additionalProperties": false
     }
-  }
+  },
+  "additionalProperties": false
 }

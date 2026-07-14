@@ -287,6 +287,31 @@ abstract class BaseScenarioPack : ScenarioPack {
     protected fun recommendedQuestion(id: String, field: String, question: String): ClarificationQuestion =
         ClarificationQuestion(id, field, ClarificationSeverity.RECOMMENDED, question)
 
+    protected fun recurringSchedule(text: String): IntentSchedule? {
+        val lower = normalizeText(text)
+        val interval = Regex("""\bevery\s+(\d+)\s*(day|days|d|hour|hours|h|week|weeks|w|minute|minutes|min)\b""")
+            .find(lower)
+        if (interval != null) {
+            val amount = interval.groupValues[1].toInt()
+            require(amount > 0) { "Recurring schedule interval must be positive." }
+            val expression = when (interval.groupValues[2]) {
+                "day", "days", "d" -> "P${amount}D"
+                "hour", "hours", "h" -> "PT${amount}H"
+                "week", "weeks", "w" -> "P${amount * 7}D"
+                else -> "PT${amount}M"
+            }
+            return IntentSchedule(IntentScheduleKind.INTERVAL, expression)
+        }
+        val cadence = when {
+            Regex("""\bnightly\b|\bevery night\b""").containsMatchIn(lower) -> "nightly"
+            Regex("""\bdaily\b|\bevery day\b""").containsMatchIn(lower) -> "daily"
+            Regex("""\bweekly\b|\bevery week\b""").containsMatchIn(lower) -> "weekly"
+            Regex("""\bmonthly\b|\bevery month\b""").containsMatchIn(lower) -> "monthly"
+            else -> null
+        }
+        return cadence?.let { IntentSchedule(IntentScheduleKind.CALENDAR, it) }
+    }
+
     protected fun mediumRisk(id: String, message: String, recommendation: String? = null, mitigated: Boolean = false): IntentRisk =
         IntentRisk(id, RiskSeverity.MEDIUM, message, recommendation, mitigated)
 
@@ -327,7 +352,8 @@ abstract class BaseScenarioPack : ScenarioPack {
         assumptions: List<NormalizationAssumption> = emptyList(),
         questions: List<ClarificationQuestion> = emptyList(),
         risks: List<IntentRisk> = emptyList(),
-        explanation: List<String> = emptyList()
+        explanation: List<String> = emptyList(),
+        triggers: List<IntentTrigger> = emptyList()
     ): ScenarioNormalizationResult {
         val blockingPolicies = buildList {
             if (questions.any { it.severity == ClarificationSeverity.REQUIRED }) {
@@ -338,11 +364,12 @@ abstract class BaseScenarioPack : ScenarioPack {
             }
         }
         val intent = IntentDocument(
-            intentVersion = "1.0",
+            intentVersion = FlowStandardVersions.INTENT_VERSION,
             name = sanitize(name),
             description = description,
             inputs = inputs.distinctBy { it.name },
             systems = systems.distinctBy { it.name },
+            triggers = triggers.distinctBy { it.id },
             workflows = listOf(IntentWorkflow("main", workflowKind(definition.id), steps)),
             policies = policies + blockingPolicies,
             failure = failure
@@ -669,7 +696,7 @@ object BackupRestoreScenarioPack : BaseScenarioPack() {
         maturity = FlowStandardVersions.FLOW_STANDARD_VERSION,
         description = "Create, verify and optionally restore backups with retention and notification policies.",
         triggers = listOf("backup", "back up", "restore", "recovery", "retention", "snapshot"),
-        capabilities = listOf(StandardCapability.SCHEDULE, StandardCapability.BACKUP, StandardCapability.VALIDATE, StandardCapability.RESTORE, StandardCapability.NOTIFY),
+        capabilities = listOf(StandardCapability.BACKUP, StandardCapability.VALIDATE, StandardCapability.RESTORE, StandardCapability.NOTIFY),
         requiredEntities = listOf("backup subject"),
         optionalEntities = listOf("schedule", "retention", "destination"),
         risks = listOf("restore can overwrite data", "backup retention compliance"),
@@ -687,28 +714,39 @@ object BackupRestoreScenarioPack : BaseScenarioPack() {
         if (subject == null) questions += requiredQuestion("missing-backup-subject", "entities.backup.subject", "What must be backed up?")
         val systems = commonSystems(text, request.context, notify = wantsNotify).toMutableList()
         systems += IntentSystem("standard", "standard", "semantic backup operations")
-        val steps = mutableListOf<IntentStep>()
-        extractExactCron(text)?.let { cron -> steps += IntentStep("schedule", StandardCapability.SCHEDULE, params = mapOf("cron" to IntentString(cron))) }
-        if (steps.none { it.id == "schedule" } && (lower.contains("every") || lower.contains("night") || lower.contains("daily") || lower.contains("cron"))) {
-            steps += IntentStep("schedule", StandardCapability.SCHEDULE, params = mapOf("cadence" to IntentString(extractCadence(lower))))
-            questions += recommendedQuestion("schedule-timezone", "schedule.timezone", "Which exact time and timezone should be used for the recurring backup?")
+        val triggers = mutableListOf<IntentTrigger>()
+        extractExactCron(text)?.let { cron ->
+            triggers += IntentTrigger(
+                id = "backup-schedule",
+                type = IntentTriggerType.SCHEDULE,
+                workflows = listOf("main"),
+                schedule = IntentSchedule(IntentScheduleKind.CRON, cron)
+            )
         }
-        val req = if (steps.any { it.id == "schedule" }) listOf("schedule") else emptyList()
-        steps += IntentStep("backup", StandardCapability.BACKUP, requires = req, params = mapOfNotNullValue("subject" to subject?.let { IntentString(it) }, "retention" to retention?.let { IntentString(it) }))
+        if (triggers.isEmpty()) {
+            recurringSchedule(text)?.let { schedule ->
+                triggers += IntentTrigger(
+                    id = "backup-schedule",
+                    type = IntentTriggerType.SCHEDULE,
+                    workflows = listOf("main"),
+                    schedule = schedule
+                )
+                if (schedule.kind == IntentScheduleKind.CALENDAR) {
+                    questions += recommendedQuestion("schedule-timezone", "schedule.timezone", "Which exact time and timezone should be used for the calendar-based backup?")
+                }
+            }
+        }
+        val steps = mutableListOf<IntentStep>()
+        steps += IntentStep("backup", StandardCapability.BACKUP, params = mapOfNotNullValue("subject" to subject?.let { IntentString(it) }, "retention" to retention?.let { IntentString(it) }))
         steps += IntentStep("verify-backup", StandardCapability.VALIDATE, requires = listOf("backup"), params = mapOf("operation" to IntentString("verify-backup")))
         if (wantsRestore) steps += IntentStep("restore", StandardCapability.RESTORE, requires = listOf("verify-backup"), params = mapOfNotNullValue("subject" to subject?.let { IntentString(it) }))
         if (wantsNotify) steps += IntentStep("notify", StandardCapability.NOTIFY, requires = listOf(if (wantsRestore) "restore" else "verify-backup"), params = mapOf("subject" to IntentString("Backup status: ${subject ?: "backup"}")))
         val risks = if (wantsRestore) listOf(highRisk("restore-overwrite", "Restore operations may overwrite existing data.", "Require approval for restore actions.")) else emptyList()
         val policies = if (wantsRestore) listOf(IntentPolicy("restore-approval", IntentPolicyType.APPROVAL, "true", "Approval required before restore.")) else emptyList()
-        return packResult(request, match, "backup-${subject ?: "unknown"}", text, emptyList(), systems, steps, policies, IntentFailurePolicy(notify = wantsNotify), mapOfNotNull("subject" to subject, "database" to database, "retention" to retention, "scenario" to "backup-restore"), questions = questions, risks = risks, explanation = listOf("Backup/restore scenario synthesized schedule, backup, verification and notification steps without fabricating exact cron values."))
+        return packResult(request, match, "backup-${subject ?: "unknown"}", text, emptyList(), systems, steps, triggers = triggers, policies = policies, failure = IntentFailurePolicy(notify = wantsNotify), entities = mapOfNotNull("subject" to subject, "database" to database, "retention" to retention, "scenario" to "backup-restore"), questions = questions, risks = risks, explanation = listOf("Backup/restore scenario synthesized schedule, backup, verification and notification steps without fabricating exact cron values."))
     }
     private fun extractRetention(lower: String): String? = Regex("""(?:keep|retain)[^0-9]*(\d+)\s*(day|days|d)""").find(lower)?.let { "${it.groupValues[1]} days" }
     private fun extractExactCron(text: String): String? = Regex("(?i)cron\\s+['\"]?([0-9*/,-]+\\s+[0-9*/,-]+\\s+[0-9*/,-]+\\s+[0-9*/,-]+\\s+[0-9*/,-]+)['\"]?").find(text)?.groupValues?.getOrNull(1)
-    private fun extractCadence(lower: String): String = when {
-        lower.contains("night") -> "nightly"
-        lower.contains("daily") -> "daily"
-        else -> "recurring"
-    }
 }
 
 object DataSyncScenarioPack : BaseScenarioPack() {
@@ -877,6 +915,12 @@ object CertificateRenewalScenarioPack : BaseScenarioPack() {
         if (service == null) questions += recommendedQuestion("certificate-service", "entities.affectedService", "Which service or endpoint should be verified after renewal?")
         val systems = commonSystems(text, request.context, notify = wantsNotify) +
             IntentSystem("standard", "standard", "semantic certificate renewal operations")
+        val triggers = recurringSchedule(text)?.let { schedule ->
+            listOf(IntentTrigger("certificate-renewal-schedule", IntentTriggerType.SCHEDULE, listOf("main"), schedule))
+        }.orEmpty()
+        if (triggers.firstOrNull()?.schedule?.kind == IntentScheduleKind.CALENDAR) {
+            questions += recommendedQuestion("schedule-timezone", "schedule.timezone", "Which exact time and timezone should be used for the calendar-based certificate renewal?")
+        }
         val steps = mutableListOf<IntentStep>()
         steps += IntentStep(
             "renew-certificate",
@@ -890,7 +934,7 @@ object CertificateRenewalScenarioPack : BaseScenarioPack() {
         )
         steps += IntentStep("verify-certificate", StandardCapability.VALIDATE, requires = listOf("renew-certificate"), params = mapOf("operation" to IntentString("verify-certificate")))
         if (wantsNotify) steps += IntentStep("notify", StandardCapability.NOTIFY, requires = listOf("verify-certificate"), params = mapOf("subject" to IntentString("Certificate renewal status")))
-        return packResult(request, match, "certificate-renewal-${certificate ?: "unknown"}", text, emptyList(), systems, steps, failure = IntentFailurePolicy(notify = wantsNotify), entities = mapOfNotNull("certificate" to certificate, "namespace" to namespace, "service" to service, "window" to window, "scenario" to "certificate-renewal"), questions = questions, risks = listOf(mediumRisk("certificate-outage", "Certificate renewal can break TLS if provider, secret or service mapping is wrong.", "Verify the affected endpoint after renewal.")), explanation = listOf("Certificate renewal scenario selected; provider, affected-service and maintenance-window gaps remain explicit instead of being guessed."))
+        return packResult(request, match, "certificate-renewal-${certificate ?: "unknown"}", text, emptyList(), systems, steps, failure = IntentFailurePolicy(notify = wantsNotify), entities = mapOfNotNull("certificate" to certificate, "namespace" to namespace, "service" to service, "window" to window, "scenario" to "certificate-renewal"), questions = questions, risks = listOf(mediumRisk("certificate-outage", "Certificate renewal can break TLS if provider, secret or service mapping is wrong.", "Verify the affected endpoint after renewal.")), explanation = listOf("Certificate renewal scenario selected; provider, affected-service, schedule and maintenance-window gaps remain explicit instead of being guessed."), triggers = triggers)
     }
 }
 

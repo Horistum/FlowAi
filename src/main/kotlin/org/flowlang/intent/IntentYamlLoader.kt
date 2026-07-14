@@ -24,14 +24,19 @@ object IntentYamlLoader {
         val name = root.string("name") ?: error("Intent '$sourceName' is missing required field: name")
         val kind = root.string("kind") ?: "FlowIntentDocument"
         require(kind == "FlowIntentDocument") { "Unsupported intent kind '$kind' in $sourceName" }
+        val intentVersion = root.string("intentVersion") ?: org.flowlang.standard.FlowStandardVersions.INTENT_VERSION
+        require(intentVersion == org.flowlang.standard.FlowStandardVersions.INTENT_VERSION) {
+            "Unsupported intentVersion '$intentVersion' in $sourceName. Migrate to ${org.flowlang.standard.FlowStandardVersions.INTENT_VERSION}; schedules are top-level triggers in the 2.0 contract."
+        }
 
         return IntentDocument(
-            intentVersion = root.string("intentVersion") ?: "1.0",
+            intentVersion = intentVersion,
             kind = kind,
             name = name,
             description = root.string("description"),
             inputs = root.listOfMaps("inputs").map { it.toIntentInput() },
             systems = root.listOfMaps("systems").map { it.toIntentSystem() },
+            triggers = root.listOfMaps("triggers").map { it.toIntentTrigger() },
             workflows = root.listOfMaps("workflows").map { it.toIntentWorkflow() },
             policies = root.listOfMaps("policies").map { it.toIntentPolicy() },
             failure = root.map("failure")?.toIntentFailurePolicy() ?: IntentFailurePolicy()
@@ -59,15 +64,36 @@ object IntentYamlLoader {
         )
     }
 
+
+    private fun Map<String, Any?>.toIntentTrigger(): IntentTrigger {
+        val id = string("id") ?: error("Intent trigger is missing id")
+        val type = strictEnum<IntentTriggerType>(string("type") ?: error("Intent trigger '$id' is missing type"), "trigger type", id)
+        val schedule = map("schedule")?.let { raw ->
+            IntentSchedule(
+                kind = strictEnum(raw.string("kind") ?: error("Schedule trigger '$id' is missing schedule.kind"), "schedule kind", id),
+                expression = raw.string("expression") ?: error("Schedule trigger '$id' is missing schedule.expression"),
+                timezone = raw.string("timezone")
+            )
+        }
+        return IntentTrigger(
+            id = id,
+            type = type,
+            workflows = stringList("workflows").ifEmpty { listOf("main") },
+            schedule = schedule,
+            event = string("event"),
+            params = map("params")?.mapValues { (_, value) -> value.toIntentValue() } ?: emptyMap()
+        )
+    }
+
     private fun Map<String, Any?>.toIntentWorkflow(): IntentWorkflow = IntentWorkflow(
         name = string("name") ?: error("Intent workflow is missing name"),
-        kind = enumValue(string("kind") ?: "CUSTOM", IntentWorkflowKind.CUSTOM),
+        kind = strictEnum(string("kind") ?: "CUSTOM", "workflow kind", string("name") ?: "<workflow>"),
         steps = listOfMaps("steps").map { it.toIntentStep() }
     )
 
     private fun Map<String, Any?>.toIntentStep(): IntentStep = IntentStep(
         id = string("id") ?: error("Intent step is missing id"),
-        capability = enumValue(string("capability") ?: "CUSTOM", StandardCapability.CUSTOM),
+        capability = strictCapability(string("capability") ?: "CUSTOM", string("id") ?: "<step>"),
         description = string("description"),
         uses = string("uses"),
         requires = stringList("requires"),
@@ -147,6 +173,24 @@ object IntentYamlLoader {
         null -> emptyList()
         else -> listOf(v.toString())
     }
+
+
+    private fun strictCapability(value: String, stepId: String): StandardCapability {
+        val normalized = normalizeEnum(value)
+        if (normalized == "SCHEDULE") {
+            error("Intent step '$stepId' uses removed capability SCHEDULE. Declare a top-level trigger with type: SCHEDULE instead.")
+        }
+        return enumValues<StandardCapability>().firstOrNull { it.name == normalized }
+            ?: error("Intent step '$stepId' uses unknown capability '$value'.")
+    }
+
+    private inline fun <reified T : Enum<T>> strictEnum(value: String, label: String, subject: String): T {
+        val normalized = normalizeEnum(value)
+        return enumValues<T>().firstOrNull { it.name == normalized }
+            ?: error("Unknown $label '$value' in '$subject'.")
+    }
+
+    private fun normalizeEnum(value: String): String = value.trim().replace('-', '_').replace(' ', '_').uppercase()
 
     private inline fun <reified T : Enum<T>> enumValue(value: String, default: T): T {
         val normalized = value.trim().replace('-', '_').replace(' ', '_')

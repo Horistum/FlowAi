@@ -113,16 +113,9 @@ private fun runFlowCommand(args: List<String>) {
     println("===== CANONICAL TARGET MANIFESTS =====")
     listOf("jenkins", "github-actions", "tekton").forEach { target ->
         val targetCompatibility = compatibility.analyze(plan, target)
-        val manifest = when (target) {
-            "jenkins" -> JenkinsManifestGenerator().generate(plan, targetCompatibility)
-            "github-actions" -> GitHubActionsManifestGenerator().generate(plan, targetCompatibility)
-            "tekton" -> TektonManifestGenerator().generate(plan, targetCompatibility)
-            else -> null
-        }
-        if (manifest != null) {
-            println("--- $target ---")
-            println(Json.mapper.writeValueAsString(manifest))
-        }
+        val manifest = TargetManifestGenerationPipeline.generate(plan, targetCompatibility)
+        println("--- $target ---")
+        println(Json.mapper.writeValueAsString(manifest))
     }
 }
 
@@ -214,7 +207,7 @@ private fun runIntentCommand(args: List<String>) {
     var rendered: Pair<String, String>? = null
     when (target) {
         "jenkins" -> {
-            manifest = JenkinsManifestGenerator().generate(plan, compatibility)
+            manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
             println("===== JENKINS TARGET MANIFEST =====")
             println(Json.mapper.writeValueAsString(manifest))
             rendered = "Jenkinsfile" to JenkinsManifestRenderer().render(manifest)
@@ -227,7 +220,7 @@ private fun runIntentCommand(args: List<String>) {
             }
         }
         "github-actions" -> {
-            manifest = GitHubActionsManifestGenerator().generate(plan, compatibility)
+            manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
             println("===== GITHUB ACTIONS TARGET MANIFEST =====")
             println(Json.mapper.writeValueAsString(manifest))
             rendered = "github-actions.yml" to GitHubActionsManifestRenderer().render(manifest)
@@ -240,7 +233,7 @@ private fun runIntentCommand(args: List<String>) {
             }
         }
         "tekton" -> {
-            manifest = TektonManifestGenerator().generate(plan, compatibility)
+            manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
             println("===== TEKTON TARGET MANIFEST =====")
             println(Json.mapper.writeValueAsString(manifest))
             rendered = "tekton-pipeline.yaml" to TektonManifestRenderer().render(manifest)
@@ -415,15 +408,15 @@ private fun runNormalizeCommand(args: List<String>) {
 
         when (actualTarget) {
             "jenkins" -> {
-                manifest = JenkinsManifestGenerator().generate(plan, compatibility)
+                manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
                 rendered = "Jenkinsfile" to JenkinsManifestRenderer().render(manifest)
             }
             "github-actions" -> {
-                manifest = GitHubActionsManifestGenerator().generate(plan, compatibility)
+                manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
                 rendered = "github-actions.yml" to GitHubActionsManifestRenderer().render(manifest)
             }
             "tekton" -> {
-                manifest = TektonManifestGenerator().generate(plan, compatibility)
+                manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
                 rendered = "tekton-pipeline.yaml" to TektonManifestRenderer().render(manifest)
             }
         }

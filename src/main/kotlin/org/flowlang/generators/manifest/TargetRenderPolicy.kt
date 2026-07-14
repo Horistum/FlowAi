@@ -1,5 +1,7 @@
 package org.flowlang.generators.manifest
 
+import org.flowlang.capabilities.TargetRendererPayloadKind
+
 enum class TargetRenderMode {
     EXECUTABLE,
     REVIEW_ONLY,
@@ -26,37 +28,54 @@ class TargetRenderBlockedException(val readiness: TargetRenderReadiness) : Illeg
 )
 
 object TargetRenderPolicy {
-    private val completedStatuses = setOf(TargetMaterializationStatus.NATIVE, TargetMaterializationStatus.NOTES_PROJECTED)
+    private val completedStatuses = setOf(TargetMaterializationStatus.NATIVE)
     private val blockedStatuses = setOf(TargetMaterializationStatus.BLOCKED, TargetMaterializationStatus.UNSUPPORTED)
 
     fun evaluate(manifest: TargetManifest): TargetRenderReadiness {
         val steps = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForReadiness() } }
+        val capabilityFinding = if (manifest.compatibility.capabilityStatus != org.flowlang.capabilities.SupportLevel.SUPPORTED) {
+            listOf(TargetRenderFinding(
+                "manifest",
+                "CAPABILITY_${manifest.compatibility.capabilityStatus.name}",
+                "Target capability compatibility is '${manifest.compatibility.capabilityStatus}' and cannot produce executable syntax."
+            ))
+        } else emptyList()
         val blocking = steps.filter { it.materialization.status in blockedStatuses }.map { step ->
             TargetRenderFinding(step.id, step.materialization.status.name, step.materialization.reason)
         }.distinct()
         if (blocking.isNotEmpty()) return TargetRenderReadiness(manifest.target, TargetRenderMode.FAIL_FAST, blocking)
 
-        val unresolved = steps.filter { it.isMaterializationLeaf() }.mapNotNull { step ->
+        val unresolved = capabilityFinding + steps.filter { it.isMaterializationLeaf() }.mapNotNull { step ->
             when {
                 step.materialization.status !in completedStatuses -> TargetRenderFinding(
                     step.id,
                     step.materialization.status.name,
                     step.materialization.reason
                 )
-                step.metadata["rendererReady"] != "true" -> TargetRenderFinding(
+                step.rendererPayload == null -> TargetRenderFinding(
                     step.id,
                     "TARGET_PAYLOAD_MISSING",
-                    "Materialization evidence exists, but no target renderer payload is declared for '${manifest.target}'."
+                    "Native materialization evidence exists, but no structured renderer payload is declared for '${manifest.target}'."
                 )
-                step.metadata["rendererTarget"] != manifest.target -> TargetRenderFinding(
+                step.rendererPayload.target != manifest.target -> TargetRenderFinding(
                     step.id,
                     "TARGET_PAYLOAD_MISMATCH",
-                    "Renderer payload is not bound to target '${manifest.target}'."
+                    "Renderer payload is bound to '${step.rendererPayload.target}', not '${manifest.target}'."
                 )
-                step.metadata["rendererPayloadId"].isNullOrBlank() -> TargetRenderFinding(
+                step.rendererPayload.reference.isBlank() -> TargetRenderFinding(
                     step.id,
-                    "TARGET_PAYLOAD_ID_MISSING",
-                    "Renderer readiness requires a concrete target payload identifier."
+                    "TARGET_PAYLOAD_REFERENCE_MISSING",
+                    "Renderer readiness requires a concrete target payload reference."
+                )
+                step.rendererPayload.evidenceReference.isBlank() -> TargetRenderFinding(
+                    step.id,
+                    "TARGET_PAYLOAD_EVIDENCE_MISSING",
+                    "Renderer payload must cite target registry or notes evidence."
+                )
+                !payloadKindMatchesTarget(step.rendererPayload.kind, manifest.target) -> TargetRenderFinding(
+                    step.id,
+                    "TARGET_PAYLOAD_KIND_MISMATCH",
+                    "Renderer payload kind '${step.rendererPayload.kind}' cannot be emitted by target '${manifest.target}'."
                 )
                 else -> null
             }
@@ -67,6 +86,13 @@ object TargetRenderPolicy {
         } else {
             TargetRenderReadiness(manifest.target, TargetRenderMode.REVIEW_ONLY, unresolved)
         }
+    }
+
+    private fun payloadKindMatchesTarget(kind: TargetRendererPayloadKind, target: String): Boolean = when (target) {
+        "jenkins" -> kind == TargetRendererPayloadKind.JENKINS_STEP
+        "github-actions" -> kind == TargetRendererPayloadKind.GITHUB_ACTION
+        "tekton" -> kind == TargetRendererPayloadKind.TEKTON_TASK
+        else -> false
     }
 
     fun requireSafe(manifest: TargetManifest): TargetRenderReadiness {
@@ -107,7 +133,18 @@ object TargetReviewArtifactRenderer {
         sb.appendLine("  projectionReadiness: ${quoted(compatibilityReadiness.projectionReadiness.name)}")
         sb.appendLine("  renderMode: REVIEW_ONLY")
         sb.appendLine("  executable: false")
-        sb.appendLine("  reason: ${quoted("Target syntax was not emitted because required renderer payloads are unresolved.")}")
+        sb.appendLine("  reason: ${quoted("Target syntax was not emitted because required trigger or renderer payload evidence is unresolved.")}")
+        if (manifest.triggers.isNotEmpty()) {
+            sb.appendLine("  triggers:")
+            manifest.triggers.forEach { trigger ->
+                sb.appendLine("    - id: ${quoted(trigger.id)}")
+                sb.appendLine("      type: ${quoted(trigger.type)}")
+                trigger.scheduleKind?.let { sb.appendLine("      scheduleKind: ${quoted(it)}") }
+                trigger.scheduleExpression?.let { sb.appendLine("      scheduleExpression: ${quoted(it)}") }
+                trigger.timezone?.let { sb.appendLine("      timezone: ${quoted(it)}") }
+                trigger.event?.let { sb.appendLine("      event: ${quoted(it)}") }
+            }
+        }
         sb.appendLine("  findings:")
         readiness.findings.forEach { finding ->
             sb.appendLine("    - nodeId: ${quoted(finding.nodeId)}")

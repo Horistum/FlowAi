@@ -25,12 +25,35 @@ data class TargetCapability(
     val nativeRuntime: SupportLevel = SupportLevel.PARTIAL,
     val notes: List<String> = emptyList(),
     val features: Map<String, SupportLevel> = emptyMap(),
-    val expressionSupport: TargetExpressionSupportDeclaration? = null
+    val expressionSupport: TargetExpressionSupportDeclaration? = null,
+    val projectionRules: List<TargetProjectionRule> = emptyList()
 ) {
     fun feature(name: String, fallback: SupportLevel): SupportLevel = features[name] ?: fallback
 }
 
 enum class SupportLevel { SUPPORTED, PARTIAL, UNSUPPORTED, REQUIRES_RUNTIME }
+
+enum class TargetProjectionMode { NATIVE, NOTES_PROJECTED, ADAPTER_REQUIRED, UNSUPPORTED, BLOCKED }
+
+enum class TargetRendererPayloadKind { JENKINS_STEP, GITHUB_ACTION, TEKTON_TASK }
+
+data class TargetRendererPayloadTemplate(
+    val kind: TargetRendererPayloadKind,
+    val reference: String,
+    val parameters: Map<String, String> = emptyMap()
+)
+
+data class TargetProjectionRule(
+    val module: String,
+    val action: String,
+    val mode: TargetProjectionMode,
+    val reason: String,
+    val evidenceReference: String,
+    val payload: TargetRendererPayloadTemplate? = null
+) {
+    fun matches(module: String, action: String): Boolean = this.module == module && this.action == action
+}
+
 
 data class CompatibilityIssue(
     val level: CompatibilityLevel,
@@ -58,7 +81,8 @@ data class CompatibilityReport(
     val projectionReadiness: ProjectionReadinessStatus = ProjectionReadinessStatus.NOT_EVALUATED,
     val executable: Boolean = false,
     val readinessEvidenceAvailable: Boolean = false,
-    val expressionSupport: TargetExpressionSupportDeclaration? = null
+    val expressionSupport: TargetExpressionSupportDeclaration? = null,
+    val projectionRules: List<TargetProjectionRule> = emptyList()
 ) {
     val hasErrors: Boolean get() = issues.any { it.level == CompatibilityLevel.ERROR }
     val hasWarnings: Boolean get() = issues.any { it.level == CompatibilityLevel.WARNING }
@@ -219,6 +243,10 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             )
 
         val issues = mutableListOf<CompatibilityIssue>()
+        plan.triggers.forEach { trigger ->
+            val capability = trigger.requiredCapabilities.singleOrNull() ?: "trigger.${trigger.type.lowercase()}"
+            addIfLimited(target, trigger.id, capability, supportForCapability(target, capability), issues)
+        }
         plan.nodes.forEach { inspect(it, target, issues) }
         val effectiveIssues = if (strict) issues.map { if (it.level == CompatibilityLevel.WARNING) it.copy(level = CompatibilityLevel.ERROR, message = it.message + " Strict mode treats partial support as an error.") else it } else issues
         val status = when {
@@ -231,7 +259,8 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             status = status,
             issues = effectiveIssues,
             capabilityStatus = status,
-            expressionSupport = target.expressionSupport
+            expressionSupport = target.expressionSupport,
+            projectionRules = target.projectionRules
         )
     }
 
@@ -296,7 +325,8 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
 
     private fun requiredCapabilities(plan: ExecutionPlan): List<String> {
         val nodeCapabilities = plan.nodes.flatMap { collectRequiredCapabilities(it) }
-        return (plan.requiredCapabilities + nodeCapabilities).distinct()
+        val triggerCapabilities = plan.triggers.flatMap { it.requiredCapabilities }
+        return (plan.requiredCapabilities + triggerCapabilities + nodeCapabilities).distinct()
     }
 
     private fun collectRequiredCapabilities(node: PlanNode): List<String> = when (node) {
@@ -320,6 +350,12 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             capability == "loop.dynamic" -> target.dynamicLoops
             capability == "match.basic" -> target.match
             capability == "retry.task" -> target.retry
+            capability == "trigger.manual" -> SupportLevel.SUPPORTED
+            capability == "trigger.schedule.cron" -> target.feature("trigger.schedule.cron", target.feature("cron.schedule", SupportLevel.PARTIAL))
+            capability == "trigger.schedule.interval" -> target.feature("trigger.schedule.interval", SupportLevel.PARTIAL)
+            capability == "trigger.schedule.calendar" -> target.feature("trigger.schedule.calendar", SupportLevel.PARTIAL)
+            capability == "trigger.event" -> target.feature("trigger.event", SupportLevel.PARTIAL)
+            capability == "trigger.webhook" -> target.feature("trigger.webhook", SupportLevel.PARTIAL)
             capability.startsWith("approval.") -> target.approvals
             capability.startsWith("secret.") -> target.secrets
             capability.startsWith("artifact.") -> target.artifacts

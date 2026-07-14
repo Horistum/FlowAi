@@ -95,15 +95,14 @@ class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry
                     "Semantic build, test, package or manual runtime intent in step '${step.id}'."
                 )
                 StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE -> requireSystem(explicit ?: "registry", "docker", "Container image step '${step.id}'.")
-                StandardCapability.DEPLOY -> {
-                    val engine = step.params["engine"].asTextOrNull() ?: step.params["tool"].asTextOrNull()
-                    when (engine?.lowercase()) {
-                        "argocd" -> requireSystem(explicit ?: "argo", "argocd", "ArgoCD deployment step '${step.id}'.")
-                        "helm" -> requireSystem(explicit ?: "helm", "helm", "Helm deployment step '${step.id}'.")
-                        else -> requireSystem(explicit ?: "cluster", "kubernetes", "Deployment step '${step.id}'.")
+                StandardCapability.DEPLOY, StandardCapability.VERIFY -> {
+                    val explicitModule = step.uses?.substringBefore('.')?.takeIf { it.isNotBlank() }
+                    if (explicitModule != null) {
+                        requireSystem(explicit ?: explicitModule, explicitModule, "Explicit target integration '${step.uses}' in step '${step.id}'.")
+                    } else {
+                        requireSystem(explicit ?: "standard", "standard", "Target-neutral ${step.capability.name.lowercase()} intent in step '${step.id}'.")
                     }
                 }
-                StandardCapability.VERIFY -> requireSystem(explicit ?: "cluster", "kubernetes", "Verification step '${step.id}'.")
                 StandardCapability.NOTIFY -> requireSystem(explicit ?: "notifier", "notify", "Notification step '${step.id}'.")
                 else -> requireSystem(explicit ?: "standard", "standard", "Semantic standard capability '${step.capability}' in step '${step.id}'.")
             }

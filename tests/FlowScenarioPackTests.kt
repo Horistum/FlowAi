@@ -7,6 +7,8 @@ import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ClarificationSeverity
 import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
 import org.flowlang.intent.IntentCapabilityValidator
+import org.flowlang.intent.IntentScheduleKind
+import org.flowlang.intent.IntentTriggerType
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.intent.StandardCapability
 import org.flowlang.modules.ModuleRegistry
@@ -53,8 +55,9 @@ class FlowScenarioPackTests {
     @Test
     fun backupScenarioPassesFullPipelineWithoutFabricatedCron() {
         val response = ScenarioPackIntentNormalizer().normalize(AiIntentRequest("Back up PostgreSQL database every night, keep backups for 14 days and notify the team on failure."))
-        val schedule = response.normalizedIntent.workflows.flatMap { it.steps }.firstOrNull { it.capability == StandardCapability.SCHEDULE }
-        assertFalse(schedule?.params?.containsKey("cron") == true, "Nightly must not be fabricated into an exact cron without user-provided time/timezone.")
+        val schedule = response.normalizedIntent.triggers.singleOrNull { it.type == IntentTriggerType.SCHEDULE }
+        assertTrue(schedule != null)
+        assertFalse(schedule?.schedule?.kind == IntentScheduleKind.CRON, "Nightly must not be fabricated into an exact cron without user-provided time/timezone.")
         assertTrue(response.report.openQuestions.any { it.severity == ClarificationSeverity.RECOMMENDED && it.field == "schedule.timezone" })
         assertFullPipeline(response)
     }

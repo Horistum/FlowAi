@@ -1,4 +1,4 @@
-intentVersion: "1.0"
+intentVersion: "2.0"
 kind: FlowIntentDocument
 name: nightly-backup
 

@@ -40,7 +40,7 @@ class FlowRemainingFindingsTests {
         val plan = FlowPlanner(registry).plan(ast)
         val manifest = JenkinsManifestGenerator().generate(plan, CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED))
         val notifyStep = manifest.jobs.flatMap { it.steps }.flatMap { flatten(it) }.single { it.module == "notify" && it.action == "send" }
-        assertTrue(notifyStep.run == null, "notify.send must not be lowered into a shell mail command: ${notifyStep.run}")
+        assertTrue(notifyStep.rendererPayload == null, "notify.send must not receive fabricated executable renderer payload: $notifyStep")
         assertTrue(notifyStep.materialization.status.name == "ADAPTER_REQUIRED", notifyStep.toString())
         assertTrue(notifyStep.materialization.requirements["projectionPlan"] != null, notifyStep.materialization.toString())
         assertFalse(notifyStep.params.values.any { it.contains("|| echo ") }, "notify failure masking must not survive as a projected command: ${notifyStep.params}")

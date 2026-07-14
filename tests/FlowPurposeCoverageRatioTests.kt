@@ -15,7 +15,7 @@ class FlowPurposeCoverageRatioTests {
     fun currentPurposeCoveragePasses() {
         val report = PurposeCoverageAnalyzer().analyze()
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals("PASS", report.status, report.issues.joinToString { it.code + ":" + it.subject })
         assertTrue(report.referenceScenarioCount >= PurposeCoverageAnalyzer.minimumReferenceScenarios)
         assertEquals(emptyList(), report.missingCapabilities)

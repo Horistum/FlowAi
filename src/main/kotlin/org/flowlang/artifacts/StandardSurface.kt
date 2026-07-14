@@ -2,6 +2,8 @@ package org.flowlang.artifacts
 
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.StandardModel
+import org.flowlang.targets.TargetRegistryYamlLoader
+import java.io.File
 
 data class PublicSurfaceEntry(
     val artifact: String,
@@ -138,15 +140,13 @@ data class PublicContractAliasInvariant(
 
 data class TargetSemanticsEntry(
     val feature: String,
-    val jenkins: String,
-    val githubActions: String,
-    val tekton: String,
+    val semanticsByTarget: Map<String, String>,
     val requiredDiagnosticWhenUnsupported: String
 )
 
 data class TargetSemanticsMatrixReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
-    val matrixVersion: String = "1.0",
+    val matrixVersion: String = "2.0",
     val status: String,
     val targetIds: List<String>,
     val entries: List<TargetSemanticsEntry>,
@@ -427,26 +427,30 @@ object StandardSurface {
         )
     )
 
-    fun targetSemanticsMatrix(): TargetSemanticsMatrixReport = TargetSemanticsMatrixReport(
-        status = "PASS",
-        targetIds = listOf("jenkins", "github-actions", "tekton"),
-        entries = listOf(
-            semantics("conditions", "native", "partial", "partial", "condition.expression"),
-            semantics("approvals", "native", "environment-gate", "partial", "approval.strict"),
-            semantics("secrets", "native-binding", "native-binding", "native-binding", "secret.binding"),
-            semantics("artifacts", "archive", "upload-artifact", "workspace-result", "artifact.transport"),
-            semantics("parallelism", "parallel-stage", "matrix-or-jobs", "dag-tasks", "parallelism.model"),
-            semantics("rollback", "explicit-step", "explicit-job", "explicit-task", "rollback.capability"),
-            semantics("manual-gates", "input-step", "environment-review", "external-required", "manual.gate"),
-            semantics("environment-gates", "stage-env", "environment", "namespace-or-param", "environment.gate"),
-            semantics("matrix-builds", "native", "native", "expanded-dag", "matrix.expression"),
-            semantics("dynamic-expressions", "groovy-expression", "workflow-expression", "limited-when-expression", "condition.expression"),
-            semantics("strict-manual-approval", "native", "environment-gate-not-equivalent", "unsupported-blocked", "approval.strict"),
-            semantics("unsupported-condition-fallback", "diagnostic-required", "diagnostic-required", "diagnostic-required", "condition.expression"),
-            semantics("rollback-portability", "explicit-step", "explicit-job", "explicit-task-or-blocked", "rollback.capability")
-        ),
-        portabilityRule = "Unsupported or partial target semantics must produce diagnostics or blocked readiness before rendering."
-    )
+    fun targetSemanticsMatrix(rootDir: File = File(".")): TargetSemanticsMatrixReport {
+        val targetIds = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")).keys.sorted()
+        val known = listOf(
+            semantics("conditions", mapOf("jenkins" to "native", "github-actions" to "partial", "tekton" to "partial"), "condition.expression", targetIds),
+            semantics("approvals", mapOf("jenkins" to "native", "github-actions" to "environment-gate", "tekton" to "partial"), "approval.strict", targetIds),
+            semantics("secrets", mapOf("jenkins" to "native-binding", "github-actions" to "native-binding", "tekton" to "native-binding"), "secret.binding", targetIds),
+            semantics("artifacts", mapOf("jenkins" to "archive", "github-actions" to "upload-artifact", "tekton" to "workspace-result"), "artifact.transport", targetIds),
+            semantics("parallelism", mapOf("jenkins" to "parallel-stage", "github-actions" to "matrix-or-jobs", "tekton" to "dag-tasks"), "parallelism.model", targetIds),
+            semantics("rollback", mapOf("jenkins" to "explicit-step", "github-actions" to "explicit-job", "tekton" to "explicit-task"), "rollback.capability", targetIds),
+            semantics("manual-gates", mapOf("jenkins" to "input-step", "github-actions" to "environment-review", "tekton" to "external-required"), "manual.gate", targetIds),
+            semantics("environment-gates", mapOf("jenkins" to "stage-env", "github-actions" to "environment", "tekton" to "namespace-or-param"), "environment.gate", targetIds),
+            semantics("matrix-builds", mapOf("jenkins" to "native", "github-actions" to "native", "tekton" to "expanded-dag"), "matrix.expression", targetIds),
+            semantics("dynamic-expressions", mapOf("jenkins" to "groovy-expression", "github-actions" to "workflow-expression", "tekton" to "limited-when-expression"), "condition.expression", targetIds),
+            semantics("strict-manual-approval", mapOf("jenkins" to "native", "github-actions" to "environment-gate-not-equivalent", "tekton" to "unsupported-blocked"), "approval.strict", targetIds),
+            semantics("unsupported-condition-fallback", targetIds.associateWith { "diagnostic-required" }, "condition.expression", targetIds),
+            semantics("rollback-portability", mapOf("jenkins" to "explicit-step", "github-actions" to "explicit-job", "tekton" to "explicit-task-or-blocked"), "rollback.capability", targetIds)
+        )
+        return TargetSemanticsMatrixReport(
+            status = if (targetIds.isEmpty()) "FAIL" else "PASS",
+            targetIds = targetIds,
+            entries = known,
+            portabilityRule = "Unsupported, undeclared or partial target semantics must produce diagnostics or blocked readiness before rendering."
+        )
+    }
 
     fun standardExportBundle(): StandardExportBundleReport = StandardExportBundleReport(
         status = "PASS",
@@ -609,11 +613,14 @@ object StandardSurface {
 
     private fun semantics(
         feature: String,
-        jenkins: String,
-        githubActions: String,
-        tekton: String,
-        diagnostic: String
-    ): TargetSemanticsEntry = TargetSemanticsEntry(feature, jenkins, githubActions, tekton, diagnostic)
+        declared: Map<String, String>,
+        diagnostic: String,
+        targetIds: List<String>
+    ): TargetSemanticsEntry = TargetSemanticsEntry(
+        feature = feature,
+        semanticsByTarget = targetIds.associateWith { target -> declared[target] ?: "not-declared" },
+        requiredDiagnosticWhenUnsupported = diagnostic
+    )
 
     private fun standardExampleArtifacts(): List<String> = listOf(
         "normalized-intent.json",

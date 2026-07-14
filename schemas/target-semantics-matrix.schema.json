@@ -6,23 +6,27 @@
   "required": ["standardVersion", "matrixVersion", "status", "targetIds", "entries", "portabilityRule"],
   "properties": {
     "standardVersion": { "type": "string" },
-    "matrixVersion": { "type": "string" },
+    "matrixVersion": { "const": "2.0" },
     "status": { "enum": ["PASS", "FAIL"] },
-    "targetIds": { "type": "array", "items": { "type": "string" } },
+    "targetIds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
     "entries": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["feature", "jenkins", "githubActions", "tekton", "requiredDiagnosticWhenUnsupported"],
+        "required": ["feature", "semanticsByTarget", "requiredDiagnosticWhenUnsupported"],
         "properties": {
           "feature": { "type": "string" },
-          "jenkins": { "type": "string" },
-          "githubActions": { "type": "string" },
-          "tekton": { "type": "string" },
+          "semanticsByTarget": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": { "type": "string", "minLength": 1 }
+          },
           "requiredDiagnosticWhenUnsupported": { "type": "string" }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "portabilityRule": { "type": "string" }
-  }
+  },
+  "additionalProperties": false
 }

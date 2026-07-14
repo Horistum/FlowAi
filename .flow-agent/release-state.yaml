@@ -1,20 +1,19 @@
 project: Flow Core
-stateVersion: 2
+stateVersion: 3
 
-currentVersion: "0.9.4"
-currentPackage: "flow-core-prod-v0_9_4_reference_scenario_matrix.zip"
-nextExpectedVersion: "0.9.5"
-activeStandardVersion: "0.7.6"
+currentVersion: "0.9.5"
+currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
+nextExpectedVersion: "0.9.6"
+activeStandardVersion: "0.8.0"
 
 versionBoundary:
-  publishedPackageVersion: "0.9.4"
-  publishedPackageStatus: "published"
-  activeCorrectionTrack: "v0.9.5.x"
-  currentCorrectionItem: "0.9.5.7.9"
-  correctionTrackStatus: "unreleased"
-  correctionItemIsPackageVersion: false
-  nextPackageVersion: "0.9.5"
-  publicStandardVersion: "0.7.6"
+  publishedPackageVersion: "0.9.5"
+  publishedPackageStatus: "release-candidate"
+  completedCorrectionTrack: "v0.9.5.x"
+  correctionTrackStatus: "completed"
+  nextPackageVersion: "0.9.6"
+  publicStandardVersion: "0.8.0"
+  artifactContractVersion: "2.0"
 
 repositoryRules:
   sourceLanguage: "English"
@@ -31,28 +30,23 @@ architectureConstraints:
 
 qualityPrinciples:
   - "Do not bend code only to make tests pass."
-  - "Prefer small reviewable changes."
   - "Every public behavior change must have tests."
-  - "Every public contract change must have documentation."
-  - "Every release must include a release report."
-  - "Every architectural change must be justified."
-  - "Reduce technical debt instead of carrying it forward."
+  - "Every public contract change must have a migration document."
+  - "Executable target syntax requires concrete declarative payload evidence."
+  - "Missing target evidence fails closed."
 
 lastKnownValidation:
-  flowAgentTooling: "passed"
-  flowAgentStructure: "passed"
-  flowAgentContextGeneration: "passed"
-  offlineCacheAwareChecks: "passed"
-  cleanTest: "passed"
-  conformance: "passed"
-  validationSource: "GitHub Actions Flow CI on the v0.9.5.7.9 pull request branch"
+  flowAgentTooling: "pending"
+  flowAgentStructure: "pending"
+  flowAgentContextGeneration: "pending"
+  offlineCacheAwareChecks: "pending"
+  cleanTest: "pending"
+  conformance: "pending"
+  validationSource: "GitHub Actions Flow CI on the v0.9.5 universal-model-completion pull request branch"
   notes:
-    - "The published package remains v0.9.4 while v0.9.5.x identifiers describe unreleased correction scopes."
-    - "The current scoped correction item is v0.9.5.7.9 Reference Scenario and Snapshot Honesty Reset."
-    - "The next scoped umbrella item is v0.9.5.8 Policy-Driven Safety and Environment Classification."
-    - "Target expression support is derived from explicit target registry or notes evidence rather than target-name switches."
-    - "Unknown targets and missing expression declarations fail closed before projection."
-    - "The v0.9.5.7.9 branch must pass the standard Flow CI workflow with clean test and full conformance; no self-modifying validation workflow is retained."
-    - "The active public standard version remains 0.7.6 until public snapshot and conformance contracts are intentionally advanced."
-    - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry artifact versions are unchanged."
-    - "No runtime executor, SDK API, plugin lifecycle, shell projection, target-specific public DSL, renderer expansion or Flow syntax change is added."
+    - "Package 0.9.5 promotes the completed v0.9.5.x correction work into a release line."
+    - "The active public standard advances to 0.8.0 because trigger, target-semantics and projection contracts changed."
+    - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry advance to 2.0."
+    - "Manifest generation reconciliation is mandatory for CLI, conformance and library callers."
+    - "Target-native output requires declarative registry or notes evidence and structured renderer payloads."
+    - "No runtime executor, SDK lifecycle, shell projection or fabricated payload is introduced."

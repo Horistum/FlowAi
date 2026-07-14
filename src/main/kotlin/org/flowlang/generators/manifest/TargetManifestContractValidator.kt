@@ -127,9 +127,13 @@ object TargetManifestContractValidator {
         if (!stepIds.add(step.id)) error("STEP_ID_DUPLICATE", "$path.id", "Step id '${step.id}' is duplicated in the manifest.")
         if (step.type.isBlank()) error("STEP_TYPE_BLANK", "$path.type", "TargetStep.type must be present.")
         validateNotes(step.mappingNotes, "$path.mappingNotes", issues)
-        if (step.run != null) {
-            error("ACTION_COMMAND_TEXT_UNSUPPORTED", "$path.run", "TargetStep.run is a legacy compatibility field and must not carry command text in Flow Core projection.")
-            if (step.run.contains("Flow executes")) error("ACTION_PLACEBO_COMMAND", "$path.run", "Action step must not use a green placeholder command that claims Flow executed work without materialization.")
+        step.rendererPayload?.let { payload ->
+            if (payload.target.isBlank()) error("RENDERER_PAYLOAD_TARGET_BLANK", "$path.rendererPayload.target", "Renderer payload must identify its target.")
+            if (payload.reference.isBlank()) error("RENDERER_PAYLOAD_REFERENCE_BLANK", "$path.rendererPayload.reference", "Renderer payload must identify a concrete native reference.")
+            if (payload.evidenceReference.isBlank()) error("RENDERER_PAYLOAD_EVIDENCE_BLANK", "$path.rendererPayload.evidenceReference", "Renderer payload must preserve its declarative evidence reference.")
+            if (step.materialization.status != TargetMaterializationStatus.NATIVE) {
+                error("RENDERER_PAYLOAD_WITHOUT_NATIVE_MATERIALIZATION", "$path.rendererPayload", "Only NATIVE materialization may carry an executable renderer payload.")
+            }
         }
 
         if (step.type == "action") {
