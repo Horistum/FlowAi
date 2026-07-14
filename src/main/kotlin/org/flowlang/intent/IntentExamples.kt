@@ -12,7 +12,8 @@ object IntentExamples {
         systems = listOf(
             IntentSystem("source", "git", "Application source repository"),
             IntentSystem("registry", "dockerRegistry", "Image registry"),
-            IntentSystem("cluster", "kubernetes", "Deployment target")
+            IntentSystem("cluster", "kubernetes", "Deployment target"),
+            IntentSystem("standard", "standard", "Semantic build and test operations")
         ),
         workflows = listOf(
             IntentWorkflow(
@@ -20,7 +21,7 @@ object IntentExamples {
                 kind = IntentWorkflowKind.DEPLOY,
                 steps = listOf(
                     IntentStep("checkout", StandardCapability.CHECKOUT, uses = "git"),
-                    IntentStep("test", StandardCapability.TEST, uses = "shell", requires = listOf("checkout")),
+                    IntentStep("test", StandardCapability.TEST, uses = "standard", requires = listOf("checkout")),
                     IntentStep("build-image", StandardCapability.BUILD_IMAGE, uses = "docker", requires = listOf("test")),
                     IntentStep("approve-prod", StandardCapability.APPROVE, requires = listOf("build-image")),
                     IntentStep("deploy", StandardCapability.DEPLOY, uses = "kubernetes", requires = listOf("approve-prod")),

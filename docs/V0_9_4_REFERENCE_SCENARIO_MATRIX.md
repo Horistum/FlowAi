@@ -40,7 +40,7 @@ Universal capabilities use names such as:
 
 ```text
 source.checkout
-command.run
+software.test
 deployment.apply
 data.write
 notification.send
@@ -51,7 +51,7 @@ secret.consume
 secret.rotate
 ```
 
-Implementation-specific module names such as `git.checkout`, `kubernetes.deploy`, `notify.send`, `database.upsert` or `shell.run` may appear inside Flow source examples, but they are not the semantic source of truth for the matrix.
+Implementation-specific module names such as `git.checkout`, `kubernetes.deploy`, `notify.send` or `database.upsert` may appear inside Flow source examples, but they are not the semantic source of truth for the matrix. The flagship build/test path uses `standard.execute` with the universal `software.test` capability and does not use active `shell.run`.
 
 ## Adapter projection matrix
 
@@ -83,8 +83,12 @@ Flow source
   -> planner
   -> target compatibility analysis
   -> target manifest generation
-  -> TargetCapabilityDegradationAnalyzer
+  -> compatibility-readiness analysis
+  -> render policy
+  -> exact review-only, fail-fast or executable expectation
 ```
+
+A review-only expectation accepts only `REVIEW_ONLY` render mode with `executable=false` and degraded evidence. It no longer accepts blocked or executable output as interchangeable success.
 
 Negative scenarios are parsed and then required to fail at a core validation gate with explicit diagnostic codes. The exact gate may be the Flow validator or the safety boundary, depending on where the violation is detected first.
 

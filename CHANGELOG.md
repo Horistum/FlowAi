@@ -13,6 +13,7 @@ All project source text is written in English. The changelog records architectur
 - Added structural governance checks, unified renderer failure semantics and compatibility/readiness reconciliation.
 - Added release metadata boundaries that distinguish the published package, unreleased correction scope, public standard and artifact contract versions.
 - Added evidence-driven target expression profiles with registry or notes provenance and fail-closed support decisions.
+- Added an explicit snapshot evidence index with semantic-only, review-only, fail-fast and executable states.
 
 ### Changed
 
@@ -23,6 +24,7 @@ All project source text is written in English. The changelog records architectur
 - Replaced the production CI/CD bias analyzer's hardcoded future roadmap version list with evidence-driven architectural follow-up areas.
 - Reconciled `REPORT.md`, `.flow-agent/release-state.yaml`, both roadmap files, versioning policy and correction reports around one explicit version boundary.
 - Removed target-name expression assumptions and renderer fallbacks that weakened unsupported conditions to false or unenforced comments.
+- Replaced the flagship shell-based test step with semantic `standard.execute`, renamed non-executable target snapshots and made conformance compare exact current evidence.
 
 ### Correction items recorded
 
@@ -42,6 +44,7 @@ All project source text is written in English. The changelog records architectur
 - `0.9.5.7.6` Release Metadata Reconciliation
 - `0.9.5.7.7` Policy-Driven Safety Prelude
 - `0.9.5.7.8` Target Expression and Unknown Target Safety
+- `0.9.5.7.9` Reference Scenario and Snapshot Honesty Reset
 
 ### Version boundary
 

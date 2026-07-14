@@ -19,6 +19,9 @@ systems:
   - name: cluster
     type: kubernetes
     purpose: Deployment target
+  - name: standard
+    type: standard
+    purpose: Semantic build and test operations
 workflows:
   - name: application-lifecycle
     kind: DEPLOY
@@ -28,7 +31,7 @@ workflows:
         uses: git
       - id: test
         capability: TEST
-        uses: shell
+        uses: standard
         requires: [checkout]
       - id: build-image
         capability: BUILD_IMAGE

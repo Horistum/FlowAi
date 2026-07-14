@@ -3,13 +3,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetCapabilityDegradationAnalyzer
 import org.flowlang.generators.manifest.TargetCapabilityDegradationStatus
+import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
 import org.flowlang.generators.manifest.TargetManifestGenerator
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TektonManifestGenerator
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
@@ -32,11 +35,8 @@ class ReferenceScenarioMatrixTests {
         registry = registry,
         environmentPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
     )
-    private val targets = mapOf(
-        "jenkins" to TargetCapability(target = "jenkins", description = "test"),
-        "github-actions" to TargetCapability(target = "github-actions", description = "test"),
-        "tekton" to TargetCapability(target = "tekton", description = "test")
-    )
+    private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
+        .filterKeys { it in ReferenceAdapterProjectionMatrix.supportedTargets }
     private val generators: Map<String, TargetManifestGenerator> = mapOf(
         "jenkins" to JenkinsManifestGenerator(),
         "github-actions" to GitHubActionsManifestGenerator(),
@@ -73,6 +73,18 @@ class ReferenceScenarioMatrixTests {
     }
 
     @Test
+    fun flagshipBuildTestDeployUsesSemanticTestIntentInsteadOfShellExecution() {
+        val scenario = ReferenceScenarioMatrix.positiveScenarios().single { it.id == "build-test-deploy" }
+        assertTrue("software.test" in scenario.semanticExpectation.requiredCapabilities)
+        assertFalse("command.run" in scenario.semanticExpectation.requiredCapabilities)
+        assertFalse(scenario.source.contains("shell.run"))
+        assertFalse(scenario.source.contains("use module \"shell\""))
+        assertFalse(scenario.source.contains("type: shell"))
+        assertTrue(scenario.source.contains("standard.execute standard"))
+        assertTrue(scenario.source.contains("capability: \"software.test\""))
+    }
+
+    @Test
     fun positiveScenariosPassTargetNeutralCorePipelineBeforeAdapterProjection() {
         ReferenceScenarioMatrix.positiveScenarios().forEach { scenario ->
             val ast = parser.parse(scenario.source)
@@ -80,44 +92,60 @@ class ReferenceScenarioMatrixTests {
             assertTrue(validation.valid, "${scenario.id} must pass Flow validation: ${validation.issues}")
             val safetyIssues = safety.validate(ast)
             assertTrue(safetyIssues.none { it.level == "error" }, "${scenario.id} must pass safety validation: $safetyIssues")
-
-            val plan = planner.plan(ast)
-            assertTrue(plan.nodes.isNotEmpty(), "${scenario.id} must produce execution plan nodes")
+            assertTrue(planner.plan(ast).nodes.isNotEmpty(), "${scenario.id} must produce execution plan nodes")
         }
     }
 
     @Test
-    fun adapterProjectionMatrixIsSeparateFromTargetNeutralScenarioSemantics() {
+    fun adapterProjectionMatrixDeclaresExactStateOutsideTargetNeutralSemantics() {
         val scenarios = ReferenceScenarioMatrix.all()
         val expectations = ReferenceAdapterProjectionMatrix.all()
         val scenarioIds = scenarios.map { it.id }.toSet()
-
-        assertEquals(scenarioIds, expectations.map { it.scenarioId }.toSet(), "adapter matrix must cover every reference scenario")
+        assertEquals(scenarioIds, expectations.map { it.scenarioId }.toSet())
         scenarioIds.forEach { scenarioId ->
-            val actualTargets = ReferenceAdapterProjectionMatrix.forScenario(scenarioId).map { it.target }.toSet()
-            assertEquals(ReferenceAdapterProjectionMatrix.supportedTargets, actualTargets, "$scenarioId must declare every supported adapter target")
+            assertEquals(
+                ReferenceAdapterProjectionMatrix.supportedTargets,
+                ReferenceAdapterProjectionMatrix.forScenario(scenarioId).map { it.target }.toSet(),
+                "$scenarioId must declare every supported adapter target"
+            )
         }
         expectations.forEach { expectation ->
-            assertTrue(expectation.rationale.isNotBlank(), "${expectation.scenarioId}/${expectation.target} must explain adapter expectation")
+            assertTrue(expectation.rationale.isNotBlank())
+            assertEquals(expectation.outcome == ReferenceAdapterProjectionOutcome.EXECUTABLE, expectation.executable)
         }
     }
 
     @Test
-    fun positiveAdapterExpectationsRemainProjectableWithoutBecomingCoreSemantics() {
+    fun positiveAdapterExpectationsMatchConcreteReadinessExactly() {
         ReferenceScenarioMatrix.positiveScenarios().forEach { scenario ->
-            val ast = parser.parse(scenario.source)
-            val plan = planner.plan(ast)
+            val plan = planner.plan(parser.parse(scenario.source))
             ReferenceAdapterProjectionMatrix.forScenario(scenario.id).forEach { expectation ->
-                val generator = generators.getValue(expectation.target)
                 val compatibility = CompatibilityAnalyzer(targets).analyze(plan, expectation.target)
-                val manifest = generator.generate(plan, compatibility)
-                assertEquals(expectation.target, manifest.target, "${scenario.id}/${expectation.target} manifest must retain target identity")
-                assertTrue(manifest.jobs.isNotEmpty(), "${scenario.id}/${expectation.target} must generate at least one target job")
+                val manifest = generators.getValue(expectation.target).generate(plan, compatibility)
+                val render = TargetRenderPolicy.evaluate(manifest)
+                val readiness = TargetCompatibilityReadinessAnalyzer.analyze(manifest)
                 val degradation = TargetCapabilityDegradationAnalyzer.analyze(manifest)
-                assertTrue(
-                    expectation.outcome.accepts(degradation.status),
-                    "${scenario.id}/${expectation.target} expected ${expectation.outcome} but got ${degradation.status}: ${degradation.entries}"
-                )
+
+                assertEquals(expectation.target, manifest.target)
+                assertTrue(manifest.jobs.isNotEmpty())
+                assertTrue(readiness.evidenceAvailable, "${scenario.id}/${expectation.target} must expose concrete readiness evidence")
+                when (expectation.outcome) {
+                    ReferenceAdapterProjectionOutcome.EXECUTABLE -> {
+                        assertEquals(TargetRenderMode.EXECUTABLE, render.mode)
+                        assertTrue(render.executable)
+                        assertEquals(TargetCapabilityDegradationStatus.SUPPORTED, degradation.status)
+                    }
+                    ReferenceAdapterProjectionOutcome.REVIEW_ONLY -> {
+                        assertEquals(TargetRenderMode.REVIEW_ONLY, render.mode, "${scenario.id}/${expectation.target} must remain review-only")
+                        assertFalse(render.executable)
+                        assertEquals(
+                            TargetCapabilityDegradationStatus.DEGRADED,
+                            degradation.status,
+                            "${scenario.id}/${expectation.target} review-only evidence must be degraded, not blocked or supported: ${degradation.entries}"
+                        )
+                    }
+                    ReferenceAdapterProjectionOutcome.FAIL_FAST -> error("Positive scenario ${scenario.id} must not declare FAIL_FAST.")
+                }
             }
         }
     }
@@ -126,29 +154,17 @@ class ReferenceScenarioMatrixTests {
     fun negativeCoverageIsExplicitAndRejectedByCoreValidationGates() {
         ReferenceScenarioMatrix.negativeScenarios().forEach { scenario ->
             val ast = parser.parse(scenario.source)
-            val validation = validator.validate(ast)
-            val safetyIssues = safety.validate(ast)
-            val allIssues = validation.issues + safetyIssues
+            val allIssues = validator.validate(ast).issues + safety.validate(ast)
             val errorCodes = allIssues.filter { it.level == "error" }.map { it.code }.toSet()
-
-            assertFalse(errorCodes.isEmpty(), "negative scenario ${scenario.id} must be rejected by at least one core validation gate")
+            assertFalse(errorCodes.isEmpty(), "negative scenario ${scenario.id} must be rejected")
             assertTrue(
                 scenario.expectedDiagnosticCodes.any { it in errorCodes },
-                "negative scenario ${scenario.id} must produce at least one expected diagnostic from ${scenario.expectedDiagnosticCodes}, got $errorCodes"
+                "negative scenario ${scenario.id} expected ${scenario.expectedDiagnosticCodes}, got $errorCodes"
             )
             ReferenceAdapterProjectionMatrix.forScenario(scenario.id).forEach { expectation ->
-                assertEquals(ReferenceAdapterProjectionOutcome.BLOCKED, expectation.outcome, "negative scenario ${scenario.id} must declare blocked adapter outcomes")
+                assertEquals(ReferenceAdapterProjectionOutcome.FAIL_FAST, expectation.outcome)
+                assertFalse(expectation.executable)
             }
         }
-    }
-
-    private fun ReferenceAdapterProjectionOutcome.accepts(status: TargetCapabilityDegradationStatus): Boolean = when (this) {
-        ReferenceAdapterProjectionOutcome.SUPPORTED -> status == TargetCapabilityDegradationStatus.SUPPORTED
-        ReferenceAdapterProjectionOutcome.REVIEW_REQUIRED -> status in setOf(
-            TargetCapabilityDegradationStatus.SUPPORTED,
-            TargetCapabilityDegradationStatus.DEGRADED,
-            TargetCapabilityDegradationStatus.BLOCKED
-        )
-        ReferenceAdapterProjectionOutcome.BLOCKED -> status == TargetCapabilityDegradationStatus.BLOCKED
     }
 }
