@@ -3,166 +3,24 @@ name: Flow CI
 on:
   push:
     branches:
+      - main
       - 'feature/**'
+      - 'fix/**'
+      - 'chore/**'
   pull_request:
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   compile-test-conformance:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
+
     steps:
-      - name: Checkout feature branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: feature/v095-universal-model-completion
-          fetch-depth: 0
-
-      - name: Correct remaining semantic fixtures
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          examples = Path("src/main/kotlin/org/flowlang/intent/IntentExamples.kt")
-          examples.write_text('''package org.flowlang.intent
-
-/** Small built-in examples used by documentation and future tests. */
-object IntentExamples {
-    val buildTestDeploy = IntentDocument(
-        name = "build-test-deploy",
-        description = "High-level deployment intent. This is the layer AI should produce first.",
-        inputs = listOf(
-            IntentInput("environment", "option[dev,test,prod]", required = true),
-            IntentInput("version", "text", required = true)
-        ),
-        systems = listOf(
-            IntentSystem("source", "git", "Application source repository"),
-            IntentSystem("registry", "dockerRegistry", "Image registry"),
-            IntentSystem("cluster", "kubernetes", "Declared deployment context; generic deploy remains target-neutral"),
-            IntentSystem("standard", "standard", "Semantic build, test, deploy and verify operations")
-        ),
-        workflows = listOf(
-            IntentWorkflow(
-                name = "application-lifecycle",
-                kind = IntentWorkflowKind.DEPLOY,
-                steps = listOf(
-                    IntentStep("checkout", StandardCapability.CHECKOUT),
-                    IntentStep("test", StandardCapability.TEST, requires = listOf("checkout")),
-                    IntentStep("build-image", StandardCapability.BUILD_IMAGE, requires = listOf("test")),
-                    IntentStep("approve-prod", StandardCapability.APPROVE, requires = listOf("build-image")),
-                    IntentStep("deploy", StandardCapability.DEPLOY, requires = listOf("approve-prod")),
-                    IntentStep("verify", StandardCapability.VERIFY, requires = listOf("deploy"))
-                )
-            )
-        ),
-        policies = listOf(
-            IntentPolicy(
-                name = "production-approval",
-                type = IntentPolicyType.APPROVAL,
-                condition = "environment == 'prod'",
-                message = "Production deployment requires approval."
-            )
-        ),
-        failure = IntentFailurePolicy(notify = true, rollback = true, stopOnError = true)
-    )
-}
-''', encoding="utf-8")
-
-          Path("examples/intent/argocd-deploy.intent.yaml").write_text('''intentVersion: "2.0"
-kind: FlowIntentDocument
-name: argocd-deploy
-systems:
-  - name: argo
-    type: argocd
-    config: { url: secret:ARGOCD_URL, token: secret:ARGOCD_TOKEN }
-workflows:
-  - name: cd
-    kind: DEPLOY
-    steps:
-      - id: deploy
-        capability: DEPLOY
-        uses: argocd.sync
-        params: { system: argo, app: demo-app, wait: true }
-''', encoding="utf-8")
-
-          planner = Path("src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt")
-          text = planner.read_text(encoding="utf-8")
-          old = '            StandardCapability.CUSTOM -> customAction(step, intent)'
-          new = '            StandardCapability.CUSTOM -> standardAction(step, "custom", intent)'
-          if text.count(old) != 1:
-              raise SystemExit("Expected exactly one legacy CUSTOM lowering branch.")
-          planner.write_text(text.replace(old, new, 1), encoding="utf-8")
-          PY
-          git diff --check
-
-      - name: Add one-time canonical snapshot generator
-        shell: bash
-        run: |
-          cat > src/test/kotlin/RegenerateReferenceSnapshotsTest.kt <<'KOTLIN'
-          import java.io.File
-          import kotlin.test.Test
-          import org.flowlang.capabilities.CompatibilityAnalyzer
-          import org.flowlang.cli.Json
-          import org.flowlang.conformance.ReferenceSnapshotHonesty
-          import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
-          import org.flowlang.generators.manifest.JenkinsManifestRenderer
-          import org.flowlang.generators.manifest.TargetManifest
-          import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
-          import org.flowlang.generators.manifest.TargetRenderPolicy
-          import org.flowlang.generators.manifest.TektonManifestRenderer
-          import org.flowlang.intent.IntentCapabilityValidator
-          import org.flowlang.intent.IntentToAstPlanner
-          import org.flowlang.intent.IntentYamlLoader
-          import org.flowlang.modules.ModuleRegistry
-          import org.flowlang.planner.ExecutionPlanCanonicalizer
-          import org.flowlang.planner.FlowPlanner
-          import org.flowlang.standard.FlowStandardVersions
-          import org.flowlang.targets.TargetRegistryYamlLoader
-
-          class RegenerateReferenceSnapshotsTest {
-              @Test
-              fun regenerateFromCanonicalPipeline() {
-                  val snapshotDir = File("conformance/snapshots/build-test-deploy")
-                  val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
-                  val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
-                  val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
-                  IntentCapabilityValidator(registry).validate(intent).assertValid()
-                  val ast = IntentToAstPlanner(registry).plan(intent)
-                  val plan = FlowPlanner(registry).plan(ast)
-                  val compatibility = CompatibilityAnalyzer(targets)
-                  val manifests = listOf("jenkins", "github-actions", "tekton").associateWith { target ->
-                      TargetManifestGenerationPipeline.generate(plan, compatibility.analyze(plan, target))
-                  }
-                  val writer = Json.mapper.writerWithDefaultPrettyPrinter()
-                  writer.writeValue(File(snapshotDir, "normalized-intent.json"), intent)
-                  writer.writeValue(File(snapshotDir, "flow-ast.json"), ast)
-                  writer.writeValue(File(snapshotDir, "execution-plan.json"), ExecutionPlanCanonicalizer.canonicalize(plan))
-                  writer.writeValue(
-                      File(snapshotDir, "snapshot-index.json"),
-                      ReferenceSnapshotHonesty.build(
-                          scenarioId = "build-test-deploy",
-                          standardVersion = FlowStandardVersions.FLOW_STANDARD_VERSION,
-                          manifests = manifests.values.toList()
-                      )
-                  )
-                  manifests.forEach { (target, manifest) ->
-                      val readiness = TargetRenderPolicy.evaluate(manifest)
-                      File(snapshotDir, ReferenceSnapshotHonesty.projectionFile(target, readiness.mode)).writeText(render(target, manifest))
-                  }
-              }
-
-              private fun render(target: String, manifest: TargetManifest): String = when (target) {
-                  "jenkins" -> JenkinsManifestRenderer().render(manifest)
-                  "github-actions" -> GitHubActionsManifestRenderer().render(manifest)
-                  "tekton" -> TektonManifestRenderer().render(manifest)
-                  else -> error("Unknown target '$target'.")
-              }
-          }
-          KOTLIN
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -173,50 +31,134 @@ workflows:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Regenerate snapshots from real pipeline
+      - name: Prepare Gradle Wrapper
+        run: chmod +x ./gradlew
+
+      - name: Prepare CI Log Directory
+        run: mkdir -p ci-logs
+
+      - name: Test Flow Agent Tooling
+        run: python3 -m unittest discover -s tools/tests -p 'test_*.py'
+
+      - name: Validate Flow Agent Structure
+        run: python3 tools/flow_agent_validate.py
+
+      - name: Generate Flow Agent Context
+        run: python3 tools/flow_agent_runner.py
+
+      - name: Prepare Gradle Wrapper
+        run: |
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+          fi
+
+      - name: Run Offline Tests When Cache Is Available
         shell: bash
         run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon test --tests RegenerateReferenceSnapshotsTest --stacktrace --console=plain
-          rm -f src/test/kotlin/RegenerateReferenceSnapshotsTest.kt
-          git diff --check
+          set -o pipefail
+          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
+            ./gradlew --no-daemon test --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-test.log
+            exit ${PIPESTATUS[0]}
+          else
+            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions." | tee ci-logs/offline-test.log
+          fi
 
-      - name: Run complete tests and conformance
-        id: validation
+      - name: Run Offline Conformance When Cache Is Available
         shell: bash
         run: |
-          set +e
-          {
-            ./gradlew --no-daemon clean test --stacktrace --console=plain && \
-            ./gradlew --no-daemon conformance --stacktrace --console=plain
-          } 2>&1 | tee /tmp/universal-finalization.log
-          status=${PIPESTATUS[0]}
-          git diff > /tmp/universal-finalization.diff
-          exit "$status"
+          set -o pipefail
+          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
+            ./gradlew --no-daemon run --args="conformance" --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-conformance.log
+            exit ${PIPESTATUS[0]}
+          else
+            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions." | tee ci-logs/offline-conformance.log
+          fi
 
-      - name: Upload finalization diagnostics
+      - name: Compile and Test
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Run Conformance
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-conformance.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Write CI Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "# Flow CI Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branch/ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
+          echo "Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent tooling unit tests" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline Gradle test when cache is available" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline Flow conformance when cache is available" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if compgen -G "build/test-results/test/*.xml" > /dev/null; then
+            echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import glob
+          import html
+          import xml.etree.ElementTree as ET
+          for path in sorted(glob.glob('build/test-results/test/*.xml')):
+              root = ET.parse(path).getroot()
+              for case in root.findall('testcase'):
+                  failure = case.find('failure') or case.find('error')
+                  if failure is None:
+                      continue
+                  cls = case.attrib.get('classname', '')
+                  name = case.attrib.get('name', '')
+                  message = failure.attrib.get('message', '')
+                  text = (failure.text or '').strip().splitlines()
+                  print(f"### {cls}.{name}")
+                  print("")
+                  print("```text")
+                  print(html.unescape(message)[:2000])
+                  for line in text[:12]:
+                      print(html.unescape(line)[:2000])
+                  print("```")
+                  print("")
+          PY
+          fi
+          for file in ci-logs/*.log; do
+            if [ -f "$file" ]; then
+              echo "## ${file}" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo '```text' >> "$GITHUB_STEP_SUMMARY"
+              tail -n 120 "$file" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+      - name: Upload CI Gradle Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: universal-model-finalization-diagnostics
-          path: |
-            /tmp/universal-finalization.log
-            /tmp/universal-finalization.diff
-            build/test-results
-            build/reports/tests
-            conformance/snapshots/build-test-deploy
+          name: flow-ci-gradle-logs
+          path: ci-logs/*.log
           if-no-files-found: warn
 
-      - name: Persist fully validated result
-        if: steps.validation.outcome == 'success'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git checkout origin/main -- .github/workflows/flow-agent-check.yml
-          rm -f .github/workflows/universal-finalize.yml
-          git config user.name "flow-ai-validation"
-          git config user.email "flow-ai-validation@users.noreply.github.com"
-          git add -A
-          git diff --cached --check
-          git commit -m "Finalize universal model contracts and reference snapshots"
-          git push origin HEAD:feature/v095-universal-model-completion
+      - name: Upload CI Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-ci-test-reports
+          path: |
+            build/test-results/test/*.xml
+            build/reports/tests/test/**
+          if-no-files-found: warn
