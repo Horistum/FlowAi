@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/v0957-9-reference-snapshot-honesty-reset
+  pull_request:
 
 permissions:
   contents: write
