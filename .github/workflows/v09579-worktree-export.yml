@@ -1,0 +1,26 @@
+name: v0.9.5.7.9 Worktree Export
+
+on:
+  push:
+    branches:
+      - feature/v0957-9-reference-scenario-snapshot-honesty
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v0957-9-reference-scenario-snapshot-honesty
+          fetch-depth: 0
+      - name: Export exact working tree
+        shell: bash
+        run: |
+          tar --exclude=.git --exclude=build --exclude=.gradle -czf /tmp/flow-v09579-worktree.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v09579-worktree
+          path: /tmp/flow-v09579-worktree.tar.gz
