@@ -2,7 +2,7 @@ package org.flowlang.architecture
 
 import java.io.File
 import org.flowlang.artifacts.StandardSurface
-import org.flowlang.modules.MiniYaml
+import org.flowlang.serialization.FlowYaml
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.StandardModel
 
@@ -215,7 +215,7 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         val catalog = File(rootDir, "standard/architecture/forbidden-directions.yaml")
         if (!catalog.isFile) return emptyMap()
 
-        val root = MiniYaml.parseMap(catalog.readText())
+        val root = FlowYaml.readMap(catalog)
         val items = root["forbiddenDirections"] as? List<Any?> ?: return emptyMap()
         val directions = linkedMapOf<String, List<String>>()
         items.forEach { item ->
@@ -236,7 +236,7 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         reportBudget: ArchitectureReportBudgetStatus
     ): ArchitectureDriftScoreStatus {
         val catalog = File(rootDir, "standard/architecture/drift-score.yaml")
-        val root = if (catalog.isFile) MiniYaml.parseMap(catalog.readText()) else emptyMap()
+        val root = if (catalog.isFile) FlowYaml.readMap(catalog) else emptyMap()
         val minimumScore = (root["minimumScore"] as? Number)?.toInt() ?: 0
         val positiveCatalog = root["positiveSignals"] as? List<Any?> ?: emptyList()
         val negativeCatalog = root["negativeSignals"] as? List<Any?> ?: emptyList()

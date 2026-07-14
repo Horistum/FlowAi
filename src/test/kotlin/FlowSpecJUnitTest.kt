@@ -25,7 +25,7 @@ class FlowSpecJUnitTest {
         plannerTests()
         endToEndTests()
         roundTripTests()
-        miniYamlTests()
+        yamlParsingTests()
         moduleLoaderTests()
         descriptorRegistryParityTests()
         sourceLocationTests()
