@@ -25,6 +25,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p ci-logs
           cat .flow-agent/patches/v09579/honesty.patch.gz.b64.* | base64 --decode > /tmp/honesty.patch.gz
           echo 'b01f9be2e6d99c986bb88c3ec1d911131dbc0d04d18458f00b811640c9cc450a  /tmp/honesty.patch.gz' | sha256sum --check
           gzip --decompress --stdout /tmp/honesty.patch.gz > /tmp/honesty.patch
@@ -57,9 +58,13 @@ jobs:
       - name: Generate canonical reference snapshots
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           cp conformance/snapshots/build-test-deploy/README.md /tmp/build-test-deploy-README.md
-          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/build-test-deploy.intent.yaml --scenario-id build-test-deploy --out conformance/snapshots/build-test-deploy" --stacktrace --console=plain
+          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/build-test-deploy.intent.yaml --scenario-id build-test-deploy --out conformance/snapshots/build-test-deploy" --stacktrace --console=plain 2>&1 | tee ci-logs/reference-snapshot-generation.log
+          status=${PIPESTATUS[0]}
+          if [[ ${status} -ne 0 ]]; then
+            exit ${status}
+          fi
           cp /tmp/build-test-deploy-README.md conformance/snapshots/build-test-deploy/README.md
           test -f conformance/snapshots/build-test-deploy/jenkins.review.yaml
           test -f conformance/snapshots/build-test-deploy/github-actions.review.yaml
@@ -77,10 +82,18 @@ jobs:
           fi
 
       - name: Compile and test
-        run: ./gradlew --no-daemon clean test --stacktrace --console=plain
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          exit ${PIPESTATUS[0]}
 
       - name: Run full conformance
-        run: ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-conformance.log
+          exit ${PIPESTATUS[0]}
 
       - name: Persist only validated changes
         shell: bash
@@ -94,6 +107,14 @@ jobs:
           git add -A
           git commit -m 'Complete evidence-driven reference snapshot honesty reset'
           git push origin HEAD:feature/v0957-9-reference-scenario-snapshot-honesty
+
+      - name: Upload validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v09579-honesty-validation-logs
+          path: ci-logs/*.log
+          if-no-files-found: warn
 
       - name: Upload test reports
         if: always()
