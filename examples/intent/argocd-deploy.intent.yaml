@@ -11,4 +11,5 @@ workflows:
     steps:
       - id: deploy
         capability: DEPLOY
-        params: { engine: argocd, system: argo, app: demo-app, wait: true }
+        uses: argocd.sync
+        params: { system: argo, app: demo-app, wait: true }
