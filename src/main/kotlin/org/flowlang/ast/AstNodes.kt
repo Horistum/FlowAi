@@ -1,5 +1,7 @@
 package org.flowlang.ast
 
+import org.flowlang.standard.FlowStandardVersions
+
 /**
  * Canonical Flow AST (docs/04). Platform-neutral: it must not depend on any
  * target. Source locations are optional and filled by the parser for diagnostics.
@@ -8,7 +10,7 @@ package org.flowlang.ast
 data class SourceLocation(val line: Int, val column: Int)
 
 data class FlowDocument(
-    val astVersion: String = "1.0",
+    val astVersion: String = FlowStandardVersions.AST_VERSION,
     val sourceVersion: String = "1.0",
     val kind: String = "FlowDocument",
     val imports: List<ModuleImportNode> = emptyList(),
@@ -36,8 +38,27 @@ data class FlowNode(
     val input: List<InputNode> = emptyList(),
     val vars: List<VariableNode> = emptyList(),
     val systems: List<SystemNode> = emptyList(),
+    val triggers: List<TriggerNode> = emptyList(),
     val steps: List<StatementNode> = emptyList(),
     val errorHandler: ErrorHandlerNode? = null
+)
+
+
+data class TriggerNode(
+    val type: String = "Trigger",
+    val id: String,
+    val triggerType: String,
+    val workflows: List<String> = listOf("main"),
+    val schedule: ScheduleNode? = null,
+    val event: String? = null,
+    val params: Map<String, ExpressionNode> = emptyMap()
+)
+
+data class ScheduleNode(
+    val type: String = "Schedule",
+    val kind: String,
+    val expression: String,
+    val timezone: String? = null
 )
 
 data class InputNode(

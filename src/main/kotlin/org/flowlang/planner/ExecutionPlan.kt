@@ -11,6 +11,7 @@ data class ExecutionPlan(
     val planVersion: String = org.flowlang.standard.FlowStandardVersions.EXECUTION_PLAN_VERSION,
     /** Runtime inputs carried from Flow AST to target manifests/renderers. */
     val inputs: List<PlanInput> = emptyList(),
+    val triggers: List<PlanTrigger> = emptyList(),
     val outputs: List<PlanOutput> = emptyList(),
     val dependencies: List<String> = emptyList(),
     val requiredCapabilities: List<String> = emptyList(),
@@ -34,6 +35,23 @@ data class ExecutionPlan(
         }
     }
 }
+
+
+data class PlanTrigger(
+    val id: String,
+    val type: String,
+    val workflows: List<String> = listOf("main"),
+    val schedule: PlanSchedule? = null,
+    val event: String? = null,
+    val params: Map<String, String> = emptyMap(),
+    val requiredCapabilities: List<String> = emptyList()
+)
+
+data class PlanSchedule(
+    val kind: String,
+    val expression: String,
+    val timezone: String? = null
+)
 
 data class PlanInput(
     val name: String,

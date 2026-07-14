@@ -12,7 +12,7 @@ import org.flowlang.parser.ExpressionParser
  * - `requires` is an ordering constraint and does not imply hidden parallel execution,
  * - standard build/test/package/runtime requests lower to semantic `standard.execute` actions,
  * - legacy runtime text is not preserved as projected work,
- * - deploy/image defaults are resolved through explicit convention helpers and remain visible in the design report,
+ * - target-neutral capabilities never invent Kubernetes, namespace or selector semantics,
  * - rollback is represented by an explicit `standard.rollback` action, not SkipNode.
  */
 class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
@@ -37,6 +37,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 input = intent.inputs.map { it.toInputNode() },
                 vars = emptyList(),
                 systems = systems.values.toList(),
+                triggers = intent.triggers.map { it.toTriggerNode() },
                 steps = statements,
                 errorHandler = errorHandler
             ),
@@ -47,9 +48,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     private fun ensureImplicitSystems(intent: IntentDocument, steps: List<IntentStep>, systems: LinkedHashMap<String, SystemNode>) {
         if (steps.any { it.capability in dockerCapabilities }) {
             systems.putIfAbsent("registry", SystemNode(name = "registry", systemType = "docker"))
-        }
-        if (steps.any { it.capability in kubernetesCapabilities }) {
-            systems.putIfAbsent("cluster", SystemNode(name = "cluster", systemType = "kubernetes"))
         }
         if (intent.failure.notify || steps.any { it.capability == StandardCapability.NOTIFY }) {
             systems.putIfAbsent("notifier", SystemNode(
@@ -75,6 +73,16 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             config = config.mapValues { (_, value) -> value.toExpression() }
         )
     }
+
+
+    private fun IntentTrigger.toTriggerNode(): TriggerNode = TriggerNode(
+        id = id,
+        triggerType = type.name,
+        workflows = workflows,
+        schedule = schedule?.let { ScheduleNode(kind = it.kind.name, expression = it.expression, timezone = it.timezone) },
+        event = event,
+        params = params.mapValues { (_, value) -> value.toExpression() }
+    )
 
     private fun IntentInput.toInputNode(): InputNode {
         val vt = when {
@@ -136,7 +144,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     }
 
     private fun lowerStep(step: IntentStep, intent: IntentDocument, dependencyIds: List<String>): List<StatementNode> {
-        val node: StatementNode = when (step.capability) {
+        val node: StatementNode = if (step.uses?.contains('.') == true) {
+            customAction(step, intent)
+        } else when (step.capability) {
             StandardCapability.CHECKOUT -> ActionNode(
                 module = "git", action = "checkout", target = ref(systemFor(step, "source")),
                 params = mapNotNullValues(
@@ -165,8 +175,8 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 result = result(step.id)
             )
             StandardCapability.APPROVE -> approvalStatement(step, intent)
-            StandardCapability.DEPLOY -> deployStatement(step, intent)
-            StandardCapability.VERIFY -> verifyStatement(step, intent)
+            StandardCapability.DEPLOY -> standardAction(step, "deploy", intent)
+            StandardCapability.VERIFY -> standardAction(step, "verify", intent)
             StandardCapability.ROLLBACK -> standardAction(step, "rollback", intent, requiresHandler = false)
             StandardCapability.NOTIFY -> ActionNode(
                 module = "notify", action = "send", target = ref(systemFor(step, "notifier")),
@@ -197,7 +207,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             StandardCapability.CLEANUP -> standardAction(step, "cleanup", intent)
             StandardCapability.PROVISION -> standardAction(step, "provision", intent)
             StandardCapability.DEPROVISION -> standardAction(step, "deprovision", intent)
-            StandardCapability.SCHEDULE -> standardAction(step, "schedule", intent)
             StandardCapability.DATABASE_MIGRATE -> standardAction(step, "database-migrate", intent)
             StandardCapability.CERTIFICATE_RENEW -> standardAction(step, "certificate-renew", intent)
             StandardCapability.KUBERNETES_MAINTENANCE -> standardAction(step, "kubernetes-maintenance", intent)
@@ -205,7 +214,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             StandardCapability.INCIDENT -> standardAction(step, "incident", intent)
             StandardCapability.SECRET_ROTATE -> standardAction(step, "secret-rotate", intent)
             StandardCapability.POLICY_CHECK -> standardAction(step, "policy-check", intent)
-            StandardCapability.CUSTOM -> customAction(step, intent)
+            StandardCapability.CUSTOM -> standardAction(step, "custom", intent)
         }
         return listOf(applyDependencies(node, dependencyIds))
     }
@@ -223,41 +232,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             else -> node
         }
     }
-
-    private fun deployStatement(step: IntentStep, intent: IntentDocument): StatementNode {
-        if ((paramText(step, "engine") ?: paramText(step, "tool"))?.equals("argocd", ignoreCase = true) == true) {
-            return ActionNode(
-                module = "argocd", action = "sync", target = ref(systemFor(step, "argo")),
-                params = mapNotNullValues(
-                    "app" to optionalValue(paramText(step, "app") ?: intent.name),
-                    "wait" to optionalBool(paramText(step, "wait") ?: "true"),
-                    "timeout" to optionalValue(paramText(step, "timeout") ?: "5m")
-                ),
-                result = result(step.id)
-            )
-        }
-        return ActionNode(
-            module = "kubernetes", action = "deploy", target = ref(systemFor(step, "cluster")),
-            params = mapNotNullValues(
-                "app" to optionalValue(paramText(step, "app") ?: paramText(step, "name") ?: intent.name),
-                "namespace" to namespaceExpression(intent, step),
-                "image" to imageOrDependency(intent, step),
-                "manifest" to optionalValue(paramText(step, "manifest"))
-            ),
-            result = result(step.id)
-        )
-    }
-
-    private fun verifyStatement(step: IntentStep, intent: IntentDocument): StatementNode = ActionNode(
-        module = "kubernetes", action = "get", target = ref(systemFor(step, "cluster")),
-        params = mapNotNullValues(
-            "resource" to optionalValue(paramText(step, "resource") ?: "pods"),
-            "namespace" to namespaceExpression(intent, step),
-            "selector" to optionalValue(paramText(step, "selector") ?: "app=${intent.name}")
-        ),
-        result = result(step.id),
-        handler = ResultHandlerNode(rules = listOf(ExpectNode(expressions = listOf(refImplicit("ok")))))
-    )
 
     private fun approvalStatement(step: IntentStep, intent: IntentDocument): StatementNode {
         val approval = ApproveNode(
@@ -297,10 +271,13 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     }
 
     private fun customAction(step: IntentStep, intent: IntentDocument): ActionNode {
-        val uses = step.uses ?: return standardAction(step, "custom", intent)
+        val uses = requireNotNull(step.uses) { "Explicit action lowering requires uses: <module>.<action>." }
         val parts = uses.split('.', limit = 2)
-        val module = parts.getOrNull(0) ?: "standard"
-        val action = parts.getOrNull(1) ?: "execute"
+        require(parts.size == 2 && parts.all { it.isNotBlank() }) {
+            "Step '${step.id}' must declare uses: <module>.<action>, got '$uses'."
+        }
+        val module = parts[0]
+        val action = parts[1]
         return ActionNode(
             module = module,
             action = action,
@@ -428,10 +405,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return explicit?.id?.replace('-', '_')
     }
 
-    private fun namespaceExpression(intent: IntentDocument, step: IntentStep): ExpressionNode? =
-        optionalValue(paramText(step, "namespace"))
-            ?: if (hasInput(intent, "environment")) ReferenceNode(path = listOf("environment")) else StringLiteralNode(value = "default")
-
     private fun hasInput(intent: IntentDocument, name: String): Boolean = intent.inputs.any { it.name == name }
     private fun approvalPolicy(intent: IntentDocument): IntentPolicy? = intent.policies.firstOrNull { it.type == IntentPolicyType.APPROVAL }
     private fun approvalMessage(intent: IntentDocument): String = approvalPolicy(intent)?.message ?: "Approval required for ${intent.name}"
@@ -440,14 +413,13 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
 
     companion object {
         private val dockerCapabilities = setOf(StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE)
-        private val kubernetesCapabilities = setOf(StandardCapability.DEPLOY, StandardCapability.VERIFY)
         private val blockedParamNames = setOf("command")
         private val standardCapabilities = setOf(
             StandardCapability.BUILD, StandardCapability.TEST, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND,
-            StandardCapability.ROLLBACK, StandardCapability.SYNC, StandardCapability.DATA_SYNC,
+            StandardCapability.DEPLOY, StandardCapability.VERIFY, StandardCapability.ROLLBACK, StandardCapability.SYNC, StandardCapability.DATA_SYNC,
             StandardCapability.TRANSFORM, StandardCapability.DATA_TRANSFORM, StandardCapability.VALIDATE,
             StandardCapability.BACKUP, StandardCapability.RESTORE, StandardCapability.CLEANUP,
-            StandardCapability.PROVISION, StandardCapability.DEPROVISION, StandardCapability.SCHEDULE,
+            StandardCapability.PROVISION, StandardCapability.DEPROVISION,
             StandardCapability.DATABASE_MIGRATE, StandardCapability.CERTIFICATE_RENEW, StandardCapability.KUBERNETES_MAINTENANCE,
             StandardCapability.RUNBOOK, StandardCapability.INCIDENT, StandardCapability.SECRET_ROTATE,
             StandardCapability.POLICY_CHECK, StandardCapability.CUSTOM

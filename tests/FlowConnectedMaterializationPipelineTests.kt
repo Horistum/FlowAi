@@ -1,9 +1,9 @@
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import org.flowlang.capabilities.CompatibilityReport
-import org.flowlang.capabilities.SupportLevel
+import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetMaterializationResolver
 import org.flowlang.generators.manifest.TargetMaterializationStatus
@@ -13,8 +13,11 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
 import org.flowlang.projection.TargetProjectionArtifactKind
 import org.flowlang.projection.TargetProjectionPlanValidator
+import org.flowlang.targets.TargetRegistryYamlLoader
 
 class FlowConnectedMaterializationPipelineTests {
+    private val targets by lazy { TargetRegistryYamlLoader.loadDirectory(File("targets")) }
+    private fun rules(target: String) = targets.getValue(target).projectionRules
     @Test
     fun standardTaskAdvancesThroughNotesBackedMaterializationPath() {
         val task = TaskNode(
@@ -25,7 +28,7 @@ class FlowConnectedMaterializationPipelineTests {
             params = mapOf("operation" to "test")
         )
 
-        val resolution = TargetMaterializationResolver.resolve(task, "jenkins")
+        val resolution = TargetMaterializationResolver.resolve(task, "jenkins", rules("jenkins"))
 
         assertEquals(TargetMaterializationStatus.NOTES_PROJECTED, resolution.materialization.status)
         assertEquals(MaterializationStatus.MATERIALIZABLE, resolution.negotiation.decisions.single().status)
@@ -45,7 +48,7 @@ class FlowConnectedMaterializationPipelineTests {
             params = mapOf("branch" to "main")
         )
 
-        val resolution = TargetMaterializationResolver.resolve(task, "github-actions")
+        val resolution = TargetMaterializationResolver.resolve(task, "github-actions", rules("github-actions"))
 
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, resolution.materialization.status)
         assertEquals(MaterializationStatus.ADAPTER_REQUIRED, resolution.negotiation.decisions.single().status)
@@ -66,7 +69,7 @@ class FlowConnectedMaterializationPipelineTests {
             params = mapOf("command" to "./gradlew clean test")
         )
 
-        val resolution = TargetMaterializationResolver.resolve(task, "jenkins")
+        val resolution = TargetMaterializationResolver.resolve(task, "jenkins", rules("jenkins"))
 
         assertEquals(TargetMaterializationStatus.BLOCKED, resolution.materialization.status)
         assertEquals(MaterializationStatus.BLOCKED, resolution.negotiation.decisions.single().status)
@@ -90,7 +93,7 @@ class FlowConnectedMaterializationPipelineTests {
                 )
             )
         )
-        val compatibility = CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED)
+        val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
 
         val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
         val step = manifest.jobs.single().steps.single()

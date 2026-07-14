@@ -1,5 +1,5 @@
 kind: FlowTargetRegistry
-version: "1.0"
+version: "2.0"
 description: Built-in target capability registry for the current Flow capability-contract line.
 expressionProfiles:
   - id: flow-full
@@ -102,10 +102,37 @@ targets:
       artifacts.uploadDownload: supported
       rollback.native: supported
       cron.schedule: supported
+      trigger.schedule.cron: supported
+      trigger.schedule.interval: partial
+      trigger.schedule.calendar: partial
+      trigger.event: partial
+      trigger.webhook: partial
       safety.destructiveOperation: supported
       kubernetes.api: supported
       container.image: supported
       notification.send: supported
+    projectionRules:
+      - module: git
+        action: checkout
+        mode: native
+        reason: Jenkins declares the native git checkout step and its plugin contract as executable projection evidence.
+        evidenceReference: targets/builtin-targets.yaml#targets.jenkins.projectionRules.git.checkout
+        payload:
+          kind: jenkins-step
+          reference: git
+          parameters:
+            url: param:url
+            branch: param:branch
+      - module: standard
+        action: execute
+        mode: notes_projected
+        reason: Standard semantic work is preserved for review until a concrete Jenkins integration payload is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard.execute
+      - module: standard
+        action: rollback
+        mode: notes_projected
+        reason: Rollback intent remains notes-backed until a concrete Jenkins rollback integration is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard.rollback
 
   - name: github-actions
     expressionProfile: workflow-condition
@@ -134,9 +161,25 @@ targets:
       artifacts.uploadDownload: supported
       rollback.native: partial
       cron.schedule: supported
+      trigger.schedule.cron: supported
+      trigger.schedule.interval: unsupported
+      trigger.schedule.calendar: partial
+      trigger.event: partial
+      trigger.webhook: supported
       safety.destructiveOperation: partial
       container.image: supported
       notification.send: supported
+    projectionRules:
+      - module: standard
+        action: execute
+        mode: notes_projected
+        reason: Standard semantic work is review-only until an explicit GitHub Action payload is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard.execute
+      - module: standard
+        action: rollback
+        mode: notes_projected
+        reason: Rollback intent remains notes-backed until an explicit GitHub Action rollback payload is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard.rollback
     notes:
       - Approvals are normally modeled through protected environments, not inline workflow syntax.
 
@@ -167,9 +210,25 @@ targets:
       artifacts.workspace: partial
       rollback.native: unsupported
       cron.schedule: partial
+      trigger.schedule.cron: partial
+      trigger.schedule.interval: unsupported
+      trigger.schedule.calendar: unsupported
+      trigger.event: unsupported
+      trigger.webhook: unsupported
       safety.destructiveOperation: partial
       kubernetes.api: supported
       container.image: supported
+    projectionRules:
+      - module: standard
+        action: execute
+        mode: notes_projected
+        reason: Standard semantic work is review-only until a concrete Tekton Task reference is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.tekton.projectionRules.standard.execute
+      - module: standard
+        action: rollback
+        mode: notes_projected
+        reason: Rollback intent remains notes-backed until a concrete Tekton Task reference is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.tekton.projectionRules.standard.rollback
 
   - name: argo-workflows
     expressionProfile: unavailable

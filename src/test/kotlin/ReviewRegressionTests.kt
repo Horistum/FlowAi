@@ -36,7 +36,7 @@ class ReviewRegressionTests {
             .flatMap { job -> job.steps.flatMap { step -> flattenSteps(step) } }
             .single { it.module == "kubernetes" && it.action == "deploy" }
 
-        assertTrue(deployStep.run == null, "Manifest action projection must not carry legacy executable text: $deployStep")
+        assertTrue(deployStep.rendererPayload == null, "Adapter-required manifest work must not carry executable renderer payload: $deployStep")
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, deployStep.materialization.status)
         assertEquals("app", deployStep.params["app"])
         assertEquals("namespace", deployStep.params["namespace"])
@@ -82,7 +82,7 @@ class ReviewRegressionTests {
             .single { it.module == "notify" && it.action == "send" }
         val body = notifyStep.params["body"].orEmpty()
 
-        assertTrue(notifyStep.run == null, "Manifest projection must not recreate executable text: $notifyStep")
+        assertTrue(notifyStep.rendererPayload == null, "Adapter-required manifest work must not recreate executable renderer payload: $notifyStep")
         assertFalse(body.contains("${'$'}{params.deploy.status}"), body)
         assertTrue(body.contains("${'$'}{deploy.status}"), body)
     }

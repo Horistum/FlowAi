@@ -1,37 +1,18 @@
-# Target Registry v1.0
+# Target Registry v2.0
 
-Flow target capabilities are represented as versioned YAML under `targets/`.
+Flow target capabilities and projection evidence are represented as versioned YAML under `targets/`.
 
-This is deliberate: target support must be data-driven, reviewable and conformance-testable. Hardcoding every Jenkins, Tekton, Argo Workflows or GitHub Actions behavior in Kotlin would politely re-create the same portability mess Flow exists to avoid.
+This keeps target support data reviewable and extensible. Adding a target must not require adding another vendor field to a public Kotlin data class, and declaring a capability must not be mistaken for proof that an executable renderer payload exists.
 
-## File
-
-```text
-targets/builtin-targets.yaml
-```
-
-## Capability example
+## Registry document
 
 ```yaml
 kind: FlowTargetRegistry
-version: "1.0"
-targets:
-  - name: tekton
-    expressionProfile: equality-membership-condition
-    capabilities:
-      parallel: supported
-      approvals: unsupported
-      dynamicLoops: partial
-```
+version: "2.0"
 
-## Expression profiles
-
-A target that declares condition capability must also select an explicit expression profile. Profiles describe Flow AST features, not target names.
-
-```yaml
 expressionProfiles:
   - id: equality-membership-condition
-    description: Equality and membership conditions over native scalar target values.
+    description: Equality and membership conditions over native scalar values.
     features:
       - node.literal
       - node.reference
@@ -39,25 +20,66 @@ expressionProfiles:
       - operator.binary.==
       - operator.binary.!=
       - operator.binary.in
+
+targets:
+  - name: jenkins
+    expressionProfile: equality-membership-condition
+    capabilities:
+      parallel: supported
+      approvals: partial
+    projectionRules:
+      - module: git
+        action: checkout
+        mode: NATIVE
+        reason: Jenkins has a concrete Git checkout step.
+        evidenceReference: targets/builtin-targets.yaml#jenkins.git.checkout
+        payload:
+          kind: JENKINS_STEP
+          reference: git
+          params:
+            url: param:url
+            branch: param:branch
 ```
 
-Each resolved declaration carries a registry evidence reference. Missing profiles fail closed. A profile with an empty feature list is explicit unsupported evidence and is not treated as implicit capability.
+## Projection rules
 
-Future adapters may provide equivalent target-notes evidence without modifying universal Flow expression semantics.
+A rule identifies one semantic action and states how that target can represent it:
 
-## Support levels
+- `NATIVE`: concrete target-native payload evidence exists.
+- `NOTES_PROJECTED`: a declarative notes package owns the projection.
+- `ADAPTER_REQUIRED`: no complete projection is available.
+- `UNSUPPORTED`: the target cannot represent the action safely.
+- `BLOCKED`: architecture or safety policy forbids projection.
 
-- `supported` - native or safe representation exists.
-- `partial` - representation exists with limitation or workaround.
-- `unsupported` - target cannot represent the feature safely.
-- `requires_runtime` - target needs Flow runtime support.
+`NATIVE` and `NOTES_PROJECTED` are not promises made by enum value alone. They require evidence and, for executable output, a structured renderer payload supported by the target renderer. Missing rules fail closed as `ADAPTER_REQUIRED`.
+
+## Renderer payloads
+
+Target Registry 2.0 supports structured payload kinds rather than arbitrary command strings:
+
+- `JENKINS_STEP`
+- `GITHUB_ACTION`
+- `TEKTON_TASK`
+
+Payload parameters may reference semantic task parameters, inputs or stable literals. The materialization resolver validates those references and carries the resolved payload into Target Manifest 2.0.
+
+## Expression profiles
+
+A target that declares condition support selects an explicit expression profile. The profile describes Flow AST features, not a hardcoded target switch. Missing or empty evidence fails closed.
+
+## Trigger capabilities
+
+Trigger requirements are ordinary compatibility features such as:
+
+- `trigger.manual`
+- `trigger.schedule.cron`
+- `trigger.schedule.interval`
+- `trigger.schedule.calendar`
+- `trigger.event`
+- `trigger.webhook`
+
+A renderer emits trigger syntax only when the target registry and manifest evidence support the required form.
 
 ## Enforcement
 
-The CLI loads the registry and runs `CompatibilityAnalyzer` over the Execution Plan. Expression requirements are derived from the parsed Flow AST and checked against the target's resolved profile before generation. Translators consume the same declaration, preventing compatibility and renderer behavior from drifting apart.
-
-In strict mode partial support is elevated to an error:
-
-```bash
-./gradlew run --args="intent examples/intent/build-test-deploy.intent.yaml --target tekton --strict"
-```
+The CLI and conformance path both load the same registry, run `CompatibilityAnalyzer`, generate through `TargetManifestGenerationPipeline`, reconcile compatibility with actual materialization readiness and then apply render policy. There is one evidence path, not one truth for tests and another for users.

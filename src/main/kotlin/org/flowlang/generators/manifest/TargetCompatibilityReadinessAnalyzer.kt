@@ -22,10 +22,7 @@ import org.flowlang.capabilities.TargetSelectionReport
  * but it must never erase an existing capability blocker.
  */
 object TargetCompatibilityReadinessAnalyzer {
-    private val completedMaterialization = setOf(
-        TargetMaterializationStatus.NATIVE,
-        TargetMaterializationStatus.NOTES_PROJECTED
-    )
+    private val completedMaterialization = setOf(TargetMaterializationStatus.NATIVE)
     private val blockedMaterialization = setOf(
         TargetMaterializationStatus.BLOCKED,
         TargetMaterializationStatus.UNSUPPORTED

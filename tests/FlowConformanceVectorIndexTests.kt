@@ -15,7 +15,7 @@ class FlowConformanceVectorIndexTests {
             releaseProfileChecks = releaseChecks
         )
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, index.standardVersion)
         assertEquals("PASS", index.status, index.vectorsMissingRequiredCheck.joinToString())
         assertTrue(index.vectorCount > 0)

@@ -2,7 +2,35 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
-## Unreleased - v0.9.5.x architecture correction track
+## 0.9.5 - Universal model completion
+
+### Added
+
+- Added first-class manual, schedule, event and webhook triggers across Intent, AST, ExecutionPlan and TargetManifest.
+- Added declarative target projection rules and structured native renderer payload evidence.
+- Added an extensible registry-keyed target semantics matrix.
+- Added migration documentation for all public 2.0 artifact contracts.
+
+### Changed
+
+- Made compatibility/readiness reconciliation mandatory at the final manifest generation boundary used by the CLI and all generators.
+- Removed dormant no-op and phantom-task renderer branches.
+- Made generic deploy and verify lowering target-neutral instead of inventing Kubernetes defaults.
+- Promoted the implementation package to `0.9.5` and the public standard to `0.8.0`.
+- Advanced Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry to `2.0`.
+
+### Removed
+
+- Removed schedule-as-workflow-step semantics.
+- Removed the legacy TargetManifest `run` field.
+- Removed vendor-specific fields from `TargetSemanticsEntry`.
+
+### Architecture boundary
+
+- No runtime executor, SDK lifecycle, plugin framework, shell projection or target-specific public Flow DSL is introduced.
+- Missing projection evidence remains review-only or fail-fast.
+
+## Historical - v0.9.5.x architecture correction track
 
 ### Added
 
@@ -49,11 +77,11 @@ All project source text is written in English. The changelog records architectur
 
 ### Version boundary
 
-- The published Gradle package version remains `0.9.4`.
-- The v0.9.5.x identifiers describe an unreleased architecture correction track, not published package versions.
-- The next expected package line remains `0.9.5` and requires an explicit package-promotion decision.
-- The active public Flow standard version remains `0.7.6`.
-- Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry contract versions are unchanged.
+- The correction work was promoted in package `0.9.5`.
+- The v0.9.5.x identifiers remain historical scoped-work identifiers, not package versions.
+- Package promotion is recorded in the `0.9.5` release section above.
+- The active public Flow standard version is promoted to `0.8.0`.
+- Public artifact contracts are promoted to `2.0` with an explicit migration.
 - Existing conformance gate identifiers remain stable.
 
 ### Architecture boundary

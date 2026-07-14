@@ -13,7 +13,7 @@ class FlowStandardBundleVerifierTests {
         val bundle = standardBundleFixture()
         val report = StandardBundleVerifier().verify(bundle)
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, File(bundle, "standard-version.txt").readText().trim())
         assertEquals("PASS", report.status, report.checks.filter { it.status != "PASS" }.joinToString { it.id })
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.observedStandardVersion)

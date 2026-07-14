@@ -1,6 +1,6 @@
 {
   "snapshotVersion" : "1.0",
-  "standardVersion" : "0.7.6",
+  "standardVersion" : "0.8.0",
   "scenarioId" : "build-test-deploy",
   "overallState" : "REVIEW_ONLY",
   "executable" : false,

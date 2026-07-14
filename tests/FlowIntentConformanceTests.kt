@@ -171,8 +171,9 @@ fun intentConformanceTests() {
                 steps:
                   - id: deploy
                     capability: DEPLOY
+                    uses: argocd.sync
                     requires: []
-                    params: { engine: argocd, system: argo, app: demo, wait: true }
+                    params: { system: argo, app: demo, wait: true }
         """.trimIndent())
         H.eq("intent/yaml/flow-style-system-config", (intent.systems.first().config["url"] as org.flowlang.intent.IntentSecretRef).name, "ARGOCD_URL")
         H.eq("intent/yaml/flow-style-param", (intent.workflows.first().steps.first().params["app"] as org.flowlang.intent.IntentString).value, "demo")
@@ -196,7 +197,8 @@ fun intentConformanceTests() {
                 steps:
                   - id: deploy
                     capability: DEPLOY
-                    params: { engine: argocd, system: argo, app: demo }
+                    uses: argocd.sync
+                    params: { system: argo, app: demo }
         """.trimIndent())
         val rep = IntentCapabilityValidator(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).validate(intent)
         H.ok("intent/capability/argocd-missing-url-token", rep.issues.count { it.code == "MISSING_SYSTEM_CONFIG" } >= 2)

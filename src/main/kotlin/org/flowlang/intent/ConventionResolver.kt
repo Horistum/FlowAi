@@ -19,7 +19,6 @@ object ConventionResolver {
                     if (step.params["path"] == null) out += "Step '${step.id}' does not define params.path. Convention: path = ."
                     if (step.params["image"] == null) out += "Step '${step.id}' does not define params.image. Convention: image = <intent-name>:<version|latest>."
                 }
-                StandardCapability.DEPLOY, StandardCapability.VERIFY -> if (step.params["namespace"] == null) out += "Step '${step.id}' does not define params.namespace. Convention: namespace = input.environment when present, otherwise default."
                 StandardCapability.APPROVE -> if (step.params["message"] == null) out += "Step '${step.id}' does not define params.message. Convention: use approval policy message or generated message."
                 else -> Unit
             }

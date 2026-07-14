@@ -10,7 +10,7 @@ class FlowPublicCandidateAcceptanceGateTests {
     fun standardExportManifestCarriesAcceptanceGateMetadata() {
         val manifest = StandardSurface.standardExportManifest()
 
-        assertEquals("0.7.6", FlowStandardVersions.FLOW_STANDARD_VERSION)
+        assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals("1.3", manifest.manifestVersion)
         assertTrue(manifest.releaseGateChecks.contains("v0.7.3.standard-model-projection-coherence"))
         assertTrue(manifest.releaseGateChecks.contains("v0.7.4.architecture-delta-analyzer"))

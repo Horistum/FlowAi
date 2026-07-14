@@ -1,4 +1,4 @@
-intentVersion: "1.0"
+intentVersion: "2.0"
 kind: FlowIntentDocument
 name: argocd-deploy
 systems:
@@ -11,4 +11,5 @@ workflows:
     steps:
       - id: deploy
         capability: DEPLOY
-        params: { engine: argocd, system: argo, app: demo-app, wait: true }
+        uses: argocd.sync
+        params: { system: argo, app: demo-app, wait: true }

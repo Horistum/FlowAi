@@ -1,5 +1,7 @@
 package org.flowlang.generators.manifest
 
+import org.flowlang.capabilities.TargetRendererPayloadKind
+
 class JenkinsManifestRenderer {
     fun render(manifest: TargetManifest): String {
         TargetRendererContractValidator.requireRenderable(manifest, "jenkins")
@@ -16,6 +18,7 @@ class JenkinsManifestRenderer {
         sb.appendLine("  agent any")
         sb.appendLine("  options { timestamps() }")
         renderJenkinsParameters(manifest, sb)
+        renderJenkinsTriggers(manifest, sb)
         renderJenkinsOpaqueEnvironment(manifest, sb)
         sb.appendLine("  stages {")
         manifest.jobs.forEach { job -> renderJenkinsJob(job, manifest, sb) }
@@ -33,6 +36,19 @@ class JenkinsManifestRenderer {
                 "option" -> sb.appendLine("    choice(name: '${groovyEscape(input.name)}', choices: [${input.choices.joinToString(", ") { groovyString(it) }}])")
                 else -> sb.appendLine("    string(name: '${groovyEscape(input.name)}', defaultValue: ${groovyString(input.defaultValue ?: "")})")
             }
+        }
+        sb.appendLine("  }")
+    }
+
+
+    private fun renderJenkinsTriggers(manifest: TargetManifest, sb: StringBuilder) {
+        val schedules = manifest.triggers.filter { it.type == "SCHEDULE" }
+        if (schedules.isEmpty()) return
+        sb.appendLine("  triggers {")
+        schedules.forEach { trigger ->
+            require(trigger.scheduleKind == "CRON") { "Executable Jenkins schedule '${trigger.id}' must be CRON." }
+            val expression = requireNotNull(trigger.scheduleExpression) { "Jenkins schedule '${trigger.id}' is missing expression." }
+            sb.appendLine("    cron(${groovyString(expression)})")
         }
         sb.appendLine("  }")
     }
@@ -109,10 +125,18 @@ class JenkinsManifestRenderer {
     }
 
     private fun renderJenkinsLeafBody(step: TargetStep, sb: StringBuilder, indent: String) {
-        when {
-            step.materialization.status in setOf(TargetMaterializationStatus.NATIVE, TargetMaterializationStatus.NOTES_PROJECTED) ->
-                sb.appendLine("${indent}// Flow step '${step.id}' is materialized by target notes: ${step.materialization.capability}")
-            else -> sb.appendLine("${indent}error(${groovyString("Flow step '${step.id}' is not materialized: ${step.materialization.status} ${step.materialization.reason}")})")
+        val payload = requireNotNull(step.rendererPayload) { "Executable Jenkins step '${step.id}' has no renderer payload." }
+        require(payload.kind == TargetRendererPayloadKind.JENKINS_STEP) {
+            "Jenkins cannot render payload kind '${payload.kind}' for step '${step.id}'."
+        }
+        when (payload.reference) {
+            "git" -> {
+                val url = payload.parameters["url"].orEmpty()
+                require(url.isNotBlank()) { "Jenkins git payload for '${step.id}' requires url." }
+                val branch = payload.parameters["branch"].orEmpty().ifBlank { "main" }
+                sb.appendLine("${indent}git branch: ${groovyString(branch)}, url: ${groovyString(url)}")
+            }
+            else -> error("Unsupported Jenkins structured payload reference '${payload.reference}' for step '${step.id}'.")
         }
     }
 }
@@ -133,8 +157,20 @@ class GitHubActionsManifestRenderer(
         manifest.mappingNotes.forEach { note -> sb.appendLine("# Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}") }
         sb.appendLine("name: ${yamlScalar(manifest.flowName)}")
         sb.appendLine("on:")
-        sb.appendLine("  workflow_dispatch:")
-        renderGithubInputs(manifest, sb)
+        val manual = manifest.triggers.isEmpty() || manifest.triggers.any { it.type == "MANUAL" }
+        if (manual) {
+            sb.appendLine("  workflow_dispatch:")
+            renderGithubInputs(manifest, sb)
+        }
+        val schedules = manifest.triggers.filter { it.type == "SCHEDULE" }
+        if (schedules.isNotEmpty()) {
+            sb.appendLine("  schedule:")
+            schedules.forEach { trigger ->
+                require(trigger.scheduleKind == "CRON") { "Executable GitHub schedule '${trigger.id}' must be CRON." }
+                val expression = requireNotNull(trigger.scheduleExpression) { "GitHub schedule '${trigger.id}' is missing expression." }
+                sb.appendLine("    - cron: ${yamlScalar(expression)}")
+            }
+        }
         sb.appendLine("jobs:")
         manifest.jobs.forEach { job -> renderGitHubJob(job, manifest, sb) }
         return sb.toString()
@@ -181,11 +217,19 @@ class GitHubActionsManifestRenderer(
             sb.appendLine("    env:")
             opaqueNames.forEach { name -> sb.appendLine("      ${safeEnvName(name)}: ${TargetProjectionValue.bindingValue(ProjectionTarget.GITHUB_ACTIONS, name)}") }
         }
-        sb.appendLine("    steps: []")
+        require(materializedSteps.isNotEmpty()) { "Executable GitHub Actions job '${job.id}' has no steps." }
+        sb.appendLine("    steps:")
         materializedSteps.forEach { step ->
-            TargetProjectionDiagnostics.append(ProjectionTarget.GITHUB_ACTIONS, step, manifest.inputs, sb, "    ", "#")
-            sb.appendLine("    # Flow step ${sanitizeId(step.id)} materialization=${step.materialization.status} capability=${step.materialization.capability}")
-            sb.appendLine("    # reason: ${step.materialization.reason.replace("\n", " ")}")
+            val payload = requireNotNull(step.rendererPayload) { "Executable GitHub Actions step '${step.id}' has no renderer payload." }
+            require(payload.kind == TargetRendererPayloadKind.GITHUB_ACTION) {
+                "GitHub Actions cannot render payload kind '${payload.kind}' for step '${step.id}'."
+            }
+            sb.appendLine("      - name: ${yamlScalar(step.name)}")
+            sb.appendLine("        uses: ${yamlScalar(payload.reference)}")
+            if (payload.parameters.isNotEmpty()) {
+                sb.appendLine("        with:")
+                payload.parameters.forEach { (name, value) -> sb.appendLine("          ${sanitizeId(name)}: ${yamlScalar(value)}") }
+            }
         }
     }
 
@@ -249,17 +293,22 @@ class TektonManifestRenderer {
             )
             sb.appendLine(whenBlock.prependIndent("      ").trimEnd())
         }
+        require(materializedSteps.size == 1) {
+            "Executable Tekton job '${job.id}' must resolve to exactly one structured task payload."
+        }
+        val step = materializedSteps.single()
+        val payload = requireNotNull(step.rendererPayload) { "Executable Tekton step '${step.id}' has no renderer payload." }
+        require(payload.kind == TargetRendererPayloadKind.TEKTON_TASK) {
+            "Tekton cannot render payload kind '${payload.kind}' for step '${step.id}'."
+        }
         sb.appendLine("      taskRef:")
-        sb.appendLine("        name: flow-materialization-required")
-        sb.appendLine("      params:")
-        sb.appendLine("        - name: flow-job")
-        sb.appendLine("          value: ${yamlScalar(job.id)}")
-        sb.appendLine("        - name: materialization-status")
-        sb.appendLine("          value: ${yamlScalar(materializedSteps.map { it.materialization.status.name }.distinct().joinToString(","))}")
-        materializedSteps.forEach { step ->
-            TargetProjectionDiagnostics.append(ProjectionTarget.TEKTON, step, manifest.inputs, sb, "      ", "#")
-            sb.appendLine("      # Flow step ${sanitizeId(step.id)} materialization=${step.materialization.status} capability=${step.materialization.capability}")
-            sb.appendLine("      # reason: ${step.materialization.reason.replace("\n", " ")}")
+        sb.appendLine("        name: ${sanitizeId(payload.reference)}")
+        if (payload.parameters.isNotEmpty()) {
+            sb.appendLine("      params:")
+            payload.parameters.forEach { (name, value) ->
+                sb.appendLine("        - name: ${sanitizeId(name)}")
+                sb.appendLine("          value: ${yamlScalar(value)}")
+            }
         }
     }
 }

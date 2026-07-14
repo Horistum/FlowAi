@@ -1,5 +1,7 @@
 package org.flowlang.generators.manifest
 
+import org.flowlang.capabilities.TargetProjectionMode
+import org.flowlang.capabilities.TargetProjectionRule
 import org.flowlang.materialization.MaterializationDecision
 import org.flowlang.materialization.MaterializationEvidence
 import org.flowlang.materialization.MaterializationEvidenceKind
@@ -17,13 +19,9 @@ import org.flowlang.semantic.SemanticActionKind
 import org.flowlang.semantic.SemanticActionNode
 
 /**
- * Bridges real execution-plan tasks into the notes / semantic / materialization /
- * projection contract stack.
- *
- * This resolver is intentionally conservative. It does not invent target-native
- * execution for ordinary actions. It does make the contract path real: every
- * task receives a semantic node, a materialization decision and a projection
- * artifact before it becomes a TargetMaterialization on the manifest boundary.
+ * Bridges execution-plan tasks into semantic, materialization and projection
+ * evidence. Ordinary action decisions are read from target registry evidence;
+ * this class contains no positive target/action allow-list.
  */
 internal data class TargetMaterializationResolution(
     val semanticGraph: SemanticActionGraph,
@@ -31,7 +29,8 @@ internal data class TargetMaterializationResolution(
     val negotiation: MaterializationNegotiation,
     val projectionPlan: TargetProjectionPlan,
     val artifact: TargetProjectionArtifact,
-    val materialization: TargetMaterialization
+    val materialization: TargetMaterialization,
+    val rendererPayload: TargetRendererPayload? = null
 ) {
     fun mappingNote(targetName: String, taskId: String): TargetMappingNote {
         val level = when (materialization.status) {
@@ -49,18 +48,16 @@ internal data class TargetMaterializationResolution(
             TargetMaterializationStatus.ADAPTER_REQUIRED -> "materialization.adapter-required"
             else -> "materialization.${materialization.status.name.lowercase().replace('_', '-')}"
         }
-        return TargetMappingNote(
-            level = level,
-            target = targetName,
-            nodeId = taskId,
-            feature = feature,
-            message = materialization.reason
-        )
+        return TargetMappingNote(level, targetName, taskId, feature, materialization.reason)
     }
 }
 
 internal object TargetMaterializationResolver {
-    fun resolve(task: TaskNode, targetName: String): TargetMaterializationResolution {
+    fun resolve(
+        task: TaskNode,
+        targetName: String,
+        projectionRules: List<TargetProjectionRule> = emptyList()
+    ): TargetMaterializationResolution {
         val capability = capabilityFor(task)
         val semanticNode = SemanticActionNode(
             id = "task.${contractId(task.id)}",
@@ -80,62 +77,99 @@ internal object TargetMaterializationResolver {
             edges = emptyList()
         )
         val notes = listOf(generatedCapabilityNotes(capability))
-        val decision = decisionFor(task, capability)
+        val rule = projectionRules.singleOrNull { it.matches(task.module, task.action) }
+            ?: projectionRules.firstOrNull { it.module == task.module && it.action == "*" }
+        val decision = decisionFor(task, capability, targetName, rule)
         val negotiation = MaterializationNegotiation(
             negotiationId = "flow.materialization.${contractId(task.id)}",
             graph = graph,
             decisions = listOf(decision)
         )
-        val artifact = projectionArtifactFor(task, targetName, semanticNode, decision)
+        val artifact = projectionArtifactFor(task, targetName, semanticNode, decision, rule)
         val projectionPlan = TargetProjectionPlan(
             planId = "flow.projection.${contractId(task.id)}",
             negotiation = negotiation,
             artifacts = listOf(artifact)
         )
         val materialization = targetMaterializationFor(capability, decision, artifact, projectionPlan)
-        return TargetMaterializationResolution(graph, notes, negotiation, projectionPlan, artifact, materialization)
+        val payload = if (artifact.kind == TargetProjectionArtifactKind.TARGET_NATIVE) {
+            rule?.payload?.let { template ->
+                TargetRendererPayload(
+                    kind = template.kind,
+                    target = targetName,
+                    reference = template.reference,
+                    parameters = template.parameters.mapValues { (_, source) -> resolvePayloadValue(source, task) },
+                    evidenceReference = rule.evidenceReference
+                )
+            }
+        } else null
+        return TargetMaterializationResolution(graph, notes, negotiation, projectionPlan, artifact, materialization, payload)
     }
 
-    private fun capabilityFor(task: TaskNode): String = when (task.module to task.action) {
-        "shell" to "run" -> "manual.runtime.action"
-        else -> listOf(task.module, task.action).joinToString(".").ifBlank { "flow.action" }
-    }
-
-    private fun decisionFor(task: TaskNode, capability: String): MaterializationDecision = when (task.module to task.action) {
-        "shell" to "run" -> MaterializationDecision(
-            nodeId = "task.${contractId(task.id)}",
-            status = MaterializationStatus.BLOCKED,
-            reason = "Manual runtime action is preserved for review, but raw runtime execution is blocked at the Flow Core projection boundary.",
-            evidence = listOf(MaterializationEvidence("v0.9.5.1.shell-prohibition", MaterializationEvidenceKind.REVIEW_DECISION, "The correction track prohibits raw runtime projection."))
+    private fun decisionFor(
+        task: TaskNode,
+        capability: String,
+        targetName: String,
+        rule: TargetProjectionRule?
+    ): MaterializationDecision {
+        val nodeId = "task.${contractId(task.id)}"
+        // This is a global architecture prohibition, not a positive target switch.
+        if (task.module == "shell" && task.action == "run") {
+            return MaterializationDecision(
+                nodeId = nodeId,
+                status = MaterializationStatus.BLOCKED,
+                reason = "Raw runtime execution is blocked at the Flow Core projection boundary.",
+                evidence = listOf(MaterializationEvidence(
+                    "v0.9.5.1.shell-prohibition",
+                    MaterializationEvidenceKind.REVIEW_DECISION,
+                    "The architecture constitution prohibits raw runtime projection."
+                ))
+            )
+        }
+        if (rule == null) {
+            return MaterializationDecision(
+                nodeId = nodeId,
+                status = MaterializationStatus.ADAPTER_REQUIRED,
+                reason = "Target '$targetName' declares no projection rule for '${task.module}.${task.action}'.",
+                evidence = listOf(MaterializationEvidence(
+                    "target:$targetName#projectionRules",
+                    MaterializationEvidenceKind.PROJECTION_RULE,
+                    "Missing target projection evidence fails closed."
+                ))
+            )
+        }
+        val status = when (rule.mode) {
+            TargetProjectionMode.NATIVE,
+            TargetProjectionMode.NOTES_PROJECTED -> MaterializationStatus.MATERIALIZABLE
+            TargetProjectionMode.ADAPTER_REQUIRED -> MaterializationStatus.ADAPTER_REQUIRED
+            TargetProjectionMode.UNSUPPORTED -> MaterializationStatus.UNSUPPORTED
+            TargetProjectionMode.BLOCKED -> MaterializationStatus.BLOCKED
+        }
+        val evidenceKind = when (rule.mode) {
+            TargetProjectionMode.BLOCKED -> MaterializationEvidenceKind.REVIEW_DECISION
+            else -> MaterializationEvidenceKind.PROJECTION_RULE
+        }
+        val evidence = mutableListOf(
+            MaterializationEvidence(rule.evidenceReference, evidenceKind, "Declarative target registry projection evidence.")
         )
-        "standard" to "execute" -> MaterializationDecision(
-            nodeId = "task.${contractId(task.id)}",
-            status = MaterializationStatus.MATERIALIZABLE,
-            reason = "Standard execution is declared as notes-backed semantic work and may advance to projection review.",
-            evidence = listOf(MaterializationEvidence(capability, MaterializationEvidenceKind.CAPABILITY_DECLARATION, "Generated capability notes declare this standard action."))
-        )
-        "standard" to "rollback" -> MaterializationDecision(
-            nodeId = "task.${contractId(task.id)}",
-            status = MaterializationStatus.MATERIALIZABLE,
-            reason = "Rollback intent is preserved as notes-backed semantic work and may advance to projection review.",
-            evidence = listOf(MaterializationEvidence(capability, MaterializationEvidenceKind.CAPABILITY_DECLARATION, "Generated capability notes declare this rollback action."))
-        )
-        else -> MaterializationDecision(
-            nodeId = "task.${contractId(task.id)}",
-            status = MaterializationStatus.ADAPTER_REQUIRED,
-            reason = "Action capability is represented in the semantic graph, but target materialization requires an explicit projection adapter.",
-            evidence = listOf(MaterializationEvidence("projection.${contractId(capability)}", MaterializationEvidenceKind.PROJECTION_RULE, "No target projection rule is declared for this action."))
-        )
+        if (status == MaterializationStatus.MATERIALIZABLE) {
+            evidence += MaterializationEvidence(capability, MaterializationEvidenceKind.CAPABILITY_DECLARATION, "Semantic capability declaration.")
+        }
+        return MaterializationDecision(nodeId, status, rule.reason, evidence)
     }
 
     private fun projectionArtifactFor(
         task: TaskNode,
         targetName: String,
         node: SemanticActionNode,
-        decision: MaterializationDecision
+        decision: MaterializationDecision,
+        rule: TargetProjectionRule?
     ): TargetProjectionArtifact {
         val kind = when (decision.status) {
-            MaterializationStatus.MATERIALIZABLE -> TargetProjectionArtifactKind.NOTES_BACKED
+            MaterializationStatus.MATERIALIZABLE -> when (rule?.mode) {
+                TargetProjectionMode.NATIVE -> TargetProjectionArtifactKind.TARGET_NATIVE
+                else -> TargetProjectionArtifactKind.NOTES_BACKED
+            }
             MaterializationStatus.ADAPTER_REQUIRED -> TargetProjectionArtifactKind.ADAPTER_BOUNDARY
             MaterializationStatus.UNSUPPORTED,
             MaterializationStatus.BLOCKED,
@@ -153,7 +187,8 @@ internal object TargetMaterializationResolver {
                 "capability" to node.declaration,
                 "sourceTask" to task.id,
                 "targetBoundary" to targetName,
-                "decision" to decision.status.name
+                "decision" to decision.status.name,
+                "evidenceReference" to (rule?.evidenceReference ?: "target:$targetName#projectionRules")
             )
         )
     }
@@ -177,7 +212,7 @@ internal object TargetMaterializationResolver {
                 capability = capability,
                 reason = decision.reason,
                 requirements = requirements,
-                metadata = mapOf("materializationSource" to "notes-negotiation")
+                metadata = mapOf("materializationSource" to "target-registry-projection-rule")
             )
             MaterializationStatus.ADAPTER_REQUIRED -> TargetMaterialization.adapterRequired(capability, decision.reason, requirements)
             MaterializationStatus.UNSUPPORTED -> TargetMaterialization(TargetMaterializationStatus.UNSUPPORTED, capability, decision.reason, requirements)
@@ -186,13 +221,30 @@ internal object TargetMaterializationResolver {
         }
     }
 
+    private fun resolvePayloadValue(source: String, task: TaskNode): String = when {
+        source.startsWith("param:") -> task.params[source.removePrefix("param:")].orEmpty()
+        source.startsWith("input:") -> task.inputs[source.removePrefix("input:")].orEmpty()
+        source == "task:id" -> task.id
+        source == "task:target" -> task.target
+        source.startsWith("literal:") -> source.removePrefix("literal:")
+        else -> error("Unsupported renderer payload parameter source '$source'.")
+    }
+
+    private fun capabilityFor(task: TaskNode): String = when (task.module to task.action) {
+        "shell" to "run" -> "manual.runtime.action"
+        else -> listOf(task.module, task.action).joinToString(".").ifBlank { "flow.action" }
+    }
+
     private fun generatedCapabilityNotes(capability: String): NotesPackageContract = NotesPackageContract(
         packageId = GENERATED_CAPABILITY_PACKAGE,
-        packageVersion = "0.9.5.7.1",
+        packageVersion = "0.9.5",
         kind = NotesPackageKind.CAPABILITY,
         description = "Generated task capability notes used to bind execution-plan actions to materialization negotiation.",
         declaredCapabilities = setOf(capability),
-        boundaries = setOf(NotesPackageBoundary("generated-task-capability", "Generated notes bind existing plan actions to materialization negotiation without claiming target execution."))
+        boundaries = setOf(NotesPackageBoundary(
+            "generated-task-capability",
+            "Generated notes bind existing plan actions to materialization negotiation without claiming target execution."
+        ))
     )
 
     private fun contractId(value: String): String = value.lowercase()

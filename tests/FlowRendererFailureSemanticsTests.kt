@@ -62,8 +62,8 @@ class FlowRendererFailureSemanticsTests {
             "standard_execute_1",
             "docker_build_1",
             "approve_1",
-            "kubernetes_deploy_1",
-            "kubernetes_get_1",
+            "standard_execute_2",
+            "standard_execute_3",
             "standard_rollback_1",
             "notify_send_1"
         )
@@ -74,10 +74,15 @@ class FlowRendererFailureSemanticsTests {
         )
 
         outputs.forEach { output ->
+            assertTrue(output.contains("semanticInventory:"), "Review artifact must expose complete semantic inventory:\n$output")
             expectedNodeIds.forEach { nodeId ->
                 assertTrue(output.contains("nodeId: \"$nodeId\""), "Review artifact silently dropped $nodeId:\n$output")
             }
         }
+        val jenkinsOutput = outputs.first()
+        assertTrue(jenkinsOutput.contains("nodeId: \"git_checkout_1\""))
+        assertTrue(jenkinsOutput.contains("materializationStatus: \"NATIVE\""))
+        assertTrue(jenkinsOutput.contains("rendererPayloadPresent: true"))
     }
 
     @Test
@@ -119,7 +124,7 @@ class FlowRendererFailureSemanticsTests {
 
         assertEquals(TargetRenderMode.REVIEW_ONLY, readiness.mode)
         assertFalse(readiness.executable)
-        assertTrue(readiness.findings.any { it.nodeId == "notes_projected" && it.status == "TARGET_PAYLOAD_MISSING" })
+        assertTrue(readiness.findings.any { it.nodeId == "notes_projected" && it.status == "NOTES_PROJECTED" })
     }
 
     private fun manifest(target: String): TargetManifest {

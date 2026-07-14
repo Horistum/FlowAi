@@ -5,10 +5,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.intent.IntentYamlLoader
 import org.flowlang.ast.*
-import org.flowlang.capabilities.CompatibilityReport
-import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.GroovyExpr
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.intent.*
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.ExpressionParser
@@ -20,7 +17,7 @@ import java.io.File
 class FlowSemanticCorrectnessHardeningTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
     @Test
-    fun kubernetesDeployUsesIntentApplicationNameAndRuntimeInputs() {
+    fun genericDeployIntentRemainsTargetNeutral() {
         val intent = IntentDocument(
             name = "build-test-deploy",
             inputs = listOf(
@@ -37,15 +34,15 @@ class FlowSemanticCorrectnessHardeningTests {
         )
 
         val ast = IntentToAstPlanner(registry).plan(intent)
-        val plan = FlowPlanner(registry).plan(ast)
-        val manifest = JenkinsManifestGenerator().generate(plan, CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED))
-        val deploy = manifest.jobs.flatMap { it.steps }.single { it.module == "kubernetes" && it.action == "deploy" }
+        val deploy = ast.flow.steps.single() as ActionNode
+        assertEquals("standard", deploy.module)
+        assertEquals("execute", deploy.action)
+        assertEquals("deploy", (deploy.params["operation"] as StringLiteralNode).value)
+        assertFalse(ast.flow.systems.any { it.systemType == "kubernetes" })
 
-        assertTrue(deploy.run == null, "Flow Core must not emit target command projection for kubernetes.deploy: ${deploy.run}")
-        assertEquals("build-test-deploy", deploy.params["app"])
-        assertEquals("environment", deploy.params["namespace"])
-        assertEquals("build-test-deploy:\${version}", deploy.params["image"])
-        assertFalse(deploy.params.values.any { it.contains("deployment/'app'") }, deploy.params.toString())
+        val plan = FlowPlanner(registry).plan(ast)
+        assertFalse(plan.tasks.any { it.module == "kubernetes" })
+        assertTrue(plan.tasks.any { it.module == "standard" && it.action == "execute" })
     }
 
     @Test

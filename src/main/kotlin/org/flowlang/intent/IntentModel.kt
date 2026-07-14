@@ -1,5 +1,7 @@
 package org.flowlang.intent
 
+import org.flowlang.standard.FlowStandardVersions
+
 /**
  * High-level Standard Intent Model.
  *
@@ -9,12 +11,13 @@ package org.flowlang.intent
  * have to care about YAML style quirks or target-specific lifecycle details.
  */
 data class IntentDocument(
-    val intentVersion: String = "1.0",
+    val intentVersion: String = FlowStandardVersions.INTENT_VERSION,
     val kind: String = "FlowIntentDocument",
     val name: String,
     val description: String? = null,
     val inputs: List<IntentInput> = emptyList(),
     val systems: List<IntentSystem> = emptyList(),
+    val triggers: List<IntentTrigger> = emptyList(),
     val workflows: List<IntentWorkflow> = emptyList(),
     val policies: List<IntentPolicy> = emptyList(),
     val failure: IntentFailurePolicy = IntentFailurePolicy()
@@ -83,6 +86,26 @@ data class IntentSystem(
     val config: Map<String, IntentValue> = emptyMap()
 )
 
+
+data class IntentTrigger(
+    val id: String,
+    val type: IntentTriggerType,
+    val workflows: List<String> = listOf("main"),
+    val schedule: IntentSchedule? = null,
+    val event: String? = null,
+    val params: Map<String, IntentValue> = emptyMap()
+)
+
+enum class IntentTriggerType { MANUAL, SCHEDULE, EVENT, WEBHOOK }
+
+data class IntentSchedule(
+    val kind: IntentScheduleKind,
+    val expression: String,
+    val timezone: String? = null
+)
+
+enum class IntentScheduleKind { CRON, INTERVAL, CALENDAR }
+
 data class IntentWorkflow(
     val name: String,
     val kind: IntentWorkflowKind,
@@ -102,7 +125,6 @@ enum class IntentWorkflowKind {
     PROVISION,
     RUNBOOK,
     INCIDENT,
-    SCHEDULE,
     SECRET_ROTATION,
     CUSTOM
 }
@@ -139,7 +161,6 @@ enum class StandardCapability {
     CLEANUP,
     PROVISION,
     DEPROVISION,
-    SCHEDULE,
     DATABASE_MIGRATE,
     CERTIFICATE_RENEW,
     KUBERNETES_MAINTENANCE,

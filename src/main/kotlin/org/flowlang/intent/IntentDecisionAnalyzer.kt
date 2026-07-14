@@ -174,7 +174,7 @@ class IntentDecisionAnalyzer(private val registry: ModuleRegistry = ModuleRegist
     ) {
         val hasBackup = steps.any { it.capability == StandardCapability.BACKUP }
         if (!hasBackup) return
-        val hasSchedule = steps.any { it.capability == StandardCapability.SCHEDULE } || intent.workflows.any { it.kind == IntentWorkflowKind.BACKUP }
+        val hasSchedule = intent.triggers.any { it.type == IntentTriggerType.SCHEDULE }
         if (hasSchedule && !hasAnyDecision(intent, steps, "timezone", "scheduleTimezone")) {
             missing += IntentMissingDecision(
                 id = "decision.backup.schedule.timezone",

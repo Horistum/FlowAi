@@ -26,12 +26,32 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         return ExecutionPlan(
             flowName = document.flow.name,
             inputs = document.flow.input.map { it.toPlanInput() },
+            triggers = document.flow.triggers.map { it.toPlanTrigger() },
             outputs = ctx.outputs.toList(),
             dependencies = collectDependencies(allNodes),
-            requiredCapabilities = collectRequiredCapabilities(allNodes),
+            requiredCapabilities = (collectRequiredCapabilities(allNodes) + document.flow.triggers.flatMap { it.requiredCapabilities() }).distinct(),
             assumptions = ctx.assumptions.toList(),
             nodes = allNodes
         )
+    }
+
+
+    private fun TriggerNode.toPlanTrigger(): PlanTrigger = PlanTrigger(
+        id = id,
+        type = triggerType,
+        workflows = workflows,
+        schedule = schedule?.let { PlanSchedule(it.kind, it.expression, it.timezone) },
+        event = event,
+        params = params.mapValues { (_, value) -> RuntimeParamRenderer.render(value, emptySet()) },
+        requiredCapabilities = requiredCapabilities()
+    )
+
+    private fun TriggerNode.requiredCapabilities(): List<String> = when (triggerType) {
+        "SCHEDULE" -> listOf("trigger.schedule.${schedule?.kind?.lowercase() ?: "unknown"}")
+        "EVENT" -> listOf("trigger.event")
+        "WEBHOOK" -> listOf("trigger.webhook")
+        "MANUAL" -> listOf("trigger.manual")
+        else -> listOf("trigger.unknown")
     }
 
     private fun InputNode.toPlanInput(): PlanInput {
