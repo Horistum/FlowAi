@@ -42,11 +42,12 @@ lastKnownValidation:
   offlineCacheAwareChecks: "pending"
   cleanTest: "pending"
   conformance: "pending"
-  validationSource: "GitHub Actions Flow CI on the v0.9.5 universal-model-completion pull request branch"
+  validationSource: "GitHub Actions Flow CI on the final v0.9.5 universal-model-completion pull request head"
   notes:
     - "Package 0.9.5 promotes the completed v0.9.5.x correction work into a release line."
     - "The active public standard advances to 0.8.0 because trigger, target-semantics and projection contracts changed."
     - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry advance to 2.0."
     - "Manifest generation reconciliation is mandatory for CLI, conformance and library callers."
     - "Target-native output requires declarative registry or notes evidence and structured renderer payloads."
+    - "The implementation transaction compile is not release validation; the final persisted head must pass standard Flow CI."
     - "No runtime executor, SDK lifecycle, shell projection or fabricated payload is introduced."
