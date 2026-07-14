@@ -1,0 +1,62 @@
+name: v0.9.5.7.9 Honesty Inventory
+
+on:
+  push:
+    branches:
+      - feature/v0957-9-reference-snapshot-honesty-reset
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Collect reference and snapshot evidence
+        shell: bash
+        run: |
+          mkdir -p inventory
+          {
+            echo '# Reference and snapshot files'
+            find . -type f \
+              \( -iname '*reference*' -o -iname '*snapshot*' -o -iname '*scenario*' \) \
+              -not -path './.git/*' -not -path './build/*' -not -path './.gradle/*' | sort
+            echo
+            echo '# shell.run and command-shaped reference usage'
+            grep -RInE 'shell\.run|module:[[:space:]]*shell|action:[[:space:]]*run|command:|script:' \
+              src/main src/test tests standard conformance examples docs .flow-agent modules targets 2>/dev/null || true
+            echo
+            echo '# Readiness and support claims'
+            grep -RInE 'executable|production[-_ ]ready|production[-_ ]supported|SUPPORTED|READY|REVIEW_ONLY|FAIL_FAST|SEMANTIC_ONLY|ADAPTER_REQUIRED|BLOCKED|DEGRADED' \
+              src/main src/test tests standard conformance examples docs .flow-agent 2>/dev/null || true
+            echo
+            echo '# Snapshot assertions and generated artifacts'
+            grep -RInE 'snapshot|golden|expected.*(jenkins|github|tekton)|rendered|generated artifact|end-to-end|end to end' \
+              src/main src/test tests standard conformance examples docs .flow-agent 2>/dev/null || true
+            echo
+            echo '# Reference scenario declarations'
+            grep -RInE 'ReferenceScenario|reference scenario|referenceScenario|scenario matrix|flagship' \
+              src/main src/test tests standard conformance examples docs .flow-agent 2>/dev/null || true
+          } > inventory/honesty-inventory.txt
+
+      - name: Export exact working tree
+        shell: bash
+        run: |
+          tar --exclude=.git --exclude=build --exclude=.gradle --exclude=inventory -czf /tmp/flow-v09579-working-tree.tar.gz .
+          mv /tmp/flow-v09579-working-tree.tar.gz inventory/
+
+      - name: Upload inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: v09579-honesty-inventory
+          path: inventory/honesty-inventory.txt
+
+      - name: Upload working tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: v09579-working-tree
+          path: inventory/flow-v09579-working-tree.tar.gz
