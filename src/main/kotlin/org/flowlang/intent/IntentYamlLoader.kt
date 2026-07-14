@@ -1,28 +1,22 @@
 package org.flowlang.intent
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
+import org.flowlang.serialization.FlowYaml
 
 /**
  * Loads and normalizes the high-level Standard Intent Model from YAML.
  *
- * This loader deliberately uses Jackson YAML instead of the in-repo MiniYaml helper.
+ * This loader uses the shared Jackson-backed [FlowYaml] boundary.
  * Intent input is a user/AI boundary and must accept normal YAML forms: block maps,
  * flow-style maps (`params: { app: demo }`), flow-style lists, quoted strings and
  * standard scalar handling. Complex maps/lists remain structured IntentValue
  * objects instead of being flattened into JSON strings.
  */
 object IntentYamlLoader {
-    private val mapper: ObjectMapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
-    private val mapType = object : TypeReference<Map<String, Any?>>() {}
-
     fun load(file: File): IntentDocument = loadText(file.readText(), file.path)
 
     fun loadText(text: String, sourceName: String = "<intent>"): IntentDocument {
-        val root = mapper.readValue(text, mapType)
+        val root = FlowYaml.readMap(text, sourceName)
         return normalize(root, sourceName)
     }
 

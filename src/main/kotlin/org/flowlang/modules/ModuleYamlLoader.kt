@@ -1,7 +1,9 @@
 package org.flowlang.modules
 
-import org.flowlang.parser.ExpressionParser
 import java.io.File
+import org.flowlang.parser.ExpressionParser
+import org.flowlang.serialization.FlowYaml
+import org.flowlang.serialization.FlowYamlException
 
 /**
  * Loads Flow module descriptors (docs/06, `module.yaml`) into [FlowModule] contracts.
@@ -9,10 +11,16 @@ import java.io.File
  */
 object ModuleYamlLoader {
 
-    class LoadException(message: String) : RuntimeException(message)
+    class LoadException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
-    fun loadText(yaml: String): FlowModule {
-        val root = MiniYaml.parseMap(yaml)
+    fun loadText(yaml: String): FlowModule = loadText(yaml, "<module>")
+
+    private fun loadText(yaml: String, sourceName: String): FlowModule {
+        val root = try {
+            FlowYaml.readMap(yaml, sourceName)
+        } catch (error: FlowYamlException) {
+            throw LoadException(error.message ?: "Invalid module YAML in '$sourceName'.", error)
+        }
         val kind = root["kind"]?.toString()
         if (kind != null && kind != "FlowModule") throw LoadException("expected kind: FlowModule but got '$kind'")
         val name = root["name"]?.toString() ?: throw LoadException("module descriptor missing 'name'")
@@ -28,7 +36,7 @@ object ModuleYamlLoader {
         return FlowModule(name = name, version = version, description = description, systemTypes = systemTypes, actions = actions)
     }
 
-    fun loadFile(file: File): FlowModule = loadText(file.readText())
+    fun loadFile(file: File): FlowModule = loadText(file.readText(), file.path)
 
     /** Loads every *.yaml / *.yml descriptor in a directory. */
     fun loadDirectory(dir: File): List<FlowModule> {
@@ -38,8 +46,6 @@ object ModuleYamlLoader {
             ?.map { loadFile(it) }
             ?: emptyList()
     }
-
-    // --- mapping helpers ------------------------------------------------------
 
     private fun parseAction(name: String, body: Map<String, Any?>): ModuleActionContract {
         val targetTypes = asList(body["targetTypes"]).map { it.toString() }.toSet()

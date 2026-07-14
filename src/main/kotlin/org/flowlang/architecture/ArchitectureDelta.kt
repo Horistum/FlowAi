@@ -1,6 +1,6 @@
 package org.flowlang.architecture
 
-import org.flowlang.modules.MiniYaml
+import org.flowlang.serialization.FlowYaml
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.GateKind
 import org.flowlang.standard.StandardModel
@@ -47,7 +47,7 @@ data class StandardModelSnapshot(
         @Suppress("UNCHECKED_CAST")
         fun fromYaml(file: File): StandardModelSnapshot {
             require(file.isFile) { "Standard model baseline does not exist: ${file.path}" }
-            val root = MiniYaml.parseMap(file.readText())
+            val root = FlowYaml.readMap(file)
             val checks = (root["checks"] as? List<Any?>).orEmpty().mapNotNull { item ->
                 val map = item as? Map<String, Any?> ?: return@mapNotNull null
                 val id = map["id"] as? String ?: return@mapNotNull null

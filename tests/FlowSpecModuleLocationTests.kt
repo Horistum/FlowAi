@@ -2,6 +2,8 @@ import org.flowlang.ast.*
 import org.flowlang.modules.*
 import org.flowlang.parser.*
 import org.flowlang.planner.FlowPlanner
+import org.flowlang.serialization.FlowYaml
+import org.flowlang.serialization.FlowYamlException
 import org.flowlang.validator.*
 import java.io.File
 
@@ -11,36 +13,48 @@ fun modulesDir(): File {
     return candidates.map { File(it) }.firstOrNull { it.isDirectory } ?: File("modules")
 }
 
-fun miniYamlTests() {
-    H.eq("yaml/scalar-string", MiniYaml.parseMap("a: hello")["a"], "hello")
-    H.eq("yaml/quoted", MiniYaml.parseMap("a: \"1.0\"")["a"], "1.0")
-    H.eq("yaml/bool-true", MiniYaml.parseMap("a: true")["a"], true)
-    H.eq("yaml/bool-false", MiniYaml.parseMap("a: false")["a"], false)
-    H.eq("yaml/int", MiniYaml.parseMap("a: 42")["a"], 42)
+fun yamlParsingTests() {
+    H.eq("yaml/scalar-string", FlowYaml.readMap("a: hello")["a"], "hello")
+    H.eq("yaml/quoted", FlowYaml.readMap("a: \"1.0\"")["a"], "1.0")
+    H.eq("yaml/bool-true", FlowYaml.readMap("a: true")["a"], true)
+    H.eq("yaml/bool-false", FlowYaml.readMap("a: false")["a"], false)
+    H.eq("yaml/int", FlowYaml.readMap("a: 42")["a"], 42)
+    H.eq("yaml/null", FlowYaml.readMap("a: null")["a"], null)
     run {
         @Suppress("UNCHECKED_CAST")
-        val nested = MiniYaml.parseMap("a:\n  b:\n    c: 1")["a"] as Map<String, Any?>
+        val nested = FlowYaml.readMap("a:\n  b:\n    c: 1")["a"] as Map<String, Any?>
         @Suppress("UNCHECKED_CAST")
         val b = nested["b"] as Map<String, Any?>
         H.eq("yaml/nested", b["c"], 1)
     }
     run {
         @Suppress("UNCHECKED_CAST")
-        val list = MiniYaml.parseMap("items:\n  - x\n  - y\n  - z")["items"] as List<Any?>
+        val list = FlowYaml.readMap("items:\n  - x\n  - y\n  - z")["items"] as List<Any?>
         H.eq("yaml/list", list.size, 3)
         H.eq("yaml/list-first", list[0], "x")
     }
     run {
-        val m = MiniYaml.parseMap("a: 1 # comment\n# whole line\nb: 2")
+        @Suppress("UNCHECKED_CAST")
+        val flowMap = FlowYaml.readMap("params: { app: demo, replicas: 2 }")["params"] as Map<String, Any?>
+        H.eq("yaml/flow-map", flowMap["app"], "demo")
+        H.eq("yaml/flow-map-number", flowMap["replicas"], 2)
+    }
+    run {
+        @Suppress("UNCHECKED_CAST")
+        val flowList = FlowYaml.readMap("items: [x, y, z]")["items"] as List<Any?>
+        H.eq("yaml/flow-list", flowList, listOf("x", "y", "z"))
+    }
+    run {
+        val m = FlowYaml.readMap("a: 1 # comment\n# whole line\nb: 2")
         H.eq("yaml/comment-strip", m["a"], 1)
         H.eq("yaml/comment-kept-key", m["b"], 2)
     }
     run {
-        val m = MiniYaml.parseMap("a: \"has # hash\"")
+        val m = FlowYaml.readMap("a: \"has # hash\"")
         H.eq("yaml/hash-in-quotes", m["a"], "has # hash")
     }
-    try { MiniYaml.parse("a:\n\tb: 1"); H.ok("yaml/tab-rejected", false) }
-    catch (e: MiniYaml.YamlException) { H.ok("yaml/tab-rejected", true) }
+    try { FlowYaml.readMap("a:\n\tb: 1", "tabbed-yaml"); H.ok("yaml/tab-rejected", false) }
+    catch (e: FlowYamlException) { H.ok("yaml/tab-rejected", e.message?.contains("tabbed-yaml") == true) }
 }
 
 fun moduleLoaderTests() {

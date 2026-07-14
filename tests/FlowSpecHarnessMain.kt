@@ -12,7 +12,7 @@ fun main() {
     endToEndTests()
     roundTripTests()
     legacyProjectionBoundaryTests()
-    miniYamlTests()
+    yamlParsingTests()
     moduleLoaderTests()
     descriptorRegistryParityTests()
     sourceLocationTests()

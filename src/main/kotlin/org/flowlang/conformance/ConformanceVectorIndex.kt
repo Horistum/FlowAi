@@ -1,6 +1,6 @@
 package org.flowlang.conformance
 
-import org.flowlang.modules.MiniYaml
+import org.flowlang.serialization.FlowYaml
 import org.flowlang.standard.FlowStandardVersions
 import java.io.File
 
@@ -38,7 +38,7 @@ class ConformanceVectorIndexBuilder(private val rootDir: File = File(".")) {
     ): ConformanceVectorIndexReport {
         val entries = vectorFiles().map { file ->
             val rel = file.relativeTo(rootDir).path.replace(File.separatorChar, '/')
-            val map = MiniYaml.parseMap(file.readText())
+            val map = FlowYaml.readMap(file)
             val expected = map["expected"] as? Map<*, *>
             val legacyName = map["name"] as? String
             val requiredCheck = expected?.get("requiredCheck") as? String

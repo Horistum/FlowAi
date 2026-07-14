@@ -1,14 +1,11 @@
 package org.flowlang.targets
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetExpressionEvidenceKind
 import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.capabilities.TargetExpressionSupportDeclaration
+import org.flowlang.serialization.FlowYaml
 import java.io.File
 
 /**
@@ -91,11 +88,7 @@ data class TargetDescriptor(
 }
 
 object TargetRegistryYamlLoader {
-    private val mapper: ObjectMapper = ObjectMapper(YAMLFactory())
-        .registerKotlinModule()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
-    fun load(file: File): TargetRegistryDocument = mapper.readValue(file, TargetRegistryDocument::class.java)
+    fun load(file: File): TargetRegistryDocument = FlowYaml.read(file, TargetRegistryDocument::class.java)
 
     fun loadDirectory(dir: File): Map<String, TargetCapability> {
         if (!dir.isDirectory) return emptyMap()

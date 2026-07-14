@@ -25,6 +25,7 @@ All project source text is written in English. The changelog records architectur
 - Reconciled `REPORT.md`, `.flow-agent/release-state.yaml`, both roadmap files, versioning policy and correction reports around one explicit version boundary.
 - Removed target-name expression assumptions and renderer fallbacks that weakened unsupported conditions to false or unenforced comments.
 - Replaced the flagship shell-based test step with semantic `standard.execute`, renamed non-executable target snapshots and made conformance compare exact current evidence.
+- Consolidated repository YAML parsing on one shared Jackson boundary and removed the bespoke `MiniYaml` subset parser.
 
 ### Correction items recorded
 
