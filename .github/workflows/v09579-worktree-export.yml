@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/v0957-9-reference-scenario-snapshot-honesty
+  pull_request:
 
 permissions:
   contents: read
