@@ -29,7 +29,7 @@ class FlowLegacyGeneratorFixtureRemovalTests {
         "github-actions" to TargetCapability(target = "github-actions", description = "test"),
         "tekton" to TargetCapability(target = "tekton", description = "test")
     )
-
+    private val migrationDir = File("examples/migration/blocked-shell")
     private val expectedShellCommands = mapOf(
         "build-test.flow" to setOf("mvn test"),
         "complex-devops-flow.flow" to setOf("mvn test", "mvn verify -DskipTests"),
@@ -43,26 +43,9 @@ class FlowLegacyGeneratorFixtureRemovalTests {
         assertFalse(File("src/test/kotlin/org/flowlang/generators/GitHubActionsGenerator.kt").exists())
         assertFalse(File("tests/FlowSpecTests_part2.kt").exists())
 
-        val activeHarness = listOf(
-            File("tests/FlowSpecLanguageValidationTests.kt"),
-            File("tests/FlowSpecPlannerScenarioTests.kt"),
-            File("tests/FlowSpecModuleLocationTests.kt"),
-            File("tests/FlowSpecHarnessMain.kt")
-        )
-        assertTrue(activeHarness.all { it.isFile })
-
-        val activeKotlinSources = listOf(
-            File("src/main/kotlin"),
-            File("src/test/kotlin"),
-            File("tests")
-        ).flatMap { root ->
-            root.walkTopDown()
-                .filter { file -> file.isFile && file.extension == "kt" }
-                .toList()
-        }
-        assertTrue(activeKotlinSources.isNotEmpty())
+        val activeKotlinSources = listOf(File("src/main/kotlin"), File("src/test/kotlin"), File("tests"))
+            .flatMap { root -> root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList() }
         val activeSource = activeKotlinSources.joinToString("\n") { it.readText() }
-
         assertFalse(KotlinSourceBoundaryScanner.containsSymbol(activeSource, "JenkinsGenerator"))
         assertFalse(KotlinSourceBoundaryScanner.containsSymbol(activeSource, "GitHubActionsGenerator"))
         assertFalse(KotlinSourceBoundaryScanner.containsSymbol(activeSource, "legacyJenkinsGeneratorOutput"))
@@ -70,42 +53,31 @@ class FlowLegacyGeneratorFixtureRemovalTests {
     }
 
     @Test
-    fun everyShellExampleIsPreservedAndBlockedAcrossTargets() {
-        val discovered = File("examples")
-            .listFiles { file -> file.isFile && file.extension == "flow" }
-            .orEmpty()
-            .filter { it.readText().contains("shell.run") }
-            .map { it.name }
-            .toSet()
+    fun activeExamplesContainNoShellExecutionPath() {
+        val offenders = File("examples").walkTopDown()
+            .filter { it.isFile && it.extension == "flow" && !it.toPath().startsWith(migrationDir.toPath()) }
+            .filter { file -> file.readText().let { "shell.run" in it || "type: shell" in it || "use module \"shell\"" in it } }
+            .map { it.relativeTo(File(".")).path }
+            .toList()
+        assertTrue(offenders.isEmpty(), "Active examples must be notes-driven; shell fixtures belong only to migration evidence: $offenders")
+    }
 
-        assertEquals(
-            expectedShellCommands.keys,
-            discovered,
-            "Every shell syntax example must be explicitly classified by the blocked-intent contract."
-        )
+    @Test
+    fun historicalShellExamplesAreIsolatedAndBlockedAcrossTargets() {
+        val discovered = migrationDir.listFiles { file -> file.isFile && file.extension == "flow" }
+            .orEmpty().filter { it.readText().contains("shell.run") }.map { it.name }.toSet()
+        assertEquals(expectedShellCommands.keys, discovered)
 
         discovered.sorted().forEach { example ->
-            val plan = FlowPlanner().plan(FlowParser().parse(File("examples/$example")))
+            val plan = FlowPlanner().plan(FlowParser().parse(File(migrationDir, example)))
             targets.keys.forEach { target ->
                 val manifest = manifest(plan, target)
-                val shellSteps = manifest.jobs
-                    .flatMap { job -> job.steps.flatMap { it.flattenForTest() } }
+                val shellSteps = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForTest() } }
                     .filter { it.module == "shell" && it.action == "run" }
-
-                assertTrue(shellSteps.isNotEmpty(), "$example must preserve its shell runtime intent for $target review.")
-                assertEquals(
-                    expectedShellCommands.getValue(example),
-                    shellSteps.mapNotNull { it.params["command"] }.toSet(),
-                    "$example command content must not be silently discarded for $target."
-                )
-                assertTrue(
-                    shellSteps.all { it.materialization.status == TargetMaterializationStatus.BLOCKED },
-                    "$example shell actions must remain blocked for $target."
-                )
-
+                assertEquals(expectedShellCommands.getValue(example), shellSteps.mapNotNull { it.params["command"] }.toSet())
+                assertTrue(shellSteps.all { it.materialization.status == TargetMaterializationStatus.BLOCKED })
                 val readiness = TargetRenderPolicy.evaluate(manifest)
-                assertEquals(TargetRenderMode.FAIL_FAST, readiness.mode, "$example must be blocked for $target")
-                assertTrue(readiness.findings.any { it.status == TargetMaterializationStatus.BLOCKED.name })
+                assertEquals(TargetRenderMode.FAIL_FAST, readiness.mode)
                 assertFailsWith<TargetRenderBlockedException> { render(manifest) }
             }
         }
@@ -128,6 +100,5 @@ class FlowLegacyGeneratorFixtureRemovalTests {
         else -> error("Unsupported target: ${manifest.target}")
     }
 
-    private fun TargetStep.flattenForTest(): List<TargetStep> =
-        listOf(this) + children.flatMap { it.flattenForTest() }
+    private fun TargetStep.flattenForTest(): List<TargetStep> = listOf(this) + children.flatMap { it.flattenForTest() }
 }

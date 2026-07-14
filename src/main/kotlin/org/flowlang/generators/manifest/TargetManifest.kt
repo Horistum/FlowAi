@@ -146,8 +146,14 @@ object TargetManifestGenerationPipeline {
         else -> error("No canonical TargetManifest generator is registered for target '$target'.")
     }
 
-    fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest =
-        generatorFor(compatibility.target).generate(plan, compatibility)
+    fun generate(
+        plan: ExecutionPlan,
+        compatibility: CompatibilityReport,
+        strict: Boolean = false
+    ): TargetManifest {
+        compatibility.assertAllowed(strict = strict)
+        return generatorFor(compatibility.target).generate(plan, compatibility)
+    }
 }
 
 class JenkinsManifestGenerator : ReconciledTargetManifestGenerator() {

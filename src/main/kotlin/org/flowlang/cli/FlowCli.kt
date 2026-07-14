@@ -27,6 +27,7 @@ import org.flowlang.generators.manifest.*
 import org.flowlang.conformance.ConformanceRunner
 import org.flowlang.conformance.ConformanceManifestBuilder
 import org.flowlang.conformance.ConformanceVectorIndexBuilder
+import org.flowlang.conformance.ReferenceSnapshotBundleGenerator
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDecisionAnalyzer
 import org.flowlang.intent.IntentToAstPlanner
@@ -52,6 +53,7 @@ fun main(args: Array<String>) {
         "intent" -> { runIntentCommand(args.drop(1)); return }
         "normalize" -> { runNormalizeCommand(args.drop(1)); return }
         "conformance" -> { runConformanceCommand(args.drop(1)); return }
+        "reference-snapshot" -> { runReferenceSnapshotCommand(args.drop(1)); return }
         "catalog" -> { runCatalogCommand(args.drop(1)); return }
         "diagnostics" -> { runDiagnosticsCommand(args.drop(1)); return }
         "release-profile" -> { runReleaseProfileCommand(args.drop(1)); return }
@@ -276,6 +278,22 @@ private fun runIntentCommand(args: List<String>) {
     }
 }
 
+
+
+private fun runReferenceSnapshotCommand(args: List<String>) {
+    val source = parseOption(args, "--intent") ?: args.firstOrNull() ?: "examples/intent/build-test-deploy.intent.yaml"
+    val out = parseOutDir(args) ?: "conformance/snapshots/build-test-deploy"
+    val scenarioId = parseOption(args, "--scenario-id") ?: File(source).nameWithoutExtension.removeSuffix(".intent")
+    val snapshot = ReferenceSnapshotBundleGenerator().generate(
+        intentFile = File(source),
+        outputDir = File(out),
+        scenarioId = scenarioId
+    )
+    println("===== REFERENCE SNAPSHOT INDEX =====")
+    println(Json.mapper.writeValueAsString(snapshot))
+    println("===== EXPORTED REFERENCE SNAPSHOT =====")
+    println(File(out).absolutePath)
+}
 
 private fun runNormalizeCommand(args: List<String>) {
     val text = collectNormalizeText(args)

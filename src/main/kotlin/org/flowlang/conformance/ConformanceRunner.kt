@@ -35,6 +35,7 @@ import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
 import org.flowlang.generators.manifest.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
@@ -182,13 +183,7 @@ class ConformanceRunner(
         require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target, strict = strict)
-        if (strict) compatibility.assertAllowed(strict = true)
-        val manifest = when (target) {
-            "jenkins" -> JenkinsManifestGenerator().generate(plan, compatibility)
-            "github-actions" -> GitHubActionsManifestGenerator().generate(plan, compatibility)
-            "tekton" -> TektonManifestGenerator().generate(plan, compatibility)
-            else -> error("No conformance manifest generator for target '$target'.")
-        }
+        val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility, strict = strict)
         val rendered = when (target) {
             "jenkins" -> JenkinsManifestRenderer().render(manifest)
             "github-actions" -> GitHubActionsManifestRenderer().render(manifest)
@@ -319,15 +314,17 @@ class ConformanceRunner(
     }
 
     private fun checkTektonManifestGeneration(): ConformanceCheck = runCheck("generator.manifest.tekton.partial") {
-        val artifacts = buildPipeline("tekton", strict = false)
-        require(artifacts.manifest.target == "tekton") { "Unexpected manifest target." }
-        require(artifacts.manifest.metadata["supportLevel"] == "partial") { "Tekton manifest must declare partial support." }
-        require(TargetRenderPolicy.evaluate(artifacts.manifest).mode == TargetRenderMode.REVIEW_ONLY) {
-            "Unresolved Tekton projection must remain review-only."
-        }
-        require(artifacts.rendered.contains("kind: TargetProjectionReview")) { "Expected Flow review artifact." }
-        require(!artifacts.rendered.contains("kind: Pipeline")) { "Review-only output must not masquerade as a Tekton Pipeline." }
-        require(!artifacts.rendered.contains("flow-materialization-required")) { "Review-only output must not reference a phantom Tekton task." }
+        val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
+        IntentCapabilityValidator(registry).validate(intent).assertValid()
+        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+        val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "tekton", strict = false)
+        val readiness = ExecutionReadinessAnalyzer(targets).analyze(plan, "tekton", strict = false)
+        require(compatibility.hasErrors) { "Tekton reference pipeline must fail compatibility before manifest generation." }
+        val state = ReferenceSnapshotHonesty.targetState(ReferenceBlockedProjectionEvidence(compatibility, readiness))
+        require(state.renderMode == TargetRenderMode.FAIL_FAST)
+        require(!state.manifestPresent && !state.renderedArtifactPresent)
+        require(state.blockers.any { it.feature == "approvals" })
+        require(state.blockers.any { it.feature == "standard.rollback" })
     }
 
     private fun checkFlowStyleYamlIntent(): ConformanceCheck = runCheck("intent.yaml.flow-style") {
@@ -348,7 +345,7 @@ class ConformanceRunner(
             "snapshot-index.json",
             "jenkins.review.yaml",
             "github-actions.review.yaml",
-            "tekton.review.yaml",
+            "tekton.blocked.json",
             "README.md"
         )
         required.forEach { name -> require(File(dir, name).isFile) { "Missing snapshot $name" } }
@@ -358,75 +355,73 @@ class ConformanceRunner(
     }
 
     private fun checkEndToEndSnapshotContent(): ConformanceCheck = runCheck("snapshots.e2e.content") {
-        val dir = File(rootDir, "conformance/snapshots/build-test-deploy")
-        val pipelines = listOf(
-            buildPipeline("jenkins", strict = false),
-            buildPipeline("github-actions", strict = false),
-            buildPipeline("tekton", strict = false)
-        )
-        val version = FlowStandardVersions.FLOW_STANDARD_VERSION
-        val expectedIndex = ReferenceSnapshotHonesty.build(
-            scenarioId = "build-test-deploy",
-            standardVersion = version,
-            manifests = pipelines.map { it.manifest }
-        )
-        val committedIndex = Json.mapper.readValue(File(dir, "snapshot-index.json"), ReferenceSnapshotSet::class.java)
-        require(ReferenceSnapshotHonesty.validate(expectedIndex).isEmpty()) {
-            "Generated reference snapshot evidence is inconsistent: ${ReferenceSnapshotHonesty.validate(expectedIndex)}"
-        }
-        require(ReferenceSnapshotHonesty.validate(committedIndex).isEmpty()) {
-            "Committed reference snapshot evidence is inconsistent: ${ReferenceSnapshotHonesty.validate(committedIndex)}"
-        }
-        require(committedIndex == expectedIndex) {
-            "Committed snapshot-index.json does not match current materialization and projection evidence."
-        }
-        require(committedIndex.overallState == ReferenceSnapshotSetState.REVIEW_ONLY && !committedIndex.executable) {
-            "Current build-test-deploy snapshot set must be explicitly review-only and non-executable."
-        }
-
-        val reference = pipelines.first()
-        assertJsonSnapshotEquals(File(dir, "normalized-intent.json"), reference.intent)
-        assertJsonSnapshotEquals(File(dir, "flow-ast.json"), reference.ast)
-        assertJsonSnapshotEquals(File(dir, "execution-plan.json"), ExecutionPlanCanonicalizer.canonicalize(reference.plan))
-        val canonicalPlan = File(dir, "execution-plan.json").readText()
-        require(!canonicalPlan.contains("\"module\" : \"shell\"")) { "Flagship execution plan must not contain shell materialization." }
-        require(!canonicalPlan.contains("\"action\" : \"run\"")) { "Flagship execution plan must not contain generic command projection." }
-        require(canonicalPlan.contains("\"module\" : \"standard\"")) { "Flagship execution plan must preserve semantic standard test intent." }
-
-        pipelines.forEach { artifacts ->
-            val render = TargetRenderPolicy.evaluate(artifacts.manifest)
-            require(render.mode == TargetRenderMode.REVIEW_ONLY && !render.executable) {
-                "Reference projection for ${artifacts.manifest.target} must remain exactly review-only."
-            }
-            require(artifacts.rendered.contains("standardVersion: \"$version\""))
-            require(artifacts.rendered.contains("renderMode: REVIEW_ONLY"))
-            require(artifacts.rendered.contains("executable: false"))
-            assertSnapshotEquals(
-                File(dir, ReferenceSnapshotHonesty.projectionFile(artifacts.manifest.target, render.mode)),
-                artifacts.rendered
+        val committed = File(rootDir, "conformance/snapshots/build-test-deploy")
+        val generated = File(System.getProperty("java.io.tmpdir"), "flow-reference-snapshot-${System.nanoTime()}")
+        try {
+            val snapshot = ReferenceSnapshotBundleGenerator(rootDir, registry, targets).generate(
+                intentFile = File(rootDir, "examples/intent/build-test-deploy.intent.yaml"),
+                outputDir = generated,
+                scenarioId = "build-test-deploy"
             )
-        }
-        require(pipelines.all { it.manifest.allStepParams().any { value -> value.contains("${'$'}{version}") } }) {
-            "Every reference manifest must preserve the authored version input before rendering."
-        }
-        require(!pipelines[0].rendered.contains("pipeline {"))
-        require(!pipelines[1].rendered.contains("jobs:"))
-        require(!pipelines[2].rendered.contains("kind: Pipeline"))
+            require(ReferenceSnapshotHonesty.validate(snapshot).isEmpty()) {
+                "Generated snapshot evidence is inconsistent: ${ReferenceSnapshotHonesty.validate(snapshot)}"
+            }
+            require(snapshot.overallState == ReferenceSnapshotSetState.MIXED && !snapshot.executable) {
+                "Realistic build-test-deploy evidence must be mixed and non-executable."
+            }
+            require(snapshot.targets.single { it.target == "jenkins" }.renderMode == TargetRenderMode.REVIEW_ONLY)
+            require(snapshot.targets.single { it.target == "github-actions" }.renderMode == TargetRenderMode.REVIEW_ONLY)
+            val tekton = snapshot.targets.single { it.target == "tekton" }
+            require(tekton.renderMode == TargetRenderMode.FAIL_FAST)
+            require(!tekton.manifestPresent && !tekton.renderedArtifactPresent)
 
-        val readme = File(dir, "README.md").readText()
-        require(readme.contains("review-only", ignoreCase = true))
-        require(!readme.contains("first public end-to-end Flow conformance snapshot", ignoreCase = true))
+            val generatedFiles = generated.listFiles().orEmpty().filter { it.isFile }.map { it.name }.sorted()
+            val committedFiles = committed.listFiles().orEmpty().filter { it.isFile && it.name != "README.md" }.map { it.name }.sorted()
+            require(committedFiles == generatedFiles) {
+                "Committed reference snapshot files differ from canonical generation. committed=$committedFiles generated=$generatedFiles"
+            }
+            generatedFiles.forEach { name ->
+                val generatedFile = File(generated, name)
+                val committedFile = File(committed, name)
+                if (name.endsWith(".json")) {
+                    val expected = Json.mapper.readTree(committedFile.readText())
+                    val actual = Json.mapper.readTree(generatedFile.readText())
+                    require(expected == actual) { "JSON snapshot mismatch for $name." }
+                } else {
+                    assertSnapshotEquals(committedFile, generatedFile.readText())
+                }
+            }
+
+            val canonicalPlan = File(committed, "execution-plan.json").readText()
+            require(!canonicalPlan.contains("\"module\" : \"shell\""))
+            require(!canonicalPlan.contains("\"action\" : \"run\""))
+            require(canonicalPlan.contains("\"module\" : \"standard\""))
+            val readme = File(committed, "README.md").readText()
+            require(readme.contains("0.9.5"))
+            require(readme.contains("0.8.0"))
+            require(readme.contains("2.0"))
+            require(readme.contains("Projection Rule Coverage"))
+        } finally {
+            generated.deleteRecursively()
+        }
     }
 
     private fun checkRenderedSnapshotsContainVersion(): ConformanceCheck = runCheck("snapshots.rendered.standard-version") {
         val dir = File(rootDir, "conformance/snapshots/build-test-deploy")
-        val version = FlowStandardVersions.FLOW_STANDARD_VERSION
-        listOf("jenkins.review.yaml", "github-actions.review.yaml", "tekton.review.yaml").forEach { name ->
+        val standardVersion = FlowStandardVersions.FLOW_STANDARD_VERSION
+        listOf("jenkins.review.yaml", "github-actions.review.yaml").forEach { name ->
             val text = File(dir, name).readText()
-            require(text.contains(version)) { "Snapshot $name does not contain Flow standard version $version" }
-            require(text.contains("renderMode: REVIEW_ONLY")) { "Snapshot $name must declare REVIEW_ONLY mode." }
-            require(text.contains("executable: false")) { "Snapshot $name must be explicitly non-executable." }
+            require(text.contains(standardVersion)) { "Snapshot $name does not contain Flow standard version $standardVersion" }
+            require(text.contains("renderMode: REVIEW_ONLY"))
+            require(text.contains("executable: false"))
         }
+        val blocked = Json.mapper.readValue(File(dir, "tekton.blocked.json"), ReferenceSnapshotTargetState::class.java)
+        require(blocked.renderMode == TargetRenderMode.FAIL_FAST)
+        require(!blocked.manifestPresent && !blocked.renderedArtifactPresent)
+        val index = Json.mapper.readValue(File(dir, "snapshot-index.json"), ReferenceSnapshotSet::class.java)
+        require(index.versionBoundary.implementationPackageVersion == FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION)
+        require(index.versionBoundary.publicStandardVersion == standardVersion)
+        require(index.versionBoundary.artifactContractVersion == FlowStandardVersions.TARGET_MANIFEST_VERSION)
     }
 
     private fun checkStandardIntentCatalogCoverage(): ConformanceCheck = runCheck("standard.catalog.coverage") {

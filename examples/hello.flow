@@ -1,21 +1,22 @@
 version "1.0"
 
-use module "shell" version "1.0"
+use module "standard" version "1.0"
 
 flow "hello" {
   systems {
-    system "local" {
-      type: shell
+    system "standard" {
+      type: standard
     }
   }
 
   steps {
-    shell.run local {
-      command: "echo hello"
+    standard.execute standard {
+      operation: "describe"
+      capability: "flow.example.hello"
+      description: "Preserve a minimal semantic example without runtime command execution"
     } -> result {
       expect {
         ok == true
-        code == 0
       }
     }
   }

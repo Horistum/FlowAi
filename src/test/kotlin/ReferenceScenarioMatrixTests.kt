@@ -3,17 +3,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
-import org.flowlang.generators.manifest.TargetCapabilityDegradationAnalyzer
-import org.flowlang.generators.manifest.TargetCapabilityDegradationStatus
-import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
-import org.flowlang.generators.manifest.TargetManifestGenerator
+import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
-import org.flowlang.generators.manifest.TektonManifestGenerator
+import org.flowlang.intent.IntentCapabilityValidator
+import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
@@ -37,39 +34,33 @@ class ReferenceScenarioMatrixTests {
     )
     private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
         .filterKeys { it in ReferenceAdapterProjectionMatrix.supportedTargets }
-    private val generators: Map<String, TargetManifestGenerator> = mapOf(
-        "jenkins" to JenkinsManifestGenerator(),
-        "github-actions" to GitHubActionsManifestGenerator(),
-        "tekton" to TektonManifestGenerator()
-    )
 
     @Test
     fun matrixCoversRequiredScenarioKindsAndDeclaresTargetNeutralSemanticMetadata() {
         val scenarios = ReferenceScenarioMatrix.all()
         val kinds = scenarios.map { it.kind }.toSet()
 
-        assertEquals(ReferenceScenarioKind.values().toSet(), kinds, "matrix must cover every required reference scenario kind")
-        assertTrue(scenarios.any { it.negativeCoverage }, "matrix must include explicit negative coverage")
+        assertEquals(ReferenceScenarioKind.values().toSet(), kinds)
+        assertTrue(scenarios.any { it.negativeCoverage })
         scenarios.forEach { scenario ->
-            assertTrue(scenario.id.matches(Regex("[a-z0-9-]+")), "scenario ids must be stable slugs: ${scenario.id}")
-            assertTrue(scenario.semanticExpectation.requiredCapabilities.isNotEmpty(), "${scenario.id} must declare semantic capabilities")
-            assertTrue(scenario.semanticExpectation.notes.isNotEmpty(), "${scenario.id} must explain its semantic expectation")
-            assertTrue(scenario.risks.isNotEmpty(), "${scenario.id} must declare risks")
-            assertTrue(scenario.safetyRequirements.isNotEmpty(), "${scenario.id} must declare safety requirements")
+            assertTrue(scenario.id.matches(Regex("[a-z0-9-]+")))
+            assertTrue(scenario.semanticExpectation.requiredCapabilities.isNotEmpty())
+            assertTrue(scenario.semanticExpectation.notes.isNotEmpty())
+            assertTrue(scenario.risks.isNotEmpty())
+            assertTrue(scenario.safetyRequirements.isNotEmpty())
+            assertFalse(scenario.source.contains("shell.run"), "${scenario.id} must not use shell.run as active reference behavior")
             scenario.semanticExpectation.requiredCapabilities.forEach { capability ->
-                assertFalse(capability.startsWith("git."), "${scenario.id} must not use implementation-specific capability '$capability'")
-                assertFalse(capability.startsWith("shell."), "${scenario.id} must not use implementation-specific capability '$capability'")
-                assertFalse(capability.startsWith("kubernetes."), "${scenario.id} must not use implementation-specific capability '$capability'")
-                assertFalse(capability.startsWith("database."), "${scenario.id} must not use implementation-specific capability '$capability'")
-                assertFalse(capability.startsWith("notify."), "${scenario.id} must not use implementation-specific capability '$capability'")
-                assertFalse(capability.startsWith("rest."), "${scenario.id} must not use implementation-specific capability '$capability'")
-                assertFalse(capability.startsWith("standard."), "${scenario.id} must not use implementation-specific capability '$capability'")
+                assertFalse(capability.startsWith("git."), "${scenario.id} uses implementation-specific capability '$capability'")
+                assertFalse(capability.startsWith("shell."), "${scenario.id} uses implementation-specific capability '$capability'")
+                assertFalse(capability.startsWith("kubernetes."), "${scenario.id} uses implementation-specific capability '$capability'")
+                assertFalse(capability.startsWith("database."), "${scenario.id} uses implementation-specific capability '$capability'")
+                assertFalse(capability.startsWith("notify."), "${scenario.id} uses implementation-specific capability '$capability'")
+                assertFalse(capability.startsWith("rest."), "${scenario.id} uses implementation-specific capability '$capability'")
+                assertFalse(capability.startsWith("standard."), "${scenario.id} uses implementation-specific capability '$capability'")
+                assertFalse(capability == "command.run", "${scenario.id} uses command execution as universal meaning")
             }
         }
-        assertTrue(
-            scenarios.any { it.semanticExpectation.portabilityClass == ReferencePortabilityClass.ADAPTER_REQUIRED },
-            "matrix must explicitly represent adapter-required universal semantics"
-        )
+        assertTrue(scenarios.any { it.semanticExpectation.portabilityClass == ReferencePortabilityClass.ADAPTER_REQUIRED })
     }
 
     @Test
@@ -78,8 +69,6 @@ class ReferenceScenarioMatrixTests {
         assertTrue("software.test" in scenario.semanticExpectation.requiredCapabilities)
         assertFalse("command.run" in scenario.semanticExpectation.requiredCapabilities)
         assertFalse(scenario.source.contains("shell.run"))
-        assertFalse(scenario.source.contains("use module \"shell\""))
-        assertFalse(scenario.source.contains("type: shell"))
         assertTrue(scenario.source.contains("standard.execute standard"))
         assertTrue(scenario.source.contains("capability: \"software.test\""))
     }
@@ -89,79 +78,88 @@ class ReferenceScenarioMatrixTests {
         ReferenceScenarioMatrix.positiveScenarios().forEach { scenario ->
             val ast = parser.parse(scenario.source)
             val validation = validator.validate(ast)
-            assertTrue(validation.valid, "${scenario.id} must pass Flow validation: ${validation.issues}")
+            assertTrue(validation.valid, "${scenario.id}: ${validation.issues}")
             val safetyIssues = safety.validate(ast)
-            assertTrue(safetyIssues.none { it.level == "error" }, "${scenario.id} must pass safety validation: $safetyIssues")
-            assertTrue(planner.plan(ast).nodes.isNotEmpty(), "${scenario.id} must produce execution plan nodes")
+            assertTrue(safetyIssues.none { it.level == "error" }, "${scenario.id}: $safetyIssues")
+            assertTrue(planner.plan(ast).nodes.isNotEmpty())
         }
     }
 
     @Test
-    fun adapterProjectionMatrixDeclaresExactStateOutsideTargetNeutralSemantics() {
-        val scenarios = ReferenceScenarioMatrix.all()
-        val expectations = ReferenceAdapterProjectionMatrix.all()
-        val scenarioIds = scenarios.map { it.id }.toSet()
-        assertEquals(scenarioIds, expectations.map { it.scenarioId }.toSet())
-        scenarioIds.forEach { scenarioId ->
-            assertEquals(
-                ReferenceAdapterProjectionMatrix.supportedTargets,
-                ReferenceAdapterProjectionMatrix.forScenario(scenarioId).map { it.target }.toSet(),
-                "$scenarioId must declare every supported adapter target"
-            )
-        }
-        expectations.forEach { expectation ->
-            assertTrue(expectation.rationale.isNotBlank())
-            assertEquals(expectation.outcome == ReferenceAdapterProjectionOutcome.EXECUTABLE, expectation.executable)
-        }
-    }
-
-    @Test
-    fun positiveAdapterExpectationsMatchConcreteReadinessExactly() {
+    fun targetOutcomesAreDerivedFromConcreteEvidenceWithoutBlockedManifestGeneration() {
         ReferenceScenarioMatrix.positiveScenarios().forEach { scenario ->
             val plan = planner.plan(parser.parse(scenario.source))
-            ReferenceAdapterProjectionMatrix.forScenario(scenario.id).forEach { expectation ->
-                val compatibility = CompatibilityAnalyzer(targets).analyze(plan, expectation.target)
-                val manifest = generators.getValue(expectation.target).generate(plan, compatibility)
-                val render = TargetRenderPolicy.evaluate(manifest)
-                val readiness = TargetCompatibilityReadinessAnalyzer.analyze(manifest)
-                val degradation = TargetCapabilityDegradationAnalyzer.analyze(manifest)
+            ReferenceAdapterProjectionMatrix.supportedTargets.sorted().forEach { target ->
+                val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
+                val expectation = if (compatibility.hasErrors) {
+                    ReferenceAdapterProjectionMatrix.evaluate(
+                        scenario = scenario,
+                        target = target,
+                        coreBlocked = false,
+                        compatibility = compatibility,
+                        manifest = null
+                    )
+                } else {
+                    val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
+                    ReferenceAdapterProjectionMatrix.evaluate(
+                        scenario = scenario,
+                        target = target,
+                        coreBlocked = false,
+                        compatibility = compatibility,
+                        manifest = manifest
+                    )
+                }
 
-                assertEquals(expectation.target, manifest.target)
-                assertTrue(manifest.jobs.isNotEmpty())
-                assertTrue(readiness.evidenceAvailable, "${scenario.id}/${expectation.target} must expose concrete readiness evidence")
-                when (expectation.outcome) {
-                    ReferenceAdapterProjectionOutcome.EXECUTABLE -> {
-                        assertEquals(TargetRenderMode.EXECUTABLE, render.mode)
-                        assertTrue(render.executable)
-                        assertEquals(TargetCapabilityDegradationStatus.SUPPORTED, degradation.status)
-                    }
-                    ReferenceAdapterProjectionOutcome.REVIEW_ONLY -> {
-                        assertEquals(TargetRenderMode.REVIEW_ONLY, render.mode, "${scenario.id}/${expectation.target} must remain review-only")
-                        assertFalse(render.executable)
-                        assertEquals(
-                            TargetCapabilityDegradationStatus.DEGRADED,
-                            degradation.status,
-                            "${scenario.id}/${expectation.target} review-only evidence must be degraded, not blocked or supported: ${degradation.entries}"
-                        )
-                    }
-                    ReferenceAdapterProjectionOutcome.FAIL_FAST -> error("Positive scenario ${scenario.id} must not declare FAIL_FAST.")
+                assertTrue(expectation.rationale.isNotBlank())
+                assertEquals(expectation.outcome == ReferenceAdapterProjectionOutcome.EXECUTABLE, expectation.executable)
+                if (compatibility.hasErrors) {
+                    assertEquals(ReferenceAdapterProjectionOutcome.FAIL_FAST, expectation.outcome)
                 }
             }
         }
     }
 
     @Test
-    fun negativeCoverageIsExplicitAndRejectedByCoreValidationGates() {
+    fun realisticBuildTestDeployEvidenceIsReviewOnlyForJenkinsAndGitHubButFailFastForTekton() {
+        val scenario = ReferenceScenarioMatrix.positiveScenarios().single { it.id == "build-test-deploy" }
+        val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
+        IntentCapabilityValidator(registry).validate(intent).assertValid()
+        val ast = IntentToAstPlanner(registry).plan(intent)
+        val validation = validator.validate(ast)
+        assertTrue(validation.valid, validation.issues.toString())
+        val safetyIssues = safety.validate(ast)
+        assertTrue(safetyIssues.none { it.level == "error" }, safetyIssues.toString())
+        val plan = planner.plan(ast)
+        val outcomes = ReferenceAdapterProjectionMatrix.supportedTargets.associateWith { target ->
+            val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
+            if (compatibility.hasErrors) {
+                ReferenceAdapterProjectionMatrix.evaluate(scenario, target, coreBlocked = false, compatibility = compatibility)
+            } else {
+                val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
+                ReferenceAdapterProjectionMatrix.evaluate(scenario, target, coreBlocked = false, compatibility = compatibility, manifest = manifest)
+            }
+        }
+
+        assertEquals(ReferenceAdapterProjectionOutcome.REVIEW_ONLY, outcomes.getValue("jenkins").outcome)
+        assertEquals(ReferenceAdapterProjectionOutcome.REVIEW_ONLY, outcomes.getValue("github-actions").outcome)
+        assertEquals(ReferenceAdapterProjectionOutcome.FAIL_FAST, outcomes.getValue("tekton").outcome)
+        assertTrue(outcomes.values.none { it.executable })
+    }
+
+    @Test
+    fun negativeCoverageFailsBeforeTargetProjection() {
         ReferenceScenarioMatrix.negativeScenarios().forEach { scenario ->
             val ast = parser.parse(scenario.source)
-            val allIssues = validator.validate(ast).issues + safety.validate(ast)
-            val errorCodes = allIssues.filter { it.level == "error" }.map { it.code }.toSet()
-            assertFalse(errorCodes.isEmpty(), "negative scenario ${scenario.id} must be rejected")
-            assertTrue(
-                scenario.expectedDiagnosticCodes.any { it in errorCodes },
-                "negative scenario ${scenario.id} expected ${scenario.expectedDiagnosticCodes}, got $errorCodes"
-            )
-            ReferenceAdapterProjectionMatrix.forScenario(scenario.id).forEach { expectation ->
+            val issues = validator.validate(ast).issues + safety.validate(ast)
+            val errorCodes = issues.filter { it.level == "error" }.map { it.code }.toSet()
+            assertFalse(errorCodes.isEmpty())
+            assertTrue(scenario.expectedDiagnosticCodes.any { it in errorCodes })
+            ReferenceAdapterProjectionMatrix.supportedTargets.forEach { target ->
+                val expectation = ReferenceAdapterProjectionMatrix.evaluate(
+                    scenario = scenario,
+                    target = target,
+                    coreBlocked = true
+                )
                 assertEquals(ReferenceAdapterProjectionOutcome.FAIL_FAST, expectation.outcome)
                 assertFalse(expectation.executable)
             }

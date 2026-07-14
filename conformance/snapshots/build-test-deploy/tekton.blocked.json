@@ -1,0 +1,48 @@
+{
+  "target" : "tekton",
+  "capabilityCompatibility" : "UNSUPPORTED",
+  "effectiveCompatibility" : "UNSUPPORTED",
+  "materializationReadiness" : "NOT_EVALUATED",
+  "projectionReadiness" : "FAIL_FAST",
+  "renderMode" : "FAIL_FAST",
+  "executable" : false,
+  "manifestPresent" : false,
+  "renderedArtifactPresent" : false,
+  "blockers" : [ {
+    "code" : "TARGET_COMPATIBILITY_BLOCKED",
+    "nodeId" : "approve_1",
+    "feature" : "approvals",
+    "message" : "Feature 'approvals' is not supported by target 'tekton'.",
+    "source" : "compatibility-report.json"
+  }, {
+    "code" : "TARGET_COMPATIBILITY_BLOCKED",
+    "nodeId" : "standard_rollback_1",
+    "feature" : "standard.rollback",
+    "message" : "Feature 'standard.rollback' is not supported by target 'tekton'.",
+    "source" : "compatibility-report.json"
+  }, {
+    "code" : "TARGET_UNSUPPORTED_CAPABILITY",
+    "nodeId" : "",
+    "feature" : "approval.manual",
+    "message" : "Target 'tekton' does not support required capability 'approval.manual'.",
+    "source" : "execution-readiness-report.json"
+  }, {
+    "code" : "TARGET_UNSUPPORTED_CAPABILITY",
+    "nodeId" : "",
+    "feature" : "standard.rollback",
+    "message" : "Target 'tekton' does not support required capability 'standard.rollback'.",
+    "source" : "execution-readiness-report.json"
+  }, {
+    "code" : "TARGET_UNSUPPORTED_FEATURE",
+    "nodeId" : "approve_1",
+    "feature" : "approvals",
+    "message" : "Feature 'approvals' is not supported by target 'tekton'.",
+    "source" : "execution-readiness-report.json"
+  }, {
+    "code" : "TARGET_UNSUPPORTED_FEATURE",
+    "nodeId" : "standard_rollback_1",
+    "feature" : "standard.rollback",
+    "message" : "Feature 'standard.rollback' is not supported by target 'tekton'.",
+    "source" : "execution-readiness-report.json"
+  } ]
+}

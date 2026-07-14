@@ -1,3 +1,15 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :checkKotlinGradlePluginConfigurationErrors
+> Task :compileKotlin
+w: file:///home/runner/work/FlowAi/FlowAi/src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt:273:48 Parameter 'intent' is never used
+
+> Task :compileJava NO-SOURCE
+> Task :processResources NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+===== REFERENCE SNAPSHOT INDEX =====
 {
   "snapshotVersion" : "2.0",
   "versionBoundary" : {
@@ -115,3 +127,9 @@
     } ]
   } ]
 }
+===== EXPORTED REFERENCE SNAPSHOT =====
+/home/runner/work/FlowAi/FlowAi/conformance/snapshots/build-test-deploy
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_5-1784046813589.json
+
+BUILD SUCCESSFUL in 1m 13s
+3 actionable tasks: 3 executed

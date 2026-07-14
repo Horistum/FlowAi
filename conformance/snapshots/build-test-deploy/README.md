@@ -1,24 +1,35 @@
-# Build/Test/Deploy Review-Only Reference Snapshot
+# Build/Test/Deploy Mixed Reference Snapshot
 
-This directory records the public semantic path for the `build-test-deploy` reference scenario and the current target projection evidence.
+This directory records the real semantic and target-projection evidence for the `build-test-deploy` reference scenario.
 
-It is **not** an end-to-end execution proof. The current Jenkins, GitHub Actions and Tekton outputs are review-only artifacts because required materialization and renderer payload evidence is incomplete.
+It is **not** an end-to-end execution proof. Current native payload coverage is deliberately small: Jenkins `git.checkout` is the isolated executable proof, while `standard.execute`, container build, deployment, notification and rollback work remain notes-projected, adapter-required or unsupported according to target evidence. Expanding those payload rules belongs to roadmap item **0.9.7 Projection Rule Coverage**, not to this honesty reset.
 
-The committed files represent:
+## Version boundary
+
+| Axis | Current value | Meaning |
+|---|---:|---|
+| Implementation package | `0.9.5` | The distributable Kotlin/Gradle release line. |
+| Public Flow standard | `0.8.0` | The semantic language and exported standard contract. |
+| Serialized artifact contracts | `2.0` | Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry shapes. |
+| Historical correction scope | `0.9.5.7.9` | The bounded repair item that introduced snapshot honesty; it is not a release version. |
+
+`snapshot-index.json` carries these axes explicitly so consumers do not have to infer them from file names.
+
+## Evidence path
 
 ```text
 Intent YAML
-  -> normalized intent snapshot (SEMANTIC_ONLY, non-executable)
-  -> Flow AST snapshot (SEMANTIC_ONLY, non-executable)
-  -> canonical Execution Plan snapshot (SEMANTIC_ONLY, non-executable)
-  -> target projection evidence
-       -> jenkins.review.yaml (REVIEW_ONLY, non-executable)
-       -> github-actions.review.yaml (REVIEW_ONLY, non-executable)
-       -> tekton.review.yaml (REVIEW_ONLY, non-executable)
+  -> normalized-intent.json       (SEMANTIC_ONLY)
+  -> flow-ast.json                (SEMANTIC_ONLY)
+  -> execution-plan.json          (SEMANTIC_ONLY)
+  -> target evidence
+       -> jenkins.review.yaml      (REVIEW_ONLY, manifest present, non-executable)
+       -> github-actions.review.yaml (REVIEW_ONLY, manifest present, non-executable)
+       -> tekton.blocked.json      (FAIL_FAST, no manifest, no target YAML)
 ```
 
-`snapshot-index.json` is the authoritative claim. It records capability compatibility, effective compatibility, materialization readiness, projection readiness, render mode and executable state for every target.
+Jenkins and GitHub Actions preserve the realistic pipeline as review artifacts because required materialization and renderer payload evidence is incomplete. Tekton fails before manifest generation because the current scenario requires unsupported approval and rollback capabilities.
 
-Review-only files deliberately do not use executable-looking names such as `Jenkinsfile`, `github-actions.yml` or `tekton-pipeline.yaml`. Those names are reserved for artifacts backed by complete materialization and concrete renderer payload evidence.
+Review-only files deliberately avoid executable-looking names such as `Jenkinsfile` or `github-actions.yml`. A blocked target uses JSON diagnostic evidence rather than a `.yaml` file, because no target syntax was emitted.
 
-Snapshot updates must be generated from the real parser, intent planner, Flow planner, compatibility analyzer, manifest generators and render policy. A snapshot must never be edited merely to make conformance green.
+Snapshot updates must be generated with the `reference-snapshot` command, which uses the real intent loader, validators, planners, compatibility analyzer, canonical manifest pipeline and render policy. Editing snapshots merely to satisfy conformance is forbidden, as it should be in any project that has not entirely surrendered to decorative testing.
