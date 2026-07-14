@@ -89,7 +89,11 @@ class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry
             val explicit = step.params["system"].asTextOrNull()
             when (step.capability) {
                 StandardCapability.CHECKOUT -> requireSystem(explicit ?: "source", "git", "Source checkout step '${step.id}'.")
-                StandardCapability.BUILD, StandardCapability.TEST, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND -> requireSystem(explicit ?: "local", "shell", "Command execution step '${step.id}'.")
+                StandardCapability.BUILD, StandardCapability.TEST, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND -> requireSystem(
+                    explicit ?: "standard",
+                    "standard",
+                    "Semantic build, test, package or manual runtime intent in step '${step.id}'."
+                )
                 StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE -> requireSystem(explicit ?: "registry", "docker", "Container image step '${step.id}'.")
                 StandardCapability.DEPLOY -> {
                     val engine = step.params["engine"].asTextOrNull() ?: step.params["tool"].asTextOrNull()

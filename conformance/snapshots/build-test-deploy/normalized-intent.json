@@ -2,17 +2,92 @@
   "intentVersion" : "1.0",
   "kind" : "FlowIntentDocument",
   "name" : "build-test-deploy",
-  "description" : "Canonical build, test, image, approval, deploy and verify intent snapshot.",
-  "inputs" : [ { "name" : "environment", "type" : "option[dev,test,prod]", "required" : true }, { "name" : "version", "type" : "text", "required" : true } ],
-  "systems" : [],
-  "workflows" : [ { "name" : "delivery", "kind" : "DEPLOY", "steps" : [
-    { "id" : "checkout", "capability" : "CHECKOUT" },
-    { "id" : "unit-tests", "capability" : "TEST", "requires" : ["checkout"] },
-    { "id" : "build-image", "capability" : "BUILD_IMAGE", "requires" : ["unit-tests"] },
-    { "id" : "approval", "capability" : "APPROVE", "requires" : ["build-image"] },
-    { "id" : "deploy", "capability" : "DEPLOY", "requires" : ["approval", "build-image"] },
-    { "id" : "verify", "capability" : "VERIFY", "requires" : ["deploy"] }
-  ] } ],
-  "policies" : [ { "name" : "prod-approval", "type" : "APPROVAL", "condition" : "environment == 'prod'", "message" : "Deploy to production?" } ],
-  "failure" : { "notify" : true, "rollback" : true, "stopOnError" : true }
+  "description" : "High-level deployment intent. AI should produce this layer before low-level Flow.",
+  "inputs" : [ {
+    "name" : "environment",
+    "type" : "option[dev,test,prod]",
+    "required" : true
+  }, {
+    "name" : "version",
+    "type" : "text",
+    "required" : true
+  } ],
+  "systems" : [ {
+    "name" : "source",
+    "type" : "git",
+    "purpose" : "Application source repository",
+    "config" : { }
+  }, {
+    "name" : "registry",
+    "type" : "dockerRegistry",
+    "purpose" : "Image registry",
+    "config" : { }
+  }, {
+    "name" : "cluster",
+    "type" : "kubernetes",
+    "purpose" : "Deployment target",
+    "config" : { }
+  }, {
+    "name" : "standard",
+    "type" : "standard",
+    "purpose" : "Semantic build and test operations",
+    "config" : { }
+  } ],
+  "workflows" : [ {
+    "name" : "application-lifecycle",
+    "kind" : "DEPLOY",
+    "steps" : [ {
+      "id" : "checkout",
+      "capability" : "CHECKOUT",
+      "uses" : "git",
+      "requires" : [ ],
+      "produces" : [ ],
+      "params" : { }
+    }, {
+      "id" : "test",
+      "capability" : "TEST",
+      "uses" : "standard",
+      "requires" : [ "checkout" ],
+      "produces" : [ ],
+      "params" : { }
+    }, {
+      "id" : "build-image",
+      "capability" : "BUILD_IMAGE",
+      "uses" : "docker",
+      "requires" : [ "test" ],
+      "produces" : [ ],
+      "params" : { }
+    }, {
+      "id" : "approve-prod",
+      "capability" : "APPROVE",
+      "requires" : [ "build-image" ],
+      "produces" : [ ],
+      "params" : { }
+    }, {
+      "id" : "deploy",
+      "capability" : "DEPLOY",
+      "uses" : "kubernetes",
+      "requires" : [ "approve-prod" ],
+      "produces" : [ ],
+      "params" : { }
+    }, {
+      "id" : "verify",
+      "capability" : "VERIFY",
+      "uses" : "kubernetes",
+      "requires" : [ "deploy" ],
+      "produces" : [ ],
+      "params" : { }
+    } ]
+  } ],
+  "policies" : [ {
+    "name" : "production-approval",
+    "type" : "APPROVAL",
+    "condition" : "environment == 'prod'",
+    "message" : "Production deployment requires approval."
+  } ],
+  "failure" : {
+    "notify" : true,
+    "rollback" : true,
+    "stopOnError" : true
+  }
 }

@@ -193,15 +193,17 @@ v0.3.2 adds vectors for:
 - cleanup allowed with explicit retention,
 - Kubernetes maintenance blocked without required dry-run.
 
-## v0.2.0-rc3 Snapshots
+## Reference snapshots
 
-End-to-end snapshots are stored under:
+The build/test/deploy reference snapshot set is stored under:
 
 ```text
 conformance/snapshots/build-test-deploy/
 ```
 
-They document the public standard path from normalized intent to rendered target output. Exact canonical diffing is planned for a later release; rc1 verifies snapshot presence and standard version metadata.
+It records semantic artifacts and current target projection evidence. The directory is not an end-to-end execution proof. `snapshot-index.json` declares each artifact as semantic-only, review-only, fail-fast or executable, and the current target outputs are committed under `.review.yaml` names with `executable: false`.
+
+Conformance compares normalized intent, Flow AST, canonical Execution Plan, snapshot evidence and rendered review artifacts against the real pipeline. Executable-looking vendor file names are forbidden until complete materialization and renderer payload evidence exists.
 
 
 v0.7.0 adds a vector for:

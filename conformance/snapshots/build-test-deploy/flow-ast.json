@@ -2,6 +2,361 @@
   "astVersion" : "1.0",
   "sourceVersion" : "1.0",
   "kind" : "FlowDocument",
-  "flow" : { "type" : "Flow", "name" : "build-test-deploy" },
-  "metadata" : { "createdBy" : "intent-to-ast-planner" }
+  "imports" : [ {
+    "type" : "ModuleImport",
+    "name" : "docker",
+    "version" : "1.0"
+  }, {
+    "type" : "ModuleImport",
+    "name" : "git",
+    "version" : "1.0"
+  }, {
+    "type" : "ModuleImport",
+    "name" : "kubernetes",
+    "version" : "1.0"
+  }, {
+    "type" : "ModuleImport",
+    "name" : "notify",
+    "version" : "1.0"
+  }, {
+    "type" : "ModuleImport",
+    "name" : "standard",
+    "version" : "1.0"
+  } ],
+  "flow" : {
+    "type" : "Flow",
+    "name" : "build-test-deploy",
+    "input" : [ {
+      "type" : "Input",
+      "name" : "environment",
+      "valueType" : {
+        "kind" : "option",
+        "values" : [ {
+          "type" : "StringLiteral",
+          "value" : "dev"
+        }, {
+          "type" : "StringLiteral",
+          "value" : "test"
+        }, {
+          "type" : "StringLiteral",
+          "value" : "prod"
+        } ]
+      },
+      "required" : true
+    }, {
+      "type" : "Input",
+      "name" : "version",
+      "valueType" : {
+        "kind" : "text",
+        "values" : [ ]
+      },
+      "required" : true
+    } ],
+    "vars" : [ ],
+    "systems" : [ {
+      "type" : "System",
+      "name" : "source",
+      "systemType" : "git",
+      "config" : { }
+    }, {
+      "type" : "System",
+      "name" : "registry",
+      "systemType" : "docker",
+      "config" : { }
+    }, {
+      "type" : "System",
+      "name" : "cluster",
+      "systemType" : "kubernetes",
+      "config" : { }
+    }, {
+      "type" : "System",
+      "name" : "standard",
+      "systemType" : "standard",
+      "config" : { }
+    }, {
+      "type" : "System",
+      "name" : "notifier",
+      "systemType" : "notify",
+      "config" : {
+        "channel" : {
+          "type" : "IdentifierLiteral",
+          "value" : "email"
+        }
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Action",
+      "module" : "git",
+      "action" : "checkout",
+      "target" : {
+        "type" : "Reference",
+        "path" : [ "source" ],
+        "safe" : false,
+        "scope" : "auto"
+      },
+      "params" : {
+        "branch" : {
+          "type" : "StringLiteral",
+          "value" : "main"
+        }
+      },
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "checkout"
+      },
+      "dependsOn" : [ ]
+    }, {
+      "type" : "Action",
+      "module" : "standard",
+      "action" : "execute",
+      "target" : {
+        "type" : "Reference",
+        "path" : [ "standard" ],
+        "safe" : false,
+        "scope" : "auto"
+      },
+      "params" : {
+        "operation" : {
+          "type" : "StringLiteral",
+          "value" : "test"
+        },
+        "capability" : {
+          "type" : "StringLiteral",
+          "value" : "test"
+        },
+        "description" : {
+          "type" : "StringLiteral",
+          "value" : "TEST step test"
+        },
+        "flow" : {
+          "type" : "StringLiteral",
+          "value" : "build-test-deploy"
+        }
+      },
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "test"
+      },
+      "dependsOn" : [ "checkout" ]
+    }, {
+      "type" : "Action",
+      "module" : "docker",
+      "action" : "build",
+      "target" : {
+        "type" : "Reference",
+        "path" : [ "registry" ],
+        "safe" : false,
+        "scope" : "auto"
+      },
+      "params" : {
+        "image" : {
+          "type" : "TemplateString",
+          "parts" : [ {
+            "type" : "StringLiteral",
+            "value" : "build-test-deploy:"
+          }, {
+            "type" : "Reference",
+            "path" : [ "version" ],
+            "safe" : false,
+            "scope" : "auto"
+          } ],
+          "sensitive" : false
+        },
+        "path" : {
+          "type" : "StringLiteral",
+          "value" : "."
+        }
+      },
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "build_image"
+      },
+      "dependsOn" : [ "test" ]
+    }, {
+      "type" : "If",
+      "condition" : {
+        "type" : "BinaryExpression",
+        "operator" : "==",
+        "left" : {
+          "type" : "Reference",
+          "path" : [ "environment" ],
+          "safe" : false,
+          "scope" : "auto",
+          "location" : {
+            "line" : 1,
+            "column" : 1
+          }
+        },
+        "right" : {
+          "type" : "StringLiteral",
+          "value" : "prod"
+        },
+        "location" : {
+          "line" : 1,
+          "column" : 13
+        }
+      },
+      "then" : [ {
+        "type" : "Approve",
+        "mode" : "manual",
+        "params" : {
+          "message" : {
+            "type" : "StringLiteral",
+            "value" : "Production deployment requires approval."
+          }
+        },
+        "result" : {
+          "type" : "ResultBinding",
+          "name" : "approve_prod"
+        },
+        "dependsOn" : [ "build_image" ]
+      } ],
+      "otherwise" : [ ]
+    }, {
+      "type" : "Action",
+      "module" : "kubernetes",
+      "action" : "deploy",
+      "target" : {
+        "type" : "Reference",
+        "path" : [ "cluster" ],
+        "safe" : false,
+        "scope" : "auto"
+      },
+      "params" : {
+        "app" : {
+          "type" : "StringLiteral",
+          "value" : "build-test-deploy"
+        },
+        "namespace" : {
+          "type" : "Reference",
+          "path" : [ "environment" ],
+          "safe" : false,
+          "scope" : "auto"
+        },
+        "image" : {
+          "type" : "TemplateString",
+          "parts" : [ {
+            "type" : "StringLiteral",
+            "value" : "build-test-deploy:"
+          }, {
+            "type" : "Reference",
+            "path" : [ "version" ],
+            "safe" : false,
+            "scope" : "auto"
+          } ],
+          "sensitive" : false
+        }
+      },
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "deploy"
+      },
+      "dependsOn" : [ "approve_prod" ]
+    }, {
+      "type" : "Action",
+      "module" : "kubernetes",
+      "action" : "get",
+      "target" : {
+        "type" : "Reference",
+        "path" : [ "cluster" ],
+        "safe" : false,
+        "scope" : "auto"
+      },
+      "params" : {
+        "resource" : {
+          "type" : "StringLiteral",
+          "value" : "pods"
+        },
+        "namespace" : {
+          "type" : "Reference",
+          "path" : [ "environment" ],
+          "safe" : false,
+          "scope" : "auto"
+        },
+        "selector" : {
+          "type" : "StringLiteral",
+          "value" : "app=build-test-deploy"
+        }
+      },
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "verify"
+      },
+      "handler" : {
+        "type" : "ResultHandler",
+        "rules" : [ {
+          "type" : "Expect",
+          "expressions" : [ {
+            "type" : "Reference",
+            "path" : [ "ok" ],
+            "safe" : false,
+            "scope" : "implicitResult"
+          } ]
+        } ]
+      },
+      "dependsOn" : [ "deploy" ]
+    } ],
+    "errorHandler" : {
+      "type" : "ErrorHandler",
+      "steps" : [ {
+        "type" : "Action",
+        "module" : "standard",
+        "action" : "rollback",
+        "target" : {
+          "type" : "Reference",
+          "path" : [ "standard" ],
+          "safe" : false,
+          "scope" : "auto"
+        },
+        "params" : {
+          "operation" : {
+            "type" : "StringLiteral",
+            "value" : "rollback"
+          },
+          "reason" : {
+            "type" : "Reference",
+            "path" : [ "error", "message" ],
+            "safe" : true,
+            "scope" : "error"
+          },
+          "flow" : {
+            "type" : "StringLiteral",
+            "value" : "build-test-deploy"
+          }
+        },
+        "result" : {
+          "type" : "ResultBinding",
+          "name" : "rollback_result"
+        },
+        "dependsOn" : [ ]
+      }, {
+        "type" : "Action",
+        "module" : "notify",
+        "action" : "send",
+        "target" : {
+          "type" : "Reference",
+          "path" : [ "notifier" ],
+          "safe" : false,
+          "scope" : "auto"
+        },
+        "params" : {
+          "subject" : {
+            "type" : "StringLiteral",
+            "value" : "Flow failed: build-test-deploy"
+          },
+          "body" : {
+            "type" : "Reference",
+            "path" : [ "error", "message" ],
+            "safe" : true,
+            "scope" : "error"
+          }
+        },
+        "dependsOn" : [ ]
+      } ]
+    }
+  },
+  "metadata" : {
+    "createdBy" : "intent-to-ast-planner",
+    "generatedByAI" : false
+  }
 }
