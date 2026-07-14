@@ -21,7 +21,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .flow-agent/transactions/universal-model.patch.gz.b64.* > /tmp/universal-model.patch.gz.b64
+          echo "b257f4aa7638965f30f97f07eca53f56de0cd1ac  .flow-agent/transactions/universal-model.patch.gz.b64.00" | git hash-object --stdin >/dev/null
+          test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.00)" = "b257f4aa7638965f30f97f07eca53f56de0cd1ac"
+          test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.01)" = "00495eaf0b0419d93a8b55e15e047a8c1cd892b6"
+          test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.02a)" = "20aff9564169aa857560142112f978ec49884177"
+          test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.02b)" = "bba9b0fb19b40dbef548339451a8829318b17347"
+          test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.02c)" = "cd252ee128ad00c343097eecaa7c229e5c331add"
+          test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.02d)" = "6f6aecd33003e8ec4e00bd39fd6a99b6fef5e17a"
+          test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.03)" = "881966ea0f012fb27f86ecacabf999f7b795f0b3"
+          test "$(git hash-object .flow-agent/transactions/universal-model.patch.gz.b64.04)" = "254f6953a185fc0cf6ad3c48e1cdf14e9f636d82"
+          cat \
+            .flow-agent/transactions/universal-model.patch.gz.b64.00 \
+            .flow-agent/transactions/universal-model.patch.gz.b64.01 \
+            .flow-agent/transactions/universal-model.patch.gz.b64.02a \
+            .flow-agent/transactions/universal-model.patch.gz.b64.02b \
+            .flow-agent/transactions/universal-model.patch.gz.b64.02c \
+            .flow-agent/transactions/universal-model.patch.gz.b64.02d \
+            .flow-agent/transactions/universal-model.patch.gz.b64.03 \
+            .flow-agent/transactions/universal-model.patch.gz.b64.04 \
+            > /tmp/universal-model.patch.gz.b64
           echo "62e6e2a48cb80d025ace2f7c1d9cee531ea9b0405315be95ece30c0e058c7950  /tmp/universal-model.patch.gz.b64" | sha256sum -c -
           base64 --decode /tmp/universal-model.patch.gz.b64 | gzip --decompress > /tmp/universal-model.patch
           echo "b3f20e44654333e51c875db81aa0297ce7c299916cf8472212bc378a157af6df  /tmp/universal-model.patch" | sha256sum -c -
