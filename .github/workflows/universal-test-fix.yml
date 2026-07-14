@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object .flow-agent/transactions/universal-test-fix.patch.gz.b64)" = "fc2bd29e6f3d4f89588ea51261e7181711f6f4ed"
+          test "$(git hash-object .flow-agent/transactions/universal-test-fix.patch.gz.b64)" = "bfc4cb2a6ce7d521ccb1cfa4da15df3cf96c2f84"
           echo "369b5136d670b4de6a9b0e4a7ccb9a2944b8a6e70592465b8d8e7128f4786d59  .flow-agent/transactions/universal-test-fix.patch.gz.b64" | sha256sum -c -
           base64 --decode .flow-agent/transactions/universal-test-fix.patch.gz.b64 | gzip --decompress > /tmp/universal-test-fix.patch
           echo "46c1a7e5435f7376a45cd28e498538182c7757d0226557b8bc0af9bc5bbb28d2  /tmp/universal-test-fix.patch" | sha256sum -c -
