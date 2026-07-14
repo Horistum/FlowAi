@@ -1,6 +1,6 @@
 {
-  "astVersion" : "1.0",
-  "sourceVersion" : "1.0",
+  "astVersion" : "2.0",
+  "sourceVersion" : "2.0",
   "kind" : "FlowDocument",
   "imports" : [ {
     "type" : "ModuleImport",
@@ -84,6 +84,7 @@
         }
       }
     } ],
+    "triggers" : [ ],
     "steps" : [ {
       "type" : "Action",
       "module" : "git",
@@ -214,37 +215,30 @@
       "otherwise" : [ ]
     }, {
       "type" : "Action",
-      "module" : "kubernetes",
-      "action" : "deploy",
+      "module" : "standard",
+      "action" : "execute",
       "target" : {
         "type" : "Reference",
-        "path" : [ "cluster" ],
+        "path" : [ "standard" ],
         "safe" : false,
         "scope" : "auto"
       },
       "params" : {
-        "app" : {
+        "operation" : {
+          "type" : "StringLiteral",
+          "value" : "deploy"
+        },
+        "capability" : {
+          "type" : "StringLiteral",
+          "value" : "deploy"
+        },
+        "description" : {
+          "type" : "StringLiteral",
+          "value" : "DEPLOY step deploy"
+        },
+        "flow" : {
           "type" : "StringLiteral",
           "value" : "build-test-deploy"
-        },
-        "namespace" : {
-          "type" : "Reference",
-          "path" : [ "environment" ],
-          "safe" : false,
-          "scope" : "auto"
-        },
-        "image" : {
-          "type" : "TemplateString",
-          "parts" : [ {
-            "type" : "StringLiteral",
-            "value" : "build-test-deploy:"
-          }, {
-            "type" : "Reference",
-            "path" : [ "version" ],
-            "safe" : false,
-            "scope" : "auto"
-          } ],
-          "sensitive" : false
         }
       },
       "result" : {
@@ -254,45 +248,35 @@
       "dependsOn" : [ "approve_prod" ]
     }, {
       "type" : "Action",
-      "module" : "kubernetes",
-      "action" : "get",
+      "module" : "standard",
+      "action" : "execute",
       "target" : {
         "type" : "Reference",
-        "path" : [ "cluster" ],
+        "path" : [ "standard" ],
         "safe" : false,
         "scope" : "auto"
       },
       "params" : {
-        "resource" : {
+        "operation" : {
           "type" : "StringLiteral",
-          "value" : "pods"
+          "value" : "verify"
         },
-        "namespace" : {
-          "type" : "Reference",
-          "path" : [ "environment" ],
-          "safe" : false,
-          "scope" : "auto"
-        },
-        "selector" : {
+        "capability" : {
           "type" : "StringLiteral",
-          "value" : "app=build-test-deploy"
+          "value" : "verify"
+        },
+        "description" : {
+          "type" : "StringLiteral",
+          "value" : "VERIFY step verify"
+        },
+        "flow" : {
+          "type" : "StringLiteral",
+          "value" : "build-test-deploy"
         }
       },
       "result" : {
         "type" : "ResultBinding",
         "name" : "verify"
-      },
-      "handler" : {
-        "type" : "ResultHandler",
-        "rules" : [ {
-          "type" : "Expect",
-          "expressions" : [ {
-            "type" : "Reference",
-            "path" : [ "ok" ],
-            "safe" : false,
-            "scope" : "implicitResult"
-          } ]
-        } ]
       },
       "dependsOn" : [ "deploy" ]
     } ],

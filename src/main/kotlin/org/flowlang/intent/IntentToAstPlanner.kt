@@ -214,7 +214,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             StandardCapability.INCIDENT -> standardAction(step, "incident", intent)
             StandardCapability.SECRET_ROTATE -> standardAction(step, "secret-rotate", intent)
             StandardCapability.POLICY_CHECK -> standardAction(step, "policy-check", intent)
-            StandardCapability.CUSTOM -> customAction(step, intent)
+            StandardCapability.CUSTOM -> standardAction(step, "custom", intent)
         }
         return listOf(applyDependencies(node, dependencyIds))
     }

@@ -1,6 +1,6 @@
 {
   "flowName" : "build-test-deploy",
-  "planVersion" : "1.1",
+  "planVersion" : "2.0",
   "inputs" : [ {
     "name" : "environment",
     "type" : "option",
@@ -12,6 +12,7 @@
     "required" : true,
     "choices" : [ ]
   } ],
+  "triggers" : [ ],
   "outputs" : [ {
     "name" : "checkout",
     "type" : "any",
@@ -27,18 +28,18 @@
   }, {
     "name" : "deploy",
     "type" : "any",
-    "sourceNodeId" : "kubernetes_deploy_1"
+    "sourceNodeId" : "standard_execute_2"
   }, {
     "name" : "verify",
     "type" : "any",
-    "sourceNodeId" : "kubernetes_get_1"
+    "sourceNodeId" : "standard_execute_3"
   }, {
     "name" : "rollback_result",
     "type" : "any",
     "sourceNodeId" : "standard_rollback_1"
   } ],
-  "dependencies" : [ "git_checkout_1", "standard_execute_1", "docker_build_1", "approve_1", "kubernetes_deploy_1" ],
-  "requiredCapabilities" : [ "task.execute", "standard.test", "container.image", "condition.evaluate", "approval.manual", "kubernetes.api", "errorHandlers.finally", "standard.rollback", "notification.send" ],
+  "dependencies" : [ "git_checkout_1", "standard_execute_1", "docker_build_1", "approve_1", "standard_execute_2" ],
+  "requiredCapabilities" : [ "task.execute", "standard.test", "container.image", "condition.evaluate", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "notification.send" ],
   "targetHints" : { },
   "assumptions" : [ ],
   "nodes" : [ {
@@ -165,22 +166,23 @@
     "body" : [ ],
     "errorHandler" : [ ]
   }, {
-    "id" : "kubernetes_deploy_1",
+    "id" : "standard_execute_2",
     "kind" : "task",
-    "module" : "kubernetes",
-    "action" : "deploy",
-    "target" : "cluster",
+    "module" : "standard",
+    "action" : "execute",
+    "target" : "standard",
     "resultName" : "deploy",
     "dependencies" : [ "approve_1" ],
     "inputs" : {
-      "app" : "\"build-test-deploy\"",
-      "namespace" : "\"${environment}\"",
-      "image" : "\"build-test-deploy:${version}\""
+      "operation" : "\"deploy\"",
+      "capability" : "\"deploy\"",
+      "description" : "\"DEPLOY step deploy\"",
+      "flow" : "\"build-test-deploy\""
     },
     "outputs" : [ "deploy" ],
-    "effects" : [ "kubernetes.workload", "kubernetes.workload" ],
+    "effects" : [ "flow.standard.operation" ],
     "destructive" : false,
-    "requiredCapabilities" : [ "task.execute", "kubernetes.api" ],
+    "requiredCapabilities" : [ "task.execute", "standard.deploy" ],
     "targetHints" : { },
     "assumptions" : [ ],
     "then" : [ ],
@@ -192,22 +194,23 @@
     "body" : [ ],
     "errorHandler" : [ ]
   }, {
-    "id" : "kubernetes_get_1",
+    "id" : "standard_execute_3",
     "kind" : "task",
-    "module" : "kubernetes",
-    "action" : "get",
-    "target" : "cluster",
+    "module" : "standard",
+    "action" : "execute",
+    "target" : "standard",
     "resultName" : "verify",
-    "dependencies" : [ "kubernetes_deploy_1" ],
+    "dependencies" : [ "standard_execute_2" ],
     "inputs" : {
-      "resource" : "\"pods\"",
-      "namespace" : "\"${environment}\"",
-      "selector" : "\"app=build-test-deploy\""
+      "operation" : "\"verify\"",
+      "capability" : "\"verify\"",
+      "description" : "\"VERIFY step verify\"",
+      "flow" : "\"build-test-deploy\""
     },
     "outputs" : [ "verify" ],
-    "effects" : [ "kubernetes.resource", "kubernetes.api" ],
+    "effects" : [ "flow.standard.operation" ],
     "destructive" : false,
-    "requiredCapabilities" : [ "task.execute", "kubernetes.api" ],
+    "requiredCapabilities" : [ "task.execute", "standard.verify" ],
     "targetHints" : { },
     "assumptions" : [ ],
     "then" : [ ],

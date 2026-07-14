@@ -1,5 +1,5 @@
 {
-  "intentVersion" : "1.0",
+  "intentVersion" : "2.0",
   "kind" : "FlowIntentDocument",
   "name" : "build-test-deploy",
   "description" : "High-level deployment intent. AI should produce this layer before low-level Flow.",
@@ -33,27 +33,25 @@
     "purpose" : "Semantic build and test operations",
     "config" : { }
   } ],
+  "triggers" : [ ],
   "workflows" : [ {
     "name" : "application-lifecycle",
     "kind" : "DEPLOY",
     "steps" : [ {
       "id" : "checkout",
       "capability" : "CHECKOUT",
-      "uses" : "git",
       "requires" : [ ],
       "produces" : [ ],
       "params" : { }
     }, {
       "id" : "test",
       "capability" : "TEST",
-      "uses" : "standard",
       "requires" : [ "checkout" ],
       "produces" : [ ],
       "params" : { }
     }, {
       "id" : "build-image",
       "capability" : "BUILD_IMAGE",
-      "uses" : "docker",
       "requires" : [ "test" ],
       "produces" : [ ],
       "params" : { }
@@ -66,14 +64,12 @@
     }, {
       "id" : "deploy",
       "capability" : "DEPLOY",
-      "uses" : "kubernetes",
       "requires" : [ "approve-prod" ],
       "produces" : [ ],
       "params" : { }
     }, {
       "id" : "verify",
       "capability" : "VERIFY",
-      "uses" : "kubernetes",
       "requires" : [ "deploy" ],
       "produces" : [ ],
       "params" : { }
