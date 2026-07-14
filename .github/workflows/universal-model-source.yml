@@ -1,0 +1,27 @@
+name: Universal Model Source Snapshot
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package source snapshot
+        shell: bash
+        run: |
+          tar --exclude=.git --exclude=build --exclude=.gradle --exclude=.gradle-user-home -czf /tmp/flowai-source.tar.gz .
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: flowai-universal-model-source
+          path: /tmp/flowai-source.tar.gz
+          if-no-files-found: error
