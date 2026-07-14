@@ -1,4 +1,4 @@
-name: v0.9.5.7.9 Honesty Inventory
+name: v0.9.5.7.9 Honesty Reset Validation
 
 on:
   push:
@@ -7,41 +7,28 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  inventory:
+  validate-and-persist:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v4
+        with:
+          ref: feature/v0957-9-reference-snapshot-honesty-reset
+          fetch-depth: 0
 
-      - name: Collect reference and snapshot evidence
+      - name: Apply exact implementation patches
         shell: bash
         run: |
-          mkdir -p inventory
-          {
-            echo '# Reference and snapshot files'
-            find . -type f \
-              \( -iname '*reference*' -o -iname '*snapshot*' -o -iname '*scenario*' \) \
-              -not -path './.git/*' -not -path './build/*' -not -path './.gradle/*' | sort
-            echo
-            echo '# shell.run and command-shaped reference usage'
-            grep -RInE 'shell\.run|module:[[:space:]]*shell|action:[[:space:]]*run|command:|script:' \
-              src/main src/test tests standard conformance examples docs .flow-agent modules targets 2>/dev/null || true
-            echo
-            echo '# Readiness and support claims'
-            grep -RInE 'executable|production[-_ ]ready|production[-_ ]supported|SUPPORTED|READY|REVIEW_ONLY|FAIL_FAST|SEMANTIC_ONLY|ADAPTER_REQUIRED|BLOCKED|DEGRADED' \
-              src/main src/test tests standard conformance examples docs .flow-agent 2>/dev/null || true
-            echo
-            echo '# Snapshot assertions and generated artifacts'
-            grep -RInE 'snapshot|golden|expected.*(jenkins|github|tekton)|rendered|generated artifact|end-to-end|end to end' \
-              src/main src/test tests standard conformance examples docs .flow-agent 2>/dev/null || true
-            echo
-            echo '# Reference scenario declarations'
-            grep -RInE 'ReferenceScenario|reference scenario|referenceScenario|scenario matrix|flagship' \
-              src/main src/test tests standard conformance examples docs .flow-agent 2>/dev/null || true
-          } > inventory/honesty-inventory.txt
+          for patch in .flow-agent/patches/v09579/*.patch; do
+            git apply --check "$patch"
+          done
+          for patch in .flow-agent/patches/v09579/*.patch; do
+            git apply "$patch"
+          done
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -52,29 +39,50 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Record current reference projection states
+      - name: Prepare Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Generate exact snapshots from the real pipeline
+        shell: bash
+        run: ./gradlew --no-daemon test --tests org.flowlang.tests.ReferenceSnapshotWriterTests --stacktrace --console=plain
+
+      - name: Remove transactional inventory and writer tests
         shell: bash
         run: |
-          chmod +x ./gradlew
-          ./gradlew --no-daemon test --tests org.flowlang.tests.ReferenceScenarioStateInventoryTests --stacktrace --console=plain
-          cp build/reference-scenario-state.tsv inventory/
+          rm tests/ReferenceSnapshotWriterTests.kt
+          rm tests/ReferenceScenarioStateInventoryTests.kt
 
-      - name: Export exact working tree
+      - name: Test Flow Agent tooling
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest tools/tests/test_flow_agent_roadmap.py
+
+      - name: Validate Flow Agent structure
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 tools/flow_agent_validate.py
+
+      - name: Generate Flow Agent context
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 tools/flow_agent_runner.py
+
+      - name: Compile and test
+        run: ./gradlew --no-daemon clean test --stacktrace --console=plain
+
+      - name: Run conformance
+        run: ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain
+
+      - name: Persist only fully validated changes
+        if: success()
         shell: bash
         run: |
-          tar --exclude=.git --exclude=build --exclude=.gradle --exclude=inventory -czf /tmp/flow-v09579-working-tree.tar.gz .
-          mv /tmp/flow-v09579-working-tree.tar.gz inventory/
-
-      - name: Upload inventory
-        uses: actions/upload-artifact@v4
-        with:
-          name: v09579-honesty-inventory
-          path: |
-            inventory/honesty-inventory.txt
-            inventory/reference-scenario-state.tsv
-
-      - name: Upload working tree
-        uses: actions/upload-artifact@v4
-        with:
-          name: v09579-working-tree
-          path: inventory/flow-v09579-working-tree.tar.gz
+          rm .github/workflows/v09579-honesty-inventory.yml
+          rm -rf .flow-agent/patches/v09579
+          find tools -type d -name __pycache__ -prune -exec rm -rf {} +
+          git config user.name "flow-snapshot-honesty-bot"
+          git config user.email "flow-snapshot-honesty-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Reset reference scenario and snapshot honesty"
+          git push origin HEAD:feature/v0957-9-reference-snapshot-honesty-reset
