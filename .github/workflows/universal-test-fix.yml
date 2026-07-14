@@ -27,6 +27,13 @@ jobs:
           echo "46c1a7e5435f7376a45cd28e498538182c7757d0226557b8bc0af9bc5bbb28d2  /tmp/universal-test-fix.patch" | sha256sum -c -
           git apply --check /tmp/universal-test-fix.patch
           git apply /tmp/universal-test-fix.patch
+
+          test "$(git hash-object .flow-agent/transactions/universal-node-inventory-fix.patch.gz.b64)" = "11000f56a02ad55823d3a8c3fab5862606269392"
+          echo "30242febe0717b2ac4a453935dd6bf8460ef9bf85ecb6ccab12b3797d21a2a41  .flow-agent/transactions/universal-node-inventory-fix.patch.gz.b64" | sha256sum -c -
+          base64 --decode .flow-agent/transactions/universal-node-inventory-fix.patch.gz.b64 | gzip --decompress > /tmp/universal-node-inventory-fix.patch
+          echo "f1a3f40067eaae0ae690efc92150e04887bbe83b8b9c1aad07b5dac4216e7e91  /tmp/universal-node-inventory-fix.patch" | sha256sum -c -
+          git apply --check /tmp/universal-node-inventory-fix.patch
+          git apply /tmp/universal-node-inventory-fix.patch
           git diff --check
 
       - name: Set up JDK 21
@@ -74,6 +81,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -f .flow-agent/transactions/universal-test-fix.patch.gz.b64
+          rm -f .flow-agent/transactions/universal-node-inventory-fix.patch.gz.b64
           rmdir .flow-agent/transactions 2>/dev/null || true
           rm -f .github/workflows/universal-test-fix.yml
           git config user.name "flow-ai-validation"
