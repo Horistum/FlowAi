@@ -1,0 +1,127 @@
+diff --git a/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt b/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
+index ae6ced0..8e87104 100644
+--- a/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
++++ b/src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt
+@@ -342,10 +342,21 @@ class ConformanceRunner(
+     private fun checkEndToEndSnapshotsExist(): ConformanceCheck = runCheck("snapshots.e2e.files-exist") {
+         val dir = File(rootDir, "conformance/snapshots/build-test-deploy")
+         val required = listOf(
+-            "normalized-intent.json", "flow-ast.json", "execution-plan.json", "compatibility-report.jenkins.json",
+-            "target-manifest.jenkins.json", "Jenkinsfile", "github-actions.yml", "tekton-pipeline.yaml"
++            "normalized-intent.json",
++            "flow-ast.json",
++            "execution-plan.json",
++            "snapshot-index.json",
++            "jenkins.review.yaml",
++            "github-actions.review.yaml",
++            "tekton.review.yaml",
++            "README.md"
+         )
+         required.forEach { name -> require(File(dir, name).isFile) { "Missing snapshot $name" } }
++        ReferenceSnapshotHonesty.legacyExecutableLookingFiles.forEach { name ->
++            require(!File(dir, name).exists()) {
++                "Legacy executable-looking or stale snapshot '$name' must be removed."
++            }
++        }
+     }
+ 
+     private fun checkEndToEndSnapshotContent(): ConformanceCheck = runCheck("snapshots.e2e.content") {
+@@ -355,14 +366,53 @@ class ConformanceRunner(
+         val tekton = buildPipeline("tekton", strict = false)
+         val version = FlowStandardVersions.FLOW_STANDARD_VERSION
+         val pipelines = listOf(jenkins, github, tekton)
++        val expectedIndex = ReferenceSnapshotHonesty.build(
++            scenarioId = "build-test-deploy",
++            standardVersion = version,
++            manifests = pipelines.map { it.manifest }
++        )
++        val committedIndex = Json.mapper.readValue(
++            File(dir, "snapshot-index.json"),
++            ReferenceSnapshotSet::class.java
++        )
++
++        require(ReferenceSnapshotHonesty.validate(expectedIndex).isEmpty()) {
++            "Generated reference snapshot evidence is internally inconsistent: ${ReferenceSnapshotHonesty.validate(expectedIndex)}"
++        }
++        require(ReferenceSnapshotHonesty.validate(committedIndex).isEmpty()) {
++            "Committed reference snapshot evidence is internally inconsistent: ${ReferenceSnapshotHonesty.validate(committedIndex)}"
++        }
++        require(committedIndex == expectedIndex) {
++            "Committed snapshot-index.json does not match current materialization and projection evidence."
++        }
++        require(!committedIndex.executable) { "Reference snapshot set must not claim executable output." }
++        require(committedIndex.claim == ReferenceSnapshotClaim.REVIEW_ONLY_PROJECTION_SET) {
++            "Current build-test-deploy snapshots must be explicitly classified as review-only."
++        }
++
++        assertJsonSnapshotEquals(File(dir, "normalized-intent.json"), jenkins.intent)
++        assertJsonSnapshotEquals(File(dir, "flow-ast.json"), jenkins.ast)
++        assertJsonSnapshotEquals(File(dir, "execution-plan.json"), ExecutionPlanCanonicalizer.canonicalize(jenkins.plan))
++
++        val canonicalPlanText = File(dir, "execution-plan.json").readText()
++        require(!canonicalPlanText.contains("\"module\" : \"shell\"")) {
++            "Flagship execution-plan snapshot must not contain shell materialization."
++        }
++        require(!canonicalPlanText.contains("\"action\" : \"run\"")) {
++            "Flagship execution-plan snapshot must not contain generic run-command projection."
++        }
++        require(canonicalPlanText.contains("\"module\" : \"standard\"")) {
++            "Flagship execution-plan snapshot must preserve semantic standard test intent."
++        }
+ 
+-        require(jenkins.manifest.standardVersion == version) { "Generated Jenkins manifest has wrong standard version." }
+-        require(jenkins.plan.flowName == "build-test-deploy") { "Execution plan flow name drifted." }
+-        require(jenkins.plan.tasks.isNotEmpty()) { "Execution plan must contain tasks." }
+         pipelines.forEach { artifacts ->
+-            require(TargetRenderPolicy.evaluate(artifacts.manifest).mode == TargetRenderMode.REVIEW_ONLY) {
++            val readiness = TargetRenderPolicy.evaluate(artifacts.manifest)
++            require(readiness.mode == TargetRenderMode.REVIEW_ONLY) {
+                 "Reference projection for ${artifacts.manifest.target} must remain review-only until renderer payload evidence exists."
+             }
++            require(!readiness.executable) {
++                "Reference projection for ${artifacts.manifest.target} must be explicitly non-executable."
++            }
+             require(artifacts.rendered.contains("standardVersion: \"$version\"")) {
+                 "Review artifact for ${artifacts.manifest.target} must carry the active standard version."
+             }
+@@ -372,7 +422,12 @@ class ConformanceRunner(
+             require(artifacts.rendered.contains("executable: false")) {
+                 "Review artifact for ${artifacts.manifest.target} must be explicitly non-executable."
+             }
++            assertSnapshotEquals(
++                File(dir, ReferenceSnapshotHonesty.projectionFile(artifacts.manifest.target, readiness.mode)),
++                artifacts.rendered
++            )
+         }
++
+         require(jenkins.manifest.allStepParams().any { it.contains("${'$'}{version}") }) {
+             "Jenkins manifest must preserve the authored version input reference before target rendering."
+         }
+@@ -386,17 +441,23 @@ class ConformanceRunner(
+         require(!github.rendered.contains("jobs:")) { "Review snapshot must not contain GitHub Actions vendor syntax." }
+         require(!tekton.rendered.contains("kind: Pipeline")) { "Review snapshot must not contain Tekton vendor syntax." }
+ 
+-        assertSnapshotEquals(File(dir, "Jenkinsfile"), jenkins.rendered)
+-        assertSnapshotEquals(File(dir, "github-actions.yml"), github.rendered)
+-        assertSnapshotEquals(File(dir, "tekton-pipeline.yaml"), tekton.rendered)
++        val readme = File(dir, "README.md").readText()
++        require(readme.contains("review-only", ignoreCase = true)) {
++            "Snapshot README must state that target outputs are review-only."
++        }
++        require(!readme.contains("first public end-to-end Flow conformance snapshot", ignoreCase = true)) {
++            "Snapshot README must not claim end-to-end execution."
++        }
+     }
+ 
+     private fun checkRenderedSnapshotsContainVersion(): ConformanceCheck = runCheck("snapshots.rendered.standard-version") {
+         val dir = File(rootDir, "conformance/snapshots/build-test-deploy")
+         val version = FlowStandardVersions.FLOW_STANDARD_VERSION
+-        listOf("Jenkinsfile", "github-actions.yml", "tekton-pipeline.yaml").forEach { name ->
++        listOf("jenkins.review.yaml", "github-actions.review.yaml", "tekton.review.yaml").forEach { name ->
+             val text = File(dir, name).readText()
+             require(text.contains(version)) { "Snapshot $name does not contain Flow standard version $version" }
++            require(text.contains("renderMode: REVIEW_ONLY")) { "Snapshot $name must declare REVIEW_ONLY mode." }
++            require(text.contains("executable: false")) { "Snapshot $name must be explicitly non-executable." }
+         }
+     }
+ 
