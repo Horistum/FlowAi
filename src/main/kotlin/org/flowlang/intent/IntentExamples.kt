@@ -12,20 +12,20 @@ object IntentExamples {
         systems = listOf(
             IntentSystem("source", "git", "Application source repository"),
             IntentSystem("registry", "dockerRegistry", "Image registry"),
-            IntentSystem("cluster", "kubernetes", "Deployment target"),
-            IntentSystem("standard", "standard", "Semantic build and test operations")
+            IntentSystem("cluster", "kubernetes", "Declared deployment context; generic deploy remains target-neutral"),
+            IntentSystem("standard", "standard", "Semantic build, test, deploy and verify operations")
         ),
         workflows = listOf(
             IntentWorkflow(
                 name = "application-lifecycle",
                 kind = IntentWorkflowKind.DEPLOY,
                 steps = listOf(
-                    IntentStep("checkout", StandardCapability.CHECKOUT, uses = "git"),
-                    IntentStep("test", StandardCapability.TEST, uses = "standard", requires = listOf("checkout")),
-                    IntentStep("build-image", StandardCapability.BUILD_IMAGE, uses = "docker", requires = listOf("test")),
+                    IntentStep("checkout", StandardCapability.CHECKOUT),
+                    IntentStep("test", StandardCapability.TEST, requires = listOf("checkout")),
+                    IntentStep("build-image", StandardCapability.BUILD_IMAGE, requires = listOf("test")),
                     IntentStep("approve-prod", StandardCapability.APPROVE, requires = listOf("build-image")),
-                    IntentStep("deploy", StandardCapability.DEPLOY, uses = "kubernetes", requires = listOf("approve-prod")),
-                    IntentStep("verify", StandardCapability.VERIFY, uses = "kubernetes", requires = listOf("deploy"))
+                    IntentStep("deploy", StandardCapability.DEPLOY, requires = listOf("approve-prod")),
+                    IntentStep("verify", StandardCapability.VERIFY, requires = listOf("deploy"))
                 )
             )
         ),
