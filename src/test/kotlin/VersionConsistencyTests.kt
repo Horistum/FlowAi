@@ -8,8 +8,8 @@ import java.io.File
 class VersionConsistencyTests {
     private val packageVersion = "0.9.4"
     private val correctionTrack = "v0.9.5.x"
-    private val currentCorrectionItem = "0.9.5.7.8"
-    private val nextCorrectionItem = "0.9.5.7.9"
+    private val currentCorrectionItem = "0.9.5.7.9"
+    private val nextCorrectionItem = "0.9.5.8"
     private val activeStandardVersion = "0.7.6"
 
     @Test
@@ -39,14 +39,16 @@ class VersionConsistencyTests {
         assertFileContains(".flow-agent/roadmap.yaml", "activeCorrectionTrack: \"$correctionTrack\"")
         assertFileContains(".flow-agent/roadmap.yaml", "currentCorrectionItem: \"$currentCorrectionItem\"")
         assertFileContains(".flow-agent/roadmap.yaml", "correctionItemsArePackageVersions: false")
-        assertFileContains(".flow-agent/roadmap.yaml", "activeRepairTrack: \".flow-agent/roadmap-v0.9.5.7-repair-track.yaml\"")
+        assertFileContains(".flow-agent/roadmap.yaml", "completedRepairTrack: \".flow-agent/roadmap-v0.9.5.7-repair-track.yaml\"")
+        assertFileContains(".flow-agent/roadmap.yaml", "nextUmbrellaItem: \"0.9.5.8\"")
 
         val repairTrack = File(".flow-agent/roadmap-v0.9.5.7-repair-track.yaml").readText()
         assertTrue(repairTrack.contains("version: \"$currentCorrectionItem\""))
-        assertTrue(repairTrack.contains("name: Target Expression and Unknown Target Safety"))
-        assertTrue(repairTrack.contains("version: \"$nextCorrectionItem\""))
         assertTrue(repairTrack.contains("name: Reference Scenario and Snapshot Honesty Reset"))
-        assertTrue(repairTrack.contains("status: next"))
+        assertTrue(repairTrack.contains("status: completed"))
+        assertFileContains(".flow-agent/roadmap.yaml", "version: \"$nextCorrectionItem\"")
+        assertFileContains(".flow-agent/roadmap.yaml", "name: \"Policy-Driven Safety and Environment Classification\"")
+        assertFileContains(".flow-agent/roadmap.yaml", "status: \"next\"")
     }
 
     @Test
@@ -62,7 +64,7 @@ class VersionConsistencyTests {
         assertFileContains("docs/versioning-policy.md", "Roadmap correction identifiers describe bounded internal work. They are not package versions.")
         assertFileContains("docs/versioning-policy.md", "### Roadmap correction scope")
         assertFalse(
-            File("docs/versioning-policy.md").readText().contains("bump the public Flow standard version to 0.9.5.7.8"),
+            File("docs/versioning-policy.md").readText().contains("bump the public Flow standard version to 0.9.5.7.9"),
             "Correction scope must not imply a public standard bump."
         )
     }
@@ -70,12 +72,12 @@ class VersionConsistencyTests {
     @Test
     fun correctionItemHasDocumentationAndReleaseReport() {
         assertTrue(
-            File("docs/V0_9_5_7_8_TARGET_EXPRESSION_AND_UNKNOWN_TARGET_SAFETY.md").isFile,
-            "v0.9.5.7.8 documentation must exist."
+            File("docs/V0_9_5_7_9_REFERENCE_SCENARIO_AND_SNAPSHOT_HONESTY_RESET.md").isFile,
+            "v0.9.5.7.9 documentation must exist."
         )
         assertTrue(
-            File(".flow-agent/reports/v0.9.5.7.8-target-expression-and-unknown-target-safety.md").isFile,
-            "v0.9.5.7.8 correction report must exist."
+            File(".flow-agent/reports/v0.9.5.7.9-reference-scenario-and-snapshot-honesty-reset.md").isFile,
+            "v0.9.5.7.9 correction report must exist."
         )
     }
 
