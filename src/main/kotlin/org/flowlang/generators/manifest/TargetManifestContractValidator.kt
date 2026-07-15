@@ -9,6 +9,7 @@ package org.flowlang.generators.manifest
  */
 object TargetManifestContractValidator {
     private val idPattern = Regex("^[a-z0-9][a-z0-9_-]*$")
+    private val payloadKindPattern = Regex("^[A-Za-z0-9][A-Za-z0-9._+:/-]*$")
     private val noteLevels = setOf("info", "warning", "error")
 
     fun validate(manifest: TargetManifest): TargetManifestContractReport {
@@ -128,6 +129,10 @@ object TargetManifestContractValidator {
         if (step.type.isBlank()) error("STEP_TYPE_BLANK", "$path.type", "TargetStep.type must be present.")
         validateNotes(step.mappingNotes, "$path.mappingNotes", issues)
         step.rendererPayload?.let { payload ->
+            if (payload.kind.isBlank()) error("RENDERER_PAYLOAD_KIND_BLANK", "$path.rendererPayload.kind", "Renderer payload must identify its projection consumer kind.")
+            if (payload.kind.isNotBlank() && !payloadKindPattern.matches(payload.kind)) {
+                error("RENDERER_PAYLOAD_KIND_INVALID", "$path.rendererPayload.kind", "Renderer payload kind must be an opaque projection identifier.")
+            }
             if (payload.target.isBlank()) error("RENDERER_PAYLOAD_TARGET_BLANK", "$path.rendererPayload.target", "Renderer payload must identify its target.")
             if (payload.reference.isBlank()) error("RENDERER_PAYLOAD_REFERENCE_BLANK", "$path.rendererPayload.reference", "Renderer payload must identify a concrete native reference.")
             if (payload.evidenceReference.isBlank()) error("RENDERER_PAYLOAD_EVIDENCE_BLANK", "$path.rendererPayload.evidenceReference", "Renderer payload must preserve its declarative evidence reference.")
