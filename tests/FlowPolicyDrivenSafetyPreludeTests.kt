@@ -91,10 +91,14 @@ class FlowPolicyDrivenSafetyPreludeTests {
 
     @Test
     fun rendererSourceDoesNotForceProductionForEveryApproval() {
-        val source = File("src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt").readText()
+        val source = File(
+            "src/main/kotlin/org/flowlang/generators/manifest/GitHubActionsManifestRenderer.kt"
+        ).readText()
         val validatorSource = File("src/main/kotlin/org/flowlang/validator/SafetyBoundaryValidator.kt").readText()
 
-        assertFalse(source.contains("if (job.metadata[\"approval\"] == \"true\") sb.appendLine(\"    environment: production\")"))
+        assertFalse(source.contains(
+            "if (job.metadata[\"approval\"] == \"true\") sb.appendLine(\"    environment: production\")"
+        ))
         assertFalse(validatorSource.contains("productionBoundaryParamNames"))
         assertFalse(validatorSource.contains("productionValues"))
         assertTrue(source.contains("environmentEvidenceResolver.resolve(manifest, job)"))
@@ -124,7 +128,10 @@ class FlowPolicyDrivenSafetyPreludeTests {
                     module = "kubernetes",
                     action = "deploy",
                     params = mapOf(parameter to value),
-                    materialization = TargetMaterialization.adapterRequired("deployment.apply", "Test adapter evidence.")
+                    materialization = TargetMaterialization.adapterRequired(
+                        "deployment.apply",
+                        "Test adapter evidence."
+                    )
                 )
             )
         )
