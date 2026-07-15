@@ -1,0 +1,297 @@
+kind: FlowTargetRegistry
+version: "3.0"
+description: Built-in target capability registry for the current Flow capability-contract line.
+expressionProfiles:
+  - id: flow-full
+    description: Complete Flow expression language support declared by target evidence.
+    supportsAll: true
+
+  - id: workflow-condition
+    description: Workflow condition expressions without regex or map literal support.
+    features:
+      - node.literal
+      - node.reference
+      - node.secret-reference
+      - node.member-access
+      - node.index-access
+      - node.template
+      - node.list
+      - call.any
+      - operator.unary.not
+      - operator.postfix.exists
+      - operator.postfix.empty
+      - operator.logical.and
+      - operator.logical.or
+      - operator.binary.==
+      - operator.binary.!=
+      - operator.binary.>
+      - operator.binary.>=
+      - operator.binary.<
+      - operator.binary.<=
+      - operator.binary.contains
+      - operator.binary.in
+      - operator.binary.startsWith
+      - operator.binary.endsWith
+
+  - id: equality-membership-condition
+    description: Equality and membership conditions over native scalar target values.
+    features:
+      - node.literal
+      - node.reference
+      - node.member-access
+      - operator.logical.and
+      - operator.binary.==
+      - operator.binary.!=
+      - operator.binary.in
+
+  - id: unavailable
+    description: No target expression adapter evidence is currently declared.
+    features: []
+
+targets:
+  - name: local
+    expressionProfile: flow-full
+    description: Reference local target used to validate plan semantics before platform generation.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: supported
+      match: supported
+      retry: supported
+      approvals: partial
+      errorHandlers: supported
+      artifacts: partial
+      secrets: partial
+      nativeRuntime: supported
+    features:
+      approval.inline: partial
+      approval.manual: partial
+      parallel.dag: supported
+      retry.task: supported
+      errorHandlers.finally: supported
+      secrets.runtime: partial
+      rollback.native: partial
+      cron.schedule: partial
+      safety.destructiveOperation: partial
+    notes:
+      - Manual approvals require an interactive or external gate when running locally.
+
+  - name: jenkins
+    expressionProfile: flow-full
+    description: Jenkins Pipeline generator target. Good scripted support, weaker portability.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: supported
+      match: supported
+      retry: supported
+      approvals: supported
+      errorHandlers: supported
+      artifacts: supported
+      secrets: supported
+      nativeRuntime: supported
+    features:
+      approval.inline: supported
+      approval.manual: supported
+      parallel.dag: supported
+      retry.task: supported
+      errorHandlers.finally: supported
+      secrets.runtime: supported
+      artifacts.uploadDownload: supported
+      rollback.native: supported
+      cron.schedule: supported
+      trigger.schedule.cron: supported
+      trigger.schedule.interval: partial
+      trigger.schedule.calendar: partial
+      trigger.event: partial
+      trigger.webhook: partial
+      safety.destructiveOperation: supported
+      kubernetes.api: supported
+      container.image: supported
+      notification.send: supported
+    projectionRules:
+      - module: git
+        action: checkout
+        mode: native
+        reason: Jenkins declares the native git checkout step and its plugin contract as executable projection evidence.
+        evidenceReference: targets/builtin-targets.yaml#targets.jenkins.projectionRules.git.checkout
+        payload:
+          kind: jenkins-step
+          reference: git
+          bindings:
+            url:
+              kind: TASK_PARAMETER
+              name: url
+            branch:
+              kind: TASK_PARAMETER
+              name: branch
+              defaultValue: main
+      - module: standard
+        action: execute
+        mode: notes_projected
+        reason: Standard semantic work is preserved for review until a concrete Jenkins integration payload is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard.execute
+      - module: standard
+        action: rollback
+        mode: notes_projected
+        reason: Rollback intent remains notes-backed until a concrete Jenkins rollback integration is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard.rollback
+
+  - name: github-actions
+    expressionProfile: workflow-condition
+    description: GitHub Actions generator target. Good for simple CI/CD, limited dynamic control-flow semantics.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: partial
+      match: partial
+      retry: partial
+      approvals: supported
+      errorHandlers: partial
+      artifacts: supported
+      secrets: supported
+      nativeRuntime: partial
+    features:
+      approval.inline: partial
+      approval.manual: partial
+      approval.environmentGate: supported
+      parallel.dag: supported
+      retry.task: partial
+      loops.dynamic: partial
+      errorHandlers.finally: partial
+      secrets.runtime: supported
+      artifacts.uploadDownload: supported
+      rollback.native: partial
+      cron.schedule: supported
+      trigger.schedule.cron: supported
+      trigger.schedule.interval: unsupported
+      trigger.schedule.calendar: partial
+      trigger.event: partial
+      trigger.webhook: supported
+      safety.destructiveOperation: partial
+      container.image: supported
+      notification.send: supported
+    projectionRules:
+      - module: standard
+        action: execute
+        mode: notes_projected
+        reason: Standard semantic work is review-only until an explicit GitHub Action payload is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard.execute
+      - module: standard
+        action: rollback
+        mode: notes_projected
+        reason: Rollback intent remains notes-backed until an explicit GitHub Action rollback payload is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard.rollback
+    notes:
+      - Approvals are normally modeled through protected environments, not inline workflow syntax.
+
+  - name: tekton
+    expressionProfile: equality-membership-condition
+    description: Tekton Pipelines target. Strong Kubernetes-native task model, limited dynamic loops and manual gates.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: partial
+      match: partial
+      retry: partial
+      approvals: unsupported
+      errorHandlers: partial
+      artifacts: partial
+      secrets: supported
+      nativeRuntime: partial
+    features:
+      approval.inline: unsupported
+      approval.manual: unsupported
+      approval.externalGate: partial
+      parallel.dag: supported
+      retry.task: partial
+      loops.dynamic: partial
+      errorHandlers.finally: partial
+      secrets.runtime: supported
+      artifacts.workspace: partial
+      rollback.native: unsupported
+      cron.schedule: partial
+      trigger.schedule.cron: partial
+      trigger.schedule.interval: unsupported
+      trigger.schedule.calendar: unsupported
+      trigger.event: unsupported
+      trigger.webhook: unsupported
+      safety.destructiveOperation: partial
+      kubernetes.api: supported
+      container.image: supported
+    projectionRules:
+      - module: standard
+        action: execute
+        mode: notes_projected
+        reason: Standard semantic work is review-only until a concrete Tekton Task reference is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.tekton.projectionRules.standard.execute
+      - module: standard
+        action: rollback
+        mode: notes_projected
+        reason: Rollback intent remains notes-backed until a concrete Tekton Task reference is declared.
+        evidenceReference: targets/builtin-targets.yaml#targets.tekton.projectionRules.standard.rollback
+
+  - name: argo-workflows
+    expressionProfile: unavailable
+    description: Argo Workflows target. Strong DAG, artifacts and suspend support.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: partial
+      match: partial
+      retry: supported
+      approvals: partial
+      errorHandlers: supported
+      artifacts: supported
+      secrets: supported
+      nativeRuntime: partial
+    features:
+      approval.inline: partial
+      approval.manual: partial
+      approval.suspend: supported
+      parallel.dag: supported
+      retry.task: supported
+      loops.dynamic: partial
+      errorHandlers.finally: supported
+      secrets.runtime: supported
+      artifacts.uploadDownload: supported
+      rollback.native: partial
+      cron.schedule: supported
+      safety.destructiveOperation: partial
+      kubernetes.api: supported
+    notes:
+      - Manual gates are typically represented with suspend templates.
+
+  - name: azure-devops
+    expressionProfile: unavailable
+    description: Azure DevOps Pipelines target. Strong stage/job model, platform-specific approvals/checks.
+    capabilities:
+      sequentialTasks: supported
+      parallel: supported
+      conditions: supported
+      dynamicLoops: partial
+      match: partial
+      retry: partial
+      approvals: supported
+      errorHandlers: partial
+      artifacts: supported
+      secrets: supported
+      nativeRuntime: partial
+    features:
+      approval.inline: partial
+      approval.manual: partial
+      approval.environmentGate: supported
+      parallel.dag: supported
+      retry.task: partial
+      loops.dynamic: partial
+      errorHandlers.finally: partial
+      secrets.runtime: supported
+      artifacts.uploadDownload: supported
+      rollback.native: partial
+      cron.schedule: supported
+      safety.destructiveOperation: partial
