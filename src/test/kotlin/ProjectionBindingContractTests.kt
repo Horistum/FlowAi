@@ -14,7 +14,7 @@ import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetProjectionMode
 import org.flowlang.capabilities.TargetProjectionRule
 import org.flowlang.capabilities.TargetRendererPayloadTemplate
-import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
+import org.flowlang.targets.builtin.GitHubActionsManifestRenderer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestContractValidator
@@ -25,7 +25,7 @@ import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.generators.manifest.TektonManifestRenderer
+import org.flowlang.targets.builtin.TektonManifestRenderer
 import org.flowlang.planner.TaskNode
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingContract

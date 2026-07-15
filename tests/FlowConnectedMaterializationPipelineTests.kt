@@ -4,7 +4,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetMaterializationResolver
 import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.materialization.MaterializationNegotiationValidator

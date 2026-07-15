@@ -6,7 +6,7 @@ import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.intent.IntentCapabilityValidator
@@ -100,7 +100,7 @@ class ReferenceScenarioMatrixTests {
                         manifest = null
                     )
                 } else {
-                    val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
+                    val manifest = BuiltInTargetProjections.pipeline().generate(plan, compatibility)
                     ReferenceAdapterProjectionMatrix.evaluate(
                         scenario = scenario,
                         target = target,
@@ -135,7 +135,7 @@ class ReferenceScenarioMatrixTests {
             if (compatibility.hasErrors) {
                 ReferenceAdapterProjectionMatrix.evaluate(scenario, target, coreBlocked = false, compatibility = compatibility)
             } else {
-                val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
+                val manifest = BuiltInTargetProjections.pipeline().generate(plan, compatibility)
                 ReferenceAdapterProjectionMatrix.evaluate(scenario, target, coreBlocked = false, compatibility = compatibility, manifest = manifest)
             }
         }

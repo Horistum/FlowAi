@@ -8,10 +8,10 @@ import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.TargetSelectionAnalyzer
-import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
-import org.flowlang.generators.manifest.TektonManifestGenerator
+import org.flowlang.targets.builtin.TektonManifestGenerator
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry

@@ -8,7 +8,7 @@ import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.MaterializationReadinessStatus
 import org.flowlang.capabilities.ProjectionReadinessStatus
 import org.flowlang.capabilities.SupportLevel
-import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.targets.builtin.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMaterialization

@@ -6,7 +6,7 @@ import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetCapabilityDegradationAnalyzer
 import org.flowlang.generators.manifest.TargetCapabilityDegradationStatus
 import org.flowlang.generators.manifest.TargetJob
@@ -14,7 +14,7 @@ import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMappingNote
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.generators.manifest.TektonManifestGenerator
+import org.flowlang.targets.builtin.TektonManifestGenerator
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
