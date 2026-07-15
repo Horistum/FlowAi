@@ -110,8 +110,8 @@ class FlowReferenceSnapshotHonestyResetTests {
         val boundary = FlowStandardVersions.boundary(targetManifestPresent = true)
         assertEquals("0.9.5", boundary.implementationPackageVersion)
         assertEquals("0.8.0", boundary.publicStandardVersion)
-        assertEquals("2.0", boundary.artifactContractVersion)
-        assertEquals("2.0", boundary.targetManifestVersion)
+        assertEquals("3.0", boundary.artifactContractVersion)
+        assertEquals("3.0", boundary.targetManifestVersion)
         assertEquals("jenkins.review.yaml", ReferenceSnapshotHonesty.projectionFile("jenkins", TargetRenderMode.REVIEW_ONLY))
         assertEquals("tekton.blocked.json", ReferenceSnapshotHonesty.projectionFile("tekton", TargetRenderMode.FAIL_FAST))
     }
