@@ -34,12 +34,18 @@ enum class SupportLevel { SUPPORTED, PARTIAL, UNSUPPORTED, REQUIRES_RUNTIME }
 enum class TargetProjectionMode { NATIVE, NOTES_PROJECTED, ADAPTER_REQUIRED, UNSUPPORTED, BLOCKED }
 
 /**
+ * Generic source-compatible name for an opaque projection-consumer identifier.
+ * It is a String alias, not an enum or a registry of known target platforms.
+ */
+typealias TargetRendererPayloadKind = String
+
+/**
  * Structured renderer payload template with an opaque projection-consumer kind.
  * Core validates the identifier structurally; concrete edge renderers own its
  * interpretation.
  */
 data class TargetRendererPayloadTemplate(
-    val kind: String,
+    val kind: TargetRendererPayloadKind,
     val reference: String,
     val parameters: Map<String, String> = emptyMap()
 )
