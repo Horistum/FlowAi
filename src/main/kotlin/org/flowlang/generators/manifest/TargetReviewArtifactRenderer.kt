@@ -1,5 +1,8 @@
 package org.flowlang.generators.manifest
 
+import org.flowlang.projection.ProjectionBinding
+import org.flowlang.projection.ProjectionBindingKind
+
 object TargetReviewArtifactRenderer {
     fun render(manifest: TargetManifest, readiness: TargetRenderReadiness): String {
         require(readiness.mode == TargetRenderMode.REVIEW_ONLY) { "Review artifact requires REVIEW_ONLY readiness." }
@@ -20,17 +23,7 @@ object TargetReviewArtifactRenderer {
         sb.appendLine("  renderMode: REVIEW_ONLY")
         sb.appendLine("  executable: false")
         sb.appendLine("  reason: ${quoted("Target syntax was not emitted because required materialization, trigger, or renderer payload evidence is unresolved.")}")
-        if (manifest.triggers.isNotEmpty()) {
-            sb.appendLine("  triggers:")
-            manifest.triggers.forEach { trigger ->
-                sb.appendLine("    - id: ${quoted(trigger.id)}")
-                sb.appendLine("      type: ${quoted(trigger.type)}")
-                trigger.scheduleKind?.let { sb.appendLine("      scheduleKind: ${quoted(it)}") }
-                trigger.scheduleExpression?.let { sb.appendLine("      scheduleExpression: ${quoted(it)}") }
-                trigger.timezone?.let { sb.appendLine("      timezone: ${quoted(it)}") }
-                trigger.event?.let { sb.appendLine("      event: ${quoted(it)}") }
-            }
-        }
+        appendTriggers(manifest, sb)
         sb.appendLine("  findings:")
         readiness.findings.forEach { finding ->
             sb.appendLine("    - nodeId: ${quoted(finding.nodeId)}")
@@ -38,26 +31,52 @@ object TargetReviewArtifactRenderer {
             sb.appendLine("      reason: ${quoted(finding.reason)}")
         }
         sb.appendLine("  semanticInventory:")
-        manifest.reviewInventoryLeaves().forEach { step ->
-            sb.appendLine("    - nodeId: ${quoted(step.id)}")
-            sb.appendLine("      module: ${quoted(step.module.orEmpty())}")
-            sb.appendLine("      action: ${quoted(step.action.orEmpty())}")
-            sb.appendLine("      materializationStatus: ${quoted(step.materialization.status.name)}")
-            sb.appendLine("      materializationSource: ${quoted(step.materialization.metadata["materializationSource"].orEmpty())}")
-            sb.appendLine("      projectionArtifact: ${quoted(step.materialization.requirements["projectionArtifact"].orEmpty())}")
-            sb.appendLine("      rendererPayloadPresent: ${step.rendererPayload != null}")
-            step.rendererPayload?.let { payload ->
-                sb.appendLine("      rendererPayloadKind: ${quoted(payload.kind)}")
-                sb.appendLine("      rendererPayloadReference: ${quoted(payload.reference)}")
-                sb.appendLine("      rendererPayloadEvidence: ${quoted(payload.evidenceReference)}")
-            }
-        }
+        manifest.reviewInventoryLeaves().forEach { step -> appendInventoryStep(step, sb) }
         val requirements = manifest.bindingRequirements()
         if (requirements.isNotEmpty()) {
-            sb.appendLine("  requirements:")
+            sb.appendLine("  bindingRequirements:")
             requirements.forEach { requirement -> requirement.appendTo(sb) }
         }
         return sb.toString()
+    }
+
+    private fun appendTriggers(manifest: TargetManifest, sb: StringBuilder) {
+        if (manifest.triggers.isEmpty()) return
+        sb.appendLine("  triggers:")
+        manifest.triggers.forEach { trigger ->
+            sb.appendLine("    - id: ${quoted(trigger.id)}")
+            sb.appendLine("      type: ${quoted(trigger.type)}")
+            trigger.scheduleKind?.let { sb.appendLine("      scheduleKind: ${quoted(it)}") }
+            trigger.scheduleExpression?.let { sb.appendLine("      scheduleExpression: ${quoted(it)}") }
+            trigger.timezone?.let { sb.appendLine("      timezone: ${quoted(it)}") }
+            trigger.event?.let { sb.appendLine("      event: ${quoted(it)}") }
+        }
+    }
+
+    private fun appendInventoryStep(step: TargetStep, sb: StringBuilder) {
+        sb.appendLine("    - nodeId: ${quoted(step.id)}")
+        sb.appendLine("      module: ${quoted(step.module.orEmpty())}")
+        sb.appendLine("      action: ${quoted(step.action.orEmpty())}")
+        sb.appendLine("      materializationStatus: ${quoted(step.materialization.status.name)}")
+        sb.appendLine("      materializationSource: ${quoted(step.materialization.metadata["materializationSource"].orEmpty())}")
+        sb.appendLine("      projectionArtifact: ${quoted(step.materialization.requirements["projectionArtifact"].orEmpty())}")
+        sb.appendLine("      rendererPayloadPresent: ${step.rendererPayload != null}")
+        step.rendererPayload?.let { payload ->
+            sb.appendLine("      rendererPayloadKind: ${quoted(payload.kind)}")
+            sb.appendLine("      rendererPayloadReference: ${quoted(payload.reference)}")
+            sb.appendLine("      rendererPayloadEvidence: ${quoted(payload.evidenceReference)}")
+            if (payload.bindings.isNotEmpty()) {
+                sb.appendLine("      rendererBindings:")
+                payload.bindings.forEach { (name, binding) ->
+                    sb.appendLine("        - name: ${quoted(name)}")
+                    sb.appendLine("          kind: ${quoted(binding.kind.name)}")
+                    sb.appendLine("          resolved: ${binding.isResolvedForReview()}")
+                    binding.sourceReference()?.let { source ->
+                        sb.appendLine("          source: ${quoted(source)}")
+                    }
+                }
+            }
+        }
     }
 
     private fun TargetManifest.reviewInventoryLeaves(): List<TargetStep> = jobs
@@ -65,7 +84,14 @@ object TargetReviewArtifactRenderer {
         .filter { it.isReviewInventoryLeaf() }
 
     private fun TargetStep.isReviewInventoryLeaf(): Boolean = children.isEmpty() && type !in setOf(
-        "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry", "condition"
+        "try-body",
+        "error-handler",
+        "parallel",
+        "parallel-branch",
+        "loop",
+        "match",
+        "retry",
+        "condition"
     )
 
     private fun TargetStep.flattenForReviewInventory(): List<TargetStep> =
@@ -74,51 +100,85 @@ object TargetReviewArtifactRenderer {
     private data class BindingRequirement(
         val nodeId: String,
         val parameter: String,
-        val opaqueReference: String,
-        val target: String
+        val kind: String,
+        val source: String,
+        val evidence: String
     ) {
         fun appendTo(sb: StringBuilder) {
-            val envName = safeEnvName(opaqueReference)
             sb.appendLine("    - nodeId: ${quoted(nodeId)}")
             sb.appendLine("      parameter: ${quoted(parameter)}")
-            sb.appendLine("      opaqueReference: ${quoted(opaqueReference)}")
-            sb.appendLine("      runtimeReference: ${quoted("\$$envName")}")
-            when (target) {
-                "jenkins" -> sb.appendLine("      targetBinding: ${quoted("$envName = credentials('$opaqueReference')")}")
-                "github-actions" -> {
-                    val expression = "\$" + "{{ secrets.$opaqueReference }}"
-                    sb.appendLine("      targetBinding: ${quoted("$envName: $expression")}")
-                }
-                "tekton" -> {
-                    sb.appendLine("      targetBinding:")
-                    sb.appendLine("        secretKeyRef:")
-                    sb.appendLine("          name: flow-secrets")
-                    sb.appendLine("          key: $opaqueReference")
-                }
-                else -> sb.appendLine("      targetBinding: ${quoted("Target binding notes are required for '$target'.")}")
-            }
+            sb.appendLine("      kind: ${quoted(kind)}")
+            sb.appendLine("      source: ${quoted(source)}")
+            sb.appendLine("      evidence: ${quoted(evidence)}")
         }
     }
 
     private fun TargetManifest.bindingRequirements(): List<BindingRequirement> = jobs
         .flatMap { job -> job.steps.flatMap { it.flattenForReview() } }
-        .flatMap { step ->
-            step.params.flatMap { (parameter, value) ->
-                opaqueReferenceRegex.findAll(value).map { match ->
-                    BindingRequirement(step.id, parameter, match.groupValues[1], target)
-                }.toList()
-            }
-        }
+        .flatMap { step -> step.typedBindingRequirements() + step.legacySecretRequirements() }
         .distinct()
 
-    private fun TargetStep.flattenForReview(): List<TargetStep> = listOf(this) + children.flatMap { it.flattenForReview() }
+    private fun TargetStep.typedBindingRequirements(): List<BindingRequirement> =
+        rendererPayload?.bindings.orEmpty().mapNotNull { (parameter, binding) ->
+            if (binding.kind in setOf(
+                    ProjectionBindingKind.FLOW_INPUT,
+                    ProjectionBindingKind.SECRET,
+                    ProjectionBindingKind.ARTIFACT,
+                    ProjectionBindingKind.TASK_OUTPUT,
+                    ProjectionBindingKind.TARGET_EXPRESSION
+                )
+            ) {
+                BindingRequirement(
+                    nodeId = id,
+                    parameter = parameter,
+                    kind = binding.kind.name,
+                    source = binding.sourceReference().orEmpty(),
+                    evidence = rendererPayload?.evidenceReference.orEmpty()
+                )
+            } else {
+                null
+            }
+        }
 
-    private fun safeEnvName(value: String): String = "FLOW_SECRET_" + value.uppercase()
-        .replace(Regex("[^A-Z0-9_]+"), "_")
-        .trim('_')
-        .ifBlank { "OPAQUE" }
+    private fun TargetStep.legacySecretRequirements(): List<BindingRequirement> = params.flatMap { (parameter, value) ->
+        opaqueReferenceRegex.findAll(value).map { match ->
+            BindingRequirement(
+                nodeId = id,
+                parameter = parameter,
+                kind = "LEGACY_SECRET_REFERENCE",
+                source = match.groupValues[1],
+                evidence = "step.params"
+            )
+        }.toList()
+    }
 
-    private fun quoted(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
+    private fun ProjectionBinding.isResolvedForReview(): Boolean = when (kind) {
+        ProjectionBindingKind.TASK_PARAMETER,
+        ProjectionBindingKind.TASK_INPUT,
+        ProjectionBindingKind.TASK_METADATA,
+        ProjectionBindingKind.LITERAL -> value != null
+        else -> false
+    }
+
+    private fun ProjectionBinding.sourceReference(): String? = when (kind) {
+        ProjectionBindingKind.LITERAL -> "literal"
+        ProjectionBindingKind.TASK_PARAMETER -> name?.let { "task.parameter:$it" }
+        ProjectionBindingKind.TASK_INPUT -> name?.let { "task.input:$it" }
+        ProjectionBindingKind.TASK_METADATA -> field?.let { "task.metadata:${it.name}" }
+        ProjectionBindingKind.FLOW_INPUT -> name?.let { "flow.input:$it" }
+        ProjectionBindingKind.SECRET -> name?.let { "secret:$it" }
+        ProjectionBindingKind.ARTIFACT -> name?.let { "artifact:$it" }
+        ProjectionBindingKind.TASK_OUTPUT -> if (taskId != null && output != null) "task.output:$taskId.$output" else null
+        ProjectionBindingKind.TARGET_EXPRESSION -> if (target != null && expression != null) "target.expression:$target" else null
+    }
+
+    private fun TargetStep.flattenForReview(): List<TargetStep> =
+        listOf(this) + children.flatMap { it.flattenForReview() }
+
+    private fun quoted(value: String): String = "\"" + value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n") + "\""
 
     private val opaqueReferenceRegex = Regex("secret:([A-Za-z0-9_.-]+)")
 }
