@@ -14,6 +14,7 @@ import org.flowlang.planner.TaskNode
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingContract
 import org.flowlang.projection.ProjectionBindingKind
+import org.flowlang.projection.ProjectionBindingResolutionStatus
 import org.flowlang.projection.TargetProjectionArtifact
 import org.flowlang.projection.TargetProjectionArtifactKind
 import org.flowlang.projection.TargetProjectionPlan
@@ -80,7 +81,15 @@ internal object TargetMaterializationResolver {
                 )
             }
         } else null
-        return TargetMaterializationResolution(graph, notes, negotiation, projectionPlan, artifact, materialization, payload)
+        return TargetMaterializationResolution(
+            graph,
+            notes,
+            negotiation,
+            projectionPlan,
+            artifact,
+            materialization,
+            payload
+        )
     }
 
     private fun resolveBinding(
@@ -91,36 +100,61 @@ internal object TargetMaterializationResolver {
     ): ProjectionBinding {
         ProjectionBindingContract.requireTemplate(binding, "$payloadTarget.bindings.$bindingName")
         val resolved = when (binding.kind) {
-            ProjectionBindingKind.TASK_PARAMETER -> binding.copy(
-                value = task.params[binding.name]
-                    ?: binding.defaultValue
-                    ?: error("Task '${task.id}' does not provide required parameter '${binding.name}' for projection binding '$bindingName'.")
+            ProjectionBindingKind.LITERAL -> binding.copy(
+                resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED
             )
-            ProjectionBindingKind.TASK_INPUT -> binding.copy(
-                value = task.inputs[binding.name]
-                    ?: binding.defaultValue
-                    ?: error("Task '${task.id}' does not provide required input '${binding.name}' for projection binding '$bindingName'.")
+            ProjectionBindingKind.TASK_PARAMETER -> resolveTaskValue(
+                binding = binding,
+                value = task.params[binding.name] ?: binding.defaultValue,
+                unresolvedReason = "Task '${task.id}' does not provide required parameter '${binding.name}' for projection binding '$bindingName'."
+            )
+            ProjectionBindingKind.TASK_INPUT -> resolveTaskValue(
+                binding = binding,
+                value = task.inputs[binding.name] ?: binding.defaultValue,
+                unresolvedReason = "Task '${task.id}' does not provide required input '${binding.name}' for projection binding '$bindingName'."
             )
             ProjectionBindingKind.TASK_METADATA -> binding.copy(
                 value = when (binding.field) {
                     TaskMetadataField.ID -> task.id
                     TaskMetadataField.TARGET -> task.target
                     null -> error("TASK_METADATA projection binding '$bindingName' has no field.")
-                }
+                },
+                resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED,
+                reason = null
             )
-            ProjectionBindingKind.LITERAL,
             ProjectionBindingKind.FLOW_INPUT,
             ProjectionBindingKind.SECRET,
             ProjectionBindingKind.ARTIFACT,
             ProjectionBindingKind.TASK_OUTPUT,
-            ProjectionBindingKind.TARGET_EXPRESSION -> binding
+            ProjectionBindingKind.TARGET_EXPRESSION -> binding.copy(
+                resolutionStatus = ProjectionBindingResolutionStatus.SYMBOLIC,
+                reason = null
+            )
         }
-        ProjectionBindingContract.requireResolved(
+        ProjectionBindingContract.requireManifest(
             resolved,
             payloadTarget,
             "$payloadTarget.bindings.$bindingName"
         )
         return resolved
+    }
+
+    private fun resolveTaskValue(
+        binding: ProjectionBinding,
+        value: String?,
+        unresolvedReason: String
+    ): ProjectionBinding = if (value != null) {
+        binding.copy(
+            value = value,
+            resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED,
+            reason = null
+        )
+    } else {
+        binding.copy(
+            value = null,
+            resolutionStatus = ProjectionBindingResolutionStatus.UNRESOLVED,
+            reason = unresolvedReason
+        )
     }
 
     private fun decisionFor(
@@ -166,7 +200,11 @@ internal object TargetMaterializationResolver {
             else -> MaterializationEvidenceKind.PROJECTION_RULE
         }
         val evidence = mutableListOf(
-            MaterializationEvidence(rule.evidenceReference, evidenceKind, "Declarative target registry projection evidence.")
+            MaterializationEvidence(
+                rule.evidenceReference,
+                evidenceKind,
+                "Declarative target registry projection evidence."
+            )
         )
         if (status == MaterializationStatus.MATERIALIZABLE) {
             evidence += MaterializationEvidence(
@@ -241,11 +279,21 @@ internal object TargetMaterializationResolver {
             MaterializationStatus.ADAPTER_REQUIRED ->
                 TargetMaterialization.adapterRequired(capability, decision.reason, requirements)
             MaterializationStatus.UNSUPPORTED ->
-                TargetMaterialization(TargetMaterializationStatus.UNSUPPORTED, capability, decision.reason, requirements)
+                TargetMaterialization(
+                    TargetMaterializationStatus.UNSUPPORTED,
+                    capability,
+                    decision.reason,
+                    requirements
+                )
             MaterializationStatus.BLOCKED ->
                 TargetMaterialization.blocked(capability, decision.reason).copy(requirements = requirements)
             MaterializationStatus.DEFERRED ->
-                TargetMaterialization(TargetMaterializationStatus.DECLARATIVE_ONLY, capability, decision.reason, requirements)
+                TargetMaterialization(
+                    TargetMaterializationStatus.DECLARATIVE_ONLY,
+                    capability,
+                    decision.reason,
+                    requirements
+                )
         }
     }
 
