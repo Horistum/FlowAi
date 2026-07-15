@@ -15,7 +15,6 @@ import org.flowlang.capabilities.TargetProjectionMode
 import org.flowlang.capabilities.TargetProjectionRule
 import org.flowlang.capabilities.TargetRendererPayloadTemplate
 import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
-import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestContractValidator
@@ -31,6 +30,7 @@ import org.flowlang.planner.TaskNode
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingContract
 import org.flowlang.projection.ProjectionBindingKind
+import org.flowlang.projection.ProjectionBindingResolutionStatus
 import org.flowlang.projection.TaskMetadataField
 import org.flowlang.targets.TargetProjectionPayloadDescriptor
 
@@ -57,6 +57,7 @@ class ProjectionBindingContractTests {
 
         assertEquals("FUTURE_TASK", template.kind)
         assertEquals(9, template.bindings.size)
+        assertTrue(template.bindings.values.all { it.resolutionStatus == null })
     }
 
     @Test
@@ -79,6 +80,15 @@ class ProjectionBindingContractTests {
                     value = "already-resolved"
                 ),
                 "test.parameter"
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ProjectionBindingContract.requireTemplate(
+                ProjectionBinding.taskParameter("url").copy(
+                    resolutionStatus = ProjectionBindingResolutionStatus.UNRESOLVED,
+                    reason = "Registry must not decide runtime resolution."
+                ),
+                "test.parameter-status"
             )
         }
     }
@@ -111,32 +121,45 @@ class ProjectionBindingContractTests {
         assertEquals(ProjectionBindingKind.TASK_PARAMETER, bindings.getValue("url").kind)
         assertEquals("url", bindings.getValue("url").name)
         assertEquals("https://example.invalid/repository.git", bindings.getValue("url").value)
+        assertEquals(ProjectionBindingResolutionStatus.RESOLVED, bindings.getValue("url").resolutionStatus)
         assertEquals("main", bindings.getValue("branch").value)
+        assertEquals(ProjectionBindingResolutionStatus.RESOLVED, bindings.getValue("branch").resolutionStatus)
         assertEquals("source-workspace", bindings.getValue("workspace").value)
         assertEquals("checkout_source", bindings.getValue("taskId").value)
         assertEquals(ProjectionBindingKind.FLOW_INPUT, bindings.getValue("flowInput").kind)
+        assertEquals(ProjectionBindingResolutionStatus.SYMBOLIC, bindings.getValue("flowInput").resolutionStatus)
         assertEquals(null, bindings.getValue("flowInput").value)
     }
 
     @Test
-    fun resolverFailsClosedWhenRequiredSourceIsMissing() {
-        val failure = assertFailsWith<IllegalStateException> {
-            TargetMaterializationResolver.resolve(
-                task = TaskNode(
-                    id = "checkout_source",
-                    module = "git",
-                    action = "checkout",
-                    target = "source"
-                ),
-                targetName = "jenkins",
-                projectionRules = listOf(nativeRule(
-                    targetKind = "JENKINS_STEP",
-                    bindings = mapOf("url" to ProjectionBinding.taskParameter("url"))
-                ))
-            )
-        }
+    fun missingCompileTimeSourceRemainsAuditableAndReviewOnly() {
+        val resolution = TargetMaterializationResolver.resolve(
+            task = TaskNode(
+                id = "checkout_source",
+                module = "git",
+                action = "checkout",
+                target = "source"
+            ),
+            targetName = "jenkins",
+            projectionRules = listOf(nativeRule(
+                targetKind = "JENKINS_STEP",
+                bindings = mapOf("url" to ProjectionBinding.taskParameter("url"))
+            ))
+        )
+        val payload = assertNotNull(resolution.rendererPayload)
+        val binding = payload.bindings.getValue("url")
+        val manifest = manifestWithPayload("jenkins", payload)
 
-        assertTrue(failure.message.orEmpty().contains("does not provide required parameter 'url'"))
+        assertEquals(ProjectionBindingResolutionStatus.UNRESOLVED, binding.resolutionStatus)
+        assertEquals(null, binding.value)
+        assertTrue(binding.reason.orEmpty().contains("does not provide required parameter 'url'"))
+        assertTrue(TargetManifestContractValidator.validate(manifest).valid)
+
+        val readiness = TargetRenderPolicy.evaluate(manifest)
+        assertEquals(TargetRenderMode.REVIEW_ONLY, readiness.mode)
+        assertTrue(readiness.findings.any { finding ->
+            finding.status == "TARGET_BINDING_UNRESOLVED" && finding.reason.contains("url")
+        })
     }
 
     @Test
@@ -202,20 +225,26 @@ class ProjectionBindingContractTests {
             ))
         }
 
-        assertTrue(failure.message.orEmpty().contains("Tekton secret binding requires explicit workspace or secretKeyRef evidence"))
+        assertTrue(failure.message.orEmpty().contains(
+            "Tekton secret binding requires explicit workspace or secretKeyRef evidence"
+        ))
     }
 
     @Test
     fun serializationOmitsFieldsThatDoNotBelongToBindingKind() {
-        val json = ObjectMapper().registerKotlinModule().writeValueAsString(
+        val registryJson = ObjectMapper().registerKotlinModule().writeValueAsString(
             ProjectionBinding.secret("registry-token")
         )
+        val manifestJson = ObjectMapper().registerKotlinModule().writeValueAsString(
+            ProjectionBinding.secret("registry-token").asManifestBinding()
+        )
 
-        assertTrue(json.contains("\"kind\":\"SECRET\""))
-        assertTrue(json.contains("\"name\":\"registry-token\""))
-        assertFalse(json.contains("\"value\""))
-        assertFalse(json.contains("\"taskId\""))
-        assertFalse(json.contains("\"expression\""))
+        assertTrue(registryJson.contains("\"kind\":\"SECRET\""))
+        assertTrue(registryJson.contains("\"name\":\"registry-token\""))
+        assertFalse(registryJson.contains("\"resolutionStatus\""))
+        assertFalse(registryJson.contains("\"value\""))
+        assertTrue(manifestJson.contains("\"resolutionStatus\":\"SYMBOLIC\""))
+        assertFalse(manifestJson.contains("\"reason\""))
     }
 
     @Test
@@ -226,7 +255,13 @@ class ProjectionBindingContractTests {
             "targets/builtin-targets.yaml"
         ).associateWith { File(it).readText() }
 
-        val forbidden = listOf("startsWith(\"param:\")", "startsWith(\"input:\")", "literal:", "task:id", "task:target")
+        val forbidden = listOf(
+            "startsWith(\"param:\")",
+            "startsWith(\"input:\")",
+            "literal:",
+            "task:id",
+            "task:target"
+        )
         sources.forEach { (path, source) ->
             forbidden.forEach { token ->
                 assertFalse(source.contains(token), "$path must not contain prefix-encoded binding token '$token'.")
@@ -255,6 +290,20 @@ class ProjectionBindingContractTests {
         payloadKind: String,
         reference: String,
         bindings: Map<String, ProjectionBinding>
+    ): TargetManifest = manifestWithPayload(
+        target = target,
+        payload = TargetRendererPayload(
+            kind = payloadKind,
+            target = target,
+            reference = reference,
+            bindings = bindings.mapValues { (_, binding) -> binding.asManifestBinding() },
+            evidenceReference = "test:$target#typed-bindings"
+        )
+    )
+
+    private fun manifestWithPayload(
+        target: String,
+        payload: TargetRendererPayload
     ): TargetManifest = TargetManifest(
         target = target,
         flowName = "typed-binding-test",
@@ -280,13 +329,7 @@ class ProjectionBindingContractTests {
                     capability = "example.project",
                     reason = "Complete declarative projection evidence is available."
                 ),
-                rendererPayload = TargetRendererPayload(
-                    kind = payloadKind,
-                    target = target,
-                    reference = reference,
-                    bindings = bindings,
-                    evidenceReference = "test:$target#typed-bindings"
-                )
+                rendererPayload = payload
             ))
         )),
         metadata = mapOf(
@@ -300,4 +343,27 @@ class ProjectionBindingContractTests {
             "executable" to "true"
         )
     )
+
+    private fun ProjectionBinding.asManifestBinding(): ProjectionBinding = when (kind) {
+        ProjectionBindingKind.LITERAL -> copy(
+            resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED
+        )
+        ProjectionBindingKind.TASK_PARAMETER,
+        ProjectionBindingKind.TASK_INPUT,
+        ProjectionBindingKind.TASK_METADATA -> if (value != null) {
+            copy(resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED)
+        } else {
+            copy(
+                resolutionStatus = ProjectionBindingResolutionStatus.UNRESOLVED,
+                reason = "Test binding intentionally lacks a compile-time value."
+            )
+        }
+        ProjectionBindingKind.FLOW_INPUT,
+        ProjectionBindingKind.SECRET,
+        ProjectionBindingKind.ARTIFACT,
+        ProjectionBindingKind.TASK_OUTPUT,
+        ProjectionBindingKind.TARGET_EXPRESSION -> copy(
+            resolutionStatus = ProjectionBindingResolutionStatus.SYMBOLIC
+        )
+    }
 }
