@@ -3,8 +3,8 @@
   "versionBoundary" : {
     "implementationPackageVersion" : "0.9.5",
     "publicStandardVersion" : "0.8.0",
-    "artifactContractVersion" : "2.0",
-    "targetManifestVersion" : "2.0"
+    "artifactContractVersion" : "3.0",
+    "targetManifestVersion" : "3.0"
   },
   "standardVersion" : "0.8.0",
   "scenarioId" : "build-test-deploy",
