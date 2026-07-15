@@ -1,5 +1,9 @@
 package org.flowlang.tests
 
+import java.io.File
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
@@ -11,17 +15,12 @@ import org.flowlang.generators.manifest.TektonManifestRenderer
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
-import java.io.File
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 /**
  * Regression guard for opaque-value projection requirements.
  *
- * A review-only artifact must preserve the source secret reference, runtime
- * reference and target binding requirement without claiming that the binding or
- * the action was executed.
+ * A review-only artifact preserves the symbolic source and evidence without
+ * inventing target binding syntax before executable renderer evidence exists.
  */
 class FlowSecretMaterializationTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
@@ -37,7 +36,9 @@ class FlowSecretMaterializationTests {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
         return when (target) {
             "jenkins" -> JenkinsManifestRenderer().render(JenkinsManifestGenerator().generate(plan, compatibility))
-            "github-actions" -> GitHubActionsManifestRenderer().render(GitHubActionsManifestGenerator().generate(plan, compatibility))
+            "github-actions" -> GitHubActionsManifestRenderer().render(
+                GitHubActionsManifestGenerator().generate(plan, compatibility)
+            )
             "tekton" -> TektonManifestRenderer().render(TektonManifestGenerator().generate(plan, compatibility))
             else -> error("unknown target $target")
         }
@@ -47,31 +48,38 @@ class FlowSecretMaterializationTests {
     fun secretBaseUrlRequirementIsPreservedNotDropped() {
         for (target in targets.keys) {
             val rendered = render(target)
-            assertTrue(rendered.contains("kind: TargetProjectionReview"), rendered)
-            assertTrue(rendered.contains("opaqueReference: \"CRM_URL\""), rendered)
-            assertTrue(rendered.contains("runtimeReference: \"\$FLOW_SECRET_CRM_URL\""), rendered)
+            assertGenericSecretRequirement(rendered)
             assertFalse(rendered.contains("secret(\"CRM_URL\")"), rendered)
             assertTrue(rendered.contains("executable: false"), rendered)
         }
     }
 
     @Test
-    fun jenkinsReviewRecordsCredentialsRequirement() {
+    fun jenkinsReviewDoesNotInventCredentialsBinding() {
         val rendered = render("jenkins")
-        assertTrue(rendered.contains("FLOW_SECRET_CRM_URL = credentials('CRM_URL')"), rendered)
+        assertGenericSecretRequirement(rendered)
+        assertFalse(rendered.contains("credentials('CRM_URL')"), rendered)
     }
 
     @Test
-    fun githubReviewRecordsSecretsContextRequirement() {
+    fun githubReviewDoesNotInventSecretsContextBinding() {
         val rendered = render("github-actions")
-        assertTrue(rendered.contains("FLOW_SECRET_CRM_URL: \${{ secrets.CRM_URL }}"), rendered)
+        assertGenericSecretRequirement(rendered)
+        assertFalse(rendered.contains("secrets.CRM_URL"), rendered)
     }
 
     @Test
-    fun tektonReviewRecordsSecretKeyRefRequirement() {
+    fun tektonReviewDoesNotInventSecretKeyRefBinding() {
         val rendered = render("tekton")
-        assertTrue(rendered.contains("secretKeyRef"), rendered)
-        assertTrue(rendered.contains("name: flow-secrets"), rendered)
-        assertTrue(rendered.contains("key: CRM_URL"), rendered)
+        assertGenericSecretRequirement(rendered)
+        assertFalse(rendered.contains("secretKeyRef"), rendered)
+    }
+
+    private fun assertGenericSecretRequirement(rendered: String) {
+        assertTrue(rendered.contains("kind: TargetProjectionReview"), rendered)
+        assertTrue(rendered.contains("kind: \"LEGACY_SECRET_REFERENCE\""), rendered)
+        assertTrue(rendered.contains("resolutionStatus: \"SYMBOLIC\""), rendered)
+        assertTrue(rendered.contains("source: \"CRM_URL\""), rendered)
+        assertTrue(rendered.contains("evidence: \"step.params\""), rendered)
     }
 }
