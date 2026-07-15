@@ -7,7 +7,7 @@ class TargetProjectionTestBoundaryTests {
     @Test
     fun testsImportConcreteProjectionsOnlyFromTheEdgePackage() {
         val testSources = testSourceFiles()
-        val forbiddenImports = listOf(
+        val concreteProjectionTypes = listOf(
             "JenkinsManifestGenerator",
             "JenkinsManifestRenderer",
             "GitHubActionsManifestGenerator",
@@ -16,7 +16,10 @@ class TargetProjectionTestBoundaryTests {
             "TektonManifestRenderer",
             "TargetExpressionTranslator",
             "TargetExpressionTranslationException"
-        ).map { name -> "import org.flowlang.generators.manifest.$name" }
+        )
+        val forbiddenImports = concreteProjectionTypes.map { name ->
+            "import org.flowlang.generators.manifest.$name"
+        }
 
         val offenders = testSources.flatMap { file ->
             val source = file.readText()
@@ -28,6 +31,14 @@ class TargetProjectionTestBoundaryTests {
             testSources.any { it.readText().contains("import org.flowlang.targets.builtin.JenkinsManifestGenerator") },
             "The boundary check must observe real edge projection imports."
         )
+
+        val wildcardScenarioSource = File("tests/FlowSpecPlannerScenarioTests.kt").readText()
+        concreteProjectionTypes.take(6).forEach { name ->
+            assertTrue(
+                wildcardScenarioSource.contains("import org.flowlang.targets.builtin.$name"),
+                "The wildcard planner scenario must explicitly import edge projection type '$name'."
+            )
+        }
     }
 
     @Test
@@ -39,11 +50,16 @@ class TargetProjectionTestBoundaryTests {
         val pipelineSource = File(
             "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
         ).readText()
+        val pipelineDeclaration = pipelineSource.substringAfter("class TargetManifestGenerationPipeline(")
 
         assertTrue(staticCallOffenders.isEmpty(), "Static manifest generation must not return: ${staticCallOffenders.map { it.path }}")
-        assertFalse(pipelineSource.contains("fun generate(\n            plan:"), "Core pipeline must not expose a companion generate delegate.")
+        assertFalse(
+            Regex("\\bcompanion\\s+object\\b").containsMatchIn(pipelineDeclaration),
+            "Core pipeline must not expose a companion generate delegate."
+        )
         assertFalse(File("src/main/kotlin/org/flowlang/conformance/LegacyProjectionCompileBridge.kt").exists())
         assertFalse(File(".github/workflows/v0963-test-import-migration.yml").exists())
+        assertFalse(File(".github/workflows/v0963-wildcard-test-import-migration.yml").exists())
     }
 
     private fun testSourceFiles(): List<File> = listOf(
