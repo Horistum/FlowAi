@@ -87,87 +87,135 @@
         "bindings": {
           "type": "object",
           "propertyNames": { "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
-          "additionalProperties": { "$ref": "#/$defs/resolvedBinding" }
+          "additionalProperties": { "$ref": "#/$defs/manifestBinding" }
         },
         "evidenceReference": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
-    "resolvedBinding": {
+    "manifestBinding": {
       "oneOf": [
-        { "$ref": "#/$defs/literalBinding" },
+        { "$ref": "#/$defs/resolvedLiteral" },
         { "$ref": "#/$defs/resolvedTaskParameter" },
+        { "$ref": "#/$defs/unresolvedTaskParameter" },
         { "$ref": "#/$defs/resolvedTaskInput" },
+        { "$ref": "#/$defs/unresolvedTaskInput" },
         { "$ref": "#/$defs/resolvedTaskMetadata" },
-        { "$ref": "#/$defs/namedRuntimeBinding" },
-        { "$ref": "#/$defs/taskOutputBinding" },
-        { "$ref": "#/$defs/targetExpressionBinding" }
+        { "$ref": "#/$defs/unresolvedTaskMetadata" },
+        { "$ref": "#/$defs/symbolicNamedBinding" },
+        { "$ref": "#/$defs/symbolicTaskOutput" },
+        { "$ref": "#/$defs/symbolicTargetExpression" }
       ]
     },
-    "literalBinding": {
+    "resolvedLiteral": {
       "type": "object",
-      "required": ["kind", "value"],
-      "properties": { "kind": { "const": "LITERAL" }, "value": { "type": "string" } },
+      "required": ["kind", "value", "resolutionStatus"],
+      "properties": {
+        "kind": { "const": "LITERAL" },
+        "value": { "type": "string" },
+        "resolutionStatus": { "const": "RESOLVED" }
+      },
       "additionalProperties": false
     },
     "resolvedTaskParameter": {
       "type": "object",
-      "required": ["kind", "name", "value"],
+      "required": ["kind", "name", "value", "resolutionStatus"],
       "properties": {
         "kind": { "const": "TASK_PARAMETER" },
         "name": { "type": "string", "minLength": 1 },
         "value": { "type": "string" },
-        "defaultValue": { "type": "string" }
+        "defaultValue": { "type": "string" },
+        "resolutionStatus": { "const": "RESOLVED" }
+      },
+      "additionalProperties": false
+    },
+    "unresolvedTaskParameter": {
+      "type": "object",
+      "required": ["kind", "name", "resolutionStatus", "reason"],
+      "properties": {
+        "kind": { "const": "TASK_PARAMETER" },
+        "name": { "type": "string", "minLength": 1 },
+        "defaultValue": { "type": "string" },
+        "resolutionStatus": { "const": "UNRESOLVED" },
+        "reason": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
     "resolvedTaskInput": {
       "type": "object",
-      "required": ["kind", "name", "value"],
+      "required": ["kind", "name", "value", "resolutionStatus"],
       "properties": {
         "kind": { "const": "TASK_INPUT" },
         "name": { "type": "string", "minLength": 1 },
         "value": { "type": "string" },
-        "defaultValue": { "type": "string" }
+        "defaultValue": { "type": "string" },
+        "resolutionStatus": { "const": "RESOLVED" }
+      },
+      "additionalProperties": false
+    },
+    "unresolvedTaskInput": {
+      "type": "object",
+      "required": ["kind", "name", "resolutionStatus", "reason"],
+      "properties": {
+        "kind": { "const": "TASK_INPUT" },
+        "name": { "type": "string", "minLength": 1 },
+        "defaultValue": { "type": "string" },
+        "resolutionStatus": { "const": "UNRESOLVED" },
+        "reason": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
     "resolvedTaskMetadata": {
       "type": "object",
-      "required": ["kind", "field", "value"],
+      "required": ["kind", "field", "value", "resolutionStatus"],
       "properties": {
         "kind": { "const": "TASK_METADATA" },
         "field": { "enum": ["ID", "TARGET"] },
-        "value": { "type": "string" }
+        "value": { "type": "string" },
+        "resolutionStatus": { "const": "RESOLVED" }
       },
       "additionalProperties": false
     },
-    "namedRuntimeBinding": {
+    "unresolvedTaskMetadata": {
       "type": "object",
-      "required": ["kind", "name"],
+      "required": ["kind", "field", "resolutionStatus", "reason"],
+      "properties": {
+        "kind": { "const": "TASK_METADATA" },
+        "field": { "enum": ["ID", "TARGET"] },
+        "resolutionStatus": { "const": "UNRESOLVED" },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "symbolicNamedBinding": {
+      "type": "object",
+      "required": ["kind", "name", "resolutionStatus"],
       "properties": {
         "kind": { "enum": ["FLOW_INPUT", "SECRET", "ARTIFACT"] },
-        "name": { "type": "string", "minLength": 1 }
+        "name": { "type": "string", "minLength": 1 },
+        "resolutionStatus": { "const": "SYMBOLIC" }
       },
       "additionalProperties": false
     },
-    "taskOutputBinding": {
+    "symbolicTaskOutput": {
       "type": "object",
-      "required": ["kind", "taskId", "output"],
+      "required": ["kind", "taskId", "output", "resolutionStatus"],
       "properties": {
         "kind": { "const": "TASK_OUTPUT" },
         "taskId": { "type": "string", "minLength": 1 },
-        "output": { "type": "string", "minLength": 1 }
+        "output": { "type": "string", "minLength": 1 },
+        "resolutionStatus": { "const": "SYMBOLIC" }
       },
       "additionalProperties": false
     },
-    "targetExpressionBinding": {
+    "symbolicTargetExpression": {
       "type": "object",
-      "required": ["kind", "target", "expression"],
+      "required": ["kind", "target", "expression", "resolutionStatus"],
       "properties": {
         "kind": { "const": "TARGET_EXPRESSION" },
         "target": { "type": "string", "minLength": 1 },
-        "expression": { "type": "string", "minLength": 1 }
+        "expression": { "type": "string", "minLength": 1 },
+        "resolutionStatus": { "const": "SYMBOLIC" }
       },
       "additionalProperties": false
     },
