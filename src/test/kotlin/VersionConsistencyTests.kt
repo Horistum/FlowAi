@@ -7,7 +7,8 @@ import org.flowlang.standard.FlowStandardVersions
 class VersionConsistencyTests {
     private val packageVersion = "0.9.5"
     private val publicStandardVersion = "0.8.0"
-    private val contractVersion = "2.0"
+    private val semanticContractVersion = "2.0"
+    private val targetContractVersion = "3.0"
 
     @Test
     fun packagePromotionMatchesReleaseMetadata() {
@@ -21,31 +22,41 @@ class VersionConsistencyTests {
     }
 
     @Test
-    fun publicContractVersionsMatchTheDocumentedBreakingMigration() {
+    fun publicContractVersionsMatchTheirDocumentedMigrations() {
         assertEquals(packageVersion, FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION)
         assertEquals(publicStandardVersion, FlowStandardVersions.FLOW_STANDARD_VERSION)
-        assertEquals(contractVersion, FlowStandardVersions.INTENT_VERSION)
-        assertEquals(contractVersion, FlowStandardVersions.AST_VERSION)
-        assertEquals(contractVersion, FlowStandardVersions.EXECUTION_PLAN_VERSION)
-        assertEquals(contractVersion, FlowStandardVersions.TARGET_MANIFEST_VERSION)
-        assertEquals(contractVersion, FlowStandardVersions.TARGET_REGISTRY_VERSION)
+
+        assertEquals(semanticContractVersion, FlowStandardVersions.INTENT_VERSION)
+        assertEquals(semanticContractVersion, FlowStandardVersions.AST_VERSION)
+        assertEquals(semanticContractVersion, FlowStandardVersions.EXECUTION_PLAN_VERSION)
+        assertEquals(targetContractVersion, FlowStandardVersions.TARGET_MANIFEST_VERSION)
+        assertEquals(targetContractVersion, FlowStandardVersions.TARGET_REGISTRY_VERSION)
 
         listOf(
             "schemas/intent.schema.json",
             "schemas/ast.schema.json",
             "schemas/execution-plan.schema.json",
-            "schemas/target-manifest.schema.json",
-            "schemas/target-registry.schema.json",
             "schemas/target-semantics-matrix.schema.json"
-        ).forEach { path -> assertFileContains(path, "2.0") }
+        ).forEach { path -> assertFileContains(path, semanticContractVersion) }
+        listOf(
+            "schemas/target-manifest.schema.json",
+            "schemas/target-registry.schema.json"
+        ).forEach { path -> assertFileContains(path, targetContractVersion) }
+
         assertFileContains("docs/V0_9_5_CONTRACT_MIGRATION.md", "Intent 1.x to 2.0")
-        assertFileContains("docs/versioning-policy.md", "Public artifact contract versions advance to `2.0`")
+        assertFileContains(
+            "docs/V0_9_6_TYPED_BINDING_MIGRATION.md",
+            "Target Registry and Target Manifest 2.0 to 3.0 Migration"
+        )
+        assertFileContains("docs/versioning-policy.md", "TargetManifest contract | `3.0`")
+        assertFileContains("docs/versioning-policy.md", "TargetRegistry contract | `3.0`")
     }
 
     @Test
     fun releaseHasDocumentationAndValidationReport() {
         assertTrue(File("docs/V0_9_5_UNIVERSAL_MODEL_COMPLETION.md").isFile)
         assertTrue(File("docs/V0_9_5_CONTRACT_MIGRATION.md").isFile)
+        assertTrue(File("docs/V0_9_6_TYPED_BINDING_MIGRATION.md").isFile)
         assertTrue(File(".flow-agent/reports/v0.9.5-universal-model-completion.md").isFile)
     }
 

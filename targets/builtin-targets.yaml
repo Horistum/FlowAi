@@ -1,5 +1,5 @@
 kind: FlowTargetRegistry
-version: "2.0"
+version: "3.0"
 description: Built-in target capability registry for the current Flow capability-contract line.
 expressionProfiles:
   - id: flow-full
@@ -120,9 +120,14 @@ targets:
         payload:
           kind: jenkins-step
           reference: git
-          parameters:
-            url: param:url
-            branch: param:branch
+          bindings:
+            url:
+              kind: TASK_PARAMETER
+              name: url
+            branch:
+              kind: TASK_PARAMETER
+              name: branch
+              defaultValue: main
       - module: standard
         action: execute
         mode: notes_projected

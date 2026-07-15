@@ -95,7 +95,13 @@ class UniversalModelCompletionTests {
     fun missingProjectionRuleFailsClosedInsteadOfBecomingExecutable() {
         val plan = ExecutionPlan(
             flowName = "unknown-action",
-            nodes = listOf(TaskNode("work", module = "custom", action = "do", target = "custom", requiredCapabilities = listOf("custom.do")))
+            nodes = listOf(TaskNode(
+                "work",
+                module = "custom",
+                action = "do",
+                target = "custom",
+                requiredCapabilities = listOf("custom.do")
+            ))
         )
         val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility.analyze(plan, "jenkins"))
         val step = manifest.jobs.single().steps.single()
@@ -243,11 +249,12 @@ class UniversalModelCompletionTests {
         assertEquals("2.0", FlowStandardVersions.INTENT_VERSION)
         assertEquals("2.0", FlowStandardVersions.AST_VERSION)
         assertEquals("2.0", FlowStandardVersions.EXECUTION_PLAN_VERSION)
-        assertEquals("2.0", FlowStandardVersions.TARGET_MANIFEST_VERSION)
-        assertEquals("2.0", FlowStandardVersions.TARGET_REGISTRY_VERSION)
+        assertEquals("3.0", FlowStandardVersions.TARGET_MANIFEST_VERSION)
+        assertEquals("3.0", FlowStandardVersions.TARGET_REGISTRY_VERSION)
 
-        val manifest = TargetManifestGenerationPipeline.generate(checkoutPlan(), compatibility.analyze(checkoutPlan(), "jenkins"))
-        assertEquals("2.0", manifest.manifestVersion)
+        val plan = checkoutPlan()
+        val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility.analyze(plan, "jenkins"))
+        assertEquals("3.0", manifest.manifestVersion)
         assertFalse(File("schemas/target-manifest.schema.json").readText().contains("\"run\""))
     }
 
@@ -262,7 +269,7 @@ class UniversalModelCompletionTests {
 
     @Test
     fun placeboRendererBranchesAreAbsentFromProductionSource() {
-        val source = File("src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt").readText()
+        val source = rendererSources()
         assertFalse(source.contains("steps: []"))
         assertFalse(source.contains("flow-materialization-required"))
         assertFalse(source.contains("Flow executes"))
@@ -281,6 +288,13 @@ class UniversalModelCompletionTests {
             )
         )
     )
+
+    private fun rendererSources(): String = listOf(
+        "src/main/kotlin/org/flowlang/generators/manifest/JenkinsManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/generators/manifest/GitHubActionsManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/generators/manifest/TektonManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionRenderingSupport.kt"
+    ).joinToString("\n") { path -> File(path).readText() }
 
     private fun gradlePackageVersion(): String = Regex("(?m)^version\\s*=\\s*\"([^\"]+)\"")
         .find(File("build.gradle.kts").readText())

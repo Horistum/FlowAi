@@ -7,7 +7,7 @@ import org.flowlang.architecture.ArchitectureGovernanceAnalyzer
 class FlowGovernanceScannerHonestyTests {
     @Test
     fun targetRendererUsesReadableTargetNativeVocabulary() {
-        val source = File("src/main/kotlin/org/flowlang/generators/manifest/TargetManifestRenderers.kt").readText()
+        val source = rendererSources()
 
         assertTrue(source.contains("withCredentials"))
         assertTrue(source.contains("credentialsId"))
@@ -32,4 +32,11 @@ class FlowGovernanceScannerHonestyTests {
         assertTrue(report.status == "PASS", report.issues.joinToString { "${it.code}: ${it.path}" })
         assertFalse(report.issues.any { it.code == "ARCHITECTURE_FORBIDDEN_SYMBOL_IN_SOURCE" })
     }
+
+    private fun rendererSources(): String = listOf(
+        "src/main/kotlin/org/flowlang/generators/manifest/JenkinsManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/generators/manifest/GitHubActionsManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/generators/manifest/TektonManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionRenderingSupport.kt"
+    ).joinToString("\n") { path -> File(path).readText() }
 }

@@ -1,5 +1,7 @@
 package org.flowlang.capabilities
 
+import org.flowlang.projection.ProjectionBinding
+
 /**
  * Platform capability model.
  *
@@ -40,14 +42,13 @@ enum class TargetProjectionMode { NATIVE, NOTES_PROJECTED, ADAPTER_REQUIRED, UNS
 typealias TargetRendererPayloadKind = String
 
 /**
- * Structured renderer payload template with an opaque projection-consumer kind.
- * Core validates the identifier structurally; concrete edge renderers own its
- * interpretation.
+ * Structured renderer payload template with target-neutral typed bindings.
+ * Core validates binding structure; concrete edge renderers own target syntax.
  */
 data class TargetRendererPayloadTemplate(
     val kind: TargetRendererPayloadKind,
     val reference: String,
-    val parameters: Map<String, String> = emptyMap()
+    val bindings: Map<String, ProjectionBinding> = emptyMap()
 )
 
 data class TargetProjectionRule(

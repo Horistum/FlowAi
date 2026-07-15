@@ -4,7 +4,7 @@ metadata:
   name: "build-test-deploy"
 spec:
   standardVersion: "0.8.0"
-  manifestVersion: "2.0"
+  manifestVersion: "3.0"
   target: "github-actions"
   capabilityCompatibility: "PARTIAL"
   effectiveCompatibility: "PARTIAL"

@@ -27,69 +27,113 @@ class TargetRenderBlockedException(val readiness: TargetRenderReadiness) : Illeg
 
 object TargetRenderPolicy {
     private val completedStatuses = setOf(TargetMaterializationStatus.NATIVE)
-    private val blockedStatuses = setOf(TargetMaterializationStatus.BLOCKED, TargetMaterializationStatus.UNSUPPORTED)
+    private val blockedStatuses = setOf(
+        TargetMaterializationStatus.BLOCKED,
+        TargetMaterializationStatus.UNSUPPORTED
+    )
     private val payloadKindPattern = Regex("^[A-Za-z0-9][A-Za-z0-9._+:/-]*$")
 
     fun evaluate(manifest: TargetManifest): TargetRenderReadiness {
         val steps = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForReadiness() } }
-        val capabilityFinding = if (manifest.compatibility.capabilityStatus != org.flowlang.capabilities.SupportLevel.SUPPORTED) {
+        val capabilityFinding = if (
+            manifest.compatibility.capabilityStatus != org.flowlang.capabilities.SupportLevel.SUPPORTED
+        ) {
             listOf(TargetRenderFinding(
                 "manifest",
                 "CAPABILITY_${manifest.compatibility.capabilityStatus.name}",
                 "Target capability compatibility is '${manifest.compatibility.capabilityStatus}' and cannot produce executable syntax."
             ))
-        } else emptyList()
-        val blocking = steps.filter { it.materialization.status in blockedStatuses }.map { step ->
-            TargetRenderFinding(step.id, step.materialization.status.name, step.materialization.reason)
-        }.distinct()
-        if (blocking.isNotEmpty()) return TargetRenderReadiness(manifest.target, TargetRenderMode.FAIL_FAST, blocking)
+        } else {
+            emptyList()
+        }
 
-        val unresolved = capabilityFinding + steps.filter { it.isMaterializationLeaf() }.mapNotNull { step ->
-            when {
-                step.materialization.status !in completedStatuses -> TargetRenderFinding(
-                    step.id,
-                    step.materialization.status.name,
-                    step.materialization.reason
-                )
-                step.rendererPayload == null -> TargetRenderFinding(
-                    step.id,
-                    "TARGET_PAYLOAD_MISSING",
-                    "Native materialization evidence exists, but no structured renderer payload is declared for '${manifest.target}'."
-                )
-                step.rendererPayload.target != manifest.target -> TargetRenderFinding(
-                    step.id,
-                    "TARGET_PAYLOAD_MISMATCH",
-                    "Renderer payload is bound to '${step.rendererPayload.target}', not '${manifest.target}'."
-                )
-                step.rendererPayload.kind.isBlank() -> TargetRenderFinding(
-                    step.id,
-                    "TARGET_PAYLOAD_KIND_MISSING",
-                    "Renderer readiness requires an opaque projection payload kind."
-                )
-                !payloadKindPattern.matches(step.rendererPayload.kind) -> TargetRenderFinding(
-                    step.id,
-                    "TARGET_PAYLOAD_KIND_INVALID",
-                    "Renderer payload kind '${step.rendererPayload.kind}' is not a valid opaque projection identifier."
-                )
-                step.rendererPayload.reference.isBlank() -> TargetRenderFinding(
-                    step.id,
-                    "TARGET_PAYLOAD_REFERENCE_MISSING",
-                    "Renderer readiness requires a concrete target payload reference."
-                )
-                step.rendererPayload.evidenceReference.isBlank() -> TargetRenderFinding(
-                    step.id,
-                    "TARGET_PAYLOAD_EVIDENCE_MISSING",
-                    "Renderer payload must cite target registry or notes evidence."
-                )
-                else -> null
+        val blocking = steps
+            .filter { it.materialization.status in blockedStatuses }
+            .map { step ->
+                TargetRenderFinding(step.id, step.materialization.status.name, step.materialization.reason)
             }
-        }.distinct()
+            .distinct()
+        if (blocking.isNotEmpty()) {
+            return TargetRenderReadiness(manifest.target, TargetRenderMode.FAIL_FAST, blocking)
+        }
+
+        val unresolved = capabilityFinding + steps
+            .filter { it.isMaterializationLeaf() }
+            .mapNotNull { step -> readinessFinding(step, manifest.target) }
+            .distinct()
 
         return if (unresolved.isEmpty()) {
             TargetRenderReadiness(manifest.target, TargetRenderMode.EXECUTABLE, emptyList())
         } else {
             TargetRenderReadiness(manifest.target, TargetRenderMode.REVIEW_ONLY, unresolved)
         }
+    }
+
+    private fun readinessFinding(step: TargetStep, manifestTarget: String): TargetRenderFinding? {
+        if (step.materialization.status !in completedStatuses) {
+            return TargetRenderFinding(
+                step.id,
+                step.materialization.status.name,
+                step.materialization.reason
+            )
+        }
+        val payload = step.rendererPayload ?: return TargetRenderFinding(
+            step.id,
+            "TARGET_PAYLOAD_MISSING",
+            "Native materialization evidence exists, but no structured renderer payload is declared for '$manifestTarget'."
+        )
+        if (payload.target != manifestTarget) {
+            return TargetRenderFinding(
+                step.id,
+                "TARGET_PAYLOAD_MISMATCH",
+                "Renderer payload is bound to '${payload.target}', not '$manifestTarget'."
+            )
+        }
+        if (payload.kind.isBlank()) {
+            return TargetRenderFinding(
+                step.id,
+                "TARGET_PAYLOAD_KIND_MISSING",
+                "Renderer readiness requires an opaque projection payload kind."
+            )
+        }
+        if (!payloadKindPattern.matches(payload.kind)) {
+            return TargetRenderFinding(
+                step.id,
+                "TARGET_PAYLOAD_KIND_INVALID",
+                "Renderer payload kind '${payload.kind}' is not a valid opaque projection identifier."
+            )
+        }
+        if (payload.reference.isBlank()) {
+            return TargetRenderFinding(
+                step.id,
+                "TARGET_PAYLOAD_REFERENCE_MISSING",
+                "Renderer readiness requires a concrete target payload reference."
+            )
+        }
+        if (payload.evidenceReference.isBlank()) {
+            return TargetRenderFinding(
+                step.id,
+                "TARGET_PAYLOAD_EVIDENCE_MISSING",
+                "Renderer payload must cite target registry or notes evidence."
+            )
+        }
+        val bindingIssue = TargetManifestBindingValidation.issues(payload).firstOrNull()
+        if (bindingIssue != null) {
+            return TargetRenderFinding(
+                step.id,
+                "TARGET_BINDING_INVALID",
+                "Binding '${bindingIssue.name}' is invalid: ${bindingIssue.reason}"
+            )
+        }
+        val unresolvedBinding = TargetManifestBindingValidation.unresolved(payload).firstOrNull()
+        if (unresolvedBinding != null) {
+            return TargetRenderFinding(
+                step.id,
+                "TARGET_BINDING_UNRESOLVED",
+                "Binding '${unresolvedBinding.name}' is unresolved: ${unresolvedBinding.reason}"
+            )
+        }
+        return null
     }
 
     fun requireSafe(manifest: TargetManifest): TargetRenderReadiness {
@@ -105,8 +149,16 @@ object TargetRenderPolicy {
     }
 
     private fun TargetStep.isMaterializationLeaf(): Boolean = children.isEmpty() && type !in setOf(
-        "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry", "condition"
+        "try-body",
+        "error-handler",
+        "parallel",
+        "parallel-branch",
+        "loop",
+        "match",
+        "retry",
+        "condition"
     )
 
-    private fun TargetStep.flattenForReadiness(): List<TargetStep> = listOf(this) + children.flatMap { it.flattenForReadiness() }
+    private fun TargetStep.flattenForReadiness(): List<TargetStep> =
+        listOf(this) + children.flatMap { it.flattenForReadiness() }
 }
