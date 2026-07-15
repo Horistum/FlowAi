@@ -44,8 +44,9 @@ class TargetProjectionTestBoundaryTests {
     @Test
     fun testsAndCoreUseOnlyInjectedManifestPipelineInstances() {
         val testSources = testSourceFiles()
+        val forbiddenStaticCall = "TargetManifestGenerationPipeline." + "generate("
         val staticCallOffenders = testSources.filter {
-            it.readText().contains("TargetManifestGenerationPipeline.generate(")
+            it.readText().contains(forbiddenStaticCall)
         }
         val pipelineSource = File(
             "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
