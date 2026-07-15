@@ -1,4 +1,4 @@
-# Target Registry v2.0
+# Target Registry v3.0
 
 Flow target capabilities and projection evidence are represented as versioned YAML under `targets/`.
 
@@ -8,18 +8,7 @@ This keeps target support data reviewable and extensible. Adding a target must n
 
 ```yaml
 kind: FlowTargetRegistry
-version: "2.0"
-
-expressionProfiles:
-  - id: equality-membership-condition
-    description: Equality and membership conditions over native scalar values.
-    features:
-      - node.literal
-      - node.reference
-      - operator.logical.and
-      - operator.binary.==
-      - operator.binary.!=
-      - operator.binary.in
+version: "3.0"
 
 targets:
   - name: jenkins
@@ -30,15 +19,20 @@ targets:
     projectionRules:
       - module: git
         action: checkout
-        mode: NATIVE
+        mode: native
         reason: Jenkins has a concrete Git checkout step.
         evidenceReference: targets/builtin-targets.yaml#jenkins.git.checkout
         payload:
           kind: jenkins-step
           reference: git
-          params:
-            url: param:url
-            branch: param:branch
+          bindings:
+            url:
+              kind: TASK_PARAMETER
+              name: url
+            branch:
+              kind: TASK_PARAMETER
+              name: branch
+              defaultValue: main
 ```
 
 ## Projection rules
@@ -55,16 +49,36 @@ A rule identifies one semantic action and states how that target can represent i
 
 ## Renderer payloads
 
-Target Registry 2.0 uses structured payloads rather than arbitrary command strings. The `kind` field is an opaque projection-consumer identifier, not a Flow Core enum. The registry loader validates and canonicalizes the identifier, while only the concrete edge renderer decides whether it understands that kind.
+The `kind` field is an opaque projection-consumer identifier, not a Flow Core enum. The registry loader validates and canonicalizes the identifier, while only the concrete edge renderer decides whether it understands that kind.
 
 Consequences:
 
 - Flow Core does not enumerate Jenkins, GitHub Actions, Tekton, or future target payload kinds.
-- Adding a new target payload kind does not change Intent, AST, ExecutionPlan, materialization semantics, or the public Target Manifest structure.
-- Generic readiness validates the presence, target binding, reference, and evidence of a payload.
-- A concrete renderer still fails closed when it receives a payload kind it does not own.
+- Adding a new target payload kind does not change Intent, AST, ExecutionPlan or materialization semantics.
+- Generic readiness validates payload presence, target binding, reference, evidence and typed bindings.
+- A concrete renderer still fails closed when it receives a payload kind or binding it does not own.
 
-Payload parameters may reference semantic task parameters, inputs, or stable literals. The materialization resolver validates those references and carries the resolved payload into Target Manifest 2.0.
+## Typed bindings
+
+Target Registry 3.0 replaces prefix-encoded strings such as `param:url`, `input:name` and `literal:value` with discriminated binding objects.
+
+Supported binding kinds are:
+
+| Kind | Registry meaning | Manifest behavior |
+|---|---|---|
+| `LITERAL` | Stable literal value | Preserved with its literal provenance |
+| `TASK_PARAMETER` | Read a named task parameter | Resolved during manifest generation |
+| `TASK_INPUT` | Read a named task input | Resolved during manifest generation |
+| `TASK_METADATA` | Read task `ID` or `TARGET` | Resolved during manifest generation |
+| `FLOW_INPUT` | Reference a top-level Flow input | Remains symbolic for the edge renderer |
+| `SECRET` | Reference an opaque secret | Remains symbolic and requires renderer evidence |
+| `ARTIFACT` | Reference a named artifact | Remains symbolic and requires renderer evidence |
+| `TASK_OUTPUT` | Reference a named output of another task | Remains symbolic for dependency-aware rendering |
+| `TARGET_EXPRESSION` | Explicit target-owned expression | Allowed only for the declared target |
+
+Compile-time bindings preserve their kind after resolution. A resolved `TASK_PARAMETER` therefore carries its source name and resolved value instead of collapsing into an anonymous string.
+
+Missing required task parameters or inputs fail manifest generation. Optional values require an explicit `defaultValue`; an absent value is never silently converted to an empty string.
 
 ## Expression profiles
 
