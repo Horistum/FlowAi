@@ -55,6 +55,12 @@ Flow must not define:
 - template ownership contracts
 - silent semantic fallbacks
 
+## Target-neutral Core rule
+
+Flow Core may validate generic projection evidence, but it must not enumerate target-specific payload kinds or treat Jenkins, GitHub Actions, Tekton, or any other platform as part of the semantic architecture.
+
+Adding a new target or payload kind must not require changing Intent, AST, ExecutionPlan, materialization semantics, or the public TargetManifest structure. Concrete renderers may understand target syntax only at the edge serialization boundary and must fail closed when evidence is incomplete or unrecognized.
+
 ## Change rule
 
 Every larger change must pass an Architecture Decision Gate before implementation. The decision must explain which part of the core pipeline is strengthened and which drift risks are explicitly rejected.

@@ -34,7 +34,7 @@ targets:
         reason: Jenkins has a concrete Git checkout step.
         evidenceReference: targets/builtin-targets.yaml#jenkins.git.checkout
         payload:
-          kind: JENKINS_STEP
+          kind: jenkins-step
           reference: git
           params:
             url: param:url
@@ -55,13 +55,16 @@ A rule identifies one semantic action and states how that target can represent i
 
 ## Renderer payloads
 
-Target Registry 2.0 supports structured payload kinds rather than arbitrary command strings:
+Target Registry 2.0 uses structured payloads rather than arbitrary command strings. The `kind` field is an opaque projection-consumer identifier, not a Flow Core enum. The registry loader validates and canonicalizes the identifier, while only the concrete edge renderer decides whether it understands that kind.
 
-- `JENKINS_STEP`
-- `GITHUB_ACTION`
-- `TEKTON_TASK`
+Consequences:
 
-Payload parameters may reference semantic task parameters, inputs or stable literals. The materialization resolver validates those references and carries the resolved payload into Target Manifest 2.0.
+- Flow Core does not enumerate Jenkins, GitHub Actions, Tekton, or future target payload kinds.
+- Adding a new target payload kind does not change Intent, AST, ExecutionPlan, materialization semantics, or the public Target Manifest structure.
+- Generic readiness validates the presence, target binding, reference, and evidence of a payload.
+- A concrete renderer still fails closed when it receives a payload kind it does not own.
+
+Payload parameters may reference semantic task parameters, inputs, or stable literals. The materialization resolver validates those references and carries the resolved payload into Target Manifest 2.0.
 
 ## Expression profiles
 

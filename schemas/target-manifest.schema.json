@@ -64,7 +64,7 @@
     "rendererPayload": {
       "type":"object", "required":["kind","target","reference","parameters","evidenceReference"],
       "properties": {
-        "kind":{"enum":["JENKINS_STEP","GITHUB_ACTION","TEKTON_TASK"]},
+        "kind":{"type":"string","minLength":1,"pattern":"^[A-Za-z0-9][A-Za-z0-9._+:/-]*$"},
         "target":{"type":"string"}, "reference":{"type":"string","minLength":1},
         "parameters":{"type":"object","additionalProperties":{"type":"string"}},
         "evidenceReference":{"type":"string","minLength":1}

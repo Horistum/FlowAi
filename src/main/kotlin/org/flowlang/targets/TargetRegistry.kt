@@ -7,7 +7,6 @@ import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.capabilities.TargetExpressionSupportDeclaration
 import org.flowlang.capabilities.TargetProjectionMode
 import org.flowlang.capabilities.TargetProjectionRule
-import org.flowlang.capabilities.TargetRendererPayloadKind
 import org.flowlang.capabilities.TargetRendererPayloadTemplate
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.serialization.FlowYaml
@@ -51,14 +50,17 @@ data class TargetProjectionPayloadDescriptor(
     val parameters: Map<String, String> = emptyMap()
 ) {
     fun toTemplate(targetName: String): TargetRendererPayloadTemplate {
-        val parsedKind = when (kind.trim().lowercase().replace('-', '_')) {
-            "jenkins_step" -> TargetRendererPayloadKind.JENKINS_STEP
-            "github_action" -> TargetRendererPayloadKind.GITHUB_ACTION
-            "tekton_task" -> TargetRendererPayloadKind.TEKTON_TASK
-            else -> error("Unknown renderer payload kind '$kind' for target '$targetName'.")
+        val payloadKind = kind.trim()
+        require(payloadKind.isNotBlank()) { "Projection payload kind must not be blank for target '$targetName'." }
+        require(PAYLOAD_KIND.matches(payloadKind)) {
+            "Projection payload kind '$kind' for target '$targetName' is not a valid opaque projection identifier."
         }
         require(reference.isNotBlank()) { "Projection payload reference must not be blank for target '$targetName'." }
-        return TargetRendererPayloadTemplate(parsedKind, reference, parameters)
+        return TargetRendererPayloadTemplate(payloadKind.uppercase().replace('-', '_'), reference, parameters)
+    }
+
+    companion object {
+        private val PAYLOAD_KIND = Regex("^[A-Za-z0-9][A-Za-z0-9._+:/-]*$")
     }
 }
 

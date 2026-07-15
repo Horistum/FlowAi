@@ -45,7 +45,11 @@
     },
     "payload": {
       "type":"object", "required":["kind","reference"],
-      "properties": { "kind":{"enum":["jenkins-step","github-action","tekton-task"]}, "reference":{"type":"string","minLength":1}, "parameters":{"type":"object","additionalProperties":{"type":"string"}} },
+      "properties": {
+        "kind":{"type":"string","minLength":1,"pattern":"^[A-Za-z0-9][A-Za-z0-9._+:/-]*$"},
+        "reference":{"type":"string","minLength":1},
+        "parameters":{"type":"object","additionalProperties":{"type":"string"}}
+      },
       "additionalProperties": false
     }
   },

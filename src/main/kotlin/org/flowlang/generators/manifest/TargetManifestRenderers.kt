@@ -1,7 +1,5 @@
 package org.flowlang.generators.manifest
 
-import org.flowlang.capabilities.TargetRendererPayloadKind
-
 class JenkinsManifestRenderer {
     fun render(manifest: TargetManifest): String {
         TargetRendererContractValidator.requireRenderable(manifest, "jenkins")
@@ -39,7 +37,6 @@ class JenkinsManifestRenderer {
         }
         sb.appendLine("  }")
     }
-
 
     private fun renderJenkinsTriggers(manifest: TargetManifest, sb: StringBuilder) {
         val schedules = manifest.triggers.filter { it.type == "SCHEDULE" }
@@ -126,7 +123,7 @@ class JenkinsManifestRenderer {
 
     private fun renderJenkinsLeafBody(step: TargetStep, sb: StringBuilder, indent: String) {
         val payload = requireNotNull(step.rendererPayload) { "Executable Jenkins step '${step.id}' has no renderer payload." }
-        require(payload.kind == TargetRendererPayloadKind.JENKINS_STEP) {
+        require(payload.kind == BuiltInProjectionPayloadKinds.JENKINS_STEP) {
             "Jenkins cannot render payload kind '${payload.kind}' for step '${step.id}'."
         }
         when (payload.reference) {
@@ -221,7 +218,7 @@ class GitHubActionsManifestRenderer(
         sb.appendLine("    steps:")
         materializedSteps.forEach { step ->
             val payload = requireNotNull(step.rendererPayload) { "Executable GitHub Actions step '${step.id}' has no renderer payload." }
-            require(payload.kind == TargetRendererPayloadKind.GITHUB_ACTION) {
+            require(payload.kind == BuiltInProjectionPayloadKinds.GITHUB_ACTION) {
                 "GitHub Actions cannot render payload kind '${payload.kind}' for step '${step.id}'."
             }
             sb.appendLine("      - name: ${yamlScalar(step.name)}")
@@ -298,7 +295,7 @@ class TektonManifestRenderer {
         }
         val step = materializedSteps.single()
         val payload = requireNotNull(step.rendererPayload) { "Executable Tekton step '${step.id}' has no renderer payload." }
-        require(payload.kind == TargetRendererPayloadKind.TEKTON_TASK) {
+        require(payload.kind == BuiltInProjectionPayloadKinds.TEKTON_TASK) {
             "Tekton cannot render payload kind '${payload.kind}' for step '${step.id}'."
         }
         sb.appendLine("      taskRef:")
