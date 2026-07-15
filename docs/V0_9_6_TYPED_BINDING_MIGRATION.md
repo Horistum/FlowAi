@@ -24,7 +24,7 @@ parameters:
 The resolver parsed prefixes and collapsed every value into `Map<String, String>`. That design had four material problems:
 
 1. invalid combinations could not be rejected structurally;
-2. missing parameters became empty strings;
+2. missing parameters became empty strings or aborted review generation;
 3. source provenance disappeared after resolution;
 4. runtime references such as Flow inputs, secrets and task outputs could not be represented consistently.
 
@@ -138,7 +138,7 @@ rendererPayload:
     url: https://example.invalid/repository.git
 ```
 
-Target Manifest 3.0 payload:
+Target Manifest 3.0 resolved payload:
 
 ```yaml
 rendererPayload:
@@ -150,32 +150,59 @@ rendererPayload:
       kind: TASK_PARAMETER
       name: url
       value: https://example.invalid/repository.git
+      resolutionStatus: RESOLVED
   evidenceReference: targets/builtin-targets.yaml#targets.jenkins.projectionRules.git.checkout
 ```
 
 The resolved value remains associated with its semantic origin. Consumers must no longer treat payload values as an untyped string map.
 
+## Resolution states
+
+Target Registry templates do not declare a resolution state. Manifest generation assigns exactly one state to every binding:
+
+- `RESOLVED`: a compile-time value is available and preserved with its source provenance;
+- `SYMBOLIC`: a valid runtime reference remains for the concrete edge renderer;
+- `UNRESOLVED`: required compile-time evidence is missing, with an explicit reason.
+
+An unresolved binding remains part of a structurally valid Target Manifest and review artifact:
+
+```yaml
+bindings:
+  url:
+    kind: TASK_PARAMETER
+    name: url
+    resolutionStatus: UNRESOLVED
+    reason: Task 'checkout' does not provide required parameter 'url' for projection binding 'url'.
+```
+
+`UNRESOLVED` never becomes executable. Generic readiness reports `TARGET_BINDING_UNRESOLVED` and produces a review-only artifact. This preserves the semantic inventory without inventing a URL, replacing the value with an empty string, or aborting unrelated review evidence.
+
 ## Fail-closed behavior
 
-Manifest generation now fails when:
+Manifest or registry validation fails when:
 
-- a required task parameter or task input is absent;
 - a binding contains fields that do not belong to its declared kind;
-- a compile-time binding is pre-resolved in registry evidence;
-- a resolved manifest binding lacks its resolved value;
+- a registry template pre-declares a resolution result;
+- a `RESOLVED` compile-time binding lacks its value;
+- an `UNRESOLVED` binding lacks its reason;
+- a symbolic runtime binding declares a value;
 - a target expression is bound to a different target;
 - a concrete renderer does not support the binding kind.
 
-No missing value is silently replaced with an empty string.
+Executable readiness fails closed when any structurally valid binding remains `UNRESOLVED`.
+
+No missing value is silently replaced with an empty string, and review generation is not discarded merely because executable evidence is incomplete.
 
 ## Consumer migration checklist
 
 1. Reject Target Registry and Target Manifest documents whose version is not supported.
 2. Replace reads of `payload.parameters` with reads of `payload.bindings`.
 3. Dispatch on the binding `kind` discriminator.
-4. Preserve symbolic runtime references until the concrete target rendering boundary.
-5. Fail closed on unknown kinds and invalid field combinations.
-6. Update exact snapshots and conformance fixtures to contract version `3.0`.
+4. Inspect `resolutionStatus` before attempting target rendering.
+5. Preserve symbolic runtime references until the concrete target rendering boundary.
+6. Treat `UNRESOLVED` as review-only, never executable.
+7. Fail closed on unknown kinds and invalid field combinations.
+8. Update exact snapshots and conformance fixtures to contract version `3.0`.
 
 ## Compatibility statement
 
