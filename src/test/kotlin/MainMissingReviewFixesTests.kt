@@ -18,9 +18,9 @@ import org.flowlang.ast.SystemNode
 import org.flowlang.ast.ValueTypeNode
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
-import org.flowlang.generators.manifest.JenkinsManifestRenderer
-import org.flowlang.generators.manifest.TargetExpressionTranslator
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestRenderer
+import org.flowlang.targets.builtin.TargetExpressionTranslator
 import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.tests.TargetExpressionTestEvidence
