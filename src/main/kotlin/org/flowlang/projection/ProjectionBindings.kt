@@ -1,5 +1,7 @@
 package org.flowlang.projection
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
 /**
  * Target-neutral binding kinds carried from target registry projection evidence
  * into Target Manifest. The Core validates structure and provenance, while edge
@@ -27,6 +29,7 @@ enum class TaskMetadataField { ID, TARGET }
  * semantic origin by retaining the binding kind and filling [value]. Runtime
  * references such as FLOW_INPUT, SECRET and TASK_OUTPUT remain symbolic.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProjectionBinding(
     val kind: ProjectionBindingKind,
     val value: String? = null,
