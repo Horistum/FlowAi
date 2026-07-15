@@ -2,6 +2,7 @@ package org.flowlang.generators.manifest
 
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingKind
+import org.flowlang.projection.ProjectionBindingResolutionStatus
 
 object TargetReviewArtifactRenderer {
     fun render(manifest: TargetManifest, readiness: TargetRenderReadiness): String {
@@ -70,9 +71,12 @@ object TargetReviewArtifactRenderer {
                 payload.bindings.forEach { (name, binding) ->
                     sb.appendLine("        - name: ${quoted(name)}")
                     sb.appendLine("          kind: ${quoted(binding.kind.name)}")
-                    sb.appendLine("          resolved: ${binding.isResolvedForReview()}")
+                    sb.appendLine("          resolutionStatus: ${quoted(binding.resolutionStatus?.name ?: "UNKNOWN")}")
                     binding.sourceReference()?.let { source ->
                         sb.appendLine("          source: ${quoted(source)}")
+                    }
+                    binding.reason?.let { reason ->
+                        sb.appendLine("          reason: ${quoted(reason)}")
                     }
                 }
             }
@@ -101,15 +105,19 @@ object TargetReviewArtifactRenderer {
         val nodeId: String,
         val parameter: String,
         val kind: String,
+        val resolutionStatus: String,
         val source: String,
-        val evidence: String
+        val evidence: String,
+        val reason: String? = null
     ) {
         fun appendTo(sb: StringBuilder) {
             sb.appendLine("    - nodeId: ${quoted(nodeId)}")
             sb.appendLine("      parameter: ${quoted(parameter)}")
             sb.appendLine("      kind: ${quoted(kind)}")
+            sb.appendLine("      resolutionStatus: ${quoted(resolutionStatus)}")
             sb.appendLine("      source: ${quoted(source)}")
             sb.appendLine("      evidence: ${quoted(evidence)}")
+            reason?.let { sb.appendLine("      reason: ${quoted(it)}") }
         }
     }
 
@@ -120,20 +128,15 @@ object TargetReviewArtifactRenderer {
 
     private fun TargetStep.typedBindingRequirements(): List<BindingRequirement> =
         rendererPayload?.bindings.orEmpty().mapNotNull { (parameter, binding) ->
-            if (binding.kind in setOf(
-                    ProjectionBindingKind.FLOW_INPUT,
-                    ProjectionBindingKind.SECRET,
-                    ProjectionBindingKind.ARTIFACT,
-                    ProjectionBindingKind.TASK_OUTPUT,
-                    ProjectionBindingKind.TARGET_EXPRESSION
-                )
-            ) {
+            if (binding.resolutionStatus != ProjectionBindingResolutionStatus.RESOLVED) {
                 BindingRequirement(
                     nodeId = id,
                     parameter = parameter,
                     kind = binding.kind.name,
+                    resolutionStatus = binding.resolutionStatus?.name ?: "UNKNOWN",
                     source = binding.sourceReference().orEmpty(),
-                    evidence = rendererPayload?.evidenceReference.orEmpty()
+                    evidence = rendererPayload?.evidenceReference.orEmpty(),
+                    reason = binding.reason
                 )
             } else {
                 null
@@ -146,18 +149,11 @@ object TargetReviewArtifactRenderer {
                 nodeId = id,
                 parameter = parameter,
                 kind = "LEGACY_SECRET_REFERENCE",
+                resolutionStatus = "SYMBOLIC",
                 source = match.groupValues[1],
                 evidence = "step.params"
             )
         }.toList()
-    }
-
-    private fun ProjectionBinding.isResolvedForReview(): Boolean = when (kind) {
-        ProjectionBindingKind.TASK_PARAMETER,
-        ProjectionBindingKind.TASK_INPUT,
-        ProjectionBindingKind.TASK_METADATA,
-        ProjectionBindingKind.LITERAL -> value != null
-        else -> false
     }
 
     private fun ProjectionBinding.sourceReference(): String? = when (kind) {
@@ -168,8 +164,16 @@ object TargetReviewArtifactRenderer {
         ProjectionBindingKind.FLOW_INPUT -> name?.let { "flow.input:$it" }
         ProjectionBindingKind.SECRET -> name?.let { "secret:$it" }
         ProjectionBindingKind.ARTIFACT -> name?.let { "artifact:$it" }
-        ProjectionBindingKind.TASK_OUTPUT -> if (taskId != null && output != null) "task.output:$taskId.$output" else null
-        ProjectionBindingKind.TARGET_EXPRESSION -> if (target != null && expression != null) "target.expression:$target" else null
+        ProjectionBindingKind.TASK_OUTPUT -> if (taskId != null && output != null) {
+            "task.output:$taskId.$output"
+        } else {
+            null
+        }
+        ProjectionBindingKind.TARGET_EXPRESSION -> if (target != null && expression != null) {
+            "target.expression:$target"
+        } else {
+            null
+        }
     }
 
     private fun TargetStep.flattenForReview(): List<TargetStep> =
