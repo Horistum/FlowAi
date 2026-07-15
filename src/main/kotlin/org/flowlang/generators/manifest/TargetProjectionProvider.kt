@@ -120,4 +120,15 @@ class TargetManifestGenerationPipeline(
         compatibility.assertAllowed(strict = strict)
         return projections.requireProvider(compatibility.target).generate(plan, compatibility)
     }
+
+    companion object {
+        /** Temporary bridge removed with the legacy monolithic conformance call site. */
+        internal fun generate(
+            plan: ExecutionPlan,
+            compatibility: CompatibilityReport,
+            strict: Boolean = false
+        ): TargetManifest = org.flowlang.targets.builtin.BuiltInTargetProjections
+            .pipeline()
+            .generate(plan, compatibility, strict)
+    }
 }
