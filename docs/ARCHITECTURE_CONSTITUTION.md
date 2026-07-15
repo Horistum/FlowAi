@@ -61,6 +61,14 @@ Flow Core may validate generic projection evidence, but it must not enumerate ta
 
 Adding a new target or payload kind must not require changing Intent, AST, ExecutionPlan, materialization semantics, or the public TargetManifest structure. Concrete renderers may understand target syntax only at the edge serialization boundary and must fail closed when evidence is incomplete or unrecognized.
 
+## Target projection ownership rule
+
+Flow Core may define immutable target-neutral provider and registry contracts for manifest generation and serialization. It must not instantiate, discover, select or enumerate concrete target projections.
+
+Concrete generators, renderers, payload identifiers, binding syntax and expression translation belong to edge target packages. Application and conformance composition roots may assemble a finite built-in provider registry explicitly. That registry must not perform classpath scanning, dynamic loading, lifecycle callbacks or third-party plugin discovery.
+
+Adding a target projection may require registering a new edge provider in a distribution composition root, but it must not require editing Core generation routing or introducing a target switch into semantic, planning, materialization or manifest contracts.
+
 ## Change rule
 
 Every larger change must pass an Architecture Decision Gate before implementation. The decision must explain which part of the core pipeline is strengthened and which drift risks are explicitly rejected.
