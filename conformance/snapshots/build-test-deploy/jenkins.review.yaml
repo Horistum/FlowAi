@@ -4,7 +4,7 @@ metadata:
   name: "build-test-deploy"
 spec:
   standardVersion: "0.8.0"
-  manifestVersion: "2.0"
+  manifestVersion: "3.0"
   target: "jenkins"
   capabilityCompatibility: "SUPPORTED"
   effectiveCompatibility: "PARTIAL"
@@ -14,6 +14,9 @@ spec:
   executable: false
   reason: "Target syntax was not emitted because required materialization, trigger, or renderer payload evidence is unresolved."
   findings:
+    - nodeId: "git_checkout_1"
+      status: "TARGET_BINDING_UNRESOLVED"
+      reason: "Binding 'url' is unresolved: Task 'git_checkout_1' does not provide required parameter 'url' for projection binding 'url'."
     - nodeId: "standard_execute_1"
       status: "NOTES_PROJECTED"
       reason: "Standard semantic work is preserved for review until a concrete Jenkins integration payload is declared."
@@ -46,6 +49,16 @@ spec:
       rendererPayloadKind: "JENKINS_STEP"
       rendererPayloadReference: "git"
       rendererPayloadEvidence: "targets/builtin-targets.yaml#targets.jenkins.projectionRules.git.checkout"
+      rendererBindings:
+        - name: "url"
+          kind: "TASK_PARAMETER"
+          resolutionStatus: "UNRESOLVED"
+          source: "task.parameter:url"
+          reason: "Task 'git_checkout_1' does not provide required parameter 'url' for projection binding 'url'."
+        - name: "branch"
+          kind: "TASK_PARAMETER"
+          resolutionStatus: "RESOLVED"
+          source: "task.parameter:branch"
     - nodeId: "standard_execute_1"
       module: "standard"
       action: "execute"
@@ -95,3 +108,11 @@ spec:
       materializationSource: ""
       projectionArtifact: "artifact.notify-send-1"
       rendererPayloadPresent: false
+  bindingRequirements:
+    - nodeId: "git_checkout_1"
+      parameter: "url"
+      kind: "TASK_PARAMETER"
+      resolutionStatus: "UNRESOLVED"
+      source: "task.parameter:url"
+      evidence: "targets/builtin-targets.yaml#targets.jenkins.projectionRules.git.checkout"
+      reason: "Task 'git_checkout_1' does not provide required parameter 'url' for projection binding 'url'."
