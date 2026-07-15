@@ -34,16 +34,12 @@ enum class SupportLevel { SUPPORTED, PARTIAL, UNSUPPORTED, REQUIRES_RUNTIME }
 enum class TargetProjectionMode { NATIVE, NOTES_PROJECTED, ADAPTER_REQUIRED, UNSUPPORTED, BLOCKED }
 
 /**
- * Opaque projection-consumer identifier.
- *
- * Flow Core validates this value structurally but does not enumerate Jenkins,
- * GitHub Actions, Tekton, or any future target vocabulary. Concrete edge
- * renderers own the identifiers they understand.
+ * Structured renderer payload template with an opaque projection-consumer kind.
+ * Core validates the identifier structurally; concrete edge renderers own its
+ * interpretation.
  */
-typealias TargetRendererPayloadKind = String
-
 data class TargetRendererPayloadTemplate(
-    val kind: TargetRendererPayloadKind,
+    val kind: String,
     val reference: String,
     val parameters: Map<String, String> = emptyMap()
 )
