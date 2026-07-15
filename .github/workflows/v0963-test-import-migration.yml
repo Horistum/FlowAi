@@ -19,15 +19,6 @@ jobs:
           ref: feature/v0963-core-target-projection-separation
           fetch-depth: 0
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
       - name: Migrate concrete projection imports
         shell: bash
         run: |
@@ -38,20 +29,19 @@ jobs:
           replacements = {
               'import org.flowlang.generators.manifest.JenkinsManifestGenerator':
                   'import org.flowlang.targets.builtin.JenkinsManifestGenerator',
-              'import org.flowlang.generators.manifest.JenkinsManifestRenderer':
+             'import org.flowlang.generators.manifest.JenkinsManifestRenderer':
                   'import org.flowlang.targets.builtin.JenkinsManifestRenderer',
               'import org.flowlang.generators.manifest.GitHubActionsManifestGenerator':
-                  'import org.flowlang.targets.builtin.GitHubActionsManifestGenerator',
-              'import org.flowlang.generators.manifest.GitHubActionsManifestRenderer':
-                  'import org.flowlang.targets.builtin.GitHubActionsManifestRenderer',
+                  'import org.flowlang.generators.manifest.GitHubActionsManifestRenderer':
+                  'import org.flowlang.targets.builtin.GitHubActionsManifestRender',
               'import org.flowlang.generators.manifest.TektonManifestGenerator':
                   'import org.flowlang.targets.builtin.TektonManifestGenerator',
-              'import org.flowlang.generators.manifest.TektonManifestRenderer':
-                  'import org.flowlang.targets.builtin.TektonManifestRenderer',
+              'import org.flowlang.generators.manifest.TektonManifestRender':
+                  'import org.flowlang.targets.builtin.TektonManifestRender',
               'import org.flowlang.generators.manifest.TargetExpressionTranslator':
                   'import org.flowlang.targets.builtin.TargetExpressionTranslator',
               'import org.flowlang.generators.manifest.TargetExpressionTranslationException':
-                  'import org.flowlang.targets.builtin.TargetExpressionTranslationException',
+                  'import org.flowlang.generators.manifest.TargetExpressionTranslationException',
           }
 
           changed = []
@@ -63,18 +53,18 @@ jobs:
                       migrated = migrated.replace(old, new)
 
                   if 'TargetManifestGenerationPipeline.generate(' in migrated:
-                      migrated = migrated.replace(
-                          'import org.flowlang.generators.manifest.TargetManifestGenerationPipeline\n',
-                          'import org.flowlang.targets.builtin.BuiltInTargetProjections\n'
-                      )
-                      migrated = migrated.replace(
-                          'TargetManifestGenerationPipeline.generate(',
-                          'BuiltInTargetProjections.pipeline().generate('
-                      )
+                    migrated = migrated.replace(
+                        'import org.flowlang.generators.manifest.TargetManifestGenerationPipeline\n',
+                        'import org.flowlang.targets.builtin.BuiltInTargetProjections\n'
+                    )
+                    migrated = migrated.replace(
+                        'TargetManifestGenerationPipeline.generate(',
+                        'BuiltInTargetProjections.pipeline().generate('
+                    )
 
                   if migrated != original:
-                      path.write_text(migrated)
-                      changed.append(str(path))
+                    path.write_text(migrated)
+                    changed.append(str(path))
 
           if not changed:
               raise SystemExit('No legacy test projection imports were found to migrate.')
@@ -86,19 +76,13 @@ jobs:
                   text = path.read_text()
                   for token in forbidden:
                       if token in text:
-                          offenders.append(f'{path}: {token}')
+                        offenders.append(f'{path}: {token}')
           if offenders:
               raise SystemExit('Legacy test projection references remain:\n' + '\n'.join(offenders))
 
           print(f'Migrated {len(changed)} test files:')
           print('\n'.join(changed))
           PY
-
-      - name: Compile migrated tests
-        shell: bash
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon compileTestKotlin
 
       - name: Commit migration and remove one-shot workflow
         shell: bash
