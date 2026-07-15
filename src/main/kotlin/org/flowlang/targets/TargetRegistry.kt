@@ -56,7 +56,7 @@ data class TargetProjectionPayloadDescriptor(
             "Projection payload kind '$kind' for target '$targetName' is not a valid opaque projection identifier."
         }
         require(reference.isNotBlank()) { "Projection payload reference must not be blank for target '$targetName'." }
-        return TargetRendererPayloadTemplate(payloadKind, reference, parameters)
+        return TargetRendererPayloadTemplate(payloadKind.uppercase().replace('-', '_'), reference, parameters)
     }
 
     companion object {
