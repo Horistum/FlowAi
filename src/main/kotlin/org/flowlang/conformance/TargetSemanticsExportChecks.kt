@@ -42,14 +42,12 @@ internal class TargetSemanticsExportChecks(
             }
         }
         val conditions = matrix.entries.first { it.feature == "conditions" }
-        require(conditions.jenkins == derivedConditionSupport("jenkins")) {
-            "Matrix Jenkins conditions '${conditions.jenkins}' disagrees with TargetExpressionSupport ('${derivedConditionSupport("jenkins")}')."
-        }
-        require(conditions.githubActions == derivedConditionSupport("github-actions")) {
-            "Matrix GitHub Actions conditions '${conditions.githubActions}' disagrees with TargetExpressionSupport ('${derivedConditionSupport("github-actions")}')."
-        }
-        require(conditions.tekton == derivedConditionSupport("tekton")) {
-            "Matrix Tekton conditions '${conditions.tekton}' disagrees with TargetExpressionSupport ('${derivedConditionSupport("tekton")}')."
+        listOf("jenkins", "github-actions", "tekton").forEach { target ->
+            val declared = conditions.semanticsByTarget.getValue(target)
+            val derived = derivedConditionSupport(target)
+            require(declared == derived) {
+                "Matrix target '$target' conditions '$declared' disagree with TargetExpressionSupport ('$derived')."
+            }
         }
         require(conditions.requiredDiagnosticWhenUnsupported == "condition.expression") {
             "Unsupported condition expressions must surface the condition.expression diagnostic."
