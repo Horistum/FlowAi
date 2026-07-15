@@ -5,17 +5,16 @@ import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.cli.Json
-import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
-import org.flowlang.generators.manifest.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
+import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
-import org.flowlang.generators.manifest.TektonManifestRenderer
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.planner.FlowPlanner
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.validator.FlowValidator
 import java.io.File
 
@@ -30,17 +29,25 @@ class ReferenceSnapshotBundleGenerator(
     private val rootDir: File = File("."),
     private val registry: ModuleRegistry = ModuleRegistry.fromDirectory(File(rootDir, "modules"), includeDefaults = true),
     private val targets: Map<String, org.flowlang.capabilities.TargetCapability> =
-        TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
+        TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
+    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
+    private val manifestPipeline = TargetManifestGenerationPipeline(projections)
+
     fun generate(
         intentFile: File,
         outputDir: File,
         scenarioId: String,
-        targetIds: Set<String> = setOf("jenkins", "github-actions", "tekton")
+        targetIds: Set<String> = projections.targetIds
     ): ReferenceSnapshotSet {
         require(intentFile.isFile) { "Reference intent does not exist: ${intentFile.path}" }
         require(targetIds.isNotEmpty()) { "Reference snapshot generation requires at least one target." }
-        require(targets.keys.containsAll(targetIds)) { "Unknown reference targets: ${(targetIds - targets.keys).sorted().joinToString()}." }
+        require(targets.keys.containsAll(targetIds)) {
+            "Unknown reference targets: ${(targetIds - targets.keys).sorted().joinToString()}."
+        }
+        require(projections.targetIds.containsAll(targetIds)) {
+            "Missing reference projection providers: ${(targetIds - projections.targetIds).sorted().joinToString()}."
+        }
 
         val intent = IntentYamlLoader.load(intentFile)
         IntentCapabilityValidator(registry).validate(intent).assertValid()
@@ -59,12 +66,13 @@ class ReferenceSnapshotBundleGenerator(
             if (compatibility.hasErrors || !readiness.generationAllowed) {
                 evidence += ReferenceBlockedProjectionEvidence(compatibility, readiness)
             } else {
-                val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
+                val provider = projections.requireProvider(target)
+                val manifest = manifestPipeline.generate(plan, compatibility)
                 val renderReadiness = TargetRenderPolicy.evaluate(manifest)
                 require(renderReadiness.mode != TargetRenderMode.FAIL_FAST) {
                     "Target '$target' passed compatibility but manifest evidence is fail-fast: ${renderReadiness.findings}."
                 }
-                val rendered = render(manifest)
+                val rendered = provider.render(manifest)
                 evidence += ReferenceManifestProjectionEvidence(manifest, renderedArtifactPresent = true)
                 renderedByTarget[target] = rendered
             }
@@ -72,7 +80,9 @@ class ReferenceSnapshotBundleGenerator(
 
         val snapshot = ReferenceSnapshotHonesty.build(scenarioId, evidence)
         val validationIssues = ReferenceSnapshotHonesty.validate(snapshot)
-        require(validationIssues.isEmpty()) { "Generated reference snapshot is inconsistent: ${validationIssues.joinToString()}" }
+        require(validationIssues.isEmpty()) {
+            "Generated reference snapshot is inconsistent: ${validationIssues.joinToString()}"
+        }
 
         outputDir.deleteRecursively()
         outputDir.mkdirs()
@@ -93,13 +103,6 @@ class ReferenceSnapshotBundleGenerator(
             }
         }
         return snapshot
-    }
-
-    private fun render(manifest: org.flowlang.generators.manifest.TargetManifest): String = when (manifest.target) {
-        "jenkins" -> JenkinsManifestRenderer().render(manifest)
-        "github-actions" -> GitHubActionsManifestRenderer().render(manifest)
-        "tekton" -> TektonManifestRenderer().render(manifest)
-        else -> error("No reference renderer for target '${manifest.target}'.")
     }
 
     private fun writeJson(outputDir: File, name: String, value: Any) {
