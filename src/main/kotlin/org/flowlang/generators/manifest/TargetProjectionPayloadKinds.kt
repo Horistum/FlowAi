@@ -7,6 +7,8 @@ package org.flowlang.generators.manifest
  * planning, materialization, and registry model. Adding another renderer must
  * not require extending a Flow Core enum.
  */
-internal val String.Companion.JENKINS_STEP: String get() = "JENKINS_STEP"
-internal val String.Companion.GITHUB_ACTION: String get() = "GITHUB_ACTION"
-internal val String.Companion.TEKTON_TASK: String get() = "TEKTON_TASK"
+internal object BuiltInProjectionPayloadKinds {
+    const val JENKINS_STEP = "JENKINS_STEP"
+    const val GITHUB_ACTION = "GITHUB_ACTION"
+    const val TEKTON_TASK = "TEKTON_TASK"
+}
