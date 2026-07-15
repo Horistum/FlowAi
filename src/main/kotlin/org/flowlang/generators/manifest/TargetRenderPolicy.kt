@@ -125,6 +125,14 @@ object TargetRenderPolicy {
                 "Binding '${bindingIssue.name}' is invalid: ${bindingIssue.reason}"
             )
         }
+        val unresolvedBinding = TargetManifestBindingValidation.unresolved(payload).firstOrNull()
+        if (unresolvedBinding != null) {
+            return TargetRenderFinding(
+                step.id,
+                "TARGET_BINDING_UNRESOLVED",
+                "Binding '${unresolvedBinding.name}' is unresolved: ${unresolvedBinding.reason}"
+            )
+        }
         return null
     }
 
