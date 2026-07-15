@@ -30,10 +30,12 @@ internal class DecisionAndArtifactChecks(
     private fun checkV039TargetDecisionTraceReport(): ConformanceCheck = runCheck("v0.3.9.target-decision-trace") {
         val artifacts = buildPipeline("jenkins", strict = false)
         val compatibility = CompatibilityAnalyzer(targets)
+        val githubCompatibility = compatibility.analyze(artifacts.plan, "github-actions")
+        val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton")
         val manifests = listOf(
             artifacts.manifest,
-            manifestPipeline.generate(artifacts.plan, compatibility.analyze(artifacts.plan, "github-actions")),
-            manifestPipeline.generate(artifacts.plan, compatibility.analyze(artifacts.plan, "tekton"))
+            projections.requireProvider("github-actions").generate(artifacts.plan, githubCompatibility),
+            projections.requireProvider("tekton").generate(artifacts.plan, tektonCompatibility)
         )
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
             compatibility.negotiate(artifacts.plan, strict = false),

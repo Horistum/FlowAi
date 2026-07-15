@@ -117,10 +117,8 @@ internal class PlanningReadinessChecks(
         require(!jenkins.productionReady && !jenkins.executable) { "Review-only Jenkins manifest must not be production-ready." }
         require(jenkins.readinessEvidenceAvailable) { "Concrete Jenkins readiness must carry manifest evidence." }
 
-        val githubManifest = manifestPipeline.generate(
-            artifacts.plan,
-            compatibility.analyze(artifacts.plan, "github-actions", strict = false)
-        )
+        val githubCompatibility = compatibility.analyze(artifacts.plan, "github-actions", strict = false)
+        val githubManifest = projections.requireProvider("github-actions").generate(artifacts.plan, githubCompatibility)
         val github = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "github-actions", strict = false),
             githubManifest
@@ -128,10 +126,8 @@ internal class PlanningReadinessChecks(
         require(github.readiness == ExecutionReadinessStatus.DEGRADED) { "GitHub Actions reference manifest must remain degraded." }
         require(!github.productionReady && !github.executable) { "GitHub Actions review artifact must not be production-ready." }
 
-        val tektonManifest = manifestPipeline.generate(
-            artifacts.plan,
-            compatibility.analyze(artifacts.plan, "tekton", strict = false)
-        )
+        val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton", strict = false)
+        val tektonManifest = projections.requireProvider("tekton").generate(artifacts.plan, tektonCompatibility)
         val tekton = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "tekton", strict = false),
             tektonManifest
@@ -145,10 +141,12 @@ internal class PlanningReadinessChecks(
         val compatibility = CompatibilityAnalyzer(targets)
         val preliminary = TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false)
         require(preliminary.recommendedTarget.isEmpty()) { "Capability-only selection must not recommend a target." }
+        val githubCompatibility = compatibility.analyze(artifacts.plan, "github-actions")
+        val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton")
         val manifests = listOf(
             artifacts.manifest,
-            manifestPipeline.generate(artifacts.plan, compatibility.analyze(artifacts.plan, "github-actions")),
-            manifestPipeline.generate(artifacts.plan, compatibility.analyze(artifacts.plan, "tekton"))
+            projections.requireProvider("github-actions").generate(artifacts.plan, githubCompatibility),
+            projections.requireProvider("tekton").generate(artifacts.plan, tektonCompatibility)
         )
         val manifestTargets = manifests.map { it.target }.toSet()
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
