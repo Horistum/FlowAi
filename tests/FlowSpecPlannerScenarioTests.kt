@@ -2,6 +2,12 @@ import org.flowlang.ast.*
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.*
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestRenderer
+import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.GitHubActionsManifestRenderer
+import org.flowlang.targets.builtin.TektonManifestGenerator
+import org.flowlang.targets.builtin.TektonManifestRenderer
 import org.flowlang.parser.*
 import org.flowlang.planner.*
 import org.flowlang.validator.FlowValidator
