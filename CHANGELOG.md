@@ -6,6 +6,9 @@ All project source text is written in English. The changelog records architectur
 
 ### Added
 
+- Added the first target-scoped executable multi-step reference scenario, proving ordered native checkout and image build through the real Jenkins pipeline.
+- Added canonical `checkout-build-image` semantic snapshots and `jenkins.executable.yaml` evidence derived from the real parser-to-renderer path.
+- Added `reference-snapshot --targets` support so committed evidence can declare an explicit target scope instead of implying universal readiness.
 - Added reviewed native `docker.build` projection coverage for Jenkins, GitHub Actions and Tekton.
 - Added target-owned image-build rendering through the Jenkins Docker Pipeline object API, `docker/build-push-action@v7` and the reviewed Tekton Catalog buildah Task 0.9 contract.
 - Added behavioral and negative tests covering the complete registry-to-renderer image-build path, including path safety, interpolation, push policy and target-specific structural limits.
@@ -19,6 +22,8 @@ All project source text is written in English. The changelog records architectur
 
 ### Changed
 
+- Completed the v0.9.6 Universal Native Projection Foundation track and advanced v0.9.7 Policy-Driven Safety and Environment Classification to the next roadmap item.
+- Kept `build-test-deploy` MIXED and non-executable while documenting why isolated GitHub Actions and Tekton native actions are not yet an end-to-end workspace-continuity proof.
 - Built-in target registries now declare `docker.build` as supported only where registry evidence, provider contracts and structured renderer behavior all exist.
 - Image-build context and Dockerfile values are validated as compile-time relative workspace paths; unsafe or dynamic paths, unknown interpolation and invalid push policy fail closed.
 - Jenkins custom Dockerfile selection remains unsupported because its native plugin exposes that capability through a free-form Docker CLI argument string.
@@ -32,9 +37,9 @@ All project source text is written in English. The changelog records architectur
 
 ### Architecture boundary
 
-- `0.9.6.1` through `0.9.6.6` are bounded work identifiers toward the next package line; the published package remains `0.9.5`.
+- `0.9.6.1` through `0.9.6.7` are bounded work identifiers toward the next package line; the published package remains `0.9.5`.
 - Public Flow standard remains `0.8.0`; Intent, AST and ExecutionPlan remain `2.0`; Target Registry and Target Manifest remain `3.0`.
-- No runtime executor, SDK lifecycle, plugin discovery, shell projection, credential inference or executable multi-step reference scenario is introduced.
+- No runtime executor, SDK lifecycle, plugin discovery, shell projection, credential inference or universal cross-target executable claim is introduced.
 
 ## 0.9.5 - Universal model completion
 

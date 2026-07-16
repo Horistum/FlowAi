@@ -1,0 +1,112 @@
+{
+  "astVersion" : "2.0",
+  "sourceVersion" : "2.0",
+  "kind" : "FlowDocument",
+  "imports" : [ {
+    "type" : "ModuleImport",
+    "name" : "docker",
+    "version" : "1.0"
+  }, {
+    "type" : "ModuleImport",
+    "name" : "git",
+    "version" : "1.0"
+  } ],
+  "flow" : {
+    "type" : "Flow",
+    "name" : "checkout-build-image",
+    "input" : [ {
+      "type" : "Input",
+      "name" : "version",
+      "valueType" : {
+        "kind" : "text",
+        "values" : [ ]
+      },
+      "required" : true
+    } ],
+    "vars" : [ ],
+    "systems" : [ {
+      "type" : "System",
+      "name" : "source",
+      "systemType" : "git",
+      "config" : { }
+    }, {
+      "type" : "System",
+      "name" : "registry",
+      "systemType" : "docker",
+      "config" : { }
+    } ],
+    "triggers" : [ ],
+    "steps" : [ {
+      "type" : "Action",
+      "module" : "git",
+      "action" : "checkout",
+      "target" : {
+        "type" : "Reference",
+        "path" : [ "source" ],
+        "safe" : false,
+        "scope" : "auto"
+      },
+      "params" : {
+        "url" : {
+          "type" : "StringLiteral",
+          "value" : "https://github.com/octocat/Hello-World.git"
+        },
+        "branch" : {
+          "type" : "StringLiteral",
+          "value" : "main"
+        }
+      },
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "checkout"
+      },
+      "dependsOn" : [ ]
+    }, {
+      "type" : "Action",
+      "module" : "docker",
+      "action" : "build",
+      "target" : {
+        "type" : "Reference",
+        "path" : [ "registry" ],
+        "safe" : false,
+        "scope" : "auto"
+      },
+      "params" : {
+        "image" : {
+          "type" : "TemplateString",
+          "parts" : [ {
+            "type" : "StringLiteral",
+            "value" : "ghcr.io/flowlang/reference:"
+          }, {
+            "type" : "Reference",
+            "path" : [ "version" ],
+            "safe" : false,
+            "scope" : "auto",
+            "location" : {
+              "line" : 1,
+              "column" : 1
+            }
+          } ],
+          "sensitive" : false
+        },
+        "path" : {
+          "type" : "StringLiteral",
+          "value" : "."
+        },
+        "push" : {
+          "type" : "BooleanLiteral",
+          "value" : false
+        }
+      },
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "build_image"
+      },
+      "dependsOn" : [ "checkout" ]
+    } ]
+  },
+  "metadata" : {
+    "createdBy" : "intent-to-ast-planner",
+    "generatedByAI" : false
+  }
+}

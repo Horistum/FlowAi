@@ -1,0 +1,92 @@
+version: "0.9.6.7"
+name: "First Executable Reference Scenario"
+
+objective: "Commit the first realistic multi-step executable reference evidence through the real Flow pipeline without relabeling unresolved work."
+
+roadmapReference:
+  version: "0.9.6.7"
+  name: "First Executable Reference Scenario"
+  type: "reference-readiness"
+
+architecturePurpose: "Prove that reviewed native action coverage can compose into honest target-scoped end-to-end syntax only when ordering and workspace continuity are preserved."
+
+scope:
+  include:
+    - "A new target-neutral checkout-build-image Intent document."
+    - "Ordered git.checkout and docker.build actions with no registry push."
+    - "Jenkins-scoped canonical executable snapshot evidence."
+    - "Reference snapshot CLI target-set selection."
+    - "Behavioral tests across Intent, AST, plan, compatibility, readiness, materialization, manifest and rendering."
+    - "Conformance proving canonical file equality and executable-state honesty."
+    - "Explicit preservation of the mixed build-test-deploy reference."
+  exclude:
+    - "New native action projection rules."
+    - "Runtime execution or deployment."
+    - "Registry authentication or credential inference."
+    - "GitHub Actions cross-job workspace transfer."
+    - "Tekton PipelineRun workspace binding."
+    - "Promotion of unresolved deployment operations."
+
+nonGoals:
+  - "No runtime executor."
+  - "No shell or command projection."
+  - "No target-specific public Flow syntax."
+  - "No SDK or plugin lifecycle."
+  - "No public standard or artifact contract version bump."
+  - "No claim that isolated native actions imply cross-target scenario readiness."
+
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/cli/FlowCli.kt"
+  - "src/main/kotlin/org/flowlang/conformance/CorePipelineSnapshotChecks.kt"
+  - "conformance/snapshots/build-test-deploy/README.md"
+  - "docs/ARCHITECTURE_CONSTITUTION.md"
+  - "docs/TARGET_REGISTRY.md"
+  - "CHANGELOG.md"
+  - ".flow-agent/roadmap.yaml"
+
+expectedFilesToAdd:
+  - "examples/intent/checkout-build-image.intent.yaml"
+  - "conformance/snapshots/checkout-build-image/README.md"
+  - "conformance/snapshots/checkout-build-image/normalized-intent.json"
+  - "conformance/snapshots/checkout-build-image/flow-ast.json"
+  - "conformance/snapshots/checkout-build-image/execution-plan.json"
+  - "conformance/snapshots/checkout-build-image/snapshot-index.json"
+  - "conformance/snapshots/checkout-build-image/jenkins.executable.yaml"
+  - "tests/FlowFirstExecutableReferenceScenarioTests.kt"
+  - "docs/adr/ADR_0_9_6_7_FIRST_EXECUTABLE_REFERENCE_SCENARIO.md"
+  - ".flow-agent/reports/v0.9.6.7-first-executable-reference-scenario.md"
+
+architectureChecks:
+  - "The executable snapshot target list contains only Jenkins."
+  - "Every materialization leaf is native and has a resolved payload."
+  - "Checkout is emitted before image build in one Jenkins workspace."
+  - "The artifact contains no review wrapper, shell step or Docker CLI command."
+  - "The existing build-test-deploy snapshot remains mixed and non-executable."
+  - "GitHub Actions and Tekton are excluded for explicit continuity reasons, not silently treated as failures."
+
+validationPlan:
+  - "Run Flow Agent tooling unit tests and structure validation."
+  - "Generate the new canonical snapshot with reference-snapshot --targets jenkins."
+  - "Run focused first-executable-reference tests."
+  - "Run the complete clean test suite."
+  - "Run full standalone conformance."
+  - "Run unmodified standard Flow CI on the final clean head."
+  - "Verify one final implementation commit and no temporary workflow or transport files."
+
+riskAssessment:
+  risks:
+    - "Native action coverage could be confused with cross-step workspace continuity."
+    - "A target-scoped proof could be misrepresented as universal target support."
+    - "The existing mixed scenario could be weakened to obtain a green executable label."
+  mitigations:
+    - "Select Jenkins explicitly and record target scope in snapshot evidence and documentation."
+    - "Assert one ordered Jenkins job and checkout-before-build rendering."
+    - "Keep build-test-deploy fixtures and MIXED assertions unchanged."
+    - "Fail closed on review-only, blocked or unresolved materialization."
+
+releaseArtifacts:
+  - "Target-neutral executable reference Intent."
+  - "Jenkins executable target artifact and semantic snapshots."
+  - "Target-scoped CLI generation support."
+  - "Behavioral tests and conformance assertions."
+  - "ADR, work package, report, roadmap and changelog updates."

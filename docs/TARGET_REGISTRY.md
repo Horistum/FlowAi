@@ -115,6 +115,12 @@ Image-build context and Dockerfile bindings must resolve to safe compile-time re
 
 Targets without an explicit image-build projection rule and matching provider definition remain `ADAPTER_REQUIRED` or review-only.
 
+## Executable reference scope
+
+The first committed executable multi-step reference is `checkout-build-image`, scoped to Jenkins. The target scope is part of `snapshot-index.json`; it is not inferred from the existence of similar rules on other platforms. Jenkins keeps checkout and image build ordered in one workspace. GitHub Actions remains excluded until cross-job workspace transfer is represented, and Tekton remains excluded until complete PipelineRun workspace binding is committed as reference evidence.
+
+Native leaf coverage and end-to-end reference readiness are separate claims. A registry may support both actions while a particular generated scenario remains review-only or outside the selected executable evidence scope because continuity between those actions is not proven.
+
 ## Expression profiles
 
 A target that declares condition support selects an explicit expression profile. The profile describes Flow AST features, not a hardcoded target switch. Missing or empty evidence fails closed.
