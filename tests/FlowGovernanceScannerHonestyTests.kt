@@ -33,10 +33,25 @@ class FlowGovernanceScannerHonestyTests {
         assertFalse(report.issues.any { it.code == "ARCHITECTURE_FORBIDDEN_SYMBOL_IN_SOURCE" })
     }
 
+    @Test
+    fun concreteRenderersDoNotReturnToCoreManifestPackage() {
+        listOf(
+            "JenkinsManifestRenderer.kt",
+            "GitHubActionsManifestRenderer.kt",
+            "TektonManifestRenderer.kt",
+            "TargetProjectionRenderingSupport.kt"
+        ).forEach { name ->
+            assertFalse(
+                File("src/main/kotlin/org/flowlang/generators/manifest/$name").exists(),
+                "$name must remain outside the Core manifest package."
+            )
+        }
+    }
+
     private fun rendererSources(): String = listOf(
-        "src/main/kotlin/org/flowlang/generators/manifest/JenkinsManifestRenderer.kt",
-        "src/main/kotlin/org/flowlang/generators/manifest/GitHubActionsManifestRenderer.kt",
-        "src/main/kotlin/org/flowlang/generators/manifest/TektonManifestRenderer.kt",
-        "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionRenderingSupport.kt"
+        "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt",
+        "src/main/kotlin/org/flowlang/targets/builtin/TargetProjectionRenderingSupport.kt"
     ).joinToString("\n") { path -> File(path).readText() }
 }

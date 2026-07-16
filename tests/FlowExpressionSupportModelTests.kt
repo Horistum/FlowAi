@@ -5,8 +5,8 @@ import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.TargetExpressionSupport
-import org.flowlang.generators.manifest.TargetExpressionTranslationException
-import org.flowlang.generators.manifest.TargetExpressionTranslator
+import org.flowlang.targets.builtin.TargetExpressionTranslationException
+import org.flowlang.targets.builtin.TargetExpressionTranslator
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode

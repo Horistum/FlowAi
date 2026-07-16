@@ -16,7 +16,12 @@ class FlowCiCdBiasInventoryTests {
         assertTrue(report.scannedFiles > 50)
         assertTrue(report.evidence.isNotEmpty(), "Inventory must expose the remaining CI/CD-shaped vocabulary instead of pretending it vanished.")
         assertTrue(report.categories.keys.containsAll(setOf("target", "infrastructure", "tool", "workflow-vocabulary")))
-        assertTrue(report.adapterBoundaryEvidence.any { it.path.contains("generators/manifest") && it.term.equals("Jenkins", ignoreCase = true) })
+        assertTrue(report.adapterBoundaryEvidence.any {
+            it.path.contains("targets/builtin") && it.term.equals("Jenkins", ignoreCase = true)
+        })
+        assertFalse(report.adapterBoundaryEvidence.any {
+            it.path.contains("generators/manifest") && it.term.equals("Jenkins", ignoreCase = true)
+        }, "Concrete Jenkins vocabulary must remain at the target edge, not in Core manifest generation.")
         assertTrue(report.scenarioAndConformanceEvidence.any { it.term.equals("Kubernetes", ignoreCase = true) || it.term.equals("docker", ignoreCase = true) })
         assertTrue(
             report.requiredFollowUpAreas.containsAll(
@@ -66,10 +71,10 @@ class FlowCiCdBiasInventoryTests {
     fun classifierKeepsAdapterProjectionSeparateFromSemanticCore() {
         val root = Files.createTempDirectory("flow-cicd-bias-inventory").toFile()
         try {
-            File(root, "src/main/kotlin/org/flowlang/generators/manifest").mkdirs()
+            File(root, "src/main/kotlin/org/flowlang/targets/builtin").mkdirs()
             File(root, "src/main/kotlin/org/flowlang/intent").mkdirs()
-            File(root, "src/main/kotlin/org/flowlang/generators/manifest/TargetAdapter.kt").writeText(
-                "package org.flowlang.generators.manifest\nclass TargetAdapter { val target = \"Jenkins\" }\n"
+            File(root, "src/main/kotlin/org/flowlang/targets/builtin/TargetAdapter.kt").writeText(
+                "package org.flowlang.targets.builtin\nclass TargetAdapter { val target = \"Jenkins\" }\n"
             )
             File(root, "src/main/kotlin/org/flowlang/intent/SemanticDefault.kt").writeText(
                 "package org.flowlang.intent\nclass SemanticDefault { val defaultTarget = \"Jenkins\" }\n"
@@ -78,7 +83,7 @@ class FlowCiCdBiasInventoryTests {
             val report = CiCdBiasInventoryAnalyzer(root).analyze()
 
             assertEquals(1, report.adapterBoundaryEvidence.size)
-            assertEquals("src/main/kotlin/org/flowlang/generators/manifest/TargetAdapter.kt", report.adapterBoundaryEvidence.single().path)
+            assertEquals("src/main/kotlin/org/flowlang/targets/builtin/TargetAdapter.kt", report.adapterBoundaryEvidence.single().path)
             assertEquals(1, report.activeSemanticEvidence.size)
             assertEquals("src/main/kotlin/org/flowlang/intent/SemanticDefault.kt", report.activeSemanticEvidence.single().path)
         } finally {

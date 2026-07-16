@@ -1,8 +1,21 @@
-package org.flowlang.generators.manifest
+package org.flowlang.targets.builtin
 
-class JenkinsManifestRenderer {
-    fun render(manifest: TargetManifest): String {
-        TargetRendererContractValidator.requireRenderable(manifest, "jenkins")
+import org.flowlang.generators.manifest.TargetInput
+import org.flowlang.generators.manifest.TargetJob
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetManifestRenderer
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.generators.manifest.TargetRendererContractValidator
+import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
+import org.flowlang.generators.manifest.TargetStep
+
+class JenkinsManifestRenderer : TargetManifestRenderer {
+    override val target: String = "jenkins"
+    override val artifactFileName: String = "Jenkinsfile"
+
+    override fun render(manifest: TargetManifest): String {
+        TargetRendererContractValidator.requireRenderable(manifest, target)
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)
         check(readiness.mode == TargetRenderMode.EXECUTABLE)

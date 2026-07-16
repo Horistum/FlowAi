@@ -1,8 +1,20 @@
-package org.flowlang.generators.manifest
+package org.flowlang.targets.builtin
 
-class TektonManifestRenderer {
-    fun render(manifest: TargetManifest): String {
-        TargetRendererContractValidator.requireRenderable(manifest, "tekton")
+import org.flowlang.generators.manifest.TargetJob
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetManifestRenderer
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.generators.manifest.TargetRendererContractValidator
+import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
+import org.flowlang.generators.manifest.sanitizeId
+
+class TektonManifestRenderer : TargetManifestRenderer {
+    override val target: String = "tekton"
+    override val artifactFileName: String = "tekton-pipeline.yaml"
+
+    override fun render(manifest: TargetManifest): String {
+        TargetRendererContractValidator.requireRenderable(manifest, target)
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)
         check(readiness.mode == TargetRenderMode.EXECUTABLE)

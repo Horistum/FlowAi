@@ -12,7 +12,7 @@ import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.conformance.ReferenceSnapshotBundleGenerator
 import org.flowlang.conformance.ReferenceSnapshotHonesty
 import org.flowlang.conformance.ReferenceSnapshotSetState
-import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.planner.ExecutionPlan
@@ -40,7 +40,7 @@ class FlowReferenceSnapshotHonestyResetTests {
             )
         )
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
-        val manifest = TargetManifestGenerationPipeline.generate(plan, compatibility)
+        val manifest = BuiltInTargetProjections.pipeline().generate(plan, compatibility)
         val readiness = TargetRenderPolicy.evaluate(manifest)
 
         assertEquals(TargetRenderMode.EXECUTABLE, readiness.mode)
@@ -101,7 +101,7 @@ class FlowReferenceSnapshotHonestyResetTests {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "tekton")
         assertTrue(compatibility.hasErrors)
         assertFailsWith<IllegalStateException> {
-            TargetManifestGenerationPipeline.generate(plan, compatibility)
+            BuiltInTargetProjections.pipeline().generate(plan, compatibility)
         }
     }
 

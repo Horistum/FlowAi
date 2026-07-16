@@ -1,5 +1,9 @@
-package org.flowlang.generators.manifest
+package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.TargetInput
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetStep
+import org.flowlang.generators.manifest.sanitizeId
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingKind
 

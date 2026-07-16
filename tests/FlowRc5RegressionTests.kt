@@ -7,8 +7,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.flowlang.standard.StandardCapabilityContracts
 import org.flowlang.intent.StandardCapability
-import org.flowlang.generators.manifest.TargetExpressionTranslator
-import org.flowlang.generators.manifest.TargetExpressionTranslationException
+import org.flowlang.targets.builtin.TargetExpressionTranslator
+import org.flowlang.targets.builtin.TargetExpressionTranslationException
 import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.tests.TargetExpressionTestEvidence
 

@@ -8,7 +8,7 @@ import org.flowlang.ast.ReferenceNode
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.GroovyExpr
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.modules.ModuleRegistry

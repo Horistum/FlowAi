@@ -4,7 +4,7 @@ import org.flowlang.capabilities.*
 import org.flowlang.intent.*
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import java.io.File
 
 fun targetConformanceTests() {

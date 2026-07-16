@@ -2,9 +2,9 @@ package org.flowlang.tests
 
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
-import org.flowlang.generators.manifest.TargetExpressionTranslationException
-import org.flowlang.generators.manifest.TargetExpressionTranslator
-import org.flowlang.generators.manifest.TektonManifestGenerator
+import org.flowlang.targets.builtin.TargetExpressionTranslationException
+import org.flowlang.targets.builtin.TargetExpressionTranslator
+import org.flowlang.targets.builtin.TektonManifestGenerator
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode

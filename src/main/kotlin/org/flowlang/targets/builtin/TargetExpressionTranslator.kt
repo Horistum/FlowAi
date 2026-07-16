@@ -1,12 +1,30 @@
-package org.flowlang.generators.manifest
+package org.flowlang.targets.builtin
 
-import org.flowlang.ast.*
+import org.flowlang.ast.BinaryExpressionNode
+import org.flowlang.ast.BooleanLiteralNode
+import org.flowlang.ast.CallExpressionNode
+import org.flowlang.ast.ExpressionNode
+import org.flowlang.ast.IdentifierLiteralNode
+import org.flowlang.ast.IndexExpressionNode
+import org.flowlang.ast.ListLiteralNode
+import org.flowlang.ast.LogicalExpressionNode
+import org.flowlang.ast.MapLiteralNode
+import org.flowlang.ast.MemberExpressionNode
+import org.flowlang.ast.NullLiteralNode
+import org.flowlang.ast.NumberLiteralNode
+import org.flowlang.ast.ReferenceNode
+import org.flowlang.ast.SecretRefNode
+import org.flowlang.ast.StringLiteralNode
+import org.flowlang.ast.TemplateStringNode
+import org.flowlang.ast.UnaryExpressionNode
+import org.flowlang.ast.UnaryPostfixExpressionNode
 import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.capabilities.TargetExpressionSupportDeclaration
 import org.flowlang.generators.GroovyExpr
+import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.parser.ExpressionParser
 
-/** Strict translation of Flow condition expressions into target syntax. */
+/** Strict translation of Flow condition expressions into target-owned syntax. */
 class TargetExpressionTranslationException(message: String, cause: Throwable? = null) : IllegalArgumentException(message, cause)
 
 object TargetExpressionTranslator {
@@ -16,7 +34,9 @@ object TargetExpressionTranslator {
         expressionSupport: TargetExpressionSupportDeclaration?
     ): String = try {
         val parsed = parse(condition)
-        TargetExpressionSupport.unsupportedReason("jenkins", expressionSupport, parsed)?.let { throw TargetExpressionTranslationException(it) }
+        TargetExpressionSupport.unsupportedReason("jenkins", expressionSupport, parsed)?.let {
+            throw TargetExpressionTranslationException(it)
+        }
         GroovyExpr(inputs.map { it.name }.toSet()).render(parsed)
     } catch (e: TargetExpressionTranslationException) {
         throw e
@@ -30,12 +50,26 @@ object TargetExpressionTranslator {
         expressionSupport: TargetExpressionSupportDeclaration?
     ): String = try {
         val parsed = parse(condition)
-        TargetExpressionSupport.unsupportedReason("github-actions", expressionSupport, parsed)?.let { throw TargetExpressionTranslationException(it) }
+        TargetExpressionSupport.unsupportedReason("github-actions", expressionSupport, parsed)?.let {
+            throw TargetExpressionTranslationException(it)
+        }
         renderGitHub(parsed, inputs.map { it.name }.toSet())
     } catch (e: TargetExpressionTranslationException) {
         throw e
     } catch (e: Exception) {
         throw TargetExpressionTranslationException("Unable to translate Flow condition to GitHub Actions expression: $condition", e)
+    }
+
+    fun tektonWhen(
+        condition: String,
+        inputs: List<TargetInput>,
+        expressionSupport: TargetExpressionSupportDeclaration?
+    ): String? = try {
+        val parsed = parse(condition)
+        if (TargetExpressionSupport.unsupportedReason("tekton", expressionSupport, parsed) != null) null
+        else renderTektonWhen(parsed, inputs.map { it.name }.toSet())
+    } catch (_: Exception) {
+        null
     }
 
     private fun parse(condition: String): ExpressionNode = ExpressionParser.parseSource(condition)
@@ -50,14 +84,22 @@ object TargetExpressionTranslator {
         is ReferenceNode -> renderGitHubRef(e.path, inputs)
         is MemberExpressionNode -> renderGitHub(e.target, inputs) + "." + e.member
         is IndexExpressionNode -> "${renderGitHub(e.target, inputs)}[${renderGitHub(e.index, inputs)}]"
-        is TemplateStringNode -> "'" + e.parts.joinToString("") { part -> if (part is StringLiteralNode) part.value else "${'$'}{{ ${renderGitHub(part, inputs)} }}" }.replace("'", "''") + "'"
+        is TemplateStringNode -> "'" + e.parts.joinToString("") { part ->
+            if (part is StringLiteralNode) part.value else "${'$'}{{ ${renderGitHub(part, inputs)} }}"
+        }.replace("'", "''") + "'"
         is ListLiteralNode -> renderGitHubJsonArray(e, inputs)
         is MapLiteralNode -> unsupported("GitHub Actions conditions do not support Flow map literals.")
         is CallExpressionNode -> when (e.function) {
-            "secret" -> e.args.firstOrNull()?.let { renderGitHub(it, inputs).trim('\'').let { name -> "secrets.$name" } } ?: "null"
+            "secret" -> e.args.firstOrNull()
+                ?.let { renderGitHub(it, inputs).trim('\'').let { name -> "secrets.$name" } }
+                ?: "null"
             else -> "${e.function}(${e.args.joinToString(", ") { renderGitHub(it, inputs) }})"
         }
-        is UnaryExpressionNode -> if (e.operator == "not") "!(${renderGitHub(e.operand, inputs)})" else "${e.operator}(${renderGitHub(e.operand, inputs)})"
+        is UnaryExpressionNode -> if (e.operator == "not") {
+            "!(${renderGitHub(e.operand, inputs)})"
+        } else {
+            "${e.operator}(${renderGitHub(e.operand, inputs)})"
+        }
         is UnaryPostfixExpressionNode -> when (e.operator) {
             "exists" -> "${renderGitHub(e.operand, inputs)} != null"
             "empty" -> "${renderGitHub(e.operand, inputs)} == ''"
@@ -68,21 +110,19 @@ object TargetExpressionTranslator {
             e.operands.joinToString(" $op ", "(", ")") { renderGitHub(it, inputs) }
         }
         is BinaryExpressionNode -> {
-            val l = renderGitHub(e.left, inputs); val r = renderGitHub(e.right, inputs)
+            val left = renderGitHub(e.left, inputs)
+            val right = renderGitHub(e.right, inputs)
             when (e.operator) {
-                "==", "!=", ">", ">=", "<", "<=" -> "$l ${e.operator} $r"
-                "contains" -> "contains($l, $r)"
-                "in" -> "contains($r, $l)"
-                "startsWith" -> "startsWith($l, $r)"
-                "endsWith" -> "endsWith($l, $r)"
+                "==", "!=", ">", ">=", "<", "<=" -> "$left ${e.operator} $right"
+                "contains" -> "contains($left, $right)"
+                "in" -> "contains($right, $left)"
+                "startsWith" -> "startsWith($left, $right)"
+                "endsWith" -> "endsWith($left, $right)"
                 "matches" -> unsupported("GitHub Actions conditions do not support Flow regex matches without an explicit adapter.")
                 else -> unsupported("GitHub Actions conditions do not support Flow operator '${e.operator}'.")
             }
         }
     }
-
-
-
 
     private fun renderGitHubJsonArray(node: ListLiteralNode, inputs: Set<String>): String {
         val json = node.items.joinToString(",", "[", "]") { githubJsonValue(it, inputs) }
@@ -103,18 +143,6 @@ object TargetExpressionTranslator {
         .replace("\"", "\\\"")
         .replace("\n", "\\n") + "\""
 
-    fun tektonWhen(
-        condition: String,
-        inputs: List<TargetInput>,
-        expressionSupport: TargetExpressionSupportDeclaration?
-    ): String? = try {
-        val parsed = parse(condition)
-        if (TargetExpressionSupport.unsupportedReason("tekton", expressionSupport, parsed) != null) null
-        else renderTektonWhen(parsed, inputs.map { it.name }.toSet())
-    } catch (_: Exception) {
-        null
-    }
-
     private fun renderTektonWhen(e: ExpressionNode, inputs: Set<String>): String? = when (e) {
         is BinaryExpressionNode -> {
             val left = tektonValue(e.left, inputs)
@@ -123,13 +151,13 @@ object TargetExpressionTranslator {
                 "==" -> "when:\n  - input: ${yamlScalar(left)}\n    operator: in\n    values:\n      - ${yamlScalar(right)}\n"
                 "!=" -> "when:\n  - input: ${yamlScalar(left)}\n    operator: notin\n    values:\n      - ${yamlScalar(right)}\n"
                 "in" -> {
-                    val rightNode = e.right
-                    val values = if (rightNode is ListLiteralNode) {
-                        rightNode.items.mapNotNull { tektonValue(it, inputs) }
+                    val values = if (e.right is ListLiteralNode) {
+                        e.right.items.mapNotNull { tektonValue(it, inputs) }
                     } else {
                         listOf(right)
                     }
-                    "when:\n  - input: ${yamlScalar(left)}\n    operator: in\n    values:\n" + values.joinToString("") { "      - ${yamlScalar(it)}\n" }
+                    "when:\n  - input: ${yamlScalar(left)}\n    operator: in\n    values:\n" +
+                        values.joinToString("") { "      - ${yamlScalar(it)}\n" }
                 }
                 else -> null
             }
@@ -149,12 +177,14 @@ object TargetExpressionTranslator {
         is NumberLiteralNode -> if (e.isInteger) e.value.toLong().toString() else e.value.toString()
         is BooleanLiteralNode -> e.value.toString()
         is IdentifierLiteralNode -> e.value
-        is ReferenceNode -> if (e.path.size == 1 && e.path.first() in inputs) "$(params.${e.path.first()})" else e.path.joinToString(".")
+        is ReferenceNode -> if (e.path.size == 1 && e.path.first() in inputs) {
+            "\$(params.${e.path.first()})"
+        } else {
+            e.path.joinToString(".")
+        }
         is MemberExpressionNode -> tektonValue(e.target, inputs)?.let { "$it.${e.member}" }
         else -> null
     }
-
-    private fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 
     private fun unsupported(message: String): Nothing = throw TargetExpressionTranslationException(message)
 

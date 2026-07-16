@@ -1,10 +1,22 @@
-package org.flowlang.generators.manifest
+package org.flowlang.targets.builtin
+
+import org.flowlang.generators.manifest.TargetEnvironmentSafetyEvidenceResolver
+import org.flowlang.generators.manifest.TargetJob
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetManifestRenderer
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.generators.manifest.TargetRendererContractValidator
+import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
 
 class GitHubActionsManifestRenderer(
     private val environmentEvidenceResolver: TargetEnvironmentSafetyEvidenceResolver = TargetEnvironmentSafetyEvidenceResolver()
-) {
-    fun render(manifest: TargetManifest): String {
-        TargetRendererContractValidator.requireRenderable(manifest, "github-actions")
+) : TargetManifestRenderer {
+    override val target: String = "github-actions"
+    override val artifactFileName: String = "github-actions.yml"
+
+    override fun render(manifest: TargetManifest): String {
+        TargetRendererContractValidator.requireRenderable(manifest, target)
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)
         check(readiness.mode == TargetRenderMode.EXECUTABLE)
@@ -45,7 +57,7 @@ class GitHubActionsManifestRenderer(
         if (manifest.inputs.isEmpty()) return
         sb.appendLine("    inputs:")
         manifest.inputs.forEach { input ->
-            sb.appendLine("      ${sanitizeId(input.name)}:")
+            sb.appendLine("      ${org.flowlang.generators.manifest.sanitizeId(input.name)}:")
             sb.appendLine("        description: ${yamlScalar(input.name)}")
             sb.appendLine("        required: ${input.required}")
             val type = when (input.type) {
@@ -65,11 +77,11 @@ class GitHubActionsManifestRenderer(
     private fun renderGitHubJob(job: TargetJob, manifest: TargetManifest, sb: StringBuilder) {
         val materializedSteps = job.steps.flatMap { it.flatten() }
         val opaqueNames = materializedSteps.flatMap { TargetProjectionDiagnostics.opaqueNames(it) }.distinct()
-        sb.appendLine("  ${sanitizeId(job.id)}:")
+        sb.appendLine("  ${org.flowlang.generators.manifest.sanitizeId(job.id)}:")
         sb.appendLine("    name: ${yamlScalar(job.name)}")
         sb.appendLine("    runs-on: ubuntu-latest")
         if (job.dependsOn.isNotEmpty()) {
-            sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
+            sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { org.flowlang.generators.manifest.sanitizeId(it) }}]")
         }
         githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
         if (job.metadata["approval"] == "true") {
@@ -105,7 +117,7 @@ class GitHubActionsManifestRenderer(
                 sb.appendLine("        with:")
                 payload.bindings.forEach { (name, binding) ->
                     val value = ProjectionBindingRenderer.githubValue(binding, "${step.id}.bindings.$name")
-                    sb.appendLine("          ${sanitizeId(name)}: ${yamlScalar(value)}")
+                    sb.appendLine("          ${org.flowlang.generators.manifest.sanitizeId(name)}: ${yamlScalar(value)}")
                 }
             }
         }
@@ -121,10 +133,10 @@ class GitHubActionsManifestRenderer(
             return parts.joinToString(" && ")
         }
         val needs = job.dependsOn.map { dependency ->
-            val safeDependency = sanitizeId(dependency)
-            val isApproval = manifest.jobs.firstOrNull { sanitizeId(it.id) == safeDependency }
-                ?.metadata
-                ?.get("approval") == "true"
+            val safeDependency = org.flowlang.generators.manifest.sanitizeId(dependency)
+            val isApproval = manifest.jobs.firstOrNull {
+                org.flowlang.generators.manifest.sanitizeId(it.id) == safeDependency
+            }?.metadata?.get("approval") == "true"
             if (isApproval) {
                 "(needs.$safeDependency.result == 'success' || needs.$safeDependency.result == 'skipped')"
             } else {

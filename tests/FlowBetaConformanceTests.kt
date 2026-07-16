@@ -1,10 +1,10 @@
 import org.flowlang.conformance.ConformanceRunner
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
-import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
-import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
-import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.GitHubActionsManifestRenderer
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner

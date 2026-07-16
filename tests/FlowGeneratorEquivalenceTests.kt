@@ -2,12 +2,12 @@ package org.flowlang.tests
 
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
-import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerator
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.generators.manifest.TektonManifestGenerator
+import org.flowlang.targets.builtin.TektonManifestGenerator
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode

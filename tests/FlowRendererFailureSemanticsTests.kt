@@ -8,10 +8,10 @@ import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
-import org.flowlang.generators.manifest.GitHubActionsManifestGenerator
-import org.flowlang.generators.manifest.GitHubActionsManifestRenderer
-import org.flowlang.generators.manifest.JenkinsManifestGenerator
-import org.flowlang.generators.manifest.JenkinsManifestRenderer
+import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.GitHubActionsManifestRenderer
+import org.flowlang.targets.builtin.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.JenkinsManifestRenderer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMaterialization
@@ -20,8 +20,8 @@ import org.flowlang.generators.manifest.TargetRenderBlockedException
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.generators.manifest.TektonManifestGenerator
-import org.flowlang.generators.manifest.TektonManifestRenderer
+import org.flowlang.targets.builtin.TektonManifestGenerator
+import org.flowlang.targets.builtin.TektonManifestRenderer
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry

@@ -1,11 +1,10 @@
-package org.flowlang.generators.manifest
+package org.flowlang.targets.builtin
 
 /**
  * Payload identifiers understood by the built-in edge renderers.
  *
- * These identifiers intentionally live outside the capability, semantic,
- * planning, materialization, and registry model. Adding another renderer must
- * not require extending a Flow Core enum.
+ * They are deliberately absent from capability, semantic, planning,
+ * materialization, registry and manifest Core contracts.
  */
 internal object BuiltInProjectionPayloadKinds {
     const val JENKINS_STEP = "JENKINS_STEP"

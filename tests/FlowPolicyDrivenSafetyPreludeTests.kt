@@ -92,7 +92,7 @@ class FlowPolicyDrivenSafetyPreludeTests {
     @Test
     fun rendererSourceDoesNotForceProductionForEveryApproval() {
         val source = File(
-            "src/main/kotlin/org/flowlang/generators/manifest/GitHubActionsManifestRenderer.kt"
+            "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
         ).readText()
         val validatorSource = File("src/main/kotlin/org/flowlang/validator/SafetyBoundaryValidator.kt").readText()
 
@@ -102,6 +102,10 @@ class FlowPolicyDrivenSafetyPreludeTests {
         assertFalse(validatorSource.contains("productionBoundaryParamNames"))
         assertFalse(validatorSource.contains("productionValues"))
         assertTrue(source.contains("environmentEvidenceResolver.resolve(manifest, job)"))
+        assertFalse(
+            File("src/main/kotlin/org/flowlang/generators/manifest/GitHubActionsManifestRenderer.kt").exists(),
+            "GitHub Actions rendering policy must not return to Core."
+        )
     }
 
     private fun manifestWithEnvironment(parameter: String, value: String): TargetManifest {
