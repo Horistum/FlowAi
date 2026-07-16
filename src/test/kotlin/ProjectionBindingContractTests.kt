@@ -21,6 +21,9 @@ import org.flowlang.generators.manifest.TargetManifestContractValidator
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetMaterializationResolver
 import org.flowlang.generators.manifest.TargetMaterializationStatus
+import org.flowlang.generators.manifest.TargetNativeProjectionBindingContract
+import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
+import org.flowlang.generators.manifest.TargetNativeProjectionDefinition
 import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
@@ -114,7 +117,14 @@ class ProjectionBindingContractTests {
                     "taskId" to ProjectionBinding.taskMetadata(TaskMetadataField.ID),
                     "flowInput" to ProjectionBinding.flowInput("environment")
                 )
-            ))
+            )),
+            nativeProjections = nativeCatalog(
+                "url" to ProjectionBindingKind.TASK_PARAMETER,
+                "branch" to ProjectionBindingKind.TASK_PARAMETER,
+                "workspace" to ProjectionBindingKind.TASK_INPUT,
+                "taskId" to ProjectionBindingKind.TASK_METADATA,
+                "flowInput" to ProjectionBindingKind.FLOW_INPUT
+            )
         )
 
         val bindings = assertNotNull(resolution.rendererPayload).bindings
@@ -144,7 +154,8 @@ class ProjectionBindingContractTests {
             projectionRules = listOf(nativeRule(
                 targetKind = "JENKINS_STEP",
                 bindings = mapOf("url" to ProjectionBinding.taskParameter("url"))
-            ))
+            )),
+            nativeProjections = nativeCatalog("url" to ProjectionBindingKind.TASK_PARAMETER)
         )
         val payload = assertNotNull(resolution.rendererPayload)
         val binding = payload.bindings.getValue("url")
@@ -251,6 +262,7 @@ class ProjectionBindingContractTests {
     fun productionSourcesContainNoPrefixEncodedPayloadBindingParser() {
         val sources = listOf(
             "src/main/kotlin/org/flowlang/generators/manifest/TargetMaterializationResolverEngine.kt",
+            "src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt",
             "src/main/kotlin/org/flowlang/targets/TargetRegistryModels.kt",
             "targets/builtin-targets.yaml"
         ).associateWith { File(it).readText() }
@@ -268,6 +280,19 @@ class ProjectionBindingContractTests {
             }
         }
     }
+
+    private fun nativeCatalog(
+        vararg bindings: Pair<String, ProjectionBindingKind>
+    ): TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.of(
+        "jenkins",
+        TargetNativeProjectionDefinition(
+            kind = "JENKINS_STEP",
+            reference = "git",
+            bindings = bindings.associate { (name, kind) ->
+                name to TargetNativeProjectionBindingContract(setOf(kind))
+            }
+        )
+    )
 
     private fun nativeRule(
         targetKind: String,

@@ -45,18 +45,19 @@ A rule identifies one semantic action and states how that target can represent i
 - `UNSUPPORTED`: the target cannot represent the action safely.
 - `BLOCKED`: architecture or safety policy forbids projection.
 
-`NATIVE` and `NOTES_PROJECTED` are not promises made by enum value alone. They require evidence and, for executable output, a structured renderer payload supported by the target renderer. Missing rules fail closed as `ADAPTER_REQUIRED`.
+`NATIVE` and `NOTES_PROJECTED` are not promises made by enum value alone. They require evidence. A `NATIVE` rule must also match an immutable provider-owned native projection definition for the same opaque payload kind, reference and typed binding schema. Missing rules fail closed as `ADAPTER_REQUIRED`; missing or inconsistent native implementation evidence rejects generation before executable readiness can be inferred.
 
 ## Renderer payloads
 
-The `kind` field is an opaque projection-consumer identifier, not a Flow Core enum. The registry loader validates and canonicalizes the identifier, while only the concrete edge renderer decides whether it understands that kind.
+The `kind` field is an opaque projection-consumer identifier, not a Flow Core enum. The registry loader validates and canonicalizes the identifier. The selected target provider must then own a matching native projection definition, while only the concrete edge renderer interprets target syntax and behavior.
 
 Consequences:
 
 - Flow Core does not enumerate Jenkins, GitHub Actions, Tekton, or future target payload kinds.
 - Adding a new target payload kind does not change Intent, AST, ExecutionPlan or materialization semantics.
+- Provider composition validates registry rules against implemented opaque payload identities and typed binding schemas.
 - Generic readiness validates payload presence, target binding, reference, evidence and typed bindings.
-- A concrete renderer still fails closed when it receives a payload kind or binding it does not own.
+- A concrete renderer still fails closed when it receives syntax or behavior it does not own.
 
 ## Typed bindings
 
@@ -78,7 +79,19 @@ Supported binding kinds are:
 
 Compile-time bindings preserve their kind after resolution. A resolved `TASK_PARAMETER` therefore carries its source name and resolved value instead of collapsing into an anonymous string.
 
-Missing required task parameters or inputs fail manifest generation. Optional values require an explicit `defaultValue`; an absent value is never silently converted to an empty string.
+Missing compile-time task parameters or inputs remain explicit `UNRESOLVED` manifest bindings. They force review-only readiness and are never silently converted to empty strings. Optional compile-time values may use an explicit `defaultValue`.
+
+## Native implementation catalogs
+
+A target distribution explicitly composes a `TargetNativeProjectionCatalog`. Each definition contains only target-neutral contract data:
+
+- opaque payload kind and reference;
+- named required or optional binding slots;
+- accepted `ProjectionBindingKind` values.
+
+The catalog does not discover plugins, select runtime handlers or define target syntax. It proves only that the selected edge distribution owns a concrete implementation contract corresponding to registry evidence. Registry declaration, provider implementation contract and generated manifest bindings must all agree.
+
+The current built-in catalog intentionally declares only the existing Jenkins Git checkout payload. GitHub Actions and Tekton have empty native catalogs until later reviewed coverage work adds concrete implementations.
 
 ## Expression profiles
 

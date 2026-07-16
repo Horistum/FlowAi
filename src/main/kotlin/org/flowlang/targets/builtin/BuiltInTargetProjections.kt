@@ -7,6 +7,7 @@ import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetMappingNote
+import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetProjectionProvider
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetStep
@@ -47,11 +48,13 @@ object BuiltInTargetProjections {
     fun pipeline(): TargetManifestGenerationPipeline = TargetManifestGenerationPipeline(registry)
 }
 
-class JenkinsManifestGenerator : ReconciledTargetManifestGenerator() {
+class JenkinsManifestGenerator(
+    override val nativeProjectionCatalog: TargetNativeProjectionCatalog = BuiltInNativeProjectionCatalogs.jenkins
+) : ReconciledTargetManifestGenerator() {
     override val target: String = "jenkins"
 
     override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
-        val steps = plan.nodes.toJenkinsTargetSteps(target, compatibility.projectionRules)
+        val steps = plan.nodes.toJenkinsTargetSteps(target, compatibility.projectionRules, nativeProjectionCatalog)
         return TargetManifest(
             target = target,
             flowName = plan.flowName,
@@ -65,13 +68,15 @@ class JenkinsManifestGenerator : ReconciledTargetManifestGenerator() {
     }
 }
 
-class GitHubActionsManifestGenerator : ReconciledTargetManifestGenerator() {
+class GitHubActionsManifestGenerator(
+    override val nativeProjectionCatalog: TargetNativeProjectionCatalog = BuiltInNativeProjectionCatalogs.githubActions
+) : ReconciledTargetManifestGenerator() {
     override val target: String = "github-actions"
 
     override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
         val jobs = mutableListOf<TargetJob>()
         plan.nodes.forEach {
-            it.toTargetJobs(jobs, condition = null, targetName = target, projectionRules = compatibility.projectionRules)
+            it.toTargetJobs(jobs, condition = null, targetName = target, projectionRules = compatibility.projectionRules, nativeProjections = nativeProjectionCatalog)
         }
         return TargetManifest(
             target = target,
@@ -92,13 +97,15 @@ class GitHubActionsManifestGenerator : ReconciledTargetManifestGenerator() {
     }
 }
 
-class TektonManifestGenerator : ReconciledTargetManifestGenerator() {
+class TektonManifestGenerator(
+    override val nativeProjectionCatalog: TargetNativeProjectionCatalog = BuiltInNativeProjectionCatalogs.tekton
+) : ReconciledTargetManifestGenerator() {
     override val target: String = "tekton"
 
     override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
         val jobs = mutableListOf<TargetJob>()
         plan.nodes.forEach {
-            it.toTargetJobs(jobs, condition = null, targetName = target, projectionRules = compatibility.projectionRules)
+            it.toTargetJobs(jobs, condition = null, targetName = target, projectionRules = compatibility.projectionRules, nativeProjections = nativeProjectionCatalog)
         }
         val resolvedJobs = jobs.ifEmpty {
             listOf(TargetJob(
@@ -149,7 +156,8 @@ class TektonManifestGenerator : ReconciledTargetManifestGenerator() {
 
 private fun List<PlanNode>.toJenkinsTargetSteps(
     targetName: String,
-    projectionRules: List<TargetProjectionRule>
+    projectionRules: List<TargetProjectionRule>,
+    nativeProjections: TargetNativeProjectionCatalog
 ): List<TargetStep> {
     val flowHandler = lastOrNull() as? TryPlanNode
     if (flowHandler != null && flowHandler.body.isEmpty() && flowHandler.errorHandler.isNotEmpty()) {
@@ -159,14 +167,14 @@ private fun List<PlanNode>.toJenkinsTargetSteps(
                 id = sanitizeId("flow_1_body"),
                 name = "flow_1 body",
                 type = "try-body",
-                children = bodyNodes.flatMap { it.toTargetSteps(targetName, projectionRules) },
+                children = bodyNodes.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
                 metadata = mapOf("sourceNodeKind" to flowHandler.kind, "tryRole" to "body")
             )
             val handlerStep = TargetStep(
                 id = sanitizeId("flow_1_handler"),
                 name = "flow_1 error handler",
                 type = "error-handler",
-                children = flowHandler.errorHandler.flatMap { it.toTargetSteps(targetName, projectionRules) },
+                children = flowHandler.errorHandler.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
                 metadata = mapOf("sourceNodeKind" to flowHandler.kind, "tryRole" to "errorHandler")
             )
             return listOf(TargetStep(
@@ -182,18 +190,19 @@ private fun List<PlanNode>.toJenkinsTargetSteps(
             ))
         }
     }
-    return flatMap { it.toTargetSteps(targetName, projectionRules) }
+    return flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) }
 }
 
 private fun PlanNode.toTargetJobs(
     out: MutableList<TargetJob>,
     condition: String?,
     targetName: String,
-    projectionRules: List<TargetProjectionRule>
+    projectionRules: List<TargetProjectionRule>,
+    nativeProjections: TargetNativeProjectionCatalog
 ) {
     when (this) {
         is TaskNode -> {
-            val step = toTargetStep(targetName, projectionRules).let {
+            val step = toTargetStep(targetName, projectionRules, nativeProjections).let {
                 if (condition != null) it.copy(metadata = it.metadata + ("condition" to condition)) else it
             }
             out += TargetJob(
@@ -205,7 +214,7 @@ private fun PlanNode.toTargetJobs(
             )
         }
         is ApprovalNode -> {
-            val step = toTargetSteps(targetName, projectionRules).single().let {
+            val step = toTargetSteps(targetName, projectionRules, nativeProjections).single().let {
                 if (condition != null) it.copy(metadata = it.metadata + ("condition" to condition)) else it
             }
             out += TargetJob(
@@ -218,23 +227,23 @@ private fun PlanNode.toTargetJobs(
         }
         is ConditionNode -> {
             then.forEach {
-                it.toTargetJobs(out, combineConditions(condition, this.condition), targetName, projectionRules)
+                it.toTargetJobs(out, combineConditions(condition, this.condition), targetName, projectionRules, nativeProjections)
             }
             otherwise.forEach {
-                it.toTargetJobs(out, combineConditions(condition, "not (${this.condition})"), targetName, projectionRules)
+                it.toTargetJobs(out, combineConditions(condition, "not (${this.condition})"), targetName, projectionRules, nativeProjections)
             }
         }
         is ParallelGroupNode -> branches.flatMap { it.steps }
-            .forEach { it.toTargetJobs(out, condition, targetName, projectionRules) }
-        is RetryGroupNode -> body.forEach { it.toTargetJobs(out, condition, targetName, projectionRules) }
+            .forEach { it.toTargetJobs(out, condition, targetName, projectionRules, nativeProjections) }
+        is RetryGroupNode -> body.forEach { it.toTargetJobs(out, condition, targetName, projectionRules, nativeProjections) }
         is TryPlanNode -> {
             val previousJobIds = out.map { it.id }
             val bodyJobs = mutableListOf<TargetJob>()
-            body.forEach { it.toTargetJobs(bodyJobs, condition, targetName, projectionRules) }
+            body.forEach { it.toTargetJobs(bodyJobs, condition, targetName, projectionRules, nativeProjections) }
             out += bodyJobs
             val guardDependencies = bodyJobs.map { it.id }.ifEmpty { previousJobIds }
             val handlerJobs = mutableListOf<TargetJob>()
-            errorHandler.forEach { it.toTargetJobs(handlerJobs, condition, targetName, projectionRules) }
+            errorHandler.forEach { it.toTargetJobs(handlerJobs, condition, targetName, projectionRules, nativeProjections) }
             out += handlerJobs.map { job ->
                 job.copy(
                     dependsOn = (job.dependsOn + guardDependencies).distinct(),
@@ -245,19 +254,19 @@ private fun PlanNode.toTargetJobs(
         is LoopNode -> out += TargetJob(
             id = sanitizeId(id),
             name = id,
-            steps = toTargetSteps(targetName, projectionRules),
+            steps = toTargetSteps(targetName, projectionRules, nativeProjections),
             metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial")
         )
         is MatchPlanNode -> out += TargetJob(
             id = sanitizeId(id),
             name = id,
-            steps = toTargetSteps(targetName, projectionRules),
+            steps = toTargetSteps(targetName, projectionRules, nativeProjections),
             metadata = mapOfNotNull("condition" to condition, "supportLevel" to "partial")
         )
         is DataOpNode, is ControlNode -> out += TargetJob(
             id = sanitizeId(id),
             name = id,
-            steps = toTargetSteps(targetName, projectionRules),
+            steps = toTargetSteps(targetName, projectionRules, nativeProjections),
             metadata = mapOfNotNull("condition" to condition)
         )
     }
