@@ -7,6 +7,7 @@ import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererContractValidator
 import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
+import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.sanitizeId
 
 class TektonManifestRenderer : TargetManifestRenderer {
@@ -30,6 +31,13 @@ class TektonManifestRenderer : TargetManifestRenderer {
         sb.appendLine("metadata:")
         sb.appendLine("  name: ${sanitizeId(manifest.flowName)}")
         sb.appendLine("spec:")
+        val checkoutWorkspaces = checkoutWorkspaceNames(manifest)
+        if (checkoutWorkspaces.isNotEmpty()) {
+            sb.appendLine("  workspaces:")
+            checkoutWorkspaces.forEach { workspace ->
+                sb.appendLine("    - name: ${sanitizeId(workspace)}")
+            }
+        }
         if (manifest.inputs.isNotEmpty()) {
             sb.appendLine("  params:")
             manifest.inputs.forEach {
@@ -39,6 +47,57 @@ class TektonManifestRenderer : TargetManifestRenderer {
         sb.appendLine("  tasks:")
         manifest.jobs.forEach { job -> renderTektonTask(job, manifest, sb) }
         return sb.toString()
+    }
+
+    private fun checkoutWorkspaceNames(manifest: TargetManifest): List<String> = manifest.jobs
+        .flatMap { job -> job.steps.flatMap { it.flatten() } }
+        .mapNotNull { step -> step.rendererPayload }
+        .filter { payload ->
+            payload.kind == BuiltInProjectionPayloadKinds.TEKTON_TASK && payload.reference == "git-clone"
+        }
+        .map { payload -> CheckoutProjectionValues.workspace(payload, "workspace", "Tekton git-clone payload") }
+        .distinct()
+
+    private fun renderGitCloneTask(
+        stepId: String,
+        payload: TargetRendererPayload,
+        sb: StringBuilder
+    ) {
+        val context = "Tekton git-clone payload for '$stepId'"
+        val url = CheckoutProjectionValues.gitUrl(payload, "url", context)
+        val revision = CheckoutProjectionValues.branch(payload, "revision", context)
+        val depth = payload.bindings["depth"]?.let {
+            CheckoutProjectionValues.depth(payload, "depth", context)
+        } ?: 0
+        val workspace = CheckoutProjectionValues.workspace(payload, "workspace", context)
+        sb.appendLine("      taskRef:")
+        sb.appendLine("        name: git-clone")
+        sb.appendLine("      params:")
+        sb.appendLine("        - name: url")
+        sb.appendLine("          value: ${yamlScalar(url)}")
+        sb.appendLine("        - name: revision")
+        sb.appendLine("          value: ${yamlScalar(revision)}")
+        sb.appendLine("        - name: depth")
+        sb.appendLine("          value: ${yamlScalar(depth.toString())}")
+        sb.appendLine("      workspaces:")
+        sb.appendLine("        - name: output")
+        sb.appendLine("          workspace: ${sanitizeId(workspace)}")
+    }
+
+    private fun renderGenericTask(
+        stepId: String,
+        payload: TargetRendererPayload,
+        sb: StringBuilder
+    ) {
+        sb.appendLine("      taskRef:")
+        sb.appendLine("        name: ${sanitizeId(payload.reference)}")
+        if (payload.bindings.isEmpty()) return
+        sb.appendLine("      params:")
+        payload.bindings.forEach { (name, binding) ->
+            val value = ProjectionBindingRenderer.tektonValue(binding, "$stepId.bindings.$name")
+            sb.appendLine("        - name: ${sanitizeId(name)}")
+            sb.appendLine("          value: ${yamlScalar(value)}")
+        }
     }
 
     private fun renderTektonTask(job: TargetJob, manifest: TargetManifest, sb: StringBuilder) {
@@ -67,15 +126,9 @@ class TektonManifestRenderer : TargetManifestRenderer {
         require(payload.kind == BuiltInProjectionPayloadKinds.TEKTON_TASK) {
             "Tekton cannot render payload kind '${payload.kind}' for step '${step.id}'."
         }
-        sb.appendLine("      taskRef:")
-        sb.appendLine("        name: ${sanitizeId(payload.reference)}")
-        if (payload.bindings.isNotEmpty()) {
-            sb.appendLine("      params:")
-            payload.bindings.forEach { (name, binding) ->
-                val value = ProjectionBindingRenderer.tektonValue(binding, "${step.id}.bindings.$name")
-                sb.appendLine("        - name: ${sanitizeId(name)}")
-                sb.appendLine("          value: ${yamlScalar(value)}")
-            }
+        when (payload.reference) {
+            "git-clone" -> renderGitCloneTask(step.id, payload, sb)
+            else -> renderGenericTask(step.id, payload, sb)
         }
     }
 }

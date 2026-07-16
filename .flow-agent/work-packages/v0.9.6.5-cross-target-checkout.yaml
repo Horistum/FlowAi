@@ -1,0 +1,108 @@
+version: "0.9.6.5"
+name: "Cross-target Checkout"
+
+objective: "Add reviewed native git.checkout projection coverage across Jenkins, GitHub Actions and Tekton using the common provider-owned architecture."
+
+roadmapReference:
+  version: "0.9.6.5"
+  name: "Cross-target Checkout"
+  type: "projection-coverage"
+
+architecturePurpose: "Prove that one target-neutral checkout action can be projected across multiple targets without sharing target syntax, losing typed values or fabricating support."
+
+scope:
+  include:
+    - "Native git.checkout registry evidence for Jenkins, GitHub Actions and Tekton."
+    - "Provider-owned checkout contracts for all selected targets."
+    - "Typed url, branch, depth and Tekton workspace bindings."
+    - "Concrete Jenkins, GitHub Actions and Tekton renderer behavior."
+    - "Behavioral tests through compatibility, manifest generation, readiness and rendering."
+    - "Negative tests for invalid GitHub repository identity, invalid depth and unsupported targets."
+    - "Architecture decision, target registry documentation and bounded report."
+  exclude:
+    - "Native image build."
+    - "Authentication or credential projection."
+    - "Executable multi-step reference scenario."
+    - "New target providers."
+
+nonGoals:
+  - "No runtime executor."
+  - "No SDK-first architecture."
+  - "No plugin lifecycle or classpath discovery."
+  - "No target-specific public DSL."
+  - "No shell or command projection."
+  - "No silent repository or workspace inference."
+  - "No public standard or artifact contract version bump."
+
+expectedFilesToInspect:
+  - "targets/builtin-targets.yaml"
+  - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+
+expectedFilesToChange:
+  - "targets/builtin-targets.yaml"
+  - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+  - "src/test/kotlin/TargetNativeProjectionArchitectureTests.kt"
+  - "tests/FlowConnectedMaterializationPipelineTests.kt"
+  - "conformance/snapshots/build-test-deploy/execution-plan.json"
+  - "docs/ARCHITECTURE_CONSTITUTION.md"
+  - "docs/TARGET_REGISTRY.md"
+  - "CHANGELOG.md"
+  - ".flow-agent/roadmap.yaml"
+
+expectedFilesToAdd:
+  - "src/main/kotlin/org/flowlang/targets/builtin/CheckoutProjectionRenderingSupport.kt"
+  - "src/test/kotlin/CrossTargetCheckoutProjectionTests.kt"
+  - "docs/adr/ADR_0_9_6_5_CROSS_TARGET_CHECKOUT.md"
+  - ".flow-agent/reports/v0.9.6.5-cross-target-checkout.md"
+
+testsToAddOrUpdate:
+  - "CrossTargetCheckoutProjectionTests"
+  - "TargetNativeProjectionArchitectureTests"
+  - "FlowConnectedMaterializationPipelineTests"
+  - "Canonical build-test-deploy execution-plan snapshot"
+
+conformanceToAddOrUpdate:
+  - "Existing full conformance must pass unchanged; behavioral checkout coverage is added as focused tests without inflating the public gate inventory."
+
+documentationToUpdate:
+  - "Architecture constitution cross-target fidelity rule."
+  - "Target Registry built-in checkout contracts."
+  - "Roadmap, changelog, ADR and bounded report."
+
+architectureChecks:
+  - "All selected targets have matching registry rules, provider contracts and renderer behavior."
+  - "Flow Core remains free of target-specific checkout syntax and repository parsing."
+  - "GitHub repository identity and Tekton workspace structure are enforced at the edge."
+  - "Targets without explicit checkout evidence remain adapter-required."
+  - "The change introduces no runtime, SDK, plugin lifecycle, shell projection or target-specific public syntax."
+
+validationPlan:
+  - "Run Flow Agent tooling unit tests."
+  - "Run Flow Agent structure validation and context generation."
+  - "Run offline cache-aware tests and conformance."
+  - "Run clean compile and the complete test suite."
+  - "Run the standalone full conformance runner."
+  - "Verify the final PR contains one implementation commit and no temporary source-export workflow."
+
+riskAssessment:
+  risks:
+    - "GitHub Actions repository input could receive an arbitrary Git URL and produce invalid workflow syntax."
+    - "Tekton git-clone could be emitted without its required workspace."
+    - "Depth could be silently ignored or interpreted differently across targets."
+  mitigations:
+    - "Normalize only proven github.com repository identities and reject other hosts."
+    - "Carry workspace identity as typed task metadata and emit Pipeline plus task workspace bindings."
+    - "Use a shared edge value contract where depth 0 means full history and positive values mean shallow checkout."
+
+releaseArtifacts:
+  - "Updated target registry and provider catalogs."
+  - "Concrete checkout renderer implementations."
+  - "Behavioral and negative tests."
+  - "Architecture decision and documentation updates."
+  - "Bounded work report."

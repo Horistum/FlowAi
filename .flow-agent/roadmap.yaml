@@ -281,7 +281,7 @@ roadmap:
     name: "Cross-target Checkout"
     purpose: "Add reviewed native checkout projection coverage across selected built-in targets using the common architecture."
     type: "projection-coverage"
-    status: "next"
+    status: "completed"
     requiredOutcome:
       - "Every checkout implementation has registry evidence, a provider-owned contract, renderer behavior and behavioral tests."
       - "Unsupported targets remain adapter-required or review-only."
@@ -289,7 +289,7 @@ roadmap:
     name: "Native Image Build"
     purpose: "Add reviewed native image-build projection coverage without introducing command strings as universal semantics."
     type: "projection-coverage"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "Native image-build payloads use typed bindings and explicit target evidence."
       - "Missing implementation evidence remains fail-closed."

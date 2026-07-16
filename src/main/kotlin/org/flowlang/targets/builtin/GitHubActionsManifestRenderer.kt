@@ -8,6 +8,9 @@ import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererContractValidator
 import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
+import org.flowlang.generators.manifest.TargetRendererPayload
+import org.flowlang.generators.manifest.sanitizeId
+import org.flowlang.projection.ProjectionBinding
 
 class GitHubActionsManifestRenderer(
     private val environmentEvidenceResolver: TargetEnvironmentSafetyEvidenceResolver = TargetEnvironmentSafetyEvidenceResolver()
@@ -57,7 +60,7 @@ class GitHubActionsManifestRenderer(
         if (manifest.inputs.isEmpty()) return
         sb.appendLine("    inputs:")
         manifest.inputs.forEach { input ->
-            sb.appendLine("      ${org.flowlang.generators.manifest.sanitizeId(input.name)}:")
+            sb.appendLine("      ${sanitizeId(input.name)}:")
             sb.appendLine("        description: ${yamlScalar(input.name)}")
             sb.appendLine("        required: ${input.required}")
             val type = when (input.type) {
@@ -77,11 +80,11 @@ class GitHubActionsManifestRenderer(
     private fun renderGitHubJob(job: TargetJob, manifest: TargetManifest, sb: StringBuilder) {
         val materializedSteps = job.steps.flatMap { it.flatten() }
         val opaqueNames = materializedSteps.flatMap { TargetProjectionDiagnostics.opaqueNames(it) }.distinct()
-        sb.appendLine("  ${org.flowlang.generators.manifest.sanitizeId(job.id)}:")
+        sb.appendLine("  ${sanitizeId(job.id)}:")
         sb.appendLine("    name: ${yamlScalar(job.name)}")
         sb.appendLine("    runs-on: ubuntu-latest")
         if (job.dependsOn.isNotEmpty()) {
-            sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { org.flowlang.generators.manifest.sanitizeId(it) }}]")
+            sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         }
         githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
         if (job.metadata["approval"] == "true") {
@@ -113,13 +116,40 @@ class GitHubActionsManifestRenderer(
             }
             sb.appendLine("      - name: ${yamlScalar(step.name)}")
             sb.appendLine("        uses: ${yamlScalar(payload.reference)}")
-            if (payload.bindings.isNotEmpty()) {
-                sb.appendLine("        with:")
-                payload.bindings.forEach { (name, binding) ->
-                    val value = ProjectionBindingRenderer.githubValue(binding, "${step.id}.bindings.$name")
-                    sb.appendLine("          ${org.flowlang.generators.manifest.sanitizeId(name)}: ${yamlScalar(value)}")
-                }
+            when (payload.reference) {
+                "actions/checkout@v4" -> renderCheckoutBindings(step.id, payload, sb)
+                else -> renderGenericBindings(step.id, payload.bindings, sb)
             }
+        }
+    }
+
+    private fun renderCheckoutBindings(
+        stepId: String,
+        payload: TargetRendererPayload,
+        sb: StringBuilder
+    ) {
+        val context = "GitHub checkout payload for '$stepId'"
+        val repository = CheckoutProjectionValues.githubRepository(payload, "repository", context)
+        val ref = CheckoutProjectionValues.branch(payload, "ref", context)
+        val depth = payload.bindings["fetch-depth"]?.let {
+            CheckoutProjectionValues.depth(payload, "fetch-depth", context)
+        } ?: 0
+        sb.appendLine("        with:")
+        sb.appendLine("          repository: ${yamlScalar(repository)}")
+        sb.appendLine("          ref: ${yamlScalar(ref)}")
+        sb.appendLine("          fetch-depth: ${yamlScalar(depth.toString())}")
+    }
+
+    private fun renderGenericBindings(
+        stepId: String,
+        bindings: Map<String, ProjectionBinding>,
+        sb: StringBuilder
+    ) {
+        if (bindings.isEmpty()) return
+        sb.appendLine("        with:")
+        bindings.forEach { (name, binding) ->
+            val value = ProjectionBindingRenderer.githubValue(binding, "$stepId.bindings.$name")
+            sb.appendLine("          ${sanitizeId(name)}: ${yamlScalar(value)}")
         }
     }
 
@@ -133,9 +163,9 @@ class GitHubActionsManifestRenderer(
             return parts.joinToString(" && ")
         }
         val needs = job.dependsOn.map { dependency ->
-            val safeDependency = org.flowlang.generators.manifest.sanitizeId(dependency)
+            val safeDependency = sanitizeId(dependency)
             val isApproval = manifest.jobs.firstOrNull {
-                org.flowlang.generators.manifest.sanitizeId(it.id) == safeDependency
+                sanitizeId(it.id) == safeDependency
             }?.metadata?.get("approval") == "true"
             if (isApproval) {
                 "(needs.$safeDependency.result == 'success' || needs.$safeDependency.result == 'skipped')"

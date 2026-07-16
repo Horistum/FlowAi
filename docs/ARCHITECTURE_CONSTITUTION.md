@@ -71,6 +71,8 @@ Adding a target projection may require registering a new edge provider in a dist
 
 A target registry declaration with `mode: NATIVE` is not implementation evidence by itself. The selected provider must own a matching immutable native projection contract for the opaque payload kind, reference and typed binding schema before Core may compile a native renderer payload. Missing or inconsistent provider evidence fails closed before executable readiness is inferred.
 
+Cross-target coverage must preserve one semantic action contract while allowing each edge renderer to enforce its own concrete value and structural requirements. A target may be marked native for an action only when registry evidence, provider ownership, renderer behavior and behavioral tests exist together. Similar-looking target syntax must not be treated as equivalent when required runtime structures such as workspaces or repository identity rules differ.
+
 ## Change rule
 
 Every larger change must pass an Architecture Decision Gate before implementation. The decision must explain which part of the core pipeline is strengthened and which drift risks are explicitly rejected.

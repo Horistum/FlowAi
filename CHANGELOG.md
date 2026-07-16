@@ -6,6 +6,9 @@ All project source text is written in English. The changelog records architectur
 
 ### Added
 
+- Added reviewed native `git.checkout` projection coverage for Jenkins, GitHub Actions and Tekton.
+- Added target-owned checkout rendering for GitHub repository normalization, GitHub ref/fetch-depth inputs, Jenkins shallow checkout and Tekton git-clone workspaces.
+- Added behavioral and negative tests covering the complete registry-to-renderer checkout path across built-in targets.
 - Added target-neutral opaque native projection implementation catalogs and typed binding slot contracts.
 - Added provider-owned implementation evidence for the existing Jenkins Git checkout payload.
 - Added negative architecture coverage preventing registry-only native claims, duplicate definitions, schema mismatch and cross-target catalog use.
@@ -13,6 +16,9 @@ All project source text is written in English. The changelog records architectur
 
 ### Changed
 
+- Built-in target registries now declare `git.checkout` as supported only where registry evidence, provider contracts and renderer behavior all exist.
+- Checkout depth is preserved as a typed task parameter with `0` representing full history; invalid depth values fail closed at the concrete renderer edge.
+- Targets without checkout projection evidence remain adapter-required instead of inheriting built-in coverage.
 - Native renderer payload compilation now requires agreement between target registry evidence, the selected provider catalog and generated typed bindings.
 - Typed binding resolution is owned by the native projection compilation boundary instead of the general materialization resolver.
 - Reconciled generators and projection providers validate native implementation ownership before manifests leave the generation boundary.
@@ -20,9 +26,9 @@ All project source text is written in English. The changelog records architectur
 
 ### Architecture boundary
 
-- `0.9.6.1` through `0.9.6.4` are bounded work identifiers toward the next package line; the published package remains `0.9.5`.
+- `0.9.6.1` through `0.9.6.5` are bounded work identifiers toward the next package line; the published package remains `0.9.5`.
 - Public Flow standard remains `0.8.0`; Intent, AST and ExecutionPlan remain `2.0`; Target Registry and Target Manifest remain `3.0`.
-- No runtime executor, SDK lifecycle, plugin discovery, shell projection, new native action coverage or executable reference scenario is introduced.
+- No runtime executor, SDK lifecycle, plugin discovery, shell projection, native image-build coverage or executable multi-step reference scenario is introduced.
 
 ## 0.9.5 - Universal model completion
 

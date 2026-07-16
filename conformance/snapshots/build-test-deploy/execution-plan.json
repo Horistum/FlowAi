@@ -39,7 +39,7 @@
     "sourceNodeId" : "standard_rollback_1"
   } ],
   "dependencies" : [ "git_checkout_1", "standard_execute_1", "docker_build_1", "approve_1", "standard_execute_2" ],
-  "requiredCapabilities" : [ "task.execute", "standard.test", "container.image", "condition.evaluate", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "notification.send" ],
+  "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "container.image", "condition.evaluate", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "notification.send" ],
   "targetHints" : { },
   "assumptions" : [ ],
   "nodes" : [ {
@@ -56,7 +56,7 @@
     "outputs" : [ "checkout" ],
     "effects" : [ "git.repository", "workspace.write" ],
     "destructive" : false,
-    "requiredCapabilities" : [ "task.execute" ],
+    "requiredCapabilities" : [ "task.execute", "git.checkout" ],
     "targetHints" : { },
     "assumptions" : [ ],
     "then" : [ ],
