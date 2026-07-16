@@ -128,8 +128,8 @@ class TargetNativeProjectionArchitectureTests {
     @Test
     fun builtInDistributionDeclaresOnlyActuallyImplementedNativeCoverage() {
         assertEquals(1, BuiltInNativeProjectionCatalogs.jenkins.definitions.size)
-        assertTrue(BuiltInNativeProjectionCatalogs.githubActions.definitions.isEmpty())
-        assertTrue(BuiltInNativeProjectionCatalogs.tekton.definitions.isEmpty())
+        assertEquals(1, BuiltInNativeProjectionCatalogs.githubActions.definitions.size)
+        assertEquals(1, BuiltInNativeProjectionCatalogs.tekton.definitions.size)
 
         val fakeNativeCompatibility = CompatibilityReport(
             target = "github-actions",

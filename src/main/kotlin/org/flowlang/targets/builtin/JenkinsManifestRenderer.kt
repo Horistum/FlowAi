@@ -166,15 +166,30 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         }
         when (payload.reference) {
             "git" -> {
+                val context = "Jenkins git payload for '${step.id}'"
                 val urlBinding = requireNotNull(payload.bindings["url"]) {
-                    "Jenkins git payload for '${step.id}' requires url binding."
+                    "$context requires url binding."
                 }
-                val branchBinding = payload.bindings["branch"]
-                val url = ProjectionBindingRenderer.jenkinsArgument(urlBinding, "${step.id}.bindings.url")
-                val branch = branchBinding?.let {
-                    ProjectionBindingRenderer.jenkinsArgument(it, "${step.id}.bindings.branch")
-                } ?: groovyString("main")
-                sb.appendLine("${indent}git branch: $branch, url: $url")
+                val branchBinding = requireNotNull(payload.bindings["branch"]) {
+                    "$context requires branch binding."
+                }
+                val urlValue = CheckoutProjectionValues.gitUrl(payload, "url", context)
+                val branchValue = CheckoutProjectionValues.branch(payload, "branch", context)
+                val depth = payload.bindings["depth"]?.let {
+                    CheckoutProjectionValues.depth(payload, "depth", context)
+                } ?: 0
+                require(urlBinding.value != null && branchBinding.value != null)
+                val url = groovyString(urlValue)
+                val branch = groovyString(branchValue)
+                if (depth == 0) {
+                    sb.appendLine("${indent}git branch: $branch, url: $url")
+                } else {
+                    sb.appendLine("${indent}checkout scmGit(")
+                    sb.appendLine("${indent}  branches: [[name: $branch]],")
+                    sb.appendLine("${indent}  extensions: [cloneOption(depth: $depth, noTags: false, shallow: true)],")
+                    sb.appendLine("${indent}  userRemoteConfigs: [[url: $url]]")
+                    sb.appendLine("${indent})")
+                }
             }
             else -> error(
                 "Unsupported Jenkins structured payload reference '${payload.reference}' for step '${step.id}'."

@@ -48,7 +48,7 @@ class FlowConnectedMaterializationPipelineTests {
             params = mapOf("branch" to "main")
         )
 
-        val resolution = TargetMaterializationResolver.resolve(task, "github-actions", rules("github-actions"))
+        val resolution = TargetMaterializationResolver.resolve(task, "local", rules("local"))
 
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, resolution.materialization.status)
         assertEquals(MaterializationStatus.ADAPTER_REQUIRED, resolution.negotiation.decisions.single().status)

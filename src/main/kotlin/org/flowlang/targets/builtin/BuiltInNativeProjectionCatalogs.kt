@@ -7,8 +7,8 @@ import org.flowlang.projection.ProjectionBindingKind
 
 /**
  * Explicit native projection implementation evidence shipped by this
- * distribution. Empty catalogs are intentional and prevent registry metadata
- * from claiming executable behavior before an edge implementation exists.
+ * distribution. Every entry must correspond to concrete renderer behavior;
+ * absent entries keep registry claims from becoming executable by optimism.
  */
 object BuiltInNativeProjectionCatalogs {
     val jenkins: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.of(
@@ -22,14 +22,55 @@ object BuiltInNativeProjectionCatalogs {
                 ),
                 "branch" to TargetNativeProjectionBindingContract(
                     acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
+                ),
+                "depth" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER),
+                    required = false
                 )
             )
         )
     )
 
-    val githubActions: TargetNativeProjectionCatalog =
-        TargetNativeProjectionCatalog.empty("github-actions")
+    val githubActions: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.of(
+        "github-actions",
+        TargetNativeProjectionDefinition(
+            kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
+            reference = "actions/checkout@v4",
+            bindings = mapOf(
+                "repository" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
+                ),
+                "ref" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
+                ),
+                "fetch-depth" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER),
+                    required = false
+                )
+            )
+        )
+    )
 
-    val tekton: TargetNativeProjectionCatalog =
-        TargetNativeProjectionCatalog.empty("tekton")
+    val tekton: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.of(
+        "tekton",
+        TargetNativeProjectionDefinition(
+            kind = BuiltInProjectionPayloadKinds.TEKTON_TASK,
+            reference = "git-clone",
+            bindings = mapOf(
+                "url" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
+                ),
+                "revision" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
+                ),
+                "depth" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER),
+                    required = false
+                ),
+                "workspace" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_METADATA)
+                )
+            )
+        )
+    )
 }

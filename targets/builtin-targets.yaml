@@ -111,6 +111,7 @@ targets:
       kubernetes.api: supported
       container.image: supported
       notification.send: supported
+      git.checkout: supported
     projectionRules:
       - module: git
         action: checkout
@@ -128,6 +129,10 @@ targets:
               kind: TASK_PARAMETER
               name: branch
               defaultValue: main
+            depth:
+              kind: TASK_PARAMETER
+              name: depth
+              defaultValue: "0"
       - module: standard
         action: execute
         mode: notes_projected
@@ -174,7 +179,28 @@ targets:
       safety.destructiveOperation: partial
       container.image: supported
       notification.send: supported
+      git.checkout: supported
     projectionRules:
+      - module: git
+        action: checkout
+        mode: native
+        reason: GitHub Actions declares actions/checkout with explicit repository, ref and fetch-depth bindings as executable projection evidence.
+        evidenceReference: targets/builtin-targets.yaml#targets.github-actions.projectionRules.git.checkout
+        payload:
+          kind: github-action
+          reference: actions/checkout@v4
+          bindings:
+            repository:
+              kind: TASK_PARAMETER
+              name: url
+            ref:
+              kind: TASK_PARAMETER
+              name: branch
+              defaultValue: main
+            fetch-depth:
+              kind: TASK_PARAMETER
+              name: depth
+              defaultValue: "0"
       - module: standard
         action: execute
         mode: notes_projected
@@ -223,7 +249,31 @@ targets:
       safety.destructiveOperation: partial
       kubernetes.api: supported
       container.image: supported
+      git.checkout: supported
     projectionRules:
+      - module: git
+        action: checkout
+        mode: native
+        reason: Tekton declares the reviewed git-clone Task contract with typed repository, revision, depth and workspace bindings.
+        evidenceReference: targets/builtin-targets.yaml#targets.tekton.projectionRules.git.checkout
+        payload:
+          kind: tekton-task
+          reference: git-clone
+          bindings:
+            url:
+              kind: TASK_PARAMETER
+              name: url
+            revision:
+              kind: TASK_PARAMETER
+              name: branch
+              defaultValue: main
+            depth:
+              kind: TASK_PARAMETER
+              name: depth
+              defaultValue: "0"
+            workspace:
+              kind: TASK_METADATA
+              field: TARGET
       - module: standard
         action: execute
         mode: notes_projected

@@ -33,6 +33,10 @@ targets:
               kind: TASK_PARAMETER
               name: branch
               defaultValue: main
+            depth:
+              kind: TASK_PARAMETER
+              name: depth
+              defaultValue: "0"
 ```
 
 ## Projection rules
@@ -91,7 +95,15 @@ A target distribution explicitly composes a `TargetNativeProjectionCatalog`. Eac
 
 The catalog does not discover plugins, select runtime handlers or define target syntax. It proves only that the selected edge distribution owns a concrete implementation contract corresponding to registry evidence. Registry declaration, provider implementation contract and generated manifest bindings must all agree.
 
-The current built-in catalog intentionally declares only the existing Jenkins Git checkout payload. GitHub Actions and Tekton have empty native catalogs until later reviewed coverage work adds concrete implementations.
+The built-in distribution currently declares reviewed `git.checkout` contracts for:
+
+- Jenkins `JENKINS_STEP/git`, using `url`, `branch` and optional `depth` bindings;
+- GitHub Actions `GITHUB_ACTION/actions/checkout@v4`, mapping Flow repository URL, branch and depth to `repository`, `ref` and `fetch-depth`;
+- Tekton `TEKTON_TASK/git-clone`, mapping repository URL, revision and depth plus an explicit Pipeline workspace derived from task target metadata.
+
+These contracts share Flow semantic inputs but do not share target syntax. GitHub Actions accepts only repository URLs that can be proven to identify a `github.com` owner/repository pair. Tekton emits a required Pipeline workspace and binds it to the catalog task's `output` workspace. Jenkins preserves full-history behavior when depth is `0` and uses the structured Git SCM checkout contract for shallow clones. Invalid or incomplete values fail closed in the concrete edge renderer.
+
+Targets without an explicit checkout projection rule and matching provider definition remain `ADAPTER_REQUIRED` or review-only.
 
 ## Expression profiles
 
