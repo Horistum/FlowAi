@@ -1,0 +1,78 @@
+{
+  "flowName" : "checkout-build-image",
+  "planVersion" : "2.0",
+  "inputs" : [ {
+    "name" : "version",
+    "type" : "text",
+    "required" : true,
+    "choices" : [ ]
+  } ],
+  "triggers" : [ ],
+  "outputs" : [ {
+    "name" : "checkout",
+    "type" : "any",
+    "sourceNodeId" : "git_checkout_1"
+  }, {
+    "name" : "build_image",
+    "type" : "any",
+    "sourceNodeId" : "docker_build_1"
+  } ],
+  "dependencies" : [ "git_checkout_1" ],
+  "requiredCapabilities" : [ "task.execute", "git.checkout", "docker.build", "container.image" ],
+  "targetHints" : { },
+  "assumptions" : [ ],
+  "nodes" : [ {
+    "id" : "git_checkout_1",
+    "kind" : "task",
+    "module" : "git",
+    "action" : "checkout",
+    "target" : "source",
+    "resultName" : "checkout",
+    "dependencies" : [ ],
+    "inputs" : {
+      "url" : "\"https://github.com/octocat/Hello-World.git\"",
+      "branch" : "\"main\""
+    },
+    "outputs" : [ "checkout" ],
+    "effects" : [ "git.repository", "workspace.write" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "git.checkout" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  }, {
+    "id" : "docker_build_1",
+    "kind" : "task",
+    "module" : "docker",
+    "action" : "build",
+    "target" : "registry",
+    "resultName" : "build_image",
+    "dependencies" : [ "git_checkout_1" ],
+    "inputs" : {
+      "image" : "\"ghcr.io/flowlang/reference:${version}\"",
+      "path" : "\".\"",
+      "push" : "false"
+    },
+    "outputs" : [ "build_image" ],
+    "effects" : [ "docker.image", "docker.build" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "docker.build", "container.image" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  } ]
+}

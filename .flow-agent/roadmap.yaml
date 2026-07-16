@@ -238,7 +238,7 @@ roadmap:
     name: "Universal Native Projection Foundation"
     purpose: "Build a target-neutral, typed and provider-owned native projection architecture before expanding executable target coverage."
     type: "projection-architecture-track"
-    status: "in-progress"
+    status: "completed"
     requiredOutcome:
       - "Flow Core contains no target-specific payload vocabulary or concrete projection routing."
       - "Typed projection bindings preserve semantic source and resolution state."
@@ -297,7 +297,7 @@ roadmap:
     name: "First Executable Reference Scenario"
     purpose: "Promote the first realistic multi-step reference scenario only when every action has concrete executable projection evidence."
     type: "reference-readiness"
-    status: "next"
+    status: "completed"
     requiredOutcome:
       - "The executable claim is derived from the real parser, planner, compatibility, materialization, manifest and renderer pipeline."
       - "No review-only or adapter-required action is relabeled executable."
@@ -305,7 +305,7 @@ roadmap:
     name: "Policy-Driven Safety and Environment Classification"
     purpose: "Complete declarative environment classification and remove remaining policy aliases from implementation code."
     type: "safety-policy"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "Environment sensitivity is derived from versioned safety notes evidence."
       - "No target adapter guesses production environments from target-specific strings."

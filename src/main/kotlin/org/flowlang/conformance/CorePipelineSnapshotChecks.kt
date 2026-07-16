@@ -116,6 +116,23 @@ internal class CorePipelineSnapshotChecks(
             "README.md"
         )
         required.forEach { name -> require(File(dir, name).isFile) { "Missing snapshot $name" } }
+
+        val executableDir = File(rootDir, "conformance/snapshots/checkout-build-image")
+        val executableRequired = listOf(
+            "normalized-intent.json",
+            "flow-ast.json",
+            "execution-plan.json",
+            "snapshot-index.json",
+            "jenkins.executable.yaml",
+            "README.md"
+        )
+        executableRequired.forEach { name ->
+            require(File(executableDir, name).isFile) { "Missing executable reference snapshot $name" }
+        }
+        require(executableDir.listFiles().orEmpty().none { it.name.endsWith(".review.yaml") || it.name.endsWith(".blocked.json") }) {
+            "First executable reference must not contain review-only or blocked target evidence."
+        }
+
         ReferenceSnapshotHonesty.legacyExecutableLookingFiles.forEach { name ->
             require(!File(dir, name).exists()) { "Legacy executable-looking or stale snapshot '$name' must be removed." }
         }
@@ -168,7 +185,69 @@ internal class CorePipelineSnapshotChecks(
             require(readme.contains("0.8.0"))
             require(readme.contains("2.0"))
             require(readme.contains("First Executable Reference Scenario")) {
-                "Reference snapshot README must identify the next executable-scenario roadmap boundary."
+                "Mixed reference README must identify the separate executable-scenario evidence boundary."
+            }
+
+            val executableCommitted = File(rootDir, "conformance/snapshots/checkout-build-image")
+            val executableGenerated = File(
+                System.getProperty("java.io.tmpdir"),
+                "flow-executable-reference-snapshot-${System.nanoTime()}"
+            )
+            try {
+                val executableSnapshot = ReferenceSnapshotBundleGenerator(rootDir, registry, targets, projections).generate(
+                    intentFile = File(rootDir, "examples/intent/checkout-build-image.intent.yaml"),
+                    outputDir = executableGenerated,
+                    scenarioId = "checkout-build-image",
+                    targetIds = setOf("jenkins")
+                )
+                require(ReferenceSnapshotHonesty.validate(executableSnapshot).isEmpty()) {
+                    "Executable reference evidence is inconsistent: ${ReferenceSnapshotHonesty.validate(executableSnapshot)}"
+                }
+                require(executableSnapshot.overallState == ReferenceSnapshotSetState.EXECUTABLE && executableSnapshot.executable) {
+                    "Checkout-build-image must be executable for its explicitly selected target scope."
+                }
+                val jenkins = executableSnapshot.targets.single()
+                require(jenkins.target == "jenkins" && jenkins.renderMode == TargetRenderMode.EXECUTABLE) {
+                    "First executable reference must contain only executable Jenkins evidence."
+                }
+                require(jenkins.manifestPresent && jenkins.renderedArtifactPresent)
+
+                val executableGeneratedFiles = executableGenerated.listFiles().orEmpty()
+                    .filter { it.isFile }.map { it.name }.sorted()
+                val executableCommittedFiles = executableCommitted.listFiles().orEmpty()
+                    .filter { it.isFile && it.name != "README.md" }.map { it.name }.sorted()
+                require(executableCommittedFiles == executableGeneratedFiles) {
+                    "Committed executable reference differs from canonical generation. " +
+                        "committed=$executableCommittedFiles generated=$executableGeneratedFiles"
+                }
+                executableGeneratedFiles.forEach { name ->
+                    val generatedFile = File(executableGenerated, name)
+                    val committedFile = File(executableCommitted, name)
+                    if (name.endsWith(".json")) {
+                        require(Json.mapper.readTree(committedFile) == Json.mapper.readTree(generatedFile)) {
+                            "Executable JSON snapshot mismatch for $name."
+                        }
+                    } else {
+                        assertSnapshotEquals(committedFile, generatedFile.readText())
+                    }
+                }
+
+                val artifact = File(executableCommitted, "jenkins.executable.yaml").readText()
+                require(artifact.contains("pipeline {"))
+                require(artifact.indexOf("git branch:") < artifact.indexOf("docker.build(")) {
+                    "Executable reference must preserve checkout before image build."
+                }
+                require(!artifact.contains("kind: TargetProjectionReview"))
+                require(artifact.lineSequence().none { line ->
+                    val trimmed = line.trim()
+                    trimmed == "sh" || trimmed.startsWith("sh ") || trimmed.startsWith("sh(")
+                }) { "Executable reference must not introduce a Jenkins shell step." }
+
+                val executableReadme = File(executableCommitted, "README.md").readText()
+                require(executableReadme.contains("target-scoped to **Jenkins**"))
+                require(executableReadme.contains("build-test-deploy"))
+            } finally {
+                executableGenerated.deleteRecursively()
             }
         } finally {
             generated.deleteRecursively()

@@ -281,13 +281,17 @@ private fun runIntentCommand(args: List<String>) {
 
 
 private fun runReferenceSnapshotCommand(args: List<String>) {
-    val source = parseOption(args, "--intent") ?: args.firstOrNull() ?: "examples/intent/build-test-deploy.intent.yaml"
+    val source = parseOption(args, "--intent")
+        ?: args.firstOrNull()?.takeUnless { it.startsWith("--") }
+        ?: "examples/intent/build-test-deploy.intent.yaml"
     val out = parseOutDir(args) ?: "conformance/snapshots/build-test-deploy"
     val scenarioId = parseOption(args, "--scenario-id") ?: File(source).nameWithoutExtension.removeSuffix(".intent")
+    val targetIds = parseTargetSet(args)
     val snapshot = ReferenceSnapshotBundleGenerator().generate(
         intentFile = File(source),
         outputDir = File(out),
-        scenarioId = scenarioId
+        scenarioId = scenarioId,
+        targetIds = targetIds ?: org.flowlang.targets.builtin.BuiltInTargetProjections.registry.targetIds
     )
     println("===== REFERENCE SNAPSHOT INDEX =====")
     println(Json.mapper.writeValueAsString(snapshot))
@@ -514,6 +518,13 @@ private fun parseTarget(args: List<String>): String? {
     val idx = args.indexOf("--target")
     if (idx >= 0 && idx + 1 < args.size) return args[idx + 1]
     return args.firstOrNull { it.startsWith("--target=") }?.substringAfter('=')
+}
+
+private fun parseTargetSet(args: List<String>): Set<String>? {
+    val raw = parseOption(args, "--targets") ?: return null
+    val targets = raw.split(',').map { it.trim() }.filter { it.isNotBlank() }.toSet()
+    require(targets.isNotEmpty()) { "--targets requires at least one comma-separated target id." }
+    return targets
 }
 
 private fun observedDiagnostic(

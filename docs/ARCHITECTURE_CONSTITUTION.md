@@ -75,6 +75,8 @@ Cross-target coverage must preserve one semantic action contract while allowing 
 
 Native image-build coverage must preserve image identity, workspace-relative context, Dockerfile selection and push policy through structured target APIs. Edge renderers must reject values that would require shell commands, free-form CLI argument strings, unsafe path interpretation or silent credential inference. A target-specific limitation may narrow native coverage, but it must not be hidden by approximating another target's behavior.
 
+An executable multi-step reference claim must prove more than isolated native leaves. The selected target must preserve ordering and any workspace, artifact or output continuity required between actions. Reference evidence must declare its target scope explicitly. A target that renders each action separately but lacks the required transfer contract must remain outside that executable reference even when both isolated actions are native.
+
 ## Change rule
 
 Every larger change must pass an Architecture Decision Gate before implementation. The decision must explain which part of the core pipeline is strengthened and which drift risks are explicitly rejected.

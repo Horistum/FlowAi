@@ -2,7 +2,7 @@
 
 This directory records the real semantic and target-projection evidence for the `build-test-deploy` reference scenario.
 
-It is **not** an end-to-end execution proof. The built-in distribution now has reviewed native `git.checkout` and `docker.build` evidence for Jenkins, GitHub Actions and Tekton, but this mixed scenario still contains standard execution, deployment, notification, approval and rollback requirements that remain notes-projected, adapter-required or unsupported according to each target. Promoting a complete executable scenario belongs to roadmap item **0.9.6.7 First Executable Reference Scenario** and must be derived from the real pipeline rather than inferred from isolated native actions.
+It is **not** an end-to-end execution proof. The built-in distribution has reviewed native `git.checkout` and `docker.build` evidence for Jenkins, GitHub Actions and Tekton, but this mixed scenario still contains standard execution, deployment, notification, approval and rollback requirements that remain notes-projected, adapter-required or unsupported according to each target. The completed **0.9.6.7 First Executable Reference Scenario** is committed separately under `conformance/snapshots/checkout-build-image` and does not change this scenario's MIXED state.
 
 ## Version boundary
 
