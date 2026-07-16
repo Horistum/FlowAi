@@ -1,0 +1,106 @@
+version: "0.9.6.4"
+name: "Native Projection Architecture"
+
+objective: "Require explicit provider-owned implementation contracts before a registry NATIVE rule can produce a native renderer payload."
+
+roadmapReference:
+  version: "0.9.6.4"
+  name: "Native Projection Architecture"
+  type: "projection-architecture"
+
+architecturePurpose: "Separate declarative target registry claims from concrete native projection implementation evidence while keeping payload identity and binding compilation target-neutral."
+
+scope:
+  include:
+    - "Immutable target-neutral native projection catalog and definition contracts."
+    - "Catalog-backed typed binding compilation for native renderer payloads."
+    - "Provider and generator validation of registry rules and generated manifests."
+    - "Explicit built-in catalog composition preserving only existing Jenkins checkout coverage."
+    - "Negative tests for missing, duplicate, mismatched and fabricated native contracts."
+    - "Architecture decision, target registry documentation and release report."
+  exclude:
+    - "Cross-target checkout implementation."
+    - "Native image build implementation."
+    - "Executable multi-step reference scenario."
+    - "New target renderer syntax."
+
+nonGoals:
+  - "No runtime executor."
+  - "No SDK-first architecture."
+  - "No plugin lifecycle or classpath discovery."
+  - "No target-specific public DSL."
+  - "No shell or command projection."
+  - "No fabricated executable coverage."
+  - "No public standard or artifact contract version bump."
+
+expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetMaterializationResolverEngine.kt"
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+  - "targets/builtin-targets.yaml"
+
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetMaterializationResolverEngine.kt"
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+  - "src/test/kotlin/CoreTargetProjectionBoundaryTests.kt"
+  - "src/test/kotlin/ProjectionBindingContractTests.kt"
+  - "docs/ARCHITECTURE_CONSTITUTION.md"
+  - "docs/TARGET_REGISTRY.md"
+  - "CHANGELOG.md"
+  - ".flow-agent/roadmap.yaml"
+
+expectedFilesToAdd:
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
+  - "src/test/kotlin/TargetNativeProjectionArchitectureTests.kt"
+  - "docs/adr/ADR_0_9_6_4_NATIVE_PROJECTION_ARCHITECTURE.md"
+  - ".flow-agent/reports/v0.9.6.4-native-projection-architecture.md"
+
+testsToAddOrUpdate:
+  - "TargetNativeProjectionArchitectureTests"
+  - "CoreTargetProjectionBoundaryTests"
+  - "ProjectionBindingContractTests"
+
+conformanceToAddOrUpdate:
+  - "Existing full conformance must pass unchanged; no new public conformance gate is required for this internal architecture contract."
+
+documentationToUpdate:
+  - "Architecture constitution native projection evidence rule."
+  - "Target Registry native payload enforcement."
+  - "Architecture decision and bounded work report."
+  - "Roadmap and changelog."
+
+architectureChecks:
+  - "Registry NATIVE declarations cannot create payloads without provider-owned implementation evidence."
+  - "Flow Core does not enumerate built-in targets, payload kinds or syntax."
+  - "Typed binding provenance is preserved during catalog-backed compilation."
+  - "Missing or inconsistent evidence fails closed."
+  - "The change introduces no runtime, SDK, plugin lifecycle, shell projection or target-specific public syntax."
+
+validationPlan:
+  - "Run Flow Agent tooling unit tests."
+  - "Run Flow Agent structure validation and context generation."
+  - "Run offline cache-aware tests and conformance."
+  - "Run clean compile and the complete test suite."
+  - "Run the standalone full conformance runner."
+  - "Verify the final PR diff contains no temporary source-export workflow."
+
+riskAssessment:
+  risks:
+    - "Existing native Jenkins checkout could be rejected if the catalog schema differs from registry evidence."
+    - "Direct generator callers could bypass provider validation."
+    - "A generic catalog could accidentally become a target SDK or dynamic plugin mechanism."
+  mitigations:
+    - "Declare only the existing reviewed Jenkins checkout payload and test the exact contract."
+    - "Enforce catalog validation inside the reconciled generator as well as the provider boundary."
+    - "Keep the catalog immutable, opaque, explicitly composed and free of lifecycle or discovery behavior."
+
+releaseArtifacts:
+  - "Updated source code."
+  - "Updated unit and architecture boundary tests."
+  - "Architecture decision."
+  - "Updated target registry and constitution documentation."
+  - "Bounded work report."

@@ -11,14 +11,9 @@ import org.flowlang.notes.NotesPackageBoundary
 import org.flowlang.notes.NotesPackageContract
 import org.flowlang.notes.NotesPackageKind
 import org.flowlang.planner.TaskNode
-import org.flowlang.projection.ProjectionBinding
-import org.flowlang.projection.ProjectionBindingContract
-import org.flowlang.projection.ProjectionBindingKind
-import org.flowlang.projection.ProjectionBindingResolutionStatus
 import org.flowlang.projection.TargetProjectionArtifact
 import org.flowlang.projection.TargetProjectionArtifactKind
 import org.flowlang.projection.TargetProjectionPlan
-import org.flowlang.projection.TaskMetadataField
 import org.flowlang.semantic.SemanticActionGraph
 import org.flowlang.semantic.SemanticActionKind
 import org.flowlang.semantic.SemanticActionNode
@@ -32,8 +27,12 @@ internal object TargetMaterializationResolver {
     fun resolve(
         task: TaskNode,
         targetName: String,
-        projectionRules: List<TargetProjectionRule> = emptyList()
+        projectionRules: List<TargetProjectionRule> = emptyList(),
+        nativeProjections: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.empty(targetName)
     ): TargetMaterializationResolution {
+        require(nativeProjections.target == targetName) {
+            "Materialization target '$targetName' cannot use native projection catalog '${nativeProjections.target}'."
+        }
         val capability = capabilityFor(task)
         val semanticNode = SemanticActionNode(
             id = "task.${contractId(task.id)}",
@@ -69,17 +68,7 @@ internal object TargetMaterializationResolver {
         )
         val materialization = targetMaterializationFor(capability, decision, artifact, projectionPlan)
         val payload = if (artifact.kind == TargetProjectionArtifactKind.TARGET_NATIVE) {
-            rule?.payload?.let { template ->
-                TargetRendererPayload(
-                    kind = template.kind,
-                    target = targetName,
-                    reference = template.reference,
-                    bindings = template.bindings.mapValues { (name, binding) ->
-                        resolveBinding(binding, task, targetName, name)
-                    },
-                    evidenceReference = rule.evidenceReference
-                )
-            }
+            nativeProjections.compile(requireNotNull(rule), task)
         } else null
         return TargetMaterializationResolution(
             graph,
@@ -89,71 +78,6 @@ internal object TargetMaterializationResolver {
             artifact,
             materialization,
             payload
-        )
-    }
-
-    private fun resolveBinding(
-        binding: ProjectionBinding,
-        task: TaskNode,
-        payloadTarget: String,
-        bindingName: String
-    ): ProjectionBinding {
-        ProjectionBindingContract.requireTemplate(binding, "$payloadTarget.bindings.$bindingName")
-        val resolved = when (binding.kind) {
-            ProjectionBindingKind.LITERAL -> binding.copy(
-                resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED
-            )
-            ProjectionBindingKind.TASK_PARAMETER -> resolveTaskValue(
-                binding = binding,
-                value = task.params[binding.name] ?: binding.defaultValue,
-                unresolvedReason = "Task '${task.id}' does not provide required parameter '${binding.name}' for projection binding '$bindingName'."
-            )
-            ProjectionBindingKind.TASK_INPUT -> resolveTaskValue(
-                binding = binding,
-                value = task.inputs[binding.name] ?: binding.defaultValue,
-                unresolvedReason = "Task '${task.id}' does not provide required input '${binding.name}' for projection binding '$bindingName'."
-            )
-            ProjectionBindingKind.TASK_METADATA -> binding.copy(
-                value = when (binding.field) {
-                    TaskMetadataField.ID -> task.id
-                    TaskMetadataField.TARGET -> task.target
-                    null -> error("TASK_METADATA projection binding '$bindingName' has no field.")
-                },
-                resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED,
-                reason = null
-            )
-            ProjectionBindingKind.FLOW_INPUT,
-            ProjectionBindingKind.SECRET,
-            ProjectionBindingKind.ARTIFACT,
-            ProjectionBindingKind.TASK_OUTPUT,
-            ProjectionBindingKind.TARGET_EXPRESSION -> binding.copy(
-                resolutionStatus = ProjectionBindingResolutionStatus.SYMBOLIC,
-                reason = null
-            )
-        }
-        ProjectionBindingContract.requireManifest(
-            resolved,
-            payloadTarget,
-            "$payloadTarget.bindings.$bindingName"
-        )
-        return resolved
-    }
-
-    private fun resolveTaskValue(
-        binding: ProjectionBinding,
-        value: String?,
-        unresolvedReason: String
-    ): ProjectionBinding = if (value != null) {
-        binding.copy(
-            value = value,
-            resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED,
-            reason = null
-        )
-    } else {
-        binding.copy(
-            value = null,
-            resolutionStatus = ProjectionBindingResolutionStatus.UNRESOLVED,
-            reason = unresolvedReason
         )
     }
 

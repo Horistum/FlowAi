@@ -69,6 +69,8 @@ Concrete generators, renderers, payload identifiers, binding syntax and expressi
 
 Adding a target projection may require registering a new edge provider in a distribution composition root, but it must not require editing Core generation routing or introducing a target switch into semantic, planning, materialization or manifest contracts.
 
+A target registry declaration with `mode: NATIVE` is not implementation evidence by itself. The selected provider must own a matching immutable native projection contract for the opaque payload kind, reference and typed binding schema before Core may compile a native renderer payload. Missing or inconsistent provider evidence fails closed before executable readiness is inferred.
+
 ## Change rule
 
 Every larger change must pass an Architecture Decision Gate before implementation. The decision must explain which part of the core pipeline is strengthened and which drift risks are explicitly rejected.

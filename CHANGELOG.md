@@ -2,6 +2,28 @@
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 
+## Unreleased - v0.9.6 architecture foundation
+
+### Added
+
+- Added target-neutral opaque native projection implementation catalogs and typed binding slot contracts.
+- Added provider-owned implementation evidence for the existing Jenkins Git checkout payload.
+- Added negative architecture coverage preventing registry-only native claims, duplicate definitions, schema mismatch and cross-target catalog use.
+- Added universal typed projection bindings and the explicit Core-to-edge target projection provider boundary in the preceding `0.9.6.2` and `0.9.6.3` work items.
+
+### Changed
+
+- Native renderer payload compilation now requires agreement between target registry evidence, the selected provider catalog and generated typed bindings.
+- Typed binding resolution is owned by the native projection compilation boundary instead of the general materialization resolver.
+- Reconciled generators and projection providers validate native implementation ownership before manifests leave the generation boundary.
+- Concrete generators, renderers, payload identifiers, binding syntax and expression translation remain in edge target packages.
+
+### Architecture boundary
+
+- `0.9.6.1` through `0.9.6.4` are bounded work identifiers toward the next package line; the published package remains `0.9.5`.
+- Public Flow standard remains `0.8.0`; Intent, AST and ExecutionPlan remain `2.0`; Target Registry and Target Manifest remain `3.0`.
+- No runtime executor, SDK lifecycle, plugin discovery, shell projection, new native action coverage or executable reference scenario is introduced.
+
 ## 0.9.5 - Universal model completion
 
 ### Added

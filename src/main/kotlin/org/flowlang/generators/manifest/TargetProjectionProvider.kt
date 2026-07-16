@@ -9,6 +9,9 @@ import org.flowlang.planner.ExecutionPlan
  */
 interface TargetManifestGenerator {
     val target: String
+    val nativeProjectionCatalog: TargetNativeProjectionCatalog
+        get() = TargetNativeProjectionCatalog.empty(target)
+
     fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest
 }
 
@@ -16,8 +19,15 @@ interface TargetManifestGenerator {
  * Reconciles every generated manifest before it can leave a concrete provider.
  */
 abstract class ReconciledTargetManifestGenerator : TargetManifestGenerator {
-    final override fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest =
-        buildManifest(plan, compatibility).reconcileCompatibilityReadiness()
+    final override fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
+        require(compatibility.target == target) {
+            "Manifest generator '$target' cannot consume compatibility evidence for '${compatibility.target}'."
+        }
+        nativeProjectionCatalog.requireCompatibleRules(compatibility.projectionRules)
+        return buildManifest(plan, compatibility)
+            .reconcileCompatibilityReadiness()
+            .also(nativeProjectionCatalog::requireManifest)
+    }
 
     protected abstract fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest
 }
@@ -40,12 +50,16 @@ class TargetProjectionProvider(
     val renderer: TargetManifestRenderer
 ) {
     val target: String = generator.target
+    val nativeProjectionCatalog: TargetNativeProjectionCatalog = generator.nativeProjectionCatalog
     val artifactFileName: String = renderer.artifactFileName
 
     init {
         require(target.isNotBlank()) { "Target projection provider must declare a non-blank target id." }
         require(renderer.target == target) {
             "Target projection provider mismatch: generator '${generator.target}' cannot be paired with renderer '${renderer.target}'."
+        }
+        require(nativeProjectionCatalog.target == target) {
+            "Target projection provider mismatch: generator '$target' cannot use native projection catalog '${nativeProjectionCatalog.target}'."
         }
         require(artifactFileName.isNotBlank()) {
             "Target projection provider '$target' must declare a non-blank artifact file name."
@@ -59,13 +73,15 @@ class TargetProjectionProvider(
         require(compatibility.target == target) {
             "Projection provider '$target' cannot generate compatibility evidence for '${compatibility.target}'."
         }
-        return generator.generate(plan, compatibility)
+        nativeProjectionCatalog.requireCompatibleRules(compatibility.projectionRules)
+        return generator.generate(plan, compatibility).also(nativeProjectionCatalog::requireManifest)
     }
 
     fun render(manifest: TargetManifest): String {
         require(manifest.target == target) {
             "Projection provider '$target' cannot render manifest target '${manifest.target}'."
         }
+        nativeProjectionCatalog.requireManifest(manifest)
         return renderer.render(manifest)
     }
 }

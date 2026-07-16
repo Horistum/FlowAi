@@ -64,9 +64,10 @@ internal fun CompatibilityReport.toMappingNotes(targetName: String): List<Target
  */
 internal fun PlanNode.toTargetSteps(
     targetName: String = "notes-driven",
-    projectionRules: List<TargetProjectionRule> = emptyList()
+    projectionRules: List<TargetProjectionRule> = emptyList(),
+    nativeProjections: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.empty(targetName)
 ): List<TargetStep> = when (this) {
-    is TaskNode -> listOf(toTargetStep(targetName, projectionRules))
+    is TaskNode -> listOf(toTargetStep(targetName, projectionRules, nativeProjections))
     is ConditionNode -> {
         val out = mutableListOf<TargetStep>()
         if (then.isNotEmpty()) {
@@ -75,7 +76,7 @@ internal fun PlanNode.toTargetSteps(
                 name = "$id then",
                 type = "condition",
                 params = mapOf("condition" to condition),
-                children = then.flatMap { it.toTargetSteps(targetName, projectionRules) },
+                children = then.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
                 metadata = mapOf("sourceNodeKind" to kind, "branch" to "then")
             )
         }
@@ -85,7 +86,7 @@ internal fun PlanNode.toTargetSteps(
                 name = "$id else",
                 type = "condition",
                 params = mapOf("condition" to "not ($condition)"),
-                children = otherwise.flatMap { it.toTargetSteps(targetName, projectionRules) },
+                children = otherwise.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
                 metadata = mapOf("sourceNodeKind" to kind, "branch" to "else")
             )
         }
@@ -96,7 +97,7 @@ internal fun PlanNode.toTargetSteps(
         name = id,
         type = "loop",
         params = mapOf("item" to item, "source" to source),
-        children = body.flatMap { it.toTargetSteps(targetName, projectionRules) },
+        children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
         metadata = mapOf("sourceNodeKind" to kind, "supportLevel" to "partial")
     ))
     is ParallelGroupNode -> listOf(TargetStep(
@@ -108,7 +109,7 @@ internal fun PlanNode.toTargetSteps(
                 id = sanitizeId(branch.name ?: "branch-${index + 1}"),
                 name = branch.name ?: "branch-${index + 1}",
                 type = "parallel-branch",
-                children = branch.steps.flatMap { it.toTargetSteps(targetName, projectionRules) },
+                children = branch.steps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
                 metadata = mapOf("sourceNodeKind" to "ParallelBranch")
             )
         },
@@ -120,9 +121,9 @@ internal fun PlanNode.toTargetSteps(
         type = "match",
         params = mapOf("source" to source),
         children = cases.flatMap { case ->
-            case.steps.flatMap { it.toTargetSteps(targetName, projectionRules) }
-        } + errorCase.flatMap { it.toTargetSteps(targetName, projectionRules) } +
-            defaultSteps.flatMap { it.toTargetSteps(targetName, projectionRules) },
+            case.steps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) }
+        } + errorCase.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) } +
+            defaultSteps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
         metadata = mapOf("sourceNodeKind" to kind, "supportLevel" to "partial")
     ))
     is RetryGroupNode -> listOf(TargetStep(
@@ -130,7 +131,7 @@ internal fun PlanNode.toTargetSteps(
         name = id,
         type = "retry",
         params = mapOf("max" to max.toString(), "delay" to delay, "backoff" to backoff),
-        children = body.flatMap { it.toTargetSteps(targetName, projectionRules) },
+        children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
         metadata = mapOf("sourceNodeKind" to kind)
     ))
     is TryPlanNode -> {
@@ -138,14 +139,14 @@ internal fun PlanNode.toTargetSteps(
             id = sanitizeId("${id}_body"),
             name = "$id body",
             type = "try-body",
-            children = body.flatMap { it.toTargetSteps(targetName, projectionRules) },
+            children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
             metadata = mapOf("sourceNodeKind" to kind, "tryRole" to "body")
         )
         val handlerStep = TargetStep(
             id = sanitizeId("${id}_handler"),
             name = "$id error handler",
             type = "error-handler",
-            children = errorHandler.flatMap { it.toTargetSteps(targetName, projectionRules) },
+            children = errorHandler.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
             metadata = mapOf("sourceNodeKind" to kind, "tryRole" to "errorHandler")
         )
         if (body.isEmpty()) {
@@ -212,9 +213,10 @@ internal fun PlanNode.toTargetSteps(
 
 internal fun TaskNode.toTargetStep(
     targetName: String = "notes-driven",
-    projectionRules: List<TargetProjectionRule> = emptyList()
+    projectionRules: List<TargetProjectionRule> = emptyList(),
+    nativeProjections: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.empty(targetName)
 ): TargetStep {
-    val resolution = TargetMaterializationResolver.resolve(this, targetName, projectionRules)
+    val resolution = TargetMaterializationResolver.resolve(this, targetName, projectionRules, nativeProjections)
     return TargetStep(
         id = sanitizeId(id),
         name = id,

@@ -10,6 +10,7 @@ import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetManifestRenderer
+import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetProjectionProvider
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ExecutionPlan
@@ -45,6 +46,21 @@ class CoreTargetProjectionBoundaryTests {
     }
 
     @Test
+    fun providerRejectsMismatchedNativeProjectionCatalogTarget() {
+        val failure = assertFailsWith<IllegalArgumentException> {
+            TargetProjectionProvider(
+                SyntheticGenerator(
+                    target = "alpha",
+                    nativeProjectionCatalog = TargetNativeProjectionCatalog.empty("beta")
+                ),
+                SyntheticRenderer("alpha")
+            )
+        }
+
+        assertTrue(failure.message.orEmpty().contains("native projection catalog 'beta'"))
+    }
+
+    @Test
     fun registryRejectsDuplicateTargets() {
         val failure = assertFailsWith<IllegalArgumentException> {
             TargetProjectionRegistry.of(
@@ -76,7 +92,9 @@ class CoreTargetProjectionBoundaryTests {
     fun coreGenerationSourcesContainNoBuiltInTargetRouting() {
         val coreFiles = listOf(
             "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+            "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt",
+            "src/main/kotlin/org/flowlang/generators/manifest/TargetMaterializationResolverEngine.kt",
+            "src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt"
         )
         val forbidden = listOf(
             "jenkins",
@@ -124,7 +142,8 @@ class CoreTargetProjectionBoundaryTests {
     }
 
     private class SyntheticGenerator(
-        override val target: String
+        override val target: String,
+        override val nativeProjectionCatalog: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.empty(target)
     ) : ReconciledTargetManifestGenerator() {
         override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest =
             TargetManifest(
