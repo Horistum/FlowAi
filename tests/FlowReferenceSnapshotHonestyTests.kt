@@ -61,6 +61,29 @@ class FlowReferenceSnapshotHonestyTests {
     }
 
     @Test
+    fun generatorPreservesUnmanagedDocumentationAndRemovesStaleManagedArtifacts() {
+        val generated = Files.createTempDirectory("flow-reference-managed-files").toFile()
+        try {
+            val readme = File(generated, "README.md")
+            readme.writeText("Human-owned snapshot documentation.\n")
+            val staleProjection = File(generated, "obsolete.review.yaml")
+            staleProjection.writeText("stale generated projection\n")
+
+            ReferenceSnapshotBundleGenerator().generate(
+                intentFile = File("examples/intent/build-test-deploy.intent.yaml"),
+                outputDir = generated,
+                scenarioId = "build-test-deploy"
+            )
+
+            assertEquals("Human-owned snapshot documentation.\n", readme.readText())
+            assertFalse(staleProjection.exists())
+            assertTrue(File(generated, "snapshot-index.json").isFile)
+        } finally {
+            generated.deleteRecursively()
+        }
+    }
+
+    @Test
     fun committedSnapshotDirectoryMatchesCanonicalGeneratorFileForFile() {
         val generated = Files.createTempDirectory("flow-reference-directory").toFile()
         try {

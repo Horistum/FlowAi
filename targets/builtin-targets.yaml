@@ -112,6 +112,7 @@ targets:
       container.image: supported
       notification.send: supported
       git.checkout: supported
+      docker.build: supported
     projectionRules:
       - module: git
         action: checkout
@@ -133,6 +134,29 @@ targets:
               kind: TASK_PARAMETER
               name: depth
               defaultValue: "0"
+      - module: docker
+        action: build
+        mode: native
+        reason: Jenkins declares the Docker Pipeline build and push object API as executable image-build evidence without emitting shell or Docker CLI command strings.
+        evidenceReference: targets/builtin-targets.yaml#targets.jenkins.projectionRules.docker.build
+        payload:
+          kind: jenkins-step
+          reference: docker-build
+          bindings:
+            image:
+              kind: TASK_PARAMETER
+              name: image
+            context:
+              kind: TASK_PARAMETER
+              name: path
+              defaultValue: "."
+            dockerfile:
+              kind: TASK_PARAMETER
+              name: dockerfile
+            push:
+              kind: TASK_PARAMETER
+              name: push
+              defaultValue: "false"
       - module: standard
         action: execute
         mode: notes_projected
@@ -180,6 +204,7 @@ targets:
       container.image: supported
       notification.send: supported
       git.checkout: supported
+      docker.build: supported
     projectionRules:
       - module: git
         action: checkout
@@ -201,6 +226,29 @@ targets:
               kind: TASK_PARAMETER
               name: depth
               defaultValue: "0"
+      - module: docker
+        action: build
+        mode: native
+        reason: GitHub Actions declares docker/build-push-action v7 with typed tags, context, Dockerfile and push bindings as executable image-build evidence.
+        evidenceReference: targets/builtin-targets.yaml#targets.github-actions.projectionRules.docker.build
+        payload:
+          kind: github-action
+          reference: docker/build-push-action@v7
+          bindings:
+            image:
+              kind: TASK_PARAMETER
+              name: image
+            context:
+              kind: TASK_PARAMETER
+              name: path
+              defaultValue: "."
+            dockerfile:
+              kind: TASK_PARAMETER
+              name: dockerfile
+            push:
+              kind: TASK_PARAMETER
+              name: push
+              defaultValue: "false"
       - module: standard
         action: execute
         mode: notes_projected
@@ -250,6 +298,7 @@ targets:
       kubernetes.api: supported
       container.image: supported
       git.checkout: supported
+      docker.build: supported
     projectionRules:
       - module: git
         action: checkout
@@ -274,6 +323,32 @@ targets:
             workspace:
               kind: TASK_METADATA
               field: TARGET
+      - module: docker
+        action: build
+        mode: native
+        reason: Tekton declares the reviewed Catalog buildah Task 0.9 contract with typed image, context, Dockerfile, push policy and source workspace bindings.
+        evidenceReference: targets/builtin-targets.yaml#targets.tekton.projectionRules.docker.build
+        payload:
+          kind: tekton-task
+          reference: buildah
+          bindings:
+            image:
+              kind: TASK_PARAMETER
+              name: image
+            context:
+              kind: TASK_PARAMETER
+              name: path
+              defaultValue: "."
+            dockerfile:
+              kind: TASK_PARAMETER
+              name: dockerfile
+            push:
+              kind: TASK_PARAMETER
+              name: push
+              defaultValue: "false"
+            workspace:
+              kind: LITERAL
+              value: source
       - module: standard
         action: execute
         mode: notes_projected

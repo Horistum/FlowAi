@@ -1,7 +1,9 @@
-# --- Kompilace a sestavení (Build) ---
+# Build and generated outputs
 build/
 out/
 .gradle/
 .incremental/
 bin/
 .gradle-user-home/
+__pycache__/
+*.py[cod]

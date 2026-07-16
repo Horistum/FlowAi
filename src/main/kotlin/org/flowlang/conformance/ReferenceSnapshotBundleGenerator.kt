@@ -84,8 +84,7 @@ class ReferenceSnapshotBundleGenerator(
             "Generated reference snapshot is inconsistent: ${validationIssues.joinToString()}"
         }
 
-        outputDir.deleteRecursively()
-        outputDir.mkdirs()
+        prepareOutputDirectory(outputDir)
         writeJson(outputDir, "normalized-intent.json", intent)
         writeJson(outputDir, "flow-ast.json", ast)
         writeJson(outputDir, "execution-plan.json", ExecutionPlanCanonicalizer.canonicalize(plan))
@@ -105,7 +104,31 @@ class ReferenceSnapshotBundleGenerator(
         return snapshot
     }
 
+    private fun prepareOutputDirectory(outputDir: File) {
+        outputDir.mkdirs()
+        outputDir.listFiles().orEmpty()
+            .filter { file -> file.isFile && isManagedSnapshotArtifact(file.name) }
+            .forEach { file ->
+                require(file.delete()) { "Unable to replace generated snapshot artifact: ${file.path}" }
+            }
+    }
+
+    private fun isManagedSnapshotArtifact(name: String): Boolean =
+        name in MANAGED_SNAPSHOT_FILES ||
+            name in ReferenceSnapshotHonesty.legacyExecutableLookingFiles ||
+            TARGET_SNAPSHOT_FILE.matches(name)
+
     private fun writeJson(outputDir: File, name: String, value: Any) {
         File(outputDir, name).writeText(Json.mapper.writeValueAsString(value) + "\n")
+    }
+
+    private companion object {
+        val MANAGED_SNAPSHOT_FILES: Set<String> = setOf(
+            "normalized-intent.json",
+            "flow-ast.json",
+            "execution-plan.json",
+            "snapshot-index.json"
+        )
+        val TARGET_SNAPSHOT_FILE: Regex = Regex("^[a-z0-9][a-z0-9-]*\\.(?:executable|review)\\.yaml$|^[a-z0-9][a-z0-9-]*\\.blocked\\.json$")
     }
 }

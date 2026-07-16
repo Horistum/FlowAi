@@ -184,6 +184,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             if (!operation.isNullOrBlank()) add("standard.$operation")
         }
         if (action.module == "git" && action.action == "checkout") add("git.checkout")
+        if (action.module == "docker" && action.action == "build") add("docker.build")
         if (action.module == "kubernetes") add("kubernetes.api")
         if (action.module == "docker") add("container.image")
         if (action.module == "notify") add("notification.send")

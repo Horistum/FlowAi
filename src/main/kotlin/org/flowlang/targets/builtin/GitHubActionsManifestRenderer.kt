@@ -118,6 +118,7 @@ class GitHubActionsManifestRenderer(
             sb.appendLine("        uses: ${yamlScalar(payload.reference)}")
             when (payload.reference) {
                 "actions/checkout@v4" -> renderCheckoutBindings(step.id, payload, sb)
+                "docker/build-push-action@v7" -> renderImageBuildBindings(step.id, payload, manifest, sb)
                 else -> renderGenericBindings(step.id, payload.bindings, sb)
             }
         }
@@ -138,6 +139,39 @@ class GitHubActionsManifestRenderer(
         sb.appendLine("          repository: ${yamlScalar(repository)}")
         sb.appendLine("          ref: ${yamlScalar(ref)}")
         sb.appendLine("          fetch-depth: ${yamlScalar(depth.toString())}")
+    }
+
+    private fun renderImageBuildBindings(
+        stepId: String,
+        payload: TargetRendererPayload,
+        manifest: TargetManifest,
+        sb: StringBuilder
+    ) {
+        val context = "GitHub image-build payload for '$stepId'"
+        val image = ImageBuildProjectionValues.renderText(
+            ProjectionTarget.GITHUB_ACTIONS,
+            ImageBuildProjectionValues.image(payload, "image", context),
+            manifest.inputs,
+            "$context binding 'image'"
+        )
+        val buildContext = ImageBuildProjectionValues.requireLiteralWorkspacePath(
+            ImageBuildProjectionValues.buildContext(payload, "context", context),
+            "$context binding 'context'"
+        )
+        val dockerfile = ImageBuildProjectionValues.dockerfile(payload, "dockerfile", context)?.let {
+            ImageBuildProjectionValues.requireLiteralWorkspacePath(it, "$context binding 'dockerfile'")
+        }
+        val push = ImageBuildProjectionValues.push(payload, "push", context)
+
+        sb.appendLine("        with:")
+        ImageBuildProjectionValues.githubContext(buildContext)?.let {
+            sb.appendLine("          context: ${yamlScalar(it)}")
+        }
+        ImageBuildProjectionValues.githubDockerfile(buildContext, dockerfile)?.let {
+            sb.appendLine("          file: ${yamlScalar(it)}")
+        }
+        sb.appendLine("          tags: ${yamlScalar(image)}")
+        sb.appendLine("          push: $push")
     }
 
     private fun renderGenericBindings(

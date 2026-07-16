@@ -126,10 +126,48 @@ class TargetNativeProjectionArchitectureTests {
     }
 
     @Test
+    fun missingOptionalCompileTimeBindingIsOmittedInsteadOfDowngradingReadiness() {
+        val definition = TargetNativeProjectionDefinition(
+            kind = "FUTURE_TASK",
+            reference = "checkout",
+            bindings = mapOf(
+                "source" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
+                ),
+                "depth" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER),
+                    required = false
+                )
+            )
+        )
+        val catalog = TargetNativeProjectionCatalog.of("future-target", definition)
+        val rule = nativeRule(bindings = mapOf(
+            "source" to ProjectionBinding.taskParameter("source"),
+            "depth" to ProjectionBinding.taskParameter("depth")
+        ))
+        val resolution = TargetMaterializationResolver.resolve(
+            task = TaskNode(
+                id = "checkout_source",
+                module = "git",
+                action = "checkout",
+                target = "source",
+                params = mapOf("source" to "https://example.invalid/source.git")
+            ),
+            targetName = "future-target",
+            projectionRules = listOf(rule),
+            nativeProjections = catalog
+        )
+        val payload = assertNotNull(resolution.rendererPayload)
+
+        assertEquals(setOf("source"), payload.bindings.keys)
+        assertEquals(ProjectionBindingResolutionStatus.RESOLVED, payload.bindings.getValue("source").resolutionStatus)
+    }
+
+    @Test
     fun builtInDistributionDeclaresOnlyActuallyImplementedNativeCoverage() {
-        assertEquals(1, BuiltInNativeProjectionCatalogs.jenkins.definitions.size)
-        assertEquals(1, BuiltInNativeProjectionCatalogs.githubActions.definitions.size)
-        assertEquals(1, BuiltInNativeProjectionCatalogs.tekton.definitions.size)
+        assertEquals(2, BuiltInNativeProjectionCatalogs.jenkins.definitions.size)
+        assertEquals(2, BuiltInNativeProjectionCatalogs.githubActions.definitions.size)
+        assertEquals(2, BuiltInNativeProjectionCatalogs.tekton.definitions.size)
 
         val fakeNativeCompatibility = CompatibilityReport(
             target = "github-actions",
