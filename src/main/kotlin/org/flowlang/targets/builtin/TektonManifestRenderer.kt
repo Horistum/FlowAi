@@ -31,10 +31,10 @@ class TektonManifestRenderer : TargetManifestRenderer {
         sb.appendLine("metadata:")
         sb.appendLine("  name: ${sanitizeId(manifest.flowName)}")
         sb.appendLine("spec:")
-        val checkoutWorkspaces = checkoutWorkspaceNames(manifest)
-        if (checkoutWorkspaces.isNotEmpty()) {
+        val projectionWorkspaces = projectionWorkspaceNames(manifest)
+        if (projectionWorkspaces.isNotEmpty()) {
             sb.appendLine("  workspaces:")
-            checkoutWorkspaces.forEach { workspace ->
+            projectionWorkspaces.forEach { workspace ->
                 sb.appendLine("    - name: ${sanitizeId(workspace)}")
             }
         }
@@ -49,13 +49,17 @@ class TektonManifestRenderer : TargetManifestRenderer {
         return sb.toString()
     }
 
-    private fun checkoutWorkspaceNames(manifest: TargetManifest): List<String> = manifest.jobs
+    private fun projectionWorkspaceNames(manifest: TargetManifest): List<String> = manifest.jobs
         .flatMap { job -> job.steps.flatMap { it.flatten() } }
         .mapNotNull { step -> step.rendererPayload }
-        .filter { payload ->
-            payload.kind == BuiltInProjectionPayloadKinds.TEKTON_TASK && payload.reference == "git-clone"
+        .filter { payload -> payload.kind == BuiltInProjectionPayloadKinds.TEKTON_TASK }
+        .mapNotNull { payload ->
+            when (payload.reference) {
+                "git-clone" -> CheckoutProjectionValues.workspace(payload, "workspace", "Tekton git-clone payload")
+                "buildah" -> ImageBuildProjectionValues.workspace(payload, "workspace", "Tekton buildah payload")
+                else -> null
+            }
         }
-        .map { payload -> CheckoutProjectionValues.workspace(payload, "workspace", "Tekton git-clone payload") }
         .distinct()
 
     private fun renderGitCloneTask(
@@ -81,6 +85,62 @@ class TektonManifestRenderer : TargetManifestRenderer {
         sb.appendLine("          value: ${yamlScalar(depth.toString())}")
         sb.appendLine("      workspaces:")
         sb.appendLine("        - name: output")
+        sb.appendLine("          workspace: ${sanitizeId(workspace)}")
+    }
+
+    private fun renderBuildahTask(
+        stepId: String,
+        payload: TargetRendererPayload,
+        manifest: TargetManifest,
+        sb: StringBuilder
+    ) {
+        val context = "Tekton buildah payload for '$stepId'"
+        val image = ImageBuildProjectionValues.renderText(
+            ProjectionTarget.TEKTON,
+            ImageBuildProjectionValues.image(payload, "image", context),
+            manifest.inputs,
+            "$context binding 'image'"
+        )
+        val rawContext = ImageBuildProjectionValues.requireLiteralWorkspacePath(
+            ImageBuildProjectionValues.buildContext(payload, "context", context),
+            "$context binding 'context'"
+        )
+        val renderedContext = ImageBuildProjectionValues.renderText(
+            ProjectionTarget.TEKTON,
+            rawContext,
+            manifest.inputs,
+            "$context binding 'context'"
+        )
+        val rawDockerfile = ImageBuildProjectionValues.tektonDockerfile(
+            rawContext,
+            ImageBuildProjectionValues.dockerfile(payload, "dockerfile", context)
+        )
+        ImageBuildProjectionValues.requireLiteralWorkspacePath(
+            rawDockerfile,
+            "$context binding 'dockerfile'"
+        )
+        val renderedDockerfile = ImageBuildProjectionValues.renderText(
+            ProjectionTarget.TEKTON,
+            rawDockerfile,
+            manifest.inputs,
+            "$context binding 'dockerfile'"
+        )
+        val skipPush = !ImageBuildProjectionValues.push(payload, "push", context)
+        val workspace = ImageBuildProjectionValues.workspace(payload, "workspace", context)
+
+        sb.appendLine("      taskRef:")
+        sb.appendLine("        name: buildah")
+        sb.appendLine("      params:")
+        sb.appendLine("        - name: IMAGE")
+        sb.appendLine("          value: ${yamlScalar(image)}")
+        sb.appendLine("        - name: CONTEXT")
+        sb.appendLine("          value: ${yamlScalar(renderedContext)}")
+        sb.appendLine("        - name: DOCKERFILE")
+        sb.appendLine("          value: ${yamlScalar(renderedDockerfile)}")
+        sb.appendLine("        - name: SKIP_PUSH")
+        sb.appendLine("          value: ${yamlScalar(skipPush.toString())}")
+        sb.appendLine("      workspaces:")
+        sb.appendLine("        - name: source")
         sb.appendLine("          workspace: ${sanitizeId(workspace)}")
     }
 
@@ -128,6 +188,7 @@ class TektonManifestRenderer : TargetManifestRenderer {
         }
         when (payload.reference) {
             "git-clone" -> renderGitCloneTask(step.id, payload, sb)
+            "buildah" -> renderBuildahTask(step.id, payload, manifest, sb)
             else -> renderGenericTask(step.id, payload, sb)
         }
     }

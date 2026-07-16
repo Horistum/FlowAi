@@ -105,6 +105,16 @@ These contracts share Flow semantic inputs but do not share target syntax. GitHu
 
 Targets without an explicit checkout projection rule and matching provider definition remain `ADAPTER_REQUIRED` or review-only.
 
+The built-in distribution also declares reviewed `docker.build` contracts for:
+
+- Jenkins `JENKINS_STEP/docker-build`, mapping image, context and push to the Docker Pipeline object API while rejecting custom Dockerfiles that require free-form CLI arguments;
+- GitHub Actions `GITHUB_ACTION/docker/build-push-action@v7`, mapping image, context, Dockerfile and push to structured action inputs;
+- Tekton `TEKTON_TASK/buildah`, mapping image, context, Dockerfile and inverted skip-push policy plus an explicit `source` workspace to the reviewed Catalog Task 0.9 contract.
+
+Image-build context and Dockerfile bindings must resolve to safe compile-time relative workspace paths. Dynamic image references may use declared Flow inputs and are translated by the concrete renderer. Unknown interpolation, invalid push values, unsafe paths and unsupported target-specific combinations fail closed. Authentication remains external target configuration and is never inferred from image names or system URLs.
+
+Targets without an explicit image-build projection rule and matching provider definition remain `ADAPTER_REQUIRED` or review-only.
+
 ## Expression profiles
 
 A target that declares condition support selects an explicit expression profile. The profile describes Flow AST features, not a hardcoded target switch. Missing or empty evidence fails closed.

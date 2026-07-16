@@ -73,6 +73,8 @@ A target registry declaration with `mode: NATIVE` is not implementation evidence
 
 Cross-target coverage must preserve one semantic action contract while allowing each edge renderer to enforce its own concrete value and structural requirements. A target may be marked native for an action only when registry evidence, provider ownership, renderer behavior and behavioral tests exist together. Similar-looking target syntax must not be treated as equivalent when required runtime structures such as workspaces or repository identity rules differ.
 
+Native image-build coverage must preserve image identity, workspace-relative context, Dockerfile selection and push policy through structured target APIs. Edge renderers must reject values that would require shell commands, free-form CLI argument strings, unsafe path interpretation or silent credential inference. A target-specific limitation may narrow native coverage, but it must not be hidden by approximating another target's behavior.
+
 ## Change rule
 
 Every larger change must pass an Architecture Decision Gate before implementation. The decision must explain which part of the core pipeline is strengthened and which drift risks are explicitly rejected.

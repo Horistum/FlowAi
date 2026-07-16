@@ -8,6 +8,7 @@ import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererContractValidator
 import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
+import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.TargetStep
 
 class JenkinsManifestRenderer : TargetManifestRenderer {
@@ -107,7 +108,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
                 step.children.forEach { renderJenkinsStep(it, manifest, sb, indent) }
             "condition" -> renderJenkinsCondition(step, manifest, sb, indent)
             "approval" -> sb.appendLine("${indent}input message: ${groovyString(step.params["message"] ?: "Approval required")}")
-            else -> renderJenkinsLeaf(step, sb, indent)
+            else -> renderJenkinsLeaf(step, manifest, sb, indent)
         }
     }
 
@@ -143,21 +144,31 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         sb.appendLine("${indent}}")
     }
 
-    private fun renderJenkinsLeaf(step: TargetStep, sb: StringBuilder, indent: String) {
+    private fun renderJenkinsLeaf(
+        step: TargetStep,
+        manifest: TargetManifest,
+        sb: StringBuilder,
+        indent: String
+    ) {
         val opaqueNames = TargetProjectionDiagnostics.opaqueNames(step)
         if (opaqueNames.isNotEmpty()) {
             val items = opaqueNames.joinToString(", ") {
                 TargetProjectionValue.mappingSpec(ProjectionTarget.JENKINS, it)
             }
             sb.appendLine("${indent}${TargetProjectionValue.boundary(ProjectionTarget.JENKINS)}([$items]) {")
-            renderJenkinsLeafBody(step, sb, "$indent  ")
+            renderJenkinsLeafBody(step, manifest, sb, "$indent  ")
             sb.appendLine("${indent}}")
         } else {
-            renderJenkinsLeafBody(step, sb, indent)
+            renderJenkinsLeafBody(step, manifest, sb, indent)
         }
     }
 
-    private fun renderJenkinsLeafBody(step: TargetStep, sb: StringBuilder, indent: String) {
+    private fun renderJenkinsLeafBody(
+        step: TargetStep,
+        manifest: TargetManifest,
+        sb: StringBuilder,
+        indent: String
+    ) {
         val payload = requireNotNull(step.rendererPayload) {
             "Executable Jenkins step '${step.id}' has no renderer payload."
         }
@@ -191,9 +202,45 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
                     sb.appendLine("${indent})")
                 }
             }
+            "docker-build" -> renderDockerBuild(step.id, payload, manifest, sb, indent)
             else -> error(
                 "Unsupported Jenkins structured payload reference '${payload.reference}' for step '${step.id}'."
             )
         }
+    }
+
+    private fun renderDockerBuild(
+        stepId: String,
+        payload: TargetRendererPayload,
+        manifest: TargetManifest,
+        sb: StringBuilder,
+        indent: String
+    ) {
+        val context = "Jenkins Docker build payload for '$stepId'"
+        val image = ImageBuildProjectionValues.image(payload, "image", context)
+        val buildContext = ImageBuildProjectionValues.requireLiteralWorkspacePath(
+            ImageBuildProjectionValues.buildContext(payload, "context", context),
+            "$context binding 'context'"
+        )
+        val dockerfile = ImageBuildProjectionValues.dockerfile(payload, "dockerfile", context)?.let {
+            ImageBuildProjectionValues.requireLiteralWorkspacePath(it, "$context binding 'dockerfile'")
+        }
+        require(ImageBuildProjectionValues.isDefaultDockerfile(buildContext, dockerfile)) {
+            "$context cannot render custom Dockerfile '$dockerfile' without falling back to Docker CLI argument strings."
+        }
+        val push = ImageBuildProjectionValues.push(payload, "push", context)
+        val imageArgument = ImageBuildProjectionValues.jenkinsImageArgument(
+            image,
+            manifest.inputs,
+            "$context binding 'image'"
+        )
+        val variable = ImageBuildProjectionValues.jenkinsVariable(stepId)
+        val buildCall = if (buildContext == ".") {
+            "docker.build($imageArgument)"
+        } else {
+            "docker.build($imageArgument, ${groovyString(buildContext)})"
+        }
+        sb.appendLine("${indent}def $variable = $buildCall")
+        if (push) sb.appendLine("${indent}$variable.push()")
     }
 }

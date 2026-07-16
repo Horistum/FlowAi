@@ -28,6 +28,11 @@ object BuiltInNativeProjectionCatalogs {
                     required = false
                 )
             )
+        ),
+        TargetNativeProjectionDefinition(
+            kind = BuiltInProjectionPayloadKinds.JENKINS_STEP,
+            reference = "docker-build",
+            bindings = imageBuildBindings()
         )
     )
 
@@ -48,6 +53,11 @@ object BuiltInNativeProjectionCatalogs {
                     required = false
                 )
             )
+        ),
+        TargetNativeProjectionDefinition(
+            kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
+            reference = "docker/build-push-action@v7",
+            bindings = imageBuildBindings()
         )
     )
 
@@ -71,6 +81,31 @@ object BuiltInNativeProjectionCatalogs {
                     acceptedKinds = setOf(ProjectionBindingKind.TASK_METADATA)
                 )
             )
+        ),
+        TargetNativeProjectionDefinition(
+            kind = BuiltInProjectionPayloadKinds.TEKTON_TASK,
+            reference = "buildah",
+            bindings = imageBuildBindings() + mapOf(
+                "workspace" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.LITERAL)
+                )
+            )
+        )
+    )
+
+    private fun imageBuildBindings(): Map<String, TargetNativeProjectionBindingContract> = mapOf(
+        "image" to TargetNativeProjectionBindingContract(
+            acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
+        ),
+        "context" to TargetNativeProjectionBindingContract(
+            acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
+        ),
+        "dockerfile" to TargetNativeProjectionBindingContract(
+            acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER),
+            required = false
+        ),
+        "push" to TargetNativeProjectionBindingContract(
+            acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
         )
     )
 }

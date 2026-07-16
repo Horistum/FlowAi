@@ -98,9 +98,15 @@ class TargetNativeProjectionCatalog private constructor(
             "Native projection rule '${rule.module}.${rule.action}' for target '$target' has no payload template."
         }
         val definition = requireTemplate(template, "${rule.module}.${rule.action}")
-        val resolvedBindings = template.bindings.mapValues { (name, binding) ->
-            resolveBinding(binding, task, name)
-        }
+        val resolvedBindings = template.bindings.mapNotNull { (name, binding) ->
+            val resolved = resolveBinding(binding, task, name)
+            val contract = definition.bindings.getValue(name)
+            if (!contract.required && resolved.resolutionStatus == ProjectionBindingResolutionStatus.UNRESOLVED) {
+                null
+            } else {
+                name to resolved
+            }
+        }.toMap()
         val payload = TargetRendererPayload(
             kind = template.kind,
             target = target,

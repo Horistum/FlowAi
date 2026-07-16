@@ -1,0 +1,119 @@
+version: "0.9.6.6"
+name: "Native Image Build"
+
+objective: "Add reviewed native docker.build projection coverage across Jenkins, GitHub Actions and Tekton without introducing shell or universal command-string semantics."
+
+roadmapReference:
+  version: "0.9.6.6"
+  name: "Native Image Build"
+  type: "projection-coverage"
+
+architecturePurpose: "Prove that one target-neutral image-build action can preserve image identity, context, Dockerfile and push policy across structured target-native contracts."
+
+scope:
+  include:
+    - "Native docker.build registry evidence for Jenkins, GitHub Actions and Tekton."
+    - "Provider-owned image-build contracts for all selected targets."
+    - "Typed image, context, optional Dockerfile, push and Tekton workspace bindings."
+    - "Concrete Jenkins Docker Pipeline, GitHub Buildx action and Tekton buildah Task rendering."
+    - "Behavioral tests through parser, planner, compatibility, manifest generation, readiness and rendering."
+    - "Negative tests for unsafe paths, invalid push policy, unsupported interpolation, target-specific structural limits and unsupported targets."
+    - "Canonical reference snapshot regeneration through the real generator."
+    - "Architecture decision, target registry documentation and bounded report."
+  exclude:
+    - "Registry authentication or credential projection."
+    - "Multi-platform, cache, build secret, build argument or provenance expansion."
+    - "Executable multi-step reference scenario."
+    - "New target providers."
+
+nonGoals:
+  - "No runtime executor."
+  - "No SDK-first architecture."
+  - "No plugin lifecycle or classpath discovery."
+  - "No target-specific public DSL."
+  - "No shell or command projection."
+  - "No Docker CLI argument-string fallback."
+  - "No silent path, Dockerfile, registry or authentication inference."
+  - "No public standard or artifact contract version bump."
+
+expectedFilesToInspect:
+  - "modules/docker.yaml"
+  - "targets/builtin-targets.yaml"
+  - "src/main/kotlin/org/flowlang/planner/FlowPlanner.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+
+expectedFilesToChange:
+  - "targets/builtin-targets.yaml"
+  - "src/main/kotlin/org/flowlang/planner/FlowPlanner.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+  - "src/test/kotlin/TargetNativeProjectionArchitectureTests.kt"
+  - "conformance/snapshots/build-test-deploy/execution-plan.json"
+  - "conformance/snapshots/build-test-deploy/jenkins.review.yaml"
+  - "conformance/snapshots/build-test-deploy/github-actions.review.yaml"
+  - "conformance/snapshots/build-test-deploy/README.md"
+  - "docs/ARCHITECTURE_CONSTITUTION.md"
+  - "docs/TARGET_REGISTRY.md"
+  - "CHANGELOG.md"
+  - ".flow-agent/roadmap.yaml"
+
+expectedFilesToAdd:
+  - "src/main/kotlin/org/flowlang/targets/builtin/ImageBuildProjectionRenderingSupport.kt"
+  - "src/test/kotlin/NativeImageBuildProjectionTests.kt"
+  - "docs/adr/ADR_0_9_6_6_NATIVE_IMAGE_BUILD.md"
+  - ".flow-agent/reports/v0.9.6.6-native-image-build.md"
+
+testsToAddOrUpdate:
+  - "NativeImageBuildProjectionTests"
+  - "TargetNativeProjectionArchitectureTests"
+  - "Canonical build-test-deploy execution-plan and target review snapshots"
+
+conformanceToAddOrUpdate:
+  - "Existing full conformance must pass unchanged; canonical reference evidence is regenerated through the real snapshot command without inflating the public gate inventory."
+
+documentationToUpdate:
+  - "Architecture constitution native action fidelity rule."
+  - "Target Registry built-in image-build contracts."
+  - "Reference snapshot scope and honesty statement."
+  - "Roadmap, changelog, ADR and bounded report."
+
+architectureChecks:
+  - "All selected targets have matching registry rules, provider contracts and renderer behavior."
+  - "Flow Core remains free of target-specific image-build syntax, Docker CLI strings and path interpretation."
+  - "Image, context, Dockerfile, push and workspace semantics are enforced at the edge."
+  - "Targets without explicit image-build evidence remain adapter-required."
+  - "The change introduces no runtime, SDK, plugin lifecycle, shell projection, credential inference or target-specific public syntax."
+
+validationPlan:
+  - "Run Flow Agent tooling unit tests."
+  - "Run Flow Agent structure validation and context generation."
+  - "Run offline cache-aware tests and conformance."
+  - "Run clean compile and the complete test suite."
+  - "Run the standalone full conformance runner."
+  - "Regenerate canonical reference snapshots through the real snapshot command."
+  - "Verify the final PR contains one implementation commit and no temporary source-export workflow."
+
+riskAssessment:
+  risks:
+    - "A target renderer could reconstruct Docker CLI command strings and reopen shell semantics."
+    - "Context or Dockerfile values could escape the workspace or be interpreted as options."
+    - "Push policy could drift between positive push and negative skip-push target APIs."
+    - "GitHub Git context and Tekton workspace structure could be mapped inconsistently."
+  mitigations:
+    - "Use only structured target APIs and reject Jenkins custom Dockerfile behavior that requires a free-form argument string."
+    - "Require compile-time validated relative workspace paths and fail closed on traversal, absolute, option-like, whitespace or dynamic values."
+    - "Use one compile-time boolean contract and explicitly invert it only for Tekton SKIP_PUSH."
+    - "Map GitHub custom Dockerfiles relative to the selected Git context and bind Tekton buildah to an explicit source workspace."
+
+releaseArtifacts:
+  - "Updated target registry and provider catalogs."
+  - "Concrete native image-build renderer implementations."
+  - "Behavioral and negative tests."
+  - "Regenerated canonical reference evidence."
+  - "Architecture decision and documentation updates."
+  - "Bounded work report."

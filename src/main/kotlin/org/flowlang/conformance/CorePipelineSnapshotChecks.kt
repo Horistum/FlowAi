@@ -167,7 +167,9 @@ internal class CorePipelineSnapshotChecks(
             require(readme.contains("0.9.5"))
             require(readme.contains("0.8.0"))
             require(readme.contains("2.0"))
-            require(readme.contains("Projection Rule Coverage"))
+            require(readme.contains("First Executable Reference Scenario")) {
+                "Reference snapshot README must identify the next executable-scenario roadmap boundary."
+            }
         } finally {
             generated.deleteRecursively()
         }

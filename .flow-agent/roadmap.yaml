@@ -289,7 +289,7 @@ roadmap:
     name: "Native Image Build"
     purpose: "Add reviewed native image-build projection coverage without introducing command strings as universal semantics."
     type: "projection-coverage"
-    status: "next"
+    status: "completed"
     requiredOutcome:
       - "Native image-build payloads use typed bindings and explicit target evidence."
       - "Missing implementation evidence remains fail-closed."
@@ -297,7 +297,7 @@ roadmap:
     name: "First Executable Reference Scenario"
     purpose: "Promote the first realistic multi-step reference scenario only when every action has concrete executable projection evidence."
     type: "reference-readiness"
-    status: "planned"
+    status: "next"
     requiredOutcome:
       - "The executable claim is derived from the real parser, planner, compatibility, materialization, manifest and renderer pipeline."
       - "No review-only or adapter-required action is relabeled executable."
