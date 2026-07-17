@@ -1,1 +1,14 @@
 packageId: flow.safety.core
+packageVersion: "0.9.7.2"
+kind: safety
+description: "Core safety contract vocabulary."
+safetyPolicies:
+  - approval.required
+  - destructive.operation
+  - environment.sensitive
+dependencies:
+  - packageId: flow.capability.core
+    versionConstraint: "0.9.x"
+boundaries:
+  - name: pre-projection
+    description: "Safety meaning is evaluated before target projection."
