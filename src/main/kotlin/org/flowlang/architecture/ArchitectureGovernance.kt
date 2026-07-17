@@ -70,11 +70,12 @@ data class ArchitectureGovernanceReport(
 )
 
 /**
- * Validates repository architecture contracts and active-source ownership.
+ * Validates repository architecture contracts and every active Kotlin source.
  *
  * Forbidden direction terms are checked as Kotlin symbols in structural source.
- * Comments, diagnostic messages and target-native string literals are not treated
- * as architecture mechanisms.
+ * Comments, diagnostic messages and string literals are not architecture
+ * mechanisms. Architecture and conformance production packages are deliberately
+ * scanned as well; governance cannot exempt its own implementation wholesale.
  */
 class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
     fun analyze(): ArchitectureGovernanceReport {
@@ -143,7 +144,7 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
             issues += ArchitectureGovernanceIssue(
                 code = "ARCHITECTURE_DRIFT_SCORE_FAILED",
                 severity = "error",
-                message = "Architecture drift score ${driftScore.finalScore} is below minimum ${driftScore.minimumScore} without an explicit ADR exception.",
+                message = "Architecture drift score ${driftScore.finalScore} is below minimum ${driftScore.minimumScore}, or the configured scoring mode is invalid, without an explicit ADR exception.",
                 path = "standard/architecture/drift-score.yaml"
             )
         }
@@ -195,9 +196,10 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
             "driftScoreRequired"
         ),
         "standard/architecture/drift-score.yaml" to listOf(
-            "positiveSignals",
+            "baselineSignals",
             "negativeSignals",
             "minimumScore",
+            "scoringMode",
             "silent-semantic-fallback"
         )
     )
@@ -238,17 +240,17 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         val catalog = File(rootDir, "standard/architecture/drift-score.yaml")
         val root = if (catalog.isFile) FlowYaml.readMap(catalog) else emptyMap()
         val minimumScore = (root["minimumScore"] as? Number)?.toInt() ?: 0
-        val positiveCatalog = root["positiveSignals"] as? List<Any?> ?: emptyList()
+        val scoringMode = root["scoringMode"] as? String ?: "negative-signal-only"
+        val baselineCatalog = root["baselineSignals"] as? List<Any?> ?: emptyList()
         val negativeCatalog = root["negativeSignals"] as? List<Any?> ?: emptyList()
 
-        val positiveSignals = positiveCatalog.mapNotNull { item ->
+        val baselineSignals = baselineCatalog.mapNotNull { item ->
             val map = item as? Map<String, Any?> ?: return@mapNotNull null
             val id = map["id"] as? String ?: return@mapNotNull null
-            val configuredScore = (map["score"] as? Number)?.toInt() ?: 0
-            val evidence = positiveEvidence(id)
+            val evidence = baselineEvidence(id)
             ArchitectureDriftSignalStatus(
                 id = id,
-                score = if (evidence.isNotEmpty()) configuredScore else 0,
+                score = 0,
                 present = evidence.isNotEmpty(),
                 evidence = evidence,
                 description = map["description"] as? String ?: ""
@@ -269,18 +271,18 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
             )
         }
 
-        val baselinePositiveSignals = positiveSignals.map { it.copy(score = 0) }
         val finalScore = negativeSignals.sumOf { it.score }
         val exceptionRecorded = architectureDecisionExceptionRecorded()
-        val status = if (finalScore >= minimumScore || exceptionRecorded) "PASS" else "FAIL"
+        val formulaValid = scoringMode == "negative-signal-only"
+        val status = if (formulaValid && (finalScore >= minimumScore || exceptionRecorded)) "PASS" else "FAIL"
         return ArchitectureDriftScoreStatus(
             minimumScore = minimumScore,
             finalScore = finalScore,
             status = status,
-            positiveSignals = baselinePositiveSignals,
+            positiveSignals = baselineSignals,
             negativeSignals = negativeSignals,
             exceptionRecorded = exceptionRecorded,
-            scoringMode = "negative-signal-only"
+            scoringMode = scoringMode
         )
     }
 
@@ -322,7 +324,7 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         )
     }
 
-    private fun positiveEvidence(id: String): List<String> = when (id) {
+    private fun baselineEvidence(id: String): List<String> = when (id) {
         "semantic-correctness" -> existingPaths(
             "src/main/kotlin/org/flowlang/conformance/ReferenceCorpusExecutionHarness.kt",
             "conformance/standard/reference-corpus-execution-harness.conformance.yaml"
@@ -424,9 +426,4 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
 
     private fun activeKotlinSources(src: File): Sequence<File> = src.walkTopDown()
         .filter { it.isFile && it.extension == "kt" }
-        .filterNot { file ->
-            val relative = file.relativeTo(rootDir).path.replace(File.separatorChar, '/')
-            relative.startsWith("src/main/kotlin/org/flowlang/architecture/") ||
-                relative.startsWith("src/main/kotlin/org/flowlang/conformance/")
-        }
 }
