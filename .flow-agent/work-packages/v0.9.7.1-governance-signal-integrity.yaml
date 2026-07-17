@@ -1,0 +1,27 @@
+version: "0.9.7.1"
+name: "Governance Signal Integrity"
+stream: "core"
+objective: "Make governance results truthful and self-applying."
+universalInvariant: "Reported status and score match measured behavior."
+forbiddenScope:
+  - "No broad package exclusion."
+  - "No inverted status."
+  - "No unused score."
+completionEvidence:
+  - "All production Kotlin packages are covered by behavioral fixtures."
+  - "Inventory presence is distinct from semantic health."
+  - "One negative-only formula decides drift status."
+  - "The full standard verification suite passes."
+scope:
+  include:
+    - "Governance source scanning."
+    - "Inventory status semantics."
+    - "Drift score calculation."
+    - "Behavioral tests."
+  exclude:
+    - "Intent and planning semantics."
+    - "Adapter and renderer expansion."
+validationPlan:
+  - "Run Flow Agent checks."
+  - "Run compilation and full tests."
+  - "Run full conformance and reference evidence."
