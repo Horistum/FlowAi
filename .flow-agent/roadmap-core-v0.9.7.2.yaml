@@ -18,23 +18,28 @@ items:
     status: completed
     purpose: "Separate planning ownership and dependency direction."
     universalInvariant: "Core contracts advance independently from implementation coverage."
-    forbiddenScope: ["No production behavior change."]
-    completionEvidence: ["Stream structure and dependency direction tests pass."]
+    forbiddenScope:
+      - "No production behavior change."
+    completionEvidence:
+      - "Stream structure and dependency direction tests pass."
   - version: "0.9.7.1"
     name: "Governance Signal Integrity"
     type: validation-honesty
     status: completed
     purpose: "Make governance scope, status and scoring truthful."
     universalInvariant: "Governance results match the property measured."
-    forbiddenScope: ["No broad source exclusion, inverted status or unused score."]
-    completionEvidence: ["Behavioral fixtures and the final verification suite pass."]
+    forbiddenScope:
+      - "No broad source exclusion, inverted status or unused score."
+    completionEvidence:
+      - "Behavioral fixtures and the final verification suite pass."
   - version: "0.9.7.2"
     name: "Canonical Module and Notes Authority"
     type: contract-authority
     status: completed
     purpose: "Create one strict source of semantic and safety contracts."
     universalInvariant: "Every capability and safety contract has one authority."
-    forbiddenScope: ["No duplicate defaults or permissive malformed conversion."]
+    forbiddenScope:
+      - "No duplicate defaults or permissive malformed conversion."
     completionEvidence:
       - "Registry construction loads one complete strict descriptor directory."
       - "Malformed shapes and duplicate identities fail closed."
@@ -48,61 +53,77 @@ items:
     status: next
     purpose: "Make planning validation mandatory before projection."
     universalInvariant: "Invalid planning evidence cannot reach an implementation boundary."
-    forbiddenScope: ["No alternate public bypass."]
-    completionEvidence: ["Invalid states fail through real public paths."]
+    forbiddenScope:
+      - "No alternate public bypass."
+    completionEvidence:
+      - "Invalid states fail through real public paths."
   - version: "0.9.7.4"
     name: "Universal Dependency and Continuity Contract"
     type: semantic-dependencies
     status: planned
     purpose: "Distinguish ordering from data and state continuity."
     universalInvariant: "Ordering never implies continuity."
-    forbiddenScope: ["No renderer assumption as continuity evidence."]
-    completionEvidence: ["Synthetic cases distinguish supported continuity forms."]
+    forbiddenScope:
+      - "No renderer assumption as continuity evidence."
+    completionEvidence:
+      - "Synthetic cases distinguish supported continuity forms."
   - version: "0.9.7.5"
     name: "Canonical Intent Meaning"
     type: semantic-contract
     status: planned
     purpose: "Separate canonical meaning from explicit binding."
     universalInvariant: "Equivalent intent has equivalent meaning across inventories."
-    forbiddenScope: ["No implicit binding selection."]
-    completionEvidence: ["Inventory-independent meaning tests pass."]
+    forbiddenScope:
+      - "No implicit binding selection."
+    completionEvidence:
+      - "Inventory-independent meaning tests pass."
   - version: "0.9.7.6"
     name: "Universal Effect and State Transition Model"
     type: semantic-effects
     status: planned
     purpose: "Model resource reads and state changes consistently."
     universalInvariant: "Effects remain stable across implementations."
-    forbiddenScope: ["No implementation-name inference."]
-    completionEvidence: ["Three bounded domains share one effect model."]
+    forbiddenScope:
+      - "No implementation-name inference."
+    completionEvidence:
+      - "Three bounded domains share one effect model."
   - version: "0.9.7.7"
     name: "Universal Control and Policy Requirements"
     type: control-and-safety
     status: planned
     purpose: "Represent control and safety as independent requirements."
     universalInvariant: "Control meaning is implementation-independent."
-    forbiddenScope: ["No unknown evidence treated as safe."]
-    completionEvidence: ["Known, unknown and dynamic policy cases pass."]
+    forbiddenScope:
+      - "No unknown evidence treated as safe."
+    completionEvidence:
+      - "Known, unknown and dynamic policy cases pass."
   - version: "0.9.7.8"
     name: "Abstract Execution Topology Model"
     type: topology-contract
     status: planned
     purpose: "Describe isolation, lifetime, persistence and propagation."
     universalInvariant: "Executability requires matching plan and topology evidence."
-    forbiddenScope: ["No action-only readiness proof."]
-    completionEvidence: ["Complete and contradictory profiles are tested."]
+    forbiddenScope:
+      - "No action-only readiness proof."
+    completionEvidence:
+      - "Complete and contradictory profiles are tested."
   - version: "0.9.7.9"
     name: "Intent Lowering and Diagnostic Honesty"
     type: lowering-integrity
     status: planned
     purpose: "Preserve or diagnose every meaningful input."
     universalInvariant: "Accepted information never disappears silently."
-    forbiddenScope: ["No source-form enforcement difference."]
-    completionEvidence: ["Round-trip and malformed-input tests pass."]
+    forbiddenScope:
+      - "No source-form enforcement difference."
+    completionEvidence:
+      - "Round-trip and malformed-input tests pass."
   - version: "0.9.7.10"
     name: "Bounded Semantic Closure Gate"
     type: architecture-closure
     status: planned
     purpose: "Verify declared evidence with a finite checklist."
     universalInvariant: "The track closes by falsifiable evidence."
-    forbiddenScope: ["No new requirement introduced during closure."]
-    completionEvidence: ["The declared checklist and reference evidence pass."]
+    forbiddenScope:
+      - "No new requirement introduced during closure."
+    completionEvidence:
+      - "The declared checklist and reference evidence pass."
