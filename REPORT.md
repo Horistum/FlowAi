@@ -60,25 +60,18 @@ Historical correction and roadmap identifiers remain traceability labels for com
 
 ## Validation source
 
-Local isolated validation completed for:
-
-- Flow Agent roadmap tooling unit tests;
-- split-roadmap structure validation;
-- primary Core next-item resolution;
-- negative drift tests.
-
-Authoritative repository validation is the unmodified standard Flow CI run on the final pull-request head:
+GitHub Actions **Flow CI #1520**, run `29560189402`, completed successfully on implementation head `08ee3947792cd703d54f4f270d7e83568685e509` with:
 
 - Flow Agent tooling tests;
 - Flow Agent structure validation;
 - Flow Agent context generation;
-- offline tests when cache is available;
-- offline conformance when cache is available;
+- offline tests when cache was available;
+- offline conformance when cache was available;
 - clean compile and full test suite;
 - full conformance;
 - CI logs and test report artifacts.
 
-Validation remains pending until the final clean branch completes these gates. No temporary workflow, patch transport or snapshot writer is part of the diff.
+The final validation-metadata-only head must also pass the same unmodified standard Flow CI workflow. No temporary workflow, patch transport or snapshot writer is part of the diff.
 
 ## Architecture boundary
 
