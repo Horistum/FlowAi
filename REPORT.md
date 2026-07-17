@@ -5,32 +5,34 @@ Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Active architecture track: `v0.9.7 Universal Semantic Foundation`
-Completed roadmap item: `0.9.7.1 Governance Signal Integrity`
-Next Core roadmap item: `0.9.7.2 Canonical Module and Notes Authority`
+Completed roadmap item: `0.9.7.2 Canonical Module and Notes Authority`
+Next Core roadmap item: `0.9.7.3 Mandatory Materialization Authority`
 Bounded closure item: `0.9.7.10 Bounded Semantic Closure Gate`
 
 ## Active direction
 
-The roadmap has separate Core, adapter and conformance streams. Core cannot depend on unfinished work in another stream. Existing reference evidence remains active as falsification feedback and does not define Core meaning.
+Core, implementation and conformance planning remain separate authorities. Existing executable reference evidence stays active as falsification feedback and does not define Core meaning.
 
-## v0.9.7.1 outcome
+## v0.9.7.2 outcome
 
-- Production governance scanning now covers ordinary Core, architecture and conformance Kotlin packages.
-- Comments, documentation strings and target-native strings remain outside structural symbol detection.
-- CI/CD inventory presence is distinct from active semantic health.
-- Concrete implementation terms in active semantic source require review; expected adapter-edge inventory does not.
-- Broad words such as build, deploy, pipeline, workflow, registry and runner are no longer mechanism-level blocker evidence.
-- Drift scoring uses one explicit negative-signal-only formula.
-- Existing baseline evidence is descriptive and always contributes zero score.
-- Behavioral fixtures prove self-scanning, correct polarity, live score calculation and harmless-renaming stability.
-- No Intent, AST, ExecutionPlan, materialization, adapter capability or renderer behavior changed.
+- `modules/*.yaml` is the sole production authority for module capability and safety contracts.
+- `ModuleRegistry` no longer contains hardcoded contract copies or fills missing modules from defaults.
+- The legacy `includeDefaults` parameter remains source-compatible but does not change registry content.
+- Strict loading rejects malformed section types, invalid booleans, duplicate identities and unknown effect fields.
+- Explicit approval requirements survive into production `SafetyContract.requiresApproval` values.
+- Core module descriptors reject implementation-specific implications.
+- The ArgoCD module no longer carries implementation compatibility claims.
+- Core notes packages load from one versioned manifest and strict package directory.
+- Core notes reject implementation-owned kinds and fields, unknown dependencies and malformed declarations.
+- The hardcoded notes baseline was removed; the compatibility facade delegates to the canonical loader.
+- Behavioral tests cover partial descriptor sets, malformed data, approval preservation and ownership violations.
 - Package, public standard and artifact contract versions remain unchanged.
 
 ## Revised v0.9.7 order
 
 1. `0.9.7.1 Governance Signal Integrity` — completed
-2. `0.9.7.2 Canonical Module and Notes Authority` — next
-3. `0.9.7.3 Mandatory Materialization Authority`
+2. `0.9.7.2 Canonical Module and Notes Authority` — completed
+3. `0.9.7.3 Mandatory Materialization Authority` — next
 4. `0.9.7.4 Universal Dependency and Continuity Contract`
 5. `0.9.7.5 Canonical Intent Meaning`
 6. `0.9.7.6 Universal Effect and State Transition Model`
@@ -41,8 +43,8 @@ The roadmap has separate Core, adapter and conformance streams. Core cannot depe
 
 ## Validation
 
-GitHub Actions Flow CI #1541 passed Flow Agent checks, compilation, full tests and full conformance on the implementation head. The final roadmap and report metadata head must pass the same unmodified workflow before review completion.
+Flow CI #1557 passed Flow Agent checks, compilation, full tests, full conformance and executable reference evidence on the implementation head. The final metadata head must pass the same workflow before review completion.
 
 ## Architecture boundary
 
-Flow remains a notes-driven universal automation language and standardization model. It does not execute workflows, expose an SDK lifecycle, own a plugin framework, project raw runtime instructions or allow concrete implementations to define universal meaning.
+Flow remains a notes-driven universal automation language and standardization model. It does not execute workflows, expose an SDK lifecycle, own a plugin framework or allow concrete implementations to define universal meaning.
