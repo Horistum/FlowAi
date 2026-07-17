@@ -1,0 +1,14 @@
+version: "0.9.7.0"
+name: "Roadmap Separation and Universal Drift Lock"
+stream: "core"
+objective: "Separate planning ownership and keep existing reference evidence active."
+universalInvariant: "Core contracts do not depend on unfinished implementation work."
+forbiddenScope:
+  - "No production behavior change."
+completionEvidence:
+  - "Three planning streams are active."
+  - "Structural dependency checks pass."
+  - "The next Core item is Governance Signal Integrity."
+  - "Existing reference evidence remains in standard CI."
+validationPlan:
+  - "Run the unmodified standard Flow CI."
