@@ -1,0 +1,91 @@
+project: Flow Adapter Portfolio
+stream: adapters
+roadmapVersion: 1
+status: gated
+
+purpose: >-
+  Manage concrete implementation bindings and artifact generation independently
+  from universal Flow semantics. Adapter work consumes Core contracts; it never
+  defines, amends or weakens their meaning.
+
+activationGate:
+  requiredCoreItem: "0.9.7.9"
+  rule: "Broad adapter coverage expansion remains planned until universal semantic closure. Correctness fixes may proceed without changing Core meaning."
+
+rules:
+  - "Concrete platform names belong only to adapter-specific work packages and evidence."
+  - "An unsupported adapter capability must remain explicit; it must not create a Core fallback."
+  - "Every adapter declares topology evidence before scenario executability can be evaluated."
+  - "Adapter tests prove preserved semantics, not merely syntactically valid output."
+  - "Adapter implementation lifecycle is distribution-owned and is not part of the public Flow standard."
+
+items:
+  - version: "A0.1"
+    name: "Adapter Portfolio Reassessment"
+    type: "adapter-governance"
+    status: planned
+    purpose: "Reclassify existing adapters against frozen universal requirements and remove unsupported readiness claims."
+    dependsOnCore: "0.9.7.9"
+    completionEvidence:
+      - "Each adapter has an explicit support, limitation and evidence record."
+      - "No adapter-specific behavior is required by Core semantics."
+
+  - version: "A0.2"
+    name: "Topology Evidence Adoption"
+    type: "adapter-topology"
+    status: planned
+    purpose: "Declare execution isolation, state lifetime, transfer, scope, interaction and concurrency evidence for each adapter."
+    dependsOnCore: "0.9.7.6"
+    completionEvidence:
+      - "Every executable claim is backed by complete topology evidence."
+      - "Unknown properties fail closed."
+
+  - version: "A0.3"
+    name: "Capability Binding Migration"
+    type: "adapter-binding"
+    status: planned
+    purpose: "Bind canonical capabilities to concrete implementations without changing canonical meaning."
+    dependsOnCore: "0.9.7.1"
+    completionEvidence:
+      - "Bindings preserve semantic, effect and provenance contracts."
+      - "Missing bindings remain unresolved or unsupported."
+
+  - version: "A0.4"
+    name: "Control Requirement Materialization"
+    type: "adapter-control"
+    status: planned
+    purpose: "Provide evidence for concrete satisfaction of approval, retry, timeout, compensation and scheduling requirements."
+    dependsOnCore: "0.9.7.4"
+    completionEvidence:
+      - "Every native control claim has implementation and behavioral evidence."
+      - "Unsupported control forms are not approximated silently."
+
+  - version: "A0.5"
+    name: "Continuity Satisfaction Proof"
+    type: "adapter-continuity"
+    status: planned
+    purpose: "Prove that each adapter can satisfy declared data, artifact, mutable-state and durable-state dependencies."
+    dependsOnCore: "0.9.7.3"
+    completionEvidence:
+      - "Behavioral tests validate producer-to-consumer continuity."
+      - "Ordering-only support is never promoted to continuity support."
+
+  - version: "A0.6"
+    name: "Adapter Artifact Rendering"
+    type: "adapter-rendering"
+    status: planned
+    purpose: "Generate concrete target artifacts only after capability, control, topology and continuity evidence is complete."
+    dependsOnCore: "0.9.7.9"
+    completionEvidence:
+      - "Rendered artifacts preserve all required semantic evidence."
+      - "Incomplete evidence produces review-only or fail-fast output."
+
+  - version: "A0.7"
+    name: "Trigger Materialization Coverage"
+    type: "adapter-trigger"
+    status: planned
+    purpose: "Materialize interval, calendar, event and webhook requirements only where an adapter can represent them faithfully."
+    dependsOnCore: "0.9.7.4"
+    completionEvidence:
+      - "Unsupported trigger forms remain explicit."
+      - "No trigger approximation changes timing or delivery semantics silently."
