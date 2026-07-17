@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from flow_agent_roadmap import find_unique_next_roadmap_item
+from flow_agent_roadmap import validate_roadmap_structure
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +16,10 @@ REQUIRED_FILES = [
     "agent-contract.md",
     "architecture-constitution.md",
     "roadmap.yaml",
+    "roadmap-core-v0.9.7.yaml",
+    "roadmap-adapters.yaml",
+    "roadmap-conformance.yaml",
+    "roadmap-history-v0.7-v0.9.6.yaml",
     "release-state.yaml",
     "quality-gates.yaml",
     "forbidden-directions.yaml",
@@ -45,17 +49,18 @@ def assert_immutable_principles() -> None:
     constitution = read(AGENT_DIR / "architecture-constitution.md")
     required = [
         "Flow is an AI-first standardization layer",
-        "Flow is not Jenkins-specific",
         "Flow is not a runtime executor",
+        "Flow is not an SDK-first architecture",
         "Flow public syntax must remain target-neutral",
+        "Flow Core semantics are not defined by target adapters",
     ]
     for item in required:
         if item not in constitution:
             raise AssertionError(f"Missing immutable principle: {item}")
 
 
-def assert_next_roadmap_item_exists() -> None:
-    find_unique_next_roadmap_item(ROOT, AGENT_DIR / "roadmap.yaml")
+def assert_roadmap_structure() -> None:
+    validate_roadmap_structure(ROOT, AGENT_DIR / "roadmap.yaml")
 
 
 def assert_no_obvious_forbidden_contract_terms() -> None:
@@ -74,7 +79,7 @@ def main() -> int:
     try:
         assert_required_files()
         assert_immutable_principles()
-        assert_next_roadmap_item_exists()
+        assert_roadmap_structure()
         assert_no_obvious_forbidden_contract_terms()
         print("Flow agent validation passed.")
         return 0

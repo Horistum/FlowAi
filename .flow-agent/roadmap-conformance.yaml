@@ -1,0 +1,49 @@
+project: Flow Conformance
+stream: conformance
+roadmapVersion: 2
+status: gated
+
+purpose: "Maintain bounded evidence for universal contracts and topology behavior."
+
+rules:
+  - "The gating domains are software delivery, data transformation, and infrastructure state change."
+  - "Other domains are outside the active completion scope."
+  - "Concrete artifact checks remain separate from universal contract checks."
+
+items:
+  - version: "C0.1"
+    name: "Bounded Domain Corpus"
+    type: "core-evidence"
+    status: planned
+    purpose: "Exercise shared contracts across the three gating domains."
+    dependsOnCore: "0.9.7.7"
+    completionEvidence:
+      - "Meaning, effects, dependencies, policy and controls remain preserved."
+
+  - version: "C0.2"
+    name: "Abstract Topology Matrix"
+    type: "topology-evidence"
+    status: planned
+    purpose: "Exercise plans against synthetic topology profiles."
+    dependsOnCore: "0.9.7.8"
+    completionEvidence:
+      - "Action coverage alone does not establish scenario readiness."
+      - "Earlier readiness labels change when required evidence is absent."
+
+  - version: "C0.3"
+    name: "Semantic Equivalence Rules"
+    type: "equivalence-evidence"
+    status: planned
+    purpose: "Define observable equivalence for results and continuity."
+    dependsOnCore: "0.9.7.10"
+    completionEvidence:
+      - "Required observations remain equivalent across implementations."
+
+  - version: "C0.4"
+    name: "Adapter Profile Evidence"
+    type: "adapter-evidence"
+    status: planned
+    purpose: "Evaluate implementations against frozen profiles."
+    dependsOnAdapters: "A0.6"
+    completionEvidence:
+      - "Reports keep unsupported capabilities visible."

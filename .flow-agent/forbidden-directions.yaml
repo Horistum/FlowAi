@@ -12,11 +12,23 @@ forbiddenDirections:
     severity: "blocker"
 
   - id: "target-specific-public-dsl"
-    description: "Flow public syntax must not expose Jenkins, GitHub Actions, Tekton, Argo, or other platform-specific constructs."
+    description: "Flow public syntax must not expose concrete platform or implementation constructs."
     severity: "blocker"
 
-  - id: "jenkins-specific-language"
-    description: "Flow must not become a Jenkins-specific DSL."
+  - id: "concrete-platform-semantic-authority"
+    description: "No concrete platform, adapter or implementation tool may define universal Flow meaning."
+    severity: "blocker"
+
+  - id: "reversed-roadmap-dependency"
+    description: "Core roadmap work must not depend on unfinished adapter or conformance implementation work."
+    severity: "blocker"
+
+  - id: "grandfathered-executability"
+    description: "An earlier executable label must be demoted when new continuity or topology evidence disproves it."
+    severity: "blocker"
+
+  - id: "dishonest-governance-signal"
+    description: "Governance PASS, FAIL and score semantics must match the property they claim to measure."
     severity: "blocker"
 
   - id: "test-only-hack"
@@ -27,10 +39,10 @@ forbiddenDirections:
     description: "The same standard concept must not have multiple independent sources of truth."
     severity: "major"
 
-  - id: "undocumented-compatibility-alias"
-    description: "Compatibility aliases must not be added without documentation and migration reason."
-    severity: "major"
+  - id: "silent-semantic-loss"
+    description: "Accepted intent information must not be dropped, guessed or replaced without diagnostics and provenance."
+    severity: "blocker"
 
   - id: "self-referential-governance"
-    description: "Governance features must measure behavior, quality, drift, compatibility, or coverage. Ceremony-only controls are not allowed."
+    description: "Governance features must measure behavior, quality, drift, compatibility or coverage. Ceremony-only controls are not allowed."
     severity: "major"

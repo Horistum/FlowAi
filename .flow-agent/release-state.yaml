@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 3
+stateVersion: 4
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -15,6 +15,20 @@ versionBoundary:
   publicStandardVersion: "0.8.0"
   artifactContractVersion: "2.0"
 
+roadmapState:
+  roadmapVersion: 3
+  activeTrack: "v0.9.7-universal-semantic-foundation"
+  completedItem: "0.9.7.0"
+  completedItemName: "Roadmap Separation and Universal Drift Lock"
+  primaryStream: "core"
+  nextCoreItem: "0.9.7.1"
+  nextCoreItemName: "Governance Signal Integrity"
+  boundedClosureItem: "0.9.7.10"
+  activeRoadmaps:
+    core: ".flow-agent/roadmap-core-v0.9.7.yaml"
+    adapters: ".flow-agent/roadmap-adapters.yaml"
+    conformance: ".flow-agent/roadmap-conformance.yaml"
+
 repositoryRules:
   sourceLanguage: "English"
   chatLanguage: "User-preferred language allowed outside repository artifacts"
@@ -24,7 +38,8 @@ architectureConstraints:
   noSdkFirstArchitecture: true
   noPluginLifecycle: true
   noTargetSpecificPublicDsl: true
-  noJenkinsSpecificLanguage: true
+  noConcretePlatformSemanticAuthority: true
+  noCoreDependencyOnAdapterWork: true
   noTestOnlyHacks: true
   noShellProjection: true
 
@@ -32,23 +47,27 @@ qualityPrinciples:
   - "Do not bend code only to make tests pass."
   - "Every public behavior change must have tests."
   - "Every public contract change must have a migration document."
-  - "Executable target syntax requires concrete declarative payload evidence."
-  - "Missing target evidence fails closed."
+  - "Every Core roadmap item must declare a universal invariant, forbidden scope and completion evidence."
+  - "Concrete implementation coverage must not define universal semantic meaning."
+  - "Existing executable reference evidence remains live throughout the Core track."
+  - "A previous executable label has no grandfathered status."
+  - "Missing implementation evidence fails closed."
+  - "Governance status and score polarity must match the property claimed."
 
 lastKnownValidation:
-  flowAgentTooling: "passed"
-  flowAgentStructure: "passed"
-  flowAgentContextGeneration: "passed"
-  offlineCacheAwareChecks: "passed"
-  cleanTest: "passed"
-  conformance: "passed"
-  validationSource: "GitHub Actions Flow CI #1199, run 29339611909, commit e48fc895cd70eff87bbd1e63d45632afc61a0dad"
+  flowAgentTooling: "required-on-final-head"
+  flowAgentStructure: "required-on-final-head"
+  flowAgentContextGeneration: "required-on-final-head"
+  offlineCacheAwareChecks: "required-on-final-head"
+  cleanTest: "required-on-final-head"
+  conformance: "required-on-final-head"
+  validationSource: "The unmodified standard Flow CI on the final PR #64 head is authoritative."
   notes:
-    - "Package 0.9.5 promotes the completed v0.9.5.x correction work into a release line."
-    - "The active public standard advances to 0.8.0 because trigger, target-semantics and projection contracts changed."
-    - "Intent, AST, ExecutionPlan, TargetManifest and TargetRegistry advance to 2.0."
-    - "Manifest generation reconciliation is mandatory for CLI, conformance and library callers."
-    - "Target-native output requires declarative registry or notes evidence and structured renderer payloads."
-    - "Standard Flow CI #1199 passed tooling, structure, context, offline checks, clean tests and full conformance."
-    - "The validation metadata commit must also pass the unmodified standard Flow CI workflow."
-    - "No runtime executor, SDK lifecycle, shell projection or fabricated payload is introduced."
+    - "Package, public standard and artifact contract versions remain unchanged."
+    - "Roadmap v3 separates Core, adapter and conformance planning authority."
+    - "v0.9.7.0 changes roadmap governance and Flow Agent tooling only; no production Kotlin source is changed."
+    - "The primary Core work item is v0.9.7.1 Governance Signal Integrity."
+    - "Canonical module authority, mandatory production validation and continuity precede heavier semantic-model work."
+    - "Broad adapter expansion remains gated, but existing reference and regression evidence stays active."
+    - "Readiness labels invalidated by continuity or topology evidence are intentionally demoted."
+    - "The active domain corpus is bounded to software delivery, data transformation and infrastructure state change."

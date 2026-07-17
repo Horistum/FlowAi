@@ -1,5 +1,6 @@
 version: ""
 name: ""
+stream: "core|adapters|conformance"
 
 objective: ""
 
@@ -7,8 +8,17 @@ roadmapReference:
   version: ""
   name: ""
   type: ""
+  stream: ""
 
 architecturePurpose: ""
+
+universalInvariant: ""
+
+forbiddenScope:
+  - ""
+
+completionEvidence:
+  - ""
 
 scope:
   include: []
@@ -19,8 +29,15 @@ nonGoals:
   - "No SDK-first architecture."
   - "No plugin lifecycle."
   - "No target-specific public DSL."
-  - "No Jenkins-specific language drift."
+  - "No concrete platform as Core semantic authority."
+  - "No adapter implementation in a Core work package."
   - "No test-only hacks."
+
+ownershipBoundary:
+  coreMayChange: []
+  adapterMayChange: []
+  conformanceMayChange: []
+  forbiddenCrossStreamChanges: []
 
 expectedFilesToInspect: []
 expectedFilesToChange: []
@@ -32,25 +49,28 @@ documentationToUpdate: []
 
 architectureChecks:
   - "The change supports the original Flow purpose."
-  - "The change does not move target-specific behavior into the public standard."
+  - "The change preserves the declared universal invariant."
+  - "The change stays inside its roadmap stream ownership boundary."
+  - "The change does not move concrete implementation behavior into universal semantics."
   - "The change does not duplicate standard concepts."
   - "The change reduces or avoids technical debt."
 
 validationPlan:
-  - "Run targeted compilation."
-  - "Run unit tests."
-  - "Run conformance checks."
-  - "Verify release report."
-  - "Verify release state consistency."
+  - "Run Flow Agent tooling unit tests."
+  - "Run Flow Agent structure validation."
+  - "Generate Flow Agent context."
+  - "Run targeted compilation when production sources change."
+  - "Run unit tests when production behavior changes."
+  - "Run conformance when semantic or artifact behavior changes."
+  - "Verify report and release-state consistency."
 
 riskAssessment:
   risks: []
   mitigations: []
 
 releaseArtifacts:
-  - "Updated source code."
+  - "Updated roadmap or source contracts."
   - "Updated tests."
   - "Updated conformance vectors when applicable."
-  - "Updated documentation when applicable."
-  - "Release report."
-  - "Packaged release archive."
+  - "Updated documentation."
+  - "Bounded work report."

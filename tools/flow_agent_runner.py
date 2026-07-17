@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import subprocess
 import sys
 from pathlib import Path
 
-from flow_agent_roadmap import find_scalar, find_unique_next_roadmap_item
-
+from flow_agent_roadmap import find_scalar, find_unique_next_roadmap_item, roadmap_paths_by_stream
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENT_DIR = ROOT / ".flow-agent"
@@ -41,37 +39,31 @@ def generate_agent_context() -> Path:
     main_roadmap = AGENT_DIR / "roadmap.yaml"
     next_item = find_unique_next_roadmap_item(ROOT, main_roadmap)
 
-    if next_item.source != main_roadmap.resolve():
-        relative_source = next_item.source.relative_to(AGENT_DIR.resolve())
-        contents[str(relative_source)] = read_text(next_item.source)
+    for path in roadmap_paths_by_stream(ROOT, main_roadmap).values():
+        relative_source = path.relative_to(AGENT_DIR.resolve())
+        contents[str(relative_source)] = read_text(path)
 
     current_version = find_scalar(release_state, "currentVersion") or "unknown"
+    primary_stream = find_scalar(contents["roadmap.yaml"], "primaryRoadmapStream") or "core"
 
-    context = []
-    context.append("# Flow Agent Generated Context")
-    context.append("")
-    context.append(f"Current version: {current_version}")
-    context.append(f"Next version: {next_item.version}")
-    context.append(f"Next item: {next_item.name}")
-    context.append(f"Purpose: {next_item.purpose}")
-    context.append("")
+    context = [
+        "# Flow Agent Generated Context",
+        "",
+        f"Current version: {current_version}",
+        f"Primary roadmap stream: {primary_stream}",
+        f"Next version: {next_item.version}",
+        f"Next item: {next_item.name}",
+        f"Purpose: {next_item.purpose}",
+        "",
+    ]
     for name, content in contents.items():
-        context.append(f"## {name}")
-        context.append("")
-        context.append(content)
-        context.append("")
+        context.extend([f"## {name}", "", content, ""])
 
     out_dir = ROOT / "build" / "agent-context"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "agent-context.md"
     out_file.write_text("\n".join(context), encoding="utf-8")
     return out_file
-
-
-def run(command: list[str]) -> int:
-    print(f"Running: {' '.join(command)}")
-    completed = subprocess.run(command, cwd=ROOT)
-    return completed.returncode
 
 
 def main() -> int:
