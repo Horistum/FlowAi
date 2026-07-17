@@ -15,27 +15,18 @@ class ModuleRegistry(
     companion object {
         fun fromDirectory(dir: File, includeDefaults: Boolean = false): ModuleRegistry {
             require(!includeDefaults) { "A complete descriptor directory is required." }
-            return ModuleRegistry(unique(ModuleYamlLoader.loadDirectory(dir)))
+            return ModuleRegistry(CanonicalModuleLoader.loadDirectory(dir).associateBy { it.name })
         }
 
         fun fromDescriptors(yamlTexts: List<String>, includeDefaults: Boolean = false): ModuleRegistry {
             require(!includeDefaults) { "A complete descriptor set is required." }
-            val loaded = yamlTexts.mapIndexed { index, text ->
-                ModuleYamlLoader.loadText(text, "<module-${index + 1}>")
-            }
-            return ModuleRegistry(unique(loaded))
+            return ModuleRegistry(CanonicalModuleLoader.loadTexts(yamlTexts).associateBy { it.name })
         }
 
         fun loadCanonical(rootDir: File = File(".")): List<FlowModule> =
-            ModuleYamlLoader.loadDirectory(File(rootDir, "modules"))
+            CanonicalModuleLoader.loadDirectory(File(rootDir, "modules"))
 
         @Deprecated("Use loadCanonical().")
         fun defaultModules(): List<FlowModule> = loadCanonical()
-
-        private fun unique(loaded: List<FlowModule>): Map<String, FlowModule> {
-            val duplicates = loaded.groupBy { it.name }.filterValues { it.size > 1 }.keys
-            require(duplicates.isEmpty()) { "Duplicate module descriptors: ${duplicates.sorted().joinToString()}" }
-            return loaded.associateBy { it.name }
-        }
     }
 }
