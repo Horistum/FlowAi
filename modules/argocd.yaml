@@ -79,22 +79,3 @@ actions:
       outOfSync:
         when: sync != "Synced"
         message: "Application is not synced"
-
-    targetImplications:
-      jenkins:
-        support: supported
-        requiredCapabilities:
-          - secrets.runtime
-          - shell.command
-      githubActions:
-        support: partial
-        requiredCapabilities:
-          - secrets.runtime
-      tekton:
-        support: supported
-        requiredCapabilities:
-          - secrets.runtime
-      argoWorkflows:
-        support: supported
-        requiredCapabilities:
-          - secrets.runtime
