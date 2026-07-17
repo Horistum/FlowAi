@@ -12,11 +12,15 @@ forbiddenDirections:
     severity: "blocker"
 
   - id: "target-specific-public-dsl"
-    description: "Flow public syntax must not expose Jenkins, GitHub Actions, Tekton, Argo, or other platform-specific constructs."
+    description: "Flow public syntax must not expose concrete platform or implementation constructs."
     severity: "blocker"
 
-  - id: "jenkins-specific-language"
-    description: "Flow must not become a Jenkins-specific DSL."
+  - id: "concrete-platform-semantic-authority"
+    description: "No concrete platform, adapter or implementation tool may define universal Flow meaning."
+    severity: "blocker"
+
+  - id: "cross-stream-roadmap-drift"
+    description: "Core, adapter and conformance roadmap items must stay inside their declared ownership boundaries."
     severity: "blocker"
 
   - id: "test-only-hack"
@@ -27,10 +31,14 @@ forbiddenDirections:
     description: "The same standard concept must not have multiple independent sources of truth."
     severity: "major"
 
+  - id: "silent-semantic-loss"
+    description: "Accepted intent information must not be dropped, guessed or replaced without explicit diagnostics and provenance."
+    severity: "blocker"
+
   - id: "undocumented-compatibility-alias"
     description: "Compatibility aliases must not be added without documentation and migration reason."
     severity: "major"
 
   - id: "self-referential-governance"
-    description: "Governance features must measure behavior, quality, drift, compatibility, or coverage. Ceremony-only controls are not allowed."
+    description: "Governance features must measure behavior, quality, drift, compatibility or coverage. Ceremony-only controls are not allowed."
     severity: "major"
