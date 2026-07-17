@@ -1,74 +1,33 @@
 project: Flow Core
-stateVersion: 4
-
-currentVersion: "0.9.5"
-currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
-nextExpectedVersion: "0.9.6"
-activeStandardVersion: "0.8.0"
-
-versionBoundary:
-  publishedPackageVersion: "0.9.5"
-  publishedPackageStatus: "release-candidate"
-  completedCorrectionTrack: "v0.9.5.x"
-  correctionTrackStatus: "completed"
-  nextPackageVersion: "0.9.6"
-  publicStandardVersion: "0.8.0"
+stateVersion: 5
+packageState:
+  currentVersion: "0.9.5"
+  currentPackage: flow-core-prod-v0_9_5_universal_model_completion.zip
+  nextExpectedVersion: "0.9.6"
+  activeStandardVersion: "0.8.0"
   artifactContractVersion: "2.0"
-
 roadmapState:
-  roadmapVersion: 3
-  activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.1"
-  completedItemName: "Governance Signal Integrity"
-  primaryStream: "core"
-  nextCoreItem: "0.9.7.2"
-  nextCoreItemName: "Canonical Module and Notes Authority"
+  roadmapVersion: 4
+  activeTrack: v0.9.7-universal-semantic-foundation
+  completedItem: "0.9.7.2"
+  completedItemName: Canonical Module and Notes Authority
+  nextCoreItem: "0.9.7.3"
+  nextCoreItemName: Mandatory Materialization Authority
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.yaml"
-    adapters: ".flow-agent/roadmap-adapters.yaml"
-    conformance: ".flow-agent/roadmap-conformance.yaml"
-
-repositoryRules:
-  sourceLanguage: "English"
-  chatLanguage: "User-preferred language allowed outside repository artifacts"
-
-architectureConstraints:
-  noRuntimeExecutor: true
-  noSdkFirstArchitecture: true
-  noPluginLifecycle: true
-  noTargetSpecificPublicDsl: true
-  noConcretePlatformSemanticAuthority: true
-  noCoreDependencyOnAdapterWork: true
-  noTestOnlyHacks: true
-  noShellProjection: true
-
-qualityPrinciples:
-  - "Do not bend code only to make tests pass."
-  - "Every public behavior change must have tests."
-  - "Every public contract change must have a migration document."
-  - "Every Core roadmap item must declare a universal invariant, forbidden scope and completion evidence."
-  - "Concrete implementation coverage must not define universal semantic meaning."
-  - "Existing executable reference evidence remains live throughout the Core track."
-  - "A previous executable label has no grandfathered status."
-  - "Missing implementation evidence fails closed."
-  - "Governance status and score polarity must match the property claimed."
-
-lastKnownValidation:
-  flowAgentTooling: "passed-on-implementation-head"
-  flowAgentStructure: "passed-on-implementation-head"
-  flowAgentContextGeneration: "passed-on-implementation-head"
-  offlineCacheAwareChecks: "passed-on-implementation-head"
-  cleanTest: "passed-on-implementation-head"
-  conformance: "passed-on-implementation-head"
-  validationSource: "GitHub Actions Flow CI #1541 passed before final roadmap and report metadata."
-  notes:
-    - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.1 applies governance scanning to every production Kotlin package."
-    - "CI/CD inventory presence is distinct from active semantic health."
-    - "Drift scoring has one negative-signal-only decision formula."
-    - "Baseline evidence is descriptive and contributes zero score."
-    - "Behavioral fixtures replace historical substring guards."
-    - "The existing executable reference remains green."
-    - "The primary Core work item advances to v0.9.7.2 Canonical Module and Notes Authority."
-    - "The final metadata head must pass the unmodified standard Flow CI."
+    core: .flow-agent/roadmap-core-v0.9.7.2.yaml
+    adapters: .flow-agent/roadmap-adapters.yaml
+    conformance: .flow-agent/roadmap-conformance.yaml
+validation:
+  implementationHeadRun: 1557
+  flowAgentTooling: passed
+  flowAgentStructure: passed
+  contextGeneration: passed
+  compileAndTests: passed
+  conformance: passed
+  executableReferenceEvidence: passed
+  finalMetadataHead: required
+versionChanges:
+  package: unchanged
+  publicStandard: unchanged
+  artifactContract: unchanged
