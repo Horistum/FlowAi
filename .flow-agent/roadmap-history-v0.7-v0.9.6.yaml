@@ -1,0 +1,187 @@
+project: Flow Core
+stream: history
+roadmapVersion: 1
+range: "0.7.3-to-0.9.6.7"
+status: completed
+
+purpose: >-
+  Preserve the completed roadmap sequence that led to the v0.9.7 universal
+  semantic foundation. Historical items remain traceability records and are not
+  active planning authority.
+
+items:
+  - version: "0.7.3"
+    name: "Standard Model Collapse"
+    type: "debt-reduction"
+    status: completed
+    purpose: "Collapse duplicated or conflicting standard model paths into one canonical source of truth."
+  - version: "0.7.4"
+    name: "Architecture Delta Analyzer"
+    type: "architecture-quality"
+    status: completed
+    purpose: "Measure architectural changes against the approved constitution and detect drift."
+  - version: "0.7.5"
+    name: "Purpose Coverage Ratio"
+    type: "purpose-verification"
+    status: completed
+    purpose: "Measure behavioral coverage of the original Flow purpose."
+  - version: "0.7.6"
+    name: "Semantic Correctness Hardening"
+    type: "semantic-hardening"
+    status: completed
+    purpose: "Fix semantic correctness defects without changing public syntax or target boundaries."
+  - version: "0.7.7"
+    name: "Scenario Pack Quality Gates"
+    type: "quality-gate"
+    status: completed
+    purpose: "Validate scenario consistency, usefulness, safety metadata and non-decorative coverage."
+  - version: "0.8.0"
+    name: "Core Standard Contract Freeze"
+    type: "contract-freeze"
+    status: completed
+    purpose: "Freeze the public Core standard contract before compatibility expansion."
+  - version: "0.8.1"
+    name: "Target Capability Matrix"
+    type: "capability-contract"
+    status: completed
+    purpose: "Define a stable matrix of target capabilities."
+  - version: "0.8.2"
+    name: "Target Negotiation Report"
+    type: "capability-negotiation"
+    status: completed
+    purpose: "Explain how intent maps or fails to map to declared target capabilities."
+  - version: "0.8.3"
+    name: "Package Version and Release Integrity"
+    type: "release-integrity"
+    status: completed
+    purpose: "Align package version, release metadata, versioning policy and consistency tests."
+  - version: "0.8.4"
+    name: "Planner Capability Constraints"
+    type: "planner-hardening"
+    status: completed
+    purpose: "Ensure the planner respects capability constraints before projection."
+  - version: "0.8.5"
+    name: "Safety Boundary Hardening"
+    type: "safety"
+    status: completed
+    purpose: "Strengthen pre-projection safety checks for high-risk operations."
+  - version: "0.8.6"
+    name: "Review Hardening Fixes"
+    type: "semantic-hardening"
+    status: completed
+    purpose: "Close review findings around manifest honesty and runtime secret materialization."
+  - version: "0.8.7"
+    name: "Safety Boundary Handler Coverage"
+    type: "safety"
+    status: completed
+    purpose: "Ensure safety validation descends into action result handlers."
+  - version: "0.9.0"
+    name: "Generator Projection Contract"
+    type: "projection-contract"
+    status: completed
+    purpose: "Define the stable contract between ExecutionPlan and target generators."
+  - version: "0.9.1"
+    name: "Initial Projection Stability"
+    type: "target-stability"
+    status: completed
+    purpose: "Stabilize the first implemented target projections while keeping them adapter concerns."
+  - version: "0.9.2"
+    name: "Renderer Contract Hardening"
+    type: "target-stability"
+    status: completed
+    purpose: "Harden renderer contracts before broader scenario coverage."
+  - version: "0.9.3"
+    name: "Capability Degradation Semantics"
+    type: "capability-hardening"
+    status: completed
+    purpose: "Make degraded and unsupported behavior explicit and reviewable."
+  - version: "0.9.4"
+    name: "Reference Scenario Matrix"
+    type: "scenario-hardening"
+    status: completed
+    purpose: "Build a target-neutral scenario matrix before end-to-end readiness claims."
+  - version: "0.9.5"
+    name: "Universal Model Completion"
+    type: "contract-and-architecture-release"
+    status: completed
+    purpose: "Promote the repaired notes-driven architecture and evidence-driven projection contracts."
+  - version: "0.9.5.0"
+    name: "Architecture Recenter - Notes-Driven Flow"
+    type: "architecture-recenter"
+    status: completed
+    purpose: "Re-center Flow as a notes-driven universal automation language."
+  - version: "0.9.5.1"
+    name: "Shell Usage Inventory and Prohibition"
+    type: "architecture-correction"
+    status: completed
+    purpose: "Inventory and prohibit command-oriented projection as Core meaning."
+  - version: "0.9.5.2"
+    name: "CI/CD Bias Inventory"
+    type: "architecture-correction"
+    status: completed
+    purpose: "Inventory hardcoded delivery-domain and concrete implementation assumptions."
+  - version: "0.9.5.3"
+    name: "Notes Package Contract Model"
+    type: "contract-design"
+    status: completed
+    purpose: "Introduce declarative contract kinds for domain, capability, safety, runtime, target, projection and conformance."
+  - version: "0.9.5.4"
+    name: "Universal Semantic Action Graph"
+    type: "semantic-model"
+    status: completed
+    purpose: "Replace command-oriented projection with structured semantic actions."
+  - version: "0.9.5.5"
+    name: "Materialization Negotiation"
+    type: "materialization"
+    status: completed
+    purpose: "Require explicit materialization status and evidence for every semantic action."
+  - version: "0.9.5.6"
+    name: "No-Shell Target Projection"
+    type: "projection-correction"
+    status: completed
+    purpose: "Require projection artifacts to come from declared target and projection contracts."
+  - version: "0.9.5.7"
+    name: "Target Registry Honesty"
+    type: "registry-honesty"
+    status: completed
+    purpose: "Separate declared, implemented, tested and production-supported target states."
+  - version: "0.9.6"
+    name: "Universal Native Projection Foundation"
+    type: "projection-architecture-track"
+    status: completed
+    purpose: "Build target-neutral typed projection contracts and provider-owned implementation evidence."
+  - version: "0.9.6.1"
+    name: "Target-Neutral Projection Payload Contract"
+    type: "projection-contract"
+    status: completed
+    purpose: "Remove target-specific payload types from Flow Core."
+  - version: "0.9.6.2"
+    name: "Universal Typed Projection Bindings"
+    type: "projection-contract"
+    status: completed
+    purpose: "Preserve projection value origin and resolution state."
+  - version: "0.9.6.3"
+    name: "Core and Target Projection Separation"
+    type: "architecture-boundary"
+    status: completed
+    purpose: "Move concrete generators and syntax ownership to edge composition roots."
+  - version: "0.9.6.4"
+    name: "Native Projection Architecture"
+    type: "projection-architecture"
+    status: completed
+    purpose: "Require provider-owned contracts before native renderer payloads can exist."
+  - version: "0.9.6.5"
+    name: "Cross-target Checkout"
+    type: "projection-coverage"
+    status: completed
+    purpose: "Add reviewed checkout projection evidence across selected built-in targets."
+  - version: "0.9.6.6"
+    name: "Native Image Build"
+    type: "projection-coverage"
+    status: completed
+    purpose: "Add reviewed image-build projection evidence with structured bindings."
+  - version: "0.9.6.7"
+    name: "First Executable Reference Scenario"
+    type: "reference-readiness"
+    status: completed
+    purpose: "Record the first target-scoped executable multi-step reference evidence without universal readiness claims."
