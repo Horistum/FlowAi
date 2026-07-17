@@ -9,6 +9,20 @@ Active architecture track: `v0.9.7 Universal Semantic Foundation`
 Completed roadmap item: `0.9.7.0 Roadmap Separation and Universal Drift Lock`
 Next Core roadmap item: `0.9.7.1 Canonical Intent Meaning`
 
+## Release purpose
+
+Flow 0.9.5 completes the universal semantic and projection model that the v0.9.5.x repair track prepared. The release has one reconciled manifest generation boundary, first-class trigger semantics, target-neutral lowering, extensible target semantics and evidence-driven native projection.
+
+## Corrected integrity gaps
+
+1. Manifest generators expose only a final reconciled `generate` path. `TargetManifestGenerationPipeline` is the CLI boundary, so CLI and conformance cannot serialize different compatibility truths.
+2. Existing target renderers contain no no-op job or phantom task fallback. Executable rendering requires a structured native payload.
+3. Generic DEPLOY and VERIFY intent lower to semantic standard actions. Concrete systems, namespaces and selectors appear only through explicit provider intent.
+4. Intent, AST, ExecutionPlan and TargetManifest carry manual, schedule, event and webhook triggers. Interval schedules use ISO-8601 durations such as `P30D`.
+5. `TargetSemanticsEntry` uses `semanticsByTarget`, keyed by target registry ids. Adding a target does not change the public Kotlin data model.
+6. Materialization is selected by declarative target projection rules. Missing rules fail closed as `ADAPTER_REQUIRED`; concrete native payload evidence is required before executable target syntax can be produced.
+7. The package, public standard and serialized artifact contracts are deliberately promoted and documented instead of leaving materially changed formats at historical version numbers.
+
 ## Active architecture direction
 
 The roadmap is now split into independent Core, adapter and conformance streams.
@@ -30,6 +44,20 @@ The Flow Agent selects the next primary item from the Core stream while allowing
 - Kept package, public standard and artifact contract versions unchanged.
 - Changed no production Kotlin source.
 
+## Versioning boundary
+
+- Published package version: `0.9.5`
+- Next package version: `0.9.6`
+- Active public standard version: `0.8.0`
+- Intent artifact version: `2.0`
+- AST artifact version: `2.0`
+- ExecutionPlan artifact version: `2.0`
+- TargetManifest artifact version: `2.0`
+- TargetRegistry artifact version: `2.0`
+- Target semantics matrix version: `2.0`
+
+Historical correction and roadmap identifiers remain traceability labels for completed work. They are not package or artifact versions.
+
 ## Validation source
 
 Local isolated validation completed for:
@@ -39,7 +67,18 @@ Local isolated validation completed for:
 - primary Core next-item resolution;
 - negative drift tests.
 
-The unmodified standard Flow CI on the pull request branch remains authoritative for full repository tests and conformance.
+Authoritative repository validation is the unmodified standard Flow CI run on the final pull-request head:
+
+- Flow Agent tooling tests;
+- Flow Agent structure validation;
+- Flow Agent context generation;
+- offline tests when cache is available;
+- offline conformance when cache is available;
+- clean compile and full test suite;
+- full conformance;
+- CI logs and test report artifacts.
+
+Validation remains pending until the final clean branch completes these gates. No temporary workflow, patch transport or snapshot writer is part of the diff.
 
 ## Architecture boundary
 
