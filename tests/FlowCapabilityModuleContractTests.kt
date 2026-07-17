@@ -1,6 +1,7 @@
 package org.flowlang.tests
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.flowlang.modules.ModuleContractAnalyzer
 import org.flowlang.modules.ModuleRegistry
@@ -18,11 +19,12 @@ class FlowCapabilityModuleContractTests {
     }
 
     @Test
-    fun capabilityModuleContractReportExposesTargetImplications() {
+    fun capabilityModuleContractsDoNotOwnTargetImplications() {
         val report = ModuleContractAnalyzer.analyze(registry)
-        assertTrue(report.totals.targetImplicationActions > 0)
-        assertTrue(report.modules.any { module ->
-            module.actions.any { action -> action.targetImplications.isNotEmpty() }
+
+        assertEquals(0, report.totals.targetImplicationActions)
+        assertTrue(report.modules.all { module ->
+            module.actions.all { action -> action.targetImplications.isEmpty() }
         })
     }
 
