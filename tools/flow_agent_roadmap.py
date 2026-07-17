@@ -7,23 +7,6 @@ from pathlib import Path
 
 
 REQUIRED_ROADMAP_STREAMS = ("core", "adapters", "conformance")
-FORBIDDEN_CORE_ROADMAP_TERMS = (
-    "jenkins",
-    "github actions",
-    "tekton",
-    "argo workflows",
-    "gitlab ci",
-    "azure devops",
-    "airflow",
-    "kubernetes jobs",
-    "docker",
-    "buildkit",
-    "buildah",
-    "kaniko",
-    "podman",
-    "maven",
-    "postgresql",
-)
 
 
 @dataclass(frozen=True)
@@ -128,7 +111,6 @@ def roadmap_paths_by_stream(root: Path, main_roadmap: Path) -> dict[str, Path]:
             resolved[stream] = candidate
         return resolved
 
-    # Compatibility for historical roadmap layouts.
     paths = {"core": main_roadmap}
     active_track = find_scalar(main_text, "activeRepairTrack")
     if active_track:
@@ -148,6 +130,14 @@ def roadmap_item_blocks(text: str) -> tuple[str, ...]:
 def _item_version(block: str) -> str:
     match = re.match(r"[\"']?([^\"'\n]+)[\"']?", block)
     return match.group(1).strip() if match else ""
+
+
+def _dependency_values(block: str, key: str) -> tuple[str, ...]:
+    listed = find_list(block, key)
+    if listed:
+        return listed
+    scalar = find_scalar(block, key)
+    return (scalar,) if scalar else ()
 
 
 def next_items_in(path: Path, declared_stream: str | None = None) -> list[RoadmapItem]:
@@ -197,6 +187,10 @@ def find_unique_next_roadmap_item(root: Path, main_roadmap: Path) -> RoadmapItem
     return item
 
 
+def _roadmap_versions(path: Path) -> set[str]:
+    return {_item_version(block) for block in roadmap_item_blocks(read_text(path)) if _item_version(block)}
+
+
 def _validate_core_item_contract(core_path: Path) -> None:
     text = read_text(core_path)
     if find_scalar(text, "stream") != "core":
@@ -223,18 +217,42 @@ def _validate_core_item_contract(core_path: Path) -> None:
                 f"Core roadmap item {version} is missing required fields: {', '.join(missing_fields)}"
             )
 
-        guarded_text = "\n".join(
-            [
-                find_scalar(block, "name") or "",
-                find_scalar(block, "purpose") or "",
-                *find_list(block, "requiredOutcome"),
-            ]
-        ).lower()
-        violations = sorted(term for term in FORBIDDEN_CORE_ROADMAP_TERMS if term in guarded_text)
-        if violations:
-            raise RuntimeError(
-                f"Core roadmap item {version} contains concrete target or tool scope: {', '.join(violations)}"
+        forbidden_dependencies = {
+            "dependsOnAdapters": _dependency_values(block, "dependsOnAdapters"),
+            "dependsOnConformance": _dependency_values(block, "dependsOnConformance"),
+        }
+        reversed_dependencies = {
+            key: values for key, values in forbidden_dependencies.items() if values
+        }
+        if reversed_dependencies:
+            details = ", ".join(
+                f"{key}={','.join(values)}" for key, values in reversed_dependencies.items()
             )
+            raise RuntimeError(
+                f"Core roadmap item {version} reverses roadmap ownership direction: {details}"
+            )
+
+
+def _validate_cross_stream_references(paths: dict[str, Path]) -> None:
+    core_versions = _roadmap_versions(paths["core"])
+    adapter_versions = _roadmap_versions(paths["adapters"])
+
+    for stream in ("adapters", "conformance"):
+        for block in roadmap_item_blocks(read_text(paths[stream])):
+            version = _item_version(block)
+            for dependency in _dependency_values(block, "dependsOnCore"):
+                if dependency not in core_versions:
+                    raise RuntimeError(
+                        f"{stream} roadmap item {version} references unknown Core item: {dependency}"
+                    )
+
+    for block in roadmap_item_blocks(read_text(paths["conformance"])):
+        version = _item_version(block)
+        for dependency in _dependency_values(block, "dependsOnAdapters"):
+            if dependency not in adapter_versions:
+                raise RuntimeError(
+                    f"conformance roadmap item {version} references unknown adapter item: {dependency}"
+                )
 
 
 def validate_roadmap_structure(root: Path, main_roadmap: Path) -> None:
@@ -264,6 +282,7 @@ def validate_roadmap_structure(root: Path, main_roadmap: Path) -> None:
                 )
 
         _validate_core_item_contract(paths["core"])
+        _validate_cross_stream_references(paths)
 
     next_items_by_stream(root, main_roadmap)
     find_unique_next_roadmap_item(root, main_roadmap)
