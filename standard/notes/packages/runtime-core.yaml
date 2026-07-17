@@ -1,0 +1,14 @@
+packageId: flow.runtime.core
+packageVersion: "0.9.7.2"
+kind: runtime
+description: "Execution-environment requirements without execution ownership."
+runtimeRequirements:
+  - input.required
+  - opaque.value
+  - human.approval
+dependencies:
+  - packageId: flow.safety.core
+    versionConstraint: "0.9.x"
+boundaries:
+  - name: non-executing
+    description: "Runtime notes describe requirements only."
