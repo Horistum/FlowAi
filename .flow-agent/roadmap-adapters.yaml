@@ -1,6 +1,6 @@
 project: Flow Adapter Portfolio
 stream: adapters
-roadmapVersion: 1
+roadmapVersion: 2
 status: gated
 
 purpose: >-
@@ -9,8 +9,18 @@ purpose: >-
   defines, amends or weakens their meaning.
 
 activationGate:
-  requiredCoreItem: "0.9.7.9"
-  rule: "Broad adapter coverage expansion remains planned until universal semantic closure. Correctness fixes may proceed without changing Core meaning."
+  requiredCoreItem: "0.9.7.10"
+  rule: "Broad adapter coverage expansion remains planned until the bounded Core closure gate passes. Correctness maintenance, regression repair and honest demotion remain active throughout the Core track."
+
+continuousReferenceEvidence:
+  scenario: "checkout-build-image"
+  currentExecutableTarget: "jenkins"
+  rule: "The existing executable reference remains in the unmodified standard CI throughout every Core work item."
+  failurePolicy: "Repair an adapter-local regression or deliberately demote the claim with evidence; never weaken a Core invariant to preserve the previous label."
+  otherBuiltInTargets:
+    - "GitHub Actions and Tekton action-level native evidence remains tested."
+    - "Action-level evidence does not imply scenario executability without continuity and topology proof."
+    - "Any existing executable claim that lacks the new proof is demoted to REVIEW_ONLY; the regression is intended."
 
 rules:
   - "Concrete platform names belong only to adapter-specific work packages and evidence."
@@ -18,6 +28,7 @@ rules:
   - "Every adapter declares topology evidence before scenario executability can be evaluated."
   - "Adapter tests prove preserved semantics, not merely syntactically valid output."
   - "Adapter implementation lifecycle is distribution-owned and is not part of the public Flow standard."
+  - "Maintenance evidence stays live during Core work even while broad coverage expansion is gated."
 
 items:
   - version: "A0.1"
@@ -25,27 +36,29 @@ items:
     type: "adapter-governance"
     status: planned
     purpose: "Reclassify existing adapters against frozen universal requirements and remove unsupported readiness claims."
-    dependsOnCore: "0.9.7.9"
+    dependsOnCore: "0.9.7.10"
     completionEvidence:
       - "Each adapter has an explicit support, limitation and evidence record."
       - "No adapter-specific behavior is required by Core semantics."
+      - "Earlier labels receive no grandfathered status."
 
   - version: "A0.2"
     name: "Topology Evidence Adoption"
     type: "adapter-topology"
     status: planned
     purpose: "Declare execution isolation, state lifetime, transfer, scope, interaction and concurrency evidence for each adapter."
-    dependsOnCore: "0.9.7.6"
+    dependsOnCore: "0.9.7.8"
     completionEvidence:
       - "Every executable claim is backed by complete topology evidence."
       - "Unknown properties fail closed."
+      - "Claims that fail reassessment are intentionally demoted."
 
   - version: "A0.3"
     name: "Capability Binding Migration"
     type: "adapter-binding"
     status: planned
     purpose: "Bind canonical capabilities to concrete implementations without changing canonical meaning."
-    dependsOnCore: "0.9.7.1"
+    dependsOnCore: "0.9.7.5"
     completionEvidence:
       - "Bindings preserve semantic, effect and provenance contracts."
       - "Missing bindings remain unresolved or unsupported."
@@ -55,7 +68,7 @@ items:
     type: "adapter-control"
     status: planned
     purpose: "Provide evidence for concrete satisfaction of approval, retry, timeout, compensation and scheduling requirements."
-    dependsOnCore: "0.9.7.4"
+    dependsOnCore: "0.9.7.7"
     completionEvidence:
       - "Every native control claim has implementation and behavioral evidence."
       - "Unsupported control forms are not approximated silently."
@@ -65,17 +78,18 @@ items:
     type: "adapter-continuity"
     status: planned
     purpose: "Prove that each adapter can satisfy declared data, artifact, mutable-state and durable-state dependencies."
-    dependsOnCore: "0.9.7.3"
+    dependsOnCore: "0.9.7.4"
     completionEvidence:
       - "Behavioral tests validate producer-to-consumer continuity."
       - "Ordering-only support is never promoted to continuity support."
+      - "Any existing executable claim without continuity proof becomes REVIEW_ONLY."
 
   - version: "A0.6"
     name: "Adapter Artifact Rendering"
     type: "adapter-rendering"
     status: planned
     purpose: "Generate concrete target artifacts only after capability, control, topology and continuity evidence is complete."
-    dependsOnCore: "0.9.7.9"
+    dependsOnCore: "0.9.7.10"
     completionEvidence:
       - "Rendered artifacts preserve all required semantic evidence."
       - "Incomplete evidence produces review-only or fail-fast output."
@@ -85,7 +99,7 @@ items:
     type: "adapter-trigger"
     status: planned
     purpose: "Materialize interval, calendar, event and webhook requirements only where an adapter can represent them faithfully."
-    dependsOnCore: "0.9.7.4"
+    dependsOnCore: "0.9.7.7"
     completionEvidence:
       - "Unsupported trigger forms remain explicit."
       - "No trigger approximation changes timing or delivery semantics silently."
