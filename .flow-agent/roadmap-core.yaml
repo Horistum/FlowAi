@@ -1,0 +1,222 @@
+project: Flow Core
+stream: core
+roadmapVersion: 1
+track: "v0.9.7-universal-semantic-foundation"
+status: active
+
+trackObjective: >-
+  Complete the universal semantic foundation of Flow before any further adapter
+  coverage expansion. Flow Core describes intent, effects, dependencies, policy,
+  control requirements, abstract topology requirements and materialization
+  evidence without selecting a concrete tool, platform or runtime mechanism.
+
+trackWideProhibitions:
+  - "No concrete platform or implementation tool in Core roadmap scope."
+  - "No executable target syntax or adapter implementation in this track."
+  - "No runtime executor, SDK surface or plugin lifecycle."
+  - "No raw runtime instruction as universal semantic meaning."
+  - "No weakening of validation, readiness or conformance to obtain output."
+  - "No single automation domain as proof of universal adequacy."
+
+items:
+  - version: "0.9.7.0"
+    name: "Roadmap Separation and Universal Drift Lock"
+    type: "architecture-governance"
+    status: completed
+    purpose: "Separate universal Core development from adapter implementation and conformance certification, then make that boundary mechanically enforceable."
+    universalInvariant: "Universal semantic contracts advance independently from concrete implementation coverage and certification evidence."
+    forbiddenScope:
+      - "No production semantic or projection behavior change."
+      - "No adapter capability expansion."
+      - "No public standard or artifact contract version bump."
+    requiredOutcome:
+      - "The top-level roadmap is an index over separate Core, adapter and conformance streams."
+      - "Flow Agent tooling resolves the primary Core item while allowing independent next items in other streams."
+      - "Every Core roadmap item declares universalInvariant, forbiddenScope and completionEvidence."
+      - "Concrete platform and implementation-tool names are rejected from Core item names, purposes and required outcomes."
+      - "The active work-package template encodes the same ownership boundary."
+    completionEvidence:
+      - "Roadmap structure validation passes over all three active streams."
+      - "Negative tooling tests reject missing streams, escaped paths, multiple next Core items, missing governance fields and concrete implementation scope."
+      - "The next primary Core work item resolves to 0.9.7.1."
+      - "No production Kotlin source is modified by this work item."
+
+  - version: "0.9.7.1"
+    name: "Canonical Intent Meaning"
+    type: "semantic-contract"
+    status: next
+    purpose: "Define one canonical capability meaning for each accepted intent while keeping provider selection explicit and external to that meaning."
+    universalInvariant: "Equivalent intent produces equivalent canonical meaning regardless of available adapters or implementation inventory."
+    forbiddenScope:
+      - "No implicit provider selection."
+      - "No concrete implementation normalization as canonical meaning."
+      - "No adapter renderer or syntax change."
+    requiredOutcome:
+      - "Canonical capability identity is distinct from provider and module binding."
+      - "Explicit user-selected bindings preserve provenance without redefining semantic meaning."
+      - "Missing binding remains unresolved evidence rather than an invented default."
+      - "Intent parameters are either preserved, rejected with diagnostics or represented explicitly; none disappear silently."
+    completionEvidence:
+      - "Behavioral tests prove equivalent intent has identical canonical meaning with different adapter inventories."
+      - "Negative tests reject implicit provider and channel injection."
+      - "The real public planning path emits explicit unresolved binding evidence when selection is absent."
+
+  - version: "0.9.7.2"
+    name: "Universal Effect and State Transition Model"
+    type: "semantic-effects"
+    status: planned
+    purpose: "Describe what an action reads, creates, changes, emits, consumes or destroys without depending on a concrete implementation module."
+    universalInvariant: "Semantic effects and state transitions remain stable across all valid implementations of the same capability."
+    forbiddenScope:
+      - "No safety classification based on module names."
+      - "No concrete resource API in the universal effect model."
+      - "No adapter-side invention of missing effects."
+    requiredOutcome:
+      - "The model distinguishes reads, creates, updates, deletes, emits, consumes, external mutation and irreversible transition."
+      - "Resource identity and effect provenance survive from Intent through ExecutionPlan."
+      - "Safety analysis can evaluate unknown future providers from declared effects."
+    completionEvidence:
+      - "At least three unrelated automation domains use the same effect categories."
+      - "Negative tests reject missing destructive effects and conflicting effect provenance."
+      - "Provider substitution does not change canonical effect records."
+
+  - version: "0.9.7.3"
+    name: "Universal Dependency and Continuity Contract"
+    type: "semantic-dependencies"
+    status: planned
+    purpose: "Replace ambiguous dependency edges with explicit requirements for ordering, data, outputs, artifacts, mutable state, durable state, secrets, environment evidence and human decisions."
+    universalInvariant: "Ordering alone never implies data, state or artifact continuity."
+    forbiddenScope:
+      - "No concrete execution topology encoded in dependency meaning."
+      - "No duplicated dependency properties representing the same concept."
+      - "No renderer assumption used as continuity evidence."
+    requiredOutcome:
+      - "Every dependency records producer, consumer, kind and required lifetime."
+      - "Cycles, missing producers, incompatible kinds and lost provenance fail validation."
+      - "Continuity requirements are properties of the semantic plan."
+    completionEvidence:
+      - "Synthetic topology tests distinguish shared context, isolated context, durable transfer, persistent state and absent continuity."
+      - "Negative tests prove sequential actions are not automatically data-connected."
+      - "Public models expose one canonical dependency authority."
+
+  - version: "0.9.7.4"
+    name: "Universal Control and Policy Requirements"
+    type: "control-and-safety"
+    status: planned
+    purpose: "Represent approval, retry, timeout, compensation, rollback, error boundaries, scheduling and safety decisions as universal requirements rather than implementation actions."
+    universalInvariant: "A control or safety requirement has the same meaning regardless of how or whether an adapter can satisfy it."
+    forbiddenScope:
+      - "No approval implementation represented as an ordinary semantic leaf."
+      - "No environment sensitivity guessed from implementation-specific strings."
+      - "No unknown evidence silently treated as non-sensitive."
+    requiredOutcome:
+      - "Control requirements are separated from their materialization mechanisms."
+      - "Rollback and compensation have distinct semantic meaning."
+      - "Dynamic, unknown and ambiguous safety evidence produces an explicit policy outcome."
+      - "Adapters may satisfy requirements but may not create, remove or weaken them."
+    completionEvidence:
+      - "Policy tests cover sensitive, non-sensitive, unknown and dynamic evidence."
+      - "Negative tests reject native control claims without implementation evidence."
+      - "The production validation path preserves control requirements through materialization."
+
+  - version: "0.9.7.5"
+    name: "Mandatory Materialization Authority"
+    type: "validation-authority"
+    status: planned
+    purpose: "Make semantic graph, materialization negotiation and projection-plan validation mandatory production authorities rather than decorative metadata."
+    universalInvariant: "Invalid semantic or materialization evidence cannot reach any adapter boundary."
+    forbiddenScope:
+      - "No alternate public entry point bypassing validation."
+      - "No invalid object carried forward with warning-only metadata."
+      - "No adapter-specific exception to materialization rules."
+    requiredOutcome:
+      - "Every semantic node has exactly one validated materialization decision."
+      - "Every decision has valid evidence and a matching projection record."
+      - "Typed failure evidence is returned before adapter invocation."
+      - "All public generation paths use the same validation authority."
+    completionEvidence:
+      - "Negative tests inject invalid graph, negotiation and projection states through real public generation paths."
+      - "Adapter test doubles prove they are not invoked after authority failure."
+      - "Conformance and CLI callers observe the same failure diagnostics."
+
+  - version: "0.9.7.6"
+    name: "Abstract Execution Topology Model"
+    type: "topology-contract"
+    status: planned
+    purpose: "Describe classes of execution environments through abstract isolation, lifetime, persistence, propagation, scope, interaction and concurrency properties."
+    universalInvariant: "Scenario executability is a proven relation between semantic requirements and declared topology capabilities."
+    forbiddenScope:
+      - "No concrete platform name or syntax in the topology model."
+      - "No action-level support used as scenario-level executability proof."
+      - "No unknown topology property treated as supported."
+    requiredOutcome:
+      - "The model covers execution-unit isolation, working-state lifetime, artifact persistence, output propagation, secret scope, environment scope, human interaction, retry boundaries and concurrency guarantees."
+      - "ExecutionPlan requirements are evaluated against topology evidence."
+      - "Unsatisfied or unknown properties produce structured non-executable evidence."
+    completionEvidence:
+      - "Synthetic topology profiles exercise every required property without concrete adapters."
+      - "Scenario readiness changes only when relevant topology evidence changes."
+      - "Negative tests reject incomplete and contradictory topology declarations."
+
+  - version: "0.9.7.7"
+    name: "Canonical Module and Notes Authority"
+    type: "contract-authority"
+    status: planned
+    purpose: "Remove competing semantic contract sources and make declarative notes strict, complete and authoritative."
+    universalInvariant: "Every semantic capability and safety contract has exactly one canonical source of truth."
+    forbiddenScope:
+      - "No duplicated built-in contract definitions."
+      - "No permissive type coercion to empty contracts."
+      - "No adapter implication stored in a universal module descriptor."
+    requiredOutcome:
+      - "Built-in contracts use one canonical source observed by every entry point."
+      - "Descriptors reject unknown fields and incorrect value types."
+      - "All safety properties, including approval requirements, are loaded explicitly."
+      - "Adapter compatibility evidence resides only in adapter-owned registries."
+    completionEvidence:
+      - "Parity tests prove every entry point sees the same contract."
+      - "Negative descriptor tests cover unknown fields, wrong types and missing required properties."
+      - "Duplicated fallback definitions are removed or generated from the canonical source."
+
+  - version: "0.9.7.8"
+    name: "Intent Lowering and Diagnostic Honesty"
+    type: "lowering-integrity"
+    status: planned
+    purpose: "Require lowering to preserve, explicitly transform or reject every meaningful intent field with stable diagnostics."
+    universalInvariant: "No accepted intent information disappears silently between source, canonical meaning and execution planning."
+    forbiddenScope:
+      - "No raw runtime parameter silently removed."
+      - "No target-specific enforcement difference between supported source forms."
+      - "No placeholder substitution presented as semantic completion."
+    requiredOutcome:
+      - "One enforcement authority handles forbidden raw-runtime inputs across all source forms."
+      - "Every rejected or unresolved field has a stable diagnostic code and provenance."
+      - "Canonical lowering does not choose concrete providers."
+      - "Scenario normalization uses structural tokens rather than substring heuristics."
+    completionEvidence:
+      - "Round-trip and provenance tests account for every accepted input field."
+      - "Negative tests cover forbidden raw-runtime inputs through all public source forms."
+      - "Malformed and ambiguous parser input produces exact diagnostics rather than partial plans."
+
+  - version: "0.9.7.9"
+    name: "Universal Semantic Closure Review"
+    type: "architecture-closure"
+    status: planned
+    purpose: "Verify that independent adapter and conformance work can proceed without further implementation-driven changes to universal semantic contracts."
+    universalInvariant: "Core semantic meaning is complete, internally authoritative and independent of adapter implementation convenience."
+    forbiddenScope:
+      - "No package promotion based only on one adapter scenario."
+      - "No unresolved production validation gap."
+      - "No new adapter coverage in the closure item."
+    requiredOutcome:
+      - "No implicit concrete provider selection remains."
+      - "No implementation-specific meaning remains in Intent, AST or ExecutionPlan."
+      - "No duplicated dependency or contract authority remains."
+      - "No public validation path can be bypassed."
+      - "No silent semantic parameter loss remains."
+      - "No adapter owns safety or control meaning."
+    completionEvidence:
+      - "Architecture review maps every invariant to production behavior and falsifying tests."
+      - "Cross-domain conformance prerequisites are satisfied."
+      - "Adapter roadmaps can consume frozen contracts without changing Core semantics."
+      - "A deliberate public-contract and package-promotion decision is recorded separately."
