@@ -2,3 +2,10 @@ packageId: flow.conformance.core
 packageVersion: "0.9.7.2"
 kind: conformance
 description: "Core notes evidence declarations."
+conformanceChecks:
+  - notes.contract.valid
+  - notes.boundary.enforced
+  - notes.materialization.honest
+boundaries:
+  - name: evidence-only
+    description: "Declarations provide evidence without adapter ownership."
