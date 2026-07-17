@@ -13,7 +13,7 @@ versionBoundary:
 
 roadmapIndex:
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
   historicalRoadmaps:
@@ -23,33 +23,36 @@ roadmapIndex:
 rules:
   - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
   - "The primary Flow Agent work item is selected only from the Core roadmap unless explicitly overridden."
+  - "Core work may not depend on unfinished adapter or conformance work; adapter and conformance work may consume declared Core contracts."
   - "Each roadmap stream may advance independently without redefining another stream's contracts."
   - "Every Core item must declare a universal invariant, forbidden scope and completion evidence."
-  - "Core roadmap names, purposes and required outcomes must not name concrete platforms or implementation tools."
+  - "Existing executable reference evidence remains live throughout the Core track as falsification feedback."
   - "Adapter inability must remain unsupported, adapter-required, review-only or fail-fast evidence; it must not reshape Core meaning."
+  - "A previous executable label has no grandfathered status when new continuity or topology evidence disproves it."
   - "No roadmap item may introduce runtime execution, an SDK-first architecture, a plugin lifecycle or target-specific public syntax."
   - "No roadmap item may bend code or weaken validation only to satisfy tests."
-  - "No CI/CD-only scenario may prove universal automation adequacy."
+  - "The gating cross-domain corpus is bounded to software delivery, data transformation or synchronization, and infrastructure state change."
 
 architectureConstitution:
   identity:
     - "Flow is a language and universal automation standardization model."
     - "Flow separates human or AI intent, semantic meaning, policy and evidence from implementation mechanisms."
-    - "Flow must support current and future automation domains beyond software delivery."
+    - "Flow uses real adapter evidence to falsify universal assumptions without making adapters the source of meaning."
   roadmapOwnership:
     core: "Owns universal meaning, effects, dependencies, policy, control requirements, materialization authority and abstract topology requirements."
-    adapters: "Owns concrete capability bindings, execution topology evidence and target artifact generation."
-    conformance: "Owns cross-domain semantic adequacy, abstract topology behavior and independent adapter certification."
+    adapters: "Owns concrete capability bindings, execution topology evidence, target artifact generation and continuous reference maintenance."
+    conformance: "Owns bounded cross-domain semantic adequacy, abstract topology behavior and independent adapter certification."
   forbiddenDirections:
     - "No concrete implementation default as universal lowering truth."
     - "No concrete platform as semantic authority."
     - "No raw runtime instruction as universal action meaning."
     - "No successful materialization without validated evidence."
-    - "No adapter coverage item inside the Core roadmap."
+    - "No Core dependency on adapter implementation work."
     - "No conformance example as a substitute for a universal invariant."
+    - "No governance signal whose PASS, FAIL or score contradicts the property it claims to measure."
 
 currentDecision:
   completedItem: "0.9.7.0"
   completedItemName: "Roadmap Separation and Universal Drift Lock"
   nextCoreItem: "0.9.7.1"
-  nextCoreItemName: "Canonical Intent Meaning"
+  nextCoreItemName: "Governance Signal Integrity"
