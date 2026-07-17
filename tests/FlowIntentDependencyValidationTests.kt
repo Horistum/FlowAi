@@ -13,18 +13,12 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Dependency-validation contract, asserted on STRUCTURED error codes rather than
+ * Dependency-validation contract, asserted on structured error codes rather than
  * human-readable message prose.
- *
- * Regression guard for rc1.8.3: dependency validity is owned solely by
- * IntentCapabilityValidator (codes UNKNOWN_STEP_DEPENDENCY / CYCLIC_STEP_DEPENDENCY).
- * The earlier failure was a brittle prose-substring assertion combined with a
- * duplicate planner check whose wording had drifted; asserting the code keeps the
- * test stable regardless of message phrasing.
  */
 class FlowIntentDependencyValidationTests {
 
-    private val validator = IntentCapabilityValidator(ModuleRegistry.fromDescriptors(emptyList(), includeDefaults = true))
+    private val validator = IntentCapabilityValidator(ModuleRegistry())
 
     private fun docWith(steps: List<IntentStep>): IntentDocument =
         IntentDocument(
