@@ -1,1 +1,4 @@
 packageId: flow.conformance.core
+packageVersion: "0.9.7.2"
+kind: conformance
+description: "Core notes evidence declarations."
