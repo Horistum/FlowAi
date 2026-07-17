@@ -1,0 +1,57 @@
+project: Flow Conformance
+stream: conformance
+roadmapVersion: 1
+status: gated
+
+purpose: >-
+  Prove universal semantic adequacy across unrelated automation domains and
+  abstract execution topologies, then certify adapter preservation separately
+  from Core meaning.
+
+rules:
+  - "Core conformance proves semantic invariants without concrete target syntax."
+  - "Adapter certification proves preservation of frozen Core contracts."
+  - "One successful adapter artifact is not universal conformance."
+  - "Every positive invariant has a falsifying negative case."
+  - "CI/CD-only coverage cannot complete the universal corpus."
+
+items:
+  - version: "C0.1"
+    name: "Cross-Domain Semantic Corpus"
+    type: "core-conformance"
+    status: planned
+    purpose: "Build canonical scenarios from software delivery, data movement, infrastructure change, operational response and human-governed process domains."
+    dependsOnCore: "0.9.7.4"
+    completionEvidence:
+      - "Every domain preserves canonical meaning, effects, dependencies, policy and controls."
+      - "No scenario contains concrete implementation meaning."
+
+  - version: "C0.2"
+    name: "Abstract Topology Matrix"
+    type: "topology-conformance"
+    status: planned
+    purpose: "Evaluate semantic plans against synthetic shared, isolated, transferred, persistent and unsupported execution topologies."
+    dependsOnCore: "0.9.7.6"
+    completionEvidence:
+      - "Topology satisfaction outcomes are deterministic and fail closed."
+      - "Action support alone cannot satisfy scenario readiness."
+
+  - version: "C0.3"
+    name: "Semantic Equivalence Rules"
+    type: "equivalence-conformance"
+    status: planned
+    purpose: "Define observable equivalence for results, effects, safety, controls, failure behavior and continuity."
+    dependsOnCore: "0.9.7.9"
+    completionEvidence:
+      - "Equivalent implementations may differ structurally while preserving required observations."
+      - "Missing or weakened observations fail certification."
+
+  - version: "C0.4"
+    name: "Independent Adapter Certification"
+    type: "adapter-certification"
+    status: planned
+    purpose: "Certify adapters against frozen semantic, topology and equivalence profiles without allowing adapter behavior to redefine Core."
+    dependsOnAdapters: "A0.6"
+    completionEvidence:
+      - "Certification reports separate action, control, continuity, scenario and production support."
+      - "Unsupported capabilities remain visible and bounded."
