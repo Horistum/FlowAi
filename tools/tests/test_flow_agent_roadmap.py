@@ -16,22 +16,28 @@ from flow_agent_roadmap import (
 
 VALID_CORE_ITEM = '''items:
   - version: "0.9.7.1"
-    name: "Canonical Intent Meaning"
-    type: "semantic-contract"
+    name: "Governance Signal Integrity"
+    type: "validation-honesty"
     status: next
-    purpose: "Separate universal meaning from provider binding."
-    universalInvariant: "Equivalent intent has one canonical meaning."
+    purpose: "Repair governance signal integrity."
+    universalInvariant: "Governance outcomes have honest polarity."
     forbiddenScope:
-      - "No concrete implementation selection."
+      - "No reversed dependency direction."
     requiredOutcome:
-      - "Provider binding remains explicit."
+      - "Signals match the property measured."
     completionEvidence:
-      - "Negative tests reject implicit provider selection."
+      - "Behavioral tests verify analyzer outcomes."
 '''
 
 
 class FlowAgentRoadmapTests(unittest.TestCase):
-    def _write_split_roadmaps(self, root: Path, core: str = VALID_CORE_ITEM) -> Path:
+    def _write_split_roadmaps(
+        self,
+        root: Path,
+        core: str = VALID_CORE_ITEM,
+        adapters: str | None = None,
+        conformance: str | None = None,
+    ) -> Path:
         agent = root / ".flow-agent"
         agent.mkdir()
         main = agent / "roadmap.yaml"
@@ -46,11 +52,19 @@ class FlowAgentRoadmapTests(unittest.TestCase):
         )
         (agent / "roadmap-core.yaml").write_text("stream: core\n" + core, encoding="utf-8")
         (agent / "roadmap-adapters.yaml").write_text(
-            'stream: adapters\nitems:\n  - version: "A0.1"\n    status: planned\n',
+            adapters
+            or 'stream: adapters\nitems:\n'
+            '  - version: "A0.1"\n'
+            '    status: planned\n'
+            '    dependsOnCore: "0.9.7.1"\n',
             encoding="utf-8",
         )
         (agent / "roadmap-conformance.yaml").write_text(
-            'stream: conformance\nitems:\n  - version: "C0.1"\n    status: planned\n',
+            conformance
+            or 'stream: conformance\nitems:\n'
+            '  - version: "C0.1"\n'
+            '    status: planned\n'
+            '    dependsOnCore: "0.9.7.1"\n',
             encoding="utf-8",
         )
         return main
@@ -69,12 +83,11 @@ class FlowAgentRoadmapTests(unittest.TestCase):
     def test_allows_independent_next_item_per_stream(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            main = self._write_split_roadmaps(root)
-            adapter = root / ".flow-agent/roadmap-adapters.yaml"
-            adapter.write_text(
-                'stream: adapters\nitems:\n  - version: "A0.1"\n    status: next\n',
-                encoding="utf-8",
+            adapters = (
+                'stream: adapters\nitems:\n  - version: "A0.1"\n'
+                '    status: next\n    dependsOnCore: "0.9.7.1"\n'
             )
+            main = self._write_split_roadmaps(root, adapters=adapters)
 
             items = next_items_by_stream(root, main)
 
@@ -110,7 +123,10 @@ class FlowAgentRoadmapTests(unittest.TestCase):
     def test_rejects_missing_primary_next_item(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            main = self._write_split_roadmaps(root, VALID_CORE_ITEM.replace("status: next", "status: planned"))
+            main = self._write_split_roadmaps(
+                root,
+                VALID_CORE_ITEM.replace("status: next", "status: planned"),
+            )
 
             with self.assertRaisesRegex(RuntimeError, "No roadmap item"):
                 validate_roadmap_structure(root, main)
@@ -131,43 +147,55 @@ class FlowAgentRoadmapTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "missing streams: conformance"):
                 validate_roadmap_structure(root, main)
 
-    def test_rejects_concrete_target_or_tool_in_core_scope(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            core = VALID_CORE_ITEM.replace(
-                "Separate universal meaning from provider binding.",
-                "Lower canonical meaning directly to Jenkins.",
-            )
-            main = self._write_split_roadmaps(root, core)
-
-            with self.assertRaisesRegex(RuntimeError, "concrete target or tool scope"):
-                validate_roadmap_structure(root, main)
-
     def test_rejects_core_item_without_required_governance_fields(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             core = '''items:
   - version: "0.9.7.1"
-    name: "Canonical Intent Meaning"
-    type: "semantic-contract"
+    name: "Governance Signal Integrity"
+    type: "validation-honesty"
     status: next
-    purpose: "Separate universal meaning from provider binding."
+    purpose: "Repair governance signal integrity."
 '''
             main = self._write_split_roadmaps(root, core)
 
             with self.assertRaisesRegex(RuntimeError, "missing required fields"):
                 validate_roadmap_structure(root, main)
 
+    def test_rejects_core_dependency_on_adapter_stream(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            core = VALID_CORE_ITEM.replace(
+                '    completionEvidence:\n',
+                '    dependsOnAdapters: "A0.1"\n    completionEvidence:\n',
+            )
+            main = self._write_split_roadmaps(root, core)
+
+            with self.assertRaisesRegex(RuntimeError, "reverses roadmap ownership direction"):
+                validate_roadmap_structure(root, main)
+
+    def test_rejects_unknown_core_dependency_from_adapter(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            adapters = (
+                'stream: adapters\nitems:\n  - version: "A0.1"\n'
+                '    status: planned\n    dependsOnCore: "0.9.7.99"\n'
+            )
+            main = self._write_split_roadmaps(root, adapters=adapters)
+
+            with self.assertRaisesRegex(RuntimeError, "references unknown Core item"):
+                validate_roadmap_structure(root, main)
+
     def test_adapter_roadmap_may_contain_concrete_target_names(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            main = self._write_split_roadmaps(root)
-            adapter = root / ".flow-agent/roadmap-adapters.yaml"
-            adapter.write_text(
+            adapters = (
                 'stream: adapters\nitems:\n  - version: "A0.1"\n'
-                '    name: "Jenkins adapter reassessment"\n    status: planned\n',
-                encoding="utf-8",
+                '    name: "Jenkins adapter reassessment"\n'
+                '    status: planned\n'
+                '    dependsOnCore: "0.9.7.1"\n'
             )
+            main = self._write_split_roadmaps(root, adapters=adapters)
 
             validate_roadmap_structure(root, main)
 
