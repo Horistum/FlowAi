@@ -22,9 +22,10 @@ roadmapState:
   completedItemName: "Roadmap Separation and Universal Drift Lock"
   primaryStream: "core"
   nextCoreItem: "0.9.7.1"
-  nextCoreItemName: "Canonical Intent Meaning"
+  nextCoreItemName: "Governance Signal Integrity"
+  boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
 
@@ -38,7 +39,7 @@ architectureConstraints:
   noPluginLifecycle: true
   noTargetSpecificPublicDsl: true
   noConcretePlatformSemanticAuthority: true
-  noCrossStreamRoadmapDrift: true
+  noCoreDependencyOnAdapterWork: true
   noTestOnlyHacks: true
   noShellProjection: true
 
@@ -48,22 +49,25 @@ qualityPrinciples:
   - "Every public contract change must have a migration document."
   - "Every Core roadmap item must declare a universal invariant, forbidden scope and completion evidence."
   - "Concrete implementation coverage must not define universal semantic meaning."
+  - "Existing executable reference evidence remains live throughout the Core track."
+  - "A previous executable label has no grandfathered status."
   - "Missing implementation evidence fails closed."
+  - "Governance status and score polarity must match the property claimed."
 
 lastKnownValidation:
-  flowAgentTooling: "passed"
-  flowAgentStructure: "passed"
-  flowAgentContextGeneration: "passed"
-  offlineCacheAwareChecks: "passed"
-  cleanTest: "passed"
-  conformance: "passed"
-  validationSource: "GitHub Actions Flow CI #1520, run 29560189402, implementation head 08ee3947792cd703d54f4f270d7e83568685e509"
+  flowAgentTooling: "required-on-final-head"
+  flowAgentStructure: "required-on-final-head"
+  flowAgentContextGeneration: "required-on-final-head"
+  offlineCacheAwareChecks: "required-on-final-head"
+  cleanTest: "required-on-final-head"
+  conformance: "required-on-final-head"
+  validationSource: "The unmodified standard Flow CI on the final PR #64 head is authoritative."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "Roadmap v3 separates Core, adapter and conformance planning authority."
     - "v0.9.7.0 changes roadmap governance and Flow Agent tooling only; no production Kotlin source is changed."
-    - "The primary Core work item advances to v0.9.7.1 Canonical Intent Meaning."
-    - "Broad adapter coverage remains gated until universal semantic closure."
-    - "Flow CI #1520 passed tooling, structure, context generation, compile, tests and full conformance."
-    - "This validation-metadata-only commit must also pass the unmodified standard Flow CI workflow."
-    - "No runtime executor, SDK lifecycle, plugin framework, shell projection or concrete-platform semantic authority is introduced."
+    - "The primary Core work item is v0.9.7.1 Governance Signal Integrity."
+    - "Canonical module authority, mandatory production validation and continuity precede heavier semantic-model work."
+    - "Broad adapter expansion remains gated, but existing reference and regression evidence stays active."
+    - "Readiness labels invalidated by continuity or topology evidence are intentionally demoted."
+    - "The active domain corpus is bounded to software delivery, data transformation and infrastructure state change."
