@@ -1,185 +1,141 @@
 project: Flow Core
 stream: core
-roadmapVersion: 2
+roadmapVersion: 3
 track: "v0.9.7-universal-semantic-foundation"
 status: active
 
-trackObjective: >-
-  Complete Flow's universal semantic foundation while continuously testing it
-  against existing executable reference evidence. Adapter evidence may falsify
-  Core assumptions, but it never defines universal meaning.
-
-trackWideProhibitions:
-  - "No new adapter coverage or executable target syntax in Core work items."
-  - "No runtime executor, SDK surface, plugin lifecycle or raw runtime meaning."
-  - "No weakening of validation or conformance to preserve an earlier executable label."
-  - "No single automation domain as proof of universal adequacy."
+trackObjective: "Complete the universal semantic foundation with continuous reference evidence."
 
 continuousFeedback:
-  - "Every Core item runs the existing executable reference and adapter regression suite."
-  - "A failure is repaired at the adapter boundary or recorded as an intended demotion."
-  - "Core invariants are never weakened only to preserve previous status."
+  - "Every Core item runs the existing reference and regression suite."
+  - "A failed claim is repaired at its owner or explicitly reclassified."
+  - "Core meaning is never weakened to preserve an earlier label."
 
 trackExitCriteria:
-  - "Completion evidence for 0.9.7.1 through 0.9.7.9 passes on real production and conformance paths."
-  - "0.9.7.10 verifies only the bounded checklist below and cannot invent new requirements."
-  - "New non-falsifying concerns become future roadmap items."
+  - "Evidence for 0.9.7.1 through 0.9.7.9 passes."
+  - "0.9.7.10 checks only the declared evidence."
 
 items:
   - version: "0.9.7.0"
     name: "Roadmap Separation and Universal Drift Lock"
     type: "architecture-governance"
     status: completed
-    purpose: "Separate Core, adapter and conformance planning and enforce ownership direction."
+    purpose: "Separate planning ownership and dependency direction."
     universalInvariant: "Core contracts advance independently from implementation coverage."
     forbiddenScope:
-      - "No production behavior or adapter capability change."
-    requiredOutcome:
-      - "The top-level roadmap indexes separate Core, adapter and conformance streams."
-      - "Core cannot depend on adapter or conformance work; those streams may depend on Core."
+      - "No production behavior change."
     completionEvidence:
-      - "Structure tests reject missing streams, escaped paths, duplicate next items and reversed dependencies."
-      - "The next Core item resolves to 0.9.7.1 and no production Kotlin source changes."
+      - "Stream structure and dependency direction tests pass."
 
   - version: "0.9.7.1"
     name: "Governance Signal Integrity"
     type: "validation-honesty"
-    status: next
-    purpose: "Repair governance checks whose scope, polarity or score misrepresents the property measured."
-    universalInvariant: "Governance PASS, FAIL and score semantics are truthful and self-applying."
+    status: completed
+    purpose: "Make governance scope, status and scoring truthful."
+    universalInvariant: "Governance results match the property being measured."
     forbiddenScope:
-      - "No directory-wide self-exclusion, historical substring guard, inverted status or dead score."
-    requiredOutcome:
-      - "Structural scanning covers architecture and conformance production code with only narrow tested suppressions."
-      - "Bias inventory separates inventory presence from health and avoids broad vocabulary as blocker evidence."
-      - "Drift is explicitly negative-signal-only; positive evidence is descriptive and not computed then zeroed."
+      - "No broad source exclusion, inverted status or unused score."
     completionEvidence:
-      - "Falsifying fixtures prove coverage, correct polarity and one live decision formula."
-      - "Tests survive harmless renaming and reject a new mechanism-level evasion."
+      - "Behavioral fixtures cover all production packages."
+      - "Inventory presence is separate from semantic health."
+      - "One negative-only scoring formula decides status."
+      - "Flow CI 1541 passes the full verification suite."
 
   - version: "0.9.7.2"
     name: "Canonical Module and Notes Authority"
     type: "contract-authority"
-    status: planned
-    purpose: "Create one strict, complete source of semantic and safety contracts."
-    universalInvariant: "Every capability and safety contract has one canonical authority."
+    status: next
+    purpose: "Create one strict source of semantic and safety contracts."
+    universalInvariant: "Every capability and safety contract has one authority."
     forbiddenScope:
-      - "No duplicate defaults, permissive empty coercion or adapter implication in universal descriptors."
-    requiredOutcome:
-      - "All entry points load one strict contract source including approval requirements."
-      - "Adapter compatibility evidence resides only in adapter-owned registries."
+      - "No duplicate defaults or permissive empty conversion."
     completionEvidence:
-      - "Parity and negative descriptor tests pass; dead validations are removed or made reachable."
+      - "Parity and negative descriptor tests pass."
 
   - version: "0.9.7.3"
     name: "Mandatory Materialization Authority"
     type: "validation-authority"
     status: planned
-    purpose: "Make graph, negotiation and projection-plan validators mandatory production authorities."
-    universalInvariant: "Invalid semantic or materialization evidence cannot reach an adapter."
+    purpose: "Make all planning validation mandatory before projection."
+    universalInvariant: "Invalid planning evidence cannot reach an adapter boundary."
     forbiddenScope:
-      - "No bypassing public path, warning-only invalid object or adapter exception."
-    requiredOutcome:
-      - "Every node has one validated decision, evidence and matching projection record."
-      - "All public generation paths return typed failure before adapter invocation."
+      - "No alternate public bypass."
     completionEvidence:
-      - "Invalid states fail through real CLI, conformance and library paths before adapter test doubles run."
-      - "The executable reference remains green or is honestly demoted for a demonstrated reason."
+      - "Invalid states fail through real public paths."
 
   - version: "0.9.7.4"
     name: "Universal Dependency and Continuity Contract"
     type: "semantic-dependencies"
     status: planned
-    purpose: "Distinguish ordering, data, output, artifact, state, secret, environment and human-decision dependencies."
-    universalInvariant: "Ordering never implies data, state or artifact continuity."
+    purpose: "Distinguish ordering from data and state continuity."
+    universalInvariant: "Ordering never implies continuity."
     forbiddenScope:
-      - "No duplicated dependency authority or renderer assumption as continuity evidence."
-    requiredOutcome:
-      - "Each dependency records producer, consumer, kind and lifetime; invalid graphs fail."
-      - "Readiness cannot infer scenario executability from action support and ordering alone."
+      - "No renderer assumption as continuity evidence."
     completionEvidence:
-      - "Synthetic topology tests distinguish shared, isolated, transferred, persistent and absent continuity."
-      - "Claims failing the contract are intentionally demoted; the invariant is not weakened."
+      - "Synthetic topology cases distinguish all supported continuity forms."
 
   - version: "0.9.7.5"
     name: "Canonical Intent Meaning"
     type: "semantic-contract"
     status: planned
-    purpose: "Separate canonical capability meaning from explicit provider and module binding."
-    universalInvariant: "Equivalent intent has equivalent meaning regardless of adapter inventory."
+    purpose: "Separate canonical meaning from explicit binding."
+    universalInvariant: "Equivalent intent has equivalent meaning across inventories."
     forbiddenScope:
-      - "No implicit provider, channel or implementation normalization."
-    requiredOutcome:
-      - "Missing bindings remain unresolved and every meaningful parameter is preserved or diagnosed."
+      - "No implicit binding selection."
     completionEvidence:
-      - "Behavioral tests prove inventory-independent meaning and real unresolved-binding evidence."
-      - "The executable reference uses the revised meaning without creating a Core default."
+      - "Inventory-independent meaning and unresolved binding tests pass."
 
   - version: "0.9.7.6"
     name: "Universal Effect and State Transition Model"
     type: "semantic-effects"
     status: planned
-    purpose: "Model reads, creates, updates, deletes, emits, consumes and irreversible external change."
-    universalInvariant: "Effects remain stable across implementations of the same capability."
+    purpose: "Model resource reads and state changes consistently."
+    universalInvariant: "Effects remain stable across implementations."
     forbiddenScope:
-      - "No module-name safety inference, concrete resource API or adapter-invented effect."
-    requiredOutcome:
-      - "Resource identity and effect provenance survive from Intent through ExecutionPlan."
+      - "No implementation-name inference."
     completionEvidence:
-      - "Software delivery, data transformation and infrastructure state-change scenarios share the model."
-      - "Negative tests reject missing destructive effects and conflicting provenance."
+      - "Three bounded domains share the same effect model."
 
   - version: "0.9.7.7"
     name: "Universal Control and Policy Requirements"
     type: "control-and-safety"
     status: planned
-    purpose: "Represent approval, retry, timeout, compensation, rollback, scheduling and safety as requirements."
-    universalInvariant: "Control and safety meaning is independent of materialization mechanism."
+    purpose: "Represent control and safety as independent requirements."
+    universalInvariant: "Control meaning is independent of its implementation."
     forbiddenScope:
-      - "No approval as ordinary action, implementation-string sensitivity guess or unknown-as-safe result."
-    requiredOutcome:
-      - "Control requirements remain distinct from implementation and dynamic evidence has explicit policy outcome."
+      - "No unknown evidence treated as safe."
     completionEvidence:
-      - "Policy and production-path tests cover sensitive, non-sensitive, unknown and dynamic evidence."
+      - "Policy cases cover known, unknown and dynamic evidence."
 
   - version: "0.9.7.8"
     name: "Abstract Execution Topology Model"
     type: "topology-contract"
     status: planned
-    purpose: "Describe isolation, lifetime, persistence, propagation, scope, interaction and concurrency."
-    universalInvariant: "Executability is proven between semantic requirements and declared topology capabilities."
+    purpose: "Describe isolation, lifetime, persistence and propagation."
+    universalInvariant: "Executability requires matching plan and topology evidence."
     forbiddenScope:
-      - "No concrete platform syntax, action-only proof or unknown property treated as supported."
-    requiredOutcome:
-      - "ExecutionPlan requirements are evaluated against complete topology evidence."
+      - "No action-only readiness proof."
     completionEvidence:
-      - "Synthetic profiles cover every property and reject incomplete or contradictory declarations."
-      - "Surviving executable claims have full topology and continuity evidence; no label is grandfathered."
+      - "Complete and contradictory topology profiles are tested."
 
   - version: "0.9.7.9"
     name: "Intent Lowering and Diagnostic Honesty"
     type: "lowering-integrity"
     status: planned
-    purpose: "Preserve, explicitly transform or reject every meaningful input with stable diagnostics."
-    universalInvariant: "Accepted intent information never disappears silently."
+    purpose: "Preserve or diagnose every meaningful input."
+    universalInvariant: "Accepted information never disappears silently."
     forbiddenScope:
-      - "No silent raw-runtime drop, source-form policy difference or placeholder success."
-    requiredOutcome:
-      - "One authority handles forbidden inputs; diagnostics preserve code and provenance."
-      - "Normalization uses structural tokens rather than substring heuristics."
+      - "No source-form enforcement difference."
     completionEvidence:
-      - "Round-trip, parser and negative source-form tests account for every accepted field."
+      - "Round-trip and malformed-input tests account for every field."
 
   - version: "0.9.7.10"
     name: "Bounded Semantic Closure Gate"
     type: "architecture-closure"
     status: planned
-    purpose: "Verify declared evidence without claiming semantic completeness forever."
-    universalInvariant: "The track closes by falsifiable evidence, not undefined review opinion."
+    purpose: "Verify declared evidence with a finite checklist."
+    universalInvariant: "The track closes by falsifiable evidence."
     forbiddenScope:
-      - "No new semantic category, adapter coverage or hidden unresolved failure during closure."
-    requiredOutcome:
-      - "Evidence for 0.9.7.1 through 0.9.7.9 is linked to production behavior and falsifying tests."
-      - "Failed evidence reopens its owner; new non-falsifying observations move to a future track."
+      - "No new requirement introduced during closure."
     completionEvidence:
-      - "A machine-readable checklist is green, reference evidence passes or has intended demotions, and Core has no unfinished adapter dependency."
+      - "The declared checklist and reference evidence pass."

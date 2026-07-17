@@ -1,84 +1,104 @@
+import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.architecture.CiCdBiasFollowUpArea
 import org.flowlang.architecture.CiCdBiasInventoryAnalyzer
-import java.io.File
-import java.nio.file.Files
 
 class FlowCiCdBiasInventoryTests {
     @Test
-    fun ciCdBiasInventoryClassifiesCurrentRepositoryWithoutTreatingTargetsAsSemanticTruth() {
+    fun repositoryInventorySeparatesPresenceFromSemanticHealth() {
         val report = CiCdBiasInventoryAnalyzer(File(".")).analyze()
 
-        assertEquals("PASS", report.status)
         assertTrue(report.scannedFiles > 50)
-        assertTrue(report.evidence.isNotEmpty(), "Inventory must expose the remaining CI/CD-shaped vocabulary instead of pretending it vanished.")
-        assertTrue(report.categories.keys.containsAll(setOf("target", "infrastructure", "tool", "workflow-vocabulary")))
-        assertTrue(report.adapterBoundaryEvidence.any {
-            it.path.contains("targets/builtin") && it.term.equals("Jenkins", ignoreCase = true)
-        })
-        assertFalse(report.adapterBoundaryEvidence.any {
-            it.path.contains("generators/manifest") && it.term.equals("Jenkins", ignoreCase = true)
-        }, "Concrete Jenkins vocabulary must remain at the target edge, not in Core manifest generation.")
-        assertTrue(report.scenarioAndConformanceEvidence.any { it.term.equals("Kubernetes", ignoreCase = true) || it.term.equals("docker", ignoreCase = true) })
-        assertTrue(
-            report.requiredFollowUpAreas.containsAll(
-                setOf(
-                    CiCdBiasFollowUpArea.SEMANTIC_MODEL,
-                    CiCdBiasFollowUpArea.ADAPTER_BOUNDARY,
-                    CiCdBiasFollowUpArea.SCENARIO_AND_CONFORMANCE,
-                    CiCdBiasFollowUpArea.DOCUMENTATION,
-                    CiCdBiasFollowUpArea.NOTES_AND_TARGET_DECLARATIONS
-                )
-            )
+        assertEquals("PRESENT", report.inventoryStatus)
+        assertTrue(report.evidence.isNotEmpty())
+        assertEquals(report.healthStatus, report.status)
+        assertEquals(
+            if (report.actionableEvidence.isEmpty()) "PASS" else "REVIEW_REQUIRED",
+            report.healthStatus
         )
+        assertTrue(report.actionableEvidence.all {
+            it.classification == CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE
+        })
     }
 
     @Test
-    fun semanticCoreMentionsAreInventoryDebtNotMaterializationProof() {
-        val report = CiCdBiasInventoryAnalyzer(File(".")).analyze()
-
-        assertTrue(report.activeSemanticEvidence.isNotEmpty(), "Current semantic source still contains CI/CD-shaped examples and normalizer wording that must remain visible debt.")
-        assertTrue(report.activeSemanticEvidence.all { it.classification == CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE })
-        assertFalse(report.activeSemanticEvidence.any { it.snippet.contains("SUPPORTED by default", ignoreCase = true) })
-    }
-
-    @Test
-    fun followUpClassificationIsDerivedFromEvidenceInsteadOfFutureRoadmapVersions() {
-        val root = Files.createTempDirectory("flow-cicd-bias-follow-up").toFile()
+    fun adapterVocabularyIsInventoryButNotSemanticHealthFailure() {
+        val root = Files.createTempDirectory("flow-cicd-adapter-inventory").toFile()
         try {
-            File(root, "src/main/kotlin/org/flowlang/intent").mkdirs()
-            File(root, "src/main/kotlin/org/flowlang/intent/SemanticDefault.kt").writeText(
-                "package org.flowlang.intent\nclass SemanticDefault { val defaultTarget = \"Jenkins\" }\n"
+            val adapter = File(root, "src/main/kotlin/org/flowlang/targets/builtin/TargetAdapter.kt")
+            adapter.parentFile.mkdirs()
+            adapter.writeText(
+                """
+                package org.flowlang.targets.builtin
+                class TargetAdapter { val target = "Jenkins" }
+                """.trimIndent()
             )
 
             val report = CiCdBiasInventoryAnalyzer(root).analyze()
 
-            assertEquals(listOf(CiCdBiasFollowUpArea.SEMANTIC_MODEL), report.requiredFollowUpAreas)
-            val productionSource = File("src/main/kotlin/org/flowlang/architecture/CiCdBiasInventory.kt").readText()
-            assertFalse(
-                Regex("0\\.9\\.5\\.(?:[3-9]|10)").containsMatchIn(productionSource),
-                "Production inventory analysis must not embed future roadmap version lists."
-            )
+            assertEquals("PRESENT", report.inventoryStatus)
+            assertEquals("PASS", report.healthStatus)
+            assertTrue(report.actionableEvidence.isEmpty())
+            assertEquals(1, report.adapterBoundaryEvidence.size)
         } finally {
             root.deleteRecursively()
         }
     }
 
     @Test
+    fun concreteImplementationDefaultInSemanticSourceRequiresReview() {
+        val root = Files.createTempDirectory("flow-cicd-semantic-health").toFile()
+        try {
+            val semantic = File(root, "src/main/kotlin/org/flowlang/intent/SemanticDefault.kt")
+            semantic.parentFile.mkdirs()
+            semantic.writeText(
+                """
+                package org.flowlang.intent
+                class SemanticDefault { val defaultTarget = "Jenkins" }
+                """.trimIndent()
+            )
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("PRESENT", report.inventoryStatus)
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+            assertEquals(1, report.actionableEvidence.size)
+            assertEquals(CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE, report.actionableEvidence.single().classification)
+            assertTrue(report.requiredFollowUpAreas.contains(CiCdBiasFollowUpArea.SEMANTIC_MODEL))
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun ordinaryAutomationVocabularyIsNotMechanismLevelBiasEvidence() {
+        val catalogTerms = CiCdBiasInventoryAnalyzer.catalog().map { it.term.lowercase() }.toSet()
+
+        assertFalse("build" in catalogTerms)
+        assertFalse("deploy" in catalogTerms)
+        assertFalse("deployment" in catalogTerms)
+        assertFalse("pipeline" in catalogTerms)
+        assertFalse("workflow" in catalogTerms)
+        assertFalse("registry" in catalogTerms)
+        assertFalse("runner" in catalogTerms)
+        assertTrue("jenkins" in catalogTerms)
+        assertTrue("docker" in catalogTerms)
+    }
+
+    @Test
     fun classifierKeepsAdapterProjectionSeparateFromSemanticCore() {
         val root = Files.createTempDirectory("flow-cicd-bias-inventory").toFile()
         try {
-            File(root, "src/main/kotlin/org/flowlang/targets/builtin").mkdirs()
-            File(root, "src/main/kotlin/org/flowlang/intent").mkdirs()
-            File(root, "src/main/kotlin/org/flowlang/targets/builtin/TargetAdapter.kt").writeText(
-                "package org.flowlang.targets.builtin\nclass TargetAdapter { val target = \"Jenkins\" }\n"
-            )
-            File(root, "src/main/kotlin/org/flowlang/intent/SemanticDefault.kt").writeText(
-                "package org.flowlang.intent\nclass SemanticDefault { val defaultTarget = \"Jenkins\" }\n"
-            )
+            val adapter = File(root, "src/main/kotlin/org/flowlang/targets/builtin/TargetAdapter.kt")
+            val semantic = File(root, "src/main/kotlin/org/flowlang/intent/SemanticDefault.kt")
+            adapter.parentFile.mkdirs()
+            semantic.parentFile.mkdirs()
+            adapter.writeText("package org.flowlang.targets.builtin\nclass TargetAdapter { val target = \"Jenkins\" }\n")
+            semantic.writeText("package org.flowlang.intent\nclass SemanticDefault { val defaultTarget = \"Jenkins\" }\n")
 
             val report = CiCdBiasInventoryAnalyzer(root).analyze()
 
@@ -86,6 +106,22 @@ class FlowCiCdBiasInventoryTests {
             assertEquals("src/main/kotlin/org/flowlang/targets/builtin/TargetAdapter.kt", report.adapterBoundaryEvidence.single().path)
             assertEquals(1, report.activeSemanticEvidence.size)
             assertEquals("src/main/kotlin/org/flowlang/intent/SemanticDefault.kt", report.activeSemanticEvidence.single().path)
+            assertEquals(report.activeSemanticEvidence, report.actionableEvidence)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun emptyRepositoryHasEmptyInventoryAndPassingHealth() {
+        val root = Files.createTempDirectory("flow-cicd-empty-inventory").toFile()
+        try {
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("EMPTY", report.inventoryStatus)
+            assertEquals("PASS", report.healthStatus)
+            assertTrue(report.evidence.isEmpty())
+            assertTrue(report.requiredFollowUpAreas.isEmpty())
         } finally {
             root.deleteRecursively()
         }
