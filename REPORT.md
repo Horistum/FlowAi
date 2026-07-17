@@ -5,50 +5,42 @@ Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Completed correction track: `v0.9.5.x`
+Active architecture track: `v0.9.7 Universal Semantic Foundation`
+Completed roadmap item: `0.9.7.0 Roadmap Separation and Universal Drift Lock`
+Next Core roadmap item: `0.9.7.1 Canonical Intent Meaning`
 
-## Release purpose
+## Active architecture direction
 
-Flow 0.9.5 completes the universal semantic and projection model that the v0.9.5.x repair track prepared. The release has one reconciled manifest generation boundary, first-class trigger semantics, target-neutral lowering, extensible target semantics and evidence-driven native projection.
+The roadmap is now split into independent Core, adapter and conformance streams.
 
-## Corrected integrity gaps
+- Core owns universal semantic meaning, effects, dependencies, policy, control requirements, materialization authority and abstract topology requirements.
+- Adapter work owns concrete bindings, topology evidence and target artifact generation.
+- Conformance owns cross-domain semantic adequacy, abstract topology behavior, equivalence rules and independent adapter certification.
 
-1. Manifest generators expose only a final reconciled `generate` path. `TargetManifestGenerationPipeline` is the CLI boundary, so CLI and conformance cannot serialize different compatibility truths.
-2. Jenkins, GitHub Actions and Tekton renderers contain no no-op job or phantom task fallback. Executable rendering requires a structured native payload.
-3. Generic DEPLOY and VERIFY intent lower to semantic standard actions. Kubernetes systems, namespaces and selectors appear only through explicit `uses: kubernetes.*` intent.
-4. Intent, AST, ExecutionPlan and TargetManifest carry manual, schedule, event and webhook triggers. Interval schedules use ISO-8601 durations such as `P30D`.
-5. `TargetSemanticsEntry` uses `semanticsByTarget`, keyed by target registry ids. Adding a target does not change the public Kotlin data model.
-6. Materialization is selected by declarative target projection rules. Missing rules fail closed as `ADAPTER_REQUIRED`. Jenkins `git.checkout` is backed by concrete native payload evidence and can produce executable target syntax.
-7. The package, public standard and serialized artifact contracts are deliberately promoted and documented instead of leaving materially changed formats at historical version numbers.
+The Flow Agent selects the next primary item from the Core stream while allowing other streams to maintain independent planning state. Core roadmap items must declare a universal invariant, forbidden scope and completion evidence. Concrete platform and implementation-tool names are rejected from Core item names, purposes and required outcomes.
 
-## Versioning boundary
+## v0.9.7.0 outcome
 
-- Published package version: `0.9.5`
-- Next package version: `0.9.6`
-- Active public standard version: `0.8.0`
-- Intent artifact version: `2.0`
-- AST artifact version: `2.0`
-- ExecutionPlan artifact version: `2.0`
-- TargetManifest artifact version: `2.0`
-- TargetRegistry artifact version: `2.0`
-- Target semantics matrix version: `2.0`
-
-Historical correction identifiers such as `0.9.5.7.9` remain traceability labels for completed work. They are not package or artifact versions.
+- Replaced the single mixed roadmap with a top-level index and three active roadmap authorities.
+- Moved completed v0.7 through v0.9.6 work into a historical roadmap.
+- Added mechanical validation for stream declarations, repository-contained paths, one next item per stream, a required next Core item and mandatory Core governance fields.
+- Added negative tests for concrete implementation scope in the Core roadmap.
+- Updated generated Flow Agent context to include all active roadmap streams while keeping the Core stream primary.
+- Updated the work-package template, architecture constitution and forbidden-direction catalog to encode the same boundary.
+- Kept package, public standard and artifact contract versions unchanged.
+- Changed no production Kotlin source.
 
 ## Validation source
 
-Authoritative release validation is the standard Flow CI run on the final pull-request head:
+Local isolated validation completed for:
 
-- Flow Agent tooling tests
-- Flow Agent structure validation
-- Flow Agent context generation
-- offline tests when cache is available
-- offline conformance when cache is available
-- clean compile and full test suite
-- full conformance
-- CI logs and test report artifacts
+- Flow Agent roadmap tooling unit tests;
+- split-roadmap structure validation;
+- primary Core next-item resolution;
+- negative drift tests.
 
-Validation remains pending until the final clean branch completes these gates. No temporary workflow, patch transport or snapshot writer is part of the release diff.
+The unmodified standard Flow CI on the pull request branch remains authoritative for full repository tests and conformance.
 
 ## Architecture boundary
 
-Flow remains a notes-driven universal automation language and standardization model. It does not execute workflows, expose an SDK lifecycle, own a plugin framework, project raw shell commands or add target-specific public language syntax. Native target output is allowed only when declarative evidence and structured payloads prove it.
+Flow remains a notes-driven universal automation language and standardization model. It does not execute workflows, expose an SDK lifecycle, own a plugin framework, project raw runtime instructions or allow concrete platforms to define universal semantic meaning.
