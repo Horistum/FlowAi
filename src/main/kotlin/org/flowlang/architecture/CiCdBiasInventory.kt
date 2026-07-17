@@ -7,10 +7,10 @@ import java.io.File
  * the repository while Flow is being re-centered as a notes-driven universal
  * automation standard.
  *
- * This is an inventory, not a renderer, adapter SDK, runtime bridge or target
- * ownership model. The point is to make existing bias visible and classify the
- * architectural areas that still require attention without embedding roadmap
- * scheduling or future release numbers in production analysis.
+ * Inventory presence and architectural health are intentionally separate. A
+ * concrete name at an adapter boundary is expected inventory; the same name in
+ * active semantic source is reviewable debt. Broad words such as build,
+ * workflow, pipeline, deploy, registry, and runner are not mechanism evidence.
  */
 data class CiCdBiasTerm(
     val term: String,
@@ -45,7 +45,10 @@ data class CiCdBiasInventoryReport(
     val documentationEvidence: List<CiCdBiasEvidence>,
     val moduleAndTargetNoteEvidence: List<CiCdBiasEvidence>,
     val categories: Map<String, Int>,
-    val requiredFollowUpAreas: List<CiCdBiasFollowUpArea>
+    val requiredFollowUpAreas: List<CiCdBiasFollowUpArea>,
+    val inventoryStatus: String = if (evidence.isEmpty()) "EMPTY" else "PRESENT",
+    val healthStatus: String = status,
+    val actionableEvidence: List<CiCdBiasEvidence> = emptyList()
 )
 
 class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
@@ -68,9 +71,11 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         val documentationEvidence = evidence.filter { it.classification == DOCUMENTATION }
         val moduleAndTargetNoteEvidence = evidence.filter { it.classification == MODULE_OR_TARGET_NOTE }
         val categories = evidence.groupingBy { it.category }.eachCount().toSortedMap()
+        val actionableEvidence = activeSemanticEvidence.filter { it.category in ACTIONABLE_CATEGORIES }
+        val healthStatus = if (actionableEvidence.isEmpty()) "PASS" else "REVIEW_REQUIRED"
 
         return CiCdBiasInventoryReport(
-            status = if (evidence.isNotEmpty()) "PASS" else "FAIL",
+            status = healthStatus,
             scannedFiles = files.size,
             evidence = evidence,
             activeSemanticEvidence = activeSemanticEvidence,
@@ -85,7 +90,10 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
                 if (scenarioAndConformanceEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.SCENARIO_AND_CONFORMANCE)
                 if (documentationEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.DOCUMENTATION)
                 if (moduleAndTargetNoteEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.NOTES_AND_TARGET_DECLARATIONS)
-            }
+            },
+            inventoryStatus = if (evidence.isEmpty()) "EMPTY" else "PRESENT",
+            healthStatus = healthStatus,
+            actionableEvidence = actionableEvidence
         )
     }
 
@@ -147,6 +155,8 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         const val DOCUMENTATION = "documentation"
         const val MODULE_OR_TARGET_NOTE = "module-or-target-note"
 
+        private val ACTIONABLE_CATEGORIES = setOf("target", "infrastructure", "tool", "data-system")
+
         fun catalog(): List<CiCdBiasTerm> = listOf(
             CiCdBiasTerm("Jenkins", "target", "Concrete CI target name."),
             CiCdBiasTerm("GitHub Actions", "target", "Concrete CI target name."),
@@ -155,20 +165,10 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             CiCdBiasTerm("ArgoCD", "target", "Concrete deployment target name."),
             CiCdBiasTerm("Argo CD", "target", "Concrete deployment target name."),
             CiCdBiasTerm("Kubernetes", "infrastructure", "Concrete infrastructure platform name."),
-            CiCdBiasTerm("kubernetes", "infrastructure", "Concrete infrastructure platform identifier."),
-            CiCdBiasTerm("Docker", "tool", "Concrete build/container tool name."),
-            CiCdBiasTerm("docker", "tool", "Concrete build/container tool identifier."),
+            CiCdBiasTerm("Docker", "tool", "Concrete build or container tool name."),
             CiCdBiasTerm("Maven", "tool", "Concrete build tool name."),
             CiCdBiasTerm("PostgreSQL", "data-system", "Concrete database implementation name."),
-            CiCdBiasTerm("postgres", "data-system", "Concrete database identifier."),
-            CiCdBiasTerm("pipeline", "workflow-vocabulary", "CI/CD-shaped workflow vocabulary."),
-            CiCdBiasTerm("workflow", "workflow-vocabulary", "CI/CD-shaped workflow vocabulary."),
-            CiCdBiasTerm("deploy", "workflow-vocabulary", "Deployment-specific workflow vocabulary."),
-            CiCdBiasTerm("deployment", "workflow-vocabulary", "Deployment-specific workflow vocabulary."),
-            CiCdBiasTerm("build", "workflow-vocabulary", "Build-pipeline vocabulary."),
-            CiCdBiasTerm("registry", "tool", "Container or artifact registry vocabulary."),
-            CiCdBiasTerm("runner", "runtime", "CI runner vocabulary."),
-            CiCdBiasTerm("CI/CD", "domain", "Narrow CI/CD domain label.")
+            CiCdBiasTerm("postgres", "data-system", "Concrete database identifier.")
         )
     }
 }
