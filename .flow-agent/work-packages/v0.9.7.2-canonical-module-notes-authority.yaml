@@ -1,3 +1,25 @@
 version: "0.9.7.2"
 name: "Canonical Module and Notes Authority"
 stream: core
+objective: "Align module and notes contracts to canonical files."
+universalInvariant: "Each contract has one declared source."
+forbiddenScope:
+  - "No duplicate sources."
+  - "No silent conversion."
+completionEvidence:
+  - "Registry entry points use canonical files."
+  - "Notes packages use one manifest."
+  - "Negative fixtures pass."
+  - "The standard verification suite passes."
+scope:
+  include:
+    - "Contract loading."
+    - "Ownership checks."
+    - "Behavioral tests."
+  exclude:
+    - "New semantic features."
+    - "Version changes."
+validationPlan:
+  - "Run agent checks."
+  - "Run tests."
+  - "Run conformance."
