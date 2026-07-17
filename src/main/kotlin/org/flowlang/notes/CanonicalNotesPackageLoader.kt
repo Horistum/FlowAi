@@ -102,10 +102,13 @@ object CanonicalNotesPackageLoader {
         throw ContractException(error.message ?: "Invalid YAML: ${file.path}", error)
     }
 
-    private fun text(map: Map<String, Any?>, key: String, path: String): String =
-        map[key] as? String
-            ?.takeIf { it.isNotBlank() }
-            ?: throw ContractException("$path.$key must be non-blank text.")
+    private fun text(map: Map<String, Any?>, key: String, path: String): String {
+        val value = map[key]
+        if (value !is String || value.isBlank()) {
+            throw ContractException("$path.$key must be non-blank text.")
+        }
+        return value
+    }
 
     private fun strings(value: Any?, path: String): List<String> = when (value) {
         null -> emptyList()
