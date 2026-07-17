@@ -13,15 +13,13 @@ class ModuleRegistry(
         modules.values.firstNotNullOfOrNull { module -> module.systemTypes[typeName]?.let { module to it } }
 
     companion object {
-        fun fromDirectory(dir: File, includeDefaults: Boolean = false): ModuleRegistry {
-            require(!includeDefaults) { "A complete descriptor directory is required." }
-            return ModuleRegistry(CanonicalModuleLoader.loadDirectory(dir).associateBy { it.name })
-        }
+        @Suppress("UNUSED_PARAMETER")
+        fun fromDirectory(dir: File, includeDefaults: Boolean = false): ModuleRegistry =
+            ModuleRegistry(CanonicalModuleLoader.loadDirectory(dir).associateBy { it.name })
 
-        fun fromDescriptors(yamlTexts: List<String>, includeDefaults: Boolean = false): ModuleRegistry {
-            require(!includeDefaults) { "A complete descriptor set is required." }
-            return ModuleRegistry(CanonicalModuleLoader.loadTexts(yamlTexts).associateBy { it.name })
-        }
+        @Suppress("UNUSED_PARAMETER")
+        fun fromDescriptors(yamlTexts: List<String>, includeDefaults: Boolean = false): ModuleRegistry =
+            ModuleRegistry(CanonicalModuleLoader.loadTexts(yamlTexts).associateBy { it.name })
 
         fun loadCanonical(rootDir: File = File(".")): List<FlowModule> =
             CanonicalModuleLoader.loadDirectory(File(rootDir, "modules"))
