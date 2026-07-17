@@ -16,7 +16,7 @@ REQUIRED_FILES = [
     "agent-contract.md",
     "architecture-constitution.md",
     "roadmap.yaml",
-    "roadmap-core.yaml",
+    "roadmap-core-v0.9.7.yaml",
     "roadmap-adapters.yaml",
     "roadmap-conformance.yaml",
     "roadmap-history-v0.7-v0.9.6.yaml",
