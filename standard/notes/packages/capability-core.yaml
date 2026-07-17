@@ -1,0 +1,16 @@
+packageId: flow.capability.core
+packageVersion: "0.9.7.2"
+kind: capability
+description: "Core capability vocabulary without adapter ownership."
+declaredCapabilities:
+  - approval.require
+  - notification.send
+  - resource.read
+  - resource.delete
+  - rollback.perform
+dependencies:
+  - packageId: flow.domain.core
+    versionConstraint: "0.9.x"
+boundaries:
+  - name: semantic-only
+    description: "Capabilities define meaning rather than target implementation."
