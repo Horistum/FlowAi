@@ -45,32 +45,36 @@ object CanonicalModuleLoader {
         if (actions.isEmpty()) throw ContractException("$source.actions must not be empty.")
         systems.forEach { (id, body) ->
             val system = map(body, "$source.systemTypes.$id", required = true)
-            map(system["input"], "$source.systemTypes.$id.input")
+            validateSchema(system["input"], "$source.systemTypes.$id.input")
         }
 
         val approvalByAction = mutableMapOf<String, Boolean>()
         actions.forEach { (id, body) ->
-            val action = map(body, "$source.actions.$id", required = true)
-            if (text(action, "kind", "$source.actions.$id") != "action") {
-                throw ContractException("$source.actions.$id.kind must be action.")
+            val path = "$source.actions.$id"
+            val action = map(body, path, required = true)
+            if (text(action, "kind", path) != "action") {
+                throw ContractException("$path.kind must be action.")
             }
-            list(action["targetTypes"], "$source.actions.$id.targetTypes", required = true)
-            map(action["input"], "$source.actions.$id.input")
-            map(action["output"], "$source.actions.$id.output")
-            map(action["effects"], "$source.actions.$id.effects")
+            list(action["targetTypes"], "$path.targetTypes", required = true)
+            validateSchema(action["input"], "$path.input")
+            validateSchema(action["output"], "$path.output")
+            validateEffects(action["effects"], "$path.effects")
             if (action.containsKey("targetImplications")) {
-                throw ContractException("$source.actions.$id cannot declare targetImplications.")
+                throw ContractException("$path cannot declare targetImplications.")
             }
-            val safety = map(action["safety"], "$source.actions.$id.safety")
-            bool(safety["destructive"], "$source.actions.$id.safety.destructive")
-            val requirements = list(safety["requires"], "$source.actions.$id.safety.requires")
+            val safety = map(action["safety"], "$path.safety")
+            bool(safety["destructive"], "$path.safety.destructive")
+            val requirements = list(safety["requires"], "$path.safety.requires")
             val unknown = requirements.toSet() - setOf("safety", "approval")
-            if (unknown.isNotEmpty()) throw ContractException("$source.actions.$id has unknown safety requirements: ${unknown.joinToString()}")
+            if (unknown.isNotEmpty()) throw ContractException("$path has unknown safety requirements: ${unknown.joinToString()}")
             approvalByAction[id] = "approval" in requirements
-            map(action["retry"], "$source.actions.$id.retry").let { bool(it["supported"], "$source.actions.$id.retry.supported") }
-            map(action["timeout"], "$source.actions.$id.timeout").let { bool(it["supported"], "$source.actions.$id.timeout.supported") }
-            list(action["secrets"], "$source.actions.$id.secrets")
-            list(action["requiredCapabilities"], "$source.actions.$id.requiredCapabilities")
+            map(action["retry"], "$path.retry").let { bool(it["supported"], "$path.retry.supported") }
+            map(action["timeout"], "$path.timeout").let { bool(it["supported"], "$path.timeout.supported") }
+            bool(action["additionalParams"], "$path.additionalParams")
+            list(action["secrets"], "$path.secrets")
+            list(action["requiredCapabilities"], "$path.requiredCapabilities")
+            validateIdempotent(action["idempotent"], "$path.idempotent")
+            validateErrors(action["errors"], "$path.errors")
         }
 
         val decoded = ModuleYamlLoader.loadText(yaml)
@@ -79,8 +83,42 @@ object CanonicalModuleLoader {
         })
     }
 
+    private fun validateSchema(value: Any?, path: String) {
+        map(value, path).forEach { (fieldName, rawField) ->
+            val fieldPath = "$path.$fieldName"
+            val field = map(rawField, fieldPath, required = true)
+            text(field, "type", fieldPath)
+            bool(field["required"], "$fieldPath.required")
+            bool(field["sensitive"], "$fieldPath.sensitive")
+        }
+    }
+
+    private fun validateEffects(value: Any?, path: String) {
+        val effects = map(value, path)
+        EFFECT_KEYS.forEach { key -> list(effects[key], "$path.$key") }
+        val unknown = effects.keys - EFFECT_KEYS
+        if (unknown.isNotEmpty()) throw ContractException("$path has unknown fields: ${unknown.sorted().joinToString()}")
+    }
+
+    private fun validateErrors(value: Any?, path: String) {
+        map(value, path).forEach { (name, rawError) ->
+            val errorPath = "$path.$name"
+            val error = map(rawError, errorPath, required = true)
+            text(error, "when", errorPath)
+            text(error, "message", errorPath)
+        }
+    }
+
+    private fun validateIdempotent(value: Any?, path: String) {
+        when (value) {
+            null, is Boolean -> Unit
+            is String -> if (value.isBlank()) throw ContractException("$path must not be blank.")
+            else -> throw ContractException("$path must be boolean or text.")
+        }
+    }
+
     private fun text(map: Map<String, Any?>, key: String, path: String): String =
-        map[key]?.toString()?.takeIf { it.isNotBlank() }
+        (map[key] as? String)?.takeIf { it.isNotBlank() }
             ?: throw ContractException("$path.$key must be non-blank text.")
 
     @Suppress("UNCHECKED_CAST")
@@ -93,7 +131,10 @@ object CanonicalModuleLoader {
     private fun list(value: Any?, path: String, required: Boolean = false): List<String> = when (value) {
         null -> if (required) throw ContractException("$path is required.") else emptyList()
         is List<*> -> value.mapIndexed { index, item -> item as? String ?: throw ContractException("$path[$index] must be text.") }
-            .also { if (required && it.isEmpty()) throw ContractException("$path must not be empty.") }
+            .also {
+                if (required && it.isEmpty()) throw ContractException("$path must not be empty.")
+                if (it.any(String::isBlank)) throw ContractException("$path must not contain blank text.")
+            }
         else -> throw ContractException("$path must be a list.")
     }
 
@@ -104,4 +145,5 @@ object CanonicalModuleLoader {
     }
 
     private val MODULE_ID = Regex("[a-z][a-z0-9-]*")
+    private val EFFECT_KEYS = setOf("reads", "writes", "creates", "updates", "deletes", "executes", "network", "filesystem")
 }
