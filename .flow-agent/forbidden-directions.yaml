@@ -19,8 +19,16 @@ forbiddenDirections:
     description: "No concrete platform, adapter or implementation tool may define universal Flow meaning."
     severity: "blocker"
 
-  - id: "cross-stream-roadmap-drift"
-    description: "Core, adapter and conformance roadmap items must stay inside their declared ownership boundaries."
+  - id: "reversed-roadmap-dependency"
+    description: "Core roadmap work must not depend on unfinished adapter or conformance implementation work."
+    severity: "blocker"
+
+  - id: "grandfathered-executability"
+    description: "An earlier executable label must be demoted when new continuity or topology evidence disproves it."
+    severity: "blocker"
+
+  - id: "dishonest-governance-signal"
+    description: "Governance PASS, FAIL and score semantics must match the property they claim to measure."
     severity: "blocker"
 
   - id: "test-only-hack"
@@ -32,12 +40,8 @@ forbiddenDirections:
     severity: "major"
 
   - id: "silent-semantic-loss"
-    description: "Accepted intent information must not be dropped, guessed or replaced without explicit diagnostics and provenance."
+    description: "Accepted intent information must not be dropped, guessed or replaced without diagnostics and provenance."
     severity: "blocker"
-
-  - id: "undocumented-compatibility-alias"
-    description: "Compatibility aliases must not be added without documentation and migration reason."
-    severity: "major"
 
   - id: "self-referential-governance"
     description: "Governance features must measure behavior, quality, drift, compatibility or coverage. Ceremony-only controls are not allowed."
