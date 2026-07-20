@@ -53,7 +53,7 @@ architectureConstitution:
     - "No governance signal whose status contradicts the property measured."
 
 currentDecision:
-  completedItem: "0.9.7.1"
-  completedItemName: "Governance Signal Integrity"
-  nextCoreItem: "0.9.7.2"
-  nextCoreItemName: "Canonical Module and Notes Authority"
+  completedItem: "0.9.7.2"
+  completedItemName: "Canonical Module and Notes Authority"
+  nextCoreItem: "0.9.7.3"
+  nextCoreItemName: "Mandatory Materialization Authority"
