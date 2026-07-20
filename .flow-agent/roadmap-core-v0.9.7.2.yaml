@@ -35,22 +35,23 @@ items:
   - version: "0.9.7.2"
     name: "Canonical Module and Notes Authority"
     type: contract-authority
-    status: completed
+    status: next
     purpose: "Create one strict source of semantic and safety contracts."
     universalInvariant: "Every capability and safety contract has one authority."
     forbiddenScope:
       - "No duplicate defaults or permissive malformed conversion."
     completionEvidence:
       - "Registry construction loads one complete strict descriptor directory."
-      - "Malformed shapes and duplicate identities fail closed."
-      - "Explicit approval requirements survive production loading."
+      - "Every public module load path uses the canonical validator."
+      - "Unknown fields, malformed shapes, duplicate identities and dependency cycles fail closed."
+      - "Explicit approval and destructive safety requirements survive production loading."
       - "Implementation-owned evidence is excluded from Core descriptors."
       - "Core notes load from one versioned manifest and package directory."
-      - "Flow CI 1557 passes full verification and reference evidence."
+      - "The final unmodified Flow CI passes full tests, conformance and reference evidence."
   - version: "0.9.7.3"
     name: "Mandatory Materialization Authority"
     type: validation-authority
-    status: next
+    status: planned
     purpose: "Make planning validation mandatory before projection."
     universalInvariant: "Invalid planning evidence cannot reach an implementation boundary."
     forbiddenScope:
