@@ -25,6 +25,7 @@ data class ModuleActionContract(
     val input: Map<String, SchemaField> = emptyMap(),
     val output: Map<String, SchemaField> = emptyMap(),
     val effects: Effects = Effects(),
+    val continuity: ContinuityContract = ContinuityContract(),
     val safety: SafetyContract = SafetyContract(),
     val idempotent: String = "unknown",
     val retrySupported: Boolean = false,
@@ -70,6 +71,28 @@ data class Effects(
     val network: List<String> = emptyList(),
     val filesystem: List<String> = emptyList()
 )
+
+
+enum class ContinuityKind {
+    VALUE,
+    WORKSPACE,
+    STATE;
+
+    val capability: String get() = "continuity.${name.lowercase()}"
+}
+
+data class ContinuityChannel(
+    val kind: ContinuityKind,
+    val name: String
+)
+
+data class ContinuityContract(
+    val provides: List<ContinuityChannel> = emptyList(),
+    val requires: List<ContinuityChannel> = emptyList(),
+    val preserves: List<ContinuityChannel> = emptyList()
+) {
+    val allChannels: List<ContinuityChannel> get() = provides + requires + preserves
+}
 
 data class SafetyContract(
     val destructive: Boolean = false,

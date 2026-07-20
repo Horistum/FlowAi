@@ -17,7 +17,8 @@ data class CanonicalExecutionPlan(
     val requiredCapabilities: List<String> = emptyList(),
     val targetHints: Map<String, String> = emptyMap(),
     val assumptions: List<PlanAssumption> = emptyList(),
-    val nodes: List<CanonicalPlanNode> = emptyList()
+    val nodes: List<CanonicalPlanNode> = emptyList(),
+    val dependencyRelations: List<PlanDependencyRelation> = emptyList()
 )
 
 data class CanonicalPlanNode(
@@ -76,7 +77,8 @@ object ExecutionPlanCanonicalizer {
             requiredCapabilities = plan.requiredCapabilities,
             targetHints = plan.targetHints,
             assumptions = plan.assumptions,
-            nodes = plan.nodes.map { canonicalizeNode(it) }
+            nodes = plan.nodes.map { canonicalizeNode(it) },
+            dependencyRelations = plan.dependencyRelations
         )
 
     private fun canonicalizeNode(node: PlanNode): CanonicalPlanNode = when (node) {

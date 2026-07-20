@@ -58,6 +58,7 @@ object ModuleYamlLoader {
         val input = parseSchema(body["input"])
         val output = parseSchema(body["output"])
         val effects = parseEffects(asMap(body["effects"]))
+        val continuity = parseContinuity(asMap(body["continuity"]))
         val safetyMap = asMap(body["safety"])
         val safetyRequirements = strList(safetyMap["requires"])
         val destructive = boolOf(safetyMap["destructive"])
@@ -93,6 +94,7 @@ object ModuleYamlLoader {
             input = input,
             output = output,
             effects = effects,
+            continuity = continuity,
             safety = safety,
             idempotent = idempotent,
             retrySupported = retrySupported,
@@ -114,6 +116,20 @@ object ModuleYamlLoader {
                 defaultValue = field["default"]
             )
         }
+
+    private fun parseContinuity(map: Map<String, Any?>): ContinuityContract = ContinuityContract(
+        provides = continuityChannels(map["provides"]),
+        requires = continuityChannels(map["requires"]),
+        preserves = continuityChannels(map["preserves"])
+    )
+
+    private fun continuityChannels(node: Any?): List<ContinuityChannel> = asList(node).map { raw ->
+        val channel = asMap(raw)
+        ContinuityChannel(
+            kind = ContinuityKind.valueOf(channel.getValue("kind").toString().uppercase()),
+            name = channel.getValue("name").toString()
+        )
+    }
 
     private fun parseEffects(map: Map<String, Any?>): Effects = Effects(
         reads = strList(map["reads"]),

@@ -65,6 +65,9 @@ targets:
       secrets: partial
       nativeRuntime: supported
     features:
+      continuity.value: supported
+      continuity.workspace: supported
+      continuity.state: partial
       approval.inline: partial
       approval.manual: partial
       parallel.dag: supported
@@ -93,6 +96,9 @@ targets:
       secrets: supported
       nativeRuntime: supported
     features:
+      continuity.value: supported
+      continuity.workspace: supported
+      continuity.state: partial
       approval.inline: supported
       approval.manual: supported
       parallel.dag: supported
@@ -184,6 +190,9 @@ targets:
       secrets: supported
       nativeRuntime: partial
     features:
+      continuity.value: partial
+      continuity.workspace: unsupported
+      continuity.state: unsupported
       approval.inline: partial
       approval.manual: partial
       approval.environmentGate: supported
@@ -278,6 +287,9 @@ targets:
       secrets: supported
       nativeRuntime: partial
     features:
+      continuity.value: partial
+      continuity.workspace: partial
+      continuity.state: unsupported
       approval.inline: unsupported
       approval.manual: unsupported
       approval.externalGate: partial
@@ -376,6 +388,9 @@ targets:
       secrets: supported
       nativeRuntime: partial
     features:
+      continuity.value: partial
+      continuity.workspace: partial
+      continuity.state: unsupported
       approval.inline: partial
       approval.manual: partial
       approval.suspend: supported
@@ -408,6 +423,9 @@ targets:
       secrets: supported
       nativeRuntime: partial
     features:
+      continuity.value: partial
+      continuity.workspace: partial
+      continuity.state: partial
       approval.inline: partial
       approval.manual: partial
       approval.environmentGate: supported

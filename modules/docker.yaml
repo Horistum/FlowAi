@@ -35,6 +35,10 @@ actions:
         - docker.image
       executes:
         - docker.build
+    continuity:
+      requires:
+        - kind: workspace
+          name: source
     safety:
       destructive: false
     retry:

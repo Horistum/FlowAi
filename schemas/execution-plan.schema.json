@@ -64,6 +64,12 @@
       "items": {
         "$ref": "#/$defs/trigger"
       }
+    },
+    "dependencyRelations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dependencyRelation"
+      }
     }
   },
   "$defs": {
@@ -348,6 +354,82 @@
           "items": {
             "type": "string"
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    "dependencyRelation": {
+      "type": "object",
+      "required": [
+        "targetNodeId",
+        "kind",
+        "evidence",
+        "resolution",
+        "path",
+        "candidates"
+      ],
+      "properties": {
+        "sourceNodeId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "targetNodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "ORDERING",
+            "VALUE",
+            "WORKSPACE",
+            "STATE"
+          ]
+        },
+        "channel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence": {
+          "enum": [
+            "DECLARED_ORDERING",
+            "DATA_REFERENCE",
+            "MODULE_CONTRACT"
+          ]
+        },
+        "resolution": {
+          "enum": [
+            "RESOLVED",
+            "UNRESOLVED",
+            "AMBIGUOUS"
+          ]
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidenceReference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "continuity": {
+          "type": "boolean"
+        },
+        "blocking": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false

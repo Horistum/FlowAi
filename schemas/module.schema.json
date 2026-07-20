@@ -3,35 +3,95 @@
   "$id": "https://flowlang.dev/schemas/module/1.2/module.schema.json",
   "title": "Flow Capability Module Descriptor v1.2 draft",
   "type": "object",
-  "required": ["kind", "name", "version"],
+  "required": [
+    "kind",
+    "name",
+    "version"
+  ],
   "properties": {
-    "kind": {"const": "FlowModule"},
-    "name": {"type": "string"},
-    "version": {"type": "string"},
-    "description": {"type": "string"},
-    "systemTypes": {"type": "object", "additionalProperties": true},
+    "kind": {
+      "const": "FlowModule"
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "systemTypes": {
+      "type": "object",
+      "additionalProperties": true
+    },
     "actions": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "kind": {"type": "string"},
-          "targetTypes": {"type": "array", "items": {"type": "string"}},
-          "input": {"type": "object", "additionalProperties": true},
-          "output": {"type": "object", "additionalProperties": true},
-          "effects": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
-          "secrets": {"type": "array", "items": {"type": "string"}},
-          "requiredCapabilities": {"type": "array", "items": {"type": "string"}},
+          "kind": {
+            "type": "string"
+          },
+          "targetTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "output": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "effects": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "secrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requiredCapabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "safety": {
             "type": "object",
             "properties": {
-              "destructive": {"type": "boolean"},
-              "requires": {"type": "array", "items": {"type": "string"}}
+              "destructive": {
+                "type": "boolean"
+              },
+              "requires": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             },
             "additionalProperties": true
           },
-          "targetImplications": {"$ref": "#/$defs/targetImplications"},
-          "additionalParams": {"type": "boolean"}
+          "targetImplications": {
+            "$ref": "#/$defs/targetImplications"
+          },
+          "additionalParams": {
+            "type": "boolean"
+          },
+          "continuity": {
+            "$ref": "#/$defs/continuity"
+          }
         },
         "additionalProperties": true
       }
@@ -43,13 +103,73 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "support": {"type": "string"},
-          "supported": {"type": ["string", "boolean"]},
-          "requiredCapabilities": {"type": "array", "items": {"type": "string"}},
-          "notes": {"type": "array", "items": {"type": "string"}}
+          "support": {
+            "type": "string"
+          },
+          "supported": {
+            "type": [
+              "string",
+              "boolean"
+            ]
+          },
+          "requiredCapabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         },
         "additionalProperties": true
       }
+    },
+    "continuity": {
+      "type": "object",
+      "properties": {
+        "provides": {
+          "$ref": "#/$defs/continuityChannels"
+        },
+        "requires": {
+          "$ref": "#/$defs/continuityChannels"
+        },
+        "preserves": {
+          "$ref": "#/$defs/continuityChannels"
+        }
+      },
+      "additionalProperties": false
+    },
+    "continuityChannels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/continuityChannel"
+      },
+      "uniqueItems": true
+    },
+    "continuityChannel": {
+      "type": "object",
+      "required": [
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "value",
+            "workspace",
+            "state"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][A-Za-z0-9._-]*$"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

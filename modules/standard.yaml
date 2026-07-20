@@ -31,6 +31,10 @@ actions:
     effects:
       executes:
         - flow.standard.operation
+    continuity:
+      preserves:
+        - kind: workspace
+          name: source
     safety:
       destructive: false
     retry:

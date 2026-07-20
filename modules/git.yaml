@@ -32,6 +32,10 @@ actions:
         - git.repository
       filesystem:
         - workspace.write
+    continuity:
+      provides:
+        - kind: workspace
+          name: source
     safety:
       destructive: false
     retry:
