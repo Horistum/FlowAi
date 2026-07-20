@@ -1,7 +1,7 @@
 version: "0.9.7.4"
 name: "Universal Dependency and Continuity Contract"
 stream: core
-status: in-progress
+status: completed
 objective: "Distinguish ordering from value, workspace and state continuity."
 universalInvariant: "Ordering never implies continuity."
 forbiddenScope:
@@ -24,4 +24,5 @@ completionEvidence:
   - "Synthetic tests distinguish ordering-only, direct, preserved, missing and ambiguous continuity."
   - "Target compatibility derives from explicit continuity capabilities."
   - "Committed reference snapshots match canonical generation file for file."
-  - "The final unmodified Flow CI workflow passes compilation, tests, conformance and reference evidence."
+  - "Flow CI #1695 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation head 64393255468089b44c229361524abfc24157d487."
+  - "The final metadata head must pass the same unmodified Flow CI workflow."
