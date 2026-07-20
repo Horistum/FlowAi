@@ -4,7 +4,7 @@ import java.io.File
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.serialization.FlowYamlException
 
-/** Strict authority in front of the low-level module YAML decoder. */
+/** Strict authority for Flow module semantic and safety contracts. */
 object CanonicalModuleLoader {
     class ContractException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
@@ -15,16 +15,14 @@ object CanonicalModuleLoader {
             .orEmpty()
         if (files.isEmpty()) throw ContractException("Module directory is empty: ${dir.path}")
         val modules = files.map { file -> loadText(file.readText(), file.path) }
-        val duplicates = modules.groupBy { it.name }.filterValues { it.size > 1 }.keys.sorted()
-        if (duplicates.isNotEmpty()) throw ContractException("Duplicate modules: ${duplicates.joinToString()}")
+        rejectDuplicateModuleIds(modules)
         return modules
     }
 
     fun loadTexts(texts: List<String>): List<FlowModule> {
         if (texts.isEmpty()) throw ContractException("At least one module descriptor is required.")
         val modules = texts.mapIndexed { index, text -> loadText(text, "<module-${index + 1}>") }
-        val duplicates = modules.groupBy { it.name }.filterValues { it.size > 1 }.keys.sorted()
-        if (duplicates.isNotEmpty()) throw ContractException("Duplicate modules: ${duplicates.joinToString()}")
+        rejectDuplicateModuleIds(modules)
         return modules
     }
 
@@ -34,42 +32,50 @@ object CanonicalModuleLoader {
         } catch (error: FlowYamlException) {
             throw ContractException(error.message ?: "Invalid module descriptor: $source", error)
         }
-        if (text(root, "kind", source) != "FlowModule") throw ContractException("$source.kind must be FlowModule.")
+        rejectUnknownFields(root, MODULE_KEYS, source)
+        if (text(root, "kind", source) != "FlowModule") {
+            throw ContractException("$source.kind must be FlowModule.")
+        }
         val name = text(root, "name", source)
         if (!MODULE_ID.matches(name)) throw ContractException("$source.name is invalid: $name")
         text(root, "version", source)
         text(root, "description", source)
+
         val systems = map(root["systemTypes"], "$source.systemTypes", required = true)
         val actions = map(root["actions"], "$source.actions", required = true)
         if (systems.isEmpty()) throw ContractException("$source.systemTypes must not be empty.")
         if (actions.isEmpty()) throw ContractException("$source.actions must not be empty.")
+
         systems.forEach { (id, body) ->
-            val system = map(body, "$source.systemTypes.$id", required = true)
-            validateSchema(system["input"], "$source.systemTypes.$id.input")
+            validateMemberId(id, "$source.systemTypes")
+            val path = "$source.systemTypes.$id"
+            val system = map(body, path, required = true)
+            rejectUnknownFields(system, SYSTEM_TYPE_KEYS, path)
+            validateSchema(system["input"], "$path.input", required = true)
         }
 
-        val approvalByAction = mutableMapOf<String, Boolean>()
         actions.forEach { (id, body) ->
+            validateMemberId(id, "$source.actions")
             val path = "$source.actions.$id"
             val action = map(body, path, required = true)
+            if (action.containsKey("targetImplications")) {
+                throw ContractException("$path cannot declare targetImplications; adapter evidence belongs to target registries.")
+            }
+            rejectUnknownFields(action, ACTION_KEYS, path)
             if (text(action, "kind", path) != "action") {
                 throw ContractException("$path.kind must be action.")
             }
-            list(action["targetTypes"], "$path.targetTypes", required = true)
-            validateSchema(action["input"], "$path.input")
-            validateSchema(action["output"], "$path.output")
-            validateEffects(action["effects"], "$path.effects")
-            if (action.containsKey("targetImplications")) {
-                throw ContractException("$path cannot declare targetImplications.")
+            val targetTypes = list(action["targetTypes"], "$path.targetTypes", required = true)
+            val unknownTargets = targetTypes.toSet() - systems.keys
+            if (unknownTargets.isNotEmpty()) {
+                throw ContractException("$path targets unknown system types: ${unknownTargets.sorted().joinToString()}")
             }
-            val safety = map(action["safety"], "$path.safety")
-            bool(safety["destructive"], "$path.safety.destructive")
-            val requirements = list(safety["requires"], "$path.safety.requires")
-            val unknown = requirements.toSet() - setOf("safety", "approval")
-            if (unknown.isNotEmpty()) throw ContractException("$path has unknown safety requirements: ${unknown.joinToString()}")
-            approvalByAction[id] = "approval" in requirements
-            map(action["retry"], "$path.retry").let { bool(it["supported"], "$path.retry.supported") }
-            map(action["timeout"], "$path.timeout").let { bool(it["supported"], "$path.timeout.supported") }
+            validateSchema(action["input"], "$path.input", required = true)
+            validateSchema(action["output"], "$path.output", required = true)
+            validateEffects(action["effects"], "$path.effects")
+            validateSafety(action["safety"], "$path.safety")
+            validateSupportBlock(action["retry"], "$path.retry")
+            validateSupportBlock(action["timeout"], "$path.timeout")
             bool(action["additionalParams"], "$path.additionalParams")
             list(action["secrets"], "$path.secrets")
             list(action["requiredCapabilities"], "$path.requiredCapabilities")
@@ -77,16 +83,20 @@ object CanonicalModuleLoader {
             validateErrors(action["errors"], "$path.errors")
         }
 
-        val decoded = ModuleYamlLoader.loadText(yaml)
-        return decoded.copy(actions = decoded.actions.mapValues { (id, action) ->
-            action.copy(safety = action.safety.copy(requiresApproval = approvalByAction[id] == true))
-        })
+        return ModuleYamlLoader.decodeText(yaml, source)
     }
 
-    private fun validateSchema(value: Any?, path: String) {
-        map(value, path).forEach { (fieldName, rawField) ->
+    private fun rejectDuplicateModuleIds(modules: List<FlowModule>) {
+        val duplicates = modules.groupBy { it.name }.filterValues { it.size > 1 }.keys.sorted()
+        if (duplicates.isNotEmpty()) throw ContractException("Duplicate modules: ${duplicates.joinToString()}")
+    }
+
+    private fun validateSchema(value: Any?, path: String, required: Boolean) {
+        map(value, path, required).forEach { (fieldName, rawField) ->
+            if (fieldName.isBlank()) throw ContractException("$path contains a blank field name.")
             val fieldPath = "$path.$fieldName"
             val field = map(rawField, fieldPath, required = true)
+            rejectUnknownFields(field, SCHEMA_FIELD_KEYS, fieldPath)
             text(field, "type", fieldPath)
             bool(field["required"], "$fieldPath.required")
             bool(field["sensitive"], "$fieldPath.sensitive")
@@ -94,16 +104,38 @@ object CanonicalModuleLoader {
     }
 
     private fun validateEffects(value: Any?, path: String) {
-        val effects = map(value, path)
+        val effects = map(value, path, required = true)
+        rejectUnknownFields(effects, EFFECT_KEYS, path)
         EFFECT_KEYS.forEach { key -> list(effects[key], "$path.$key") }
-        val unknown = effects.keys - EFFECT_KEYS
-        if (unknown.isNotEmpty()) throw ContractException("$path has unknown fields: ${unknown.sorted().joinToString()}")
+    }
+
+    private fun validateSafety(value: Any?, path: String) {
+        val safety = map(value, path, required = true)
+        rejectUnknownFields(safety, SAFETY_KEYS, path)
+        val destructive = bool(safety["destructive"], "$path.destructive", required = true)
+        val requirements = list(safety["requires"], "$path.requires")
+        val unknown = requirements.toSet() - SAFETY_REQUIREMENTS
+        if (unknown.isNotEmpty()) {
+            throw ContractException("$path has unknown requirements: ${unknown.sorted().joinToString()}")
+        }
+        if (destructive && "safety" !in requirements) {
+            throw ContractException("$path destructive actions must require safety.")
+        }
+    }
+
+    private fun validateSupportBlock(value: Any?, path: String) {
+        if (value == null) return
+        val block = map(value, path, required = true)
+        rejectUnknownFields(block, SUPPORT_KEYS, path)
+        bool(block["supported"], "$path.supported", required = true)
     }
 
     private fun validateErrors(value: Any?, path: String) {
         map(value, path).forEach { (name, rawError) ->
+            if (name.isBlank()) throw ContractException("$path contains a blank error name.")
             val errorPath = "$path.$name"
             val error = map(rawError, errorPath, required = true)
+            rejectUnknownFields(error, ERROR_KEYS, errorPath)
             text(error, "when", errorPath)
             text(error, "message", errorPath)
         }
@@ -114,6 +146,17 @@ object CanonicalModuleLoader {
             null, is Boolean -> Unit
             is String -> if (value.isBlank()) throw ContractException("$path must not be blank.")
             else -> throw ContractException("$path must be boolean or text.")
+        }
+    }
+
+    private fun validateMemberId(id: String, path: String) {
+        if (!MEMBER_ID.matches(id)) throw ContractException("$path contains invalid id: $id")
+    }
+
+    private fun rejectUnknownFields(map: Map<String, Any?>, allowed: Set<String>, path: String) {
+        val unknown = map.keys - allowed
+        if (unknown.isNotEmpty()) {
+            throw ContractException("$path has unknown fields: ${unknown.sorted().joinToString()}")
         }
     }
 
@@ -130,20 +173,34 @@ object CanonicalModuleLoader {
 
     private fun list(value: Any?, path: String, required: Boolean = false): List<String> = when (value) {
         null -> if (required) throw ContractException("$path is required.") else emptyList()
-        is List<*> -> value.mapIndexed { index, item -> item as? String ?: throw ContractException("$path[$index] must be text.") }
-            .also {
-                if (required && it.isEmpty()) throw ContractException("$path must not be empty.")
-                if (it.any(String::isBlank)) throw ContractException("$path must not contain blank text.")
-            }
+        is List<*> -> value.mapIndexed { index, item ->
+            item as? String ?: throw ContractException("$path[$index] must be text.")
+        }.also { items ->
+            if (required && items.isEmpty()) throw ContractException("$path must not be empty.")
+            if (items.any(String::isBlank)) throw ContractException("$path must not contain blank text.")
+            if (items.distinct().size != items.size) throw ContractException("$path must not contain duplicates.")
+        }
         else -> throw ContractException("$path must be a list.")
     }
 
-    private fun bool(value: Any?, path: String): Boolean = when (value) {
-        null -> false
+    private fun bool(value: Any?, path: String, required: Boolean = false): Boolean = when (value) {
+        null -> if (required) throw ContractException("$path is required.") else false
         is Boolean -> value
         else -> throw ContractException("$path must be boolean.")
     }
 
     private val MODULE_ID = Regex("[a-z][a-z0-9-]*")
+    private val MEMBER_ID = Regex("[a-z][A-Za-z0-9-]*")
+    private val MODULE_KEYS = setOf("kind", "name", "version", "description", "systemTypes", "actions")
+    private val SYSTEM_TYPE_KEYS = setOf("input")
+    private val ACTION_KEYS = setOf(
+        "kind", "targetTypes", "input", "output", "effects", "safety", "idempotent",
+        "retry", "timeout", "additionalParams", "errors", "secrets", "requiredCapabilities"
+    )
+    private val SCHEMA_FIELD_KEYS = setOf("type", "required", "sensitive", "default")
     private val EFFECT_KEYS = setOf("reads", "writes", "creates", "updates", "deletes", "executes", "network", "filesystem")
+    private val SAFETY_KEYS = setOf("destructive", "requires")
+    private val SAFETY_REQUIREMENTS = setOf("safety", "approval")
+    private val SUPPORT_KEYS = setOf("supported")
+    private val ERROR_KEYS = setOf("when", "message")
 }
