@@ -27,11 +27,11 @@ jobs:
             --exclude=.git \
             --exclude=build \
             --exclude=.gradle \
-            -czf flowai-source.tar.gz .
+            -czf /tmp/flowai-source.tar.gz .
       - name: Upload source archive
         uses: actions/upload-artifact@v4
         with:
           name: flowai-source
-          path: flowai-source.tar.gz
+          path: /tmp/flowai-source.tar.gz
           if-no-files-found: error
           retention-days: 1
