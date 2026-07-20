@@ -1,33 +1,74 @@
 project: Flow Core
 stateVersion: 5
-packageState:
-  currentVersion: "0.9.5"
-  currentPackage: flow-core-prod-v0_9_5_universal_model_completion.zip
-  nextExpectedVersion: "0.9.6"
-  activeStandardVersion: "0.8.0"
+
+currentVersion: "0.9.5"
+currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
+nextExpectedVersion: "0.9.6"
+activeStandardVersion: "0.8.0"
+
+versionBoundary:
+  publishedPackageVersion: "0.9.5"
+  publishedPackageStatus: "release-candidate"
+  completedCorrectionTrack: "v0.9.5.x"
+  correctionTrackStatus: "completed"
+  nextPackageVersion: "0.9.6"
+  publicStandardVersion: "0.8.0"
   artifactContractVersion: "2.0"
+
 roadmapState:
   roadmapVersion: 4
-  activeTrack: v0.9.7-universal-semantic-foundation
-  completedItem: "0.9.7.2"
-  completedItemName: Canonical Module and Notes Authority
-  nextCoreItem: "0.9.7.3"
-  nextCoreItemName: Mandatory Materialization Authority
+  activeTrack: "v0.9.7-universal-semantic-foundation"
+  completedItem: "0.9.7.1"
+  completedItemName: "Governance Signal Integrity"
+  primaryStream: "core"
+  nextCoreItem: "0.9.7.2"
+  nextCoreItemName: "Canonical Module and Notes Authority"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: .flow-agent/roadmap-core-v0.9.7.2.yaml
-    adapters: .flow-agent/roadmap-adapters.yaml
-    conformance: .flow-agent/roadmap-conformance.yaml
-validation:
-  implementationHeadRun: 1557
-  flowAgentTooling: passed
-  flowAgentStructure: passed
-  contextGeneration: passed
-  compileAndTests: passed
-  conformance: passed
-  executableReferenceEvidence: passed
-  finalMetadataHead: required
-versionChanges:
-  package: unchanged
-  publicStandard: unchanged
-  artifactContract: unchanged
+    core: ".flow-agent/roadmap-core-v0.9.7.2.yaml"
+    adapters: ".flow-agent/roadmap-adapters.yaml"
+    conformance: ".flow-agent/roadmap-conformance.yaml"
+
+repositoryRules:
+  sourceLanguage: "English"
+  chatLanguage: "User-preferred language allowed outside repository artifacts"
+
+architectureConstraints:
+  noRuntimeExecutor: true
+  noSdkFirstArchitecture: true
+  noPluginLifecycle: true
+  noTargetSpecificPublicDsl: true
+  noConcretePlatformSemanticAuthority: true
+  noCoreDependencyOnAdapterWork: true
+  noTestOnlyHacks: true
+  noShellProjection: true
+
+qualityPrinciples:
+  - "Do not bend code only to make tests pass."
+  - "Every public behavior change must have tests."
+  - "Every public contract change must have a migration document."
+  - "Every Core roadmap item must declare a universal invariant, forbidden scope and completion evidence."
+  - "Concrete implementation coverage must not define universal semantic meaning."
+  - "Existing executable reference evidence remains live throughout the Core track."
+  - "A previous executable label has no grandfathered status."
+  - "Missing implementation evidence fails closed."
+  - "Governance status and score polarity must match the property claimed."
+  - "Every public module loading path must use one canonical descriptor authority."
+  - "Malformed module and notes declarations fail closed instead of becoming empty defaults."
+
+lastKnownValidation:
+  flowAgentTooling: "required-on-final-head"
+  flowAgentStructure: "required-on-final-head"
+  flowAgentContextGeneration: "required-on-final-head"
+  offlineCacheAwareChecks: "required-on-final-head"
+  cleanTest: "required-on-final-head"
+  conformance: "required-on-final-head"
+  executableReferenceEvidence: "required-on-final-head"
+  validationSource: "The unmodified standard Flow CI on the final pull request head is authoritative."
+  notes:
+    - "Package, public standard and artifact contract versions remain unchanged."
+    - "v0.9.7.2 remains active until strict module and notes authority passes final validation."
+    - "Hardcoded module defaults and permissive gap filling are removed."
+    - "All public module YAML entrypoints delegate to canonical structural validation."
+    - "Core notes load only from the versioned standard notes manifest and package directory."
+    - "Target and projection evidence remains implementation-owned."
