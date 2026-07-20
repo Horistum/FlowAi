@@ -1,0 +1,55 @@
+name: Apply v0.9.7.4 Evidence Fix
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/v0974-fix1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/v0.9.7.4-universal-dependency-continuity
+          fetch-depth: 0
+
+      - name: Fetch and verify fix payload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/milank78git/FlowAi/git/blobs/7d422d9754003c63cca39da27f36080d3d6d9c70" \
+            | jq -r '.content' \
+            | tr -d '\r\n' \
+            | base64 --decode > /tmp/v0974-fix1.tar.gz
+          echo "f91ed1ad9dce753aae73c71944e836a2cd0c6ca09a7290549a8700637df88e4d  /tmp/v0974-fix1.tar.gz" | sha256sum --check
+
+      - name: Apply evidence fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/v0974-fix1.tar.gz
+          rm -f .github/workflows/v0974-fix1.yml
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "flow-ai-agent"
+          git config user.email "flow-ai-agent@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Align continuity evidence and reference expectations"
+          git push origin HEAD:agent/v0.9.7.4-universal-dependency-continuity
