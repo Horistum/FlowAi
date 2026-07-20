@@ -1,16 +1,18 @@
 version: "0.9.7.2"
 name: "Canonical Module and Notes Authority"
 stream: core
-objective: "Align module and notes contracts to canonical files."
+status: completed
+objective: "Use canonical files for module and notes contracts."
 universalInvariant: "Each contract has one declared source."
 forbiddenScope:
   - "No duplicate sources."
   - "No silent conversion."
 completionEvidence:
-  - "Registry entry points use canonical files."
-  - "Notes packages use one manifest."
-  - "Negative fixtures pass."
-  - "The standard verification suite passes."
+  - "Module registry entry points use one strict descriptor directory."
+  - "Notes packages use one versioned manifest."
+  - "Negative contract fixtures pass."
+  - "The declared notes dependency chain is preserved."
+  - "Flow CI 1586 passes the implementation head."
 scope:
   include:
     - "Contract loading."
@@ -20,6 +22,7 @@ scope:
     - "New semantic features."
     - "Version changes."
 validationPlan:
-  - "Run agent checks."
-  - "Run tests."
-  - "Run conformance."
+  - "Run Flow Agent checks."
+  - "Run full tests."
+  - "Run full conformance."
+  - "Repeat the workflow on the final metadata head."
