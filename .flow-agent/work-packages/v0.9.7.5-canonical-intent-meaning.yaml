@@ -1,0 +1,17 @@
+version: "0.9.7.5"
+name: "Canonical Intent Meaning"
+stream: core
+status: in-progress
+objective: "Separate canonical intent meaning from explicit capability binding."
+universalInvariant: "Equivalent intent has equivalent meaning across inventories."
+forbiddenScope:
+  - "No implicit binding selection."
+  - "No implementation identity in canonical meaning."
+  - "No target inventory as semantic authority."
+completionEvidence:
+  - "Canonical intent meaning is derived before and independently from binding resolution."
+  - "Equivalent intent produces identical canonical meaning across different capability inventories."
+  - "Explicit binding decisions remain separate evidence with declared provenance and resolution status."
+  - "Missing or ambiguous binding does not mutate canonical meaning and fails execution readiness closed."
+  - "Production planners, validators and materialization paths reject forged or implicit binding claims."
+  - "The final unmodified Flow CI workflow passes compilation, tests, conformance and reference evidence."
