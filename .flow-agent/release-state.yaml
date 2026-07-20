@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 5
+stateVersion: 6
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,11 +18,11 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 4
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.1"
-  completedItemName: "Governance Signal Integrity"
+  completedItem: "0.9.7.2"
+  completedItemName: "Canonical Module and Notes Authority"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.2"
-  nextCoreItemName: "Canonical Module and Notes Authority"
+  nextCoreItem: "0.9.7.3"
+  nextCoreItemName: "Mandatory Materialization Authority"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
     core: ".flow-agent/roadmap-core-v0.9.7.2.yaml"
@@ -57,18 +57,19 @@ qualityPrinciples:
   - "Malformed module and notes declarations fail closed instead of becoming empty defaults."
 
 lastKnownValidation:
-  flowAgentTooling: "required-on-final-head"
-  flowAgentStructure: "required-on-final-head"
-  flowAgentContextGeneration: "required-on-final-head"
-  offlineCacheAwareChecks: "required-on-final-head"
-  cleanTest: "required-on-final-head"
-  conformance: "required-on-final-head"
-  executableReferenceEvidence: "required-on-final-head"
-  validationSource: "The unmodified standard Flow CI on the final pull request head is authoritative."
+  flowAgentTooling: "passed-on-implementation-head"
+  flowAgentStructure: "passed-on-implementation-head"
+  flowAgentContextGeneration: "passed-on-implementation-head"
+  offlineCacheAwareChecks: "passed-on-implementation-head"
+  cleanTest: "passed-on-implementation-head"
+  conformance: "passed-on-implementation-head"
+  executableReferenceEvidence: "passed-on-implementation-head"
+  validationSource: "Flow CI #1586 passed on implementation head 04a891d7569ba59562341808cba9d7c87804379c."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.2 remains active until strict module and notes authority passes final validation."
-    - "Hardcoded module defaults and permissive gap filling are removed."
-    - "All public module YAML entrypoints delegate to canonical structural validation."
-    - "Core notes load only from the versioned standard notes manifest and package directory."
+    - "Hardcoded module defaults and permissive descriptor gap filling are removed."
+    - "Every public module YAML entrypoint delegates to canonical structural validation."
+    - "Approval and destructive safety requirements survive canonical production loading."
+    - "Core notes load from one versioned manifest and preserve the declared dependency chain."
     - "Target and projection evidence remains implementation-owned."
+    - "The final metadata head must pass the unmodified standard Flow CI."
