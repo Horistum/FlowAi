@@ -43,7 +43,7 @@ internal abstract class ConformanceCheckSupport(
     protected val targets: Map<String, org.flowlang.capabilities.TargetCapability>,
     protected val projections: TargetProjectionRegistry
 ) {
-    protected val manifestPipeline = TargetManifestGenerationPipeline(projections)
+    protected val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
 
     protected fun buildPipeline(target: String, strict: Boolean = false): PipelineArtifacts {
         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
@@ -55,7 +55,7 @@ internal abstract class ConformanceCheckSupport(
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target, strict = strict)
         val provider = projections.requireProvider(target)
-        val manifest = manifestPipeline.generate(plan, compatibility, strict = strict)
+        val manifest = manifestPipeline.generate(plan, target, strict = strict)
         val rendered = provider.render(manifest)
         return PipelineArtifacts(intent, ast, validation, plan, compatibility, manifest, rendered)
     }

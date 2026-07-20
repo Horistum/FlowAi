@@ -1,32 +1,49 @@
 package org.flowlang.generators.manifest
 
 import org.flowlang.capabilities.CompatibilityReport
+import org.flowlang.capabilities.TargetCapability
 import org.flowlang.planner.ExecutionPlan
 
 /**
  * Target-neutral generation boundary. Concrete target implementations live outside
  * Flow Core and are composed explicitly at an application or conformance edge.
+ *
+ * The generator accepts only authorization issued by
+ * [MandatoryMaterializationAuthority]. Raw plans and caller-provided compatibility
+ * reports are deliberately not a public generation API.
  */
 interface TargetManifestGenerator {
     val target: String
     val nativeProjectionCatalog: TargetNativeProjectionCatalog
         get() = TargetNativeProjectionCatalog.empty(target)
 
-    fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest
+    fun generate(authorization: TargetProjectionAuthorization): TargetManifest
 }
 
 /**
  * Reconciles every generated manifest before it can leave a concrete provider.
  */
 abstract class ReconciledTargetManifestGenerator : TargetManifestGenerator {
-    final override fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
-        require(compatibility.target == target) {
-            "Manifest generator '$target' cannot consume compatibility evidence for '${compatibility.target}'."
+    final override fun generate(authorization: TargetProjectionAuthorization): TargetManifest {
+        require(authorization.target == target) {
+            "Manifest generator '$target' cannot consume authorization for '${authorization.target}'."
         }
+        val plan = authorization.plan
+        val compatibility = authorization.compatibility
         nativeProjectionCatalog.requireCompatibleRules(compatibility.projectionRules)
         return buildManifest(plan, compatibility)
             .reconcileCompatibilityReadiness()
             .also(nativeProjectionCatalog::requireManifest)
+            .also { manifest ->
+                if (
+                    authorization.purpose == TargetProjectionAuthorizationPurpose.DIAGNOSTIC_EVIDENCE &&
+                    authorization.compatibility.hasErrors
+                ) {
+                    require(!manifest.compatibility.executable) {
+                        "Diagnostic projection for unsupported target '$target' cannot claim executable readiness."
+                    }
+                }
+            }
     }
 
     protected abstract fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest
@@ -69,12 +86,12 @@ class TargetProjectionProvider(
         }
     }
 
-    fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
-        require(compatibility.target == target) {
-            "Projection provider '$target' cannot generate compatibility evidence for '${compatibility.target}'."
+    fun generate(authorization: TargetProjectionAuthorization): TargetManifest {
+        require(authorization.target == target) {
+            "Projection provider '$target' cannot consume authorization for '${authorization.target}'."
         }
-        nativeProjectionCatalog.requireCompatibleRules(compatibility.projectionRules)
-        return generator.generate(plan, compatibility).also(nativeProjectionCatalog::requireManifest)
+        nativeProjectionCatalog.requireCompatibleRules(authorization.compatibility.projectionRules)
+        return generator.generate(authorization).also(nativeProjectionCatalog::requireManifest)
     }
 
     fun render(manifest: TargetManifest): String {
@@ -122,18 +139,36 @@ class TargetProjectionRegistry private constructor(
 }
 
 /**
- * Canonical manifest pipeline. Available target projections are injected instead
- * of being hardcoded in Flow Core.
+ * Canonical manifest pipeline. Every public generation call passes through one
+ * materialization authority before a concrete provider can see the plan.
  */
 class TargetManifestGenerationPipeline(
+    targets: Map<String, TargetCapability>,
     private val projections: TargetProjectionRegistry
 ) {
+    private val authority = MandatoryMaterializationAuthority(targets)
+
     fun generate(
         plan: ExecutionPlan,
-        compatibility: CompatibilityReport,
+        target: String,
         strict: Boolean = false
     ): TargetManifest {
-        compatibility.assertAllowed(strict = strict)
-        return projections.requireProvider(compatibility.target).generate(plan, compatibility)
+        val provider = projections.requireProvider(target)
+        val authorization = authority.authorize(plan, target, strict)
+        return provider.generate(authorization)
+    }
+
+    /**
+     * Generates auditable diagnostic evidence for compatibility analysis and
+     * conformance. Unsupported target semantics remain explicit and the
+     * resulting manifest is forbidden from claiming executable readiness.
+     */
+    fun generateDiagnosticEvidence(
+        plan: ExecutionPlan,
+        target: String
+    ): TargetManifest {
+        val provider = projections.requireProvider(target)
+        val authorization = authority.authorizeDiagnosticEvidence(plan, target)
+        return provider.generate(authorization)
     }
 }

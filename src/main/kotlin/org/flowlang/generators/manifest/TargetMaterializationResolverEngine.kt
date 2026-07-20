@@ -70,14 +70,16 @@ internal object TargetMaterializationResolver {
         val payload = if (artifact.kind == TargetProjectionArtifactKind.TARGET_NATIVE) {
             nativeProjections.compile(requireNotNull(rule), task)
         } else null
-        return TargetMaterializationResolution(
-            graph,
-            notes,
-            negotiation,
-            projectionPlan,
-            artifact,
-            materialization,
-            payload
+        return TargetMaterializationEvidenceAuthority.requireValid(
+            TargetMaterializationResolution(
+                graph,
+                notes,
+                negotiation,
+                projectionPlan,
+                artifact,
+                materialization,
+                payload
+            )
         )
     }
 

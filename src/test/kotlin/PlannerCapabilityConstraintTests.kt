@@ -8,10 +8,12 @@ import org.flowlang.capabilities.PlannerCapabilityConstraintGate
 import org.flowlang.capabilities.PlannerCapabilityConstraintStatus
 import org.flowlang.capabilities.PlannerCapabilityConstraintViolation
 import org.flowlang.capabilities.SupportLevel
-import org.flowlang.capabilities.CompatibilityReport
+import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetManifestGenerator
-import org.flowlang.generators.manifest.generateWithCapabilityConstraints
+import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
+import org.flowlang.generators.manifest.TargetManifestRenderer
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
@@ -53,16 +55,25 @@ class PlannerCapabilityConstraintTests {
     @Test
     fun safeProjectionHelperDoesNotInvokeGeneratorWhenTargetIsBlocked() {
         var invoked = false
-        val generator = object : TargetManifestGenerator {
+        val generator = object : ReconciledTargetManifestGenerator() {
             override val target: String = "tekton"
-            override fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
+            override fun buildManifest(plan: ExecutionPlan, compatibility: org.flowlang.capabilities.CompatibilityReport): TargetManifest {
                 invoked = true
                 return TargetManifest(target = target, flowName = plan.flowName, compatibility = compatibility)
             }
         }
+        val renderer = object : TargetManifestRenderer {
+            override val target: String = "tekton"
+            override val artifactFileName: String = "tekton.yaml"
+            override fun render(manifest: TargetManifest): String = manifest.target
+        }
+        val pipeline = TargetManifestGenerationPipeline(
+            targets,
+            TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
+        )
 
         assertFailsWith<PlannerCapabilityConstraintViolation> {
-            generator.generateWithCapabilityConstraints(approvalPlan(), targets)
+            pipeline.generate(approvalPlan(), "tekton")
         }
         assertFalse(invoked, "Renderer projection must not start for unsupported target semantics.")
     }

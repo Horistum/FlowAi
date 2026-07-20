@@ -40,7 +40,7 @@ class FlowReferenceSnapshotHonestyResetTests {
             )
         )
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
-        val manifest = BuiltInTargetProjections.pipeline().generate(plan, compatibility)
+        val manifest = BuiltInTargetProjections.pipeline(targets).generate(plan, compatibility.target)
         val readiness = TargetRenderPolicy.evaluate(manifest)
 
         assertEquals(TargetRenderMode.EXECUTABLE, readiness.mode)
@@ -101,7 +101,7 @@ class FlowReferenceSnapshotHonestyResetTests {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "tekton")
         assertTrue(compatibility.hasErrors)
         assertFailsWith<IllegalStateException> {
-            BuiltInTargetProjections.pipeline().generate(plan, compatibility)
+            BuiltInTargetProjections.pipeline(targets).generate(plan, compatibility.target)
         }
     }
 

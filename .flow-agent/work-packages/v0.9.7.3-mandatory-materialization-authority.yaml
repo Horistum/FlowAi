@@ -1,0 +1,16 @@
+version: "0.9.7.3"
+name: "Mandatory Materialization Authority"
+stream: core
+status: completed
+objective: "Make planning validation mandatory before projection."
+universalInvariant: "Invalid planning evidence cannot reach an implementation boundary."
+forbiddenScope:
+  - "No alternate public bypass."
+completionEvidence:
+  - "Every production projection path requests an unforgeable authorization from one authority."
+  - "Execution candidates fail before provider invocation when structural or capability evidence is invalid."
+  - "Diagnostic evidence remains structurally validated, registry-derived and explicitly non-executable when blocked."
+  - "Semantic graph, materialization negotiation, projection plan and artifact authority alignment fail closed."
+  - "Negative tests prove invalid plans do not invoke target generators."
+  - "Flow CI #1643 passed clean compilation, full tests, conformance and executable reference evidence on implementation head eff81da4f9c1aff90da30864092f884d71e73e24."
+  - "The final metadata head must pass the same unmodified Flow CI workflow."

@@ -34,8 +34,8 @@ internal class DecisionAndArtifactChecks(
         val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton")
         val manifests = listOf(
             artifacts.manifest,
-            projections.requireProvider("github-actions").generate(artifacts.plan, githubCompatibility),
-            projections.requireProvider("tekton").generate(artifacts.plan, tektonCompatibility)
+            manifestPipeline.generate(artifacts.plan, "github-actions"),
+            manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
         )
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
             compatibility.negotiate(artifacts.plan, strict = false),

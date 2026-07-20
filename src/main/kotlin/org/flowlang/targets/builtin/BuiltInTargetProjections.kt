@@ -1,6 +1,7 @@
 package org.flowlang.targets.builtin
 
 import org.flowlang.capabilities.CompatibilityReport
+import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetProjectionRule
 import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetJob
@@ -45,7 +46,8 @@ object BuiltInTargetProjections {
         TargetProjectionProvider(TektonManifestGenerator(), TektonManifestRenderer())
     )
 
-    fun pipeline(): TargetManifestGenerationPipeline = TargetManifestGenerationPipeline(registry)
+    fun pipeline(targets: Map<String, TargetCapability>): TargetManifestGenerationPipeline =
+        TargetManifestGenerationPipeline(targets, registry)
 }
 
 class JenkinsManifestGenerator(

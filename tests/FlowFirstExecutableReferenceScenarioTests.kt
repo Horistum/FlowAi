@@ -55,7 +55,7 @@ class FlowFirstExecutableReferenceScenarioTests {
         assertTrue(readiness.generationAllowed)
 
         val provider = BuiltInTargetProjections.registry.requireProvider("jenkins")
-        val manifest = BuiltInTargetProjections.pipeline().generate(plan, compatibility)
+        val manifest = BuiltInTargetProjections.pipeline(targets).generate(plan, compatibility.target)
         val renderReadiness = TargetRenderPolicy.evaluate(manifest)
         assertEquals(TargetRenderMode.EXECUTABLE, renderReadiness.mode)
         assertTrue(renderReadiness.executable)

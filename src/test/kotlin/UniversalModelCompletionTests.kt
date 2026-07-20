@@ -42,7 +42,7 @@ import org.flowlang.targets.builtin.JenkinsManifestRenderer
 class UniversalModelCompletionTests {
     private val targets by lazy { TargetRegistryYamlLoader.loadDirectory(File("targets")) }
     private val compatibility by lazy { CompatibilityAnalyzer(targets) }
-    private val projectionPipeline by lazy { BuiltInTargetProjections.pipeline() }
+    private val projectionPipeline by lazy { BuiltInTargetProjections.pipeline(targets) }
 
     @Test
     fun manifestGenerationAlwaysReconcilesCompatibilityAndReadiness() {
@@ -63,7 +63,7 @@ class UniversalModelCompletionTests {
         assertEquals(SupportLevel.SUPPORTED, preliminary.status)
         assertFalse(preliminary.readinessEvidenceAvailable)
 
-        val manifest = projectionPipeline.generate(plan, preliminary)
+        val manifest = projectionPipeline.generate(plan, preliminary.target)
         val concrete = TargetCompatibilityReadinessAnalyzer.analyze(manifest)
 
         assertTrue(manifest.compatibility.readinessEvidenceAvailable)
@@ -76,7 +76,7 @@ class UniversalModelCompletionTests {
     @Test
     fun nativeProjectionRequiresRealPayloadAndProducesExecutableJenkinsSyntax() {
         val plan = checkoutPlan()
-        val manifest = projectionPipeline.generate(plan, compatibility.analyze(plan, "jenkins"))
+        val manifest = projectionPipeline.generate(plan, "jenkins")
         val step = manifest.jobs.single().steps.single()
 
         assertEquals(TargetMaterializationStatus.NATIVE, step.materialization.status)
@@ -104,7 +104,7 @@ class UniversalModelCompletionTests {
                 requiredCapabilities = listOf("custom.do")
             ))
         )
-        val manifest = projectionPipeline.generate(plan, compatibility.analyze(plan, "jenkins"))
+        val manifest = projectionPipeline.generate(plan, "jenkins")
         val step = manifest.jobs.single().steps.single()
 
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, step.materialization.status)
@@ -254,7 +254,7 @@ class UniversalModelCompletionTests {
         assertEquals("3.0", FlowStandardVersions.TARGET_REGISTRY_VERSION)
 
         val plan = checkoutPlan()
-        val manifest = projectionPipeline.generate(plan, compatibility.analyze(plan, "jenkins"))
+        val manifest = projectionPipeline.generate(plan, "jenkins")
         assertEquals("3.0", manifest.manifestVersion)
         assertFalse(File("schemas/target-manifest.schema.json").readText().contains("\"run\""))
     }
@@ -265,7 +265,7 @@ class UniversalModelCompletionTests {
         val composition = File("src/main/kotlin/org/flowlang/cli/CliTargetProjectionComposition.kt").readText()
 
         assertContains(cli, "TargetManifestGenerationPipeline.generate")
-        assertContains(composition, "BuiltInTargetProjections.pipeline()")
+        assertContains(composition, "BuiltInTargetProjections.pipeline(targets)")
         assertFalse(cli.contains("JenkinsManifestGenerator()"))
         assertFalse(cli.contains("GitHubActionsManifestGenerator()"))
         assertFalse(cli.contains("TektonManifestGenerator()"))

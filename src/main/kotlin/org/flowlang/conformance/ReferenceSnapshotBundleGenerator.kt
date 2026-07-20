@@ -32,7 +32,7 @@ class ReferenceSnapshotBundleGenerator(
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
-    private val manifestPipeline = TargetManifestGenerationPipeline(projections)
+    private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
 
     fun generate(
         intentFile: File,
@@ -67,7 +67,7 @@ class ReferenceSnapshotBundleGenerator(
                 evidence += ReferenceBlockedProjectionEvidence(compatibility, readiness)
             } else {
                 val provider = projections.requireProvider(target)
-                val manifest = manifestPipeline.generate(plan, compatibility)
+                val manifest = manifestPipeline.generate(plan, target)
                 val renderReadiness = TargetRenderPolicy.evaluate(manifest)
                 require(renderReadiness.mode != TargetRenderMode.FAIL_FAST) {
                     "Target '$target' passed compatibility but manifest evidence is fail-fast: ${renderReadiness.findings}."
