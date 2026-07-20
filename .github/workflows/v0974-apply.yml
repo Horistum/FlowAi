@@ -47,6 +47,11 @@ jobs:
         run: |
           set -euo pipefail
           tar -xzf /tmp/v0974-patch1.tar.gz
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/kotlin/org/flowlang/planner/FlowPlanner.kt')
+          path.write_text(path.read_text().rstrip() + '\n')
+          PY
           rm -f .flow-agent/tmp/v0974-patch1-part-{00..06}.b64
           rmdir .flow-agent/tmp 2>/dev/null || true
           rm -f .github/workflows/v0974-source-export.yml
