@@ -18,7 +18,7 @@
     "sourceNodeId" : "docker_build_1"
   } ],
   "dependencies" : [ "git_checkout_1" ],
-  "requiredCapabilities" : [ "task.execute", "git.checkout", "docker.build", "container.image" ],
+  "requiredCapabilities" : [ "task.execute", "git.checkout", "docker.build", "container.image", "continuity.workspace" ],
   "targetHints" : { },
   "assumptions" : [ ],
   "nodes" : [ {
@@ -63,7 +63,7 @@
     "outputs" : [ "build_image" ],
     "effects" : [ "docker.image", "docker.build" ],
     "destructive" : false,
-    "requiredCapabilities" : [ "task.execute", "docker.build", "container.image" ],
+    "requiredCapabilities" : [ "task.execute", "docker.build", "container.image", "continuity.workspace" ],
     "targetHints" : { },
     "assumptions" : [ ],
     "then" : [ ],
@@ -74,5 +74,28 @@
     "defaultSteps" : [ ],
     "body" : [ ],
     "errorHandler" : [ ]
+  } ],
+  "dependencyRelations" : [ {
+    "sourceNodeId" : "git_checkout_1",
+    "targetNodeId" : "docker_build_1",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "git_checkout_1", "docker_build_1" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "git_checkout_1",
+    "targetNodeId" : "docker_build_1",
+    "kind" : "WORKSPACE",
+    "channel" : "source",
+    "evidence" : "MODULE_CONTRACT",
+    "resolution" : "RESOLVED",
+    "path" : [ "git_checkout_1", "docker_build_1" ],
+    "candidates" : [ ],
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source",
+    "continuity" : true,
+    "blocking" : false
   } ]
 }

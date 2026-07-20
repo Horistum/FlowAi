@@ -26,9 +26,9 @@
     "state" : "SEMANTIC_ONLY",
     "executable" : false
   }, {
-    "file" : "github-actions.review.yaml",
+    "file" : "github-actions.blocked.json",
     "layer" : "TARGET_PROJECTION",
-    "state" : "REVIEW_ONLY",
+    "state" : "FAIL_FAST",
     "executable" : false,
     "target" : "github-actions"
   }, {
@@ -46,15 +46,33 @@
   } ],
   "targets" : [ {
     "target" : "github-actions",
-    "capabilityCompatibility" : "PARTIAL",
-    "effectiveCompatibility" : "PARTIAL",
-    "materializationReadiness" : "REVIEW_REQUIRED",
-    "projectionReadiness" : "REVIEW_ONLY",
-    "renderMode" : "REVIEW_ONLY",
+    "capabilityCompatibility" : "UNSUPPORTED",
+    "effectiveCompatibility" : "UNSUPPORTED",
+    "materializationReadiness" : "NOT_EVALUATED",
+    "projectionReadiness" : "FAIL_FAST",
+    "renderMode" : "FAIL_FAST",
     "executable" : false,
-    "manifestPresent" : true,
-    "renderedArtifactPresent" : true,
-    "blockers" : [ ]
+    "manifestPresent" : false,
+    "renderedArtifactPresent" : false,
+    "blockers" : [ {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "docker_build_1",
+      "feature" : "continuity.workspace",
+      "message" : "Feature 'continuity.workspace' is not supported by target 'github-actions'.",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_CAPABILITY",
+      "nodeId" : "",
+      "feature" : "continuity.workspace",
+      "message" : "Target 'github-actions' does not support required capability 'continuity.workspace'.",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "docker_build_1",
+      "feature" : "continuity.workspace",
+      "message" : "Feature 'continuity.workspace' is not supported by target 'github-actions'.",
+      "source" : "execution-readiness-report.json"
+    } ]
   }, {
     "target" : "jenkins",
     "capabilityCompatibility" : "SUPPORTED",
