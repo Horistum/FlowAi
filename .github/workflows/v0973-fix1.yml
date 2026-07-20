@@ -25,20 +25,20 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/v0973-fix1-parts
-          for index in $(seq -w 0 5); do
+          for index in 00 01 02 03 04 05; do
             tr -d '\r\n' < ".flow-agent/tmp/v0973-fix1-part-${index}.b64" > "/tmp/v0973-fix1-parts/part-${index}"
           done
           cat > /tmp/v0973-fix1-parts.sha256 <<'EOF'
-          e6612a227c43e9d8316865a1effa3510374069ba729df382846f9b32c3967c20  /tmp/v0973-fix1-parts/part-0
-          d862b52f09e18a69e7473ef3c50117955c828b9cf0665c90947c952c0aa834fb  /tmp/v0973-fix1-parts/part-1
-          20dd9cad2f5dd34540454588d79ef97b33c218c0b11970a51b77fc84cef4880d  /tmp/v0973-fix1-parts/part-2
-          418be171199ff1fb91301aadc0160f18b6589ca20c12919209de44b67997f7a9  /tmp/v0973-fix1-parts/part-3
-          35c5f4a392923f3464ba1691ae76dec0e02d232e078af36873ae287872a9ed45  /tmp/v0973-fix1-parts/part-4
-          3451ad97e1b01c10bd55be2a5e15fdce85ca807b732bf6ad7aef304b84901555  /tmp/v0973-fix1-parts/part-5
+          e6612a227c43e9d8316865a1effa3510374069ba729df382846f9b32c3967c20  /tmp/v0973-fix1-parts/part-00
+          d862b52f09e18a69e7473ef3c50117955c828b9cf0665c90947c952c0aa834fb  /tmp/v0973-fix1-parts/part-01
+          20dd9cad2f5dd34540454588d79ef97b33c218c0b11970a51b77fc84cef4880d  /tmp/v0973-fix1-parts/part-02
+          418be171199ff1fb91301aadc0160f18b6589ca20c12919209de44b67997f7a9  /tmp/v0973-fix1-parts/part-03
+          35c5f4a392923f3464ba1691ae76dec0e02d232e078af36873ae287872a9ed45  /tmp/v0973-fix1-parts/part-04
+          3451ad97e1b01c10bd55be2a5e15fdce85ca807b732bf6ad7aef304b84901555  /tmp/v0973-fix1-parts/part-05
           EOF
           sed -i 's/^          //' /tmp/v0973-fix1-parts.sha256
           sha256sum --check /tmp/v0973-fix1-parts.sha256
-          cat /tmp/v0973-fix1-parts/part-{0..5} | base64 --decode > /tmp/v0973-fix1.tar.gz
+          cat /tmp/v0973-fix1-parts/part-{00..05} | base64 --decode > /tmp/v0973-fix1.tar.gz
           echo "a60e6234a80250cdf1c85c92f4bdc72f15b83238bd6eb324b4ebf2ad0558f29e  /tmp/v0973-fix1.tar.gz" | sha256sum --check
 
       - name: Apply diagnostic authorization fix
