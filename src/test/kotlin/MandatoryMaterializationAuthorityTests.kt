@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityReport
+import org.flowlang.capabilities.PlannerCapabilityConstraintViolation
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.InvalidPlanningEvidenceException
 import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
@@ -16,9 +17,11 @@ import org.flowlang.generators.manifest.TargetMaterializationEvidenceAuthority
 import org.flowlang.generators.manifest.TargetMaterializationResolver
 import org.flowlang.generators.manifest.TargetProjectionProvider
 import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
 import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 class MandatoryMaterializationAuthorityTests {
     @Test
@@ -65,6 +68,27 @@ class MandatoryMaterializationAuthorityTests {
         assertTrue(invoked)
         assertEquals(target, manifest.target)
         assertEquals("future-flow", manifest.flowName)
+    }
+
+
+    @Test
+    fun unsupportedTargetRequiresExplicitDiagnosticAuthorization() {
+        val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
+        val pipeline = BuiltInTargetProjections.pipeline(targets)
+        val plan = ExecutionPlan(
+            flowName = "diagnostic-only",
+            nodes = listOf(ApprovalNode(id = "approve"))
+        )
+
+        assertFailsWith<PlannerCapabilityConstraintViolation> {
+            pipeline.generate(plan, "tekton")
+        }
+
+        val diagnostic = pipeline.generateDiagnosticEvidence(plan, "tekton")
+
+        assertTrue(diagnostic.compatibility.hasErrors)
+        assertFalse(diagnostic.compatibility.executable)
+        assertEquals("tekton", diagnostic.target)
     }
 
     @Test

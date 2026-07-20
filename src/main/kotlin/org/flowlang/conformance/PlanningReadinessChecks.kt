@@ -130,7 +130,7 @@ internal class PlanningReadinessChecks(
         require(!github.productionReady && !github.executable) { "GitHub Actions review artifact must not be production-ready." }
 
         val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton", strict = false)
-        val tektonManifest = manifestPipeline.generate(artifacts.plan, "tekton")
+        val tektonManifest = manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
         val tekton = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "tekton", strict = false),
             tektonManifest
@@ -149,7 +149,7 @@ internal class PlanningReadinessChecks(
         val manifests = listOf(
             artifacts.manifest,
             manifestPipeline.generate(artifacts.plan, "github-actions"),
-            manifestPipeline.generate(artifacts.plan, "tekton")
+            manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
         )
         val manifestTargets = manifests.map { it.target }.toSet()
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)

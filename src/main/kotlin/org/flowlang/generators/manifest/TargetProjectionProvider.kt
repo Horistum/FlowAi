@@ -34,6 +34,16 @@ abstract class ReconciledTargetManifestGenerator : TargetManifestGenerator {
         return buildManifest(plan, compatibility)
             .reconcileCompatibilityReadiness()
             .also(nativeProjectionCatalog::requireManifest)
+            .also { manifest ->
+                if (
+                    authorization.purpose == TargetProjectionAuthorizationPurpose.DIAGNOSTIC_EVIDENCE &&
+                    authorization.compatibility.hasErrors
+                ) {
+                    require(!manifest.compatibility.executable) {
+                        "Diagnostic projection for unsupported target '$target' cannot claim executable readiness."
+                    }
+                }
+            }
     }
 
     protected abstract fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest
@@ -145,6 +155,20 @@ class TargetManifestGenerationPipeline(
     ): TargetManifest {
         val provider = projections.requireProvider(target)
         val authorization = authority.authorize(plan, target, strict)
+        return provider.generate(authorization)
+    }
+
+    /**
+     * Generates auditable diagnostic evidence for compatibility analysis and
+     * conformance. Unsupported target semantics remain explicit and the
+     * resulting manifest is forbidden from claiming executable readiness.
+     */
+    fun generateDiagnosticEvidence(
+        plan: ExecutionPlan,
+        target: String
+    ): TargetManifest {
+        val provider = projections.requireProvider(target)
+        val authorization = authority.authorizeDiagnosticEvidence(plan, target)
         return provider.generate(authorization)
     }
 }

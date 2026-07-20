@@ -4,7 +4,6 @@ import java.io.File
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetManifestGenerationPipeline as CanonicalTargetManifestGenerationPipeline
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
@@ -19,7 +18,7 @@ internal object TargetManifestGenerationPipeline {
         }
     }
     private val pipeline by lazy {
-        CanonicalTargetManifestGenerationPipeline(targets, BuiltInTargetProjections.registry)
+        BuiltInTargetProjections.pipeline(targets)
     }
 
     fun generate(

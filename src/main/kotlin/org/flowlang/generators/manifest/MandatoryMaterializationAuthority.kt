@@ -25,10 +25,16 @@ import org.flowlang.standard.FlowStandardVersions
  * authorization. This keeps target implementations extensible without exposing
  * an alternate public bypass around planning validation.
  */
+enum class TargetProjectionAuthorizationPurpose {
+    EXECUTION_CANDIDATE,
+    DIAGNOSTIC_EVIDENCE
+}
+
 class TargetProjectionAuthorization internal constructor(
     val plan: ExecutionPlan,
     val compatibility: CompatibilityReport,
-    val strict: Boolean
+    val strict: Boolean,
+    val purpose: TargetProjectionAuthorizationPurpose = TargetProjectionAuthorizationPurpose.EXECUTION_CANDIDATE
 ) {
     val target: String get() = compatibility.target
 }
@@ -79,7 +85,34 @@ class MandatoryMaterializationAuthority(
         require(target.isNotBlank()) { "Materialization target must not be blank." }
         ExecutionPlanMaterializationValidator.requireValid(plan)
         val report = capabilityGate.requireProjectionAllowed(plan, target, strict)
-        return TargetProjectionAuthorization(plan, report.compatibility, strict)
+        return TargetProjectionAuthorization(
+            plan = plan,
+            compatibility = report.compatibility,
+            strict = strict,
+            purpose = TargetProjectionAuthorizationPurpose.EXECUTION_CANDIDATE
+        )
+    }
+
+    /**
+     * Authorizes diagnostic artifact generation without pretending that an
+     * unsupported target is executable. Structural planning evidence remains
+     * mandatory and compatibility is still derived from the canonical target
+     * registry; only the executable-capability gate is replaced by explicit
+     * diagnostic intent.
+     */
+    fun authorizeDiagnosticEvidence(
+        plan: ExecutionPlan,
+        target: String
+    ): TargetProjectionAuthorization {
+        require(target.isNotBlank()) { "Diagnostic materialization target must not be blank." }
+        ExecutionPlanMaterializationValidator.requireValid(plan)
+        val report = capabilityGate.check(plan, target, strict = false)
+        return TargetProjectionAuthorization(
+            plan = plan,
+            compatibility = report.compatibility,
+            strict = false,
+            purpose = TargetProjectionAuthorizationPurpose.DIAGNOSTIC_EVIDENCE
+        )
     }
 }
 
