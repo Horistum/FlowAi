@@ -1,3 +1,4 @@
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -5,13 +6,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityLevel
+import org.flowlang.capabilities.PlannerCapabilityConstraintGate
+import org.flowlang.capabilities.PlannerCapabilityConstraintStatus
+import org.flowlang.capabilities.PlannerCapabilityConstraintViolation
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.LoopNode
-import org.flowlang.planner.PlannerCapabilityConstraintGate
-import org.flowlang.planner.PlannerCapabilityConstraintStatus
 import org.flowlang.planner.TaskNode
-import java.io.File
 
 class PlannerCapabilityConstraintGateTests {
     private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
@@ -25,12 +26,12 @@ class PlannerCapabilityConstraintGateTests {
             nodes = listOf(TaskNode(id = "shell_run_1", module = "shell", action = "run", target = "local"))
         )
 
-        val report = gate.analyze(plan, "jenkins")
+        val report = gate.check(plan, "jenkins")
 
-        assertEquals(PlannerCapabilityConstraintStatus.ALLOWED, report.status)
-        assertTrue(report.allowedForProjection)
+        assertEquals(PlannerCapabilityConstraintStatus.ALLOWED, report.constraintStatus)
+        assertTrue(report.projectionAllowed)
         assertTrue(report.blockingIssues.isEmpty())
-        assertTrue(report.warnings.isEmpty())
+        assertTrue(report.compatibility.issues.none { it.level == CompatibilityLevel.WARNING })
     }
 
     @Test
@@ -40,13 +41,13 @@ class PlannerCapabilityConstraintGateTests {
             nodes = listOf(ApprovalNode(id = "approve_1", mode = "manual"))
         )
 
-        val report = gate.analyze(plan, "tekton")
+        val report = gate.check(plan, "tekton")
 
-        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.status)
-        assertFalse(report.allowedForProjection)
-        assertTrue(report.blockingIssues.any { it.level == CompatibilityLevel.ERROR && it.feature == "approvals" }, report.blockingIssues.toString())
-        assertFailsWith<IllegalStateException> {
-            gate.compatibilityForProjection(plan, "tekton")
+        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.constraintStatus)
+        assertFalse(report.projectionAllowed)
+        assertTrue(report.blockingIssues.any { it.level == CompatibilityLevel.ERROR && it.feature == "approvals" })
+        assertFailsWith<PlannerCapabilityConstraintViolation> {
+            gate.requireProjectionAllowed(plan, "tekton")
         }
     }
 
@@ -57,11 +58,11 @@ class PlannerCapabilityConstraintGateTests {
             nodes = listOf(LoopNode(id = "for_1", item = "item", source = "items"))
         )
 
-        val report = gate.analyze(plan, "github-actions", strict = false)
+        val report = gate.check(plan, "github-actions", strict = false)
 
-        assertEquals(PlannerCapabilityConstraintStatus.DEGRADED, report.status)
-        assertTrue(report.allowedForProjection)
-        assertTrue(report.warnings.any { it.feature == "dynamicLoops" }, report.warnings.toString())
+        assertEquals(PlannerCapabilityConstraintStatus.DEGRADED, report.constraintStatus)
+        assertTrue(report.projectionAllowed)
+        assertTrue(report.compatibility.issues.any { it.feature == "dynamicLoops" })
     }
 
     @Test
@@ -71,12 +72,12 @@ class PlannerCapabilityConstraintGateTests {
             nodes = listOf(LoopNode(id = "for_1", item = "item", source = "items"))
         )
 
-        val report = gate.analyze(plan, "github-actions", strict = true)
+        val report = gate.check(plan, "github-actions", strict = true)
 
-        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.status)
-        assertTrue(report.blockingIssues.any { it.feature == "dynamicLoops" }, report.blockingIssues.toString())
-        assertFailsWith<IllegalStateException> {
-            gate.compatibilityForProjection(plan, "github-actions", strict = true)
+        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.constraintStatus)
+        assertTrue(report.blockingIssues.any { it.feature == "dynamicLoops" })
+        assertFailsWith<PlannerCapabilityConstraintViolation> {
+            gate.requireProjectionAllowed(plan, "github-actions", strict = true)
         }
     }
 
@@ -87,9 +88,9 @@ class PlannerCapabilityConstraintGateTests {
             nodes = listOf(TaskNode(id = "shell_run_1", module = "shell", action = "run", target = "local"))
         )
 
-        val report = gate.analyze(plan, "not-a-target")
+        val report = gate.check(plan, "not-a-target")
 
-        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.status)
-        assertTrue(report.blockingIssues.any { it.feature == "target" }, report.blockingIssues.toString())
+        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.constraintStatus)
+        assertTrue(report.blockingIssues.any { it.feature == "target" })
     }
 }

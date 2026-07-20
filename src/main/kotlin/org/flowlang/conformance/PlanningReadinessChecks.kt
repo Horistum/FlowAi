@@ -121,7 +121,7 @@ internal class PlanningReadinessChecks(
         require(jenkins.readinessEvidenceAvailable) { "Concrete Jenkins readiness must carry manifest evidence." }
 
         val githubCompatibility = compatibility.analyze(artifacts.plan, "github-actions", strict = false)
-        val githubManifest = projections.requireProvider("github-actions").generate(artifacts.plan, githubCompatibility)
+        val githubManifest = manifestPipeline.generate(artifacts.plan, "github-actions")
         val github = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "github-actions", strict = false),
             githubManifest
@@ -130,7 +130,7 @@ internal class PlanningReadinessChecks(
         require(!github.productionReady && !github.executable) { "GitHub Actions review artifact must not be production-ready." }
 
         val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton", strict = false)
-        val tektonManifest = projections.requireProvider("tekton").generate(artifacts.plan, tektonCompatibility)
+        val tektonManifest = manifestPipeline.generate(artifacts.plan, "tekton")
         val tekton = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "tekton", strict = false),
             tektonManifest
@@ -148,8 +148,8 @@ internal class PlanningReadinessChecks(
         val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton")
         val manifests = listOf(
             artifacts.manifest,
-            projections.requireProvider("github-actions").generate(artifacts.plan, githubCompatibility),
-            projections.requireProvider("tekton").generate(artifacts.plan, tektonCompatibility)
+            manifestPipeline.generate(artifacts.plan, "github-actions"),
+            manifestPipeline.generate(artifacts.plan, "tekton")
         )
         val manifestTargets = manifests.map { it.target }.toSet()
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)

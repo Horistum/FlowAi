@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
+import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
@@ -21,14 +22,10 @@ class CoreTargetProjectionBoundaryTests {
         val registry = TargetProjectionRegistry.of(
             TargetProjectionProvider(SyntheticGenerator("future-orchestrator"), SyntheticRenderer("future-orchestrator"))
         )
-        val pipeline = TargetManifestGenerationPipeline(registry)
-        val compatibility = CompatibilityReport(
-            target = "future-orchestrator",
-            status = SupportLevel.SUPPORTED,
-            capabilityStatus = SupportLevel.SUPPORTED
-        )
+        val targets = mapOf("future-orchestrator" to TargetCapability("future-orchestrator", "Synthetic future target"))
+        val pipeline = TargetManifestGenerationPipeline(targets, registry)
 
-        val manifest = pipeline.generate(ExecutionPlan(flowName = "future-flow"), compatibility)
+        val manifest = pipeline.generate(ExecutionPlan(flowName = "future-flow"), "future-orchestrator")
         val rendered = registry.requireProvider("future-orchestrator").render(manifest)
 
         assertEquals("future-orchestrator", manifest.target)
@@ -74,15 +71,11 @@ class CoreTargetProjectionBoundaryTests {
 
     @Test
     fun pipelineRejectsUnregisteredTargetInsteadOfFallingBack() {
-        val pipeline = TargetManifestGenerationPipeline(TargetProjectionRegistry.empty())
-        val compatibility = CompatibilityReport(
-            target = "missing-target",
-            status = SupportLevel.SUPPORTED,
-            capabilityStatus = SupportLevel.SUPPORTED
-        )
+        val targets = mapOf("missing-target" to TargetCapability("missing-target", "Missing provider target"))
+        val pipeline = TargetManifestGenerationPipeline(targets, TargetProjectionRegistry.empty())
 
         val failure = assertFailsWith<IllegalStateException> {
-            pipeline.generate(ExecutionPlan(flowName = "missing"), compatibility)
+            pipeline.generate(ExecutionPlan(flowName = "missing"), "missing-target")
         }
 
         assertTrue(failure.message.orEmpty().contains("No target projection provider is registered"))
@@ -135,7 +128,7 @@ class CoreTargetProjectionBoundaryTests {
             "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
         ).readText()
 
-        assertTrue(cliComposition.contains("BuiltInTargetProjections.pipeline()"))
+        assertTrue(cliComposition.contains("BuiltInTargetProjections.registry"))
         assertTrue(referenceGenerator.contains("BuiltInTargetProjections.registry"))
         assertTrue(referenceGenerator.contains("projections.requireProvider(target)"))
         assertFalse(referenceGenerator.contains("when (manifest.target)"))

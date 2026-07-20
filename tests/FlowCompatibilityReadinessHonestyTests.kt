@@ -15,14 +15,17 @@ import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetManifestGenerator
+import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
+import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
+import org.flowlang.generators.manifest.TargetManifestRenderer
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
 import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.generators.manifest.generateWithCapabilityConstraints
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
 import org.flowlang.projection.ProjectionBinding
@@ -146,9 +149,9 @@ class FlowCompatibilityReadinessHonestyTests {
     fun safeProjectionStoresEffectiveCompatibilityOnManifest() {
         val targets = mapOf("jenkins" to TargetCapability(target = "jenkins", description = "test"))
         val plan = readinessPlan()
-        val generator = object : TargetManifestGenerator {
+        val generator = object : ReconciledTargetManifestGenerator() {
             override val target: String = "jenkins"
-            override fun generate(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest =
+            override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest =
                 TargetManifest(
                     target = target,
                     flowName = plan.flowName,
@@ -156,7 +159,15 @@ class FlowCompatibilityReadinessHonestyTests {
                     jobs = listOf(TargetJob(id = "job", steps = listOf(notesProjectedStep())))
                 )
         }
-        val manifest = generator.generateWithCapabilityConstraints(plan, targets)
+        val renderer = object : TargetManifestRenderer {
+            override val target: String = "jenkins"
+            override val artifactFileName: String = "Jenkinsfile"
+            override fun render(manifest: TargetManifest): String = manifest.target
+        }
+        val manifest = TargetManifestGenerationPipeline(
+            targets,
+            TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
+        ).generate(plan, "jenkins")
         assertEquals(SupportLevel.PARTIAL, manifest.compatibility.status)
         assertEquals(SupportLevel.SUPPORTED, manifest.compatibility.capabilityStatus)
         assertEquals(MaterializationReadinessStatus.REVIEW_REQUIRED, manifest.compatibility.materializationReadiness)

@@ -42,11 +42,9 @@ internal class ProjectionSurfaceChecks(
             )
         )
         val expectedTasks = setOf("build", "test", "deploy", "notify")
-        val generators = listOf("jenkins", "github-actions", "tekton").associateWith {
-            projections.requireProvider(it).generator
-        }
-        generators.forEach { (target, generator) ->
-            val manifest = generator.generate(plan, CompatibilityAnalyzer(targets).analyze(plan, target))
+        val targetIds = listOf("jenkins", "github-actions", "tekton")
+        targetIds.forEach { target ->
+            val manifest = manifestPipeline.generate(plan, target)
             val taskNames = mutableSetOf<String>()
             var deployGuard: String? = null
             fun walk(steps: List<TargetStep>, guard: String?) {
