@@ -50,6 +50,11 @@ jobs:
         run: |
           set -euo pipefail
           tar -xzf /tmp/v0974-fix1.tar.gz
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/kotlin/org/flowlang/planner/FlowPlanner.kt')
+          path.write_text(path.read_text().rstrip() + '\n')
+          PY
           rm -f .flow-agent/tmp/v0974-fix1.tar.gz
           rm -f .flow-agent/tmp/v0974-fix1-part-{00..08}.b64
           rm -f .flow-agent/v0974-payload-diagnostics.txt
