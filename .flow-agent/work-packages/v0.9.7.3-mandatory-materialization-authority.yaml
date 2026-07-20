@@ -1,0 +1,11 @@
+version: "0.9.7.3"
+name: "Mandatory Materialization Authority"
+stream: core
+status: in-progress
+objective: "Make planning validation mandatory before projection."
+universalInvariant: "Invalid planning evidence cannot reach an implementation boundary."
+forbiddenScope:
+  - "No alternate public bypass."
+completionEvidence:
+  - "Invalid states fail through real public paths."
+  - "The full Flow CI suite passes on the final implementation head."
