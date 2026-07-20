@@ -8,7 +8,7 @@ import org.flowlang.modules.ModuleRegistry
 import java.io.File
 
 class FlowCapabilityModuleContractTests {
-    private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
+    private val registry = ModuleRegistry.fromDirectory(File("modules"))
 
     @Test
     fun capabilityModuleContractReportHasNoBlockingErrors() {
