@@ -7,6 +7,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.modules.CanonicalModuleLoader
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleYamlLoader
 
 class CanonicalModuleAuthorityTests {
     @Test
@@ -17,6 +18,7 @@ class CanonicalModuleAuthorityTests {
         assertEquals(canonical, registry)
         assertEquals(canonical, ModuleRegistry.defaultModules().associateBy { it.name })
         assertTrue(registry.values.all { it.version.isNotBlank() && it.description.isNotBlank() })
+        assertTrue(registry.values.flatMap { it.actions.values }.all { it.targetImplications.isEmpty() })
     }
 
     @Test
@@ -49,6 +51,63 @@ class CanonicalModuleAuthorityTests {
     }
 
     @Test
+    fun publicYamlLoaderCannotBypassCanonicalValidation() {
+        val malformed = validDescriptor().replace(
+            "    effects: {}",
+            "    effects: {}\n    inventedSemanticDefault: true"
+        )
+
+        assertFailsWith<ModuleYamlLoader.LoadException> {
+            ModuleYamlLoader.loadText(malformed)
+        }
+    }
+
+    @Test
+    fun unknownSchemaFieldFailsClosed() {
+        val malformed = validDescriptor().replace(
+            "        required: true",
+            "        required: true\n        requiredByConvention: true"
+        )
+
+        assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(malformed)
+        }
+    }
+
+    @Test
+    fun unsupportedRetryDefaultsFailInsteadOfDisappearing() {
+        val malformed = validDescriptor().replace(
+            "    safety:",
+            "    retry:\n      supported: true\n      default:\n        max: 3\n    safety:"
+        )
+
+        assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(malformed)
+        }
+    }
+
+    @Test
+    fun actionCannotTargetUndeclaredSystemType() {
+        val malformed = validDescriptor().replace("      - custom", "      - missing")
+
+        assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(malformed)
+        }
+    }
+
+    @Test
+    fun destructiveActionMustDeclareSafetyRequirement() {
+        val malformed = validDescriptor().replace(
+            "      requires:\n        - safety\n        - approval",
+            "      requires:\n        - approval"
+        )
+
+        assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(malformed)
+        }
+    }
+
+    @Test
     fun adapterImplicationsAreRejectedFromCoreModuleDescriptors() {
         val malformed = validDescriptor().replace(
             "    effects: {}",
@@ -61,13 +120,16 @@ class CanonicalModuleAuthorityTests {
     }
 
     @Test
-    fun approvalRequirementIsPreservedByCanonicalLoading() {
-        val module = CanonicalModuleLoader.loadText(validDescriptor())
-        val action = module.actions.getValue("perform")
+    fun approvalRequirementIsPreservedByEveryPublicLoadPath() {
+        val canonical = CanonicalModuleLoader.loadText(validDescriptor())
+        val publicLoader = ModuleYamlLoader.loadText(validDescriptor())
 
-        assertTrue(action.safety.requiresApproval)
-        assertTrue(action.safety.requiresSafety)
-        assertTrue(action.safety.destructive)
+        listOf(canonical, publicLoader).forEach { module ->
+            val action = module.actions.getValue("perform")
+            assertTrue(action.safety.requiresApproval)
+            assertTrue(action.safety.requiresSafety)
+            assertTrue(action.safety.destructive)
+        }
     }
 
     @Test
