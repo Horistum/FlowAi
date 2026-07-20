@@ -19,13 +19,18 @@ jobs:
         with:
           ref: agent/v0.9.7.3-mandatory-materialization-authority
           fetch-depth: 0
-      - name: Verify and apply reviewed implementation overlay
+      - name: Verify payload part 1
+        run: echo "be501f2dbc248ade771c09fb91ece988234d84abf770cbc06bdd631dd29a180e  .flow-agent/tmp/v0973-overlay-1.b64" | sha256sum --check
+      - name: Verify payload part 2
+        run: echo "fcddb1a63ae44a7f4bbb5210e3874490ea9b8a5a29f0bb82e8369fca6482761f  .flow-agent/tmp/v0973-overlay-2.b64" | sha256sum --check
+      - name: Verify payload part 3
+        run: echo "c5fc0f8dab9b38940a89330b923f0835f29e8e4ca3f362ce2d937ae9e3ddd274  .flow-agent/tmp/v0973-overlay-3.b64" | sha256sum --check
+      - name: Verify payload part 4
+        run: echo "83e6c5261f455b095de10bf2ab18ca5228ceb7a46f33276f336730e5bfe17172  .flow-agent/tmp/v0973-overlay-4.b64" | sha256sum --check
+      - name: Apply reviewed implementation overlay
         shell: bash
         run: |
-          wc -c .flow-agent/tmp/v0973-overlay-{1,2,3,4}.b64
-          sha256sum .flow-agent/tmp/v0973-overlay-{1,2,3,4}.b64
           cat .flow-agent/tmp/v0973-overlay-{1,2,3,4}.b64 | tr -d '\n' | base64 --decode > /tmp/v0973-overlay.tar.gz
-          sha256sum /tmp/v0973-overlay.tar.gz
           echo "dc60615a5af5448b3818c69cc56290e990c085795ea36efbdaed344298a26d52  /tmp/v0973-overlay.tar.gz" | sha256sum --check
           tar -xzf /tmp/v0973-overlay.tar.gz
           while IFS= read -r path; do
