@@ -1,0 +1,18 @@
+version: "0.9.7.4"
+name: "Universal Dependency and Continuity Contract"
+stream: core
+status: in-progress
+objective: "Distinguish ordering from value, workspace and state continuity."
+universalInvariant: "Ordering never implies continuity."
+forbiddenScope:
+  - "No renderer assumption as continuity evidence."
+  - "No hidden workspace or state transfer."
+  - "No target-specific dependency syntax in Core contracts."
+completionEvidence:
+  - "Execution plans preserve typed ordering, value, workspace and state relations."
+  - "Module contracts declare continuity provision, requirement and preservation."
+  - "Unresolved or ambiguous continuity blocks execution-candidate authorization."
+  - "Diagnostic evidence preserves continuity blockers without claiming executable readiness."
+  - "Synthetic tests distinguish ordering-only, direct, preserved, missing and ambiguous continuity."
+  - "Target compatibility derives from explicit continuity capabilities."
+  - "The final unmodified Flow CI workflow passes compilation, tests, conformance and reference evidence."
