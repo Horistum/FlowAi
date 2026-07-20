@@ -1,4 +1,4 @@
-name: Apply v0.9.7.4 Evidence Fix
+name: Diagnose v0.9.7.4 Segments
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  apply-fix:
+  diagnose-segments:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout implementation branch
@@ -20,49 +20,26 @@ jobs:
           ref: agent/v0.9.7.4-universal-dependency-continuity
           fetch-depth: 0
 
-      - name: Verify segmented fix payload
+      - name: Record segment diagnostics
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/v0974-fix1-parts
-          for index in 00 01 02 03 04 05 06 07 08; do
-            tr -d '\r\n' < ".flow-agent/tmp/v0974-fix1-part-${index}.b64" > "/tmp/v0974-fix1-parts/part-${index}"
-          done
-          cat > /tmp/v0974-fix1-parts.sha256 <<'EOF'
-          63d942c8a1a3aab43194c7844a72c64b8a1a5c23997b1285e9575878efbd3c3e  /tmp/v0974-fix1-parts/part-00
-          18d0a64074ccbf72ec138ecc6be7635e8cc4f1ceca1bfd7240a819cd3cbcb3b78  /tmp/v0974-fix1-parts/part-01
-          624fc962e7519bdda9a6087af6a34583d959c598984b347a7b5531865f39bb0e  /tmp/v0974-fix1-parts/part-02
-          97c990ffdf91615794269a380fea9846d5b6e777c98e99ff034cd3dfab171506  /tmp/v0974-fix1-parts/part-03
-          e42ce07670994953fc318961dcebaae9fa147083dd0c95d9a71d53ceac9f559e  /tmp/v0974-fix1-parts/part-04
-          c55e58942dee75fbfa8778234597bf9e4c5089664e2fc8e7555b8e78a2d75b4f  /tmp/v0974-fix1-parts/part-05
-          a93c31e179e20e6238a43eefec1faab41100ab495c6bb44834cfeee9d8c1e234  /tmp/v0974-fix1-parts/part-06
-          994a62355f5ad08f0bb72f6e8d30efba05e686813eca7b9124fa82ef3f6c2691  /tmp/v0974-fix1-parts/part-07
-          979b133ee9df0e479701c24b2851f6772668129ffae6db8db91baf82b2042b27  /tmp/v0974-fix1-parts/part-08
-          EOF
-          sed -i 's/^          //' /tmp/v0974-fix1-parts.sha256
-          sha256sum --check /tmp/v0974-fix1-parts.sha256
-          cat /tmp/v0974-fix1-parts/part-{00..08} | base64 --decode > /tmp/v0974-fix1.tar.gz
-          echo "f91ed1ad9dce753aae73c71944e836a2cd0c6ca09a7290549a8700637df88e4d  /tmp/v0974-fix1.tar.gz" | sha256sum --check
-          tar -tzf /tmp/v0974-fix1.tar.gz > /dev/null
+          {
+            for index in 00 01 02 03 04 05 06 07 08; do
+              file=".flow-agent/tmp/v0974-fix1-part-${index}.b64"
+              printf '%s bytes=' "${file}"
+              tr -d '\r\n' < "${file}" | wc -c
+              printf '%s sha256=' "${file}"
+              tr -d '\r\n' < "${file}" | sha256sum | cut -d' ' -f1
+            done
+          } > .flow-agent/v0974-segment-diagnostics.txt
 
-      - name: Apply continuity evidence fix
-        shell: bash
-        run: |
-          set -euo pipefail
-          tar -xzf /tmp/v0974-fix1.tar.gz
-          rm -f .flow-agent/tmp/v0974-fix1.tar.gz
-          rm -f .flow-agent/tmp/v0974-fix1-part-{00..08}.b64
-          rm -f .flow-agent/v0974-payload-diagnostics.txt
-          rmdir .flow-agent/tmp 2>/dev/null || true
-          rm -f .github/workflows/v0974-fix1.yml
-
-      - name: Commit fix
+      - name: Commit diagnostics
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "flow-ai-agent"
           git config user.email "flow-ai-agent@users.noreply.github.com"
-          git add -A
-          git diff --cached --check
-          git commit -m "Align continuity evidence and reference expectations"
+          git add .flow-agent/v0974-segment-diagnostics.txt
+          git commit -m "Record v0.9.7.4 segment diagnostics"
           git push origin HEAD:agent/v0.9.7.4-universal-dependency-continuity
