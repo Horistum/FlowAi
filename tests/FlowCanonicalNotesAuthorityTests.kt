@@ -31,9 +31,7 @@ class FlowCanonicalNotesAuthorityTests {
 
     @Test
     fun targetOwnedNotesCannotEnterTheCoreAuthority() {
-        val root = notesRepository(
-            packageYaml = validDomainPackage().replace("kind: domain", "kind: target")
-        )
+        val root = notesRepository(validDomainPackage().replace("kind: domain", "kind: target"))
         try {
             assertFailsWith<CanonicalNotesPackageLoader.ContractException> {
                 CanonicalNotesPackageLoader.load(root)
@@ -45,9 +43,7 @@ class FlowCanonicalNotesAuthorityTests {
 
     @Test
     fun adapterEvidenceFieldsCannotEnterTheCoreAuthority() {
-        val root = notesRepository(
-            packageYaml = validDomainPackage() + "\ntargetCapabilities:\n  - jenkins.action\n"
-        )
+        val root = notesRepository(validDomainPackage() + "\ntargetCapabilities:\n  - adapter.action\n")
         try {
             assertFailsWith<CanonicalNotesPackageLoader.ContractException> {
                 CanonicalNotesPackageLoader.load(root)
@@ -58,9 +54,48 @@ class FlowCanonicalNotesAuthorityTests {
     }
 
     @Test
+    fun unknownManifestFieldFailsClosed() {
+        val root = notesRepository(validDomainPackage())
+        File(root, "standard/notes/packages.yaml").appendText("\nimplicitPackages: true\n")
+        try {
+            assertFailsWith<CanonicalNotesPackageLoader.ContractException> {
+                CanonicalNotesPackageLoader.load(root)
+            }
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun unknownPackageAndBoundaryFieldsFailClosed() {
+        val unknownPackage = notesRepository(validDomainPackage() + "\nimplicitDefaults: true\n")
+        try {
+            assertFailsWith<CanonicalNotesPackageLoader.ContractException> {
+                CanonicalNotesPackageLoader.load(unknownPackage)
+            }
+        } finally {
+            unknownPackage.deleteRecursively()
+        }
+
+        val unknownBoundary = notesRepository(
+            validDomainPackage().replace(
+                "    description: \"Core notes do not own target evidence.\"",
+                "    description: \"Core notes do not own target evidence.\"\n    inherited: true"
+            )
+        )
+        try {
+            assertFailsWith<CanonicalNotesPackageLoader.ContractException> {
+                CanonicalNotesPackageLoader.load(unknownBoundary)
+            }
+        } finally {
+            unknownBoundary.deleteRecursively()
+        }
+    }
+
+    @Test
     fun unknownDependencyFailsClosed() {
         val root = notesRepository(
-            packageYaml = validDomainPackage() +
+            validDomainPackage() +
                 "\ndependencies:\n  - packageId: flow.missing.core\n    versionConstraint: \"0.9.x\"\n"
         )
         try {
@@ -73,13 +108,12 @@ class FlowCanonicalNotesAuthorityTests {
     }
 
     @Test
-    fun malformedDeclarationListDoesNotBecomeEmpty() {
-        val root = notesRepository(
-            packageYaml = validDomainPackage().replace(
-                "declaredSemantics:\n  - automation.intent",
-                "declaredSemantics: automation.intent"
-            )
-        )
+    fun dependencyCycleFailsClosed() {
+        val domain = validDomainPackage() +
+            "\ndependencies:\n  - packageId: flow.capability.core\n    versionConstraint: \"0.9.x\"\n"
+        val capability = validCapabilityPackage() +
+            "\ndependencies:\n  - packageId: flow.domain.core\n    versionConstraint: \"0.9.x\"\n"
+        val root = notesRepository(domain, capability)
         try {
             assertFailsWith<CanonicalNotesPackageLoader.ContractException> {
                 CanonicalNotesPackageLoader.load(root)
@@ -89,7 +123,38 @@ class FlowCanonicalNotesAuthorityTests {
         }
     }
 
-    private fun notesRepository(packageYaml: String): File {
+    @Test
+    fun malformedOrDuplicateDeclarationsDoNotBecomeSetsSilently() {
+        val malformed = notesRepository(
+            validDomainPackage().replace(
+                "declaredSemantics:\n  - automation.intent",
+                "declaredSemantics: automation.intent"
+            )
+        )
+        try {
+            assertFailsWith<CanonicalNotesPackageLoader.ContractException> {
+                CanonicalNotesPackageLoader.load(malformed)
+            }
+        } finally {
+            malformed.deleteRecursively()
+        }
+
+        val duplicate = notesRepository(
+            validDomainPackage().replace(
+                "  - automation.intent",
+                "  - automation.intent\n  - automation.intent"
+            )
+        )
+        try {
+            assertFailsWith<CanonicalNotesPackageLoader.ContractException> {
+                CanonicalNotesPackageLoader.load(duplicate)
+            }
+        } finally {
+            duplicate.deleteRecursively()
+        }
+    }
+
+    private fun notesRepository(vararg packageYamls: String): File {
         val root = Files.createTempDirectory("flow-notes-authority").toFile()
         val packages = File(root, "standard/notes/packages")
         packages.mkdirs()
@@ -101,7 +166,9 @@ class FlowCanonicalNotesAuthorityTests {
             adapterEvidence: targets
             """.trimIndent()
         )
-        File(packages, "domain.yaml").writeText(packageYaml)
+        packageYamls.forEachIndexed { index, yaml ->
+            File(packages, "package-${index + 1}.yaml").writeText(yaml)
+        }
         return root
     }
 
@@ -116,5 +183,18 @@ class FlowCanonicalNotesAuthorityTests {
         boundaries:
           - name: no-target-truth
             description: "Core notes do not own target evidence."
+        """.trimIndent()
+
+    private fun validCapabilityPackage(): String =
+        """
+        packageId: flow.capability.core
+        packageVersion: "0.9.7.2"
+        kind: capability
+        description: "Synthetic capability package"
+        declaredCapabilities:
+          - resource.read
+        boundaries:
+          - name: semantic-only
+            description: "Capability meaning does not define adapter implementation."
         """.trimIndent()
 }
