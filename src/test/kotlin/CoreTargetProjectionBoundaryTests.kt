@@ -122,13 +122,13 @@ class CoreTargetProjectionBoundaryTests {
     }
 
     @Test
-    fun compositionRootsUseTheExplicitBuiltInRegistry() {
+    fun compositionRootsUseExplicitBuiltInProjectionComposition() {
         val cliComposition = File("src/main/kotlin/org/flowlang/cli/CliTargetProjectionComposition.kt").readText()
         val referenceGenerator = File(
             "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
         ).readText()
 
-        assertTrue(cliComposition.contains("BuiltInTargetProjections.registry"))
+        assertTrue(cliComposition.contains("BuiltInTargetProjections.pipeline(targets)"))
         assertTrue(referenceGenerator.contains("BuiltInTargetProjections.registry"))
         assertTrue(referenceGenerator.contains("projections.requireProvider(target)"))
         assertFalse(referenceGenerator.contains("when (manifest.target)"))
