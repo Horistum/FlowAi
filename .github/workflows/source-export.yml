@@ -1,11 +1,6 @@
 name: Apply v0.9.7.3 Implementation
 
 on:
-  push:
-    branches:
-      - agent/v0.9.7.3-mandatory-materialization-authority
-    paths:
-      - .github/workflows/source-export.yml
   pull_request:
     branches:
       - main
@@ -24,10 +19,13 @@ jobs:
         with:
           ref: agent/v0.9.7.3-mandatory-materialization-authority
           fetch-depth: 0
-      - name: Apply reviewed implementation overlay
+      - name: Verify and apply reviewed implementation overlay
         shell: bash
         run: |
+          wc -c .flow-agent/tmp/v0973-overlay-{1,2,3,4}.b64
+          sha256sum .flow-agent/tmp/v0973-overlay-{1,2,3,4}.b64
           cat .flow-agent/tmp/v0973-overlay-{1,2,3,4}.b64 | tr -d '\n' | base64 --decode > /tmp/v0973-overlay.tar.gz
+          sha256sum /tmp/v0973-overlay.tar.gz
           echo "dc60615a5af5448b3818c69cc56290e990c085795ea36efbdaed344298a26d52  /tmp/v0973-overlay.tar.gz" | sha256sum --check
           tar -xzf /tmp/v0973-overlay.tar.gz
           while IFS= read -r path; do
