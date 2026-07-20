@@ -6,6 +6,9 @@ conformanceChecks:
   - notes.contract.valid
   - notes.boundary.enforced
   - notes.materialization.honest
+dependencies:
+  - packageId: flow.runtime.core
+    versionConstraint: "0.9.x"
 boundaries:
   - name: evidence-only
     description: "Declarations provide evidence without adapter ownership."
