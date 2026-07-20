@@ -1,13 +1,24 @@
 package org.flowlang.generators.manifest
 
+import org.flowlang.capabilities.CompatibilityIssue
+import org.flowlang.capabilities.CompatibilityLevel
 import org.flowlang.capabilities.CompatibilityReport
+import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.PlannerCapabilityConstraintGate
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ControlNode
 import org.flowlang.planner.DataOpNode
+import org.flowlang.modules.ContinuityChannel
+import org.flowlang.modules.ContinuityKind
+import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.PlanDependencyEvidence
+import org.flowlang.planner.PlanDependencyKind
+import org.flowlang.planner.PlanDependencyRelation
+import org.flowlang.planner.PlanDependencyRelations
+import org.flowlang.planner.PlanDependencyResolution
 import org.flowlang.planner.LoopNode
 import org.flowlang.planner.MatchPlanNode
 import org.flowlang.planner.ParallelGroupNode
@@ -61,7 +72,8 @@ class InvalidPlanningEvidenceException(
  * never accepted as authorization evidence.
  */
 class MandatoryMaterializationAuthority(
-    private val targets: Map<String, TargetCapability>
+    private val targets: Map<String, TargetCapability>,
+    private val modules: ModuleRegistry = ModuleRegistry()
 ) {
     private val capabilityGate = PlannerCapabilityConstraintGate(targets)
 
@@ -83,7 +95,8 @@ class MandatoryMaterializationAuthority(
         strict: Boolean = false
     ): TargetProjectionAuthorization {
         require(target.isNotBlank()) { "Materialization target must not be blank." }
-        ExecutionPlanMaterializationValidator.requireValid(plan)
+        ExecutionPlanMaterializationValidator.requireValid(plan, modules)
+        ExecutionPlanContinuityValidator.requireResolved(plan)
         val report = capabilityGate.requireProjectionAllowed(plan, target, strict)
         return TargetProjectionAuthorization(
             plan = plan,
@@ -105,24 +118,47 @@ class MandatoryMaterializationAuthority(
         target: String
     ): TargetProjectionAuthorization {
         require(target.isNotBlank()) { "Diagnostic materialization target must not be blank." }
-        ExecutionPlanMaterializationValidator.requireValid(plan)
+        ExecutionPlanMaterializationValidator.requireValid(plan, modules)
         val report = capabilityGate.check(plan, target, strict = false)
+        val continuityIssues = ExecutionPlanContinuityValidator.blockers(plan).map { relation ->
+            CompatibilityIssue(
+                level = CompatibilityLevel.ERROR,
+                target = target,
+                nodeId = relation.targetNodeId,
+                feature = "${relation.kind.capability}.planning",
+                message = continuityMessage(relation)
+            )
+        }
+        val compatibility = if (continuityIssues.isEmpty()) report.compatibility else report.compatibility.copy(
+            status = SupportLevel.UNSUPPORTED,
+            issues = (report.compatibility.issues + continuityIssues).distinct(),
+            capabilityStatus = report.compatibility.capabilityStatus
+        )
         return TargetProjectionAuthorization(
             plan = plan,
-            compatibility = report.compatibility,
+            compatibility = compatibility,
             strict = false,
             purpose = TargetProjectionAuthorizationPurpose.DIAGNOSTIC_EVIDENCE
         )
     }
+
+    private fun continuityMessage(relation: PlanDependencyRelation): String = when (relation.resolution) {
+        PlanDependencyResolution.UNRESOLVED ->
+            "${relation.kind.name.lowercase()} continuity channel '${relation.channel}' has no proven provider for node '${relation.targetNodeId}'. Ordering alone is not continuity evidence."
+        PlanDependencyResolution.AMBIGUOUS ->
+            "${relation.kind.name.lowercase()} continuity channel '${relation.channel}' has multiple possible providers for node '${relation.targetNodeId}': ${relation.candidates.joinToString()}."
+        PlanDependencyResolution.RESOLVED ->
+            "Resolved continuity relation was unexpectedly reported as blocking."
+    }
 }
 
 internal object ExecutionPlanMaterializationValidator {
-    fun requireValid(plan: ExecutionPlan) {
-        val issues = validate(plan)
+    fun requireValid(plan: ExecutionPlan, modules: ModuleRegistry) {
+        val issues = validate(plan, modules)
         if (issues.isNotEmpty()) throw InvalidPlanningEvidenceException(issues)
     }
 
-    fun validate(plan: ExecutionPlan): List<PlanningEvidenceIssue> {
+    fun validate(plan: ExecutionPlan, modules: ModuleRegistry): List<PlanningEvidenceIssue> {
         val issues = mutableListOf<PlanningEvidenceIssue>()
         if (plan.flowName.isBlank()) {
             issues += issue("planning.flow-name.missing", "flowName", "Flow name must not be blank.")
@@ -160,7 +196,178 @@ internal object ExecutionPlanMaterializationValidator {
                 issues += issue("planning.capability.missing", "requiredCapabilities[$index]", "Required capability must not be blank.")
             }
         }
+        validateDependencyRelations(plan, modules, seenNodeIds, issues)
         return issues
+    }
+
+    private fun validateDependencyRelations(
+        plan: ExecutionPlan,
+        modules: ModuleRegistry,
+        nodeIds: Set<String>,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        val nodesById = PlanDependencyRelations.flatten(plan.nodes).associateBy { it.id }
+        val duplicates = plan.dependencyRelations
+            .groupBy(PlanDependencyRelations::relationKey)
+            .filterValues { it.size > 1 }
+        duplicates.keys.forEach { key ->
+            issues += issue("planning.dependency.duplicate", "dependencyRelations", "Dependency relation is duplicated: ${key.joinToString()}.")
+        }
+
+        PlanDependencyRelations.flatten(plan.nodes).forEach { node ->
+            PlanDependencyRelations.dependencies(node).forEach { source ->
+                val represented = plan.dependencyRelations.any { relation ->
+                    relation.kind == PlanDependencyKind.ORDERING &&
+                        relation.sourceNodeId == source &&
+                        relation.targetNodeId == node.id &&
+                        relation.resolution == PlanDependencyResolution.RESOLVED
+                }
+                if (!represented) {
+                    issues += issue(
+                        "planning.ordering.evidence.missing",
+                        "nodes.${node.id}.dependsOn",
+                        "Ordering dependency '$source -> ${node.id}' has no explicit ordering relation."
+                    )
+                }
+            }
+        }
+
+        plan.dependencyRelations.forEachIndexed { index, relation ->
+            val location = "dependencyRelations[$index]"
+            if (relation.targetNodeId !in nodeIds) {
+                issues += issue("planning.dependency.target.unknown", location, "Dependency target '${relation.targetNodeId}' is not a plan node.")
+            }
+            relation.sourceNodeId?.let { source ->
+                if (source !in nodeIds) {
+                    issues += issue("planning.dependency.source.unknown", location, "Dependency source '$source' is not a plan node.")
+                }
+                if (source == relation.targetNodeId) {
+                    issues += issue("planning.dependency.self", location, "Dependency relation cannot reference the same source and target node.")
+                }
+            }
+            relation.candidates.filter { it !in nodeIds }.forEach { candidate ->
+                issues += issue("planning.dependency.candidate.unknown", location, "Dependency candidate '$candidate' is not a plan node.")
+            }
+
+            if (relation.kind == PlanDependencyKind.ORDERING) {
+                if (relation.channel != null) {
+                    issues += issue("planning.ordering.channel.forbidden", location, "Ordering relations cannot declare a continuity channel.")
+                }
+                if (relation.resolution != PlanDependencyResolution.RESOLVED || relation.sourceNodeId == null) {
+                    issues += issue("planning.ordering.unresolved", location, "Ordering relations must name one resolved source node.")
+                }
+            } else {
+                if (relation.channel.isNullOrBlank()) {
+                    issues += issue("planning.continuity.channel.missing", location, "Continuity relations must declare a non-blank channel.")
+                }
+                val capability = relation.kind.capability
+                val targetTask = nodesById[relation.targetNodeId] as? TaskNode
+                if (capability != null && targetTask != null && capability !in targetTask.requiredCapabilities) {
+                    issues += issue(
+                        "planning.continuity.capability.missing",
+                        location,
+                        "Target task '${targetTask.id}' must require capability '$capability'."
+                    )
+                }
+            }
+
+            when (relation.resolution) {
+                PlanDependencyResolution.RESOLVED -> {
+                    if (relation.sourceNodeId == null) {
+                        issues += issue("planning.dependency.source.missing", location, "Resolved dependency relation must name a source node.")
+                    }
+                    validateResolvedPath(relation, nodesById, location, issues)
+                }
+                PlanDependencyResolution.UNRESOLVED -> {
+                    if (relation.sourceNodeId != null || relation.candidates.isNotEmpty() || relation.path.isNotEmpty()) {
+                        issues += issue("planning.continuity.unresolved.malformed", location, "Unresolved continuity must not fabricate a source, candidates or path.")
+                    }
+                }
+                PlanDependencyResolution.AMBIGUOUS -> {
+                    if (relation.sourceNodeId != null || relation.candidates.size < 2 || relation.path.isNotEmpty()) {
+                        issues += issue("planning.continuity.ambiguous.malformed", location, "Ambiguous continuity must list at least two candidates and no selected source or path.")
+                    }
+                }
+            }
+        }
+
+        nodesById.values.filterIsInstance<TaskNode>().forEach { task ->
+            val continuity = modules.findAction(task.module, task.action)?.continuity ?: return@forEach
+            continuity.requires.forEach { requirement ->
+                val kind = requirement.kind.toPlanKind()
+                val matches = plan.dependencyRelations.filter { relation ->
+                    relation.targetNodeId == task.id &&
+                        relation.kind == kind &&
+                        relation.channel == requirement.name &&
+                        relation.evidence == PlanDependencyEvidence.MODULE_CONTRACT
+                }
+                if (matches.size != 1) {
+                    issues += issue(
+                        "planning.continuity.requirement.evidence",
+                        "nodes.${task.id}",
+                        "Action '${task.module}.${task.action}' requires exactly one ${kind.name.lowercase()} continuity relation for channel '${requirement.name}', found ${matches.size}."
+                    )
+                } else if (matches.single().resolution == PlanDependencyResolution.RESOLVED) {
+                    validateModuleContinuityPath(matches.single(), requirement, nodesById, modules, issues)
+                }
+            }
+        }
+    }
+
+    private fun validateResolvedPath(
+        relation: PlanDependencyRelation,
+        nodesById: Map<String, PlanNode>,
+        location: String,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        val source = relation.sourceNodeId ?: return
+        if (relation.path.firstOrNull() != source || relation.path.lastOrNull() != relation.targetNodeId) {
+            issues += issue("planning.dependency.path.invalid", location, "Resolved dependency path must start at '$source' and end at '${relation.targetNodeId}'.")
+            return
+        }
+        if (relation.path.size < 2) {
+            issues += issue("planning.dependency.path.short", location, "Resolved dependency path must contain source and target nodes.")
+        }
+        relation.path.zipWithNext().forEach { (upstream, downstream) ->
+            val downstreamNode = nodesById[downstream]
+            if (downstreamNode == null || upstream !in PlanDependencyRelations.dependencies(downstreamNode)) {
+                issues += issue(
+                    "planning.dependency.path.unordered",
+                    location,
+                    "Dependency path segment '$upstream -> $downstream' is not backed by an ordering dependency."
+                )
+            }
+        }
+    }
+
+    private fun validateModuleContinuityPath(
+        relation: PlanDependencyRelation,
+        requirement: ContinuityChannel,
+        nodesById: Map<String, PlanNode>,
+        modules: ModuleRegistry,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        val path = relation.path
+        val sourceTask = path.firstOrNull()?.let(nodesById::get) as? TaskNode
+        val sourceContinuity = sourceTask?.let { modules.findAction(it.module, it.action)?.continuity }
+        if (sourceContinuity == null || requirement !in sourceContinuity.provides) {
+            issues += issue(
+                "planning.continuity.provider.invalid",
+                "dependencyRelations.${relation.targetNodeId}.${requirement.name}",
+                "Resolved continuity source '${relation.sourceNodeId}' does not provide ${requirement.kind.name.lowercase()} channel '${requirement.name}'."
+            )
+        }
+        path.drop(1).dropLast(1).forEach { nodeId ->
+            val task = nodesById[nodeId] as? TaskNode
+            val continuity = task?.let { modules.findAction(it.module, it.action)?.continuity }
+            if (continuity == null || requirement !in continuity.preserves) {
+                issues += issue(
+                    "planning.continuity.preservation.invalid",
+                    "dependencyRelations.${relation.targetNodeId}.${requirement.name}",
+                    "Intermediate node '$nodeId' does not explicitly preserve ${requirement.kind.name.lowercase()} channel '${requirement.name}'."
+                )
+            }
+        }
     }
 
     private fun validateNodes(
@@ -216,4 +423,29 @@ internal object ExecutionPlanMaterializationValidator {
 
     private fun issue(code: String, location: String, message: String) =
         PlanningEvidenceIssue(code = code, location = location, message = message)
+}
+
+
+class UnresolvedPlanningContinuityException(
+    val relations: List<PlanDependencyRelation>
+) : IllegalArgumentException(
+    "Execution plan contains unresolved continuity evidence: " + relations.joinToString { relation ->
+        "${relation.kind.name.lowercase()}:${relation.channel} at ${relation.targetNodeId} (${relation.resolution.name.lowercase()})"
+    }
+)
+
+internal object ExecutionPlanContinuityValidator {
+    fun blockers(plan: ExecutionPlan): List<PlanDependencyRelation> =
+        plan.dependencyRelations.filter(PlanDependencyRelation::blocking)
+
+    fun requireResolved(plan: ExecutionPlan) {
+        val blockers = blockers(plan)
+        if (blockers.isNotEmpty()) throw UnresolvedPlanningContinuityException(blockers)
+    }
+}
+
+private fun ContinuityKind.toPlanKind(): PlanDependencyKind = when (this) {
+    ContinuityKind.VALUE -> PlanDependencyKind.VALUE
+    ContinuityKind.WORKSPACE -> PlanDependencyKind.WORKSPACE
+    ContinuityKind.STATE -> PlanDependencyKind.STATE
 }

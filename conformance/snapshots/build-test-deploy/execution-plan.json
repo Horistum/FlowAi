@@ -39,7 +39,7 @@
     "sourceNodeId" : "standard_rollback_1"
   } ],
   "dependencies" : [ "git_checkout_1", "standard_execute_1", "docker_build_1", "approve_1", "standard_execute_2" ],
-  "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "docker.build", "container.image", "condition.evaluate", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "notification.send" ],
+  "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "docker.build", "container.image", "continuity.workspace", "condition.evaluate", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "notification.send" ],
   "targetHints" : { },
   "assumptions" : [ ],
   "nodes" : [ {
@@ -110,7 +110,7 @@
     "outputs" : [ "build_image" ],
     "effects" : [ "docker.image", "docker.build" ],
     "destructive" : false,
-    "requiredCapabilities" : [ "task.execute", "docker.build", "container.image" ],
+    "requiredCapabilities" : [ "task.execute", "docker.build", "container.image", "continuity.workspace" ],
     "targetHints" : { },
     "assumptions" : [ ],
     "then" : [ ],
@@ -292,5 +292,68 @@
       "body" : [ ],
       "errorHandler" : [ ]
     } ]
+  } ],
+  "dependencyRelations" : [ {
+    "sourceNodeId" : "git_checkout_1",
+    "targetNodeId" : "standard_execute_1",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "git_checkout_1", "standard_execute_1" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "standard_execute_1",
+    "targetNodeId" : "docker_build_1",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "standard_execute_1", "docker_build_1" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "git_checkout_1",
+    "targetNodeId" : "docker_build_1",
+    "kind" : "WORKSPACE",
+    "channel" : "source",
+    "evidence" : "MODULE_CONTRACT",
+    "resolution" : "RESOLVED",
+    "path" : [ "git_checkout_1", "standard_execute_1", "docker_build_1" ],
+    "candidates" : [ ],
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source",
+    "continuity" : true,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "docker_build_1",
+    "targetNodeId" : "approve_1",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "docker_build_1", "approve_1" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "approve_1",
+    "targetNodeId" : "standard_execute_2",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "approve_1", "standard_execute_2" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "standard_execute_2",
+    "targetNodeId" : "standard_execute_3",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "standard_execute_2", "standard_execute_3" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
   } ]
 }

@@ -5,13 +5,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
-import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.TargetSelectionAnalyzer
-import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
-import org.flowlang.targets.builtin.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
-import org.flowlang.targets.builtin.TektonManifestGenerator
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -37,7 +34,7 @@ class FlowTargetSelectionTests {
         assertTrue(report.recommendedTarget.isEmpty())
         assertTrue(report.readyTargets.isEmpty())
         assertTrue(report.degradedTargets.contains("jenkins"))
-        assertTrue(report.degradedTargets.contains("github-actions"))
+        assertTrue(report.blockedTargets.contains("github-actions"))
         assertTrue(report.blockedTargets.contains("tekton"))
         assertTrue(report.candidates.map { it.rank } == (1..report.candidates.size).toList())
         assertTrue(report.candidates.none { it.readinessEvidenceAvailable })
@@ -46,12 +43,12 @@ class FlowTargetSelectionTests {
     @Test
     fun referenceManifestsDoNotProduceExecutableTargetRecommendation() {
         val plan = referencePlan()
-        val compatibility = CompatibilityAnalyzer(targets)
         val preliminary = TargetSelectionAnalyzer(targets).analyze(plan)
+        val pipeline = BuiltInTargetProjections.pipeline(targets)
         val manifests = listOf(
-            JenkinsManifestGenerator().generate(plan, compatibility.analyze(plan, "jenkins")),
-            GitHubActionsManifestGenerator().generate(plan, compatibility.analyze(plan, "github-actions")),
-            TektonManifestGenerator().generate(plan, compatibility.analyze(plan, "tekton"))
+            pipeline.generate(plan, "jenkins"),
+            pipeline.generateDiagnosticEvidence(plan, "github-actions"),
+            pipeline.generateDiagnosticEvidence(plan, "tekton")
         )
 
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
@@ -61,7 +58,7 @@ class FlowTargetSelectionTests {
         assertTrue(report.recommendedTarget.isEmpty(), diagnostic)
         assertTrue(report.readyTargets.isEmpty(), diagnostic)
         assertTrue(report.degradedTargets.contains("jenkins"), diagnostic)
-        assertTrue(report.degradedTargets.contains("github-actions"), diagnostic)
+        assertTrue(report.blockedTargets.contains("github-actions"), diagnostic)
         assertTrue(report.blockedTargets.contains("tekton"), diagnostic)
         assertEquals(
             ExecutionReadinessStatus.DEGRADED,

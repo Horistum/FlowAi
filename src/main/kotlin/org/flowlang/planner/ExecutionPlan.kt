@@ -17,7 +17,8 @@ data class ExecutionPlan(
     val requiredCapabilities: List<String> = emptyList(),
     val targetHints: Map<String, String> = emptyMap(),
     val assumptions: List<PlanAssumption> = emptyList(),
-    val nodes: List<PlanNode> = emptyList()
+    val nodes: List<PlanNode> = emptyList(),
+    val dependencyRelations: List<PlanDependencyRelation> = PlanDependencyRelations.inferOrdering(nodes)
 ) {
     /** Depth-first flattening of all concrete action tasks. */
     val tasks: List<TaskNode> get() = collectTasks(nodes)

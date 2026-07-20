@@ -45,7 +45,10 @@ internal fun baseMetadata(plan: ExecutionPlan, generator: String): Map<String, S
     "sourcePlanVersion" to plan.planVersion,
     "generator" to generator,
     "standardVersion" to FlowStandardVersions.FLOW_STANDARD_VERSION,
-    "projectionModel" to "notes-driven-materialization"
+    "projectionModel" to "notes-driven-materialization",
+    "dependencyContinuityModel" to "explicit",
+    "dependencyRelationCount" to plan.dependencyRelations.size.toString(),
+    "continuityBlockerCount" to plan.dependencyRelations.count { it.blocking }.toString()
 )
 
 internal fun CompatibilityReport.toMappingNotes(targetName: String): List<TargetMappingNote> = issues.map {

@@ -39,15 +39,17 @@ internal class StandardArchitectureNormalizationChecks(
     private fun checkRenderedSnapshotsContainVersion(): ConformanceCheck = runCheck("snapshots.rendered.standard-version") {
         val dir = File(rootDir, "conformance/snapshots/build-test-deploy")
         val standardVersion = FlowStandardVersions.FLOW_STANDARD_VERSION
-        listOf("jenkins.review.yaml", "github-actions.review.yaml").forEach { name ->
-            val text = File(dir, name).readText()
-            require(text.contains(standardVersion)) { "Snapshot $name does not contain Flow standard version $standardVersion" }
-            require(text.contains("renderMode: REVIEW_ONLY"))
-            require(text.contains("executable: false"))
+        val review = File(dir, "jenkins.review.yaml").readText()
+        require(review.contains(standardVersion)) {
+            "Snapshot jenkins.review.yaml does not contain Flow standard version $standardVersion"
         }
-        val blocked = Json.mapper.readValue(File(dir, "tekton.blocked.json"), ReferenceSnapshotTargetState::class.java)
-        require(blocked.renderMode == TargetRenderMode.FAIL_FAST)
-        require(!blocked.manifestPresent && !blocked.renderedArtifactPresent)
+        require(review.contains("renderMode: REVIEW_ONLY"))
+        require(review.contains("executable: false"))
+        listOf("github-actions.blocked.json", "tekton.blocked.json").forEach { name ->
+            val blocked = Json.mapper.readValue(File(dir, name), ReferenceSnapshotTargetState::class.java)
+            require(blocked.renderMode == TargetRenderMode.FAIL_FAST)
+            require(!blocked.manifestPresent && !blocked.renderedArtifactPresent)
+        }
         val index = Json.mapper.readValue(File(dir, "snapshot-index.json"), ReferenceSnapshotSet::class.java)
         require(index.versionBoundary.implementationPackageVersion == FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION)
         require(index.versionBoundary.publicStandardVersion == standardVersion)

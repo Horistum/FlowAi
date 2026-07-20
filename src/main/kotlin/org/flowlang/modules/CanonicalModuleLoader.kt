@@ -73,6 +73,7 @@ object CanonicalModuleLoader {
             validateSchema(action["input"], "$path.input", required = true)
             validateSchema(action["output"], "$path.output", required = true)
             validateEffects(action["effects"], "$path.effects")
+            validateContinuity(action["continuity"], "$path.continuity")
             validateSafety(action["safety"], "$path.safety")
             validateSupportBlock(action["retry"], "$path.retry")
             validateSupportBlock(action["timeout"], "$path.timeout")
@@ -107,6 +108,31 @@ object CanonicalModuleLoader {
         val effects = map(value, path, required = true)
         rejectUnknownFields(effects, EFFECT_KEYS, path)
         EFFECT_KEYS.forEach { key -> list(effects[key], "$path.$key") }
+    }
+
+    private fun validateContinuity(value: Any?, path: String) {
+        if (value == null) return
+        val continuity = map(value, path, required = true)
+        rejectUnknownFields(continuity, CONTINUITY_KEYS, path)
+        CONTINUITY_KEYS.forEach { key ->
+            val channels = objectList(continuity[key], "$path.$key")
+            val identities = channels.mapIndexed { index, channel ->
+                val channelPath = "$path.$key[$index]"
+                rejectUnknownFields(channel, CONTINUITY_CHANNEL_KEYS, channelPath)
+                val kind = text(channel, "kind", channelPath).lowercase()
+                if (kind !in CONTINUITY_KINDS) {
+                    throw ContractException("$channelPath.kind must be one of: ${CONTINUITY_KINDS.sorted().joinToString()}.")
+                }
+                val name = text(channel, "name", channelPath)
+                if (!CONTINUITY_CHANNEL.matches(name)) {
+                    throw ContractException("$channelPath.name is invalid: $name")
+                }
+                kind to name
+            }
+            if (identities.distinct().size != identities.size) {
+                throw ContractException("$path.$key must not contain duplicate continuity channels.")
+            }
+        }
     }
 
     private fun validateSafety(value: Any?, path: String) {
@@ -171,6 +197,15 @@ object CanonicalModuleLoader {
         else -> throw ContractException("$path must be a map.")
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun objectList(value: Any?, path: String): List<Map<String, Any?>> = when (value) {
+        null -> emptyList()
+        is List<*> -> value.mapIndexed { index, item ->
+            item as? Map<String, Any?> ?: throw ContractException("$path[$index] must be a map.")
+        }
+        else -> throw ContractException("$path must be a list.")
+    }
+
     private fun list(value: Any?, path: String, required: Boolean = false): List<String> = when (value) {
         null -> if (required) throw ContractException("$path is required.") else emptyList()
         is List<*> -> value.mapIndexed { index, item ->
@@ -194,11 +229,15 @@ object CanonicalModuleLoader {
     private val MODULE_KEYS = setOf("kind", "name", "version", "description", "systemTypes", "actions")
     private val SYSTEM_TYPE_KEYS = setOf("input")
     private val ACTION_KEYS = setOf(
-        "kind", "targetTypes", "input", "output", "effects", "safety", "idempotent",
+        "kind", "targetTypes", "input", "output", "effects", "continuity", "safety", "idempotent",
         "retry", "timeout", "additionalParams", "errors", "secrets", "requiredCapabilities"
     )
     private val SCHEMA_FIELD_KEYS = setOf("type", "required", "sensitive", "default")
     private val EFFECT_KEYS = setOf("reads", "writes", "creates", "updates", "deletes", "executes", "network", "filesystem")
+    private val CONTINUITY_KEYS = setOf("provides", "requires", "preserves")
+    private val CONTINUITY_CHANNEL_KEYS = setOf("kind", "name")
+    private val CONTINUITY_KINDS = setOf("value", "workspace", "state")
+    private val CONTINUITY_CHANNEL = Regex("[a-z][A-Za-z0-9._-]*")
     private val SAFETY_KEYS = setOf("destructive", "requires")
     private val SAFETY_REQUIREMENTS = setOf("safety", "approval")
     private val SUPPORT_KEYS = setOf("supported")

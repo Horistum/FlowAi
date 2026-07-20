@@ -1,6 +1,10 @@
 package org.flowlang.planner
 
 import org.flowlang.ast.*
+import org.flowlang.modules.ContinuityChannel
+import org.flowlang.modules.ContinuityContract
+import org.flowlang.modules.ContinuityKind
+import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleRegistry
 
 /**
@@ -31,7 +35,8 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             dependencies = collectDependencies(allNodes),
             requiredCapabilities = (collectRequiredCapabilities(allNodes) + document.flow.triggers.flatMap { it.requiredCapabilities() }).distinct(),
             assumptions = ctx.assumptions.toList(),
-            nodes = allNodes
+            nodes = allNodes,
+            dependencyRelations = ctx.dependencyRelations.distinctBy(PlanDependencyRelations::relationKey)
         )
     }
 
@@ -96,6 +101,15 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         is ApproveNode -> {
             val explicitDeps = stmt.dependsOn.mapNotNull { ctx.results[it.replace('-', '_')] ?: ctx.results[it] }.distinct()
             val id = ctx.id("approve")
+            ctx.dependencyRelations += explicitDeps.map { sourceNodeId ->
+                PlanDependencyRelation(
+                    sourceNodeId = sourceNodeId,
+                    targetNodeId = id,
+                    kind = PlanDependencyKind.ORDERING,
+                    evidence = PlanDependencyEvidence.DECLARED_ORDERING,
+                    path = listOf(sourceNodeId, id)
+                )
+            }
             stmt.result?.let { ctx.results[it.name] = id }
             ApprovalNode(id = id, mode = stmt.mode,
                 message = (stmt.params["message"])?.let(ExpressionRenderer::render)?.trim('"'),
@@ -122,18 +136,54 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val referenced = mutableSetOf<String>()
         action.params.values.forEach { collectRoots(it, referenced) }
         action.target.path.firstOrNull()?.let { referenced += it }
-        val dataDeps = referenced.mapNotNull { ctx.results[it]?.takeIf { taskId -> taskId.isNotEmpty() } }
-        val explicitDeps = action.dependsOn.mapNotNull { raw ->
+        val dataDependencies = referenced.mapNotNull { binding ->
+            ctx.results[binding]?.let { sourceNodeId -> DataDependency(sourceNodeId, binding) }
+        }.distinct()
+        val explicitDependencies = action.dependsOn.mapNotNull { raw ->
             val normalized = raw.replace('-', '_')
             ctx.results[normalized] ?: ctx.results[raw]
-        }
-        val deps = (dataDeps + explicitDeps).distinct().filter { it != id }
+        }.distinct()
+        val deps = (dataDependencies.map { it.sourceNodeId } + explicitDependencies)
+            .distinct()
+            .filter { it != id }
 
-        // Fix: system configuration (git url/branch, REST baseUrl, k8s/helm namespace) is no longer
+        val continuityRelations = contract?.continuity?.requires.orEmpty().map { requirement ->
+            ctx.resolveContinuityRequirement(id, deps, requirement, action.module, action.action)
+        }
+        val orderingRelations = deps.map { sourceNodeId ->
+            val evidence = if (dataDependencies.any { it.sourceNodeId == sourceNodeId }) {
+                PlanDependencyEvidence.DATA_REFERENCE
+            } else {
+                PlanDependencyEvidence.DECLARED_ORDERING
+            }
+            PlanDependencyRelation(
+                sourceNodeId = sourceNodeId,
+                targetNodeId = id,
+                kind = PlanDependencyKind.ORDERING,
+                evidence = evidence,
+                path = listOf(sourceNodeId, id)
+            )
+        }
+        val valueRelations = dataDependencies.map { dependency ->
+            PlanDependencyRelation(
+                sourceNodeId = dependency.sourceNodeId,
+                targetNodeId = id,
+                kind = PlanDependencyKind.VALUE,
+                channel = dependency.binding,
+                evidence = PlanDependencyEvidence.DATA_REFERENCE,
+                path = listOf(dependency.sourceNodeId, id),
+                evidenceReference = "${action.module}.${action.action}.params.${dependency.binding}"
+            )
+        }
+        ctx.dependencyRelations += orderingRelations + valueRelations + continuityRelations
+
+        // System configuration (git url/branch, REST baseUrl, k8s/helm namespace) is no longer
         // dropped at the planning boundary. Non-secret values configured on the target system act as
         // defaults for the action's params; explicit action params still win. Secret-valued endpoints
-        // are intentionally left out because they require runtime secret resolution, not a literal value.
+        // remain symbolic for target-side secret resolution.
         val renderedParams = mergeSystemConfig(action, ctx)
+        val continuityCapabilities = (valueRelations + continuityRelations)
+            .mapNotNull { it.kind.capability }
 
         val task = TaskNode(
             id = id, module = action.module, action = action.action,
@@ -144,14 +194,19 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             destructive = contract?.safety?.destructive ?: false,
             safety = action.safety?.let { it.rule + (it.condition?.let { c -> " " + ExpressionRenderer.render(c) } ?: "") },
             params = renderedParams,
-            requiredCapabilities = inferRequiredCapabilities(action, contract?.safety?.destructive ?: false)
+            requiredCapabilities = (
+                inferRequiredCapabilities(action, contract?.safety?.destructive ?: false) + continuityCapabilities
+            ).distinct()
         )
+        ctx.registerTask(task, contract)
         action.result?.let {
             ctx.results[it.name] = id
             ctx.outputs += PlanOutput(it.name, sourceNodeId = id)
         }
         return task
     }
+
+    private data class DataDependency(val sourceNodeId: String, val binding: String)
 
     /**
      * Renders the action's params and layers in defaults from the targeted system's configuration
@@ -240,11 +295,87 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val results = mutableMapOf<String, String>()   // result/binding name -> producing task id
         val outputs = mutableListOf<PlanOutput>()
         val assumptions = mutableListOf<PlanAssumption>()
+        val dependencyRelations = mutableListOf<PlanDependencyRelation>()
+        private val taskDependencies = mutableMapOf<String, List<String>>()
+        private val taskContinuity = mutableMapOf<String, ContinuityContract>()
         private val counters = mutableMapOf<String, Int>()
+
         fun id(prefix: String): String {
             val n = (counters[prefix] ?: 0) + 1
             counters[prefix] = n
             return "${prefix}_$n"
         }
+
+        fun registerTask(task: TaskNode, contract: ModuleActionContract?) {
+            taskDependencies[task.id] = task.dependsOn
+            taskContinuity[task.id] = contract?.continuity ?: ContinuityContract()
+        }
+
+        fun resolveContinuityRequirement(
+            targetNodeId: String,
+            dependencies: List<String>,
+            requirement: ContinuityChannel,
+            module: String,
+            action: String
+        ): PlanDependencyRelation {
+            val matches = dependencies.flatMap { dependency ->
+                findProviders(dependency, requirement, linkedSetOf())
+            }.distinctBy { it.providerNodeId }
+            val evidenceReference = "$module.$action.continuity.requires.${requirement.kind.name.lowercase()}.${requirement.name}"
+            return when (matches.size) {
+                1 -> PlanDependencyRelation(
+                    sourceNodeId = matches.single().providerNodeId,
+                    targetNodeId = targetNodeId,
+                    kind = requirement.kind.toPlanKind(),
+                    channel = requirement.name,
+                    evidence = PlanDependencyEvidence.MODULE_CONTRACT,
+                    resolution = PlanDependencyResolution.RESOLVED,
+                    path = matches.single().path + targetNodeId,
+                    evidenceReference = evidenceReference
+                )
+                0 -> PlanDependencyRelation(
+                    targetNodeId = targetNodeId,
+                    kind = requirement.kind.toPlanKind(),
+                    channel = requirement.name,
+                    evidence = PlanDependencyEvidence.MODULE_CONTRACT,
+                    resolution = PlanDependencyResolution.UNRESOLVED,
+                    evidenceReference = evidenceReference
+                )
+                else -> PlanDependencyRelation(
+                    targetNodeId = targetNodeId,
+                    kind = requirement.kind.toPlanKind(),
+                    channel = requirement.name,
+                    evidence = PlanDependencyEvidence.MODULE_CONTRACT,
+                    resolution = PlanDependencyResolution.AMBIGUOUS,
+                    candidates = matches.map { it.providerNodeId }.sorted(),
+                    evidenceReference = evidenceReference
+                )
+            }
+        }
+
+        private fun findProviders(
+            nodeId: String,
+            requirement: ContinuityChannel,
+            visited: LinkedHashSet<String>
+        ): List<ContinuityPath> {
+            if (!visited.add(nodeId)) return emptyList()
+            val continuity = taskContinuity[nodeId] ?: return emptyList()
+            if (requirement in continuity.provides) return listOf(ContinuityPath(nodeId, listOf(nodeId)))
+            if (requirement !in continuity.preserves) return emptyList()
+            return taskDependencies[nodeId].orEmpty().flatMap { dependency ->
+                findProviders(dependency, requirement, LinkedHashSet(visited)).map { path ->
+                    path.copy(path = path.path + nodeId)
+                }
+            }
+        }
+
+        private data class ContinuityPath(val providerNodeId: String, val path: List<String>)
     }
+
+}
+
+private fun ContinuityKind.toPlanKind(): PlanDependencyKind = when (this) {
+    ContinuityKind.VALUE -> PlanDependencyKind.VALUE
+    ContinuityKind.WORKSPACE -> PlanDependencyKind.WORKSPACE
+    ContinuityKind.STATE -> PlanDependencyKind.STATE
 }

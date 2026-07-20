@@ -13,7 +13,7 @@ versionBoundary:
 
 roadmapIndex:
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.3.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.4.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
   historicalRoadmaps:
@@ -21,6 +21,7 @@ roadmapIndex:
     - ".flow-agent/roadmap-v0.9.5.7-repair-track.yaml"
     - ".flow-agent/roadmap-core-v0.9.7.yaml"
     - ".flow-agent/roadmap-core-v0.9.7.2.yaml"
+    - ".flow-agent/roadmap-core-v0.9.7.3.yaml"
 
 rules:
   - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
@@ -54,7 +55,7 @@ architectureConstitution:
     - "No governance signal whose status contradicts the property measured."
 
 currentDecision:
-  completedItem: "0.9.7.3"
-  completedItemName: "Mandatory Materialization Authority"
-  nextCoreItem: "0.9.7.4"
-  nextCoreItemName: "Universal Dependency and Continuity Contract"
+  completedItem: "0.9.7.4"
+  completedItemName: "Universal Dependency and Continuity Contract"
+  nextCoreItem: "0.9.7.5"
+  nextCoreItemName: "Canonical Intent Meaning"

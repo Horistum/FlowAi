@@ -18,14 +18,14 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.3"
-  completedItemName: "Mandatory Materialization Authority"
+  completedItem: "0.9.7.4"
+  completedItemName: "Universal Dependency and Continuity Contract"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.4"
-  nextCoreItemName: "Universal Dependency and Continuity Contract"
+  nextCoreItem: "0.9.7.5"
+  nextCoreItemName: "Canonical Intent Meaning"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.3.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.4.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
 
@@ -57,6 +57,9 @@ qualityPrinciples:
   - "Malformed module and notes declarations fail closed instead of becoming empty defaults."
   - "Every production projection path must obtain registry-derived authorization before invoking a target generator."
   - "Diagnostic projection evidence may preserve blocked facts but must never claim executable readiness."
+  - "Ordering never implies value, workspace or state continuity."
+  - "Continuity must be declared by canonical module contracts and supported explicitly by the target."
+  - "Committed reference evidence must be regenerated through the canonical production generator."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-implementation-head"
@@ -66,12 +69,14 @@ lastKnownValidation:
   cleanTest: "passed-on-implementation-head"
   conformance: "passed-on-implementation-head"
   executableReferenceEvidence: "passed-on-implementation-head"
-  validationSource: "Flow CI #1643 passed on implementation head eff81da4f9c1aff90da30864092f884d71e73e24."
+  validationSource: "Flow CI #1695 passed on implementation head 64393255468089b44c229361524abfc24157d487."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "One mandatory materialization authority validates plans and derives compatibility from the canonical target registry."
-    - "Execution candidates fail before provider invocation when structural or capability evidence is invalid."
-    - "Diagnostic evidence remains validated and explicitly non-executable when capability constraints block projection."
-    - "Semantic graph, negotiation, projection plan and artifact authority alignment fail closed."
-    - "The optional projection helper and duplicate planner capability gate are removed."
+    - "Execution plans carry typed ordering, value, workspace and state relations."
+    - "Module contracts declare continuity providers, requirements and preservation rules."
+    - "Missing or ambiguous continuity blocks execution-candidate authorization."
+    - "Diagnostic evidence preserves blockers without claiming executable readiness."
+    - "Target compatibility derives from explicit continuity capabilities."
+    - "GitHub Actions reference evidence is blocked because workspace transfer is not represented explicitly."
+    - "Reference snapshots were regenerated through the canonical production generator."
     - "The final metadata head must pass the unmodified standard Flow CI."
