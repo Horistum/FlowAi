@@ -63,14 +63,9 @@ actions:
 
     retry:
       supported: true
-      default:
-        max: 3
-        delay: "10s"
 
     timeout:
       supported: true
-      default: "5m"
-      max: "30m"
 
     errors:
       unhealthy:
