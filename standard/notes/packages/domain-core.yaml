@@ -1,0 +1,11 @@
+packageId: flow.domain.core
+packageVersion: "0.9.7.2"
+kind: domain
+description: "Core target-neutral automation meaning used before target projection."
+declaredSemantics:
+  - automation.intent
+  - semantic.action
+  - safety.boundary
+boundaries:
+  - name: no-target-truth
+    description: "Domain notes do not declare concrete target support."

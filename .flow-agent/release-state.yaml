@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 4
+stateVersion: 6
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,16 +16,16 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 3
+  roadmapVersion: 4
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.1"
-  completedItemName: "Governance Signal Integrity"
+  completedItem: "0.9.7.2"
+  completedItemName: "Canonical Module and Notes Authority"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.2"
-  nextCoreItemName: "Canonical Module and Notes Authority"
+  nextCoreItem: "0.9.7.3"
+  nextCoreItemName: "Mandatory Materialization Authority"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.2.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
 
@@ -53,6 +53,8 @@ qualityPrinciples:
   - "A previous executable label has no grandfathered status."
   - "Missing implementation evidence fails closed."
   - "Governance status and score polarity must match the property claimed."
+  - "Every public module loading path must use one canonical descriptor authority."
+  - "Malformed module and notes declarations fail closed instead of becoming empty defaults."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-implementation-head"
@@ -61,14 +63,13 @@ lastKnownValidation:
   offlineCacheAwareChecks: "passed-on-implementation-head"
   cleanTest: "passed-on-implementation-head"
   conformance: "passed-on-implementation-head"
-  validationSource: "GitHub Actions Flow CI #1541 passed before final roadmap and report metadata."
+  executableReferenceEvidence: "passed-on-implementation-head"
+  validationSource: "Flow CI #1586 passed on implementation head 04a891d7569ba59562341808cba9d7c87804379c."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.1 applies governance scanning to every production Kotlin package."
-    - "CI/CD inventory presence is distinct from active semantic health."
-    - "Drift scoring has one negative-signal-only decision formula."
-    - "Baseline evidence is descriptive and contributes zero score."
-    - "Behavioral fixtures replace historical substring guards."
-    - "The existing executable reference remains green."
-    - "The primary Core work item advances to v0.9.7.2 Canonical Module and Notes Authority."
+    - "Hardcoded module defaults and permissive descriptor gap filling are removed."
+    - "Every public module YAML entrypoint delegates to canonical structural validation."
+    - "Approval and destructive safety requirements survive canonical production loading."
+    - "Core notes load from one versioned manifest and preserve the declared dependency chain."
+    - "Target and projection evidence remains implementation-owned."
     - "The final metadata head must pass the unmodified standard Flow CI."

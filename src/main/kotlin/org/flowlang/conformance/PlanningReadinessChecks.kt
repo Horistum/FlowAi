@@ -40,8 +40,11 @@ internal class PlanningReadinessChecks(
         require(report.modules.any { it.actions.any { action -> action.destructive && action.requiresSafety } }) {
             "At least one destructive action must require safety so adapters can enforce gates."
         }
-        require(report.totals.targetImplicationActions > 0) {
-            "At least one module action must expose target implications for capability negotiation."
+        require(report.totals.targetImplicationActions == 0) {
+            "Core module contracts must not own target implications; adapter evidence belongs to target registries."
+        }
+        require(report.modules.all { module -> module.actions.all { it.targetImplications.isEmpty() } }) {
+            "Core module report must remain free of target compatibility claims."
         }
     }
 

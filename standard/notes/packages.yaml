@@ -1,0 +1,4 @@
+version: 1
+sourceDirectory: standard/notes/packages
+ownership: core-semantic-and-safety-contracts
+adapterEvidence: targets
