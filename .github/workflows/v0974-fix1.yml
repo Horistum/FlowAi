@@ -20,54 +20,11 @@ jobs:
           ref: agent/v0.9.7.4-universal-dependency-continuity
           fetch-depth: 0
 
-      - name: Attach verified payload blob to branch
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Verify and apply evidence fix
         shell: bash
         run: |
           set -euo pipefail
-          api="https://api.github.com/repos/milank78git/FlowAi"
-          current_sha="$(git rev-parse HEAD)"
-          tree_sha="$(curl -fsSL \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${api}/git/commits/${current_sha}" | jq -r '.tree.sha')"
-          new_tree="$(jq -n \
-            --arg base_tree "${tree_sha}" \
-            --arg blob "7d422d9754003c63cca39da27f36080d3d6d9c70" \
-            '{base_tree: $base_tree, tree: [{path: ".flow-agent/tmp/v0974-fix1.tar.gz", mode: "100644", type: "blob", sha: $blob}]}' \
-            | curl -fsSL -X POST \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "${api}/git/trees" -d @- \
-            | jq -r '.sha')"
-          new_commit="$(jq -n \
-            --arg message "Attach v0.9.7.4 evidence fix payload" \
-            --arg tree "${new_tree}" \
-            --arg parent "${current_sha}" \
-            '{message: $message, tree: $tree, parents: [$parent]}' \
-            | curl -fsSL -X POST \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "${api}/git/commits" -d @- \
-            | jq -r '.sha')"
-          jq -n --arg sha "${new_commit}" '{sha: $sha, force: false}' \
-            | curl -fsSL -X PATCH \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "${api}/git/refs/heads/agent/v0.9.7.4-universal-dependency-continuity" -d @- > /dev/null
-          git fetch origin agent/v0.9.7.4-universal-dependency-continuity
-          git reset --hard "${new_commit}"
           echo "f91ed1ad9dce753aae73c71944e836a2cd0c6ca09a7290549a8700637df88e4d  .flow-agent/tmp/v0974-fix1.tar.gz" | sha256sum --check
-
-      - name: Apply evidence fix
-        shell: bash
-        run: |
-          set -euo pipefail
           tar -xzf .flow-agent/tmp/v0974-fix1.tar.gz
           rm -f .flow-agent/tmp/v0974-fix1.tar.gz
           rmdir .flow-agent/tmp 2>/dev/null || true
