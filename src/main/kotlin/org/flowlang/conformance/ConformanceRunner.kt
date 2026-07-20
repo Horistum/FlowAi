@@ -16,7 +16,7 @@ class ConformanceRunner(
     private val rootDir: File = File("."),
     private val registry: ModuleRegistry =
         if (File(rootDir, "modules").isDirectory) {
-            ModuleRegistry.fromDirectory(File(rootDir, "modules"), includeDefaults = true)
+            ModuleRegistry.fromDirectory(File(rootDir, "modules"))
         } else {
             ModuleRegistry()
         },
