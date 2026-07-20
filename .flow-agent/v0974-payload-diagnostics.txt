@@ -1,0 +1,21 @@
+bytes=15008
+sha256=c1ef476d2572b7a805b14f38df71cc7d3164b855e8a5bad6d649c06116bf112c
+file=gzip compressed data, from Unix, original size modulo 2^32 122880
+archive:
+./
+./src/
+./src/main/
+./src/main/kotlin/
+./src/main/kotlin/org/
+./src/main/kotlin/org/flowlang/
+./src/main/kotlin/org/flowlang/planner/
+./src/main/kotlin/org/flowlang/planner/FlowPlanner.kt
+./src/main/kotlin/org/flowlang/conformance/
+./src/main/kotlin/org/flowlang/conformance/PlanningReadinessChecks.kt
+
+gzip: stdin: invalid compressed data--crc error
+tar: 
+gzip: stdin: invalid compressed data--length error
+Skipping to next header
+tar: Child returned status 1
+tar: Error is not recoverable: exiting now
