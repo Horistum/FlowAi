@@ -120,16 +120,16 @@ internal class PlanningReadinessChecks(
         require(!jenkins.productionReady && !jenkins.executable) { "Review-only Jenkins manifest must not be production-ready." }
         require(jenkins.readinessEvidenceAvailable) { "Concrete Jenkins readiness must carry manifest evidence." }
 
-        val githubCompatibility = compatibility.analyze(artifacts.plan, "github-actions", strict = false)
-        val githubManifest = manifestPipeline.generate(artifacts.plan, "github-actions")
+        val githubManifest = manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "github-actions")
         val github = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "github-actions", strict = false),
             githubManifest
         )
-        require(github.readiness == ExecutionReadinessStatus.DEGRADED) { "GitHub Actions reference manifest must remain degraded." }
-        require(!github.productionReady && !github.executable) { "GitHub Actions review artifact must not be production-ready." }
+        require(github.readiness == ExecutionReadinessStatus.BLOCKED) { "GitHub Actions must be blocked without workspace continuity evidence." }
+        require(!github.generationAllowed && !github.productionReady && !github.executable) {
+            "Blocked GitHub Actions evidence must not claim generation or production readiness."
+        }
 
-        val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton", strict = false)
         val tektonManifest = manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
         val tekton = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "tekton", strict = false),
@@ -141,14 +141,11 @@ internal class PlanningReadinessChecks(
 
     private fun checkV038TargetSelectionReport(): ConformanceCheck = runCheck("v0.3.8.target-selection") {
         val artifacts = buildPipeline("jenkins", strict = false)
-        val compatibility = CompatibilityAnalyzer(targets)
         val preliminary = TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false)
         require(preliminary.recommendedTarget.isEmpty()) { "Capability-only selection must not recommend a target." }
-        val githubCompatibility = compatibility.analyze(artifacts.plan, "github-actions")
-        val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton")
         val manifests = listOf(
             artifacts.manifest,
-            manifestPipeline.generate(artifacts.plan, "github-actions"),
+            manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "github-actions"),
             manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
         )
         val manifestTargets = manifests.map { it.target }.toSet()
@@ -156,8 +153,10 @@ internal class PlanningReadinessChecks(
         require(report.candidates.size == targets.size) { "Target selection must evaluate every registered target." }
         require(report.recommendedTarget.isEmpty()) { "Reference deployment has no executable target recommendation." }
         require(report.readyTargets.isEmpty()) { "Review-only reference manifests must not be classified as ready." }
-        require(report.degradedTargets.containsAll(listOf("jenkins", "github-actions"))) { "Jenkins and GitHub Actions must be classified as review-only degraded targets." }
-        require(report.blockedTargets.contains("tekton")) { "Tekton must be classified as blocked." }
+        require(report.degradedTargets.contains("jenkins")) { "Jenkins must remain a review-only degraded target." }
+        require(report.blockedTargets.containsAll(listOf("github-actions", "tekton"))) {
+            "GitHub Actions and Tekton must be classified as blocked."
+        }
         require(report.candidates.filter { it.target in manifestTargets }.all { it.readinessEvidenceAvailable }) {
             "Candidates with concrete manifests must carry readiness evidence."
         }

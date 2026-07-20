@@ -11,10 +11,9 @@ import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.MaterializationReadinessStatus
 import org.flowlang.capabilities.ProjectionReadinessStatus
-import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
-import org.flowlang.targets.builtin.TektonManifestGenerator
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -63,31 +62,25 @@ class FlowExecutionReadinessTests {
     }
 
     @Test
-    fun githubReferencePlanIsDegradedAndConcreteManifestRemainsReviewOnly() {
+    fun githubReferencePlanIsBlockedWithoutWorkspaceContinuityEvidence() {
         val plan = referencePlan()
         val preliminary = ExecutionReadinessAnalyzer(targets).analyze(plan, "github-actions")
-        val manifest = GitHubActionsManifestGenerator().generate(
-            plan,
-            CompatibilityAnalyzer(targets).analyze(plan, "github-actions")
-        )
+        val manifest = BuiltInTargetProjections.pipeline(targets).generateDiagnosticEvidence(plan, "github-actions")
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifest)
 
-        assertEquals(ExecutionReadinessStatus.DEGRADED, report.readiness)
-        assertTrue(report.generationAllowed)
+        assertEquals(ExecutionReadinessStatus.BLOCKED, report.readiness)
+        assertFalse(report.generationAllowed)
         assertFalse(report.productionReady)
         assertFalse(report.executable)
         assertTrue(report.readinessEvidenceAvailable)
-        assertTrue(report.warnings.isNotEmpty())
+        assertTrue(report.blockers.any { it.capability == "continuity.workspace" })
     }
 
     @Test
     fun tektonReferencePlanAndManifestRemainBlocked() {
         val plan = referencePlan()
         val preliminary = ExecutionReadinessAnalyzer(targets).analyze(plan, "tekton")
-        val manifest = TektonManifestGenerator().generate(
-            plan,
-            CompatibilityAnalyzer(targets).analyze(plan, "tekton")
-        )
+        val manifest = BuiltInTargetProjections.pipeline(targets).generateDiagnosticEvidence(plan, "tekton")
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifest)
 
         assertEquals(ExecutionReadinessStatus.BLOCKED, report.readiness)

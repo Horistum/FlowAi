@@ -101,6 +101,15 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         is ApproveNode -> {
             val explicitDeps = stmt.dependsOn.mapNotNull { ctx.results[it.replace('-', '_')] ?: ctx.results[it] }.distinct()
             val id = ctx.id("approve")
+            ctx.dependencyRelations += explicitDeps.map { sourceNodeId ->
+                PlanDependencyRelation(
+                    sourceNodeId = sourceNodeId,
+                    targetNodeId = id,
+                    kind = PlanDependencyKind.ORDERING,
+                    evidence = PlanDependencyEvidence.DECLARED_ORDERING,
+                    path = listOf(sourceNodeId, id)
+                )
+            }
             stmt.result?.let { ctx.results[it.name] = id }
             ApprovalNode(id = id, mode = stmt.mode,
                 message = (stmt.params["message"])?.let(ExpressionRenderer::render)?.trim('"'),

@@ -69,15 +69,18 @@ internal class CorePipelineSnapshotChecks(
     }
 
     private fun checkGitHubManifestGeneration(): ConformanceCheck = runCheck("generator.manifest.github-actions") {
-        val artifacts = buildPipeline("github-actions", strict = false)
-        require(artifacts.manifest.target == "github-actions") { "Unexpected manifest target." }
-        require(artifacts.manifest.jobs.isNotEmpty()) { "Expected GitHub Actions manifest jobs." }
-        require(TargetRenderPolicy.evaluate(artifacts.manifest).mode == TargetRenderMode.REVIEW_ONLY) {
-            "Unresolved GitHub Actions projection must remain review-only."
+        val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
+        IntentCapabilityValidator(registry).validate(intent).assertValid()
+        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+        val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "github-actions", strict = false)
+        val readiness = ExecutionReadinessAnalyzer(targets).analyze(plan, "github-actions", strict = false)
+        require(compatibility.hasErrors) {
+            "GitHub Actions reference pipeline must fail without explicit workspace continuity evidence."
         }
-        require(artifacts.rendered.contains("kind: TargetProjectionReview")) { "Expected Flow review artifact." }
-        require(!artifacts.rendered.contains("jobs:")) { "Review-only output must not masquerade as a GitHub Actions workflow." }
-        require(!artifacts.rendered.contains("steps: []")) { "Review-only output must not emit a green no-op job." }
+        val state = ReferenceSnapshotHonesty.targetState(ReferenceBlockedProjectionEvidence(compatibility, readiness))
+        require(state.renderMode == TargetRenderMode.FAIL_FAST)
+        require(!state.manifestPresent && !state.renderedArtifactPresent)
+        require(state.blockers.any { it.feature == "continuity.workspace" })
     }
 
     private fun checkTektonManifestGeneration(): ConformanceCheck = runCheck("generator.manifest.tekton.partial") {
@@ -111,7 +114,7 @@ internal class CorePipelineSnapshotChecks(
             "execution-plan.json",
             "snapshot-index.json",
             "jenkins.review.yaml",
-            "github-actions.review.yaml",
+            "github-actions.blocked.json",
             "tekton.blocked.json",
             "README.md"
         )
@@ -154,7 +157,9 @@ internal class CorePipelineSnapshotChecks(
                 "Realistic build-test-deploy evidence must be mixed and non-executable."
             }
             require(snapshot.targets.single { it.target == "jenkins" }.renderMode == TargetRenderMode.REVIEW_ONLY)
-            require(snapshot.targets.single { it.target == "github-actions" }.renderMode == TargetRenderMode.REVIEW_ONLY)
+            val github = snapshot.targets.single { it.target == "github-actions" }
+            require(github.renderMode == TargetRenderMode.FAIL_FAST)
+            require(!github.manifestPresent && !github.renderedArtifactPresent)
             val tekton = snapshot.targets.single { it.target == "tekton" }
             require(tekton.renderMode == TargetRenderMode.FAIL_FAST)
             require(!tekton.manifestPresent && !tekton.renderedArtifactPresent)

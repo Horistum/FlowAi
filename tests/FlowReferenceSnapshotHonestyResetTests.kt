@@ -61,7 +61,11 @@ class FlowReferenceSnapshotHonestyResetTests {
             assertEquals(ReferenceSnapshotSetState.MIXED, snapshot.overallState)
             assertFalse(snapshot.executable)
             assertEquals(TargetRenderMode.REVIEW_ONLY, snapshot.targets.single { it.target == "jenkins" }.renderMode)
-            assertEquals(TargetRenderMode.REVIEW_ONLY, snapshot.targets.single { it.target == "github-actions" }.renderMode)
+            val github = snapshot.targets.single { it.target == "github-actions" }
+            assertEquals(TargetRenderMode.FAIL_FAST, github.renderMode)
+            assertFalse(github.manifestPresent)
+            assertFalse(github.renderedArtifactPresent)
+            assertTrue(github.blockers.any { it.feature == "continuity.workspace" })
             val tekton = snapshot.targets.single { it.target == "tekton" }
             assertEquals(TargetRenderMode.FAIL_FAST, tekton.renderMode)
             assertFalse(tekton.manifestPresent)
@@ -69,7 +73,8 @@ class FlowReferenceSnapshotHonestyResetTests {
             assertTrue(tekton.blockers.any { it.feature == "approvals" })
             assertTrue(tekton.blockers.any { it.feature == "standard.rollback" })
             assertTrue(File(output, "jenkins.review.yaml").isFile)
-            assertTrue(File(output, "github-actions.review.yaml").isFile)
+            assertTrue(File(output, "github-actions.blocked.json").isFile)
+            assertFalse(File(output, "github-actions.review.yaml").exists())
             assertTrue(File(output, "tekton.blocked.json").isFile)
             assertFalse(File(output, "tekton.review.yaml").exists())
             assertFalse(File(output, "tekton-pipeline.yaml").exists())

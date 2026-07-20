@@ -31,7 +31,10 @@ class FlowReferenceSnapshotHonestyTests {
             assertEquals(ReferenceSnapshotSetState.MIXED, committed.overallState)
             assertFalse(committed.executable)
             assertEquals(TargetRenderMode.REVIEW_ONLY, committed.targets.single { it.target == "jenkins" }.renderMode)
-            assertEquals(TargetRenderMode.REVIEW_ONLY, committed.targets.single { it.target == "github-actions" }.renderMode)
+            val github = committed.targets.single { it.target == "github-actions" }
+            assertEquals(TargetRenderMode.FAIL_FAST, github.renderMode)
+            assertFalse(github.manifestPresent)
+            assertFalse(github.renderedArtifactPresent)
             val tekton = committed.targets.single { it.target == "tekton" }
             assertEquals(TargetRenderMode.FAIL_FAST, tekton.renderMode)
             assertFalse(tekton.manifestPresent)
@@ -46,18 +49,19 @@ class FlowReferenceSnapshotHonestyTests {
         ReferenceSnapshotHonesty.legacyExecutableLookingFiles.forEach { legacy ->
             assertFalse(File(root, legacy).exists(), "Legacy snapshot '$legacy' must not remain committed.")
         }
-        listOf("jenkins.review.yaml", "github-actions.review.yaml").forEach { name ->
-            val content = File(root, name).readText()
-            assertTrue(content.contains("renderMode: REVIEW_ONLY"))
-            assertTrue(content.contains("executable: false"))
+        val review = File(root, "jenkins.review.yaml").readText()
+        assertTrue(review.contains("renderMode: REVIEW_ONLY"))
+        assertTrue(review.contains("executable: false"))
+        assertFalse(File(root, "github-actions.review.yaml").exists())
+        listOf("github-actions.blocked.json", "tekton.blocked.json").forEach { name ->
+            val blocked = File(root, name)
+            assertTrue(blocked.isFile)
+            assertFalse(File(root, name.removeSuffix(".json") + ".yaml").exists())
+            val content = blocked.readText()
+            assertTrue(content.contains("\"renderMode\" : \"FAIL_FAST\""))
+            assertTrue(content.contains("\"manifestPresent\" : false"))
+            assertTrue(content.contains("\"renderedArtifactPresent\" : false"))
         }
-        val blocked = File(root, "tekton.blocked.json")
-        assertTrue(blocked.isFile)
-        assertFalse(File(root, "tekton.blocked.yaml").exists())
-        val content = blocked.readText()
-        assertTrue(content.contains("\"renderMode\" : \"FAIL_FAST\""))
-        assertTrue(content.contains("\"manifestPresent\" : false"))
-        assertTrue(content.contains("\"renderedArtifactPresent\" : false"))
     }
 
     @Test

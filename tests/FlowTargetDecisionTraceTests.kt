@@ -11,10 +11,8 @@ import org.flowlang.capabilities.DecisionTraceStatus
 import org.flowlang.capabilities.TargetDecisionKind
 import org.flowlang.capabilities.TargetDecisionTraceAnalyzer
 import org.flowlang.capabilities.TargetSelectionAnalyzer
-import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
-import org.flowlang.targets.builtin.JenkinsManifestGenerator
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
-import org.flowlang.targets.builtin.TektonManifestGenerator
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -49,10 +47,11 @@ class FlowTargetDecisionTraceTests {
     fun referenceManifestDecisionTraceRemainsBlockedWithoutExecutableTarget() {
         val plan = referencePlan()
         val compatibilityAnalyzer = CompatibilityAnalyzer(targets)
+        val pipeline = BuiltInTargetProjections.pipeline(targets)
         val manifests = listOf(
-            JenkinsManifestGenerator().generate(plan, compatibilityAnalyzer.analyze(plan, "jenkins")),
-            GitHubActionsManifestGenerator().generate(plan, compatibilityAnalyzer.analyze(plan, "github-actions")),
-            TektonManifestGenerator().generate(plan, compatibilityAnalyzer.analyze(plan, "tekton"))
+            pipeline.generate(plan, "jenkins"),
+            pipeline.generateDiagnosticEvidence(plan, "github-actions"),
+            pipeline.generateDiagnosticEvidence(plan, "tekton")
         )
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
             compatibilityAnalyzer.negotiate(plan),
@@ -75,7 +74,7 @@ class FlowTargetDecisionTraceTests {
         assertTrue(report.recommendedTarget.isEmpty())
         assertFalse(report.generationAllowed)
         assertTrue(report.targetExplanations.any { it.target == "jenkins" && it.decision == TargetDecisionKind.DEGRADED })
-        assertTrue(report.targetExplanations.any { it.target == "github-actions" && it.decision == TargetDecisionKind.DEGRADED })
+        assertTrue(report.targetExplanations.any { it.target == "github-actions" && it.decision == TargetDecisionKind.BLOCKED })
         assertTrue(report.targetExplanations.any { it.target == "tekton" && it.decision == TargetDecisionKind.BLOCKED })
     }
 }

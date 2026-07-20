@@ -120,7 +120,7 @@ class ReferenceScenarioMatrixTests {
     }
 
     @Test
-    fun realisticBuildTestDeployEvidenceIsReviewOnlyForJenkinsAndGitHubButFailFastForTekton() {
+    fun realisticBuildTestDeployEvidenceIsReviewOnlyForJenkinsAndFailFastWithoutWorkspaceContinuity() {
         val scenario = ReferenceScenarioMatrix.positiveScenarios().single { it.id == "build-test-deploy" }
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
         IntentCapabilityValidator(registry).validate(intent).assertValid()
@@ -141,7 +141,7 @@ class ReferenceScenarioMatrixTests {
         }
 
         assertEquals(ReferenceAdapterProjectionOutcome.REVIEW_ONLY, outcomes.getValue("jenkins").outcome)
-        assertEquals(ReferenceAdapterProjectionOutcome.REVIEW_ONLY, outcomes.getValue("github-actions").outcome)
+        assertEquals(ReferenceAdapterProjectionOutcome.FAIL_FAST, outcomes.getValue("github-actions").outcome)
         assertEquals(ReferenceAdapterProjectionOutcome.FAIL_FAST, outcomes.getValue("tekton").outcome)
         assertTrue(outcomes.values.none { it.executable })
     }

@@ -30,11 +30,9 @@ internal class DecisionAndArtifactChecks(
     private fun checkV039TargetDecisionTraceReport(): ConformanceCheck = runCheck("v0.3.9.target-decision-trace") {
         val artifacts = buildPipeline("jenkins", strict = false)
         val compatibility = CompatibilityAnalyzer(targets)
-        val githubCompatibility = compatibility.analyze(artifacts.plan, "github-actions")
-        val tektonCompatibility = compatibility.analyze(artifacts.plan, "tekton")
         val manifests = listOf(
             artifacts.manifest,
-            manifestPipeline.generate(artifacts.plan, "github-actions"),
+            manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "github-actions"),
             manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
         )
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
@@ -63,8 +61,8 @@ internal class DecisionAndArtifactChecks(
         require(report.targetExplanations.any { it.target == "jenkins" && it.decision == TargetDecisionKind.DEGRADED }) {
             "Trace must explain Jenkins as review-only degraded."
         }
-        require(report.targetExplanations.any { it.target == "github-actions" && it.decision == TargetDecisionKind.DEGRADED }) {
-            "Trace must explain GitHub Actions as degraded."
+        require(report.targetExplanations.any { it.target == "github-actions" && it.decision == TargetDecisionKind.BLOCKED }) {
+            "Trace must explain GitHub Actions as blocked without workspace continuity evidence."
         }
         require(report.targetExplanations.any { it.target == "tekton" && it.decision == TargetDecisionKind.BLOCKED }) {
             "Trace must explain Tekton as blocked."
