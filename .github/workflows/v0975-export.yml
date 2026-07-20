@@ -1,0 +1,42 @@
+name: Export v0.9.7.5 Source
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/v0975-export.yml
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/v0.9.7.5-canonical-intent-meaning
+          fetch-depth: 0
+
+      - name: Create source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude=.git \
+            --exclude=.gradle \
+            --exclude=build \
+            --exclude='*/build' \
+            -czf /tmp/flowai-v0975-source.tar.gz .
+          sha256sum /tmp/flowai-v0975-source.tar.gz > /tmp/flowai-v0975-source.sha256
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: flowai-v0975-source
+          path: |
+            /tmp/flowai-v0975-source.tar.gz
+            /tmp/flowai-v0975-source.sha256
+          if-no-files-found: error
