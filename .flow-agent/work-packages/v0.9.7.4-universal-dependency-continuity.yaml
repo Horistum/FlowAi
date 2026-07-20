@@ -8,6 +8,13 @@ forbiddenScope:
   - "No renderer assumption as continuity evidence."
   - "No hidden workspace or state transfer."
   - "No target-specific dependency syntax in Core contracts."
+implementedScope:
+  - "Execution plans carry typed ordering, value, workspace and state dependency relations."
+  - "Module contracts declare continuity providers, requirements and preservation rules."
+  - "The planner resolves direct and preserved continuity paths and records unresolved or ambiguous evidence."
+  - "Materialization authorization reloads canonical module contracts and fails execution candidates closed on invalid continuity evidence."
+  - "Target compatibility uses explicit continuity capabilities instead of inferring continuity from renderer layout."
+  - "GitHub Actions reference evidence is blocked where workspace transfer is not represented explicitly."
 completionEvidence:
   - "Execution plans preserve typed ordering, value, workspace and state relations."
   - "Module contracts declare continuity provision, requirement and preservation."
