@@ -36,6 +36,13 @@
       "config" : { }
     } ],
     "triggers" : [ ],
+    "controlRequirements" : [ ],
+    "controlEvidence" : [ ],
+    "controlDecision" : {
+      "status" : "ALLOWED",
+      "blockingRequirementIds" : [ ],
+      "pendingRequirementIds" : [ ]
+    },
     "steps" : [ {
       "type" : "Action",
       "module" : "git",

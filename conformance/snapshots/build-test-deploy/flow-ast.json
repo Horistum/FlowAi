@@ -71,6 +71,26 @@
       "config" : { }
     } ],
     "triggers" : [ ],
+    "controlRequirements" : [ {
+      "id" : "control.approval.production-approval",
+      "kind" : "APPROVAL",
+      "subject" : "production-approval",
+      "source" : "INTENT_POLICY",
+      "condition" : "environment == 'prod'",
+      "message" : "Production deployment requires approval."
+    } ],
+    "controlEvidence" : [ {
+      "requirementId" : "control.approval.production-approval",
+      "status" : "DYNAMIC",
+      "source" : "DYNAMIC_CONDITION",
+      "detail" : "environment == 'prod'",
+      "enforcementCapabilities" : [ "approval.manual", "condition.evaluate" ]
+    } ],
+    "controlDecision" : {
+      "status" : "PENDING",
+      "blockingRequirementIds" : [ ],
+      "pendingRequirementIds" : [ "control.approval.production-approval" ]
+    },
     "steps" : [ {
       "type" : "Action",
       "module" : "git",

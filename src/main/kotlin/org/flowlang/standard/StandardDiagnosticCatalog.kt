@@ -54,6 +54,8 @@ object StandardDiagnosticCatalog {
         code("SAFETY_DESTRUCTIVE_OPERATION", "safety", "error", "intent-capability-validation-report.json", "Destructive operation lacks sufficient safety mitigation."),
         code("SAFETY_EXTERNAL_SIDE_EFFECT", "safety", "error", "intent-capability-validation-report.json", "External side effect lacks approval or notification guardrail."),
         code("SAFETY_CLEANUP_REQUIRES_RETENTION", "safety", "error", "intent-capability-validation-report.json", "Cleanup operation requires explicit retention or safety rule."),
+        code("CONTROL_EVIDENCE_DYNAMIC", "safety", "warning", "intent-capability-validation-report.json", "Control evidence is dynamic and requires explicit materialization enforcement capabilities."),
+        code("SAFETY_POLICY_EVIDENCE_UNKNOWN", "safety", "error", "intent-capability-validation-report.json", "Control policy evidence is missing or cannot be evaluated safely."),
 
         code("TARGET_UNSUPPORTED_FEATURE", "target", "error", "execution-readiness-report.json", "Target cannot represent a required feature."),
         code("TARGET_STRICT_PARTIAL_FEATURE", "target", "error", "execution-readiness-report.json", "Strict mode treats partial target support as blocking."),

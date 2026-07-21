@@ -1,6 +1,8 @@
 package org.flowlang.intent
 
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.controls.CanonicalControlRequirementAuthority
+import org.flowlang.controls.ControlAssessment
 import org.flowlang.modules.SchemaField
 import org.flowlang.standard.StandardCapabilityContracts
 
@@ -13,7 +15,6 @@ import org.flowlang.standard.StandardCapabilityContracts
  * forcing them to debug platform-specific runtime failures.
  */
 class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
-    private val safetyPolicyValidator = SafetyPolicyValidator()
 
     fun validate(intent: IntentDocument): IntentValidationReport {
         val issues = mutableListOf<IntentValidationIssue>()
@@ -70,8 +71,8 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
             }
         }
 
-        issues += MandatorySafetyPolicy.validate(intent)
-        issues += safetyPolicyValidator.validate(intent)
+        val controlAssessment = CanonicalControlRequirementAuthority.assess(intent)
+        issues += CanonicalControlRequirementAuthority.validationIssues(controlAssessment)
 
         resolution.bindings.flatMap { binding ->
             binding.issues.map { issue -> err(issue.code, issue.message) }
@@ -108,7 +109,8 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
             valid = issues.none { it.level == "error" },
             issues = issues,
             meaning = resolution.meaning,
-            bindings = resolution.bindings
+            bindings = resolution.bindings,
+            controlAssessment = controlAssessment
         )
     }
 
@@ -201,7 +203,8 @@ data class IntentValidationReport(
     val valid: Boolean,
     val issues: List<IntentValidationIssue> = emptyList(),
     val meaning: CanonicalIntentMeaning,
-    val bindings: List<IntentBindingEvidence> = emptyList()
+    val bindings: List<IntentBindingEvidence> = emptyList(),
+    val controlAssessment: ControlAssessment = ControlAssessment()
 ) {
     fun assertValid() {
         if (!valid) error("Intent validation failed: " + issues.filter { it.level == "error" }.joinToString { it.code + ": " + it.message })

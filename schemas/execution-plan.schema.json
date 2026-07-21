@@ -70,6 +70,21 @@
       "items": {
         "$ref": "#/$defs/dependencyRelation"
       }
+    },
+    "controlRequirements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/controlRequirement"
+      }
+    },
+    "controlEvidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/controlEvidence"
+      }
+    },
+    "controlDecision": {
+      "$ref": "#/$defs/controlDecision"
     }
   },
   "$defs": {
@@ -522,6 +537,141 @@
             "string",
             "null"
           ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "controlRequirement": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "subject",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "APPROVAL",
+            "DRY_RUN",
+            "BACKUP",
+            "ROLLBACK_PLAN",
+            "CHANGE_TICKET",
+            "RETENTION_GUARD",
+            "CLARIFICATION",
+            "RISK_MITIGATION",
+            "SAFETY_GUARD",
+            "EXTERNAL_EFFECT_REVIEW",
+            "POLICY_EVALUATION"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "enum": [
+            "CANONICAL_CAPABILITY",
+            "INTENT_POLICY",
+            "MODULE_CONTRACT",
+            "ENVIRONMENT_POLICY",
+            "FLOW_SOURCE"
+          ]
+        },
+        "condition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "controlEvidence": {
+      "type": "object",
+      "required": [
+        "requirementId",
+        "status",
+        "source",
+        "enforcementCapabilities"
+      ],
+      "properties": {
+        "requirementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "SATISFIED",
+            "UNSATISFIED",
+            "UNKNOWN",
+            "DYNAMIC"
+          ]
+        },
+        "source": {
+          "enum": [
+            "AUTHORED_STEP",
+            "AUTHORED_PARAMETER",
+            "AUTHORED_POLICY",
+            "AUTHORED_FAILURE_POLICY",
+            "AST_SAFETY_DECLARATION",
+            "MODULE_CONTRACT",
+            "DYNAMIC_CONDITION",
+            "MISSING"
+          ]
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enforcementCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "controlDecision": {
+      "type": "object",
+      "required": [
+        "status",
+        "blockingRequirementIds",
+        "pendingRequirementIds"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "ALLOWED",
+            "BLOCKED",
+            "PENDING"
+          ]
+        },
+        "blockingRequirementIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pendingRequirementIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false

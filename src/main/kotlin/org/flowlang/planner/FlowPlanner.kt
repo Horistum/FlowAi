@@ -4,6 +4,7 @@ import org.flowlang.ast.*
 import org.flowlang.effects.CanonicalIntentEffectAuthority
 import org.flowlang.effects.ModuleEffectCanonicalizer
 import org.flowlang.effects.SemanticEffect
+import org.flowlang.controls.PlanningControlAuthority
 import org.flowlang.intent.StandardCapability
 import org.flowlang.modules.ContinuityChannel
 import org.flowlang.modules.ContinuityContract
@@ -31,14 +32,27 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             listOf(TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(it.steps, ctx)))
         } ?: emptyList()
         val allNodes = nodes + tail
+        val controlAssessment = PlanningControlAuthority.assess(
+            canonicalRequirements = document.flow.controlRequirements,
+            canonicalEvidence = document.flow.controlEvidence,
+            nodes = allNodes,
+            modules = registry
+        )
         return ExecutionPlan(
             flowName = document.flow.name,
             inputs = document.flow.input.map { it.toPlanInput() },
             triggers = document.flow.triggers.map { it.toPlanTrigger() },
             outputs = ctx.outputs.toList(),
             dependencies = collectDependencies(allNodes),
-            requiredCapabilities = (collectRequiredCapabilities(allNodes) + document.flow.triggers.flatMap { it.requiredCapabilities() }).distinct(),
+            requiredCapabilities = (
+                collectRequiredCapabilities(allNodes) +
+                    document.flow.triggers.flatMap { it.requiredCapabilities() } +
+                    PlanningControlAuthority.requiredEnforcementCapabilities(controlAssessment)
+                ).distinct(),
             assumptions = ctx.assumptions.toList(),
+            controlRequirements = controlAssessment.requirements,
+            controlEvidence = controlAssessment.evidence,
+            controlDecision = controlAssessment.decision,
             nodes = allNodes,
             dependencyRelations = ctx.dependencyRelations.distinctBy(PlanDependencyRelations::relationKey)
         )

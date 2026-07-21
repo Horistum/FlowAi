@@ -1,0 +1,38 @@
+version: "0.9.7.7"
+name: "Universal Control and Policy Requirements"
+stream: core
+status: completed
+objective: "Represent control and safety requirements independently from implementation evidence and authorization decisions."
+universalInvariant: "Control meaning is implementation-independent."
+forbiddenScope:
+  - "No unknown evidence treated as safe."
+  - "No target inventory or renderer layout as control authority."
+  - "No semantic effect treated as implicit approval or policy evidence."
+  - "No collapsed requirement, evidence and decision contract."
+implementationStatus: "implemented and validated on the implementation head; exact completion head validation required"
+implementedScope:
+  - "Canonical intent derives target-neutral control requirements before implementation binding."
+  - "Requirements, evidence and authorization decisions are represented as separate typed contracts."
+  - "Known, unknown, unsatisfied and dynamic evidence remain explicit through AST and execution planning."
+  - "Module safety contracts may add obligations but cannot rewrite canonical intent requirements."
+  - "Materialization re-derives canonical and module-owned requirements and rejects omitted, forged or unresolved control evidence."
+  - "Dynamic evidence declares explicit enforcement capabilities and remains pending rather than silently safe."
+  - "Approval policy declarations no longer count as proof that an approval mechanism exists."
+  - "Legacy safety validators remain compatibility facades over one canonical control authority."
+validation:
+  implementationHead: "b0cac07630df7270912c2db0fb528d5f6ed663a3"
+  flowCiRun: "29812084855"
+  flowCiNumber: "1787"
+  result: passed
+  evidence:
+    - "Flow Agent tooling and structure validation passed."
+    - "Cache-aware offline tests and conformance passed."
+    - "Clean compilation and the full test suite passed."
+    - "Full conformance and executable reference evidence passed."
+    - "Both committed reference snapshot bundles were regenerated through the production generator."
+finalValidation: "required on the exact completion metadata head"
+completionEvidence:
+  - "Known, unknown and dynamic policy cases use one control model."
+  - "Equivalent intent produces equivalent control requirements across inventories and bindings."
+  - "Unknown or contradictory evidence cannot authorize materialization."
+  - "The complete unmodified Flow CI workflow passes compilation, tests, conformance and executable reference evidence."

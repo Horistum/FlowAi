@@ -2,6 +2,8 @@ package org.flowlang.intent
 
 import org.flowlang.effects.CanonicalIntentEffectAuthority
 import org.flowlang.effects.SemanticEffect
+import org.flowlang.controls.CanonicalControlRequirementAuthority
+import org.flowlang.controls.ControlRequirement
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.standard.StandardCapabilityContracts
@@ -21,6 +23,7 @@ data class CanonicalIntentMeaning(
     val inputs: List<IntentInput> = emptyList(),
     val triggers: List<IntentTrigger> = emptyList(),
     val workflows: List<CanonicalIntentWorkflow> = emptyList(),
+    val controlRequirements: List<ControlRequirement> = emptyList(),
     val policies: List<IntentPolicy> = emptyList(),
     val failure: IntentFailurePolicy = IntentFailurePolicy()
 )
@@ -221,6 +224,7 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
                     }
                 )
             },
+            controlRequirements = CanonicalControlRequirementAuthority.requirementsFor(intent),
             policies = intent.policies,
             failure = intent.failure
         )

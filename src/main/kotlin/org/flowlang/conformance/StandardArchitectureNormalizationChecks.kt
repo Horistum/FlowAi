@@ -4,6 +4,9 @@ import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.Json
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.effects.CanonicalIntentEffectAuthority
+import org.flowlang.controls.CanonicalControlRequirementAuthority
+import org.flowlang.controls.ControlDecisionStatus
+import org.flowlang.controls.ControlEvidenceStatus
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
 import org.flowlang.effects.ResourceState
@@ -42,6 +45,7 @@ internal class StandardArchitectureNormalizationChecks(
         checkStandardCapabilityContracts(),
         checkCanonicalIntentMeaning(),
         checkUniversalEffectModel(),
+        checkUniversalControlPolicyRequirements(),
         checkIntentDesignReport(),
         checkCorePackagesDoNotImportJackson(),
         checkModulesDoNotOwnTargetRendering(),
@@ -135,6 +139,53 @@ internal class StandardArchitectureNormalizationChecks(
 
         val read = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.CHECKOUT).single()
         require(read.operation == EffectOperation.READ && read.transition == null)
+    }
+
+    private fun checkUniversalControlPolicyRequirements(): ConformanceCheck = runCheck("intent.controls.universal-policy-requirements") {
+        val known = IntentDocument(
+            name = "known-control",
+            workflows = listOf(IntentWorkflow(
+                name = "migration",
+                kind = IntentWorkflowKind.CUSTOM,
+                steps = listOf(
+                    IntentStep(id = "backup", capability = StandardCapability.BACKUP),
+                    IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE)
+                )
+            ))
+        )
+        val knownAssessment = CanonicalControlRequirementAuthority.assess(known)
+        require(knownAssessment.decision.status == ControlDecisionStatus.ALLOWED)
+        require(knownAssessment.evidence.all { it.status == ControlEvidenceStatus.SATISFIED })
+
+        val unknown = known.copy(
+            name = "unknown-control",
+            workflows = listOf(IntentWorkflow(
+                name = "migration",
+                kind = IntentWorkflowKind.CUSTOM,
+                steps = listOf(IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE))
+            ))
+        )
+        val unknownAssessment = CanonicalControlRequirementAuthority.assess(unknown)
+        require(unknownAssessment.decision.status == ControlDecisionStatus.BLOCKED)
+        require(unknownAssessment.evidence.any { it.status == ControlEvidenceStatus.UNKNOWN })
+
+        val dynamic = IntentDocument(
+            name = "dynamic-control",
+            workflows = listOf(IntentWorkflow(
+                name = "delivery",
+                kind = IntentWorkflowKind.DEPLOY,
+                steps = listOf(IntentStep(id = "approve", capability = StandardCapability.APPROVE))
+            )),
+            policies = listOf(org.flowlang.intent.IntentPolicy(
+                name = "production-approval",
+                type = org.flowlang.intent.IntentPolicyType.APPROVAL,
+                condition = "environment == 'prod'"
+            ))
+        )
+        val dynamicAssessment = CanonicalControlRequirementAuthority.assess(dynamic)
+        require(dynamicAssessment.decision.status == ControlDecisionStatus.PENDING)
+        require(dynamicAssessment.evidence.single().status == ControlEvidenceStatus.DYNAMIC)
+        require(dynamicAssessment.evidence.single().enforcementCapabilities.containsAll(listOf("approval.manual", "condition.evaluate")))
     }
 
     private fun checkIntentDesignReport(): ConformanceCheck = runCheck("intent.design-report") {

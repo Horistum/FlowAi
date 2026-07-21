@@ -21,6 +21,13 @@
   "requiredCapabilities" : [ "task.execute", "git.checkout", "docker.build", "container.image", "continuity.workspace" ],
   "targetHints" : { },
   "assumptions" : [ ],
+  "controlRequirements" : [ ],
+  "controlEvidence" : [ ],
+  "controlDecision" : {
+    "status" : "ALLOWED",
+    "blockingRequirementIds" : [ ],
+    "pendingRequirementIds" : [ ]
+  },
   "nodes" : [ {
     "id" : "git_checkout_1",
     "kind" : "task",

@@ -13,7 +13,7 @@ versionBoundary:
 
 roadmapIndex:
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.6.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.7.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
   historicalRoadmaps:
@@ -24,6 +24,7 @@ roadmapIndex:
     - ".flow-agent/roadmap-core-v0.9.7.3.yaml"
     - ".flow-agent/roadmap-core-v0.9.7.4.yaml"
     - ".flow-agent/roadmap-core-v0.9.7.5.yaml"
+    - ".flow-agent/roadmap-core-v0.9.7.6.yaml"
 
 rules:
   - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
@@ -57,7 +58,7 @@ architectureConstitution:
     - "No governance signal whose status contradicts the property measured."
 
 currentDecision:
-  completedItem: "0.9.7.6"
-  completedItemName: "Universal Effect and State Transition Model"
-  nextCoreItem: "0.9.7.7"
-  nextCoreItemName: "Universal Control and Policy Requirements"
+  completedItem: "0.9.7.7"
+  completedItemName: "Universal Control and Policy Requirements"
+  nextCoreItem: "0.9.7.8"
+  nextCoreItemName: "Abstract Execution Topology Model"
