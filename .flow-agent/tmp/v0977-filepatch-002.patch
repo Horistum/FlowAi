@@ -1,0 +1,354 @@
+diff --git a/src/main/kotlin/org/flowlang/controls/ControlContracts.kt b/src/main/kotlin/org/flowlang/controls/ControlContracts.kt
+new file mode 100644
+index 0000000..03cb558
+--- /dev/null
++++ b/src/main/kotlin/org/flowlang/controls/ControlContracts.kt
+@@ -0,0 +1,148 @@
++package org.flowlang.controls
++
++/**
++ * Target-neutral control requirements, evidence and decisions.
++ *
++ * A requirement states what must be controlled. Evidence states what is known
++ * about that requirement. A decision states whether planning may continue.
++ * Keeping these concepts separate prevents a policy declaration from being
++ * mistaken for proof that its control was actually provided.
++ */
++enum class ControlRequirementKind {
++    APPROVAL,
++    DRY_RUN,
++    BACKUP,
++    ROLLBACK_PLAN,
++    CHANGE_TICKET,
++    RETENTION_GUARD,
++    CLARIFICATION,
++    RISK_MITIGATION,
++    SAFETY_GUARD,
++    EXTERNAL_EFFECT_REVIEW,
++    POLICY_EVALUATION
++}
++
++enum class ControlRequirementSource {
++    CANONICAL_CAPABILITY,
++    INTENT_POLICY,
++    MODULE_CONTRACT,
++    ENVIRONMENT_POLICY,
++    FLOW_SOURCE
++}
++
++data class ControlRequirement(
++    val id: String,
++    val kind: ControlRequirementKind,
++    val subject: String,
++    val source: ControlRequirementSource,
++    val condition: String? = null,
++    val message: String? = null
++) {
++    init {
++        require(id.isNotBlank()) { "Control requirement id must not be blank." }
++        require(subject.isNotBlank()) { "Control requirement subject must not be blank." }
++    }
++}
++
++enum class ControlEvidenceStatus {
++    SATISFIED,
++    UNSATISFIED,
++    UNKNOWN,
++    DYNAMIC
++}
++
++enum class ControlEvidenceSource {
++    AUTHORED_STEP,
++    AUTHORED_PARAMETER,
++    AUTHORED_POLICY,
++    AUTHORED_FAILURE_POLICY,
++    AST_SAFETY_DECLARATION,
++    MODULE_CONTRACT,
++    DYNAMIC_CONDITION,
++    MISSING
++}
++
++data class ControlEvidence(
++    val requirementId: String,
++    val status: ControlEvidenceStatus,
++    val source: ControlEvidenceSource,
++    val detail: String? = null,
++    val enforcementCapabilities: List<String> = emptyList()
++) {
++    init {
++        require(requirementId.isNotBlank()) { "Control evidence requirement id must not be blank." }
++        require(enforcementCapabilities.none(String::isBlank)) {
++            "Control evidence enforcement capability must not be blank."
++        }
++        require(status != ControlEvidenceStatus.DYNAMIC || enforcementCapabilities.isNotEmpty()) {
++            "Dynamic control evidence must declare its enforcement capabilities."
++        }
++    }
++}
++
++enum class ControlDecisionStatus {
++    ALLOWED,
++    BLOCKED,
++    PENDING
++}
++
++data class ControlDecision(
++    val status: ControlDecisionStatus,
++    val blockingRequirementIds: List<String> = emptyList(),
++    val pendingRequirementIds: List<String> = emptyList()
++)
++
++data class ControlAssessment(
++    val requirements: List<ControlRequirement> = emptyList(),
++    val evidence: List<ControlEvidence> = emptyList(),
++    val decision: ControlDecision = ControlDecision(ControlDecisionStatus.ALLOWED)
++)
++
++object ControlDecisionAuthority {
++    fun evaluate(
++        requirements: List<ControlRequirement>,
++        evidence: List<ControlEvidence>
++    ): ControlDecision {
++        require(requirements.distinctBy(ControlRequirement::id).size == requirements.size) {
++            "Control requirements must use unique ids."
++        }
++        require(evidence.groupBy(ControlEvidence::requirementId).values.none { it.size > 1 }) {
++            "Control requirements must have at most one evidence record."
++        }
++        val evidenceById = evidence.associateBy(ControlEvidence::requirementId)
++        require(evidenceById.keys.all { id -> requirements.any { it.id == id } }) {
++            "Control evidence must reference a declared requirement."
++        }
++        val blocking = mutableListOf<String>()
++        val pending = mutableListOf<String>()
++        requirements.forEach { requirement ->
++            when (evidenceById[requirement.id]?.status ?: ControlEvidenceStatus.UNKNOWN) {
++                ControlEvidenceStatus.SATISFIED -> Unit
++                ControlEvidenceStatus.UNSATISFIED,
++                ControlEvidenceStatus.UNKNOWN -> blocking += requirement.id
++                ControlEvidenceStatus.DYNAMIC -> pending += requirement.id
++            }
++        }
++        return when {
++            blocking.isNotEmpty() -> ControlDecision(
++                status = ControlDecisionStatus.BLOCKED,
++                blockingRequirementIds = blocking.sorted(),
++                pendingRequirementIds = pending.sorted()
++            )
++            pending.isNotEmpty() -> ControlDecision(
++                status = ControlDecisionStatus.PENDING,
++                pendingRequirementIds = pending.sorted()
++            )
++            else -> ControlDecision(ControlDecisionStatus.ALLOWED)
++        }
++    }
++
++    fun assessment(
++        requirements: List<ControlRequirement>,
++        evidence: List<ControlEvidence>
++    ): ControlAssessment = ControlAssessment(
++        requirements = requirements,
++        evidence = evidence,
++        decision = evaluate(requirements, evidence)
++    )
++}
+diff --git a/src/main/kotlin/org/flowlang/controls/PlanningControlAuthority.kt b/src/main/kotlin/org/flowlang/controls/PlanningControlAuthority.kt
+new file mode 100644
+index 0000000..1764e10
+--- /dev/null
++++ b/src/main/kotlin/org/flowlang/controls/PlanningControlAuthority.kt
+@@ -0,0 +1,194 @@
++package org.flowlang.controls
++
++import org.flowlang.modules.ModuleRegistry
++import org.flowlang.planner.ApprovalNode
++import org.flowlang.planner.ConditionNode
++import org.flowlang.planner.ExecutionPlan
++import org.flowlang.planner.LoopNode
++import org.flowlang.planner.MatchPlanNode
++import org.flowlang.planner.ParallelGroupNode
++import org.flowlang.planner.PlanNode
++import org.flowlang.planner.RetryGroupNode
++import org.flowlang.planner.TaskNode
++import org.flowlang.planner.TryPlanNode
++
++/**
++ * Adds controls owned by canonical module contracts and Flow source declarations.
++ * Intent-owned requirements remain unchanged; module inventory can add concrete
++ * obligations but cannot rewrite or remove canonical intent meaning.
++ */
++object PlanningControlAuthority {
++    fun assess(
++        canonicalRequirements: List<ControlRequirement>,
++        canonicalEvidence: List<ControlEvidence>,
++        nodes: List<PlanNode>,
++        modules: ModuleRegistry
++    ): ControlAssessment {
++        val requirements = canonicalRequirements.toMutableList()
++        val evidence = canonicalEvidence.toMutableList()
++        flatten(nodes).filterIsInstance<TaskNode>().forEach { task ->
++            val contract = modules.findAction(task.module, task.action)?.safety ?: return@forEach
++            if (contract.requiresApproval || contract.destructive) {
++                addTaskRequirement(
++                    requirements,
++                    evidence,
++                    task,
++                    ControlRequirementKind.APPROVAL,
++                    approvalEvidence(task, canonicalRequirements, canonicalEvidence, nodes)
++                )
++            }
++            if (contract.requiresSafety) {
++                addTaskRequirement(
++                    requirements,
++                    evidence,
++                    task,
++                    ControlRequirementKind.SAFETY_GUARD,
++                    safetyEvidence(task)
++                )
++            }
++        }
++        return ControlDecisionAuthority.assessment(
++            requirements = requirements.distinctBy(ControlRequirement::id).sortedBy(ControlRequirement::id),
++            evidence = evidence.distinctBy(ControlEvidence::requirementId).sortedBy(ControlEvidence::requirementId)
++        )
++    }
++
++    fun requiredEnforcementCapabilities(assessment: ControlAssessment): List<String> =
++        assessment.evidence
++            .filter { it.status == ControlEvidenceStatus.DYNAMIC }
++            .flatMap(ControlEvidence::enforcementCapabilities)
++            .distinct()
++
++    fun rederivedModuleRequirements(nodes: List<PlanNode>, modules: ModuleRegistry): List<ControlRequirement> =
++        assess(emptyList(), emptyList(), nodes, modules).requirements
++
++    private fun addTaskRequirement(
++        requirements: MutableList<ControlRequirement>,
++        evidence: MutableList<ControlEvidence>,
++        task: TaskNode,
++        kind: ControlRequirementKind,
++        taskEvidence: (String) -> ControlEvidence
++    ) {
++        val id = taskRequirementId(task, kind)
++        requirements += ControlRequirement(
++            id = id,
++            kind = kind,
++            subject = "${task.module}.${task.action}@${task.id}",
++            source = ControlRequirementSource.MODULE_CONTRACT
++        )
++        evidence += taskEvidence(id)
++    }
++
++    private fun approvalEvidence(
++        task: TaskNode,
++        canonicalRequirements: List<ControlRequirement>,
++        canonicalEvidence: List<ControlEvidence>,
++        nodes: List<PlanNode>
++    ): (String) -> ControlEvidence = { id ->
++        val safety = task.safety?.trim().orEmpty()
++        when {
++            safety.startsWith("requiresApproval", ignoreCase = true) -> ControlEvidence(
++                requirementId = id,
++                status = ControlEvidenceStatus.SATISFIED,
++                source = ControlEvidenceSource.AST_SAFETY_DECLARATION,
++                detail = safety
++            )
++            safety.startsWith("onlyIf", ignoreCase = true) -> ControlEvidence(
++                requirementId = id,
++                status = ControlEvidenceStatus.DYNAMIC,
++                source = ControlEvidenceSource.DYNAMIC_CONDITION,
++                detail = safety,
++                enforcementCapabilities = listOf("condition.evaluate")
++            )
++            else -> {
++                val approvalIds = canonicalRequirements
++                    .filter { it.kind == ControlRequirementKind.APPROVAL }
++                    .map(ControlRequirement::id)
++                    .toSet()
++                val canonical = canonicalEvidence.firstOrNull {
++                    it.requirementId in approvalIds && it.status in setOf(ControlEvidenceStatus.SATISFIED, ControlEvidenceStatus.DYNAMIC)
++                }
++                when {
++                    canonical != null -> canonical.copy(requirementId = id)
++                    hasConditionalApproval(nodes) -> ControlEvidence(
++                        requirementId = id,
++                        status = ControlEvidenceStatus.DYNAMIC,
++                        source = ControlEvidenceSource.DYNAMIC_CONDITION,
++                        detail = "Conditional approval node",
++                        enforcementCapabilities = listOf("approval.manual", "condition.evaluate")
++                    )
++                    flatten(nodes).any { it is ApprovalNode } -> ControlEvidence(
++                        requirementId = id,
++                        status = ControlEvidenceStatus.SATISFIED,
++                        source = ControlEvidenceSource.AUTHORED_STEP,
++                        detail = "Approval node"
++                    )
++                    else -> ControlEvidence(
++                        requirementId = id,
++                        status = ControlEvidenceStatus.UNKNOWN,
++                        source = ControlEvidenceSource.MISSING,
++                        detail = "Module contract requires approval control evidence."
++                    )
++                }
++            }
++        }
++    }
++
++    private fun safetyEvidence(task: TaskNode): (String) -> ControlEvidence = { id ->
++        val safety = task.safety?.trim().orEmpty()
++        when {
++            safety.startsWith("onlyIf", ignoreCase = true) -> ControlEvidence(
++                requirementId = id,
++                status = ControlEvidenceStatus.DYNAMIC,
++                source = ControlEvidenceSource.DYNAMIC_CONDITION,
++                detail = safety,
++                enforcementCapabilities = listOf("condition.evaluate")
++            )
++            safety.isNotBlank() -> ControlEvidence(
++                requirementId = id,
++                status = ControlEvidenceStatus.SATISFIED,
++                source = ControlEvidenceSource.AST_SAFETY_DECLARATION,
++                detail = safety
++            )
++            else -> ControlEvidence(
++                requirementId = id,
++                status = ControlEvidenceStatus.UNKNOWN,
++                source = ControlEvidenceSource.MISSING,
++                detail = "Module contract requires explicit safety control evidence."
++            )
++        }
++    }
++
++    private fun hasConditionalApproval(nodes: List<PlanNode>): Boolean = nodes.any { node ->
++        when (node) {
++            is ConditionNode -> flatten(node.then + node.otherwise).any { it is ApprovalNode } ||
++                hasConditionalApproval(node.then) || hasConditionalApproval(node.otherwise)
++            is LoopNode -> hasConditionalApproval(node.body)
++            is ParallelGroupNode -> node.branches.any { hasConditionalApproval(it.steps) }
++            is MatchPlanNode -> node.cases.any { hasConditionalApproval(it.steps) } ||
++                hasConditionalApproval(node.errorCase) || hasConditionalApproval(node.defaultSteps)
++            is RetryGroupNode -> hasConditionalApproval(node.body)
++            is TryPlanNode -> hasConditionalApproval(node.body) || hasConditionalApproval(node.errorHandler)
++            else -> false
++        }
++    }
++
++    private fun taskRequirementId(task: TaskNode, kind: ControlRequirementKind): String =
++        "control.${kind.name.lowercase()}.task.${canonicalId(task.id)}"
++
++    private fun canonicalId(value: String): String = value.trim().lowercase()
++        .replace(Regex("[^a-z0-9]+"), "-")
++        .trim('-')
++
++    private fun flatten(nodes: List<PlanNode>): List<PlanNode> = nodes.flatMap { node ->
++        listOf(node) + when (node) {
++            is ConditionNode -> flatten(node.then) + flatten(node.otherwise)
++            is LoopNode -> flatten(node.body)
++            is ParallelGroupNode -> node.branches.flatMap { flatten(it.steps) }
++            is MatchPlanNode -> node.cases.flatMap { flatten(it.steps) } + flatten(node.errorCase) + flatten(node.defaultSteps)
++            is RetryGroupNode -> flatten(node.body)
++            is TryPlanNode -> flatten(node.body) + flatten(node.errorHandler)
++            else -> emptyList()
++        }
++    }
++}
