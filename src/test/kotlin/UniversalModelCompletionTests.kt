@@ -19,6 +19,7 @@ import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
 import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.effects.ModuleEffectCanonicalizer
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentScheduleKind
@@ -34,6 +35,7 @@ import org.flowlang.intent.StandardCapability
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.TaskNode
+import org.flowlang.modules.ModuleRegistry
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.BuiltInTargetProjections
@@ -55,7 +57,8 @@ class UniversalModelCompletionTests {
                     action = "execute",
                     target = "standard",
                     params = mapOf("operation" to "test"),
-                    requiredCapabilities = listOf("standard.execute")
+                    requiredCapabilities = listOf("standard.execute"),
+                    effectModel = moduleEffects("standard", "execute")
                 )
             )
         )
@@ -288,9 +291,14 @@ class UniversalModelCompletionTests {
                 action = "checkout",
                 target = "source",
                 params = mapOf("url" to "https://example.invalid/repo.git", "branch" to "main"),
-                requiredCapabilities = listOf("git.checkout")
+                requiredCapabilities = listOf("git.checkout"),
+                effectModel = moduleEffects("git", "checkout")
             )
         )
+    )
+
+    private fun moduleEffects(module: String, action: String) = ModuleEffectCanonicalizer.canonicalize(
+        ModuleRegistry().requireModule(module).actions.getValue(action).effects
     )
 
     private fun rendererSources(): String = listOf(

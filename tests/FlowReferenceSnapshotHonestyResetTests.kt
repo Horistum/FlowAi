@@ -15,6 +15,8 @@ import org.flowlang.conformance.ReferenceSnapshotSetState
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
+import org.flowlang.effects.ModuleEffectCanonicalizer
+import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
 import org.flowlang.standard.FlowStandardVersions
@@ -35,7 +37,8 @@ class FlowReferenceSnapshotHonestyResetTests {
                     params = mapOf(
                         "url" to "https://example.invalid/repository.git",
                         "branch" to "main"
-                    )
+                    ),
+                    effectModel = moduleEffects("git", "checkout")
                 )
             )
         )
@@ -120,4 +123,8 @@ class FlowReferenceSnapshotHonestyResetTests {
         assertEquals("jenkins.review.yaml", ReferenceSnapshotHonesty.projectionFile("jenkins", TargetRenderMode.REVIEW_ONLY))
         assertEquals("tekton.blocked.json", ReferenceSnapshotHonesty.projectionFile("tekton", TargetRenderMode.FAIL_FAST))
     }
+    private fun moduleEffects(module: String, action: String) = ModuleEffectCanonicalizer.canonicalize(
+        ModuleRegistry().requireModule(module).actions.getValue(action).effects
+    )
+
 }

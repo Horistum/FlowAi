@@ -60,11 +60,11 @@ class UniversalEffectStateTransitionModelTests {
         assertEquals(ResourceState.PRESENT, create.transition?.to)
         assertTrue(create.mutatesState)
 
-        val update = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
-        assertEquals(EffectOperation.UPDATE, update.operation)
-        assertEquals(ResourceState.PRESENT, update.transition?.from)
-        assertEquals(ResourceState.PRESENT, update.transition?.to)
-        assertTrue(update.mutatesState)
+        val reconcile = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
+        assertEquals(EffectOperation.UPSERT, reconcile.operation)
+        assertEquals(ResourceState.UNKNOWN, reconcile.transition?.from)
+        assertEquals(ResourceState.PRESENT, reconcile.transition?.to)
+        assertTrue(reconcile.mutatesState)
 
         val read = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.CHECKOUT).single()
         assertEquals(EffectOperation.READ, read.operation)

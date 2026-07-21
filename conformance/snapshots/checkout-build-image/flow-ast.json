@@ -60,6 +60,14 @@
         "type" : "ResultBinding",
         "name" : "checkout"
       },
+      "semanticCapability" : "CHECKOUT",
+      "semanticEffects" : [ {
+        "domain" : "SOFTWARE_DELIVERY",
+        "operation" : "READ",
+        "resource" : "source.repository",
+        "external" : true,
+        "sourceCapability" : "CHECKOUT"
+      } ],
       "dependsOn" : [ ]
     }, {
       "type" : "Action",
@@ -102,6 +110,18 @@
         "type" : "ResultBinding",
         "name" : "build_image"
       },
+      "semanticCapability" : "BUILD_IMAGE",
+      "semanticEffects" : [ {
+        "domain" : "SOFTWARE_DELIVERY",
+        "operation" : "CREATE",
+        "resource" : "software.image",
+        "transition" : {
+          "from" : "ABSENT",
+          "to" : "PRESENT"
+        },
+        "external" : true,
+        "sourceCapability" : "BUILD_IMAGE"
+      } ],
       "dependsOn" : [ "checkout" ]
     } ]
   },
