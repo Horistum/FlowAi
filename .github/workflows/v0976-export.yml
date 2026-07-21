@@ -1,0 +1,38 @@
+name: Export v0.9.7.6 Source
+
+on:
+  push:
+    branches:
+      - agent/v0.9.7.6-universal-effect-state-transition
+    paths:
+      - .github/workflows/v0976-export.yml
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+
+      - name: Package repository source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude=.git \
+            --exclude=.gradle \
+            --exclude=build \
+            --exclude='**/build' \
+            -czf /tmp/flow-v0976-source.tar.gz .
+          sha256sum /tmp/flow-v0976-source.tar.gz
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: v0976-source-export
+          path: /tmp/flow-v0976-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
