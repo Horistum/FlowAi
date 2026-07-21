@@ -1,0 +1,888 @@
+diff --git a/schemas/ast.schema.json b/schemas/ast.schema.json
+index 60a2ea8..c3f1f47 100644
+--- a/schemas/ast.schema.json
++++ b/schemas/ast.schema.json
+@@ -3,39 +3,264 @@
+   "$id": "https://flowlang.dev/schemas/ast/2.0/ast.schema.json",
+   "title": "Flow AST v2.0",
+   "type": "object",
+-  "required": ["astVersion", "sourceVersion", "kind", "imports", "flow"],
++  "required": [
++    "astVersion",
++    "sourceVersion",
++    "kind",
++    "imports",
++    "flow"
++  ],
+   "properties": {
+-    "astVersion": {"const":"2.0"},
+-    "sourceVersion": {"type":"string"},
+-    "kind": {"const":"FlowDocument"},
+-    "imports": {"type":"array"},
++    "astVersion": {
++      "const": "2.0"
++    },
++    "sourceVersion": {
++      "type": "string"
++    },
++    "kind": {
++      "const": "FlowDocument"
++    },
++    "imports": {
++      "type": "array"
++    },
+     "flow": {
+-      "type":"object",
+-      "required":["name","triggers","steps"],
++      "type": "object",
++      "required": [
++        "name",
++        "triggers",
++        "steps"
++      ],
+       "properties": {
+-        "name":{"type":"string"},
+-        "input":{"type":"array"},
+-        "vars":{"type":"array"},
+-        "systems":{"type":"array"},
+-        "triggers":{"type":"array","items":{"$ref":"#/$defs/trigger"}},
+-        "steps":{"type":"array"},
+-        "errorHandler":{"type":["object","null"]}
++        "name": {
++          "type": "string"
++        },
++        "input": {
++          "type": "array"
++        },
++        "vars": {
++          "type": "array"
++        },
++        "systems": {
++          "type": "array"
++        },
++        "triggers": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/trigger"
++          }
++        },
++        "steps": {
++          "type": "array"
++        },
++        "errorHandler": {
++          "type": [
++            "object",
++            "null"
++          ]
++        },
++        "controlRequirements": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/controlRequirement"
++          }
++        },
++        "controlEvidence": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/controlEvidence"
++          }
++        },
++        "controlDecision": {
++          "$ref": "#/$defs/controlDecision"
++        }
+       },
+       "additionalProperties": true
+     },
+-    "metadata": {"type":"object"}
++    "metadata": {
++      "type": "object"
++    }
+   },
+   "$defs": {
+     "trigger": {
+-      "type":"object",
+-      "required":["type","id","triggerType","workflows"],
++      "type": "object",
++      "required": [
++        "type",
++        "id",
++        "triggerType",
++        "workflows"
++      ],
+       "properties": {
+-        "type":{"const":"Trigger"}, "id":{"type":"string"},
+-        "triggerType":{"enum":["MANUAL","SCHEDULE","EVENT","WEBHOOK"]},
+-        "workflows":{"type":"array","items":{"type":"string"}},
+-        "schedule":{"type":["object","null"]}, "event":{"type":["string","null"]},
+-        "params":{"type":"object"}
++        "type": {
++          "const": "Trigger"
++        },
++        "id": {
++          "type": "string"
++        },
++        "triggerType": {
++          "enum": [
++            "MANUAL",
++            "SCHEDULE",
++            "EVENT",
++            "WEBHOOK"
++          ]
++        },
++        "workflows": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        },
++        "schedule": {
++          "type": [
++            "object",
++            "null"
++          ]
++        },
++        "event": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "params": {
++          "type": "object"
++        }
+       }
++    },
++    "controlRequirement": {
++      "type": "object",
++      "required": [
++        "id",
++        "kind",
++        "subject",
++        "source"
++      ],
++      "properties": {
++        "id": {
++          "type": "string",
++          "minLength": 1
++        },
++        "kind": {
++          "enum": [
++            "APPROVAL",
++            "DRY_RUN",
++            "BACKUP",
++            "ROLLBACK_PLAN",
++            "CHANGE_TICKET",
++            "RETENTION_GUARD",
++            "CLARIFICATION",
++            "RISK_MITIGATION",
++            "SAFETY_GUARD",
++            "EXTERNAL_EFFECT_REVIEW",
++            "POLICY_EVALUATION"
++          ]
++        },
++        "subject": {
++          "type": "string",
++          "minLength": 1
++        },
++        "source": {
++          "enum": [
++            "CANONICAL_CAPABILITY",
++            "INTENT_POLICY",
++            "MODULE_CONTRACT",
++            "ENVIRONMENT_POLICY",
++            "FLOW_SOURCE"
++          ]
++        },
++        "condition": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "message": {
++          "type": [
++            "string",
++            "null"
++          ]
++        }
++      },
++      "additionalProperties": false
++    },
++    "controlEvidence": {
++      "type": "object",
++      "required": [
++        "requirementId",
++        "status",
++        "source",
++        "enforcementCapabilities"
++      ],
++      "properties": {
++        "requirementId": {
++          "type": "string",
++          "minLength": 1
++        },
++        "status": {
++          "enum": [
++            "SATISFIED",
++            "UNSATISFIED",
++            "UNKNOWN",
++            "DYNAMIC"
++          ]
++        },
++        "source": {
++          "enum": [
++            "AUTHORED_STEP",
++            "AUTHORED_PARAMETER",
++            "AUTHORED_POLICY",
++            "AUTHORED_FAILURE_POLICY",
++            "AST_SAFETY_DECLARATION",
++            "MODULE_CONTRACT",
++            "DYNAMIC_CONDITION",
++            "MISSING"
++          ]
++        },
++        "detail": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "enforcementCapabilities": {
++          "type": "array",
++          "items": {
++            "type": "string",
++            "minLength": 1
++          }
++        }
++      },
++      "additionalProperties": false
++    },
++    "controlDecision": {
++      "type": "object",
++      "required": [
++        "status",
++        "blockingRequirementIds",
++        "pendingRequirementIds"
++      ],
++      "properties": {
++        "status": {
++          "enum": [
++            "ALLOWED",
++            "BLOCKED",
++            "PENDING"
++          ]
++        },
++        "blockingRequirementIds": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        },
++        "pendingRequirementIds": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        }
++      },
++      "additionalProperties": false
+     }
+   },
+   "additionalProperties": true
+diff --git a/schemas/execution-plan.schema.json b/schemas/execution-plan.schema.json
+index 5082339..f0a31cc 100644
+--- a/schemas/execution-plan.schema.json
++++ b/schemas/execution-plan.schema.json
+@@ -70,6 +70,21 @@
+       "items": {
+         "$ref": "#/$defs/dependencyRelation"
+       }
++    },
++    "controlRequirements": {
++      "type": "array",
++      "items": {
++        "$ref": "#/$defs/controlRequirement"
++      }
++    },
++    "controlEvidence": {
++      "type": "array",
++      "items": {
++        "$ref": "#/$defs/controlEvidence"
++      }
++    },
++    "controlDecision": {
++      "$ref": "#/$defs/controlDecision"
+     }
+   },
+   "$defs": {
+@@ -525,6 +540,141 @@
+         }
+       },
+       "additionalProperties": false
++    },
++    "controlRequirement": {
++      "type": "object",
++      "required": [
++        "id",
++        "kind",
++        "subject",
++        "source"
++      ],
++      "properties": {
++        "id": {
++          "type": "string",
++          "minLength": 1
++        },
++        "kind": {
++          "enum": [
++            "APPROVAL",
++            "DRY_RUN",
++            "BACKUP",
++            "ROLLBACK_PLAN",
++            "CHANGE_TICKET",
++            "RETENTION_GUARD",
++            "CLARIFICATION",
++            "RISK_MITIGATION",
++            "SAFETY_GUARD",
++            "EXTERNAL_EFFECT_REVIEW",
++            "POLICY_EVALUATION"
++          ]
++        },
++        "subject": {
++          "type": "string",
++          "minLength": 1
++        },
++        "source": {
++          "enum": [
++            "CANONICAL_CAPABILITY",
++            "INTENT_POLICY",
++            "MODULE_CONTRACT",
++            "ENVIRONMENT_POLICY",
++            "FLOW_SOURCE"
++          ]
++        },
++        "condition": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "message": {
++          "type": [
++            "string",
++            "null"
++          ]
++        }
++      },
++      "additionalProperties": false
++    },
++    "controlEvidence": {
++      "type": "object",
++      "required": [
++        "requirementId",
++        "status",
++        "source",
++        "enforcementCapabilities"
++      ],
++      "properties": {
++        "requirementId": {
++          "type": "string",
++          "minLength": 1
++        },
++        "status": {
++          "enum": [
++            "SATISFIED",
++            "UNSATISFIED",
++            "UNKNOWN",
++            "DYNAMIC"
++          ]
++        },
++        "source": {
++          "enum": [
++            "AUTHORED_STEP",
++            "AUTHORED_PARAMETER",
++            "AUTHORED_POLICY",
++            "AUTHORED_FAILURE_POLICY",
++            "AST_SAFETY_DECLARATION",
++            "MODULE_CONTRACT",
++            "DYNAMIC_CONDITION",
++            "MISSING"
++          ]
++        },
++        "detail": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "enforcementCapabilities": {
++          "type": "array",
++          "items": {
++            "type": "string",
++            "minLength": 1
++          }
++        }
++      },
++      "additionalProperties": false
++    },
++    "controlDecision": {
++      "type": "object",
++      "required": [
++        "status",
++        "blockingRequirementIds",
++        "pendingRequirementIds"
++      ],
++      "properties": {
++        "status": {
++          "enum": [
++            "ALLOWED",
++            "BLOCKED",
++            "PENDING"
++          ]
++        },
++        "blockingRequirementIds": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        },
++        "pendingRequirementIds": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        }
++      },
++      "additionalProperties": false
+     }
+   }
+ }
+diff --git a/src/main/kotlin/org/flowlang/ast/AstNodes.kt b/src/main/kotlin/org/flowlang/ast/AstNodes.kt
+index ed697df..df8a4e0 100644
+--- a/src/main/kotlin/org/flowlang/ast/AstNodes.kt
++++ b/src/main/kotlin/org/flowlang/ast/AstNodes.kt
+@@ -1,6 +1,9 @@
+ package org.flowlang.ast
+ 
+ import org.flowlang.effects.SemanticEffect
++import org.flowlang.controls.ControlDecision
++import org.flowlang.controls.ControlEvidence
++import org.flowlang.controls.ControlRequirement
+ import org.flowlang.standard.FlowStandardVersions
+ 
+ /**
+@@ -40,6 +43,9 @@ data class FlowNode(
+     val vars: List<VariableNode> = emptyList(),
+     val systems: List<SystemNode> = emptyList(),
+     val triggers: List<TriggerNode> = emptyList(),
++    val controlRequirements: List<ControlRequirement> = emptyList(),
++    val controlEvidence: List<ControlEvidence> = emptyList(),
++    val controlDecision: ControlDecision = ControlDecision(org.flowlang.controls.ControlDecisionStatus.ALLOWED),
+     val steps: List<StatementNode> = emptyList(),
+     val errorHandler: ErrorHandlerNode? = null
+ )
+diff --git a/src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt b/src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
+index 1a23618..157d020 100644
+--- a/src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
++++ b/src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
+@@ -4,6 +4,9 @@ import org.flowlang.adapters.yaml.IntentYamlLoader
+ import org.flowlang.cli.Json
+ import org.flowlang.generators.manifest.TargetRenderMode
+ import org.flowlang.effects.CanonicalIntentEffectAuthority
++import org.flowlang.controls.CanonicalControlRequirementAuthority
++import org.flowlang.controls.ControlDecisionStatus
++import org.flowlang.controls.ControlEvidenceStatus
+ import org.flowlang.effects.EffectDomain
+ import org.flowlang.effects.EffectOperation
+ import org.flowlang.effects.ResourceState
+@@ -42,6 +45,7 @@ internal class StandardArchitectureNormalizationChecks(
+         checkStandardCapabilityContracts(),
+         checkCanonicalIntentMeaning(),
+         checkUniversalEffectModel(),
++        checkUniversalControlPolicyRequirements(),
+         checkIntentDesignReport(),
+         checkCorePackagesDoNotImportJackson(),
+         checkModulesDoNotOwnTargetRendering(),
+@@ -137,6 +141,53 @@ internal class StandardArchitectureNormalizationChecks(
+         require(read.operation == EffectOperation.READ && read.transition == null)
+     }
+ 
++    private fun checkUniversalControlPolicyRequirements(): ConformanceCheck = runCheck("intent.controls.universal-policy-requirements") {
++        val known = IntentDocument(
++            name = "known-control",
++            workflows = listOf(IntentWorkflow(
++                name = "migration",
++                kind = IntentWorkflowKind.CUSTOM,
++                steps = listOf(
++                    IntentStep(id = "backup", capability = StandardCapability.BACKUP),
++                    IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE)
++                )
++            ))
++        )
++        val knownAssessment = CanonicalControlRequirementAuthority.assess(known)
++        require(knownAssessment.decision.status == ControlDecisionStatus.ALLOWED)
++        require(knownAssessment.evidence.all { it.status == ControlEvidenceStatus.SATISFIED })
++
++        val unknown = known.copy(
++            name = "unknown-control",
++            workflows = listOf(IntentWorkflow(
++                name = "migration",
++                kind = IntentWorkflowKind.CUSTOM,
++                steps = listOf(IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE))
++            ))
++        )
++        val unknownAssessment = CanonicalControlRequirementAuthority.assess(unknown)
++        require(unknownAssessment.decision.status == ControlDecisionStatus.BLOCKED)
++        require(unknownAssessment.evidence.any { it.status == ControlEvidenceStatus.UNKNOWN })
++
++        val dynamic = IntentDocument(
++            name = "dynamic-control",
++            workflows = listOf(IntentWorkflow(
++                name = "delivery",
++                kind = IntentWorkflowKind.DEPLOY,
++                steps = listOf(IntentStep(id = "approve", capability = StandardCapability.APPROVE))
++            )),
++            policies = listOf(org.flowlang.intent.IntentPolicy(
++                name = "production-approval",
++                type = org.flowlang.intent.IntentPolicyType.APPROVAL,
++                condition = "environment == 'prod'"
++            ))
++        )
++        val dynamicAssessment = CanonicalControlRequirementAuthority.assess(dynamic)
++        require(dynamicAssessment.decision.status == ControlDecisionStatus.PENDING)
++        require(dynamicAssessment.evidence.single().status == ControlEvidenceStatus.DYNAMIC)
++        require(dynamicAssessment.evidence.single().enforcementCapabilities.containsAll(listOf("approval.manual", "condition.evaluate")))
++    }
++
+     private fun checkIntentDesignReport(): ConformanceCheck = runCheck("intent.design-report") {
+         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
+         val report = IntentDesignAnalyzer(registry).analyze(intent)
+diff --git a/src/main/kotlin/org/flowlang/controls/CanonicalControlRequirementAuthority.kt b/src/main/kotlin/org/flowlang/controls/CanonicalControlRequirementAuthority.kt
+new file mode 100644
+index 0000000..626dd1e
+--- /dev/null
++++ b/src/main/kotlin/org/flowlang/controls/CanonicalControlRequirementAuthority.kt
+@@ -0,0 +1,342 @@
++package org.flowlang.controls
++
++import org.flowlang.intent.IntentBoolean
++import org.flowlang.intent.IntentDocument
++import org.flowlang.intent.IntentPolicy
++import org.flowlang.intent.IntentPolicyType
++import org.flowlang.intent.IntentStep
++import org.flowlang.intent.IntentString
++import org.flowlang.intent.IntentValidationIssue
++import org.flowlang.intent.IntentValue
++import org.flowlang.intent.PolicyCondition
++import org.flowlang.intent.SafetyRequirement
++import org.flowlang.intent.StandardCapability
++import org.flowlang.intent.asTextOrNull
++
++/** Inventory-independent authority for intent control requirements and authored evidence. */
++object CanonicalControlRequirementAuthority {
++    fun requirementsFor(intent: IntentDocument): List<ControlRequirement> {
++        val requirements = linkedMapOf<String, ControlRequirement>()
++        fun put(requirement: ControlRequirement) {
++            requirements[requirement.id] = requirement
++        }
++
++        val steps = intent.workflows.flatMap { it.steps }
++        requirementsForCapabilities(steps.map(IntentStep::capability)).forEach(::put)
++
++        intent.policies.forEach { policy ->
++            when (policy.type) {
++                IntentPolicyType.APPROVAL -> put(
++                    requirement(
++                        kind = ControlRequirementKind.APPROVAL,
++                        subject = policy.name,
++                        source = ControlRequirementSource.INTENT_POLICY,
++                        condition = policy.condition,
++                        message = policy.message
++                    )
++                )
++                IntentPolicyType.SAFETY -> put(safetyRequirement(policy))
++                IntentPolicyType.CUSTOM -> put(policyEvaluation(policy))
++                else -> Unit
++            }
++        }
++        return requirements.values.sortedBy { it.id }
++    }
++
++    fun requirementsForCapabilities(capabilities: Iterable<StandardCapability>): List<ControlRequirement> {
++        val values = capabilities.toSet()
++        return buildList {
++            if (StandardCapability.DATABASE_MIGRATE in values) {
++                add(requirement(ControlRequirementKind.BACKUP, "DATABASE_MIGRATE", ControlRequirementSource.CANONICAL_CAPABILITY))
++            }
++            if (StandardCapability.DEPROVISION in values) {
++                add(requirement(ControlRequirementKind.APPROVAL, "DEPROVISION", ControlRequirementSource.CANONICAL_CAPABILITY))
++            }
++            if (StandardCapability.CLEANUP in values) {
++                add(requirement(ControlRequirementKind.RETENTION_GUARD, "CLEANUP", ControlRequirementSource.CANONICAL_CAPABILITY))
++            }
++        }.sortedBy(ControlRequirement::id)
++    }
++
++    fun assess(intent: IntentDocument): ControlAssessment {
++        val requirements = requirementsFor(intent)
++        val evidence = requirements.map { evidenceFor(it, intent) }
++        return ControlDecisionAuthority.assessment(requirements, evidence)
++    }
++
++    fun validationIssues(
++        assessment: ControlAssessment,
++        requirementIds: Set<String>? = null
++    ): List<IntentValidationIssue> = buildList {
++        val evidenceById = assessment.evidence.associateBy(ControlEvidence::requirementId)
++        assessment.requirements
++            .filter { requirementIds == null || it.id in requirementIds }
++            .forEach { requirement ->
++            val evidence = evidenceById[requirement.id]
++            when (evidence?.status ?: ControlEvidenceStatus.UNKNOWN) {
++                ControlEvidenceStatus.SATISFIED -> Unit
++                ControlEvidenceStatus.DYNAMIC -> add(
++                    IntentValidationIssue(
++                        level = "warn",
++                        code = "CONTROL_EVIDENCE_DYNAMIC",
++                        message = "Control requirement '${requirement.id}' depends on dynamic evidence and remains pending until materialization enforcement."
++                    )
++                )
++                ControlEvidenceStatus.UNKNOWN,
++                ControlEvidenceStatus.UNSATISFIED -> add(
++                    IntentValidationIssue(
++                        level = "error",
++                        code = diagnosticCode(requirement.kind),
++                        message = diagnosticMessage(requirement, evidence)
++                    )
++                )
++            }
++        }
++    }
++
++    private fun evidenceFor(requirement: ControlRequirement, intent: IntentDocument): ControlEvidence {
++        val steps = intent.workflows.flatMap(IntentWorkflow@{ it.steps })
++        return when (requirement.kind) {
++            ControlRequirementKind.APPROVAL -> approvalEvidence(requirement, steps)
++            ControlRequirementKind.BACKUP -> capabilityOrFlagEvidence(requirement, steps, StandardCapability.BACKUP, "hasBackup")
++            ControlRequirementKind.DRY_RUN -> flagEvidence(requirement, intent, "dryRun")
++            ControlRequirementKind.ROLLBACK_PLAN -> rollbackEvidence(requirement, intent)
++            ControlRequirementKind.CHANGE_TICKET -> textEvidence(requirement, intent, "changeTicket")
++            ControlRequirementKind.RETENTION_GUARD -> retentionEvidence(requirement, intent)
++            ControlRequirementKind.CLARIFICATION,
++            ControlRequirementKind.RISK_MITIGATION,
++            ControlRequirementKind.SAFETY_GUARD,
++            ControlRequirementKind.EXTERNAL_EFFECT_REVIEW -> declaredSafetyEvidence(requirement, intent)
++            ControlRequirementKind.POLICY_EVALUATION -> customPolicyEvidence(requirement)
++        }
++    }
++
++    private fun approvalEvidence(
++        requirement: ControlRequirement,
++        steps: List<IntentStep>
++    ): ControlEvidence {
++        val approval = steps.firstOrNull { it.capability == StandardCapability.APPROVE }
++            ?: return missing(requirement, "No authored APPROVE step provides approval evidence.")
++        val condition = listOfNotNull(requirement.condition, approval.params["condition"]?.asTextOrNull())
++            .firstOrNull(String::isNotBlank)
++        return if (condition != null) {
++            ControlEvidence(
++                requirementId = requirement.id,
++                status = ControlEvidenceStatus.DYNAMIC,
++                source = ControlEvidenceSource.DYNAMIC_CONDITION,
++                detail = condition,
++                enforcementCapabilities = listOf("approval.manual", "condition.evaluate")
++            )
++        } else {
++            satisfied(requirement, ControlEvidenceSource.AUTHORED_STEP, "APPROVE step '${approval.id}'")
++        }
++    }
++
++    private fun capabilityOrFlagEvidence(
++        requirement: ControlRequirement,
++        steps: List<IntentStep>,
++        capability: StandardCapability,
++        flag: String
++    ): ControlEvidence {
++        steps.firstOrNull { it.capability == capability }?.let {
++            return satisfied(requirement, ControlEvidenceSource.AUTHORED_STEP, "${capability.name} step '${it.id}'")
++        }
++        return flagEvidence(requirement, steps, flag)
++    }
++
++    private fun flagEvidence(
++        requirement: ControlRequirement,
++        intent: IntentDocument,
++        key: String
++    ): ControlEvidence = flagEvidence(requirement, intent.workflows.flatMap { it.steps }, key)
++
++    private fun flagEvidence(
++        requirement: ControlRequirement,
++        steps: List<IntentStep>,
++        key: String
++    ): ControlEvidence {
++        val value = steps.asSequence().mapNotNull { it.params[key] }.firstOrNull()
++            ?: return missing(requirement, "No explicit '$key' evidence was authored.")
++        return when (value) {
++            is IntentBoolean -> if (value.value) {
++                satisfied(requirement, ControlEvidenceSource.AUTHORED_PARAMETER, "$key=true")
++            } else {
++                unsatisfied(requirement, "$key=false")
++            }
++            else -> {
++                val text = value.asTextOrNull().orEmpty()
++                when {
++                    text.equals("true", ignoreCase = true) -> satisfied(requirement, ControlEvidenceSource.AUTHORED_PARAMETER, "$key=true")
++                    text.equals("false", ignoreCase = true) -> unsatisfied(requirement, "$key=false")
++                    text.isNotBlank() -> dynamic(requirement, text, "policy.dynamic")
++                    else -> missing(requirement, "Authored '$key' evidence is blank.")
++                }
++            }
++        }
++    }
++
++    private fun rollbackEvidence(requirement: ControlRequirement, intent: IntentDocument): ControlEvidence {
++        val workflow = intent.workflows.firstOrNull { it.onError?.steps?.isNotEmpty() == true }
++        if (workflow != null) {
++            return satisfied(requirement, ControlEvidenceSource.AUTHORED_FAILURE_POLICY, "Workflow '${workflow.name}' declares onError steps.")
++        }
++        return textEvidence(requirement, intent, "rollbackPlan")
++    }
++
++    private fun textEvidence(
++        requirement: ControlRequirement,
++        intent: IntentDocument,
++        key: String
++    ): ControlEvidence {
++        val value = intent.workflows.asSequence()
++            .flatMap { it.steps.asSequence() }
++            .mapNotNull { it.params[key] }
++            .firstOrNull()
++            ?: return missing(requirement, "No explicit '$key' evidence was authored.")
++        val text = value.asTextOrNull().orEmpty()
++        return if (text.isNotBlank()) {
++            satisfied(requirement, ControlEvidenceSource.AUTHORED_PARAMETER, "$key=$text")
++        } else {
++            missing(requirement, "Authored '$key' evidence is blank.")
++        }
++    }
++
++    private fun retentionEvidence(requirement: ControlRequirement, intent: IntentDocument): ControlEvidence {
++        val policy = intent.policies.firstOrNull { it.type == IntentPolicyType.RETENTION }
++        if (policy != null && !policy.expression.isNullOrBlank()) {
++            return dynamic(requirement, policy.expression, "policy.retention")
++        }
++        return flagEvidence(requirement, intent, "retentionChecked")
++    }
++
++    private fun declaredSafetyEvidence(
++        requirement: ControlRequirement,
++        intent: IntentDocument
++    ): ControlEvidence {
++        val policy = intent.policies.firstOrNull {
++            it.type == IntentPolicyType.SAFETY && safetyKind(it) == requirement.kind
++        } ?: return missing(requirement, "The safety requirement was not backed by an authored safety policy.")
++        val expression = policy.expression?.trim().orEmpty()
++        return when {
++            expression.equals("true", ignoreCase = true) -> satisfied(requirement, ControlEvidenceSource.AUTHORED_POLICY, expression)
++            expression.equals("false", ignoreCase = true) -> unsatisfied(requirement, expression)
++            expression.isNotBlank() -> dynamic(requirement, expression, "policy.dynamic")
++            !policy.condition.isNullOrBlank() -> dynamic(requirement, policy.condition, "condition.evaluate")
++            else -> missing(requirement, "Safety policy '${policy.name}' contains no evaluable evidence.")
++        }
++    }
++
++    private fun customPolicyEvidence(requirement: ControlRequirement): ControlEvidence =
++        when {
++            !requirement.condition.isNullOrBlank() -> dynamic(requirement, requirement.condition, "policy.dynamic")
++            else -> missing(requirement, "Custom control policy '${requirement.subject}' contains no condition or expression.")
++        }
++
++    private fun safetyRequirement(policy: IntentPolicy): ControlRequirement {
++        val requirement = policy.requirement ?: PolicyCondition.parse(policy.condition)?.requirement
++        val kind = requirement?.toControlKind() ?: ControlRequirementKind.POLICY_EVALUATION
++        return requirement(kind, policy.name, ControlRequirementSource.INTENT_POLICY, policy.condition, policy.message)
++    }
++
++    private fun policyEvaluation(policy: IntentPolicy): ControlRequirement = requirement(
++        kind = ControlRequirementKind.POLICY_EVALUATION,
++        subject = policy.name,
++        source = ControlRequirementSource.INTENT_POLICY,
++        condition = policy.expression ?: policy.condition,
++        message = policy.message
++    )
++
++    private fun safetyKind(policy: IntentPolicy): ControlRequirementKind =
++        (policy.requirement ?: PolicyCondition.parse(policy.condition)?.requirement)?.toControlKind()
++            ?: ControlRequirementKind.POLICY_EVALUATION
++
++    private fun SafetyRequirement.toControlKind(): ControlRequirementKind = when (this) {
++        SafetyRequirement.DRY_RUN -> ControlRequirementKind.DRY_RUN
++        SafetyRequirement.BACKUP -> ControlRequirementKind.BACKUP
++        SafetyRequirement.ROLLBACK_PLAN -> ControlRequirementKind.ROLLBACK_PLAN
++        SafetyRequirement.CHANGE_TICKET -> ControlRequirementKind.CHANGE_TICKET
++        SafetyRequirement.CLARIFICATION -> ControlRequirementKind.CLARIFICATION
++        SafetyRequirement.RISK_MITIGATION -> ControlRequirementKind.RISK_MITIGATION
++        SafetyRequirement.RETENTION_POLICY -> ControlRequirementKind.RETENTION_GUARD
++    }
++
++    private fun requirement(
++        kind: ControlRequirementKind,
++        subject: String,
++        source: ControlRequirementSource,
++        condition: String? = null,
++        message: String? = null
++    ): ControlRequirement = ControlRequirement(
++        id = "${source.name.lowercase()}:${kind.name.lowercase()}:${normalize(subject)}",
++        kind = kind,
++        subject = subject,
++        source = source,
++        condition = condition?.takeIf(String::isNotBlank),
++        message = message?.takeIf(String::isNotBlank)
++    )
++
++    private fun normalize(value: String): String = value.trim().lowercase()
++        .replace(Regex("[^a-z0-9]+"), "-")
++        .trim('-')
++        .ifBlank { "control" }
++
++    private fun satisfied(
++        requirement: ControlRequirement,
++        source: ControlEvidenceSource,
++        detail: String
++    ) = ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, source, detail)
++
++    private fun unsatisfied(requirement: ControlRequirement, detail: String) =
++        ControlEvidence(requirement.id, ControlEvidenceStatus.UNSATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, detail)
++
++    private fun missing(requirement: ControlRequirement, detail: String) =
++        ControlEvidence(requirement.id, ControlEvidenceStatus.UNKNOWN, ControlEvidenceSource.MISSING, detail)
++
++    private fun dynamic(requirement: ControlRequirement, detail: String?, vararg capabilities: String) =
++        ControlEvidence(
++            requirement.id,
++            ControlEvidenceStatus.DYNAMIC,
++            ControlEvidenceSource.DYNAMIC_CONDITION,
++            detail,
++            capabilities.toList()
++        )
++
++    private fun diagnosticCode(kind: ControlRequirementKind): String = when (kind) {
++        ControlRequirementKind.APPROVAL -> "SAFETY_REQUIRES_APPROVAL"
++        ControlRequirementKind.BACKUP -> "SAFETY_REQUIRES_BACKUP"
++        ControlRequirementKind.DRY_RUN -> "SAFETY_REQUIRES_DRY_RUN"
++        ControlRequirementKind.ROLLBACK_PLAN -> "SAFETY_REQUIRES_ROLLBACK_PLAN"
++        ControlRequirementKind.CHANGE_TICKET -> "SAFETY_REQUIRES_CHANGE_TICKET"
++        ControlRequirementKind.RETENTION_GUARD -> "SAFETY_REQUIRES_RETENTION_POLICY"
++        ControlRequirementKind.CLARIFICATION -> "SAFETY_REQUIRES_CLARIFICATION"
++        ControlRequirementKind.RISK_MITIGATION -> "SAFETY_REQUIRES_RISK_MITIGATION"
++        ControlRequirementKind.SAFETY_GUARD,
++        ControlRequirementKind.EXTERNAL_EFFECT_REVIEW,
++        ControlRequirementKind.POLICY_EVALUATION -> "SAFETY_POLICY_EVIDENCE_UNKNOWN"
++    }
++
++    private fun diagnosticMessage(
++        requirement: ControlRequirement,
++        evidence: ControlEvidence?
++    ): String = "Control requirement '${requirement.kind}' for '${requirement.subject}' is " +
++        "${evidence?.status ?: ControlEvidenceStatus.UNKNOWN}: ${evidence?.detail ?: "no evidence was provided"}."
++}
