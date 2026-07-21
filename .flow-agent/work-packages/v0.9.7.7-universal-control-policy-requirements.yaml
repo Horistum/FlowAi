@@ -1,0 +1,23 @@
+version: "0.9.7.7"
+name: "Universal Control and Policy Requirements"
+stream: core
+status: in-progress
+objective: "Represent control and safety requirements independently from implementation evidence and authorization decisions."
+universalInvariant: "Control meaning is implementation-independent."
+forbiddenScope:
+  - "No unknown evidence treated as safe."
+  - "No target inventory or renderer layout as control authority."
+  - "No semantic effect treated as implicit approval or policy evidence."
+  - "No collapsed requirement, evidence and decision contract."
+plannedScope:
+  - "Audit existing policy, approval, destructive and safety metadata owners."
+  - "Define target-neutral typed control requirements."
+  - "Represent known, unknown and dynamic policy evidence explicitly."
+  - "Keep authorization decisions separate and fail closed on unresolved evidence."
+  - "Carry control requirements through canonical intent, AST, planning and materialization validation."
+finalValidation: "required on the exact completion metadata head"
+completionEvidence:
+  - "Known, unknown and dynamic policy cases use one control model."
+  - "Equivalent intent produces equivalent control requirements across inventories and bindings."
+  - "Unknown or contradictory evidence cannot authorize materialization."
+  - "The complete unmodified Flow CI workflow passes compilation, tests, conformance and executable reference evidence."
