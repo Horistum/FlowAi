@@ -1,5 +1,7 @@
 package org.flowlang.intent
 
+import org.flowlang.effects.CanonicalIntentEffectAuthority
+import org.flowlang.effects.SemanticEffect
 import org.flowlang.ast.*
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.ExpressionParser
@@ -153,9 +155,13 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         dependencyIds: List<String>,
         binding: IntentBindingEvidence
     ): List<StatementNode> {
+        val semanticEffects = CanonicalIntentEffectAuthority.effectsFor(
+            step.capability,
+            CanonicalIntentMeaningAuthority.semanticParameters(step)
+        )
         val node: StatementNode = when (binding.status) {
-            IntentBindingStatus.RESOLVED -> boundAction(step, binding)
-            IntentBindingStatus.UNBOUND -> semanticStatement(step, intent)
+            IntentBindingStatus.RESOLVED -> boundAction(step, binding, semanticEffects)
+            IntentBindingStatus.UNBOUND -> semanticStatement(step, intent, semanticEffects)
             IntentBindingStatus.INVALID -> error(
                 "Internal planner invariant: invalid binding '${binding.requestedAction}' for step '${step.id}' passed validation."
             )
@@ -163,7 +169,11 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return listOf(applyDependencies(node, dependencyIds))
     }
 
-    private fun semanticStatement(step: IntentStep, intent: IntentDocument): StatementNode =
+    private fun semanticStatement(
+        step: IntentStep,
+        intent: IntentDocument,
+        semanticEffects: List<SemanticEffect>
+    ): StatementNode =
         if (step.capability == StandardCapability.APPROVE) {
             approvalStatement(step, intent)
         } else {
@@ -171,7 +181,8 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 step = step,
                 operation = semanticOperation(step.capability),
                 intent = intent,
-                dropBlockedParams = step.capability in blockedRuntimeCapabilities
+                dropBlockedParams = step.capability in blockedRuntimeCapabilities,
+                semanticEffects = semanticEffects
             )
         }
 
@@ -182,7 +193,11 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         else -> capability.name.lowercase().replace('_', '-')
     }
 
-    private fun boundAction(step: IntentStep, binding: IntentBindingEvidence): ActionNode {
+    private fun boundAction(
+        step: IntentStep,
+        binding: IntentBindingEvidence,
+        semanticEffects: List<SemanticEffect>
+    ): ActionNode {
         val moduleName = requireNotNull(binding.module)
         val actionName = requireNotNull(binding.action)
         val systemName = requireNotNull(binding.system)
@@ -206,7 +221,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             action = actionName,
             target = ref(systemName),
             params = params,
-            result = result(step.id)
+            result = result(step.id),
+            semanticCapability = step.capability.name,
+            semanticEffects = semanticEffects
         )
     }
 
@@ -238,7 +255,8 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         step: IntentStep,
         operation: String,
         intent: IntentDocument,
-        dropBlockedParams: Boolean = false
+        dropBlockedParams: Boolean = false,
+        semanticEffects: List<SemanticEffect> = CanonicalIntentEffectAuthority.effectsFor(step.capability)
     ): ActionNode {
         val params = linkedMapOf<String, ExpressionNode>(
             "operation" to StringLiteralNode(value = operation),
@@ -255,7 +273,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return ActionNode(
             module = "standard", action = if (operation == "rollback") "rollback" else "execute", target = ref("standard"),
             params = params,
-            result = result(step.id)
+            result = result(step.id),
+            semanticCapability = step.capability.name,
+            semanticEffects = semanticEffects
         )
     }
 
@@ -271,7 +291,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                     "reason" to ReferenceNode(path = listOf("error", "message"), scope = "error", safe = true),
                     "flow" to StringLiteralNode(value = intent.name)
                 ),
-                result = ResultBindingNode(name = "rollback_result")
+                result = ResultBindingNode(name = "rollback_result"),
+                semanticCapability = StandardCapability.ROLLBACK.name,
+                semanticEffects = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.ROLLBACK)
             )
         }
         if (intent.failure.notify) {
@@ -284,7 +306,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                     "flow" to StringLiteralNode(value = intent.name),
                     "subject" to StringLiteralNode(value = "Flow failed: ${intent.name}"),
                     "body" to ReferenceNode(path = listOf("error", "message"), scope = "error", safe = true)
-                )
+                ),
+                semanticCapability = StandardCapability.NOTIFY.name,
+                semanticEffects = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.NOTIFY)
             )
         }
         return ErrorHandlerNode(steps = steps)

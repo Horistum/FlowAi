@@ -3,6 +3,10 @@ package org.flowlang.conformance
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.Json
 import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.effects.CanonicalIntentEffectAuthority
+import org.flowlang.effects.EffectDomain
+import org.flowlang.effects.EffectOperation
+import org.flowlang.effects.ResourceState
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ClarificationSeverity
 import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
@@ -37,6 +41,7 @@ internal class StandardArchitectureNormalizationChecks(
         checkStandardIntentCatalogCoverage(),
         checkStandardCapabilityContracts(),
         checkCanonicalIntentMeaning(),
+        checkUniversalEffectModel(),
         checkIntentDesignReport(),
         checkCorePackagesDoNotImportJackson(),
         checkModulesDoNotOwnTargetRendering(),
@@ -105,6 +110,31 @@ internal class StandardArchitectureNormalizationChecks(
         require(argo.meaning == kubernetes.meaning) { "Equivalent intent changed meaning across explicit implementation inventories." }
         require(argo.bindings.single().status == IntentBindingStatus.RESOLVED)
         require(kubernetes.bindings.single().status == IntentBindingStatus.RESOLVED)
+    }
+
+    private fun checkUniversalEffectModel(): ConformanceCheck = runCheck("intent.effects.universal-state-transition-model") {
+        val representative = listOf(
+            StandardCapability.BUILD_IMAGE,
+            StandardCapability.DATA_TRANSFORM,
+            StandardCapability.PROVISION
+        ).flatMap(CanonicalIntentEffectAuthority::effectsFor)
+
+        require(representative.map { it.domain }.toSet().containsAll(setOf(
+            EffectDomain.SOFTWARE_DELIVERY,
+            EffectDomain.DATA_TRANSFORMATION,
+            EffectDomain.INFRASTRUCTURE_STATE
+        ))) { "Software delivery, data transformation and infrastructure state change must share one semantic effect model." }
+
+        val create = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.BUILD_IMAGE).single()
+        require(create.operation == EffectOperation.CREATE)
+        require(create.transition?.from == ResourceState.ABSENT && create.transition.to == ResourceState.PRESENT)
+
+        val update = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
+        require(update.operation == EffectOperation.UPDATE)
+        require(update.transition?.from == ResourceState.PRESENT && update.transition.to == ResourceState.PRESENT)
+
+        val read = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.CHECKOUT).single()
+        require(read.operation == EffectOperation.READ && read.transition == null)
     }
 
     private fun checkIntentDesignReport(): ConformanceCheck = runCheck("intent.design-report") {

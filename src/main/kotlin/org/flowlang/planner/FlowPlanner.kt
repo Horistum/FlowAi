@@ -1,6 +1,10 @@
 package org.flowlang.planner
 
 import org.flowlang.ast.*
+import org.flowlang.effects.CanonicalIntentEffectAuthority
+import org.flowlang.effects.ModuleEffectCanonicalizer
+import org.flowlang.effects.SemanticEffect
+import org.flowlang.intent.StandardCapability
 import org.flowlang.modules.ContinuityChannel
 import org.flowlang.modules.ContinuityContract
 import org.flowlang.modules.ContinuityKind
@@ -116,9 +120,37 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                 resultName = stmt.result?.name,
                 dependsOn = explicitDeps)
         }
-        is TransformNode -> { val id = ctx.id("transform"); ctx.results[stmt.target] = id; DataOpNode(id, "Transform", stmt.target, ExpressionRenderer.render(stmt.source)) }
-        is AggregateNode -> { val id = ctx.id("aggregate"); ctx.results[stmt.target] = id; DataOpNode(id, "Aggregate", stmt.target, ExpressionRenderer.render(stmt.source)) }
-        is ValidateNode -> DataOpNode(ctx.id("validate"), "Validate", null, ExpressionRenderer.render(stmt.target))
+        is TransformNode -> {
+            val id = ctx.id("transform")
+            ctx.results[stmt.target] = id
+            DataOpNode(
+                id = id,
+                kind = "Transform",
+                target = stmt.target,
+                detail = ExpressionRenderer.render(stmt.source),
+                semanticCapability = StandardCapability.TRANSFORM.name,
+                effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.TRANSFORM)
+            )
+        }
+        is AggregateNode -> {
+            val id = ctx.id("aggregate")
+            ctx.results[stmt.target] = id
+            DataOpNode(
+                id = id,
+                kind = "Aggregate",
+                target = stmt.target,
+                detail = ExpressionRenderer.render(stmt.source),
+                semanticCapability = StandardCapability.DATA_TRANSFORM.name,
+                effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DATA_TRANSFORM)
+            )
+        }
+        is ValidateNode -> DataOpNode(
+            id = ctx.id("validate"),
+            kind = "Validate",
+            detail = ExpressionRenderer.render(stmt.target),
+            semanticCapability = StandardCapability.VALIDATE.name,
+            effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.VALIDATE)
+        )
         is SetNode -> { val id = ctx.id("set"); ctx.results[stmt.name] = id; ControlNode(id, "Set", "${stmt.name} = ${ExpressionRenderer.render(stmt.value)}") }
         is FailNode -> ControlNode(ctx.id("fail"), "Fail", ExpressionRenderer.render(stmt.message))
         is SkipNode -> ControlNode(ctx.id("skip"), "Skip", ExpressionRenderer.render(stmt.message))
@@ -129,9 +161,10 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     private fun planAction(action: ActionNode, ctx: Ctx): TaskNode {
         val id = ctx.id("${action.module}_${action.action}")
         val contract = registry.findAction(action.module, action.action)
-        val effects = contract?.effects?.let { e ->
-            (e.reads + e.writes + e.creates + e.updates + e.deletes + e.executes + e.network + e.filesystem)
-        } ?: emptyList()
+        val effectModel = action.semanticEffects.ifEmpty {
+            contract?.effects?.let(ModuleEffectCanonicalizer::canonicalize).orEmpty()
+        }
+        val effects = effectModel.map(SemanticEffect::legacyIdentity).distinct()
 
         val referenced = mutableSetOf<String>()
         action.params.values.forEach { collectRoots(it, referenced) }
@@ -188,7 +221,11 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val task = TaskNode(
             id = id, module = action.module, action = action.action,
             target = action.target.path.joinToString("."),
-            resultName = action.result?.name, dependsOn = deps, effects = effects,
+            resultName = action.result?.name,
+            dependsOn = deps,
+            semanticCapability = action.semanticCapability,
+            effectModel = effectModel,
+            effects = effects,
             inputs = renderedParams,
             outputs = action.result?.let { listOf(it.name) } ?: emptyList(),
             destructive = contract?.safety?.destructive ?: false,
