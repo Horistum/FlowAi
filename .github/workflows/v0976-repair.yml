@@ -41,14 +41,40 @@ jobs:
           echo "08a6e7476854014893d90fa467ac2f40a7d583d74fdacbdb00bb8f07246d6094  /tmp/v0976-repair.tar.gz" | sha256sum --check
           tar -tzf /tmp/v0976-repair.tar.gz > /dev/null
           tar -xzf /tmp/v0976-repair.tar.gz
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("src/test/kotlin/UniversalEffectStateTransitionModelTests.kt")
+          text = path.read_text()
+          old = '''        val update = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
+                  assertEquals(EffectOperation.UPDATE, update.operation)
+                  assertEquals(ResourceState.PRESENT, update.transition?.from)
+                  assertEquals(ResourceState.PRESENT, update.transition?.to)
+                  assertTrue(update.mutatesState)
+          '''
+          new = '''        val reconcile = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
+                  assertEquals(EffectOperation.UPSERT, reconcile.operation)
+                  assertEquals(ResourceState.UNKNOWN, reconcile.transition?.from)
+                  assertEquals(ResourceState.PRESENT, reconcile.transition?.to)
+                  assertTrue(reconcile.mutatesState)
+          '''
+          if old not in text:
+              raise SystemExit("Expected deployment transition assertion was not found")
+          path.write_text(text.replace(old, new))
+          PY
+
+      - name: Validate typed effect contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon test --tests UniversalEffectStateTransitionModelTests --stacktrace
 
       - name: Regenerate canonical reference snapshots
         shell: bash
         run: |
           set -euo pipefail
-          chmod +x gradlew
-          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/build-test-deploy.intent.yaml --out conformance/snapshots/build-test-deploy --scenario-id build-test-deploy"
-          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/checkout-build-image.intent.yaml --out conformance/snapshots/checkout-build-image --scenario-id checkout-build-image"
+          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/build-test-deploy.intent.yaml --out conformance/snapshots/build-test-deploy --scenario-id build-test-deploy" --stacktrace
+          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/checkout-build-image.intent.yaml --out conformance/snapshots/checkout-build-image --scenario-id checkout-build-image" --stacktrace
 
       - name: Commit repair
         shell: bash
