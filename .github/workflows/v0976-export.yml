@@ -1,9 +1,9 @@
 name: Export v0.9.7.6 Source
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/v0.9.7.6-universal-effect-state-transition
+      - main
     paths:
       - .github/workflows/v0976-export.yml
 
