@@ -1,0 +1,23 @@
+version: "0.9.7.6"
+name: "Universal Effect and State Transition Model"
+stream: core
+status: in-progress
+objective: "Model resource reads and state changes consistently across bounded automation domains."
+universalInvariant: "Effects remain stable across implementations."
+forbiddenScope:
+  - "No implementation-name inference."
+  - "No target inventory as effect authority."
+  - "No ordering or continuity relation treated as a state transition."
+implementedScope:
+  - "Canonical intent capabilities derive target-neutral typed effects before binding resolution."
+  - "AST and execution-plan nodes carry the same semantic effect evidence."
+  - "Module effect buckets convert to the shared model without inferring domains from implementation identities."
+  - "Materialization authorization re-derives canonical effects and rejects omitted or forged evidence."
+  - "Software delivery, data transformation and infrastructure state change share one operation and transition vocabulary."
+finalValidation: "required on the exact completion metadata head"
+completionEvidence:
+  - "Three bounded domains share one effect model."
+  - "Equivalent intent produces identical effect evidence across inventories and explicit bindings."
+  - "State transitions are defined by semantic operations rather than implementation names."
+  - "Legacy effect projections remain derived compatibility evidence, not a second semantic authority."
+  - "The complete unmodified Flow CI workflow passes compilation, tests, conformance and reference evidence."
