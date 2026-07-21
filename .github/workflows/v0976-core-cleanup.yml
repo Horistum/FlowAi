@@ -1,0 +1,133 @@
+name: Finalize v0.9.7.6 Core Boundaries
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/v0976-core-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-core-boundaries:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/v0.9.7.6-universal-effect-state-transition
+          fetch-depth: 0
+
+      - name: Remove serializer coupling and align conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected text not found in {path}: {old[:120]!r}")
+              file.write_text(text.replace(old, new))
+
+          replace(
+              "src/main/kotlin/org/flowlang/effects/SemanticEffects.kt",
+              "import com.fasterxml.jackson.annotation.JsonIgnore\n\n",
+              ""
+          )
+          replace(
+              "src/main/kotlin/org/flowlang/effects/SemanticEffects.kt",
+              '''    @get:JsonIgnore
+              val observesResource: Boolean get() = operation == EffectOperation.READ
+
+              @get:JsonIgnore
+              val mutatesState: Boolean get() = operation in MUTATING_OPERATIONS
+
+              /** Backward-compatible resource projection for the historical string list. */
+              @get:JsonIgnore
+              val legacyIdentity: String get() = resource
+
+              companion object {
+                  private val MUTATING_OPERATIONS = setOf(
+                      EffectOperation.CREATE,
+                      EffectOperation.UPDATE,
+                      EffectOperation.DELETE,
+                      EffectOperation.UPSERT
+                  )
+
+          ''',
+              '''    companion object {
+          '''
+          )
+
+          for path in (
+              "src/main/kotlin/org/flowlang/planner/ExecutionPlan.kt",
+              "src/main/kotlin/org/flowlang/planner/FlowPlanner.kt",
+              "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt",
+              "src/test/kotlin/UniversalEffectStateTransitionModelTests.kt",
+          ):
+              file = Path(path)
+              text = file.read_text()
+              text = text.replace("effectModel.map(SemanticEffect::legacyIdentity)", "effectModel.map(SemanticEffect::resource)")
+              text = text.replace("forgedEffect.map(SemanticEffect::legacyIdentity)", "forgedEffect.map(SemanticEffect::resource)")
+              file.write_text(text)
+
+          replace(
+              "src/test/kotlin/UniversalEffectStateTransitionModelTests.kt",
+              "import kotlin.test.assertFalse\n",
+              ""
+          )
+          for assertion in (
+              "        assertTrue(create.mutatesState)\n",
+              "        assertTrue(reconcile.mutatesState)\n",
+              "        assertTrue(read.observesResource)\n",
+              "        assertFalse(read.mutatesState)\n",
+          ):
+              replace("src/test/kotlin/UniversalEffectStateTransitionModelTests.kt", assertion, "")
+
+          replace(
+              "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt",
+              '''        val update = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
+                      require(update.operation == EffectOperation.UPDATE)
+                      require(update.transition?.from == ResourceState.PRESENT && update.transition.to == ResourceState.PRESENT)
+          ''',
+              '''        val reconcile = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
+                      require(reconcile.operation == EffectOperation.UPSERT)
+                      require(reconcile.transition?.from == ResourceState.UNKNOWN && reconcile.transition.to == ResourceState.PRESENT)
+          '''
+          )
+
+          replace(
+              ".flow-agent/work-packages/v0.9.7.6-universal-effect-state-transition.yaml",
+              '  - "Derived effect helpers remain internal and do not expand serialized artifact contracts."\n',
+              '  - "Serialized effect evidence contains only declared semantic fields and keeps Core independent from serializer annotations."\n'
+          )
+          PY
+          git diff --check
+
+      - name: Validate focused effect and conformance contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon test \
+            --tests UniversalEffectStateTransitionModelTests \
+            --tests FlowConformanceBridgeJUnitTest \
+            --tests org.flowlang.tests.FlowRcConformanceTests \
+            --stacktrace
+
+      - name: Commit boundary cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/v0976-core-cleanup.yml
+          git config user.name "flow-ai-agent"
+          git config user.email "flow-ai-agent@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Finalize v0.9.7.6 core effect boundaries"
+          git push origin HEAD:agent/v0.9.7.6-universal-effect-state-transition
