@@ -8,7 +8,7 @@ forbiddenScope:
   - "No implementation-name inference."
   - "No target inventory as effect authority."
   - "No ordering or continuity relation treated as a state transition."
-implementationStatus: "integrated for full validation"
+implementationStatus: "focused effect and conformance validation passed; full validation required"
 implementedScope:
   - "Canonical intent capabilities derive target-neutral typed effects before binding resolution."
   - "AST and execution-plan nodes carry the same semantic effect evidence."
@@ -17,6 +17,10 @@ implementedScope:
   - "Software delivery, data transformation and infrastructure state change share one operation and transition vocabulary."
   - "Serialized effect evidence contains only declared semantic fields and keeps Core independent from serializer annotations."
   - "Committed reference evidence is regenerated through the canonical production generator."
+focusedValidation:
+  - "UniversalEffectStateTransitionModelTests passed."
+  - "FlowConformanceBridgeJUnitTest passed."
+  - "FlowRcConformanceTests passed."
 finalValidation: "required on the exact completion metadata head"
 completionEvidence:
   - "Three bounded domains share one effect model."
