@@ -508,7 +508,7 @@ internal object ExecutionPlanMaterializationValidator {
         location: String,
         issues: MutableList<PlanningEvidenceIssue>
     ) {
-        val expectedProjection = effectModel.map(SemanticEffect::legacyIdentity).distinct()
+        val expectedProjection = effectModel.map(SemanticEffect::resource).distinct()
         if (legacyEffects != expectedProjection) {
             issues += issue(
                 "planning.effect.projection.invalid",

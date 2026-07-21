@@ -164,7 +164,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val effectModel = action.semanticEffects.ifEmpty {
             contract?.effects?.let(ModuleEffectCanonicalizer::canonicalize).orEmpty()
         }
-        val effects = effectModel.map(SemanticEffect::legacyIdentity).distinct()
+        val effects = effectModel.map(SemanticEffect::resource).distinct()
 
         val referenced = mutableSetOf<String>()
         action.params.values.forEach { collectRoots(it, referenced) }

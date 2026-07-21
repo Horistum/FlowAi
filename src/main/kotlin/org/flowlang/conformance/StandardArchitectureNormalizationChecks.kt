@@ -129,9 +129,9 @@ internal class StandardArchitectureNormalizationChecks(
         require(create.operation == EffectOperation.CREATE)
         require(create.transition?.from == ResourceState.ABSENT && create.transition.to == ResourceState.PRESENT)
 
-        val update = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
-        require(update.operation == EffectOperation.UPDATE)
-        require(update.transition?.from == ResourceState.PRESENT && update.transition.to == ResourceState.PRESENT)
+        val reconcile = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
+        require(reconcile.operation == EffectOperation.UPSERT)
+        require(reconcile.transition?.from == ResourceState.UNKNOWN && reconcile.transition.to == ResourceState.PRESENT)
 
         val read = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.CHECKOUT).single()
         require(read.operation == EffectOperation.READ && read.transition == null)

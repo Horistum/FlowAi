@@ -89,7 +89,7 @@ data class TaskNode(
     val dependencies: List<String> = dependsOn,
     val semanticCapability: String? = null,
     val effectModel: List<SemanticEffect> = emptyList(),
-    val effects: List<String> = effectModel.map(SemanticEffect::legacyIdentity).distinct(),
+    val effects: List<String> = effectModel.map(SemanticEffect::resource).distinct(),
     val inputs: Map<String, String> = emptyMap(),
     val outputs: List<String> = emptyList(),
     val destructive: Boolean = false,
@@ -171,7 +171,7 @@ data class DataOpNode(
     val detail: String? = null,
     val semanticCapability: String? = null,
     val effectModel: List<SemanticEffect> = emptyList(),
-    val effects: List<String> = effectModel.map(SemanticEffect::legacyIdentity).distinct()
+    val effects: List<String> = effectModel.map(SemanticEffect::resource).distinct()
 ) : PlanNode
 
 data class ControlNode(

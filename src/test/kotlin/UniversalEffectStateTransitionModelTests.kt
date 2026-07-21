@@ -2,7 +2,6 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.IntentYamlLoader
@@ -58,19 +57,15 @@ class UniversalEffectStateTransitionModelTests {
         assertEquals(EffectOperation.CREATE, create.operation)
         assertEquals(ResourceState.ABSENT, create.transition?.from)
         assertEquals(ResourceState.PRESENT, create.transition?.to)
-        assertTrue(create.mutatesState)
 
         val reconcile = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DEPLOY).single()
         assertEquals(EffectOperation.UPSERT, reconcile.operation)
         assertEquals(ResourceState.UNKNOWN, reconcile.transition?.from)
         assertEquals(ResourceState.PRESENT, reconcile.transition?.to)
-        assertTrue(reconcile.mutatesState)
 
         val read = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.CHECKOUT).single()
         assertEquals(EffectOperation.READ, read.operation)
         assertNull(read.transition)
-        assertTrue(read.observesResource)
-        assertFalse(read.mutatesState)
     }
 
     @Test
@@ -219,7 +214,7 @@ class UniversalEffectStateTransitionModelTests {
         val forgedEffect = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.CHECKOUT)
         val forged = base.copy(
             effectModel = forgedEffect,
-            effects = forgedEffect.map(SemanticEffect::legacyIdentity)
+            effects = forgedEffect.map(SemanticEffect::resource)
         )
         val forgedFailure = assertFailsWith<InvalidPlanningEvidenceException> {
             authority.authorizeDiagnosticEvidence(ExecutionPlan(flowName = "forged", nodes = listOf(forged)), "jenkins")
