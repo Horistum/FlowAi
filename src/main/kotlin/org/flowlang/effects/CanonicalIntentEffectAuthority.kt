@@ -32,12 +32,12 @@ object CanonicalIntentEffectAuthority {
         StandardCapability.PACKAGE -> listOf(create(EffectDomain.SOFTWARE_DELIVERY, "software.package", capability))
         StandardCapability.BUILD_IMAGE -> listOf(create(EffectDomain.SOFTWARE_DELIVERY, "software.image", capability))
         StandardCapability.PUSH_IMAGE -> listOf(upsert(EffectDomain.SOFTWARE_DELIVERY, "software.image.registry", capability))
-        StandardCapability.DEPLOY -> listOf(update(EffectDomain.INFRASTRUCTURE_STATE, "deployment.state", capability))
+        StandardCapability.DEPLOY -> listOf(upsert(EffectDomain.INFRASTRUCTURE_STATE, "deployment.state", capability))
         StandardCapability.VERIFY -> listOf(read(EffectDomain.INFRASTRUCTURE_STATE, "deployment.state", capability))
         StandardCapability.APPROVE -> emptyList()
         StandardCapability.ROLLBACK -> listOf(update(EffectDomain.INFRASTRUCTURE_STATE, "managed.state", capability))
         StandardCapability.NOTIFY -> listOf(emit(EffectDomain.COMMUNICATION, "notification", capability))
-        StandardCapability.SYNC -> listOf(update(EffectDomain.INFRASTRUCTURE_STATE, "desired.state", capability))
+        StandardCapability.SYNC -> listOf(upsert(EffectDomain.INFRASTRUCTURE_STATE, "desired.state", capability))
         StandardCapability.DATA_SYNC -> listOf(
             read(EffectDomain.DATA_TRANSFORMATION, "data.source", capability),
             upsert(EffectDomain.DATA_TRANSFORMATION, "data.destination", capability)
@@ -54,7 +54,7 @@ object CanonicalIntentEffectAuthority {
         )
         StandardCapability.RESTORE -> listOf(
             read(EffectDomain.DATA_TRANSFORMATION, "data.backup", capability),
-            update(EffectDomain.DATA_TRANSFORMATION, "data.destination", capability)
+            upsert(EffectDomain.DATA_TRANSFORMATION, "data.destination", capability)
         )
         StandardCapability.CLEANUP -> listOf(delete(EffectDomain.INFRASTRUCTURE_STATE, "managed.resource", capability))
         StandardCapability.PROVISION -> listOf(upsert(EffectDomain.INFRASTRUCTURE_STATE, "infrastructure.resource", capability))
@@ -80,8 +80,9 @@ object CanonicalIntentEffectAuthority {
 
     private fun apiEffect(method: String?, capability: StandardCapability): SemanticEffect = when (method?.trim()?.uppercase()) {
         "GET", "HEAD" -> read(EffectDomain.COMMUNICATION, "external.api.resource", capability)
-        "POST" -> create(EffectDomain.COMMUNICATION, "external.api.resource", capability)
-        "PUT", "PATCH" -> update(EffectDomain.COMMUNICATION, "external.api.resource", capability)
+        "POST" -> execute(EffectDomain.COMMUNICATION, "external.api.request", capability)
+        "PUT" -> upsert(EffectDomain.COMMUNICATION, "external.api.resource", capability)
+        "PATCH" -> update(EffectDomain.COMMUNICATION, "external.api.resource", capability)
         "DELETE" -> delete(EffectDomain.COMMUNICATION, "external.api.resource", capability)
         else -> execute(EffectDomain.COMMUNICATION, "external.api.request", capability)
     }
