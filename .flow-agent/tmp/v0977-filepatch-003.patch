@@ -1,0 +1,322 @@
+diff --git a/src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt b/src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt
+index 68e5be2..4c80e29 100644
+--- a/src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt
++++ b/src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt
+@@ -6,6 +6,12 @@ import org.flowlang.capabilities.CompatibilityReport
+ import org.flowlang.capabilities.SupportLevel
+ import org.flowlang.capabilities.PlannerCapabilityConstraintGate
+ import org.flowlang.capabilities.TargetCapability
++import org.flowlang.controls.CanonicalControlRequirementAuthority
++import org.flowlang.controls.ControlDecisionAuthority
++import org.flowlang.controls.ControlDecisionStatus
++import org.flowlang.controls.ControlEvidenceStatus
++import org.flowlang.controls.ControlRequirement
++import org.flowlang.controls.PlanningControlAuthority
+ import org.flowlang.effects.CanonicalIntentEffectAuthority
+ import org.flowlang.effects.ModuleEffectCanonicalizer
+ import org.flowlang.effects.SemanticEffect
+@@ -101,6 +107,7 @@ class MandatoryMaterializationAuthority(
+         require(target.isNotBlank()) { "Materialization target must not be blank." }
+         ExecutionPlanMaterializationValidator.requireValid(plan, modules)
+         ExecutionPlanContinuityValidator.requireResolved(plan)
++        ExecutionPlanControlValidator.requireAuthorized(plan)
+         val report = capabilityGate.requireProjectionAllowed(plan, target, strict)
+         return TargetProjectionAuthorization(
+             plan = plan,
+@@ -133,9 +140,19 @@ class MandatoryMaterializationAuthority(
+                 message = continuityMessage(relation)
+             )
+         }
+-        val compatibility = if (continuityIssues.isEmpty()) report.compatibility else report.compatibility.copy(
++        val controlIssues = ExecutionPlanControlValidator.blockers(plan).map { requirement ->
++            CompatibilityIssue(
++                level = CompatibilityLevel.ERROR,
++                target = target,
++                nodeId = "control",
++                feature = "control.${requirement.kind.name.lowercase()}.planning",
++                message = "Control requirement '${requirement.id}' is not satisfied by known evidence."
++            )
++        }
++        val planningIssues = continuityIssues + controlIssues
++        val compatibility = if (planningIssues.isEmpty()) report.compatibility else report.compatibility.copy(
+             status = SupportLevel.UNSUPPORTED,
+-            issues = (report.compatibility.issues + continuityIssues).distinct(),
++            issues = (report.compatibility.issues + planningIssues).distinct(),
+             capabilityStatus = report.compatibility.capabilityStatus
+         )
+         return TargetProjectionAuthorization(
+@@ -202,6 +219,7 @@ internal object ExecutionPlanMaterializationValidator {
+             }
+         }
+         validateDependencyRelations(plan, modules, seenNodeIds, issues)
++        validateControlEvidence(plan, modules, issues)
+         return issues
+     }
+ 
+@@ -518,6 +536,67 @@ internal object ExecutionPlanMaterializationValidator {
+         }
+     }
+ 
++    private fun validateControlEvidence(
++        plan: ExecutionPlan,
++        modules: ModuleRegistry,
++        issues: MutableList<PlanningEvidenceIssue>
++    ) {
++        val duplicateRequirements = plan.controlRequirements.groupBy(ControlRequirement::id).filterValues { it.size > 1 }
++        duplicateRequirements.keys.forEach { id ->
++            issues += issue("planning.control.requirement.duplicate", "controlRequirements.$id", "Control requirement '$id' is duplicated.")
++        }
++        val duplicateEvidence = plan.controlEvidence.groupBy { it.requirementId }.filterValues { it.size > 1 }
++        duplicateEvidence.keys.forEach { id ->
++            issues += issue("planning.control.evidence.duplicate", "controlEvidence.$id", "Control requirement '$id' has multiple evidence records.")
++        }
++        val requirementIds = plan.controlRequirements.map(ControlRequirement::id).toSet()
++        plan.controlEvidence.filter { it.requirementId !in requirementIds }.forEach { evidence ->
++            issues += issue("planning.control.evidence.orphan", "controlEvidence.${evidence.requirementId}", "Control evidence references an undeclared requirement.")
++        }
++        plan.controlRequirements.filter { requirement -> plan.controlEvidence.none { it.requirementId == requirement.id } }.forEach { requirement ->
++            issues += issue("planning.control.evidence.missing", "controlRequirements.${requirement.id}", "Every control requirement must have one explicit evidence record, including unknown evidence.")
++        }
++
++        val tasks = PlanDependencyRelations.flatten(plan.nodes).filterIsInstance<TaskNode>()
++        val canonicalCapabilities = tasks.mapNotNull { task -> task.semanticCapability?.let { runCatching { StandardCapability.valueOf(it) }.getOrNull() } }
++        val expectedCanonical = CanonicalControlRequirementAuthority.requirementsForCapabilities(canonicalCapabilities)
++        val expectedModule = PlanningControlAuthority.rederivedModuleRequirements(plan.nodes, modules)
++        (expectedCanonical + expectedModule).forEach { expected ->
++            val actual = plan.controlRequirements.singleOrNull { it.id == expected.id }
++            if (actual != expected) {
++                issues += issue(
++                    "planning.control.requirement.invalid",
++                    "controlRequirements.${expected.id}",
++                    "Control requirement must match its canonical or module authority. Expected $expected, found $actual."
++                )
++            }
++        }
++
++        plan.controlEvidence.filter { it.status == ControlEvidenceStatus.DYNAMIC }.forEach { evidence ->
++            val missing = evidence.enforcementCapabilities.filter { it !in plan.requiredCapabilities }
++            if (missing.isNotEmpty()) {
++                issues += issue(
++                    "planning.control.dynamic.capability.missing",
++                    "controlEvidence.${evidence.requirementId}",
++                    "Dynamic control evidence must require its enforcement capabilities: ${missing.joinToString()}."
++                )
++            }
++        }
++        val expectedDecision = runCatching {
++            ControlDecisionAuthority.evaluate(plan.controlRequirements, plan.controlEvidence)
++        }.getOrElse { error ->
++            issues += issue("planning.control.assessment.invalid", "controlDecision", error.message ?: "Control assessment is malformed.")
++            return
++        }
++        if (plan.controlDecision != expectedDecision) {
++            issues += issue(
++                "planning.control.decision.invalid",
++                "controlDecision",
++                "Control decision must be derived from requirement evidence. Expected $expectedDecision, found ${plan.controlDecision}."
++            )
++        }
++    }
++
+     private fun validateNodes(
+         nodes: List<PlanNode>,
+         path: String,
+@@ -597,3 +676,29 @@ private fun ContinuityKind.toPlanKind(): PlanDependencyKind = when (this) {
+     ContinuityKind.WORKSPACE -> PlanDependencyKind.WORKSPACE
+     ContinuityKind.STATE -> PlanDependencyKind.STATE
+ }
++
++
++class UnresolvedPlanningControlException(
++    val requirements: List<ControlRequirement>
++) : IllegalArgumentException(
++    "Execution plan contains unresolved control evidence: " + requirements.joinToString { it.id }
++)
++
++internal object ExecutionPlanControlValidator {
++    fun blockers(plan: ExecutionPlan): List<ControlRequirement> {
++        val evidence = plan.controlEvidence.associateBy { it.requirementId }
++        return plan.controlRequirements.filter { requirement ->
++            when (evidence[requirement.id]?.status ?: ControlEvidenceStatus.UNKNOWN) {
++                ControlEvidenceStatus.UNKNOWN, ControlEvidenceStatus.UNSATISFIED -> true
++                ControlEvidenceStatus.SATISFIED, ControlEvidenceStatus.DYNAMIC -> false
++            }
++        }
++    }
++
++    fun requireAuthorized(plan: ExecutionPlan) {
++        val blockers = blockers(plan)
++        if (blockers.isNotEmpty() || plan.controlDecision.status == ControlDecisionStatus.BLOCKED) {
++            throw UnresolvedPlanningControlException(blockers)
++        }
++    }
++}
+diff --git a/src/main/kotlin/org/flowlang/intent/CanonicalIntentMeaning.kt b/src/main/kotlin/org/flowlang/intent/CanonicalIntentMeaning.kt
+index 3e58af9..61ad1d2 100644
+--- a/src/main/kotlin/org/flowlang/intent/CanonicalIntentMeaning.kt
++++ b/src/main/kotlin/org/flowlang/intent/CanonicalIntentMeaning.kt
+@@ -2,6 +2,8 @@ package org.flowlang.intent
+ 
+ import org.flowlang.effects.CanonicalIntentEffectAuthority
+ import org.flowlang.effects.SemanticEffect
++import org.flowlang.controls.CanonicalControlRequirementAuthority
++import org.flowlang.controls.ControlRequirement
+ import org.flowlang.modules.ModuleActionContract
+ import org.flowlang.modules.ModuleRegistry
+ import org.flowlang.standard.StandardCapabilityContracts
+@@ -21,6 +23,7 @@ data class CanonicalIntentMeaning(
+     val inputs: List<IntentInput> = emptyList(),
+     val triggers: List<IntentTrigger> = emptyList(),
+     val workflows: List<CanonicalIntentWorkflow> = emptyList(),
++    val controlRequirements: List<ControlRequirement> = emptyList(),
+     val policies: List<IntentPolicy> = emptyList(),
+     val failure: IntentFailurePolicy = IntentFailurePolicy()
+ )
+@@ -221,6 +224,7 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
+                     }
+                 )
+             },
++            controlRequirements = CanonicalControlRequirementAuthority.requirementsFor(intent),
+             policies = intent.policies,
+             failure = intent.failure
+         )
+diff --git a/src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt b/src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt
+index 12b4e41..2a08846 100644
+--- a/src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt
++++ b/src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt
+@@ -1,6 +1,8 @@
+ package org.flowlang.intent
+ 
+ import org.flowlang.modules.ModuleRegistry
++import org.flowlang.controls.CanonicalControlRequirementAuthority
++import org.flowlang.controls.ControlAssessment
+ import org.flowlang.modules.SchemaField
+ import org.flowlang.standard.StandardCapabilityContracts
+ 
+@@ -13,7 +15,6 @@ import org.flowlang.standard.StandardCapabilityContracts
+  * forcing them to debug platform-specific runtime failures.
+  */
+ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
+-    private val safetyPolicyValidator = SafetyPolicyValidator()
+ 
+     fun validate(intent: IntentDocument): IntentValidationReport {
+         val issues = mutableListOf<IntentValidationIssue>()
+@@ -70,8 +71,8 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
+             }
+         }
+ 
+-        issues += MandatorySafetyPolicy.validate(intent)
+-        issues += safetyPolicyValidator.validate(intent)
++        val controlAssessment = CanonicalControlRequirementAuthority.assess(intent)
++        issues += CanonicalControlRequirementAuthority.validationIssues(controlAssessment)
+ 
+         resolution.bindings.flatMap { binding ->
+             binding.issues.map { issue -> err(issue.code, issue.message) }
+@@ -108,7 +109,8 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
+             valid = issues.none { it.level == "error" },
+             issues = issues,
+             meaning = resolution.meaning,
+-            bindings = resolution.bindings
++            bindings = resolution.bindings,
++            controlAssessment = controlAssessment
+         )
+     }
+ 
+@@ -201,7 +203,8 @@ data class IntentValidationReport(
+     val valid: Boolean,
+     val issues: List<IntentValidationIssue> = emptyList(),
+     val meaning: CanonicalIntentMeaning,
+-    val bindings: List<IntentBindingEvidence> = emptyList()
++    val bindings: List<IntentBindingEvidence> = emptyList(),
++    val controlAssessment: ControlAssessment = ControlAssessment()
+ ) {
+     fun assertValid() {
+         if (!valid) error("Intent validation failed: " + issues.filter { it.level == "error" }.joinToString { it.code + ": " + it.message })
+diff --git a/src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt b/src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt
+index 75ce00c..71f4757 100644
+--- a/src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt
++++ b/src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt
+@@ -42,6 +42,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
+                 vars = emptyList(),
+                 systems = systems.values.toList(),
+                 triggers = intent.triggers.map { it.toTriggerNode() },
++                controlRequirements = validation.controlAssessment.requirements,
++                controlEvidence = validation.controlAssessment.evidence,
++                controlDecision = validation.controlAssessment.decision,
+                 steps = statements,
+                 errorHandler = errorHandler
+             ),
+diff --git a/src/main/kotlin/org/flowlang/intent/MandatorySafetyPolicy.kt b/src/main/kotlin/org/flowlang/intent/MandatorySafetyPolicy.kt
+index 7e02084..68966bb 100644
+--- a/src/main/kotlin/org/flowlang/intent/MandatorySafetyPolicy.kt
++++ b/src/main/kotlin/org/flowlang/intent/MandatorySafetyPolicy.kt
+@@ -1,57 +1,20 @@
+ package org.flowlang.intent
+ 
++import org.flowlang.controls.CanonicalControlRequirementAuthority
++import org.flowlang.controls.ControlRequirementSource
++
+ /**
+- * Capability-level safety obligations that are part of the Flow standard itself.
+- *
+- * This object is intentionally located in the intent layer, not in the AI
+- * normalization boundary. A manually authored intent file and an AI-normalized
+- * intent must receive the same safety verdict before lowering. Otherwise the
+- * input channel becomes a security boundary, which is exactly the sort of
+- * cleverness production systems punish with interest.
++ * Compatibility facade for callers that still request capability-level safety validation.
++ * The canonical control authority owns the requirement, evidence and decision model.
+  */
++@Deprecated("Use CanonicalControlRequirementAuthority.assess(intent).")
+ object MandatorySafetyPolicy {
+-    /**
+-     * Validates safety obligations implied by high-risk capabilities.
+-     *
+-     * The validator reports missing mitigations; it does not silently synthesize
+-     * policies. Silent synthesis would let a manual intent pass the gate while the
+-     * lowered AST still lacks the human-visible backup/approval evidence.
+-     */
+     fun validate(intent: IntentDocument): List<IntentValidationIssue> {
+-        val issues = mutableListOf<IntentValidationIssue>()
+-        val steps = intent.workflows.flatMap { it.steps }
+-
+-        if (steps.any { it.capability == StandardCapability.DATABASE_MIGRATE } && !hasBackup(steps)) {
+-            issues += error(
+-                "SAFETY_REQUIRES_BACKUP",
+-                "DATABASE_MIGRATE requires an explicit BACKUP step or confirmed backup parameter before lowering."
+-            )
+-        }
+-
+-        if (steps.any { it.capability == StandardCapability.DEPROVISION } && !hasApproval(intent, steps)) {
+-            issues += error(
+-                "SAFETY_REQUIRES_APPROVAL",
+-                "DEPROVISION requires an APPROVE step or approval policy before lowering."
+-            )
+-        }
+-
+-        return issues
++        val assessment = CanonicalControlRequirementAuthority.assess(intent)
++        val ids = assessment.requirements
++            .filter { it.source == ControlRequirementSource.CANONICAL_CAPABILITY }
++            .map { it.id }
++            .toSet()
++        return CanonicalControlRequirementAuthority.validationIssues(assessment, ids)
+     }
+-
+-    private fun hasBackup(steps: List<IntentStep>): Boolean =
+-        steps.any { it.capability == StandardCapability.BACKUP } ||
+-            steps.any { step -> step.params["backup"].asConfirmedText() }
+-
+-    private fun hasApproval(intent: IntentDocument, steps: List<IntentStep>): Boolean =
+-        steps.any { it.capability == StandardCapability.APPROVE } ||
+-            intent.policies.any { it.type == IntentPolicyType.APPROVAL }
+-
+-    private fun IntentValue?.asConfirmedText(): Boolean {
+-        val raw = asTextOrNull()?.trim().orEmpty()
+-        if (raw.isBlank()) return false
+-        return raw.lowercase() !in setOf("false", "no", "none", "not-confirmed", "unspecified")
+-    }
+-
+-    private fun error(code: String, message: String): IntentValidationIssue =
+-        IntentValidationIssue("error", code, message)
+ }
