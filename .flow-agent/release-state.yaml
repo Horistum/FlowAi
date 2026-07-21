@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 8
+stateVersion: 9
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,14 +18,14 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.5"
-  completedItemName: "Canonical Intent Meaning"
+  completedItem: "0.9.7.6"
+  completedItemName: "Universal Effect and State Transition Model"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.6"
-  nextCoreItemName: "Universal Effect and State Transition Model"
+  nextCoreItem: "0.9.7.7"
+  nextCoreItemName: "Universal Control and Policy Requirements"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.5.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.6.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
 
@@ -63,6 +63,10 @@ qualityPrinciples:
   - "Canonical intent meaning is derived before explicit binding and is never enriched from implementation inventory."
   - "Explicit binding requires a declared capability implementation and an explicitly selected compatible system."
   - "Binding failure remains separate diagnostic evidence and must not mutate canonical meaning."
+  - "Semantic effects are derived from canonical capabilities before implementation binding."
+  - "Effect domain, operation, resource and state transition remain implementation-independent."
+  - "Ordering, continuity, policy and topology evidence must not be inferred from semantic effects."
+  - "Known canonical effects must be re-derived and validated before materialization."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-implementation-head"
@@ -72,14 +76,16 @@ lastKnownValidation:
   cleanTest: "passed-on-implementation-head"
   conformance: "passed-on-implementation-head"
   executableReferenceEvidence: "passed-on-implementation-head"
-  validationSource: "Flow CI #1719 passed on implementation head eed684e9996680f9abc6c4348c8747e332c1e6c9."
+  validationSource: "Flow CI #1756 passed on implementation head af921b5ceb1f5e15c9f6a152a7291003817f8134."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "Canonical intent meaning excludes implementation identities, systems, tools and engines."
-    - "Explicit uses declarations produce separate binding evidence with provenance and resolution status."
-    - "Module actions declare implemented standard capabilities through strict canonical contracts."
-    - "Unbound standard intent remains standard semantic work instead of selecting a module implicitly."
-    - "Invalid or incomplete explicit binding fails validation before planning."
-    - "Semantic target parameters never select binding systems implicitly."
+    - "Canonical intent capabilities derive typed effects before explicit binding."
+    - "AST and execution-plan nodes preserve effect domain, operation, resource and state transition."
+    - "Software delivery, data transformation and infrastructure state change use one effect vocabulary."
+    - "Implementation-owned module effects convert without inferring semantic domains from implementation names."
+    - "Legacy string effects remain a derived resource projection and not a semantic authority."
+    - "Materialization authorization rejects missing, duplicated or forged effect evidence."
+    - "Core effect contracts remain independent from serializer annotations."
     - "Reference snapshots were regenerated through the canonical production generator."
+    - "The Jenkins executable reference proof remains live."
     - "The final metadata head must pass the unmodified standard Flow CI."
