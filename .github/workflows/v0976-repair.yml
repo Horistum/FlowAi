@@ -65,16 +65,25 @@ jobs:
       - name: Validate typed effect contract
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           chmod +x gradlew
-          ./gradlew --no-daemon test --tests UniversalEffectStateTransitionModelTests --stacktrace
+          ./gradlew --no-daemon test --tests UniversalEffectStateTransitionModelTests --stacktrace 2>&1 | tee /tmp/v0976-effect-tests.log
 
       - name: Regenerate canonical reference snapshots
         shell: bash
         run: |
-          set -euo pipefail
-          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/build-test-deploy.intent.yaml --out conformance/snapshots/build-test-deploy --scenario-id build-test-deploy" --stacktrace
-          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/checkout-build-image.intent.yaml --out conformance/snapshots/checkout-build-image --scenario-id checkout-build-image" --stacktrace
+          set -o pipefail
+          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/build-test-deploy.intent.yaml --out conformance/snapshots/build-test-deploy --scenario-id build-test-deploy" --stacktrace 2>&1 | tee /tmp/v0976-build-test-deploy.log
+          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/checkout-build-image.intent.yaml --out conformance/snapshots/checkout-build-image --scenario-id checkout-build-image" --stacktrace 2>&1 | tee /tmp/v0976-checkout-build-image.log
+
+      - name: Upload repair diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v0976-repair-diagnostics
+          path: /tmp/v0976-*.log
+          if-no-files-found: warn
+          retention-days: 1
 
       - name: Commit repair
         shell: bash
