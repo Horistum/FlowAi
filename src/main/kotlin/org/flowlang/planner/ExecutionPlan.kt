@@ -1,6 +1,10 @@
 package org.flowlang.planner
 
 import org.flowlang.effects.SemanticEffect
+import org.flowlang.controls.ControlDecision
+import org.flowlang.controls.ControlDecisionStatus
+import org.flowlang.controls.ControlEvidence
+import org.flowlang.controls.ControlRequirement
 
 /**
  * Execution plan (docs/07). The plan preserves control-flow structure (conditions,
@@ -19,6 +23,9 @@ data class ExecutionPlan(
     val requiredCapabilities: List<String> = emptyList(),
     val targetHints: Map<String, String> = emptyMap(),
     val assumptions: List<PlanAssumption> = emptyList(),
+    val controlRequirements: List<ControlRequirement> = emptyList(),
+    val controlEvidence: List<ControlEvidence> = emptyList(),
+    val controlDecision: ControlDecision = ControlDecision(ControlDecisionStatus.ALLOWED),
     val nodes: List<PlanNode> = emptyList(),
     val dependencyRelations: List<PlanDependencyRelation> = PlanDependencyRelations.inferOrdering(nodes)
 ) {

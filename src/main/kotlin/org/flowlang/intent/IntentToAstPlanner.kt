@@ -42,6 +42,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 vars = emptyList(),
                 systems = systems.values.toList(),
                 triggers = intent.triggers.map { it.toTriggerNode() },
+                controlRequirements = validation.controlAssessment.requirements,
+                controlEvidence = validation.controlAssessment.evidence,
+                controlDecision = validation.controlAssessment.decision,
                 steps = statements,
                 errorHandler = errorHandler
             ),

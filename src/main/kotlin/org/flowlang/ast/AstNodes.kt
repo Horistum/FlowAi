@@ -1,6 +1,9 @@
 package org.flowlang.ast
 
 import org.flowlang.effects.SemanticEffect
+import org.flowlang.controls.ControlDecision
+import org.flowlang.controls.ControlEvidence
+import org.flowlang.controls.ControlRequirement
 import org.flowlang.standard.FlowStandardVersions
 
 /**
@@ -40,6 +43,9 @@ data class FlowNode(
     val vars: List<VariableNode> = emptyList(),
     val systems: List<SystemNode> = emptyList(),
     val triggers: List<TriggerNode> = emptyList(),
+    val controlRequirements: List<ControlRequirement> = emptyList(),
+    val controlEvidence: List<ControlEvidence> = emptyList(),
+    val controlDecision: ControlDecision = ControlDecision(org.flowlang.controls.ControlDecisionStatus.ALLOWED),
     val steps: List<StatementNode> = emptyList(),
     val errorHandler: ErrorHandlerNode? = null
 )

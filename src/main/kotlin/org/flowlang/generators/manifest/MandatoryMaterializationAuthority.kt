@@ -6,6 +6,12 @@ import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.PlannerCapabilityConstraintGate
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.controls.CanonicalControlRequirementAuthority
+import org.flowlang.controls.ControlDecisionAuthority
+import org.flowlang.controls.ControlDecisionStatus
+import org.flowlang.controls.ControlEvidenceStatus
+import org.flowlang.controls.ControlRequirement
+import org.flowlang.controls.PlanningControlAuthority
 import org.flowlang.effects.CanonicalIntentEffectAuthority
 import org.flowlang.effects.ModuleEffectCanonicalizer
 import org.flowlang.effects.SemanticEffect
@@ -101,6 +107,7 @@ class MandatoryMaterializationAuthority(
         require(target.isNotBlank()) { "Materialization target must not be blank." }
         ExecutionPlanMaterializationValidator.requireValid(plan, modules)
         ExecutionPlanContinuityValidator.requireResolved(plan)
+        ExecutionPlanControlValidator.requireAuthorized(plan)
         val report = capabilityGate.requireProjectionAllowed(plan, target, strict)
         return TargetProjectionAuthorization(
             plan = plan,
@@ -133,9 +140,19 @@ class MandatoryMaterializationAuthority(
                 message = continuityMessage(relation)
             )
         }
-        val compatibility = if (continuityIssues.isEmpty()) report.compatibility else report.compatibility.copy(
+        val controlIssues = ExecutionPlanControlValidator.blockers(plan).map { requirement ->
+            CompatibilityIssue(
+                level = CompatibilityLevel.ERROR,
+                target = target,
+                nodeId = "control",
+                feature = "control.${requirement.kind.name.lowercase()}.planning",
+                message = "Control requirement '${requirement.id}' is not satisfied by known evidence."
+            )
+        }
+        val planningIssues = continuityIssues + controlIssues
+        val compatibility = if (planningIssues.isEmpty()) report.compatibility else report.compatibility.copy(
             status = SupportLevel.UNSUPPORTED,
-            issues = (report.compatibility.issues + continuityIssues).distinct(),
+            issues = (report.compatibility.issues + planningIssues).distinct(),
             capabilityStatus = report.compatibility.capabilityStatus
         )
         return TargetProjectionAuthorization(
@@ -202,6 +219,7 @@ internal object ExecutionPlanMaterializationValidator {
             }
         }
         validateDependencyRelations(plan, modules, seenNodeIds, issues)
+        validateControlEvidence(plan, modules, issues)
         return issues
     }
 
@@ -518,6 +536,67 @@ internal object ExecutionPlanMaterializationValidator {
         }
     }
 
+    private fun validateControlEvidence(
+        plan: ExecutionPlan,
+        modules: ModuleRegistry,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        val duplicateRequirements = plan.controlRequirements.groupBy(ControlRequirement::id).filterValues { it.size > 1 }
+        duplicateRequirements.keys.forEach { id ->
+            issues += issue("planning.control.requirement.duplicate", "controlRequirements.$id", "Control requirement '$id' is duplicated.")
+        }
+        val duplicateEvidence = plan.controlEvidence.groupBy { it.requirementId }.filterValues { it.size > 1 }
+        duplicateEvidence.keys.forEach { id ->
+            issues += issue("planning.control.evidence.duplicate", "controlEvidence.$id", "Control requirement '$id' has multiple evidence records.")
+        }
+        val requirementIds = plan.controlRequirements.map(ControlRequirement::id).toSet()
+        plan.controlEvidence.filter { it.requirementId !in requirementIds }.forEach { evidence ->
+            issues += issue("planning.control.evidence.orphan", "controlEvidence.${evidence.requirementId}", "Control evidence references an undeclared requirement.")
+        }
+        plan.controlRequirements.filter { requirement -> plan.controlEvidence.none { it.requirementId == requirement.id } }.forEach { requirement ->
+            issues += issue("planning.control.evidence.missing", "controlRequirements.${requirement.id}", "Every control requirement must have one explicit evidence record, including unknown evidence.")
+        }
+
+        val tasks = PlanDependencyRelations.flatten(plan.nodes).filterIsInstance<TaskNode>()
+        val canonicalCapabilities = tasks.mapNotNull { task -> task.semanticCapability?.let { runCatching { StandardCapability.valueOf(it) }.getOrNull() } }
+        val expectedCanonical = CanonicalControlRequirementAuthority.requirementsForCapabilities(canonicalCapabilities)
+        val expectedModule = PlanningControlAuthority.rederivedModuleRequirements(plan.nodes, modules)
+        (expectedCanonical + expectedModule).forEach { expected ->
+            val actual = plan.controlRequirements.singleOrNull { it.id == expected.id }
+            if (actual != expected) {
+                issues += issue(
+                    "planning.control.requirement.invalid",
+                    "controlRequirements.${expected.id}",
+                    "Control requirement must match its canonical or module authority. Expected $expected, found $actual."
+                )
+            }
+        }
+
+        plan.controlEvidence.filter { it.status == ControlEvidenceStatus.DYNAMIC }.forEach { evidence ->
+            val missing = evidence.enforcementCapabilities.filter { it !in plan.requiredCapabilities }
+            if (missing.isNotEmpty()) {
+                issues += issue(
+                    "planning.control.dynamic.capability.missing",
+                    "controlEvidence.${evidence.requirementId}",
+                    "Dynamic control evidence must require its enforcement capabilities: ${missing.joinToString()}."
+                )
+            }
+        }
+        val expectedDecision = runCatching {
+            ControlDecisionAuthority.evaluate(plan.controlRequirements, plan.controlEvidence)
+        }.getOrElse { error ->
+            issues += issue("planning.control.assessment.invalid", "controlDecision", error.message ?: "Control assessment is malformed.")
+            return
+        }
+        if (plan.controlDecision != expectedDecision) {
+            issues += issue(
+                "planning.control.decision.invalid",
+                "controlDecision",
+                "Control decision must be derived from requirement evidence. Expected $expectedDecision, found ${plan.controlDecision}."
+            )
+        }
+    }
+
     private fun validateNodes(
         nodes: List<PlanNode>,
         path: String,
@@ -596,4 +675,30 @@ private fun ContinuityKind.toPlanKind(): PlanDependencyKind = when (this) {
     ContinuityKind.VALUE -> PlanDependencyKind.VALUE
     ContinuityKind.WORKSPACE -> PlanDependencyKind.WORKSPACE
     ContinuityKind.STATE -> PlanDependencyKind.STATE
+}
+
+
+class UnresolvedPlanningControlException(
+    val requirements: List<ControlRequirement>
+) : IllegalArgumentException(
+    "Execution plan contains unresolved control evidence: " + requirements.joinToString { it.id }
+)
+
+internal object ExecutionPlanControlValidator {
+    fun blockers(plan: ExecutionPlan): List<ControlRequirement> {
+        val evidence = plan.controlEvidence.associateBy { it.requirementId }
+        return plan.controlRequirements.filter { requirement ->
+            when (evidence[requirement.id]?.status ?: ControlEvidenceStatus.UNKNOWN) {
+                ControlEvidenceStatus.UNKNOWN, ControlEvidenceStatus.UNSATISFIED -> true
+                ControlEvidenceStatus.SATISFIED, ControlEvidenceStatus.DYNAMIC -> false
+            }
+        }
+    }
+
+    fun requireAuthorized(plan: ExecutionPlan) {
+        val blockers = blockers(plan)
+        if (blockers.isNotEmpty() || plan.controlDecision.status == ControlDecisionStatus.BLOCKED) {
+            throw UnresolvedPlanningControlException(blockers)
+        }
+    }
 }

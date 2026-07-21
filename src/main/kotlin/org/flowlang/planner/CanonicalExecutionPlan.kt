@@ -1,6 +1,10 @@
 package org.flowlang.planner
 
 import org.flowlang.effects.SemanticEffect
+import org.flowlang.controls.ControlDecision
+import org.flowlang.controls.ControlDecisionStatus
+import org.flowlang.controls.ControlEvidence
+import org.flowlang.controls.ControlRequirement
 
 /**
  * Canonical public Execution Plan view.
@@ -19,6 +23,9 @@ data class CanonicalExecutionPlan(
     val requiredCapabilities: List<String> = emptyList(),
     val targetHints: Map<String, String> = emptyMap(),
     val assumptions: List<PlanAssumption> = emptyList(),
+    val controlRequirements: List<ControlRequirement> = emptyList(),
+    val controlEvidence: List<ControlEvidence> = emptyList(),
+    val controlDecision: ControlDecision = ControlDecision(ControlDecisionStatus.ALLOWED),
     val nodes: List<CanonicalPlanNode> = emptyList(),
     val dependencyRelations: List<PlanDependencyRelation> = emptyList()
 )
@@ -81,6 +88,9 @@ object ExecutionPlanCanonicalizer {
             requiredCapabilities = plan.requiredCapabilities,
             targetHints = plan.targetHints,
             assumptions = plan.assumptions,
+            controlRequirements = plan.controlRequirements,
+            controlEvidence = plan.controlEvidence,
+            controlDecision = plan.controlDecision,
             nodes = plan.nodes.map { canonicalizeNode(it) },
             dependencyRelations = plan.dependencyRelations
         )
