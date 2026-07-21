@@ -1,5 +1,7 @@
 package org.flowlang.effects
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 /**
  * Target-neutral semantic effects carried from canonical intent into planning.
  *
@@ -52,10 +54,14 @@ data class SemanticEffect(
         }
     }
 
+    @get:JsonIgnore
     val observesResource: Boolean get() = operation == EffectOperation.READ
+
+    @get:JsonIgnore
     val mutatesState: Boolean get() = operation in MUTATING_OPERATIONS
 
     /** Backward-compatible resource projection for the historical string list. */
+    @get:JsonIgnore
     val legacyIdentity: String get() = resource
 
     companion object {
