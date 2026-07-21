@@ -1,18 +1,26 @@
 version: "0.9.7.5"
 name: "Canonical Intent Meaning"
 stream: core
-status: in-progress
+status: completed
 objective: "Separate canonical intent meaning from explicit capability binding."
 universalInvariant: "Equivalent intent has equivalent meaning across inventories."
 forbiddenScope:
   - "No implicit binding selection."
   - "No implementation identity in canonical meaning."
   - "No target inventory as semantic authority."
-implementationStatus: "canonical evidence regenerated for full validation"
+implementedScope:
+  - "Canonical intent meaning is derived before binding resolution and excludes systems, tools, engines and implementation identities."
+  - "Explicit uses declarations produce separate binding evidence with provenance, resolution status and implementation claims."
+  - "Module actions declare the standard capabilities they implement through strict canonical contracts."
+  - "Unbound standard intent remains standard semantic work instead of selecting a preferred module implicitly."
+  - "Semantic parameters remain part of meaning while system, tool and engine are binding metadata only."
+  - "Production validation, planning, design analysis and conformance use the same canonical authority."
 completionEvidence:
   - "Canonical intent meaning is derived before and independently from binding resolution."
   - "Equivalent intent produces identical canonical meaning across different capability inventories."
   - "Explicit binding decisions remain separate evidence with declared provenance and resolution status."
-  - "Missing or ambiguous binding does not mutate canonical meaning and fails execution readiness closed."
-  - "Production planners, validators and materialization paths reject forged or implicit binding claims."
-  - "The final unmodified Flow CI workflow passes compilation, tests, conformance and reference evidence."
+  - "Invalid or incomplete binding does not mutate canonical meaning and fails planning closed."
+  - "Canonical module descriptors declare implemented standard capabilities explicitly."
+  - "Structured semantic parameters survive canonicalization and lowering."
+  - "Reference snapshots match the canonical production generator file for file."
+  - "Flow CI #1719 passed compilation, full tests, conformance and reference evidence on implementation head eed684e9996680f9abc6c4348c8747e332c1e6c9."
