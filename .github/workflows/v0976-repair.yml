@@ -74,7 +74,7 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/build-test-deploy.intent.yaml --out conformance/snapshots/build-test-deploy --scenario-id build-test-deploy" --stacktrace 2>&1 | tee /tmp/v0976-build-test-deploy.log
-          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/checkout-build-image.intent.yaml --out conformance/snapshots/checkout-build-image --scenario-id checkout-build-image" --stacktrace 2>&1 | tee /tmp/v0976-checkout-build-image.log
+          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/checkout-build-image.intent.yaml --out conformance/snapshots/checkout-build-image --scenario-id checkout-build-image --targets jenkins" --stacktrace 2>&1 | tee /tmp/v0976-checkout-build-image.log
 
       - name: Upload repair diagnostics
         if: always()
