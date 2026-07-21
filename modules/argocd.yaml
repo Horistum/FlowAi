@@ -18,6 +18,7 @@ systemTypes:
 actions:
   sync:
     kind: action
+    implements: [DEPLOY, SYNC]
     targetTypes:
       - argocd
 

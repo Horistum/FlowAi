@@ -41,6 +41,7 @@ data class ModuleActionSummary(
     val requiresSafety: Boolean = false,
     val secrets: List<String> = emptyList(),
     val requiredCapabilities: List<String> = emptyList(),
+    val implementedCapabilities: List<String> = emptyList(),
     val targetImplications: Map<String, String> = emptyMap(),
     val retrySupported: Boolean = false,
     val timeoutSupported: Boolean = false
@@ -137,6 +138,7 @@ object ModuleContractAnalyzer {
             requiresSafety = safety.requiresSafety,
             secrets = secrets,
             requiredCapabilities = requiredCapabilities,
+            implementedCapabilities = implementedCapabilities.sorted(),
             targetImplications = targetImplications.mapValues { it.value.support },
             retrySupported = retrySupported,
             timeoutSupported = timeoutSupported

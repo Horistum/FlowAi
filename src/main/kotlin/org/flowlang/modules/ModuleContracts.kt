@@ -34,6 +34,7 @@ data class ModuleActionContract(
     val errors: Map<String, ModuleErrorRule> = emptyMap(),
     val secrets: List<String> = emptyList(),
     val requiredCapabilities: List<String> = emptyList(),
+    val implementedCapabilities: Set<String> = emptySet(),
     val targetImplications: Map<String, TargetImplication> = emptyMap()
 )
 

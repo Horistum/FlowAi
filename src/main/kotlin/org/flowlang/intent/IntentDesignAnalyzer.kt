@@ -44,6 +44,7 @@ class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry
     fun analyze(intent: IntentDocument): IntentDesignReport {
         val declaredSystems = intent.systems.associateBy { it.name }
         val steps = intent.workflows.flatMap { it.steps }
+        val resolution = CanonicalIntentMeaningAuthority(registry).resolve(intent)
         val capabilities = steps.map { step ->
             val def = StandardIntentCatalog.byCapability[step.capability]
             IntentCapabilityUse(
@@ -85,30 +86,25 @@ class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry
             )
         }
 
-        steps.forEach { step ->
-            val explicit = step.params["system"].asTextOrNull()
-            when (step.capability) {
-                StandardCapability.CHECKOUT -> requireSystem(explicit ?: "source", "git", "Source checkout step '${step.id}'.")
-                StandardCapability.BUILD, StandardCapability.TEST, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND -> requireSystem(
-                    explicit ?: "standard",
-                    "standard",
-                    "Semantic build, test, package or manual runtime intent in step '${step.id}'."
+        resolution.bindings.forEach { binding ->
+            when (binding.status) {
+                IntentBindingStatus.RESOLVED -> requireSystem(
+                    name = requireNotNull(binding.system),
+                    type = requireNotNull(binding.systemType),
+                    reason = "Explicit binding '${binding.requestedAction}' for step '${binding.stepId}'."
                 )
-                StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE -> requireSystem(explicit ?: "registry", "docker", "Container image step '${step.id}'.")
-                StandardCapability.DEPLOY, StandardCapability.VERIFY -> {
-                    val explicitModule = step.uses?.substringBefore('.')?.takeIf { it.isNotBlank() }
-                    if (explicitModule != null) {
-                        requireSystem(explicit ?: explicitModule, explicitModule, "Explicit target integration '${step.uses}' in step '${step.id}'.")
-                    } else {
-                        requireSystem(explicit ?: "standard", "standard", "Target-neutral ${step.capability.name.lowercase()} intent in step '${step.id}'.")
-                    }
+                IntentBindingStatus.UNBOUND -> if (binding.capability != StandardCapability.APPROVE) {
+                    requireSystem(
+                        name = "standard",
+                        type = "standard",
+                        reason = "Unbound canonical capability '${binding.capability}' in step '${binding.stepId}'."
+                    )
                 }
-                StandardCapability.NOTIFY -> requireSystem(explicit ?: "notifier", "notify", "Notification step '${step.id}'.")
-                else -> requireSystem(explicit ?: "standard", "standard", "Semantic standard capability '${step.capability}' in step '${step.id}'.")
+                IntentBindingStatus.INVALID -> Unit
             }
         }
 
-        if (intent.failure.notify) requireSystem("notifier", "notify", "Failure notification policy.")
+        if (intent.failure.notify) requireSystem("standard", "standard", "Semantic failure notification policy.")
         if (intent.failure.rollback) requireSystem("standard", "standard", "Failure rollback policy.")
 
         val missingDecisions = mutableListOf<String>()
@@ -123,6 +119,7 @@ class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry
             portability += "Approval semantics differ by target. Jenkins/GitHub/Azure have native options; Tekton usually requires an external gate."
         }
         if (steps.any { it.requires.isNotEmpty() }) portability += "Intent uses DAG dependencies through requires; target generator must preserve dependency semantics."
+        if (resolution.bindings.any { it.status == IntentBindingStatus.RESOLVED }) portability += "Explicit module bindings are implementation evidence and do not alter canonical intent meaning."
         if (steps.any { it.capability in setOf(StandardCapability.BACKUP, StandardCapability.RESTORE, StandardCapability.SECRET_ROTATE, StandardCapability.RUNBOOK, StandardCapability.INCIDENT) }) {
             portability += "Operational intents may require organization-specific modules or policies. This is expected and should be modeled through capability contracts, not custom parser syntax."
         }

@@ -13,6 +13,7 @@ systemTypes:
 actions:
   checkout:
     kind: action
+    implements: [CHECKOUT]
     targetTypes:
       - git
     input:

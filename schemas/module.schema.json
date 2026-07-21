@@ -91,6 +91,45 @@
           },
           "continuity": {
             "$ref": "#/$defs/continuity"
+          },
+          "implements": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "CHECKOUT",
+                "BUILD",
+                "TEST",
+                "PACKAGE",
+                "BUILD_IMAGE",
+                "PUSH_IMAGE",
+                "DEPLOY",
+                "VERIFY",
+                "APPROVE",
+                "ROLLBACK",
+                "NOTIFY",
+                "SYNC",
+                "DATA_SYNC",
+                "DATA_TRANSFORM",
+                "TRANSFORM",
+                "VALIDATE",
+                "BACKUP",
+                "RESTORE",
+                "CLEANUP",
+                "PROVISION",
+                "DEPROVISION",
+                "DATABASE_MIGRATE",
+                "CERTIFICATE_RENEW",
+                "KUBERNETES_MAINTENANCE",
+                "RUNBOOK",
+                "INCIDENT",
+                "SECRET_ROTATE",
+                "POLICY_CHECK",
+                "RUN_COMMAND",
+                "CALL_API",
+                "CUSTOM"
+              ]
+            },
+            "uniqueItems": true
           }
         },
         "additionalProperties": true

@@ -77,6 +77,7 @@ object ModuleYamlLoader {
         val additionalParams = boolOf(body["additionalParams"])
         val secrets = strList(body["secrets"])
         val requiredCapabilities = strList(body["requiredCapabilities"])
+        val implementedCapabilities = strList(body["implements"]).toSet()
         val errors = asMap(body["errors"]).mapValues { (errorName, errorBody) ->
             val error = asMap(errorBody)
             ModuleErrorRule(
@@ -102,7 +103,8 @@ object ModuleYamlLoader {
             additionalParams = additionalParams,
             errors = errors,
             secrets = secrets,
-            requiredCapabilities = requiredCapabilities
+            requiredCapabilities = requiredCapabilities,
+            implementedCapabilities = implementedCapabilities
         )
     }
 

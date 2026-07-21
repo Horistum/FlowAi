@@ -43,6 +43,7 @@ actions:
       supported: true
   rollback:
     kind: action
+    implements: [ROLLBACK]
     targetTypes:
       - standard
     additionalParams: true

@@ -14,6 +14,7 @@ systemTypes:
 actions:
   send:
     kind: action
+    implements: [NOTIFY]
     targetTypes:
       - notify
       - email
@@ -37,6 +38,7 @@ actions:
       destructive: false
   email:
     kind: action
+    implements: [NOTIFY]
     targetTypes:
       - notify
       - email

@@ -18,14 +18,16 @@ import org.flowlang.parser.ExpressionParser
 class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     fun plan(intent: IntentDocument): FlowDocument {
-        IntentCapabilityValidator(registry).validate(intent).assertValid()
+        val validation = IntentCapabilityValidator(registry).validate(intent)
+        validation.assertValid()
+        val bindings = validation.bindings.associateBy { it.stepId }
         val systems = LinkedHashMap<String, SystemNode>()
         intent.systems.forEach { systems[it.name] = it.toSystemNode() }
 
         val allSteps = intent.workflows.flatMap { it.steps }
-        ensureImplicitSystems(intent, allSteps, systems)
+        ensureImplicitSystems(intent, allSteps, bindings, systems)
 
-        val statements = lowerOrderedSteps(allSteps, intent)
+        val statements = lowerOrderedSteps(allSteps, intent, bindings)
         val errorHandler = buildErrorHandler(intent)
         val imports = collectModules(statements, systems.values).sorted().map { ModuleImportNode(name = it, version = "1.0") }
 
@@ -45,18 +47,16 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         )
     }
 
-    private fun ensureImplicitSystems(intent: IntentDocument, steps: List<IntentStep>, systems: LinkedHashMap<String, SystemNode>) {
-        if (steps.any { it.capability in dockerCapabilities }) {
-            systems.putIfAbsent("registry", SystemNode(name = "registry", systemType = "docker"))
+    private fun ensureImplicitSystems(
+        intent: IntentDocument,
+        steps: List<IntentStep>,
+        bindings: Map<String, IntentBindingEvidence>,
+        systems: LinkedHashMap<String, SystemNode>
+    ) {
+        val hasUnboundSemanticWork = steps.any { step ->
+            step.capability != StandardCapability.APPROVE && bindings.getValue(step.id).status == IntentBindingStatus.UNBOUND
         }
-        if (intent.failure.notify || steps.any { it.capability == StandardCapability.NOTIFY }) {
-            systems.putIfAbsent("notifier", SystemNode(
-                name = "notifier",
-                systemType = "notify",
-                config = mapOf("channel" to IdentifierLiteralNode(value = "email"))
-            ))
-        }
-        if (steps.any { it.capability in standardCapabilities } || intent.failure.rollback) {
+        if (hasUnboundSemanticWork || intent.failure.notify || intent.failure.rollback) {
             systems.putIfAbsent("standard", SystemNode(name = "standard", systemType = "standard"))
         }
     }
@@ -131,92 +131,83 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return ordered
     }
 
-    private fun lowerOrderedSteps(steps: List<IntentStep>, intent: IntentDocument): List<StatementNode> {
+    private fun lowerOrderedSteps(
+        steps: List<IntentStep>,
+        intent: IntentDocument,
+        bindings: Map<String, IntentBindingEvidence>
+    ): List<StatementNode> {
         val ordered = orderedSteps(steps)
         val out = mutableListOf<StatementNode>()
         var previousStepId: String? = null
         ordered.forEach { step ->
             val dependencies = (step.requires + listOfNotNull(previousStepId)).distinct()
-            out += lowerStep(step, intent, dependencies)
+            out += lowerStep(step, intent, dependencies, bindings.getValue(step.id))
             previousStepId = step.id
         }
         return out
     }
 
-    private fun lowerStep(step: IntentStep, intent: IntentDocument, dependencyIds: List<String>): List<StatementNode> {
-        val node: StatementNode = if (step.uses?.contains('.') == true) {
-            customAction(step, intent)
-        } else when (step.capability) {
-            StandardCapability.CHECKOUT -> ActionNode(
-                module = "git", action = "checkout", target = ref(systemFor(step, "source")),
-                params = mapNotNullValues(
-                    "url" to optionalValue(paramText(step, "url")),
-                    "branch" to optionalValue(paramText(step, "branch") ?: "main")
-                ),
-                result = result(step.id)
+    private fun lowerStep(
+        step: IntentStep,
+        intent: IntentDocument,
+        dependencyIds: List<String>,
+        binding: IntentBindingEvidence
+    ): List<StatementNode> {
+        val node: StatementNode = when (binding.status) {
+            IntentBindingStatus.RESOLVED -> boundAction(step, binding)
+            IntentBindingStatus.UNBOUND -> semanticStatement(step, intent)
+            IntentBindingStatus.INVALID -> error(
+                "Internal planner invariant: invalid binding '${binding.requestedAction}' for step '${step.id}' passed validation."
             )
-            StandardCapability.TEST -> standardAction(step, "test", intent, dropBlockedParams = true)
-            StandardCapability.BUILD -> standardAction(step, "build", intent, dropBlockedParams = true)
-            StandardCapability.PACKAGE -> standardAction(step, "package", intent, dropBlockedParams = true)
-            StandardCapability.RUN_COMMAND -> standardAction(step, "manual-runtime-action", intent, dropBlockedParams = true)
-            StandardCapability.BUILD_IMAGE -> ActionNode(
-                module = "docker", action = "build", target = ref(systemFor(step, "registry")),
-                params = mapNotNullValues(
-                    "image" to imageExpression(intent, step),
-                    "path" to optionalValue(paramText(step, "path") ?: "."),
-                    "dockerfile" to optionalValue(paramText(step, "dockerfile")),
-                    "push" to optionalBool(paramText(step, "push"))
-                ),
-                result = result(step.id)
-            )
-            StandardCapability.PUSH_IMAGE -> ActionNode(
-                module = "docker", action = "push", target = ref(systemFor(step, "registry")),
-                params = mapOf("image" to imageOrDependency(intent, step)),
-                result = result(step.id)
-            )
-            StandardCapability.APPROVE -> approvalStatement(step, intent)
-            StandardCapability.DEPLOY -> standardAction(step, "deploy", intent)
-            StandardCapability.VERIFY -> standardAction(step, "verify", intent)
-            StandardCapability.ROLLBACK -> standardAction(step, "rollback", intent, requiresHandler = false)
-            StandardCapability.NOTIFY -> ActionNode(
-                module = "notify", action = "send", target = ref(systemFor(step, "notifier")),
-                params = mapNotNullValues(
-                    "subject" to optionalValue(paramText(step, "subject") ?: "Flow notification"),
-                    "body" to optionalValue(paramText(step, "body") ?: "Flow ${intent.name} notification"),
-                    "to" to optionalValue(paramText(step, "to")),
-                    "channel" to optionalValue(paramText(step, "channel"))
-                ),
-                result = result(step.id)
-            )
-            StandardCapability.CALL_API -> ActionNode(
-                module = "rest", action = "call", target = ref(systemFor(step, "api")),
-                params = mapNotNullValues(
-                    "method" to optionalValue(paramText(step, "method") ?: "GET"),
-                    "path" to optionalValue(paramText(step, "path") ?: error("CALL_API step '${step.id}' requires params.path")),
-                    "body" to optionalValue(paramText(step, "body"))
-                ),
-                result = result(step.id)
-            )
-            StandardCapability.SYNC,
-            StandardCapability.DATA_SYNC -> standardAction(step, "data-sync", intent)
-            StandardCapability.TRANSFORM,
-            StandardCapability.DATA_TRANSFORM -> standardAction(step, "data-transform", intent)
-            StandardCapability.VALIDATE -> standardAction(step, "validate", intent)
-            StandardCapability.BACKUP -> standardAction(step, "backup", intent)
-            StandardCapability.RESTORE -> standardAction(step, "restore", intent)
-            StandardCapability.CLEANUP -> standardAction(step, "cleanup", intent)
-            StandardCapability.PROVISION -> standardAction(step, "provision", intent)
-            StandardCapability.DEPROVISION -> standardAction(step, "deprovision", intent)
-            StandardCapability.DATABASE_MIGRATE -> standardAction(step, "database-migrate", intent)
-            StandardCapability.CERTIFICATE_RENEW -> standardAction(step, "certificate-renew", intent)
-            StandardCapability.KUBERNETES_MAINTENANCE -> standardAction(step, "kubernetes-maintenance", intent)
-            StandardCapability.RUNBOOK -> standardAction(step, "runbook", intent)
-            StandardCapability.INCIDENT -> standardAction(step, "incident", intent)
-            StandardCapability.SECRET_ROTATE -> standardAction(step, "secret-rotate", intent)
-            StandardCapability.POLICY_CHECK -> standardAction(step, "policy-check", intent)
-            StandardCapability.CUSTOM -> standardAction(step, "custom", intent)
         }
         return listOf(applyDependencies(node, dependencyIds))
+    }
+
+    private fun semanticStatement(step: IntentStep, intent: IntentDocument): StatementNode =
+        if (step.capability == StandardCapability.APPROVE) {
+            approvalStatement(step, intent)
+        } else {
+            standardAction(
+                step = step,
+                operation = semanticOperation(step.capability),
+                intent = intent,
+                dropBlockedParams = step.capability in blockedRuntimeCapabilities
+            )
+        }
+
+    private fun semanticOperation(capability: StandardCapability): String = when (capability) {
+        StandardCapability.RUN_COMMAND -> "manual-runtime-action"
+        StandardCapability.DATA_SYNC, StandardCapability.SYNC -> "data-sync"
+        StandardCapability.DATA_TRANSFORM, StandardCapability.TRANSFORM -> "data-transform"
+        else -> capability.name.lowercase().replace('_', '-')
+    }
+
+    private fun boundAction(step: IntentStep, binding: IntentBindingEvidence): ActionNode {
+        val moduleName = requireNotNull(binding.module)
+        val actionName = requireNotNull(binding.action)
+        val systemName = requireNotNull(binding.system)
+        val contract = requireNotNull(registry.findAction(moduleName, actionName)) {
+            "Internal planner invariant: resolved binding '${binding.requestedAction}' has no module action contract."
+        }
+        val supplied = step.params.filterKeys { it !in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
+        val params = linkedMapOf<String, ExpressionNode>()
+        contract.input.forEach { (name, field) ->
+            val value = supplied[name]
+            when {
+                value != null -> params[name] = value.toExpression()
+                field.defaultValue != null -> params[name] = field.defaultValue.toExpressionNode()
+            }
+        }
+        if (contract.additionalParams) {
+            supplied.filterKeys { it !in params }.forEach { (name, value) -> params[name] = value.toExpression() }
+        }
+        return ActionNode(
+            module = moduleName,
+            action = actionName,
+            target = ref(systemName),
+            params = params,
+            result = result(step.id)
+        )
     }
 
     private fun applyDependencies(node: StatementNode, dependencyIds: List<String>): StatementNode {
@@ -247,7 +238,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         step: IntentStep,
         operation: String,
         intent: IntentDocument,
-        requiresHandler: Boolean = false,
         dropBlockedParams: Boolean = false
     ): ActionNode {
         val params = linkedMapOf<String, ExpressionNode>(
@@ -256,7 +246,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             "description" to StringLiteralNode(value = step.description ?: "${step.capability} step ${step.id}"),
             "flow" to StringLiteralNode(value = intent.name)
         )
-        step.params
+        CanonicalIntentMeaningAuthority.semanticParameters(step)
             .filterKeys { key -> !dropBlockedParams || key !in blockedParamNames }
             .forEach { (key, value) -> params[key] = value.toExpression() }
         if (dropBlockedParams && step.params.keys.any { it in blockedParamNames }) {
@@ -265,27 +255,10 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return ActionNode(
             module = "standard", action = if (operation == "rollback") "rollback" else "execute", target = ref("standard"),
             params = params,
-            result = result(step.id),
-            handler = if (requiresHandler) expectOkAndCodeZero() else null
-        )
-    }
-
-    private fun customAction(step: IntentStep, intent: IntentDocument): ActionNode {
-        val uses = requireNotNull(step.uses) { "Explicit action lowering requires uses: <module>.<action>." }
-        val parts = uses.split('.', limit = 2)
-        require(parts.size == 2 && parts.all { it.isNotBlank() }) {
-            "Step '${step.id}' must declare uses: <module>.<action>, got '$uses'."
-        }
-        val module = parts[0]
-        val action = parts[1]
-        return ActionNode(
-            module = module,
-            action = action,
-            target = ref(paramText(step, "system") ?: paramText(step, "target") ?: module),
-            params = step.params.filterKeys { it !in setOf("system", "target") }.mapValues { it.value.toExpression() },
             result = result(step.id)
         )
     }
+
 
     private fun buildErrorHandler(intent: IntentDocument): ErrorHandlerNode? {
         if (!intent.failure.notify && !intent.failure.rollback) return null
@@ -303,8 +276,12 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         }
         if (intent.failure.notify) {
             steps += ActionNode(
-                module = "notify", action = "send", target = ref("notifier"),
+                module = "standard", action = "execute", target = ref("standard"),
                 params = mapOf(
+                    "operation" to StringLiteralNode(value = "notify-failure"),
+                    "capability" to StringLiteralNode(value = "notify"),
+                    "description" to StringLiteralNode(value = "Notify about failure of ${intent.name}"),
+                    "flow" to StringLiteralNode(value = intent.name),
                     "subject" to StringLiteralNode(value = "Flow failed: ${intent.name}"),
                     "body" to ReferenceNode(path = listOf("error", "message"), scope = "error", safe = true)
                 )
@@ -342,14 +319,8 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return out
     }
 
-    private fun systemFor(step: IntentStep, fallback: String): String = paramText(step, "system") ?: paramText(step, "target") ?: fallback
     private fun result(id: String) = ResultBindingNode(name = id.replace('-', '_'))
     private fun ref(name: String) = ReferenceNode(path = listOf(name))
-    private fun refImplicit(name: String) = ReferenceNode(path = listOf(name), scope = "implicitResult")
-
-    private fun optionalValue(value: String?): ExpressionNode? = value?.let { stringToExpression(it) }
-    private fun optionalBool(value: String?): ExpressionNode? = value?.toBooleanStrictOrNull()?.let { BooleanLiteralNode(value = it) }
-
     private fun paramText(step: IntentStep, key: String): String? = step.params[key].asTextOrNull()
 
     private fun IntentValue.toExpression(): ExpressionNode = when (this) {
@@ -364,8 +335,17 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         is IntentObject -> MapLiteralNode(entries = fields.mapValues { it.value.toExpression() })
     }
 
-    private fun mapNotNullValues(vararg pairs: Pair<String, ExpressionNode?>): Map<String, ExpressionNode> =
-        pairs.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
+    private fun Any.toExpressionNode(): ExpressionNode = when (this) {
+        is String -> StringLiteralNode(value = this)
+        is Boolean -> BooleanLiteralNode(value = this)
+        is Int -> NumberLiteralNode(value = toDouble(), isInteger = true)
+        is Long -> NumberLiteralNode(value = toDouble(), isInteger = true)
+        is Float -> NumberLiteralNode(value = toDouble(), isInteger = false)
+        is Double -> NumberLiteralNode(value = this, isInteger = this % 1.0 == 0.0)
+        is Number -> NumberLiteralNode(value = toDouble(), isInteger = false)
+        else -> StringLiteralNode(value = toString())
+    }
+
 
     private fun stringToExpression(value: String): ExpressionNode {
         val interpolationStart = "\${"
@@ -383,46 +363,18 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return if (parts.size == 1) parts.single() else TemplateStringNode(parts = parts)
     }
 
-    private fun expectOkAndCodeZero() = ResultHandlerNode(rules = listOf(ExpectNode(expressions = listOf(
-        BinaryExpressionNode(operator = "==", left = refImplicit("ok"), right = BooleanLiteralNode(value = true)),
-        BinaryExpressionNode(operator = "==", left = refImplicit("code"), right = NumberLiteralNode(value = 0.0, isInteger = true))
-    ))))
-
-    private fun imageExpression(intent: IntentDocument, step: IntentStep): ExpressionNode =
-        optionalValue(paramText(step, "image")) ?: if (hasInput(intent, "version")) {
-            TemplateStringNode(parts = listOf(StringLiteralNode(value = "${intent.name}:"), ReferenceNode(path = listOf("version"))))
-        } else StringLiteralNode(value = "${intent.name}:latest")
-
-    private fun imageOrDependency(intent: IntentDocument, step: IntentStep): ExpressionNode =
-        optionalValue(paramText(step, "image"))
-            ?: imageProducerFromRequires(intent, step)?.let { ReferenceNode(path = listOf(it, "tag")) }
-            ?: imageExpression(intent, step)
-
-    private fun imageProducerFromRequires(intent: IntentDocument, step: IntentStep): String? {
-        val byId = intent.workflows.flatMap { it.steps }.associateBy { it.id }
-        val explicit = step.requires.mapNotNull { byId[it] }
-            .lastOrNull { it.capability in setOf(StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE) }
-        return explicit?.id?.replace('-', '_')
-    }
-
-    private fun hasInput(intent: IntentDocument, name: String): Boolean = intent.inputs.any { it.name == name }
     private fun approvalPolicy(intent: IntentDocument): IntentPolicy? = intent.policies.firstOrNull { it.type == IntentPolicyType.APPROVAL }
     private fun approvalMessage(intent: IntentDocument): String = approvalPolicy(intent)?.message ?: "Approval required for ${intent.name}"
     private fun approvalCondition(intent: IntentDocument): ExpressionNode? = approvalPolicy(intent)?.condition?.let { parseCondition(it) }
     private fun parseCondition(raw: String): ExpressionNode = ExpressionParser.parseSource(raw)
 
     companion object {
-        private val dockerCapabilities = setOf(StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE)
         private val blockedParamNames = setOf("command")
-        private val standardCapabilities = setOf(
-            StandardCapability.BUILD, StandardCapability.TEST, StandardCapability.PACKAGE, StandardCapability.RUN_COMMAND,
-            StandardCapability.DEPLOY, StandardCapability.VERIFY, StandardCapability.ROLLBACK, StandardCapability.SYNC, StandardCapability.DATA_SYNC,
-            StandardCapability.TRANSFORM, StandardCapability.DATA_TRANSFORM, StandardCapability.VALIDATE,
-            StandardCapability.BACKUP, StandardCapability.RESTORE, StandardCapability.CLEANUP,
-            StandardCapability.PROVISION, StandardCapability.DEPROVISION,
-            StandardCapability.DATABASE_MIGRATE, StandardCapability.CERTIFICATE_RENEW, StandardCapability.KUBERNETES_MAINTENANCE,
-            StandardCapability.RUNBOOK, StandardCapability.INCIDENT, StandardCapability.SECRET_ROTATE,
-            StandardCapability.POLICY_CHECK, StandardCapability.CUSTOM
+        private val blockedRuntimeCapabilities = setOf(
+            StandardCapability.BUILD,
+            StandardCapability.TEST,
+            StandardCapability.PACKAGE,
+            StandardCapability.RUN_COMMAND
         )
     }
 }
