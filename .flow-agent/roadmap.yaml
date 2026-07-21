@@ -1,57 +1,62 @@
 project: Flow Core
 roadmapVersion: 5
-currentTrack: v0.9.7-universal-semantic-foundation
+currentTrack: "v0.9.7-universal-semantic-foundation"
 primaryRoadmapStream: core
+
 versionBoundary:
-  publishedPackageVersion: 0.9.5
-  nextPackageVersion: 0.9.6
-  activePublicStandardVersion: 0.8.0
-  completedCorrectionTrack: v0.9.5.x
-  correctionTrackStatus: completed
-  artifactContractVersion: '2.0'
+  publishedPackageVersion: "0.9.5"
+  nextPackageVersion: "0.9.6"
+  activePublicStandardVersion: "0.8.0"
+  completedCorrectionTrack: "v0.9.5.x"
+  correctionTrackStatus: "completed"
+  artifactContractVersion: "2.0"
+
 roadmapIndex:
   activeRoadmaps:
-    core: .flow-agent/roadmap-core-v0.9.7.5.yaml
-    adapters: .flow-agent/roadmap-adapters.yaml
-    conformance: .flow-agent/roadmap-conformance.yaml
+    core: ".flow-agent/roadmap-core-v0.9.7.5.yaml"
+    adapters: ".flow-agent/roadmap-adapters.yaml"
+    conformance: ".flow-agent/roadmap-conformance.yaml"
   historicalRoadmaps:
-  - .flow-agent/roadmap-history-v0.7-v0.9.6.yaml
-  - .flow-agent/roadmap-v0.9.5.7-repair-track.yaml
-  - .flow-agent/roadmap-core-v0.9.7.yaml
-  - .flow-agent/roadmap-core-v0.9.7.2.yaml
-  - .flow-agent/roadmap-core-v0.9.7.3.yaml
-  - .flow-agent/roadmap-core-v0.9.7.4.yaml
+    - ".flow-agent/roadmap-history-v0.7-v0.9.6.yaml"
+    - ".flow-agent/roadmap-v0.9.5.7-repair-track.yaml"
+    - ".flow-agent/roadmap-core-v0.9.7.yaml"
+    - ".flow-agent/roadmap-core-v0.9.7.2.yaml"
+    - ".flow-agent/roadmap-core-v0.9.7.3.yaml"
+    - ".flow-agent/roadmap-core-v0.9.7.4.yaml"
+
 rules:
-- The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries.
-- The primary Flow Agent work item is selected only from the Core roadmap unless explicitly overridden.
-- Core work may not depend on unfinished adapter or conformance work.
-- Each roadmap stream may advance independently without redefining another stream's contracts.
-- Every Core item must declare a universal invariant, forbidden scope and completion evidence.
-- Existing executable reference evidence remains live throughout the Core track.
-- Implementation inability must not reshape Core meaning.
-- A previous executable label has no grandfathered status.
-- No roadmap item may introduce runtime execution, an SDK-first architecture or implementation-specific public syntax.
-- No roadmap item may bend code or weaken validation only to satisfy tests.
-- The gating corpus is bounded to software delivery, data transformation and infrastructure state change.
+  - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
+  - "The primary Flow Agent work item is selected only from the Core roadmap unless explicitly overridden."
+  - "Core work may not depend on unfinished adapter or conformance work."
+  - "Each roadmap stream may advance independently without redefining another stream's contracts."
+  - "Every Core item must declare a universal invariant, forbidden scope and completion evidence."
+  - "Existing executable reference evidence remains live throughout the Core track."
+  - "Implementation inability must not reshape Core meaning."
+  - "A previous executable label has no grandfathered status."
+  - "No roadmap item may introduce runtime execution, an SDK-first architecture or implementation-specific public syntax."
+  - "No roadmap item may bend code or weaken validation only to satisfy tests."
+  - "The gating corpus is bounded to software delivery, data transformation and infrastructure state change."
+
 architectureConstitution:
   identity:
-  - Flow is a language and universal automation standardization model.
-  - Flow separates intent, semantic meaning, policy and evidence from implementation mechanisms.
-  - Implementation evidence may falsify assumptions without becoming the source of meaning.
+    - "Flow is a language and universal automation standardization model."
+    - "Flow separates intent, semantic meaning, policy and evidence from implementation mechanisms."
+    - "Implementation evidence may falsify assumptions without becoming the source of meaning."
   roadmapOwnership:
-    core: Owns universal meaning, effects, dependencies, policy, control requirements and materialization authority.
-    adapters: Owns concrete capability bindings, execution evidence and target artifacts.
-    conformance: Owns bounded semantic adequacy and independent implementation certification.
+    core: "Owns universal meaning, effects, dependencies, policy, control requirements and materialization authority."
+    adapters: "Owns concrete capability bindings, execution evidence and target artifacts."
+    conformance: "Owns bounded semantic adequacy and independent implementation certification."
   forbiddenDirections:
-  - No concrete implementation default as universal lowering truth.
-  - No concrete platform as semantic authority.
-  - No raw runtime instruction as universal action meaning.
-  - No successful materialization without validated evidence.
-  - No Core dependency on implementation work.
-  - No conformance example as a substitute for a universal invariant.
-  - No governance signal whose status contradicts the property measured.
+    - "No concrete implementation default as universal lowering truth."
+    - "No concrete platform as semantic authority."
+    - "No raw runtime instruction as universal action meaning."
+    - "No successful materialization without validated evidence."
+    - "No Core dependency on implementation work."
+    - "No conformance example as a substitute for a universal invariant."
+    - "No governance signal whose status contradicts the property measured."
+
 currentDecision:
-  completedItem: 0.9.7.5
-  completedItemName: Canonical Intent Meaning
-  nextCoreItem: 0.9.7.6
-  nextCoreItemName: Universal Effect and State Transition Model
+  completedItem: "0.9.7.5"
+  completedItemName: "Canonical Intent Meaning"
+  nextCoreItem: "0.9.7.6"
+  nextCoreItemName: "Universal Effect and State Transition Model"
