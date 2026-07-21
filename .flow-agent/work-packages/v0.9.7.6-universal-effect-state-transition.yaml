@@ -8,12 +8,15 @@ forbiddenScope:
   - "No implementation-name inference."
   - "No target inventory as effect authority."
   - "No ordering or continuity relation treated as a state transition."
+implementationStatus: "integrated for full validation"
 implementedScope:
   - "Canonical intent capabilities derive target-neutral typed effects before binding resolution."
   - "AST and execution-plan nodes carry the same semantic effect evidence."
   - "Module effect buckets convert to the shared model without inferring domains from implementation identities."
   - "Materialization authorization re-derives canonical effects and rejects omitted or forged evidence."
   - "Software delivery, data transformation and infrastructure state change share one operation and transition vocabulary."
+  - "Derived effect helpers remain internal and do not expand serialized artifact contracts."
+  - "Committed reference evidence is regenerated through the canonical production generator."
 finalValidation: "required on the exact completion metadata head"
 completionEvidence:
   - "Three bounded domains share one effect model."
