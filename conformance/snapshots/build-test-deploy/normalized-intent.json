@@ -40,9 +40,19 @@
     "steps" : [ {
       "id" : "checkout",
       "capability" : "CHECKOUT",
+      "uses" : "git.checkout",
       "requires" : [ ],
       "produces" : [ ],
-      "params" : { }
+      "params" : {
+        "system" : {
+          "value" : "source",
+          "kind" : "string"
+        },
+        "branch" : {
+          "value" : "main",
+          "kind" : "string"
+        }
+      }
     }, {
       "id" : "test",
       "capability" : "TEST",
@@ -52,9 +62,27 @@
     }, {
       "id" : "build-image",
       "capability" : "BUILD_IMAGE",
+      "uses" : "docker.build",
       "requires" : [ "test" ],
       "produces" : [ ],
-      "params" : { }
+      "params" : {
+        "system" : {
+          "value" : "registry",
+          "kind" : "string"
+        },
+        "image" : {
+          "value" : "build-test-deploy:${version}",
+          "kind" : "string"
+        },
+        "path" : {
+          "value" : ".",
+          "kind" : "string"
+        },
+        "push" : {
+          "value" : false,
+          "kind" : "boolean"
+        }
+      }
     }, {
       "id" : "approve-prod",
       "capability" : "APPROVE",

@@ -4,19 +4,141 @@
   "title": "Flow Intent Capability Validation Report",
   "type": "object",
   "additionalProperties": false,
-  "required": ["valid", "issues"],
+  "required": [
+    "valid",
+    "issues",
+    "meaning",
+    "bindings"
+  ],
   "properties": {
-    "valid": { "type": "boolean" },
+    "valid": {
+      "type": "boolean"
+    },
     "issues": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["level", "code", "message"],
+        "required": [
+          "level",
+          "code",
+          "message"
+        ],
         "properties": {
-          "level": { "type": "string" },
-          "code": { "type": "string" },
-          "message": { "type": "string" }
+          "level": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "meaning": {
+      "type": "object"
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stepId",
+          "capability",
+          "status",
+          "implementedCapabilities",
+          "semanticParameters",
+          "bindingParameters",
+          "issues",
+          "resolved"
+        ],
+        "properties": {
+          "stepId": {
+            "type": "string"
+          },
+          "capability": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "UNBOUND",
+              "RESOLVED",
+              "INVALID"
+            ]
+          },
+          "requestedAction": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "module": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "action": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "system": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "systemType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "implementedCapabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "semanticParameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bindingParameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "resolved": {
+            "type": "boolean"
+          }
         }
       }
     }

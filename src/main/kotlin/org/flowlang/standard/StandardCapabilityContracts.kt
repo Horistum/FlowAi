@@ -36,8 +36,16 @@ object StandardCapabilityContracts {
         StandardCapability.CALL_API to contract(StandardCapability.CALL_API, required = listOf("path"), optional = listOf("method", "body", "system", "target"), systems = listOf("rest"), strategy = "module-action"),
         StandardCapability.BACKUP to contract(StandardCapability.BACKUP, required = listOf("subject"), optional = listOf("retention", "destination", "system", "target")),
         StandardCapability.RESTORE to contract(StandardCapability.RESTORE, required = listOf("subject"), optional = listOf("recoveryPoint", "system", "target")),
-        StandardCapability.DATA_SYNC to contract(StandardCapability.DATA_SYNC, required = listOf("source", "destination"), optional = listOf("mode", "system", "target")),
-        StandardCapability.SYNC to contract(StandardCapability.SYNC, required = listOf("source", "destination"), optional = listOf("mode", "system", "target")),
+        StandardCapability.DATA_SYNC to contract(
+        StandardCapability.DATA_SYNC,
+        required = listOf("source", "destination"),
+        optional = listOf("mode", "filters", "batches", "system", "target")
+    ),
+    StandardCapability.SYNC to contract(
+        StandardCapability.SYNC,
+        required = listOf("source", "destination"),
+        optional = listOf("mode", "filters", "batches", "system", "target")
+    ),
         StandardCapability.DATA_TRANSFORM to contract(StandardCapability.DATA_TRANSFORM, optional = listOf("mapping", "operation", "system", "target")),
         StandardCapability.TRANSFORM to contract(StandardCapability.TRANSFORM, optional = listOf("mapping", "operation", "system", "target")),
         StandardCapability.VALIDATE to contract(StandardCapability.VALIDATE, optional = listOf("operation", "schema", "target", "system")),

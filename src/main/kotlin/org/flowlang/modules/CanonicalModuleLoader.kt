@@ -80,6 +80,11 @@ object CanonicalModuleLoader {
             bool(action["additionalParams"], "$path.additionalParams")
             list(action["secrets"], "$path.secrets")
             list(action["requiredCapabilities"], "$path.requiredCapabilities")
+            val implemented = list(action["implements"], "$path.implements")
+            val unknownImplemented = implemented.toSet() - STANDARD_CAPABILITIES
+            if (unknownImplemented.isNotEmpty()) {
+                throw ContractException("$path implements unknown standard capabilities: ${unknownImplemented.sorted().joinToString()}.")
+            }
             validateIdempotent(action["idempotent"], "$path.idempotent")
             validateErrors(action["errors"], "$path.errors")
         }
@@ -230,8 +235,9 @@ object CanonicalModuleLoader {
     private val SYSTEM_TYPE_KEYS = setOf("input")
     private val ACTION_KEYS = setOf(
         "kind", "targetTypes", "input", "output", "effects", "continuity", "safety", "idempotent",
-        "retry", "timeout", "additionalParams", "errors", "secrets", "requiredCapabilities"
+        "retry", "timeout", "additionalParams", "errors", "secrets", "requiredCapabilities", "implements"
     )
+    private val STANDARD_CAPABILITIES = org.flowlang.intent.StandardCapability.values().map { it.name }.toSet()
     private val SCHEMA_FIELD_KEYS = setOf("type", "required", "sensitive", "default")
     private val EFFECT_KEYS = setOf("reads", "writes", "creates", "updates", "deletes", "executes", "network", "filesystem")
     private val CONTINUITY_KEYS = setOf("provides", "requires", "preserves")

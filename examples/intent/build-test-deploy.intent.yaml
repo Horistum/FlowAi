@@ -28,12 +28,22 @@ workflows:
     steps:
       - id: checkout
         capability: CHECKOUT
+        uses: git.checkout
+        params:
+          system: source
+          branch: main
       - id: test
         capability: TEST
         requires: [checkout]
       - id: build-image
         capability: BUILD_IMAGE
+        uses: docker.build
         requires: [test]
+        params:
+          system: registry
+          image: build-test-deploy:${version}
+          path: .
+          push: false
       - id: approve-prod
         capability: APPROVE
         requires: [build-image]

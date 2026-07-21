@@ -36,6 +36,7 @@ actions:
       destructive: false
   deploy:
     kind: action
+    implements: [DEPLOY]
     targetTypes:
       - kubernetes
     input:

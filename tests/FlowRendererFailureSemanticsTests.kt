@@ -65,7 +65,7 @@ class FlowRendererFailureSemanticsTests {
             "standard_execute_2",
             "standard_execute_3",
             "standard_rollback_1",
-            "notify_send_1"
+            "standard_execute_4"
         )
         val outputs = listOf(
             JenkinsManifestRenderer().render(referenceManifest("jenkins")),

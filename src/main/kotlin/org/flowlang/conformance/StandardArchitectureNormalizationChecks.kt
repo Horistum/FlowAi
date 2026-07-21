@@ -6,9 +6,17 @@ import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ClarificationSeverity
 import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
+import org.flowlang.intent.CanonicalIntentMeaningAuthority
+import org.flowlang.intent.IntentBindingStatus
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDesignAnalyzer
+import org.flowlang.intent.IntentDocument
+import org.flowlang.intent.IntentString
+import org.flowlang.intent.IntentSystem
+import org.flowlang.intent.IntentStep
 import org.flowlang.intent.IntentToAstPlanner
+import org.flowlang.intent.IntentWorkflow
+import org.flowlang.intent.IntentWorkflowKind
 import org.flowlang.intent.StandardCapability
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
@@ -28,6 +36,7 @@ internal class StandardArchitectureNormalizationChecks(
         checkRenderedSnapshotsContainVersion(),
         checkStandardIntentCatalogCoverage(),
         checkStandardCapabilityContracts(),
+        checkCanonicalIntentMeaning(),
         checkIntentDesignReport(),
         checkCorePackagesDoNotImportJackson(),
         checkModulesDoNotOwnTargetRendering(),
@@ -70,6 +79,32 @@ internal class StandardArchitectureNormalizationChecks(
         require(contracts.containsAll(capabilities)) { "Standard capability contracts do not cover all StandardCapability enum values." }
         val deploy = org.flowlang.standard.StandardCapabilityContracts.requireContract(org.flowlang.intent.StandardCapability.DEPLOY)
         require(deploy.loweringStrategy.isNotBlank()) { "DEPLOY contract must declare lowering strategy." }
+    }
+
+    private fun checkCanonicalIntentMeaning(): ConformanceCheck = runCheck("intent.canonical-meaning.inventory-independent") {
+        fun intent(systemType: String, uses: String, bindingParam: String) = IntentDocument(
+            name = "equivalent-deploy",
+            systems = listOf(IntentSystem("delivery", systemType)),
+            workflows = listOf(IntentWorkflow(
+                name = "delivery",
+                kind = IntentWorkflowKind.DEPLOY,
+                steps = listOf(IntentStep(
+                    id = "deploy",
+                    capability = StandardCapability.DEPLOY,
+                    uses = uses,
+                    params = mapOf(
+                        "system" to IntentString("delivery"),
+                        bindingParam to IntentString("billing")
+                    )
+                ))
+            ))
+        )
+
+        val argo = CanonicalIntentMeaningAuthority(registry).resolve(intent("argocd", "argocd.sync", "app"))
+        val kubernetes = CanonicalIntentMeaningAuthority(registry).resolve(intent("kubernetes", "kubernetes.deploy", "name"))
+        require(argo.meaning == kubernetes.meaning) { "Equivalent intent changed meaning across explicit implementation inventories." }
+        require(argo.bindings.single().status == IntentBindingStatus.RESOLVED)
+        require(kubernetes.bindings.single().status == IntentBindingStatus.RESOLVED)
     }
 
     private fun checkIntentDesignReport(): ConformanceCheck = runCheck("intent.design-report") {

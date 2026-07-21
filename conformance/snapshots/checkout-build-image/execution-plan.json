@@ -30,8 +30,8 @@
     "resultName" : "checkout",
     "dependencies" : [ ],
     "inputs" : {
-      "url" : "\"https://github.com/octocat/Hello-World.git\"",
-      "branch" : "\"main\""
+      "branch" : "\"main\"",
+      "url" : "\"https://github.com/octocat/Hello-World.git\""
     },
     "outputs" : [ "checkout" ],
     "effects" : [ "git.repository", "workspace.write" ],

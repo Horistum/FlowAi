@@ -26,6 +26,7 @@
     "steps" : [ {
       "id" : "checkout",
       "capability" : "CHECKOUT",
+      "uses" : "git.checkout",
       "requires" : [ ],
       "produces" : [ ],
       "params" : {
@@ -45,6 +46,7 @@
     }, {
       "id" : "build-image",
       "capability" : "BUILD_IMAGE",
+      "uses" : "docker.build",
       "requires" : [ "checkout" ],
       "produces" : [ ],
       "params" : {

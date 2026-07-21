@@ -17,7 +17,8 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
 
     fun validate(intent: IntentDocument): IntentValidationReport {
         val issues = mutableListOf<IntentValidationIssue>()
-        val systemsByName = intent.systems.associateBy { it.name }
+        val resolution = CanonicalIntentMeaningAuthority(registry).resolve(intent)
+        val bindingsByStep = resolution.bindings.associateBy { it.stepId }
         val steps = intent.workflows.flatMap { it.steps }
         val stepIds = steps.map { it.id }
 
@@ -72,49 +73,43 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         issues += MandatorySafetyPolicy.validate(intent)
         issues += safetyPolicyValidator.validate(intent)
 
+        resolution.bindings.flatMap { binding ->
+            binding.issues.map { issue -> err(issue.code, issue.message) }
+        }.forEach(issues::add)
+
         steps.forEach { step ->
-            if (!step.uses.isNullOrBlank() && !step.uses.contains('.')) {
+            val binding = bindingsByStep.getValue(step.id)
+            val bindingHints = step.params.keys.intersect(CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS)
+            if (step.uses.isNullOrBlank() && bindingHints.isNotEmpty()) {
                 issues += err(
-                    "USES_REQUIRES_MODULE_ACTION",
-                    "Step '${step.id}' must declare uses as '<module>.<action>'; bare module or tool hints are ambiguous."
+                    "BINDING_HINT_REQUIRES_USES",
+                    "Step '${step.id}' declares binding metadata ${bindingHints.sorted()} without explicit uses: <module>.<action>."
                 )
             }
-            if (step.capability in setOf(StandardCapability.DEPLOY, StandardCapability.VERIFY) &&
-                step.uses.isNullOrBlank() &&
-                (step.params["engine"] != null || step.params["tool"] != null)
-            ) {
-                issues += err(
-                    "TARGET_TOOL_HINT_REQUIRES_USES",
-                    "Step '${step.id}' must express target-specific lowering through 'uses: <module>.<action>'; engine/tool hints are not target-neutral semantics."
-                )
-            }
+
             val contract = StandardCapabilityContracts.requireContract(step.capability)
             contract.requiredParams.forEach { required ->
                 if (step.params[required].isBlankIntent()) {
                     issues += err("MISSING_REQUIRED_STEP_PARAM", "Step '${step.id}' capability '${step.capability}' requires params '$required'.")
                 }
             }
-            step.params.keys.filter { it !in (contract.requiredParams + contract.optionalParams) && contract.requiredParams.isNotEmpty() }.forEach { key ->
-                issues += warn("UNKNOWN_STEP_PARAM", "Step '${step.id}' capability '${step.capability}' does not declare params '$key'.")
-            }
-            val requiredType = requiredSystemType(step)
-            val explicitSystem = step.params["system"].asTextOrNull()
-            if (explicitSystem != null) {
-                val declared = systemsByName[explicitSystem]
-                if (declared == null) {
-                    issues += err("UNKNOWN_INTENT_SYSTEM", "Step '${step.id}' references unknown system '$explicitSystem'.")
-                } else if (requiredType != null && normalizeSystemType(declared.type) != requiredType) {
-                    issues += err(
-                        "INTENT_SYSTEM_TYPE_MISMATCH",
-                        "Step '${step.id}' requires system type '$requiredType', but system '$explicitSystem' is '${normalizeSystemType(declared.type)}'."
-                    )
+            val acceptedBindingParams = binding.bindingParameters.toSet()
+            step.params.keys
+                .filter { it !in (contract.requiredParams + contract.optionalParams) }
+                .filter { it !in acceptedBindingParams }
+                .filter { it !in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
+                .forEach { key ->
+                    issues += warn("UNKNOWN_STEP_PARAM", "Step '${step.id}' capability '${step.capability}' does not declare semantic params '$key'.")
                 }
-            }
-
         }
 
         detectCycles(steps, issues)
-        return IntentValidationReport(valid = issues.none { it.level == "error" }, issues = issues)
+        return IntentValidationReport(
+            valid = issues.none { it.level == "error" },
+            issues = issues,
+            meaning = resolution.meaning,
+            bindings = resolution.bindings
+        )
     }
 
     private fun validateConfig(
@@ -187,16 +182,6 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
 
     private enum class VisitState { VISITING, DONE }
 
-    private fun requiredSystemType(step: IntentStep): String? {
-        step.uses?.substringBefore('.')?.takeIf { it.isNotBlank() }?.let { return normalizeSystemType(it) }
-        return when (step.capability) {
-            StandardCapability.CHECKOUT -> "git"
-            StandardCapability.BUILD_IMAGE, StandardCapability.PUSH_IMAGE -> "docker"
-            StandardCapability.NOTIFY -> "notify"
-            StandardCapability.CALL_API -> "rest"
-            else -> null
-        }
-    }
 
     private fun normalizeSystemType(type: String): String = when (type) {
         "dockerRegistry", "containerRegistry" -> "docker"
@@ -214,7 +199,9 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
 
 data class IntentValidationReport(
     val valid: Boolean,
-    val issues: List<IntentValidationIssue> = emptyList()
+    val issues: List<IntentValidationIssue> = emptyList(),
+    val meaning: CanonicalIntentMeaning,
+    val bindings: List<IntentBindingEvidence> = emptyList()
 ) {
     fun assertValid() {
         if (!valid) error("Intent validation failed: " + issues.filter { it.level == "error" }.joinToString { it.code + ": " + it.message })

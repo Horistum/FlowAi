@@ -31,7 +31,6 @@ workflows:
         capability: VERIFY
         requires: [create-backup]
         params:
-          system: backupStore
           resource: backup-artifact
 
 failure:

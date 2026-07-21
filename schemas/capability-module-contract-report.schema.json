@@ -93,6 +93,7 @@
                 "requiresSafety",
                 "secrets",
                 "requiredCapabilities",
+                "implementedCapabilities",
                 "targetImplications",
                 "retrySupported",
                 "timeoutSupported"
@@ -168,6 +169,12 @@
                   }
                 },
                 "continuityPreserves": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "implementedCapabilities": {
                   "type": "array",
                   "items": {
                     "type": "string"

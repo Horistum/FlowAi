@@ -47,13 +47,13 @@
         "scope" : "auto"
       },
       "params" : {
-        "url" : {
-          "type" : "StringLiteral",
-          "value" : "https://github.com/octocat/Hello-World.git"
-        },
         "branch" : {
           "type" : "StringLiteral",
           "value" : "main"
+        },
+        "url" : {
+          "type" : "StringLiteral",
+          "value" : "https://github.com/octocat/Hello-World.git"
         }
       },
       "result" : {

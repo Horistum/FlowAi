@@ -19,12 +19,14 @@ workflows:
     steps:
       - id: checkout
         capability: CHECKOUT
+        uses: git.checkout
         params:
           system: source
           url: https://github.com/octocat/Hello-World.git
           branch: main
       - id: build-image
         capability: BUILD_IMAGE
+        uses: docker.build
         requires: [checkout]
         params:
           system: registry
