@@ -1,0 +1,559 @@
+diff --git a/schemas/ast.schema.json b/schemas/ast.schema.json
+index 60a2ea8..c3f1f47 100644
+--- a/schemas/ast.schema.json
++++ b/schemas/ast.schema.json
+@@ -3,39 +3,264 @@
+   "$id": "https://flowlang.dev/schemas/ast/2.0/ast.schema.json",
+   "title": "Flow AST v2.0",
+   "type": "object",
+-  "required": ["astVersion", "sourceVersion", "kind", "imports", "flow"],
++  "required": [
++    "astVersion",
++    "sourceVersion",
++    "kind",
++    "imports",
++    "flow"
++  ],
+   "properties": {
+-    "astVersion": {"const":"2.0"},
+-    "sourceVersion": {"type":"string"},
+-    "kind": {"const":"FlowDocument"},
+-    "imports": {"type":"array"},
++    "astVersion": {
++      "const": "2.0"
++    },
++    "sourceVersion": {
++      "type": "string"
++    },
++    "kind": {
++      "const": "FlowDocument"
++    },
++    "imports": {
++      "type": "array"
++    },
+     "flow": {
+-      "type":"object",
+-      "required":["name","triggers","steps"],
++      "type": "object",
++      "required": [
++        "name",
++        "triggers",
++        "steps"
++      ],
+       "properties": {
+-        "name":{"type":"string"},
+-        "input":{"type":"array"},
+-        "vars":{"type":"array"},
+-        "systems":{"type":"array"},
+-        "triggers":{"type":"array","items":{"$ref":"#/$defs/trigger"}},
+-        "steps":{"type":"array"},
+-        "errorHandler":{"type":["object","null"]}
++        "name": {
++          "type": "string"
++        },
++        "input": {
++          "type": "array"
++        },
++        "vars": {
++          "type": "array"
++        },
++        "systems": {
++          "type": "array"
++        },
++        "triggers": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/trigger"
++          }
++        },
++        "steps": {
++          "type": "array"
++        },
++        "errorHandler": {
++          "type": [
++            "object",
++            "null"
++          ]
++        },
++        "controlRequirements": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/controlRequirement"
++          }
++        },
++        "controlEvidence": {
++          "type": "array",
++          "items": {
++            "$ref": "#/$defs/controlEvidence"
++          }
++        },
++        "controlDecision": {
++          "$ref": "#/$defs/controlDecision"
++        }
+       },
+       "additionalProperties": true
+     },
+-    "metadata": {"type":"object"}
++    "metadata": {
++      "type": "object"
++    }
+   },
+   "$defs": {
+     "trigger": {
+-      "type":"object",
+-      "required":["type","id","triggerType","workflows"],
++      "type": "object",
++      "required": [
++        "type",
++        "id",
++        "triggerType",
++        "workflows"
++      ],
+       "properties": {
+-        "type":{"const":"Trigger"}, "id":{"type":"string"},
+-        "triggerType":{"enum":["MANUAL","SCHEDULE","EVENT","WEBHOOK"]},
+-        "workflows":{"type":"array","items":{"type":"string"}},
+-        "schedule":{"type":["object","null"]}, "event":{"type":["string","null"]},
+-        "params":{"type":"object"}
++        "type": {
++          "const": "Trigger"
++        },
++        "id": {
++          "type": "string"
++        },
++        "triggerType": {
++          "enum": [
++            "MANUAL",
++            "SCHEDULE",
++            "EVENT",
++            "WEBHOOK"
++          ]
++        },
++        "workflows": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        },
++        "schedule": {
++          "type": [
++            "object",
++            "null"
++          ]
++        },
++        "event": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "params": {
++          "type": "object"
++        }
+       }
++    },
++    "controlRequirement": {
++      "type": "object",
++      "required": [
++        "id",
++        "kind",
++        "subject",
++        "source"
++      ],
++      "properties": {
++        "id": {
++          "type": "string",
++          "minLength": 1
++        },
++        "kind": {
++          "enum": [
++            "APPROVAL",
++            "DRY_RUN",
++            "BACKUP",
++            "ROLLBACK_PLAN",
++            "CHANGE_TICKET",
++            "RETENTION_GUARD",
++            "CLARIFICATION",
++            "RISK_MITIGATION",
++            "SAFETY_GUARD",
++            "EXTERNAL_EFFECT_REVIEW",
++            "POLICY_EVALUATION"
++          ]
++        },
++        "subject": {
++          "type": "string",
++          "minLength": 1
++        },
++        "source": {
++          "enum": [
++            "CANONICAL_CAPABILITY",
++            "INTENT_POLICY",
++            "MODULE_CONTRACT",
++            "ENVIRONMENT_POLICY",
++            "FLOW_SOURCE"
++          ]
++        },
++        "condition": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "message": {
++          "type": [
++            "string",
++            "null"
++          ]
++        }
++      },
++      "additionalProperties": false
++    },
++    "controlEvidence": {
++      "type": "object",
++      "required": [
++        "requirementId",
++        "status",
++        "source",
++        "enforcementCapabilities"
++      ],
++      "properties": {
++        "requirementId": {
++          "type": "string",
++          "minLength": 1
++        },
++        "status": {
++          "enum": [
++            "SATISFIED",
++            "UNSATISFIED",
++            "UNKNOWN",
++            "DYNAMIC"
++          ]
++        },
++        "source": {
++          "enum": [
++            "AUTHORED_STEP",
++            "AUTHORED_PARAMETER",
++            "AUTHORED_POLICY",
++            "AUTHORED_FAILURE_POLICY",
++            "AST_SAFETY_DECLARATION",
++            "MODULE_CONTRACT",
++            "DYNAMIC_CONDITION",
++            "MISSING"
++          ]
++        },
++        "detail": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "enforcementCapabilities": {
++          "type": "array",
++          "items": {
++            "type": "string",
++            "minLength": 1
++          }
++        }
++      },
++      "additionalProperties": false
++    },
++    "controlDecision": {
++      "type": "object",
++      "required": [
++        "status",
++        "blockingRequirementIds",
++        "pendingRequirementIds"
++      ],
++      "properties": {
++        "status": {
++          "enum": [
++            "ALLOWED",
++            "BLOCKED",
++            "PENDING"
++          ]
++        },
++        "blockingRequirementIds": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        },
++        "pendingRequirementIds": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        }
++      },
++      "additionalProperties": false
+     }
+   },
+   "additionalProperties": true
+diff --git a/schemas/execution-plan.schema.json b/schemas/execution-plan.schema.json
+index 5082339..f0a31cc 100644
+--- a/schemas/execution-plan.schema.json
++++ b/schemas/execution-plan.schema.json
+@@ -70,6 +70,21 @@
+       "items": {
+         "$ref": "#/$defs/dependencyRelation"
+       }
++    },
++    "controlRequirements": {
++      "type": "array",
++      "items": {
++        "$ref": "#/$defs/controlRequirement"
++      }
++    },
++    "controlEvidence": {
++      "type": "array",
++      "items": {
++        "$ref": "#/$defs/controlEvidence"
++      }
++    },
++    "controlDecision": {
++      "$ref": "#/$defs/controlDecision"
+     }
+   },
+   "$defs": {
+@@ -525,6 +540,141 @@
+         }
+       },
+       "additionalProperties": false
++    },
++    "controlRequirement": {
++      "type": "object",
++      "required": [
++        "id",
++        "kind",
++        "subject",
++        "source"
++      ],
++      "properties": {
++        "id": {
++          "type": "string",
++          "minLength": 1
++        },
++        "kind": {
++          "enum": [
++            "APPROVAL",
++            "DRY_RUN",
++            "BACKUP",
++            "ROLLBACK_PLAN",
++            "CHANGE_TICKET",
++            "RETENTION_GUARD",
++            "CLARIFICATION",
++            "RISK_MITIGATION",
++            "SAFETY_GUARD",
++            "EXTERNAL_EFFECT_REVIEW",
++            "POLICY_EVALUATION"
++          ]
++        },
++        "subject": {
++          "type": "string",
++          "minLength": 1
++        },
++        "source": {
++          "enum": [
++            "CANONICAL_CAPABILITY",
++            "INTENT_POLICY",
++            "MODULE_CONTRACT",
++            "ENVIRONMENT_POLICY",
++            "FLOW_SOURCE"
++          ]
++        },
++        "condition": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "message": {
++          "type": [
++            "string",
++            "null"
++          ]
++        }
++      },
++      "additionalProperties": false
++    },
++    "controlEvidence": {
++      "type": "object",
++      "required": [
++        "requirementId",
++        "status",
++        "source",
++        "enforcementCapabilities"
++      ],
++      "properties": {
++        "requirementId": {
++          "type": "string",
++          "minLength": 1
++        },
++        "status": {
++          "enum": [
++            "SATISFIED",
++            "UNSATISFIED",
++            "UNKNOWN",
++            "DYNAMIC"
++          ]
++        },
++        "source": {
++          "enum": [
++            "AUTHORED_STEP",
++            "AUTHORED_PARAMETER",
++            "AUTHORED_POLICY",
++            "AUTHORED_FAILURE_POLICY",
++            "AST_SAFETY_DECLARATION",
++            "MODULE_CONTRACT",
++            "DYNAMIC_CONDITION",
++            "MISSING"
++          ]
++        },
++        "detail": {
++          "type": [
++            "string",
++            "null"
++          ]
++        },
++        "enforcementCapabilities": {
++          "type": "array",
++          "items": {
++            "type": "string",
++            "minLength": 1
++          }
++        }
++      },
++      "additionalProperties": false
++    },
++    "controlDecision": {
++      "type": "object",
++      "required": [
++        "status",
++        "blockingRequirementIds",
++        "pendingRequirementIds"
++      ],
++      "properties": {
++        "status": {
++          "enum": [
++            "ALLOWED",
++            "BLOCKED",
++            "PENDING"
++          ]
++        },
++        "blockingRequirementIds": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        },
++        "pendingRequirementIds": {
++          "type": "array",
++          "items": {
++            "type": "string"
++          }
++        }
++      },
++      "additionalProperties": false
+     }
+   }
+ }
+diff --git a/src/main/kotlin/org/flowlang/ast/AstNodes.kt b/src/main/kotlin/org/flowlang/ast/AstNodes.kt
+index ed697df..df8a4e0 100644
+--- a/src/main/kotlin/org/flowlang/ast/AstNodes.kt
++++ b/src/main/kotlin/org/flowlang/ast/AstNodes.kt
+@@ -1,6 +1,9 @@
+ package org.flowlang.ast
+ 
+ import org.flowlang.effects.SemanticEffect
++import org.flowlang.controls.ControlDecision
++import org.flowlang.controls.ControlEvidence
++import org.flowlang.controls.ControlRequirement
+ import org.flowlang.standard.FlowStandardVersions
+ 
+ /**
+@@ -40,6 +43,9 @@ data class FlowNode(
+     val vars: List<VariableNode> = emptyList(),
+     val systems: List<SystemNode> = emptyList(),
+     val triggers: List<TriggerNode> = emptyList(),
++    val controlRequirements: List<ControlRequirement> = emptyList(),
++    val controlEvidence: List<ControlEvidence> = emptyList(),
++    val controlDecision: ControlDecision = ControlDecision(org.flowlang.controls.ControlDecisionStatus.ALLOWED),
+     val steps: List<StatementNode> = emptyList(),
+     val errorHandler: ErrorHandlerNode? = null
+ )
+diff --git a/src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt b/src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
+index 1a23618..157d020 100644
+--- a/src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
++++ b/src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
+@@ -4,6 +4,9 @@ import org.flowlang.adapters.yaml.IntentYamlLoader
+ import org.flowlang.cli.Json
+ import org.flowlang.generators.manifest.TargetRenderMode
+ import org.flowlang.effects.CanonicalIntentEffectAuthority
++import org.flowlang.controls.CanonicalControlRequirementAuthority
++import org.flowlang.controls.ControlDecisionStatus
++import org.flowlang.controls.ControlEvidenceStatus
+ import org.flowlang.effects.EffectDomain
+ import org.flowlang.effects.EffectOperation
+ import org.flowlang.effects.ResourceState
+@@ -42,6 +45,7 @@ internal class StandardArchitectureNormalizationChecks(
+         checkStandardCapabilityContracts(),
+         checkCanonicalIntentMeaning(),
+         checkUniversalEffectModel(),
++        checkUniversalControlPolicyRequirements(),
+         checkIntentDesignReport(),
+         checkCorePackagesDoNotImportJackson(),
+         checkModulesDoNotOwnTargetRendering(),
+@@ -137,6 +141,53 @@ internal class StandardArchitectureNormalizationChecks(
+         require(read.operation == EffectOperation.READ && read.transition == null)
+     }
+ 
++    private fun checkUniversalControlPolicyRequirements(): ConformanceCheck = runCheck("intent.controls.universal-policy-requirements") {
++        val known = IntentDocument(
++            name = "known-control",
++            workflows = listOf(IntentWorkflow(
++                name = "migration",
++                kind = IntentWorkflowKind.CUSTOM,
++                steps = listOf(
++                    IntentStep(id = "backup", capability = StandardCapability.BACKUP),
++                    IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE)
++                )
++            ))
++        )
++        val knownAssessment = CanonicalControlRequirementAuthority.assess(known)
++        require(knownAssessment.decision.status == ControlDecisionStatus.ALLOWED)
++        require(knownAssessment.evidence.all { it.status == ControlEvidenceStatus.SATISFIED })
++
++        val unknown = known.copy(
++            name = "unknown-control",
++            workflows = listOf(IntentWorkflow(
++                name = "migration",
++                kind = IntentWorkflowKind.CUSTOM,
++                steps = listOf(IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE))
++            ))
++        )
++        val unknownAssessment = CanonicalControlRequirementAuthority.assess(unknown)
++        require(unknownAssessment.decision.status == ControlDecisionStatus.BLOCKED)
++        require(unknownAssessment.evidence.any { it.status == ControlEvidenceStatus.UNKNOWN })
++
++        val dynamic = IntentDocument(
++            name = "dynamic-control",
++            workflows = listOf(IntentWorkflow(
++                name = "delivery",
++                kind = IntentWorkflowKind.DEPLOY,
++                steps = listOf(IntentStep(id = "approve", capability = StandardCapability.APPROVE))
++            )),
++            policies = listOf(org.flowlang.intent.IntentPolicy(
++                name = "production-approval",
++                type = org.flowlang.intent.IntentPolicyType.APPROVAL,
++                condition = "environment == 'prod'"
++            ))
++        )
++        val dynamicAssessment = CanonicalControlRequirementAuthority.assess(dynamic)
++        require(dynamicAssessment.decision.status == ControlDecisionStatus.PENDING)
++        require(dynamicAssessment.evidence.single().status == ControlEvidenceStatus.DYNAMIC)
++        require(dynamicAssessment.evidence.single().enforcementCapabilities.containsAll(listOf("approval.manual", "condition.evaluate")))
++    }
++
+     private fun checkIntentDesignReport(): ConformanceCheck = runCheck("intent.design-report") {
+         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
+         val report = IntentDesignAnalyzer(registry).analyze(intent)
