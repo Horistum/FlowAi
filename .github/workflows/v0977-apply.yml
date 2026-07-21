@@ -41,14 +41,16 @@ jobs:
             echo "71756e5ff398246fa4a686b83c90b3f9fb9f2c370ac8ccf2e8ed95f246ce4e67  .flow-agent/tmp/v0977-filepatch-003.patch" | sha256sum --check
             echo "d0447621ea6a5942f4d668dff910082befa144e752d5cc288a5c186534f2ef3b  .flow-agent/tmp/v0977-filepatch-004.patch" | sha256sum --check
             echo "043fd3e20116361c768629cc4937751906df11dd1a965b794a0cf7f2bcaac594  .flow-agent/tmp/v0977-filepatch-005.patch" | sha256sum --check
+            echo "22e8207c47763cfc445c61f102b50f31d2427903415e95b02539c9d483637cb7  .flow-agent/tmp/v0977-repair-006.patch" | sha256sum --check
             cat .flow-agent/tmp/v0977-filepatch-000.patch \
                 .flow-agent/tmp/v0977-filepatch-001.patch \
                 .flow-agent/tmp/v0977-filepatch-002.patch \
                 .flow-agent/tmp/v0977-filepatch-003.patch \
                 .flow-agent/tmp/v0977-filepatch-004.patch \
                 .flow-agent/tmp/v0977-filepatch-005.patch \
+                .flow-agent/tmp/v0977-repair-006.patch \
                 > /tmp/v0977-implementation.patch
-            echo "eecc2ff82bce17cee6817b21beebc1c04c7bb0515107c466122daf8fdb5ab56a  /tmp/v0977-implementation.patch" | sha256sum --check
+            echo "976f97331cfd765ff9d7b2befee10aec55204c9ee9e6dde68c8098d4e5b951ac  /tmp/v0977-implementation.patch" | sha256sum --check
             git apply --check /tmp/v0977-implementation.patch
             git apply /tmp/v0977-implementation.patch
             git diff --check
