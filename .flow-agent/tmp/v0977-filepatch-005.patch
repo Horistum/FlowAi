@@ -1,0 +1,232 @@
+diff --git a/src/test/kotlin/UniversalControlPolicyRequirementsTests.kt b/src/test/kotlin/UniversalControlPolicyRequirementsTests.kt
+new file mode 100644
+index 0000000..8aeb3a9
+--- /dev/null
++++ b/src/test/kotlin/UniversalControlPolicyRequirementsTests.kt
+@@ -0,0 +1,226 @@
++import java.io.File
++import kotlin.test.Test
++import kotlin.test.assertEquals
++import kotlin.test.assertFailsWith
++import kotlin.test.assertFalse
++import kotlin.test.assertTrue
++import org.flowlang.adapters.yaml.IntentYamlLoader
++import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
++import org.flowlang.ast.ActionNode
++import org.flowlang.ast.FlowDocument
++import org.flowlang.ast.FlowNode
++import org.flowlang.ast.ReferenceNode
++import org.flowlang.ast.SafetyNode
++import org.flowlang.controls.CanonicalControlRequirementAuthority
++import org.flowlang.controls.ControlDecisionStatus
++import org.flowlang.controls.ControlEvidenceStatus
++import org.flowlang.controls.ControlRequirementKind
++import org.flowlang.effects.CanonicalIntentEffectAuthority
++import org.flowlang.effects.SemanticEffect
++import org.flowlang.generators.manifest.InvalidPlanningEvidenceException
++import org.flowlang.generators.manifest.MandatoryMaterializationAuthority
++import org.flowlang.generators.manifest.UnresolvedPlanningControlException
++import org.flowlang.intent.CanonicalIntentMeaningAuthority
++import org.flowlang.intent.IntentCapabilityValidator
++import org.flowlang.intent.IntentDocument
++import org.flowlang.intent.IntentPolicy
++import org.flowlang.intent.IntentPolicyType
++import org.flowlang.intent.IntentStep
++import org.flowlang.intent.IntentString
++import org.flowlang.intent.IntentToAstPlanner
++import org.flowlang.intent.IntentWorkflow
++import org.flowlang.intent.IntentWorkflowKind
++import org.flowlang.intent.StandardCapability
++import org.flowlang.modules.ModuleRegistry
++import org.flowlang.planner.ExecutionPlan
++import org.flowlang.planner.FlowPlanner
++import org.flowlang.planner.TaskNode
++
++class UniversalControlPolicyRequirementsTests {
++    private val modules by lazy { ModuleRegistry.fromDirectory(File("modules")) }
++    private val targets by lazy { TargetRegistryYamlLoader.loadDirectory(File("targets")) }
++
++    @Test
++    fun canonicalControlMeaningIsInventoryIndependent() {
++        val intent = migrationIntent(includeBackup = true)
++        val emptyInventory = ModuleRegistry.fromDescriptors(emptyList())
++
++        val canonical = CanonicalIntentMeaningAuthority(modules).resolve(intent).meaning
++        val alternative = CanonicalIntentMeaningAuthority(emptyInventory).resolve(intent).meaning
++
++        assertEquals(canonical.controlRequirements, alternative.controlRequirements)
++        assertEquals(canonical, alternative)
++    }
++
++    @Test
++    fun knownBackupEvidenceAllowsCanonicalRequirement() {
++        val assessment = CanonicalControlRequirementAuthority.assess(migrationIntent(includeBackup = true))
++
++        assertEquals(ControlDecisionStatus.ALLOWED, assessment.decision.status)
++        assertEquals(ControlRequirementKind.BACKUP, assessment.requirements.single().kind)
++        assertEquals(ControlEvidenceStatus.SATISFIED, assessment.evidence.single().status)
++    }
++
++    @Test
++    fun missingEvidenceIsExplicitlyUnknownAndBlocksValidation() {
++        val intent = migrationIntent(includeBackup = false)
++        val assessment = CanonicalControlRequirementAuthority.assess(intent)
++        val validation = IntentCapabilityValidator(modules).validate(intent)
++
++        assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status)
++        assertEquals(ControlEvidenceStatus.UNKNOWN, assessment.evidence.single().status)
++        assertFalse(validation.valid)
++        assertTrue(validation.issues.any { it.code == "SAFETY_REQUIRES_BACKUP" })
++    }
++
++    @Test
++    fun explicitNegativeEvidenceIsUnsatisfiedRatherThanUnknown() {
++        val intent = IntentDocument(
++            name = "migration",
++            workflows = listOf(IntentWorkflow(
++                name = "migration",
++                kind = IntentWorkflowKind.CUSTOM,
++                steps = listOf(IntentStep(
++                    id = "migrate",
++                    capability = StandardCapability.DATABASE_MIGRATE,
++                    params = mapOf("backup" to org.flowlang.intent.IntentBoolean(false))
++                ))
++            ))
++        )
++
++        val evidence = CanonicalControlRequirementAuthority.assess(intent).evidence.single()
++        assertEquals(ControlEvidenceStatus.UNSATISFIED, evidence.status)
++    }
++
++    @Test
++    fun conditionalApprovalIsDynamicAndRequiresRuntimeEnforcementCapabilities() {
++        val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
++        val validation = IntentCapabilityValidator(modules).validate(intent)
++        val plan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(intent))
++
++        assertTrue(validation.valid, validation.issues.toString())
++        assertEquals(ControlDecisionStatus.PENDING, validation.controlAssessment.decision.status)
++        assertTrue(validation.controlAssessment.evidence.any { it.status == ControlEvidenceStatus.DYNAMIC })
++        assertEquals(ControlDecisionStatus.PENDING, plan.controlDecision.status)
++        assertTrue("approval.manual" in plan.requiredCapabilities)
++        assertTrue("condition.evaluate" in plan.requiredCapabilities)
++    }
++
++    @Test
++    fun customPolicyWithConditionIsDynamicButBlankPolicyIsUnknown() {
++        val dynamic = customPolicyIntent("risk.score <= 3")
++        val unknown = customPolicyIntent("")
++
++        val dynamicValidation = IntentCapabilityValidator(modules).validate(dynamic)
++        val unknownValidation = IntentCapabilityValidator(modules).validate(unknown)
++
++        assertTrue(dynamicValidation.valid)
++        assertEquals(ControlDecisionStatus.PENDING, dynamicValidation.controlAssessment.decision.status)
++        assertTrue(dynamicValidation.issues.any { it.code == "CONTROL_EVIDENCE_DYNAMIC" })
++        assertFalse(unknownValidation.valid)
++        assertTrue(unknownValidation.issues.any { it.code == "SAFETY_POLICY_EVIDENCE_UNKNOWN" })
++    }
++
++    @Test
++    fun destructiveModuleWithoutControlEvidenceBlocksExecutionButKeepsDiagnosticEvidence() {
++        val plan = FlowPlanner(modules).plan(FlowDocument(flow = FlowNode(
++            name = "delete",
++            steps = listOf(ActionNode(
++                module = "kubernetes",
++                action = "delete",
++                target = ReferenceNode(path = listOf("cluster")),
++                params = mapOf("resource" to org.flowlang.ast.StringLiteralNode(value = "namespace/demo"))
++            ))
++        )))
++        val authority = MandatoryMaterializationAuthority(targets, modules)
++
++        assertEquals(ControlDecisionStatus.BLOCKED, plan.controlDecision.status)
++        assertFailsWith<UnresolvedPlanningControlException> { authority.authorize(plan, "jenkins") }
++        val diagnostic = authority.authorizeDiagnosticEvidence(plan, "jenkins")
++        assertTrue(diagnostic.compatibility.hasErrors)
++        assertTrue(diagnostic.compatibility.issues.any { it.feature.startsWith("control.") })
++    }
++
++    @Test
++    fun rawFlowSafetyDeclarationIsEvidenceButNotAnImplementationSpecificMeaning() {
++        val plan = FlowPlanner(modules).plan(FlowDocument(flow = FlowNode(
++            name = "delete",
++            steps = listOf(ActionNode(
++                module = "kubernetes",
++                action = "delete",
++                target = ReferenceNode(path = listOf("cluster")),
++                params = mapOf("resource" to org.flowlang.ast.StringLiteralNode(value = "namespace/demo")),
++                safety = SafetyNode(rule = "requiresApproval")
++            ))
++        )))
++
++        assertEquals(ControlDecisionStatus.ALLOWED, plan.controlDecision.status)
++        assertTrue(plan.controlEvidence.all { it.status == ControlEvidenceStatus.SATISFIED })
++    }
++
++    @Test
++    fun materializationRejectsOmittedOrForgedControlAssessment() {
++        val effects = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DATABASE_MIGRATE)
++        val task = TaskNode(
++            id = "migration",
++            module = "standard",
++            action = "execute",
++            target = "standard",
++            semanticCapability = StandardCapability.DATABASE_MIGRATE.name,
++            effectModel = effects,
++            effects = effects.map(SemanticEffect::resource),
++            params = mapOf("operation" to "database-migrate", "capability" to "database-migrate")
++        )
++        val forged = ExecutionPlan(flowName = "forged", nodes = listOf(task))
++
++        val failure = assertFailsWith<InvalidPlanningEvidenceException> {
++            MandatoryMaterializationAuthority(targets, modules).authorizeDiagnosticEvidence(forged, "jenkins")
++        }
++        assertTrue(failure.issues.any { it.code == "planning.control.requirement.invalid" })
++    }
++
++    @Test
++    fun semanticEffectsDoNotInventControlRequirements() {
++        val intent = IntentDocument(
++            name = "build",
++            workflows = listOf(IntentWorkflow(
++                name = "build",
++                kind = IntentWorkflowKind.BUILD,
++                steps = listOf(IntentStep(
++                    id = "image",
++                    capability = StandardCapability.BUILD_IMAGE,
++                    params = mapOf("image" to IntentString("example/app:1"))
++                ))
++            ))
++        )
++        val meaning = CanonicalIntentMeaningAuthority(modules).resolve(intent).meaning
++
++        assertTrue(meaning.workflows.single().steps.single().effects.isNotEmpty())
++        assertTrue(meaning.controlRequirements.isEmpty())
++    }
++
++    private fun migrationIntent(includeBackup: Boolean): IntentDocument {
++        val steps = buildList {
++            if (includeBackup) add(IntentStep(id = "backup", capability = StandardCapability.BACKUP))
++            add(IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE))
++        }
++        return IntentDocument(
++            name = "migration",
++            workflows = listOf(IntentWorkflow("migration", IntentWorkflowKind.CUSTOM, steps))
++        )
++    }
++
++    private fun customPolicyIntent(condition: String): IntentDocument = IntentDocument(
++        name = "custom-policy",
++        workflows = listOf(IntentWorkflow(
++            name = "build",
++            kind = IntentWorkflowKind.BUILD,
++            steps = listOf(IntentStep(id = "build", capability = StandardCapability.BUILD))
++        )),
++        policies = listOf(IntentPolicy(
++            name = "risk-policy",
++            type = IntentPolicyType.CUSTOM,
++            condition = condition
++        ))
++    )
++}
