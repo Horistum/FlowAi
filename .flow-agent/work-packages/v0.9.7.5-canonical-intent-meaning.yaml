@@ -15,6 +15,7 @@ implementedScope:
   - "Unbound standard intent remains standard semantic work instead of selecting a preferred module implicitly."
   - "Semantic parameters remain part of meaning while system, tool and engine are binding metadata only."
   - "Production validation, planning, design analysis and conformance use the same canonical authority."
+finalValidation: "required on the exact completion metadata head"
 completionEvidence:
   - "Canonical intent meaning is derived before and independently from binding resolution."
   - "Equivalent intent produces identical canonical meaning across different capability inventories."
