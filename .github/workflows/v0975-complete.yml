@@ -24,7 +24,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tr -d '\r\n' < .flow-agent/tmp/v0975-metadata.b64 | base64 --decode > /tmp/v0975-metadata.tar.gz
+          mkdir -p /tmp/v0975-metadata-parts
+          for index in 00 01 02; do
+            tr -d '\r\n' < ".flow-agent/tmp/v0975-metadata-part-${index}.b64" > "/tmp/v0975-metadata-parts/part-${index}"
+          done
+          cat > /tmp/v0975-metadata-parts.sha256 <<'EOF'
+          659875cf47d1c715b031a332ad9fe33ffd930759c0d4b3afef98de873a29aa9b  /tmp/v0975-metadata-parts/part-00
+          b2d310363e4c1475be2052aade452cc3e10fe3ce6eae12d49c1b89d40797910a  /tmp/v0975-metadata-parts/part-01
+          22be649e5c9c174b433f7201dcc8933107ae674cb539d42feb4f8a08ad864338  /tmp/v0975-metadata-parts/part-02
+          EOF
+          sed -i 's/^          //' /tmp/v0975-metadata-parts.sha256
+          sha256sum --check /tmp/v0975-metadata-parts.sha256
+          cat /tmp/v0975-metadata-parts/part-{00..02} > /tmp/v0975-metadata.b64
+          echo "eddb4c701c1266f01fd58262f5a182c80e9f66e9b39c0b8ac15850a3b4b6de14  /tmp/v0975-metadata.b64" | sha256sum --check
+          base64 --decode /tmp/v0975-metadata.b64 > /tmp/v0975-metadata.tar.gz
           echo "e7a63f81ebb6959dd36f549ab778b414ebd5209b0eb19dc7470d87ad329a765c  /tmp/v0975-metadata.tar.gz" | sha256sum --check
           tar -tzf /tmp/v0975-metadata.tar.gz > /dev/null
 
@@ -34,6 +47,7 @@ jobs:
           set -euo pipefail
           tar -xzf /tmp/v0975-metadata.tar.gz
           rm -f .flow-agent/tmp/v0975-metadata.b64
+          rm -f .flow-agent/tmp/v0975-metadata-part-{00..02}.b64
           rmdir .flow-agent/tmp 2>/dev/null || true
           rm -f .github/workflows/v0975-complete.yml
 
