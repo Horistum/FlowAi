@@ -35,14 +35,22 @@ jobs:
           set -o pipefail
           {
             set -euo pipefail
-            echo "21b4342e3b44d9a0e9e8c99748fa59846452535d492305b513946a3f98baad7e  .flow-agent/tmp/v0977-implementation-000.b64" | sha256sum --check
-            echo "6ef0ab89e0f2a0c7d0e150e285b4a1fb5e9c63a2dcdb65b41e1e9caf57393ee3  .flow-agent/tmp/v0977-implementation-001.b64" | sha256sum --check
-            cat .flow-agent/tmp/v0977-implementation-000.b64 .flow-agent/tmp/v0977-implementation-001.b64 > /tmp/v0977-implementation.b64
-            echo "adf1b166a2070e9c34abf5ce2d8e7716221d0ae1162215fa0b01f95453c884a3  /tmp/v0977-implementation.b64" | sha256sum --check
-            base64 --decode /tmp/v0977-implementation.b64 > /tmp/v0977-implementation.tar.gz
-            echo "d76ee0d45797b747f32ed125a515cfdfca7fc0573c4498e73d1fd76d6565665c  /tmp/v0977-implementation.tar.gz" | sha256sum --check
-            tar -tzf /tmp/v0977-implementation.tar.gz > /dev/null
-            tar -xzf /tmp/v0977-implementation.tar.gz
+            echo "d08c749a941603356e1998db0a73033756efd591f5adf967506b76bc59aef4bc  .flow-agent/tmp/v0977-filepatch-000.patch" | sha256sum --check
+            echo "4b75be54e8cc0942a12f7b3438f457438935adc7a1271e2f48906b8dbc7a5246  .flow-agent/tmp/v0977-filepatch-001.patch" | sha256sum --check
+            echo "49b582a6edc5c1662bd2fac096bf37bbdfa64d29ce9a629cf33cfdbb090606a4  .flow-agent/tmp/v0977-filepatch-002.patch" | sha256sum --check
+            echo "71756e5ff398246fa4a686b83c90b3f9fb9f2c370ac8ccf2e8ed95f246ce4e67  .flow-agent/tmp/v0977-filepatch-003.patch" | sha256sum --check
+            echo "d0447621ea6a5942f4d668dff910082befa144e752d5cc288a5c186534f2ef3b  .flow-agent/tmp/v0977-filepatch-004.patch" | sha256sum --check
+            echo "043fd3e20116361c768629cc4937751906df11dd1a965b794a0cf7f2bcaac594  .flow-agent/tmp/v0977-filepatch-005.patch" | sha256sum --check
+            cat .flow-agent/tmp/v0977-filepatch-000.patch \
+                .flow-agent/tmp/v0977-filepatch-001.patch \
+                .flow-agent/tmp/v0977-filepatch-002.patch \
+                .flow-agent/tmp/v0977-filepatch-003.patch \
+                .flow-agent/tmp/v0977-filepatch-004.patch \
+                .flow-agent/tmp/v0977-filepatch-005.patch \
+                > /tmp/v0977-implementation.patch
+            echo "eecc2ff82bce17cee6817b21beebc1c04c7bb0515107c466122daf8fdb5ab56a  /tmp/v0977-implementation.patch" | sha256sum --check
+            git apply --check /tmp/v0977-implementation.patch
+            git apply /tmp/v0977-implementation.patch
             git diff --check
           } 2>&1 | tee /tmp/v0977-apply.log
 
@@ -54,6 +62,7 @@ jobs:
           ./gradlew --no-daemon test \
             --tests UniversalControlPolicyRequirementsTests \
             --tests FlowConformanceBridgeJUnitTest \
+            --tests org.flowlang.tests.FlowRcConformanceTests \
             --stacktrace 2>&1 | tee /tmp/v0977-focused-tests.log
 
       - name: Upload diagnostics
@@ -71,7 +80,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f .flow-agent/tmp/v0977-implementation-*.b64
+          rm -f .flow-agent/tmp/v0977-*
           rmdir .flow-agent/tmp 2>/dev/null || true
           rm -f .github/workflows/v0977-export.yml
           rm -f .github/workflows/v0977-apply.yml
