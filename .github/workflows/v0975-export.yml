@@ -60,7 +60,7 @@ jobs:
             /tmp/v0975-parts/v0975-implementation-tail-00.b64 \
             /tmp/v0975-parts/v0975-implementation-tail-01.b64 \
             > /tmp/v0975-implementation.b64
-          echo "5acbe67d402ba9ca74f7d32f6ec757e86b61725ac38850c9005658e6d9016e46  /tmp/v0975-implementation.b64" | sha256sum --check
+          echo "2d6fd16110f728a65933931d5f29a6eba9ba3f9bdb82dd2697ca6ba09206004f  /tmp/v0975-implementation.b64" | sha256sum --check
           base64 --decode /tmp/v0975-implementation.b64 > /tmp/v0975-implementation.tar.gz
           echo "286dbe77ee28459dcba247f874b92a2cef968624c8ac991881c5fa2b3dda0c6e  /tmp/v0975-implementation.tar.gz" | sha256sum --check
           tar -tzf /tmp/v0975-implementation.tar.gz > /dev/null
