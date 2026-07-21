@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 9
+stateVersion: 10
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,14 +18,14 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.6"
-  completedItemName: "Universal Effect and State Transition Model"
+  completedItem: "0.9.7.7"
+  completedItemName: "Universal Control and Policy Requirements"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.7"
-  nextCoreItemName: "Universal Control and Policy Requirements"
+  nextCoreItem: "0.9.7.8"
+  nextCoreItemName: "Abstract Execution Topology Model"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.6.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.7.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
 
@@ -67,6 +67,11 @@ qualityPrinciples:
   - "Effect domain, operation, resource and state transition remain implementation-independent."
   - "Ordering, continuity, policy and topology evidence must not be inferred from semantic effects."
   - "Known canonical effects must be re-derived and validated before materialization."
+  - "Control requirements, evidence and authorization decisions remain separate contracts."
+  - "A policy declaration never proves that the required control mechanism exists."
+  - "Unknown and unsatisfied control evidence blocks authorization."
+  - "Dynamic control evidence remains pending and declares explicit enforcement capabilities."
+  - "Module contracts may add control obligations but cannot rewrite canonical intent meaning."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-implementation-head"
@@ -76,16 +81,17 @@ lastKnownValidation:
   cleanTest: "passed-on-implementation-head"
   conformance: "passed-on-implementation-head"
   executableReferenceEvidence: "passed-on-implementation-head"
-  validationSource: "Flow CI #1756 passed on implementation head af921b5ceb1f5e15c9f6a152a7291003817f8134."
+  validationSource: "Flow CI #1787 passed on implementation head b0cac07630df7270912c2db0fb528d5f6ed663a3."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "Canonical intent capabilities derive typed effects before explicit binding."
-    - "AST and execution-plan nodes preserve effect domain, operation, resource and state transition."
-    - "Software delivery, data transformation and infrastructure state change use one effect vocabulary."
-    - "Implementation-owned module effects convert without inferring semantic domains from implementation names."
-    - "Legacy string effects remain a derived resource projection and not a semantic authority."
-    - "Materialization authorization rejects missing, duplicated or forged effect evidence."
-    - "Core effect contracts remain independent from serializer annotations."
+    - "Canonical intent derives target-neutral control requirements before implementation binding."
+    - "Requirements, evidence and authorization decisions use separate typed contracts."
+    - "Known, unknown, unsatisfied and dynamic evidence remain explicit through AST and execution planning."
+    - "Approval policies declare requirements and do not count as approval evidence."
+    - "Module safety contracts may add obligations without rewriting canonical intent requirements."
+    - "Materialization re-derives canonical and module-owned requirements and rejects omitted, forged or unresolved evidence."
+    - "Dynamic evidence declares explicit enforcement capabilities and remains pending rather than silently safe."
+    - "Legacy safety validators remain compatibility facades over one canonical authority."
     - "Reference snapshots were regenerated through the canonical production generator."
     - "The Jenkins executable reference proof remains live."
     - "The final metadata head must pass the unmodified standard Flow CI."
