@@ -8,6 +8,7 @@ forbiddenScope:
   - "No implicit binding selection."
   - "No implementation identity in canonical meaning."
   - "No target inventory as semantic authority."
+implementationStatus: "integrated for full validation"
 completionEvidence:
   - "Canonical intent meaning is derived before and independently from binding resolution."
   - "Equivalent intent produces identical canonical meaning across different capability inventories."
