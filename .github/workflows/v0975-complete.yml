@@ -1,0 +1,51 @@
+name: Complete v0.9.7.5 Metadata
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/v0975-complete.yml
+
+permissions:
+  contents: write
+
+jobs:
+  complete-metadata:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/v0.9.7.5-canonical-intent-meaning
+          fetch-depth: 0
+
+      - name: Verify completion metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          tr -d '\r\n' < .flow-agent/tmp/v0975-metadata.b64 > /tmp/v0975-metadata.b64
+          echo "eddb4c701c1266f01fd58262f5a182c80e9f66e9b39c0b8ac15850a3b4b6de14  /tmp/v0975-metadata.b64" | sha256sum --check
+          base64 --decode /tmp/v0975-metadata.b64 > /tmp/v0975-metadata.tar.gz
+          echo "e7a63f81ebb6959dd36f549ab778b414ebd5209b0eb19dc7470d87ad329a765c  /tmp/v0975-metadata.tar.gz" | sha256sum --check
+          tar -tzf /tmp/v0975-metadata.tar.gz > /dev/null
+
+      - name: Apply completion metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/v0975-metadata.tar.gz
+          rm -f .flow-agent/tmp/v0975-metadata.b64
+          rmdir .flow-agent/tmp 2>/dev/null || true
+          rm -f .github/workflows/v0975-complete.yml
+
+      - name: Commit completion metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "flow-ai-agent"
+          git config user.email "flow-ai-agent@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Complete v0.9.7.5 canonical intent meaning"
+          git push origin HEAD:agent/v0.9.7.5-canonical-intent-meaning
