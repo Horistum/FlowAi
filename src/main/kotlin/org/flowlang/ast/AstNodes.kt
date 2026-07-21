@@ -1,5 +1,6 @@
 package org.flowlang.ast
 
+import org.flowlang.effects.SemanticEffect
 import org.flowlang.standard.FlowStandardVersions
 
 /**
@@ -101,6 +102,9 @@ data class ActionNode(
     val result: ResultBindingNode? = null,
     val handler: ResultHandlerNode? = null,
     val safety: SafetyNode? = null,
+    /** Canonical, target-neutral effect evidence carried from Standard Intent lowering. */
+    val semanticCapability: String? = null,
+    val semanticEffects: List<SemanticEffect> = emptyList(),
     /** Explicit dependency names, primarily produced by the Standard Intent lowering layer.
      * They refer to result binding names, not target-specific job ids.
      */

@@ -6,6 +6,9 @@ import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.PlannerCapabilityConstraintGate
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.effects.CanonicalIntentEffectAuthority
+import org.flowlang.effects.ModuleEffectCanonicalizer
+import org.flowlang.effects.SemanticEffect
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ControlNode
@@ -27,6 +30,7 @@ import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.intent.StandardCapability
 
 /**
  * Evidence issued only by the canonical materialization authority.
@@ -173,6 +177,7 @@ internal object ExecutionPlanMaterializationValidator {
 
         val seenNodeIds = mutableSetOf<String>()
         validateNodes(plan.nodes, "nodes", seenNodeIds, issues)
+        validateEffectEvidence(plan.nodes, "nodes", modules, issues)
 
         val duplicateInputs = plan.inputs.groupingBy { it.name }.eachCount().filterValues { it > 1 }.keys
         duplicateInputs.forEach { name ->
@@ -367,6 +372,149 @@ internal object ExecutionPlanMaterializationValidator {
                     "Intermediate node '$nodeId' does not explicitly preserve ${requirement.kind.name.lowercase()} channel '${requirement.name}'."
                 )
             }
+        }
+    }
+
+    private fun validateEffectEvidence(
+        nodes: List<PlanNode>,
+        path: String,
+        modules: ModuleRegistry,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        nodes.forEachIndexed { index, node ->
+            val location = "$path[$index]"
+            when (node) {
+                is TaskNode -> validateTaskEffects(node, location, modules, issues)
+                is DataOpNode -> validateCanonicalEffects(
+                    semanticCapability = node.semanticCapability,
+                    effectModel = node.effectModel,
+                    legacyEffects = node.effects,
+                    params = emptyMap(),
+                    location = location,
+                    issues = issues
+                )
+                is ConditionNode -> {
+                    validateEffectEvidence(node.then, "$location.then", modules, issues)
+                    validateEffectEvidence(node.otherwise, "$location.otherwise", modules, issues)
+                }
+                is LoopNode -> validateEffectEvidence(node.body, "$location.body", modules, issues)
+                is ParallelGroupNode -> node.branches.forEachIndexed { branchIndex, branch ->
+                    validateEffectEvidence(branch.steps, "$location.branches[$branchIndex]", modules, issues)
+                }
+                is MatchPlanNode -> {
+                    node.cases.forEachIndexed { caseIndex, case ->
+                        validateEffectEvidence(case.steps, "$location.cases[$caseIndex]", modules, issues)
+                    }
+                    validateEffectEvidence(node.errorCase, "$location.errorCase", modules, issues)
+                    validateEffectEvidence(node.defaultSteps, "$location.default", modules, issues)
+                }
+                is RetryGroupNode -> validateEffectEvidence(node.body, "$location.body", modules, issues)
+                is TryPlanNode -> {
+                    validateEffectEvidence(node.body, "$location.body", modules, issues)
+                    validateEffectEvidence(node.errorHandler, "$location.errorHandler", modules, issues)
+                }
+                is ApprovalNode, is ControlNode -> Unit
+            }
+        }
+    }
+
+    private fun validateTaskEffects(
+        task: TaskNode,
+        location: String,
+        modules: ModuleRegistry,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        if (task.semanticCapability != null) {
+            validateCanonicalEffects(
+                semanticCapability = task.semanticCapability,
+                effectModel = task.effectModel,
+                legacyEffects = task.effects,
+                params = task.params.ifEmpty { task.inputs },
+                location = location,
+                issues = issues
+            )
+            return
+        }
+
+        val contract = modules.findAction(task.module, task.action)
+        if (contract != null) {
+            val expected = ModuleEffectCanonicalizer.canonicalize(contract.effects)
+            validateEffectList(expected, task.effectModel, task.effects, location, issues, "module contract")
+        } else {
+            validateEffectProjection(task.effectModel, task.effects, location, issues)
+        }
+    }
+
+    private fun validateCanonicalEffects(
+        semanticCapability: String?,
+        effectModel: List<SemanticEffect>,
+        legacyEffects: List<String>,
+        params: Map<String, String>,
+        location: String,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        if (semanticCapability.isNullOrBlank()) {
+            if (effectModel.isNotEmpty() || legacyEffects.isNotEmpty()) {
+                issues += issue(
+                    "planning.effect.capability.missing",
+                    "$location.semanticCapability",
+                    "Canonical effect evidence must name its standard capability."
+                )
+            }
+            return
+        }
+
+        val capability = runCatching { StandardCapability.valueOf(semanticCapability) }.getOrNull()
+        if (capability == null) {
+            issues += issue(
+                "planning.effect.capability.unknown",
+                "$location.semanticCapability",
+                "Unknown canonical effect capability '$semanticCapability'."
+            )
+            return
+        }
+        val expected = CanonicalIntentEffectAuthority.effectsForRendered(capability, params)
+        validateEffectList(expected, effectModel, legacyEffects, location, issues, "canonical intent")
+    }
+
+    private fun validateEffectList(
+        expected: List<SemanticEffect>,
+        actual: List<SemanticEffect>,
+        legacyEffects: List<String>,
+        location: String,
+        issues: MutableList<PlanningEvidenceIssue>,
+        authority: String
+    ) {
+        if (actual != expected) {
+            issues += issue(
+                "planning.effect.evidence.invalid",
+                "$location.effectModel",
+                "Effect evidence does not match the $authority authority. Expected $expected, found $actual."
+            )
+        }
+        validateEffectProjection(actual, legacyEffects, location, issues)
+        if (actual.distinct().size != actual.size) {
+            issues += issue(
+                "planning.effect.evidence.duplicate",
+                "$location.effectModel",
+                "Effect evidence must not contain duplicate entries."
+            )
+        }
+    }
+
+    private fun validateEffectProjection(
+        effectModel: List<SemanticEffect>,
+        legacyEffects: List<String>,
+        location: String,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        val expectedProjection = effectModel.map(SemanticEffect::resource).distinct()
+        if (legacyEffects != expectedProjection) {
+            issues += issue(
+                "planning.effect.projection.invalid",
+                "$location.effects",
+                "Legacy effect projection must be derived from the typed effect model. Expected $expectedProjection, found $legacyEffects."
+            )
         }
     }
 

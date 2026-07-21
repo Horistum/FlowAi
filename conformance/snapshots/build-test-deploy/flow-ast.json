@@ -91,6 +91,14 @@
         "type" : "ResultBinding",
         "name" : "checkout"
       },
+      "semanticCapability" : "CHECKOUT",
+      "semanticEffects" : [ {
+        "domain" : "SOFTWARE_DELIVERY",
+        "operation" : "READ",
+        "resource" : "source.repository",
+        "external" : true,
+        "sourceCapability" : "CHECKOUT"
+      } ],
       "dependsOn" : [ ]
     }, {
       "type" : "Action",
@@ -124,6 +132,20 @@
         "type" : "ResultBinding",
         "name" : "test"
       },
+      "semanticCapability" : "TEST",
+      "semanticEffects" : [ {
+        "domain" : "SOFTWARE_DELIVERY",
+        "operation" : "READ",
+        "resource" : "software.source",
+        "external" : true,
+        "sourceCapability" : "TEST"
+      }, {
+        "domain" : "SOFTWARE_DELIVERY",
+        "operation" : "EXECUTE",
+        "resource" : "software.test",
+        "external" : true,
+        "sourceCapability" : "TEST"
+      } ],
       "dependsOn" : [ "checkout" ]
     }, {
       "type" : "Action",
@@ -166,6 +188,18 @@
         "type" : "ResultBinding",
         "name" : "build_image"
       },
+      "semanticCapability" : "BUILD_IMAGE",
+      "semanticEffects" : [ {
+        "domain" : "SOFTWARE_DELIVERY",
+        "operation" : "CREATE",
+        "resource" : "software.image",
+        "transition" : {
+          "from" : "ABSENT",
+          "to" : "PRESENT"
+        },
+        "external" : true,
+        "sourceCapability" : "BUILD_IMAGE"
+      } ],
       "dependsOn" : [ "test" ]
     }, {
       "type" : "If",
@@ -239,6 +273,18 @@
         "type" : "ResultBinding",
         "name" : "deploy"
       },
+      "semanticCapability" : "DEPLOY",
+      "semanticEffects" : [ {
+        "domain" : "INFRASTRUCTURE_STATE",
+        "operation" : "UPSERT",
+        "resource" : "deployment.state",
+        "transition" : {
+          "from" : "UNKNOWN",
+          "to" : "PRESENT"
+        },
+        "external" : true,
+        "sourceCapability" : "DEPLOY"
+      } ],
       "dependsOn" : [ "approve_prod" ]
     }, {
       "type" : "Action",
@@ -272,6 +318,14 @@
         "type" : "ResultBinding",
         "name" : "verify"
       },
+      "semanticCapability" : "VERIFY",
+      "semanticEffects" : [ {
+        "domain" : "INFRASTRUCTURE_STATE",
+        "operation" : "READ",
+        "resource" : "deployment.state",
+        "external" : true,
+        "sourceCapability" : "VERIFY"
+      } ],
       "dependsOn" : [ "deploy" ]
     } ],
     "errorHandler" : {
@@ -306,6 +360,18 @@
           "type" : "ResultBinding",
           "name" : "rollback_result"
         },
+        "semanticCapability" : "ROLLBACK",
+        "semanticEffects" : [ {
+          "domain" : "INFRASTRUCTURE_STATE",
+          "operation" : "UPDATE",
+          "resource" : "managed.state",
+          "transition" : {
+            "from" : "PRESENT",
+            "to" : "PRESENT"
+          },
+          "external" : true,
+          "sourceCapability" : "ROLLBACK"
+        } ],
         "dependsOn" : [ ]
       }, {
         "type" : "Action",
@@ -345,6 +411,14 @@
             "scope" : "error"
           }
         },
+        "semanticCapability" : "NOTIFY",
+        "semanticEffects" : [ {
+          "domain" : "COMMUNICATION",
+          "operation" : "EMIT",
+          "resource" : "notification",
+          "external" : true,
+          "sourceCapability" : "NOTIFY"
+        } ],
         "dependsOn" : [ ]
       } ]
     }

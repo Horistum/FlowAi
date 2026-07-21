@@ -1,5 +1,7 @@
 package org.flowlang.intent
 
+import org.flowlang.effects.CanonicalIntentEffectAuthority
+import org.flowlang.effects.SemanticEffect
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.standard.StandardCapabilityContracts
@@ -35,7 +37,8 @@ data class CanonicalIntentStep(
     val description: String? = null,
     val requires: List<String> = emptyList(),
     val produces: List<String> = emptyList(),
-    val params: Map<String, IntentValue> = emptyMap()
+    val params: Map<String, IntentValue> = emptyMap(),
+    val effects: List<SemanticEffect> = emptyList()
 )
 
 enum class IntentBindingStatus { UNBOUND, RESOLVED, INVALID }
@@ -212,7 +215,8 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
                             description = step.description,
                             requires = step.requires,
                             produces = step.produces,
-                            params = semanticParameters(step)
+                            params = semanticParameters(step),
+                            effects = CanonicalIntentEffectAuthority.effectsFor(step.capability, semanticParameters(step))
                         )
                     }
                 )

@@ -1,5 +1,7 @@
 package org.flowlang.planner
 
+import org.flowlang.effects.SemanticEffect
+
 /**
  * Canonical public Execution Plan view.
  *
@@ -31,6 +33,8 @@ data class CanonicalPlanNode(
     val dependencies: List<String> = emptyList(),
     val inputs: Map<String, String> = emptyMap(),
     val outputs: List<String> = emptyList(),
+    val semanticCapability: String? = null,
+    val effectModel: List<SemanticEffect> = emptyList(),
     val effects: List<String> = emptyList(),
     val safety: String? = null,
     val destructive: Boolean = false,
@@ -92,6 +96,8 @@ object ExecutionPlanCanonicalizer {
             dependencies = node.dependencies,
             inputs = node.inputs.ifEmpty { node.params },
             outputs = node.outputs,
+            semanticCapability = node.semanticCapability,
+            effectModel = node.effectModel,
             effects = node.effects,
             safety = node.safety,
             destructive = node.destructive,
@@ -160,7 +166,10 @@ object ExecutionPlanCanonicalizer {
             id = node.id,
             kind = node.kind.lowercase(),
             target = node.target,
-            detail = node.detail
+            detail = node.detail,
+            semanticCapability = node.semanticCapability,
+            effectModel = node.effectModel,
+            effects = node.effects
         )
         is ControlNode -> CanonicalPlanNode(
             id = node.id,
@@ -173,7 +182,7 @@ object ExecutionPlanCanonicalizer {
         node.module == "standard" && node.action == "rollback" -> "rollback"
         node.module == "notify" -> "notification"
         node.requiredCapabilities.any { it.startsWith("secret.") } -> "secret"
-        node.effects.any { it.contains("artifact", ignoreCase = true) } -> "artifact"
+        node.effectModel.any { it.resource.contains("artifact", ignoreCase = true) } -> "artifact"
         else -> "task"
     }
 

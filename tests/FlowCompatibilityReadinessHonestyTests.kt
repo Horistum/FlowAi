@@ -26,6 +26,8 @@ import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetStep
+import org.flowlang.effects.ModuleEffectCanonicalizer
+import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
 import org.flowlang.projection.ProjectionBinding
@@ -207,7 +209,8 @@ class FlowCompatibilityReadinessHonestyTests {
             module = "standard",
             action = "execute",
             target = "standard",
-            requiredCapabilities = listOf("task.execute")
+            requiredCapabilities = listOf("task.execute"),
+            effectModel = moduleEffects("standard", "execute")
         ))
     )
 
@@ -273,4 +276,8 @@ class FlowCompatibilityReadinessHonestyTests {
             )
         )
     }
+    private fun moduleEffects(module: String, action: String) = ModuleEffectCanonicalizer.canonicalize(
+        ModuleRegistry().requireModule(module).actions.getValue(action).effects
+    )
+
 }

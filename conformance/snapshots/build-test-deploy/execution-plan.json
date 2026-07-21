@@ -54,7 +54,15 @@
       "branch" : "\"main\""
     },
     "outputs" : [ "checkout" ],
-    "effects" : [ "git.repository", "workspace.write" ],
+    "semanticCapability" : "CHECKOUT",
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "READ",
+      "resource" : "source.repository",
+      "external" : true,
+      "sourceCapability" : "CHECKOUT"
+    } ],
+    "effects" : [ "source.repository" ],
     "destructive" : false,
     "requiredCapabilities" : [ "task.execute", "git.checkout" ],
     "targetHints" : { },
@@ -82,7 +90,21 @@
       "flow" : "\"build-test-deploy\""
     },
     "outputs" : [ "test" ],
-    "effects" : [ "flow.standard.operation" ],
+    "semanticCapability" : "TEST",
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "READ",
+      "resource" : "software.source",
+      "external" : true,
+      "sourceCapability" : "TEST"
+    }, {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "EXECUTE",
+      "resource" : "software.test",
+      "external" : true,
+      "sourceCapability" : "TEST"
+    } ],
+    "effects" : [ "software.source", "software.test" ],
     "destructive" : false,
     "requiredCapabilities" : [ "task.execute", "standard.test" ],
     "targetHints" : { },
@@ -109,7 +131,19 @@
       "push" : "false"
     },
     "outputs" : [ "build_image" ],
-    "effects" : [ "docker.image", "docker.build" ],
+    "semanticCapability" : "BUILD_IMAGE",
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "CREATE",
+      "resource" : "software.image",
+      "transition" : {
+        "from" : "ABSENT",
+        "to" : "PRESENT"
+      },
+      "external" : true,
+      "sourceCapability" : "BUILD_IMAGE"
+    } ],
+    "effects" : [ "software.image" ],
     "destructive" : false,
     "requiredCapabilities" : [ "task.execute", "docker.build", "container.image", "continuity.workspace" ],
     "targetHints" : { },
@@ -128,6 +162,7 @@
     "dependencies" : [ ],
     "inputs" : { },
     "outputs" : [ ],
+    "effectModel" : [ ],
     "effects" : [ ],
     "destructive" : false,
     "requiredCapabilities" : [ "condition.evaluate" ],
@@ -144,6 +179,7 @@
         "mode" : "manual"
       },
       "outputs" : [ ],
+      "effectModel" : [ ],
       "effects" : [ ],
       "safety" : "requiresApproval",
       "destructive" : false,
@@ -181,7 +217,19 @@
       "flow" : "\"build-test-deploy\""
     },
     "outputs" : [ "deploy" ],
-    "effects" : [ "flow.standard.operation" ],
+    "semanticCapability" : "DEPLOY",
+    "effectModel" : [ {
+      "domain" : "INFRASTRUCTURE_STATE",
+      "operation" : "UPSERT",
+      "resource" : "deployment.state",
+      "transition" : {
+        "from" : "UNKNOWN",
+        "to" : "PRESENT"
+      },
+      "external" : true,
+      "sourceCapability" : "DEPLOY"
+    } ],
+    "effects" : [ "deployment.state" ],
     "destructive" : false,
     "requiredCapabilities" : [ "task.execute", "standard.deploy" ],
     "targetHints" : { },
@@ -209,7 +257,15 @@
       "flow" : "\"build-test-deploy\""
     },
     "outputs" : [ "verify" ],
-    "effects" : [ "flow.standard.operation" ],
+    "semanticCapability" : "VERIFY",
+    "effectModel" : [ {
+      "domain" : "INFRASTRUCTURE_STATE",
+      "operation" : "READ",
+      "resource" : "deployment.state",
+      "external" : true,
+      "sourceCapability" : "VERIFY"
+    } ],
+    "effects" : [ "deployment.state" ],
     "destructive" : false,
     "requiredCapabilities" : [ "task.execute", "standard.verify" ],
     "targetHints" : { },
@@ -228,6 +284,7 @@
     "dependencies" : [ ],
     "inputs" : { },
     "outputs" : [ ],
+    "effectModel" : [ ],
     "effects" : [ ],
     "destructive" : false,
     "requiredCapabilities" : [ "errorHandlers.finally" ],
@@ -254,7 +311,19 @@
         "flow" : "\"build-test-deploy\""
       },
       "outputs" : [ "rollback_result" ],
-      "effects" : [ "flow.rollback" ],
+      "semanticCapability" : "ROLLBACK",
+      "effectModel" : [ {
+        "domain" : "INFRASTRUCTURE_STATE",
+        "operation" : "UPDATE",
+        "resource" : "managed.state",
+        "transition" : {
+          "from" : "PRESENT",
+          "to" : "PRESENT"
+        },
+        "external" : true,
+        "sourceCapability" : "ROLLBACK"
+      } ],
+      "effects" : [ "managed.state" ],
       "destructive" : false,
       "requiredCapabilities" : [ "task.execute", "standard.rollback" ],
       "targetHints" : { },
@@ -283,7 +352,15 @@
         "body" : "error?.message"
       },
       "outputs" : [ ],
-      "effects" : [ "flow.standard.operation" ],
+      "semanticCapability" : "NOTIFY",
+      "effectModel" : [ {
+        "domain" : "COMMUNICATION",
+        "operation" : "EMIT",
+        "resource" : "notification",
+        "external" : true,
+        "sourceCapability" : "NOTIFY"
+      } ],
+      "effects" : [ "notification" ],
       "destructive" : false,
       "requiredCapabilities" : [ "task.execute", "standard.notify-failure" ],
       "targetHints" : { },

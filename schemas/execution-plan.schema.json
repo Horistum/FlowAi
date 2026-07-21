@@ -236,6 +236,18 @@
             "type": "string"
           }
         },
+        "semanticCapability": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "effectModel": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semanticEffect"
+          }
+        },
         "effects": {
           "type": "array",
           "items": {
@@ -430,6 +442,86 @@
         },
         "blocking": {
           "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "stateTransition": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "enum": [
+            "UNKNOWN",
+            "ABSENT",
+            "PRESENT"
+          ]
+        },
+        "to": {
+          "enum": [
+            "UNKNOWN",
+            "ABSENT",
+            "PRESENT"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "semanticEffect": {
+      "type": "object",
+      "required": [
+        "domain",
+        "operation",
+        "resource",
+        "external"
+      ],
+      "properties": {
+        "domain": {
+          "enum": [
+            "SOFTWARE_DELIVERY",
+            "DATA_TRANSFORMATION",
+            "INFRASTRUCTURE_STATE",
+            "COMMUNICATION",
+            "UNKNOWN"
+          ]
+        },
+        "operation": {
+          "enum": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "UPSERT",
+            "EXECUTE",
+            "EMIT",
+            "UNKNOWN"
+          ]
+        },
+        "resource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "transition": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/stateTransition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "external": {
+          "type": "boolean"
+        },
+        "sourceCapability": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

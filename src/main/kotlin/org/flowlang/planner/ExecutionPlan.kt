@@ -1,5 +1,7 @@
 package org.flowlang.planner
 
+import org.flowlang.effects.SemanticEffect
+
 /**
  * Execution plan (docs/07). The plan preserves control-flow structure (conditions,
  * loops, parallel groups, match, retry, try, approvals, data ops) instead of
@@ -85,7 +87,9 @@ data class TaskNode(
     val resultName: String? = null,
     val dependsOn: List<String> = emptyList(),
     val dependencies: List<String> = dependsOn,
-    val effects: List<String> = emptyList(),
+    val semanticCapability: String? = null,
+    val effectModel: List<SemanticEffect> = emptyList(),
+    val effects: List<String> = effectModel.map(SemanticEffect::resource).distinct(),
     val inputs: Map<String, String> = emptyMap(),
     val outputs: List<String> = emptyList(),
     val destructive: Boolean = false,
@@ -164,7 +168,10 @@ data class DataOpNode(
     override val id: String,
     override val kind: String,         // "Transform" | "Validate" | "Aggregate"
     val target: String? = null,
-    val detail: String? = null
+    val detail: String? = null,
+    val semanticCapability: String? = null,
+    val effectModel: List<SemanticEffect> = emptyList(),
+    val effects: List<String> = effectModel.map(SemanticEffect::resource).distinct()
 ) : PlanNode
 
 data class ControlNode(

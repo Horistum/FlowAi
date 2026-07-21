@@ -1,0 +1,39 @@
+version: "0.9.7.6"
+name: "Universal Effect and State Transition Model"
+stream: core
+status: completed
+objective: "Model resource reads and state changes consistently across bounded automation domains."
+universalInvariant: "Effects remain stable across implementations."
+forbiddenScope:
+  - "No implementation-name inference."
+  - "No target inventory as effect authority."
+  - "No ordering or continuity relation treated as a state transition."
+  - "No serializer framework as a Core semantic dependency."
+implementedScope:
+  - "Canonical intent capabilities derive target-neutral typed effects before binding resolution."
+  - "AST and execution-plan nodes carry the same semantic effect evidence."
+  - "Module effect buckets convert to the shared model without inferring domains from implementation identities."
+  - "Materialization authorization re-derives canonical effects and rejects omitted, duplicated or forged evidence."
+  - "Software delivery, data transformation and infrastructure state change share one operation and transition vocabulary."
+  - "Serialized effect evidence contains only declared semantic fields and keeps Core independent from serializer annotations."
+  - "Legacy string effects remain a derived resource projection rather than a second semantic authority."
+  - "Committed reference evidence is regenerated through the canonical production generator."
+validationEvidence:
+  focused:
+    - "UniversalEffectStateTransitionModelTests passed."
+    - "FlowConformanceBridgeJUnitTest passed."
+    - "FlowRcConformanceTests passed."
+  implementation:
+    workflow: "Flow CI"
+    runNumber: 1756
+    runId: 29803032235
+    head: "af921b5ceb1f5e15c9f6a152a7291003817f8134"
+    result: "passed"
+  finalMetadataHead: "required before review completion"
+completionEvidence:
+  - "Three bounded domains share one effect model."
+  - "Equivalent intent produces identical effect evidence across inventories and explicit bindings."
+  - "State transitions are defined by semantic operations rather than implementation names."
+  - "Legacy effect projections remain derived compatibility evidence, not a second semantic authority."
+  - "Materialization validation rejects missing, duplicated and forged canonical effect evidence."
+  - "The implementation head passed compilation, full tests, conformance and reference evidence."

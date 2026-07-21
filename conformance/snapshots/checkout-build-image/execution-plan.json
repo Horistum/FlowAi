@@ -34,7 +34,15 @@
       "url" : "\"https://github.com/octocat/Hello-World.git\""
     },
     "outputs" : [ "checkout" ],
-    "effects" : [ "git.repository", "workspace.write" ],
+    "semanticCapability" : "CHECKOUT",
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "READ",
+      "resource" : "source.repository",
+      "external" : true,
+      "sourceCapability" : "CHECKOUT"
+    } ],
+    "effects" : [ "source.repository" ],
     "destructive" : false,
     "requiredCapabilities" : [ "task.execute", "git.checkout" ],
     "targetHints" : { },
@@ -61,7 +69,19 @@
       "push" : "false"
     },
     "outputs" : [ "build_image" ],
-    "effects" : [ "docker.image", "docker.build" ],
+    "semanticCapability" : "BUILD_IMAGE",
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "CREATE",
+      "resource" : "software.image",
+      "transition" : {
+        "from" : "ABSENT",
+        "to" : "PRESENT"
+      },
+      "external" : true,
+      "sourceCapability" : "BUILD_IMAGE"
+    } ],
+    "effects" : [ "software.image" ],
     "destructive" : false,
     "requiredCapabilities" : [ "task.execute", "docker.build", "container.image", "continuity.workspace" ],
     "targetHints" : { },
