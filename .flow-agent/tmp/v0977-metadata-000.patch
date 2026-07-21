@@ -1,0 +1,128 @@
+diff --git a/.flow-agent/release-state.yaml b/.flow-agent/release-state.yaml
+index 223495c..2cbb7e2 100644
+--- a/.flow-agent/release-state.yaml
++++ b/.flow-agent/release-state.yaml
+@@ -1,5 +1,5 @@
+ project: Flow Core
+-stateVersion: 9
++stateVersion: 10
+ 
+ currentVersion: "0.9.5"
+ currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
+@@ -18,14 +18,14 @@ versionBoundary:
+ roadmapState:
+   roadmapVersion: 5
+   activeTrack: "v0.9.7-universal-semantic-foundation"
+-  completedItem: "0.9.7.6"
+-  completedItemName: "Universal Effect and State Transition Model"
++  completedItem: "0.9.7.7"
++  completedItemName: "Universal Control and Policy Requirements"
+   primaryStream: "core"
+-  nextCoreItem: "0.9.7.7"
+-  nextCoreItemName: "Universal Control and Policy Requirements"
++  nextCoreItem: "0.9.7.8"
++  nextCoreItemName: "Abstract Execution Topology Model"
+   boundedClosureItem: "0.9.7.10"
+   activeRoadmaps:
+-    core: ".flow-agent/roadmap-core-v0.9.7.6.yaml"
++    core: ".flow-agent/roadmap-core-v0.9.7.7.yaml"
+     adapters: ".flow-agent/roadmap-adapters.yaml"
+     conformance: ".flow-agent/roadmap-conformance.yaml"
+ 
+@@ -67,6 +67,11 @@ qualityPrinciples:
+   - "Effect domain, operation, resource and state transition remain implementation-independent."
+   - "Ordering, continuity, policy and topology evidence must not be inferred from semantic effects."
+   - "Known canonical effects must be re-derived and validated before materialization."
++  - "Control requirements, evidence and authorization decisions remain separate contracts."
++  - "A policy declaration never proves that the required control mechanism exists."
++  - "Unknown and unsatisfied control evidence blocks authorization."
++  - "Dynamic control evidence remains pending and declares explicit enforcement capabilities."
++  - "Module contracts may add control obligations but cannot rewrite canonical intent meaning."
+ 
+ lastKnownValidation:
+   flowAgentTooling: "passed-on-implementation-head"
+@@ -76,16 +81,17 @@ lastKnownValidation:
+   cleanTest: "passed-on-implementation-head"
+   conformance: "passed-on-implementation-head"
+   executableReferenceEvidence: "passed-on-implementation-head"
+-  validationSource: "Flow CI #1756 passed on implementation head af921b5ceb1f5e15c9f6a152a7291003817f8134."
++  validationSource: "Flow CI #1787 passed on implementation head b0cac07630df7270912c2db0fb528d5f6ed663a3."
+   notes:
+     - "Package, public standard and artifact contract versions remain unchanged."
+-    - "Canonical intent capabilities derive typed effects before explicit binding."
+-    - "AST and execution-plan nodes preserve effect domain, operation, resource and state transition."
+-    - "Software delivery, data transformation and infrastructure state change use one effect vocabulary."
+-    - "Implementation-owned module effects convert without inferring semantic domains from implementation names."
+-    - "Legacy string effects remain a derived resource projection and not a semantic authority."
+-    - "Materialization authorization rejects missing, duplicated or forged effect evidence."
+-    - "Core effect contracts remain independent from serializer annotations."
++    - "Canonical intent derives target-neutral control requirements before implementation binding."
++    - "Requirements, evidence and authorization decisions use separate typed contracts."
++    - "Known, unknown, unsatisfied and dynamic evidence remain explicit through AST and execution planning."
++    - "Approval policies declare requirements and do not count as approval evidence."
++    - "Module safety contracts may add obligations without rewriting canonical intent requirements."
++    - "Materialization re-derives canonical and module-owned requirements and rejects omitted, forged or unresolved evidence."
++    - "Dynamic evidence declares explicit enforcement capabilities and remains pending rather than silently safe."
++    - "Legacy safety validators remain compatibility facades over one canonical authority."
+     - "Reference snapshots were regenerated through the canonical production generator."
+     - "The Jenkins executable reference proof remains live."
+     - "The final metadata head must pass the unmodified standard Flow CI."
+diff --git a/.flow-agent/roadmap.yaml b/.flow-agent/roadmap.yaml
+index c8fe2ae..fc04287 100644
+--- a/.flow-agent/roadmap.yaml
++++ b/.flow-agent/roadmap.yaml
+@@ -13,7 +13,7 @@ versionBoundary:
+ 
+ roadmapIndex:
+   activeRoadmaps:
+-    core: ".flow-agent/roadmap-core-v0.9.7.6.yaml"
++    core: ".flow-agent/roadmap-core-v0.9.7.7.yaml"
+     adapters: ".flow-agent/roadmap-adapters.yaml"
+     conformance: ".flow-agent/roadmap-conformance.yaml"
+   historicalRoadmaps:
+@@ -24,6 +24,7 @@ roadmapIndex:
+     - ".flow-agent/roadmap-core-v0.9.7.3.yaml"
+     - ".flow-agent/roadmap-core-v0.9.7.4.yaml"
+     - ".flow-agent/roadmap-core-v0.9.7.5.yaml"
++    - ".flow-agent/roadmap-core-v0.9.7.6.yaml"
+ 
+ rules:
+   - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
+@@ -57,7 +58,7 @@ architectureConstitution:
+     - "No governance signal whose status contradicts the property measured."
+ 
+ currentDecision:
+-  completedItem: "0.9.7.6"
+-  completedItemName: "Universal Effect and State Transition Model"
+-  nextCoreItem: "0.9.7.7"
+-  nextCoreItemName: "Universal Control and Policy Requirements"
++  completedItem: "0.9.7.7"
++  completedItemName: "Universal Control and Policy Requirements"
++  nextCoreItem: "0.9.7.8"
++  nextCoreItemName: "Abstract Execution Topology Model"
+diff --git a/REPORT.md b/REPORT.md
+index 5e48f19..465bb77 100644
+--- a/REPORT.md
++++ b/REPORT.md
+@@ -4,28 +4,28 @@ Current published package line: `0.9.5`
+ Package release status: `release-candidate`
+ Next package line: `0.9.6`
+ Active public standard version: `0.8.0`
+-Completed roadmap item: `0.9.7.6 Universal Effect and State Transition Model`
+-Next Core roadmap item: `0.9.7.7 Universal Control and Policy Requirements`
++Completed roadmap item: `0.9.7.7 Universal Control and Policy Requirements`
++Next Core roadmap item: `0.9.7.8 Abstract Execution Topology Model`
+ Bounded closure item: `0.9.7.10 Bounded Semantic Closure Gate`
+ 
+ ## Active direction
+ 
+ Core, implementation and conformance planning remain separate authorities. Existing executable reference evidence stays active as falsification feedback and does not define Core meaning.
+ 
+-## v0.9.7.6 outcome
+-
+-- Canonical standard capabilities now derive target-neutral typed effects before implementation binding.
+-- Effect evidence identifies domain, operation, resource, state transition, externality and source capability.
+-- `CREATE`, `UPDATE`, `DELETE` and `UPSERT` have fixed state-transition meanings.
+-- Reconciliation capabilities use `UPSERT` when resource existence is unknown.
+-- AST and execution-plan task or data-operation nodes preserve the same typed effect evidence.
+-- Software delivery, data transformation and infrastructure state change share one operation and transiti
