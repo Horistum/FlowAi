@@ -16,10 +16,6 @@
     "version" : "1.0"
   }, {
     "type" : "ModuleImport",
-    "name" : "notify",
-    "version" : "1.0"
-  }, {
-    "type" : "ModuleImport",
     "name" : "standard",
     "version" : "1.0"
   } ],
@@ -73,16 +69,6 @@
       "name" : "standard",
       "systemType" : "standard",
       "config" : { }
-    }, {
-      "type" : "System",
-      "name" : "notifier",
-      "systemType" : "notify",
-      "config" : {
-        "channel" : {
-          "type" : "IdentifierLiteral",
-          "value" : "email"
-        }
-      }
     } ],
     "triggers" : [ ],
     "steps" : [ {
@@ -159,13 +145,21 @@
             "type" : "Reference",
             "path" : [ "version" ],
             "safe" : false,
-            "scope" : "auto"
+            "scope" : "auto",
+            "location" : {
+              "line" : 1,
+              "column" : 1
+            }
           } ],
           "sensitive" : false
         },
         "path" : {
           "type" : "StringLiteral",
           "value" : "."
+        },
+        "push" : {
+          "type" : "BooleanLiteral",
+          "value" : false
         }
       },
       "result" : {
@@ -315,15 +309,31 @@
         "dependsOn" : [ ]
       }, {
         "type" : "Action",
-        "module" : "notify",
-        "action" : "send",
+        "module" : "standard",
+        "action" : "execute",
         "target" : {
           "type" : "Reference",
-          "path" : [ "notifier" ],
+          "path" : [ "standard" ],
           "safe" : false,
           "scope" : "auto"
         },
         "params" : {
+          "operation" : {
+            "type" : "StringLiteral",
+            "value" : "notify-failure"
+          },
+          "capability" : {
+            "type" : "StringLiteral",
+            "value" : "notify"
+          },
+          "description" : {
+            "type" : "StringLiteral",
+            "value" : "Notify about failure of build-test-deploy"
+          },
+          "flow" : {
+            "type" : "StringLiteral",
+            "value" : "build-test-deploy"
+          },
           "subject" : {
             "type" : "StringLiteral",
             "value" : "Flow failed: build-test-deploy"

@@ -58,7 +58,14 @@ class FlowAiNormalizationRegressionTests {
         IntentCapabilityValidator(registry).validate(response.normalizedIntent).assertValid()
         val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
         val plan = FlowPlanner(registry).plan(ast)
-        val build = plan.tasks.first { it.module == "docker" && it.action == "build" }
-        assertTrue(build.params["image"]?.contains("${'$'}{version}") == true, "Plan must retain version as a template reference, not as a quoted literal value.")
+        val build = plan.tasks.first {
+        it.module == "standard" &&
+            it.action == "execute" &&
+            it.params["operation"] == "\"build-image\""
+    }
+    assertTrue(
+        build.params["image"]?.contains("${'$'}{version}") == true,
+        "Semantic build intent must retain version as a template reference without selecting Docker implicitly."
+    )
     }
 }

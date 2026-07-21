@@ -39,7 +39,7 @@
     "sourceNodeId" : "standard_rollback_1"
   } ],
   "dependencies" : [ "git_checkout_1", "standard_execute_1", "docker_build_1", "approve_1", "standard_execute_2" ],
-  "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "docker.build", "container.image", "continuity.workspace", "condition.evaluate", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "notification.send" ],
+  "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "docker.build", "container.image", "continuity.workspace", "condition.evaluate", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "standard.notify-failure" ],
   "targetHints" : { },
   "assumptions" : [ ],
   "nodes" : [ {
@@ -105,7 +105,8 @@
     "dependencies" : [ "standard_execute_1" ],
     "inputs" : {
       "image" : "\"build-test-deploy:${version}\"",
-      "path" : "\".\""
+      "path" : "\".\"",
+      "push" : "false"
     },
     "outputs" : [ "build_image" ],
     "effects" : [ "docker.image", "docker.build" ],
@@ -267,20 +268,24 @@
       "body" : [ ],
       "errorHandler" : [ ]
     }, {
-      "id" : "notify_send_1",
-      "kind" : "notification",
-      "module" : "notify",
-      "action" : "send",
-      "target" : "notifier",
+      "id" : "standard_execute_4",
+      "kind" : "task",
+      "module" : "standard",
+      "action" : "execute",
+      "target" : "standard",
       "dependencies" : [ ],
       "inputs" : {
+        "operation" : "\"notify-failure\"",
+        "capability" : "\"notify\"",
+        "description" : "\"Notify about failure of build-test-deploy\"",
+        "flow" : "\"build-test-deploy\"",
         "subject" : "\"Flow failed: build-test-deploy\"",
         "body" : "error?.message"
       },
       "outputs" : [ ],
-      "effects" : [ "notify.send" ],
+      "effects" : [ "flow.standard.operation" ],
       "destructive" : false,
-      "requiredCapabilities" : [ "task.execute", "notification.send" ],
+      "requiredCapabilities" : [ "task.execute", "standard.notify-failure" ],
       "targetHints" : { },
       "assumptions" : [ ],
       "then" : [ ],

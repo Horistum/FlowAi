@@ -12,8 +12,8 @@ pipeline {
       steps {
         script {
           // Flow mapping note [info] materialization.native git_checkout_1: Jenkins declares the native git checkout step and its plugin contract as executable projection evidence.
-          // Flow param url: https://github.com/octocat/Hello-World.git
           // Flow param branch: main
+          // Flow param url: https://github.com/octocat/Hello-World.git
           // Flow binding url: TASK_PARAMETER
           // Flow binding branch: TASK_PARAMETER
           // Flow binding depth: TASK_PARAMETER

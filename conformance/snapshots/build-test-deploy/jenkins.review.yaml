@@ -32,9 +32,9 @@ spec:
     - nodeId: "standard_rollback_1"
       status: "NOTES_PROJECTED"
       reason: "Rollback intent remains notes-backed until a concrete Jenkins rollback integration is declared."
-    - nodeId: "notify_send_1"
-      status: "ADAPTER_REQUIRED"
-      reason: "Target 'jenkins' declares no projection rule for 'notify.send'."
+    - nodeId: "standard_execute_4"
+      status: "NOTES_PROJECTED"
+      reason: "Standard semantic work is preserved for review until a concrete Jenkins integration payload is declared."
   semanticInventory:
     - nodeId: "git_checkout_1"
       module: "git"
@@ -118,12 +118,12 @@ spec:
       materializationSource: "target-registry-projection-rule"
       projectionArtifact: "artifact.standard-rollback-1"
       rendererPayloadPresent: false
-    - nodeId: "notify_send_1"
-      module: "notify"
-      action: "send"
-      materializationStatus: "ADAPTER_REQUIRED"
-      materializationSource: ""
-      projectionArtifact: "artifact.notify-send-1"
+    - nodeId: "standard_execute_4"
+      module: "standard"
+      action: "execute"
+      materializationStatus: "NOTES_PROJECTED"
+      materializationSource: "target-registry-projection-rule"
+      projectionArtifact: "artifact.standard-execute-4"
       rendererPayloadPresent: false
   bindingRequirements:
     - nodeId: "git_checkout_1"
