@@ -73,6 +73,7 @@ jobs:
           path: |
             /tmp/v0977-apply.log
             /tmp/v0977-focused-tests.log
+            build/test-results/test
           if-no-files-found: warn
           retention-days: 1
 
