@@ -56,11 +56,18 @@ jobs:
             git diff --check
           } 2>&1 | tee /tmp/v0977-apply.log
 
-      - name: Validate focused control contracts
+      - name: Regenerate canonical reference snapshots
         shell: bash
         run: |
           set -o pipefail
           chmod +x gradlew
+          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/build-test-deploy.intent.yaml --out conformance/snapshots/build-test-deploy --scenario-id build-test-deploy" --stacktrace 2>&1 | tee /tmp/v0977-build-test-deploy.log
+          ./gradlew --no-daemon run --args="reference-snapshot --intent examples/intent/checkout-build-image.intent.yaml --out conformance/snapshots/checkout-build-image --scenario-id checkout-build-image --targets jenkins" --stacktrace 2>&1 | tee /tmp/v0977-checkout-build-image.log
+
+      - name: Validate focused control contracts
+        shell: bash
+        run: |
+          set -o pipefail
           ./gradlew --no-daemon test \
             --tests UniversalControlPolicyRequirementsTests \
             --tests FlowConformanceBridgeJUnitTest \
@@ -74,6 +81,8 @@ jobs:
           name: v0977-apply-diagnostics
           path: |
             /tmp/v0977-apply.log
+            /tmp/v0977-build-test-deploy.log
+            /tmp/v0977-checkout-build-image.log
             /tmp/v0977-focused-tests.log
             build/test-results/test
           if-no-files-found: warn
