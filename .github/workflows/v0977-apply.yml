@@ -32,16 +32,19 @@ jobs:
       - name: Verify and apply implementation
         shell: bash
         run: |
-          set -euo pipefail
-          echo "21b4342e3b44d9a0e9e8c99748fa59846452535d492305b513946a3f98baad7e  .flow-agent/tmp/v0977-implementation-000.b64" | sha256sum --check
-          echo "6ef0ab89e0f2a0c7d0e150e285b4a1fb5e9c63a2dcdb65b41e1e9caf57393ee3  .flow-agent/tmp/v0977-implementation-001.b64" | sha256sum --check
-          cat .flow-agent/tmp/v0977-implementation-000.b64 .flow-agent/tmp/v0977-implementation-001.b64 > /tmp/v0977-implementation.b64
-          echo "adf1b166a2070e9c34abf5ce2d8e7716221d0ae1162215fa0b01f95453c884a3  /tmp/v0977-implementation.b64" | sha256sum --check
-          base64 --decode /tmp/v0977-implementation.b64 > /tmp/v0977-implementation.tar.gz
-          echo "d76ee0d45797b747f32ed125a515cfdfca7fc0573c4498e73d1fd76d6565665c  /tmp/v0977-implementation.tar.gz" | sha256sum --check
-          tar -tzf /tmp/v0977-implementation.tar.gz > /dev/null
-          tar -xzf /tmp/v0977-implementation.tar.gz
-          git diff --check
+          set -o pipefail
+          {
+            set -euo pipefail
+            echo "21b4342e3b44d9a0e9e8c99748fa59846452535d492305b513946a3f98baad7e  .flow-agent/tmp/v0977-implementation-000.b64" | sha256sum --check
+            echo "6ef0ab89e0f2a0c7d0e150e285b4a1fb5e9c63a2dcdb65b41e1e9caf57393ee3  .flow-agent/tmp/v0977-implementation-001.b64" | sha256sum --check
+            cat .flow-agent/tmp/v0977-implementation-000.b64 .flow-agent/tmp/v0977-implementation-001.b64 > /tmp/v0977-implementation.b64
+            echo "adf1b166a2070e9c34abf5ce2d8e7716221d0ae1162215fa0b01f95453c884a3  /tmp/v0977-implementation.b64" | sha256sum --check
+            base64 --decode /tmp/v0977-implementation.b64 > /tmp/v0977-implementation.tar.gz
+            echo "d76ee0d45797b747f32ed125a515cfdfca7fc0573c4498e73d1fd76d6565665c  /tmp/v0977-implementation.tar.gz" | sha256sum --check
+            tar -tzf /tmp/v0977-implementation.tar.gz > /dev/null
+            tar -xzf /tmp/v0977-implementation.tar.gz
+            git diff --check
+          } 2>&1 | tee /tmp/v0977-apply.log
 
       - name: Validate focused control contracts
         shell: bash
@@ -58,7 +61,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: v0977-apply-diagnostics
-          path: /tmp/v0977-focused-tests.log
+          path: |
+            /tmp/v0977-apply.log
+            /tmp/v0977-focused-tests.log
           if-no-files-found: warn
           retention-days: 1
 
