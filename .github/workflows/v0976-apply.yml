@@ -1,0 +1,57 @@
+name: Apply v0.9.7.6 Implementation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/v0976-apply.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-implementation:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/v0.9.7.6-universal-effect-state-transition
+          fetch-depth: 0
+
+      - name: Verify implementation payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "e086a99dbc8ef1ec020ae1e17a4f6c2b4693eeac9c9936c975d0a53f1fc8107a  .flow-agent/tmp/v0976-implementation-000.b64" | sha256sum --check
+          echo "5827d62ce537890b48fd1090e80ffeb49d35a446be71f30d8dd169c68c9052fe  .flow-agent/tmp/v0976-implementation-001.b64" | sha256sum --check
+          echo "c7fd8d03e6dc27d207c607aa2179dd0b077a4089644d6ed1578ad0874baf4697  .flow-agent/tmp/v0976-implementation-002.b64" | sha256sum --check
+          echo "864acd6598781084701f79c62e1e87b8708509a4f78163f6a111fe4675be088d  .flow-agent/tmp/v0976-implementation-003.b64" | sha256sum --check
+          echo "facb2388f1b4c60dafc118a5820f5692768faeec9aa38df5aefd9bbbf73b3944  .flow-agent/tmp/v0976-implementation-004.b64" | sha256sum --check
+          cat .flow-agent/tmp/v0976-implementation-*.b64 | tr -d '\r\n' > /tmp/v0976-implementation.b64
+          echo "34a92bf95030ec84985812ca4da61ff8c94be7781178e2b22b743096572fa546  /tmp/v0976-implementation.b64" | sha256sum --check
+          base64 --decode /tmp/v0976-implementation.b64 > /tmp/v0976-implementation.tar.gz
+          echo "165ad45e85d82545dbb6c3ac8bab91871f4ccf7137ada3ab091e6cd94a3dbfef  /tmp/v0976-implementation.tar.gz" | sha256sum --check
+          tar -tzf /tmp/v0976-implementation.tar.gz > /dev/null
+
+      - name: Apply implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/v0976-implementation.tar.gz
+          rm -f .flow-agent/tmp/v0976-implementation-*.b64
+          rmdir .flow-agent/tmp 2>/dev/null || true
+          rm -f .github/workflows/v0976-export.yml
+          rm -f .github/workflows/v0976-apply.yml
+
+      - name: Commit implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "flow-ai-agent"
+          git config user.email "flow-ai-agent@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Implement v0.9.7.6 universal effect model"
+          git push origin HEAD:agent/v0.9.7.6-universal-effect-state-transition
