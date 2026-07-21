@@ -1,33 +1,38 @@
 project: Flow Core
 stateVersion: 8
-currentVersion: 0.9.5
-currentPackage: flow-core-prod-v0_9_5_universal_model_completion.zip
-nextExpectedVersion: 0.9.6
-activeStandardVersion: 0.8.0
+
+currentVersion: "0.9.5"
+currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
+nextExpectedVersion: "0.9.6"
+activeStandardVersion: "0.8.0"
+
 versionBoundary:
-  publishedPackageVersion: 0.9.5
-  publishedPackageStatus: release-candidate
-  completedCorrectionTrack: v0.9.5.x
-  correctionTrackStatus: completed
-  nextPackageVersion: 0.9.6
-  publicStandardVersion: 0.8.0
-  artifactContractVersion: '2.0'
+  publishedPackageVersion: "0.9.5"
+  publishedPackageStatus: "release-candidate"
+  completedCorrectionTrack: "v0.9.5.x"
+  correctionTrackStatus: "completed"
+  nextPackageVersion: "0.9.6"
+  publicStandardVersion: "0.8.0"
+  artifactContractVersion: "2.0"
+
 roadmapState:
   roadmapVersion: 5
-  activeTrack: v0.9.7-universal-semantic-foundation
-  completedItem: 0.9.7.5
-  completedItemName: Canonical Intent Meaning
-  primaryStream: core
-  nextCoreItem: 0.9.7.6
-  nextCoreItemName: Universal Effect and State Transition Model
-  boundedClosureItem: 0.9.7.10
+  activeTrack: "v0.9.7-universal-semantic-foundation"
+  completedItem: "0.9.7.5"
+  completedItemName: "Canonical Intent Meaning"
+  primaryStream: "core"
+  nextCoreItem: "0.9.7.6"
+  nextCoreItemName: "Universal Effect and State Transition Model"
+  boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: .flow-agent/roadmap-core-v0.9.7.5.yaml
-    adapters: .flow-agent/roadmap-adapters.yaml
-    conformance: .flow-agent/roadmap-conformance.yaml
+    core: ".flow-agent/roadmap-core-v0.9.7.5.yaml"
+    adapters: ".flow-agent/roadmap-adapters.yaml"
+    conformance: ".flow-agent/roadmap-conformance.yaml"
+
 repositoryRules:
-  sourceLanguage: English
-  chatLanguage: User-preferred language allowed outside repository artifacts
+  sourceLanguage: "English"
+  chatLanguage: "User-preferred language allowed outside repository artifacts"
+
 architectureConstraints:
   noRuntimeExecutor: true
   noSdkFirstArchitecture: true
@@ -37,42 +42,44 @@ architectureConstraints:
   noCoreDependencyOnAdapterWork: true
   noTestOnlyHacks: true
   noShellProjection: true
+
 qualityPrinciples:
-- Do not bend code only to make tests pass.
-- Every public behavior change must have tests.
-- Every public contract change must have a migration document.
-- Every Core roadmap item must declare a universal invariant, forbidden scope and completion evidence.
-- Concrete implementation coverage must not define universal semantic meaning.
-- Existing executable reference evidence remains live throughout the Core track.
-- A previous executable label has no grandfathered status.
-- Missing implementation evidence fails closed.
-- Governance status and score polarity must match the property claimed.
-- Every public module loading path must use one canonical descriptor authority.
-- Malformed module and notes declarations fail closed instead of becoming empty defaults.
-- Every production projection path must obtain registry-derived authorization before invoking a target generator.
-- Diagnostic projection evidence may preserve blocked facts but must never claim executable readiness.
-- Ordering never implies value, workspace or state continuity.
-- Continuity must be declared by canonical module contracts and supported explicitly by the target.
-- Committed reference evidence must be regenerated through the canonical production generator.
-- Canonical intent meaning is derived before explicit binding and is never enriched from implementation inventory.
-- Explicit binding requires a declared capability implementation and an explicitly selected compatible system.
-- Binding failure remains separate diagnostic evidence and must not mutate canonical meaning.
+  - "Do not bend code only to make tests pass."
+  - "Every public behavior change must have tests."
+  - "Every public contract change must have a migration document."
+  - "Every Core roadmap item must declare a universal invariant, forbidden scope and completion evidence."
+  - "Concrete implementation coverage must not define universal semantic meaning."
+  - "Existing executable reference evidence remains live throughout the Core track."
+  - "A previous executable label has no grandfathered status."
+  - "Missing implementation evidence fails closed."
+  - "Governance status and score polarity must match the property claimed."
+  - "Every public module loading path must use one canonical descriptor authority."
+  - "Malformed module and notes declarations fail closed instead of becoming empty defaults."
+  - "Every production projection path must obtain registry-derived authorization before invoking a target generator."
+  - "Diagnostic projection evidence may preserve blocked facts but must never claim executable readiness."
+  - "Ordering never implies value, workspace or state continuity."
+  - "Continuity must be declared by canonical module contracts and supported explicitly by the target."
+  - "Committed reference evidence must be regenerated through the canonical production generator."
+  - "Canonical intent meaning is derived before explicit binding and is never enriched from implementation inventory."
+  - "Explicit binding requires a declared capability implementation and an explicitly selected compatible system."
+  - "Binding failure remains separate diagnostic evidence and must not mutate canonical meaning."
+
 lastKnownValidation:
-  flowAgentTooling: passed-on-implementation-head
-  flowAgentStructure: passed-on-implementation-head
-  flowAgentContextGeneration: passed-on-implementation-head
-  offlineCacheAwareChecks: passed-on-implementation-head
-  cleanTest: passed-on-implementation-head
-  conformance: passed-on-implementation-head
-  executableReferenceEvidence: passed-on-implementation-head
-  validationSource: 'Flow CI #1719 passed on implementation head eed684e9996680f9abc6c4348c8747e332c1e6c9.'
+  flowAgentTooling: "passed-on-implementation-head"
+  flowAgentStructure: "passed-on-implementation-head"
+  flowAgentContextGeneration: "passed-on-implementation-head"
+  offlineCacheAwareChecks: "passed-on-implementation-head"
+  cleanTest: "passed-on-implementation-head"
+  conformance: "passed-on-implementation-head"
+  executableReferenceEvidence: "passed-on-implementation-head"
+  validationSource: "Flow CI #1719 passed on implementation head eed684e9996680f9abc6c4348c8747e332c1e6c9."
   notes:
-  - Package, public standard and artifact contract versions remain unchanged.
-  - Canonical intent meaning excludes implementation identities, systems, tools and engines.
-  - Explicit uses declarations produce separate binding evidence with provenance and resolution status.
-  - Module actions declare implemented standard capabilities through strict canonical contracts.
-  - Unbound standard intent remains standard semantic work instead of selecting a module implicitly.
-  - Invalid or incomplete explicit binding fails validation before planning.
-  - Semantic target parameters never select binding systems implicitly.
-  - Reference snapshots were regenerated through the canonical production generator.
-  - The final metadata head must pass the unmodified standard Flow CI.
+    - "Package, public standard and artifact contract versions remain unchanged."
+    - "Canonical intent meaning excludes implementation identities, systems, tools and engines."
+    - "Explicit uses declarations produce separate binding evidence with provenance and resolution status."
+    - "Module actions declare implemented standard capabilities through strict canonical contracts."
+    - "Unbound standard intent remains standard semantic work instead of selecting a module implicitly."
+    - "Invalid or incomplete explicit binding fails validation before planning."
+    - "Semantic target parameters never select binding systems implicitly."
+    - "Reference snapshots were regenerated through the canonical production generator."
+    - "The final metadata head must pass the unmodified standard Flow CI."
