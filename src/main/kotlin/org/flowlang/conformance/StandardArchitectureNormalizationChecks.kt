@@ -29,6 +29,13 @@ import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.StandardIntentCatalog
+import org.flowlang.topology.ExecutionTopologyDecisionStatus
+import org.flowlang.topology.ExecutionTopologyEvidenceStatus
+import org.flowlang.topology.ExecutionTopologyKind
+import org.flowlang.topology.ExecutionTopologyMatchingAuthority
+import org.flowlang.topology.ExecutionTopologyProfile
+import org.flowlang.topology.ExecutionTopologySupportDeclaration
+import org.flowlang.topology.ExecutionTopologySupportStatus
 import org.flowlang.validator.FlowValidator
 import java.io.File
 import org.flowlang.generators.manifest.TargetProjectionRegistry
@@ -46,6 +53,7 @@ internal class StandardArchitectureNormalizationChecks(
         checkCanonicalIntentMeaning(),
         checkUniversalEffectModel(),
         checkUniversalControlPolicyRequirements(),
+        checkAbstractExecutionTopologyModel(),
         checkIntentDesignReport(),
         checkCorePackagesDoNotImportJackson(),
         checkModulesDoNotOwnTargetRendering(),
@@ -186,6 +194,69 @@ internal class StandardArchitectureNormalizationChecks(
         require(dynamicAssessment.decision.status == ControlDecisionStatus.PENDING)
         require(dynamicAssessment.evidence.single().status == ControlEvidenceStatus.DYNAMIC)
         require(dynamicAssessment.evidence.single().enforcementCapabilities.containsAll(listOf("approval.manual", "condition.evaluate")))
+    }
+
+    private fun checkAbstractExecutionTopologyModel(): ConformanceCheck = runCheck("planning.topology.abstract-execution-model") {
+        val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/checkout-build-image.intent.yaml"))
+        val canonical = CanonicalIntentMeaningAuthority(registry).resolve(intent).meaning.topologyRequirements
+        val inventoryIndependent = CanonicalIntentMeaningAuthority(ModuleRegistry()).resolve(intent).meaning.topologyRequirements
+        require(canonical == inventoryIndependent) {
+            "Equivalent intent changed topology requirements across implementation inventories."
+        }
+
+        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+        require(plan.topologyRequirements.any { it.kind == ExecutionTopologyKind.EPHEMERAL_WORKSPACE })
+        require(plan.topologyRequirements.any { it.kind == ExecutionTopologyKind.WORKSPACE_PROPAGATION })
+
+        val jenkins = ExecutionTopologyMatchingAuthority.assess(
+            plan.topologyRequirements,
+            targets.getValue("jenkins").topologyProfile
+        )
+        require(jenkins.decision.status == ExecutionTopologyDecisionStatus.MATCHED) {
+            "Jenkins reference topology must match the checkout-and-build plan."
+        }
+
+        val github = ExecutionTopologyMatchingAuthority.assess(
+            plan.topologyRequirements,
+            targets.getValue("github-actions").topologyProfile
+        )
+        require(github.decision.status == ExecutionTopologyDecisionStatus.BLOCKED)
+        require(github.evidence.any {
+            it.kind == ExecutionTopologyKind.WORKSPACE_PROPAGATION &&
+                it.status == ExecutionTopologyEvidenceStatus.UNSATISFIED
+        }) { "GitHub Actions must remain blocked without workspace propagation evidence." }
+
+        val missing = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, null)
+        require(missing.decision.status == ExecutionTopologyDecisionStatus.BLOCKED)
+        require(missing.evidence.all { it.status == ExecutionTopologyEvidenceStatus.UNKNOWN }) {
+            "Action capability without a topology profile must remain unknown and blocked."
+        }
+
+        val contradictory = ExecutionTopologyProfile(
+            target = "contradictory",
+            declarations = ExecutionTopologyKind.entries.flatMap { kind ->
+                val supported = ExecutionTopologySupportDeclaration(
+                    kind = kind,
+                    status = ExecutionTopologySupportStatus.SUPPORTED,
+                    evidenceReference = "conformance:${kind.registryKey}:supported"
+                )
+                if (kind == ExecutionTopologyKind.WORKFLOW_SCOPE) {
+                    listOf(
+                        supported,
+                        ExecutionTopologySupportDeclaration(
+                            kind = kind,
+                            status = ExecutionTopologySupportStatus.UNSUPPORTED,
+                            evidenceReference = "conformance:${kind.registryKey}:unsupported"
+                        )
+                    )
+                } else {
+                    listOf(supported)
+                }
+            }
+        )
+        val contradiction = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, contradictory)
+        require(contradiction.decision.status == ExecutionTopologyDecisionStatus.BLOCKED)
+        require(contradiction.evidence.any { it.status == ExecutionTopologyEvidenceStatus.CONTRADICTORY })
     }
 
     private fun checkIntentDesignReport(): ConformanceCheck = runCheck("intent.design-report") {

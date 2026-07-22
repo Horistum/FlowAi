@@ -22,4 +22,5 @@ The existing `build-test-deploy` reference remains MIXED and non-executable beca
 - Next package line: `0.9.6`
 - Public Flow standard: `0.8.0`
 - Intent, AST and ExecutionPlan: `2.0`
-- Target Registry and Target Manifest: `3.0`
+- Target Registry: `3.1`
+- Target Manifest: `3.0`
