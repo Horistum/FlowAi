@@ -1,0 +1,23 @@
+version: "0.9.7.8"
+name: "Abstract Execution Topology Model"
+stream: core
+status: in-progress
+objective: "Describe execution isolation, lifetime, persistence and propagation independently from target renderer layout."
+universalInvariant: "Executability requires matching plan and topology evidence."
+forbiddenScope:
+  - "No action-only readiness proof."
+  - "No renderer layout or target inventory as topology authority."
+  - "No ordering or continuity relation treated as a complete execution environment."
+  - "No target-specific execution syntax in Core contracts."
+plannedScope:
+  - "Audit existing readiness, isolation, lifetime, persistence and propagation evidence owners."
+  - "Define one target-neutral typed topology requirement and evidence model."
+  - "Carry topology requirements and evidence through canonical meaning, AST, execution planning and materialization authorization."
+  - "Fail closed on missing, contradictory or unsupported topology evidence."
+  - "Preserve the Jenkins executable reference proof only when its topology evidence remains complete."
+finalValidation: "required on the exact completion metadata head"
+completionEvidence:
+  - "Complete and contradictory topology profiles are tested."
+  - "Equivalent intent derives equivalent topology requirements across inventories and bindings."
+  - "Action capability alone cannot authorize materialization."
+  - "The complete unmodified Flow CI workflow passes compilation, tests, conformance and executable reference evidence."
