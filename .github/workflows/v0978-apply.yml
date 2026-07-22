@@ -40,6 +40,7 @@ jobs:
             echo "ab2eae21222c9f2d00051b76c48b6a70ca89fa57a744efaa27869f23c20fe4d2  .flow-agent/tmp/v0978-implementation-002.patch" | sha256sum --check
             echo "2e74728857c9189c284f9a1d158e7090ea024e914cdc220d625ee5393fae512c  .flow-agent/tmp/v0978-implementation-003.patch" | sha256sum --check
             echo "e8bfe0514a27acd5e6c9e6de6d6dc1ffd402cb985e2a15af5723ce548015045b  .flow-agent/tmp/v0978-repair-004.patch" | sha256sum --check
+            echo "68f2e2bda4c6396ea629f21d1565a7e9592075738feb0c6ab30646cabbf74794  .flow-agent/tmp/v0978-repair-005.patch" | sha256sum --check
             cat .flow-agent/tmp/v0978-implementation-000.patch \
                 .flow-agent/tmp/v0978-implementation-001.patch \
                 .flow-agent/tmp/v0978-implementation-002.patch \
@@ -54,6 +55,8 @@ jobs:
             git apply /tmp/v0978-implementation.patch
             git apply --check .flow-agent/tmp/v0978-repair-004.patch
             git apply .flow-agent/tmp/v0978-repair-004.patch
+            git apply --check .flow-agent/tmp/v0978-repair-005.patch
+            git apply .flow-agent/tmp/v0978-repair-005.patch
             git diff --check
           } 2>&1 | tee /tmp/v0978-apply.log
 
