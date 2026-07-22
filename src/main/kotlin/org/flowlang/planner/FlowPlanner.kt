@@ -11,6 +11,7 @@ import org.flowlang.modules.ContinuityContract
 import org.flowlang.modules.ContinuityKind
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.topology.PlanningTopologyAuthority
 
 /**
  * Converts validated Flow AST into a platform-neutral ExecutionPlan.
@@ -32,6 +33,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             listOf(TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(it.steps, ctx)))
         } ?: emptyList()
         val allNodes = nodes + tail
+        val dependencyRelations = ctx.dependencyRelations.distinctBy(PlanDependencyRelations::relationKey)
         val controlAssessment = PlanningControlAuthority.assess(
             canonicalRequirements = document.flow.controlRequirements,
             canonicalEvidence = document.flow.controlEvidence,
@@ -53,8 +55,14 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             controlRequirements = controlAssessment.requirements,
             controlEvidence = controlAssessment.evidence,
             controlDecision = controlAssessment.decision,
+            topologyRequirements = PlanningTopologyAuthority.requirementsFor(
+                flowName = document.flow.name,
+                canonicalRequirements = document.flow.topologyRequirements,
+                nodes = allNodes,
+                dependencyRelations = dependencyRelations
+            ),
             nodes = allNodes,
-            dependencyRelations = ctx.dependencyRelations.distinctBy(PlanDependencyRelations::relationKey)
+            dependencyRelations = dependencyRelations
         )
     }
 

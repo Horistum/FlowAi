@@ -5,6 +5,8 @@ import org.flowlang.controls.ControlDecision
 import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.controls.ControlEvidence
 import org.flowlang.controls.ControlRequirement
+import org.flowlang.topology.ExecutionTopologyRequirement
+import org.flowlang.topology.PlanningTopologyAuthority
 
 /**
  * Execution plan (docs/07). The plan preserves control-flow structure (conditions,
@@ -27,7 +29,14 @@ data class ExecutionPlan(
     val controlEvidence: List<ControlEvidence> = emptyList(),
     val controlDecision: ControlDecision = ControlDecision(ControlDecisionStatus.ALLOWED),
     val nodes: List<PlanNode> = emptyList(),
-    val dependencyRelations: List<PlanDependencyRelation> = PlanDependencyRelations.inferOrdering(nodes)
+    val dependencyRelations: List<PlanDependencyRelation> = PlanDependencyRelations.inferOrdering(nodes),
+    /** Target-neutral environment needs derived from plan structure and continuity. */
+    val topologyRequirements: List<ExecutionTopologyRequirement> = PlanningTopologyAuthority.requirementsFor(
+        flowName = flowName,
+        canonicalRequirements = emptyList(),
+        nodes = nodes,
+        dependencyRelations = dependencyRelations
+    )
 ) {
     /** Depth-first flattening of all concrete action tasks. */
     val tasks: List<TaskNode> get() = collectTasks(nodes)

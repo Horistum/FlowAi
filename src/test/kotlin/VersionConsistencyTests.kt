@@ -8,7 +8,8 @@ class VersionConsistencyTests {
     private val packageVersion = "0.9.5"
     private val publicStandardVersion = "0.8.0"
     private val semanticContractVersion = "2.0"
-    private val targetContractVersion = "3.0"
+    private val targetManifestContractVersion = "3.0"
+    private val targetRegistryContractVersion = "3.1"
 
     @Test
     fun packagePromotionMatchesReleaseMetadata() {
@@ -29,8 +30,8 @@ class VersionConsistencyTests {
         assertEquals(semanticContractVersion, FlowStandardVersions.INTENT_VERSION)
         assertEquals(semanticContractVersion, FlowStandardVersions.AST_VERSION)
         assertEquals(semanticContractVersion, FlowStandardVersions.EXECUTION_PLAN_VERSION)
-        assertEquals(targetContractVersion, FlowStandardVersions.TARGET_MANIFEST_VERSION)
-        assertEquals(targetContractVersion, FlowStandardVersions.TARGET_REGISTRY_VERSION)
+        assertEquals(targetManifestContractVersion, FlowStandardVersions.TARGET_MANIFEST_VERSION)
+        assertEquals(targetRegistryContractVersion, FlowStandardVersions.TARGET_REGISTRY_VERSION)
 
         listOf(
             "schemas/intent.schema.json",
@@ -38,10 +39,8 @@ class VersionConsistencyTests {
             "schemas/execution-plan.schema.json",
             "schemas/target-semantics-matrix.schema.json"
         ).forEach { path -> assertFileContains(path, semanticContractVersion) }
-        listOf(
-            "schemas/target-manifest.schema.json",
-            "schemas/target-registry.schema.json"
-        ).forEach { path -> assertFileContains(path, targetContractVersion) }
+        assertFileContains("schemas/target-manifest.schema.json", targetManifestContractVersion)
+        assertFileContains("schemas/target-registry.schema.json", targetRegistryContractVersion)
 
         assertFileContains("docs/V0_9_5_CONTRACT_MIGRATION.md", "Intent 1.x to 2.0")
         assertFileContains(
@@ -49,7 +48,7 @@ class VersionConsistencyTests {
             "Target Registry and Target Manifest 2.0 to 3.0 Migration"
         )
         assertFileContains("docs/versioning-policy.md", "TargetManifest contract | `3.0`")
-        assertFileContains("docs/versioning-policy.md", "TargetRegistry contract | `3.0`")
+        assertFileContains("docs/versioning-policy.md", "TargetRegistry contract | `3.1`")
     }
 
     @Test

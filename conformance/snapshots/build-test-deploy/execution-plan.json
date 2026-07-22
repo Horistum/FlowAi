@@ -62,6 +62,67 @@
     "blockingRequirementIds" : [ ],
     "pendingRequirementIds" : [ "control.approval.production-approval" ]
   },
+  "topologyRequirements" : [ {
+    "id" : "topology.ephemeralWorkspace.git-checkout-1-docker-build-1",
+    "kind" : "EPHEMERAL_WORKSPACE",
+    "subject" : "git_checkout_1->docker_build_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source"
+  }, {
+    "id" : "topology.failurePropagation.build-test-deploy",
+    "kind" : "FAILURE_PROPAGATION",
+    "subject" : "build-test-deploy",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.failure"
+  }, {
+    "id" : "topology.failurePropagation.onerror-1",
+    "kind" : "FAILURE_PROPAGATION",
+    "subject" : "onError_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes.onError_1.errorHandler"
+  }, {
+    "id" : "topology.suspendResume.approve-1",
+    "kind" : "SUSPEND_RESUME",
+    "subject" : "approve_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes.approve_1"
+  }, {
+    "id" : "topology.suspendResume.approve-prod",
+    "kind" : "SUSPEND_RESUME",
+    "subject" : "approve-prod",
+    "source" : "CANONICAL_CAPABILITY",
+    "evidenceReference" : "intent.workflows.application-lifecycle.steps.approve-prod"
+  }, {
+    "id" : "topology.workflowLifetime.application-lifecycle",
+    "kind" : "WORKFLOW_LIFETIME",
+    "subject" : "application-lifecycle",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.workflows.application-lifecycle"
+  }, {
+    "id" : "topology.workflowLifetime.build-test-deploy",
+    "kind" : "WORKFLOW_LIFETIME",
+    "subject" : "build-test-deploy",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes"
+  }, {
+    "id" : "topology.workflowScope.application-lifecycle",
+    "kind" : "WORKFLOW_SCOPE",
+    "subject" : "application-lifecycle",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.workflows.application-lifecycle"
+  }, {
+    "id" : "topology.workflowScope.build-test-deploy",
+    "kind" : "WORKFLOW_SCOPE",
+    "subject" : "build-test-deploy",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes"
+  }, {
+    "id" : "topology.workspacePropagation.git-checkout-1-docker-build-1",
+    "kind" : "WORKSPACE_PROPAGATION",
+    "subject" : "git_checkout_1->docker_build_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source"
+  } ],
   "nodes" : [ {
     "id" : "git_checkout_1",
     "kind" : "task",

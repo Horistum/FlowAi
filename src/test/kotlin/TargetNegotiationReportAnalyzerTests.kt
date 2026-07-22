@@ -16,7 +16,7 @@ class TargetNegotiationReportAnalyzerTests {
         val plan = planWith("task.execute", "container.image")
         val negotiation = CompatibilityAnalyzer(
             mapOf(
-                "jenkins" to TargetCapability(
+                "jenkins" to testTargetCapability(
                     target = "jenkins",
                     description = "Jenkins target",
                     features = mapOf("container.image" to SupportLevel.SUPPORTED)
@@ -38,7 +38,7 @@ class TargetNegotiationReportAnalyzerTests {
         val plan = planWith("approval.manual")
         val negotiation = CompatibilityAnalyzer(
             mapOf(
-                "github-actions" to TargetCapability(
+                "github-actions" to testTargetCapability(
                     target = "github-actions",
                     description = "GitHub Actions target",
                     approvals = SupportLevel.PARTIAL
@@ -61,7 +61,7 @@ class TargetNegotiationReportAnalyzerTests {
         val plan = planWith("kubernetes.api")
         val negotiation = CompatibilityAnalyzer(
             mapOf(
-                "tekton" to TargetCapability(
+                "tekton" to testTargetCapability(
                     target = "tekton",
                     description = "Tekton target",
                     features = mapOf("kubernetes.api" to SupportLevel.UNSUPPORTED)
@@ -84,7 +84,7 @@ class TargetNegotiationReportAnalyzerTests {
         val plan = planWith("standard.execute")
         val negotiation = CompatibilityAnalyzer(
             mapOf(
-                "portable-target" to TargetCapability(
+                "portable-target" to testTargetCapability(
                     target = "portable-target",
                     description = "Portable target",
                     nativeRuntime = SupportLevel.REQUIRES_RUNTIME

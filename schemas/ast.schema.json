@@ -72,6 +72,12 @@
         },
         "controlDecision": {
           "$ref": "#/$defs/controlDecision"
+        },
+        "topologyRequirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/executionTopologyRequirement"
+          }
         }
       },
       "additionalProperties": true
@@ -261,6 +267,56 @@
         }
       },
       "additionalProperties": false
+    },
+    "executionTopologyRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "subject",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "WORKFLOW_SCOPE",
+            "BRANCH_ISOLATION",
+            "ATTEMPT_ISOLATION",
+            "WORKFLOW_LIFETIME",
+            "SUSPEND_RESUME",
+            "EPHEMERAL_WORKSPACE",
+            "DURABLE_STATE",
+            "VALUE_PROPAGATION",
+            "WORKSPACE_PROPAGATION",
+            "STATE_PROPAGATION",
+            "FAILURE_PROPAGATION"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "enum": [
+            "CANONICAL_WORKFLOW",
+            "CANONICAL_CAPABILITY",
+            "PLAN_STRUCTURE",
+            "DEPENDENCY_RELATION",
+            "MODULE_CONTRACT"
+          ]
+        },
+        "evidenceReference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     }
   },
   "additionalProperties": true

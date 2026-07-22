@@ -1,6 +1,8 @@
 package org.flowlang.capabilities
 
 import org.flowlang.planner.*
+import org.flowlang.topology.ExecutionTopologyEvidenceStatus
+import org.flowlang.topology.ExecutionTopologyMatchingAuthority
 
 /**
  * Checks whether an ExecutionPlan can be represented on a target.
@@ -117,6 +119,16 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             addIfLimited(target, trigger.id, capability, supportForCapability(target, capability), issues)
         }
         plan.nodes.forEach { inspect(it, target, issues) }
+        val topology = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, target.topologyProfile)
+        topology.evidence.filter { it.status != ExecutionTopologyEvidenceStatus.SATISFIED }.forEach { evidence ->
+            issues += CompatibilityIssue(
+                CompatibilityLevel.ERROR,
+                target.target,
+                evidence.requirementId,
+                "topology.${evidence.kind.registryKey}",
+                "Target '${target.target}' does not provide complete execution-topology evidence for '${evidence.kind.registryKey}': ${evidence.status.name.lowercase()}${evidence.detail?.let { ": $it" }.orEmpty()}"
+            )
+        }
         val effectiveIssues = if (strict) issues.map { if (it.level == CompatibilityLevel.WARNING) it.copy(level = CompatibilityLevel.ERROR, message = it.message + " Strict mode treats partial support as an error.") else it } else issues
         val status = when {
             effectiveIssues.any { it.level == CompatibilityLevel.ERROR } -> SupportLevel.UNSUPPORTED

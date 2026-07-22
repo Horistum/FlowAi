@@ -1,6 +1,7 @@
 package org.flowlang.capabilities
 
 import org.flowlang.projection.ProjectionBinding
+import org.flowlang.topology.ExecutionTopologyProfile
 
 /**
  * Platform capability model.
@@ -26,7 +27,8 @@ data class TargetCapability(
     val notes: List<String> = emptyList(),
     val features: Map<String, SupportLevel> = emptyMap(),
     val expressionSupport: TargetExpressionSupportDeclaration? = null,
-    val projectionRules: List<TargetProjectionRule> = emptyList()
+    val projectionRules: List<TargetProjectionRule> = emptyList(),
+    val topologyProfile: ExecutionTopologyProfile? = null
 ) {
     fun feature(name: String, fallback: SupportLevel): SupportLevel = features[name] ?: fallback
 }

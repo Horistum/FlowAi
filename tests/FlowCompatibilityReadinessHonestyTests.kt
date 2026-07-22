@@ -149,7 +149,7 @@ class FlowCompatibilityReadinessHonestyTests {
 
     @Test
     fun safeProjectionStoresEffectiveCompatibilityOnManifest() {
-        val targets = mapOf("jenkins" to TargetCapability(target = "jenkins", description = "test"))
+        val targets = mapOf("jenkins" to testTargetCapability(target = "jenkins", description = "test"))
         val plan = readinessPlan()
         val generator = object : ReconciledTargetManifestGenerator() {
             override val target: String = "jenkins"
@@ -197,8 +197,8 @@ class FlowCompatibilityReadinessHonestyTests {
     }
 
     private fun readinessTargets(): Map<String, TargetCapability> = mapOf(
-        "jenkins" to TargetCapability(target = "jenkins", description = "test"),
-        "github-actions" to TargetCapability(target = "github-actions", description = "test")
+        "jenkins" to testTargetCapability(target = "jenkins", description = "test"),
+        "github-actions" to testTargetCapability(target = "github-actions", description = "test")
     )
 
     private fun readinessPlan(): ExecutionPlan = ExecutionPlan(

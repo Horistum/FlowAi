@@ -100,8 +100,9 @@ class UniversalDependencyContinuityContractTests {
 
         assertEquals(SupportLevel.SUPPORTED, analyzer.analyze(plan, "jenkins").status)
         assertEquals(SupportLevel.UNSUPPORTED, analyzer.analyze(plan, "github-actions").status)
-        assertEquals(SupportLevel.PARTIAL, analyzer.analyze(plan, "tekton").status)
+        assertEquals(SupportLevel.UNSUPPORTED, analyzer.analyze(plan, "tekton").status)
         assertTrue(analyzer.analyze(plan, "github-actions").issues.any { it.feature == "continuity.workspace" })
+        assertTrue(analyzer.analyze(plan, "tekton").issues.any { it.feature == "topology.workspacePropagation" })
     }
 
     @Test

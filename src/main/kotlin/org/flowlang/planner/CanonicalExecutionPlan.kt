@@ -5,6 +5,7 @@ import org.flowlang.controls.ControlDecision
 import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.controls.ControlEvidence
 import org.flowlang.controls.ControlRequirement
+import org.flowlang.topology.ExecutionTopologyRequirement
 
 /**
  * Canonical public Execution Plan view.
@@ -26,6 +27,7 @@ data class CanonicalExecutionPlan(
     val controlRequirements: List<ControlRequirement> = emptyList(),
     val controlEvidence: List<ControlEvidence> = emptyList(),
     val controlDecision: ControlDecision = ControlDecision(ControlDecisionStatus.ALLOWED),
+    val topologyRequirements: List<ExecutionTopologyRequirement> = emptyList(),
     val nodes: List<CanonicalPlanNode> = emptyList(),
     val dependencyRelations: List<PlanDependencyRelation> = emptyList()
 )
@@ -91,6 +93,7 @@ object ExecutionPlanCanonicalizer {
             controlRequirements = plan.controlRequirements,
             controlEvidence = plan.controlEvidence,
             controlDecision = plan.controlDecision,
+            topologyRequirements = plan.topologyRequirements,
             nodes = plan.nodes.map { canonicalizeNode(it) },
             dependencyRelations = plan.dependencyRelations
         )

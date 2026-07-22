@@ -45,6 +45,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 controlRequirements = validation.controlAssessment.requirements,
                 controlEvidence = validation.controlAssessment.evidence,
                 controlDecision = validation.controlAssessment.decision,
+                topologyRequirements = validation.meaning.topologyRequirements,
                 steps = statements,
                 errorHandler = errorHandler
             ),

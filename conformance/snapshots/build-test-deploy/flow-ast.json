@@ -91,6 +91,31 @@
       "blockingRequirementIds" : [ ],
       "pendingRequirementIds" : [ "control.approval.production-approval" ]
     },
+    "topologyRequirements" : [ {
+      "id" : "topology.failurePropagation.build-test-deploy",
+      "kind" : "FAILURE_PROPAGATION",
+      "subject" : "build-test-deploy",
+      "source" : "CANONICAL_WORKFLOW",
+      "evidenceReference" : "intent.failure"
+    }, {
+      "id" : "topology.suspendResume.approve-prod",
+      "kind" : "SUSPEND_RESUME",
+      "subject" : "approve-prod",
+      "source" : "CANONICAL_CAPABILITY",
+      "evidenceReference" : "intent.workflows.application-lifecycle.steps.approve-prod"
+    }, {
+      "id" : "topology.workflowLifetime.application-lifecycle",
+      "kind" : "WORKFLOW_LIFETIME",
+      "subject" : "application-lifecycle",
+      "source" : "CANONICAL_WORKFLOW",
+      "evidenceReference" : "intent.workflows.application-lifecycle"
+    }, {
+      "id" : "topology.workflowScope.application-lifecycle",
+      "kind" : "WORKFLOW_SCOPE",
+      "subject" : "application-lifecycle",
+      "source" : "CANONICAL_WORKFLOW",
+      "evidenceReference" : "intent.workflows.application-lifecycle"
+    } ],
     "steps" : [ {
       "type" : "Action",
       "module" : "git",

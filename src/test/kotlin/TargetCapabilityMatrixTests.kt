@@ -23,7 +23,7 @@ class TargetCapabilityMatrixTests {
     @Test
     fun missingRequiredTargetFailsCapabilityMatrix() {
         val targets = mapOf(
-            "jenkins" to TargetCapability(target = "jenkins", description = "Jenkins test target")
+            "jenkins" to testTargetCapability(target = "jenkins", description = "Jenkins test target")
         )
         val report = TargetCapabilityMatrixAnalyzer(targets).analyze()
 
@@ -35,9 +35,9 @@ class TargetCapabilityMatrixTests {
     @Test
     fun blankTargetDescriptionFailsCapabilityMatrix() {
         val targets = mapOf(
-            "jenkins" to TargetCapability(target = "jenkins", description = ""),
-            "github-actions" to TargetCapability(target = "github-actions", description = "GitHub Actions test target"),
-            "tekton" to TargetCapability(target = "tekton", description = "Tekton test target")
+            "jenkins" to testTargetCapability(target = "jenkins", description = ""),
+            "github-actions" to testTargetCapability(target = "github-actions", description = "GitHub Actions test target"),
+            "tekton" to testTargetCapability(target = "tekton", description = "Tekton test target")
         )
         val report = TargetCapabilityMatrixAnalyzer(targets).analyze()
 
