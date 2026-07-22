@@ -39,6 +39,7 @@ jobs:
             echo "94417590a5f6c2603bb703aa1c4326255e2fb034291fd25711c134d1b9186ce2  .flow-agent/tmp/v0978-implementation-001.patch" | sha256sum --check
             echo "ab2eae21222c9f2d00051b76c48b6a70ca89fa57a744efaa27869f23c20fe4d2  .flow-agent/tmp/v0978-implementation-002.patch" | sha256sum --check
             echo "2e74728857c9189c284f9a1d158e7090ea024e914cdc220d625ee5393fae512c  .flow-agent/tmp/v0978-implementation-003.patch" | sha256sum --check
+            echo "e8bfe0514a27acd5e6c9e6de6d6dc1ffd402cb985e2a15af5723ce548015045b  .flow-agent/tmp/v0978-repair-004.patch" | sha256sum --check
             cat .flow-agent/tmp/v0978-implementation-000.patch \
                 .flow-agent/tmp/v0978-implementation-001.patch \
                 .flow-agent/tmp/v0978-implementation-002.patch \
@@ -51,6 +52,8 @@ jobs:
             echo "f8a1cb33e6bf108578c6b33a0fb9f4c759ebd2e04d3665c38a8be6fb60cc940d  /tmp/v0978-implementation.patch" | sha256sum --check
             git apply --check /tmp/v0978-implementation.patch
             git apply /tmp/v0978-implementation.patch
+            git apply --check .flow-agent/tmp/v0978-repair-004.patch
+            git apply .flow-agent/tmp/v0978-repair-004.patch
             git diff --check
           } 2>&1 | tee /tmp/v0978-apply.log
 
@@ -100,6 +103,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -f .flow-agent/tmp/v0978-implementation-*.patch
+          rm -f .flow-agent/tmp/v0978-repair-*.patch
           rmdir .flow-agent/tmp 2>/dev/null || true
           rm -f .github/workflows/v0978-export.yml
           rm -f .github/workflows/v0978-apply.yml
