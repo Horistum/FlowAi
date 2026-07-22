@@ -9,7 +9,7 @@ forbiddenScope:
   - "No renderer layout or target inventory as topology authority."
   - "No ordering or continuity relation treated as a complete execution environment."
   - "No target-specific execution syntax in Core contracts."
-implementationStatus: "implemented and validated on the implementation head; exact completion head validation required"
+implementationStatus: "implementation, topology conformance and completion metadata committed; exact final head validation required"
 implementedScope:
   - "Canonical intent derives target-neutral topology requirements before implementation binding."
   - "Execution topology models isolation, lifetime, persistence and propagation through one typed contract."
@@ -29,7 +29,14 @@ validation:
     - "Clean compilation and the complete test suite passed."
     - "Full conformance and executable reference evidence passed."
     - "Both committed reference snapshot bundles were regenerated through the production generator."
-finalValidation: "required on the exact completion metadata head"
+completionValidation:
+  completionHead: "2f1e1e92f3cd816226e4f17ec2e8ff650c155aae"
+  focusedCompletionResult: passed
+  evidence:
+    - "Completion patch integrity and application checks passed."
+    - "Topology conformance, RC conformance and version consistency passed."
+    - "Completion workflow and payload were removed from the committed branch."
+finalValidation: "required on the exact final repository head"
 completionEvidence:
   - "Complete and contradictory topology profiles are tested."
   - "Equivalent intent derives equivalent topology requirements across inventories and bindings."
