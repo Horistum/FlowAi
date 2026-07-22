@@ -1,5 +1,5 @@
 kind: FlowTargetRegistry
-version: "3.0"
+version: "3.1"
 description: Built-in target capability registry for the current Flow capability-contract line.
 expressionProfiles:
   - id: flow-full
@@ -52,6 +52,20 @@ targets:
   - name: local
     expressionProfile: flow-full
     description: Reference local target used to validate plan semantics before platform generation.
+    topology:
+      evidenceReference: targets/builtin-targets.yaml#targets.local.topology
+      capabilities:
+        workflowScope: supported
+        branchIsolation: supported
+        attemptIsolation: supported
+        workflowLifetime: supported
+        suspendResume: partial
+        ephemeralWorkspace: supported
+        durableState: partial
+        valuePropagation: supported
+        workspacePropagation: supported
+        statePropagation: partial
+        failurePropagation: supported
     capabilities:
       sequentialTasks: supported
       parallel: supported
@@ -83,6 +97,20 @@ targets:
   - name: jenkins
     expressionProfile: flow-full
     description: Jenkins Pipeline generator target. Good scripted support, weaker portability.
+    topology:
+      evidenceReference: targets/builtin-targets.yaml#targets.jenkins.topology
+      capabilities:
+        workflowScope: supported
+        branchIsolation: supported
+        attemptIsolation: supported
+        workflowLifetime: supported
+        suspendResume: supported
+        ephemeralWorkspace: supported
+        durableState: supported
+        valuePropagation: supported
+        workspacePropagation: supported
+        statePropagation: supported
+        failurePropagation: supported
     capabilities:
       sequentialTasks: supported
       parallel: supported
@@ -177,6 +205,20 @@ targets:
   - name: github-actions
     expressionProfile: workflow-condition
     description: GitHub Actions generator target. Good for simple CI/CD, limited dynamic control-flow semantics.
+    topology:
+      evidenceReference: targets/builtin-targets.yaml#targets.github-actions.topology
+      capabilities:
+        workflowScope: supported
+        branchIsolation: supported
+        attemptIsolation: partial
+        workflowLifetime: supported
+        suspendResume: partial
+        ephemeralWorkspace: supported
+        durableState: unsupported
+        valuePropagation: partial
+        workspacePropagation: unsupported
+        statePropagation: unsupported
+        failurePropagation: partial
     capabilities:
       sequentialTasks: supported
       parallel: supported
@@ -274,6 +316,20 @@ targets:
   - name: tekton
     expressionProfile: equality-membership-condition
     description: Tekton Pipelines target. Strong Kubernetes-native task model, limited dynamic loops and manual gates.
+    topology:
+      evidenceReference: targets/builtin-targets.yaml#targets.tekton.topology
+      capabilities:
+        workflowScope: supported
+        branchIsolation: supported
+        attemptIsolation: partial
+        workflowLifetime: supported
+        suspendResume: unsupported
+        ephemeralWorkspace: partial
+        durableState: unsupported
+        valuePropagation: partial
+        workspacePropagation: partial
+        statePropagation: unsupported
+        failurePropagation: partial
     capabilities:
       sequentialTasks: supported
       parallel: supported
@@ -375,6 +431,20 @@ targets:
   - name: argo-workflows
     expressionProfile: unavailable
     description: Argo Workflows target. Strong DAG, artifacts and suspend support.
+    topology:
+      evidenceReference: targets/builtin-targets.yaml#targets.argo-workflows.topology
+      capabilities:
+        workflowScope: supported
+        branchIsolation: supported
+        attemptIsolation: supported
+        workflowLifetime: supported
+        suspendResume: supported
+        ephemeralWorkspace: partial
+        durableState: partial
+        valuePropagation: partial
+        workspacePropagation: partial
+        statePropagation: partial
+        failurePropagation: supported
     capabilities:
       sequentialTasks: supported
       parallel: supported
@@ -410,6 +480,20 @@ targets:
   - name: azure-devops
     expressionProfile: unavailable
     description: Azure DevOps Pipelines target. Strong stage/job model, platform-specific approvals/checks.
+    topology:
+      evidenceReference: targets/builtin-targets.yaml#targets.azure-devops.topology
+      capabilities:
+        workflowScope: supported
+        branchIsolation: supported
+        attemptIsolation: partial
+        workflowLifetime: supported
+        suspendResume: supported
+        ephemeralWorkspace: supported
+        durableState: partial
+        valuePropagation: supported
+        workspacePropagation: partial
+        statePropagation: partial
+        failurePropagation: supported
     capabilities:
       sequentialTasks: supported
       parallel: supported

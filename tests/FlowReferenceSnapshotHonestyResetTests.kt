@@ -14,6 +14,7 @@ import org.flowlang.conformance.ReferenceSnapshotHonesty
 import org.flowlang.conformance.ReferenceSnapshotSetState
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.UnresolvedExecutionTopologyException
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.effects.ModuleEffectCanonicalizer
 import org.flowlang.modules.ModuleRegistry
@@ -108,7 +109,7 @@ class FlowReferenceSnapshotHonestyResetTests {
         )
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "tekton")
         assertTrue(compatibility.hasErrors)
-        assertFailsWith<IllegalStateException> {
+        assertFailsWith<UnresolvedExecutionTopologyException> {
             BuiltInTargetProjections.pipeline(targets).generate(plan, compatibility.target)
         }
     }

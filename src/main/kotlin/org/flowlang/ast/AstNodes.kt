@@ -5,6 +5,7 @@ import org.flowlang.controls.ControlDecision
 import org.flowlang.controls.ControlEvidence
 import org.flowlang.controls.ControlRequirement
 import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.topology.ExecutionTopologyRequirement
 
 /**
  * Canonical Flow AST (docs/04). Platform-neutral: it must not depend on any
@@ -46,6 +47,7 @@ data class FlowNode(
     val controlRequirements: List<ControlRequirement> = emptyList(),
     val controlEvidence: List<ControlEvidence> = emptyList(),
     val controlDecision: ControlDecision = ControlDecision(org.flowlang.controls.ControlDecisionStatus.ALLOWED),
+    val topologyRequirements: List<ExecutionTopologyRequirement> = emptyList(),
     val steps: List<StatementNode> = emptyList(),
     val errorHandler: ErrorHandlerNode? = null
 )

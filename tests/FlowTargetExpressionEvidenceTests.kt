@@ -36,7 +36,7 @@ class FlowTargetExpressionEvidenceTests {
 
     @Test
     fun unknownOrUndeclaredTargetFailsClosed() {
-        val target = TargetCapability(target = "future-target", description = "No expression notes yet")
+        val target = testTargetCapability(target = "future-target", description = "No expression notes yet")
         val decision = TargetExpressionSupport.evaluate(target, "env == 'prod'")
 
         assertFalse(decision.supported)
@@ -56,7 +56,7 @@ class FlowTargetExpressionEvidenceTests {
                 TargetExpressionFeatures.binary("==")
             )
         )
-        val target = TargetCapability(
+        val target = testTargetCapability(
             target = "future-target",
             description = "Target with explicit expression notes",
             expressionSupport = declaration
@@ -98,7 +98,7 @@ class FlowTargetExpressionEvidenceTests {
             File(root, "target.yaml").writeText(
                 """
                 kind: FlowTargetRegistry
-                version: "3.0"
+                version: "3.1"
                 targets:
                   - name: unsafe-target
                     description: Missing expression evidence

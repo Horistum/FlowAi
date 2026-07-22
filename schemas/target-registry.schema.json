@@ -1,27 +1,71 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/target-registry/3.0/target-registry.schema.json",
-  "title": "Flow Target Registry v3.0",
+  "$id": "https://flowlang.dev/schemas/target-registry/3.1/target-registry.schema.json",
+  "title": "Flow Target Registry v3.1",
   "type": "object",
-  "required": ["kind", "version", "expressionProfiles", "targets"],
+  "required": [
+    "kind",
+    "version",
+    "expressionProfiles",
+    "targets"
+  ],
   "properties": {
-    "kind": { "const": "FlowTargetRegistry" },
-    "version": { "const": "3.0" },
-    "description": { "type": "string" },
-    "expressionProfiles": { "type": "array" },
+    "kind": {
+      "const": "FlowTargetRegistry"
+    },
+    "version": {
+      "const": "3.1"
+    },
+    "description": {
+      "type": "string"
+    },
+    "expressionProfiles": {
+      "type": "array"
+    },
     "targets": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "capabilities", "expressionProfile", "projectionRules"],
+        "required": [
+          "name",
+          "capabilities",
+          "expressionProfile",
+          "topology",
+          "projectionRules"
+        ],
         "properties": {
-          "name": { "type": "string", "minLength": 1 },
-          "description": { "type": "string" },
-          "expressionProfile": { "type": "string", "minLength": 1 },
-          "capabilities": { "$ref": "#/$defs/supportMap" },
-          "features": { "$ref": "#/$defs/supportMap" },
-          "notes": { "type": "array", "items": { "type": "string" } },
-          "projectionRules": { "type": "array", "items": { "$ref": "#/$defs/projectionRule" } }
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "expressionProfile": {
+            "type": "string",
+            "minLength": 1
+          },
+          "capabilities": {
+            "$ref": "#/$defs/supportMap"
+          },
+          "features": {
+            "$ref": "#/$defs/supportMap"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "projectionRules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/projectionRule"
+            }
+          },
+          "topology": {
+            "$ref": "#/$defs/topologyProfile"
+          }
         },
         "additionalProperties": false
       }
@@ -30,113 +74,406 @@
   "$defs": {
     "supportMap": {
       "type": "object",
-      "additionalProperties": { "enum": ["supported", "full", "partial", "unsupported", "none", "requires_runtime"] }
+      "additionalProperties": {
+        "enum": [
+          "supported",
+          "full",
+          "partial",
+          "unsupported",
+          "none",
+          "requires_runtime"
+        ]
+      }
     },
     "projectionRule": {
       "type": "object",
-      "required": ["module", "action", "mode", "reason", "evidenceReference"],
+      "required": [
+        "module",
+        "action",
+        "mode",
+        "reason",
+        "evidenceReference"
+      ],
       "properties": {
-        "module": { "type": "string", "minLength": 1 },
-        "action": { "type": "string", "minLength": 1 },
-        "mode": { "enum": ["native", "notes_projected", "adapter_required", "unsupported", "blocked"] },
-        "reason": { "type": "string", "minLength": 1 },
-        "evidenceReference": { "type": "string", "minLength": 1 },
-        "payload": { "$ref": "#/$defs/payload" }
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mode": {
+          "enum": [
+            "native",
+            "notes_projected",
+            "adapter_required",
+            "unsupported",
+            "blocked"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceReference": {
+          "type": "string",
+          "minLength": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/payload"
+        }
       },
       "allOf": [
-        { "if": { "properties": { "mode": { "const": "native" } } }, "then": { "required": ["payload"] } },
-        { "if": { "properties": { "mode": { "not": { "const": "native" } } } }, "then": { "not": { "required": ["payload"] } } }
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "native"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "payload"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "not": {
+                  "const": "native"
+                }
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "payload"
+              ]
+            }
+          }
+        }
       ],
       "additionalProperties": false
     },
     "payload": {
       "type": "object",
-      "required": ["kind", "reference", "bindings"],
+      "required": [
+        "kind",
+        "reference",
+        "bindings"
+      ],
       "properties": {
-        "kind": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:/-]*$" },
-        "reference": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:/-]*$"
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1
+        },
         "bindings": {
           "type": "object",
-          "propertyNames": { "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
-          "additionalProperties": { "$ref": "#/$defs/templateBinding" }
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/templateBinding"
+          }
         }
       },
       "additionalProperties": false
     },
     "templateBinding": {
       "oneOf": [
-        { "$ref": "#/$defs/literalBinding" },
-        { "$ref": "#/$defs/taskParameterTemplate" },
-        { "$ref": "#/$defs/taskInputTemplate" },
-        { "$ref": "#/$defs/taskMetadataTemplate" },
-        { "$ref": "#/$defs/namedRuntimeBinding" },
-        { "$ref": "#/$defs/taskOutputBinding" },
-        { "$ref": "#/$defs/targetExpressionBinding" }
+        {
+          "$ref": "#/$defs/literalBinding"
+        },
+        {
+          "$ref": "#/$defs/taskParameterTemplate"
+        },
+        {
+          "$ref": "#/$defs/taskInputTemplate"
+        },
+        {
+          "$ref": "#/$defs/taskMetadataTemplate"
+        },
+        {
+          "$ref": "#/$defs/namedRuntimeBinding"
+        },
+        {
+          "$ref": "#/$defs/taskOutputBinding"
+        },
+        {
+          "$ref": "#/$defs/targetExpressionBinding"
+        }
       ]
     },
     "literalBinding": {
       "type": "object",
-      "required": ["kind", "value"],
-      "properties": { "kind": { "const": "LITERAL" }, "value": { "type": "string" } },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "const": "LITERAL"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
       "additionalProperties": false
     },
     "taskParameterTemplate": {
       "type": "object",
-      "required": ["kind", "name"],
+      "required": [
+        "kind",
+        "name"
+      ],
       "properties": {
-        "kind": { "const": "TASK_PARAMETER" },
-        "name": { "type": "string", "minLength": 1 },
-        "defaultValue": { "type": "string" }
+        "kind": {
+          "const": "TASK_PARAMETER"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "defaultValue": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "taskInputTemplate": {
       "type": "object",
-      "required": ["kind", "name"],
+      "required": [
+        "kind",
+        "name"
+      ],
       "properties": {
-        "kind": { "const": "TASK_INPUT" },
-        "name": { "type": "string", "minLength": 1 },
-        "defaultValue": { "type": "string" }
+        "kind": {
+          "const": "TASK_INPUT"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "defaultValue": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "taskMetadataTemplate": {
       "type": "object",
-      "required": ["kind", "field"],
+      "required": [
+        "kind",
+        "field"
+      ],
       "properties": {
-        "kind": { "const": "TASK_METADATA" },
-        "field": { "enum": ["ID", "TARGET"] }
+        "kind": {
+          "const": "TASK_METADATA"
+        },
+        "field": {
+          "enum": [
+            "ID",
+            "TARGET"
+          ]
+        }
       },
       "additionalProperties": false
     },
     "namedRuntimeBinding": {
       "type": "object",
-      "required": ["kind", "name"],
+      "required": [
+        "kind",
+        "name"
+      ],
       "properties": {
-        "kind": { "enum": ["FLOW_INPUT", "SECRET", "ARTIFACT"] },
-        "name": { "type": "string", "minLength": 1 }
+        "kind": {
+          "enum": [
+            "FLOW_INPUT",
+            "SECRET",
+            "ARTIFACT"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": false
     },
     "taskOutputBinding": {
       "type": "object",
-      "required": ["kind", "taskId", "output"],
+      "required": [
+        "kind",
+        "taskId",
+        "output"
+      ],
       "properties": {
-        "kind": { "const": "TASK_OUTPUT" },
-        "taskId": { "type": "string", "minLength": 1 },
-        "output": { "type": "string", "minLength": 1 }
+        "kind": {
+          "const": "TASK_OUTPUT"
+        },
+        "taskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "output": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": false
     },
     "targetExpressionBinding": {
       "type": "object",
-      "required": ["kind", "target", "expression"],
+      "required": [
+        "kind",
+        "target",
+        "expression"
+      ],
       "properties": {
-        "kind": { "const": "TARGET_EXPRESSION" },
-        "target": { "type": "string", "minLength": 1 },
-        "expression": { "type": "string", "minLength": 1 }
+        "kind": {
+          "const": "TARGET_EXPRESSION"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expression": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": false
+    },
+    "topologyProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceReference",
+        "capabilities"
+      ],
+      "properties": {
+        "evidenceReference": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "workflowScope",
+            "branchIsolation",
+            "attemptIsolation",
+            "workflowLifetime",
+            "suspendResume",
+            "ephemeralWorkspace",
+            "durableState",
+            "valuePropagation",
+            "workspacePropagation",
+            "statePropagation",
+            "failurePropagation"
+          ],
+          "properties": {
+            "workflowScope": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "branchIsolation": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "attemptIsolation": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "workflowLifetime": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "suspendResume": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "ephemeralWorkspace": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "durableState": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "valuePropagation": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "workspacePropagation": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "statePropagation": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            },
+            "failurePropagation": {
+              "enum": [
+                "supported",
+                "partial",
+                "unsupported",
+                "unknown"
+              ]
+            }
+          }
+        }
+      }
     }
   },
   "additionalProperties": false

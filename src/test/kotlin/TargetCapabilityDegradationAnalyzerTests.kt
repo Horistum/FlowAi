@@ -22,9 +22,9 @@ import org.flowlang.planner.FlowPlanner
 class TargetCapabilityDegradationAnalyzerTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
     private val targets = mapOf(
-        "jenkins" to TargetCapability(target = "jenkins", description = "test"),
-        "github-actions" to TargetCapability(target = "github-actions", description = "test"),
-        "tekton" to TargetCapability(target = "tekton", description = "test")
+        "jenkins" to testTargetCapability(target = "jenkins", description = "test"),
+        "github-actions" to testTargetCapability(target = "github-actions", description = "test"),
+        "tekton" to testTargetCapability(target = "tekton", description = "test")
     )
 
     @Test

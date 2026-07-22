@@ -61,6 +61,36 @@
       "message" : "Feature 'continuity.workspace' is not supported by target 'github-actions'.",
       "source" : "compatibility-report.json"
     }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.failurePropagation.build-test-deploy",
+      "feature" : "topology.failurePropagation",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'failurePropagation': degraded",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.failurePropagation.onerror-1",
+      "feature" : "topology.failurePropagation",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'failurePropagation': degraded",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.suspendResume.approve-1",
+      "feature" : "topology.suspendResume",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'suspendResume': degraded",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.suspendResume.approve-prod",
+      "feature" : "topology.suspendResume",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'suspendResume': degraded",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.workspacePropagation.git-checkout-1-docker-build-1",
+      "feature" : "topology.workspacePropagation",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'workspacePropagation': unsatisfied",
+      "source" : "compatibility-report.json"
+    }, {
       "code" : "TARGET_UNSUPPORTED_CAPABILITY",
       "nodeId" : "",
       "feature" : "continuity.workspace",
@@ -71,6 +101,36 @@
       "nodeId" : "docker_build_1",
       "feature" : "continuity.workspace",
       "message" : "Feature 'continuity.workspace' is not supported by target 'github-actions'.",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.failurePropagation.build-test-deploy",
+      "feature" : "topology.failurePropagation",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'failurePropagation': degraded",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.failurePropagation.onerror-1",
+      "feature" : "topology.failurePropagation",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'failurePropagation': degraded",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.suspendResume.approve-1",
+      "feature" : "topology.suspendResume",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'suspendResume': degraded",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.suspendResume.approve-prod",
+      "feature" : "topology.suspendResume",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'suspendResume': degraded",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.workspacePropagation.git-checkout-1-docker-build-1",
+      "feature" : "topology.workspacePropagation",
+      "message" : "Target 'github-actions' does not provide complete execution-topology evidence for 'workspacePropagation': unsatisfied",
       "source" : "execution-readiness-report.json"
     } ]
   }, {
@@ -107,6 +167,42 @@
       "message" : "Feature 'standard.rollback' is not supported by target 'tekton'.",
       "source" : "compatibility-report.json"
     }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.ephemeralWorkspace.git-checkout-1-docker-build-1",
+      "feature" : "topology.ephemeralWorkspace",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'ephemeralWorkspace': degraded",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.failurePropagation.build-test-deploy",
+      "feature" : "topology.failurePropagation",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'failurePropagation': degraded",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.failurePropagation.onerror-1",
+      "feature" : "topology.failurePropagation",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'failurePropagation': degraded",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.suspendResume.approve-1",
+      "feature" : "topology.suspendResume",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'suspendResume': unsatisfied",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.suspendResume.approve-prod",
+      "feature" : "topology.suspendResume",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'suspendResume': unsatisfied",
+      "source" : "compatibility-report.json"
+    }, {
+      "code" : "TARGET_COMPATIBILITY_BLOCKED",
+      "nodeId" : "topology.workspacePropagation.git-checkout-1-docker-build-1",
+      "feature" : "topology.workspacePropagation",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'workspacePropagation': degraded",
+      "source" : "compatibility-report.json"
+    }, {
       "code" : "TARGET_UNSUPPORTED_CAPABILITY",
       "nodeId" : "",
       "feature" : "approval.manual",
@@ -129,6 +225,42 @@
       "nodeId" : "standard_rollback_1",
       "feature" : "standard.rollback",
       "message" : "Feature 'standard.rollback' is not supported by target 'tekton'.",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.ephemeralWorkspace.git-checkout-1-docker-build-1",
+      "feature" : "topology.ephemeralWorkspace",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'ephemeralWorkspace': degraded",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.failurePropagation.build-test-deploy",
+      "feature" : "topology.failurePropagation",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'failurePropagation': degraded",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.failurePropagation.onerror-1",
+      "feature" : "topology.failurePropagation",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'failurePropagation': degraded",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.suspendResume.approve-1",
+      "feature" : "topology.suspendResume",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'suspendResume': unsatisfied",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.suspendResume.approve-prod",
+      "feature" : "topology.suspendResume",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'suspendResume': unsatisfied",
+      "source" : "execution-readiness-report.json"
+    }, {
+      "code" : "TARGET_UNSUPPORTED_FEATURE",
+      "nodeId" : "topology.workspacePropagation.git-checkout-1-docker-build-1",
+      "feature" : "topology.workspacePropagation",
+      "message" : "Target 'tekton' does not provide complete execution-topology evidence for 'workspacePropagation': degraded",
       "source" : "execution-readiness-report.json"
     } ]
   } ]

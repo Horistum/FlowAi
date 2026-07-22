@@ -15,7 +15,7 @@ object FlowStandardVersions {
     const val AST_VERSION = "2.0"
     const val EXECUTION_PLAN_VERSION = "2.0"
     const val TARGET_MANIFEST_VERSION = "3.0"
-    const val TARGET_REGISTRY_VERSION = "3.0"
+    const val TARGET_REGISTRY_VERSION = "3.1"
 
     fun boundary(targetManifestPresent: Boolean): FlowVersionBoundary = FlowVersionBoundary(
         implementationPackageVersion = IMPLEMENTATION_PACKAGE_VERSION,

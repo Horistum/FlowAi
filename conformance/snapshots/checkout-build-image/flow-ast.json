@@ -43,6 +43,19 @@
       "blockingRequirementIds" : [ ],
       "pendingRequirementIds" : [ ]
     },
+    "topologyRequirements" : [ {
+      "id" : "topology.workflowLifetime.build-reference-image",
+      "kind" : "WORKFLOW_LIFETIME",
+      "subject" : "build-reference-image",
+      "source" : "CANONICAL_WORKFLOW",
+      "evidenceReference" : "intent.workflows.build-reference-image"
+    }, {
+      "id" : "topology.workflowScope.build-reference-image",
+      "kind" : "WORKFLOW_SCOPE",
+      "subject" : "build-reference-image",
+      "source" : "CANONICAL_WORKFLOW",
+      "evidenceReference" : "intent.workflows.build-reference-image"
+    } ],
     "steps" : [ {
       "type" : "Action",
       "module" : "git",

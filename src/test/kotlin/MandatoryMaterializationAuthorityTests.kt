@@ -6,9 +6,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityReport
-import org.flowlang.capabilities.PlannerCapabilityConstraintViolation
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.InvalidPlanningEvidenceException
+import org.flowlang.generators.manifest.UnresolvedExecutionTopologyException
 import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
@@ -30,7 +30,7 @@ class MandatoryMaterializationAuthorityTests {
         val target = "future-orchestrator"
         val generator = syntheticGenerator(target) { invoked = true }
         val pipeline = TargetManifestGenerationPipeline(
-            targets = mapOf(target to TargetCapability(target, "Synthetic target")),
+            targets = mapOf(target to testTargetCapability(target, "Synthetic target")),
             projections = TargetProjectionRegistry.of(
                 TargetProjectionProvider(generator, syntheticRenderer(target))
             )
@@ -57,7 +57,7 @@ class MandatoryMaterializationAuthorityTests {
         var invoked = false
         val target = "future-orchestrator"
         val pipeline = TargetManifestGenerationPipeline(
-            targets = mapOf(target to TargetCapability(target, "Synthetic target")),
+            targets = mapOf(target to testTargetCapability(target, "Synthetic target")),
             projections = TargetProjectionRegistry.of(
                 TargetProjectionProvider(syntheticGenerator(target) { invoked = true }, syntheticRenderer(target))
             )
@@ -80,7 +80,7 @@ class MandatoryMaterializationAuthorityTests {
             nodes = listOf(ApprovalNode(id = "approve"))
         )
 
-        assertFailsWith<PlannerCapabilityConstraintViolation> {
+        assertFailsWith<UnresolvedExecutionTopologyException> {
             pipeline.generate(plan, "tekton")
         }
 

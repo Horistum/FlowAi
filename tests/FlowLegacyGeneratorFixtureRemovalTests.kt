@@ -25,9 +25,9 @@ import org.flowlang.planner.FlowPlanner
 
 class FlowLegacyGeneratorFixtureRemovalTests {
     private val targets = mapOf(
-        "jenkins" to TargetCapability(target = "jenkins", description = "test"),
-        "github-actions" to TargetCapability(target = "github-actions", description = "test"),
-        "tekton" to TargetCapability(target = "tekton", description = "test")
+        "jenkins" to testTargetCapability(target = "jenkins", description = "test"),
+        "github-actions" to testTargetCapability(target = "github-actions", description = "test"),
+        "tekton" to testTargetCapability(target = "tekton", description = "test")
     )
     private val migrationDir = File("examples/migration/blocked-shell")
     private val expectedShellCommands = mapOf(

@@ -28,6 +28,43 @@
     "blockingRequirementIds" : [ ],
     "pendingRequirementIds" : [ ]
   },
+  "topologyRequirements" : [ {
+    "id" : "topology.ephemeralWorkspace.git-checkout-1-docker-build-1",
+    "kind" : "EPHEMERAL_WORKSPACE",
+    "subject" : "git_checkout_1->docker_build_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source"
+  }, {
+    "id" : "topology.workflowLifetime.build-reference-image",
+    "kind" : "WORKFLOW_LIFETIME",
+    "subject" : "build-reference-image",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.workflows.build-reference-image"
+  }, {
+    "id" : "topology.workflowLifetime.checkout-build-image",
+    "kind" : "WORKFLOW_LIFETIME",
+    "subject" : "checkout-build-image",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes"
+  }, {
+    "id" : "topology.workflowScope.build-reference-image",
+    "kind" : "WORKFLOW_SCOPE",
+    "subject" : "build-reference-image",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.workflows.build-reference-image"
+  }, {
+    "id" : "topology.workflowScope.checkout-build-image",
+    "kind" : "WORKFLOW_SCOPE",
+    "subject" : "checkout-build-image",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes"
+  }, {
+    "id" : "topology.workspacePropagation.git-checkout-1-docker-build-1",
+    "kind" : "WORKSPACE_PROPAGATION",
+    "subject" : "git_checkout_1->docker_build_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source"
+  } ],
   "nodes" : [ {
     "id" : "git_checkout_1",
     "kind" : "task",

@@ -36,6 +36,9 @@ object TargetRegistryYamlLoader {
                 require(descriptor.expressionProfile?.isNotBlank() == true) {
                     "Target '${descriptor.name}' must declare expressionProfile in ${file.path}; missing expression evidence fails closed."
                 }
+                require(descriptor.topology != null) {
+                    "Target '${descriptor.name}' must declare topology evidence in ${file.path}; missing topology evidence fails closed."
+                }
                 require(descriptor.name !in out) {
                     "Target '${descriptor.name}' is declared more than once across target registry files."
                 }

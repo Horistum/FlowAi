@@ -6,6 +6,9 @@ All project source text is written in English. The changelog records architectur
 
 ### Added
 
+- Added a target-neutral execution-topology model covering isolation, lifetime, persistence and propagation.
+- Added mandatory Target Registry `3.1` topology profiles with explicit support status and evidence for every built-in target.
+- Added fail-closed materialization checks that reject missing, partial, unsupported or contradictory topology evidence before provider invocation.
 - Added the first target-scoped executable multi-step reference scenario, proving ordered native checkout and image build through the real Jenkins pipeline.
 - Added canonical `checkout-build-image` semantic snapshots and `jenkins.executable.yaml` evidence derived from the real parser-to-renderer path.
 - Added `reference-snapshot --targets` support so committed evidence can declare an explicit target scope instead of implying universal readiness.
@@ -22,6 +25,9 @@ All project source text is written in English. The changelog records architectur
 
 ### Changed
 
+- Action capability, task ordering and continuity evidence no longer prove executable readiness without a matching execution-topology profile.
+- Target Registry advances from `3.0` to `3.1`; Target Manifest remains `3.0`.
+- Partial execution topology is classified as unsupported rather than degraded executable readiness.
 - Completed the v0.9.6 Universal Native Projection Foundation track and advanced v0.9.7 Policy-Driven Safety and Environment Classification to the next roadmap item.
 - Kept `build-test-deploy` MIXED and non-executable while documenting why isolated GitHub Actions and Tekton native actions are not yet an end-to-end workspace-continuity proof.
 - Built-in target registries now declare `docker.build` as supported only where registry evidence, provider contracts and structured renderer behavior all exist.
@@ -38,7 +44,7 @@ All project source text is written in English. The changelog records architectur
 ### Architecture boundary
 
 - `0.9.6.1` through `0.9.6.7` are bounded work identifiers toward the next package line; the published package remains `0.9.5`.
-- Public Flow standard remains `0.8.0`; Intent, AST and ExecutionPlan remain `2.0`; Target Registry and Target Manifest remain `3.0`.
+- Public Flow standard remains `0.8.0`; Intent, AST and ExecutionPlan remain `2.0`; Target Registry is `3.1` and Target Manifest remains `3.0`.
 - No runtime executor, SDK lifecycle, plugin discovery, shell projection, credential inference or universal cross-target executable claim is introduced.
 
 ## 0.9.5 - Universal model completion

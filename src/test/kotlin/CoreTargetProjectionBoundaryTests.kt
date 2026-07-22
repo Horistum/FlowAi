@@ -22,7 +22,7 @@ class CoreTargetProjectionBoundaryTests {
         val registry = TargetProjectionRegistry.of(
             TargetProjectionProvider(SyntheticGenerator("future-orchestrator"), SyntheticRenderer("future-orchestrator"))
         )
-        val targets = mapOf("future-orchestrator" to TargetCapability("future-orchestrator", "Synthetic future target"))
+        val targets = mapOf("future-orchestrator" to testTargetCapability("future-orchestrator", "Synthetic future target"))
         val pipeline = TargetManifestGenerationPipeline(targets, registry)
 
         val manifest = pipeline.generate(ExecutionPlan(flowName = "future-flow"), "future-orchestrator")
@@ -71,7 +71,7 @@ class CoreTargetProjectionBoundaryTests {
 
     @Test
     fun pipelineRejectsUnregisteredTargetInsteadOfFallingBack() {
-        val targets = mapOf("missing-target" to TargetCapability("missing-target", "Missing provider target"))
+        val targets = mapOf("missing-target" to testTargetCapability("missing-target", "Missing provider target"))
         val pipeline = TargetManifestGenerationPipeline(targets, TargetProjectionRegistry.empty())
 
         val failure = assertFailsWith<IllegalStateException> {

@@ -10,7 +10,7 @@ Flow has separate public version axes with distinct purposes. They are intention
 | AST contract | `2.0` | The serialized AST contract changes incompatibly. |
 | ExecutionPlan contract | `2.0` | The serialized execution-plan contract changes incompatibly. |
 | TargetManifest contract | `3.0` | The serialized target-manifest contract changes incompatibly. |
-| TargetRegistry contract | `3.0` | The serialized target-registry contract changes incompatibly. |
+| TargetRegistry contract | `3.1` | The serialized target-registry contract changes incompatibly. |
 
 ## Package version
 
@@ -34,7 +34,8 @@ Intent, AST and ExecutionPlan remain at `2.0`:
 
 Target contracts advance to `3.0` in implementation work item `0.9.6.2`:
 
-- TargetRegistry 3.0 replaces prefix-encoded payload parameter strings with universal typed binding templates.
+- TargetRegistry 3.0 replaced prefix-encoded payload parameter strings with universal typed binding templates.
+- TargetRegistry 3.1 requires complete execution-topology evidence for isolation, lifetime, persistence and propagation.
 - TargetManifest 3.0 preserves binding kind, source provenance, resolved compile-time values and symbolic runtime references.
 
 The migration is documented in `docs/V0_9_6_TYPED_BINDING_MIGRATION.md`.

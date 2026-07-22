@@ -6,9 +6,9 @@ import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.PlannerCapabilityConstraintGate
 import org.flowlang.capabilities.PlannerCapabilityConstraintStatus
-import org.flowlang.capabilities.PlannerCapabilityConstraintViolation
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
+import org.flowlang.generators.manifest.UnresolvedExecutionTopologyException
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetManifestRenderer
@@ -43,13 +43,14 @@ class PlannerCapabilityConstraintTests {
     }
 
     @Test
-    fun githubActionsPartialErrorHandlerSupportIsDegradedOutsideStrictMode() {
+    fun githubActionsPartialTopologyBlocksOutsideStrictMode() {
         val report = PlannerCapabilityConstraintGate(targets).check(errorHandlerPlan(), "github-actions", strict = false)
 
-        assertTrue(report.projectionAllowed, report.blockingIssues.joinToString())
-        assertEquals(PlannerCapabilityConstraintStatus.DEGRADED, report.constraintStatus)
-        assertEquals(SupportLevel.PARTIAL, report.status)
+        assertFalse(report.projectionAllowed, "Incomplete execution topology must block projection outside strict mode too.")
+        assertEquals(PlannerCapabilityConstraintStatus.BLOCKED, report.constraintStatus)
+        assertEquals(SupportLevel.UNSUPPORTED, report.status)
         assertTrue(report.compatibility.issues.any { it.feature == "errorHandlers" && it.nodeId == "try_1" })
+        assertTrue(report.blockingIssues.any { it.feature == "topology.failurePropagation" })
     }
 
     @Test
@@ -72,7 +73,7 @@ class PlannerCapabilityConstraintTests {
             TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
         )
 
-        assertFailsWith<PlannerCapabilityConstraintViolation> {
+        assertFailsWith<UnresolvedExecutionTopologyException> {
             pipeline.generate(approvalPlan(), "tekton")
         }
         assertFalse(invoked, "Renderer projection must not start for unsupported target semantics.")

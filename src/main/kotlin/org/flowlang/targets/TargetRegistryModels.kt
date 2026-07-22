@@ -10,6 +10,11 @@ import org.flowlang.capabilities.TargetRendererPayloadTemplate
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingContract
 import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.topology.ExecutionTopologyKind
+import org.flowlang.topology.ExecutionTopologyProfile
+import org.flowlang.topology.ExecutionTopologyProfileAuthority
+import org.flowlang.topology.ExecutionTopologySupportDeclaration
+import org.flowlang.topology.ExecutionTopologySupportStatus
 
 /** Versioned declarative target registry document. */
 data class TargetRegistryDocument(
@@ -110,6 +115,39 @@ data class TargetProjectionRuleDescriptor(
     }
 }
 
+
+data class TargetTopologyProfileDescriptor(
+    val evidenceReference: String = "",
+    val capabilities: Map<String, String> = emptyMap()
+) {
+    fun toProfile(targetName: String): ExecutionTopologyProfile {
+        require(evidenceReference.isNotBlank()) {
+            "Target '$targetName' topology profile must declare an evidenceReference."
+        }
+        val unknown = capabilities.keys.filter { ExecutionTopologyKind.fromRegistryKey(it) == null }
+        require(unknown.isEmpty()) {
+            "Target '$targetName' topology profile declares unknown capabilities: ${unknown.sorted()}."
+        }
+        val declarations = capabilities.map { (key, raw) ->
+            val kind = requireNotNull(ExecutionTopologyKind.fromRegistryKey(key))
+            ExecutionTopologySupportDeclaration(
+                kind = kind,
+                status = when (raw.trim().lowercase().replace('-', '_')) {
+                    "supported", "full", "yes", "true" -> ExecutionTopologySupportStatus.SUPPORTED
+                    "partial", "limited" -> ExecutionTopologySupportStatus.PARTIAL
+                    "unsupported", "none", "no", "false" -> ExecutionTopologySupportStatus.UNSUPPORTED
+                    "unknown" -> ExecutionTopologySupportStatus.UNKNOWN
+                    else -> error("Unknown topology support '$raw' for '$key' on target '$targetName'.")
+                },
+                evidenceReference = "$evidenceReference#$key"
+            )
+        }
+        val profile = ExecutionTopologyProfile(targetName, declarations)
+        ExecutionTopologyProfileAuthority.requireValid(profile)
+        return profile
+    }
+}
+
 data class TargetDescriptor(
     val name: String = "",
     val description: String = "",
@@ -117,6 +155,7 @@ data class TargetDescriptor(
     val notes: List<String> = emptyList(),
     val features: Map<String, String> = emptyMap(),
     val expressionProfile: String? = null,
+    val topology: TargetTopologyProfileDescriptor? = null,
     val projectionRules: List<TargetProjectionRuleDescriptor> = emptyList()
 ) {
     fun toCapability(expressionProfiles: Map<String, TargetExpressionSupportDeclaration> = emptyMap()): TargetCapability {
@@ -141,7 +180,8 @@ data class TargetDescriptor(
             notes = notes,
             features = features.mapValues { (_, raw) -> parseSupport(raw, name) },
             expressionSupport = expressionDeclaration,
-            projectionRules = projectionRules.map { it.toRule(name) }
+            projectionRules = projectionRules.map { it.toRule(name) },
+            topologyProfile = requireNotNull(topology) { "Target '$name' must declare a complete topology profile." }.toProfile(name)
         )
     }
 

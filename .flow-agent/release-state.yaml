@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 10
+stateVersion: 11
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,14 +18,14 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.7"
-  completedItemName: "Universal Control and Policy Requirements"
+  completedItem: "0.9.7.8"
+  completedItemName: "Abstract Execution Topology Model"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.8"
-  nextCoreItemName: "Abstract Execution Topology Model"
+  nextCoreItem: "0.9.7.9"
+  nextCoreItemName: "Intent Lowering and Diagnostic Honesty"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.7.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.8.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
 
@@ -72,6 +72,10 @@ qualityPrinciples:
   - "Unknown and unsatisfied control evidence blocks authorization."
   - "Dynamic control evidence remains pending and declares explicit enforcement capabilities."
   - "Module contracts may add control obligations but cannot rewrite canonical intent meaning."
+  - "Executable readiness requires matching execution-topology requirements and target evidence."
+  - "Action capability, ordering and continuity cannot substitute for topology evidence."
+  - "Missing, partial, unsupported and contradictory topology evidence blocks provider invocation."
+  - "Target topology profiles must be complete, explicit and independent from renderer layout."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-implementation-head"
@@ -81,17 +85,15 @@ lastKnownValidation:
   cleanTest: "passed-on-implementation-head"
   conformance: "passed-on-implementation-head"
   executableReferenceEvidence: "passed-on-implementation-head"
-  validationSource: "Flow CI #1787 passed on implementation head b0cac07630df7270912c2db0fb528d5f6ed663a3."
+  validationSource: "Flow CI #1811 passed on implementation head ba7e90cad6efe92fb929f13475fa8f3409fd3ef1."
   notes:
-    - "Package, public standard and artifact contract versions remain unchanged."
-    - "Canonical intent derives target-neutral control requirements before implementation binding."
-    - "Requirements, evidence and authorization decisions use separate typed contracts."
-    - "Known, unknown, unsatisfied and dynamic evidence remain explicit through AST and execution planning."
-    - "Approval policies declare requirements and do not count as approval evidence."
-    - "Module safety contracts may add obligations without rewriting canonical intent requirements."
-    - "Materialization re-derives canonical and module-owned requirements and rejects omitted, forged or unresolved evidence."
-    - "Dynamic evidence declares explicit enforcement capabilities and remains pending rather than silently safe."
-    - "Legacy safety validators remain compatibility facades over one canonical authority."
+    - "Package, public standard, AST, ExecutionPlan and Target Manifest versions remain unchanged."
+    - "Target Registry advances from 3.0 to 3.1 and requires complete topology profiles."
+    - "Canonical intent derives topology requirements before explicit binding."
+    - "AST and execution plans preserve isolation, lifetime, persistence and propagation requirements."
+    - "Materialization re-derives minimum topology and rejects omitted or unsupported evidence."
+    - "Partial topology cannot authorize executable provider invocation."
+    - "Action capability, ordering and continuity remain separate from execution topology."
     - "Reference snapshots were regenerated through the canonical production generator."
     - "The Jenkins executable reference proof remains live."
     - "The final metadata head must pass the unmodified standard Flow CI."

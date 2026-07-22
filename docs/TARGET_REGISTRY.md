@@ -1,4 +1,4 @@
-# Target Registry v3.0
+# Target Registry v3.1
 
 Flow target capabilities and projection evidence are represented as versioned YAML under `targets/`.
 
@@ -8,7 +8,7 @@ This keeps target support data reviewable and extensible. Adding a target must n
 
 ```yaml
 kind: FlowTargetRegistry
-version: "3.0"
+version: "3.1"
 
 targets:
   - name: jenkins
@@ -38,6 +38,19 @@ targets:
               name: depth
               defaultValue: "0"
 ```
+
+## Execution topology profiles
+
+Target Registry `3.1` requires every target to declare a complete execution-topology profile. The profile is separate from action capabilities and projection rules. It records evidence for isolation, lifetime, persistence and propagation dimensions:
+
+- workflow, branch and retry-attempt isolation;
+- workflow lifetime and suspend/resume support;
+- ephemeral workspace and durable state persistence;
+- value, workspace, state and failure propagation.
+
+Each dimension declares `supported`, `partial`, `unsupported` or `unknown` with one explicit evidence reference. Missing, duplicate or contradictory declarations fail closed. `partial` topology remains non-executable because a degraded execution environment cannot prove safe end-to-end materialization.
+
+A target may support every requested action and still be blocked when its topology cannot preserve the required workspace, state or control-flow lifetime. Renderer layout and action ordering are not topology evidence.
 
 ## Projection rules
 

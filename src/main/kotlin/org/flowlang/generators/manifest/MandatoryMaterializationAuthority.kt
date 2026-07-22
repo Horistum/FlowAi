@@ -37,6 +37,8 @@ import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.intent.StandardCapability
+import org.flowlang.topology.ExecutionTopologyAssessment
+import org.flowlang.topology.ExecutionTopologyEvidenceStatus
 
 /**
  * Evidence issued only by the canonical materialization authority.
@@ -55,6 +57,7 @@ class TargetProjectionAuthorization internal constructor(
     val plan: ExecutionPlan,
     val compatibility: CompatibilityReport,
     val strict: Boolean,
+    val topology: ExecutionTopologyAssessment,
     val purpose: TargetProjectionAuthorizationPurpose = TargetProjectionAuthorizationPurpose.EXECUTION_CANDIDATE
 ) {
     val target: String get() = compatibility.target
@@ -108,11 +111,14 @@ class MandatoryMaterializationAuthority(
         ExecutionPlanMaterializationValidator.requireValid(plan, modules)
         ExecutionPlanContinuityValidator.requireResolved(plan)
         ExecutionPlanControlValidator.requireAuthorized(plan)
+        val targetCapability = requireNotNull(targets[target]) { "Unknown target '$target'." }
+        val topology = ExecutionPlanTopologyValidator.requireMatched(plan, targetCapability)
         val report = capabilityGate.requireProjectionAllowed(plan, target, strict)
         return TargetProjectionAuthorization(
             plan = plan,
             compatibility = report.compatibility,
             strict = strict,
+            topology = topology,
             purpose = TargetProjectionAuthorizationPurpose.EXECUTION_CANDIDATE
         )
     }
@@ -149,7 +155,17 @@ class MandatoryMaterializationAuthority(
                 message = "Control requirement '${requirement.id}' is not satisfied by known evidence."
             )
         }
-        val planningIssues = continuityIssues + controlIssues
+        val topology = ExecutionPlanTopologyValidator.assess(plan, targets[target])
+        val topologyIssues = topology.evidence.filter { it.status != ExecutionTopologyEvidenceStatus.SATISFIED }.map { evidence ->
+            CompatibilityIssue(
+                level = CompatibilityLevel.ERROR,
+                target = target,
+                nodeId = evidence.requirementId,
+                feature = "topology.${evidence.kind.registryKey}.planning",
+                message = "Execution topology requirement '${evidence.requirementId}' is ${evidence.status.name.lowercase()}."
+            )
+        }
+        val planningIssues = continuityIssues + controlIssues + topologyIssues
         val compatibility = if (planningIssues.isEmpty()) report.compatibility else report.compatibility.copy(
             status = SupportLevel.UNSUPPORTED,
             issues = (report.compatibility.issues + planningIssues).distinct(),
@@ -159,6 +175,7 @@ class MandatoryMaterializationAuthority(
             plan = plan,
             compatibility = compatibility,
             strict = false,
+            topology = topology,
             purpose = TargetProjectionAuthorizationPurpose.DIAGNOSTIC_EVIDENCE
         )
     }
@@ -220,6 +237,7 @@ internal object ExecutionPlanMaterializationValidator {
         }
         validateDependencyRelations(plan, modules, seenNodeIds, issues)
         validateControlEvidence(plan, modules, issues)
+        issues += ExecutionPlanTopologyValidator.validate(plan)
         return issues
     }
 

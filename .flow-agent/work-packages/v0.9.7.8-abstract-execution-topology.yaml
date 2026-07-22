@@ -1,0 +1,44 @@
+version: "0.9.7.8"
+name: "Abstract Execution Topology Model"
+stream: core
+status: completed
+objective: "Describe execution isolation, lifetime, persistence and propagation independently from target renderer layout."
+universalInvariant: "Executability requires matching plan and topology evidence."
+forbiddenScope:
+  - "No action-only readiness proof."
+  - "No renderer layout or target inventory as topology authority."
+  - "No ordering or continuity relation treated as a complete execution environment."
+  - "No target-specific execution syntax in Core contracts."
+implementationStatus: "implementation, topology conformance and completion metadata committed; exact final head validation required"
+implementedScope:
+  - "Canonical intent derives target-neutral topology requirements before implementation binding."
+  - "Execution topology models isolation, lifetime, persistence and propagation through one typed contract."
+  - "Flow AST and execution plans preserve topology requirements independently from target evidence."
+  - "Target Registry 3.1 requires complete topology profiles with explicit evidence references."
+  - "Materialization re-derives minimum plan topology and rejects omitted, contradictory or unsupported evidence."
+  - "Action capability, ordering and continuity alone cannot authorize executable materialization."
+  - "Test fixtures use explicit synthetic topology evidence rather than a hidden production default."
+validation:
+  implementationHead: "ba7e90cad6efe92fb929f13475fa8f3409fd3ef1"
+  flowCiRun: "29899648745"
+  flowCiNumber: "1811"
+  result: passed
+  evidence:
+    - "Flow Agent tooling and structure validation passed."
+    - "Cache-aware offline tests and conformance passed."
+    - "Clean compilation and the complete test suite passed."
+    - "Full conformance and executable reference evidence passed."
+    - "Both committed reference snapshot bundles were regenerated through the production generator."
+completionValidation:
+  completionHead: "2f1e1e92f3cd816226e4f17ec2e8ff650c155aae"
+  focusedCompletionResult: passed
+  evidence:
+    - "Completion patch integrity and application checks passed."
+    - "Topology conformance, RC conformance and version consistency passed."
+    - "Completion workflow and payload were removed from the committed branch."
+finalValidation: "required on the exact final repository head"
+completionEvidence:
+  - "Complete and contradictory topology profiles are tested."
+  - "Equivalent intent derives equivalent topology requirements across inventories and bindings."
+  - "Action capability alone cannot authorize materialization."
+  - "The complete unmodified Flow CI workflow passes compilation, tests, conformance and executable reference evidence."
