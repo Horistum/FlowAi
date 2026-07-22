@@ -1,0 +1,68 @@
+diff --git a/src/main/kotlin/org/flowlang/topology/PlanningTopologyAuthority.kt b/src/main/kotlin/org/flowlang/topology/PlanningTopologyAuthority.kt
+index 210645f..9d7f42a 100644
+--- a/src/main/kotlin/org/flowlang/topology/PlanningTopologyAuthority.kt
++++ b/src/main/kotlin/org/flowlang/topology/PlanningTopologyAuthority.kt
+@@ -63,11 +63,12 @@ object PlanningTopologyAuthority {
+         }
+     }.distinctBy(ExecutionTopologyRequirement::id).sortedBy(ExecutionTopologyRequirement::id)
+ 
+-    private fun requirement(kind: ExecutionTopologyKind, subject: String, reference: String) =
+-        ExecutionTopologyRequirement(
+-            id = "topology.${kind.registryKey}.${sanitize(subject)}",
++    private fun requirement(kind: ExecutionTopologyKind, subject: String, reference: String): ExecutionTopologyRequirement {
++        val normalizedSubject = subject.ifBlank { "unknown-${kind.registryKey}" }
++        return ExecutionTopologyRequirement(
++            id = "topology.${kind.registryKey}.${sanitize(normalizedSubject)}",
+             kind = kind,
+-            subject = subject,
++            subject = normalizedSubject,
+             source = if (reference.startsWith("plan.dependencyRelations")) {
+                 ExecutionTopologyRequirementSource.DEPENDENCY_RELATION
+             } else {
+@@ -75,6 +76,7 @@ object PlanningTopologyAuthority {
+             },
+             evidenceReference = reference
+         )
++    }
+ 
+     private fun sanitize(value: String): String = value.lowercase()
+         .replace(Regex("[^a-z0-9]+"), "-")
+diff --git a/src/test/kotlin/MandatoryMaterializationAuthorityTests.kt b/src/test/kotlin/MandatoryMaterializationAuthorityTests.kt
+index b835ec1..157728e 100644
+--- a/src/test/kotlin/MandatoryMaterializationAuthorityTests.kt
++++ b/src/test/kotlin/MandatoryMaterializationAuthorityTests.kt
+@@ -6,9 +6,9 @@ import kotlin.test.assertFalse
+ import kotlin.test.assertTrue
+ import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+ import org.flowlang.capabilities.CompatibilityReport
+-import org.flowlang.capabilities.PlannerCapabilityConstraintViolation
+ import org.flowlang.capabilities.TargetCapability
+ import org.flowlang.generators.manifest.InvalidPlanningEvidenceException
++import org.flowlang.generators.manifest.UnresolvedExecutionTopologyException
+ import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
+ import org.flowlang.generators.manifest.TargetManifest
+ import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
+@@ -80,7 +80,7 @@ class MandatoryMaterializationAuthorityTests {
+             nodes = listOf(ApprovalNode(id = "approve"))
+         )
+ 
+-        assertFailsWith<PlannerCapabilityConstraintViolation> {
++        assertFailsWith<UnresolvedExecutionTopologyException> {
+             pipeline.generate(plan, "tekton")
+         }
+ 
+diff --git a/src/test/kotlin/UniversalDependencyContinuityContractTests.kt b/src/test/kotlin/UniversalDependencyContinuityContractTests.kt
+index 20aa18d..d7dc02c 100644
+--- a/src/test/kotlin/UniversalDependencyContinuityContractTests.kt
++++ b/src/test/kotlin/UniversalDependencyContinuityContractTests.kt
+@@ -100,8 +100,9 @@ class UniversalDependencyContinuityContractTests {
+ 
+         assertEquals(SupportLevel.SUPPORTED, analyzer.analyze(plan, "jenkins").status)
+         assertEquals(SupportLevel.UNSUPPORTED, analyzer.analyze(plan, "github-actions").status)
+-        assertEquals(SupportLevel.PARTIAL, analyzer.analyze(plan, "tekton").status)
++        assertEquals(SupportLevel.UNSUPPORTED, analyzer.analyze(plan, "tekton").status)
+         assertTrue(analyzer.analyze(plan, "github-actions").issues.any { it.feature == "continuity.workspace" })
++        assertTrue(analyzer.analyze(plan, "tekton").issues.any { it.feature == "topology.workspacePropagation" })
+     }
+ 
+     @Test
