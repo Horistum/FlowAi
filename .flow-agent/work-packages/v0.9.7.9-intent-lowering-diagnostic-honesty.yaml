@@ -9,12 +9,19 @@ forbiddenScope:
   - "No accepted field or value dropped without diagnostic evidence."
   - "No malformed declaration converted into empty or default meaning."
   - "No target-specific public Flow syntax or runtime execution."
-plannedScope:
-  - "Audit parser, normalization, validation, canonical meaning, lowering and artifact projection boundaries."
-  - "Define typed lowering coverage and diagnostic provenance."
-  - "Prove equivalent source forms preserve equivalent meaning and diagnostics."
-  - "Reject malformed or unsupported accepted input before it can disappear."
-  - "Add round-trip and malformed-input conformance evidence."
+implementedScope:
+  - "The intent loader rejects unknown fields, malformed shapes, invalid booleans, empty references and duplicate config sources with stable path-aware diagnostics."
+  - "Equivalent block YAML, flow YAML, JSON and normalized map forms produce equivalent intent meaning."
+  - "Source intent metadata and typed lowering coverage evidence survive through AST and execution planning."
+  - "Declared step outputs, structured defaults, source descriptions, system purpose and explicit binding metadata are preserved."
+  - "Unknown semantic parameters, unsupported policy lowering, multiple workflow flattening and stopOnError=false fail closed instead of disappearing."
+  - "Materialization validates source-step coverage and lowering evidence before provider invocation."
+focusedValidation:
+  - "IntentLoweringDiagnosticHonestyTests passed."
+  - "CanonicalIntentMeaningTests passed."
+  - "FlowConformanceBridgeJUnitTest passed."
+  - "FlowRcConformanceTests passed."
+  - "Both reference snapshot bundles were regenerated through the production generator."
 finalValidation: "required on the exact completion metadata head"
 completionEvidence:
   - "Equivalent source forms produce equivalent canonical meaning and diagnostics."
