@@ -254,7 +254,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
         val renderedParams = mergeSystemConfig(action, ctx)
         val continuityCapabilities = (valueRelations + continuityRelations)
-            .map { it.kind.capability }
+            .mapNotNull { it.kind.capability }
 
         val outputNames = (listOfNotNull(action.result?.name) + action.declaredOutputs).distinct()
         val task = TaskNode(
