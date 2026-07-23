@@ -35,11 +35,13 @@ jobs:
           path.write_text(text.replace(old, '.map { it.normalized() }'))
           PY
           python3 scripts/apply_v0_9_7_9_3.py
+          python3 scripts/patch_v0_9_7_9_3_round2.py
 
-      - name: Restore standard workflow and remove migration helper
+      - name: Restore standard workflow and remove migration helpers
         run: |
           git show origin/main:.github/workflows/flow-agent-check.yml > .github/workflows/flow-agent-check.yml
           rm scripts/apply_v0_9_7_9_3.py
+          rm scripts/patch_v0_9_7_9_3_round2.py
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
