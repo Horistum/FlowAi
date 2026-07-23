@@ -3,7 +3,6 @@ package org.flowlang.controls
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
-import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.LoopNode
 import org.flowlang.planner.MatchPlanNode
 import org.flowlang.planner.ParallelGroupNode
@@ -16,6 +15,11 @@ import org.flowlang.planner.TryPlanNode
  * Adds controls owned by canonical module contracts and Flow source declarations.
  * Intent-owned requirements remain unchanged; module inventory can add concrete
  * obligations but cannot rewrite or remove canonical intent meaning.
+ *
+ * Approval evidence is task-scoped. An approval only protects a task when it is
+ * an actual dependency ancestor of that task. Merely placing an approval node
+ * elsewhere in the flow, or writing `safety: requiresApproval`, is a declaration
+ * of intent rather than proof that the control is reachable and enforced.
  */
 object PlanningControlAuthority {
     fun assess(
@@ -26,6 +30,8 @@ object PlanningControlAuthority {
     ): ControlAssessment {
         val requirements = canonicalRequirements.toMutableList()
         val evidence = canonicalEvidence.toMutableList()
+        val graph = ControlGraph.index(nodes)
+
         flatten(nodes).filterIsInstance<TaskNode>().forEach { task ->
             val contract = modules.findAction(task.module, task.action)?.safety ?: return@forEach
             if (contract.requiresApproval || contract.destructive) {
@@ -34,7 +40,7 @@ object PlanningControlAuthority {
                     evidence,
                     task,
                     ControlRequirementKind.APPROVAL,
-                    approvalEvidence(task, canonicalRequirements, canonicalEvidence, nodes)
+                    approvalEvidence(task, graph)
                 )
             }
             if (contract.requiresSafety) {
@@ -47,9 +53,13 @@ object PlanningControlAuthority {
                 )
             }
         }
+
+        // Do not deduplicate security obligations. A canonical-id collision is
+        // malformed evidence and ControlDecisionAuthority must reject it instead
+        // of silently discarding one requirement with distinctBy.
         return ControlDecisionAuthority.assessment(
-            requirements = requirements.distinctBy(ControlRequirement::id).sortedBy(ControlRequirement::id),
-            evidence = evidence.distinctBy(ControlEvidence::requirementId).sortedBy(ControlEvidence::requirementId)
+            requirements = requirements.sortedBy(ControlRequirement::id),
+            evidence = evidence.sortedBy(ControlEvidence::requirementId)
         )
     }
 
@@ -81,56 +91,39 @@ object PlanningControlAuthority {
 
     private fun approvalEvidence(
         task: TaskNode,
-        canonicalRequirements: List<ControlRequirement>,
-        canonicalEvidence: List<ControlEvidence>,
-        nodes: List<PlanNode>
+        graph: ControlGraph
     ): (String) -> ControlEvidence = { id ->
-        val safety = task.safety?.trim().orEmpty()
+        val ancestors = graph.ancestorsOf(task.id)
+        val unconditional = ancestors.intersect(graph.unconditionalApprovalIds)
+        val dynamic = ancestors.intersect(graph.dynamicApprovalIds)
+        val declaration = task.safety?.trim().orEmpty()
+
         when {
-            safety.startsWith("requiresApproval", ignoreCase = true) -> ControlEvidence(
+            unconditional.isNotEmpty() -> ControlEvidence(
                 requirementId = id,
                 status = ControlEvidenceStatus.SATISFIED,
-                source = ControlEvidenceSource.AST_SAFETY_DECLARATION,
-                detail = safety
+                source = ControlEvidenceSource.AUTHORED_STEP,
+                detail = "Reachable approval ancestor(s): ${unconditional.sorted().joinToString()}"
             )
-            safety.startsWith("onlyIf", ignoreCase = true) -> ControlEvidence(
+            dynamic.isNotEmpty() -> ControlEvidence(
                 requirementId = id,
                 status = ControlEvidenceStatus.DYNAMIC,
                 source = ControlEvidenceSource.DYNAMIC_CONDITION,
-                detail = safety,
-                enforcementCapabilities = listOf("condition.evaluate")
+                detail = "Approval ancestor(s) are conditionally reachable: ${dynamic.sorted().joinToString()}",
+                enforcementCapabilities = listOf("approval.manual", "condition.evaluate")
             )
-            else -> {
-                val approvalIds = canonicalRequirements
-                    .filter { it.kind == ControlRequirementKind.APPROVAL }
-                    .map(ControlRequirement::id)
-                    .toSet()
-                val canonical = canonicalEvidence.firstOrNull {
-                    it.requirementId in approvalIds && it.status in setOf(ControlEvidenceStatus.SATISFIED, ControlEvidenceStatus.DYNAMIC)
-                }
-                when {
-                    canonical != null -> canonical.copy(requirementId = id)
-                    hasConditionalApproval(nodes) -> ControlEvidence(
-                        requirementId = id,
-                        status = ControlEvidenceStatus.DYNAMIC,
-                        source = ControlEvidenceSource.DYNAMIC_CONDITION,
-                        detail = "Conditional approval node",
-                        enforcementCapabilities = listOf("approval.manual", "condition.evaluate")
-                    )
-                    flatten(nodes).any { it is ApprovalNode } -> ControlEvidence(
-                        requirementId = id,
-                        status = ControlEvidenceStatus.SATISFIED,
-                        source = ControlEvidenceSource.AUTHORED_STEP,
-                        detail = "Approval node"
-                    )
-                    else -> ControlEvidence(
-                        requirementId = id,
-                        status = ControlEvidenceStatus.UNKNOWN,
-                        source = ControlEvidenceSource.MISSING,
-                        detail = "Module contract requires approval control evidence."
-                    )
-                }
-            }
+            declaration.startsWith("requiresApproval", ignoreCase = true) -> ControlEvidence(
+                requirementId = id,
+                status = ControlEvidenceStatus.UNKNOWN,
+                source = ControlEvidenceSource.AST_SAFETY_DECLARATION,
+                detail = "'$declaration' declares an approval requirement but does not provide a reachable approval mechanism."
+            )
+            else -> ControlEvidence(
+                requirementId = id,
+                status = ControlEvidenceStatus.UNKNOWN,
+                source = ControlEvidenceSource.MISSING,
+                detail = "Module contract requires a reachable approval ancestor for task '${task.id}'."
+            )
         }
     }
 
@@ -159,26 +152,69 @@ object PlanningControlAuthority {
         }
     }
 
-    private fun hasConditionalApproval(nodes: List<PlanNode>): Boolean = nodes.any { node ->
-        when (node) {
-            is ConditionNode -> flatten(node.then + node.otherwise).any { it is ApprovalNode } ||
-                hasConditionalApproval(node.then) || hasConditionalApproval(node.otherwise)
-            is LoopNode -> hasConditionalApproval(node.body)
-            is ParallelGroupNode -> node.branches.any { hasConditionalApproval(it.steps) }
-            is MatchPlanNode -> node.cases.any { hasConditionalApproval(it.steps) } ||
-                hasConditionalApproval(node.errorCase) || hasConditionalApproval(node.defaultSteps)
-            is RetryGroupNode -> hasConditionalApproval(node.body)
-            is TryPlanNode -> hasConditionalApproval(node.body) || hasConditionalApproval(node.errorHandler)
-            else -> false
-        }
-    }
-
     private fun taskRequirementId(task: TaskNode, kind: ControlRequirementKind): String =
         "control.${kind.name.lowercase()}.task.${canonicalId(task.id)}"
 
     private fun canonicalId(value: String): String = value.trim().lowercase()
         .replace(Regex("[^a-z0-9]+"), "-")
         .trim('-')
+
+    private data class ControlGraph(
+        val dependenciesByNode: Map<String, List<String>>,
+        val unconditionalApprovalIds: Set<String>,
+        val dynamicApprovalIds: Set<String>
+    ) {
+        fun ancestorsOf(nodeId: String): Set<String> {
+            val result = linkedSetOf<String>()
+            fun visit(current: String) {
+                dependenciesByNode[current].orEmpty().forEach { dependency ->
+                    if (result.add(dependency)) visit(dependency)
+                }
+            }
+            visit(nodeId)
+            return result
+        }
+
+        companion object {
+            fun index(nodes: List<PlanNode>): ControlGraph {
+                val dependencies = linkedMapOf<String, List<String>>()
+                val unconditional = linkedSetOf<String>()
+                val dynamic = linkedSetOf<String>()
+
+                fun visit(items: List<PlanNode>, dynamicContext: Boolean) {
+                    items.forEach { node ->
+                        when (node) {
+                            is TaskNode -> dependencies[node.id] = node.dependsOn
+                            is ApprovalNode -> {
+                                dependencies[node.id] = node.dependsOn
+                                if (dynamicContext) dynamic += node.id else unconditional += node.id
+                            }
+                            is ConditionNode -> {
+                                visit(node.then, true)
+                                visit(node.otherwise, true)
+                            }
+                            is LoopNode -> visit(node.body, true)
+                            is ParallelGroupNode -> node.branches.forEach { visit(it.steps, true) }
+                            is MatchPlanNode -> {
+                                node.cases.forEach { visit(it.steps, true) }
+                                visit(node.errorCase, true)
+                                visit(node.defaultSteps, true)
+                            }
+                            is RetryGroupNode -> visit(node.body, true)
+                            is TryPlanNode -> {
+                                visit(node.body, dynamicContext)
+                                visit(node.errorHandler, true)
+                            }
+                            else -> Unit
+                        }
+                    }
+                }
+
+                visit(nodes, false)
+                return ControlGraph(dependencies, unconditional, dynamic)
+            }
+        }
+    }
 
     private fun flatten(nodes: List<PlanNode>): List<PlanNode> = nodes.flatMap { node ->
         listOf(node) + when (node) {
