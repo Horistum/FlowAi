@@ -8,6 +8,11 @@ import org.flowlang.intent.StandardCapability
  * The catalog explains the vocabulary; contracts constrain AI and scenario-pack
  * output. Normalizers and lowerers must respect these contracts before any AST,
  * plan or target syntax is generated.
+ *
+ * Free-form runtime command text is deliberately not part of the Standard Intent
+ * contract. Core is a target-neutral semantic standard, not a shell-command
+ * transport. A caller that supplies `command` must therefore fail validation
+ * until a typed semantic contract exists for the requested operation.
  */
 data class StandardCapabilityContract(
     val capability: StandardCapability,
@@ -23,9 +28,9 @@ object StandardCapabilityContracts {
     private val overrides: Map<StandardCapability, StandardCapabilityContract> = mapOf(
         StandardCapability.CHECKOUT to contract(StandardCapability.CHECKOUT, optional = listOf("url", "branch", "system", "target"), systems = listOf("git"), strategy = "module-action"),
         StandardCapability.BUILD to contract(StandardCapability.BUILD, optional = listOf("tool", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
-        StandardCapability.TEST to contract(StandardCapability.TEST, optional = listOf("suite", "command", "tool", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+        StandardCapability.TEST to contract(StandardCapability.TEST, optional = listOf("suite", "tool", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
         StandardCapability.PACKAGE to contract(StandardCapability.PACKAGE, optional = listOf("artifact", "tool", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
-        StandardCapability.RUN_COMMAND to contract(StandardCapability.RUN_COMMAND, optional = listOf("description", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+        StandardCapability.RUN_COMMAND to contract(StandardCapability.RUN_COMMAND, required = listOf("description"), optional = listOf("system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
         StandardCapability.BUILD_IMAGE to contract(StandardCapability.BUILD_IMAGE, optional = listOf("image", "path", "dockerfile", "push", "system", "target"), systems = listOf("docker"), strategy = "module-action"),
         StandardCapability.PUSH_IMAGE to contract(StandardCapability.PUSH_IMAGE, required = listOf("image"), optional = listOf("system", "target"), systems = listOf("docker"), strategy = "module-action"),
         StandardCapability.DEPLOY to contract(StandardCapability.DEPLOY, optional = listOf("system", "target", "subject", "environment", "artifact", "version", "strategy", "namespace", "image"), systems = listOf("standard"), strategy = "semantic-action"),
@@ -37,15 +42,15 @@ object StandardCapabilityContracts {
         StandardCapability.BACKUP to contract(StandardCapability.BACKUP, required = listOf("subject"), optional = listOf("retention", "destination", "system", "target")),
         StandardCapability.RESTORE to contract(StandardCapability.RESTORE, required = listOf("subject"), optional = listOf("recoveryPoint", "system", "target")),
         StandardCapability.DATA_SYNC to contract(
-        StandardCapability.DATA_SYNC,
-        required = listOf("source", "destination"),
-        optional = listOf("mode", "filters", "batches", "system", "target")
-    ),
-    StandardCapability.SYNC to contract(
-        StandardCapability.SYNC,
-        required = listOf("source", "destination"),
-        optional = listOf("mode", "filters", "batches", "system", "target")
-    ),
+            StandardCapability.DATA_SYNC,
+            required = listOf("source", "destination"),
+            optional = listOf("mode", "filters", "batches", "system", "target")
+        ),
+        StandardCapability.SYNC to contract(
+            StandardCapability.SYNC,
+            required = listOf("source", "destination"),
+            optional = listOf("mode", "filters", "batches", "system", "target")
+        ),
         StandardCapability.DATA_TRANSFORM to contract(StandardCapability.DATA_TRANSFORM, optional = listOf("mapping", "operation", "system", "target")),
         StandardCapability.TRANSFORM to contract(StandardCapability.TRANSFORM, optional = listOf("mapping", "operation", "system", "target")),
         StandardCapability.VALIDATE to contract(StandardCapability.VALIDATE, optional = listOf("operation", "schema", "target", "system")),

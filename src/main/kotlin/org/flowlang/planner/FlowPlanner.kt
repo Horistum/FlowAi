@@ -68,7 +68,6 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         )
     }
 
-
     private fun TriggerNode.toPlanTrigger(): PlanTrigger = PlanTrigger(
         id = id,
         type = triggerType,
@@ -253,10 +252,6 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         }
         ctx.dependencyRelations += orderingRelations + valueRelations + continuityRelations
 
-        // System configuration (git url/branch, REST baseUrl, k8s/helm namespace) is no longer
-        // dropped at the planning boundary. Non-secret values configured on the target system act as
-        // defaults for the action's params; explicit action params still win. Secret-valued endpoints
-        // remain symbolic for target-side secret resolution.
         val renderedParams = mergeSystemConfig(action, ctx)
         val continuityCapabilities = (valueRelations + continuityRelations)
             .mapNotNull { it.kind.capability }
@@ -276,10 +271,10 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             inputs = renderedParams,
             outputs = outputNames,
             destructive = contract?.safety?.destructive ?: false,
-            safety = action.safety?.let { it.rule + (it.condition?.let { c -> " " + ExpressionRenderer.render(c) } ?: "") },
+            safety = action.safety?.let { it.rule + (it.condition?.let { condition -> " " + ExpressionRenderer.render(condition) } ?: "") },
             params = renderedParams,
             requiredCapabilities = (
-                inferRequiredCapabilities(action, contract?.safety?.destructive ?: false) + continuityCapabilities
+                inferRequiredCapabilities(action, contract) + continuityCapabilities
             ).distinct()
         )
         ctx.registerTask(task, contract)
@@ -294,41 +289,40 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     private data class DataDependency(val sourceNodeId: String, val binding: String)
 
     /**
-     * Renders the action's params and layers in defaults from the targeted system's configuration
-     * for the keys each module consumes. Values are merged only when the action does not already
-     * provide the key, so explicit params always win. Secret-valued config (`secret("NAME")`) is
-     * kept and rendered as-is; the manifest layer materialises it through the target's secret
-     * mechanism (Jenkins credentials, GitHub secrets, Tekton secretKeyRef) rather than dropping it.
+     * Renders action parameters and layers in every schema-declared value from the
+     * targeted system configuration. Explicit action parameters always win.
+     *
+     * The system-type descriptor is the authority for which configuration belongs
+     * to the system. This removes module-name switches and preserves integrations
+     * such as Argo CD url/token without teaching Core about that product.
      */
     private fun mergeSystemConfig(action: ActionNode, ctx: Ctx): Map<String, String> {
-        val rendered = action.params.mapValues { (_, expr) -> RuntimeParamRenderer.render(expr, ctx.inputNames) }.toMutableMap()
+        val rendered = action.params.mapValues { (_, expression) ->
+            RuntimeParamRenderer.render(expression, ctx.inputNames)
+        }.toMutableMap()
         val system = action.target.path.firstOrNull()?.let { ctx.systems[it] } ?: return rendered
-        fun pull(key: String) {
-            if (key in rendered) return
-            val expr = system.config[key] ?: return
-            rendered[key] = RuntimeParamRenderer.render(expr, ctx.inputNames)
-        }
-        when (action.module) {
-            "git" -> { pull("url"); pull("branch") }
-            "rest" -> pull("baseUrl")
-            "database" -> pull("url")
-            "kubernetes", "helm" -> pull("namespace")
+        val systemContract = registry.findSystemType(system.systemType)?.second ?: return rendered
+        systemContract.input.keys.sorted().forEach { key ->
+            if (key !in rendered) {
+                system.config[key]?.let { expression ->
+                    rendered[key] = RuntimeParamRenderer.render(expression, ctx.inputNames)
+                }
+            }
         }
         return rendered
     }
 
-    private fun inferRequiredCapabilities(action: ActionNode, destructive: Boolean): List<String> = buildList {
+    private fun inferRequiredCapabilities(
+        action: ActionNode,
+        contract: ModuleActionContract?
+    ): List<String> = buildList {
         add("task.execute")
+        addAll(contract?.requiredCapabilities.orEmpty())
         if (action.module == "standard") {
             val operation = action.params["operation"]?.let(ExpressionRenderer::render)?.trim('"')
             if (!operation.isNullOrBlank()) add("standard.$operation")
         }
-        if (action.module == "git" && action.action == "checkout") add("git.checkout")
-        if (action.module == "docker" && action.action == "build") add("docker.build")
-        if (action.module == "kubernetes") add("kubernetes.api")
-        if (action.module == "docker") add("container.image")
-        if (action.module == "notify") add("notification.send")
-        if (destructive) add("safety.destructiveOperation")
+        if (contract?.safety?.destructive == true) add("safety.destructiveOperation")
     }.distinct()
 
     private fun collectDependencies(nodes: List<PlanNode>): List<String> = nodes.flatMap { node ->
@@ -377,7 +371,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     }
 
     private class Ctx(val inputNames: Set<String>, val systems: Map<String, SystemNode> = emptyMap()) {
-        val results = mutableMapOf<String, String>()   // result/binding name -> producing task id
+        val results = mutableMapOf<String, String>()
         val outputs = mutableListOf<PlanOutput>()
         val assumptions = mutableListOf<PlanAssumption>()
         val dependencyRelations = mutableListOf<PlanDependencyRelation>()
@@ -456,7 +450,6 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
         private data class ContinuityPath(val providerNodeId: String, val path: List<String>)
     }
-
 }
 
 private fun ContinuityKind.toPlanKind(): PlanDependencyKind = when (this) {

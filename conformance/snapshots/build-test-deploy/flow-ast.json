@@ -80,20 +80,19 @@
       "kind" : "APPROVAL",
       "subject" : "production-approval",
       "source" : "INTENT_POLICY",
-      "condition" : "environment == 'prod'",
-      "message" : "Production deployment requires approval."
+      "message" : "Approval is required before deployment in this reference flow."
     } ],
     "controlEvidence" : [ {
       "requirementId" : "control.approval.production-approval",
-      "status" : "DYNAMIC",
-      "source" : "DYNAMIC_CONDITION",
-      "detail" : "environment == 'prod'",
-      "enforcementCapabilities" : [ "approval.manual", "condition.evaluate" ]
+      "status" : "SATISFIED",
+      "source" : "AUTHORED_STEP",
+      "detail" : "approve-prod",
+      "enforcementCapabilities" : [ ]
     } ],
     "controlDecision" : {
-      "status" : "PENDING",
+      "status" : "ALLOWED",
       "blockingRequirementIds" : [ ],
-      "pendingRequirementIds" : [ "control.approval.production-approval" ]
+      "pendingRequirementIds" : [ ]
     },
     "topologyRequirements" : [ {
       "id" : "topology.failurePropagation.build-test-deploy",
@@ -270,47 +269,21 @@
       "declaredOutputs" : [ ],
       "dependsOn" : [ "test" ]
     }, {
-      "type" : "If",
-      "condition" : {
-        "type" : "BinaryExpression",
-        "operator" : "==",
-        "left" : {
-          "type" : "Reference",
-          "path" : [ "environment" ],
-          "safe" : false,
-          "scope" : "auto",
-          "location" : {
-            "line" : 1,
-            "column" : 1
-          }
-        },
-        "right" : {
+      "type" : "Approve",
+      "mode" : "manual",
+      "params" : {
+        "message" : {
           "type" : "StringLiteral",
-          "value" : "prod"
-        },
-        "location" : {
-          "line" : 1,
-          "column" : 13
+          "value" : "Approval is required before deployment in this reference flow."
         }
       },
-      "then" : [ {
-        "type" : "Approve",
-        "mode" : "manual",
-        "params" : {
-          "message" : {
-            "type" : "StringLiteral",
-            "value" : "Production deployment requires approval."
-          }
-        },
-        "result" : {
-          "type" : "ResultBinding",
-          "name" : "approve_prod"
-        },
-        "sourceId" : "approve-prod",
-        "declaredOutputs" : [ ],
-        "dependsOn" : [ "build_image" ]
-      } ],
-      "otherwise" : [ ]
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "approve_prod"
+      },
+      "sourceId" : "approve-prod",
+      "declaredOutputs" : [ ],
+      "dependsOn" : [ "build_image" ]
     }, {
       "type" : "Action",
       "module" : "standard",
@@ -516,8 +489,7 @@
       "policies" : [ {
         "name" : "production-approval",
         "type" : "APPROVAL",
-        "condition" : "environment == 'prod'",
-        "message" : "Production deployment requires approval."
+        "message" : "Approval is required before deployment in this reference flow."
       } ],
       "systemPurposes" : {
         "source" : "Application source repository",

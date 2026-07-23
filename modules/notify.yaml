@@ -34,6 +34,8 @@ actions:
     effects:
       network:
         - notify.send
+    requiredCapabilities:
+      - notification.send
     safety:
       destructive: false
   email:
@@ -57,5 +59,7 @@ actions:
     effects:
       network:
         - email.send
+    requiredCapabilities:
+      - notification.send
     safety:
       destructive: false

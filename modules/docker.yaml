@@ -40,6 +40,9 @@ actions:
       requires:
         - kind: workspace
           name: source
+    requiredCapabilities:
+      - docker.build
+      - container.image
     safety:
       destructive: false
     retry:
@@ -59,5 +62,7 @@ actions:
     effects:
       network:
         - docker.registry
+    requiredCapabilities:
+      - container.image
     safety:
       destructive: false

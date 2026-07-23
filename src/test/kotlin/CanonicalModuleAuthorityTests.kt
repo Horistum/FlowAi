@@ -18,7 +18,6 @@ class CanonicalModuleAuthorityTests {
         assertEquals(canonical, registry)
         assertEquals(canonical, ModuleRegistry.defaultModules().associateBy { it.name })
         assertTrue(registry.values.all { it.version.isNotBlank() && it.description.isNotBlank() })
-        assertTrue(registry.values.flatMap { it.actions.values }.all { it.targetImplications.isEmpty() })
     }
 
     @Test

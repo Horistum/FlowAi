@@ -4,7 +4,7 @@ import org.flowlang.standard.FlowStandardVersions
 
 data class CapabilityModuleContractReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
-    val moduleContractVersion: String = "1.2",
+    val moduleContractVersion: String = "1.3",
     val totals: CapabilityModuleTotals,
     val modules: List<ModuleSummary>,
     val issues: List<CapabilityModuleIssue> = emptyList()
@@ -16,8 +16,7 @@ data class CapabilityModuleTotals(
     val modules: Int,
     val systemTypes: Int,
     val actions: Int,
-    val destructiveActions: Int,
-    val targetImplicationActions: Int
+    val destructiveActions: Int
 )
 
 data class ModuleSummary(
@@ -42,7 +41,6 @@ data class ModuleActionSummary(
     val secrets: List<String> = emptyList(),
     val requiredCapabilities: List<String> = emptyList(),
     val implementedCapabilities: List<String> = emptyList(),
-    val targetImplications: Map<String, String> = emptyMap(),
     val retrySupported: Boolean = false,
     val timeoutSupported: Boolean = false
 )
@@ -59,8 +57,9 @@ data class CapabilityModuleIssue(
  * Capability module contract audit.
  *
  * Flow modules are dictionaries of capabilities and effects. They must help the
- * planner, validator and target negotiation layer reason about automation
- * semantics. They must not become plugin runtimes or renderer template owners.
+ * planner and validator reason about automation semantics. Target support and
+ * projection evidence are intentionally absent from this report because they are
+ * owned by target registries and provider catalogs, not module contracts.
  */
 object ModuleContractAnalyzer {
     fun analyze(registry: ModuleRegistry): CapabilityModuleContractReport {
@@ -90,8 +89,7 @@ object ModuleContractAnalyzer {
                 modules = modules.size,
                 systemTypes = modules.sumOf { it.systemTypes.size },
                 actions = actions.size,
-                destructiveActions = actions.count { it.safety.destructive },
-                targetImplicationActions = actions.count { it.targetImplications.isNotEmpty() }
+                destructiveActions = actions.count { it.safety.destructive }
             ),
             modules = summaries,
             issues = issues
@@ -139,7 +137,6 @@ object ModuleContractAnalyzer {
             secrets = secrets,
             requiredCapabilities = requiredCapabilities,
             implementedCapabilities = implementedCapabilities.sorted(),
-            targetImplications = targetImplications.mapValues { it.value.support },
             retrySupported = retrySupported,
             timeoutSupported = timeoutSupported
         )

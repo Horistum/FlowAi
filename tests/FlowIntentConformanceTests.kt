@@ -23,7 +23,7 @@ fun intentConformanceTests() {
                   - id: test
                     capability: TEST
                     params:
-                      command: mvn test
+                      suite: unit
         """.trimIndent())
         H.eq("intent/load/name", intent.name, "basic-build")
         H.eq("intent/load/step", intent.workflows.first().steps.first().capability, StandardCapability.TEST)
@@ -62,12 +62,12 @@ fun intentConformanceTests() {
                     capability: TEST
                     requires: [checkout]
                     params:
-                      command: mvn test
+                      suite: unit
                   - id: integration-tests
                     capability: TEST
                     requires: [checkout]
                     params:
-                      command: mvn verify
+                      suite: integration
                   - id: package
                     capability: PACKAGE
                     requires: [unit-tests, integration-tests]
@@ -247,5 +247,4 @@ fun intentConformanceTests() {
         H.ok("intent/lowering/object-to-map-literal", action.params["filters"] is org.flowlang.ast.MapLiteralNode)
         H.ok("intent/lowering/list-to-list-literal", action.params["batches"] is org.flowlang.ast.ListLiteralNode)
     }
-
 }

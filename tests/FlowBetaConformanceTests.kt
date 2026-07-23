@@ -1,6 +1,7 @@
 import org.flowlang.conformance.ConformanceRunner
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
 import org.flowlang.targets.builtin.GitHubActionsManifestRenderer
 import org.flowlang.targets.builtin.JenkinsManifestGenerator
@@ -62,8 +63,30 @@ fun rc4SemanticGeneratorRegressionTests() {
     val plan = FlowPlanner(registry).plan(ast)
 
     H.scenario {
-        val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
-        val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
+        val conditionalIntent = IntentYamlLoader.loadText("""
+            kind: FlowIntentDocument
+            name: conditional-approval-regression
+            inputs:
+              - name: environment
+                type: option[dev,prod]
+                required: true
+            workflows:
+              - name: delivery
+                kind: DEPLOY
+                steps:
+                  - id: approve
+                    capability: APPROVE
+            policies:
+              - name: production-approval
+                type: APPROVAL
+                condition: environment == 'prod'
+                message: Production approval regression.
+        """.trimIndent())
+        val conditionalValidation = IntentCapabilityValidator(registry).validate(conditionalIntent)
+        H.ok("rc4/jenkins-condition/intent-valid", conditionalValidation.valid)
+        val conditionalPlan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(conditionalIntent))
+        val manifest = BuiltInTargetProjections.pipeline(targets)
+            .generateDiagnosticEvidence(conditionalPlan, "jenkins")
         val rendered = JenkinsManifestRenderer().render(manifest)
         val conditions = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForConformance() } }
             .filter { it.type == "condition" }

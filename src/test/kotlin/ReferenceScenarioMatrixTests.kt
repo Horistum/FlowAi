@@ -6,9 +6,8 @@ import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
+import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.targets.builtin.BuiltInTargetProjections
-import org.flowlang.generators.manifest.TargetRenderMode
-import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -89,30 +88,39 @@ class ReferenceScenarioMatrixTests {
     fun targetOutcomesAreDerivedFromConcreteEvidenceWithoutBlockedManifestGeneration() {
         ReferenceScenarioMatrix.positiveScenarios().forEach { scenario ->
             val plan = planner.plan(parser.parse(scenario.source))
+            val coreBlocked = plan.controlDecision.status != ControlDecisionStatus.ALLOWED
             ReferenceAdapterProjectionMatrix.supportedTargets.sorted().forEach { target ->
                 val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
-                val expectation = if (compatibility.hasErrors) {
-                    ReferenceAdapterProjectionMatrix.evaluate(
+                val expectation = when {
+                    coreBlocked -> ReferenceAdapterProjectionMatrix.evaluate(
+                        scenario = scenario,
+                        target = target,
+                        coreBlocked = true,
+                        compatibility = compatibility,
+                        manifest = null
+                    )
+                    compatibility.hasErrors -> ReferenceAdapterProjectionMatrix.evaluate(
                         scenario = scenario,
                         target = target,
                         coreBlocked = false,
                         compatibility = compatibility,
                         manifest = null
                     )
-                } else {
-                    val manifest = BuiltInTargetProjections.pipeline(targets).generate(plan, target)
-                    ReferenceAdapterProjectionMatrix.evaluate(
-                        scenario = scenario,
-                        target = target,
-                        coreBlocked = false,
-                        compatibility = compatibility,
-                        manifest = manifest
-                    )
+                    else -> {
+                        val manifest = BuiltInTargetProjections.pipeline(targets).generate(plan, target)
+                        ReferenceAdapterProjectionMatrix.evaluate(
+                            scenario = scenario,
+                            target = target,
+                            coreBlocked = false,
+                            compatibility = compatibility,
+                            manifest = manifest
+                        )
+                    }
                 }
 
                 assertTrue(expectation.rationale.isNotBlank())
                 assertEquals(expectation.outcome == ReferenceAdapterProjectionOutcome.EXECUTABLE, expectation.executable)
-                if (compatibility.hasErrors) {
+                if (coreBlocked || compatibility.hasErrors) {
                     assertEquals(ReferenceAdapterProjectionOutcome.FAIL_FAST, expectation.outcome)
                 }
             }
@@ -130,6 +138,7 @@ class ReferenceScenarioMatrixTests {
         val safetyIssues = safety.validate(ast)
         assertTrue(safetyIssues.none { it.level == "error" }, safetyIssues.toString())
         val plan = planner.plan(ast)
+        assertEquals(ControlDecisionStatus.ALLOWED, plan.controlDecision.status)
         val outcomes = ReferenceAdapterProjectionMatrix.supportedTargets.associateWith { target ->
             val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
             if (compatibility.hasErrors) {

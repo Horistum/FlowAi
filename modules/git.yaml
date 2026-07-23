@@ -37,6 +37,8 @@ actions:
       provides:
         - kind: workspace
           name: source
+    requiredCapabilities:
+      - git.checkout
     safety:
       destructive: false
     retry:

@@ -27,8 +27,7 @@
         "modules",
         "systemTypes",
         "actions",
-        "destructiveActions",
-        "targetImplicationActions"
+        "destructiveActions"
       ],
       "properties": {
         "modules": {
@@ -41,9 +40,6 @@
           "type": "integer"
         },
         "destructiveActions": {
-          "type": "integer"
-        },
-        "targetImplicationActions": {
           "type": "integer"
         }
       },
@@ -94,7 +90,6 @@
                 "secrets",
                 "requiredCapabilities",
                 "implementedCapabilities",
-                "targetImplications",
                 "retrySupported",
                 "timeoutSupported"
               ],
@@ -141,12 +136,6 @@
                 "requiredCapabilities": {
                   "type": "array",
                   "items": {
-                    "type": "string"
-                  }
-                },
-                "targetImplications": {
-                  "type": "object",
-                  "additionalProperties": {
                     "type": "string"
                   }
                 },
