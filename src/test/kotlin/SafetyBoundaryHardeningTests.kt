@@ -26,9 +26,10 @@ class SafetyBoundaryHardeningTests {
     }
 
     @Test
-    fun unknownEnvironmentDoesNotBecomeSensitiveByNameGuessing() {
+    fun unknownEnvironmentFailsClosedWithoutBeingGuessedAsSensitive() {
         val issues = strictValidator().validate(parse(customEnvironmentDeployFlow()))
 
+        assertTrue(issues.any { it.code == "ENVIRONMENT_CLASSIFICATION_UNKNOWN" }, issues.toString())
         assertTrue(issues.none { it.code == "ENVIRONMENT_APPROVAL_REQUIRED" }, issues.toString())
     }
 
@@ -111,7 +112,7 @@ class SafetyBoundaryHardeningTests {
           steps {
             kubernetes.deploy k8s {
               app: "demo"
-              namespace: "customer-a"
+              environment: "customer-a"
               image: "demo:1"
             }
           }

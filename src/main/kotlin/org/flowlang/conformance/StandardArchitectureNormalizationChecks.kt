@@ -28,6 +28,7 @@ import org.flowlang.intent.StandardCapability
 import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
+import org.flowlang.parser.FlowParser
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.StandardIntentCatalog
 import org.flowlang.topology.ExecutionTopologyDecisionStatus
@@ -56,6 +57,7 @@ internal class StandardArchitectureNormalizationChecks(
         checkUniversalControlPolicyRequirements(),
         checkAbstractExecutionTopologyModel(),
         checkIntentLoweringDiagnosticHonesty(),
+        checkEnvironmentSafetyProductionIntegration(),
         checkIntentDesignReport(),
         checkCorePackagesDoNotImportJackson(),
         checkModulesDoNotOwnTargetRendering(),
@@ -337,6 +339,56 @@ internal class StandardArchitectureNormalizationChecks(
             "Unknown semantic input was accepted even though canonical lowering would discard it."
         }
     }
+
+    private fun checkEnvironmentSafetyProductionIntegration(): ConformanceCheck =
+        runCheck("flow.environment-safety.production-integration") {
+            fun flow(namespace: String, approval: Boolean = false, input: Boolean = false): org.flowlang.ast.FlowDocument {
+                val inputBlock = if (input) "input { environment: text required }" else ""
+                val approvalLine = if (approval) "safety: requiresApproval" else ""
+                return FlowParser().parse(
+                    """
+                    version "1.0"
+                    use module "kubernetes" version "1.0"
+                    flow "environment safety" {
+                      $inputBlock
+                      systems { system "k8s" { type: kubernetes } }
+                      steps {
+                        kubernetes.deploy k8s {
+                          app: "demo"
+                          namespace: $namespace
+                          image: "demo:1"
+                          $approvalLine
+                        }
+                      }
+                    }
+                    """.trimIndent()
+                )
+            }
+
+            val dynamic = FlowValidator(registry).validate(flow("environment", input = true))
+            require(!dynamic.valid && dynamic.issues.any { it.code == "ENVIRONMENT_CLASSIFICATION_UNKNOWN" }) {
+                "Runtime environment reference was not blocked by the production Flow validator."
+            }
+            require(dynamic.issues.single { it.code == "ENVIRONMENT_CLASSIFICATION_UNKNOWN" }
+                .message.contains("runtime reference 'environment'")) {
+                "Reference environment evidence was reinterpreted as a literal."
+            }
+
+            val sensitive = FlowValidator(registry).validate(flow("\"prod\""))
+            require(!sensitive.valid && sensitive.issues.any { it.code == "ENVIRONMENT_APPROVAL_REQUIRED" }) {
+                "Sensitive environment mutation was not approval-gated."
+            }
+
+            val approved = FlowValidator(registry).validate(flow("\"prod\"", approval = true))
+            require(approved.issues.none { it.code.startsWith("ENVIRONMENT_") }) {
+                "Unconditional approval did not satisfy sensitive environment policy: ${approved.issues}."
+            }
+
+            val engineering = FlowValidator(registry).validate(flow("\"dev\""))
+            require(engineering.issues.none { it.code.startsWith("ENVIRONMENT_") }) {
+                "Known non-sensitive environment was blocked: ${engineering.issues}."
+            }
+        }
 
     private fun checkIntentDesignReport(): ConformanceCheck = runCheck("intent.design-report") {
         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))

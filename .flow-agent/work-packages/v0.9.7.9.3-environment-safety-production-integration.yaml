@@ -1,0 +1,34 @@
+
+version: "0.9.7.9.3"
+name: "Environment Safety Production Integration"
+stream: core
+status: validation-pending
+objective: "Make notes-backed environment safety a fail-closed production validation gate before planning and projection."
+scopeBoundary:
+  - "Keep environment classification target-neutral and notes-backed."
+  - "Do not add runtime environment lookup or infer target aliases."
+  - "Treat references as dynamic evidence, never as literal environment values."
+  - "Require the same safety gate in direct Flow, Intent lowering, normalization lowering and reference generation."
+universalInvariants:
+  - "Only policy-recognized parameter names are environment evidence."
+  - "Sensitive evidence requires reachable approval; destructive non-sensitive work may instead use an exhaustively proven finite environment guard."
+  - "Unknown literal, reference and dynamic expression evidence blocks planning unless reachable approval conservatively guards the environment boundary."
+  - "Non-sensitive status requires explicit policy evidence."
+  - "CLI lowering cannot invoke FlowPlanner after an invalid Flow validation report."
+implementedSlices:
+  - id: typed-environment-evidence
+  - id: fail-closed-unknown-classification
+  - id: reference-preservation
+  - id: flow-validator-production-wiring
+  - id: cli-pre-planning-gate
+  - id: diagnostic-catalog-registration
+  - id: conformance-and-adversarial-tests
+validation:
+  required:
+    - "Flow agent tooling tests"
+    - "Repository structure validation"
+    - "Clean Gradle compilation and complete test suite"
+    - "Standalone Flow conformance"
+followUpWorkItem:
+  version: "0.9.7.9.4"
+  name: "Scenario Negation and Token Boundary Honesty"
