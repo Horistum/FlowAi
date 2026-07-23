@@ -42,7 +42,7 @@ jobs:
             echo "54d2f76c84adde304d7dd576e150ae94061881249a3159822f987a0847c2a542  .flow-agent/tmp/v0979-implementation-04.b64" | sha256sum --check
             echo "d8b0d5e3804fa24ec2763872d7e647f3386f87b519598b64c11241dddc921705  .flow-agent/tmp/v0979-implementation-05.b64" | sha256sum --check
             echo "bdb7b0381011331e8c970173f977f5447bdc962ea3218a2995df2135e85ddc3d  .flow-agent/tmp/v0979-repair-06.patch" | sha256sum --check
-            echo "cd1beff551ea718e3a1b92271395b5fa0f35f81e1a3f11435fcd4c75d49d170b  .flow-agent/tmp/v0979-repair-07.patch" | sha256sum --check
+            echo "7e32ef12f61c0823e0939dab3c1cae2f31c8d4f5a919f2511f3a1be10bc8c235  .flow-agent/tmp/v0979-repair-07.patch" | sha256sum --check
             cat .flow-agent/tmp/v0979-implementation-*.b64 > /tmp/v0979-implementation.patch.gz.b64
             echo "e035e8d65603ca148de927db9e60af174b0673983e993c5ecad3312625c8e377  /tmp/v0979-implementation.patch.gz.b64" | sha256sum --check
             base64 --decode /tmp/v0979-implementation.patch.gz.b64 > /tmp/v0979-implementation.patch.gz
