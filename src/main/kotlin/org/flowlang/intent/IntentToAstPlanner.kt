@@ -6,6 +6,7 @@ import org.flowlang.ast.*
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.ExpressionParser
 import org.flowlang.lowering.IntentLoweringAuthority
+import org.flowlang.lowering.IntentValueExpressionLowering
 
 /**
  * Lowers the high-level Standard Intent Model into canonical Flow AST.
@@ -54,7 +55,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 createdBy = "intent-to-ast-planner",
                 generatedByAI = false,
                 sourceIntent = IntentLoweringAuthority.sourceMetadata(intent),
-                loweringReport = IntentLoweringAuthority.report(intent)
+                loweringReport = null
             )
         )
     }
@@ -74,11 +75,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     }
 
     private fun IntentSystem.toSystemNode(): SystemNode {
-        val normalizedType = when (type) {
-            "dockerRegistry", "containerRegistry" -> "docker"
-            "notification", "email" -> "notify"
-            else -> type
-        }
+        val normalizedType = IntentLoweringAuthority.canonicalSystemType(type)
         return SystemNode(
             name = name,
             systemType = normalizedType,
@@ -192,7 +189,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 step = step,
                 operation = semanticOperation(step.capability),
                 intent = intent,
-                dropBlockedParams = step.capability in blockedRuntimeCapabilities,
                 semanticEffects = semanticEffects
             )
         }
@@ -274,7 +270,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         step: IntentStep,
         operation: String,
         intent: IntentDocument,
-        dropBlockedParams: Boolean = false,
         semanticEffects: List<SemanticEffect> = CanonicalIntentEffectAuthority.effectsFor(step.capability)
     ): ActionNode {
         val params = linkedMapOf<String, ExpressionNode>(
@@ -284,11 +279,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             "flow" to StringLiteralNode(value = intent.name)
         )
         CanonicalIntentMeaningAuthority.semanticParameters(step)
-            .filterKeys { key -> !dropBlockedParams || key !in blockedParamNames }
             .forEach { (key, value) -> params[key] = value.toExpression() }
-        if (dropBlockedParams && step.params.keys.any { it in blockedParamNames }) {
-            params["projection"] = StringLiteralNode(value = "notes-driven-materialization-required")
-        }
         return ActionNode(
             module = "standard", action = if (operation == "rollback") "rollback" else "execute", target = ref("standard"),
             params = params,
@@ -371,17 +362,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     private fun ref(name: String) = ReferenceNode(path = listOf(name))
     private fun paramText(step: IntentStep, key: String): String? = step.params[key].asTextOrNull()
 
-    private fun IntentValue.toExpression(): ExpressionNode = when (this) {
-        is IntentString -> stringToExpression(value)
-        is IntentNumber -> NumberLiteralNode(value = value, isInteger = isInteger)
-        is IntentBoolean -> BooleanLiteralNode(value = value)
-        is IntentNull -> NullLiteralNode()
-        is IntentSecretRef -> SecretRefNode(name = name)
-        is IntentRef -> ReferenceNode(path = path)
-        is IntentExpression -> parseCondition(source)
-        is IntentList -> ListLiteralNode(items = items.map { it.toExpression() })
-        is IntentObject -> MapLiteralNode(entries = fields.mapValues { it.value.toExpression() })
-    }
+    private fun IntentValue.toExpression(): ExpressionNode = IntentValueExpressionLowering.lower(this)
 
     private fun Any.toExpressionNode(): ExpressionNode = when (this) {
         is String -> StringLiteralNode(value = this)
@@ -395,34 +376,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     }
 
 
-    private fun stringToExpression(value: String): ExpressionNode {
-        val interpolationStart = "\${"
-        if (!value.contains(interpolationStart)) return StringLiteralNode(value = value)
-        val parts = mutableListOf<ExpressionNode>()
-        var pos = 0
-        val regex = Regex(Regex.escape(interpolationStart) + "([^}]+)}")
-        regex.findAll(value).forEach { match ->
-            if (match.range.first > pos) parts += StringLiteralNode(value = value.substring(pos, match.range.first))
-            val exprSource = match.groupValues[1].trim()
-            parts += parseCondition(exprSource)
-            pos = match.range.last + 1
-        }
-        if (pos < value.length) parts += StringLiteralNode(value = value.substring(pos))
-        return if (parts.size == 1) parts.single() else TemplateStringNode(parts = parts)
-    }
-
     private fun approvalPolicy(intent: IntentDocument): IntentPolicy? = intent.policies.firstOrNull { it.type == IntentPolicyType.APPROVAL }
     private fun approvalMessage(intent: IntentDocument): String = approvalPolicy(intent)?.message ?: "Approval required for ${intent.name}"
     private fun approvalCondition(intent: IntentDocument): ExpressionNode? = approvalPolicy(intent)?.condition?.let { parseCondition(it) }
     private fun parseCondition(raw: String): ExpressionNode = ExpressionParser.parseSource(raw)
 
-    companion object {
-        private val blockedParamNames = setOf("command")
-        private val blockedRuntimeCapabilities = setOf(
-            StandardCapability.BUILD,
-            StandardCapability.TEST,
-            StandardCapability.PACKAGE,
-            StandardCapability.RUN_COMMAND
-        )
-    }
 }
