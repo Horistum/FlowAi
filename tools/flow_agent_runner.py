@@ -35,7 +35,26 @@ def assemble_pending_v09794_sources() -> None:
     if not ASSEMBLY_SCRIPT.exists():
         return
 
-    subprocess.run([sys.executable, str(ASSEMBLY_SCRIPT)], cwd=ROOT, check=True)
+    completed = subprocess.run(
+        [sys.executable, str(ASSEMBLY_SCRIPT)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.stdout:
+        print(completed.stdout, end="")
+    if completed.stderr:
+        print(completed.stderr, end="", file=sys.stderr)
+    if completed.returncode != 0:
+        log_dir = ROOT / "ci-logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        (log_dir / "v09794-assembly-subprocess.log").write_text(
+            "STDOUT:\n" + completed.stdout + "\nSTDERR:\n" + completed.stderr,
+            encoding="utf-8",
+        )
+        raise RuntimeError(f"v0.9.7.9.4 guarded assembly failed with exit code {completed.returncode}")
+
     payload = {
         relative: base64.b64encode((ROOT / relative).read_bytes()).decode("ascii")
         for relative in ASSEMBLED_SOURCE_PATHS
