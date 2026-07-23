@@ -12,6 +12,7 @@ import org.flowlang.modules.ContinuityKind
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.topology.PlanningTopologyAuthority
+import org.flowlang.lowering.IntentLoweringAuthority
 
 /**
  * Converts validated Flow AST into a platform-neutral ExecutionPlan.
@@ -40,7 +41,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             nodes = allNodes,
             modules = registry
         )
-        return ExecutionPlan(
+        val basePlan = ExecutionPlan(
             flowName = document.flow.name,
             inputs = document.flow.input.map { it.toPlanInput() },
             triggers = document.flow.triggers.map { it.toPlanTrigger() },
@@ -52,7 +53,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                     PlanningControlAuthority.requiredEnforcementCapabilities(controlAssessment)
                 ).distinct(),
             sourceIntent = document.metadata.sourceIntent,
-            loweringReport = document.metadata.loweringReport,
+            loweringReport = null,
             assumptions = ctx.assumptions.toList(),
             controlRequirements = controlAssessment.requirements,
             controlEvidence = controlAssessment.evidence,
@@ -66,6 +67,11 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             nodes = allNodes,
             dependencyRelations = dependencyRelations
         )
+        return if (basePlan.sourceIntent == null) {
+            basePlan
+        } else {
+            basePlan.copy(loweringReport = IntentLoweringAuthority.report(basePlan))
+        }
     }
 
     private fun TriggerNode.toPlanTrigger(): PlanTrigger = PlanTrigger(

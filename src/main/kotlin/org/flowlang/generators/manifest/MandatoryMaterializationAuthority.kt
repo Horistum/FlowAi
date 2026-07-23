@@ -36,6 +36,9 @@ import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.lowering.IntentLoweringAuthority
+import org.flowlang.lowering.IntentLoweringDisposition
+import org.flowlang.lowering.IntentLoweringReport
 import org.flowlang.intent.StandardCapability
 import org.flowlang.topology.ExecutionTopologyAssessment
 import org.flowlang.topology.ExecutionTopologyEvidenceStatus
@@ -261,16 +264,82 @@ internal object ExecutionPlanMaterializationValidator {
             issues += issue(
                 "planning.lowering.report.missing",
                 "loweringReport",
-                "Intent-derived execution plan must preserve lowering coverage evidence."
+                "Intent-derived execution plan must preserve artifact-derived lowering evidence."
             )
             return
         }
-        if (report.contractVersion != "1.0") {
+        if (report.contractVersion != IntentLoweringReport.CONTRACT_VERSION) {
             issues += issue(
                 "planning.lowering.version.unsupported",
                 "loweringReport.contractVersion",
-                "Unsupported lowering coverage contract '${report.contractVersion}'."
+                "Unsupported lowering evidence contract '${report.contractVersion}'."
             )
+        }
+        if (report.artifactKind != IntentLoweringReport.ARTIFACT_KIND) {
+            issues += issue(
+                "planning.lowering.artifact-kind.invalid",
+                "loweringReport.artifactKind",
+                "Lowering evidence must certify '${IntentLoweringReport.ARTIFACT_KIND}', found '${report.artifactKind}'."
+            )
+        }
+        if (!report.evidenceDigest.matches(Regex("[0-9a-f]{64}"))) {
+            issues += issue(
+                "planning.lowering.artifact-digest.invalid",
+                "loweringReport.evidenceDigest",
+                "Lowering evidence must declare a lowercase SHA-256 artifact digest."
+            )
+        }
+        if (sourceIntent.fields.isEmpty()) {
+            issues += issue(
+                "planning.lowering.source-catalog.empty",
+                "sourceIntent.fields",
+                "Intent-derived execution plans require a non-empty stable source field catalog."
+            )
+        }
+        sourceIntent.fields.groupBy { it.identity }.filterValues { it.size > 1 }.keys.forEach { identity ->
+            issues += issue(
+                "planning.lowering.source-identity.duplicate",
+                "sourceIntent.fields.$identity",
+                "Stable source identity '$identity' is declared more than once."
+            )
+        }
+        sourceIntent.fields.groupBy { it.targetIdentity }.filterValues { it.size > 1 }.keys.forEach { identity ->
+            issues += issue(
+                "planning.lowering.target-identity.duplicate",
+                "sourceIntent.fields.$identity",
+                "Stable target identity '$identity' is claimed by more than one source field."
+            )
+        }
+        sourceIntent.fields.forEachIndexed { index, field ->
+            if (field.identity.isBlank() || field.sourcePath.isBlank() || field.targetIdentity.isBlank() || field.valueKind.isBlank()) {
+                issues += issue(
+                    "planning.lowering.source-field.malformed",
+                    "sourceIntent.fields[$index]",
+                    "Source field evidence must declare non-blank stable identities, source path and value kind."
+                )
+            }
+            if (!field.sourceDigest.matches(Regex("[0-9a-f]{64}")) ||
+                !field.expectedTargetDigest.matches(Regex("[0-9a-f]{64}"))) {
+                issues += issue(
+                    "planning.lowering.source-field.digest.invalid",
+                    "sourceIntent.fields[$index]",
+                    "Source and expected target digests must be lowercase SHA-256 values."
+                )
+            }
+            if (field.disposition == IntentLoweringDisposition.PRESERVED && field.transform != null) {
+                issues += issue(
+                    "planning.lowering.preserved-transform.invalid",
+                    "sourceIntent.fields[$index]",
+                    "PRESERVED source fields must not declare a transform."
+                )
+            }
+            if (field.disposition == IntentLoweringDisposition.TRANSFORMED && field.transform.isNullOrBlank()) {
+                issues += issue(
+                    "planning.lowering.transform.missing",
+                    "sourceIntent.fields[$index]",
+                    "TRANSFORMED source fields must declare the applied transform."
+                )
+            }
         }
         if (report.evidence.isEmpty()) {
             issues += issue(
@@ -279,21 +348,72 @@ internal object ExecutionPlanMaterializationValidator {
                 "Intent-derived execution plan must not claim empty lowering coverage."
             )
         }
-        report.evidence.groupBy { it.sourcePath }.filterValues { it.size > 1 }.keys.forEach { sourcePath ->
+        report.evidence.groupBy { it.sourceIdentity }.filterValues { it.size > 1 }.keys.forEach { identity ->
             issues += issue(
                 "planning.lowering.evidence.duplicate",
-                "loweringReport.evidence.$sourcePath",
-                "Source path '$sourcePath' has more than one lowering disposition."
+                "loweringReport.evidence.$identity",
+                "Stable source identity '$identity' has more than one lowering disposition."
+            )
+        }
+        report.evidence.groupBy { it.targetIdentity }.filterValues { it.size > 1 }.keys.forEach { identity ->
+            issues += issue(
+                "planning.lowering.evidence.target-duplicate",
+                "loweringReport.evidence.$identity",
+                "Stable target identity '$identity' is certified more than once."
             )
         }
         report.evidence.forEachIndexed { index, evidence ->
-            if (evidence.sourcePath.isBlank() || evidence.targetPath.isBlank() || evidence.valueKind.isBlank()) {
+            if (evidence.sourceIdentity.isBlank() || evidence.sourcePath.isBlank() ||
+                evidence.targetIdentity.isBlank() || evidence.valueKind.isBlank()) {
                 issues += issue(
                     "planning.lowering.evidence.malformed",
                     "loweringReport.evidence[$index]",
-                    "Lowering evidence must declare non-blank source path, target path and value kind."
+                    "Lowering evidence must declare non-blank stable source and target identities, source path and value kind."
                 )
             }
+            if (!evidence.sourceDigest.matches(Regex("[0-9a-f]{64}")) ||
+                !evidence.targetDigest.matches(Regex("[0-9a-f]{64}"))) {
+                issues += issue(
+                    "planning.lowering.evidence.digest.invalid",
+                    "loweringReport.evidence[$index]",
+                    "Lowering evidence digests must be lowercase SHA-256 values."
+                )
+            }
+        }
+
+        val expectedFields = sourceIntent.fields.map { it.identity }.toSet()
+        val actualFields = report.evidence.map { it.sourceIdentity }.toSet()
+        (expectedFields - actualFields).forEach { identity ->
+            issues += issue(
+                "planning.lowering.evidence.missing",
+                "loweringReport.evidence",
+                "Accepted source field '$identity' has no artifact-derived lowering evidence."
+            )
+        }
+        (actualFields - expectedFields).forEach { identity ->
+            issues += issue(
+                "planning.lowering.evidence.orphaned",
+                "loweringReport.evidence.$identity",
+                "Lowering report certifies source field '$identity' outside the source catalog."
+            )
+        }
+
+        val derivedReport = runCatching {
+            IntentLoweringAuthority.report(plan.copy(loweringReport = null))
+        }.getOrElse { failure ->
+            issues += issue(
+                "planning.lowering.target-value.mismatch",
+                "loweringReport",
+                failure.message ?: "Lowering evidence does not resolve against concrete execution-plan values."
+            )
+            null
+        }
+        if (derivedReport != null && report != derivedReport) {
+            issues += issue(
+                "planning.lowering.report.stale-or-forged",
+                "loweringReport",
+                "Lowering report does not equal evidence re-derived from the concrete execution plan."
+            )
         }
 
         val expectedSourceIds = sourceIntent.workflows.flatMap { it.stepIds }.toSet()

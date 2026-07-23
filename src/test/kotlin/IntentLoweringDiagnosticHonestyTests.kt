@@ -4,6 +4,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 import org.flowlang.adapters.yaml.IntentYamlLoader
@@ -22,7 +23,9 @@ import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.intent.IntentWorkflow
 import org.flowlang.intent.IntentWorkflowKind
 import org.flowlang.intent.StandardCapability
+import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.lowering.IntentLoweringDisposition
+import org.flowlang.lowering.IntentLoweringReport
 import org.flowlang.planner.FlowPlanner
 
 class IntentLoweringDiagnosticHonestyTests {
@@ -31,7 +34,10 @@ class IntentLoweringDiagnosticHonestyTests {
         val block = IntentYamlLoader.loadText(BLOCK_INTENT, "block.yaml")
         val flow = IntentYamlLoader.loadText(FLOW_INTENT, "flow.yaml")
         val json = IntentYamlLoader.loadText(JSON_INTENT, "intent.json")
-        val normalized = IntentYamlLoader.normalize(Json.mapper.readValue(JSON_INTENT, Map::class.java) as Map<String, Any?>, "normalized-map")
+        val normalized = IntentYamlLoader.normalize(
+            Json.mapper.readValue(JSON_INTENT, Map::class.java) as Map<String, Any?>,
+            "normalized-map"
+        )
 
         assertEquals(block, flow)
         assertEquals(block, json)
@@ -44,10 +50,16 @@ class IntentLoweringDiagnosticHonestyTests {
         val ast = IntentToAstPlanner().plan(intent)
         val plan = FlowPlanner().plan(ast)
         val action = assertIs<ActionNode>(ast.flow.steps.single())
+        val report = assertNotNull(plan.loweringReport)
 
         assertEquals("Preserve all accepted data", ast.metadata.sourceIntent?.description)
         assertEquals("CUSTOM", ast.metadata.sourceIntent?.workflows?.single()?.kind)
-        assertTrue(ast.metadata.loweringReport?.evidence.orEmpty().all { it.disposition in IntentLoweringDisposition.values() })
+        assertNull(ast.metadata.loweringReport, "AST metadata must not claim evidence for a plan that does not exist yet.")
+        assertEquals(IntentLoweringReport.CONTRACT_VERSION, report.contractVersion)
+        assertEquals(IntentLoweringReport.ARTIFACT_KIND, report.artifactKind)
+        assertTrue(report.evidence.all { it.disposition in IntentLoweringDisposition.values() })
+        assertTrue(report.evidence.all { it.sourceIdentity.isNotBlank() && it.targetIdentity.isNotBlank() })
+        assertEquals(report, IntentLoweringAuthority.report(plan.copy(loweringReport = null)))
         assertContains(action.declaredOutputs, "artifact")
         assertContains(action.params.keys, "structured")
         assertContains(action.params.keys, "reference")
@@ -55,30 +67,39 @@ class IntentLoweringDiagnosticHonestyTests {
         assertEquals("build-result", plan.tasks.single().sourceId)
         assertNotNull(plan.inputs.single().defaultExpression)
         assertEquals(ast.metadata.sourceIntent, plan.sourceIntent)
-        assertEquals(ast.metadata.loweringReport, plan.loweringReport)
     }
 
     @Test
     fun explicitBindingMetadataIsPreservedSeparatelyFromSemanticParams() {
         val intent = IntentDocument(
             name = "bound-checkout",
-            systems = listOf(IntentSystem("repo", "git", config = mapOf("url" to IntentString("https://example.invalid/repo.git")))),
-            workflows = listOf(IntentWorkflow(
-                "main",
-                IntentWorkflowKind.BUILD,
-                listOf(IntentStep(
-                    id = "checkout",
-                    capability = StandardCapability.CHECKOUT,
-                    uses = "git.checkout",
-                    produces = listOf("workspace"),
-                    params = mapOf(
-                        "system" to IntentString("repo"),
-                        "tool" to IntentString("git"),
-                        "engine" to IntentString("native"),
-                        "branch" to IntentString("main")
+            systems = listOf(
+                IntentSystem(
+                    "repo",
+                    "git",
+                    config = mapOf("url" to IntentString("https://example.invalid/repo.git"))
+                )
+            ),
+            workflows = listOf(
+                IntentWorkflow(
+                    "main",
+                    IntentWorkflowKind.BUILD,
+                    listOf(
+                        IntentStep(
+                            id = "checkout",
+                            capability = StandardCapability.CHECKOUT,
+                            uses = "git.checkout",
+                            produces = listOf("workspace"),
+                            params = mapOf(
+                                "system" to IntentString("repo"),
+                                "tool" to IntentString("git"),
+                                "engine" to IntentString("native"),
+                                "branch" to IntentString("main")
+                            )
+                        )
                     )
-                ))
-            ))
+                )
+            )
         )
         val ast = IntentToAstPlanner().plan(intent)
         val plan = FlowPlanner().plan(ast)
@@ -87,6 +108,10 @@ class IntentLoweringDiagnosticHonestyTests {
         assertEquals(setOf("system", "tool", "engine"), action.bindingMetadata.keys)
         assertEquals(setOf("system", "tool", "engine"), plan.tasks.single().bindingMetadata.keys)
         assertContains(plan.tasks.single().outputs, "workspace")
+        assertTrue(assertNotNull(plan.loweringReport).evidence.any {
+            it.sourceIdentity == "step/checkout/param/system" &&
+                it.targetIdentity == "plan/node/source/checkout/binding-metadata/system"
+        })
     }
 
     @Test
@@ -118,7 +143,9 @@ class IntentLoweringDiagnosticHonestyTests {
     fun unsupportedMeaningIsRejectedInsteadOfDiscarded() {
         fun report(intent: IntentDocument) = IntentCapabilityValidator().validate(intent)
 
-        val unknownParam = report(singleStep(IntentStep("test", StandardCapability.TEST, params = mapOf("mystery" to IntentString("lost")))))
+        val unknownParam = report(
+            singleStep(IntentStep("test", StandardCapability.TEST, params = mapOf("mystery" to IntentString("lost"))))
+        )
         assertFalse(unknownParam.valid)
         assertContains(unknownParam.issues.map { it.code }, "UNKNOWN_STEP_PARAM")
 

@@ -834,8 +834,10 @@
       "required": [
         "workflows",
         "policies",
+        "systems",
         "systemPurposes",
-        "failure"
+        "failure",
+        "fields"
       ],
       "properties": {
         "description": {
@@ -864,6 +866,18 @@
         },
         "failure": {
           "$ref": "#/$defs/intentFailureMetadata"
+        },
+        "systems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/intentSystemMetadata"
+          }
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/intentSourceField"
+          }
         }
       },
       "additionalProperties": false
@@ -871,17 +885,26 @@
     "intentLoweringEvidence": {
       "type": "object",
       "required": [
+        "sourceIdentity",
         "sourcePath",
-        "targetPath",
+        "targetIdentity",
         "disposition",
-        "valueKind"
+        "valueKind",
+        "sourceDigest",
+        "targetDigest"
       ],
       "properties": {
-        "sourcePath": {
-          "type": "string"
+        "sourceIdentity": {
+          "type": "string",
+          "minLength": 1
         },
-        "targetPath": {
-          "type": "string"
+        "sourcePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetIdentity": {
+          "type": "string",
+          "minLength": 1
         },
         "disposition": {
           "enum": [
@@ -890,9 +913,18 @@
           ]
         },
         "valueKind": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
-        "note": {
+        "sourceDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "targetDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "transform": {
           "type": [
             "string",
             "null"
@@ -905,17 +937,110 @@
       "type": "object",
       "required": [
         "contractVersion",
+        "artifactKind",
+        "evidenceDigest",
         "evidence"
       ],
       "properties": {
         "contractVersion": {
-          "const": "1.0"
+          "const": "2.0"
+        },
+        "artifactKind": {
+          "const": "execution-plan"
+        },
+        "evidenceDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         },
         "evidence": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/intentLoweringEvidence"
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    "intentSystemMetadata": {
+      "type": "object",
+      "required": [
+        "name",
+        "sourceType",
+        "canonicalType",
+        "config"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "sourceType": {
+          "type": "string"
+        },
+        "canonicalType": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "intentSourceField": {
+      "type": "object",
+      "required": [
+        "identity",
+        "sourcePath",
+        "targetIdentity",
+        "disposition",
+        "valueKind",
+        "sourceDigest",
+        "expectedTargetDigest"
+      ],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetIdentity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disposition": {
+          "enum": [
+            "PRESERVED",
+            "TRANSFORMED"
+          ]
+        },
+        "valueKind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expectedTargetDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "transform": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

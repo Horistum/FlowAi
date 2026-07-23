@@ -174,6 +174,19 @@
         "stepIds" : [ "checkout", "build-image" ]
       } ],
       "policies" : [ ],
+      "systems" : [ {
+        "name" : "source",
+        "sourceType" : "git",
+        "canonicalType" : "git",
+        "purpose" : "Public application source repository",
+        "config" : { }
+      }, {
+        "name" : "registry",
+        "sourceType" : "dockerRegistry",
+        "canonicalType" : "docker",
+        "purpose" : "Local image build target without registry push",
+        "config" : { }
+      } ],
       "systemPurposes" : {
         "source" : "Public application source repository",
         "registry" : "Local image build target without registry push"
@@ -182,158 +195,253 @@
         "notify" : false,
         "rollback" : false,
         "stopOnError" : true
-      }
-    },
-    "loweringReport" : {
-      "contractVersion" : "1.0",
-      "evidence" : [ {
-        "sourcePath" : "$.name",
-        "targetPath" : "$.flow.name",
+      },
+      "fields" : [ {
+        "identity" : "failure/notify",
+        "sourcePath" : "$.failure.notify",
+        "targetIdentity" : "plan/source-intent/failure/notify",
         "disposition" : "PRESERVED",
-        "valueKind" : "string"
+        "valueKind" : "boolean",
+        "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+        "expectedTargetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
       }, {
-        "sourcePath" : "$.description",
-        "targetPath" : "$.metadata.sourceIntent.description",
+        "identity" : "failure/rollback",
+        "sourcePath" : "$.failure.rollback",
+        "targetIdentity" : "plan/source-intent/failure/rollback",
         "disposition" : "PRESERVED",
-        "valueKind" : "string"
+        "valueKind" : "boolean",
+        "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+        "expectedTargetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
       }, {
+        "identity" : "failure/stop-on-error",
+        "sourcePath" : "$.failure.stopOnError",
+        "targetIdentity" : "plan/source-intent/failure/stop-on-error",
+        "disposition" : "PRESERVED",
+        "valueKind" : "boolean",
+        "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+        "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+      }, {
+        "identity" : "input/version/name",
         "sourcePath" : "$.inputs[0].name",
-        "targetPath" : "$.flow.input[0].name",
+        "targetIdentity" : "plan/input/version/name",
         "disposition" : "PRESERVED",
-        "valueKind" : "string"
+        "valueKind" : "string",
+        "sourceDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae",
+        "expectedTargetDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"
       }, {
-        "sourcePath" : "$.inputs[0].type",
-        "targetPath" : "$.flow.input[0].valueType",
-        "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
+        "identity" : "input/version/required",
         "sourcePath" : "$.inputs[0].required",
-        "targetPath" : "$.flow.input[0].required",
+        "targetIdentity" : "plan/input/version/required",
         "disposition" : "PRESERVED",
-        "valueKind" : "boolean"
+        "valueKind" : "boolean",
+        "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+        "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
       }, {
-        "sourcePath" : "$.systems[0].name",
-        "targetPath" : "$.flow.systems[0].name",
-        "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
-        "sourcePath" : "$.systems[0].type",
-        "targetPath" : "$.flow.systems[0].systemType",
+        "identity" : "input/version/type",
+        "sourcePath" : "$.inputs[0].type",
+        "targetIdentity" : "plan/input/version/type",
         "disposition" : "TRANSFORMED",
+        "valueKind" : "input-type",
+        "sourceDigest" : "b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2",
+        "expectedTargetDigest" : "38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723",
+        "transform" : "intent-input-type-normalization"
+      }, {
+        "identity" : "intent/description",
+        "sourcePath" : "$.description",
+        "targetIdentity" : "plan/source-intent/description",
+        "disposition" : "PRESERVED",
         "valueKind" : "string",
-        "note" : "Canonical system type normalization."
+        "sourceDigest" : "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce",
+        "expectedTargetDigest" : "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce"
       }, {
-        "sourcePath" : "$.systems[0].purpose",
-        "targetPath" : "$.metadata.sourceIntent.systemPurposes.source",
+        "identity" : "intent/name",
+        "sourcePath" : "$.name",
+        "targetIdentity" : "plan/flow/name",
         "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
-        "sourcePath" : "$.systems[1].name",
-        "targetPath" : "$.flow.systems[1].name",
-        "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
-        "sourcePath" : "$.systems[1].type",
-        "targetPath" : "$.flow.systems[1].systemType",
-        "disposition" : "TRANSFORMED",
         "valueKind" : "string",
-        "note" : "Canonical system type normalization."
+        "sourceDigest" : "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2",
+        "expectedTargetDigest" : "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2"
       }, {
-        "sourcePath" : "$.systems[1].purpose",
-        "targetPath" : "$.metadata.sourceIntent.systemPurposes.registry",
-        "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
-        "sourcePath" : "$.workflows[0].name",
-        "targetPath" : "$.metadata.sourceIntent.workflows[0].name",
-        "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
-        "sourcePath" : "$.workflows[0].kind",
-        "targetPath" : "$.metadata.sourceIntent.workflows[0].kind",
-        "disposition" : "PRESERVED",
-        "valueKind" : "enum"
-      }, {
-        "sourcePath" : "$.workflows[0].steps[0].id",
-        "targetPath" : "$.flow.steps[0].result",
-        "disposition" : "TRANSFORMED",
-        "valueKind" : "string",
-        "note" : "Step id becomes a stable result binding and source id."
-      }, {
-        "sourcePath" : "$.workflows[0].steps[0].capability",
-        "targetPath" : "$.flow.steps[0].semanticCapability",
-        "disposition" : "PRESERVED",
-        "valueKind" : "enum"
-      }, {
-        "sourcePath" : "$.workflows[0].steps[0].uses",
-        "targetPath" : "$.flow.steps[0].module/$.flow.steps[0].action",
-        "disposition" : "TRANSFORMED",
-        "valueKind" : "binding",
-        "note" : "Explicit binding resolves to module and action."
-      }, {
-        "sourcePath" : "$.workflows[0].steps[0].params.system",
-        "targetPath" : "$.flow.steps[0].bindingMetadata.system",
-        "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
-        "sourcePath" : "$.workflows[0].steps[0].params.url",
-        "targetPath" : "$.flow.steps[0].params.url",
-        "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
-        "sourcePath" : "$.workflows[0].steps[0].params.branch",
-        "targetPath" : "$.flow.steps[0].params.branch",
-        "disposition" : "PRESERVED",
-        "valueKind" : "string"
-      }, {
-        "sourcePath" : "$.workflows[0].steps[1].id",
-        "targetPath" : "$.flow.steps[1].result",
-        "disposition" : "TRANSFORMED",
-        "valueKind" : "string",
-        "note" : "Step id becomes a stable result binding and source id."
-      }, {
+        "identity" : "step/build-image/capability",
         "sourcePath" : "$.workflows[0].steps[1].capability",
-        "targetPath" : "$.flow.steps[1].semanticCapability",
+        "targetIdentity" : "plan/node/source/build-image/semantic-capability",
         "disposition" : "PRESERVED",
-        "valueKind" : "enum"
+        "valueKind" : "enum",
+        "sourceDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8",
+        "expectedTargetDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"
       }, {
+        "identity" : "step/build-image/id",
+        "sourcePath" : "$.workflows[0].steps[1].id",
+        "targetIdentity" : "plan/node/source/build-image/identity",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "step-identity",
+        "sourceDigest" : "9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa",
+        "expectedTargetDigest" : "c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee",
+        "transform" : "step-id-to-source-and-result-identity"
+      }, {
+        "identity" : "step/build-image/param/image",
+        "sourcePath" : "$.workflows[0].steps[1].params.image",
+        "targetIdentity" : "plan/node/source/build-image/param/image",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b",
+        "expectedTargetDigest" : "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b"
+      }, {
+        "identity" : "step/build-image/param/path",
+        "sourcePath" : "$.workflows[0].steps[1].params.path",
+        "targetIdentity" : "plan/node/source/build-image/param/path",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1",
+        "expectedTargetDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"
+      }, {
+        "identity" : "step/build-image/param/push",
+        "sourcePath" : "$.workflows[0].steps[1].params.push",
+        "targetIdentity" : "plan/node/source/build-image/param/push",
+        "disposition" : "PRESERVED",
+        "valueKind" : "boolean",
+        "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+        "expectedTargetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+      }, {
+        "identity" : "step/build-image/param/system",
+        "sourcePath" : "$.workflows[0].steps[1].params.system",
+        "targetIdentity" : "plan/node/source/build-image/binding-metadata/system",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd",
+        "expectedTargetDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"
+      }, {
+        "identity" : "step/build-image/requires/checkout",
+        "sourcePath" : "$.workflows[0].steps[1].requires",
+        "targetIdentity" : "plan/node/source/build-image/dependency/source/checkout",
+        "disposition" : "PRESERVED",
+        "valueKind" : "step-reference",
+        "sourceDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15",
+        "expectedTargetDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"
+      }, {
+        "identity" : "step/build-image/uses",
         "sourcePath" : "$.workflows[0].steps[1].uses",
-        "targetPath" : "$.flow.steps[1].module/$.flow.steps[1].action",
+        "targetIdentity" : "plan/node/source/build-image/binding",
         "disposition" : "TRANSFORMED",
         "valueKind" : "binding",
-        "note" : "Explicit binding resolves to module and action."
+        "sourceDigest" : "4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00",
+        "expectedTargetDigest" : "783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3",
+        "transform" : "explicit-action-binding-resolution"
       }, {
-        "sourcePath" : "$.workflows[0].steps[1].requires",
-        "targetPath" : "$.flow.steps[1].dependsOn",
+        "identity" : "step/checkout/capability",
+        "sourcePath" : "$.workflows[0].steps[0].capability",
+        "targetIdentity" : "plan/node/source/checkout/semantic-capability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum",
+        "sourceDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2",
+        "expectedTargetDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"
+      }, {
+        "identity" : "step/checkout/id",
+        "sourcePath" : "$.workflows[0].steps[0].id",
+        "targetIdentity" : "plan/node/source/checkout/identity",
         "disposition" : "TRANSFORMED",
-        "valueKind" : "list",
-        "note" : "Source step ids become canonical result dependencies."
+        "valueKind" : "step-identity",
+        "sourceDigest" : "0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710",
+        "expectedTargetDigest" : "2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205",
+        "transform" : "step-id-to-source-and-result-identity"
       }, {
-        "sourcePath" : "$.workflows[0].steps[1].params.system",
-        "targetPath" : "$.flow.steps[1].bindingMetadata.system",
+        "identity" : "step/checkout/param/branch",
+        "sourcePath" : "$.workflows[0].steps[0].params.branch",
+        "targetIdentity" : "plan/node/source/checkout/param/branch",
         "disposition" : "PRESERVED",
-        "valueKind" : "string"
+        "valueKind" : "string",
+        "sourceDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b",
+        "expectedTargetDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"
       }, {
-        "sourcePath" : "$.workflows[0].steps[1].params.image",
-        "targetPath" : "$.flow.steps[1].params.image",
+        "identity" : "step/checkout/param/system",
+        "sourcePath" : "$.workflows[0].steps[0].params.system",
+        "targetIdentity" : "plan/node/source/checkout/binding-metadata/system",
         "disposition" : "PRESERVED",
-        "valueKind" : "string"
+        "valueKind" : "string",
+        "sourceDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095",
+        "expectedTargetDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"
       }, {
-        "sourcePath" : "$.workflows[0].steps[1].params.path",
-        "targetPath" : "$.flow.steps[1].params.path",
+        "identity" : "step/checkout/param/url",
+        "sourcePath" : "$.workflows[0].steps[0].params.url",
+        "targetIdentity" : "plan/node/source/checkout/param/url",
         "disposition" : "PRESERVED",
-        "valueKind" : "string"
+        "valueKind" : "string",
+        "sourceDigest" : "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5",
+        "expectedTargetDigest" : "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5"
       }, {
-        "sourcePath" : "$.workflows[0].steps[1].params.push",
-        "targetPath" : "$.flow.steps[1].params.push",
-        "disposition" : "PRESERVED",
-        "valueKind" : "boolean"
-      }, {
-        "sourcePath" : "$.failure",
-        "targetPath" : "$.flow.errorHandler",
+        "identity" : "step/checkout/uses",
+        "sourcePath" : "$.workflows[0].steps[0].uses",
+        "targetIdentity" : "plan/node/source/checkout/binding",
         "disposition" : "TRANSFORMED",
-        "valueKind" : "failure-policy",
-        "note" : "Failure notification and rollback lower to canonical error-handler actions; stopOnError=true is the canonical default."
+        "valueKind" : "binding",
+        "sourceDigest" : "40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476",
+        "expectedTargetDigest" : "291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6",
+        "transform" : "explicit-action-binding-resolution"
+      }, {
+        "identity" : "system/registry/name",
+        "sourcePath" : "$.systems[1].name",
+        "targetIdentity" : "plan/source-intent/system/registry/name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf",
+        "expectedTargetDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"
+      }, {
+        "identity" : "system/registry/purpose",
+        "sourcePath" : "$.systems[1].purpose",
+        "targetIdentity" : "plan/source-intent/system/registry/purpose",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19",
+        "expectedTargetDigest" : "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19"
+      }, {
+        "identity" : "system/registry/type",
+        "sourcePath" : "$.systems[1].type",
+        "targetIdentity" : "plan/source-intent/system/registry/canonical-type",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "sourceDigest" : "7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e",
+        "expectedTargetDigest" : "1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87",
+        "transform" : "canonical-system-type-normalization"
+      }, {
+        "identity" : "system/source/name",
+        "sourcePath" : "$.systems[0].name",
+        "targetIdentity" : "plan/source-intent/system/source/name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b",
+        "expectedTargetDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"
+      }, {
+        "identity" : "system/source/purpose",
+        "sourcePath" : "$.systems[0].purpose",
+        "targetIdentity" : "plan/source-intent/system/source/purpose",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445",
+        "expectedTargetDigest" : "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445"
+      }, {
+        "identity" : "system/source/type",
+        "sourcePath" : "$.systems[0].type",
+        "targetIdentity" : "plan/source-intent/system/source/canonical-type",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382",
+        "expectedTargetDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"
+      }, {
+        "identity" : "workflow/build-reference-image/kind",
+        "sourcePath" : "$.workflows[0].kind",
+        "targetIdentity" : "plan/source-intent/workflow/build-reference-image/kind",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum",
+        "sourceDigest" : "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e",
+        "expectedTargetDigest" : "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e"
+      }, {
+        "identity" : "workflow/build-reference-image/name",
+        "sourcePath" : "$.workflows[0].name",
+        "targetIdentity" : "plan/source-intent/workflow/build-reference-image/name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string",
+        "sourceDigest" : "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758",
+        "expectedTargetDigest" : "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758"
       } ]
     }
   }
