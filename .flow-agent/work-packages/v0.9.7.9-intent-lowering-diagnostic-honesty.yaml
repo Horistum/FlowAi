@@ -1,7 +1,7 @@
 version: "0.9.7.9"
 name: "Intent Lowering and Diagnostic Honesty"
 stream: core
-status: in-progress
+status: completed
 objective: "Preserve or explicitly diagnose every meaningful accepted input across equivalent source forms."
 universalInvariant: "Accepted information never disappears silently."
 forbiddenScope:
@@ -16,12 +16,17 @@ implementedScope:
   - "Declared step outputs, structured defaults, source descriptions, system purpose and explicit binding metadata are preserved."
   - "Unknown semantic parameters, unsupported policy lowering, multiple workflow flattening and stopOnError=false fail closed instead of disappearing."
   - "Materialization validates source-step coverage and lowering evidence before provider invocation."
-focusedValidation:
-  - "IntentLoweringDiagnosticHonestyTests passed."
-  - "CanonicalIntentMeaningTests passed."
-  - "FlowConformanceBridgeJUnitTest passed."
-  - "FlowRcConformanceTests passed."
-  - "Both reference snapshot bundles were regenerated through the production generator."
+validation:
+  implementationHead: "784573fd67abc73bf18dc98d6ae055d7914f2420"
+  flowCiRun: "29973213486"
+  flowCiNumber: "1833"
+  result: passed
+  evidence:
+    - "Flow Agent tooling and structure validation passed."
+    - "Cache-aware offline tests and conformance passed."
+    - "Clean compilation and the complete test suite passed."
+    - "Full conformance and executable reference evidence passed."
+    - "Both reference snapshot bundles were regenerated through the production generator."
 finalValidation: "required on the exact completion metadata head"
 completionEvidence:
   - "Equivalent source forms produce equivalent canonical meaning and diagnostics."
