@@ -5,6 +5,7 @@ import base64
 import json
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 
 from flow_agent_roadmap import find_scalar, find_unique_next_roadmap_item, roadmap_paths_by_stream
@@ -100,7 +101,13 @@ def main() -> int:
         context_file = generate_agent_context()
         print(f"Generated agent context: {context_file}")
         return 0
-    except Exception as exc:
+    except BaseException as exc:
+        log_dir = ROOT / "ci-logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        (log_dir / "v09794-assembly-error.log").write_text(
+            traceback.format_exc(),
+            encoding="utf-8",
+        )
         print(f"Flow agent runner failed: {exc}", file=sys.stderr)
         return 1
 
