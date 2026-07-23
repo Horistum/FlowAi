@@ -34,7 +34,7 @@ class ArtifactDerivedIntentLoweringEvidenceTests {
 
         assertEquals(IntentLoweringReport.CONTRACT_VERSION, report.contractVersion)
         assertEquals(IntentLoweringReport.ARTIFACT_KIND, report.artifactKind)
-        assertTrue(report.artifactDigest.matches(Regex("[0-9a-f]{64}")))
+        assertTrue(report.evidenceDigest.matches(Regex("[0-9a-f]{64}")))
         assertEquals(
             report,
             IntentLoweringAuthority.report(plan.copy(loweringReport = null)),
@@ -104,7 +104,7 @@ class ArtifactDerivedIntentLoweringEvidenceTests {
     fun forgedArtifactDigestIsRejectedEvenWhenEveryEvidenceEntryLooksValid() {
         val plan = FlowPlanner().plan(IntentToAstPlanner().plan(stableIdentityIntent()))
         val report = assertNotNull(plan.loweringReport)
-        val forged = plan.copy(loweringReport = report.copy(artifactDigest = "0".repeat(64)))
+        val forged = plan.copy(loweringReport = report.copy(evidenceDigest = "0".repeat(64)))
 
         assertContainsLoweringIssue(forged, "planning.lowering.report.stale-or-forged")
     }

@@ -282,10 +282,10 @@ internal object ExecutionPlanMaterializationValidator {
                 "Lowering evidence must certify '${IntentLoweringReport.ARTIFACT_KIND}', found '${report.artifactKind}'."
             )
         }
-        if (!report.artifactDigest.matches(Regex("[0-9a-f]{64}"))) {
+        if (!report.evidenceDigest.matches(Regex("[0-9a-f]{64}"))) {
             issues += issue(
                 "planning.lowering.artifact-digest.invalid",
-                "loweringReport.artifactDigest",
+                "loweringReport.evidenceDigest",
                 "Lowering evidence must declare a lowercase SHA-256 artifact digest."
             )
         }

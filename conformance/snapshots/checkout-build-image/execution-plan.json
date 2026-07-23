@@ -301,7 +301,7 @@
   "loweringReport" : {
     "contractVersion" : "2.0",
     "artifactKind" : "execution-plan",
-    "artifactDigest" : "09bb33d7277b026cf0b678a24a821bbfcbd73bd3494b144f645d3a4779e7234c",
+    "evidenceDigest" : "09bb33d7277b026cf0b678a24a821bbfcbd73bd3494b144f645d3a4779e7234c",
     "evidence" : [ {
       "sourceIdentity" : "failure/notify",
       "sourcePath" : "$.failure.notify",

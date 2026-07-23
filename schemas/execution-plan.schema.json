@@ -938,7 +938,7 @@
       "required": [
         "contractVersion",
         "artifactKind",
-        "artifactDigest",
+        "evidenceDigest",
         "evidence"
       ],
       "properties": {
@@ -948,7 +948,7 @@
         "artifactKind": {
           "const": "execution-plan"
         },
-        "artifactDigest": {
+        "evidenceDigest": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
         },

@@ -48,7 +48,7 @@ data class IntentLoweringEvidence(
 data class IntentLoweringReport(
     val contractVersion: String = CONTRACT_VERSION,
     val artifactKind: String = ARTIFACT_KIND,
-    val artifactDigest: String = "",
+    val evidenceDigest: String = "",
     val evidence: List<IntentLoweringEvidence> = emptyList()
 ) {
     companion object {
@@ -195,7 +195,7 @@ object IntentLoweringAuthority {
             )
         }
 
-        val artifactDigest = digest(
+        val evidenceDigest = digest(
             "execution-plan-lowering-evidence",
             evidence.joinToString("\n") { entry ->
                 canonicalRecord(
@@ -209,7 +209,7 @@ object IntentLoweringAuthority {
                 )
             }
         )
-        return IntentLoweringReport(artifactDigest = artifactDigest, evidence = evidence)
+        return IntentLoweringReport(evidenceDigest = evidenceDigest, evidence = evidence)
     }
 
     private fun sourceFields(
