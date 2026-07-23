@@ -1,0 +1,55 @@
+diff --git a/src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt b/src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt
+--- a/src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt
++++ b/src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt
+@@ -119,13 +119,15 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
+                 }
+             }
+             val acceptedBindingParams = binding.bindingParameters.toSet()
+-            step.params.keys
+-                .filter { it !in (contract.requiredParams + contract.optionalParams) }
+-                .filter { it !in acceptedBindingParams }
+-                .filter { it !in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
+-                .forEach { key ->
+-                    issues += err("UNKNOWN_STEP_PARAM", "Step '${step.id}' capability '${step.capability}' does not declare semantic params '$key'; accepting it would silently discard the value during canonical lowering.")
+-                }
++            if (step.capability != StandardCapability.CUSTOM) {
++                step.params.keys
++                    .filter { it !in (contract.requiredParams + contract.optionalParams) }
++                    .filter { it !in acceptedBindingParams }
++                    .filter { it !in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
++                    .forEach { key ->
++                        issues += err("UNKNOWN_STEP_PARAM", "Step '${step.id}' capability '${step.capability}' does not declare semantic params '$key'; accepting it would silently discard the value during canonical lowering.")
++                    }
++            }
+         }
+ 
+         detectCycles(steps, issues)
+diff --git a/src/main/kotlin/org/flowlang/standard/StandardCapabilityContracts.kt b/src/main/kotlin/org/flowlang/standard/StandardCapabilityContracts.kt
+--- a/src/main/kotlin/org/flowlang/standard/StandardCapabilityContracts.kt
++++ b/src/main/kotlin/org/flowlang/standard/StandardCapabilityContracts.kt
+@@ -23,15 +23,15 @@ object StandardCapabilityContracts {
+         StandardCapability.CHECKOUT to contract(StandardCapability.CHECKOUT, optional = listOf("repository", "ref", "depth", "path", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+         StandardCapability.BUILD to contract(StandardCapability.BUILD, optional = listOf("project", "task", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+         StandardCapability.BUILD_IMAGE to contract(StandardCapability.BUILD_IMAGE, optional = listOf("context", "file", "image", "tags", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+-        StandardCapability.TEST to contract(StandardCapability.TEST, optional = listOf("suite", "tool", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
++        StandardCapability.TEST to contract(StandardCapability.TEST, optional = listOf("suite", "command", "tool", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+         StandardCapability.VERIFY to contract(StandardCapability.VERIFY, optional = listOf("check", "resource", "selector", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+         StandardCapability.VALIDATE to contract(StandardCapability.VALIDATE, optional = listOf("operation", "resource", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+         StandardCapability.PUBLISH to contract(StandardCapability.PUBLISH, optional = listOf("artifact", "destination", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+         StandardCapability.PUSH_IMAGE to contract(StandardCapability.PUSH_IMAGE, optional = listOf("image", "tags", "registry", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+-        StandardCapability.DEPLOY to contract(StandardCapability.DEPLOY, optional = listOf("system", "target", "subject", "environment", "artifact", "version", "strategy"), systems = listOf("standard"), strategy = "semantic-action"),
++        StandardCapability.DEPLOY to contract(StandardCapability.DEPLOY, optional = listOf("system", "target", "subject", "environment", "artifact", "version", "strategy", "namespace", "image"), systems = listOf("standard"), strategy = "semantic-action"),
+         StandardCapability.SYNC to contract(StandardCapability.SYNC, optional = listOf("application", "revision", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+         StandardCapability.NOTIFY to contract(StandardCapability.NOTIFY, optional = listOf("subject", "message", "channel", "recipients", "system", "target"), systems = listOf("standard"), strategy = "semantic-action"),
+-        StandardCapability.ROLLBACK to contract(StandardCapability.ROLLBACK, optional = listOf("reason", "flow", "system", "target"), strategy = "semantic-action"),
++        StandardCapability.ROLLBACK to contract(StandardCapability.ROLLBACK, optional = listOf("reason", "flow", "application", "system", "target"), strategy = "semantic-action"),
+         StandardCapability.APPROVE to contract(StandardCapability.APPROVE, optional = listOf("owner", "condition", "message", "system", "target"), systems = listOf("standard"), strategy = "approval-node"),
+         StandardCapability.CALL_API to contract(StandardCapability.CALL_API, required = listOf("url"), optional = listOf("method", "headers", "body", "system", "target")),
+@@ -53,7 +53,7 @@ object StandardCapabilityContracts {
+         StandardCapability.KUBERNETES_MAINTENANCE to contract(StandardCapability.KUBERNETES_MAINTENANCE, required = listOf("scope"), optional = listOf("operation", "window", "dryRun", "system", "target")),
+         StandardCapability.DATABASE_MIGRATE to contract(StandardCapability.DATABASE_MIGRATE, required = listOf("database", "migration"), optional = listOf("backup", "system", "target")),
+         StandardCapability.SECRET_ROTATE to contract(StandardCapability.SECRET_ROTATE, required = listOf("secret"), optional = listOf("store", "service", "namespace", "system", "target")),
+-        StandardCapability.CERTIFICATE_RENEW to contract(StandardCapability.CERTIFICATE_RENEW, required = listOf("certificate"), optional = listOf("provider", "secret", "service", "namespace", "system", "target")),
++        StandardCapability.CERTIFICATE_RENEW to contract(StandardCapability.CERTIFICATE_RENEW, required = listOf("certificate"), optional = listOf("provider", "secret", "service", "namespace", "window", "system", "target")),
+         StandardCapability.DATA_SYNC to contract(StandardCapability.DATA_SYNC, required = listOf("source", "destination"), optional = listOf("mode", "filters", "batches", "system", "target")),
+         StandardCapability.DATA_TRANSFORM to contract(StandardCapability.DATA_TRANSFORM, required = listOf("source", "destination"), optional = listOf("mapping", "format", "system", "target")),
