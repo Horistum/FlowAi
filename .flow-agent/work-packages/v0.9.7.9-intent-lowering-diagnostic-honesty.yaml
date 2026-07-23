@@ -1,0 +1,24 @@
+version: "0.9.7.9"
+name: "Intent Lowering and Diagnostic Honesty"
+stream: core
+status: in-progress
+objective: "Preserve or explicitly diagnose every meaningful accepted input across equivalent source forms."
+universalInvariant: "Accepted information never disappears silently."
+forbiddenScope:
+  - "No source-form enforcement difference."
+  - "No accepted field or value dropped without diagnostic evidence."
+  - "No malformed declaration converted into empty or default meaning."
+  - "No target-specific public Flow syntax or runtime execution."
+plannedScope:
+  - "Audit parser, normalization, validation, canonical meaning, lowering and artifact projection boundaries."
+  - "Define typed lowering coverage and diagnostic provenance."
+  - "Prove equivalent source forms preserve equivalent meaning and diagnostics."
+  - "Reject malformed or unsupported accepted input before it can disappear."
+  - "Add round-trip and malformed-input conformance evidence."
+finalValidation: "required on the exact completion metadata head"
+completionEvidence:
+  - "Equivalent source forms produce equivalent canonical meaning and diagnostics."
+  - "Every accepted meaningful input is preserved or explicitly diagnosed."
+  - "Malformed input fails closed without empty-default lowering."
+  - "Round-trip and malformed-input tests pass."
+  - "The complete unmodified Flow CI workflow passes compilation, tests, conformance and executable reference evidence."
