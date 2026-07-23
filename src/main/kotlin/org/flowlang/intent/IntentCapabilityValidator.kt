@@ -84,6 +84,8 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
             }
         }
 
+        issues += IntentSourceContradictionAuthority.validationIssues(intent)
+
         intent.systems.forEach { system ->
             val normalizedType = normalizeSystemType(system.type)
             val resolved = registry.findSystemType(normalizedType)
@@ -210,7 +212,6 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
 
     private enum class VisitState { VISITING, DONE }
 
-
     private fun normalizeSystemType(type: String): String = when (type) {
         "dockerRegistry", "containerRegistry" -> "docker"
         "notification", "email" -> "notify"
@@ -223,6 +224,7 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         private val SUPPORTED_POLICY_TYPES = setOf(IntentPolicyType.APPROVAL, IntentPolicyType.SAFETY, IntentPolicyType.CUSTOM)
         private val ISO_INTERVAL = Regex("""^P(?=\d|T\d)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$""")
     }
+
     private fun warn(code: String, message: String) = IntentValidationIssue("warning", code, message)
 }
 
