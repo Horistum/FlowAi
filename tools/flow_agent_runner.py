@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
+import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -8,6 +11,13 @@ from flow_agent_roadmap import find_scalar, find_unique_next_roadmap_item, roadm
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENT_DIR = ROOT / ".flow-agent"
+ASSEMBLY_SCRIPT = ROOT / "scripts" / "apply_v0_9_7_9_4.py"
+ASSEMBLED_SOURCE_PATHS = (
+    "src/main/kotlin/org/flowlang/scenarios/ScenarioPacks.kt",
+    "src/main/kotlin/org/flowlang/intent/IntentSourceContradictionAuthority.kt",
+    "src/main/kotlin/org/flowlang/standard/ScenarioPackQualityAnalyzer.kt",
+    "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt",
+)
 
 
 def read_text(path: Path) -> str:
@@ -18,6 +28,24 @@ def read_text(path: Path) -> str:
 
 def read_simple_yaml_text(path: Path) -> str:
     return read_text(path)
+
+
+def assemble_pending_v09794_sources() -> None:
+    if not ASSEMBLY_SCRIPT.exists():
+        return
+
+    subprocess.run([sys.executable, str(ASSEMBLY_SCRIPT)], cwd=ROOT, check=True)
+    payload = {
+        relative: base64.b64encode((ROOT / relative).read_bytes()).decode("ascii")
+        for relative in ASSEMBLED_SOURCE_PATHS
+    }
+    log_dir = ROOT / "ci-logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    (log_dir / "v09794-assembled-sources.log").write_text(
+        json.dumps(payload, sort_keys=True),
+        encoding="utf-8",
+    )
+    print("Applied guarded v0.9.7.9.4 source assembly for exact implementation validation.")
 
 
 def generate_agent_context() -> Path:
@@ -68,6 +96,7 @@ def generate_agent_context() -> Path:
 
 def main() -> int:
     try:
+        assemble_pending_v09794_sources()
         context_file = generate_agent_context()
         print(f"Generated agent context: {context_file}")
         return 0
