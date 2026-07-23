@@ -1,4 +1,4 @@
-name: Materialize v0.9.7.9.4 Reviewed Tree
+name: Materialize v0.9.7.9.4 Final Reviewed Tree
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: materialize-v0.9.7.9.4-reviewed-tree
+  group: materialize-v0.9.7.9.4-final-reviewed-tree
   cancel-in-progress: false
 
 jobs:
@@ -19,27 +19,90 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout materialization branch
+      - name: Checkout reviewed source branch
         uses: actions/checkout@v4
         with:
-          ref: fix/v0.9.7.9.4-materialize-reviewed-tree
+          ref: agent/v0.9.7.9.4-scenario-negation-token-boundary-final
           fetch-depth: 0
 
-      - name: Apply previously validated guarded source assembly
-        run: python3 scripts/apply_v0_9_7_9_4.py
-
-      - name: Apply compiler correction discovered by first real build
+      - name: Apply scenario specificity correction
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          path = Path("src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt")
-          text = path.read_text(encoding="utf-8")
-          old = 'boundary.report.scenarioSelection.selectedPack == "custom"'
-          new = 'boundary.report.scenarioSelection?.selectedPack == "custom"'
-          count = text.count(old)
-          if count != 1:
-              raise SystemExit(f"Expected one nullable scenario-selection correction, found {count}")
-          path.write_text(text.replace(old, new), encoding="utf-8")
+
+          authority = Path("src/main/kotlin/org/flowlang/intent/IntentSourceDirectiveAuthority.kt")
+          text = authority.read_text(encoding="utf-8")
+          old = '''    fun containsAffirmedPhrase(source: String, phrase: String): Boolean =
+              affirmedPhrases(source, listOf(phrase)).isNotEmpty()
+
+          private fun mentions(source: String, candidateAliases: List<List<String>>): List<IntentSourceMention> {'''
+          new = '''    fun containsAffirmedPhrase(source: String, phrase: String): Boolean =
+              affirmedPhrases(source, listOf(phrase)).isNotEmpty()
+
+          /** Number of lexical tokens in one exact trigger phrase. */
+          fun phraseTokenCount(phrase: String): Int = phraseTokens(phrase).size
+
+          private fun mentions(source: String, candidateAliases: List<List<String>>): List<IntentSourceMention> {'''
+          if text.count(old) != 1:
+              raise SystemExit(f"Expected one source-authority insertion point, found {text.count(old)}")
+          authority.write_text(text.replace(old, new), encoding="utf-8")
+
+          scenarios = Path("src/main/kotlin/org/flowlang/scenarios/ScenarioPacks.kt")
+          text = scenarios.read_text(encoding="utf-8")
+          old = '''    override fun match(text: String, context: AiIntentContext): ScenarioPackMatch {
+              val hits = IntentSourceDirectiveAuthority.affirmedPhrases(text, definition.triggers)
+              val score = if (hits.isEmpty()) 0.0 else (0.42 + hits.size * 0.11).coerceAtMost(0.95)
+              return ScenarioPackMatch(definition.id, score, hits)
+          }'''
+          new = '''    override fun match(text: String, context: AiIntentContext): ScenarioPackMatch {
+              val hits = IntentSourceDirectiveAuthority.affirmedPhrases(text, definition.triggers)
+              val specificity = hits.sumOf { IntentSourceDirectiveAuthority.phraseTokenCount(it) }
+              val score = if (hits.isEmpty()) {
+                  0.0
+              } else {
+                  (0.38 + hits.size * 0.10 + specificity * 0.04).coerceAtMost(0.95)
+              }
+              return ScenarioPackMatch(definition.id, score, hits)
+          }'''
+          if text.count(old) != 1:
+              raise SystemExit(f"Expected one base match scoring block, found {text.count(old)}")
+          text = text.replace(old, new)
+
+          old = '        triggers = listOf("database migration", "db migration", "migrate database", "schema migration", "migration"),'
+          new = '        triggers = listOf("database migration", "db migration", "migrate database", "migrate the database", "migrate a database", "migrate db", "migrate the db", "migrate a db", "schema migration", "migration"),'
+          if text.count(old) != 1:
+              raise SystemExit(f"Expected one database trigger list, found {text.count(old)}")
+          scenarios.write_text(text.replace(old, new), encoding="utf-8")
+
+          docs = Path("docs/V0_9_7_9_4_SCENARIO_NEGATION_TOKEN_BOUNDARY_HONESTY.md")
+          text = docs.read_text(encoding="utf-8")
+          marker = '''Multi-word phrases must be contiguous. The old ordered-token search, which could join unrelated words across a sentence, is removed.
+'''
+          addition = marker + '''
+          Exact trigger selection also includes lexical specificity. When two packs match the same number of phrases, a multi-token trigger carries more evidence than a generic one-token noun. This prevents a request such as `migrate database orders and create a backup` from being classified as a generic backup operation merely because that pack is registered first. Common grammatical forms such as `migrate the database` are declared explicitly rather than recovered through fuzzy matching.
+'''
+          if text.count(marker) != 1:
+              raise SystemExit(f"Expected one documentation specificity marker, found {text.count(marker)}")
+          docs.write_text(text.replace(marker, addition), encoding="utf-8")
+
+          report = Path(".flow-agent/reports/v0.9.7.9.4-scenario-negation-token-boundary-honesty.md")
+          text = report.read_text(encoding="utf-8")
+          marker = '''Scenario selection counts only affirmed, contiguous trigger phrases. Scenario synthesis uses the same evidence for backup, repository/source, notification, approval, rollback and restore. Conflicting polarity becomes a required clarification and disputed work is withheld.
+'''
+          addition = marker + '''
+          Trigger scoring combines independent phrase hits with exact lexical specificity. Multi-token intent phrases therefore outrank generic one-token nouns without relying on pack registration order. Database migration explicitly supports common article-bearing forms such as `migrate the database`.
+'''
+          if text.count(marker) != 1:
+              raise SystemExit(f"Expected one report specificity marker, found {text.count(marker)}")
+          report.write_text(text.replace(marker, addition), encoding="utf-8")
+
+          work = Path(".flow-agent/work-packages/v0.9.7.9.4-scenario-negation-token-boundary-honesty.yaml")
+          text = work.read_text(encoding="utf-8")
+          marker = '  - "Scenario triggers match affirmed contiguous token sequences, never substrings."\n'
+          addition = marker + '  - "Exact multi-token triggers outrank generic one-token matches without depending on pack registration order."\n'
+          if text.count(marker) != 1:
+              raise SystemExit(f"Expected one work-package specificity marker, found {text.count(marker)}")
+          work.write_text(text.replace(marker, addition), encoding="utf-8")
           PY
 
       - name: Capture exact project diff
@@ -59,18 +122,18 @@ jobs:
             src/test/kotlin/IntentSourceContradictionAuthorityTests.kt
             src/test/kotlin/ScenarioNegationTokenBoundaryHonestyTests.kt
           )
-          tar -cf /tmp/v09794-reviewed-tree.tar "${paths[@]}"
+          tar -cf /tmp/v09794-final-reviewed-tree.tar "${paths[@]}"
 
-      - name: Create clean review branch from main
+      - name: Create one-commit final review branch from main
         shell: bash
         run: |
           set -euo pipefail
-          review_branch=fix/v0.9.7.9.4-scenario-negation-token-boundary-honesty-review
+          review_branch=agent/v0.9.7.9.4-review-final
           git fetch origin main
           git reset --hard
           git clean -fdx
           git checkout -B "$review_branch" origin/main
-          tar -xf /tmp/v09794-reviewed-tree.tar
+          tar -xf /tmp/v09794-final-reviewed-tree.tar
           git add \
             .flow-agent/reports/v0.9.7.9.4-scenario-negation-token-boundary-honesty.md \
             .flow-agent/work-packages/v0.9.7.9.4-scenario-negation-token-boundary-honesty.yaml \
@@ -97,11 +160,9 @@ jobs:
               "src/test/kotlin/IntentSourceContradictionAuthorityTests.kt",
               "src/test/kotlin/ScenarioNegationTokenBoundaryHonestyTests.kt",
           ])
-          actual = sorted(subprocess.check_output(
-              ["git", "diff", "--cached", "--name-only"], text=True
-          ).splitlines())
+          actual = sorted(subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True).splitlines())
           if actual != expected:
-              raise SystemExit(f"Unexpected review diff. Expected {expected}, got {actual}")
+              raise SystemExit(f"Unexpected final review diff. Expected {expected}, got {actual}")
           PY
           git config user.name "flow-ai-agent"
           git config user.email "flow-ai-agent@users.noreply.github.com"
