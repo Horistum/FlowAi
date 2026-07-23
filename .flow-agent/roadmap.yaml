@@ -13,7 +13,7 @@ versionBoundary:
 
 roadmapIndex:
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.8.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
   historicalRoadmaps:
@@ -26,6 +26,7 @@ roadmapIndex:
     - ".flow-agent/roadmap-core-v0.9.7.5.yaml"
     - ".flow-agent/roadmap-core-v0.9.7.6.yaml"
     - ".flow-agent/roadmap-core-v0.9.7.7.yaml"
+    - ".flow-agent/roadmap-core-v0.9.7.8.yaml"
 
 rules:
   - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
@@ -59,7 +60,7 @@ architectureConstitution:
     - "No governance signal whose status contradicts the property measured."
 
 currentDecision:
-  completedItem: "0.9.7.8"
-  completedItemName: "Abstract Execution Topology Model"
-  nextCoreItem: "0.9.7.9"
-  nextCoreItemName: "Intent Lowering and Diagnostic Honesty"
+  completedItem: "0.9.7.9"
+  completedItemName: "Intent Lowering and Diagnostic Honesty"
+  nextCoreItem: "0.9.7.10"
+  nextCoreItemName: "Bounded Semantic Closure Gate"
