@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   finalize-metadata:
-    if: ${{ !startsWith(github.event.head_commit.message, '[v0.9.7.9.2-metadata]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -20,10 +19,37 @@ jobs:
           ref: agent/v0.9.7.9.2-artifact-derived-lowering-evidence
           fetch-depth: 0
 
-      - name: Align diagnostics and changelog
+      - name: Align conformance, diagnostics and changelog
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
+          conformance = Path('src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt')
+          text = conformance.read_text()
+          import_marker = 'import org.flowlang.intent.StandardCapability\n'
+          if 'import org.flowlang.lowering.IntentLoweringAuthority\n' not in text:
+              if text.count(import_marker) != 1:
+                  raise SystemExit('Missing unique lowering import marker')
+              text = text.replace(import_marker, import_marker + 'import org.flowlang.lowering.IntentLoweringAuthority\n', 1)
+          old = '''        require(ast.metadata.loweringReport?.evidence.orEmpty().isNotEmpty()) { "AST lacks lowering coverage evidence." }
+          require(plan.loweringReport == ast.metadata.loweringReport) { "Execution plan lost lowering coverage evidence." }
+'''
+          new = '''        val sourceMetadata = requireNotNull(ast.metadata.sourceIntent) { "AST lacks stable lowering source metadata." }
+          require(sourceMetadata.fields.isNotEmpty()) { "AST lacks stable lowering source field identities." }
+          require(ast.metadata.loweringReport == null) { "AST must not certify execution-plan values before the plan exists." }
+          val loweringReport = requireNotNull(plan.loweringReport) { "Execution plan lacks artifact-derived lowering evidence." }
+          require(loweringReport.evidence.map { it.sourceIdentity }.toSet() == sourceMetadata.fields.map { it.identity }.toSet()) {
+              "Execution-plan lowering evidence does not cover the stable source catalog."
+          }
+          require(loweringReport == IntentLoweringAuthority.report(plan.copy(loweringReport = null))) {
+              "Execution-plan lowering evidence is not reproducible from concrete plan values."
+          }
+'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit('Lowering conformance block is neither old nor finalized')
+          conformance.write_text(text)
 
           authority = Path('src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt')
           text = authority.read_text()
@@ -32,10 +58,10 @@ jobs:
               'Lowering evidence must declare a lowercase SHA-256 artifact digest.': 'Lowering evidence must declare a lowercase SHA-256 aggregate evidence digest.',
           }
           for old, new in replacements.items():
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'Expected one occurrence of {old!r}, found {count}')
-              text = text.replace(old, new, 1)
+              if old in text:
+                  text = text.replace(old, new, 1)
+              elif new not in text:
+                  raise SystemExit(f'Diagnostic text is neither old nor finalized: {old!r}')
           authority.write_text(text)
 
           changelog = Path('CHANGELOG.md')
@@ -78,11 +104,11 @@ jobs:
               changelog.write_text(text)
           PY
 
-      - name: Remove one-shot workflow and commit metadata
+      - name: Remove one-shot workflow and commit finalized evidence
         run: |
           git rm .github/workflows/v0.9.7.9.2-final-metadata.yml
           git config user.name "flow-ci"
           git config user.email "flow-ci@users.noreply.github.com"
-          git add CHANGELOG.md src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt
-          git commit -m "[v0.9.7.9.2-metadata] Record artifact-derived lowering contract"
+          git add CHANGELOG.md src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt
+          git commit -m "[v0.9.7.9.2-final] Finalize artifact-derived lowering conformance"
           git push origin HEAD:agent/v0.9.7.9.2-artifact-derived-lowering-evidence
