@@ -1,0 +1,36 @@
+version: "0.9.7.9.4"
+name: "Scenario Negation and Token Boundary Honesty"
+stream: core
+status: complete
+objective: "Remove substring-based synthesis and make negation first-class across backup, repository and notification extraction."
+scopeBoundary:
+  - "Keep source-language interpretation deterministic and target-neutral."
+  - "Do not add probabilistic NLP or runtime text interpretation."
+  - "Preserve the independent contradiction validator as defense in depth."
+  - "Do not synthesize disputed work when source polarity conflicts."
+universalInvariants:
+  - "Scenario triggers match affirmed contiguous token sequences, never substrings."
+  - "Exact multi-token triggers outrank generic one-token matches without depending on pack registration order."
+  - "Explicit denial cannot create positive steps, systems, failure policies or control parameters."
+  - "Conflicting polarity requires clarification and withholds disputed synthesis."
+  - "A bare team reference is not notification evidence."
+  - "Compound identifiers do not become repository or trigger evidence."
+implementedSlices:
+  - id: shared-source-directive-authority
+  - id: exact-token-trigger-matching
+  - id: clause-local-negation-evidence
+  - id: conflicting-polarity-clarification
+  - id: backup-synthesis-honesty
+  - id: restore-without-invented-backup
+  - id: repository-extraction-honesty
+  - id: notification-extraction-honesty
+  - id: approval-and-rollback-negation-unification
+  - id: contradiction-authority-vocabulary-unification
+  - id: conformance-and-adversarial-tests
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "The exact final pull request head must pass tooling tests, repository structure validation, clean Gradle test and standalone conformance before review readiness."
+  buildDiscipline: "Implementation is assembled off the CI-matched branch namespace. One standard full build is triggered only after the complete pull request head exists; another build is permitted only for a real correction."
+followUpWorkItem:
+  version: "0.9.7.9.5"
+  name: "Provider-Backed Approval and Topology Identity"
