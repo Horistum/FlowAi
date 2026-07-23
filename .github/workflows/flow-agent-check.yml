@@ -1,106 +1,26 @@
 name: Flow CI
 
 on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+      - 'chore/**'
   pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  finalize-test-conformance:
+  compile-test-conformance:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     steps:
-      - name: Checkout final correction branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: fix/v0.9.7.9.2-artifact-derived-lowering-evidence-final
-          fetch-depth: 0
-
-      - name: Finalize diagnostics and release evidence
-        env:
-          FLOW_VALIDATION_RUN_ID: ${{ github.run_id }}
-          FLOW_VALIDATION_RUN_NUMBER: ${{ github.run_number }}
-        run: |
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          authority = Path('src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt')
-          text = authority.read_text()
-          replacements = {
-              'planning.lowering.artifact-digest.invalid': 'planning.lowering.evidence-digest.invalid',
-              'Lowering evidence must declare a lowercase SHA-256 artifact digest.': 'Lowering evidence must declare a lowercase SHA-256 aggregate evidence digest.',
-          }
-          for old, new in replacements.items():
-              if old in text:
-                  text = text.replace(old, new, 1)
-              elif new not in text:
-                  raise SystemExit(f'Diagnostic text is neither old nor finalized: {old!r}')
-          authority.write_text(text)
-
-          changelog = Path('CHANGELOG.md')
-          text = changelog.read_text()
-          heading = '### v0.9.7.9.2 Artifact-Derived Lowering Evidence'
-          if heading not in text:
-              marker = '### v0.9.7.9.1 Evidence and Control Integrity Repair'
-              section = '''### v0.9.7.9.2 Artifact-Derived Lowering Evidence
-
-#### Added
-
-- Added stable semantic source and target identities for every accepted Intent field covered by lowering evidence.
-- Added source, expected-target and concrete-target SHA-256 digests with explicit named transformations.
-- Added adversarial tests for concrete target mutation, forged evidence digest, missing evidence, duplicate evidence and topological source-step reordering.
-- Added an embedded lowering evidence contract `2.0` while preserving the public ExecutionPlan artifact version at `2.0`.
-
-#### Changed
-
-- Lowering reports are issued only after FlowPlanner constructs the concrete execution plan.
-- Mandatory materialization re-derives every target value and requires exact equality with the stored report.
-- `sourcePath` is diagnostic only; `sourceIdentity` is the stable authority independent of list position.
-- `PRESERVED` now requires verified source-target equality, while `TRANSFORMED` requires a named conversion and verified expected target value.
-- Canonical build-test-deploy and checkout-build-image snapshot bundles were regenerated through the reference generator.
-
-#### Removed
-
-- Removed source-iterated path-only preservation claims.
-- Removed index-based target addressing as lowering evidence authority.
-- Removed `dropBlockedParams` and the synthetic notes-driven materialization marker.
-
-#### Validation boundary
-
-- The aggregate `evidenceDigest` covers the certified lowering evidence view and is not represented as a signature of the entire execution plan.
-- Full compile, test and standalone conformance validation is mandatory on the exact final PR head.
-- The v0.9.7 closure gate remains blocked pending work items v0.9.7.9.3 through v0.9.7.9.7.
-
-'''
-              if marker not in text:
-                  raise SystemExit(f'Missing changelog marker: {marker}')
-              changelog.write_text(text.replace(marker, section + marker, 1))
-
-          work_package = Path('.flow-agent/work-packages/v0.9.7.9.2-artifact-derived-lowering-evidence.yaml')
-          text = work_package.read_text()
-          text = text.replace('status: exact-head-validation-pending', 'status: complete', 1)
-          if 'validationEvidence:' not in text:
-              text += f'''validationEvidence:\n  workflow: "Flow CI"\n  runNumber: "{os.environ['FLOW_VALIDATION_RUN_NUMBER']}"\n  runId: "{os.environ['FLOW_VALIDATION_RUN_ID']}"\n  scope:\n    - "Flow agent tooling tests"\n    - "Repository structure validation"\n    - "Clean Gradle compilation and complete test suite"\n    - "Standalone Flow conformance"\n    - "Canonical snapshot honesty"\n'''
-          work_package.write_text(text)
-
-          report = Path('.flow-agent/reports/v0.9.7.9.2-artifact-derived-lowering-evidence.md')
-          text = report.read_text()
-          text = text.replace(
-              'Implementation complete. Final exact-head validation is pending.',
-              'Implementation complete. The finalized content is committed only after the recorded Flow CI run passes tooling, clean tests, standalone conformance and snapshot honesty.',
-              1
-          )
-          marker = '## Validation boundary\n'
-          replacement = f'''## Validation evidence\n\n- Workflow: `Flow CI`\n- Run number: `{os.environ['FLOW_VALIDATION_RUN_NUMBER']}`\n- Run ID: `{os.environ['FLOW_VALIDATION_RUN_ID']}`\n- The workflow tests the finalized worktree before committing release evidence.\n- A subsequent standard Flow CI run must validate the exact resulting commit SHA before the PR is ready.\n\n## Validation boundary\n'''
-          if '## Validation evidence\n' not in text:
-              if marker not in text:
-                  raise SystemExit('Missing report validation marker')
-              text = text.replace(marker, replacement, 1)
-          report.write_text(text)
-          PY
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -111,37 +31,134 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Validate finalized worktree
+      - name: Prepare Gradle Wrapper
+        run: chmod +x ./gradlew
+
+      - name: Prepare CI Log Directory
+        run: mkdir -p ci-logs
+
+      - name: Test Flow Agent Tooling
+        run: python3 -m unittest discover -s tools/tests -p 'test_*.py'
+
+      - name: Validate Flow Agent Structure
+        run: python3 tools/flow_agent_validate.py
+
+      - name: Generate Flow Agent Context
+        run: python3 tools/flow_agent_runner.py
+
+      - name: Prepare Gradle Wrapper
+        run: |
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+          fi
+
+      - name: Run Offline Tests When Cache Is Available
         shell: bash
         run: |
           set -o pipefail
-          chmod +x ./gradlew
-          python3 -m unittest discover -s tools/tests -p 'test_*.py'
-          python3 tools/flow_agent_validate.py
-          python3 tools/flow_agent_runner.py
-          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee v0.9.7.9.2-final-test.log
-          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee v0.9.7.9.2-final-conformance.log
+          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
+            ./gradlew --no-daemon test --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-test.log
+            exit ${PIPESTATUS[0]}
+          else
+            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions." | tee ci-logs/offline-test.log
+          fi
 
-      - name: Restore standard CI and commit validated content
+      - name: Run Offline Conformance When Cache Is Available
+        shell: bash
         run: |
-          git fetch origin main
-          git show origin/main:.github/workflows/flow-agent-check.yml > .github/workflows/flow-agent-check.yml
-          git config user.name "flow-ci"
-          git config user.email "flow-ci@users.noreply.github.com"
-          git add CHANGELOG.md .flow-agent/work-packages/v0.9.7.9.2-artifact-derived-lowering-evidence.yaml .flow-agent/reports/v0.9.7.9.2-artifact-derived-lowering-evidence.md .github/workflows/flow-agent-check.yml src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt
-          git commit -m "Complete v0.9.7.9.2 artifact-derived lowering evidence"
-          git push origin HEAD:fix/v0.9.7.9.2-artifact-derived-lowering-evidence-final
-          git rev-parse HEAD | tee final-commit-sha.txt
+          set -o pipefail
+          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
+            ./gradlew --no-daemon run --args="conformance" --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-conformance.log
+            exit ${PIPESTATUS[0]}
+          else
+            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions." | tee ci-logs/offline-conformance.log
+          fi
 
-      - name: Upload finalization evidence
+      - name: Compile and Test
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Run Conformance
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-conformance.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Write CI Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "# Flow CI Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branch/ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
+          echo "Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent tooling unit tests" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline Gradle test when cache is available" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline Flow conformance when cache is available" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if compgen -G "build/test-results/test/*.xml" > /dev/null; then
+            echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import glob
+          import html
+          import xml.etree.ElementTree as ET
+          for path in sorted(glob.glob('build/test-results/test/*.xml')):
+              root = ET.parse(path).getroot()
+              for case in root.findall('testcase'):
+                  failure = case.find('failure') or case.find('error')
+                  if failure is None:
+                      continue
+                  cls = case.attrib.get('classname', '')
+                  name = case.attrib.get('name', '')
+                  message = failure.attrib.get('message', '')
+                  text = (failure.text or '').strip().splitlines()
+                  print(f"### {cls}.{name}")
+                  print("")
+                  print("```text")
+                  print(html.unescape(message)[:2000])
+                  for line in text[:12]:
+                      print(html.unescape(line)[:2000])
+                  print("```")
+                  print("")
+          PY
+          fi
+          for file in ci-logs/*.log; do
+            if [ -f "$file" ]; then
+              echo "## ${file}" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo '```text' >> "$GITHUB_STEP_SUMMARY"
+              tail -n 120 "$file" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+      - name: Upload CI Gradle Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: v0.9.7.9.2-finalization-evidence
+          name: flow-ci-gradle-logs
+          path: ci-logs/*.log
+          if-no-files-found: warn
+
+      - name: Upload CI Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-ci-test-reports
           path: |
-            final-commit-sha.txt
-            v0.9.7.9.2-final-test.log
-            v0.9.7.9.2-final-conformance.log
             build/test-results/test/*.xml
             build/reports/tests/test/**
           if-no-files-found: warn
