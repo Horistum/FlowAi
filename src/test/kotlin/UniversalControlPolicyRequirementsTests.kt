@@ -7,10 +7,13 @@ import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.ast.ActionNode
+import org.flowlang.ast.ApproveNode
 import org.flowlang.ast.FlowDocument
 import org.flowlang.ast.FlowNode
 import org.flowlang.ast.ReferenceNode
+import org.flowlang.ast.ResultBindingNode
 import org.flowlang.ast.SafetyNode
+import org.flowlang.ast.StringLiteralNode
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.controls.ControlEvidenceStatus
@@ -93,7 +96,7 @@ class UniversalControlPolicyRequirementsTests {
     }
 
     @Test
-    fun conditionalApprovalIsDynamicAndRequiresRuntimeEnforcementCapabilities() {
+    fun conditionalApprovalRemainsPendingAtIntentButFailsClosedInExecutionPlan() {
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
         val validation = IntentCapabilityValidator(modules).validate(intent)
         val plan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(intent))
@@ -101,37 +104,44 @@ class UniversalControlPolicyRequirementsTests {
         assertTrue(validation.valid, validation.issues.toString())
         assertEquals(ControlDecisionStatus.PENDING, validation.controlAssessment.decision.status)
         assertTrue(validation.controlAssessment.evidence.any { it.status == ControlEvidenceStatus.DYNAMIC })
-        assertEquals(ControlDecisionStatus.PENDING, plan.controlDecision.status)
+
+        assertEquals(ControlDecisionStatus.BLOCKED, plan.controlDecision.status)
+        assertTrue(plan.controlEvidence.any {
+            it.status == ControlEvidenceStatus.UNKNOWN &&
+                it.detail.orEmpty().contains("no provider enforcement evidence")
+        })
         assertTrue("approval.manual" in plan.requiredCapabilities)
         assertTrue("condition.evaluate" in plan.requiredCapabilities)
+        assertFailsWith<UnresolvedPlanningControlException> {
+            MandatoryMaterializationAuthority(targets, modules).authorize(plan, "jenkins")
+        }
+        assertTrue(
+            MandatoryMaterializationAuthority(targets, modules)
+                .authorizeDiagnosticEvidence(plan, "jenkins")
+                .compatibility.hasErrors
+        )
     }
 
     @Test
-    fun customPolicyWithConditionIsDynamicButBlankPolicyIsUnknown() {
+    fun customPolicyWithConditionIsPendingAtIntentButUnknownAtExecutionPlanning() {
         val dynamic = customPolicyIntent("risk.score <= 3")
         val unknown = customPolicyIntent("")
 
         val dynamicValidation = IntentCapabilityValidator(modules).validate(dynamic)
         val unknownValidation = IntentCapabilityValidator(modules).validate(unknown)
+        val dynamicPlan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(dynamic))
 
         assertTrue(dynamicValidation.valid)
         assertEquals(ControlDecisionStatus.PENDING, dynamicValidation.controlAssessment.decision.status)
         assertTrue(dynamicValidation.issues.any { it.code == "CONTROL_EVIDENCE_DYNAMIC" })
+        assertEquals(ControlDecisionStatus.BLOCKED, dynamicPlan.controlDecision.status)
         assertFalse(unknownValidation.valid)
         assertTrue(unknownValidation.issues.any { it.code == "SAFETY_POLICY_EVIDENCE_UNKNOWN" })
     }
 
     @Test
     fun destructiveModuleWithoutControlEvidenceBlocksExecutionButKeepsDiagnosticEvidence() {
-        val plan = FlowPlanner(modules).plan(FlowDocument(flow = FlowNode(
-            name = "delete",
-            steps = listOf(ActionNode(
-                module = "kubernetes",
-                action = "delete",
-                target = ReferenceNode(path = listOf("cluster")),
-                params = mapOf("resource" to org.flowlang.ast.StringLiteralNode(value = "namespace/demo"))
-            ))
-        )))
+        val plan = FlowPlanner(modules).plan(deleteFlow())
         val authority = MandatoryMaterializationAuthority(targets, modules)
 
         assertEquals(ControlDecisionStatus.BLOCKED, plan.controlDecision.status)
@@ -142,20 +152,47 @@ class UniversalControlPolicyRequirementsTests {
     }
 
     @Test
-    fun rawFlowSafetyDeclarationIsEvidenceButNotAnImplementationSpecificMeaning() {
-        val plan = FlowPlanner(modules).plan(FlowDocument(flow = FlowNode(
-            name = "delete",
-            steps = listOf(ActionNode(
-                module = "kubernetes",
-                action = "delete",
-                target = ReferenceNode(path = listOf("cluster")),
-                params = mapOf("resource" to org.flowlang.ast.StringLiteralNode(value = "namespace/demo")),
+    fun unrelatedApprovalDoesNotAuthorizeDestructiveTask() {
+        val plan = FlowPlanner(modules).plan(
+            deleteFlow(
+                approval = ApproveNode(result = ResultBindingNode(name = "approval")),
+                dependsOnApproval = false,
                 safety = SafetyNode(rule = "requiresApproval")
-            ))
-        )))
+            )
+        )
+
+        assertEquals(ControlDecisionStatus.BLOCKED, plan.controlDecision.status)
+        assertTrue(plan.controlEvidence.any {
+            it.requirementId.contains("control.approval.task") && it.status == ControlEvidenceStatus.UNKNOWN
+        })
+    }
+
+    @Test
+    fun reachableApprovalAncestorAuthorizesTheTaskControl() {
+        val plan = FlowPlanner(modules).plan(
+            deleteFlow(
+                approval = ApproveNode(result = ResultBindingNode(name = "approval")),
+                dependsOnApproval = true,
+                safety = SafetyNode(rule = "requiresApproval")
+            )
+        )
 
         assertEquals(ControlDecisionStatus.ALLOWED, plan.controlDecision.status)
         assertTrue(plan.controlEvidence.all { it.status == ControlEvidenceStatus.SATISFIED })
+    }
+
+    @Test
+    fun safetyDeclarationAloneIsRequirementMetadataNotApprovalImplementation() {
+        val plan = FlowPlanner(modules).plan(
+            deleteFlow(safety = SafetyNode(rule = "requiresApproval"))
+        )
+
+        assertEquals(ControlDecisionStatus.BLOCKED, plan.controlDecision.status)
+        assertTrue(plan.controlEvidence.any {
+            it.requirementId.contains("control.approval.task") &&
+                it.status == ControlEvidenceStatus.UNKNOWN &&
+                it.detail.orEmpty().contains("does not provide a reachable approval mechanism")
+        })
     }
 
     @Test
@@ -197,6 +234,28 @@ class UniversalControlPolicyRequirementsTests {
 
         assertTrue(meaning.workflows.single().steps.single().effects.isNotEmpty())
         assertTrue(meaning.controlRequirements.isEmpty())
+    }
+
+    private fun deleteFlow(
+        approval: ApproveNode? = null,
+        dependsOnApproval: Boolean = false,
+        safety: SafetyNode? = null
+    ): FlowDocument {
+        val steps = buildList {
+            approval?.let(::add)
+            add(ActionNode(
+                module = "kubernetes",
+                action = "delete",
+                target = ReferenceNode(path = listOf("cluster")),
+                params = mapOf(
+                    "resource" to StringLiteralNode(value = "namespace"),
+                    "name" to StringLiteralNode(value = "demo")
+                ),
+                dependsOn = if (dependsOnApproval) listOf("approval") else emptyList(),
+                safety = safety
+            ))
+        }
+        return FlowDocument(flow = FlowNode(name = "delete", steps = steps))
     }
 
     private fun migrationIntent(includeBackup: Boolean): IntentDocument {
