@@ -56,8 +56,7 @@ workflows:
 policies:
   - name: production-approval
     type: APPROVAL
-    condition: environment == 'prod'
-    message: Production deployment requires approval.
+    message: Approval is required before deployment in this reference flow.
 failure:
   notify: true
   rollback: true
