@@ -68,6 +68,10 @@ object StandardDiagnosticCatalog {
         code("TARGET_TYPE_INVALID", "flow-validation", "error", "validation-report.json", "Flow AST action targets a system type not accepted by the module action."),
         code("MISSING_PARAM", "flow-validation", "error", "validation-report.json", "Flow AST action misses a required module parameter."),
         code("SAFETY_REQUIRED", "flow-validation", "error", "validation-report.json", "Destructive Flow AST action lacks a safety rule."),
+        code("APPROVAL_REQUIRED", "flow-validation", "error", "validation-report.json", "An action contract requires unconditional approval before planning."),
+        code("ROLLBACK_APPROVAL_REQUIRED", "flow-validation", "error", "validation-report.json", "Rollback-sensitive work outside an error handler requires unconditional approval."),
+        code("ENVIRONMENT_APPROVAL_REQUIRED", "flow-validation", "error", "validation-report.json", "A policy-classified sensitive environment requires unconditional approval."),
+        code("ENVIRONMENT_CLASSIFICATION_UNKNOWN", "flow-validation", "error", "validation-report.json", "Environment evidence is dynamic or unclassified and cannot proceed to planning."),
 
         code("SAFETY_REQUIRES_CLARIFICATION", "safety", "error", "intent-decision-report.json", "Safety policy requires clarification before lowering."),
         code("SAFETY_UNMITIGATED_HIGH_RISK", "safety", "error", "intent-decision-report.json", "Intent contains an unmitigated high risk."),

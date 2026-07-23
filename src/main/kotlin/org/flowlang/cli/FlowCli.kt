@@ -90,6 +90,7 @@ private fun runFlowCommand(args: List<String>) {
     val ast = parser.parse(file)
     val validator = FlowValidator(registry)
     val report = validator.validate(ast)
+    require(report.valid) { "Flow validation failed before planning: " + report.issues.joinToString { it.code + ": " + it.message } }
     val plan = FlowPlanner(registry).plan(ast)
     val previewReport = PlanPreview().render(plan)
     val targets = targetRegistry()
@@ -151,6 +152,7 @@ private fun runIntentCommand(args: List<String>) {
 
     val ast = IntentToAstPlanner(registry).plan(intent)
     val validation = FlowValidator(registry).validate(ast)
+    require(validation.valid) { "Flow validation failed before planning: " + validation.issues.joinToString { it.code + ": " + it.message } }
     val plan = FlowPlanner(registry).plan(ast)
     val targetCapabilities = targetRegistry()
     val compatibility = CompatibilityAnalyzer(targetCapabilities).analyze(plan, target, strict = strict)
@@ -374,6 +376,7 @@ private fun runNormalizeCommand(args: List<String>) {
 
         val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
         val validation = FlowValidator(registry).validate(ast)
+        require(validation.valid) { "Flow validation failed before planning: " + validation.issues.joinToString { it.code + ": " + it.message } }
         val plan = FlowPlanner(registry).plan(ast)
         val actualTarget = target ?: "jenkins"
         val targetCapabilities = targetRegistry()

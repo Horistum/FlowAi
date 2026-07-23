@@ -2,6 +2,8 @@ package org.flowlang.validator
 
 import org.flowlang.ast.*
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.safety.EnvironmentSafetyPolicy
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 
 /**
  * Flow AST validator (docs/03, docs/04, docs/06).
@@ -12,7 +14,10 @@ import org.flowlang.modules.ModuleRegistry
  * reference resolution against scope, and expression operator validity. Recurses
  * through every control-flow and data statement.
  */
-class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
+class FlowValidator(
+    private val registry: ModuleRegistry = ModuleRegistry(),
+    private val environmentPolicy: EnvironmentSafetyPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
+) {
 
     private val standardResultFields = setOf(
         "ok", "status", "code", "data", "text", "lines", "json", "yaml", "error", "meta", "artifacts"
@@ -97,6 +102,7 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
             eh.steps.forEach { validateStatement(it, imported, document.flow.systems, ehScope, results, issues) }
         }
 
+        issues += SafetyBoundaryValidator(registry, environmentPolicy).validate(document)
         return ValidationReport(valid = issues.none { it.level == "error" }, issues = issues)
     }
 
@@ -228,8 +234,6 @@ class FlowValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
                     issues += err("UNKNOWN_PARAM", "Action '${action.module}.${action.action}' does not define parameter '$it'", action.sourceLocation)
                 }
             }
-            if (contract.safety.destructive && action.safety == null)
-                issues += err("SAFETY_REQUIRED", "Destructive action '${action.module}.${action.action}' requires a safety rule", action.sourceLocation)
         }
 
         // Action parameters are executable expressions. A bareword in an action
