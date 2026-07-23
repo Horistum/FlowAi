@@ -60,7 +60,7 @@ object PlanningControlAuthority {
             }
         }
 
-        val executionEvidence = evidence.map(ControlEvidence::failClosedForExecutionPlanning)
+        val executionEvidence = evidence.map { it.failClosedForExecutionPlanning() }
 
         // Do not deduplicate security obligations. A canonical-id collision is
         // malformed evidence and ControlDecisionAuthority must reject it instead
