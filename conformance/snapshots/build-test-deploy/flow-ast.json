@@ -53,21 +53,25 @@
       "type" : "System",
       "name" : "source",
       "systemType" : "git",
+      "purpose" : "Application source repository",
       "config" : { }
     }, {
       "type" : "System",
       "name" : "registry",
       "systemType" : "docker",
+      "purpose" : "Image registry",
       "config" : { }
     }, {
       "type" : "System",
       "name" : "cluster",
       "systemType" : "kubernetes",
+      "purpose" : "Deployment target",
       "config" : { }
     }, {
       "type" : "System",
       "name" : "standard",
       "systemType" : "standard",
+      "purpose" : "Semantic build and test operations",
       "config" : { }
     } ],
     "triggers" : [ ],
@@ -144,6 +148,14 @@
         "external" : true,
         "sourceCapability" : "CHECKOUT"
       } ],
+      "sourceId" : "checkout",
+      "bindingMetadata" : {
+        "system" : {
+          "type" : "StringLiteral",
+          "value" : "source"
+        }
+      },
+      "declaredOutputs" : [ ],
       "dependsOn" : [ ]
     }, {
       "type" : "Action",
@@ -191,6 +203,9 @@
         "external" : true,
         "sourceCapability" : "TEST"
       } ],
+      "sourceId" : "test",
+      "bindingMetadata" : { },
+      "declaredOutputs" : [ ],
       "dependsOn" : [ "checkout" ]
     }, {
       "type" : "Action",
@@ -245,6 +260,14 @@
         "external" : true,
         "sourceCapability" : "BUILD_IMAGE"
       } ],
+      "sourceId" : "build-image",
+      "bindingMetadata" : {
+        "system" : {
+          "type" : "StringLiteral",
+          "value" : "registry"
+        }
+      },
+      "declaredOutputs" : [ ],
       "dependsOn" : [ "test" ]
     }, {
       "type" : "If",
@@ -283,6 +306,8 @@
           "type" : "ResultBinding",
           "name" : "approve_prod"
         },
+        "sourceId" : "approve-prod",
+        "declaredOutputs" : [ ],
         "dependsOn" : [ "build_image" ]
       } ],
       "otherwise" : [ ]
@@ -330,6 +355,9 @@
         "external" : true,
         "sourceCapability" : "DEPLOY"
       } ],
+      "sourceId" : "deploy",
+      "bindingMetadata" : { },
+      "declaredOutputs" : [ ],
       "dependsOn" : [ "approve_prod" ]
     }, {
       "type" : "Action",
@@ -371,6 +399,9 @@
         "external" : true,
         "sourceCapability" : "VERIFY"
       } ],
+      "sourceId" : "verify",
+      "bindingMetadata" : { },
+      "declaredOutputs" : [ ],
       "dependsOn" : [ "deploy" ]
     } ],
     "errorHandler" : {
@@ -417,6 +448,8 @@
           "external" : true,
           "sourceCapability" : "ROLLBACK"
         } ],
+        "bindingMetadata" : { },
+        "declaredOutputs" : [ ],
         "dependsOn" : [ ]
       }, {
         "type" : "Action",
@@ -464,12 +497,307 @@
           "external" : true,
           "sourceCapability" : "NOTIFY"
         } ],
+        "bindingMetadata" : { },
+        "declaredOutputs" : [ ],
         "dependsOn" : [ ]
       } ]
     }
   },
   "metadata" : {
     "createdBy" : "intent-to-ast-planner",
-    "generatedByAI" : false
+    "generatedByAI" : false,
+    "sourceIntent" : {
+      "description" : "High-level deployment intent. AI should produce this layer before low-level Flow.",
+      "workflows" : [ {
+        "name" : "application-lifecycle",
+        "kind" : "DEPLOY",
+        "stepIds" : [ "checkout", "test", "build-image", "approve-prod", "deploy", "verify" ]
+      } ],
+      "policies" : [ {
+        "name" : "production-approval",
+        "type" : "APPROVAL",
+        "condition" : "environment == 'prod'",
+        "message" : "Production deployment requires approval."
+      } ],
+      "systemPurposes" : {
+        "source" : "Application source repository",
+        "registry" : "Image registry",
+        "cluster" : "Deployment target",
+        "standard" : "Semantic build and test operations"
+      },
+      "failure" : {
+        "notify" : true,
+        "rollback" : true,
+        "stopOnError" : true
+      }
+    },
+    "loweringReport" : {
+      "contractVersion" : "1.0",
+      "evidence" : [ {
+        "sourcePath" : "$.name",
+        "targetPath" : "$.flow.name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.description",
+        "targetPath" : "$.metadata.sourceIntent.description",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.inputs[0].name",
+        "targetPath" : "$.flow.input[0].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.inputs[0].type",
+        "targetPath" : "$.flow.input[0].valueType",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.inputs[0].required",
+        "targetPath" : "$.flow.input[0].required",
+        "disposition" : "PRESERVED",
+        "valueKind" : "boolean"
+      }, {
+        "sourcePath" : "$.inputs[1].name",
+        "targetPath" : "$.flow.input[1].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.inputs[1].type",
+        "targetPath" : "$.flow.input[1].valueType",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.inputs[1].required",
+        "targetPath" : "$.flow.input[1].required",
+        "disposition" : "PRESERVED",
+        "valueKind" : "boolean"
+      }, {
+        "sourcePath" : "$.systems[0].name",
+        "targetPath" : "$.flow.systems[0].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[0].type",
+        "targetPath" : "$.flow.systems[0].systemType",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Canonical system type normalization."
+      }, {
+        "sourcePath" : "$.systems[0].purpose",
+        "targetPath" : "$.metadata.sourceIntent.systemPurposes.source",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[1].name",
+        "targetPath" : "$.flow.systems[1].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[1].type",
+        "targetPath" : "$.flow.systems[1].systemType",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Canonical system type normalization."
+      }, {
+        "sourcePath" : "$.systems[1].purpose",
+        "targetPath" : "$.metadata.sourceIntent.systemPurposes.registry",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[2].name",
+        "targetPath" : "$.flow.systems[2].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[2].type",
+        "targetPath" : "$.flow.systems[2].systemType",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Canonical system type normalization."
+      }, {
+        "sourcePath" : "$.systems[2].purpose",
+        "targetPath" : "$.metadata.sourceIntent.systemPurposes.cluster",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[3].name",
+        "targetPath" : "$.flow.systems[3].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[3].type",
+        "targetPath" : "$.flow.systems[3].systemType",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Canonical system type normalization."
+      }, {
+        "sourcePath" : "$.systems[3].purpose",
+        "targetPath" : "$.metadata.sourceIntent.systemPurposes.standard",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].name",
+        "targetPath" : "$.metadata.sourceIntent.workflows[0].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].kind",
+        "targetPath" : "$.metadata.sourceIntent.workflows[0].kind",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].id",
+        "targetPath" : "$.flow.steps[0].result",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Step id becomes a stable result binding and source id."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].capability",
+        "targetPath" : "$.flow.steps[0].semanticCapability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].uses",
+        "targetPath" : "$.flow.steps[0].module/$.flow.steps[0].action",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "binding",
+        "note" : "Explicit binding resolves to module and action."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].params.system",
+        "targetPath" : "$.flow.steps[0].bindingMetadata.system",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].params.branch",
+        "targetPath" : "$.flow.steps[0].params.branch",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].id",
+        "targetPath" : "$.flow.steps[1].result",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Step id becomes a stable result binding and source id."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].capability",
+        "targetPath" : "$.flow.steps[1].semanticCapability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].requires",
+        "targetPath" : "$.flow.steps[1].dependsOn",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "list",
+        "note" : "Source step ids become canonical result dependencies."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[2].id",
+        "targetPath" : "$.flow.steps[2].result",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Step id becomes a stable result binding and source id."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[2].capability",
+        "targetPath" : "$.flow.steps[2].semanticCapability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[2].uses",
+        "targetPath" : "$.flow.steps[2].module/$.flow.steps[2].action",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "binding",
+        "note" : "Explicit binding resolves to module and action."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[2].requires",
+        "targetPath" : "$.flow.steps[2].dependsOn",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "list",
+        "note" : "Source step ids become canonical result dependencies."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[2].params.system",
+        "targetPath" : "$.flow.steps[2].bindingMetadata.system",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[2].params.image",
+        "targetPath" : "$.flow.steps[2].params.image",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[2].params.path",
+        "targetPath" : "$.flow.steps[2].params.path",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[2].params.push",
+        "targetPath" : "$.flow.steps[2].params.push",
+        "disposition" : "PRESERVED",
+        "valueKind" : "boolean"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[3].id",
+        "targetPath" : "$.flow.steps[3].result",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Step id becomes a stable result binding and source id."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[3].capability",
+        "targetPath" : "$.flow.steps[3].semanticCapability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[3].requires",
+        "targetPath" : "$.flow.steps[3].dependsOn",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "list",
+        "note" : "Source step ids become canonical result dependencies."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[4].id",
+        "targetPath" : "$.flow.steps[4].result",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Step id becomes a stable result binding and source id."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[4].capability",
+        "targetPath" : "$.flow.steps[4].semanticCapability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[4].requires",
+        "targetPath" : "$.flow.steps[4].dependsOn",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "list",
+        "note" : "Source step ids become canonical result dependencies."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[5].id",
+        "targetPath" : "$.flow.steps[5].result",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Step id becomes a stable result binding and source id."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[5].capability",
+        "targetPath" : "$.flow.steps[5].semanticCapability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[5].requires",
+        "targetPath" : "$.flow.steps[5].dependsOn",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "list",
+        "note" : "Source step ids become canonical result dependencies."
+      }, {
+        "sourcePath" : "$.policies[0]",
+        "targetPath" : "$.flow.controlRequirements",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "policy",
+        "note" : "Policy source is preserved and supported policy meaning becomes a control requirement."
+      }, {
+        "sourcePath" : "$.failure",
+        "targetPath" : "$.flow.errorHandler",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "failure-policy",
+        "note" : "Failure notification and rollback lower to canonical error-handler actions; stopOnError=true is the canonical default."
+      } ]
+    }
   }
 }

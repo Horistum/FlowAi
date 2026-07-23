@@ -91,6 +91,26 @@
       "items": {
         "$ref": "#/$defs/executionTopologyRequirement"
       }
+    },
+    "sourceIntent": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/intentSourceMetadata"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "loweringReport": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/intentLoweringReport"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "$defs": {
@@ -120,6 +140,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "defaultExpression": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -731,6 +757,168 @@
           ]
         }
       }
+    },
+    "intentWorkflowMetadata": {
+      "type": "object",
+      "required": [
+        "name",
+        "kind",
+        "stepIds"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "stepIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "intentPolicyMetadata": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "condition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "intentFailureMetadata": {
+      "type": "object",
+      "required": [
+        "notify",
+        "rollback",
+        "stopOnError"
+      ],
+      "properties": {
+        "notify": {
+          "type": "boolean"
+        },
+        "rollback": {
+          "type": "boolean"
+        },
+        "stopOnError": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "intentSourceMetadata": {
+      "type": "object",
+      "required": [
+        "workflows",
+        "policies",
+        "systemPurposes",
+        "failure"
+      ],
+      "properties": {
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workflows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/intentWorkflowMetadata"
+          }
+        },
+        "policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/intentPolicyMetadata"
+          }
+        },
+        "systemPurposes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "failure": {
+          "$ref": "#/$defs/intentFailureMetadata"
+        }
+      },
+      "additionalProperties": false
+    },
+    "intentLoweringEvidence": {
+      "type": "object",
+      "required": [
+        "sourcePath",
+        "targetPath",
+        "disposition",
+        "valueKind"
+      ],
+      "properties": {
+        "sourcePath": {
+          "type": "string"
+        },
+        "targetPath": {
+          "type": "string"
+        },
+        "disposition": {
+          "enum": [
+            "PRESERVED",
+            "TRANSFORMED"
+          ]
+        },
+        "valueKind": {
+          "type": "string"
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "intentLoweringReport": {
+      "type": "object",
+      "required": [
+        "contractVersion",
+        "evidence"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": "1.0"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/intentLoweringEvidence"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

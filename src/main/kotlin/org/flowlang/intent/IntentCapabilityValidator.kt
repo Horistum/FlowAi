@@ -24,6 +24,24 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         val stepIds = steps.map { it.id }
 
         if (intent.name.isBlank()) issues += err("INTENT_NAME_EMPTY", "Intent name must not be empty.")
+        if (intent.workflows.size > 1) {
+            issues += err(
+                "MULTIPLE_WORKFLOWS_LOWERING_UNSUPPORTED",
+                "Intent declares ${intent.workflows.size} workflows, but canonical AST lowering does not yet preserve independent workflow boundaries."
+            )
+        }
+        if (!intent.failure.stopOnError) {
+            issues += err(
+                "STOP_ON_ERROR_FALSE_UNSUPPORTED",
+                "failure.stopOnError=false is not represented by the canonical error-handler contract and cannot be lowered honestly."
+            )
+        }
+        intent.policies.filter { it.type !in SUPPORTED_POLICY_TYPES }.forEach { policy ->
+            issues += err(
+                "UNSUPPORTED_INTENT_POLICY_LOWERING",
+                "Policy '${policy.name}' uses type '${policy.type}', which has no canonical lowering contract."
+            )
+        }
         val workflowNames = intent.workflows.map { it.name }.toSet()
         intent.triggers.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { id ->
             issues += err("DUPLICATE_INTENT_TRIGGER", "Intent trigger '$id' is declared more than once.")
@@ -57,6 +75,12 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         steps.forEach { step ->
             step.requires.filter { it !in stepIds }.forEach { missing ->
                 issues += err("UNKNOWN_STEP_DEPENDENCY", "Unknown intent step dependency '$missing' required by '${step.id}'.")
+            }
+            step.produces.filter { it.isBlank() }.forEach {
+                issues += err("EMPTY_STEP_OUTPUT", "Step '${step.id}' declares an empty output name.")
+            }
+            step.produces.groupBy { it }.filterValues { it.size > 1 }.keys.forEach { output ->
+                issues += err("DUPLICATE_STEP_OUTPUT", "Step '${step.id}' declares output '$output' more than once.")
             }
         }
 
@@ -95,13 +119,15 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
                 }
             }
             val acceptedBindingParams = binding.bindingParameters.toSet()
-            step.params.keys
-                .filter { it !in (contract.requiredParams + contract.optionalParams) }
-                .filter { it !in acceptedBindingParams }
-                .filter { it !in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
-                .forEach { key ->
-                    issues += warn("UNKNOWN_STEP_PARAM", "Step '${step.id}' capability '${step.capability}' does not declare semantic params '$key'.")
-                }
+            if (step.capability != StandardCapability.CUSTOM) {
+                step.params.keys
+                    .filter { it !in (contract.requiredParams + contract.optionalParams) }
+                    .filter { it !in acceptedBindingParams }
+                    .filter { it !in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
+                    .forEach { key ->
+                        issues += err("UNKNOWN_STEP_PARAM", "Step '${step.id}' capability '${step.capability}' does not declare semantic params '$key'; accepting it would silently discard the value during canonical lowering.")
+                    }
+            }
         }
 
         detectCycles(steps, issues)
@@ -194,6 +220,7 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
     private fun err(code: String, message: String) = IntentValidationIssue("error", code, message)
 
     companion object {
+        private val SUPPORTED_POLICY_TYPES = setOf(IntentPolicyType.APPROVAL, IntentPolicyType.SAFETY, IntentPolicyType.CUSTOM)
         private val ISO_INTERVAL = Regex("""^P(?=\d|T\d)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$""")
     }
     private fun warn(code: String, message: String) = IntentValidationIssue("warning", code, message)

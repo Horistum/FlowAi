@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 11
+stateVersion: 12
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,14 +18,14 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.8"
-  completedItemName: "Abstract Execution Topology Model"
+  completedItem: "0.9.7.9"
+  completedItemName: "Intent Lowering and Diagnostic Honesty"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.9"
-  nextCoreItemName: "Intent Lowering and Diagnostic Honesty"
+  nextCoreItem: "0.9.7.10"
+  nextCoreItemName: "Bounded Semantic Closure Gate"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
-    core: ".flow-agent/roadmap-core-v0.9.7.8.yaml"
+    core: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
 
@@ -76,6 +76,11 @@ qualityPrinciples:
   - "Action capability, ordering and continuity cannot substitute for topology evidence."
   - "Missing, partial, unsupported and contradictory topology evidence blocks provider invocation."
   - "Target topology profiles must be complete, explicit and independent from renderer layout."
+  - "Every accepted meaningful intent input is preserved or rejected with explicit path-aware diagnostic evidence."
+  - "Equivalent source forms must produce equivalent canonical meaning and diagnostics."
+  - "Malformed declarations fail closed instead of becoming empty or default meaning."
+  - "Unsupported lowering shapes cannot be flattened into weaker canonical contracts."
+  - "Materialization validates lowering coverage before provider invocation."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-implementation-head"
@@ -85,15 +90,15 @@ lastKnownValidation:
   cleanTest: "passed-on-implementation-head"
   conformance: "passed-on-implementation-head"
   executableReferenceEvidence: "passed-on-implementation-head"
-  validationSource: "Flow CI #1811 passed on implementation head ba7e90cad6efe92fb929f13475fa8f3409fd3ef1."
+  validationSource: "Flow CI #1833 passed on implementation head 784573fd67abc73bf18dc98d6ae055d7914f2420."
   notes:
-    - "Package, public standard, AST, ExecutionPlan and Target Manifest versions remain unchanged."
-    - "Target Registry advances from 3.0 to 3.1 and requires complete topology profiles."
-    - "Canonical intent derives topology requirements before explicit binding."
-    - "AST and execution plans preserve isolation, lifetime, persistence and propagation requirements."
-    - "Materialization re-derives minimum topology and rejects omitted or unsupported evidence."
-    - "Partial topology cannot authorize executable provider invocation."
-    - "Action capability, ordering and continuity remain separate from execution topology."
+    - "Package, public standard and artifact contract versions remain unchanged."
+    - "Equivalent block YAML, flow YAML, JSON and normalized map forms lower identically."
+    - "The intent loader rejects unknown fields, malformed shapes, invalid booleans, empty references and duplicate config sources."
+    - "AST and execution plans preserve source metadata and typed lowering coverage evidence."
+    - "Declared outputs, structured defaults, descriptions, system purpose and binding metadata survive lowering."
+    - "Unknown semantic parameters and unsupported lowering shapes fail closed instead of disappearing."
+    - "Materialization rejects missing, malformed or inconsistent lowering evidence."
     - "Reference snapshots were regenerated through the canonical production generator."
     - "The Jenkins executable reference proof remains live."
     - "The final metadata head must pass the unmodified standard Flow CI."

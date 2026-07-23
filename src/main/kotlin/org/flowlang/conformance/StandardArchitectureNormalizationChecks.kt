@@ -54,6 +54,7 @@ internal class StandardArchitectureNormalizationChecks(
         checkUniversalEffectModel(),
         checkUniversalControlPolicyRequirements(),
         checkAbstractExecutionTopologyModel(),
+        checkIntentLoweringDiagnosticHonesty(),
         checkIntentDesignReport(),
         checkCorePackagesDoNotImportJackson(),
         checkModulesDoNotOwnTargetRendering(),
@@ -257,6 +258,75 @@ internal class StandardArchitectureNormalizationChecks(
         val contradiction = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, contradictory)
         require(contradiction.decision.status == ExecutionTopologyDecisionStatus.BLOCKED)
         require(contradiction.evidence.any { it.status == ExecutionTopologyEvidenceStatus.CONTRADICTORY })
+    }
+
+    private fun checkIntentLoweringDiagnosticHonesty(): ConformanceCheck = runCheck("intent.lowering.diagnostic-honesty") {
+        val block = IntentYamlLoader.loadText(
+            """
+            name: lowering-honesty
+            description: Preserve accepted data
+            inputs:
+              - name: config
+                type: object
+                default: { enabled: true, names: [one, two] }
+            systems:
+              - name: standard
+                type: standard
+                purpose: semantic operations
+            workflows:
+              - name: main
+                kind: CUSTOM
+                steps:
+                  - id: transform
+                    capability: CUSTOM
+                    produces: [artifact]
+                    params:
+                      structured: { enabled: true, names: [one, two] }
+                      reference: ref:config.names
+            """.trimIndent(),
+            "block.yaml"
+        )
+        val flowStyle = IntentYamlLoader.loadText(
+            """
+            name: lowering-honesty
+            description: Preserve accepted data
+            inputs: [{ name: config, type: object, default: { enabled: true, names: [one, two] } }]
+            systems: [{ name: standard, type: standard, purpose: semantic operations }]
+            workflows: [{ name: main, kind: CUSTOM, steps: [{ id: transform, capability: CUSTOM, produces: [artifact], params: { structured: { enabled: true, names: [one, two] }, reference: "ref:config.names" } }] }]
+            """.trimIndent(),
+            "flow.yaml"
+        )
+        require(block == flowStyle) { "Equivalent block and flow-style source forms normalized differently." }
+
+        val ast = IntentToAstPlanner(registry).plan(block)
+        val plan = FlowPlanner(registry).plan(ast)
+        require(ast.metadata.loweringReport?.evidence.orEmpty().isNotEmpty()) { "AST lacks lowering coverage evidence." }
+        require(plan.loweringReport == ast.metadata.loweringReport) { "Execution plan lost lowering coverage evidence." }
+        require(plan.tasks.single().outputs.contains("artifact")) { "Declared intent output disappeared during lowering." }
+        require(plan.inputs.single().defaultExpression?.contains("enabled") == true) { "Structured input default disappeared during planning." }
+
+        val malformed = runCatching {
+            IntentYamlLoader.loadText("name: malformed\nworkflows: [not-an-object]", "malformed.yaml")
+        }.exceptionOrNull()
+        require(malformed is org.flowlang.intent.IntentSourceException) { "Malformed source did not produce a stable source diagnostic." }
+        require(malformed.code == "INTENT_LIST_ITEM_TYPE_MISMATCH") { "Malformed source produced code '${malformed.code}'." }
+
+        val unsupported = IntentDocument(
+            name = "unsupported-param",
+            workflows = listOf(IntentWorkflow(
+                name = "main",
+                kind = IntentWorkflowKind.CUSTOM,
+                steps = listOf(IntentStep(
+                    id = "test",
+                    capability = StandardCapability.TEST,
+                    params = mapOf("mystery" to IntentString("must-not-disappear"))
+                ))
+            ))
+        )
+        val report = IntentCapabilityValidator(registry).validate(unsupported)
+        require(!report.valid && report.issues.any { it.code == "UNKNOWN_STEP_PARAM" }) {
+            "Unknown semantic input was accepted even though canonical lowering would discard it."
+        }
     }
 
     private fun checkIntentDesignReport(): ConformanceCheck = runCheck("intent.design-report") {

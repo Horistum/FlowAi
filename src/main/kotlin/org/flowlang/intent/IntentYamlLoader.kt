@@ -2,119 +2,157 @@ package org.flowlang.intent
 
 import java.io.File
 import org.flowlang.serialization.FlowYaml
+import org.flowlang.standard.FlowStandardVersions
+
+/** Stable source-boundary failure. Human text may improve; [code] and [path] are contract evidence. */
+class IntentSourceException(
+    val code: String,
+    val path: String,
+    val sourceName: String,
+    detail: String
+) : IllegalStateException("$code at $path in $sourceName: $detail")
 
 /**
- * Loads and normalizes the high-level Standard Intent Model from YAML.
+ * Strict YAML/JSON boundary for the Standard Intent Model.
  *
- * This loader uses the shared Jackson-backed [FlowYaml] boundary.
- * Intent input is a user/AI boundary and must accept normal YAML forms: block maps,
- * flow-style maps (`params: { app: demo }`), flow-style lists, quoted strings and
- * standard scalar handling. Complex maps/lists remain structured IntentValue
- * objects instead of being flattened into JSON strings.
+ * Equivalent YAML and JSON shapes normalize identically. Malformed shapes, unknown
+ * fields and invalid scalar types fail before they can become empty/default meaning.
  */
 object IntentYamlLoader {
+    private val rootFields = setOf("intentVersion", "kind", "name", "description", "inputs", "systems", "triggers", "workflows", "policies", "failure")
+
     fun load(file: File): IntentDocument = loadText(file.readText(), file.path)
 
-    fun loadText(text: String, sourceName: String = "<intent>"): IntentDocument {
-        val root = FlowYaml.readMap(text, sourceName)
-        return normalize(root, sourceName)
-    }
+    fun loadText(text: String, sourceName: String = "<intent>"): IntentDocument =
+        normalize(FlowYaml.readMap(text, sourceName), sourceName)
 
     fun normalize(root: Map<String, Any?>, sourceName: String = "<intent>"): IntentDocument {
-        val name = root.string("name") ?: error("Intent '$sourceName' is missing required field: name")
-        val kind = root.string("kind") ?: "FlowIntentDocument"
-        require(kind == "FlowIntentDocument") { "Unsupported intent kind '$kind' in $sourceName" }
-        val intentVersion = root.string("intentVersion") ?: org.flowlang.standard.FlowStandardVersions.INTENT_VERSION
-        require(intentVersion == org.flowlang.standard.FlowStandardVersions.INTENT_VERSION) {
-            "Unsupported intentVersion '$intentVersion' in $sourceName. Migrate to ${org.flowlang.standard.FlowStandardVersions.INTENT_VERSION}; schedules are top-level triggers in the 2.0 contract."
+        root.requireOnly(rootFields, "$", sourceName)
+        val name = root.requiredString("name", "$.name", sourceName)
+        val kind = root.optionalString("kind", "$.kind", sourceName) ?: "FlowIntentDocument"
+        if (kind != "FlowIntentDocument") fail("UNSUPPORTED_INTENT_KIND", "$.kind", sourceName, "Unsupported intent kind '$kind'.")
+        val intentVersion = root.optionalString("intentVersion", "$.intentVersion", sourceName) ?: FlowStandardVersions.INTENT_VERSION
+        if (intentVersion != FlowStandardVersions.INTENT_VERSION) {
+            fail(
+                "UNSUPPORTED_INTENT_VERSION",
+                "$.intentVersion",
+                sourceName,
+                "Unsupported intentVersion '$intentVersion'. Migrate to ${FlowStandardVersions.INTENT_VERSION}; schedules are top-level triggers in the 2.0 contract."
+            )
         }
-
         return IntentDocument(
             intentVersion = intentVersion,
             kind = kind,
             name = name,
-            description = root.string("description"),
-            inputs = root.listOfMaps("inputs").map { it.toIntentInput() },
-            systems = root.listOfMaps("systems").map { it.toIntentSystem() },
-            triggers = root.listOfMaps("triggers").map { it.toIntentTrigger() },
-            workflows = root.listOfMaps("workflows").map { it.toIntentWorkflow() },
-            policies = root.listOfMaps("policies").map { it.toIntentPolicy() },
-            failure = root.map("failure")?.toIntentFailurePolicy() ?: IntentFailurePolicy()
+            description = root.optionalString("description", "$.description", sourceName),
+            inputs = root.objectList("inputs", "$.inputs", sourceName).mapIndexed { index, value -> value.toIntentInput("$.inputs[$index]", sourceName) },
+            systems = root.objectList("systems", "$.systems", sourceName).mapIndexed { index, value -> value.toIntentSystem("$.systems[$index]", sourceName) },
+            triggers = root.objectList("triggers", "$.triggers", sourceName).mapIndexed { index, value -> value.toIntentTrigger("$.triggers[$index]", sourceName) },
+            workflows = root.objectList("workflows", "$.workflows", sourceName).mapIndexed { index, value -> value.toIntentWorkflow("$.workflows[$index]", sourceName) },
+            policies = root.objectList("policies", "$.policies", sourceName).mapIndexed { index, value -> value.toIntentPolicy("$.policies[$index]", sourceName) },
+            failure = root.optionalObject("failure", "$.failure", sourceName)?.toIntentFailurePolicy("$.failure", sourceName) ?: IntentFailurePolicy()
         )
     }
 
-    private fun Map<String, Any?>.toIntentInput(): IntentInput = IntentInput(
-        name = string("name") ?: error("Intent input is missing name"),
-        type = string("type") ?: "text",
-        required = bool("required") ?: false,
-        default = this["default"]?.toIntentValue()
-    )
+    private fun Map<String, Any?>.toIntentInput(path: String, source: String): IntentInput {
+        requireOnly(setOf("name", "type", "required", "default"), path, source)
+        return IntentInput(
+            name = requiredString("name", "$path.name", source),
+            type = optionalString("type", "$path.type", source) ?: "text",
+            required = optionalBoolean("required", "$path.required", source) ?: false,
+            default = if (containsKey("default")) this["default"].toIntentValue("$path.default", source) else null
+        )
+    }
 
-    private fun Map<String, Any?>.toIntentSystem(): IntentSystem {
-        val name = string("name") ?: error("Intent system is missing name")
-        val type = string("type") ?: error("Intent system '$name' is missing type")
-        val nested = map("config")?.mapValues { (_, v) -> v.toIntentValue() } ?: emptyMap()
+    private fun Map<String, Any?>.toIntentSystem(path: String, source: String): IntentSystem {
+        val name = requiredString("name", "$path.name", source)
+        val type = requiredString("type", "$path.type", source)
+        val nestedRaw = optionalObject("config", "$path.config", source).orEmpty()
         val reserved = setOf("name", "type", "purpose", "config")
-        val inline = filterKeys { it !in reserved }.mapValues { (_, v) -> v.toIntentValue() }
+        val inlineRaw = filterKeys { it !in reserved }
+        val duplicates = nestedRaw.keys.intersect(inlineRaw.keys)
+        if (duplicates.isNotEmpty()) {
+            fail("DUPLICATE_SYSTEM_CONFIG_SOURCE", path, source, "Config keys ${duplicates.sorted()} are declared both under config and inline.")
+        }
+        val nested = nestedRaw.mapValues { (key, value) -> value.toIntentValue("$path.config.$key", source) }
+        val inline = inlineRaw.mapValues { (key, value) -> value.toIntentValue("$path.$key", source) }
         return IntentSystem(
             name = name,
             type = type,
-            purpose = string("purpose"),
+            purpose = optionalString("purpose", "$path.purpose", source),
             config = nested + inline
         )
     }
 
-
-    private fun Map<String, Any?>.toIntentTrigger(): IntentTrigger {
-        val id = string("id") ?: error("Intent trigger is missing id")
-        val type = strictEnum<IntentTriggerType>(string("type") ?: error("Intent trigger '$id' is missing type"), "trigger type", id)
-        val schedule = map("schedule")?.let { raw ->
+    private fun Map<String, Any?>.toIntentTrigger(path: String, source: String): IntentTrigger {
+        requireOnly(setOf("id", "type", "workflows", "schedule", "event", "params"), path, source)
+        val id = requiredString("id", "$path.id", source)
+        val type = strictEnum<IntentTriggerType>(requiredString("type", "$path.type", source), "UNKNOWN_TRIGGER_TYPE", "$path.type", source)
+        val schedule = optionalObject("schedule", "$path.schedule", source)?.let { raw ->
+            raw.requireOnly(setOf("kind", "expression", "timezone"), "$path.schedule", source)
             IntentSchedule(
-                kind = strictEnum(raw.string("kind") ?: error("Schedule trigger '$id' is missing schedule.kind"), "schedule kind", id),
-                expression = raw.string("expression") ?: error("Schedule trigger '$id' is missing schedule.expression"),
-                timezone = raw.string("timezone")
+                kind = strictEnum(raw.requiredString("kind", "$path.schedule.kind", source), "UNKNOWN_SCHEDULE_KIND", "$path.schedule.kind", source),
+                expression = raw.requiredString("expression", "$path.schedule.expression", source),
+                timezone = raw.optionalString("timezone", "$path.schedule.timezone", source)
             )
         }
         return IntentTrigger(
             id = id,
             type = type,
-            workflows = stringList("workflows").ifEmpty { listOf("main") },
+            workflows = stringList("workflows", "$path.workflows", source).ifEmpty { listOf("main") },
             schedule = schedule,
-            event = string("event"),
-            params = map("params")?.mapValues { (_, value) -> value.toIntentValue() } ?: emptyMap()
+            event = optionalString("event", "$path.event", source),
+            params = optionalObject("params", "$path.params", source).orEmpty()
+                .mapValues { (key, value) -> value.toIntentValue("$path.params.$key", source) }
         )
     }
 
-    private fun Map<String, Any?>.toIntentWorkflow(): IntentWorkflow = IntentWorkflow(
-        name = string("name") ?: error("Intent workflow is missing name"),
-        kind = strictEnum(string("kind") ?: "CUSTOM", "workflow kind", string("name") ?: "<workflow>"),
-        steps = listOfMaps("steps").map { it.toIntentStep() }
-    )
+    private fun Map<String, Any?>.toIntentWorkflow(path: String, source: String): IntentWorkflow {
+        requireOnly(setOf("name", "kind", "steps"), path, source)
+        val name = requiredString("name", "$path.name", source)
+        return IntentWorkflow(
+            name = name,
+            kind = strictEnum(optionalString("kind", "$path.kind", source) ?: "CUSTOM", "UNKNOWN_WORKFLOW_KIND", "$path.kind", source),
+            steps = objectList("steps", "$path.steps", source).mapIndexed { index, value -> value.toIntentStep("$path.steps[$index]", source) }
+        )
+    }
 
-    private fun Map<String, Any?>.toIntentStep(): IntentStep = IntentStep(
-        id = string("id") ?: error("Intent step is missing id"),
-        capability = strictCapability(string("capability") ?: "CUSTOM", string("id") ?: "<step>"),
-        description = string("description"),
-        uses = string("uses"),
-        requires = stringList("requires"),
-        produces = stringList("produces"),
-        params = map("params")?.mapValues { (_, v) -> v.toIntentValue() } ?: emptyMap()
-    )
+    private fun Map<String, Any?>.toIntentStep(path: String, source: String): IntentStep {
+        requireOnly(setOf("id", "capability", "description", "uses", "requires", "produces", "params"), path, source)
+        val id = requiredString("id", "$path.id", source)
+        return IntentStep(
+            id = id,
+            capability = strictCapability(optionalString("capability", "$path.capability", source) ?: "CUSTOM", id, "$path.capability", source),
+            description = optionalString("description", "$path.description", source),
+            uses = optionalString("uses", "$path.uses", source),
+            requires = stringList("requires", "$path.requires", source),
+            produces = stringList("produces", "$path.produces", source),
+            params = optionalObject("params", "$path.params", source).orEmpty()
+                .mapValues { (key, value) -> value.toIntentValue("$path.params.$key", source) }
+        )
+    }
 
-    private fun Map<String, Any?>.toIntentPolicy(): IntentPolicy = IntentPolicy(
-        name = string("name") ?: error("Intent policy is missing name"),
-        type = enumValue(string("type") ?: "CUSTOM", IntentPolicyType.CUSTOM),
-        condition = string("condition"),
-        message = string("message")
-    )
+    private fun Map<String, Any?>.toIntentPolicy(path: String, source: String): IntentPolicy {
+        requireOnly(setOf("name", "type", "condition", "message"), path, source)
+        val name = requiredString("name", "$path.name", source)
+        return IntentPolicy(
+            name = name,
+            type = strictEnum(optionalString("type", "$path.type", source) ?: "CUSTOM", "UNKNOWN_POLICY_TYPE", "$path.type", source),
+            condition = optionalString("condition", "$path.condition", source),
+            message = optionalString("message", "$path.message", source)
+        )
+    }
 
-    private fun Map<String, Any?>.toIntentFailurePolicy(): IntentFailurePolicy = IntentFailurePolicy(
-        notify = bool("notify") ?: false,
-        rollback = bool("rollback") ?: false,
-        stopOnError = bool("stopOnError") ?: true
-    )
+    private fun Map<String, Any?>.toIntentFailurePolicy(path: String, source: String): IntentFailurePolicy {
+        requireOnly(setOf("notify", "rollback", "stopOnError"), path, source)
+        return IntentFailurePolicy(
+            notify = optionalBoolean("notify", "$path.notify", source) ?: false,
+            rollback = optionalBoolean("rollback", "$path.rollback", source) ?: false,
+            stopOnError = optionalBoolean("stopOnError", "$path.stopOnError", source) ?: true
+        )
+    }
 
-    private fun Any?.toIntentValue(): IntentValue = when (this) {
+    private fun Any?.toIntentValue(path: String, source: String): IntentValue = when (this) {
         null -> IntentNull()
         is IntentValue -> this
         is Boolean -> IntentBoolean(this)
@@ -123,77 +161,112 @@ object IntentYamlLoader {
         is Float -> IntentNumber(toDouble(), isInteger = false)
         is Double -> IntentNumber(this, isInteger = this % 1.0 == 0.0)
         is Number -> IntentNumber(toDouble(), isInteger = false)
-        is String -> parseStringValue(this)
-        is Map<*, *> -> IntentObject(entries.mapNotNull { (k, v) -> k?.toString()?.let { it to v.toIntentValue() } }.toMap())
-        is List<*> -> IntentList(map { it.toIntentValue() })
-        else -> IntentString(toString())
+        is String -> parseStringValue(this, path, source)
+        is Map<*, *> -> {
+            val values = linkedMapOf<String, IntentValue>()
+            entries.forEach { (rawKey, rawValue) ->
+                val key = rawKey as? String ?: fail("NON_STRING_OBJECT_KEY", path, source, "Object keys must be strings.")
+                values[key] = rawValue.toIntentValue("$path.$key", source)
+            }
+            IntentObject(values)
+        }
+        is List<*> -> IntentList(mapIndexed { index, value -> value.toIntentValue("$path[$index]", source) })
+        else -> fail("UNSUPPORTED_INTENT_VALUE_TYPE", path, source, "Unsupported value type '${this::class.qualifiedName}'.")
     }
 
-    private fun parseStringValue(raw: String): IntentValue = when {
-        raw.startsWith("secret:") -> IntentSecretRef(raw.removePrefix("secret:"))
-        raw.startsWith("ref:") -> IntentRef(raw.removePrefix("ref:").split('.').filter { it.isNotBlank() })
-        raw.startsWith("expr:") -> IntentExpression(raw.removePrefix("expr:"))
-        raw.matches(Regex("""^\$\{[A-Za-z_][A-Za-z0-9_.-]*}$""")) ->
-            IntentRef(raw.removePrefix("\${").removeSuffix("}").split('.').filter { it.isNotBlank() })
-        raw.matches(Regex("""^\$[A-Za-z_][A-Za-z0-9_.-]*$""")) ->
-            IntentRef(raw.drop(1).split('.').filter { it.isNotBlank() })
+    private fun parseStringValue(raw: String, path: String, source: String): IntentValue = when {
+        raw.startsWith("secret:") -> IntentSecretRef(nonBlankSuffix(raw, "secret:", "EMPTY_SECRET_REFERENCE", path, source))
+        raw.startsWith("ref:") -> IntentRef(referencePath(nonBlankSuffix(raw, "ref:", "EMPTY_INTENT_REFERENCE", path, source), path, source))
+        raw.startsWith("expr:") -> IntentExpression(nonBlankSuffix(raw, "expr:", "EMPTY_INTENT_EXPRESSION", path, source))
+        raw.matches(Regex("""^\$\{[A-Za-z_][A-Za-z0-9_.-]*}$""")) -> IntentRef(referencePath(raw.removePrefix("\${").removeSuffix("}"), path, source))
+        raw.matches(Regex("""^\$[A-Za-z_][A-Za-z0-9_.-]*$""")) -> IntentRef(referencePath(raw.drop(1), path, source))
         else -> IntentString(raw)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun Map<String, Any?>.map(key: String): Map<String, Any?>? = this[key] as? Map<String, Any?>
-
-    private fun Map<String, Any?>.string(key: String): String? = when (val v = this[key]) {
-        null -> null
-        is String -> v
-        is Number, is Boolean -> v.toString()
-        else -> null
+    private fun referencePath(raw: String, path: String, source: String): List<String> {
+        val segments = raw.split('.')
+        if (segments.any { it.isBlank() }) fail("INVALID_INTENT_REFERENCE", path, source, "Reference '$raw' contains an empty path segment.")
+        return segments
     }
 
-    private fun Map<String, Any?>.bool(key: String): Boolean? = when (val v = this[key]) {
-        is Boolean -> v
-        is String -> when (v.trim().lowercase()) {
+    private fun nonBlankSuffix(raw: String, prefix: String, code: String, path: String, source: String): String {
+        val value = raw.removePrefix(prefix).trim()
+        if (value.isBlank()) fail(code, path, source, "'$prefix' must be followed by a value.")
+        return value
+    }
+
+    private fun Map<String, Any?>.requireOnly(allowed: Set<String>, path: String, source: String) {
+        val unknown = keys - allowed
+        if (unknown.isNotEmpty()) fail("UNKNOWN_INTENT_FIELD", path, source, "Unknown fields ${unknown.sorted()}.")
+    }
+
+    private fun Map<String, Any?>.requiredString(key: String, path: String, source: String): String =
+        optionalString(key, path, source) ?: fail("MISSING_REQUIRED_INTENT_FIELD", path, source, "Required string field '$key' is missing.")
+
+    private fun Map<String, Any?>.optionalString(key: String, path: String, source: String): String? = when (val value = this[key]) {
+        null -> null
+        is String -> value
+        else -> fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected a string but found ${value::class.simpleName}.")
+    }
+
+    private fun Map<String, Any?>.optionalBoolean(key: String, path: String, source: String): Boolean? = when (val value = this[key]) {
+        null -> null
+        is Boolean -> value
+        is String -> when (value.trim().lowercase()) {
             "true" -> true
             "false" -> false
-            else -> null
+            else -> fail("INVALID_INTENT_BOOLEAN", path, source, "Expected true or false but found '$value'.")
         }
-        else -> null
+        else -> fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected a boolean but found ${value::class.simpleName}.")
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun Map<String, Any?>.listOfMaps(key: String): List<Map<String, Any?>> = when (val v = this[key]) {
-        is List<*> -> v.mapNotNull { it as? Map<String, Any?> }
-        null -> emptyList()
-        else -> error("Intent field '$key' must be a list of objects")
+    private fun Map<String, Any?>.optionalObject(key: String, path: String, source: String): Map<String, Any?>? = when (val value = this[key]) {
+        null -> null
+        is Map<*, *> -> {
+            if (value.keys.any { it !is String }) fail("NON_STRING_OBJECT_KEY", path, source, "Object keys must be strings.")
+            value as Map<String, Any?>
+        }
+        else -> fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected an object but found ${value::class.simpleName}.")
     }
 
-    private fun Map<String, Any?>.stringList(key: String): List<String> = when (val v = this[key]) {
-        is List<*> -> v.map { it?.toString() ?: "" }
-        is String -> listOf(v)
+    @Suppress("UNCHECKED_CAST")
+    private fun Map<String, Any?>.objectList(key: String, path: String, source: String): List<Map<String, Any?>> = when (val value = this[key]) {
         null -> emptyList()
-        else -> listOf(v.toString())
+        is List<*> -> value.mapIndexed { index, item ->
+            val map = item as? Map<*, *> ?: fail("INTENT_LIST_ITEM_TYPE_MISMATCH", "$path[$index]", source, "Expected an object.")
+            if (map.keys.any { it !is String }) fail("NON_STRING_OBJECT_KEY", "$path[$index]", source, "Object keys must be strings.")
+            map as Map<String, Any?>
+        }
+        else -> fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected a list of objects but found ${value::class.simpleName}.")
     }
 
+    private fun Map<String, Any?>.stringList(key: String, path: String, source: String): List<String> = when (val value = this[key]) {
+        null -> emptyList()
+        is String -> listOf(value)
+        is List<*> -> value.mapIndexed { index, item ->
+            item as? String ?: fail("INTENT_LIST_ITEM_TYPE_MISMATCH", "$path[$index]", source, "Expected a string.")
+        }
+        else -> fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected a string or list of strings but found ${value::class.simpleName}.")
+    }
 
-    private fun strictCapability(value: String, stepId: String): StandardCapability {
+    private fun strictCapability(value: String, stepId: String, path: String, source: String): StandardCapability {
         val normalized = normalizeEnum(value)
         if (normalized == "SCHEDULE") {
-            error("Intent step '$stepId' uses removed capability SCHEDULE. Declare a top-level trigger with type: SCHEDULE instead.")
+            fail("REMOVED_SCHEDULE_CAPABILITY", path, source, "Intent step '$stepId' uses removed capability SCHEDULE. Declare a top-level trigger with type: SCHEDULE instead.")
         }
         return enumValues<StandardCapability>().firstOrNull { it.name == normalized }
-            ?: error("Intent step '$stepId' uses unknown capability '$value'.")
+            ?: fail("UNKNOWN_STANDARD_CAPABILITY", path, source, "Intent step '$stepId' uses unknown capability '$value'.")
     }
 
-    private inline fun <reified T : Enum<T>> strictEnum(value: String, label: String, subject: String): T {
+    private inline fun <reified T : Enum<T>> strictEnum(value: String, code: String, path: String, source: String): T {
         val normalized = normalizeEnum(value)
         return enumValues<T>().firstOrNull { it.name == normalized }
-            ?: error("Unknown $label '$value' in '$subject'.")
+            ?: fail(code, path, source, "Unknown ${T::class.simpleName} value '$value'.")
     }
 
     private fun normalizeEnum(value: String): String = value.trim().replace('-', '_').replace(' ', '_').uppercase()
 
-    private inline fun <reified T : Enum<T>> enumValue(value: String, default: T): T {
-        val normalized = value.trim().replace('-', '_').replace(' ', '_')
-        return enumValues<T>().firstOrNull { it.name.equals(normalized, ignoreCase = true) } ?: default
-    }
+    private fun fail(code: String, path: String, source: String, detail: String): Nothing =
+        throw IntentSourceException(code, path, source, detail)
 }
