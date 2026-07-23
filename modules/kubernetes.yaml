@@ -32,6 +32,8 @@ actions:
         - kubernetes.resource
       network:
         - kubernetes.api
+    requiredCapabilities:
+      - kubernetes.api
     safety:
       destructive: false
   deploy:
@@ -58,6 +60,8 @@ actions:
         - kubernetes.workload
       updates:
         - kubernetes.workload
+    requiredCapabilities:
+      - kubernetes.api
     safety:
       destructive: false
     retry:
@@ -81,6 +85,8 @@ actions:
     effects:
       deletes:
         - kubernetes.resource
+    requiredCapabilities:
+      - kubernetes.api
     safety:
       destructive: true
       requires:
