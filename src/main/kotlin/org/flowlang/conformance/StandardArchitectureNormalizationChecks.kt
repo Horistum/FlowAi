@@ -25,6 +25,7 @@ import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.intent.IntentWorkflow
 import org.flowlang.intent.IntentWorkflowKind
 import org.flowlang.intent.StandardCapability
+import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.standard.FlowStandardVersions
@@ -300,8 +301,16 @@ internal class StandardArchitectureNormalizationChecks(
 
         val ast = IntentToAstPlanner(registry).plan(block)
         val plan = FlowPlanner(registry).plan(ast)
-        require(ast.metadata.loweringReport?.evidence.orEmpty().isNotEmpty()) { "AST lacks lowering coverage evidence." }
-        require(plan.loweringReport == ast.metadata.loweringReport) { "Execution plan lost lowering coverage evidence." }
+        val sourceMetadata = requireNotNull(ast.metadata.sourceIntent) { "AST lacks stable lowering source metadata." }
+        require(sourceMetadata.fields.isNotEmpty()) { "AST lacks stable lowering source field identities." }
+        require(ast.metadata.loweringReport == null) { "AST must not certify execution-plan values before the plan exists." }
+        val loweringReport = requireNotNull(plan.loweringReport) { "Execution plan lacks artifact-derived lowering evidence." }
+        require(loweringReport.evidence.map { it.sourceIdentity }.toSet() == sourceMetadata.fields.map { it.identity }.toSet()) {
+            "Execution-plan lowering evidence does not cover the stable source catalog."
+        }
+        require(loweringReport == IntentLoweringAuthority.report(plan.copy(loweringReport = null))) {
+            "Execution-plan lowering evidence is not reproducible from concrete plan values."
+        }
         require(plan.tasks.single().outputs.contains("artifact")) { "Declared intent output disappeared during lowering." }
         require(plan.inputs.single().defaultExpression?.contains("enabled") == true) { "Structured input default disappeared during planning." }
 
