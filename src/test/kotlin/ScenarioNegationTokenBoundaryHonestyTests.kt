@@ -20,7 +20,7 @@ class ScenarioNegationTokenBoundaryHonestyTests {
     fun tokenBoundariesPreventSubstringScenarioSelection() {
         val response = normalize("Investigate capacity regression.")
 
-        assertEquals("custom", response.report.scenarioSelection.selectedPack)
+        assertEquals("custom", response.report.scenarioSelection?.selectedPack)
         assertTrue(response.normalizedIntent.workflows.flatMap { it.steps }
             .none { it.capability == StandardCapability.BUILD })
     }
@@ -29,7 +29,7 @@ class ScenarioNegationTokenBoundaryHonestyTests {
     fun negatedTriggerDoesNotSelectItsScenarioPack() {
         val response = normalize("Do not deploy anything.")
 
-        assertEquals("custom", response.report.scenarioSelection.selectedPack)
+        assertEquals("custom", response.report.scenarioSelection?.selectedPack)
         assertTrue(response.normalizedIntent.workflows.flatMap { it.steps }
             .none { it.capability == StandardCapability.DEPLOY })
     }
