@@ -1,9 +1,10 @@
 name: Materialize v0.9.7.9.4 Reviewed Tree
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/v0.9.7.9.4-materialize-reviewed-tree
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -21,6 +22,7 @@ jobs:
       - name: Checkout materialization branch
         uses: actions/checkout@v4
         with:
+          ref: fix/v0.9.7.9.4-materialize-reviewed-tree
           fetch-depth: 0
 
       - name: Apply previously validated guarded source assembly
