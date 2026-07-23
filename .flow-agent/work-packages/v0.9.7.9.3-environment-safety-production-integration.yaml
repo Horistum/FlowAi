@@ -1,8 +1,7 @@
-
 version: "0.9.7.9.3"
 name: "Environment Safety Production Integration"
 stream: core
-status: validation-pending
+status: complete
 objective: "Make notes-backed environment safety a fail-closed production validation gate before planning and projection."
 scopeBoundary:
   - "Keep environment classification target-neutral and notes-backed."
@@ -19,16 +18,28 @@ implementedSlices:
   - id: typed-environment-evidence
   - id: fail-closed-unknown-classification
   - id: reference-preservation
+  - id: scoped-approval-reachability
+  - id: finite-non-sensitive-environment-proof
+  - id: canonical-rollback-authority-composition
   - id: flow-validator-production-wiring
   - id: cli-pre-planning-gate
   - id: diagnostic-catalog-registration
   - id: conformance-and-adversarial-tests
-validation:
-  required:
+validationEvidence:
+  workflow: "Flow CI"
+  runNumber: "1941"
+  runId: "29996465904"
+  validatedHead: "e621a42855c2f6ed37cf8d00cc570e35679e6110"
+  passed:
     - "Flow agent tooling tests"
     - "Repository structure validation"
+    - "Offline Gradle test and conformance when cache was available"
     - "Clean Gradle compilation and complete test suite"
     - "Standalone Flow conformance"
+  postValidationChanges:
+    - "Completion metadata only"
+    - "Removal of accidentally committed CI log files"
+  finalReviewPolicy: "The cleaned final review head must pass the standard Flow CI workflow before the pull request is marked ready."
 followUpWorkItem:
   version: "0.9.7.9.4"
   name: "Scenario Negation and Token Boundary Honesty"
