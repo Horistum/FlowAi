@@ -6,6 +6,8 @@ import org.flowlang.controls.ControlEvidence
 import org.flowlang.controls.ControlRequirement
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.topology.ExecutionTopologyRequirement
+import org.flowlang.lowering.IntentLoweringReport
+import org.flowlang.lowering.IntentSourceMetadata
 
 /**
  * Canonical Flow AST (docs/04). Platform-neutral: it must not depend on any
@@ -26,7 +28,9 @@ data class FlowDocument(
 data class MetadataNode(
     val sourceFile: String? = null,
     val createdBy: String? = "flow-parser",
-    val generatedByAI: Boolean = false
+    val generatedByAI: Boolean = false,
+    val sourceIntent: IntentSourceMetadata? = null,
+    val loweringReport: IntentLoweringReport? = null
 )
 
 data class ModuleImportNode(
@@ -95,6 +99,7 @@ data class SystemNode(
     val type: String = "System",
     val name: String,
     val systemType: String,
+    val purpose: String? = null,
     val config: Map<String, ExpressionNode> = emptyMap(),
     val sourceLocation: SourceLocation? = null
 )
@@ -113,6 +118,11 @@ data class ActionNode(
     /** Canonical, target-neutral effect evidence carried from Standard Intent lowering. */
     val semanticCapability: String? = null,
     val semanticEffects: List<SemanticEffect> = emptyList(),
+    /** Source intent evidence retained independently from resolved module fields. */
+    val sourceId: String? = null,
+    val sourceDescription: String? = null,
+    val bindingMetadata: Map<String, ExpressionNode> = emptyMap(),
+    val declaredOutputs: List<String> = emptyList(),
     /** Explicit dependency names, primarily produced by the Standard Intent lowering layer.
      * They refer to result binding names, not target-specific job ids.
      */
@@ -182,6 +192,9 @@ data class ApproveNode(
     val mode: String = "manual",
     val params: Map<String, ExpressionNode> = emptyMap(),
     val result: ResultBindingNode? = null,
+    val sourceId: String? = null,
+    val sourceDescription: String? = null,
+    val declaredOutputs: List<String> = emptyList(),
     /** Explicit dependency names produced by intent lowering. They refer to result binding names. */
     val dependsOn: List<String> = emptyList(),
     val sourceLocation: SourceLocation? = null

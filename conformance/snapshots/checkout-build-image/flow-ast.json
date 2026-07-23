@@ -28,11 +28,13 @@
       "type" : "System",
       "name" : "source",
       "systemType" : "git",
+      "purpose" : "Public application source repository",
       "config" : { }
     }, {
       "type" : "System",
       "name" : "registry",
       "systemType" : "docker",
+      "purpose" : "Local image build target without registry push",
       "config" : { }
     } ],
     "triggers" : [ ],
@@ -88,6 +90,14 @@
         "external" : true,
         "sourceCapability" : "CHECKOUT"
       } ],
+      "sourceId" : "checkout",
+      "bindingMetadata" : {
+        "system" : {
+          "type" : "StringLiteral",
+          "value" : "source"
+        }
+      },
+      "declaredOutputs" : [ ],
       "dependsOn" : [ ]
     }, {
       "type" : "Action",
@@ -142,11 +152,189 @@
         "external" : true,
         "sourceCapability" : "BUILD_IMAGE"
       } ],
+      "sourceId" : "build-image",
+      "bindingMetadata" : {
+        "system" : {
+          "type" : "StringLiteral",
+          "value" : "registry"
+        }
+      },
+      "declaredOutputs" : [ ],
       "dependsOn" : [ "checkout" ]
     } ]
   },
   "metadata" : {
     "createdBy" : "intent-to-ast-planner",
-    "generatedByAI" : false
+    "generatedByAI" : false,
+    "sourceIntent" : {
+      "description" : "Target-scoped reference intent proving ordered native checkout and image build projection.",
+      "workflows" : [ {
+        "name" : "build-reference-image",
+        "kind" : "BUILD",
+        "stepIds" : [ "checkout", "build-image" ]
+      } ],
+      "policies" : [ ],
+      "systemPurposes" : {
+        "source" : "Public application source repository",
+        "registry" : "Local image build target without registry push"
+      },
+      "failure" : {
+        "notify" : false,
+        "rollback" : false,
+        "stopOnError" : true
+      }
+    },
+    "loweringReport" : {
+      "contractVersion" : "1.0",
+      "evidence" : [ {
+        "sourcePath" : "$.name",
+        "targetPath" : "$.flow.name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.description",
+        "targetPath" : "$.metadata.sourceIntent.description",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.inputs[0].name",
+        "targetPath" : "$.flow.input[0].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.inputs[0].type",
+        "targetPath" : "$.flow.input[0].valueType",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.inputs[0].required",
+        "targetPath" : "$.flow.input[0].required",
+        "disposition" : "PRESERVED",
+        "valueKind" : "boolean"
+      }, {
+        "sourcePath" : "$.systems[0].name",
+        "targetPath" : "$.flow.systems[0].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[0].type",
+        "targetPath" : "$.flow.systems[0].systemType",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Canonical system type normalization."
+      }, {
+        "sourcePath" : "$.systems[0].purpose",
+        "targetPath" : "$.metadata.sourceIntent.systemPurposes.source",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[1].name",
+        "targetPath" : "$.flow.systems[1].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.systems[1].type",
+        "targetPath" : "$.flow.systems[1].systemType",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Canonical system type normalization."
+      }, {
+        "sourcePath" : "$.systems[1].purpose",
+        "targetPath" : "$.metadata.sourceIntent.systemPurposes.registry",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].name",
+        "targetPath" : "$.metadata.sourceIntent.workflows[0].name",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].kind",
+        "targetPath" : "$.metadata.sourceIntent.workflows[0].kind",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].id",
+        "targetPath" : "$.flow.steps[0].result",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Step id becomes a stable result binding and source id."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].capability",
+        "targetPath" : "$.flow.steps[0].semanticCapability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].uses",
+        "targetPath" : "$.flow.steps[0].module/$.flow.steps[0].action",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "binding",
+        "note" : "Explicit binding resolves to module and action."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].params.system",
+        "targetPath" : "$.flow.steps[0].bindingMetadata.system",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].params.url",
+        "targetPath" : "$.flow.steps[0].params.url",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[0].params.branch",
+        "targetPath" : "$.flow.steps[0].params.branch",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].id",
+        "targetPath" : "$.flow.steps[1].result",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "string",
+        "note" : "Step id becomes a stable result binding and source id."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].capability",
+        "targetPath" : "$.flow.steps[1].semanticCapability",
+        "disposition" : "PRESERVED",
+        "valueKind" : "enum"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].uses",
+        "targetPath" : "$.flow.steps[1].module/$.flow.steps[1].action",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "binding",
+        "note" : "Explicit binding resolves to module and action."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].requires",
+        "targetPath" : "$.flow.steps[1].dependsOn",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "list",
+        "note" : "Source step ids become canonical result dependencies."
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].params.system",
+        "targetPath" : "$.flow.steps[1].bindingMetadata.system",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].params.image",
+        "targetPath" : "$.flow.steps[1].params.image",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].params.path",
+        "targetPath" : "$.flow.steps[1].params.path",
+        "disposition" : "PRESERVED",
+        "valueKind" : "string"
+      }, {
+        "sourcePath" : "$.workflows[0].steps[1].params.push",
+        "targetPath" : "$.flow.steps[1].params.push",
+        "disposition" : "PRESERVED",
+        "valueKind" : "boolean"
+      }, {
+        "sourcePath" : "$.failure",
+        "targetPath" : "$.flow.errorHandler",
+        "disposition" : "TRANSFORMED",
+        "valueKind" : "failure-policy",
+        "note" : "Failure notification and rollback lower to canonical error-handler actions; stopOnError=true is the canonical default."
+      } ]
+    }
   }
 }

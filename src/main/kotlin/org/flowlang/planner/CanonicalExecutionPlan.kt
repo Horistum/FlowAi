@@ -6,6 +6,8 @@ import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.controls.ControlEvidence
 import org.flowlang.controls.ControlRequirement
 import org.flowlang.topology.ExecutionTopologyRequirement
+import org.flowlang.lowering.IntentLoweringReport
+import org.flowlang.lowering.IntentSourceMetadata
 
 /**
  * Canonical public Execution Plan view.
@@ -23,6 +25,8 @@ data class CanonicalExecutionPlan(
     val dependencies: List<String> = emptyList(),
     val requiredCapabilities: List<String> = emptyList(),
     val targetHints: Map<String, String> = emptyMap(),
+    val sourceIntent: IntentSourceMetadata? = null,
+    val loweringReport: IntentLoweringReport? = null,
     val assumptions: List<PlanAssumption> = emptyList(),
     val controlRequirements: List<ControlRequirement> = emptyList(),
     val controlEvidence: List<ControlEvidence> = emptyList(),
@@ -43,6 +47,9 @@ data class CanonicalPlanNode(
     val inputs: Map<String, String> = emptyMap(),
     val outputs: List<String> = emptyList(),
     val semanticCapability: String? = null,
+    val sourceId: String? = null,
+    val sourceDescription: String? = null,
+    val bindingMetadata: Map<String, String> = emptyMap(),
     val effectModel: List<SemanticEffect> = emptyList(),
     val effects: List<String> = emptyList(),
     val safety: String? = null,
@@ -89,6 +96,8 @@ object ExecutionPlanCanonicalizer {
             dependencies = plan.dependencies,
             requiredCapabilities = plan.requiredCapabilities,
             targetHints = plan.targetHints,
+            sourceIntent = plan.sourceIntent,
+            loweringReport = plan.loweringReport,
             assumptions = plan.assumptions,
             controlRequirements = plan.controlRequirements,
             controlEvidence = plan.controlEvidence,
@@ -110,6 +119,9 @@ object ExecutionPlanCanonicalizer {
             inputs = node.inputs.ifEmpty { node.params },
             outputs = node.outputs,
             semanticCapability = node.semanticCapability,
+            sourceId = node.sourceId,
+            sourceDescription = node.sourceDescription,
+            bindingMetadata = node.bindingMetadata,
             effectModel = node.effectModel,
             effects = node.effects,
             safety = node.safety,
@@ -122,7 +134,10 @@ object ExecutionPlanCanonicalizer {
             id = node.id,
             kind = "approval",
             resultName = node.resultName,
+            sourceId = node.sourceId,
+            sourceDescription = node.sourceDescription,
             dependencies = node.dependencies,
+            outputs = node.outputs,
             inputs = mapOfNotNull("message" to node.message, "mode" to node.mode),
             safety = node.safety,
             requiredCapabilities = node.requiredCapabilities

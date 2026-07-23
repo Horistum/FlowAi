@@ -5,6 +5,7 @@ import org.flowlang.effects.SemanticEffect
 import org.flowlang.ast.*
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.ExpressionParser
+import org.flowlang.lowering.IntentLoweringAuthority
 
 /**
  * Lowers the high-level Standard Intent Model into canonical Flow AST.
@@ -49,7 +50,12 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
                 steps = statements,
                 errorHandler = errorHandler
             ),
-            metadata = MetadataNode(createdBy = "intent-to-ast-planner", generatedByAI = false)
+            metadata = MetadataNode(
+                createdBy = "intent-to-ast-planner",
+                generatedByAI = false,
+                sourceIntent = IntentLoweringAuthority.sourceMetadata(intent),
+                loweringReport = IntentLoweringAuthority.report(intent)
+            )
         )
     }
 
@@ -76,6 +82,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return SystemNode(
             name = name,
             systemType = normalizedType,
+            purpose = purpose,
             config = config.mapValues { (_, value) -> value.toExpression() }
         )
     }
@@ -227,7 +234,12 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             params = params,
             result = result(step.id),
             semanticCapability = step.capability.name,
-            semanticEffects = semanticEffects
+            semanticEffects = semanticEffects,
+            sourceId = step.id,
+            sourceDescription = step.description,
+            bindingMetadata = step.params.filterKeys { it in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
+                .mapValues { (_, value) -> value.toExpression() },
+            declaredOutputs = step.produces
         )
     }
 
@@ -249,7 +261,10 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         val approval = ApproveNode(
             mode = "manual",
             params = mapOf("message" to StringLiteralNode(value = paramText(step, "message") ?: approvalMessage(intent))),
-            result = result(step.id)
+            result = result(step.id),
+            sourceId = step.id,
+            sourceDescription = step.description,
+            declaredOutputs = step.produces
         )
         val condition = approvalCondition(intent)
         return if (condition != null) IfNode(condition = condition, then = listOf(approval)) else approval
@@ -279,7 +294,12 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             params = params,
             result = result(step.id),
             semanticCapability = step.capability.name,
-            semanticEffects = semanticEffects
+            semanticEffects = semanticEffects,
+            sourceId = step.id,
+            sourceDescription = step.description,
+            bindingMetadata = step.params.filterKeys { it in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
+                .mapValues { (_, value) -> value.toExpression() },
+            declaredOutputs = step.produces
         )
     }
 

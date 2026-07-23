@@ -51,6 +51,8 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                     document.flow.triggers.flatMap { it.requiredCapabilities() } +
                     PlanningControlAuthority.requiredEnforcementCapabilities(controlAssessment)
                 ).distinct(),
+            sourceIntent = document.metadata.sourceIntent,
+            loweringReport = document.metadata.loweringReport,
             assumptions = ctx.assumptions.toList(),
             controlRequirements = controlAssessment.requirements,
             controlEvidence = controlAssessment.evidence,
@@ -87,8 +89,16 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     private fun InputNode.toPlanInput(): PlanInput {
         val choices = valueType.values.filterIsInstance<StringLiteralNode>().map { it.value }
-        val defaultValue = default?.let { ExpressionRenderer.render(it).trim('"') }
-        return PlanInput(name = name, type = valueType.kind, required = required, defaultValue = defaultValue, choices = choices)
+        val defaultValue = (default as? StringLiteralNode)?.value
+        val defaultExpression = default?.let(ExpressionRenderer::render)
+        return PlanInput(
+            name = name,
+            type = valueType.kind,
+            required = required,
+            defaultValue = defaultValue,
+            defaultExpression = defaultExpression,
+            choices = choices
+        )
     }
 
     private fun planStatements(stmts: List<StatementNode>, ctx: Ctx): List<PlanNode> = stmts.map { planStatement(it, ctx) }
@@ -136,11 +146,22 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                     path = listOf(sourceNodeId, id)
                 )
             }
-            stmt.result?.let { ctx.results[it.name] = id }
-            ApprovalNode(id = id, mode = stmt.mode,
+            val outputNames = (listOfNotNull(stmt.result?.name) + stmt.declaredOutputs).distinct()
+            outputNames.forEach { output ->
+                ctx.results[output] = id
+                ctx.results[output.replace('-', '_')] = id
+                ctx.outputs += PlanOutput(output, sourceNodeId = id)
+            }
+            ApprovalNode(
+                id = id,
+                mode = stmt.mode,
                 message = (stmt.params["message"])?.let(ExpressionRenderer::render)?.trim('"'),
                 resultName = stmt.result?.name,
-                dependsOn = explicitDeps)
+                sourceId = stmt.sourceId,
+                sourceDescription = stmt.sourceDescription,
+                outputs = outputNames,
+                dependsOn = explicitDeps
+            )
         }
         is TransformNode -> {
             val id = ctx.id("transform")
@@ -240,16 +261,20 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val continuityCapabilities = (valueRelations + continuityRelations)
             .mapNotNull { it.kind.capability }
 
+        val outputNames = (listOfNotNull(action.result?.name) + action.declaredOutputs).distinct()
         val task = TaskNode(
             id = id, module = action.module, action = action.action,
             target = action.target.path.joinToString("."),
             resultName = action.result?.name,
             dependsOn = deps,
             semanticCapability = action.semanticCapability,
+            sourceId = action.sourceId,
+            sourceDescription = action.sourceDescription,
+            bindingMetadata = action.bindingMetadata.mapValues { (_, value) -> RuntimeParamRenderer.render(value, ctx.inputNames) },
             effectModel = effectModel,
             effects = effects,
             inputs = renderedParams,
-            outputs = action.result?.let { listOf(it.name) } ?: emptyList(),
+            outputs = outputNames,
             destructive = contract?.safety?.destructive ?: false,
             safety = action.safety?.let { it.rule + (it.condition?.let { c -> " " + ExpressionRenderer.render(c) } ?: "") },
             params = renderedParams,
@@ -258,9 +283,10 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             ).distinct()
         )
         ctx.registerTask(task, contract)
-        action.result?.let {
-            ctx.results[it.name] = id
-            ctx.outputs += PlanOutput(it.name, sourceNodeId = id)
+        outputNames.forEach { output ->
+            ctx.results[output] = id
+            ctx.results[output.replace('-', '_')] = id
+            ctx.outputs += PlanOutput(output, sourceNodeId = id)
         }
         return task
     }

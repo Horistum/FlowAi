@@ -7,6 +7,8 @@ import org.flowlang.controls.ControlEvidence
 import org.flowlang.controls.ControlRequirement
 import org.flowlang.topology.ExecutionTopologyRequirement
 import org.flowlang.topology.PlanningTopologyAuthority
+import org.flowlang.lowering.IntentLoweringReport
+import org.flowlang.lowering.IntentSourceMetadata
 
 /**
  * Execution plan (docs/07). The plan preserves control-flow structure (conditions,
@@ -24,6 +26,8 @@ data class ExecutionPlan(
     val dependencies: List<String> = emptyList(),
     val requiredCapabilities: List<String> = emptyList(),
     val targetHints: Map<String, String> = emptyMap(),
+    val sourceIntent: IntentSourceMetadata? = null,
+    val loweringReport: IntentLoweringReport? = null,
     val assumptions: List<PlanAssumption> = emptyList(),
     val controlRequirements: List<ControlRequirement> = emptyList(),
     val controlEvidence: List<ControlEvidence> = emptyList(),
@@ -77,6 +81,8 @@ data class PlanInput(
     val type: String = "text",
     val required: Boolean = false,
     val defaultValue: String? = null,
+    /** Canonical expression rendering retained for structured and symbolic defaults. */
+    val defaultExpression: String? = null,
     val choices: List<String> = emptyList()
 )
 
@@ -104,6 +110,9 @@ data class TaskNode(
     val dependsOn: List<String> = emptyList(),
     val dependencies: List<String> = dependsOn,
     val semanticCapability: String? = null,
+    val sourceId: String? = null,
+    val sourceDescription: String? = null,
+    val bindingMetadata: Map<String, String> = emptyMap(),
     val effectModel: List<SemanticEffect> = emptyList(),
     val effects: List<String> = effectModel.map(SemanticEffect::resource).distinct(),
     val inputs: Map<String, String> = emptyMap(),
@@ -174,6 +183,9 @@ data class ApprovalNode(
     val mode: String = "manual",
     val message: String? = null,
     val resultName: String? = null,
+    val sourceId: String? = null,
+    val sourceDescription: String? = null,
+    val outputs: List<String> = emptyList(),
     val dependsOn: List<String> = emptyList(),
     val dependencies: List<String> = dependsOn,
     val requiredCapabilities: List<String> = listOf("approval.manual"),

@@ -237,8 +237,87 @@ internal object ExecutionPlanMaterializationValidator {
         }
         validateDependencyRelations(plan, modules, seenNodeIds, issues)
         validateControlEvidence(plan, modules, issues)
+        validateLoweringEvidence(plan, issues)
         issues += ExecutionPlanTopologyValidator.validate(plan)
         return issues
+    }
+
+    private fun validateLoweringEvidence(
+        plan: ExecutionPlan,
+        issues: MutableList<PlanningEvidenceIssue>
+    ) {
+        val sourceIntent = plan.sourceIntent ?: run {
+            if (plan.loweringReport != null) {
+                issues += issue(
+                    "planning.lowering.source-metadata.missing",
+                    "sourceIntent",
+                    "Lowering evidence is present without source intent metadata."
+                )
+            }
+            return
+        }
+        val report = plan.loweringReport
+        if (report == null) {
+            issues += issue(
+                "planning.lowering.report.missing",
+                "loweringReport",
+                "Intent-derived execution plan must preserve lowering coverage evidence."
+            )
+            return
+        }
+        if (report.contractVersion != "1.0") {
+            issues += issue(
+                "planning.lowering.version.unsupported",
+                "loweringReport.contractVersion",
+                "Unsupported lowering coverage contract '${report.contractVersion}'."
+            )
+        }
+        if (report.evidence.isEmpty()) {
+            issues += issue(
+                "planning.lowering.evidence.empty",
+                "loweringReport.evidence",
+                "Intent-derived execution plan must not claim empty lowering coverage."
+            )
+        }
+        report.evidence.groupBy { it.sourcePath }.filterValues { it.size > 1 }.keys.forEach { sourcePath ->
+            issues += issue(
+                "planning.lowering.evidence.duplicate",
+                "loweringReport.evidence.$sourcePath",
+                "Source path '$sourcePath' has more than one lowering disposition."
+            )
+        }
+        report.evidence.forEachIndexed { index, evidence ->
+            if (evidence.sourcePath.isBlank() || evidence.targetPath.isBlank() || evidence.valueKind.isBlank()) {
+                issues += issue(
+                    "planning.lowering.evidence.malformed",
+                    "loweringReport.evidence[$index]",
+                    "Lowering evidence must declare non-blank source path, target path and value kind."
+                )
+            }
+        }
+
+        val expectedSourceIds = sourceIntent.workflows.flatMap { it.stepIds }.toSet()
+        val actualSourceIds = PlanDependencyRelations.flatten(plan.nodes).mapNotNull { node ->
+            when (node) {
+                is TaskNode -> node.sourceId
+                is ApprovalNode -> node.sourceId
+                else -> null
+            }
+        }.toSet()
+        (expectedSourceIds - actualSourceIds).forEach { sourceId ->
+            issues += issue(
+                "planning.lowering.step-evidence.missing",
+                "nodes",
+                "Intent step '$sourceId' has no source identity in the execution plan."
+            )
+        }
+        (actualSourceIds - expectedSourceIds).forEach { sourceId ->
+            issues += issue(
+                "planning.lowering.step-evidence.orphaned",
+                "nodes.$sourceId",
+                "Execution node claims source step '$sourceId' outside source intent metadata."
+            )
+        }
     }
 
     private fun validateDependencyRelations(
