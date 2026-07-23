@@ -1,0 +1,48 @@
+name: Assemble v0.9.7.9.4
+
+on:
+  push:
+    branches:
+      - agent/v0.9.7.9.4-scenario-negation-token-boundary-honesty
+
+permissions:
+  contents: write
+
+concurrency:
+  group: assemble-v0.9.7.9.4
+  cancel-in-progress: false
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/v0.9.7.9.4-scenario-negation-token-boundary-honesty
+          fetch-depth: 0
+
+      - name: Apply guarded complete patch
+        run: python3 scripts/apply_v0_9_7_9_4.py
+
+      - name: Remove one-shot assembly files
+        run: |
+          rm scripts/apply_v0_9_7_9_4.py
+          rm .github/workflows/v09794-assemble.yml
+
+      - name: Validate assembled diff
+        run: |
+          git diff --check
+          test ! -e scripts/apply_v0_9_7_9_4.py
+          test ! -e .github/workflows/v09794-assemble.yml
+          grep -q 'IntentSourceDirectiveAuthority.affirmedPhrases' src/main/kotlin/org/flowlang/scenarios/ScenarioPacks.kt
+          grep -q 'ai.normalization.scenario-negation-token-boundary-honesty' src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
+
+      - name: Commit final implementation tree
+        run: |
+          git config user.name "flow-ai-agent"
+          git config user.email "flow-ai-agent@users.noreply.github.com"
+          git add -A
+          git commit -m "Implement v0.9.7.9.4 scenario negation and token boundary honesty"
+          git push origin HEAD:agent/v0.9.7.9.4-scenario-negation-token-boundary-honesty
