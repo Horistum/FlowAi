@@ -16,6 +16,18 @@ repairSlices:
       - "Remove free-form command from the TEST semantic contract."
       - "Require RUN_COMMAND to describe semantic intent rather than transport runtime text."
       - "Reject command text with UNKNOWN_STEP_PARAM before AST lowering."
+  - id: module-authority-surface
+    status: implemented
+    scope:
+      - "Remove the permanently empty targetImplications model and report surface."
+      - "Keep target ownership enforcement at the canonical descriptor loader."
+      - "Test rejection of target implications at the descriptor boundary."
+  - id: capability-and-config-propagation
+    status: implemented
+    scope:
+      - "Consume ModuleActionContract.requiredCapabilities in planning."
+      - "Move built-in capability declarations into module descriptors."
+      - "Project system configuration generically from system-type schemas, including Argo CD url and secret token evidence."
   - id: artifact-derived-lowering-evidence
     status: pending
     scope:
@@ -39,16 +51,12 @@ repairSlices:
     scope:
       - "Add explicit backup negation and token-boundary matching."
       - "Prevent git, repo, team and backup substring collisions."
-  - id: capability-and-config-propagation
-    status: pending
-    scope:
-      - "Consume ModuleActionContract.requiredCapabilities in planning."
-      - "Project system configuration generically from module schemas, including Argo CD secrets."
   - id: identity-and-governance-integrity
-    status: pending
-    scope:
+    status: in-progress
+    implemented:
+      - "Removed the unused portable-shell error-handler lowering overload from production source."
+    remaining:
       - "Replace lossy safety and topology IDs with collision-safe identities."
-      - "Remove portable-shell legacy production code."
       - "Make governance scans parse semantic tokens without scanning their own vocabulary literals."
 validation:
   required:
