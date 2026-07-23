@@ -4,7 +4,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.ast.ActionNode
 import org.flowlang.ast.ApproveNode
@@ -97,7 +96,7 @@ class UniversalControlPolicyRequirementsTests {
 
     @Test
     fun conditionalApprovalRemainsPendingAtIntentButFailsClosedInExecutionPlan() {
-        val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
+        val intent = dynamicApprovalIntent()
         val validation = IntentCapabilityValidator(modules).validate(intent)
         val plan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(intent))
 
@@ -235,6 +234,24 @@ class UniversalControlPolicyRequirementsTests {
         assertTrue(meaning.workflows.single().steps.single().effects.isNotEmpty())
         assertTrue(meaning.controlRequirements.isEmpty())
     }
+
+    private fun dynamicApprovalIntent(): IntentDocument = IntentDocument(
+        name = "dynamic-approval",
+        workflows = listOf(IntentWorkflow(
+            name = "delivery",
+            kind = IntentWorkflowKind.DEPLOY,
+            steps = listOf(IntentStep(
+                id = "approve",
+                capability = StandardCapability.APPROVE
+            ))
+        )),
+        policies = listOf(IntentPolicy(
+            name = "conditional-approval",
+            type = IntentPolicyType.APPROVAL,
+            condition = "environment == 'prod'",
+            message = "Approval is required only when the runtime environment is production."
+        ))
+    )
 
     private fun deleteFlow(
         approval: ApproveNode? = null,
