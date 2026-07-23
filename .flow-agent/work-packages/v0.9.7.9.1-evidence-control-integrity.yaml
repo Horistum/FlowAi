@@ -1,66 +1,77 @@
 version: "0.9.7.9.1"
 name: "Evidence and Control Integrity Repair"
 stream: core
-status: in-progress
-objective: "Remove false positive evidence and fail-open control decisions before the v0.9.7 closure gate."
+status: completed
+objective: "Close the first confirmed false-evidence and fail-open control paths without expanding Flow Core into a runtime-command engine."
+scopeBoundary:
+  - "Reject unrepresentable free-form runtime command text before AST lowering."
+  - "Require task-scoped reachable approval evidence and fail closed unresolved dynamic controls before execution materialization."
+  - "Reject explicit backup denial that contradicts synthesized positive backup evidence."
+  - "Consume module-declared capabilities and system configuration during planning."
+  - "Remove dead target implication and portable-shell production surfaces."
 universalInvariants:
-  - "Accepted semantic input is either represented in the canonical artifact or rejected before lowering."
-  - "Evidence is derived from the artifact it certifies and never from source presence alone."
+  - "Unrepresentable semantic input is rejected before lowering instead of being accepted and silently discarded."
   - "Pending, unknown or unreachable control evidence cannot authorize executable materialization."
-  - "Explicit negation cannot synthesize positive safety evidence."
-  - "Canonical identities are collision-safe and collisions fail closed."
-repairSlices:
+  - "A safety declaration is not proof that an approval mechanism exists."
+  - "Explicit negative source meaning cannot become positive backup evidence."
+  - "Module contract capabilities and schema-declared system configuration survive into the execution plan."
+implementedSlices:
   - id: runtime-command-boundary
-    status: implemented
-    scope:
-      - "Remove free-form command from the TEST semantic contract."
-      - "Require RUN_COMMAND to describe semantic intent rather than transport runtime text."
-      - "Reject command text with UNKNOWN_STEP_PARAM before AST lowering."
-  - id: module-authority-surface
-    status: implemented
-    scope:
-      - "Remove the permanently empty targetImplications model and report surface."
-      - "Keep target ownership enforcement at the canonical descriptor loader."
-      - "Test rejection of target implications at the descriptor boundary."
+    evidence:
+      - "BUILD, TEST, PACKAGE and RUN_COMMAND reject free-form command parameters."
+      - "RUN_COMMAND requires a target-neutral semantic description."
+      - "Negative tests prove rejection occurs before canonical lowering."
+  - id: control-reachability-and-authorization
+    evidence:
+      - "Approval evidence is bound to dependency ancestry of the protected task."
+      - "Unrelated approvals and safety declarations do not authorize destructive work."
+      - "Dynamic control evidence is retained for diagnostics but converted to an execution-plan blocker without provider enforcement evidence."
+      - "Control obligations are no longer silently deduplicated by lossy ids."
+  - id: source-contradiction-safety
+    evidence:
+      - "No-backup and unavailable-backup language cannot coexist with a synthesized BACKUP step or positive backup parameter."
+      - "The contradiction gate applies independently of the selected scenario pack."
   - id: capability-and-config-propagation
-    status: implemented
-    scope:
-      - "Consume ModuleActionContract.requiredCapabilities in planning."
-      - "Move built-in capability declarations into module descriptors."
-      - "Project system configuration generically from system-type schemas, including Argo CD url and secret token evidence."
-  - id: artifact-derived-lowering-evidence
-    status: pending
-    scope:
-      - "Replace index-based target paths with stable source identities."
-      - "Validate every PRESERVED or TRANSFORMED claim against the produced AST and execution plan."
-      - "Remove dead dropBlockedParams behavior after the contract boundary is proven."
-  - id: control-reachability-and-dominance
-    status: pending
-    scope:
-      - "Bind approval evidence to the protected task and control-flow path."
-      - "Require ordering or dominance evidence."
-      - "Block executable authorization for PENDING control decisions."
-  - id: environment-safety-integration
-    status: pending
-    scope:
-      - "Integrate safety classification into the production validation path."
-      - "Treat UNKNOWN as unresolved evidence rather than non-sensitive."
-      - "Preserve references as dynamic values instead of literal identifier names."
-  - id: scenario-negation-honesty
-    status: pending
-    scope:
-      - "Add explicit backup negation and token-boundary matching."
-      - "Prevent git, repo, team and backup substring collisions."
-  - id: identity-and-governance-integrity
-    status: in-progress
-    implemented:
-      - "Removed the unused portable-shell error-handler lowering overload from production source."
-    remaining:
-      - "Replace lossy safety and topology IDs with collision-safe identities."
-      - "Make governance scans parse semantic tokens without scanning their own vocabulary literals."
+    evidence:
+      - "FlowPlanner consumes ModuleActionContract.requiredCapabilities."
+      - "Built-in module capabilities are declared by descriptors rather than planner product-name branches."
+      - "Schema-declared Argo CD url and symbolic token reach the execution task with argocd.api and secrets.runtime requirements."
+  - id: module-and-legacy-surface-cleanup
+    evidence:
+      - "The permanently empty targetImplications model and report fields are removed."
+      - "Canonical module loading continues to reject descriptor-owned target implications."
+      - "The unused portable-shell error-handler lowering overload is removed from production source."
+  - id: canonical-evidence-refresh
+    evidence:
+      - "The reference snapshot bundle was regenerated by ReferenceSnapshotBundleGenerator, not edited manually."
+      - "Reference approval policy, AST, execution plan and target evidence agree on an unconditional authored approval."
 validation:
-  required:
-    - "Focused negative tests for every repaired fail-open path."
-    - "Full clean compilation and test suite."
-    - "Full conformance and executable reference evidence."
-    - "No completion metadata until the exact final head is green."
+  implementationHead: "1689d9400192dd0efbfba9b4d80ee6ab5ec06cdc"
+  flowCiRun: "29983340424"
+  flowCiNumber: "1872"
+  result: success
+  checks:
+    - "Flow agent tooling tests"
+    - "Flow agent structure validation"
+    - "Clean Gradle compilation and full test suite"
+    - "Full Flow conformance run"
+    - "Canonical reference snapshot honesty"
+followUpWorkItems:
+  - version: "0.9.7.9.2"
+    name: "Artifact-Derived Lowering Evidence"
+    objective: "Replace source-iterated lowering claims with stable identity evidence verified against produced AST and execution-plan values."
+  - version: "0.9.7.9.3"
+    name: "Environment Safety Production Integration"
+    objective: "Integrate environment classification into the production validation path and fail closed UNKNOWN or dynamic references."
+  - version: "0.9.7.9.4"
+    name: "Scenario Negation and Token Boundary Honesty"
+    objective: "Remove substring-based synthesis and make negation first-class across backup, repository and notification extraction."
+  - version: "0.9.7.9.5"
+    name: "Provider-Backed Approval and Topology Identity"
+    objective: "Require provider payload evidence for native approval and use collision-safe topology and control identities."
+  - version: "0.9.7.9.6"
+    name: "Derived Model and Governance Integrity"
+    objective: "Remove duplicate derived fields and make governance scanners behaviorally meaningful."
+  - version: "0.9.7.9.7"
+    name: "CLI Diagnostic and Release Honesty"
+    objective: "Expose blocked review artifacts through the CLI and reconcile changelog and release evidence before closure."
