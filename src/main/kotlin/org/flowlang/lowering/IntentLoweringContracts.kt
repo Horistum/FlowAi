@@ -3,7 +3,6 @@ package org.flowlang.lowering
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import org.flowlang.intent.IntentDocument
-import org.flowlang.intent.IntentPolicyType
 import org.flowlang.intent.IntentStep
 import org.flowlang.intent.IntentValue
 import org.flowlang.intent.asTextOrNull
@@ -13,7 +12,6 @@ import org.flowlang.planner.ExpressionRenderer
 import org.flowlang.planner.PlanDependencyRelations
 import org.flowlang.planner.PlanInput
 import org.flowlang.planner.PlanNode
-import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.RuntimeParamRenderer
 import org.flowlang.planner.TaskNode
 
@@ -133,7 +131,7 @@ object IntentLoweringAuthority {
         val policies = intent.policies.map { policy ->
             IntentPolicyMetadata(policy.name, policy.type.name, policy.condition, policy.message)
         }
-        val fields = sourceFields(intent, systems, workflows, policies, inputNames).sortedBy(IntentSourceField::identity)
+        val fields = sourceFields(intent, systems, policies, inputNames).sortedBy(IntentSourceField::identity)
 
         require(fields.map { it.identity }.distinct().size == fields.size) {
             "Intent lowering source identities must be unique."
@@ -217,7 +215,6 @@ object IntentLoweringAuthority {
     private fun sourceFields(
         intent: IntentDocument,
         systems: List<IntentSystemMetadata>,
-        workflows: List<IntentWorkflowMetadata>,
         policies: List<IntentPolicyMetadata>,
         inputNames: Set<String>
     ): List<IntentSourceField> = buildList {
@@ -739,7 +736,7 @@ object IntentLoweringAuthority {
     private fun digest(kind: String, value: String): String {
         val bytes = MessageDigest.getInstance("SHA-256")
             .digest("$kind\u0000$value".toByteArray(StandardCharsets.UTF_8))
-        return bytes.joinToString("") { byte -> "%02x".format(byte) }
+        return bytes.joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
     }
 
     private fun segment(value: String): String = value.replace("~", "~0").replace("/", "~1")
