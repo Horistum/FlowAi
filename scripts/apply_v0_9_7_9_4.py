@@ -16,11 +16,11 @@ parts = [
 ]
 payload = "".join(Path(path).read_text(encoding="utf-8").strip() for path in parts)
 script = zlib.decompress(base64.b64decode(payload)).decode()
-old = """  ('src/main/kotlin/org/flowlang/scenarios/ScenarioPacks.kt',
-   'text.contains(\"notify\", ignoreCase = true)',
-   'notificationRequested(text)',
-   6),"""
-new = old.replace("\n   6),", "\n   2),")
+old = """ ('src/main/kotlin/org/flowlang/scenarios/ScenarioPacks.kt',
+  'text.contains(\"notify\", ignoreCase = true)',
+  'notificationRequested(text)',
+  6),"""
+new = old.replace("\n  6),", "\n  2),")
 if script.count(old) != 1:
     raise SystemExit(f"Expected one notification cardinality override, found {script.count(old)}")
 exec(script.replace(old, new), {"__name__": "__main__"})
