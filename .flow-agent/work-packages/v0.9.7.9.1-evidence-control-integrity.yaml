@@ -1,0 +1,58 @@
+version: "0.9.7.9.1"
+name: "Evidence and Control Integrity Repair"
+stream: core
+status: in-progress
+objective: "Remove false positive evidence and fail-open control decisions before the v0.9.7 closure gate."
+universalInvariants:
+  - "Accepted semantic input is either represented in the canonical artifact or rejected before lowering."
+  - "Evidence is derived from the artifact it certifies and never from source presence alone."
+  - "Pending, unknown or unreachable control evidence cannot authorize executable materialization."
+  - "Explicit negation cannot synthesize positive safety evidence."
+  - "Canonical identities are collision-safe and collisions fail closed."
+repairSlices:
+  - id: runtime-command-boundary
+    status: implemented
+    scope:
+      - "Remove free-form command from the TEST semantic contract."
+      - "Require RUN_COMMAND to describe semantic intent rather than transport runtime text."
+      - "Reject command text with UNKNOWN_STEP_PARAM before AST lowering."
+  - id: artifact-derived-lowering-evidence
+    status: pending
+    scope:
+      - "Replace index-based target paths with stable source identities."
+      - "Validate every PRESERVED or TRANSFORMED claim against the produced AST and execution plan."
+      - "Remove dead dropBlockedParams behavior after the contract boundary is proven."
+  - id: control-reachability-and-dominance
+    status: pending
+    scope:
+      - "Bind approval evidence to the protected task and control-flow path."
+      - "Require ordering or dominance evidence."
+      - "Block executable authorization for PENDING control decisions."
+  - id: environment-safety-integration
+    status: pending
+    scope:
+      - "Integrate safety classification into the production validation path."
+      - "Treat UNKNOWN as unresolved evidence rather than non-sensitive."
+      - "Preserve references as dynamic values instead of literal identifier names."
+  - id: scenario-negation-honesty
+    status: pending
+    scope:
+      - "Add explicit backup negation and token-boundary matching."
+      - "Prevent git, repo, team and backup substring collisions."
+  - id: capability-and-config-propagation
+    status: pending
+    scope:
+      - "Consume ModuleActionContract.requiredCapabilities in planning."
+      - "Project system configuration generically from module schemas, including Argo CD secrets."
+  - id: identity-and-governance-integrity
+    status: pending
+    scope:
+      - "Replace lossy safety and topology IDs with collision-safe identities."
+      - "Remove portable-shell legacy production code."
+      - "Make governance scans parse semantic tokens without scanning their own vocabulary literals."
+validation:
+  required:
+    - "Focused negative tests for every repaired fail-open path."
+    - "Full clean compilation and test suite."
+    - "Full conformance and executable reference evidence."
+    - "No completion metadata until the exact final head is green."
