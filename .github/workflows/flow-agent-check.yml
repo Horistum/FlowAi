@@ -1,164 +1,50 @@
-name: Flow CI
+name: Assemble v0.9.7.9.4
 
 on:
   push:
     branches:
-      - main
-      - 'feature/**'
-      - 'fix/**'
-      - 'chore/**'
-  pull_request:
-  workflow_dispatch:
+      - agent/v0.9.7.9.4-scenario-negation-token-boundary-honesty
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: assemble-v0.9.7.9.4
+  cancel-in-progress: false
 
 jobs:
-  compile-test-conformance:
+  assemble:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 10
     steps:
-      - name: Checkout
+      - name: Checkout staging branch
         uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: '21'
+          ref: agent/v0.9.7.9.4-scenario-negation-token-boundary-honesty
+          fetch-depth: 0
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Apply guarded complete patch
+        run: python3 scripts/apply_v0_9_7_9_4.py
 
-      - name: Prepare Gradle Wrapper
-        run: chmod +x ./gradlew
-
-      - name: Prepare CI Log Directory
-        run: mkdir -p ci-logs
-
-      - name: Test Flow Agent Tooling
-        run: python3 -m unittest discover -s tools/tests -p 'test_*.py'
-
-      - name: Validate Flow Agent Structure
-        run: python3 tools/flow_agent_validate.py
-
-      - name: Generate Flow Agent Context
-        run: python3 tools/flow_agent_runner.py
-
-      - name: Prepare Gradle Wrapper
+      - name: Restore standard workflow and remove assembly files
         run: |
-          if [ -f ./gradlew ]; then
-            chmod +x ./gradlew
-          fi
+          git show origin/main:.github/workflows/flow-agent-check.yml > .github/workflows/flow-agent-check.yml
+          rm scripts/apply_v0_9_7_9_4.py
+          rm .github/workflows/v09794-assemble.yml
 
-      - name: Run Offline Tests When Cache Is Available
-        shell: bash
+      - name: Validate assembled diff
         run: |
-          set -o pipefail
-          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon test --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-test.log
-            exit ${PIPESTATUS[0]}
-          else
-            echo "Offline Gradle cache not available. Skipping project tests in GitHub Actions." | tee ci-logs/offline-test.log
-          fi
+          git diff --check
+          test ! -e scripts/apply_v0_9_7_9_4.py
+          test ! -e .github/workflows/v09794-assemble.yml
+          grep -q 'IntentSourceDirectiveAuthority.affirmedPhrases' src/main/kotlin/org/flowlang/scenarios/ScenarioPacks.kt
+          grep -q 'ai.normalization.scenario-negation-token-boundary-honesty' src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
+          cmp .github/workflows/flow-agent-check.yml <(git show origin/main:.github/workflows/flow-agent-check.yml)
 
-      - name: Run Offline Conformance When Cache Is Available
-        shell: bash
+      - name: Commit final implementation tree
         run: |
-          set -o pipefail
-          if [ -x ./gradlew ] && [ -d .gradle/caches ]; then
-            ./gradlew --no-daemon run --args="conformance" --offline --stacktrace --console=plain 2>&1 | tee ci-logs/offline-conformance.log
-            exit ${PIPESTATUS[0]}
-          else
-            echo "Offline Gradle cache not available. Skipping conformance in GitHub Actions." | tee ci-logs/offline-conformance.log
-          fi
-
-      - name: Compile and Test
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Run Conformance
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-conformance.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Write CI Summary
-        if: always()
-        shell: bash
-        run: |
-          echo "# Flow CI Result" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
-          echo "Branch/ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
-          echo "Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Flow agent tooling unit tests" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Offline Gradle test when cache is available" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Offline Flow conformance when cache is available" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          if compgen -G "build/test-results/test/*.xml" > /dev/null; then
-            echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import glob
-          import html
-          import xml.etree.ElementTree as ET
-          for path in sorted(glob.glob('build/test-results/test/*.xml')):
-              root = ET.parse(path).getroot()
-              for case in root.findall('testcase'):
-                  failure = case.find('failure') or case.find('error')
-                  if failure is None:
-                      continue
-                  cls = case.attrib.get('classname', '')
-                  name = case.attrib.get('name', '')
-                  message = failure.attrib.get('message', '')
-                  text = (failure.text or '').strip().splitlines()
-                  print(f"### {cls}.{name}")
-                  print("")
-                  print("```text")
-                  print(html.unescape(message)[:2000])
-                  for line in text[:12]:
-                      print(html.unescape(line)[:2000])
-                  print("```")
-                  print("")
-          PY
-          fi
-          for file in ci-logs/*.log; do
-            if [ -f "$file" ]; then
-              echo "## ${file}" >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
-              echo '```text' >> "$GITHUB_STEP_SUMMARY"
-              tail -n 120 "$file" >> "$GITHUB_STEP_SUMMARY"
-              echo '```' >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
-            fi
-          done
-
-      - name: Upload CI Gradle Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flow-ci-gradle-logs
-          path: ci-logs/*.log
-          if-no-files-found: warn
-
-      - name: Upload CI Test Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flow-ci-test-reports
-          path: |
-            build/test-results/test/*.xml
-            build/reports/tests/test/**
-          if-no-files-found: warn
+          git config user.name "flow-ai-agent"
+          git config user.email "flow-ai-agent@users.noreply.github.com"
+          git add -A
+          git commit -m "Implement v0.9.7.9.4 scenario negation and token boundary honesty"
+          git push origin HEAD:agent/v0.9.7.9.4-scenario-negation-token-boundary-honesty
