@@ -3,6 +3,9 @@ package org.flowlang.modules
 /**
  * Module + action contracts (docs/06). Modules own meaning; the core owns syntax.
  * Used by the validator and the planner.
+ *
+ * Target support and projection evidence deliberately do not live in this model.
+ * Those decisions belong to versioned target registries and provider catalogs.
  */
 data class FlowModule(
     val name: String,
@@ -34,8 +37,7 @@ data class ModuleActionContract(
     val errors: Map<String, ModuleErrorRule> = emptyMap(),
     val secrets: List<String> = emptyList(),
     val requiredCapabilities: List<String> = emptyList(),
-    val implementedCapabilities: Set<String> = emptySet(),
-    val targetImplications: Map<String, TargetImplication> = emptyMap()
+    val implementedCapabilities: Set<String> = emptySet()
 )
 
 /**
@@ -55,13 +57,6 @@ data class SchemaField(
     val defaultValue: Any? = null
 )
 
-data class TargetImplication(
-    val target: String,
-    val support: String = "unknown",
-    val requiredCapabilities: List<String> = emptyList(),
-    val notes: List<String> = emptyList()
-)
-
 data class Effects(
     val reads: List<String> = emptyList(),
     val writes: List<String> = emptyList(),
@@ -72,7 +67,6 @@ data class Effects(
     val network: List<String> = emptyList(),
     val filesystem: List<String> = emptyList()
 )
-
 
 enum class ContinuityKind {
     VALUE,
