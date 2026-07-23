@@ -1,7 +1,7 @@
 version: "0.9.7.9.2"
 name: "Artifact-Derived Lowering Evidence"
 stream: core
-status: validation-pending
+status: exact-head-validation-pending
 objective: "Replace source-iterated lowering claims with stable identity evidence re-derived from concrete execution-plan values."
 scopeBoundary:
   - "Keep Flow Core target-neutral and do not introduce runtime command transport."
