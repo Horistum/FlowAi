@@ -20,6 +20,12 @@ import org.flowlang.planner.TryPlanNode
  * an actual dependency ancestor of that task. Merely placing an approval node
  * elsewhere in the flow, or writing `safety: requiresApproval`, is a declaration
  * of intent rather than proof that the control is reachable and enforced.
+ *
+ * Dynamic intent evidence remains useful for diagnostics, but the execution-plan
+ * boundary currently has no provider-backed enforcement proof. It is therefore
+ * converted to explicit UNKNOWN evidence before materialization. This is a
+ * deliberate fail-closed transition, not a loss of the original condition: the
+ * detail and required enforcement capabilities are retained.
  */
 object PlanningControlAuthority {
     fun assess(
@@ -54,23 +60,37 @@ object PlanningControlAuthority {
             }
         }
 
+        val executionEvidence = evidence.map(ControlEvidence::failClosedForExecutionPlanning)
+
         // Do not deduplicate security obligations. A canonical-id collision is
         // malformed evidence and ControlDecisionAuthority must reject it instead
         // of silently discarding one requirement with distinctBy.
         return ControlDecisionAuthority.assessment(
             requirements = requirements.sortedBy(ControlRequirement::id),
-            evidence = evidence.sortedBy(ControlEvidence::requirementId)
+            evidence = executionEvidence.sortedBy(ControlEvidence::requirementId)
         )
     }
 
     fun requiredEnforcementCapabilities(assessment: ControlAssessment): List<String> =
         assessment.evidence
-            .filter { it.status == ControlEvidenceStatus.DYNAMIC }
             .flatMap(ControlEvidence::enforcementCapabilities)
             .distinct()
 
     fun rederivedModuleRequirements(nodes: List<PlanNode>, modules: ModuleRegistry): List<ControlRequirement> =
         assess(emptyList(), emptyList(), nodes, modules).requirements
+
+    private fun ControlEvidence.failClosedForExecutionPlanning(): ControlEvidence =
+        if (status != ControlEvidenceStatus.DYNAMIC) {
+            this
+        } else {
+            copy(
+                status = ControlEvidenceStatus.UNKNOWN,
+                detail = buildString {
+                    append("Dynamic control is unresolved at the execution-plan boundary because no provider enforcement evidence is attached.")
+                    detail?.takeIf(String::isNotBlank)?.let { append(" Source detail: ").append(it) }
+                }
+            )
+        }
 
     private fun addTaskRequirement(
         requirements: MutableList<ControlRequirement>,
