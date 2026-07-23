@@ -43,7 +43,7 @@
     "sourceNodeId" : "standard_rollback_1"
   } ],
   "dependencies" : [ "git_checkout_1", "standard_execute_1", "docker_build_1", "approve_1", "standard_execute_2" ],
-  "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "docker.build", "container.image", "continuity.workspace", "condition.evaluate", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "standard.notify-failure" ],
+  "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "docker.build", "container.image", "continuity.workspace", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "standard.notify-failure" ],
   "targetHints" : { },
   "sourceIntent" : {
     "description" : "High-level deployment intent. AI should produce this layer before low-level Flow.",
@@ -55,8 +55,7 @@
     "policies" : [ {
       "name" : "production-approval",
       "type" : "APPROVAL",
-      "condition" : "environment == 'prod'",
-      "message" : "Production deployment requires approval."
+      "message" : "Approval is required before deployment in this reference flow."
     } ],
     "systemPurposes" : {
       "source" : "Application source repository",
@@ -344,20 +343,19 @@
     "kind" : "APPROVAL",
     "subject" : "production-approval",
     "source" : "INTENT_POLICY",
-    "condition" : "environment == 'prod'",
-    "message" : "Production deployment requires approval."
+    "message" : "Approval is required before deployment in this reference flow."
   } ],
   "controlEvidence" : [ {
     "requirementId" : "control.approval.production-approval",
-    "status" : "DYNAMIC",
-    "source" : "DYNAMIC_CONDITION",
-    "detail" : "environment == 'prod'",
-    "enforcementCapabilities" : [ "approval.manual", "condition.evaluate" ]
+    "status" : "SATISFIED",
+    "source" : "AUTHORED_STEP",
+    "detail" : "approve-prod",
+    "enforcementCapabilities" : [ ]
   } ],
   "controlDecision" : {
-    "status" : "PENDING",
+    "status" : "ALLOWED",
     "blockingRequirementIds" : [ ],
-    "pendingRequirementIds" : [ "control.approval.production-approval" ]
+    "pendingRequirementIds" : [ ]
   },
   "topologyRequirements" : [ {
     "id" : "topology.ephemeralWorkspace.git-checkout-1-docker-build-1",
@@ -545,47 +543,25 @@
     "body" : [ ],
     "errorHandler" : [ ]
   }, {
-    "id" : "if_1",
-    "kind" : "condition",
-    "dependencies" : [ ],
-    "inputs" : { },
-    "outputs" : [ ],
+    "id" : "approve_1",
+    "kind" : "approval",
+    "resultName" : "approve_prod",
+    "dependencies" : [ "docker_build_1" ],
+    "inputs" : {
+      "message" : "Approval is required before deployment in this reference flow.",
+      "mode" : "manual"
+    },
+    "outputs" : [ "approve_prod" ],
+    "sourceId" : "approve-prod",
     "bindingMetadata" : { },
     "effectModel" : [ ],
     "effects" : [ ],
+    "safety" : "requiresApproval",
     "destructive" : false,
-    "requiredCapabilities" : [ "condition.evaluate" ],
+    "requiredCapabilities" : [ "approval.manual" ],
     "targetHints" : { },
     "assumptions" : [ ],
-    "condition" : "environment == \"prod\"",
-    "then" : [ {
-      "id" : "approve_1",
-      "kind" : "approval",
-      "resultName" : "approve_prod",
-      "dependencies" : [ "docker_build_1" ],
-      "inputs" : {
-        "message" : "Production deployment requires approval.",
-        "mode" : "manual"
-      },
-      "outputs" : [ "approve_prod" ],
-      "sourceId" : "approve-prod",
-      "bindingMetadata" : { },
-      "effectModel" : [ ],
-      "effects" : [ ],
-      "safety" : "requiresApproval",
-      "destructive" : false,
-      "requiredCapabilities" : [ "approval.manual" ],
-      "targetHints" : { },
-      "assumptions" : [ ],
-      "then" : [ ],
-      "otherwise" : [ ],
-      "branches" : [ ],
-      "cases" : [ ],
-      "errorCase" : [ ],
-      "defaultSteps" : [ ],
-      "body" : [ ],
-      "errorHandler" : [ ]
-    } ],
+    "then" : [ ],
     "otherwise" : [ ],
     "branches" : [ ],
     "cases" : [ ],
