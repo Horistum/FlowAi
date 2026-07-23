@@ -23,7 +23,18 @@ jobs:
           fetch-depth: 0
 
       - name: Apply guarded production integration
-        run: python3 scripts/apply_v0_9_7_9_3.py
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/apply_v0_9_7_9_3.py')
+          text = path.read_text()
+          old = '.map(String::normalized)'
+          count = text.count(old)
+          if count != 3:
+              raise SystemExit(f'Expected 3 member-extension references, found {count}')
+          path.write_text(text.replace(old, '.map { it.normalized() }'))
+          PY
+          python3 scripts/apply_v0_9_7_9_3.py
 
       - name: Restore standard workflow and remove migration helper
         run: |
