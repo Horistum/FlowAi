@@ -58,6 +58,7 @@ internal class StandardArchitectureNormalizationChecks(
         checkAbstractExecutionTopologyModel(),
         checkIntentLoweringDiagnosticHonesty(),
         checkEnvironmentSafetyProductionIntegration(),
+        checkScenarioNegationTokenBoundaryHonesty(),
         checkIntentDesignReport(),
         checkCorePackagesDoNotImportJackson(),
         checkModulesDoNotOwnTargetRendering(),
@@ -387,6 +388,41 @@ internal class StandardArchitectureNormalizationChecks(
             val engineering = FlowValidator(registry).validate(flow("\"dev\""))
             require(engineering.issues.none { it.code.startsWith("ENVIRONMENT_") }) {
                 "Known non-sensitive environment was blocked: ${engineering.issues}."
+            }
+        }
+
+    private fun checkScenarioNegationTokenBoundaryHonesty(): ConformanceCheck =
+        runCheck("ai.normalization.scenario-negation-token-boundary-honesty") {
+            val normalizer = ScenarioPackIntentNormalizer()
+
+            val deniedBackup = normalizer.normalize(
+                AiIntentRequest("Migrate database orders to version 2; backup is unavailable.")
+            )
+            require(deniedBackup.normalizedIntent.workflows.flatMap { it.steps }
+                .none { it.capability == StandardCapability.BACKUP }) {
+                "Explicit backup denial synthesized positive BACKUP evidence."
+            }
+
+            val deniedNotification = normalizer.normalize(
+                AiIntentRequest("Run incident runbook for api outage, but do not notify the team.")
+            )
+            require(deniedNotification.normalizedIntent.workflows.flatMap { it.steps }
+                .none { it.capability == StandardCapability.NOTIFY }) {
+                "Explicit notification denial synthesized a NOTIFY step."
+            }
+
+            val boundary = normalizer.normalize(AiIntentRequest("Investigate capacity regression."))
+            require(boundary.report.scenarioSelection?.selectedPack == "custom") {
+                "The substring 'ci' inside 'capacity' selected the build-test scenario."
+            }
+
+            val conflicting = normalizer.normalize(
+                AiIntentRequest("Run incident runbook for api outage; do not notify on success, but notify on failure.")
+            )
+            require(conflicting.report.openQuestions.any {
+                it.severity == ClarificationSeverity.REQUIRED && it.field == "source.notification"
+            }) {
+                "Conflicting notification polarity did not require clarification."
             }
         }
 

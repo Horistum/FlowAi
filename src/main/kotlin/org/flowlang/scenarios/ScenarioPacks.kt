@@ -174,8 +174,7 @@ object ScenarioPackRegistry {
 
 abstract class BaseScenarioPack : ScenarioPack {
     override fun match(text: String, context: AiIntentContext): ScenarioPackMatch {
-        val normalized = normalizeText(text)
-        val hits = definition.triggers.filter { trigger -> triggerMatches(normalized, normalizeText(trigger)) }
+        val hits = IntentSourceDirectiveAuthority.affirmedPhrases(text, definition.triggers)
         val score = if (hits.isEmpty()) 0.0 else (0.42 + hits.size * 0.11).coerceAtMost(0.95)
         return ScenarioPackMatch(definition.id, score, hits)
     }
@@ -196,16 +195,26 @@ abstract class BaseScenarioPack : ScenarioPack {
     protected fun sanitize(raw: String): String = raw.lowercase().replace(Regex("[^a-z0-9._-]+"), "-").trim('-').ifBlank { "flow" }
 
     protected fun commonSystems(text: String, context: AiIntentContext, includeSource: Boolean = false, notify: Boolean = false): List<IntentSystem> = buildList {
-        if (includeSource || context.repositoryUrl != null || text.contains("repo", ignoreCase = true) || text.contains("git", ignoreCase = true)) {
+        val repository = IntentSourceDirectiveAuthority.analyze(text, IntentSourceDirectiveConcept.REPOSITORY)
+        val notification = IntentSourceDirectiveAuthority.analyze(text, IntentSourceDirectiveConcept.NOTIFICATION)
+        val sourceAllowed = !repository.denied && !repository.conflicting
+        val notificationAllowed = !notification.denied && !notification.conflicting
+        if (sourceAllowed && (includeSource || context.repositoryUrl != null || repository.requested)) {
             add(IntentSystem("source", "git", "source repository", mapOfNotNullValue("url" to context.repositoryUrl?.let { IntentString(it) })))
         }
-        if (notify || text.contains("notify", ignoreCase = true) || text.contains("email", ignoreCase = true) || text.contains("slack", ignoreCase = true) || text.contains("team", ignoreCase = true)) {
+        if (notificationAllowed && (notify || notification.requested)) {
             add(IntentSystem("notifier", "notify", "notification channel", mapOf("channel" to IntentString(context.notificationChannel ?: inferredChannel(text)))))
         }
     }
 
-    protected fun assumptionsForMissingRepo(context: AiIntentContext): List<NormalizationAssumption> =
-        if (context.repositoryUrl == null) listOf(NormalizationAssumption("source-url", "systems.source.config.url", "not specified", "Repository URL was not provided; target platforms may use their default checkout mechanism when available.", 0.55)) else emptyList()
+    protected fun assumptionsForMissingRepo(text: String, context: AiIntentContext): List<NormalizationAssumption> {
+        val repository = IntentSourceDirectiveAuthority.analyze(text, IntentSourceDirectiveConcept.REPOSITORY)
+        return if (context.repositoryUrl == null && !repository.denied && !repository.conflicting) {
+            listOf(NormalizationAssumption("source-url", "systems.source.config.url", "not specified", "Repository URL was not provided; target platforms may use their default checkout mechanism when available.", 0.55))
+        } else {
+            emptyList()
+        }
+    }
 
     protected fun environmentInputs(prodSensitive: Boolean, context: AiIntentContext): List<IntentInput> =
         if (prodSensitive) listOf(IntentInput("environment", "option[dev,test,prod]", required = true, default = context.defaultEnvironment?.let { IntentString(it) })) else emptyList()
@@ -215,48 +224,20 @@ abstract class BaseScenarioPack : ScenarioPack {
      * but it must never synthesize its own APPROVE step or APPROVAL policy. Otherwise the
      * negative corpus case "production deploy without approval" becomes unreachable.
      */
-    protected fun explicitApprovalRequested(lower: String): Boolean =
-        !approvalExplicitlyDenied(lower) && Regex("""\b(?:require|requires|required|with|after|manual|human|manager|owner)?\s*(?:approval|approve|approved)\b""").containsMatchIn(lower)
+    protected fun explicitApprovalRequested(source: String): Boolean =
+        IntentSourceDirectiveAuthority.analyze(source, IntentSourceDirectiveConcept.APPROVAL).requested
 
-    protected fun approvalExplicitlyDenied(lower: String): Boolean = listOf(
-        "without approval",
-        "without manual approval",
-        "without human approval",
-        "without any approval",
-        "no approval",
-        "no manual approval",
-        "no human approval",
-        "skip approval",
-        "skip manual approval",
-        "bypass approval",
-        "do not require approval",
-        "don't require approval",
-        "do not wait for approval",
-        "don't wait for approval"
-    ).any { lower.contains(it) }
+    protected fun approvalExplicitlyDenied(source: String): Boolean =
+        IntentSourceDirectiveAuthority.analyze(source, IntentSourceDirectiveConcept.APPROVAL).denied
 
-    /**
-     * Rollback, like approval, must respect explicit negation. The word "rollback" appears in both
-     * "rollback on failure" (wanted) and "deploy without rollback" (explicitly refused); a bare
-     * substring test would enable a rollback handler the author asked NOT to have. Mirrors
-     * [approvalExplicitlyDenied] so the negative-intent corpus stays reachable.
-     */
-    protected fun rollbackExplicitlyDenied(lower: String): Boolean = listOf(
-        "without rollback",
-        "without a rollback",
-        "without any rollback",
-        "without roll back",
-        "no rollback",
-        "no roll back",
-        "skip rollback",
-        "skip the rollback",
-        "skip roll back",
-        "bypass rollback",
-        "do not rollback",
-        "don't rollback",
-        "do not roll back",
-        "don't roll back"
-    ).any { lower.contains(it) }
+    protected fun rollbackExplicitlyDenied(source: String): Boolean =
+        IntentSourceDirectiveAuthority.analyze(source, IntentSourceDirectiveConcept.ROLLBACK).denied
+
+    protected fun rollbackRequested(source: String): Boolean =
+        IntentSourceDirectiveAuthority.analyze(source, IntentSourceDirectiveConcept.ROLLBACK).requested
+
+    protected fun notificationRequested(source: String): Boolean =
+        IntentSourceDirectiveAuthority.analyze(source, IntentSourceDirectiveConcept.NOTIFICATION).requested
 
     /**
      * Owner extraction is intentionally narrow. A generic "require approval" is a valid
@@ -355,8 +336,26 @@ abstract class BaseScenarioPack : ScenarioPack {
         explanation: List<String> = emptyList(),
         triggers: List<IntentTrigger> = emptyList()
     ): ScenarioNormalizationResult {
+        val directiveQuestions = buildList {
+            fun requireResolution(
+                concept: IntentSourceDirectiveConcept,
+                id: String,
+                field: String,
+                question: String
+            ) {
+                if (IntentSourceDirectiveAuthority.analyze(request.userText, concept).conflicting) {
+                    add(requiredQuestion(id, field, question))
+                }
+            }
+            requireResolution(IntentSourceDirectiveConcept.BACKUP, "conflicting-backup-directive", "source.backup", "The request both requires and denies backup. Which instruction is authoritative?")
+            requireResolution(IntentSourceDirectiveConcept.REPOSITORY, "conflicting-repository-directive", "source.repository", "The request both requires and denies repository access. Which instruction is authoritative?")
+            requireResolution(IntentSourceDirectiveConcept.NOTIFICATION, "conflicting-notification-directive", "source.notification", "The request both requires and denies notification. Which instruction is authoritative?")
+            requireResolution(IntentSourceDirectiveConcept.APPROVAL, "conflicting-approval-directive", "source.approval", "The request both requires and denies approval. Which instruction is authoritative?")
+            requireResolution(IntentSourceDirectiveConcept.ROLLBACK, "conflicting-rollback-directive", "source.rollback", "The request both requires and denies rollback. Which instruction is authoritative?")
+        }
+        val resolvedQuestions = (questions + directiveQuestions).distinctBy { it.id }
         val blockingPolicies = buildList {
-            if (questions.any { it.severity == ClarificationSeverity.REQUIRED }) {
+            if (resolvedQuestions.any { it.severity == ClarificationSeverity.REQUIRED }) {
                 add(IntentPolicy("normalization-required-clarification", IntentPolicyType.SAFETY, "requiresClarification", "Required clarification must be resolved before lowering."))
             }
             if (risks.any { it.severity == RiskSeverity.HIGH && !it.mitigated }) {
@@ -374,7 +373,7 @@ abstract class BaseScenarioPack : ScenarioPack {
             policies = policies + blockingPolicies,
             failure = failure
         )
-        return ScenarioNormalizationResult(intent, classification(definition.id, match.score), entities, assumptions, questions, risks, explanation, match)
+        return ScenarioNormalizationResult(intent, classification(definition.id, match.score), entities, assumptions, resolvedQuestions, risks, explanation, match)
     }
 
     protected fun extractFirst(text: String, vararg patterns: Regex): String? =
@@ -448,20 +447,7 @@ abstract class BaseScenarioPack : ScenarioPack {
         return cleaned
     }
 
-    private fun triggerMatches(text: String, trigger: String): Boolean =
-        text.contains(trigger) || containsTokensInOrder(entityTokens(text), entityTokens(trigger))
 
-    private fun containsTokensInOrder(textTokens: List<String>, triggerTokens: List<String>): Boolean {
-        if (triggerTokens.isEmpty()) return false
-        var index = 0
-        for (token in textTokens) {
-            if (token == triggerTokens[index]) {
-                index += 1
-                if (index == triggerTokens.size) return true
-            }
-        }
-        return false
-    }
 
     private fun entityTokens(value: String): List<String> =
         Regex("[a-z0-9._/-]+").findAll(value.lowercase()).map { it.value.trim('.', ',', ';', ':') }.filter { it.isNotBlank() }.toList()
@@ -510,8 +496,8 @@ object DeploymentScenarioPack : BaseScenarioPack() {
         val approvalDenied = approvalExplicitlyDenied(lower)
         val wantsApproval = explicitApprovalRequested(lower)
         val requiresApprovalPolicy = prod && !wantsApproval
-        val wantsRollback = lower.contains("rollback") && !rollbackExplicitlyDenied(lower)
-        val wantsNotify = lower.contains("notify") || lower.contains("email") || lower.contains("slack") || lower.contains("team")
+        val wantsRollback = rollbackRequested(text)
+        val wantsNotify = notificationRequested(text)
         val name = app ?: "deployment"
         val questions = mutableListOf<ClarificationQuestion>()
         if (app.isNullOrBlank()) questions += requiredQuestion("missing-application-name", "entities.application.name", "What is the application or service name?")
@@ -557,7 +543,7 @@ object DeploymentScenarioPack : BaseScenarioPack() {
             if (wantsApproval) add(IntentPolicy("production-approval", IntentPolicyType.APPROVAL, if (prod) "environment == 'prod'" else "true", "Approval required before deployment."))
             if (requiresApprovalPolicy) add(IntentPolicy("production-approval-required", IntentPolicyType.SAFETY, "requiresApproval", "Production deployment requires explicit approval; the normalizer must not synthesize one."))
         }
-        val assumptions = assumptionsForMissingRepo(request.context) + listOf(NormalizationAssumption("default-test-command", "steps.test.params.command", "mvn test", "No build tool was specified; downstream convention resolver may use mvn test.", 0.62))
+        val assumptions = assumptionsForMissingRepo(text, request.context) + listOf(NormalizationAssumption("default-test-command", "steps.test.params.command", "mvn test", "No build tool was specified; downstream convention resolver may use mvn test.", 0.62))
         return packResult(
             request,
             match,
@@ -597,7 +583,7 @@ object RollbackScenarioPack : BaseScenarioPack() {
         val lower = normalizeText(text)
         val app = applicationEntity(text, request.context)
         val rollbackTarget = rollbackTargetEntity(text)
-        val wantsNotify = lower.contains("notify") || lower.contains("team") || lower.contains("email") || lower.contains("slack")
+        val wantsNotify = notificationRequested(text)
         val systems = commonSystems(text, request.context, notify = wantsNotify) + IntentSystem("standard", "standard", "semantic rollback operations")
         val target = rollbackTarget ?: "previous-version"
         val displayName = app ?: target
@@ -684,7 +670,7 @@ object BuildTestScenarioPack : BaseScenarioPack() {
             IntentStep("build", StandardCapability.BUILD, requires = listOf("checkout")),
             IntentStep("test", StandardCapability.TEST, requires = listOf("build"))
         )
-        return packResult(request, match, "build-test", text, emptyList(), systems, steps, assumptions = assumptionsForMissingRepo(request.context), entities = mapOf("scenario" to "build-test"), explanation = listOf("Build/test scenario selected; no deployment was synthesized."))
+        return packResult(request, match, "build-test", text, emptyList(), systems, steps, assumptions = assumptionsForMissingRepo(text, request.context), entities = mapOf("scenario" to "build-test"), explanation = listOf("Build/test scenario selected; no deployment was synthesized."))
     }
 }
 
@@ -705,13 +691,24 @@ object BackupRestoreScenarioPack : BaseScenarioPack() {
     override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult {
         val text = request.userText
         val lower = normalizeText(text)
+        val backupDirective = IntentSourceDirectiveAuthority.analyze(text, IntentSourceDirectiveConcept.BACKUP)
+        val restoreDirective = IntentSourceDirectiveAuthority.analyze(text, IntentSourceDirectiveConcept.RESTORE)
         val subject = subjectEntity(text)
         val retention = extractRetention(lower)
-        val database = if (lower.contains("database") || lower.contains(" db ")) subject else null
-        val wantsRestore = lower.contains("restore") || lower.contains("recovery")
-        val wantsNotify = lower.contains("notify") || lower.contains("team") || lower.contains("email") || lower.contains("slack")
+        val database = if (Regex("""\bdatabase\b|\bdb\b""").containsMatchIn(lower)) subject else null
+        val wantsRestore = restoreDirective.requested
+        val wantsBackup = when {
+            backupDirective.requested -> true
+            backupDirective.denied || backupDirective.conflicting -> false
+            wantsRestore -> false
+            else -> true
+        }
+        val wantsNotify = notificationRequested(text)
         val questions = mutableListOf<ClarificationQuestion>()
-        if (subject == null) questions += requiredQuestion("missing-backup-subject", "entities.backup.subject", "What must be backed up?")
+        if (subject == null) questions += requiredQuestion("missing-backup-subject", "entities.backup.subject", "What backup or restore subject is affected?")
+        if (!wantsBackup && !wantsRestore) {
+            questions += requiredQuestion("missing-backup-operation", "source.backup", "The selected backup scenario contains no affirmed backup or restore operation. What operation should be performed?")
+        }
         val systems = commonSystems(text, request.context, notify = wantsNotify).toMutableList()
         systems += IntentSystem("standard", "standard", "semantic backup operations")
         val triggers = mutableListOf<IntentTrigger>()
@@ -737,10 +734,26 @@ object BackupRestoreScenarioPack : BaseScenarioPack() {
             }
         }
         val steps = mutableListOf<IntentStep>()
-        steps += IntentStep("backup", StandardCapability.BACKUP, params = mapOfNotNullValue("subject" to subject?.let { IntentString(it) }, "retention" to retention?.let { IntentString(it) }))
-        steps += IntentStep("verify-backup", StandardCapability.VALIDATE, requires = listOf("backup"), params = mapOf("operation" to IntentString("verify-backup")))
-        if (wantsRestore) steps += IntentStep("restore", StandardCapability.RESTORE, requires = listOf("verify-backup"), params = mapOfNotNullValue("subject" to subject?.let { IntentString(it) }))
-        if (wantsNotify) steps += IntentStep("notify", StandardCapability.NOTIFY, requires = listOf(if (wantsRestore) "restore" else "verify-backup"), params = mapOf("subject" to IntentString("Backup status: ${subject ?: "backup"}")))
+        if (wantsBackup) {
+            steps += IntentStep("backup", StandardCapability.BACKUP, params = mapOfNotNullValue("subject" to subject?.let { IntentString(it) }, "retention" to retention?.let { IntentString(it) }))
+            steps += IntentStep("verify-backup", StandardCapability.VALIDATE, requires = listOf("backup"), params = mapOf("operation" to IntentString("verify-backup")))
+        }
+        if (wantsRestore) {
+            steps += IntentStep(
+                "restore",
+                StandardCapability.RESTORE,
+                requires = if (wantsBackup) listOf("verify-backup") else emptyList(),
+                params = mapOfNotNullValue("subject" to subject?.let { IntentString(it) })
+            )
+        }
+        if (wantsNotify) {
+            val dependency = when {
+                wantsRestore -> "restore"
+                wantsBackup -> "verify-backup"
+                else -> null
+            }
+            steps += IntentStep("notify", StandardCapability.NOTIFY, requires = listOfNotNull(dependency), params = mapOf("subject" to IntentString("Backup status: ${subject ?: "backup"}")))
+        }
         val risks = if (wantsRestore) listOf(highRisk("restore-overwrite", "Restore operations may overwrite existing data.", "Require approval for restore actions.")) else emptyList()
         val policies = if (wantsRestore) listOf(IntentPolicy("restore-approval", IntentPolicyType.APPROVAL, "true", "Approval required before restore.")) else emptyList()
         return packResult(request, match, "backup-${subject ?: "unknown"}", text, emptyList(), systems, steps, triggers = triggers, policies = policies, failure = IntentFailurePolicy(notify = wantsNotify), entities = mapOfNotNull("subject" to subject, "database" to database, "retention" to retention, "scenario" to "backup-restore"), questions = questions, risks = risks, explanation = listOf("Backup/restore scenario synthesized schedule, backup, verification and notification steps without fabricating exact cron values."))
@@ -765,7 +778,7 @@ object DataSyncScenarioPack : BaseScenarioPack() {
     )
     override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult {
         val text = request.userText
-        val notify = text.contains("notify", ignoreCase = true) || text.contains("team", ignoreCase = true)
+        val notify = notificationRequested(text)
         val (source, destination) = extractFromTo(text)
         val systems = commonSystems(text, request.context, notify = notify) + IntentSystem("standard", "standard", "semantic data sync operations")
         val steps = mutableListOf(
@@ -800,7 +813,7 @@ object SecretRotationScenarioPack : BaseScenarioPack() {
         val text = request.userText
         val secret = extractSecret(text)
         val service = extractAffectedService(text)
-        val notify = text.contains("notify", ignoreCase = true) || text.contains("team", ignoreCase = true)
+        val notify = notificationRequested(text)
         val systems = commonSystems(text, request.context, notify = notify) + IntentSystem("standard", "standard", "semantic secret rotation operations")
         val steps = mutableListOf<IntentStep>()
         steps += IntentStep("approve-rotation", StandardCapability.APPROVE)
@@ -840,19 +853,27 @@ object DatabaseMigrationScenarioPack : BaseScenarioPack() {
     override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult {
         val text = request.userText
         val lower = normalizeText(text)
+        val backupDirective = IntentSourceDirectiveAuthority.analyze(text, IntentSourceDirectiveConcept.BACKUP)
         val database = databaseEntity(text)
         val version = Regex("(?i)(?:version|to)\\s+([a-z0-9._-]+)").find(text)?.groupValues?.getOrNull(1)
         val wantsApproval = explicitApprovalRequested(lower)
-        val wantsNotify = lower.contains("notify") || lower.contains("team") || lower.contains("email") || lower.contains("slack")
-        val wantsRollback = lower.contains("rollback") && !rollbackExplicitlyDenied(lower)
+        val wantsNotify = notificationRequested(text)
+        val wantsRollback = rollbackRequested(text)
         val questions = mutableListOf<ClarificationQuestion>()
         if (database == null) questions += requiredQuestion("missing-database", "entities.database", "Which database should be migrated?")
-        if (!lower.contains("backup")) questions += recommendedQuestion("migration-backup", "safety.backup", "Should a backup be created before the migration?")
+        if (backupDirective.status == IntentSourceDirectiveStatus.ABSENT) {
+            questions += recommendedQuestion("migration-backup", "safety.backup", "Should a backup be created before the migration?")
+        }
         if (!wantsRollback) questions += recommendedQuestion("migration-rollback-plan", "safety.rollbackPlan", "What rollback plan should be used if migration validation fails?")
-        val systems = commonSystems(text, request.context, includeSource = lower.contains("repo") || lower.contains("git"), notify = wantsNotify) +
+        val systems = commonSystems(
+            text,
+            request.context,
+            includeSource = IntentSourceDirectiveAuthority.analyze(text, IntentSourceDirectiveConcept.REPOSITORY).requested,
+            notify = wantsNotify
+        ) +
             IntentSystem("standard", "standard", "semantic database migration operations")
         val steps = mutableListOf<IntentStep>()
-        if (lower.contains("backup")) {
+        if (backupDirective.requested) {
             steps += IntentStep("backup-database", StandardCapability.BACKUP, params = mapOfNotNullValue("subject" to database?.let { IntentString(it) }))
         }
         if (wantsApproval) {
@@ -869,7 +890,7 @@ object DatabaseMigrationScenarioPack : BaseScenarioPack() {
             params = mapOfNotNullValue(
                 "database" to database?.let { IntentString(it) },
                 "version" to version?.let { IntentString(it) },
-                "backup" to IntentString(if (lower.contains("backup")) "required" else "not-confirmed"),
+                "backup" to (if (backupDirective.requested) IntentString("required") else null),
                 "rollbackPlan" to (if (wantsRollback) IntentString("required") else null)
             )
         )
@@ -880,7 +901,11 @@ object DatabaseMigrationScenarioPack : BaseScenarioPack() {
             if (wantsApproval) add(IntentPolicy("database-migration-approval", IntentPolicyType.APPROVAL, "true", "Approval required before applying database migration."))
             add(IntentPolicy("database-migration-backup", IntentPolicyType.SAFETY, "requiresBackup", "Database migration should have a confirmed backup before apply."))
         }
-        val risks = listOf(highRisk("database-migration-risk", "Database migration can cause data loss or application downtime.", "Require backup, validation and rollback plan.", mitigated = lower.contains("backup") && wantsRollback))
+        val risks = if (backupDirective.denied) {
+            listOf(highRisk("database-migration-backup-denied", "The request explicitly denies backup for a database migration that requires backup evidence.", "Provide an approved backup before migration or cancel the migration.", mitigated = false))
+        } else {
+            listOf(highRisk("database-migration-risk", "Database migration can cause data loss or application downtime.", "Require backup, validation and rollback plan.", mitigated = backupDirective.requested && wantsRollback))
+        }
         return packResult(request, match, "database-migration-${database ?: "unknown"}", text, emptyList(), systems, steps, policies, IntentFailurePolicy(notify = wantsNotify, rollback = wantsRollback), mapOfNotNull("database" to database, "scenario" to "database-migration"), questions = questions, risks = risks, explanation = listOf("Database migration scenario selected; critical database, backup and rollback decisions are explicit."))
     }
 }
@@ -907,7 +932,7 @@ object CertificateRenewalScenarioPack : BaseScenarioPack() {
         val namespace = Regex("(?i)(?:namespace|ns)\\s+([a-z0-9._-]+)").find(text)?.groupValues?.getOrNull(1)
         val service = Regex("(?i)(?:service|endpoint)\\s+([a-z0-9._/-]+)").find(text)?.groupValues?.getOrNull(1)
         val window = maintenanceWindowEntity(text)
-        val wantsNotify = lower.contains("notify") || lower.contains("team") || lower.contains("email") || lower.contains("slack")
+        val wantsNotify = notificationRequested(text)
         val questions = mutableListOf<ClarificationQuestion>()
         if (certificate == null) questions += requiredQuestion("missing-certificate", "entities.certificate", "Which certificate should be renewed?")
         if (!lower.contains("provider") && !lower.contains("cert-manager") && !lower.contains("vault")) {
@@ -970,7 +995,7 @@ object KubernetesMaintenanceScenarioPack : BaseScenarioPack() {
         val wantsApproval = explicitApprovalRequested(lower)
         val wantsDryRun = lower.contains("dry-run") || lower.contains("dry run")
         val window = maintenanceWindowEntity(text)
-        val wantsNotify = lower.contains("notify") || lower.contains("team") || lower.contains("email") || lower.contains("slack")
+        val wantsNotify = notificationRequested(text)
         val questions = mutableListOf<ClarificationQuestion>()
         if (scope == null) questions += requiredQuestion("missing-kubernetes-scope", "entities.kubernetes.scope", "Which cluster, namespace or resource scope is affected?")
         if (prod && window == null) questions += requiredQuestion("missing-maintenance-window", "safety.maintenance.window", "Which maintenance window authorizes this production maintenance?")
@@ -1016,12 +1041,13 @@ object ProvisionScenarioPack : BaseScenarioPack() {
     )
     override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult {
         val text = request.userText
-        val notify = text.contains("notify", ignoreCase = true)
-        val systems = commonSystems(text, request.context, includeSource = text.contains("terraform", true), notify = notify) + IntentSystem("standard", "standard", "semantic provisioning operations")
+        val notify = notificationRequested(text)
+        val terraform = IntentSourceDirectiveAuthority.containsAffirmedPhrase(text, "terraform")
+        val systems = commonSystems(text, request.context, includeSource = terraform, notify = notify) + IntentSystem("standard", "standard", "semantic provisioning operations")
         val steps = mutableListOf<IntentStep>()
-        steps += IntentStep("plan-provision", StandardCapability.PROVISION, params = mapOfNotNullValue("stack" to if (text.contains("terraform", true)) IntentString("terraform") else null, "mode" to IntentString("plan")))
+        steps += IntentStep("plan-provision", StandardCapability.PROVISION, params = mapOfNotNullValue("stack" to if (terraform) IntentString("terraform") else null, "mode" to IntentString("plan")))
         steps += IntentStep("approve-provision", StandardCapability.APPROVE, requires = listOf("plan-provision"), params = mapOf("message" to IntentString("Approve infrastructure provisioning")))
-        steps += IntentStep("apply-provision", StandardCapability.PROVISION, requires = listOf("approve-provision"), params = mapOfNotNullValue("stack" to if (text.contains("terraform", true)) IntentString("terraform") else null, "mode" to IntentString("apply")))
+        steps += IntentStep("apply-provision", StandardCapability.PROVISION, requires = listOf("approve-provision"), params = mapOfNotNullValue("stack" to if (terraform) IntentString("terraform") else null, "mode" to IntentString("apply")))
         steps += IntentStep("validate", StandardCapability.VALIDATE, requires = listOf("apply-provision"), params = mapOf("operation" to IntentString("verify-provisioning")))
         if (notify) steps += IntentStep("notify", StandardCapability.NOTIFY, requires = listOf("validate"), params = mapOf("subject" to IntentString("Provisioning status")))
         return packResult(request, match, "provision", text, emptyList(), systems, steps, policies = listOf(IntentPolicy("provision-approval", IntentPolicyType.APPROVAL, "true", "Approval required before provisioning changes.")), failure = IntentFailurePolicy(notify = notify), entities = mapOf("scenario" to "provision"), risks = listOf(mediumRisk("infrastructure-impact", "Provisioning can change infrastructure and cost profile.", "Review target environment and generated plan before apply.", mitigated = true)), explanation = listOf("Provisioning scenario selected; request did not fall back to custom."))
@@ -1044,7 +1070,7 @@ object CleanupScenarioPack : BaseScenarioPack() {
     override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult {
         val text = request.userText
         val resource = cleanEntityPhrase(extractFirst(text, Regex("(?i)(?:cleanup|clean up|remove old|delete old|prune)\\s+(.+)$")))
-        val notify = text.contains("notify", ignoreCase = true)
+        val notify = notificationRequested(text)
         val retention = extractRetentionRule(text)
         val systems = commonSystems(text, request.context, notify = notify) + IntentSystem("standard", "standard", "semantic cleanup operations")
         val steps = mutableListOf<IntentStep>()
@@ -1093,7 +1119,7 @@ object IncidentRunbookScenarioPack : BaseScenarioPack() {
     )
     override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult {
         val text = request.userText
-        val notify = text.contains("notify", ignoreCase = true) || text.contains("team", ignoreCase = true)
+        val notify = notificationRequested(text)
         val systems = commonSystems(text, request.context, notify = notify) + IntentSystem("standard", "standard", "semantic runbook operations")
         val steps = mutableListOf(
             IntentStep("runbook", StandardCapability.RUNBOOK, params = mapOf("description" to IntentString(text))),
