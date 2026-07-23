@@ -1,0 +1,108 @@
+name: v0.9.7.9.2 Finalize Now
+
+on:
+  push:
+    branches:
+      - agent/v0.9.7.9.2-artifact-derived-lowering-evidence
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/v0.9.7.9.2-artifact-derived-lowering-evidence
+          fetch-depth: 0
+
+      - name: Apply final conformance and metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          conformance = Path('src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt')
+          text = conformance.read_text()
+          marker = 'import org.flowlang.intent.StandardCapability\n'
+          if 'import org.flowlang.lowering.IntentLoweringAuthority\n' not in text:
+              if text.count(marker) != 1:
+                  raise SystemExit('Missing unique lowering import marker')
+              text = text.replace(marker, marker + 'import org.flowlang.lowering.IntentLoweringAuthority\n', 1)
+          old = '''        require(ast.metadata.loweringReport?.evidence.orEmpty().isNotEmpty()) { "AST lacks lowering coverage evidence." }
+          require(plan.loweringReport == ast.metadata.loweringReport) { "Execution plan lost lowering coverage evidence." }
+'''
+          new = '''        val sourceMetadata = requireNotNull(ast.metadata.sourceIntent) { "AST lacks stable lowering source metadata." }
+          require(sourceMetadata.fields.isNotEmpty()) { "AST lacks stable lowering source field identities." }
+          require(ast.metadata.loweringReport == null) { "AST must not certify execution-plan values before the plan exists." }
+          val loweringReport = requireNotNull(plan.loweringReport) { "Execution plan lacks artifact-derived lowering evidence." }
+          require(loweringReport.evidence.map { it.sourceIdentity }.toSet() == sourceMetadata.fields.map { it.identity }.toSet()) {
+              "Execution-plan lowering evidence does not cover the stable source catalog."
+          }
+          require(loweringReport == IntentLoweringAuthority.report(plan.copy(loweringReport = null))) {
+              "Execution-plan lowering evidence is not reproducible from concrete plan values."
+          }
+'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit('Lowering conformance block is neither old nor finalized')
+          conformance.write_text(text)
+
+          authority = Path('src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt')
+          text = authority.read_text()
+          text = text.replace('planning.lowering.artifact-digest.invalid', 'planning.lowering.evidence-digest.invalid')
+          text = text.replace(
+              'Lowering evidence must declare a lowercase SHA-256 artifact digest.',
+              'Lowering evidence must declare a lowercase SHA-256 aggregate evidence digest.'
+          )
+          authority.write_text(text)
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text()
+          heading = '### v0.9.7.9.2 Artifact-Derived Lowering Evidence'
+          if heading not in text:
+              marker = '### v0.9.7.9.1 Evidence and Control Integrity Repair'
+              section = '''### v0.9.7.9.2 Artifact-Derived Lowering Evidence
+
+#### Added
+
+- Added stable semantic source and target identities for every accepted Intent field covered by lowering evidence.
+- Added source, expected-target and concrete-target SHA-256 digests with explicit named transformations.
+- Added adversarial tests for concrete target mutation, forged evidence digest, missing evidence, duplicate evidence and topological source-step reordering.
+- Added an embedded lowering evidence contract `2.0` while preserving the public ExecutionPlan artifact version at `2.0`.
+
+#### Changed
+
+- Lowering reports are issued only after FlowPlanner constructs the concrete execution plan.
+- Mandatory materialization re-derives every target value and requires exact equality with the stored report.
+- `sourcePath` is diagnostic only; `sourceIdentity` is the stable authority independent of list position.
+- `PRESERVED` now requires verified source-target equality, while `TRANSFORMED` requires a named conversion and verified expected target value.
+- Canonical build-test-deploy and checkout-build-image snapshot bundles were regenerated through the reference generator.
+
+#### Removed
+
+- Removed source-iterated path-only preservation claims.
+- Removed index-based target addressing as lowering evidence authority.
+- Removed `dropBlockedParams` and the synthetic notes-driven materialization marker.
+
+#### Validation boundary
+
+- The aggregate `evidenceDigest` covers the certified lowering evidence view and is not represented as a signature of the entire execution plan.
+- The v0.9.7 closure gate remains blocked pending work items v0.9.7.9.3 through v0.9.7.9.7.
+
+'''
+              if marker not in text:
+                  raise SystemExit(f'Missing changelog marker: {marker}')
+              changelog.write_text(text.replace(marker, section + marker, 1))
+          PY
+
+      - name: Commit final state
+        run: |
+          git rm .github/workflows/v0.9.7.9.2-final-metadata.yml .github/workflows/v0.9.7.9.2-finalize-now.yml
+          git config user.name "flow-ci"
+          git config user.email "flow-ci@users.noreply.github.com"
+          git add CHANGELOG.md src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt
+          git commit -m "[v0.9.7.9.2-final] Finalize artifact-derived lowering conformance"
+          git push origin HEAD:agent/v0.9.7.9.2-artifact-derived-lowering-evidence
