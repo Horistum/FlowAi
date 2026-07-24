@@ -192,11 +192,12 @@ class GitHubActionsManifestRenderer(
             TargetExpressionTranslator.github(it, manifest.inputs, manifest.compatibility.expressionSupport)
         }
         if (job.metadata["errorHandler"] == "true") {
-            val parts = mutableListOf("always()", "failure()")
+            val parts = mutableListOf("!cancelled()", "failure()")
             if (!own.isNullOrBlank()) parts += "($own)"
             return parts.joinToString(" && ")
         }
-        val needs = job.dependsOn.map { dependency ->
+
+        val dependencyConditions = job.dependsOn.mapNotNull { dependency ->
             val safeDependency = sanitizeId(dependency)
             val isProviderBackedApproval = manifest.jobs.firstOrNull {
                 sanitizeId(it.id) == safeDependency
@@ -204,13 +205,14 @@ class GitHubActionsManifestRenderer(
             if (isProviderBackedApproval) {
                 "(needs.$safeDependency.result == 'success' || needs.$safeDependency.result == 'skipped')"
             } else {
-                "needs.$safeDependency.result == 'success'"
+                null
             }
         }
+
         val parts = mutableListOf<String>()
-        if (job.dependsOn.isNotEmpty()) parts += "always()"
+        if (dependencyConditions.isNotEmpty()) parts += "!cancelled()"
         if (!own.isNullOrBlank()) parts += "($own)"
-        parts += needs
+        parts += dependencyConditions
         return parts.takeIf { it.isNotEmpty() }?.joinToString(" && ")
     }
 }
