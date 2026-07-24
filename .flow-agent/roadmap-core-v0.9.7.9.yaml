@@ -14,7 +14,7 @@ trackExitCriteria:
 
 correctionClosure:
   parentItem: "0.9.7.9"
-  status: implementation-complete-validation-pending
+  status: completed
   completedThrough: "0.9.7.9.7"
   completedItemName: "CLI Diagnostic and Release Honesty"
   ledger: "CHANGELOG-v0.9.7.9.md"
@@ -44,7 +44,7 @@ correctionClosure:
       status: completed
     - version: "0.9.7.9.7"
       name: CLI Diagnostic and Release Honesty
-      status: implementation-complete-validation-pending
+      status: completed
 
 items:
   - version: 0.9.7.0
@@ -205,7 +205,7 @@ items:
   - version: 0.9.7.9
     name: Intent Lowering and Diagnostic Honesty
     type: lowering-integrity
-    status: completed-with-bounded-corrections
+    status: completed
     purpose: Preserve or diagnose every meaningful input.
     universalInvariant: Accepted information never disappears silently.
     forbiddenScope:
