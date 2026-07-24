@@ -1,4 +1,0 @@
-v0.9.7.9.8 implementation scope
-
-This file intentionally contains no candidate commit hash or CI result.
-The exact candidate head and validation result remain external pull-request evidence.
