@@ -3,6 +3,7 @@ package org.flowlang.generators.manifest
 import org.flowlang.capabilities.CompatibilityReadinessFinding
 import org.flowlang.capabilities.CompatibilityReadinessReport
 import org.flowlang.capabilities.DerivedModelIntegrityAuthority
+import org.flowlang.capabilities.ExecutionReadinessIntegrityAuthority
 import org.flowlang.capabilities.ExecutionReadinessReport
 import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.MaterializationReadinessStatus
@@ -93,6 +94,7 @@ object TargetCompatibilityReadinessAnalyzer {
         readiness: ExecutionReadinessReport,
         manifest: TargetManifest
     ): ExecutionReadinessReport {
+        ExecutionReadinessIntegrityAuthority.requireValid(readiness)
         require(!readiness.readinessEvidenceAvailable) {
             "Execution readiness for '${readiness.target}' is already reconciled; derived evidence cannot be used as preliminary input."
         }
@@ -124,7 +126,7 @@ object TargetCompatibilityReadinessAnalyzer {
         val productionReady = effectiveReadiness == ExecutionReadinessStatus.READY &&
             concrete.recommendationEligible && blockers.isEmpty()
 
-        return readiness.copy(
+        val reconciled = readiness.copy(
             readiness = effectiveReadiness,
             generationAllowed = generationAllowed,
             productionReady = productionReady,
@@ -146,6 +148,7 @@ object TargetCompatibilityReadinessAnalyzer {
             executable = concrete.executable && effectiveReadiness != ExecutionReadinessStatus.BLOCKED,
             readinessEvidenceAvailable = true
         )
+        return ExecutionReadinessIntegrityAuthority.requireValid(reconciled)
     }
 
     /** Applies concrete manifest evidence to a preliminary capability negotiation report. */
