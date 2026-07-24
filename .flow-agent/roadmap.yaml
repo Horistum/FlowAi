@@ -10,6 +10,7 @@ versionBoundary:
   completedCorrectionTrack: "v0.9.5.x"
   correctionTrackStatus: "completed"
   artifactContractVersion: "2.0"
+  activeBoundedWorkTrack: "v0.9.7.9.x"
 
 roadmapIndex:
   activeRoadmaps:
@@ -40,6 +41,8 @@ rules:
   - "No roadmap item may introduce runtime execution, an SDK-first architecture or implementation-specific public syntax."
   - "No roadmap item may bend code or weaken validation only to satisfy tests."
   - "The gating corpus is bounded to software delivery, data transformation and infrastructure state change."
+  - "Rendering requires explicit executable evidence and is never implied by manifest generation."
+  - "Release publication requires staged conformance, integrity and bundle verification evidence."
 
 architectureConstitution:
   identity:
@@ -58,9 +61,10 @@ architectureConstitution:
     - "No Core dependency on implementation work."
     - "No conformance example as a substitute for a universal invariant."
     - "No governance signal whose status contradicts the property measured."
+    - "No release PASS without explicit passing conformance evidence."
 
 currentDecision:
-  completedItem: "0.9.7.9"
-  completedItemName: "Intent Lowering and Diagnostic Honesty"
+  completedItem: "0.9.7.9.7"
+  completedItemName: "CLI Diagnostic and Release Honesty"
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
