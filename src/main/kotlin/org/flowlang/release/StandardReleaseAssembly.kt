@@ -213,8 +213,10 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
             FlowArtifactEntry(
                 name = name,
                 role = known?.role ?: if (name.endsWith("report.json")) FlowArtifactRole.REPORT else FlowArtifactRole.METADATA,
-                schema = when (name) {
-                    "release-metadata-honesty-report.json" -> "schemas/release-metadata-honesty-report.schema.json"
+                schema = when {
+                    name == "standard-version.txt" -> ""
+                    name == "release-metadata-honesty-report.json" -> "schemas/release-metadata-honesty-report.schema.json"
+                    name.endsWith(".json") -> known?.schema?.takeIf { it.isNotBlank() } ?: "schemas/$name"
                     else -> known?.schema.orEmpty()
                 },
                 required = true,
