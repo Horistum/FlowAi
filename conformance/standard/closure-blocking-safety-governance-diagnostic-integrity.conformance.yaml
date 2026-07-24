@@ -1,0 +1,30 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: standard.closure-blocking-safety-governance-diagnostic-integrity.v09798
+introducedIn: "0.9.7.9.8"
+description: >-
+  Closure cannot begin while authored safety evidence is fail-open, governance
+  health is self-referential, target incompatibility escapes as a stack trace,
+  canonical topology can disappear, or target adapters override cancellation semantics.
+input:
+  command: conformance
+expected:
+  requiredCheck: governance.closure-blocking-safety-diagnostic-integrity
+  standardVersion: "0.8.0"
+  invariants:
+    - Placeholder or ambiguous authored text never satisfies a safety control.
+    - CI/CD bias health is derived only from actionable lexical evidence in active semantic source.
+    - Absence of target selection produces target-neutral planning evidence and never selects Jenkins implicitly.
+    - Expected target incompatibility produces review-only or blocked diagnostic evidence without rendered syntax.
+    - Canonical workflow and capability topology is independently re-derived before materialization.
+    - Retained dependency and effect fields remain exact compatibility projections of typed authorities.
+    - Ordinary GitHub Actions dependency jobs preserve native success and cancellation semantics.
+    - An active bounded correction keeps the Core closure gate blocked.
+forbidden:
+  - arbitrary non-empty text as positive control evidence
+  - raw line substring matching as architecture health
+  - implicit Jenkins target selection
+  - legacy CLI main fallback
+  - canonicalRequirements = emptyList() at the materialization validation boundary
+  - always() on ordinary dependent GitHub Actions jobs
+  - active correction and Core closure status next at the same time
