@@ -248,17 +248,16 @@ object CanonicalControlRequirementAuthority {
         var explicitDenial = false
         steps.forEach { step ->
             names.forEach { name ->
-                when (val assessment = AuthoredControlEvidenceTextAuthority.assess(name, step.params[name])) {
-                    is AuthoredControlEvidenceTextAssessment -> when (assessment.status) {
-                        AuthoredControlEvidenceTextStatus.CONFIRMED -> return ControlEvidence(
-                            requirement.id,
-                            ControlEvidenceStatus.SATISFIED,
-                            ControlEvidenceSource.AUTHORED_PARAMETER,
-                            "${step.id}.$name: ${assessment.reason}"
-                        )
-                        AuthoredControlEvidenceTextStatus.DENIED -> explicitDenial = true
-                        AuthoredControlEvidenceTextStatus.UNKNOWN -> Unit
-                    }
+                val assessment = AuthoredControlEvidenceTextAuthority.assess(name, step.params[name])
+                when (assessment.status) {
+                    AuthoredControlEvidenceTextStatus.CONFIRMED -> return ControlEvidence(
+                        requirement.id,
+                        ControlEvidenceStatus.SATISFIED,
+                        ControlEvidenceSource.AUTHORED_PARAMETER,
+                        "${step.id}.$name: ${assessment.reason}"
+                    )
+                    AuthoredControlEvidenceTextStatus.DENIED -> explicitDenial = true
+                    AuthoredControlEvidenceTextStatus.UNKNOWN -> Unit
                 }
             }
         }
