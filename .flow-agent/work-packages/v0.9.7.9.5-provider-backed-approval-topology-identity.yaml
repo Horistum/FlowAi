@@ -15,6 +15,7 @@ universalInvariants:
   - "A target with approval capability but no provider payload remains ADAPTER_REQUIRED or review-only."
   - "Concrete materialization readiness cannot erase an existing compatibility, planning or topology blocker."
   - "Renderer readiness requires effective compatibility, not only capability-table support."
+  - "Review findings remain stable when an already reconciled manifest is evaluated again."
   - "Distinct control obligations that share a readable slug retain distinct deterministic ids."
   - "Distinct topology subjects that share a readable slug retain distinct deterministic ids."
   - "Exact duplicate control obligations fail instead of being overwritten."
@@ -26,6 +27,7 @@ implementedSlices:
   - id: github-approval-topology-honesty
   - id: compatibility-readiness-monotonicity
   - id: renderer-effective-compatibility-gate
+  - id: review-finding-idempotence
   - id: collision-safe-identity-authority
   - id: control-requirement-identity
   - id: topology-requirement-identity
