@@ -18,6 +18,7 @@ import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.capabilities.TargetSelectionReport
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
 import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRenderReadiness
@@ -53,7 +54,7 @@ class CliTargetEvidenceAuthority(
     private val targets: Map<String, TargetCapability>,
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
-    private val pipeline = BuiltInTargetProjections.pipeline(targets)
+    private val pipeline = TargetManifestGenerationPipeline(targets, projections)
 
     fun evaluate(
         plan: ExecutionPlan,
