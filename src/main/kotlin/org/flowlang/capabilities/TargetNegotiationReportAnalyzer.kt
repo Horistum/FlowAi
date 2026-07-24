@@ -128,7 +128,7 @@ object TargetNegotiationReportAnalyzer {
                 target = entry.target,
                 capability = capability,
                 level = SupportLevel.REQUIRES_RUNTIME,
-                message = "Capability '$capability' requires runtime support on target '${entry.target}'."
+                message = "Capability '$capability' requires an external target-side runtime or adapter capability on '${entry.target}'; Flow Core does not provide one."
             )
         }
         return (unsupported + runtime).sortedBy { it.capability }
@@ -143,5 +143,5 @@ object TargetNegotiationReportAnalyzer {
         .map { "${it.capability}: ${it.recommendation}" }
 
     private fun runtimeSuffix(capabilities: List<String>): String =
-        if (capabilities.isEmpty()) "" else "; runtime required for: ${capabilities.sorted().joinToString()}"
+        if (capabilities.isEmpty()) "" else "; external target-side runtime or adapter required for: ${capabilities.sorted().joinToString()}"
 }
