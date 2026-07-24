@@ -8,6 +8,7 @@ import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.generators.manifest.TargetApprovalProjectionField
+import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetMaterializationStatus
@@ -88,7 +89,7 @@ class ProviderBackedApprovalTopologyIdentityTests {
             target = "jenkins",
             flowName = "forged-approval",
             compatibility = supportedCompatibility("jenkins"),
-            jobs = listOf(org.flowlang.generators.manifest.TargetJob(
+            jobs = listOf(TargetJob(
                 id = "main",
                 steps = listOf(TargetStep(
                     id = "approve",
@@ -228,11 +229,11 @@ class ProviderBackedApprovalTopologyIdentityTests {
             kind = IntentWorkflowKind.DEPLOY,
             steps = listOf(IntentStep("approve", StandardCapability.APPROVE))
         )),
-        policies = names.mapIndexed { index, name ->
+        policies = names.map { name ->
             IntentPolicy(
                 name = name,
                 type = IntentPolicyType.APPROVAL,
-                message = "Approval obligation $index"
+                message = "Approval obligation for $name"
             )
         }
     )
