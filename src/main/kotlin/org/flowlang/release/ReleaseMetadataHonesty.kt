@@ -218,7 +218,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             ))
             add(containsCheck(
                 "release.validation.external-candidate-policy",
-                releaseState.string("lastKnownValidation", "candidateValidationPolicy"),
+                releaseState.string("lastKnownValidation", "notes"),
                 "external exact-head CI evidence",
                 releaseStateFile.path,
                 "Candidate validation must remain external evidence until the candidate head actually passes."
