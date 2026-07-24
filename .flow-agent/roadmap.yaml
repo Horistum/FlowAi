@@ -64,7 +64,7 @@ architectureConstitution:
     - "No release PASS without explicit passing conformance evidence."
 
 currentDecision:
-  completedItem: "0.9.7.9.7"
-  completedItemName: "CLI Diagnostic and Release Honesty"
+  completedItem: "0.9.7.9"
+  completedItemName: "Intent Lowering and Diagnostic Honesty"
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
