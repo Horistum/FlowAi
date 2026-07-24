@@ -76,7 +76,7 @@ object CanonicalControlRequirementAuthority {
                         IntentValidationIssue(
                             level = "warning",
                             code = "CONTROL_EVIDENCE_DYNAMIC",
-                            message = "Control requirement '${requirement.kind}' for '${requirement.subject}' is dynamic and must be enforced by ${evidence.enforcementCapabilities.joinToString()}."
+                            message = "Control requirement '${requirement.kind}' for '${requirement.subject}' is dynamic and must be enforced by ${evidence?.enforcementCapabilities.orEmpty().joinToString()}."
                         )
                     )
                     ControlEvidenceStatus.UNKNOWN,
