@@ -1,5 +1,7 @@
 package org.flowlang.generators.manifest
 
+import org.flowlang.capabilities.SupportLevel
+
 enum class TargetRenderMode {
     EXECUTABLE,
     REVIEW_ONLY,
@@ -35,16 +37,26 @@ object TargetRenderPolicy {
 
     fun evaluate(manifest: TargetManifest): TargetRenderReadiness {
         val steps = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForReadiness() } }
-        val capabilityFinding = if (
-            manifest.compatibility.capabilityStatus != org.flowlang.capabilities.SupportLevel.SUPPORTED
-        ) {
-            listOf(TargetRenderFinding(
-                "manifest",
-                "CAPABILITY_${manifest.compatibility.capabilityStatus.name}",
-                "Target capability compatibility is '${manifest.compatibility.capabilityStatus}' and cannot produce executable syntax."
-            ))
-        } else {
-            emptyList()
+        val compatibilityFindings = buildList {
+            if (manifest.compatibility.hasErrors || manifest.compatibility.status == SupportLevel.UNSUPPORTED) {
+                add(TargetRenderFinding(
+                    "manifest",
+                    "COMPATIBILITY_UNSUPPORTED",
+                    "Target compatibility contains blocking evidence and cannot produce executable syntax."
+                ))
+            } else if (manifest.compatibility.status != SupportLevel.SUPPORTED) {
+                add(TargetRenderFinding(
+                    "manifest",
+                    "COMPATIBILITY_${manifest.compatibility.status.name}",
+                    "Effective target compatibility is '${manifest.compatibility.status}' and requires review."
+                ))
+            } else if (manifest.compatibility.capabilityStatus != SupportLevel.SUPPORTED) {
+                add(TargetRenderFinding(
+                    "manifest",
+                    "CAPABILITY_${manifest.compatibility.capabilityStatus.name}",
+                    "Target capability compatibility is '${manifest.compatibility.capabilityStatus}' and cannot produce executable syntax."
+                ))
+            }
         }
 
         val blocking = steps
@@ -57,7 +69,7 @@ object TargetRenderPolicy {
             return TargetRenderReadiness(manifest.target, TargetRenderMode.FAIL_FAST, blocking)
         }
 
-        val unresolved = capabilityFinding + steps
+        val unresolved = compatibilityFindings + steps
             .filter { it.isMaterializationLeaf() }
             .mapNotNull { step -> readinessFinding(step, manifest.target) }
             .distinct()
