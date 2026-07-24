@@ -1,0 +1,36 @@
+version: "0.9.7.9.6"
+name: "Derived Model and Governance Integrity"
+stream: core
+status: complete
+objective: "Make every derived report and governance verdict reproducible from its primary evidence and reject contradictory summaries or policy weakening."
+scopeBoundary:
+  - "Keep execution plans, compatibility evidence, manifests and governance findings as the primary authorities."
+  - "Treat report summary fields as validated derived views, not independent mutable truth."
+  - "Do not introduce a second target-selection or governance-scanning algorithm."
+  - "Keep reconciliation monotonic and one-way."
+  - "Keep target-specific implementation evidence outside canonical intent and planning."
+universalInvariants:
+  - "Negotiation support partitions exactly cover required capabilities without overlap."
+  - "Readiness, selection buckets and recommendations are reproducible from detailed evidence."
+  - "A decision trace cannot combine artifacts from different plans, strictness modes or target sets."
+  - "Duplicate or out-of-scope manifest evidence fails instead of being silently overwritten."
+  - "Readiness-aware reports cannot be reused as preliminary reconciliation input."
+  - "The drift catalog declares the complete known signal inventory with strictly negative risk weights and minimum score zero."
+  - "Governance score, budget and top-level status are reproducible from detailed evidence."
+  - "An ADR drift exception names every covered negative signal and an existing conformance guardrail."
+implementedSlices:
+  - id: derived-model-integrity-authority
+  - id: execution-readiness-integrity-authority
+  - id: negotiation-partition-and-summary-validation
+  - id: selection-bucket-and-recommendation-validation
+  - id: decision-trace-source-alignment
+  - id: one-way-readiness-reconciliation
+  - id: duplicate-manifest-evidence-rejection
+  - id: strict-governance-catalog-validation
+  - id: governance-report-derivation-validation
+  - id: scoped-adr-drift-exceptions
+  - id: governance-derived-model-conformance
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "The exact final pull request head must pass tooling tests, repository structure validation, clean Gradle tests, RC and snapshot checks, and standalone conformance before review readiness."
+  buildDiscipline: "Assemble all related edits before opening the draft pull request. Trigger another build only for a concrete defect exposed by the complete candidate."

@@ -121,7 +121,7 @@ class ExecutionReadinessAnalyzer(private val targets: Map<String, TargetCapabili
             else -> ExecutionReadinessStatus.READY
         }
 
-        return ExecutionReadinessReport(
+        val report = ExecutionReadinessReport(
             planVersion = plan.planVersion,
             flowName = plan.flowName,
             target = target,
@@ -137,6 +137,7 @@ class ExecutionReadinessAnalyzer(private val targets: Map<String, TargetCapabili
             warnings = effectiveWarnings,
             requiredActions = preliminaryRequiredActions(readiness, effectiveBlockers, effectiveWarnings)
         )
+        return ExecutionReadinessIntegrityAuthority.requireValid(report)
     }
 
     private fun preliminaryDecisionText(readiness: ExecutionReadinessStatus, target: String): String = when (readiness) {

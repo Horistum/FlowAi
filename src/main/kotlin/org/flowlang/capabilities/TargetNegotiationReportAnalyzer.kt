@@ -51,18 +51,19 @@ enum class TargetNegotiationOutcome {
 
 object TargetNegotiationReportAnalyzer {
     fun explain(report: TargetCapabilityNegotiationReport): TargetNegotiationExplanationReport {
-        val targetExplanations = report.targets.map { entry ->
+        val validated = DerivedModelIntegrityAuthority.requireNegotiation(report)
+        val targetExplanations = validated.targets.map { entry ->
             val reasons = rejectionReasonsFor(entry)
             TargetNegotiationExplanation(
                 target = entry.target,
-                outcome = outcomeFor(entry, report.readinessEvidenceAvailable),
+                outcome = outcomeFor(entry, validated.readinessEvidenceAvailable),
                 portabilityScore = entry.portabilityScore,
                 supportedCapabilities = entry.supported.sorted(),
                 degradedCapabilities = entry.partial.sorted(),
                 unsupportedCapabilities = entry.unsupported.sorted(),
                 runtimeRequiredCapabilities = entry.requiresRuntime.sorted(),
                 rejectionReasons = reasons,
-                workaroundRecommendations = workaroundRecommendationsFor(entry, report.requiredWorkarounds),
+                workaroundRecommendations = workaroundRecommendationsFor(entry, validated.requiredWorkarounds),
                 notes = entry.notes.sorted()
             )
         }.sortedBy { it.target }
@@ -78,26 +79,28 @@ object TargetNegotiationReportAnalyzer {
                 .forEach {
                     add("Target '${it.target}' is degraded and requires explicit workarounds for: ${it.degradedCapabilities.joinToString()}${runtimeSuffix(it.runtimeRequiredCapabilities)}")
                 }
-            if (!report.readinessEvidenceAvailable) {
+            if (!validated.readinessEvidenceAvailable) {
                 add("Target recommendation is unavailable until materialization and projection readiness are evaluated on concrete manifests.")
+            } else if (validated.recommendedTargets.isEmpty() && targetExplanations.any { it.outcome != TargetNegotiationOutcome.BLOCKED }) {
+                add("No target has complete executable readiness evidence; non-blocked targets remain review-only or incomplete.")
             }
         }.distinct().sorted()
         val status = when {
-            report.readinessEvidenceAvailable && targetExplanations.any { it.outcome == TargetNegotiationOutcome.SUPPORTED } -> "PASS"
-            targetExplanations.any { it.outcome == TargetNegotiationOutcome.DEGRADED } -> "DEGRADED"
+            validated.readinessEvidenceAvailable && validated.recommendedTargets.isNotEmpty() -> "PASS"
+            targetExplanations.any { it.outcome != TargetNegotiationOutcome.BLOCKED } -> "DEGRADED"
             else -> "BLOCKED"
         }
 
         return TargetNegotiationExplanationReport(
             status = status,
-            flowName = report.flowName,
-            requiredCapabilities = report.requiredCapabilities.sorted(),
-            recommendedTargets = report.recommendedTargets.sorted(),
-            blockedTargets = report.blockedTargets.sorted(),
+            flowName = validated.flowName,
+            requiredCapabilities = validated.requiredCapabilities.sorted(),
+            recommendedTargets = validated.recommendedTargets.sorted(),
+            blockedTargets = validated.blockedTargets.sorted(),
             targets = targetExplanations,
             rejectionReasons = rejectionReasons,
             warnings = warnings,
-            readinessEvidenceAvailable = report.readinessEvidenceAvailable
+            readinessEvidenceAvailable = validated.readinessEvidenceAvailable
         )
     }
 
