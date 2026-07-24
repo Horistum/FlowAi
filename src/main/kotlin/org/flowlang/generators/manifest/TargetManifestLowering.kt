@@ -6,6 +6,7 @@ import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ControlNode
 import org.flowlang.planner.DataOpNode
+import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.LoopNode
 import org.flowlang.planner.MatchPlanNode
 import org.flowlang.planner.ParallelGroupNode
@@ -15,7 +16,6 @@ import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
-import org.flowlang.planner.ExecutionPlan
 import org.flowlang.standard.FlowStandardVersions
 
 enum class TargetMaterializationStatus {
@@ -164,21 +164,41 @@ internal fun PlanNode.toTargetSteps(
             ))
         }
     }
-    is ApprovalNode -> listOf(TargetStep(
-        id = sanitizeId(id),
-        name = id,
-        type = "approval",
-        dependsOn = dependsOn.map(::sanitizeId),
-        params = mapOf("mode" to mode) + (message?.let { mapOf("message" to it) } ?: emptyMap()),
-        materialization = TargetMaterialization.native(
-            "approval.require",
-            "Approval is represented as a target-native review boundary when the target supports it."
-        ),
-        metadata = mapOf(
-            "sourceNodeKind" to kind,
-            "resultName" to (resultName ?: "")
-        ).filterValues { it.isNotBlank() }
-    ))
+    is ApprovalNode -> {
+        val capability = requiredCapabilities.singleOrNull { it.startsWith("approval.") }
+            ?: "approval.${mode.lowercase()}"
+        val payload = nativeProjections.compileApproval(this)
+        val materialization = if (payload != null) {
+            TargetMaterialization.native(
+                capability,
+                "Approval is backed by a provider-owned structured payload contract.",
+                metadata = mapOf(
+                    "materializationSource" to "provider-native-approval-contract",
+                    "providerEvidence" to payload.evidenceReference
+                )
+            )
+        } else {
+            TargetMaterialization.adapterRequired(
+                capability,
+                "Target provider '$targetName' does not declare a native approval payload contract.",
+                requirements = mapOf("providerCapability" to capability)
+            )
+        }
+        listOf(TargetStep(
+            id = sanitizeId(id),
+            name = id,
+            type = "approval",
+            dependsOn = dependsOn.map(::sanitizeId),
+            params = mapOf("mode" to mode) + (message?.let { mapOf("message" to it) } ?: emptyMap()),
+            materialization = materialization,
+            rendererPayload = payload,
+            metadata = mapOf(
+                "sourceNodeKind" to kind,
+                "resultName" to (resultName ?: ""),
+                "approvalCapability" to capability
+            ).filterValues { it.isNotBlank() }
+        ))
+    }
     is DataOpNode -> listOf(TargetStep(
         id = sanitizeId(id),
         name = id,

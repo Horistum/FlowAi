@@ -1,18 +1,33 @@
 package org.flowlang.conformance
 
+import org.flowlang.adapters.yaml.IntentYamlLoader
+import org.flowlang.ai.normalization.AiIntentRequest
+import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.TargetSelectionAnalyzer
-import org.flowlang.adapters.yaml.IntentYamlLoader
-import org.flowlang.ai.normalization.AiIntentRequest
-import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
+import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
+import org.flowlang.generators.manifest.TargetMaterializationStatus
+import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.intent.IntentDecisionAnalyzer
+import org.flowlang.intent.IntentDocument
+import org.flowlang.intent.IntentPolicy
+import org.flowlang.intent.IntentPolicyType
+import org.flowlang.intent.IntentStep
+import org.flowlang.intent.IntentWorkflow
+import org.flowlang.intent.IntentWorkflowKind
+import org.flowlang.intent.StandardCapability
 import org.flowlang.modules.ModuleContractAnalyzer
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.planner.ApprovalNode
+import org.flowlang.planner.ExecutionPlan
+import org.flowlang.topology.CanonicalTopologyRequirementAuthority
+import org.flowlang.topology.ExecutionTopologyKind
 import java.io.File
-import org.flowlang.generators.manifest.TargetProjectionRegistry
 
 internal class PlanningReadinessChecks(
     rootDir: File,
@@ -25,7 +40,8 @@ internal class PlanningReadinessChecks(
         checkV035IntentDecisionModel(),
         checkV036ExecutionPlanPortability(),
         checkV037ExecutionReadinessReport(),
-        checkV038TargetSelectionReport()
+        checkV038TargetSelectionReport(),
+        checkProviderBackedApprovalAndTopologyIdentity()
     )
 
     private fun checkV034CapabilityModuleContracts(): ConformanceCheck = runCheck("v0.3.4.capability-module-contracts") {
@@ -105,7 +121,6 @@ internal class PlanningReadinessChecks(
 
     private fun checkV037ExecutionReadinessReport(): ConformanceCheck = runCheck("v0.3.7.execution-readiness") {
         val artifacts = buildPipeline("jenkins", strict = false)
-        val compatibility = CompatibilityAnalyzer(targets)
         val analyzer = ExecutionReadinessAnalyzer(targets)
 
         val preliminaryJenkins = analyzer.analyze(artifacts.plan, "jenkins", strict = false)
@@ -162,4 +177,55 @@ internal class PlanningReadinessChecks(
         }
         require(report.candidates.map { it.rank } == (1..report.candidates.size).toList()) { "Candidate ranks must be contiguous." }
     }
+
+    private fun checkProviderBackedApprovalAndTopologyIdentity(): ConformanceCheck =
+        runCheck("planning.provider-backed-approval-topology-identity") {
+            val plan = ExecutionPlan(
+                flowName = "approval-proof",
+                nodes = listOf(ApprovalNode(id = "approve", message = "Approve release"))
+            )
+            val jenkins = manifestPipeline.generateDiagnosticEvidence(plan, "jenkins")
+            val jenkinsApproval = jenkins.jobs.single().steps.single()
+            require(jenkinsApproval.materialization.status == TargetMaterializationStatus.NATIVE)
+            require(jenkinsApproval.rendererPayload?.reference == "input") {
+                "Jenkins approval was not backed by its provider-owned input payload."
+            }
+
+            val github = manifestPipeline.generateDiagnosticEvidence(plan, "github-actions")
+            val githubApproval = github.jobs.single().steps.single()
+            require(githubApproval.materialization.status == TargetMaterializationStatus.ADAPTER_REQUIRED)
+            require(githubApproval.rendererPayload == null)
+            require(TargetRenderPolicy.evaluate(github).mode == TargetRenderMode.REVIEW_ONLY) {
+                "GitHub Actions claimed executable approval from capability metadata without provider payload evidence."
+            }
+
+            val policies = listOf("prod approval", "prod-approval").map { name ->
+                IntentPolicy(name, IntentPolicyType.APPROVAL, message = "Approval for $name")
+            }
+            val controlIntent = IntentDocument(
+                name = "control-identity",
+                workflows = listOf(IntentWorkflow(
+                    "main",
+                    IntentWorkflowKind.DEPLOY,
+                    listOf(IntentStep("approve", StandardCapability.APPROVE))
+                )),
+                policies = policies
+            )
+            val controls = CanonicalControlRequirementAuthority.requirementsFor(controlIntent)
+            require(controls.size == 2 && controls.map { it.id }.toSet().size == 2) {
+                "Lossy control slugging discarded or merged a distinct approval obligation."
+            }
+
+            val topologyIntent = IntentDocument(
+                name = "topology-identity",
+                workflows = listOf("release api", "release-api").map { name ->
+                    IntentWorkflow(name, IntentWorkflowKind.BUILD, listOf(IntentStep("build-$name", StandardCapability.BUILD)))
+                }
+            )
+            val topology = CanonicalTopologyRequirementAuthority.requirementsFor(topologyIntent)
+                .filter { it.kind == ExecutionTopologyKind.WORKFLOW_SCOPE }
+            require(topology.size == 2 && topology.map { it.id }.toSet().size == 2) {
+                "Lossy topology slugging discarded a distinct workflow scope."
+            }
+        }
 }

@@ -19,7 +19,7 @@ import org.flowlang.capabilities.TargetSelectionReport
  * This analyzer does not materialize work and does not add renderer payloads. It
  * only prevents capability optimism from being presented as executable readiness.
  * Reconciliation is monotonic: concrete evidence may confirm or reduce readiness,
- * but it must never erase an existing capability blocker.
+ * but it must never erase an existing compatibility or planning blocker.
  */
 object TargetCompatibilityReadinessAnalyzer {
     private val completedMaterialization = setOf(TargetMaterializationStatus.NATIVE)
@@ -47,11 +47,12 @@ object TargetCompatibilityReadinessAnalyzer {
             TargetRenderMode.REVIEW_ONLY -> ProjectionReadinessStatus.REVIEW_ONLY
             TargetRenderMode.FAIL_FAST -> ProjectionReadinessStatus.FAIL_FAST
         }
-        val effectiveStatus = effectiveStatus(
+        val readinessStatus = effectiveStatus(
             capabilityStatus = capabilityStatus,
             materialization = materialization,
             projection = projectionStatus
         )
+        val effectiveStatus = stricterSupport(manifest.compatibility.status, readinessStatus)
         val materializationFindings = leaves
             .filter { it.materialization.status !in completedMaterialization }
             .map {
@@ -75,7 +76,9 @@ object TargetCompatibilityReadinessAnalyzer {
             effectiveStatus = effectiveStatus,
             materializationReadiness = materialization,
             projectionReadiness = projectionStatus,
-            executable = projection.executable,
+            executable = projection.executable &&
+                effectiveStatus == SupportLevel.SUPPORTED &&
+                !manifest.compatibility.hasErrors,
             evidenceAvailable = true,
             findings = (materializationFindings + projectionFindings).distinct()
         )
@@ -138,13 +141,7 @@ object TargetCompatibilityReadinessAnalyzer {
         )
     }
 
-    /**
-     * Applies concrete manifest evidence to a capability negotiation report.
-     *
-     * The returned report keeps the original capability inventories but updates
-     * target status and recommendations so unresolved or non-executable targets
-     * cannot remain recommended.
-     */
+    /** Applies concrete manifest evidence to a capability negotiation report. */
     fun reconcile(
         negotiation: TargetCapabilityNegotiationReport,
         manifests: Collection<TargetManifest>

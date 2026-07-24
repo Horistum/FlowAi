@@ -16,36 +16,31 @@ import org.flowlang.intent.asTextOrNull
 /** Inventory-independent authority for intent control requirements and authored evidence. */
 object CanonicalControlRequirementAuthority {
     fun requirementsFor(intent: IntentDocument): List<ControlRequirement> {
-        val requirements = linkedMapOf<String, ControlRequirement>()
-        fun put(requirement: ControlRequirement) {
-            requirements[requirement.id] = requirement
-        }
-
+        val requirements = mutableListOf<ControlRequirement>()
         val steps = intent.workflows.flatMap { it.steps }
-        requirementsForCapabilities(steps.map(IntentStep::capability)).forEach(::put)
+        requirements += requirementsForCapabilities(steps.map(IntentStep::capability))
 
         intent.policies.forEach { policy ->
             when (policy.type) {
-                IntentPolicyType.APPROVAL -> put(
-                    requirement(
-                        kind = ControlRequirementKind.APPROVAL,
-                        subject = policy.name,
-                        source = ControlRequirementSource.INTENT_POLICY,
-                        condition = policy.condition,
-                        message = policy.message
-                    )
+                IntentPolicyType.APPROVAL -> requirements += requirement(
+                    kind = ControlRequirementKind.APPROVAL,
+                    subject = policy.name,
+                    source = ControlRequirementSource.INTENT_POLICY,
+                    condition = policy.condition,
+                    message = policy.message
                 )
-                IntentPolicyType.SAFETY -> put(safetyRequirement(policy))
-                IntentPolicyType.CUSTOM -> put(policyEvaluation(policy))
+                IntentPolicyType.SAFETY -> requirements += safetyRequirement(policy)
+                IntentPolicyType.CUSTOM -> requirements += policyEvaluation(policy)
                 else -> Unit
             }
         }
-        return requirements.values.sortedBy { it.id }
+        return ControlRequirementIdentityAuthority.assign(requirements)
+            .sortedBy(ControlRequirement::id)
     }
 
     fun requirementsForCapabilities(capabilities: Iterable<StandardCapability>): List<ControlRequirement> {
         val values = capabilities.toSet()
-        return buildList {
+        val requirements = buildList {
             if (StandardCapability.DATABASE_MIGRATE in values) {
                 add(requirement(ControlRequirementKind.BACKUP, "DATABASE_MIGRATE", ControlRequirementSource.CANONICAL_CAPABILITY))
             }
@@ -55,7 +50,9 @@ object CanonicalControlRequirementAuthority {
             if (StandardCapability.CLEANUP in values) {
                 add(requirement(ControlRequirementKind.RETENTION_GUARD, "CLEANUP", ControlRequirementSource.CANONICAL_CAPABILITY))
             }
-        }.sortedBy(ControlRequirement::id)
+        }
+        return ControlRequirementIdentityAuthority.assign(requirements)
+            .sortedBy(ControlRequirement::id)
     }
 
     fun assess(intent: IntentDocument): ControlAssessment {
@@ -72,20 +69,20 @@ object CanonicalControlRequirementAuthority {
         assessment.requirements
             .filter { requirementIds == null || it.id in requirementIds }
             .forEach { requirement ->
-            val evidence = evidenceById[requirement.id]
-            when (evidence?.status ?: ControlEvidenceStatus.UNKNOWN) {
-                ControlEvidenceStatus.SATISFIED -> Unit
-                ControlEvidenceStatus.DYNAMIC -> add(
-                    IntentValidationIssue(
-                        level = "warning",
-                        code = "CONTROL_EVIDENCE_DYNAMIC",
-                        message = "Control requirement '${requirement.kind}' for '${requirement.subject}' is dynamic and must be enforced by ${evidence?.enforcementCapabilities.orEmpty().joinToString()}."
+                val evidence = evidenceById[requirement.id]
+                when (evidence?.status ?: ControlEvidenceStatus.UNKNOWN) {
+                    ControlEvidenceStatus.SATISFIED -> Unit
+                    ControlEvidenceStatus.DYNAMIC -> add(
+                        IntentValidationIssue(
+                            level = "warning",
+                            code = "CONTROL_EVIDENCE_DYNAMIC",
+                            message = "Control requirement '${requirement.kind}' for '${requirement.subject}' is dynamic and must be enforced by ${evidence?.enforcementCapabilities.orEmpty().joinToString()}."
+                        )
                     )
-                )
-                ControlEvidenceStatus.UNKNOWN,
-                ControlEvidenceStatus.UNSATISFIED -> add(issueFor(requirement, evidence?.status ?: ControlEvidenceStatus.UNKNOWN))
+                    ControlEvidenceStatus.UNKNOWN,
+                    ControlEvidenceStatus.UNSATISFIED -> add(issueFor(requirement, evidence?.status ?: ControlEvidenceStatus.UNKNOWN))
+                }
             }
-        }
     }
 
     private fun safetyRequirement(policy: IntentPolicy): ControlRequirement {
@@ -218,8 +215,7 @@ object CanonicalControlRequirementAuthority {
         if (dryRun.status != ControlEvidenceStatus.UNKNOWN) return dryRun
         val backup = backupEvidence(requirement, steps)
         if (backup.status != ControlEvidenceStatus.UNKNOWN) return backup
-        val safety = confirmedParameterEvidence(requirement, steps, listOf("safety", "retention", "rollbackPlan"))
-        return safety
+        return confirmedParameterEvidence(requirement, steps, listOf("safety", "retention", "rollbackPlan"))
     }
 
     private fun externalReviewEvidence(requirement: ControlRequirement, steps: List<IntentStep>): ControlEvidence {

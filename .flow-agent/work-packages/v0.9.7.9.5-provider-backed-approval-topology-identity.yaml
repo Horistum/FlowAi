@@ -1,0 +1,41 @@
+version: "0.9.7.9.5"
+name: "Provider-Backed Approval and Topology Identity"
+stream: core
+status: complete
+objective: "Require concrete provider payload evidence before approval is called native and eliminate lossy control or topology identity collisions."
+scopeBoundary:
+  - "Keep semantic approval requirements target-neutral in Intent, AST and ExecutionPlan."
+  - "Treat native approval as target-edge implementation evidence, not a capability-table assumption."
+  - "Do not model GitHub protected environments as a fake universal approval step."
+  - "Preserve readable public ids when no semantic collision exists."
+  - "Do not silently discard duplicate or colliding security obligations."
+universalInvariants:
+  - "An approval node is NATIVE only when the composed provider supplies a validated structured payload contract."
+  - "Provider payload kind, reference, bindings and evidence reference are owned and checked by the target projection catalog."
+  - "A target with approval capability but no provider payload remains ADAPTER_REQUIRED or review-only."
+  - "Concrete materialization readiness cannot erase an existing compatibility, planning or topology blocker."
+  - "Renderer readiness requires effective compatibility, not only capability-table support."
+  - "Review findings remain stable when an already reconciled manifest is evaluated again."
+  - "Distinct control obligations that share a readable slug retain distinct deterministic ids."
+  - "Distinct topology subjects that share a readable slug retain distinct deterministic ids."
+  - "Exact duplicate control obligations fail instead of being overwritten."
+  - "Canonical and planning observations of the same topology requirement coalesce without losing distinct subjects."
+implementedSlices:
+  - id: provider-owned-approval-contract
+  - id: jenkins-input-payload-evidence
+  - id: no-native-approval-without-payload
+  - id: github-approval-topology-honesty
+  - id: compatibility-readiness-monotonicity
+  - id: renderer-effective-compatibility-gate
+  - id: review-finding-idempotence
+  - id: collision-safe-identity-authority
+  - id: control-requirement-identity
+  - id: topology-requirement-identity
+  - id: snapshot-and-conformance-evidence
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "The exact final pull request head must pass tooling tests, repository structure validation, clean Gradle test and standalone conformance before review readiness."
+  buildDiscipline: "All related corrections are assembled while the pull request is closed. A standard full build is triggered only for a complete candidate or a concrete correction head."
+followUpWorkItem:
+  version: "0.9.7.9.6"
+  name: "Derived Model and Governance Integrity"

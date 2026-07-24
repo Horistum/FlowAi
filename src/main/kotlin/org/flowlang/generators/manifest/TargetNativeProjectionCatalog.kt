@@ -3,6 +3,7 @@ package org.flowlang.generators.manifest
 import org.flowlang.capabilities.TargetProjectionMode
 import org.flowlang.capabilities.TargetProjectionRule
 import org.flowlang.capabilities.TargetRendererPayloadTemplate
+import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingContract
@@ -10,11 +11,7 @@ import org.flowlang.projection.ProjectionBindingKind
 import org.flowlang.projection.ProjectionBindingResolutionStatus
 import org.flowlang.projection.TaskMetadataField
 
-/**
- * Target-neutral contract for one binding accepted by a concrete native
- * projection implementation. The binding vocabulary remains portable; target
- * syntax and behavior remain owned by the edge implementation.
- */
+/** Target-neutral contract for one binding accepted by a concrete native projection. */
 data class TargetNativeProjectionBindingContract(
     val acceptedKinds: Set<ProjectionBindingKind>,
     val required: Boolean = true
@@ -26,10 +23,7 @@ data class TargetNativeProjectionBindingContract(
     }
 }
 
-/**
- * Opaque identity and typed input contract for one native projection handler.
- * Neither kind nor reference is interpreted by Flow Core.
- */
+/** Opaque identity and typed input contract for one native action projection handler. */
 data class TargetNativeProjectionDefinition(
     val kind: String,
     val reference: String,
@@ -49,34 +43,99 @@ data class TargetNativeProjectionDefinition(
     }
 }
 
+enum class TargetApprovalProjectionField {
+    NODE_ID,
+    MODE,
+    MESSAGE
+}
+
+data class TargetNativeApprovalProjectionBindingContract(
+    val field: TargetApprovalProjectionField,
+    val required: Boolean = true
+)
+
+/**
+ * Provider-owned contract for materializing a semantic approval boundary.
+ *
+ * This contract is intentionally separate from module action projection rules:
+ * ApprovalNode is a control boundary, not a fabricated module task. A target may
+ * claim native approval only when its composed provider supplies this concrete
+ * payload contract and the renderer owns the matching kind/reference pair.
+ */
+data class TargetNativeApprovalProjectionDefinition(
+    val capability: String,
+    val kind: String,
+    val reference: String,
+    val evidenceReference: String,
+    val bindings: Map<String, TargetNativeApprovalProjectionBindingContract>
+) {
+    init {
+        require(capability.isNotBlank()) { "Native approval projection must declare a capability." }
+        require(capability.startsWith("approval.")) {
+            "Native approval projection capability '$capability' is not an approval capability."
+        }
+        require(kind.isNotBlank()) { "Native approval projection '$capability' must declare a payload kind." }
+        require(reference.isNotBlank()) { "Native approval projection '$capability' must declare a payload reference." }
+        require(evidenceReference.isNotBlank()) { "Native approval projection '$capability' must cite provider evidence." }
+        require(bindings.isNotEmpty()) { "Native approval projection '$capability' must declare typed bindings." }
+        require(bindings.keys.none(String::isBlank)) { "Native approval projection '$capability' contains a blank binding name." }
+        require(bindings.values.map(TargetNativeApprovalProjectionBindingContract::field).distinct().size == bindings.size) {
+            "Native approval projection '$capability' maps the same semantic field more than once."
+        }
+    }
+
+    internal fun payloadDefinition(): TargetNativeProjectionDefinition = TargetNativeProjectionDefinition(
+        kind = kind,
+        reference = reference,
+        bindings = bindings.mapValues { (_, contract) ->
+            TargetNativeProjectionBindingContract(
+                acceptedKinds = setOf(ProjectionBindingKind.LITERAL),
+                required = contract.required
+            )
+        }
+    )
+}
+
 /**
  * Immutable, explicitly composed evidence that a target distribution owns and
  * implements selected native projection payloads.
- *
- * This is not discovery, a plugin lifecycle, or a target DSL. A NATIVE registry
- * rule is accepted only when this catalog contains a matching implementation
- * contract and its typed binding schema agrees exactly.
  */
 class TargetNativeProjectionCatalog private constructor(
     val target: String,
-    definitions: Iterable<TargetNativeProjectionDefinition>
+    actionDefinitions: Iterable<TargetNativeProjectionDefinition>,
+    approvalProjectionDefinitions: Iterable<TargetNativeApprovalProjectionDefinition>
 ) {
     private val definitionsByKey: Map<DefinitionKey, TargetNativeProjectionDefinition>
+    private val approvalDefinitionsByCapability: Map<String, TargetNativeApprovalProjectionDefinition>
+    private val actionDefinitionValues: List<TargetNativeProjectionDefinition>
 
     init {
         require(target.isNotBlank()) { "Native projection catalog must declare a non-blank target id." }
+        actionDefinitionValues = actionDefinitions.toList()
+        val approvals = approvalProjectionDefinitions.toList()
         val indexed = linkedMapOf<DefinitionKey, TargetNativeProjectionDefinition>()
-        definitions.forEach { definition ->
-            val key = DefinitionKey(definition.kind, definition.reference)
-            require(indexed.putIfAbsent(key, definition) == null) {
-                "Duplicate native projection definition '${definition.kind}/${definition.reference}' for target '$target'."
-            }
+        actionDefinitionValues.forEach { definition ->
+            indexDefinition(indexed, definition)
+        }
+        approvals.forEach { approval ->
+            indexDefinition(indexed, approval.payloadDefinition())
         }
         definitionsByKey = indexed.toMap()
+
+        val approvalsByCapability = linkedMapOf<String, TargetNativeApprovalProjectionDefinition>()
+        approvals.forEach { definition ->
+            require(approvalsByCapability.putIfAbsent(definition.capability, definition) == null) {
+                "Duplicate native approval projection capability '${definition.capability}' for target '$target'."
+            }
+        }
+        approvalDefinitionsByCapability = approvalsByCapability.toMap()
     }
 
     val definitions: List<TargetNativeProjectionDefinition>
-        get() = definitionsByKey.values.toList()
+        get() = actionDefinitionValues
+
+    val approvalDefinitions: List<TargetNativeApprovalProjectionDefinition>
+        get() = approvalDefinitionsByCapability.values.toList()
 
     fun requireCompatibleRules(rules: Iterable<TargetProjectionRule>) {
         rules.filter { it.mode == TargetProjectionMode.NATIVE }.forEach { rule ->
@@ -118,6 +177,41 @@ class TargetNativeProjectionCatalog private constructor(
         return payload
     }
 
+    /** Returns null when this provider has no owned implementation for the approval capability. */
+    fun compileApproval(node: ApprovalNode): TargetRendererPayload? {
+        val requestedCapability = node.requiredCapabilities
+            .singleOrNull { it.startsWith("approval.") }
+            ?: "approval.${node.mode.lowercase()}"
+        val definition = approvalDefinitionsByCapability[requestedCapability] ?: return null
+        val payloadDefinition = definition.payloadDefinition()
+        val bindings = definition.bindings.mapNotNull { (name, contract) ->
+            val value = when (contract.field) {
+                TargetApprovalProjectionField.NODE_ID -> node.id
+                TargetApprovalProjectionField.MODE -> node.mode
+                TargetApprovalProjectionField.MESSAGE -> node.message ?: "Approval required"
+            }.takeIf(String::isNotBlank)
+            if (value == null) {
+                require(!contract.required) {
+                    "Native approval projection '${definition.capability}' for target '$target' cannot resolve required binding '$name'."
+                }
+                null
+            } else {
+                name to ProjectionBinding.literal(value).copy(
+                    resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED
+                )
+            }
+        }.toMap()
+        val payload = TargetRendererPayload(
+            kind = definition.kind,
+            target = target,
+            reference = definition.reference,
+            bindings = bindings,
+            evidenceReference = definition.evidenceReference
+        )
+        requirePayload(payload, payloadDefinition)
+        return payload
+    }
+
     fun requirePayload(payload: TargetRendererPayload) {
         require(payload.target == target) {
             "Native projection catalog '$target' cannot validate payload target '${payload.target}'."
@@ -135,6 +229,16 @@ class TargetNativeProjectionCatalog private constructor(
             .flatMap { step -> flatten(step) }
             .mapNotNull { it.rendererPayload }
             .forEach(::requirePayload)
+    }
+
+    private fun indexDefinition(
+        indexed: MutableMap<DefinitionKey, TargetNativeProjectionDefinition>,
+        definition: TargetNativeProjectionDefinition
+    ) {
+        val key = DefinitionKey(definition.kind, definition.reference)
+        require(indexed.putIfAbsent(key, definition) == null) {
+            "Duplicate native projection definition '${definition.kind}/${definition.reference}' for target '$target'."
+        }
     }
 
     private fun requireTemplate(
@@ -156,8 +260,7 @@ class TargetNativeProjectionCatalog private constructor(
             ProjectionBindingContract.requireTemplate(binding, "$target.$context.bindings.$name")
             val contract = definition.bindings.getValue(name)
             require(binding.kind in contract.acceptedKinds) {
-                "Native projection '$context' binding '$name' for target '$target' uses ${binding.kind}; " +
-                    "accepted kinds: ${contract.acceptedKinds.sortedBy { it.name }.joinToString()}."
+                "Native projection '$context' binding '$name' for target '$target' uses ${binding.kind}; accepted kinds: ${contract.acceptedKinds.sortedBy { it.name }.joinToString()}."
             }
         }
         return definition
@@ -172,21 +275,18 @@ class TargetNativeProjectionCatalog private constructor(
         }
         val unexpected = payload.bindings.keys - definition.bindings.keys
         require(unexpected.isEmpty()) {
-            "Native projection payload '${payload.kind}/${payload.reference}' for target '$target' contains unsupported bindings: " +
-                unexpected.sorted().joinToString() + "."
+            "Native projection payload '${payload.kind}/${payload.reference}' for target '$target' contains unsupported bindings: ${unexpected.sorted().joinToString()}."
         }
         val missing = definition.bindings
             .filterValues { it.required }
             .keys - payload.bindings.keys
         require(missing.isEmpty()) {
-            "Native projection payload '${payload.kind}/${payload.reference}' for target '$target' is missing required bindings: " +
-                missing.sorted().joinToString() + "."
+            "Native projection payload '${payload.kind}/${payload.reference}' for target '$target' is missing required bindings: ${missing.sorted().joinToString()}."
         }
         payload.bindings.forEach { (name, binding) ->
             val contract = definition.bindings.getValue(name)
             require(binding.kind in contract.acceptedKinds) {
-                "Native projection payload binding '$name' for target '$target' uses ${binding.kind}; " +
-                    "accepted kinds: ${contract.acceptedKinds.sortedBy { it.name }.joinToString()}."
+                "Native projection payload binding '$name' for target '$target' uses ${binding.kind}; accepted kinds: ${contract.acceptedKinds.sortedBy { it.name }.joinToString()}."
             }
             ProjectionBindingContract.requireManifest(binding, target, "$target.bindings.$name")
         }
@@ -195,9 +295,9 @@ class TargetNativeProjectionCatalog private constructor(
     private fun definitionFor(kind: String, reference: String): TargetNativeProjectionDefinition =
         definitionsByKey[DefinitionKey(kind, reference)]
             ?: error(
-                "Target '$target' has no native projection implementation contract for '$kind/$reference'. " +
-                    "Declared contracts: ${definitionsByKey.keys.sortedWith(compareBy<DefinitionKey> { it.kind }.thenBy { it.reference })
-                        .joinToString { "${it.kind}/${it.reference}" }.ifBlank { "none" }}."
+                "Target '$target' has no native projection implementation contract for '$kind/$reference'. Declared contracts: " +
+                    definitionsByKey.keys.sortedWith(compareBy<DefinitionKey> { it.kind }.thenBy { it.reference })
+                        .joinToString { "${it.kind}/${it.reference}" }.ifBlank { "none" } + "."
             )
 
     private fun resolveBinding(
@@ -270,14 +370,15 @@ class TargetNativeProjectionCatalog private constructor(
     companion object {
         fun of(
             target: String,
-            definitions: Iterable<TargetNativeProjectionDefinition>
-        ): TargetNativeProjectionCatalog = TargetNativeProjectionCatalog(target, definitions)
+            definitions: Iterable<TargetNativeProjectionDefinition>,
+            approvalDefinitions: Iterable<TargetNativeApprovalProjectionDefinition> = emptyList()
+        ): TargetNativeProjectionCatalog = TargetNativeProjectionCatalog(target, definitions, approvalDefinitions)
 
         fun of(
             target: String,
             vararg definitions: TargetNativeProjectionDefinition
         ): TargetNativeProjectionCatalog = of(target, definitions.asIterable())
 
-        fun empty(target: String): TargetNativeProjectionCatalog = TargetNativeProjectionCatalog(target, emptyList())
+        fun empty(target: String): TargetNativeProjectionCatalog = of(target, emptyList())
     }
 }
