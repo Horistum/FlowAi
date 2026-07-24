@@ -1,0 +1,42 @@
+version: "0.9.7.9.7"
+name: "CLI Diagnostic and Release Honesty"
+stream: core
+status: complete
+objective: "Make every public CLI readiness, rendering and release-publication claim reproducible from concrete manifest, conformance, artifact and repository metadata evidence."
+scopeBoundary:
+  - "Keep manifest generation, executable rendering and release publication as separate evidence-gated states."
+  - "Keep package, public-standard, artifact-contract and bounded-work versions as independent axes."
+  - "Use the existing projection providers and conformance runner; do not introduce a second planner, renderer registry or release scanner."
+  - "Keep current candidate CI evidence external to the candidate commit until the exact head actually passes."
+  - "Do not broaden this correction into runtime execution, deployment or target-specific public semantics."
+universalInvariants:
+  - "A public READY, PASS, rendered or published claim exists only when the exact evidence required by that claim is present and validated."
+  - "A target manifest proves structural projection evidence but does not by itself authorize executable target syntax."
+  - "A renderer is invoked only after an explicit render request and executable render-readiness evidence."
+  - "CLI readiness, negotiation, selection, trace and adapter diagnostics are reconciled against the exact emitted manifest."
+  - "Missing conformance evidence fails release compliance instead of being treated as implicit success."
+  - "Release publication verifies a sibling staging bundle before replacing the destination."
+  - "Every required release JSON artifact declares an existing schema and explicit evidence provenance."
+  - "Release metadata agrees across Gradle, release state, roadmap, REPORT and the bounded correction ledger."
+  - "Runtime-required diagnostics describe external target-side infrastructure or adapters and never imply Flow Core runtime ownership."
+implementedSlices:
+  - id: coherent-cli-target-evidence
+  - id: explicit-render-authorization
+  - id: manifest-versus-render-readiness-wording
+  - id: concrete-adapter-diagnostic-reconciliation
+  - id: actual-output-artifact-bundles
+  - id: conformance-required-release-compliance
+  - id: real-standard-release-assembly
+  - id: staged-bundle-verification
+  - id: atomic-destination-replacement
+  - id: release-metadata-honesty-authority
+  - id: bounded-correction-ledger
+  - id: external-runtime-wording
+  - id: cli-release-honesty-conformance
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "The exact final pull request head must pass tooling tests, repository structure validation, clean Gradle tests, RC and snapshot checks, standalone conformance and existing executable reference evidence before review readiness."
+  buildDiscipline: "Assemble the complete candidate before opening the draft pull request. Close the pull request during corrections and trigger another build only for a concrete failure exposed by the complete candidate."
+followUpWorkItem:
+  version: "0.9.7.10"
+  name: "Bounded Semantic Closure Gate"

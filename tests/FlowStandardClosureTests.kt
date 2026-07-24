@@ -10,6 +10,9 @@ import org.flowlang.artifacts.FlowArtifactBundleAnalyzer
 import org.flowlang.artifacts.StandardComplianceAnalyzer
 import org.flowlang.artifacts.StandardContractIndexAnalyzer
 import org.flowlang.artifacts.StandardReleaseProfile
+import org.flowlang.conformance.ConformanceCheck
+import org.flowlang.conformance.ConformanceManifestBuilder
+import org.flowlang.conformance.ConformanceSummary
 import org.flowlang.standard.DiagnosticCoverageAnalyzer
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.ObservedDiagnosticCode
@@ -38,7 +41,18 @@ class FlowStandardClosureTests {
         val index = StandardContractIndexAnalyzer().analyze(bundle)
         val profile = StandardReleaseProfile.report()
         val evidence = ArtifactEvidenceAnalyzer().analyze(bundle)
-        val compliance = StandardComplianceAnalyzer().analyze(bundle, index, profile, evidence, integrity)
+        val conformanceManifest = ConformanceManifestBuilder().build(
+            summary = ConformanceSummary(listOf(ConformanceCheck("standard.release.fixture", true))),
+            implementation = "flow-standard-closure-fixture"
+        )
+        val compliance = StandardComplianceAnalyzer().analyze(
+            bundle = bundle,
+            contractIndex = index,
+            releaseProfile = profile,
+            evidence = evidence,
+            integrity = integrity,
+            conformanceManifest = conformanceManifest
+        )
 
         assertTrue(index.requiredContracts.contains("standard-contract-index.json"))
         assertTrue(index.contracts.any { it.artifact == "standard-compliance-report.json" && it.introducedIn == "0.3.19" })

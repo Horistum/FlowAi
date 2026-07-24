@@ -77,7 +77,7 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
                         target = target.target,
                         capability = capability,
                         support = support,
-                        recommendation = "Requires Flow runtime support or an equivalent target-side execution adapter."
+                        recommendation = "Requires an external target-side runtime or execution adapter; Flow Core does not provide one."
                     )
                     else -> null
                 }
@@ -284,14 +284,14 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
                 target.target,
                 nodeId,
                 feature,
-                "Feature '$feature' is only partially supported by target '${target.target}'. Generator/runtime may need a workaround."
+                "Feature '$feature' is only partially supported by target '${target.target}'. A target-specific mapping or adapter may be required."
             )
             SupportLevel.REQUIRES_RUNTIME -> issues += CompatibilityIssue(
                 CompatibilityLevel.WARNING,
                 target.target,
                 nodeId,
                 feature,
-                "Feature '$feature' requires Flow runtime support on target '${target.target}'."
+                "Feature '$feature' requires an external target-side runtime or adapter capability on '${target.target}'; Flow Core does not provide one."
             )
             SupportLevel.UNSUPPORTED -> issues += CompatibilityIssue(
                 CompatibilityLevel.ERROR,

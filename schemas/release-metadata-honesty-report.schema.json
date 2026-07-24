@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.org/schemas/release-metadata-honesty-report.schema.json",
+  "title": "Flow Release Metadata Honesty Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reportVersion",
+    "implementationPackageVersion",
+    "publicStandardVersion",
+    "completedCorrectionItem",
+    "nextCoreItem",
+    "status",
+    "checks",
+    "failedChecks"
+  ],
+  "properties": {
+    "reportVersion": { "type": "string", "const": "1.0" },
+    "implementationPackageVersion": { "type": "string", "minLength": 1 },
+    "publicStandardVersion": { "type": "string", "minLength": 1 },
+    "completedCorrectionItem": { "type": "string", "minLength": 1 },
+    "nextCoreItem": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "expected", "observed", "source", "message"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+          "expected": { "type": "string" },
+          "observed": { "type": "string" },
+          "source": { "type": "string", "minLength": 1 },
+          "message": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "failedChecks": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}

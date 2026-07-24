@@ -91,7 +91,7 @@ class ExecutionReadinessAnalyzer(private val targets: Map<String, TargetCapabili
                 severity = ReadinessSeverity.WARNING,
                 target = target,
                 capability = capability,
-                message = "Target '$target' requires Flow runtime support for capability '$capability'."
+                message = "Target '$target' requires an external target-side runtime or adapter capability for '$capability'; Flow Core does not provide one."
             )
         }
         targetEntry?.partial.orEmpty().forEach { capability ->

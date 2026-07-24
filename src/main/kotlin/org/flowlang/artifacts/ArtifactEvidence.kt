@@ -63,10 +63,12 @@ class ArtifactEvidenceAnalyzer {
         "standard-export-bundle.json" -> "StandardSurface.standardExportBundle"
         "conformance-levels.json" -> "StandardSurface.conformanceLevels"
         "standard-export-manifest.json" -> "StandardSurface.standardExportManifest"
+        "conformance-manifest.json" -> "ConformanceManifestBuilder"
         "conformance-vector-index.json" -> "ConformanceVectorIndexBuilder"
         "standard-index.json" -> "PublicStandardDraft.standardIndex"
         "conformance-suite.json" -> "PublicStandardDraft.conformanceSuite"
         "flow-standard-draft.json" -> "PublicStandardDraft.draft"
+        "release-metadata-honesty-report.json" -> "ReleaseMetadataHonestyAuthority"
         else -> "flow-public-pipeline"
     }
 }
