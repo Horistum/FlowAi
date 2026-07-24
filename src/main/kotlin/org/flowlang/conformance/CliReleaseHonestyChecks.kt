@@ -77,10 +77,15 @@ internal class CliReleaseHonestyChecks(
             require(!releaseAssembly.contains("ADAPTER_CONTRACT_READY")) {
                 "Release assembly fabricates adapter-ready diagnostics without a target artifact."
             }
-            require(releaseAssembly.contains("StandardBundleVerifier().verify(staging)")) {
+            val publishMethod = releaseAssembly
+                .substringAfter("fun publishValidatedBundle")
+                .substringBefore("private fun releaseBundle")
+            val verifyIndex = publishMethod.indexOf("StandardBundleVerifier().verify(staging)")
+            val publishIndex = publishMethod.indexOf("publishDirectory(staging, outputDir)")
+            require(verifyIndex >= 0) {
                 "Release publication does not verify the staged bundle."
             }
-            require(releaseAssembly.indexOf("StandardBundleVerifier().verify(staging)") < releaseAssembly.indexOf("publishDirectory(staging, outputDir)")) {
+            require(publishIndex >= 0 && verifyIndex < publishIndex) {
                 "Release bundle is published before staged verification."
             }
 
