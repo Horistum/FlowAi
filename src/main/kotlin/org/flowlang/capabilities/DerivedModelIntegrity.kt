@@ -205,8 +205,9 @@ object DerivedModelIntegrityAuthority {
             }
             val expectedStatus = when {
                 entry.unsupported.isNotEmpty() || entry.issues.any { it.level == CompatibilityLevel.ERROR } -> SupportLevel.UNSUPPORTED
-                entry.requiresRuntime.isNotEmpty() -> SupportLevel.REQUIRES_RUNTIME
-                entry.partial.isNotEmpty() || entry.issues.any { it.level == CompatibilityLevel.WARNING } -> SupportLevel.PARTIAL
+                entry.partial.isNotEmpty() ||
+                    entry.requiresRuntime.isNotEmpty() ||
+                    entry.issues.any { it.level == CompatibilityLevel.WARNING } -> SupportLevel.PARTIAL
                 else -> SupportLevel.SUPPORTED
             }
             if (!report.readinessEvidenceAvailable && entry.status != expectedStatus) {
