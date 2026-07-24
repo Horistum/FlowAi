@@ -1,0 +1,102 @@
+package org.flowlang.conformance
+
+import java.io.File
+import org.flowlang.adapters.yaml.IntentYamlLoader
+import org.flowlang.cli.honest.CliTargetEvidenceAuthority
+import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.generators.manifest.TargetRenderBlockedException
+import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.intent.IntentCapabilityValidator
+import org.flowlang.intent.IntentToAstPlanner
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.planner.FlowPlanner
+import org.flowlang.release.ReleaseMetadataHonestyAuthority
+
+internal class CliReleaseHonestyChecks(
+    rootDir: File,
+    registry: ModuleRegistry,
+    targets: Map<String, org.flowlang.capabilities.TargetCapability>,
+    projections: TargetProjectionRegistry
+) : ConformanceCheckSupport(rootDir, registry, targets, projections) {
+    fun checks(): List<ConformanceCheck> = listOf(
+        checkCliDiagnosticAndReleaseHonesty()
+    )
+
+    private fun checkCliDiagnosticAndReleaseHonesty(): ConformanceCheck =
+        runCheck("cli.release.diagnostic-honesty") {
+            val gradle = File(rootDir, "build.gradle.kts").readText()
+            require(gradle.contains("org.flowlang.cli.honest.HonestFlowCliKt")) {
+                "The application entrypoint bypasses the honest CLI authority."
+            }
+
+            val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
+            IntentCapabilityValidator(registry).validate(intent).assertValid()
+            val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+            val evidence = CliTargetEvidenceAuthority(targets, projections).evaluate(
+                plan = plan,
+                target = "jenkins",
+                strict = false,
+                renderRequested = false
+            )
+            require(evidence.readiness.readinessEvidenceAvailable) {
+                "CLI exported preliminary readiness beside a concrete manifest."
+            }
+            require(evidence.negotiation.readinessEvidenceAvailable) {
+                "CLI exported preliminary negotiation beside a concrete manifest."
+            }
+            require(evidence.selection.candidates.first { it.target == "jenkins" }.readinessEvidenceAvailable) {
+                "CLI target selection was not reconciled against the emitted Jenkins manifest."
+            }
+            require(evidence.renderedArtifact == null) {
+                "CLI rendered target syntax even though rendering was not requested."
+            }
+            require(evidence.renderReadiness.mode == TargetRenderMode.REVIEW_ONLY) {
+                "The reference Jenkins manifest should remain review-only, not executable."
+            }
+            val blockedRender = runCatching {
+                CliTargetEvidenceAuthority(targets, projections).evaluate(
+                    plan = plan,
+                    target = "jenkins",
+                    strict = false,
+                    renderRequested = true
+                )
+            }.exceptionOrNull()
+            require(blockedRender is TargetRenderBlockedException) {
+                "Review-only target evidence produced rendered target syntax."
+            }
+
+            val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
+            require(release.completedCorrectionItem == "0.9.7.9.7")
+            require(release.nextCoreItem == "0.9.7.10")
+
+            val honestCli = File(rootDir, "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt").readText()
+            require(!honestCli.contains("TARGET MANIFEST READY")) {
+                "Public CLI still labels unevaluated or review-only manifest evidence as READY."
+            }
+            val releaseAssembly = File(rootDir, "src/main/kotlin/org/flowlang/release/StandardReleaseAssembly.kt").readText()
+            require(!releaseAssembly.contains("ADAPTER_CONTRACT_READY")) {
+                "Release assembly fabricates adapter-ready diagnostics without a target artifact."
+            }
+            require(releaseAssembly.contains("StandardBundleVerifier().verify(staging)")) {
+                "Release publication does not verify the staged bundle."
+            }
+            require(releaseAssembly.indexOf("StandardBundleVerifier().verify(staging)") < releaseAssembly.indexOf("publishDirectory(staging, outputDir)")) {
+                "Release bundle is published before staged verification."
+            }
+
+            listOf(
+                "src/main/kotlin/org/flowlang/capabilities/CompatibilityAnalyzer.kt",
+                "src/main/kotlin/org/flowlang/capabilities/ExecutionReadiness.kt",
+                "src/main/kotlin/org/flowlang/capabilities/TargetNegotiationReportAnalyzer.kt",
+                "src/main/kotlin/org/flowlang/standard/StandardDiagnosticCatalog.kt"
+            ).forEach { path ->
+                val text = File(rootDir, path).readText()
+                require(!text.contains("requires Flow runtime support", ignoreCase = true)) {
+                    "Legacy runtime-ownership wording remains in $path."
+                }
+                require(!text.contains("Generator/runtime may", ignoreCase = true)) {
+                    "Ambiguous generator/runtime ownership wording remains in $path."
+                }
+            }
+        }
+}
