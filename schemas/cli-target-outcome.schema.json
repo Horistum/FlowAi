@@ -21,7 +21,7 @@
           "code": { "type": "string", "minLength": 1 },
           "severity": { "enum": ["info", "warning", "error"] },
           "message": { "type": "string", "minLength": 1 },
-          "causeType": { "type": "string" }
+          "causeType": { "type": ["string", "null"] }
         }
       }
     }
