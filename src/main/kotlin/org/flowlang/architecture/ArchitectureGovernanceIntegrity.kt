@@ -378,7 +378,11 @@ object ArchitectureGovernanceIntegrityAuthority {
             .toSet()
         val exceptionSignals = validExceptionSignals(rootDir, issues)
         val exceptionCoversPresentSignals = presentNegativeSignals.isNotEmpty() && presentNegativeSignals.all { it in exceptionSignals }
-        if (report.driftScore.exceptionRecorded && !exceptionCoversPresentSignals) {
+        if (
+            presentNegativeSignals.isNotEmpty() &&
+            report.driftScore.exceptionRecorded &&
+            !exceptionCoversPresentSignals
+        ) {
             issues += issue(
                 "GOVERNANCE_DRIFT_EXCEPTION_UNSCOPED",
                 "driftScore.exceptionRecorded",
@@ -438,16 +442,13 @@ object ArchitectureGovernanceIntegrityAuthority {
             .filter { it.isFile && it.extension == "md" && it.name != "ADR_TEMPLATE.md" }
             .forEach { adr ->
                 val text = adr.readText()
-                val mentionsException = text.contains("Drift Score exception", ignoreCase = true)
-                val mentionsGuard = text.contains("conformance guardrail", ignoreCase = true)
-                if (!mentionsException && !mentionsGuard) return@forEach
-                val signalMatch = signalRegex.find(text)
+                val signalMatch = signalRegex.find(text) ?: return@forEach
                 val guardMatch = guardRegex.find(text)
-                if (signalMatch == null || guardMatch == null) {
+                if (guardMatch == null) {
                     issues += issue(
                         "GOVERNANCE_DRIFT_EXCEPTION_FORMAT_INVALID",
                         adr.relativeTo(rootDir).path.replace(File.separatorChar, '/'),
-                        "Drift exceptions require explicit 'Drift Score exception:' and 'Conformance guardrail:' lines."
+                        "An explicit drift exception requires a matching 'Conformance guardrail:' line."
                     )
                     return@forEach
                 }
