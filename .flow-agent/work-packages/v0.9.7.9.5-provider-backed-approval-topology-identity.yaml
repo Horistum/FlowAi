@@ -13,6 +13,8 @@ universalInvariants:
   - "An approval node is NATIVE only when the composed provider supplies a validated structured payload contract."
   - "Provider payload kind, reference, bindings and evidence reference are owned and checked by the target projection catalog."
   - "A target with approval capability but no provider payload remains ADAPTER_REQUIRED or review-only."
+  - "Concrete materialization readiness cannot erase an existing compatibility, planning or topology blocker."
+  - "Renderer readiness requires effective compatibility, not only capability-table support."
   - "Distinct control obligations that share a readable slug retain distinct deterministic ids."
   - "Distinct topology subjects that share a readable slug retain distinct deterministic ids."
   - "Exact duplicate control obligations fail instead of being overwritten."
@@ -22,6 +24,8 @@ implementedSlices:
   - id: jenkins-input-payload-evidence
   - id: no-native-approval-without-payload
   - id: github-approval-topology-honesty
+  - id: compatibility-readiness-monotonicity
+  - id: renderer-effective-compatibility-gate
   - id: collision-safe-identity-authority
   - id: control-requirement-identity
   - id: topology-requirement-identity
@@ -29,7 +33,7 @@ implementedSlices:
 validationPolicy:
   workflow: "Flow CI"
   requirement: "The exact final pull request head must pass tooling tests, repository structure validation, clean Gradle test and standalone conformance before review readiness."
-  buildDiscipline: "All repository edits are assembled before opening the pull request. One standard full build is triggered for the complete candidate; another build is permitted only for a concrete correction."
+  buildDiscipline: "All related corrections are assembled while the pull request is closed. A standard full build is triggered only for a complete candidate or a concrete correction head."
 followUpWorkItem:
   version: "0.9.7.9.6"
   name: "Derived Model and Governance Integrity"
