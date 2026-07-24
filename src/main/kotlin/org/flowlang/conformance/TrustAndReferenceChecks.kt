@@ -118,7 +118,8 @@ internal class TrustAndReferenceChecks(
         val requiredGate = "v0.7.0.reference-corpus-execution-harness"
         val harnessReport = ReferenceCorpusExecutionHarness(registry).execute()
         val index = ConformanceVectorIndexBuilder(rootDir).build(
-            runnerChecks = allRunnerChecksForVectorIndex(),
+            runnerChecks = allRunnerChecksForVectorIndex() +
+                "governance.closure-blocking-safety-diagnostic-integrity",
             releaseProfileChecks = releaseProfile.requiredConformanceChecks
         )
 
