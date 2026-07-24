@@ -1,0 +1,41 @@
+version: "0.9.7.9.8"
+name: "Closure-Blocking Safety, Governance and Diagnostic Integrity"
+type: "bounded-correction"
+stream: core
+status: active
+parentCoreItem: "0.9.7.9"
+objective: "Repair the remaining safety-evidence, governance-signal, diagnostic CLI, canonical-topology and adapter cancellation defects that block an honest v0.9.7 closure decision."
+scopeBoundary:
+  - "Treat authored safety evidence as confirmed only through explicit positive values or concrete control-specific references."
+  - "Make CI/CD bias health depend on executable semantic coupling rather than comments, prose, catalog declarations or edge-owned target vocabulary."
+  - "Expose target-neutral planning when no target is selected and diagnostic manifest evidence when a target cannot execute."
+  - "Remove the legacy CLI entrypoint and every implicit Jenkins target default."
+  - "Re-derive canonical topology from retained source provenance before materialization."
+  - "Retain legacy dependencies and effects only as mechanically validated compatibility projections, never as independent authorities."
+  - "Preserve GitHub Actions cancellation semantics; do not use always() for ordinary dependency jobs."
+  - "Keep package, public-standard and artifact contract versions unchanged."
+universalInvariants:
+  - "Unknown, placeholder or ambiguous text never satisfies a safety control."
+  - "Governance health is reproducible from actionable lexical evidence and can reach PASS on an honest repository."
+  - "Expected target incompatibility produces a typed review or blocked result, not a stack trace."
+  - "Absence of target selection never means Jenkins."
+  - "Canonical workflow and capability topology cannot disappear undetected from an execution plan."
+  - "Retained derived fields equal their typed authority at every materialization boundary."
+  - "Ordinary GitHub Actions dependencies preserve native success and cancellation behavior."
+implementedSlices:
+  - id: authored-control-evidence-classification
+  - id: lexical-cicd-bias-governance
+  - id: target-neutral-cli-planning
+  - id: diagnostic-target-manifest-fallback
+  - id: legacy-cli-removal
+  - id: canonical-topology-provenance
+  - id: retained-derived-projection-integrity
+  - id: github-cancellation-semantics
+  - id: closure-blocking-integrity-conformance
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "The active correction implementation head must first pass tooling, structure, clean tests, standalone conformance and reference evidence while 0.9.7.10 remains blocked. A final metadata head may mark the correction complete and unblock 0.9.7.10 only after that implementation evidence exists."
+  buildDiscipline: "Assemble one complete implementation candidate before opening a draft pull request. Close the pull request during any concrete correction set and never trigger CI for file-level connector commits."
+followUpWorkItem:
+  version: "0.9.7.10"
+  name: "Bounded Semantic Closure Gate"
