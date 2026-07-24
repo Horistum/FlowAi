@@ -320,9 +320,10 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
     private fun Map<String, Any?>.string(vararg path: String): String {
         var current: Any? = this
         path.forEach { key -> current = (current as? Map<*, *>)?.get(key) }
-        return when (current) {
-            is Iterable<*> -> current.joinToString("\n") { it.toString() }
-            else -> current?.toString().orEmpty()
+        val resolved = current
+        return when (resolved) {
+            is Iterable<*> -> resolved.joinToString("\n") { it.toString() }
+            else -> resolved?.toString().orEmpty()
         }
     }
 
