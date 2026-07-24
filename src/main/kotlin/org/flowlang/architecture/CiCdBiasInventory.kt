@@ -9,7 +9,9 @@ import java.io.File
  * Kotlin source is scanned lexically. Comments are ignored, catalog declarations
  * are self-identifying inventory, ordinary diagnostic strings are non-actionable,
  * and target names become actionable only when they occur in code identifiers or
- * control/default literals in active semantic source.
+ * control/default literals in active semantic source. Explicitly retained public
+ * compatibility symbols remain visible inventory but do not masquerade as hidden
+ * implementation defaults.
  */
 data class CiCdBiasTerm(
     val term: String,
@@ -22,6 +24,7 @@ enum class CiCdBiasLexicalContext {
     CONTROL_LITERAL,
     STRING_LITERAL,
     CATALOG_DECLARATION,
+    COMPATIBILITY_SYMBOL,
     STRUCTURED_TEXT
 }
 
@@ -124,17 +127,21 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         val lines = text.lines()
         return if (file.extension in setOf("kt", "kts")) {
             KotlinLexicalScanner.scan(text).flatMap { span ->
-                catalog().filter { term -> span.text.contains(term.term, ignoreCase = true) }
-                    .map { term ->
-                        val lineText = lines.getOrElse(span.line - 1) { span.text }
+                catalog().flatMap { term ->
+                    termOccurrences(span.text, term.term).map { offset ->
+                        val occurrenceLine = span.line + span.text.take(offset).count { it == '\n' }
+                        val lineText = lines.getOrElse(occurrenceLine - 1) { span.text }
                         val context = when {
                             lineText.contains("CiCdBiasTerm(") -> CiCdBiasLexicalContext.CATALOG_DECLARATION
+                            span.kind == KotlinSpanKind.CODE && compatibilitySymbolAt(span.text, offset) ->
+                                CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
                             span.kind == KotlinSpanKind.CODE -> CiCdBiasLexicalContext.CODE_IDENTIFIER
                             isControlLiteral(lineText, term.term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
                             else -> CiCdBiasLexicalContext.STRING_LITERAL
                         }
-                        evidence(relative, span.line, term, classification, lineText, context)
+                        evidence(relative, occurrenceLine, term, classification, lineText, context)
                     }
+                }
             }
         } else {
             lines.flatMapIndexed { index, line ->
@@ -152,6 +159,20 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             }
         }
     }
+
+    private fun termOccurrences(text: String, term: String): List<Int> =
+        Regex(Regex.escape(term), RegexOption.IGNORE_CASE).findAll(text).map { it.range.first }.toList()
+
+    private fun compatibilitySymbolAt(text: String, offset: Int): Boolean {
+        var start = offset
+        while (start > 0 && text[start - 1].isIdentifierPart()) start--
+        var end = offset
+        while (end < text.length && text[end].isIdentifierPart()) end++
+        val symbol = text.substring(start, end).substringAfterLast('.')
+        return symbol in retainedCompatibilitySymbols
+    }
+
+    private fun Char.isIdentifierPart(): Boolean = isLetterOrDigit() || this == '_' || this == '.'
 
     private fun evidence(
         path: String,
@@ -197,7 +218,8 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             path.startsWith("examples/") ||
             path.startsWith("tests/") ||
             path.startsWith("src/test/") ||
-            path.startsWith("src/main/kotlin/org/flowlang/conformance/") -> SCENARIO_OR_CONFORMANCE
+            path.startsWith("src/main/kotlin/org/flowlang/conformance/") ||
+            path.startsWith("src/main/kotlin/org/flowlang/scenarios/") -> SCENARIO_OR_CONFORMANCE
         path.startsWith("src/main/kotlin/org/flowlang/cli/") ||
             path.startsWith("src/main/kotlin/org/flowlang/release/") -> APPLICATION_COMPOSITION
         path.startsWith("src/main/kotlin/org/flowlang/generators/") ||
@@ -239,6 +261,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         const val MODULE_OR_TARGET_NOTE = "module-or-target-note"
 
         private val ACTIONABLE_CATEGORIES = setOf("target", "infrastructure", "tool", "data-system")
+        private val retainedCompatibilitySymbols = setOf("KUBERNETES_MAINTENANCE")
 
         fun catalog(): List<CiCdBiasTerm> = listOf(
             CiCdBiasTerm("Jenkins", "target", "Concrete CI target name."),
