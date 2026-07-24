@@ -224,7 +224,11 @@ private fun PlanNode.toTargetJobs(
                 name = id,
                 dependsOn = dependsOn.map(::sanitizeId),
                 steps = listOf(step),
-                metadata = mapOfNotNull("condition" to condition, "approval" to "true")
+                metadata = mapOfNotNull(
+                    "condition" to condition,
+                    "semanticControl" to "approval",
+                    "providerApprovalPayload" to (step.rendererPayload != null).toString()
+                )
             )
         }
         is ConditionNode -> {
