@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.org/schemas/target-render-readiness.schema.json",
+  "title": "Flow Target Render Readiness",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["target", "mode", "findings", "executable"],
+  "properties": {
+    "target": { "type": "string", "minLength": 1 },
+    "mode": { "enum": ["EXECUTABLE", "REVIEW_ONLY", "FAIL_FAST"] },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["nodeId", "status", "reason"],
+        "properties": {
+          "nodeId": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "executable": { "type": "boolean" }
+  }
+}
