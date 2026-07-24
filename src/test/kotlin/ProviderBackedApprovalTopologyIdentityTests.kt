@@ -6,15 +6,21 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
+import org.flowlang.capabilities.TargetCapability
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.generators.manifest.TargetApprovalProjectionField
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
+import org.flowlang.generators.manifest.TargetManifestGenerator
+import org.flowlang.generators.manifest.TargetManifestRenderer
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetNativeApprovalProjectionBindingContract
 import org.flowlang.generators.manifest.TargetNativeApprovalProjectionDefinition
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetStep
@@ -29,16 +35,22 @@ import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
 import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.GitHubActionsManifestRenderer
 import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import org.flowlang.targets.builtin.JenkinsManifestRenderer
 import org.flowlang.topology.CanonicalTopologyRequirementAuthority
 import org.flowlang.topology.ExecutionTopologyKind
+import org.flowlang.topology.ExecutionTopologyProfile
 import org.flowlang.topology.PlanningTopologyAuthority
 
 class ProviderBackedApprovalTopologyIdentityTests {
     @Test
     fun jenkinsApprovalIsNativeOnlyWithOwnedProviderPayload() {
-        val manifest = JenkinsManifestGenerator().generate(approvalPlan(), supportedCompatibility("jenkins"))
+        val manifest = pipeline(
+            target = "jenkins",
+            generator = JenkinsManifestGenerator(),
+            renderer = JenkinsManifestRenderer()
+        ).generate(approvalPlan(), "jenkins")
         val step = manifest.jobs.single().steps.single()
         val payload = assertNotNull(step.rendererPayload)
 
@@ -57,7 +69,11 @@ class ProviderBackedApprovalTopologyIdentityTests {
     @Test
     fun missingProviderContractCannotClaimNativeApproval() {
         val generator = JenkinsManifestGenerator(TargetNativeProjectionCatalog.empty("jenkins"))
-        val manifest = generator.generate(approvalPlan(), supportedCompatibility("jenkins"))
+        val manifest = pipeline(
+            target = "jenkins",
+            generator = generator,
+            renderer = JenkinsManifestRenderer()
+        ).generate(approvalPlan(), "jenkins")
         val step = manifest.jobs.single().steps.single()
         val readiness = TargetRenderPolicy.evaluate(manifest)
 
@@ -71,10 +87,11 @@ class ProviderBackedApprovalTopologyIdentityTests {
 
     @Test
     fun githubEnvironmentCapabilityDoesNotForgeStepPayloadEvidence() {
-        val manifest = GitHubActionsManifestGenerator().generate(
-            approvalPlan(),
-            supportedCompatibility("github-actions")
-        )
+        val manifest = pipeline(
+            target = "github-actions",
+            generator = GitHubActionsManifestGenerator(),
+            renderer = GitHubActionsManifestRenderer()
+        ).generate(approvalPlan(), "github-actions")
         val step = manifest.jobs.single().steps.single()
 
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, step.materialization.status)
@@ -194,6 +211,30 @@ class ProviderBackedApprovalTopologyIdentityTests {
         val requirement = CanonicalTopologyRequirementAuthority.requirementsFor(intent)
             .single { it.kind == ExecutionTopologyKind.WORKFLOW_SCOPE }
         assertEquals("topology.workflowScope.release", requirement.id)
+    }
+
+    private fun pipeline(
+        target: String,
+        generator: TargetManifestGenerator,
+        renderer: TargetManifestRenderer
+    ): TargetManifestGenerationPipeline {
+        val capability = TargetCapability(
+            target = target,
+            description = "Provider-backed approval test target.",
+            approvals = SupportLevel.SUPPORTED,
+            features = mapOf(
+                "approval.manual" to SupportLevel.SUPPORTED,
+                "approval.inline" to SupportLevel.SUPPORTED
+            ),
+            topologyProfile = ExecutionTopologyProfile.fullySupported(
+                target,
+                "test:$target#topology"
+            )
+        )
+        return TargetManifestGenerationPipeline(
+            targets = mapOf(target to capability),
+            projections = TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
+        )
     }
 
     private fun approvalPlan(): ExecutionPlan = ExecutionPlan(
