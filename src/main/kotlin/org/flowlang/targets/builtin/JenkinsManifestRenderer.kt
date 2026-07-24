@@ -7,8 +7,8 @@ import org.flowlang.generators.manifest.TargetManifestRenderer
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererContractValidator
-import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
 import org.flowlang.generators.manifest.TargetRendererPayload
+import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
 import org.flowlang.generators.manifest.TargetStep
 
 class JenkinsManifestRenderer : TargetManifestRenderer {
@@ -107,9 +107,28 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry" ->
                 step.children.forEach { renderJenkinsStep(it, manifest, sb, indent) }
             "condition" -> renderJenkinsCondition(step, manifest, sb, indent)
-            "approval" -> sb.appendLine("${indent}input message: ${groovyString(step.params["message"] ?: "Approval required")}")
+            "approval" -> renderJenkinsApproval(step, sb, indent)
             else -> renderJenkinsLeaf(step, manifest, sb, indent)
         }
+    }
+
+    private fun renderJenkinsApproval(step: TargetStep, sb: StringBuilder, indent: String) {
+        val payload = requireNotNull(step.rendererPayload) {
+            "Executable Jenkins approval '${step.id}' has no provider renderer payload."
+        }
+        require(payload.kind == BuiltInProjectionPayloadKinds.JENKINS_STEP && payload.reference == "input") {
+            "Jenkins approval '${step.id}' requires the owned JENKINS_STEP/input payload, not '${payload.kind}/${payload.reference}'."
+        }
+        val mode = requireNotNull(payload.bindings["mode"]?.value) {
+            "Jenkins approval '${step.id}' is missing resolved mode binding."
+        }
+        require(mode == "manual") {
+            "Jenkins approval '${step.id}' cannot render unsupported mode '$mode'."
+        }
+        val message = requireNotNull(payload.bindings["message"]?.value) {
+            "Jenkins approval '${step.id}' is missing resolved message binding."
+        }
+        sb.appendLine("${indent}input message: ${groovyString(message)}")
     }
 
     private fun renderJenkinsTry(
@@ -178,12 +197,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         when (payload.reference) {
             "git" -> {
                 val context = "Jenkins git payload for '${step.id}'"
-                val urlBinding = requireNotNull(payload.bindings["url"]) {
-                    "$context requires url binding."
-                }
-                val branchBinding = requireNotNull(payload.bindings["branch"]) {
-                    "$context requires branch binding."
-                }
+                val urlBinding = requireNotNull(payload.bindings["url"]) { "$context requires url binding." }
+                val branchBinding = requireNotNull(payload.bindings["branch"]) { "$context requires branch binding." }
                 val urlValue = CheckoutProjectionValues.gitUrl(payload, "url", context)
                 val branchValue = CheckoutProjectionValues.branch(payload, "branch", context)
                 val depth = payload.bindings["depth"]?.let {
@@ -203,9 +218,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
                 }
             }
             "docker-build" -> renderDockerBuild(step.id, payload, manifest, sb, indent)
-            else -> error(
-                "Unsupported Jenkins structured payload reference '${payload.reference}' for step '${step.id}'."
-            )
+            else -> error("Unsupported Jenkins structured payload reference '${payload.reference}' for step '${step.id}'.")
         }
     }
 
