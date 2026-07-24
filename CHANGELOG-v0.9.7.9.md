@@ -62,16 +62,20 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 
 - Replaces fail-open arbitrary-text control evidence with typed confirmed, denied and unknown classification.
 - Accepts concrete backup, rollback, change-ticket, retention and safety evidence while rejecting placeholders such as `unknown`, `TODO`, `n/a` and `pending`.
-- Replaces raw CI/CD bias substring matching with lexical code, control-literal, ordinary-string, comment and catalog contexts.
-- Makes governance health depend only on actionable coupling in active semantic source and separates CLI/release composition from Core semantics.
+- Recognizes bounded compact retention durations such as `14d` without accepting arbitrary text.
+- Replaces raw CI/CD bias substring matching with lexical code, control-literal, ordinary-string, comment, catalog and retained-compatibility contexts.
+- Localizes lexical findings to the actual occurrence line and separates scenario, conformance, CLI, release and adapter ownership from Core semantic health.
+- Makes governance health depend only on actionable coupling in active semantic source.
 - Removes the legacy CLI entrypoint and every implicit Jenkins target default.
 - Produces target-neutral planning evidence when no target is selected.
 - Produces typed review-only or blocked diagnostic manifest evidence for expected target incompatibility instead of a stack trace.
 - Re-derives canonical workflow and capability topology from retained source provenance before materialization.
 - Retains legacy `dependencies` and `effects` only as mechanically checked compatibility projections.
 - Preserves GitHub Actions cancellation semantics and removes `always()` from ordinary dependency jobs.
-- Status: active. Candidate implementation validation remains external exact-head CI evidence and is not predeclared in this ledger.
+- Status: complete.
+- Implementation validation: Flow CI `#2021`, run `30090943402`, exact implementation head `64e4df9abe8a95adede53b2876c49031e0bfed8f` passed tooling, structure, clean tests, standalone conformance and reference evidence.
+- Completion metadata requires its own final exact-head Flow CI before review readiness.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` remains `correction-required`. `0.9.7.10 Bounded Semantic Closure Gate` remains `blocked` while work package `0.9.7.9.8` is active. The closure gate may become `next` only after the implementation head passes the unmodified Flow CI workflow, the existing executable reference evidence remains live, and a separate metadata head records the completed correction lifecycle.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed` only after the bounded correction implementation passed. `0.9.7.10 Bounded Semantic Closure Gate` is now `next`. The closure gate remains a finite verification step and may not introduce new requirements or reinterpret implementation coverage as Core meaning.
