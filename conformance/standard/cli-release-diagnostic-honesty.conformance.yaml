@@ -1,0 +1,24 @@
+kind: FlowConformanceVector
+id: cli-release-diagnostic-honesty
+introducedIn: 0.9.7.9.7
+area: cli-release
+purpose: >-
+  Prove that public CLI readiness, target rendering and release publication
+  claims are derived from concrete evidence and fail closed when evidence is
+  absent, review-only or unverified.
+expected:
+  requiredCheck: cli.release.diagnostic-honesty
+  invariants:
+    - The public application routes release-facing commands through the honest CLI authority.
+    - CLI target reports are reconciled against the exact emitted manifest.
+    - A renderer is not invoked without an explicit render request.
+    - Review-only or blocked manifests cannot produce target syntax.
+    - Standard compliance requires an explicit passing conformance manifest.
+    - Standard export verifies a staging bundle before destination replacement.
+    - Release metadata distinguishes package, public-standard and bounded-work axes.
+    - Flow Core does not claim ownership of an external target-side runtime.
+forbidden:
+  - TARGET MANIFEST READY
+  - synthetic adapter-ready release evidence
+  - direct publication before bundle verification
+  - committed current-candidate CI success
