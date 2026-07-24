@@ -141,7 +141,9 @@ object AuthoredControlEvidenceTextAuthority {
     )
     private val backupReference = Regex("(?i)(backup|snapshot|archive)[-_:/ ]?[A-Za-z0-9][A-Za-z0-9._:/-]*")
     private val changeReference = Regex("(?i)([A-Z][A-Z0-9]{1,9}-[0-9]+|CHG[0-9]+|RFC[0-9]+)")
-    private val retentionDuration = Regex("(?i)\\b[0-9]+\\s*(minute|hour|day|week|month|year)s?\\b")
+    private val retentionDuration = Regex(
+        "(?i)\\b[1-9][0-9]*\\s*(minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|wks?|w|months?|mos?|mo|years?|yrs?|y)\\b"
+    )
     private val backupTerms = setOf("backup", "snapshot", "archive", "restore point")
     private val rollbackActions = setOf("restore", "rollback", "roll back", "revert", "redeploy", "fail over", "failover", "recover")
     private val retentionTerms = setOf("retain", "retention", "expire", "delete after", "policy")
