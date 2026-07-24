@@ -85,7 +85,7 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
         require(integrity.status == "PASS") {
             "Release artifact integrity failed: ${integrity.issues.joinToString { it.code + ":" + it.artifact }}"
         }
-        val contractIndex = StandardContractIndexAnalyzer().analyze(bundle)
+        val contractIndex = StandardContractIndexAnalyzer().analyze(bundle, conformanceManifest)
         val evidence = ArtifactEvidenceAnalyzer().analyze(bundle)
         require(evidence.missingEvidence.isEmpty()) {
             "Release artifact provenance is incomplete: ${evidence.missingEvidence.joinToString()}"
@@ -262,7 +262,7 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
         val entries = names.mapIndexed { index, name ->
             val known = catalog[name]
             val derived = name !in sourceArtifacts
-            val provenance = known?.derivedFrom.orEmpty().ifEmpty { explicitProvenance[name].orEmpty() }
+            val provenance = explicitProvenance[name] ?: known?.derivedFrom.orEmpty()
             FlowArtifactEntry(
                 name = name,
                 role = known?.role ?: if (name.endsWith("report.json")) FlowArtifactRole.REPORT else FlowArtifactRole.METADATA,
