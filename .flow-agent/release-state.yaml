@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 13
+stateVersion: 12
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -14,8 +14,6 @@ versionBoundary:
   nextPackageVersion: "0.9.6"
   publicStandardVersion: "0.8.0"
   artifactContractVersion: "2.0"
-  activeBoundedWorkTrack: "v0.9.7.9.x"
-  boundedWorkMeaning: "Unreleased implementation work; not a package, public-standard or artifact-contract version."
 
 roadmapState:
   roadmapVersion: 5
@@ -96,12 +94,12 @@ lastKnownValidation:
   cleanTest: "passed-on-merged-v0.9.7.9.6-head"
   conformance: "passed-on-merged-v0.9.7.9.6-head"
   executableReferenceEvidence: "passed-on-merged-v0.9.7.9.6-head"
-  validationSource: "Last merged validation: Flow CI #2001, run 30075088660, exact head 002483835844c207df6375d4159e331bfcaf6415 for v0.9.7.9.6."
-  candidateValidationPolicy: "Current candidate success is external exact-head CI evidence and must not be predeclared inside the candidate commit."
+  validationSource: "Flow CI #2001 passed on merged implementation head 002483835844c207df6375d4159e331bfcaf6415."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.1 through v0.9.7.9.7 are bounded correction items, not package releases."
+    - "v0.9.7.9.7 is a bounded correction work package inside Core item v0.9.7.9."
     - "CLI target reports are reconciled against the exact emitted manifest."
     - "Rendering is not performed unless explicitly requested and executable."
     - "Standard export validates a staging bundle before publication."
-    - "The final v0.9.7.9.7 candidate requires unmodified exact-head Flow CI evidence in its pull request."
+    - "Current candidate success remains external exact-head CI evidence until the pull request head actually passes."
+    - "The final candidate head must pass the unmodified standard Flow CI."
