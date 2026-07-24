@@ -3,14 +3,13 @@ package org.flowlang.architecture
 import java.io.File
 
 /**
- * Classifies concrete CI/CD and infrastructure vocabulary that still exists in
- * the repository while Flow is being re-centered as a notes-driven universal
- * automation standard.
+ * Classifies concrete CI/CD and infrastructure vocabulary while separating
+ * inventory from actionable semantic coupling.
  *
- * Inventory presence and architectural health are intentionally separate. A
- * concrete name at an adapter boundary is expected inventory; the same name in
- * active semantic source is reviewable debt. Broad words such as build,
- * workflow, pipeline, deploy, registry, and runner are not mechanism evidence.
+ * Kotlin source is scanned lexically. Comments are ignored, catalog declarations
+ * are self-identifying inventory, ordinary diagnostic strings are non-actionable,
+ * and target names become actionable only when they occur in code identifiers or
+ * control/default literals in active semantic source.
  */
 data class CiCdBiasTerm(
     val term: String,
@@ -18,17 +17,28 @@ data class CiCdBiasTerm(
     val reason: String
 )
 
+enum class CiCdBiasLexicalContext {
+    CODE_IDENTIFIER,
+    CONTROL_LITERAL,
+    STRING_LITERAL,
+    CATALOG_DECLARATION,
+    STRUCTURED_TEXT
+}
+
 data class CiCdBiasEvidence(
     val path: String,
     val line: Int,
     val term: String,
     val category: String,
     val classification: String,
-    val snippet: String
+    val snippet: String,
+    val lexicalContext: CiCdBiasLexicalContext = CiCdBiasLexicalContext.STRUCTURED_TEXT,
+    val actionable: Boolean = false
 )
 
 enum class CiCdBiasFollowUpArea {
     SEMANTIC_MODEL,
+    APPLICATION_COMPOSITION,
     ADAPTER_BOUNDARY,
     SCENARIO_AND_CONFORMANCE,
     DOCUMENTATION,
@@ -40,6 +50,7 @@ data class CiCdBiasInventoryReport(
     val scannedFiles: Int,
     val evidence: List<CiCdBiasEvidence>,
     val activeSemanticEvidence: List<CiCdBiasEvidence>,
+    val applicationCompositionEvidence: List<CiCdBiasEvidence>,
     val adapterBoundaryEvidence: List<CiCdBiasEvidence>,
     val scenarioAndConformanceEvidence: List<CiCdBiasEvidence>,
     val documentationEvidence: List<CiCdBiasEvidence>,
@@ -62,16 +73,23 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             }
         }.distinctBy { it.canonicalFile }
 
-        val evidence = files.flatMap { file -> evidenceIn(file) }
-            .sortedWith(compareBy<CiCdBiasEvidence> { it.classification }.thenBy { it.path }.thenBy { it.line }.thenBy { it.term })
+        val evidence = files.flatMap(::evidenceIn)
+            .distinctBy { listOf(it.path, it.line.toString(), it.term.lowercase(), it.lexicalContext.name) }
+            .sortedWith(
+                compareBy<CiCdBiasEvidence> { it.classification }
+                    .thenBy { it.path }
+                    .thenBy { it.line }
+                    .thenBy { it.term }
+            )
 
         val activeSemanticEvidence = evidence.filter { it.classification == ACTIVE_SEMANTIC_SOURCE }
+        val applicationCompositionEvidence = evidence.filter { it.classification == APPLICATION_COMPOSITION }
         val adapterBoundaryEvidence = evidence.filter { it.classification == ADAPTER_BOUNDARY }
         val scenarioAndConformanceEvidence = evidence.filter { it.classification == SCENARIO_OR_CONFORMANCE }
         val documentationEvidence = evidence.filter { it.classification == DOCUMENTATION }
         val moduleAndTargetNoteEvidence = evidence.filter { it.classification == MODULE_OR_TARGET_NOTE }
         val categories = evidence.groupingBy { it.category }.eachCount().toSortedMap()
-        val actionableEvidence = activeSemanticEvidence.filter { it.category in ACTIONABLE_CATEGORIES }
+        val actionableEvidence = activeSemanticEvidence.filter(CiCdBiasEvidence::actionable)
         val healthStatus = if (actionableEvidence.isEmpty()) "PASS" else "REVIEW_REQUIRED"
 
         return CiCdBiasInventoryReport(
@@ -79,13 +97,15 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             scannedFiles = files.size,
             evidence = evidence,
             activeSemanticEvidence = activeSemanticEvidence,
+            applicationCompositionEvidence = applicationCompositionEvidence,
             adapterBoundaryEvidence = adapterBoundaryEvidence,
             scenarioAndConformanceEvidence = scenarioAndConformanceEvidence,
             documentationEvidence = documentationEvidence,
             moduleAndTargetNoteEvidence = moduleAndTargetNoteEvidence,
             categories = categories,
             requiredFollowUpAreas = buildList {
-                if (activeSemanticEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.SEMANTIC_MODEL)
+                if (actionableEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.SEMANTIC_MODEL)
+                if (applicationCompositionEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.APPLICATION_COMPOSITION)
                 if (adapterBoundaryEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.ADAPTER_BOUNDARY)
                 if (scenarioAndConformanceEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.SCENARIO_AND_CONFORMANCE)
                 if (documentationEvidence.isNotEmpty()) add(CiCdBiasFollowUpArea.DOCUMENTATION)
@@ -100,25 +120,81 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     private fun evidenceIn(file: File): List<CiCdBiasEvidence> {
         val relative = file.relativeTo(rootDir).path.replace(File.separatorChar, '/')
         val classification = classify(relative)
-        return file.readLines().flatMapIndexed { index, line ->
-            catalog().filter { term -> line.contains(term.term, ignoreCase = true) }
-                .map { term ->
-                    CiCdBiasEvidence(
-                        path = relative,
-                        line = index + 1,
-                        term = term.term,
-                        category = term.category,
-                        classification = classification,
-                        snippet = line.trim().take(160)
-                    )
-                }
+        val text = file.readText()
+        val lines = text.lines()
+        return if (file.extension in setOf("kt", "kts")) {
+            KotlinLexicalScanner.scan(text).flatMap { span ->
+                catalog().filter { term -> span.text.contains(term.term, ignoreCase = true) }
+                    .map { term ->
+                        val lineText = lines.getOrElse(span.line - 1) { span.text }
+                        val context = when {
+                            lineText.contains("CiCdBiasTerm(") -> CiCdBiasLexicalContext.CATALOG_DECLARATION
+                            span.kind == KotlinSpanKind.CODE -> CiCdBiasLexicalContext.CODE_IDENTIFIER
+                            isControlLiteral(lineText, term.term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
+                            else -> CiCdBiasLexicalContext.STRING_LITERAL
+                        }
+                        evidence(relative, span.line, term, classification, lineText, context)
+                    }
+            }
+        } else {
+            lines.flatMapIndexed { index, line ->
+                catalog().filter { term -> line.contains(term.term, ignoreCase = true) }
+                    .map { term ->
+                        evidence(
+                            relative,
+                            index + 1,
+                            term,
+                            classification,
+                            line,
+                            CiCdBiasLexicalContext.STRUCTURED_TEXT
+                        )
+                    }
+            }
         }
+    }
+
+    private fun evidence(
+        path: String,
+        line: Int,
+        term: CiCdBiasTerm,
+        classification: String,
+        snippet: String,
+        context: CiCdBiasLexicalContext
+    ): CiCdBiasEvidence {
+        val actionable = classification == ACTIVE_SEMANTIC_SOURCE &&
+            term.category in ACTIONABLE_CATEGORIES &&
+            context in setOf(CiCdBiasLexicalContext.CODE_IDENTIFIER, CiCdBiasLexicalContext.CONTROL_LITERAL)
+        return CiCdBiasEvidence(
+            path = path,
+            line = line,
+            term = term.term,
+            category = term.category,
+            classification = classification,
+            snippet = snippet.trim().take(160),
+            lexicalContext = context,
+            actionable = actionable
+        )
+    }
+
+    private fun isControlLiteral(line: String, term: String): Boolean {
+        val normalized = line.lowercase()
+        val escaped = Regex.escape(term.lowercase())
+        val quotedTerm = "[\\\"']$escaped[\\\"']"
+        val namedAssignment = Regex(
+            "(?i)\\b(default(?:target|provider|platform|tool|engine)?|target|provider|platform|backend|implementation|engine|tool|adapter|runtime)\\b\\s*[:=].*$quotedTerm"
+        )
+        return namedAssignment.containsMatchIn(line) ||
+            Regex("(?i)(==|!=)\\s*$quotedTerm").containsMatchIn(line) ||
+            Regex("(?i)$quotedTerm\\s*(==|!=|->)").containsMatchIn(line) ||
+            (normalized.contains("setof(") && Regex("(?i)$quotedTerm").containsMatchIn(line))
     }
 
     private fun classify(path: String): String = when {
         path.startsWith("docs/") || path.startsWith(".flow-agent/") || path == "REPORT.md" || path == "CHANGELOG.md" -> DOCUMENTATION
         path.startsWith("modules/") || path.startsWith("targets/") -> MODULE_OR_TARGET_NOTE
         path.startsWith("conformance/") || path.startsWith("standard/") || path.startsWith("examples/") || path.startsWith("tests/") || path.startsWith("src/test/") -> SCENARIO_OR_CONFORMANCE
+        path.startsWith("src/main/kotlin/org/flowlang/cli/") ||
+            path.startsWith("src/main/kotlin/org/flowlang/release/") -> APPLICATION_COMPOSITION
         path.startsWith("src/main/kotlin/org/flowlang/generators/") ||
             path.startsWith("src/main/kotlin/org/flowlang/adapters/") ||
             path.startsWith("src/main/kotlin/org/flowlang/capabilities/") ||
@@ -150,6 +226,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
 
     companion object {
         const val ACTIVE_SEMANTIC_SOURCE = "active-semantic-source"
+        const val APPLICATION_COMPOSITION = "application-composition"
         const val ADAPTER_BOUNDARY = "adapter-boundary"
         const val SCENARIO_OR_CONFORMANCE = "scenario-or-conformance"
         const val DOCUMENTATION = "documentation"
@@ -170,5 +247,108 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             CiCdBiasTerm("PostgreSQL", "data-system", "Concrete database implementation name."),
             CiCdBiasTerm("postgres", "data-system", "Concrete database identifier.")
         )
+    }
+}
+
+private enum class KotlinSpanKind { CODE, STRING }
+
+private data class KotlinLexicalSpan(
+    val line: Int,
+    val kind: KotlinSpanKind,
+    val text: String
+)
+
+/** Small lexer sufficient to separate executable Kotlin from comments and strings. */
+private object KotlinLexicalScanner {
+    fun scan(text: String): List<KotlinLexicalSpan> {
+        val spans = mutableListOf<KotlinLexicalSpan>()
+        var index = 0
+        var line = 1
+        var blockCommentDepth = 0
+
+        fun advance(value: String) {
+            line += value.count { it == '\n' }
+            index += value.length
+        }
+
+        while (index < text.length) {
+            if (blockCommentDepth > 0) {
+                when {
+                    text.startsWith("/*", index) -> {
+                        blockCommentDepth++
+                        advance("/*")
+                    }
+                    text.startsWith("*/", index) -> {
+                        blockCommentDepth--
+                        advance("*/")
+                    }
+                    else -> advance(text[index].toString())
+                }
+                continue
+            }
+            if (text.startsWith("//", index)) {
+                val end = text.indexOf('\n', index).let { if (it < 0) text.length else it }
+                advance(text.substring(index, end))
+                continue
+            }
+            if (text.startsWith("/*", index)) {
+                blockCommentDepth = 1
+                advance("/*")
+                continue
+            }
+            if (text.startsWith("\"\"\"", index)) {
+                val startLine = line
+                val end = text.indexOf("\"\"\"", index + 3)
+                val finish = if (end < 0) text.length else end + 3
+                val value = text.substring(index + 3, if (end < 0) text.length else end)
+                spans += KotlinLexicalSpan(startLine, KotlinSpanKind.STRING, value)
+                advance(text.substring(index, finish))
+                continue
+            }
+            if (text[index] == '"') {
+                val startLine = line
+                var cursor = index + 1
+                var escaped = false
+                while (cursor < text.length) {
+                    val character = text[cursor]
+                    if (!escaped && character == '"') break
+                    escaped = !escaped && character == '\\'
+                    if (character != '\\') escaped = false
+                    cursor++
+                }
+                val finish = if (cursor < text.length) cursor + 1 else text.length
+                spans += KotlinLexicalSpan(startLine, KotlinSpanKind.STRING, text.substring(index + 1, cursor.coerceAtMost(text.length)))
+                advance(text.substring(index, finish))
+                continue
+            }
+            if (text[index] == '\'') {
+                var cursor = index + 1
+                var escaped = false
+                while (cursor < text.length) {
+                    val character = text[cursor]
+                    if (!escaped && character == '\'') break
+                    escaped = !escaped && character == '\\'
+                    if (character != '\\') escaped = false
+                    cursor++
+                }
+                advance(text.substring(index, if (cursor < text.length) cursor + 1 else text.length))
+                continue
+            }
+
+            val startLine = line
+            val start = index
+            while (
+                index < text.length &&
+                !text.startsWith("//", index) &&
+                !text.startsWith("/*", index) &&
+                !text.startsWith("\"\"\"", index) &&
+                text[index] != '"' &&
+                text[index] != '\''
+            ) {
+                advance(text[index].toString())
+            }
+            if (index > start) spans += KotlinLexicalSpan(startLine, KotlinSpanKind.CODE, text.substring(start, index))
+        }
+        return spans
     }
 }
