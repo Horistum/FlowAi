@@ -51,6 +51,13 @@ data class IntentSourceDirectiveEvidence(
  * Phrases are matched as complete token sequences. Substrings inside identifiers
  * such as `capacity`, `digital-api` or `checkout-api` are not semantic evidence.
  * Negation is clause-local and is retained as evidence rather than erased.
+ *
+ * A deliberately narrow grammar extension supports one bounded entity token in
+ * declared action-domain trigger pairs, for example `migrate orders database`
+ * matching the declared trigger `migrate database`. This is not fuzzy ordered-word
+ * matching: the action and domain tokens must be exactly two positions apart in the
+ * same clause, the middle token must be a plausible entity, and polarity is assessed
+ * across the complete three-token span.
  */
 object IntentSourceDirectiveAuthority {
     private data class Token(val value: String, val index: Int)
@@ -102,7 +109,7 @@ object IntentSourceDirectiveAuthority {
     fun containsAffirmedPhrase(source: String, phrase: String): Boolean =
         affirmedPhrases(source, listOf(phrase)).isNotEmpty()
 
-    /** Number of lexical tokens in one exact trigger phrase. */
+    /** Number of lexical tokens in one declared trigger phrase. */
     fun phraseTokenCount(phrase: String): Int = phraseTokens(phrase).size
 
     private fun mentions(source: String, candidateAliases: List<List<String>>): List<IntentSourceMention> {
@@ -116,24 +123,8 @@ object IntentSourceDirectiveAuthority {
 
         clauses.forEach { clause ->
             orderedAliases.forEach { alias ->
-                if (clause.size >= alias.size) {
-                    for (start in 0..clause.size - alias.size) {
-                        val slice = clause.subList(start, start + alias.size).map(Token::value)
-                        if (slice != alias) continue
-                        val end = start + alias.size
-                        val polarity = if (isNegated(clause, start, end)) {
-                            IntentSourceMentionPolarity.NEGATED
-                        } else {
-                            IntentSourceMentionPolarity.AFFIRMED
-                        }
-                        result += IntentSourceMention(
-                            phrase = alias.joinToString(" "),
-                            polarity = polarity,
-                            tokenStart = clause[start].index,
-                            tokenEndExclusive = clause[end - 1].index + 1
-                        )
-                    }
-                }
+                collectExactMentions(clause, alias, result)
+                collectBoundedEntitySlotMentions(clause, alias, result)
             }
         }
 
@@ -141,6 +132,60 @@ object IntentSourceDirectiveAuthority {
             .distinctBy { listOf(it.tokenStart, it.tokenEndExclusive, it.polarity) }
             .sortedWith(compareBy(IntentSourceMention::tokenStart, IntentSourceMention::tokenEndExclusive))
     }
+
+    private fun collectExactMentions(
+        clause: List<Token>,
+        alias: List<String>,
+        result: MutableList<IntentSourceMention>
+    ) {
+        if (clause.size < alias.size) return
+        for (start in 0..clause.size - alias.size) {
+            val slice = clause.subList(start, start + alias.size).map(Token::value)
+            if (slice != alias) continue
+            val end = start + alias.size
+            result += mention(clause, alias, start, end)
+        }
+    }
+
+    private fun collectBoundedEntitySlotMentions(
+        clause: List<Token>,
+        alias: List<String>,
+        result: MutableList<IntentSourceMention>
+    ) {
+        if (!supportsBoundedEntitySlot(alias) || clause.size < 3) return
+        for (start in 0..clause.size - 3) {
+            val action = clause[start].value
+            val entity = clause[start + 1].value
+            val domain = clause[start + 2].value
+            if (action != alias[0] || domain != alias[1] || !isEntitySlotToken(entity)) continue
+            result += mention(clause, alias, start, start + 3)
+        }
+    }
+
+    private fun mention(
+        clause: List<Token>,
+        alias: List<String>,
+        start: Int,
+        endExclusive: Int
+    ): IntentSourceMention {
+        val polarity = if (isNegated(clause, start, endExclusive)) {
+            IntentSourceMentionPolarity.NEGATED
+        } else {
+            IntentSourceMentionPolarity.AFFIRMED
+        }
+        return IntentSourceMention(
+            phrase = alias.joinToString(" "),
+            polarity = polarity,
+            tokenStart = clause[start].index,
+            tokenEndExclusive = clause[endExclusive - 1].index + 1
+        )
+    }
+
+    private fun supportsBoundedEntitySlot(alias: List<String>): Boolean =
+        alias.size == 2 && alias[0] in ENTITY_SLOT_ACTIONS && alias[1] in ENTITY_SLOT_DOMAINS
+
+    private fun isEntitySlotToken(token: String): Boolean =
+        token.length >= 2 && token !in ENTITY_SLOT_BLOCKERS && token !in PREFIX_NEGATORS
 
     private fun isNegated(tokens: List<Token>, start: Int, endExclusive: Int): Boolean {
         val before = tokens
@@ -200,6 +245,15 @@ object IntentSourceDirectiveAuthority {
 
     private val TOKEN = Regex("""[a-z0-9]+(?:[._/-][a-z0-9]+)*""")
     private val CLAUSE_BOUNDARY = Regex("""(?i)[.!?;,]+|\b(?:but|however|except|instead)\b""")
+
+    private val ENTITY_SLOT_ACTIONS = setOf("migrate")
+    private val ENTITY_SLOT_DOMAINS = setOf("database", "db")
+    private val ENTITY_SLOT_BLOCKERS = setOf(
+        "a", "an", "the", "any", "all", "this", "that", "these", "those",
+        "and", "or", "but", "from", "to", "for", "on", "in", "with", "without",
+        "database", "db", "migration", "migrate", "backup", "restore", "repository",
+        "approval", "notify", "notification", "rollback"
+    )
 
     private val CONTRACTIONS = linkedMapOf(
         "don't" to "do not",

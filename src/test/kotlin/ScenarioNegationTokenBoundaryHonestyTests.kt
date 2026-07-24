@@ -35,6 +35,45 @@ class ScenarioNegationTokenBoundaryHonestyTests {
     }
 
     @Test
+    fun boundedEntitySlotSelectsDatabaseMigrationWithoutRestoringFuzzyMatching() {
+        val response = normalize("Migrate orders database to version 2 and create a backup first.")
+        val steps = response.normalizedIntent.workflows.flatMap { it.steps }
+
+        assertEquals("database-migration", response.report.scenarioSelection?.selectedPack)
+        assertEquals("orders", response.report.entities["database"])
+        assertTrue(steps.any { it.capability == StandardCapability.DATABASE_MIGRATE })
+        assertTrue(steps.any { it.capability == StandardCapability.BACKUP })
+
+        assertEquals(
+            listOf("migrate database"),
+            IntentSourceDirectiveAuthority.affirmedPhrases(
+                "Migrate orders database to version 2.",
+                listOf("migrate database")
+            )
+        )
+        assertTrue(
+            IntentSourceDirectiveAuthority.affirmedPhrases(
+                "Migrate orders service and later inspect the database.",
+                listOf("migrate database")
+            ).isEmpty()
+        )
+    }
+
+    @Test
+    fun boundedEntitySlotPreservesNegationAcrossTheWholeSpan() {
+        assertTrue(
+            IntentSourceDirectiveAuthority.affirmedPhrases(
+                "Do not migrate orders database; create a backup only.",
+                listOf("migrate database")
+            ).isEmpty()
+        )
+
+        val response = normalize("Do not migrate orders database; create a backup only.")
+        assertTrue(response.normalizedIntent.workflows.flatMap { it.steps }
+            .none { it.capability == StandardCapability.DATABASE_MIGRATE })
+    }
+
+    @Test
     fun databaseMigrationDoesNotSynthesizeDeniedBackupEvidence() {
         listOf(
             "Migrate database orders to version 2, we have no backup.",
