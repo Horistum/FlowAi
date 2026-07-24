@@ -98,8 +98,14 @@ internal abstract class ConformanceCheckSupport(
             contractIndex = referenceContractIndex(artifacts, target),
             releaseProfile = referenceReleaseProfile(),
             evidence = referenceEvidence(artifacts, target),
-            integrity = referenceArtifactIntegrity(artifacts, target)
+            integrity = referenceArtifactIntegrity(artifacts, target),
+            conformanceManifest = referenceComplianceManifestFixture()
         )
+
+    protected fun referenceComplianceManifestFixture() = ConformanceManifestBuilder(rootDir).build(
+        summary = ConformanceSummary(listOf(ConformanceCheck("reference.artifact-compliance-fixture", true))),
+        implementation = "flow-reference-compliance-fixture"
+    )
 
     protected fun referenceFreeze(artifacts: PipelineArtifacts, target: String) =
         PublicStandardDraft.freeze(referenceContractIndex(artifacts, target))
@@ -236,6 +242,7 @@ internal abstract class ConformanceCheckSupport(
         "v0.7.3.standard-model-projection-coherence",
         "v0.7.4.architecture-delta-analyzer",
         "v0.7.5.purpose-coverage-ratio",
+        "cli.release.diagnostic-honesty",
         ConformanceQualityGateNames.CORE_CONTRACT_CHECK,
         ConformanceQualityGateNames.SCENARIO_PACK_QUALITY
     )
