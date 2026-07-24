@@ -1,0 +1,59 @@
+id: v0.9.7.9.7-cli-diagnostic-release-honesty
+version: 0.9.7.9.7
+name: CLI Diagnostic and Release Honesty
+stream: core
+status: implementation-complete-validation-pending
+
+purpose: >-
+  Make public CLI diagnostics, rendering decisions and release publication
+  reproducible from concrete manifest, conformance, artifact and repository
+  metadata evidence.
+
+universalInvariant: >-
+  A public READY, PASS, rendered or published claim exists only when the exact
+  evidence required by that claim is present and validated.
+
+confirmedDefects:
+  - CLI renderers could be invoked without an explicit render request.
+  - Preliminary target reports were exported beside concrete manifests.
+  - Manifest existence was labelled as readiness.
+  - Adapter diagnostics were not reconciled against concrete render evidence.
+  - Standard draft evidence fabricated an adapter-ready observation.
+  - Missing conformance evidence did not fail standard compliance.
+  - Standard export changed its destination before final verification.
+  - Release metadata mixed stale validation, package and bounded-work axes.
+  - Runtime diagnostics implied Flow Core runtime ownership.
+
+implementation:
+  - CliTargetEvidenceAuthority builds one manifest-reconciled target evidence set.
+  - HonestFlowCli is the public Gradle application entrypoint for intent, normalize and release-facing commands.
+  - Rendering requires both explicit --render and TargetRenderMode.EXECUTABLE.
+  - Per-flow artifact bundles describe only files actually emitted.
+  - StandardComplianceAnalyzer requires an explicit PASS conformance manifest.
+  - StandardReleaseAssemblyAuthority assembles real conformance and release evidence.
+  - Standard export verifies a sibling staging directory before destination replacement.
+  - ReleaseMetadataHonestyAuthority reconciles Gradle, state, roadmap, report and correction ledger.
+  - Runtime-required diagnostics identify external target-side infrastructure and deny Core ownership.
+
+forbiddenScope:
+  - No runtime executor.
+  - No SDK or plugin lifecycle.
+  - No shell or command projection.
+  - No implicit rendering.
+  - No synthetic executable diagnostic.
+  - No direct publication before verification.
+  - No package, public-standard or existing artifact-contract version bump.
+  - No committed claim that the current candidate CI already passed.
+
+completionEvidence:
+  - Unit tests prove non-render, review-only render rejection, concrete evidence export and conformance-required compliance.
+  - Conformance check cli.release.diagnostic-honesty passes.
+  - Release metadata honesty report passes.
+  - All required release schemas exist.
+  - The exact final branch head passes unmodified Flow CI.
+  - The existing executable reference evidence remains live.
+
+validationPolicy:
+  previousMergedEvidence: "Flow CI #2001, run 30075088660, head 002483835844c207df6375d4159e331bfcaf6415"
+  candidateEvidence: external-pull-request-ci
+  candidateStatus: pending
