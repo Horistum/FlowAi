@@ -37,6 +37,28 @@ GitHub approval is normally expressed through protected environments attached to
 
 This release deliberately does not declare a GitHub native approval-step payload. Job metadata and capability support therefore cannot manufacture native step evidence. GitHub Actions remains review-only for this control until a provider contract represents protected-environment placement, configuration evidence and dependency semantics explicitly.
 
+## Monotonic compatibility and readiness
+
+Capability support, planning compatibility, materialization readiness and renderer readiness are distinct evidence layers. Later evidence may confirm an earlier claim or make it stricter. It cannot remove an existing blocker.
+
+A diagnostic authorization may therefore preserve:
+
+```text
+status = UNSUPPORTED
+capabilityStatus = SUPPORTED
+```
+
+This means the target supports the individual capability, but the concrete plan is still blocked by planning, control, continuity or topology evidence. A complete provider payload does not change that verdict.
+
+`TargetCompatibilityReadinessAnalyzer` now derives its result as the stricter of:
+
+- the existing compatibility status
+- capability support
+- materialization readiness
+- projection readiness
+
+Executable readiness additionally requires no compatibility error. `TargetRenderPolicy` uses effective compatibility and explicit issues, not only `capabilityStatus`. The same blocker therefore survives diagnostic generation, reconciliation and later rendering.
+
 ## Collision-safe identity
 
 Readable ids are retained when they are unique. For example, `release` remains:
@@ -82,8 +104,9 @@ This work does not:
 - add runtime approval services
 - add dynamic plugin discovery
 - encode target commands or shell fragments
+- weaken compatibility blockers after materialization
 - change public standard or artifact contract versions
 
 ## Conformance
 
-The conformance gate `planning.provider-backed-approval-topology-identity` verifies provider payload evidence and collision-safe control/topology identities through the standard test and conformance pipeline.
+The conformance gate `planning.provider-backed-approval-topology-identity` verifies provider payload evidence and collision-safe control/topology identities through the standard test and conformance pipeline. Dedicated monotonicity tests verify that complete native payload evidence cannot erase an existing unsupported compatibility verdict.
