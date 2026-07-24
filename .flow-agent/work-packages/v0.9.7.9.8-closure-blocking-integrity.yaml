@@ -2,7 +2,7 @@ version: "0.9.7.9.8"
 name: "Closure-Blocking Safety, Governance and Diagnostic Integrity"
 type: "bounded-correction"
 stream: core
-status: active
+status: complete
 parentCoreItem: "0.9.7.9"
 objective: "Repair the remaining safety-evidence, governance-signal, diagnostic CLI, canonical-topology and adapter cancellation defects that block an honest v0.9.7 closure decision."
 scopeBoundary:
@@ -34,7 +34,7 @@ implementedSlices:
   - id: closure-blocking-integrity-conformance
 validationPolicy:
   workflow: "Flow CI"
-  requirement: "The active correction implementation head must first pass tooling, structure, clean tests, standalone conformance and reference evidence while 0.9.7.10 remains blocked. A final metadata head may mark the correction complete and unblock 0.9.7.10 only after that implementation evidence exists."
+  requirement: "Implementation head 64e4df9abe8a95adede53b2876c49031e0bfed8f passed unmodified Flow CI #2021, run 30090943402, including tooling, structure, clean tests, standalone conformance and reference evidence while 0.9.7.10 remained blocked. The separate completion-metadata head must pass the same workflow before review readiness."
   buildDiscipline: "Assemble one complete implementation candidate before opening a draft pull request. Close the pull request during any concrete correction set and never trigger CI for file-level connector commits."
 followUpWorkItem:
   version: "0.9.7.10"
