@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.org/schemas/cli-target-outcome.schema.json",
+  "title": "Flow CLI Target Outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["target", "outcome", "diagnosticFallbackUsed", "renderRequested", "renderAuthorized", "diagnostics"],
+  "properties": {
+    "target": { "type": "string", "minLength": 1 },
+    "outcome": { "enum": ["EXECUTABLE", "REVIEW_ONLY", "BLOCKED"] },
+    "diagnosticFallbackUsed": { "type": "boolean" },
+    "renderRequested": { "type": "boolean" },
+    "renderAuthorized": { "type": "boolean" },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "severity", "message"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "severity": { "enum": ["info", "warning", "error"] },
+          "message": { "type": "string", "minLength": 1 },
+          "causeType": { "type": "string" }
+        }
+      }
+    }
+  }
+}
