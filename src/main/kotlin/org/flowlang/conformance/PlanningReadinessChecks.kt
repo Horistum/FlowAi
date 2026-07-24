@@ -4,10 +4,8 @@ import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
 import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
-import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
@@ -27,8 +25,6 @@ import org.flowlang.modules.ModuleContractAnalyzer
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
-import org.flowlang.targets.builtin.JenkinsManifestGenerator
 import org.flowlang.topology.CanonicalTopologyRequirementAuthority
 import org.flowlang.topology.ExecutionTopologyKind
 import java.io.File
@@ -184,23 +180,18 @@ internal class PlanningReadinessChecks(
 
     private fun checkProviderBackedApprovalAndTopologyIdentity(): ConformanceCheck =
         runCheck("planning.provider-backed-approval-topology-identity") {
-            fun compatibility(target: String) = CompatibilityReport(
-                target = target,
-                status = SupportLevel.SUPPORTED,
-                capabilityStatus = SupportLevel.SUPPORTED
-            )
             val plan = ExecutionPlan(
                 flowName = "approval-proof",
                 nodes = listOf(ApprovalNode(id = "approve", message = "Approve release"))
             )
-            val jenkins = JenkinsManifestGenerator().generate(plan, compatibility("jenkins"))
+            val jenkins = manifestPipeline.generateDiagnosticEvidence(plan, "jenkins")
             val jenkinsApproval = jenkins.jobs.single().steps.single()
             require(jenkinsApproval.materialization.status == TargetMaterializationStatus.NATIVE)
             require(jenkinsApproval.rendererPayload?.reference == "input") {
                 "Jenkins approval was not backed by its provider-owned input payload."
             }
 
-            val github = GitHubActionsManifestGenerator().generate(plan, compatibility("github-actions"))
+            val github = manifestPipeline.generateDiagnosticEvidence(plan, "github-actions")
             val githubApproval = github.jobs.single().steps.single()
             require(githubApproval.materialization.status == TargetMaterializationStatus.ADAPTER_REQUIRED)
             require(githubApproval.rendererPayload == null)
