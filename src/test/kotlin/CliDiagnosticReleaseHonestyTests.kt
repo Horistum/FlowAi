@@ -122,6 +122,41 @@ class CliDiagnosticReleaseHonestyTests {
         assertTrue(report.failedChecks.isEmpty())
     }
 
+    @Test
+    fun staleReleaseStateCannotBeHiddenByCorrectReportProse() {
+        val root = Files.createTempDirectory("flow-release-metadata-drift").toFile()
+        try {
+            listOf(
+                "build.gradle.kts",
+                "REPORT.md",
+                "CHANGELOG-v0.9.7.9.md",
+                ".flow-agent/release-state.yaml",
+                ".flow-agent/roadmap.yaml",
+                ".flow-agent/roadmap-core-v0.9.7.9.yaml"
+            ).forEach { path ->
+                val source = File(path)
+                val destination = File(root, path)
+                destination.parentFile?.mkdirs()
+                source.copyTo(destination, overwrite = true)
+            }
+            val state = File(root, ".flow-agent/release-state.yaml")
+            state.writeText(
+                state.readText().replace(
+                    "completedItem: \"0.9.7.9.7\"",
+                    "completedItem: \"0.9.7.9.6\""
+                )
+            )
+
+            val report = ReleaseMetadataHonestyAuthority(root).analyze()
+
+            assertEquals("FAIL", report.status)
+            assertTrue("release.state.completed-item" in report.failedChecks)
+            assertTrue(report.checks.single { it.id == "release.state.completed-item" }.observed == "0.9.7.9.6")
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     private fun captureStdout(block: () -> Unit): String {
         val original = System.out
         val bytes = ByteArrayOutputStream()
