@@ -52,6 +52,10 @@ class ClosureBlockingSafetyIntegrityTests {
             AuthoredControlEvidenceTextStatus.CONFIRMED,
             AuthoredControlEvidenceTextAuthority.assess("retention", IntentString("retain for 30 days")).status
         )
+        assertEquals(
+            AuthoredControlEvidenceTextStatus.CONFIRMED,
+            AuthoredControlEvidenceTextAuthority.assess("retention", IntentString("14d")).status
+        )
     }
 
     @Test
