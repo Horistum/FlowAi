@@ -1,13 +1,15 @@
 kind: FlowConformanceVector
-id: cli-release-diagnostic-honesty
-introducedIn: 0.9.7.9.7
-area: cli-release
-purpose: >-
-  Prove that public CLI readiness, target rendering and release publication
-  claims are derived from concrete evidence and fail closed when evidence is
-  absent, review-only or unverified.
+version: "1.0"
+id: standard.cli-release-diagnostic-honesty.v09797
+introducedIn: "0.9.7.9.7"
+description: >-
+  Public CLI readiness, rendering and release publication claims must be derived
+  from concrete evidence and fail closed when evidence is absent, review-only or unverified.
+input:
+  command: conformance
 expected:
   requiredCheck: cli.release.diagnostic-honesty
+  standardVersion: "0.8.0"
   invariants:
     - The public application routes release-facing commands through the honest CLI authority.
     - CLI target reports are reconciled against the exact emitted manifest.
