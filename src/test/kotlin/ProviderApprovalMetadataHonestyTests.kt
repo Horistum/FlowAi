@@ -1,25 +1,35 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
+import org.flowlang.capabilities.TargetCapability
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.BuiltInTargetProjections
+import org.flowlang.topology.ExecutionTopologyProfile
 
 class ProviderApprovalMetadataHonestyTests {
     @Test
     fun semanticApprovalJobDoesNotClaimProviderApprovalEvidence() {
-        val manifest = GitHubActionsManifestGenerator().generate(
+        val target = TargetCapability(
+            target = "github-actions",
+            description = "Approval metadata test target.",
+            approvals = SupportLevel.SUPPORTED,
+            features = mapOf(
+                "approval.manual" to SupportLevel.SUPPORTED,
+                "approval.inline" to SupportLevel.SUPPORTED
+            ),
+            topologyProfile = ExecutionTopologyProfile.fullySupported(
+                "github-actions",
+                "test:github-actions#topology"
+            )
+        )
+        val manifest = BuiltInTargetProjections.pipeline(mapOf(target.target to target)).generate(
             ExecutionPlan(
                 flowName = "approval-metadata",
                 nodes = listOf(ApprovalNode(id = "approve"))
             ),
-            CompatibilityReport(
-                target = "github-actions",
-                status = SupportLevel.SUPPORTED,
-                capabilityStatus = SupportLevel.SUPPORTED
-            )
+            target.target
         )
         val job = manifest.jobs.single()
 
