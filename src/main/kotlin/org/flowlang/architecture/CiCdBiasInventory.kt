@@ -192,7 +192,12 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     private fun classify(path: String): String = when {
         path.startsWith("docs/") || path.startsWith(".flow-agent/") || path == "REPORT.md" || path == "CHANGELOG.md" -> DOCUMENTATION
         path.startsWith("modules/") || path.startsWith("targets/") -> MODULE_OR_TARGET_NOTE
-        path.startsWith("conformance/") || path.startsWith("standard/") || path.startsWith("examples/") || path.startsWith("tests/") || path.startsWith("src/test/") -> SCENARIO_OR_CONFORMANCE
+        path.startsWith("conformance/") ||
+            path.startsWith("standard/") ||
+            path.startsWith("examples/") ||
+            path.startsWith("tests/") ||
+            path.startsWith("src/test/") ||
+            path.startsWith("src/main/kotlin/org/flowlang/conformance/") -> SCENARIO_OR_CONFORMANCE
         path.startsWith("src/main/kotlin/org/flowlang/cli/") ||
             path.startsWith("src/main/kotlin/org/flowlang/release/") -> APPLICATION_COMPOSITION
         path.startsWith("src/main/kotlin/org/flowlang/generators/") ||
@@ -205,7 +210,8 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     private fun File.shouldScan(): Boolean {
         val path = relativeTo(rootDir).path.replace(File.separatorChar, '/')
         if (path.contains("/build/") || path.contains("/.gradle") || path.endsWith(".class") || path.endsWith(".jar")) return false
-        return extension in setOf("kt", "kts", "md", "yaml", "yml", "json", "flow", "txt") || name in setOf("README.md", "REPORT.md", "CHANGELOG.md")
+        return extension in setOf("kt", "kts", "md", "yaml", "yml", "json", "flow", "txt") ||
+            name in setOf("README.md", "REPORT.md", "CHANGELOG.md")
     }
 
     private fun scanRoots(): List<String> = listOf(
@@ -317,7 +323,11 @@ private object KotlinLexicalScanner {
                     cursor++
                 }
                 val finish = if (cursor < text.length) cursor + 1 else text.length
-                spans += KotlinLexicalSpan(startLine, KotlinSpanKind.STRING, text.substring(index + 1, cursor.coerceAtMost(text.length)))
+                spans += KotlinLexicalSpan(
+                    startLine,
+                    KotlinSpanKind.STRING,
+                    text.substring(index + 1, cursor.coerceAtMost(text.length))
+                )
                 advance(text.substring(index, finish))
                 continue
             }
@@ -347,7 +357,9 @@ private object KotlinLexicalScanner {
             ) {
                 advance(text[index].toString())
             }
-            if (index > start) spans += KotlinLexicalSpan(startLine, KotlinSpanKind.CODE, text.substring(start, index))
+            if (index > start) {
+                spans += KotlinLexicalSpan(startLine, KotlinSpanKind.CODE, text.substring(start, index))
+            }
         }
         return spans
     }
