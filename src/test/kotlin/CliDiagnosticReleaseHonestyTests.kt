@@ -123,7 +123,7 @@ class CliDiagnosticReleaseHonestyTests {
     }
 
     @Test
-    fun staleReleaseStateCannotBeHiddenByCorrectReportProse() {
+    fun staleBoundedCorrectionCannotBeHiddenByCorrectParentRoadmapState() {
         val root = Files.createTempDirectory("flow-release-metadata-drift").toFile()
         try {
             listOf(
@@ -132,26 +132,31 @@ class CliDiagnosticReleaseHonestyTests {
                 "CHANGELOG-v0.9.7.9.md",
                 ".flow-agent/release-state.yaml",
                 ".flow-agent/roadmap.yaml",
-                ".flow-agent/roadmap-core-v0.9.7.9.yaml"
+                ".flow-agent/roadmap-core-v0.9.7.9.yaml",
+                ".flow-agent/work-packages/v0.9.7.9.7-cli-diagnostic-release-honesty.yaml"
             ).forEach { path ->
                 val source = File(path)
                 val destination = File(root, path)
                 destination.parentFile?.mkdirs()
                 source.copyTo(destination, overwrite = true)
             }
-            val state = File(root, ".flow-agent/release-state.yaml")
-            state.writeText(
-                state.readText().replace(
-                    "completedItem: \"0.9.7.9.7\"",
-                    "completedItem: \"0.9.7.9.6\""
+            val workPackage = File(root, ".flow-agent/work-packages/v0.9.7.9.7-cli-diagnostic-release-honesty.yaml")
+            workPackage.writeText(
+                workPackage.readText().replace(
+                    "version: \"0.9.7.9.7\"",
+                    "version: \"0.9.7.9.6\""
                 )
             )
 
             val report = ReleaseMetadataHonestyAuthority(root).analyze()
 
             assertEquals("FAIL", report.status)
-            assertTrue("release.state.completed-item" in report.failedChecks)
-            assertTrue(report.checks.single { it.id == "release.state.completed-item" }.observed == "0.9.7.9.6")
+            assertTrue("release.work-package.correction-item" in report.failedChecks)
+            assertEquals(
+                "0.9.7.9.6",
+                report.checks.single { it.id == "release.work-package.correction-item" }.observed
+            )
+            assertTrue(report.checks.single { it.id == "release.state.parent-item" }.status == "PASS")
         } finally {
             root.deleteRecursively()
         }
