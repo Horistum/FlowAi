@@ -69,6 +69,9 @@ class ArtifactEvidenceAnalyzer {
         "conformance-suite.json" -> "PublicStandardDraft.conformanceSuite"
         "flow-standard-draft.json" -> "PublicStandardDraft.draft"
         "release-metadata-honesty-report.json" -> "ReleaseMetadataHonestyAuthority"
+        "target-neutral-planning-report.json" -> "CliTargetNeutralPlanningEvidence"
+        "cli-target-outcome.json" -> "CliTargetEvidenceAuthority"
+        "target-render-readiness.json" -> "TargetRenderPolicy"
         else -> "flow-public-pipeline"
     }
 }
