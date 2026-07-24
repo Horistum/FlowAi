@@ -9,7 +9,7 @@ group = "org.flowlang"
 // identifiers are bounded work items, not additional package versions.
 version = "0.9.5"
 
-application { mainClass.set("org.flowlang.cli.FlowCliKt") }
+application { mainClass.set("org.flowlang.cli.honest.HonestFlowCliKt") }
 
 kotlin { jvmToolchain(21) }
 
