@@ -2,6 +2,7 @@ package org.flowlang.standard
 
 import org.flowlang.artifacts.ReferenceIntentCorpusReport
 import org.flowlang.artifacts.StandardSurface
+import org.flowlang.intent.IntentSourceDirectiveAuthority
 import org.flowlang.intent.StandardCapability
 import org.flowlang.scenarios.ScenarioPackDefinition
 import org.flowlang.scenarios.ScenarioPackRegistry
@@ -98,7 +99,7 @@ class ScenarioPackQualityAnalyzer(
     private fun hasUsefulExample(definition: ScenarioPackDefinition): Boolean =
         definition.exampleRequests.any { example ->
             val exampleTokens = tokens(example)
-            definition.triggers.any { trigger -> containsTokensInOrder(exampleTokens, tokens(trigger)) } ||
+            IntentSourceDirectiveAuthority.affirmedPhrases(example, definition.triggers).isNotEmpty() ||
                 definition.capabilities.any { capability -> capability.name.lowercase().split('_').any { it in exampleTokens } }
         }
 
@@ -111,17 +112,7 @@ class ScenarioPackQualityAnalyzer(
     private fun tokens(value: String): List<String> =
         Regex("[a-z0-9._/-]+").findAll(value.lowercase()).map { it.value }.toList()
 
-    private fun containsTokensInOrder(textTokens: List<String>, queryTokens: List<String>): Boolean {
-        if (queryTokens.isEmpty()) return false
-        var index = 0
-        for (token in textTokens) {
-            if (token == queryTokens[index]) {
-                index += 1
-                if (index == queryTokens.size) return true
-            }
-        }
-        return false
-    }
+
 
     private fun issue(code: String, packId: String, message: String): ScenarioPackQualityIssue =
         ScenarioPackQualityIssue(code, packId, message)
