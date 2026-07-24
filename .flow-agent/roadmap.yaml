@@ -63,8 +63,8 @@ architectureConstitution:
 currentDecision:
   completedItem: "0.9.7.9"
   completedItemName: "Intent Lowering and Diagnostic Honesty"
-  correctionState: "active"
-  activeCorrectionWorkPackage: ".flow-agent/work-packages/v0.9.7.9.8-closure-blocking-integrity.yaml"
+  correctionState: "complete"
+  activeCorrectionWorkPackage: ""
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
-  nextCoreItemStatus: "blocked"
+  nextCoreItemStatus: "next"
