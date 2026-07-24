@@ -83,7 +83,7 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
                 }
             }
         }
-        return TargetCapabilityNegotiationReport(
+        val negotiation = TargetCapabilityNegotiationReport(
             planVersion = plan.planVersion,
             flowName = plan.flowName,
             requiredCapabilities = required,
@@ -97,6 +97,7 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             blockedTargets = entries.filter { it.status == SupportLevel.UNSUPPORTED || it.unsupported.isNotEmpty() }.map { it.target },
             readinessEvidenceAvailable = false
         )
+        return DerivedModelIntegrityAuthority.requireNegotiation(negotiation)
     }
 
     fun analyze(plan: ExecutionPlan, targetName: String, strict: Boolean = false): CompatibilityReport {
