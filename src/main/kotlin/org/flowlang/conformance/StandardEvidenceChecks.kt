@@ -81,11 +81,12 @@ internal class StandardEvidenceChecks(
 
     private fun checkV0319StandardComplianceReport(): ConformanceCheck = runCheck("v0.3.19.standard-compliance-report") {
         val artifacts = buildPipeline("jenkins", strict = false)
-        val compliance = referenceCompliance(artifacts, "jenkins")
+        val compliance = referenceComplianceWithExplicitEvidence(artifacts, "jenkins")
         require(compliance.status == "PASS") { "Reference public artifact set must pass compliance gates: ${compliance.failedGates.joinToString()}" }
         require(compliance.gates.any { it.id == "artifact-integrity.pass" && it.status == "PASS" }) { "Compliance must include artifact integrity gate." }
         require(compliance.gates.any { it.id == "contract-index.present" && it.status == "PASS" }) { "Compliance must include contract index gate." }
         require(compliance.gates.any { it.id == "bundle.contains-compliance" && it.status == "PASS" }) { "Compliance must verify bundle membership." }
+        require(compliance.gates.any { it.id == "conformance.pass" && it.status == "PASS" }) { "Compliance must require explicit passing conformance evidence." }
     }
 
     private fun checkV0320StandardFreezeReport(): ConformanceCheck = runCheck("v0.3.20.standard-freeze-report") {
@@ -126,13 +127,31 @@ internal class StandardEvidenceChecks(
 
     private fun checkV040PublicStandardDraft(): ConformanceCheck = runCheck("v0.4.0.public-standard-draft") {
         val artifacts = buildPipeline("jenkins", strict = false)
-        val draft = referenceDraft(artifacts, "jenkins")
+        val compliance = referenceComplianceWithExplicitEvidence(artifacts, "jenkins")
+        val draft = PublicStandardDraft.draft(referenceArtifactBundle(artifacts, "jenkins"), compliance)
         val index = referenceStandardIndex(artifacts, "jenkins")
-        val suite = referenceConformanceSuite()
+        val suite = PublicStandardDraft.conformanceSuite(referencePassingConformanceManifest())
         require(draft.status == "PASS") { "Public standard draft must pass compliance." }
         require(draft.purpose.contains("Human/AI intent")) { "Draft must preserve Flow's original intent standardization purpose." }
         require(index.artifacts.contains("flow-standard-draft.json")) { "Standard index must include draft artifact." }
         require(suite.referenceCorpus == "reference-corpus-index.json") { "Conformance suite must point to reference corpus." }
         require(suite.negativeCorpus == "negative-conformance-corpus.json") { "Conformance suite must point to negative corpus." }
     }
+
+    private fun referenceComplianceWithExplicitEvidence(
+        artifacts: PipelineArtifacts,
+        target: String
+    ) = StandardComplianceAnalyzer().analyze(
+        bundle = referenceArtifactBundle(artifacts, target),
+        contractIndex = referenceContractIndex(artifacts, target),
+        releaseProfile = referenceReleaseProfile(),
+        evidence = referenceEvidence(artifacts, target),
+        integrity = referenceArtifactIntegrity(artifacts, target),
+        conformanceManifest = referencePassingConformanceManifest()
+    )
+
+    private fun referencePassingConformanceManifest() = ConformanceManifestBuilder(rootDir).build(
+        summary = ConformanceSummary(listOf(ConformanceCheck("reference.artifact-compliance-fixture", true))),
+        implementation = "flow-reference-compliance-fixture"
+    )
 }
