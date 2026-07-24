@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.org/schemas/target-neutral-planning-report.schema.json",
+  "title": "Flow Target-Neutral Planning Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["flowName", "planVersion", "targetSelected", "negotiation", "selection", "message"],
+  "properties": {
+    "flowName": { "type": "string", "minLength": 1 },
+    "planVersion": { "type": "string", "minLength": 1 },
+    "targetSelected": { "const": false },
+    "negotiation": { "type": "object" },
+    "selection": { "type": "object" },
+    "message": { "type": "string", "minLength": 1 }
+  }
+}
