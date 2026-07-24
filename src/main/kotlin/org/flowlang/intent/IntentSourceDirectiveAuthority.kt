@@ -52,12 +52,16 @@ data class IntentSourceDirectiveEvidence(
  * such as `capacity`, `digital-api` or `checkout-api` are not semantic evidence.
  * Negation is clause-local and is retained as evidence rather than erased.
  *
- * A deliberately narrow grammar extension supports one bounded entity token in
- * declared action-domain trigger pairs, for example `migrate orders database`
- * matching the declared trigger `migrate database`. This is not fuzzy ordered-word
- * matching: the action and domain tokens must be exactly two positions apart in the
- * same clause, the middle token must be a plausible entity, and polarity is assessed
- * across the complete three-token span.
+ * Two deliberately bounded grammar forms supplement exact phrases:
+ *
+ * - an action-domain pair may contain one entity token, for example
+ *   `migrate orders database` matching the declared `migrate database` trigger;
+ * - a database migration operation may be written as
+ *   `migration v42 on database`, matching declared database-migration triggers.
+ *
+ * Neither form is fuzzy ordered-word matching. Every accepted form has a fixed
+ * maximum span, remains inside one clause, requires exact operation/domain tokens,
+ * and derives polarity from the complete matched span.
  */
 object IntentSourceDirectiveAuthority {
     private data class Token(val value: String, val index: Int)
@@ -125,6 +129,7 @@ object IntentSourceDirectiveAuthority {
             orderedAliases.forEach { alias ->
                 collectExactMentions(clause, alias, result)
                 collectBoundedEntitySlotMentions(clause, alias, result)
+                collectDatabaseMigrationOperationMentions(clause, alias, result)
             }
         }
 
@@ -162,6 +167,52 @@ object IntentSourceDirectiveAuthority {
         }
     }
 
+    /**
+     * Recognizes a bounded operation-first database migration form such as:
+     *
+     * `run migration v42 on database orders`
+     *
+     * The declared candidate remains `database migration` (or its `db` variant),
+     * so scenario specificity reflects two independent semantic tokens rather than
+     * a generic one-token `migration` match. The bridge accepts only:
+     *
+     * `migration [one version/entity token] (on|for|of) (database|db)`
+     *
+     * and never crosses a clause boundary.
+     */
+    private fun collectDatabaseMigrationOperationMentions(
+        clause: List<Token>,
+        alias: List<String>,
+        result: MutableList<IntentSourceMention>
+    ) {
+        if (!supportsDatabaseMigrationOperation(alias)) return
+        val domain = alias.first { it in DATABASE_DOMAINS }
+        clause.indices.forEach { start ->
+            if (clause[start].value != "migration") return@forEach
+
+            val directDomain = clause.getOrNull(start + 1)?.value
+            if (directDomain == domain) {
+                result += mention(clause, alias, start, start + 2)
+            }
+
+            val prepositionAfterOperation = clause.getOrNull(start + 1)?.value
+            val domainAfterPreposition = clause.getOrNull(start + 2)?.value
+            if (prepositionAfterOperation in MIGRATION_DOMAIN_PREPOSITIONS && domainAfterPreposition == domain) {
+                result += mention(clause, alias, start, start + 3)
+            }
+
+            val bridge = clause.getOrNull(start + 1)?.value
+            val preposition = clause.getOrNull(start + 2)?.value
+            val bridgedDomain = clause.getOrNull(start + 3)?.value
+            if (
+                bridge != null && isMigrationBridgeToken(bridge) &&
+                preposition in MIGRATION_DOMAIN_PREPOSITIONS && bridgedDomain == domain
+            ) {
+                result += mention(clause, alias, start, start + 4)
+            }
+        }
+    }
+
     private fun mention(
         clause: List<Token>,
         alias: List<String>,
@@ -182,10 +233,16 @@ object IntentSourceDirectiveAuthority {
     }
 
     private fun supportsBoundedEntitySlot(alias: List<String>): Boolean =
-        alias.size == 2 && alias[0] in ENTITY_SLOT_ACTIONS && alias[1] in ENTITY_SLOT_DOMAINS
+        alias.size == 2 && alias[0] in ENTITY_SLOT_ACTIONS && alias[1] in DATABASE_DOMAINS
+
+    private fun supportsDatabaseMigrationOperation(alias: List<String>): Boolean =
+        alias.size == 2 && "migration" in alias && alias.any { it in DATABASE_DOMAINS }
 
     private fun isEntitySlotToken(token: String): Boolean =
         token.length >= 2 && token !in ENTITY_SLOT_BLOCKERS && token !in PREFIX_NEGATORS
+
+    private fun isMigrationBridgeToken(token: String): Boolean =
+        token.length >= 2 && token !in MIGRATION_BRIDGE_BLOCKERS && token !in PREFIX_NEGATORS
 
     private fun isNegated(tokens: List<Token>, start: Int, endExclusive: Int): Boolean {
         val before = tokens
@@ -247,12 +304,16 @@ object IntentSourceDirectiveAuthority {
     private val CLAUSE_BOUNDARY = Regex("""(?i)[.!?;,]+|\b(?:but|however|except|instead)\b""")
 
     private val ENTITY_SLOT_ACTIONS = setOf("migrate")
-    private val ENTITY_SLOT_DOMAINS = setOf("database", "db")
+    private val DATABASE_DOMAINS = setOf("database", "db")
+    private val MIGRATION_DOMAIN_PREPOSITIONS = setOf("on", "for", "of")
     private val ENTITY_SLOT_BLOCKERS = setOf(
         "a", "an", "the", "any", "all", "this", "that", "these", "those",
         "and", "or", "but", "from", "to", "for", "on", "in", "with", "without",
         "database", "db", "migration", "migrate", "backup", "restore", "repository",
         "approval", "notify", "notification", "rollback"
+    )
+    private val MIGRATION_BRIDGE_BLOCKERS = ENTITY_SLOT_BLOCKERS + setOf(
+        "run", "execute", "perform", "start", "stop", "verify", "create", "take"
     )
 
     private val CONTRACTIONS = linkedMapOf(

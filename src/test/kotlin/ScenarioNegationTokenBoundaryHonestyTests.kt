@@ -74,6 +74,47 @@ class ScenarioNegationTokenBoundaryHonestyTests {
     }
 
     @Test
+    fun referenceCorpusOperationSyntaxSelectsDatabaseMigrationOverGenericBackup() {
+        val source = "Create a backup of database orders, run migration v42 on database orders, verify and rollback on failure."
+        val response = normalize(source)
+        val steps = response.normalizedIntent.workflows.flatMap { it.steps }
+
+        assertEquals("database-migration", response.report.scenarioSelection?.selectedPack)
+        assertEquals("orders", response.report.entities["database"])
+        assertTrue(steps.any { it.capability == StandardCapability.BACKUP })
+        assertTrue(steps.any { it.capability == StandardCapability.DATABASE_MIGRATE })
+        assertTrue(steps.any { it.capability == StandardCapability.ROLLBACK })
+        assertTrue(
+            IntentSourceDirectiveAuthority.affirmedPhrases(
+                source,
+                listOf("database migration")
+            ).isNotEmpty()
+        )
+    }
+
+    @Test
+    fun operationSyntaxRemainsClauseBoundedAndNegationAware() {
+        assertTrue(
+            IntentSourceDirectiveAuthority.affirmedPhrases(
+                "Do not run migration v42 on database orders; create a backup only.",
+                listOf("database migration")
+            ).isEmpty()
+        )
+        assertTrue(
+            IntentSourceDirectiveAuthority.affirmedPhrases(
+                "Review migration v42. Inspect database orders separately.",
+                listOf("database migration")
+            ).isEmpty()
+        )
+        assertTrue(
+            IntentSourceDirectiveAuthority.affirmedPhrases(
+                "Run migration planning for the service on database orders.",
+                listOf("database migration")
+            ).isEmpty()
+        )
+    }
+
+    @Test
     fun databaseMigrationDoesNotSynthesizeDeniedBackupEvidence() {
         listOf(
             "Migrate database orders to version 2, we have no backup.",
