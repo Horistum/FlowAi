@@ -65,9 +65,14 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
             runnerChecks = conformanceSummary.checks.map { it.name },
             releaseProfileChecks = releaseProfile.requiredConformanceChecks
         )
+        require(vectorIndex.status == "PASS") {
+            "Conformance vector index is not release-consistent: " +
+                (vectorIndex.checksMissingFromRunner + vectorIndex.releaseProfileChecksMissingVector).joinToString()
+        }
         val releaseMetadata = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
         val diagnosticCoverage = DiagnosticCoverageAnalyzer().analyze(emptyList())
         val bundle = releaseBundle()
+        requireDeclaredSchemasExist(bundle)
         val emittedNames = bundle.pipeline.toSet()
         val integrity = ArtifactIntegrityAnalyzer().analyze(
             bundle = bundle,
@@ -82,6 +87,9 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
         }
         val contractIndex = StandardContractIndexAnalyzer().analyze(bundle)
         val evidence = ArtifactEvidenceAnalyzer().analyze(bundle)
+        require(evidence.missingEvidence.isEmpty()) {
+            "Release artifact provenance is incomplete: ${evidence.missingEvidence.joinToString()}"
+        }
         val compliance = StandardComplianceAnalyzer().analyze(
             bundle = bundle,
             contractIndex = contractIndex,
@@ -208,21 +216,67 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
             hasManifest = false,
             renderedArtifact = null
         ).artifacts.associateBy { it.name }
+        val sourceArtifacts = setOf(
+            "standard-version.txt",
+            "standard-diagnostic-catalog.json",
+            "standard-release-profile.json",
+            "compatibility-policy.json",
+            "reference-corpus-index.json",
+            "negative-conformance-corpus.json",
+            "target-conformance-profile.json",
+            "public-standard-surface.json",
+            "compatibility-migration-policy.json",
+            "reference-intent-corpus.json",
+            "target-semantics-matrix.json",
+            "standard-export-bundle.json",
+            "conformance-levels.json",
+            "standard-export-manifest.json"
+        )
+        val explicitProvenance = mapOf(
+            "diagnostic-coverage-report.json" to listOf("standard-diagnostic-catalog.json"),
+            "conformance-manifest.json" to listOf("conformance/", "src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt"),
+            "conformance-vector-index.json" to listOf("conformance/", "standard-release-profile.json", "conformance-manifest.json"),
+            "flow-artifact-bundle.json" to names.filterNot { it == "flow-artifact-bundle.json" },
+            "artifact-integrity-report.json" to listOf("flow-artifact-bundle.json", "diagnostic-coverage-report.json", "standard-version.txt"),
+            "standard-contract-index.json" to listOf("flow-artifact-bundle.json", "conformance-manifest.json"),
+            "artifact-evidence-report.json" to listOf("flow-artifact-bundle.json"),
+            "standard-compliance-report.json" to listOf(
+                "standard-contract-index.json",
+                "standard-release-profile.json",
+                "artifact-evidence-report.json",
+                "artifact-integrity-report.json",
+                "conformance-manifest.json"
+            ),
+            "standard-freeze-report.json" to listOf("standard-contract-index.json"),
+            "standard-index.json" to listOf("standard-contract-index.json", "flow-artifact-bundle.json", "conformance-manifest.json"),
+            "conformance-suite.json" to listOf("conformance-manifest.json", "reference-corpus-index.json", "negative-conformance-corpus.json"),
+            "flow-standard-draft.json" to listOf("standard-index.json", "conformance-suite.json", "standard-compliance-report.json"),
+            "release-metadata-honesty-report.json" to listOf(
+                "build.gradle.kts",
+                ".flow-agent/release-state.yaml",
+                ".flow-agent/roadmap.yaml",
+                "REPORT.md",
+                "CHANGELOG-v0.9.7.9.md"
+            )
+        )
         val entries = names.mapIndexed { index, name ->
             val known = catalog[name]
+            val derived = name !in sourceArtifacts
+            val provenance = known?.derivedFrom.orEmpty().ifEmpty { explicitProvenance[name].orEmpty() }
             FlowArtifactEntry(
                 name = name,
                 role = known?.role ?: if (name.endsWith("report.json")) FlowArtifactRole.REPORT else FlowArtifactRole.METADATA,
                 schema = when {
                     name == "standard-version.txt" -> ""
                     name == "release-metadata-honesty-report.json" -> "schemas/release-metadata-honesty-report.schema.json"
-                    name.endsWith(".json") -> known?.schema?.takeIf { it.isNotBlank() } ?: "schemas/$name"
+                    name.endsWith(".json") -> known?.schema?.takeIf { it.isNotBlank() }
+                        ?: "schemas/${name.removeSuffix(".json")}.schema.json"
                     else -> known?.schema.orEmpty()
                 },
                 required = true,
-                derived = name != "standard-version.txt",
+                derived = derived,
                 pipelineIndex = index + 1,
-                derivedFrom = known?.derivedFrom.orEmpty()
+                derivedFrom = if (derived) provenance else emptyList()
             )
         }
         return FlowArtifactBundleReport(
@@ -234,6 +288,18 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
             optionalArtifacts = emptyList(),
             pipeline = names
         )
+    }
+
+    private fun requireDeclaredSchemasExist(bundle: FlowArtifactBundleReport) {
+        val missing = bundle.artifacts
+            .filter { it.required && it.name.endsWith(".json") }
+            .map { it.schema }
+            .filter { it.isBlank() || !File(rootDir, it).isFile }
+            .distinct()
+            .sorted()
+        require(missing.isEmpty()) {
+            "Release bundle declares missing schemas: ${missing.joinToString()}"
+        }
     }
 
     private fun copyStandardDirectories(outputDir: File) {
