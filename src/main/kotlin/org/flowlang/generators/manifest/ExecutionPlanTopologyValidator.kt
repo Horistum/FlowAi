@@ -23,6 +23,8 @@ class UnresolvedExecutionTopologyException(
 internal object ExecutionPlanTopologyValidator {
     fun validate(plan: ExecutionPlan): List<PlanningEvidenceIssue> {
         val issues = mutableListOf<PlanningEvidenceIssue>()
+        issues += ExecutionPlanDerivedProjectionValidator.validate(plan)
+
         val duplicateIds = plan.topologyRequirements.groupingBy(ExecutionTopologyRequirement::id)
             .eachCount().filterValues { it > 1 }.keys
         duplicateIds.forEach { id ->
