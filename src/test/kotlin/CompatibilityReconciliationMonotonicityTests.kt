@@ -10,6 +10,7 @@ import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMaterialization
+import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererPayload
@@ -63,6 +64,40 @@ class CompatibilityReconciliationMonotonicityTests {
         assertTrue(reconciled.compatibility.executable)
         assertEquals(ProjectionReadinessStatus.EXECUTABLE, reconciled.compatibility.projectionReadiness)
         assertEquals(TargetRenderMode.EXECUTABLE, TargetRenderPolicy.evaluate(reconciled).mode)
+    }
+
+    @Test
+    fun derivedPartialCompatibilityDoesNotCreateASecondGenericFinding() {
+        val manifest = TargetManifest(
+            target = "test-target",
+            flowName = "review-idempotence",
+            compatibility = CompatibilityReport(
+                target = "test-target",
+                status = SupportLevel.SUPPORTED,
+                capabilityStatus = SupportLevel.SUPPORTED
+            ),
+            jobs = listOf(TargetJob(
+                id = "main",
+                steps = listOf(TargetStep(
+                    id = "notes-step",
+                    type = "action",
+                    materialization = TargetMaterialization(
+                        status = TargetMaterializationStatus.NOTES_PROJECTED,
+                        capability = "standard.execute",
+                        reason = "Concrete provider payload is not available."
+                    )
+                ))
+            ))
+        )
+
+        val before = TargetRenderPolicy.evaluate(manifest)
+        val reconciled = manifest.reconcileCompatibilityReadiness()
+        val after = TargetRenderPolicy.evaluate(reconciled)
+
+        assertEquals(TargetRenderMode.REVIEW_ONLY, before.mode)
+        assertEquals(SupportLevel.PARTIAL, reconciled.compatibility.status)
+        assertEquals(before.findings, after.findings)
+        assertTrue(after.findings.none { it.status == "COMPATIBILITY_PARTIAL" })
     }
 
     private fun nativeManifest(compatibility: CompatibilityReport): TargetManifest = TargetManifest(
