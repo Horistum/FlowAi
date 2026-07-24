@@ -90,7 +90,7 @@ object StandardDiagnosticCatalog {
         code("TARGET_STRICT_PARTIAL_FEATURE", "target", "error", "execution-readiness-report.json", "Strict mode treats partial target support as blocking."),
         code("TARGET_PARTIAL_FEATURE", "target", "warning", "execution-readiness-report.json", "Target can represent a feature only partially."),
         code("TARGET_UNSUPPORTED_CAPABILITY", "target", "error", "execution-readiness-report.json", "Target does not support a required capability."),
-        code("TARGET_REQUIRES_RUNTIME", "target", "warning", "execution-readiness-report.json", "Target requires Flow runtime or equivalent adapter support for a capability."),
+        code("TARGET_REQUIRES_RUNTIME", "target", "warning", "execution-readiness-report.json", "Target requires an external target-side runtime or adapter capability; Flow Core does not provide one."),
         code("TARGET_PARTIAL_CAPABILITY", "target", "warning", "execution-readiness-report.json", "Target only partially supports a required capability."),
         code("UNKNOWN_TARGET", "target", "error", "execution-readiness-report.json", "Requested target is not present in the target registry."),
 
