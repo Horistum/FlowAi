@@ -47,7 +47,7 @@ object CollisionSafeIdentityAuthority {
             }
         }
 
-        val unique = source.groupBy(::semanticKey).values.map { duplicates ->
+        val unique = source.groupBy { candidate -> semanticKey(candidate) }.values.map { duplicates ->
             when {
                 duplicates.size == 1 -> duplicates.single()
                 duplicatePolicy == SemanticDuplicatePolicy.KEEP_FIRST -> duplicates.first()
@@ -58,7 +58,7 @@ object CollisionSafeIdentityAuthority {
             }
         }
 
-        val collisionGroups = unique.groupBy(CollisionSafeIdentityCandidate<T>::baseId)
+        val collisionGroups = unique.groupBy { candidate -> candidate.baseId }
         val assignments = unique.map { candidate ->
             val group = collisionGroups.getValue(candidate.baseId)
             val id = if (group.size == 1) {
@@ -69,7 +69,7 @@ object CollisionSafeIdentityAuthority {
             CollisionSafeIdentityAssignment(id, candidate.value)
         }
 
-        require(assignments.map(CollisionSafeIdentityAssignment<T>::id).distinct().size == assignments.size) {
+        require(assignments.map { assignment -> assignment.id }.distinct().size == assignments.size) {
             "Collision-safe identity assignment still produced duplicate ids."
         }
         return assignments
@@ -80,7 +80,7 @@ object CollisionSafeIdentityAuthority {
 
     private fun digest(components: List<String?>): String {
         val hash = MessageDigest.getInstance("SHA-256").digest(encode(components).toByteArray(Charsets.UTF_8))
-        return hash.joinToString("") { byte -> "%02x".format(byte) }.take(12)
+        return hash.joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }.take(12)
     }
 
     private fun encode(components: List<String?>): String = buildString {
