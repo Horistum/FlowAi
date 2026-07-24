@@ -3,9 +3,13 @@ package org.flowlang.conformance
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
+import org.flowlang.architecture.ArchitectureGovernanceIntegrityAuthority
+import org.flowlang.architecture.GovernedArchitectureAnalyzer
 import org.flowlang.capabilities.CompatibilityAnalyzer
+import org.flowlang.capabilities.DerivedModelIntegrityAuthority
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessStatus
+import org.flowlang.capabilities.TargetDecisionTraceAnalyzer
 import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
@@ -41,7 +45,8 @@ internal class PlanningReadinessChecks(
         checkV036ExecutionPlanPortability(),
         checkV037ExecutionReadinessReport(),
         checkV038TargetSelectionReport(),
-        checkProviderBackedApprovalAndTopologyIdentity()
+        checkProviderBackedApprovalAndTopologyIdentity(),
+        checkDerivedModelAndGovernanceIntegrity()
     )
 
     private fun checkV034CapabilityModuleContracts(): ConformanceCheck = runCheck("v0.3.4.capability-module-contracts") {
@@ -226,6 +231,58 @@ internal class PlanningReadinessChecks(
                 .filter { it.kind == ExecutionTopologyKind.WORKFLOW_SCOPE }
             require(topology.size == 2 && topology.map { it.id }.toSet().size == 2) {
                 "Lossy topology slugging discarded a distinct workflow scope."
+            }
+        }
+
+    private fun checkDerivedModelAndGovernanceIntegrity(): ConformanceCheck =
+        runCheck("governance.derived-model-integrity") {
+            val artifacts = buildPipeline("jenkins", strict = false)
+            val preliminaryNegotiation = CompatibilityAnalyzer(targets).negotiate(artifacts.plan, strict = false)
+            val preliminarySelection = TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false)
+            DerivedModelIntegrityAuthority.requireNegotiation(preliminaryNegotiation)
+            DerivedModelIntegrityAuthority.requireSelection(preliminarySelection)
+
+            val manifests = listOf(
+                artifacts.manifest,
+                manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "github-actions"),
+                manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
+            )
+            val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(preliminaryNegotiation, manifests)
+            val selection = TargetCompatibilityReadinessAnalyzer.reconcile(preliminarySelection, manifests)
+            DerivedModelIntegrityAuthority.requireNegotiation(negotiation)
+            DerivedModelIntegrityAuthority.requireSelection(selection)
+
+            val trace = TargetDecisionTraceAnalyzer(targets).analyze(
+                plan = artifacts.plan,
+                requestedTarget = "jenkins",
+                strict = false,
+                negotiation = negotiation,
+                selection = selection
+            )
+            require(trace.recommendedTarget == selection.recommendedTarget) {
+                "Decision trace recommendation diverged from validated target selection."
+            }
+
+            val duplicateManifestRejected = runCatching {
+                TargetCompatibilityReadinessAnalyzer.reconcile(
+                    preliminarySelection,
+                    listOf(artifacts.manifest, artifacts.manifest)
+                )
+            }.isFailure
+            require(duplicateManifestRejected) {
+                "Duplicate manifest evidence was silently overwritten by target identity."
+            }
+
+            val governance = GovernedArchitectureAnalyzer(rootDir).analyze()
+            require(governance.status == "PASS") {
+                "Repository governance failed integrity validation: ${governance.issues.joinToString { it.code }}"
+            }
+            val corrupted = governance.copy(status = "FAIL")
+            val corruptedStatusRejected = runCatching {
+                ArchitectureGovernanceIntegrityAuthority.requireValid(rootDir, corrupted)
+            }.isFailure
+            require(corruptedStatusRejected) {
+                "Governance summary status was accepted independently from its issue evidence."
             }
         }
 }
