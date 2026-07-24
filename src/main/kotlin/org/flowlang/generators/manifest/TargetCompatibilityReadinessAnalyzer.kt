@@ -2,6 +2,7 @@ package org.flowlang.generators.manifest
 
 import org.flowlang.capabilities.CompatibilityReadinessFinding
 import org.flowlang.capabilities.CompatibilityReadinessReport
+import org.flowlang.capabilities.DerivedModelIntegrityAuthority
 import org.flowlang.capabilities.ExecutionReadinessReport
 import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.MaterializationReadinessStatus
@@ -20,6 +21,9 @@ import org.flowlang.capabilities.TargetSelectionReport
  * only prevents capability optimism from being presented as executable readiness.
  * Reconciliation is monotonic: concrete evidence may confirm or reduce readiness,
  * but it must never erase an existing compatibility or planning blocker.
+ *
+ * Reconciliation is deliberately one-way. A readiness-aware report cannot be fed
+ * back into this authority as though it were preliminary source evidence.
  */
 object TargetCompatibilityReadinessAnalyzer {
     private val completedMaterialization = setOf(TargetMaterializationStatus.NATIVE)
@@ -89,6 +93,9 @@ object TargetCompatibilityReadinessAnalyzer {
         readiness: ExecutionReadinessReport,
         manifest: TargetManifest
     ): ExecutionReadinessReport {
+        require(!readiness.readinessEvidenceAvailable) {
+            "Execution readiness for '${readiness.target}' is already reconciled; derived evidence cannot be used as preliminary input."
+        }
         require(readiness.target == manifest.target) {
             "Execution readiness target '${readiness.target}' does not match manifest target '${manifest.target}'."
         }
@@ -141,12 +148,17 @@ object TargetCompatibilityReadinessAnalyzer {
         )
     }
 
-    /** Applies concrete manifest evidence to a capability negotiation report. */
+    /** Applies concrete manifest evidence to a preliminary capability negotiation report. */
     fun reconcile(
         negotiation: TargetCapabilityNegotiationReport,
         manifests: Collection<TargetManifest>
     ): TargetCapabilityNegotiationReport {
-        val manifestsByTarget = manifests.associateBy { it.target }
+        DerivedModelIntegrityAuthority.requireNegotiation(negotiation)
+        require(!negotiation.readinessEvidenceAvailable) {
+            "Capability negotiation for '${negotiation.flowName}' is already readiness-aware; reconciliation requires preliminary evidence."
+        }
+        val expectedTargets = negotiation.targets.map { it.target }.toSet()
+        val manifestsByTarget = indexManifests(manifests, expectedTargets)
         val entries = negotiation.targets.map { entry ->
             val manifest = manifestsByTarget[entry.target]
             if (manifest == null) {
@@ -180,12 +192,13 @@ object TargetCompatibilityReadinessAnalyzer {
                 reports[entry.target]?.materializationReadiness == MaterializationReadinessStatus.BLOCKED
         }.map { it.target }.distinct().sorted()
 
-        return negotiation.copy(
+        val reconciled = negotiation.copy(
             targets = entries,
             recommendedTargets = recommended,
             blockedTargets = blocked,
             readinessEvidenceAvailable = true
         )
+        return DerivedModelIntegrityAuthority.requireNegotiation(reconciled)
     }
 
     /** Applies concrete manifest evidence to preliminary target ranking and recommendation. */
@@ -193,7 +206,12 @@ object TargetCompatibilityReadinessAnalyzer {
         selection: TargetSelectionReport,
         manifests: Collection<TargetManifest>
     ): TargetSelectionReport {
-        val manifestsByTarget = manifests.associateBy { it.target }
+        DerivedModelIntegrityAuthority.requireSelection(selection)
+        require(selection.candidates.none { it.readinessEvidenceAvailable }) {
+            "Target selection for '${selection.flowName}' is already readiness-aware; reconciliation requires preliminary candidates."
+        }
+        val expectedTargets = selection.candidates.map { it.target }.toSet()
+        val manifestsByTarget = indexManifests(manifests, expectedTargets)
         val candidates = selection.candidates.map { candidate ->
             val manifest = manifestsByTarget[candidate.target]
             if (manifest == null) {
@@ -218,7 +236,7 @@ object TargetCompatibilityReadinessAnalyzer {
         ).mapIndexed { index, candidate -> candidate.copy(rank = index + 1) }
 
         val recommended = candidates.firstOrNull { it.productionReady && it.executable }?.target.orEmpty()
-        return selection.copy(
+        val reconciled = selection.copy(
             recommendedTarget = recommended,
             decision = if (recommended.isBlank()) {
                 "No target has both supported effective compatibility and executable projection evidence."
@@ -230,6 +248,23 @@ object TargetCompatibilityReadinessAnalyzer {
             blockedTargets = candidates.filter { it.readiness == ExecutionReadinessStatus.BLOCKED }.map { it.target },
             candidates = candidates
         )
+        return DerivedModelIntegrityAuthority.requireSelection(reconciled)
+    }
+
+    private fun indexManifests(
+        manifests: Collection<TargetManifest>,
+        expectedTargets: Set<String>
+    ): Map<String, TargetManifest> {
+        val manifestList = manifests.toList()
+        val duplicateTargets = manifestList.groupingBy { it.target }.eachCount().filterValues { it > 1 }.keys
+        require(duplicateTargets.isEmpty()) {
+            "Concrete manifest evidence contains duplicate targets: ${duplicateTargets.sorted().joinToString()}."
+        }
+        val unknownTargets = manifestList.map { it.target }.toSet() - expectedTargets
+        require(unknownTargets.isEmpty()) {
+            "Concrete manifest evidence contains targets outside the derived model: ${unknownTargets.sorted().joinToString()}."
+        }
+        return manifestList.associateBy { it.target }
     }
 
     private fun TargetSelectionCandidate.withConcreteReadiness(
