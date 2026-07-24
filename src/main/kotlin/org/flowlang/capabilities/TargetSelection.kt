@@ -66,7 +66,7 @@ class TargetSelectionAnalyzer(private val targets: Map<String, TargetCapability>
                 recommendation = preliminaryRecommendationFor(report)
             )
         }
-        return TargetSelectionReport(
+        val selection = TargetSelectionReport(
             planVersion = plan.planVersion,
             flowName = plan.flowName,
             strict = strict,
@@ -77,6 +77,7 @@ class TargetSelectionAnalyzer(private val targets: Map<String, TargetCapability>
             blockedTargets = candidates.filter { it.readiness == ExecutionReadinessStatus.BLOCKED }.map { it.target },
             candidates = candidates
         )
+        return DerivedModelIntegrityAuthority.requireSelection(selection)
     }
 
     private fun readinessRank(readiness: ExecutionReadinessStatus): Int = when (readiness) {
