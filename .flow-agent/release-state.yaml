@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 12
+stateVersion: 13
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -14,12 +14,14 @@ versionBoundary:
   nextPackageVersion: "0.9.6"
   publicStandardVersion: "0.8.0"
   artifactContractVersion: "2.0"
+  activeBoundedWorkTrack: "v0.9.7.9.x"
+  boundedWorkMeaning: "Unreleased implementation work; not a package, public-standard or artifact-contract version."
 
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.9"
-  completedItemName: "Intent Lowering and Diagnostic Honesty"
+  completedItem: "0.9.7.9.7"
+  completedItemName: "CLI Diagnostic and Release Honesty"
   primaryStream: "core"
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
@@ -81,24 +83,25 @@ qualityPrinciples:
   - "Malformed declarations fail closed instead of becoming empty or default meaning."
   - "Unsupported lowering shapes cannot be flattened into weaker canonical contracts."
   - "Materialization validates lowering coverage before provider invocation."
+  - "Rendering is explicit and requires executable evidence; manifest existence is not render authorization."
+  - "Release compliance requires an explicit PASS conformance manifest."
+  - "Release publication occurs only after staged bundle verification."
+  - "Committed metadata may cite only already-merged validation evidence."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-implementation-head"
-  flowAgentStructure: "passed-on-implementation-head"
-  flowAgentContextGeneration: "passed-on-implementation-head"
-  offlineCacheAwareChecks: "passed-on-implementation-head"
-  cleanTest: "passed-on-implementation-head"
-  conformance: "passed-on-implementation-head"
-  executableReferenceEvidence: "passed-on-implementation-head"
-  validationSource: "Flow CI #1833 passed on implementation head 784573fd67abc73bf18dc98d6ae055d7914f2420."
+  flowAgentTooling: "passed-on-merged-v0.9.7.9.6-head"
+  flowAgentStructure: "passed-on-merged-v0.9.7.9.6-head"
+  flowAgentContextGeneration: "passed-on-merged-v0.9.7.9.6-head"
+  offlineCacheAwareChecks: "passed-on-merged-v0.9.7.9.6-head"
+  cleanTest: "passed-on-merged-v0.9.7.9.6-head"
+  conformance: "passed-on-merged-v0.9.7.9.6-head"
+  executableReferenceEvidence: "passed-on-merged-v0.9.7.9.6-head"
+  validationSource: "Last merged validation: Flow CI #2001, run 30075088660, exact head 002483835844c207df6375d4159e331bfcaf6415 for v0.9.7.9.6."
+  candidateValidationPolicy: "Current candidate success is external exact-head CI evidence and must not be predeclared inside the candidate commit."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "Equivalent block YAML, flow YAML, JSON and normalized map forms lower identically."
-    - "The intent loader rejects unknown fields, malformed shapes, invalid booleans, empty references and duplicate config sources."
-    - "AST and execution plans preserve source metadata and typed lowering coverage evidence."
-    - "Declared outputs, structured defaults, descriptions, system purpose and binding metadata survive lowering."
-    - "Unknown semantic parameters and unsupported lowering shapes fail closed instead of disappearing."
-    - "Materialization rejects missing, malformed or inconsistent lowering evidence."
-    - "Reference snapshots were regenerated through the canonical production generator."
-    - "The Jenkins executable reference proof remains live."
-    - "The final metadata head must pass the unmodified standard Flow CI."
+    - "v0.9.7.9.1 through v0.9.7.9.7 are bounded correction items, not package releases."
+    - "CLI target reports are reconciled against the exact emitted manifest."
+    - "Rendering is not performed unless explicitly requested and executable."
+    - "Standard export validates a staging bundle before publication."
+    - "The final v0.9.7.9.7 candidate requires unmodified exact-head Flow CI evidence in its pull request."
