@@ -245,19 +245,26 @@ object CanonicalControlRequirementAuthority {
         steps: List<IntentStep>,
         names: List<String>
     ): ControlEvidence {
-        var explicitFalse = false
+        var explicitDenial = false
         steps.forEach { step ->
             names.forEach { name ->
-                val value = step.params[name]
-                if (value.asConfirmedText()) {
-                    return ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "${step.id}.$name")
+                when (val assessment = AuthoredControlEvidenceTextAuthority.assess(name, step.params[name])) {
+                    is AuthoredControlEvidenceTextAssessment -> when (assessment.status) {
+                        AuthoredControlEvidenceTextStatus.CONFIRMED -> return ControlEvidence(
+                            requirement.id,
+                            ControlEvidenceStatus.SATISFIED,
+                            ControlEvidenceSource.AUTHORED_PARAMETER,
+                            "${step.id}.$name: ${assessment.reason}"
+                        )
+                        AuthoredControlEvidenceTextStatus.DENIED -> explicitDenial = true
+                        AuthoredControlEvidenceTextStatus.UNKNOWN -> Unit
+                    }
                 }
-                if (value != null && value.asBooleanLike() == false) explicitFalse = true
             }
         }
-        return if (explicitFalse) {
+        return if (explicitDenial) {
             ControlEvidence(requirement.id, ControlEvidenceStatus.UNSATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "Explicit negative evidence")
-        } else missing(requirement, "No authored evidence was found.")
+        } else missing(requirement, "No confirmed authored evidence was found.")
     }
 
     private fun missing(requirement: ControlRequirement, detail: String) = ControlEvidence(
@@ -328,11 +335,5 @@ object CanonicalControlRequirementAuthority {
             else -> null
         }
         else -> null
-    }
-
-    private fun IntentValue?.asConfirmedText(): Boolean {
-        val raw = asTextOrNull()?.trim().orEmpty()
-        if (raw.isBlank()) return false
-        return raw.lowercase() !in setOf("false", "no", "none", "not-confirmed", "unspecified")
     }
 }
