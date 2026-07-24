@@ -37,28 +37,6 @@ object TargetRenderPolicy {
 
     fun evaluate(manifest: TargetManifest): TargetRenderReadiness {
         val steps = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForReadiness() } }
-        val compatibilityFindings = buildList {
-            if (manifest.compatibility.hasErrors || manifest.compatibility.status == SupportLevel.UNSUPPORTED) {
-                add(TargetRenderFinding(
-                    "manifest",
-                    "COMPATIBILITY_UNSUPPORTED",
-                    "Target compatibility contains blocking evidence and cannot produce executable syntax."
-                ))
-            } else if (manifest.compatibility.status != SupportLevel.SUPPORTED) {
-                add(TargetRenderFinding(
-                    "manifest",
-                    "COMPATIBILITY_${manifest.compatibility.status.name}",
-                    "Effective target compatibility is '${manifest.compatibility.status}' and requires review."
-                ))
-            } else if (manifest.compatibility.capabilityStatus != SupportLevel.SUPPORTED) {
-                add(TargetRenderFinding(
-                    "manifest",
-                    "CAPABILITY_${manifest.compatibility.capabilityStatus.name}",
-                    "Target capability compatibility is '${manifest.compatibility.capabilityStatus}' and cannot produce executable syntax."
-                ))
-            }
-        }
-
         val blocking = steps
             .filter { it.materialization.status in blockedStatuses }
             .map { step ->
@@ -69,10 +47,35 @@ object TargetRenderPolicy {
             return TargetRenderReadiness(manifest.target, TargetRenderMode.FAIL_FAST, blocking)
         }
 
-        val unresolved = compatibilityFindings + steps
+        val concreteFindings = steps
             .filter { it.isMaterializationLeaf() }
             .mapNotNull { step -> readinessFinding(step, manifest.target) }
             .distinct()
+        val compatibilityFindings = buildList {
+            if (manifest.compatibility.hasErrors || manifest.compatibility.status == SupportLevel.UNSUPPORTED) {
+                add(TargetRenderFinding(
+                    "manifest",
+                    "COMPATIBILITY_UNSUPPORTED",
+                    "Target compatibility contains blocking evidence and cannot produce executable syntax."
+                ))
+            } else if (manifest.compatibility.capabilityStatus != SupportLevel.SUPPORTED) {
+                add(TargetRenderFinding(
+                    "manifest",
+                    "CAPABILITY_${manifest.compatibility.capabilityStatus.name}",
+                    "Target capability compatibility is '${manifest.compatibility.capabilityStatus}' and cannot produce executable syntax."
+                ))
+            } else if (
+                manifest.compatibility.status != SupportLevel.SUPPORTED &&
+                concreteFindings.isEmpty()
+            ) {
+                add(TargetRenderFinding(
+                    "manifest",
+                    "COMPATIBILITY_${manifest.compatibility.status.name}",
+                    "Effective target compatibility is '${manifest.compatibility.status}' and requires review."
+                ))
+            }
+        }
+        val unresolved = (compatibilityFindings + concreteFindings).distinct()
 
         return if (unresolved.isEmpty()) {
             TargetRenderReadiness(manifest.target, TargetRenderMode.EXECUTABLE, emptyList())
