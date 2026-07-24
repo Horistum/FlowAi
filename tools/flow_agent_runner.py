@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from flow_agent_roadmap import find_scalar, find_unique_next_roadmap_item, roadmap_paths_by_stream
+from flow_agent_roadmap import active_roadmap_paths, find_scalar, find_unique_next_roadmap_item
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENT_DIR = ROOT / ".flow-agent"
@@ -39,7 +39,7 @@ def generate_agent_context() -> Path:
     main_roadmap = AGENT_DIR / "roadmap.yaml"
     next_item = find_unique_next_roadmap_item(ROOT, main_roadmap)
 
-    for path in roadmap_paths_by_stream(ROOT, main_roadmap).values():
+    for path in active_roadmap_paths(ROOT, main_roadmap):
         relative_source = path.relative_to(AGENT_DIR.resolve())
         contents[str(relative_source)] = read_text(path)
 
