@@ -87,7 +87,7 @@ class GitHubActionsManifestRenderer(
             sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         }
         githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
-        if (job.metadata["approval"] == "true") {
+        if (job.metadata["providerApprovalPayload"] == "true") {
             val environmentEvidence = environmentEvidenceResolver.resolve(manifest, job)
             sb.appendLine("    # Flow environment sensitivity: ${environmentEvidence.sensitivity}")
             sb.appendLine("    # Flow environment policy: ${environmentEvidence.policyPackageId}@${environmentEvidence.policyPackageVersion}")
@@ -198,10 +198,10 @@ class GitHubActionsManifestRenderer(
         }
         val needs = job.dependsOn.map { dependency ->
             val safeDependency = sanitizeId(dependency)
-            val isApproval = manifest.jobs.firstOrNull {
+            val isProviderBackedApproval = manifest.jobs.firstOrNull {
                 sanitizeId(it.id) == safeDependency
-            }?.metadata?.get("approval") == "true"
-            if (isApproval) {
+            }?.metadata?.get("providerApprovalPayload") == "true"
+            if (isProviderBackedApproval) {
                 "(needs.$safeDependency.result == 'success' || needs.$safeDependency.result == 'skipped')"
             } else {
                 "needs.$safeDependency.result == 'success'"
