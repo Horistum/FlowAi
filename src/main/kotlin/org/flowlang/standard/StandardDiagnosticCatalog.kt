@@ -92,6 +92,8 @@ object StandardDiagnosticCatalog {
         code("TARGET_UNSUPPORTED_CAPABILITY", "target", "error", "execution-readiness-report.json", "Target does not support a required capability."),
         code("TARGET_REQUIRES_RUNTIME", "target", "warning", "execution-readiness-report.json", "Target requires an external target-side runtime or adapter capability; Flow Core does not provide one."),
         code("TARGET_PARTIAL_CAPABILITY", "target", "warning", "execution-readiness-report.json", "Target only partially supports a required capability."),
+        code("TARGET_NOTES_PROJECTED", "target", "info", "execution-readiness-report.json", "Target projection preserved explicit notes as review evidence without treating them as executable payload."),
+        code("TARGET_TARGET_BINDING_UNRESOLVED", "target", "warning", "execution-readiness-report.json", "Target projection contains an unresolved target-owned binding and therefore cannot claim executable readiness."),
         code("UNKNOWN_TARGET", "target", "error", "execution-readiness-report.json", "Requested target is not present in the target registry."),
 
         code("ADAPTER_MUST_NOT_READ_INTENT", "adapter", "invariant", "target-adapter-contract.json", "Adapter must not consume or reinterpret human/AI intent artifacts."),
