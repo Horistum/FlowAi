@@ -42,7 +42,8 @@ data class TargetDecisionTraceReport(
  * Explains how Flow reached the target recommendation.
  *
  * This is an audit/reporting layer over existing standard artifacts. It must
- * not introduce a second target-selection algorithm.
+ * not introduce a second target-selection algorithm and it must not combine
+ * derived artifacts from different plans, strictness modes or target registries.
  */
 class TargetDecisionTraceAnalyzer(private val targets: Map<String, TargetCapability>) {
     fun analyze(plan: ExecutionPlan, requestedTarget: String = "", strict: Boolean = false): TargetDecisionTraceReport {
@@ -59,18 +60,19 @@ class TargetDecisionTraceAnalyzer(private val targets: Map<String, TargetCapabil
         negotiation: TargetCapabilityNegotiationReport,
         selection: TargetSelectionReport
     ): TargetDecisionTraceReport {
-        require(negotiation.flowName == plan.flowName) {
-            "Negotiation report flow '${negotiation.flowName}' does not match plan '${plan.flowName}'."
-        }
-        require(selection.flowName == plan.flowName) {
-            "Selection report flow '${selection.flowName}' does not match plan '${plan.flowName}'."
-        }
+        DerivedModelIntegrityAuthority.requireTraceInputs(
+            plan = plan,
+            strict = strict,
+            requestedTarget = requestedTarget,
+            configuredTargets = targets.keys,
+            negotiation = negotiation,
+            selection = selection
+        )
+
         val recommended = selection.recommendedTarget
         val recommendedCandidate = selection.candidates.firstOrNull { it.target == recommended }
         val finalDecision = finalDecisionFor(recommendedCandidate)
-        val generationAllowed = recommendedCandidate?.let {
-            it.generationAllowed && it.productionReady && it.executable
-        } == true
+        val generationAllowed = finalDecision == DecisionTraceStatus.PASSED
 
         return TargetDecisionTraceReport(
             planVersion = plan.planVersion,
@@ -96,7 +98,11 @@ class TargetDecisionTraceAnalyzer(private val targets: Map<String, TargetCapabil
 
     private fun finalDecisionFor(candidate: TargetSelectionCandidate?): DecisionTraceStatus = when {
         candidate == null -> DecisionTraceStatus.BLOCKED
-        candidate.readiness == ExecutionReadinessStatus.READY && candidate.productionReady && candidate.executable -> DecisionTraceStatus.PASSED
+        candidate.readiness == ExecutionReadinessStatus.READY &&
+            candidate.readinessEvidenceAvailable &&
+            candidate.productionReady &&
+            candidate.executable &&
+            candidate.generationAllowed -> DecisionTraceStatus.PASSED
         candidate.generationAllowed -> DecisionTraceStatus.WARNING
         else -> DecisionTraceStatus.BLOCKED
     }
@@ -150,9 +156,12 @@ class TargetDecisionTraceAnalyzer(private val targets: Map<String, TargetCapabil
     private fun explainCandidate(candidate: TargetSelectionCandidate, recommendedTarget: String): TargetDecisionExplanation {
         val decision = when {
             candidate.target == recommendedTarget && candidate.productionReady && candidate.executable -> TargetDecisionKind.RECOMMENDED
-            candidate.readiness == ExecutionReadinessStatus.READY -> TargetDecisionKind.READY_ALTERNATIVE
-            candidate.readiness == ExecutionReadinessStatus.DEGRADED -> TargetDecisionKind.DEGRADED
-            else -> TargetDecisionKind.BLOCKED
+            candidate.readiness == ExecutionReadinessStatus.READY &&
+                candidate.readinessEvidenceAvailable &&
+                candidate.productionReady &&
+                candidate.executable -> TargetDecisionKind.READY_ALTERNATIVE
+            candidate.readiness == ExecutionReadinessStatus.BLOCKED -> TargetDecisionKind.BLOCKED
+            else -> TargetDecisionKind.DEGRADED
         }
         return TargetDecisionExplanation(
             target = candidate.target,
@@ -166,7 +175,7 @@ class TargetDecisionTraceAnalyzer(private val targets: Map<String, TargetCapabil
     private fun reasonFor(candidate: TargetSelectionCandidate, decision: TargetDecisionKind): String = when (decision) {
         TargetDecisionKind.RECOMMENDED -> "Highest-ranked target with complete materialization, executable projection evidence and portability score ${candidate.targetPortabilityScore}."
         TargetDecisionKind.READY_ALTERNATIVE -> "Executable target, but ranked below the recommended target by portability score or stable ordering."
-        TargetDecisionKind.DEGRADED -> "Target is review-only or incomplete; materialization=${candidate.materializationReadiness}, projection=${candidate.projectionReadiness}."
+        TargetDecisionKind.DEGRADED -> "Target is preliminary, review-only or incomplete; evidenceAvailable=${candidate.readinessEvidenceAvailable}, materialization=${candidate.materializationReadiness}, projection=${candidate.projectionReadiness}."
         TargetDecisionKind.BLOCKED -> "Target has blocked compatibility or projection evidence; blocker count is ${candidate.blockerCount}."
     }
 }
