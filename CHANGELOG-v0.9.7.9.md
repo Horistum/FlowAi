@@ -56,8 +56,22 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 - Publishes standard bundles only after staged verification, preserving the previous destination on failure.
 - Adds machine-checked package, public-standard, roadmap, report and correction-ledger consistency.
 - Clarifies that runtime-required capabilities depend on external target-side infrastructure or adapters; Flow Core provides no runtime.
-- Candidate validation is intentionally recorded only in the pull request after exact-head CI completes.
+- Validation: Flow CI `#2011`, run `30083768491`, exact head `f970561c568f3fea0dcf8f858acfff15b4a3eaaa`.
+
+### v0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity
+
+- Replaces fail-open arbitrary-text control evidence with typed confirmed, denied and unknown classification.
+- Accepts concrete backup, rollback, change-ticket, retention and safety evidence while rejecting placeholders such as `unknown`, `TODO`, `n/a` and `pending`.
+- Replaces raw CI/CD bias substring matching with lexical code, control-literal, ordinary-string, comment and catalog contexts.
+- Makes governance health depend only on actionable coupling in active semantic source and separates CLI/release composition from Core semantics.
+- Removes the legacy CLI entrypoint and every implicit Jenkins target default.
+- Produces target-neutral planning evidence when no target is selected.
+- Produces typed review-only or blocked diagnostic manifest evidence for expected target incompatibility instead of a stack trace.
+- Re-derives canonical workflow and capability topology from retained source provenance before materialization.
+- Retains legacy `dependencies` and `effects` only as mechanically checked compatibility projections.
+- Preserves GitHub Actions cancellation semantics and removes `always()` from ordinary dependency jobs.
+- Status: active. Candidate implementation validation remains external exact-head CI evidence and is not predeclared in this ledger.
 
 ## Closure boundary
 
-`0.9.7.10 Bounded Semantic Closure Gate` remains the next Core item. It may close the track only after the exact final `0.9.7.9.7` candidate passes the unmodified Flow CI workflow and the existing executable reference evidence remains live.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` remains `correction-required`. `0.9.7.10 Bounded Semantic Closure Gate` remains `blocked` while work package `0.9.7.9.8` is active. The closure gate may become `next` only after the implementation head passes the unmodified Flow CI workflow, the existing executable reference evidence remains live, and a separate metadata head records the completed correction lifecycle.
