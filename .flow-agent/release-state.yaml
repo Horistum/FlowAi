@@ -86,7 +86,7 @@ qualityPrinciples:
   - "Release publication occurs only after staged bundle verification."
   - "Committed metadata may cite only already-merged validation evidence."
   - "Unknown or placeholder authored text never satisfies a safety control."
-  - "An active bounded correction blocks the Core closure item."
+  - "A completed bounded correction may unblock the Core closure item only after exact-head implementation evidence exists."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-merged-v0.9.7.9.7-head"
@@ -99,7 +99,6 @@ lastKnownValidation:
   validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.8 is the active bounded correction work package inside Core item v0.9.7.9."
-    - "Core item v0.9.7.9 is correction-required and v0.9.7.10 remains blocked."
-    - "Candidate success remains external exact-head CI evidence until the pull request head actually passes."
-    - "The active correction must pass the unmodified standard Flow CI before any completion metadata is committed."
+    - "v0.9.7.9.8 completed after external exact-head CI evidence: Flow CI #2021, run 30090943402, passed implementation head 64e4df9abe8a95adede53b2876c49031e0bfed8f."
+    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is now the next Core item."
+    - "The completion-metadata head must pass the unmodified standard Flow CI before the pull request is ready for review."
