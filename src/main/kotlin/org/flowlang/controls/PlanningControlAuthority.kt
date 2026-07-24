@@ -34,37 +34,30 @@ object PlanningControlAuthority {
         nodes: List<PlanNode>,
         modules: ModuleRegistry
     ): ControlAssessment {
-        val requirements = canonicalRequirements.toMutableList()
-        val evidence = canonicalEvidence.toMutableList()
         val graph = ControlGraph.index(nodes)
+        val taskDrafts = mutableListOf<TaskRequirementDraft>()
 
         flatten(nodes).filterIsInstance<TaskNode>().forEach { task ->
             val contract = modules.findAction(task.module, task.action)?.safety ?: return@forEach
             if (contract.requiresApproval || contract.destructive) {
-                addTaskRequirement(
-                    requirements,
-                    evidence,
-                    task,
-                    ControlRequirementKind.APPROVAL,
-                    approvalEvidence(task, graph)
-                )
+                taskDrafts += draft(task, ControlRequirementKind.APPROVAL, approvalEvidence(task, graph))
             }
             if (contract.requiresSafety) {
-                addTaskRequirement(
-                    requirements,
-                    evidence,
-                    task,
-                    ControlRequirementKind.SAFETY_GUARD,
-                    safetyEvidence(task)
-                )
+                taskDrafts += draft(task, ControlRequirementKind.SAFETY_GUARD, safetyEvidence(task))
             }
         }
 
-        val executionEvidence = evidence.map { it.failClosedForExecutionPlanning() }
+        val taskRequirements = ControlRequirementIdentityAuthority.assign(taskDrafts.map(TaskRequirementDraft::requirement))
+        require(taskRequirements.size == taskDrafts.size) {
+            "Task control identity assignment changed the number of security obligations."
+        }
+        val taskEvidence = taskRequirements.zip(taskDrafts).map { (requirement, draft) ->
+            draft.evidence(requirement.id)
+        }
 
-        // Do not deduplicate security obligations. A canonical-id collision is
-        // malformed evidence and ControlDecisionAuthority must reject it instead
-        // of silently discarding one requirement with distinctBy.
+        val requirements = canonicalRequirements + taskRequirements
+        val executionEvidence = (canonicalEvidence + taskEvidence).map { it.failClosedForExecutionPlanning() }
+
         return ControlDecisionAuthority.assessment(
             requirements = requirements.sortedBy(ControlRequirement::id),
             evidence = executionEvidence.sortedBy(ControlEvidence::requirementId)
@@ -92,22 +85,19 @@ object PlanningControlAuthority {
             )
         }
 
-    private fun addTaskRequirement(
-        requirements: MutableList<ControlRequirement>,
-        evidence: MutableList<ControlEvidence>,
+    private fun draft(
         task: TaskNode,
         kind: ControlRequirementKind,
-        taskEvidence: (String) -> ControlEvidence
-    ) {
-        val id = taskRequirementId(task, kind)
-        requirements += ControlRequirement(
-            id = id,
+        evidence: (String) -> ControlEvidence
+    ): TaskRequirementDraft = TaskRequirementDraft(
+        requirement = ControlRequirement(
+            id = taskRequirementId(task, kind),
             kind = kind,
             subject = "${task.module}.${task.action}@${task.id}",
             source = ControlRequirementSource.MODULE_CONTRACT
-        )
-        evidence += taskEvidence(id)
-    }
+        ),
+        evidence = evidence
+    )
 
     private fun approvalEvidence(
         task: TaskNode,
@@ -178,6 +168,12 @@ object PlanningControlAuthority {
     private fun canonicalId(value: String): String = value.trim().lowercase()
         .replace(Regex("[^a-z0-9]+"), "-")
         .trim('-')
+        .ifBlank { "task" }
+
+    private data class TaskRequirementDraft(
+        val requirement: ControlRequirement,
+        val evidence: (String) -> ControlEvidence
+    )
 
     private data class ControlGraph(
         val dependenciesByNode: Map<String, List<String>>,
