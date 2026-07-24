@@ -16,6 +16,7 @@ import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.reconcileCompatibilityReadiness
 import org.flowlang.projection.ProjectionBinding
+import org.flowlang.projection.ProjectionBindingResolutionStatus
 
 class CompatibilityReconciliationMonotonicityTests {
     @Test
@@ -81,7 +82,11 @@ class CompatibilityReconciliationMonotonicityTests {
                     kind = "TEST_PAYLOAD",
                     target = "test-target",
                     reference = "approval",
-                    bindings = mapOf("message" to ProjectionBinding.literal("Approve")),
+                    bindings = mapOf(
+                        "message" to ProjectionBinding.literal("Approve").copy(
+                            resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED
+                        )
+                    ),
                     evidenceReference = "test:provider#approval"
                 )
             ))
