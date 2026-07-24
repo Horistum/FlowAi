@@ -36,7 +36,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
         val releaseStateFile = File(rootDir, ".flow-agent/release-state.yaml")
         val roadmapFile = File(rootDir, ".flow-agent/roadmap.yaml")
         val reportFile = File(rootDir, "REPORT.md")
-        val changelogFile = File(rootDir, "CHANGELOG.md")
+        val changelogFile = File(rootDir, "CHANGELOG-v0.9.7.9.md")
         val gradleFile = File(rootDir, "build.gradle.kts")
 
         val releaseState = requiredYaml(releaseStateFile)
@@ -160,7 +160,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
                     changelogText,
                     "### v$id ",
                     changelogFile.path,
-                    "The changelog must record every bounded correction item exactly once."
+                    "The bounded correction changelog must record every work item exactly once."
                 ))
             }
             add(containsCheck(
