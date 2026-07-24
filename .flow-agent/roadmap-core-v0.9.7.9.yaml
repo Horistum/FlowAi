@@ -9,8 +9,8 @@ continuousFeedback:
   - A failed claim is repaired at its owner or explicitly reclassified.
   - Core meaning is never weakened to preserve an earlier label.
 trackExitCriteria:
-  - Evidence for 0.9.7.1 through 0.9.7.9 passes.
-  - 0.9.7.10 checks only declared evidence.
+  - Evidence for 0.9.7.1 through 0.9.7.9 passes after all active bounded corrections complete.
+  - 0.9.7.10 checks only declared evidence and cannot start while a correction is active.
 items:
   - version: 0.9.7.0
     name: Roadmap Separation and Universal Drift Lock
@@ -63,8 +63,7 @@ items:
       - Semantic graph, materialization negotiation, projection plan and artifact authority alignment fail closed.
       - The optional projection helper and duplicate planner capability gate are removed.
       - Negative tests prove invalid plans do not invoke target generators.
-      - Flow CI 1643 passed clean compilation, full tests, conformance and executable reference evidence on implementation
-        head eff81da4f9c1aff90da30864092f884d71e73e24.
+      - Flow CI 1643 passed clean compilation, full tests, conformance and executable reference evidence on implementation head eff81da4f9c1aff90da30864092f884d71e73e24.
   - version: 0.9.7.4
     name: Universal Dependency and Continuity Contract
     type: semantic-dependencies
@@ -81,10 +80,10 @@ items:
       - Direct and preserved continuity paths resolve explicitly; missing and ambiguous paths remain blocking evidence.
       - Materialization authorization reloads canonical module contracts and rejects omitted or forged continuity claims.
       - Target compatibility derives from explicit continuity capabilities rather than renderer layout.
+      - Legacy dependencies fields are retained only as compatibility projections of dependsOn and are mechanically rejected when they diverge.
       - GitHub Actions reference evidence is blocked where workspace transfer is not represented explicitly.
       - Canonical snapshot generation replaced stale committed evidence file for file.
-      - Flow CI 1695 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation
-        head 64393255468089b44c229361524abfc24157d487.
+      - Flow CI 1695 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation head 64393255468089b44c229361524abfc24157d487.
   - version: 0.9.7.5
     name: Canonical Intent Meaning
     type: semantic-contract
@@ -103,8 +102,7 @@ items:
       - Unbound standard intent lowers to standard semantic work without selecting a preferred module.
       - Binding metadata cannot enter canonical meaning or silently become a semantic target.
       - Canonical reference snapshots were regenerated through the production generator.
-      - Flow CI 1719 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation
-        head eed684e9996680f9abc6c4348c8747e332c1e6c9.
+      - Flow CI 1719 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation head eed684e9996680f9abc6c4348c8747e332c1e6c9.
   - version: 0.9.7.6
     name: Universal Effect and State Transition Model
     type: semantic-effects
@@ -125,8 +123,7 @@ items:
       - Legacy string effects remain a derived resource projection rather than a second semantic authority.
       - Serialized effect evidence contains only declared semantic fields and Core remains serializer-independent.
       - Canonical reference snapshots were regenerated through the production generator while the Jenkins executable proof remained live.
-      - Flow CI 1756 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation
-        head af921b5ceb1f5e15c9f6a152a7291003817f8134.
+      - Flow CI 1756 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation head af921b5ceb1f5e15c9f6a152a7291003817f8134.
   - version: 0.9.7.7
     name: Universal Control and Policy Requirements
     type: control-and-safety
@@ -143,14 +140,13 @@ items:
       - Canonical intent derives target-neutral control requirements before implementation binding.
       - Requirements, evidence and authorization decisions use separate typed contracts.
       - Known, unknown, unsatisfied and dynamic evidence remain explicit through AST and execution planning.
-      - Module contracts may add obligations but cannot rewrite canonical intent requirements.
+      - Module contracts may add control obligations but cannot rewrite canonical intent requirements.
       - Materialization re-derives canonical and module-owned requirements and rejects omitted, forged or unresolved evidence.
       - Dynamic evidence declares explicit enforcement capabilities and remains pending rather than silently safe.
       - Approval policies no longer count as approval evidence without an authored approval mechanism.
       - Legacy safety validators remain compatibility facades over one canonical control authority.
       - Canonical reference snapshots were regenerated through the production generator while the Jenkins executable proof remained live.
-      - Flow CI 1787 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation
-        head b0cac07630df7270912c2db0fb528d5f6ed663a3.
+      - Flow CI 1787 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation head b0cac07630df7270912c2db0fb528d5f6ed663a3.
   - version: 0.9.7.8
     name: Abstract Execution Topology Model
     type: topology-contract
@@ -167,16 +163,15 @@ items:
       - AST and execution-plan artifacts preserve isolation, lifetime, persistence and propagation requirements.
       - Target Registry 3.1 requires complete evidence-backed topology profiles for every target.
       - Missing, partial, unsupported and contradictory target topology evidence blocks executable materialization.
-      - Materialization re-derives minimum topology from plan structure and continuity relations before provider invocation.
+      - Materialization independently re-derives canonical workflow and capability topology from retained source provenance.
       - Action support, ordering and continuity evidence cannot substitute for an execution topology match.
-      - Complete, missing and contradictory profiles are tested through unit and conformance evidence.
+      - Complete, missing, forged and contradictory profiles are tested through unit and conformance evidence.
       - Canonical reference snapshots were regenerated while the Jenkins executable proof remained live.
-      - Flow CI 1811 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation
-        head ba7e90cad6efe92fb929f13475fa8f3409fd3ef1.
+      - Flow CI 1811 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation head ba7e90cad6efe92fb929f13475fa8f3409fd3ef1.
   - version: 0.9.7.9
     name: Intent Lowering and Diagnostic Honesty
     type: lowering-integrity
-    status: completed
+    status: correction-required
     purpose: Preserve or diagnose every meaningful input.
     universalInvariant: Accepted information never disappears silently.
     forbiddenScope:
@@ -185,22 +180,18 @@ items:
       - No malformed declaration converted into empty or default meaning.
       - No unsupported policy or workflow shape flattened into a weaker contract.
     completionEvidence:
-      - Equivalent block YAML, flow YAML, JSON and normalized map forms produce equivalent intent meaning.
-      - Strict path-aware loader diagnostics reject unknown fields, malformed shapes, invalid booleans and empty references.
-      - Source metadata and typed lowering evidence cover every accepted meaningful input through AST and execution planning.
-      - Declared outputs, structured defaults, descriptions, system purpose and explicit binding metadata survive lowering.
-      - Unsupported multi-workflow flattening, stopOnError=false and unsupported policy types fail closed.
-      - Materialization validates lowering evidence and source-step coverage before provider invocation.
-      - Canonical reference snapshots were regenerated through the production generator while the Jenkins executable proof remained live.
-      - Flow CI 1833 passed Flow Agent checks, clean compilation, full tests, conformance and reference evidence on implementation
-        head 784573fd67abc73bf18dc98d6ae055d7914f2420.
+      - The original implementation evidence remains historical but is insufficient for closure.
+      - Bounded corrections 0.9.7.9.1 through 0.9.7.9.7 repaired confirmed lowering, identity, approval, governance and release defects.
+      - Active correction 0.9.7.9.8 must repair remaining safety, governance, CLI, topology and adapter integrity blockers.
+      - The item may return to completed only after exact-head CI proves the correction and reference evidence.
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: next
+    status: blocked
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
       - No new requirement introduced during closure.
+      - No closure execution while a bounded correction is active.
     completionEvidence:
-      - The declared checklist and reference evidence pass.
+      - The declared checklist and reference evidence pass after all correction work packages are complete.
