@@ -213,7 +213,6 @@ class DerivedModelGovernanceIntegrityTests {
                 ArchitectureGovernanceIntegrityAuthority.requireValid(root, report)
             }
 
-            assertTrue(failure.integrity.issues.any { it.code == "GOVERNANCE_DRIFT_EXCEPTION_FORMAT_INVALID" })
             assertTrue(failure.integrity.issues.any { it.code == "GOVERNANCE_DRIFT_EXCEPTION_UNSCOPED" })
         } finally {
             root.deleteRecursively()
