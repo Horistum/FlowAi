@@ -3,8 +3,8 @@ package org.flowlang.conformance
 import java.io.File
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
+import org.flowlang.cli.honest.CliTargetEvidenceOutcome
 import org.flowlang.generators.manifest.TargetProjectionRegistry
-import org.flowlang.generators.manifest.TargetRenderBlockedException
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
@@ -53,21 +53,27 @@ internal class CliReleaseHonestyChecks(
             require(evidence.renderReadiness.mode == TargetRenderMode.REVIEW_ONLY) {
                 "The reference Jenkins manifest should remain review-only, not executable."
             }
-            val blockedRender = runCatching {
-                CliTargetEvidenceAuthority(targets, projections).evaluate(
-                    plan = plan,
-                    target = "jenkins",
-                    strict = false,
-                    renderRequested = true
-                )
-            }.exceptionOrNull()
-            require(blockedRender is TargetRenderBlockedException) {
+
+            val requestedRender = CliTargetEvidenceAuthority(targets, projections).evaluate(
+                plan = plan,
+                target = "jenkins",
+                strict = false,
+                renderRequested = true
+            )
+            require(requestedRender.outcome == CliTargetEvidenceOutcome.REVIEW_ONLY) {
+                "Review-only target evidence was not preserved as a typed CLI outcome."
+            }
+            require(requestedRender.renderedArtifact == null) {
                 "Review-only target evidence produced rendered target syntax."
+            }
+            require(requestedRender.diagnostics.any { it.code == "CLI_RENDER_NOT_AUTHORIZED" }) {
+                "A denied render request lacks a stable diagnostic code."
             }
 
             val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
-            require(release.completedCorrectionItem == "0.9.7.9.7")
+            require(release.completedCorrectionItem == "0.9.7.9.8")
             require(release.nextCoreItem == "0.9.7.10")
+            require(release.correctionStatus in setOf("active", "complete"))
 
             val honestCli = File(rootDir, "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt").readText()
             require(!honestCli.contains("TARGET MANIFEST READY")) {
