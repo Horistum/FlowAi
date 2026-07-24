@@ -171,7 +171,7 @@ items:
   - version: 0.9.7.9
     name: Intent Lowering and Diagnostic Honesty
     type: lowering-integrity
-    status: correction-required
+    status: completed
     purpose: Preserve or diagnose every meaningful input.
     universalInvariant: Accepted information never disappears silently.
     forbiddenScope:
@@ -180,14 +180,14 @@ items:
       - No malformed declaration converted into empty or default meaning.
       - No unsupported policy or workflow shape flattened into a weaker contract.
     completionEvidence:
-      - The original implementation evidence remains historical but is insufficient for closure.
+      - The original implementation evidence remains historical and was explicitly superseded after a false preservation claim was proven.
       - Bounded corrections 0.9.7.9.1 through 0.9.7.9.7 repaired confirmed lowering, identity, approval, governance and release defects.
-      - Active correction 0.9.7.9.8 must repair remaining safety, governance, CLI, topology and adapter integrity blockers.
-      - The item may return to completed only after exact-head CI proves the correction and reference evidence.
+      - Bounded correction 0.9.7.9.8 repaired the remaining safety, governance, CLI, topology, derived-projection and adapter cancellation blockers.
+      - Flow CI 2021, run 30090943402, passed tooling, structure, clean tests, standalone conformance and reference evidence on implementation head 64e4df9abe8a95adede53b2876c49031e0bfed8f.
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: blocked
+    status: next
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
