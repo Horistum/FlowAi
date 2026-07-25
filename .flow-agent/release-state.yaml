@@ -103,7 +103,7 @@ lastKnownValidation:
   validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.9 completed after external exact-head CI evidence: Flow CI #2048, run 30155688901, passed implementation head 869816b978a107545742553e598bcdd118d984b2."
-    - "The same Flow CI run independently passed merge candidate 5c4b0999b104f5501eb79980ab83014dac275df6."
-    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is now the next Core item."
-    - "The completion-metadata head must pass both exact-head and merge-candidate jobs before the pull request is ready for review."
+    - "The final architecture audit kept v0.9.7.9.9 active after proving raw target-string materialization, presentation-coupled CLI outcomes and an obsolete application-composition governance exemption."
+    - "Assembly Flow CI #2083, run 30166636855, passed typed-candidate exact head 151e7f91f9fa8b9747b251a5f0e0878672920654 and its synthetic merge candidate."
+    - "Core item v0.9.7.9 is correction-required and v0.9.7.10 remains blocked."
+    - "Candidate validation remains external exact-head CI evidence until both the public implementation head and the later completion-metadata head pass exact-head and merge-candidate jobs."

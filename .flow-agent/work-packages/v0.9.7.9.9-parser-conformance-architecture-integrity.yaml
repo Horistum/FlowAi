@@ -2,9 +2,9 @@ version: "0.9.7.9.9"
 name: "Parser, Conformance and Architecture Evidence Integrity"
 type: "bounded-correction"
 stream: core
-status: complete
+status: active
 parentCoreItem: "0.9.7.9"
-objective: "Repair silent .flow retry-policy loss, circular compliance proof, incomplete serialization boundaries, whitespace-based module governance and unnecessary concrete-target anchoring of universal conformance evidence."
+objective: "Repair silent .flow retry-policy loss, circular compliance proof, incomplete serialization boundaries, whitespace-based module governance, unnecessary concrete-target anchoring and untyped target-selection and CLI execution evidence."
 scopeBoundary:
   - "Reject unknown, duplicate or incorrectly typed retry policy fields with path-aware parser diagnostics."
   - "Keep retry defaults only for omitted fields; never use them to replace malformed authored values."
@@ -14,12 +14,17 @@ scopeBoundary:
   - "Build universal evidence, schemas and decision artifacts from a target-neutral Core fixture."
   - "Retain target-specific checks only for adapter contracts, manifests and rendered artifacts."
   - "Keep package, public-standard and artifact contract versions unchanged."
+  - "Require registry-validated explicit target selection before target materialization; no raw nullable target may cross the materialization authority."
+  - "Return typed CLI execution outcomes and artifact roles before presentation; conformance must not infer architecture from message text or source-file names."
+  - "Apply production coupling governance to CLI and release composition instead of treating application composition as an automatic exemption."
 universalInvariants:
   - "Every authored retry policy value is preserved or rejected; no malformed or unknown value disappears into a default."
   - "A release compliance gate is falsifiable and fails when its conformance manifest fails."
   - "Semantic Core contracts do not depend on serialization frameworks."
   - "Module target ownership is rejected by canonical descriptor structure, independent of YAML whitespace."
   - "Universal conformance evidence has no concrete target identity or renderer dependency."
+  - "Target materialization is representable only with registry-validated explicit selection evidence."
+  - "Target-neutral CLI outcomes cannot contain target manifests or rendered target artifacts, and rejected outcomes cannot masquerade as successful publication."
 implementedSlices:
   - id: flow-retry-parser-fail-closed
   - id: compliance-positive-negative-polarity
@@ -30,10 +35,14 @@ implementedSlices:
   - id: correction-governance-reopen
   - id: generic-bounded-correction-release-authority
   - id: exact-head-and-merge-candidate-validation
+  - id: typed-explicit-target-selection
+  - id: typed-cli-execution-result
+  - id: application-composition-governance-restoration
+  - id: behavioral-cli-conformance
 validationPolicy:
   workflow: "Flow CI"
-  requirement: "Flow CI #2048, run 30155688901, passed exact implementation head 869816b978a107545742553e598bcdd118d984b2 and independently passed synthetic merge candidate 5c4b0999b104f5501eb79980ab83014dac275df6. The completion-metadata head must pass the same dual workflow before review readiness."
-  buildDiscipline: "Keep the completion metadata distinct from the validated implementation head and require a final exact-head plus merge-candidate run before marking the pull request ready."
+  requirement: "Historical Flow CI #2048 validated the earlier correction boundary. Assembly Flow CI #2083, run 30166636855, passed the typed target-selection candidate at exact head 151e7f91f9fa8b9747b251a5f0e0878672920654 and its synthetic merge candidate. The public PR head and its merge candidate must now pass independently before this correction may return to complete."
+  buildDiscipline: "Keep the correction active and the closure item blocked until the public PR implementation head and a later completion-metadata head each pass exact-head and merge-candidate validation."
 followUpWorkItem:
   version: "0.9.7.10"
   name: "Bounded Semantic Closure Gate"
