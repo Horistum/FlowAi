@@ -46,15 +46,29 @@ internal class ClosureBlockingIntegrityChecks(
             checkCanonicalTopology()
             checkRetainedDerivedProjection()
             checkGitHubCancellationSemantics()
+            checkExactHeadCiBoundary()
             checkCorrectionLifecycle()
         }
 
     private fun checkAuthoredControlEvidence() {
-        listOf("unknown", "TODO", "n/a", "pending", "to be confirmed").forEach { value ->
+        val ambiguous = listOf(
+            "backup" to "unknown",
+            "backup" to "TODO",
+            "backup" to "n/a",
+            "backup" to "pending",
+            "backup" to "to be confirmed",
+            "backup" to "backup later",
+            "backup" to "backup something",
+            "rollbackPlan" to "rollback someday please",
+            "retention" to "policy later",
+            "safety" to "approval pending",
+            "backup" to "approved"
+        )
+        ambiguous.forEach { (parameter, value) ->
             require(
-                AuthoredControlEvidenceTextAuthority.assess("backup", IntentString(value)).status ==
+                AuthoredControlEvidenceTextAuthority.assess(parameter, IntentString(value)).status ==
                     AuthoredControlEvidenceTextStatus.UNKNOWN
-            ) { "Placeholder '$value' was accepted as positive backup evidence." }
+            ) { "Ambiguous control evidence '$parameter=$value' was accepted as positive evidence." }
         }
         require(
             AuthoredControlEvidenceTextAuthority
@@ -127,21 +141,51 @@ internal class ClosureBlockingIntegrityChecks(
                 )
             )
         )
-        val damaged = plan.copy(
+        val omitted = plan.copy(
             topologyRequirements = plan.topologyRequirements.filterNot {
                 it.source == ExecutionTopologyRequirementSource.CANONICAL_WORKFLOW ||
                     it.source == ExecutionTopologyRequirementSource.CANONICAL_CAPABILITY
             }
         )
-        val failure = runCatching {
+        val omittedFailure = runCatching {
             MandatoryMaterializationAuthority(targets, registry)
-                .authorizeDiagnosticEvidence(damaged, "jenkins")
+                .authorizeDiagnosticEvidence(omitted, "jenkins")
         }.exceptionOrNull()
-        require(failure is InvalidPlanningEvidenceException) {
+        require(omittedFailure is InvalidPlanningEvidenceException) {
             "Omitted canonical topology did not fail at the materialization authority."
         }
-        require(failure.issues.any { it.code == "planning.topology.canonical.missing" }) {
+        require(omittedFailure.issues.any { it.code == "planning.topology.canonical.missing" }) {
             "Canonical topology loss failed without a specific planning diagnostic."
+        }
+
+        val withoutProvenance = plan.copy(sourceIntent = null)
+        val provenanceFailure = runCatching {
+            MandatoryMaterializationAuthority(targets, registry)
+                .authorizeDiagnosticEvidence(withoutProvenance, "jenkins")
+        }.exceptionOrNull()
+        require(provenanceFailure is InvalidPlanningEvidenceException) {
+            "Canonical topology without source provenance was accepted."
+        }
+        require(provenanceFailure.issues.any { it.code == "planning.topology.canonical.provenance.missing" }) {
+            "Missing canonical source provenance lacks a specific planning diagnostic."
+        }
+
+        val fullyStripped = plan.copy(
+            sourceIntent = null,
+            topologyRequirements = plan.topologyRequirements.filterNot {
+                it.source == ExecutionTopologyRequirementSource.CANONICAL_WORKFLOW ||
+                    it.source == ExecutionTopologyRequirementSource.CANONICAL_CAPABILITY
+            }
+        )
+        val strippedFailure = runCatching {
+            MandatoryMaterializationAuthority(targets, registry)
+                .authorizeDiagnosticEvidence(fullyStripped, "jenkins")
+        }.exceptionOrNull()
+        require(strippedFailure is InvalidPlanningEvidenceException) {
+            "Removing both canonical claims and their source provenance hid intent-derived topology."
+        }
+        require(strippedFailure.issues.any { it.code == "planning.topology.canonical.provenance.missing" }) {
+            "Stripped canonical provenance failed without a specific planning diagnostic."
         }
     }
 
@@ -203,6 +247,22 @@ internal class ClosureBlockingIntegrityChecks(
         val expression = GitHubJobConditionAuthority.expression(approvalManifest.jobs.last(), approvalManifest).orEmpty()
         require(expression.contains("!cancelled()") && !expression.contains("always()")) {
             "Provider-approval dependency evaluation does not preserve workflow cancellation."
+        }
+    }
+
+    private fun checkExactHeadCiBoundary() {
+        val workflow = File(rootDir, ".github/workflows/flow-agent-check.yml").readText()
+        require(workflow.contains("github.event.pull_request.head.sha")) {
+            "Flow CI does not select the pull request head SHA for exact-head validation."
+        }
+        require(workflow.contains("Verify Exact Checked-Out Revision")) {
+            "Flow CI does not verify the revision checked out for exact-head validation."
+        }
+        require(workflow.contains("git rev-parse HEAD")) {
+            "Flow CI does not compare the checked-out Git revision to the declared evidence SHA."
+        }
+        require(workflow.contains("merge-candidate-compile-test-conformance")) {
+            "Flow CI lost the separate pull-request merge-candidate validation."
         }
     }
 
