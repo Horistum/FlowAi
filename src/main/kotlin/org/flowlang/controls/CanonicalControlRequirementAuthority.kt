@@ -245,25 +245,40 @@ object CanonicalControlRequirementAuthority {
         steps: List<IntentStep>,
         names: List<String>
     ): ControlEvidence {
-        var explicitDenial = false
+        val confirmations = mutableListOf<String>()
+        val denials = mutableListOf<String>()
         steps.forEach { step ->
             names.forEach { name ->
                 val assessment = AuthoredControlEvidenceTextAuthority.assess(name, step.params[name])
+                val detail = "${step.id}.$name: ${assessment.reason}"
                 when (assessment.status) {
-                    AuthoredControlEvidenceTextStatus.CONFIRMED -> return ControlEvidence(
-                        requirement.id,
-                        ControlEvidenceStatus.SATISFIED,
-                        ControlEvidenceSource.AUTHORED_PARAMETER,
-                        "${step.id}.$name: ${assessment.reason}"
-                    )
-                    AuthoredControlEvidenceTextStatus.DENIED -> explicitDenial = true
+                    AuthoredControlEvidenceTextStatus.CONFIRMED -> confirmations += detail
+                    AuthoredControlEvidenceTextStatus.DENIED -> denials += detail
                     AuthoredControlEvidenceTextStatus.UNKNOWN -> Unit
                 }
             }
         }
-        return if (explicitDenial) {
-            ControlEvidence(requirement.id, ControlEvidenceStatus.UNSATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "Explicit negative evidence")
-        } else missing(requirement, "No confirmed authored evidence was found.")
+        return when {
+            confirmations.isNotEmpty() && denials.isNotEmpty() -> ControlEvidence(
+                requirement.id,
+                ControlEvidenceStatus.UNSATISFIED,
+                ControlEvidenceSource.AUTHORED_PARAMETER,
+                "Conflicting authored evidence; confirmed: ${confirmations.joinToString()}; denied: ${denials.joinToString()}"
+            )
+            denials.isNotEmpty() -> ControlEvidence(
+                requirement.id,
+                ControlEvidenceStatus.UNSATISFIED,
+                ControlEvidenceSource.AUTHORED_PARAMETER,
+                "Explicit negative evidence: ${denials.joinToString()}"
+            )
+            confirmations.isNotEmpty() -> ControlEvidence(
+                requirement.id,
+                ControlEvidenceStatus.SATISFIED,
+                ControlEvidenceSource.AUTHORED_PARAMETER,
+                confirmations.joinToString()
+            )
+            else -> missing(requirement, "No confirmed authored evidence was found.")
+        }
     }
 
     private fun missing(requirement: ControlRequirement, detail: String) = ControlEvidence(
