@@ -2,7 +2,7 @@ version: "0.9.7.9.9"
 name: "Parser, Conformance and Architecture Evidence Integrity"
 type: "bounded-correction"
 stream: core
-status: implementation-candidate
+status: active
 parentCoreItem: "0.9.7.9"
 objective: "Repair silent .flow retry-policy loss, circular compliance proof, incomplete serialization boundaries, whitespace-based module governance and unnecessary concrete-target anchoring of universal conformance evidence."
 scopeBoundary:
