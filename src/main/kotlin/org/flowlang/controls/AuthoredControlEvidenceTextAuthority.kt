@@ -37,10 +37,10 @@ object AuthoredControlEvidenceTextAuthority {
     private fun assessText(parameterName: String, raw: String): AuthoredControlEvidenceTextAssessment {
         val normalized = normalize(raw)
         if (normalized.isBlank()) return unknown(normalized, "Blank text is not control evidence.")
-        if (normalized in explicitDenials) {
+        if (denialPatterns.any { it.containsMatchIn(normalized) }) {
             return denied(normalized, "The authored text explicitly denies or declares unavailable control evidence.")
         }
-        if (normalized in placeholders || placeholderPatterns.any { it.matches(normalized) }) {
+        if (unresolvedPatterns.any { it.containsMatchIn(normalized) }) {
             return unknown(normalized, "Placeholder or unresolved text cannot satisfy a control requirement.")
         }
         if (normalized in explicitConfirmations) {
@@ -65,37 +65,42 @@ object AuthoredControlEvidenceTextAuthority {
     private fun concreteBackupReference(raw: String): Boolean {
         val value = raw.trim()
         return concreteLocator(value) ||
-            backupReference.matches(value) ||
-            tokenCount(value) >= 2 && backupTerms.any { value.contains(it, ignoreCase = true) }
+            backupIdentifier.matches(value) ||
+            namedBackupReference.matches(value)
     }
 
     private fun concreteRollbackPlan(raw: String): Boolean {
         val value = raw.trim()
-        return tokenCount(value) >= 3 && rollbackActions.any { value.contains(it, ignoreCase = true) }
+        val hasAction = rollbackActions.any { containsTerm(value, it) }
+        val hasObject = rollbackObjects.any { containsTerm(value, it) }
+        return tokenCount(value) >= 4 && hasAction &&
+            (hasObject || concreteLocator(value) || changeReference.matches(value))
     }
 
     private fun concreteChangeReference(raw: String): Boolean {
         val value = raw.trim()
-        return changeReference.matches(value) || concreteLocator(value)
+        return changeReference.matches(value) || uriReference.matches(value)
     }
 
-    private fun concreteRetentionRule(raw: String): Boolean {
-        val value = raw.trim()
-        return retentionDuration.containsMatchIn(value) ||
-            tokenCount(value) >= 2 && retentionTerms.any { value.contains(it, ignoreCase = true) }
-    }
+    private fun concreteRetentionRule(raw: String): Boolean =
+        retentionDuration.containsMatchIn(raw.trim())
 
     private fun concreteSafetyControl(raw: String): Boolean {
         val value = raw.trim()
-        return tokenCount(value) >= 2 && safetyTerms.any { value.contains(it, ignoreCase = true) }
+        return dryRunControl.containsMatchIn(value) ||
+            concreteBackupReference(value) ||
+            concreteRollbackPlan(value) ||
+            concreteChangeReference(value) ||
+            concreteRetentionRule(value)
     }
 
     private fun concreteLocator(value: String): Boolean =
-        value.contains("://") ||
-            value.startsWith("/") ||
-            value.startsWith("./") ||
-            value.startsWith("../") ||
-            value.contains(Regex("[A-Za-z0-9._-]+/[A-Za-z0-9._/-]+"))
+        uriReference.matches(value) ||
+            unixPathReference.matches(value) ||
+            windowsPathReference.matches(value)
+
+    private fun containsTerm(value: String, term: String): Boolean =
+        Regex("(?i)(^|[^A-Za-z0-9])${Regex.escape(term)}([^A-Za-z0-9]|$)").containsMatchIn(value)
 
     private fun normalize(value: String): String = value.trim().lowercase().replace(Regex("\\s+"), " ")
 
@@ -121,31 +126,37 @@ object AuthoredControlEvidenceTextAuthority {
         reason
     )
 
-    private val explicitConfirmations = setOf(
-        "true", "yes", "required", "confirmed", "available", "created", "present",
-        "provided", "enabled", "complete", "completed", "approved"
+    private val explicitConfirmations = setOf("true", "yes", "confirmed")
+
+    private val denialPatterns = listOf(
+        Regex("(^|[^a-z0-9])(false|no|none|denied|disabled|unavailable|missing|absent)([^a-z0-9]|$)"),
+        Regex("(^|[^a-z0-9])not[ _-]+(available|confirmed|provided|present|created|complete|completed|approved)([^a-z0-9]|$)")
     )
-    private val explicitDenials = setOf(
-        "false", "no", "none", "denied", "disabled", "unavailable", "not available",
-        "not-confirmed", "not confirmed", "missing", "absent"
+
+    private val unresolvedPatterns = listOf(
+        Regex("(^|[^a-z0-9])(unknown|unspecified|todo|tbd|pending|later|planned|unset|someday|eventually|maybe|placeholder)([^a-z0-9]|$)"),
+        Regex("(^|[^a-z0-9])n[ /_-]*a([^a-z0-9]|$)"),
+        Regex("(^|[^a-z0-9])not[ _-]+applicable([^a-z0-9]|$)"),
+        Regex("(^|[^a-z0-9])ask[ _-]+later([^a-z0-9]|$)"),
+        Regex("(^|[^a-z0-9])to[ _-]+be[ _-]+(defined|confirmed|provided|decided)([^a-z0-9]|$)"),
+        Regex("(^|[^a-z0-9])(will|shall)[ _-]+be[ _-]+(defined|confirmed|provided|decided)([^a-z0-9]|$)")
     )
-    private val placeholders = setOf(
-        "unknown", "unspecified", "n/a", "na", "not applicable", "todo", "tbd",
-        "pending", "later", "ask later", "planned", "not set", "unset"
+
+    private val uriReference = Regex("(?i)[A-Za-z][A-Za-z0-9+.-]*://\\S+")
+    private val unixPathReference = Regex("(?:/|\\./|\\.\\./)[A-Za-z0-9._/-]+")
+    private val windowsPathReference = Regex("(?i)[A-Z]:\\\\[A-Za-z0-9._\\\\ -]+")
+    private val backupIdentifier = Regex("(?i)(backup|snapshot|archive)[-_:/][A-Za-z0-9][A-Za-z0-9._:/-]*")
+    private val namedBackupReference = Regex(
+        "(?i)(backup|snapshot|archive)\\s+[A-Za-z0-9._/-]*[0-9:/][A-Za-z0-9._:/-]*"
     )
-    private val placeholderPatterns = listOf(
-        Regex("to be (defined|confirmed|provided|decided)"),
-        Regex("(will|shall) be (defined|confirmed|provided|decided)"),
-        Regex("unknown.*"),
-        Regex("pending.*")
-    )
-    private val backupReference = Regex("(?i)(backup|snapshot|archive)[-_:/ ]?[A-Za-z0-9][A-Za-z0-9._:/-]*")
     private val changeReference = Regex("(?i)([A-Z][A-Z0-9]{1,9}-[0-9]+|CHG[0-9]+|RFC[0-9]+)")
     private val retentionDuration = Regex(
         "(?i)\\b[1-9][0-9]*\\s*(minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|wks?|w|months?|mos?|mo|years?|yrs?|y)\\b"
     )
-    private val backupTerms = setOf("backup", "snapshot", "archive", "restore point")
+    private val dryRunControl = Regex("(?i)\\bdry[ -]?run\\b")
     private val rollbackActions = setOf("restore", "rollback", "roll back", "revert", "redeploy", "fail over", "failover", "recover")
-    private val retentionTerms = setOf("retain", "retention", "expire", "delete after", "policy")
-    private val safetyTerms = setOf("approval", "dry run", "dry-run", "backup", "rollback", "retention", "guard", "change ticket")
+    private val rollbackObjects = setOf(
+        "snapshot", "backup", "image", "version", "deployment", "database", "release",
+        "configuration", "manifest", "commit", "artifact", "service"
+    )
 }
