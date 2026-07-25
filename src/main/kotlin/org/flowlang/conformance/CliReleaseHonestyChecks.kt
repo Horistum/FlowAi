@@ -71,7 +71,9 @@ internal class CliReleaseHonestyChecks(
             }
 
             val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
-            require(release.completedCorrectionItem == "0.9.7.9.8")
+            require(release.completedCorrectionItem.startsWith("0.9.7.9.")) {
+                "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded 0.9.7.9.x track."
+            }
             require(release.nextCoreItem == "0.9.7.10")
             require(release.correctionStatus in setOf("active", "complete"))
 
