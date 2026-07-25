@@ -295,16 +295,38 @@ class FlowParser {
     private fun parseRetry(ts: TokenStream): RetryNode {
         val kw = ts.expectWord("retry")
         ts.expect(TokenType.LBRACE, "'{'")
-        var max = 3; var delay = "10s"; var backoff = "fixed"
+        var max = 3
+        var delay = "10s"
+        var backoff = "fixed"
+        val seenKeys = mutableSetOf<String>()
         ts.skipSeparators()
         while (!ts.check(TokenType.RBRACE)) {
-            val key = ts.expect(TokenType.IDENT, "policy key").text
+            val keyToken = ts.expect(TokenType.IDENT, "policy key")
+            val key = keyToken.text
+            val path = "retry.$key"
+            if (!seenKeys.add(key)) {
+                throw ParseException("duplicate policy key '$path'", keyToken.line, keyToken.column)
+            }
             ts.expect(TokenType.COLON, "':'")
-            val v = ExpressionParser(ts).parse()
+            val valueToken = ts.peek()
+            val value = ExpressionParser(ts).parse()
             when (key) {
-                "max" -> max = ((v as? NumberLiteralNode)?.value ?: 3.0).toInt()
-                "delay" -> delay = (v as? StringLiteralNode)?.value ?: "10s"
-                "backoff" -> backoff = (v as? StringLiteralNode)?.value ?: ((v as? ReferenceNode)?.path?.joinToString(".") ?: "fixed")
+                "max" -> {
+                    val number = value as? NumberLiteralNode
+                        ?: throw ParseException("$path must be an integer number", valueToken.line, valueToken.column)
+                    if (!number.isInteger || number.value < Int.MIN_VALUE || number.value > Int.MAX_VALUE) {
+                        throw ParseException("$path must be an integer number", valueToken.line, valueToken.column)
+                    }
+                    max = number.value.toInt()
+                }
+                "delay" -> delay = (value as? StringLiteralNode)?.value
+                    ?: throw ParseException("$path must be text", valueToken.line, valueToken.column)
+                "backoff" -> backoff = when (value) {
+                    is StringLiteralNode -> value.value
+                    is ReferenceNode -> value.path.joinToString(".")
+                    else -> throw ParseException("$path must be text or a symbolic identifier", valueToken.line, valueToken.column)
+                }
+                else -> throw ParseException("unknown policy key '$path'", keyToken.line, keyToken.column)
             }
             ts.skipSeparators()
         }
