@@ -28,10 +28,12 @@ jobs:
           exec > >(tee materialization.log) 2>&1
           set -eux
           printf '%s  %s\n' \
-            c7f1490306fbd15ed5d5b85fc4bef2c985fb63e8b8f5b38dbae69c9896b171ac .flow-agent/internal/variant2.part-00 \
+            59e5a4e86d9bd701eae04a364a3b1bc311686684c233ff1dcaf9154d48d947f0 .flow-agent/internal/variant2.part-000 \
+            c2273f9b08665280dc1c6e9053087c2c61f03e9b4b9382b2506b4dcabadd7381 .flow-agent/internal/variant2.part-001 \
             378ee189e3d470a6cc37795db2225c1f1c0b01a47974f24384d76b6956b83b3e .flow-agent/internal/variant2.part-01 \
             d4c4a474971cb9ee675b7358c4c1f8a53906d0c7d72835de565de777fd2c3e3c .flow-agent/internal/variant2.part-02 \
-            c5202ff4e8f791df5bee533a29bd7875156ed1ff86355963cd84ab285b51f8a0 .flow-agent/internal/variant2.part-03 \
+            e9fd70b9111647f85024f9153363a86c83850c67a09e5d492d1446216c5e0d88 .flow-agent/internal/variant2.part-030 \
+            59be9198a4078043b56c4b25db2f891b1a950e0b014c84fb201587dbc3d6f2b9 .flow-agent/internal/variant2.part-031 \
             dae34409dd7cc588d06c00acabbf322eba9a4b70c3b9ecab8f7f60f51ad005d3 .flow-agent/internal/variant2.part-04 \
             23040102e07eadff9c23e5b700840cff32a0157367ac892ef8415d9c22eb407d .flow-agent/internal/variant2.part-05 \
             0ad344797c9ca8b07e80d1cb9121a243ff611357a7c6b508b46d25aa46588241 .flow-agent/internal/variant2.part-06 \
@@ -39,7 +41,17 @@ jobs:
           encoded="$(mktemp)"
           compressed="$(mktemp)"
           patch_file="$(mktemp)"
-          cat .flow-agent/internal/variant2.part-* > "$encoded"
+          cat \
+            .flow-agent/internal/variant2.part-000 \
+            .flow-agent/internal/variant2.part-001 \
+            .flow-agent/internal/variant2.part-01 \
+            .flow-agent/internal/variant2.part-02 \
+            .flow-agent/internal/variant2.part-030 \
+            .flow-agent/internal/variant2.part-031 \
+            .flow-agent/internal/variant2.part-04 \
+            .flow-agent/internal/variant2.part-05 \
+            .flow-agent/internal/variant2.part-06 \
+            > "$encoded"
           test "$(wc -c < "$encoded")" = "34704"
           test "$(sha256sum "$encoded" | awk '{print $1}')" = "3d72b1763df7cf72cb9067c6bb7c243ecfaa66351516ecd00e87c0524a627e6c"
           base64 --decode "$encoded" > "$compressed"
