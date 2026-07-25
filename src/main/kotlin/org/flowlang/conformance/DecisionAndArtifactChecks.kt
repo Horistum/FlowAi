@@ -32,9 +32,9 @@ internal class DecisionAndArtifactChecks(
     private fun checkV039TargetDecisionTraceReport(): ConformanceCheck = runCheck("v0.3.9.target-decision-trace") {
         val core = neutral.build()
         val compatibility = CompatibilityAnalyzer(targets)
-        val manifests = targets.keys.sorted().map { target ->
-            manifestPipeline.generateDiagnosticEvidence(core.plan, target)
-        }
+        val manifests = targets.keys.sorted()
+            .filter { target -> projections.providerFor(target) != null }
+            .map { target -> manifestPipeline.generateDiagnosticEvidence(core.plan, target) }
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
             compatibility.negotiate(core.plan, strict = false),
             manifests
