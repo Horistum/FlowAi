@@ -5,15 +5,15 @@ Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
-Core roadmap item status: `correction-required`
-Active correction item: `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity`
-Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`blocked`)
+Core roadmap item status: `completed`
+Completed correction item: `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity`
+Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
 
 ## Active direction
 
 Core, implementation and conformance planning remain separate authorities. Existing executable reference evidence stays active as falsification feedback and does not define Core meaning. Package, public-standard, artifact-contract and bounded-work versions remain independent axes.
 
-The v0.9.7 track cannot enter its bounded closure gate while `0.9.7.9.9` is active. The correction reopens `0.9.7.9` after proving that the public `.flow` retry parser silently discarded or replaced authored policy values and that several conformance and architecture checks overstated what they proved.
+The later parser and conformance audit reopened `0.9.7.9`, and bounded correction `0.9.7.9.9` repaired the confirmed findings. Flow CI #2048 independently passed the implementation head and its synthetic merge candidate, so the correction is complete and the bounded closure gate is again the next Core item. The completion-metadata head still requires its own dual validation before review readiness.
 
 ## Correction ledger
 
@@ -25,7 +25,7 @@ The v0.9.7 track cannot enter its bounded closure gate while `0.9.7.9.9` is acti
 6. `0.9.7.9.6 Derived Model and Governance Integrity` made report summaries and governance verdicts reproducible from detailed evidence.
 7. `0.9.7.9.7 CLI Diagnostic and Release Honesty` separated manifest evidence, render authorization and staged release publication.
 8. `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity` repaired the previously known closure blockers and completed after dual validation.
-9. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity` repairs the later parser, compliance, architecture and conformance findings before closure may resume.
+9. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity` repaired the later parser, compliance, architecture and conformance findings and completed after dual validation.
 
 ## v0.9.7.9.8 retained implementation boundary
 
@@ -90,6 +90,7 @@ The v0.9.7 track cannot enter its bounded closure gate while `0.9.7.9.9` is acti
 - Serializer annotations are removed from the target-neutral projection contract.
 - Jackson and YAML imports are checked across the declared semantic Core package set.
 - Module target ownership is rejected by `CanonicalModuleLoader` structure rather than source indentation.
+- Release metadata honesty selects the active or latest bounded correction instead of hard-coding a historical work item.
 
 ## Roadmap order
 
@@ -101,9 +102,9 @@ The v0.9.7 track cannot enter its bounded closure gate while `0.9.7.9.9` is acti
 6. `0.9.7.6 Universal Effect and State Transition Model` completed
 7. `0.9.7.7 Universal Control and Policy Requirements` completed
 8. `0.9.7.8 Abstract Execution Topology Model` completed
-9. `0.9.7.9 Intent Lowering and Diagnostic Honesty` correction-required
-10. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity` active
-11. `0.9.7.10 Bounded Semantic Closure Gate` blocked
+9. `0.9.7.9 Intent Lowering and Diagnostic Honesty` completed
+10. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity` completed
+11. `0.9.7.10 Bounded Semantic Closure Gate` next
 
 ## Validation
 
@@ -111,7 +112,9 @@ Last merged validation: Flow CI #2011, run `30083768491`, passed implementation 
 
 Historical correction validation: Flow CI #2025, run `30144935197`, passed exact implementation head `af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319` and synthetic merge candidate `2e30830d55fe73ec0c46c75dfd425c1047dc9853` for `v0.9.7.9.8`.
 
-The active `v0.9.7.9.9` candidate has no committed passing claim. Its final implementation head and synthetic merge candidate must independently pass Flow Agent checks, clean tests, standalone conformance and executable reference evidence before completion metadata may be written.
+Current correction validation: Flow CI #2048, run `30155688901`, passed exact implementation head `869816b978a107545742553e598bcdd118d984b2` and synthetic merge candidate `5c4b0999b104f5501eb79980ab83014dac275df6` for `v0.9.7.9.9`.
+
+The completion-metadata head must independently pass both Flow CI jobs before the pull request is marked ready for review.
 
 ## Architecture boundary
 
