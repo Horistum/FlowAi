@@ -61,21 +61,23 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 ### v0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity
 
 - Replaces fail-open arbitrary-text control evidence with typed confirmed, denied and unknown classification.
-- Accepts concrete backup, rollback, change-ticket, retention and safety evidence while rejecting placeholders such as `unknown`, `TODO`, `n/a` and `pending`.
-- Recognizes bounded compact retention durations such as `14d` without accepting arbitrary text.
+- Rejects placeholder, ambiguity and denial markers even when embedded in longer authored text.
+- Accepts only bounded explicit confirmations or concrete control-specific backup locators, rollback plans, change-ticket identifiers, retention durations and safety controls.
+- Rejects generic words such as `available`, `complete`, `approved`, `required` and `policy` as standalone evidence.
 - Replaces raw CI/CD bias substring matching with lexical code, control-literal, ordinary-string, comment, catalog and retained-compatibility contexts.
 - Localizes lexical findings to the actual occurrence line and separates scenario, conformance, CLI, release and adapter ownership from Core semantic health.
 - Makes governance health depend only on actionable coupling in active semantic source.
 - Removes the legacy CLI entrypoint and every implicit Jenkins target default.
 - Produces target-neutral planning evidence when no target is selected.
 - Produces typed review-only or blocked diagnostic manifest evidence for expected target incompatibility instead of a stack trace.
-- Re-derives canonical workflow and capability topology from retained source provenance before materialization.
+- Re-derives canonical workflow and capability topology only from independent retained source provenance.
+- Rejects canonical claims and intent-derived source signals when `sourceIntent` is missing instead of validating retained claims against themselves.
 - Retains legacy `dependencies` and `effects` only as mechanically checked compatibility projections.
 - Preserves GitHub Actions cancellation semantics and removes `always()` from ordinary dependency jobs.
-- Status: complete.
-- Implementation validation: Flow CI `#2021`, run `30090943402`, exact implementation head `64e4df9abe8a95adede53b2876c49031e0bfed8f` passed tooling, structure, clean tests, standalone conformance and reference evidence.
-- Completion metadata requires its own final exact-head Flow CI before review readiness.
+- Validates the exact pull-request head independently from GitHub's synthetic merge candidate and verifies both checked-out SHAs.
+- Status: active.
+- Validation: pending one corrected implementation head passing both Flow CI jobs; runs `#2021` and `#2022` remain merge-candidate evidence only and are not exact-head proof.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed` only after the bounded correction implementation passed. `0.9.7.10 Bounded Semantic Closure Gate` is now `next`. The closure gate remains a finite verification step and may not introduce new requirements or reinterpret implementation coverage as Core meaning.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` remains `correction-required`. `0.9.7.10 Bounded Semantic Closure Gate` remains `blocked` while work package `0.9.7.9.8` is active. The closure gate may become `next` only after the corrected implementation head passes exact-head validation, the same pull request passes merge-candidate validation, the existing executable reference evidence remains live and a separate metadata head records the completed correction lifecycle.
