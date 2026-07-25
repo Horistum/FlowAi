@@ -61,13 +61,11 @@ architectureConstitution:
     - "No governance signal whose status contradicts the property measured."
 
 currentDecision:
-  completedItem: "0.9.7.8"
-  completedItemName: "Abstract Execution Topology Model"
+  completedItem: "0.9.7.9"
+  completedItemName: "Intent Lowering and Diagnostic Honesty"
   correctionState: "active"
   activeCorrectionWorkPackage: ".flow-agent/work-packages/v0.9.7.9.9-parser-conformance-architecture-integrity.yaml"
   activeCorrectionWorkPackageName: "Parser, Conformance and Architecture Evidence Integrity"
-  reopenedCoreItem: "0.9.7.9"
-  reopenedCoreItemName: "Intent Lowering and Diagnostic Honesty"
-  blockedCoreItem: "0.9.7.10"
-  blockedCoreItemName: "Bounded Semantic Closure Gate"
-  blockedCoreItemStatus: "blocked"
+  nextCoreItem: "0.9.7.10"
+  nextCoreItemName: "Bounded Semantic Closure Gate"
+  nextCoreItemStatus: "blocked"
