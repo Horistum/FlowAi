@@ -86,7 +86,7 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 - Replaces indentation-based module governance with canonical module-loader evidence and structural negative tests.
 - Introduces a target-neutral conformance fixture for universal artifact, schema, compliance, draft and decision evidence.
 - Keeps concrete Jenkins projection evidence only where a target manifest or renderer is genuinely under test.
-- Status: implementation-candidate; no passing validation evidence recorded yet.
+- Status: active implementation candidate; no passing validation evidence recorded yet.
 
 ## Closure boundary
 
