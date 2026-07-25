@@ -17,17 +17,52 @@ import org.flowlang.intent.StandardCapability
 class ClosureBlockingSafetyIntegrityTests {
     @Test
     fun placeholdersAndAmbiguousTextNeverConfirmControlEvidence() {
-        listOf("unknown", "TODO", "n/a", "pending", "to be confirmed", "ask later").forEach { value ->
-            val assessment = AuthoredControlEvidenceTextAuthority.assess("backup", IntentString(value))
-            assertEquals(AuthoredControlEvidenceTextStatus.UNKNOWN, assessment.status, value)
+        val ambiguous = listOf(
+            "backup" to "unknown",
+            "backup" to "TODO",
+            "backup" to "n/a",
+            "backup" to "pending",
+            "backup" to "to be confirmed",
+            "backup" to "ask later",
+            "backup" to "backup later",
+            "backup" to "backup something",
+            "backup" to "snapshot pending",
+            "rollbackPlan" to "rollback someday please",
+            "retention" to "policy later",
+            "safety" to "approval pending",
+            "backup" to "available",
+            "backup" to "complete",
+            "backup" to "approved",
+            "retention" to "required"
+        )
+
+        ambiguous.forEach { (parameter, value) ->
+            val assessment = AuthoredControlEvidenceTextAuthority.assess(parameter, IntentString(value))
+            assertEquals(AuthoredControlEvidenceTextStatus.UNKNOWN, assessment.status, "$parameter=$value")
         }
     }
 
     @Test
-    fun explicitDenialsRemainUnsatisfied() {
-        listOf("no", "false", "not available", "missing", "disabled").forEach { value ->
+    fun explicitDenialsRemainUnsatisfiedEvenInsideLongerText() {
+        listOf(
+            "no",
+            "false",
+            "not available",
+            "missing",
+            "disabled",
+            "backup unavailable",
+            "no backup exists"
+        ).forEach { value ->
             val assessment = AuthoredControlEvidenceTextAuthority.assess("backup", IntentString(value))
             assertEquals(AuthoredControlEvidenceTextStatus.DENIED, assessment.status, value)
+        }
+    }
+
+    @Test
+    fun explicitPositiveValuesRemainDeliberateAndBounded() {
+        listOf("true", "yes", "confirmed").forEach { value ->
+            val assessment = AuthoredControlEvidenceTextAuthority.assess("backup", IntentString(value))
+            assertEquals(AuthoredControlEvidenceTextStatus.CONFIRMED, assessment.status, value)
         }
     }
 
@@ -36,6 +71,10 @@ class ClosureBlockingSafetyIntegrityTests {
         assertEquals(
             AuthoredControlEvidenceTextStatus.CONFIRMED,
             AuthoredControlEvidenceTextAuthority.assess("backup", IntentString("s3://recovery/db-before-migration-42")).status
+        )
+        assertEquals(
+            AuthoredControlEvidenceTextStatus.CONFIRMED,
+            AuthoredControlEvidenceTextAuthority.assess("backup", IntentString("backup-db-before-migration-42")).status
         )
         assertEquals(
             AuthoredControlEvidenceTextStatus.CONFIRMED,
@@ -56,14 +95,23 @@ class ClosureBlockingSafetyIntegrityTests {
             AuthoredControlEvidenceTextStatus.CONFIRMED,
             AuthoredControlEvidenceTextAuthority.assess("retention", IntentString("14d")).status
         )
+        assertEquals(
+            AuthoredControlEvidenceTextStatus.CONFIRMED,
+            AuthoredControlEvidenceTextAuthority.assess(
+                "safety",
+                IntentString("dry-run with rollback ticket OPS-1842")
+            ).status
+        )
     }
 
     @Test
     fun unknownBackupTextCannotAuthorizeDatabaseMigration() {
-        val assessment = CanonicalControlRequirementAuthority.assess(migrationIntent("unknown"))
+        listOf("unknown", "backup later", "backup something", "approved").forEach { backup ->
+            val assessment = CanonicalControlRequirementAuthority.assess(migrationIntent(backup))
 
-        assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status)
-        assertEquals(ControlEvidenceStatus.UNKNOWN, assessment.evidence.single().status)
+            assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status, backup)
+            assertEquals(ControlEvidenceStatus.UNKNOWN, assessment.evidence.single().status, backup)
+        }
     }
 
     @Test
