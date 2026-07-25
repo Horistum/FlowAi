@@ -86,8 +86,10 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 - Replaces indentation-based module governance with canonical module-loader evidence and structural negative tests.
 - Introduces a target-neutral conformance fixture for universal artifact, schema, compliance, draft and decision evidence.
 - Keeps concrete Jenkins projection evidence only where a target manifest or renderer is genuinely under test.
-- Status: active implementation candidate; no passing validation evidence recorded yet.
+- Generalizes release metadata honesty so bounded correction identity is selected from governance state instead of a hard-coded historical version.
+- Validation: Flow CI `#2048`, run `30155688901`, passed exact implementation head `869816b978a107545742553e598bcdd118d984b2` and independently passed merge candidate `5c4b0999b104f5501eb79980ab83014dac275df6`.
+- Status: complete; the completion-metadata head still requires the same dual workflow before review readiness.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` is `correction-required` while `0.9.7.9.9` is active. `0.9.7.10 Bounded Semantic Closure Gate` remains blocked until the correction has independent exact-head and merge-candidate Flow CI evidence. Package, public-standard and artifact-contract versions remain unchanged.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is the next Core item. Package, public-standard and artifact-contract versions remain unchanged.
