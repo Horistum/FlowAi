@@ -5,16 +5,17 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyRelations
 
 /**
- * Re-derives canonical topology from source provenance retained by an ExecutionPlan.
+ * Re-derives canonical topology only from source provenance retained by an
+ * ExecutionPlan.
  *
- * Intent-derived plans carry workflow, source-step and failure metadata. That data
- * is independent from the plan's topologyRequirements field and therefore lets the
- * materialization boundary detect omitted or forged CANONICAL_WORKFLOW and
- * CANONICAL_CAPABILITY requirements instead of validating an empty expectation.
+ * Canonical requirements already stored on the plan are never reused as the
+ * expected value for their own validation. A plan without source provenance has
+ * no independent canonical authority and must be handled by the materialization
+ * validator rather than certifying its retained claims.
  */
 object ExecutionPlanCanonicalTopologyAuthority {
     fun requirementsFor(plan: ExecutionPlan): List<ExecutionTopologyRequirement> {
-        val source = plan.sourceIntent ?: return retainedCanonicalRequirements(plan)
+        val source = plan.sourceIntent ?: return emptyList()
         val nodes = PlanDependencyRelations.flatten(plan.nodes)
         val approvalSourceIds = nodes.filterIsInstance<ApprovalNode>()
             .mapNotNull(ApprovalNode::sourceId)
@@ -56,11 +57,6 @@ object ExecutionPlanCanonicalTopologyAuthority {
             .sortedBy(ExecutionTopologyRequirement::id)
     }
 
-    private fun retainedCanonicalRequirements(plan: ExecutionPlan): List<ExecutionTopologyRequirement> =
-        plan.topologyRequirements.filter { it.source in canonicalSources }
-            .let(TopologyRequirementIdentityAuthority::assign)
-            .sortedBy(ExecutionTopologyRequirement::id)
-
     private fun requirement(
         kind: ExecutionTopologyKind,
         subject: String,
@@ -72,10 +68,5 @@ object ExecutionPlanCanonicalTopologyAuthority {
         subject = subject,
         source = source,
         evidenceReference = reference
-    )
-
-    private val canonicalSources = setOf(
-        ExecutionTopologyRequirementSource.CANONICAL_WORKFLOW,
-        ExecutionTopologyRequirementSource.CANONICAL_CAPABILITY
     )
 }
