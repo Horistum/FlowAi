@@ -1,7 +1,10 @@
 package org.flowlang.generators.manifest
 
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.PlanDependencyRelations
+import org.flowlang.planner.TaskNode
 import org.flowlang.topology.ExecutionPlanCanonicalTopologyAuthority
 import org.flowlang.topology.ExecutionTopologyAssessment
 import org.flowlang.topology.ExecutionTopologyDecisionStatus
@@ -47,32 +50,48 @@ internal object ExecutionPlanTopologyValidator {
             )
         }
 
-        val canonicalExpected = ExecutionPlanCanonicalTopologyAuthority.requirementsFor(plan)
         val canonicalActual = plan.topologyRequirements.filter { it.source in canonicalSources }
-        val actualCanonicalByKey = canonicalActual.associateBy(::semanticKey)
-        val expectedCanonicalByKey = canonicalExpected.associateBy(::semanticKey)
+        val hasIndependentCanonicalProvenance = plan.sourceIntent != null
+        if (!hasIndependentCanonicalProvenance && retainsCanonicalSourceSignals(plan, canonicalActual)) {
+            issues += PlanningEvidenceIssue(
+                "planning.topology.canonical.provenance.missing",
+                "sourceIntent",
+                "Plan retains canonical topology or intent-derived source signals without the independent source provenance required to validate them."
+            )
+        }
 
-        canonicalExpected.forEach { expected ->
-            val actual = actualCanonicalByKey[semanticKey(expected)]
-            when {
-                actual == null -> issues += PlanningEvidenceIssue(
-                    "planning.topology.canonical.missing",
-                    "topologyRequirements",
-                    "Plan omits canonical execution topology '${expected.kind.registryKey}' for '${expected.subject}'."
-                )
-                actual != expected -> issues += PlanningEvidenceIssue(
-                    "planning.topology.canonical.invalid",
-                    "topologyRequirements.${actual.id}",
-                    "Canonical topology evidence must match source provenance. Expected $expected, found $actual."
+        val canonicalExpected = if (hasIndependentCanonicalProvenance) {
+            ExecutionPlanCanonicalTopologyAuthority.requirementsFor(plan)
+        } else {
+            emptyList()
+        }
+
+        if (hasIndependentCanonicalProvenance) {
+            val actualCanonicalByKey = canonicalActual.associateBy(::semanticKey)
+            val expectedCanonicalByKey = canonicalExpected.associateBy(::semanticKey)
+
+            canonicalExpected.forEach { expected ->
+                val actual = actualCanonicalByKey[semanticKey(expected)]
+                when {
+                    actual == null -> issues += PlanningEvidenceIssue(
+                        "planning.topology.canonical.missing",
+                        "topologyRequirements",
+                        "Plan omits canonical execution topology '${expected.kind.registryKey}' for '${expected.subject}'."
+                    )
+                    actual != expected -> issues += PlanningEvidenceIssue(
+                        "planning.topology.canonical.invalid",
+                        "topologyRequirements.${actual.id}",
+                        "Canonical topology evidence must match source provenance. Expected $expected, found $actual."
+                    )
+                }
+            }
+            canonicalActual.filter { semanticKey(it) !in expectedCanonicalByKey }.forEach { unexpected ->
+                issues += PlanningEvidenceIssue(
+                    "planning.topology.canonical.orphaned",
+                    "topologyRequirements.${unexpected.id}",
+                    "Plan declares canonical topology '${unexpected.kind.registryKey}' for '${unexpected.subject}' without matching source provenance."
                 )
             }
-        }
-        canonicalActual.filter { semanticKey(it) !in expectedCanonicalByKey }.forEach { unexpected ->
-            issues += PlanningEvidenceIssue(
-                "planning.topology.canonical.orphaned",
-                "topologyRequirements.${unexpected.id}",
-                "Plan declares canonical topology '${unexpected.kind.registryKey}' for '${unexpected.subject}' without matching source provenance."
-            )
         }
 
         val expected = PlanningTopologyAuthority.requirementsFor(
@@ -108,6 +127,20 @@ internal object ExecutionPlanTopologyValidator {
 
     fun blockers(plan: ExecutionPlan, target: TargetCapability?): List<ExecutionTopologyEvidence> =
         assess(plan, target).evidence.filter { it.status != ExecutionTopologyEvidenceStatus.SATISFIED }
+
+    private fun retainsCanonicalSourceSignals(
+        plan: ExecutionPlan,
+        canonicalActual: List<ExecutionTopologyRequirement>
+    ): Boolean {
+        if (canonicalActual.isNotEmpty() || plan.loweringReport != null) return true
+        return PlanDependencyRelations.flatten(plan.nodes).any { node ->
+            when (node) {
+                is TaskNode -> node.sourceId != null
+                is ApprovalNode -> node.sourceId != null
+                else -> false
+            }
+        }
+    }
 
     private fun semanticKey(requirement: ExecutionTopologyRequirement): Pair<String, String> =
         requirement.kind.name to requirement.subject
