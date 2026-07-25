@@ -78,7 +78,8 @@ class TargetSelectionAuthorityTests {
             targets
         ).javaClass
 
-        assertTrue(implementation.declaredConstructors.all { java.lang.reflect.Modifier.isPrivate(it.modifiers) })
+        assertTrue(java.lang.reflect.Modifier.isPrivate(implementation.modifiers))
+        assertEquals(TargetSelectionAuthority::class.java, implementation.enclosingClass)
         assertEquals(1, org.flowlang.materialization.ExplicitTargetSelection::class.sealedSubclasses.size)
     }
 
