@@ -2,7 +2,7 @@ version: "0.9.7.9.8"
 name: "Closure-Blocking Safety, Governance and Diagnostic Integrity"
 type: "bounded-correction"
 stream: core
-status: complete
+status: active
 parentCoreItem: "0.9.7.9"
 objective: "Repair the remaining safety-evidence, governance-signal, diagnostic CLI, canonical-topology and adapter cancellation defects that block an honest v0.9.7 closure decision."
 scopeBoundary:
@@ -10,18 +10,20 @@ scopeBoundary:
   - "Make CI/CD bias health depend on executable semantic coupling rather than comments, prose, catalog declarations or edge-owned target vocabulary."
   - "Expose target-neutral planning when no target is selected and diagnostic manifest evidence when a target cannot execute."
   - "Remove the legacy CLI entrypoint and every implicit Jenkins target default."
-  - "Re-derive canonical topology from retained source provenance before materialization."
+  - "Re-derive canonical topology from retained source provenance before materialization and reject canonical claims when that provenance is missing."
   - "Retain legacy dependencies and effects only as mechanically validated compatibility projections, never as independent authorities."
   - "Preserve GitHub Actions cancellation semantics; do not use always() for ordinary dependency jobs."
+  - "Validate the exact pull-request head independently from the synthetic merge candidate."
   - "Keep package, public-standard and artifact contract versions unchanged."
 universalInvariants:
   - "Unknown, placeholder or ambiguous text never satisfies a safety control."
   - "Governance health is reproducible from actionable lexical evidence and can reach PASS on an honest repository."
   - "Expected target incompatibility produces a typed review or blocked result, not a stack trace."
   - "Absence of target selection never means Jenkins."
-  - "Canonical workflow and capability topology cannot disappear undetected from an execution plan."
+  - "Canonical workflow and capability topology cannot disappear or self-certify without retained source provenance."
   - "Retained derived fields equal their typed authority at every materialization boundary."
   - "Ordinary GitHub Actions dependencies preserve native success and cancellation behavior."
+  - "A validation record identifies the exact checked-out head and does not relabel a merge ref as exact-head evidence."
 implementedSlices:
   - id: authored-control-evidence-classification
   - id: lexical-cicd-bias-governance
@@ -31,10 +33,11 @@ implementedSlices:
   - id: canonical-topology-provenance
   - id: retained-derived-projection-integrity
   - id: github-cancellation-semantics
+  - id: exact-head-and-merge-candidate-validation
   - id: closure-blocking-integrity-conformance
 validationPolicy:
   workflow: "Flow CI"
-  requirement: "Implementation head 64e4df9abe8a95adede53b2876c49031e0bfed8f passed unmodified Flow CI #2021, run 30090943402, including tooling, structure, clean tests, standalone conformance and reference evidence while 0.9.7.10 remained blocked. The separate completion-metadata head must pass the same workflow before review readiness."
+  requirement: "The corrected implementation head must pass the exact-head compile-test-conformance job, and the same pull request revision must pass the separate merge-candidate-compile-test-conformance job, before completion metadata may advance the Core roadmap."
   buildDiscipline: "Assemble one complete implementation candidate before opening a draft pull request. Close the pull request during any concrete correction set and never trigger CI for file-level connector commits."
 followUpWorkItem:
   version: "0.9.7.10"
