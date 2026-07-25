@@ -188,7 +188,7 @@ items:
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: blocked-by-correction
+    status: blocked
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
