@@ -74,10 +74,20 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 - Retains legacy `dependencies` and `effects` only as mechanically checked compatibility projections.
 - Preserves GitHub Actions cancellation semantics and removes `always()` from ordinary dependency jobs.
 - Validates the exact pull-request head independently from GitHub's synthetic merge candidate and verifies both checked-out SHAs.
-- Status: complete.
-- Validation: Flow CI `#2025`, run `30144935197`, passed exact implementation head `af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319` and independently passed merge candidate `2e30830d55fe73ec0c46c75dfd425c1047dc9853`, including tooling, structure, context generation, clean tests and standalone conformance.
-- Completion metadata requires the same dual Flow CI validation before review readiness.
+- Historical validation: Flow CI `#2025`, run `30144935197`, passed exact implementation head `af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319` and independently passed merge candidate `2e30830d55fe73ec0c46c75dfd425c1047dc9853`.
+- Status: historically complete, superseded by the later reopening described below.
+
+### v0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity
+
+- Rejects malformed, fractional, unknown and duplicate `.flow` retry policy declarations with path-aware parser diagnostics.
+- Preserves retry defaults only for omitted values instead of using them as silent coercion targets.
+- Proves both PASS and FAIL compliance polarity and propagates failing compliance into the public standard draft.
+- Removes Jackson annotations from the target-neutral projection contract and expands serializer-boundary enforcement across the semantic Core package set.
+- Replaces indentation-based module governance with canonical module-loader evidence and structural negative tests.
+- Introduces a target-neutral conformance fixture for universal artifact, schema, compliance, draft and decision evidence.
+- Keeps concrete Jenkins projection evidence only where a target manifest or renderer is genuinely under test.
+- Status: implementation-candidate; no passing validation evidence recorded yet.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is now `next`. The closure gate remains a finite verification step and may not introduce new requirements or reinterpret implementation coverage as Core meaning.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is `correction-required` while `0.9.7.9.9` is active. `0.9.7.10 Bounded Semantic Closure Gate` remains blocked until the correction has independent exact-head and merge-candidate Flow CI evidence. Package, public-standard and artifact-contract versions remain unchanged.
