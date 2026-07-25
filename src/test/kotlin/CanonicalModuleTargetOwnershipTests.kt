@@ -58,8 +58,7 @@ class CanonicalModuleTargetOwnershipTests {
     }
 
     private fun moduleWith(forbidden: String): String {
-        val actionOwnedBlock = forbidden.trimIndent().prependIndent("    ")
-        return """
+        val base = """
             kind: FlowModule
             name: forbidden-target-owner
             version: "1.0"
@@ -84,7 +83,7 @@ class CanonicalModuleTargetOwnershipTests {
                   filesystem: []
                 safety:
                   destructive: false
-            $actionOwnedBlock
         """.trimIndent()
+        return base + "\n" + forbidden.trimIndent().prependIndent("    ") + "\n"
     }
 }
