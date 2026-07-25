@@ -86,7 +86,7 @@ fun rc4SemanticGeneratorRegressionTests() {
         H.ok("rc4/jenkins-condition/intent-valid", conditionalValidation.valid)
         val conditionalPlan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(conditionalIntent))
         val manifest = BuiltInTargetProjections.pipeline(targets)
-            .generateDiagnosticEvidence(conditionalPlan, "jenkins")
+            .generateDiagnosticEvidence(testDiagnosticMaterializationRequest(conditionalPlan, "jenkins", targets))
         val rendered = JenkinsManifestRenderer().render(manifest)
         val conditions = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForConformance() } }
             .filter { it.type == "condition" }
