@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 12
+stateVersion: 13
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,11 +18,13 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.9"
-  completedItemName: "Intent Lowering and Diagnostic Honesty"
+  completedItem: "0.9.7.8"
+  completedItemName: "Abstract Execution Topology Model"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.10"
-  nextCoreItemName: "Bounded Semantic Closure Gate"
+  activeCorrectionWorkPackage: "0.9.7.9.9"
+  activeCorrectionWorkPackageName: "Parser, Conformance and Architecture Evidence Integrity"
+  blockedCoreItem: "0.9.7.10"
+  blockedCoreItemName: "Bounded Semantic Closure Gate"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
     core: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
@@ -88,19 +90,21 @@ qualityPrinciples:
   - "Unknown or placeholder authored text never satisfies a safety control."
   - "A completed bounded correction may unblock the Core closure item only after exact-head implementation evidence exists."
   - "Exact-head and merge-candidate validation are separate evidence and neither may impersonate the other."
+  - "Parser defaults apply only to omitted values; malformed or unknown authored declarations are rejected."
+  - "A conformance gate must prove both acceptance and rejection polarity when it claims enforcement."
+  - "Universal conformance evidence must not require a concrete target projection as its semantic substrate."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-merged-v0.9.7.9.7-head"
-  flowAgentStructure: "passed-on-merged-v0.9.7.9.7-head"
-  flowAgentContextGeneration: "passed-on-merged-v0.9.7.9.7-head"
-  offlineCacheAwareChecks: "passed-on-merged-v0.9.7.9.7-head"
-  cleanTest: "passed-on-merged-v0.9.7.9.7-head"
-  conformance: "passed-on-merged-v0.9.7.9.7-head"
-  executableReferenceEvidence: "passed-on-merged-v0.9.7.9.7-head"
-  validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
+  flowAgentTooling: "passed-on-merged-v0.9.7.9.8-follow-up-head"
+  flowAgentStructure: "passed-on-merged-v0.9.7.9.8-follow-up-head"
+  flowAgentContextGeneration: "passed-on-merged-v0.9.7.9.8-follow-up-head"
+  offlineCacheAwareChecks: "passed-on-merged-v0.9.7.9.8-follow-up-head"
+  cleanTest: "passed-on-merged-v0.9.7.9.8-follow-up-head"
+  conformance: "passed-on-merged-v0.9.7.9.8-follow-up-head"
+  executableReferenceEvidence: "passed-on-merged-v0.9.7.9.8-follow-up-head"
+  validationSource: "Historical merged validation only; v0.9.7.9.9 has no passing implementation evidence yet."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.8 completed after external exact-head CI evidence: Flow CI #2025, run 30144935197, passed implementation head af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319."
-    - "The same Flow CI run independently passed merge candidate 2e30830d55fe73ec0c46c75dfd425c1047dc9853."
-    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is now the next Core item."
-    - "The completion-metadata head must pass both exact-head and merge-candidate jobs before the pull request is ready for review."
+    - "v0.9.7.9 was reopened after proving silent retry-policy coercion and discard on the public .flow parser path."
+    - "The same audit also found circular compliance conformance, incomplete serializer-boundary scope, indentation-based module governance and unnecessary Jenkins anchoring of universal evidence."
+    - "v0.9.7.10 remains blocked until v0.9.7.9.9 has independent exact-head and merge-candidate validation evidence."
