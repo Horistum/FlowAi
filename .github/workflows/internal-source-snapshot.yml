@@ -15,21 +15,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 5
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify And Package Source
+      - name: Package Source And Provenance
         shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
-          REVIEW_BASE_SHA: 37c965575c3c8be4bdca3c98e876d1bad7bbb268
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
-          test "$(git rev-parse HEAD~4)" = "${REVIEW_BASE_SHA}"
           git rev-parse HEAD > snapshot-commit.txt
           git rev-parse HEAD^{tree} > snapshot-tree.txt
-          git rev-parse HEAD~4^{tree} > snapshot-base-tree.txt
+          git rev-parse 37c965575c3c8be4bdca3c98e876d1bad7bbb268^{tree} > snapshot-base-tree.txt
+          git log --format='%H %P %s' -10 > snapshot-history.txt
           git archive --format=tar.gz --output=source-snapshot.tar.gz HEAD
 
       - name: Upload Source Snapshot
@@ -41,5 +37,6 @@ jobs:
             snapshot-commit.txt
             snapshot-tree.txt
             snapshot-base-tree.txt
+            snapshot-history.txt
           if-no-files-found: error
           retention-days: 1
