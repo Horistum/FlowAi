@@ -2,7 +2,7 @@ version: "0.9.7.9.9"
 name: "Parser, Conformance and Architecture Evidence Integrity"
 type: "bounded-correction"
 stream: core
-status: active
+status: complete
 parentCoreItem: "0.9.7.9"
 objective: "Repair silent .flow retry-policy loss, circular compliance proof, incomplete serialization boundaries, whitespace-based module governance and unnecessary concrete-target anchoring of universal conformance evidence."
 scopeBoundary:
@@ -28,10 +28,12 @@ implementedSlices:
   - id: target-neutral-conformance-fixture
   - id: decision-and-schema-substrate-neutralization
   - id: correction-governance-reopen
+  - id: generic-bounded-correction-release-authority
+  - id: exact-head-and-merge-candidate-validation
 validationPolicy:
   workflow: "Flow CI"
-  requirement: "The final implementation head and synthetic merge candidate must independently pass Flow Agent checks, clean tests, standalone conformance and executable reference evidence before completion metadata may be written."
-  buildDiscipline: "Do not mark this work package complete and do not unblock v0.9.7.10 until exact-head and merge-candidate evidence exists."
-blockedWorkItem:
+  requirement: "Flow CI #2048, run 30155688901, passed exact implementation head 869816b978a107545742553e598bcdd118d984b2 and independently passed synthetic merge candidate 5c4b0999b104f5501eb79980ab83014dac275df6. The completion-metadata head must pass the same dual workflow before review readiness."
+  buildDiscipline: "Keep the completion metadata distinct from the validated implementation head and require a final exact-head plus merge-candidate run before marking the pull request ready."
+followUpWorkItem:
   version: "0.9.7.10"
   name: "Bounded Semantic Closure Gate"
