@@ -119,7 +119,18 @@ def roadmap_paths_by_stream(root: Path, main_roadmap: Path) -> dict[str, Path]:
 
 
 def active_roadmap_paths(root: Path, main_roadmap: Path) -> tuple[Path, ...]:
-    return tuple(roadmap_paths_by_stream(root, main_roadmap).values())
+    paths = list(roadmap_paths_by_stream(root, main_roadmap).values())
+    correction = active_correction_work_package(root, main_roadmap)
+    if correction is not None:
+        paths.append(correction)
+    return tuple(paths)
+
+
+def active_correction_work_package(root: Path, main_roadmap: Path) -> Path | None:
+    declared = find_scalar(read_text(main_roadmap), "activeCorrectionWorkPackage")
+    if not declared:
+        return None
+    return _resolve_repository_path(root, declared, "Active correction work package")
 
 
 def roadmap_item_blocks(text: str) -> tuple[str, ...]:
@@ -161,6 +172,26 @@ def next_items_in(path: Path, declared_stream: str | None = None) -> list[Roadma
     return items
 
 
+def correction_item(path: Path) -> RoadmapItem:
+    text = read_text(path)
+    status = find_scalar(text, "status")
+    if status != "active":
+        raise RuntimeError(f"Active correction work package must declare status: active: {path}")
+    version = find_scalar(text, "version") or ""
+    name = find_scalar(text, "name") or ""
+    purpose = find_scalar(text, "objective") or find_scalar(text, "purpose") or ""
+    if not version or not name or not purpose:
+        raise RuntimeError(f"Active correction work package is missing version, name or objective: {path}")
+    return RoadmapItem(
+        version=version,
+        name=name,
+        purpose=purpose,
+        item_type=find_scalar(text, "type") or "bounded-correction",
+        stream="correction",
+        source=path,
+    )
+
+
 def next_items_by_stream(root: Path, main_roadmap: Path) -> dict[str, RoadmapItem]:
     items_by_stream: dict[str, RoadmapItem] = {}
     for declared_stream, path in roadmap_paths_by_stream(root, main_roadmap).items():
@@ -177,14 +208,23 @@ def find_unique_next_roadmap_item(root: Path, main_roadmap: Path) -> RoadmapItem
     main_text = read_text(main_roadmap)
     primary_stream = find_scalar(main_text, "primaryRoadmapStream") or "core"
     items_by_stream = next_items_by_stream(root, main_roadmap)
-    item = items_by_stream.get(primary_stream)
-    if item is None:
+    core_item = items_by_stream.get(primary_stream)
+    correction_path = active_correction_work_package(root, main_roadmap)
+
+    if correction_path is not None:
+        if core_item is not None:
+            raise RuntimeError(
+                "An active correction work package and a primary Core status: next item must not coexist."
+            )
+        return correction_item(correction_path)
+
+    if core_item is None:
         checked = roadmap_paths_by_stream(root, main_roadmap).get(primary_stream)
         location = str(checked.relative_to(root.resolve())) if checked else primary_stream
         raise RuntimeError(
             f"No roadmap item with status: next found for primary stream {primary_stream}: {location}"
         )
-    return item
+    return core_item
 
 
 def _roadmap_versions(path: Path) -> set[str]:
@@ -255,6 +295,24 @@ def _validate_cross_stream_references(paths: dict[str, Path]) -> None:
                 )
 
 
+def _validate_active_correction(root: Path, main_roadmap: Path, paths: dict[str, Path]) -> None:
+    correction_path = active_correction_work_package(root, main_roadmap)
+    if correction_path is None:
+        return
+    correction = correction_item(correction_path)
+    text = read_text(correction_path)
+    parent = find_scalar(text, "parentCoreItem")
+    if parent not in _roadmap_versions(paths["core"]):
+        raise RuntimeError(
+            f"Active correction {correction.version} references unknown parent Core item: {parent or 'missing'}"
+        )
+    core_next = next_items_in(paths["core"], "core")
+    if core_next:
+        raise RuntimeError(
+            "The Core closure item must remain blocked while an active correction work package exists."
+        )
+
+
 def validate_roadmap_structure(root: Path, main_roadmap: Path) -> None:
     root = root.resolve()
     main_roadmap = main_roadmap.resolve()
@@ -283,6 +341,7 @@ def validate_roadmap_structure(root: Path, main_roadmap: Path) -> None:
 
         _validate_core_item_contract(paths["core"])
         _validate_cross_stream_references(paths)
+        _validate_active_correction(root, main_roadmap, paths)
 
     next_items_by_stream(root, main_roadmap)
     find_unique_next_roadmap_item(root, main_roadmap)

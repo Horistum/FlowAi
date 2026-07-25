@@ -15,13 +15,7 @@ data class StandardDiagnosticCatalogReport(
     val codes: List<StandardDiagnosticCode>
 )
 
-/**
- * Stable diagnostic code catalog for Flow public reports.
- *
- * The catalog is intentionally independent from any specific validator class.
- * Validators, adapters, CI jobs and AI agents should use these codes instead
- * of parsing human-readable messages.
- */
+/** Stable diagnostic code catalog for Flow public reports. */
 object StandardDiagnosticCatalog {
     val codes: List<StandardDiagnosticCode> = listOf(
         code("INTENT_NAME_EMPTY", "intent", "error", "intent-capability-validation-report.json", "Intent document has an empty name."),
@@ -63,7 +57,6 @@ object StandardDiagnosticCatalog {
         code("UNKNOWN_SYSTEM_CONFIG", "intent", "warning", "intent-capability-validation-report.json", "A declared system contains configuration not defined by its module contract."),
         code("SECRET_CONFIG_NOT_SECRET_REF", "intent", "error", "intent-capability-validation-report.json", "Sensitive system configuration must be represented as a secret reference."),
         code("SYSTEM_CONFIG_TYPE_MISMATCH", "intent", "error", "intent-capability-validation-report.json", "System configuration value does not match the required schema type."),
-
         code("TARGET_NOT_FOUND", "flow-validation", "error", "validation-report.json", "Flow AST action targets an unknown system."),
         code("TARGET_TYPE_INVALID", "flow-validation", "error", "validation-report.json", "Flow AST action targets a system type not accepted by the module action."),
         code("MISSING_PARAM", "flow-validation", "error", "validation-report.json", "Flow AST action misses a required module parameter."),
@@ -72,7 +65,6 @@ object StandardDiagnosticCatalog {
         code("ROLLBACK_APPROVAL_REQUIRED", "flow-validation", "error", "validation-report.json", "Rollback-sensitive work outside an error handler requires unconditional approval."),
         code("ENVIRONMENT_APPROVAL_REQUIRED", "flow-validation", "error", "validation-report.json", "A policy-classified sensitive environment requires unconditional approval."),
         code("ENVIRONMENT_CLASSIFICATION_UNKNOWN", "flow-validation", "error", "validation-report.json", "Environment evidence is dynamic or unclassified and cannot proceed to planning."),
-
         code("SAFETY_REQUIRES_CLARIFICATION", "safety", "error", "intent-decision-report.json", "Safety policy requires clarification before lowering."),
         code("SAFETY_UNMITIGATED_HIGH_RISK", "safety", "error", "intent-decision-report.json", "Intent contains an unmitigated high risk."),
         code("SAFETY_REQUIRES_APPROVAL", "safety", "error", "intent-capability-validation-report.json", "Safety policy requires approval."),
@@ -85,7 +77,6 @@ object StandardDiagnosticCatalog {
         code("SAFETY_CLEANUP_REQUIRES_RETENTION", "safety", "error", "intent-capability-validation-report.json", "Cleanup operation requires explicit retention or safety rule."),
         code("CONTROL_EVIDENCE_DYNAMIC", "safety", "warning", "intent-capability-validation-report.json", "Control evidence is dynamic and requires explicit materialization enforcement capabilities."),
         code("SAFETY_POLICY_EVIDENCE_UNKNOWN", "safety", "error", "intent-capability-validation-report.json", "Control policy evidence is missing or cannot be evaluated safely."),
-
         code("TARGET_UNSUPPORTED_FEATURE", "target", "error", "execution-readiness-report.json", "Target cannot represent a required feature."),
         code("TARGET_STRICT_PARTIAL_FEATURE", "target", "error", "execution-readiness-report.json", "Strict mode treats partial target support as blocking."),
         code("TARGET_PARTIAL_FEATURE", "target", "warning", "execution-readiness-report.json", "Target can represent a feature only partially."),
@@ -95,7 +86,8 @@ object StandardDiagnosticCatalog {
         code("TARGET_NOTES_PROJECTED", "target", "info", "execution-readiness-report.json", "Target projection preserved explicit notes as review evidence without treating them as executable payload."),
         code("TARGET_TARGET_BINDING_UNRESOLVED", "target", "warning", "execution-readiness-report.json", "Target projection contains an unresolved target-owned binding and therefore cannot claim executable readiness."),
         code("UNKNOWN_TARGET", "target", "error", "execution-readiness-report.json", "Requested target is not present in the target registry."),
-
+        code("CLI_TARGET_DIAGNOSTIC_FALLBACK", "cli", "warning", "cli-target-outcome.json", "CLI generated diagnostic manifest evidence after expected target materialization was blocked."),
+        code("CLI_RENDER_NOT_AUTHORIZED", "cli", "error", "cli-target-outcome.json", "CLI did not emit target syntax because concrete evidence did not authorize rendering."),
         code("ADAPTER_MUST_NOT_READ_INTENT", "adapter", "invariant", "target-adapter-contract.json", "Adapter must not consume or reinterpret human/AI intent artifacts."),
         code("ADAPTER_MUST_PRESERVE_PLAN_NODE_IDS", "adapter", "invariant", "target-adapter-contract.json", "Adapter output must preserve ExecutionPlan node identity."),
         code("ADAPTER_MUST_RESPECT_READINESS", "adapter", "invariant", "target-adapter-contract.json", "Adapter must not generate when readiness blocks generation."),
@@ -103,7 +95,6 @@ object StandardDiagnosticCatalog {
         code("ADAPTER_CONTRACT_READY", "adapter", "info", "adapter-diagnostics.json", "Adapter contract permits target manifest generation."),
         code("ADAPTER_CONTRACT_DEGRADED", "adapter", "warning", "adapter-diagnostics.json", "Adapter may generate only with documented target limitations."),
         code("ADAPTER_CONTRACT_BLOCKED", "adapter", "error", "adapter-diagnostics.json", "Adapter must not generate target manifest while readiness is blocked."),
-
         code("ACTION_TARGET_TYPES_MISSING", "module", "warning", "capability-module-contract-report.json", "Module action should declare targetTypes."),
         code("ARTIFACT_REQUIRED_MISSING", "artifact-integrity", "error", "artifact-integrity-report.json", "A required public artifact is missing from the artifact set."),
         code("ARTIFACT_SCHEMA_MISSING", "artifact-integrity", "warning", "artifact-integrity-report.json", "A public JSON artifact is missing an explicit schema declaration."),

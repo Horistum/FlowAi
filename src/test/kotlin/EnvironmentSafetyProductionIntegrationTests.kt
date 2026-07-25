@@ -1,13 +1,11 @@
-
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import org.flowlang.cli.main as flowMain
+import org.flowlang.cli.honest.runCli
 import org.flowlang.parser.FlowParser
 import org.flowlang.safety.EnvironmentParameterEvidence
 import org.flowlang.safety.EnvironmentSensitivity
@@ -185,15 +183,17 @@ class EnvironmentSafetyProductionIntegrationTests {
         val output = ByteArrayOutputStream()
         try {
             System.setOut(PrintStream(output))
-            val error = assertFailsWith<IllegalArgumentException> {
-                flowMain(arrayOf(file.absolutePath))
-            }
-            assertTrue(error.message.orEmpty().contains("ENVIRONMENT_CLASSIFICATION_UNKNOWN"), error.message)
+            val status = runCli(arrayOf("flow", file.absolutePath))
+            assertEquals(2, status)
         } finally {
             System.setOut(originalOut)
             file.delete()
         }
-        assertFalse(output.toString().contains("EXECUTION PLAN JSON"), output.toString())
+        val text = output.toString()
+        assertTrue(text.contains("ENVIRONMENT_CLASSIFICATION_UNKNOWN"), text)
+        assertTrue(text.contains("CLI DIAGNOSTIC FAILURE"), text)
+        assertFalse(text.contains("EXECUTION PLAN JSON"), text)
+        assertFalse(text.contains("Exception in thread"), text)
     }
 
     private fun parse(source: String) = FlowParser().parse(source.trimIndent())

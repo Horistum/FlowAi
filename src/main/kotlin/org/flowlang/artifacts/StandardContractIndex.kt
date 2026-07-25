@@ -83,6 +83,9 @@ class StandardContractIndexAnalyzer {
         "conformance-vector-index.json" -> "0.5.4"
         "standard-index.json", "conformance-suite.json", "flow-standard-draft.json" -> "0.4.0"
         "release-metadata-honesty-report.json" -> "0.9.7.9.7"
+        "target-neutral-planning-report.json",
+        "cli-target-outcome.json",
+        "target-render-readiness.json" -> "0.9.7.9.8"
         else -> "pre-0.3.10"
     }
 }

@@ -86,7 +86,9 @@ class GitHubActionsManifestRenderer(
         if (job.dependsOn.isNotEmpty()) {
             sb.appendLine("    needs: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         }
-        githubJobIf(job, manifest)?.let { sb.appendLine("    if: ${githubExpression(it)}") }
+        GitHubJobConditionAuthority.expression(job, manifest)?.let {
+            sb.appendLine("    if: ${githubExpression(it)}")
+        }
         if (job.metadata["providerApprovalPayload"] == "true") {
             val environmentEvidence = environmentEvidenceResolver.resolve(manifest, job)
             sb.appendLine("    # Flow environment sensitivity: ${environmentEvidence.sensitivity}")
@@ -185,32 +187,5 @@ class GitHubActionsManifestRenderer(
             val value = ProjectionBindingRenderer.githubValue(binding, "$stepId.bindings.$name")
             sb.appendLine("          ${sanitizeId(name)}: ${yamlScalar(value)}")
         }
-    }
-
-    private fun githubJobIf(job: TargetJob, manifest: TargetManifest): String? {
-        val own = job.metadata["condition"]?.let {
-            TargetExpressionTranslator.github(it, manifest.inputs, manifest.compatibility.expressionSupport)
-        }
-        if (job.metadata["errorHandler"] == "true") {
-            val parts = mutableListOf("always()", "failure()")
-            if (!own.isNullOrBlank()) parts += "($own)"
-            return parts.joinToString(" && ")
-        }
-        val needs = job.dependsOn.map { dependency ->
-            val safeDependency = sanitizeId(dependency)
-            val isProviderBackedApproval = manifest.jobs.firstOrNull {
-                sanitizeId(it.id) == safeDependency
-            }?.metadata?.get("providerApprovalPayload") == "true"
-            if (isProviderBackedApproval) {
-                "(needs.$safeDependency.result == 'success' || needs.$safeDependency.result == 'skipped')"
-            } else {
-                "needs.$safeDependency.result == 'success'"
-            }
-        }
-        val parts = mutableListOf<String>()
-        if (job.dependsOn.isNotEmpty()) parts += "always()"
-        if (!own.isNullOrBlank()) parts += "($own)"
-        parts += needs
-        return parts.takeIf { it.isNotEmpty() }?.joinToString(" && ")
     }
 }

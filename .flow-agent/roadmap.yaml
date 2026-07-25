@@ -30,7 +30,8 @@ roadmapIndex:
 
 rules:
   - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
-  - "The primary Flow Agent work item is selected only from the Core roadmap unless explicitly overridden."
+  - "The primary Flow Agent work item is selected only from the Core roadmap unless an active bounded correction work package explicitly blocks the next Core item."
+  - "An active bounded correction and a Core item with status next must never coexist."
   - "Core work may not depend on unfinished adapter or conformance work."
   - "Each roadmap stream may advance independently without redefining another stream's contracts."
   - "Every Core item must declare a universal invariant, forbidden scope and completion evidence."
@@ -62,5 +63,8 @@ architectureConstitution:
 currentDecision:
   completedItem: "0.9.7.9"
   completedItemName: "Intent Lowering and Diagnostic Honesty"
+  correctionState: "complete"
+  activeCorrectionWorkPackage: ""
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
+  nextCoreItemStatus: "next"

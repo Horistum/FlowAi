@@ -56,8 +56,28 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 - Publishes standard bundles only after staged verification, preserving the previous destination on failure.
 - Adds machine-checked package, public-standard, roadmap, report and correction-ledger consistency.
 - Clarifies that runtime-required capabilities depend on external target-side infrastructure or adapters; Flow Core provides no runtime.
-- Candidate validation is intentionally recorded only in the pull request after exact-head CI completes.
+- Validation: Flow CI `#2011`, run `30083768491`, exact head `f970561c568f3fea0dcf8f858acfff15b4a3eaaa`.
+
+### v0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity
+
+- Replaces fail-open arbitrary-text control evidence with typed confirmed, denied and unknown classification.
+- Rejects placeholder, ambiguity and denial markers even when embedded in longer authored text.
+- Accepts only bounded explicit confirmations or concrete control-specific backup locators, rollback plans, change-ticket identifiers, retention durations and safety controls.
+- Rejects generic words such as `available`, `complete`, `approved`, `required` and `policy` as standalone evidence.
+- Replaces raw CI/CD bias substring matching with lexical code, control-literal, ordinary-string, comment, catalog and retained-compatibility contexts.
+- Makes governance health depend only on actionable coupling in active semantic source.
+- Removes the legacy CLI entrypoint and every implicit Jenkins target default.
+- Produces target-neutral planning evidence when no target is selected.
+- Produces typed review-only or blocked diagnostic manifest evidence for expected target incompatibility instead of a stack trace.
+- Re-derives canonical workflow and capability topology only from independent retained source provenance.
+- Rejects canonical claims and intent-derived source signals when `sourceIntent` is missing instead of validating retained claims against themselves.
+- Retains legacy `dependencies` and `effects` only as mechanically checked compatibility projections.
+- Preserves GitHub Actions cancellation semantics and removes `always()` from ordinary dependency jobs.
+- Validates the exact pull-request head independently from GitHub's synthetic merge candidate and verifies both checked-out SHAs.
+- Status: complete.
+- Validation: Flow CI `#2025`, run `30144935197`, passed exact implementation head `af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319` and independently passed merge candidate `2e30830d55fe73ec0c46c75dfd425c1047dc9853`, including tooling, structure, context generation, clean tests and standalone conformance.
+- Completion metadata requires the same dual Flow CI validation before review readiness.
 
 ## Closure boundary
 
-`0.9.7.10 Bounded Semantic Closure Gate` remains the next Core item. It may close the track only after the exact final `0.9.7.9.7` candidate passes the unmodified Flow CI workflow and the existing executable reference evidence remains live.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is now `next`. The closure gate remains a finite verification step and may not introduce new requirements or reinterpret implementation coverage as Core meaning.

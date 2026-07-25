@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.architecture.CiCdBiasFollowUpArea
 import org.flowlang.architecture.CiCdBiasInventoryAnalyzer
+import org.flowlang.architecture.CiCdBiasLexicalContext
 
 class FlowCiCdBiasInventoryTests {
     @Test
@@ -21,7 +22,10 @@ class FlowCiCdBiasInventoryTests {
             report.healthStatus
         )
         assertTrue(report.actionableEvidence.all {
-            it.classification == CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE
+            it.classification == CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE && it.actionable
+        })
+        assertTrue(report.evidence.none {
+            it.lexicalContext == CiCdBiasLexicalContext.CATALOG_DECLARATION && it.actionable
         })
     }
 
@@ -50,6 +54,24 @@ class FlowCiCdBiasInventoryTests {
     }
 
     @Test
+    fun applicationCompositionVocabularyIsNotCoreSemanticBias() {
+        val root = Files.createTempDirectory("flow-cicd-application-composition").toFile()
+        try {
+            val cli = File(root, "src/main/kotlin/org/flowlang/cli/App.kt")
+            cli.parentFile.mkdirs()
+            cli.writeText("package org.flowlang.cli\nval provider = \"Jenkins\"\n")
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("PASS", report.healthStatus)
+            assertEquals(1, report.applicationCompositionEvidence.size)
+            assertTrue(report.requiredFollowUpAreas.contains(CiCdBiasFollowUpArea.APPLICATION_COMPOSITION))
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun concreteImplementationDefaultInSemanticSourceRequiresReview() {
         val root = Files.createTempDirectory("flow-cicd-semantic-health").toFile()
         try {
@@ -68,7 +90,53 @@ class FlowCiCdBiasInventoryTests {
             assertEquals("REVIEW_REQUIRED", report.healthStatus)
             assertEquals(1, report.actionableEvidence.size)
             assertEquals(CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE, report.actionableEvidence.single().classification)
+            assertEquals(CiCdBiasLexicalContext.CONTROL_LITERAL, report.actionableEvidence.single().lexicalContext)
             assertTrue(report.requiredFollowUpAreas.contains(CiCdBiasFollowUpArea.SEMANTIC_MODEL))
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun targetNameInExecutableIdentifierRequiresReview() {
+        val root = Files.createTempDirectory("flow-cicd-semantic-identifier").toFile()
+        try {
+            val semantic = File(root, "src/main/kotlin/org/flowlang/intent/JenkinsMeaning.kt")
+            semantic.parentFile.mkdirs()
+            semantic.writeText("package org.flowlang.intent\nclass JenkinsMeaning\n")
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+            assertEquals(CiCdBiasLexicalContext.CODE_IDENTIFIER, report.actionableEvidence.single().lexicalContext)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun commentsDiagnosticProseAndCatalogDeclarationsAreNotActionable() {
+        val root = Files.createTempDirectory("flow-cicd-lexical-context").toFile()
+        try {
+            val semantic = File(root, "src/main/kotlin/org/flowlang/intent/Diagnostics.kt")
+            semantic.parentFile.mkdirs()
+            semantic.writeText(
+                """
+                package org.flowlang.intent
+                // Jenkins must not become semantic authority.
+                /* Docker is mentioned only in an explanatory comment. */
+                val message = "Jenkins is not available for this target-neutral operation."
+                val term = CiCdBiasTerm("Jenkins", "target", "catalog data")
+                """.trimIndent()
+            )
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("PASS", report.healthStatus)
+            assertTrue(report.actionableEvidence.isEmpty())
+            assertTrue(report.evidence.any { it.lexicalContext == CiCdBiasLexicalContext.STRING_LITERAL })
+            assertTrue(report.evidence.any { it.lexicalContext == CiCdBiasLexicalContext.CATALOG_DECLARATION })
+            assertTrue(report.evidence.none { it.snippet.startsWith("//") || it.snippet.startsWith("/*") })
         } finally {
             root.deleteRecursively()
         }

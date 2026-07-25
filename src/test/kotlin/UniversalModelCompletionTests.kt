@@ -264,14 +264,20 @@ class UniversalModelCompletionTests {
 
     @Test
     fun cliUsesTheCanonicalManifestGenerationBoundary() {
-        val cli = File("src/main/kotlin/org/flowlang/cli/FlowCli.kt").readText()
+        val legacyCli = File("src/main/kotlin/org/flowlang/cli/FlowCli.kt")
+        val honestCli = File("src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt").readText()
+        val authority = File("src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt").readText()
         val composition = File("src/main/kotlin/org/flowlang/cli/CliTargetProjectionComposition.kt").readText()
 
-        assertContains(cli, "TargetManifestGenerationPipeline.generate")
+        assertFalse(legacyCli.exists())
+        assertContains(honestCli, "CliTargetEvidenceAuthority")
+        assertFalse(honestCli.contains("legacyMain"))
+        assertContains(authority, "TargetManifestGenerationPipeline")
+        assertContains(authority, "pipeline.generate(plan, target, strict = strict)")
         assertContains(composition, "BuiltInTargetProjections.pipeline(targets)")
-        assertFalse(cli.contains("JenkinsManifestGenerator()"))
-        assertFalse(cli.contains("GitHubActionsManifestGenerator()"))
-        assertFalse(cli.contains("TektonManifestGenerator()"))
+        assertFalse(authority.contains("JenkinsManifestGenerator()"))
+        assertFalse(authority.contains("GitHubActionsManifestGenerator()"))
+        assertFalse(authority.contains("TektonManifestGenerator()"))
     }
 
     @Test

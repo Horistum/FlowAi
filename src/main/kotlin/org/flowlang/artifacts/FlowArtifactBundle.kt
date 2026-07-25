@@ -26,13 +26,7 @@ data class FlowArtifactBundleReport(
     val pipeline: List<String>
 )
 
-/**
- * Describes the public artifact bundle exported by the CLI.
- *
- * This is a standard contract for consumers outside this Kotlin implementation:
- * they can inspect one manifest to understand which JSON/text artifacts are
- * present, which schemas apply, and how artifacts relate in the Flow pipeline.
- */
+/** Describes the public artifact bundle exported by the CLI. */
 class FlowArtifactBundleAnalyzer {
     fun intentBundle(
         flowName: String,
@@ -114,11 +108,14 @@ class FlowArtifactBundleAnalyzer {
             add("validation-report.json", FlowArtifactRole.REPORT, "schemas/validation-report.schema.json", derivedFrom = listOf("flow-ast.json"))
             add("execution-plan.json", FlowArtifactRole.PLAN, "schemas/execution-plan.schema.json", derivedFrom = listOf("flow-ast.json"))
             add("canonical-execution-plan.json", FlowArtifactRole.PLAN, "schemas/execution-plan.schema.json", derivedFrom = listOf("execution-plan.json"))
+            add("target-neutral-planning-report.json", FlowArtifactRole.REPORT, "schemas/target-neutral-planning-report.schema.json", required = false, derivedFrom = listOf("execution-plan.json"))
             add("compatibility-report.json", FlowArtifactRole.REPORT, "schemas/compatibility-report.schema.json", derivedFrom = listOf("execution-plan.json"))
             add("capability-negotiation-report.json", FlowArtifactRole.REPORT, "schemas/capability-negotiation-report.schema.json", derivedFrom = listOf("execution-plan.json"))
             add("execution-readiness-report.json", FlowArtifactRole.REPORT, "schemas/execution-readiness-report.schema.json", derivedFrom = listOf("capability-negotiation-report.json"))
             add("target-selection-report.json", FlowArtifactRole.REPORT, "schemas/target-selection-report.schema.json", derivedFrom = listOf("execution-readiness-report.json"))
             add("target-decision-trace-report.json", FlowArtifactRole.REPORT, "schemas/target-decision-trace-report.schema.json", derivedFrom = listOf("target-selection-report.json"))
+            add("cli-target-outcome.json", FlowArtifactRole.REPORT, "schemas/cli-target-outcome.schema.json", required = false, derivedFrom = listOf("target-decision-trace-report.json", "target-manifest.json"))
+            add("target-render-readiness.json", FlowArtifactRole.REPORT, "schemas/target-render-readiness.schema.json", required = false, derivedFrom = listOf("target-manifest.json"))
             add("target-adapter-contract.json", FlowArtifactRole.REPORT, "schemas/target-adapter-contract.schema.json", derivedFrom = listOf("execution-plan.json", "execution-readiness-report.json", "target-selection-report.json", "target-decision-trace-report.json"))
             add("adapter-diagnostics.json", FlowArtifactRole.REPORT, "schemas/adapter-diagnostics.schema.json", derivedFrom = listOf("target-adapter-contract.json"))
             add("diagnostic-coverage-report.json", FlowArtifactRole.REPORT, "schemas/diagnostic-coverage-report.schema.json", derivedFrom = listOf("intent-capability-validation-report.json", "validation-report.json", "execution-readiness-report.json", "target-adapter-contract.json", "adapter-diagnostics.json", "standard-diagnostic-catalog.json"))
