@@ -7,6 +7,9 @@ import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
 import org.flowlang.controls.AuthoredControlEvidenceTextAuthority
 import org.flowlang.controls.AuthoredControlEvidenceTextStatus
+import org.flowlang.controls.CanonicalControlRequirementAuthority
+import org.flowlang.controls.ControlDecisionStatus
+import org.flowlang.controls.ControlEvidenceStatus
 import org.flowlang.generators.manifest.InvalidPlanningEvidenceException
 import org.flowlang.generators.manifest.MandatoryMaterializationAuthority
 import org.flowlang.generators.manifest.TargetJob
@@ -75,6 +78,39 @@ internal class ClosureBlockingIntegrityChecks(
                 .assess("backup", IntentString("s3://recovery/db-before-migration-42"))
                 .status == AuthoredControlEvidenceTextStatus.CONFIRMED
         ) { "A concrete backup reference was not recognized as authored evidence." }
+
+        val conflicting = CanonicalControlRequirementAuthority.assess(
+            IntentDocument(
+                name = "conflicting-control-evidence",
+                workflows = listOf(
+                    IntentWorkflow(
+                        name = "migration",
+                        kind = IntentWorkflowKind.CUSTOM,
+                        steps = listOf(
+                            IntentStep(
+                                id = "migrate-confirmed",
+                                capability = StandardCapability.DATABASE_MIGRATE,
+                                params = mapOf("backup" to IntentString("s3://recovery/db-before-migration-42"))
+                            ),
+                            IntentStep(
+                                id = "migrate-denied",
+                                capability = StandardCapability.DATABASE_MIGRATE,
+                                params = mapOf("backup" to IntentString("not available"))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        require(conflicting.decision.status == ControlDecisionStatus.BLOCKED) {
+            "Contradictory authored control evidence was allowed."
+        }
+        require(conflicting.evidence.single().status == ControlEvidenceStatus.UNSATISFIED) {
+            "Contradictory authored control evidence was not represented as blocking evidence."
+        }
+        require(conflicting.evidence.single().detail.orEmpty().contains("Conflicting authored evidence")) {
+            "Contradictory authored control evidence lacks an explicit conflict diagnostic."
+        }
     }
 
     private fun checkBiasInventory() {
@@ -247,6 +283,27 @@ internal class ClosureBlockingIntegrityChecks(
         val expression = GitHubJobConditionAuthority.expression(approvalManifest.jobs.last(), approvalManifest).orEmpty()
         require(expression.contains("!cancelled()") && !expression.contains("always()")) {
             "Provider-approval dependency evaluation does not preserve workflow cancellation."
+        }
+
+        val mixedManifest = ordinaryManifest.copy(
+            jobs = listOf(
+                TargetJob(id = "build"),
+                TargetJob(id = "approve", metadata = mapOf("providerApprovalPayload" to "true")),
+                TargetJob(id = "deploy", dependsOn = listOf("approve", "build"))
+            )
+        )
+        val mixedExpression = GitHubJobConditionAuthority.expression(
+            mixedManifest.jobs.last(),
+            mixedManifest
+        ).orEmpty()
+        require(mixedExpression.contains("needs.approve.result == 'skipped'")) {
+            "Provider-backed approval skip evidence was lost in a mixed dependency set."
+        }
+        require(mixedExpression.contains("needs.build.result == 'success'")) {
+            "A mixed provider-approval condition bypasses the success gate of an ordinary dependency."
+        }
+        require(!mixedExpression.contains("needs.build.result == 'skipped'")) {
+            "An ordinary dependency was incorrectly granted approval-style skip semantics."
         }
     }
 
