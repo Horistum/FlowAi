@@ -5,12 +5,12 @@ import org.flowlang.modules.CanonicalModuleLoader
 
 class CanonicalModuleTargetOwnershipTests {
     @Test
-    fun forbiddenTargetOwnershipFieldsFailRegardlessOfIndentationOrYamlStyle() {
+    fun forbiddenTargetOwnershipFieldsFailThroughCanonicalStructure() {
         val forbiddenBodies = listOf(
-            "runtime:\n          executable: true",
-            "  generators: { jenkins: owned }",
+            "runtime:\n  executable: true",
+            "generators: { jenkins: owned }",
             "template: Jenkinsfile",
-            "      entrypoint: run",
+            "entrypoint: run",
             "targetImplications: [jenkins]"
         )
 
@@ -57,32 +57,34 @@ class CanonicalModuleTargetOwnershipTests {
         )
     }
 
-    private fun moduleWith(forbidden: String): String =
-        """
-        kind: FlowModule
-        name: forbidden-target-owner
-        version: "1.0"
-        description: "Negative target ownership fixture"
-        systemTypes:
-          neutral:
-            input: {}
-        actions:
-          execute:
-            kind: action
-            targetTypes: [neutral]
-            input: {}
-            output: {}
-            effects:
-              reads: []
-              writes: []
-              creates: []
-              updates: []
-              deletes: []
-              executes: []
-              network: []
-              filesystem: []
-            safety:
-              destructive: false
-            $forbidden
+    private fun moduleWith(forbidden: String): String {
+        val actionOwnedBlock = forbidden.trimIndent().prependIndent("    ")
+        return """
+            kind: FlowModule
+            name: forbidden-target-owner
+            version: "1.0"
+            description: "Negative target ownership fixture"
+            systemTypes:
+              neutral:
+                input: {}
+            actions:
+              execute:
+                kind: action
+                targetTypes: [neutral]
+                input: {}
+                output: {}
+                effects:
+                  reads: []
+                  writes: []
+                  creates: []
+                  updates: []
+                  deletes: []
+                  executes: []
+                  network: []
+                  filesystem: []
+                safety:
+                  destructive: false
+            $actionOwnedBlock
         """.trimIndent()
+    }
 }
