@@ -1,9 +1,8 @@
 package org.flowlang.conformance
 
-import org.flowlang.artifacts.StandardComplianceAnalyzer
+import java.io.File
 import org.flowlang.artifacts.PublicStandardDraft
 import org.flowlang.modules.ModuleRegistry
-import java.io.File
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 
 internal class StandardEvidenceChecks(
@@ -12,6 +11,8 @@ internal class StandardEvidenceChecks(
     targets: Map<String, org.flowlang.capabilities.TargetCapability>,
     projections: TargetProjectionRegistry
 ) : ConformanceCheckSupport(rootDir, registry, targets, projections) {
+    private val neutral = TargetNeutralConformanceFixture(rootDir, registry, targets)
+
     fun checks(): List<ConformanceCheck> = listOf(
         checkV0314DiagnosticCoverageReport(),
         checkV0315ArtifactIntegrityReport(),
@@ -28,19 +29,19 @@ internal class StandardEvidenceChecks(
     )
 
     private fun checkV0314DiagnosticCoverageReport(): ConformanceCheck = runCheck("v0.3.14.diagnostic-coverage-report") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val coverage = referenceDiagnosticCoverage(artifacts, "jenkins")
-        require(coverage.status == "PASS") { "Reference pipeline must not emit diagnostic codes outside the standard catalog: ${coverage.unknownCodes.joinToString { it.code }}" }
-        require(coverage.observedCodes.any { it.code == "ADAPTER_CONTRACT_READY" }) { "Coverage report must observe adapter diagnostics." }
+        val core = neutral.build()
+        val coverage = neutral.diagnosticCoverage(core)
+        require(coverage.status == "PASS") { "Target-neutral reference evidence emitted diagnostic codes outside the standard catalog: ${coverage.unknownCodes.joinToString { it.code }}" }
+        require(coverage.observedCodes.any { it.code == "ADAPTER_CONTRACT_READY" }) { "Coverage report must observe adapter diagnostics across the registered target inventory." }
         require(coverage.observedCodes.any { it.code == "ADAPTER_MUST_NOT_READ_INTENT" }) { "Coverage report must observe adapter contract invariants." }
         require(coverage.catalogCodes.contains("DIAGNOSTIC_CODE_UNKNOWN")) { "Coverage report must be anchored to the v0.3.14 diagnostic catalog." }
-        require(coverage.unusedCatalogCodes.isNotEmpty()) { "Coverage report should expose catalog codes not observed by this specific pipeline." }
+        require(coverage.unusedCatalogCodes.isNotEmpty()) { "Coverage report should expose catalog codes not observed by this reference intent." }
     }
 
     private fun checkV0315ArtifactIntegrityReport(): ConformanceCheck = runCheck("v0.3.15.artifact-integrity-report") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val integrity = referenceArtifactIntegrity(artifacts, "jenkins")
-        require(integrity.status == "PASS") { "Reference artifact set must pass integrity checks: ${integrity.issues.joinToString { it.code }}" }
+        val core = neutral.build()
+        val integrity = neutral.artifactIntegrity(core)
+        require(integrity.status == "PASS") { "Target-neutral artifact set must pass integrity checks: ${integrity.issues.joinToString { it.code }}" }
         require(integrity.requiredArtifactsExpected.contains("diagnostic-coverage-report.json")) { "Integrity report must include diagnostic coverage as a required artifact." }
         require(integrity.requiredArtifactsExpected.contains("artifact-integrity-report.json")) { "Integrity report must include itself as a public artifact." }
         require(integrity.missingRequiredArtifacts.isEmpty()) { "Reference artifact set must not miss required artifacts." }
@@ -49,8 +50,10 @@ internal class StandardEvidenceChecks(
     }
 
     private fun checkV0316StandardContractIndex(): ConformanceCheck = runCheck("v0.3.16.standard-contract-index") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val index = referenceContractIndex(artifacts, "jenkins")
+        val index = neutral.contractIndex(neutral.build())
+        require(index.target == TargetNeutralConformanceFixture.TARGET_NEUTRAL) {
+            "Universal contract evidence must not inherit a concrete target identity."
+        }
         require(index.contracts.any { it.artifact == "execution-plan.json" && it.schema == "schemas/execution-plan.schema.json" }) {
             "Contract index must include execution-plan.json and its schema."
         }
@@ -68,8 +71,10 @@ internal class StandardEvidenceChecks(
     }
 
     private fun checkV0318ArtifactEvidenceReport(): ConformanceCheck = runCheck("v0.3.18.artifact-evidence-report") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val evidence = referenceEvidence(artifacts, "jenkins")
+        val evidence = neutral.evidence(neutral.build())
+        require(evidence.target == TargetNeutralConformanceFixture.TARGET_NEUTRAL) {
+            "Universal artifact evidence must not inherit a concrete target identity."
+        }
         require(evidence.missingEvidence.isEmpty()) { "Required derived artifacts must have evidence: ${evidence.missingEvidence.joinToString()}" }
         require(evidence.evidence.any { it.artifact == "standard-compliance-report.json" && it.producer == "StandardComplianceAnalyzer" }) {
             "Evidence report must identify standard compliance producer."
@@ -80,18 +85,28 @@ internal class StandardEvidenceChecks(
     }
 
     private fun checkV0319StandardComplianceReport(): ConformanceCheck = runCheck("v0.3.19.standard-compliance-report") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val compliance = referenceComplianceWithExplicitEvidence(artifacts, "jenkins")
-        require(compliance.status == "PASS") { "Reference public artifact set must pass compliance gates: ${compliance.failedGates.joinToString()}" }
-        require(compliance.gates.any { it.id == "artifact-integrity.pass" && it.status == "PASS" }) { "Compliance must include artifact integrity gate." }
-        require(compliance.gates.any { it.id == "contract-index.present" && it.status == "PASS" }) { "Compliance must include contract index gate." }
-        require(compliance.gates.any { it.id == "bundle.contains-compliance" && it.status == "PASS" }) { "Compliance must verify bundle membership." }
-        require(compliance.gates.any { it.id == "conformance.pass" && it.status == "PASS" }) { "Compliance must require explicit passing conformance evidence." }
+        val core = neutral.build()
+        val passing = neutral.compliance(core, neutral.passingManifest())
+        require(passing.status == "PASS") { "Reference public artifact set must pass compliance gates: ${passing.failedGates.joinToString()}" }
+        require(passing.gates.any { it.id == "artifact-integrity.pass" && it.status == "PASS" }) { "Compliance must include artifact integrity gate." }
+        require(passing.gates.any { it.id == "contract-index.present" && it.status == "PASS" }) { "Compliance must include contract index gate." }
+        require(passing.gates.any { it.id == "bundle.contains-compliance" && it.status == "PASS" }) { "Compliance must verify bundle membership." }
+        require(passing.gates.any { it.id == "conformance.pass" && it.status == "PASS" }) { "Compliance must require explicit passing conformance evidence." }
+
+        val failing = neutral.compliance(core, neutral.failingManifest())
+        require(failing.status == "FAIL") {
+            "A failing conformance manifest was certified as release compliant."
+        }
+        require(failing.failedGates.contains("conformance.pass")) {
+            "Compliance failure must identify the conformance.pass gate."
+        }
+        require(failing.gates.single { it.id == "conformance.pass" }.status == "FAIL") {
+            "The conformance.pass gate did not preserve negative evidence."
+        }
     }
 
     private fun checkV0320StandardFreezeReport(): ConformanceCheck = runCheck("v0.3.20.standard-freeze-report") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val freeze = referenceFreeze(artifacts, "jenkins")
+        val freeze = neutral.freeze(neutral.build())
         require(freeze.status == "PASS") { "Standard freeze must pass without missing schemas: ${freeze.issues.joinToString()}" }
         require(freeze.stableContracts.any { it.artifact == "execution-plan.json" }) { "Freeze report must mark execution plan as stable." }
         require(freeze.breakingChangeRules.contains("add-required-field")) { "Freeze report must expose breaking-change rules." }
@@ -126,32 +141,21 @@ internal class StandardEvidenceChecks(
     }
 
     private fun checkV040PublicStandardDraft(): ConformanceCheck = runCheck("v0.4.0.public-standard-draft") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val compliance = referenceComplianceWithExplicitEvidence(artifacts, "jenkins")
-        val draft = PublicStandardDraft.draft(referenceArtifactBundle(artifacts, "jenkins"), compliance)
-        val index = referenceStandardIndex(artifacts, "jenkins")
-        val suite = PublicStandardDraft.conformanceSuite(referencePassingConformanceManifest())
-        require(draft.status == "PASS") { "Public standard draft must pass compliance." }
+        val core = neutral.build()
+        val passingCompliance = neutral.compliance(core, neutral.passingManifest())
+        val draft = neutral.draft(core, passingCompliance)
+        val index = neutral.standardIndex(core)
+        val suite = PublicStandardDraft.conformanceSuite(neutral.passingManifest())
+        require(draft.status == "PASS") { "Public standard draft must pass valid compliance." }
         require(draft.purpose.contains("Human/AI intent")) { "Draft must preserve Flow's original intent standardization purpose." }
         require(index.artifacts.contains("flow-standard-draft.json")) { "Standard index must include draft artifact." }
         require(suite.referenceCorpus == "reference-corpus-index.json") { "Conformance suite must point to reference corpus." }
         require(suite.negativeCorpus == "negative-conformance-corpus.json") { "Conformance suite must point to negative corpus." }
+
+        val failingCompliance = neutral.compliance(core, neutral.failingManifest())
+        val rejectedDraft = neutral.draft(core, failingCompliance)
+        require(rejectedDraft.status == "FAIL") {
+            "Public standard draft ignored failing compliance evidence."
+        }
     }
-
-    private fun referenceComplianceWithExplicitEvidence(
-        artifacts: PipelineArtifacts,
-        target: String
-    ) = StandardComplianceAnalyzer().analyze(
-        bundle = referenceArtifactBundle(artifacts, target),
-        contractIndex = referenceContractIndex(artifacts, target),
-        releaseProfile = referenceReleaseProfile(),
-        evidence = referenceEvidence(artifacts, target),
-        integrity = referenceArtifactIntegrity(artifacts, target),
-        conformanceManifest = referencePassingConformanceManifest()
-    )
-
-    private fun referencePassingConformanceManifest() = ConformanceManifestBuilder(rootDir).build(
-        summary = ConformanceSummary(listOf(ConformanceCheck("reference.artifact-compliance-fixture", true))),
-        implementation = "flow-reference-compliance-fixture"
-    )
 }
