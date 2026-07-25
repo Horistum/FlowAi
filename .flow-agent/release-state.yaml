@@ -18,13 +18,13 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.8"
-  completedItemName: "Abstract Execution Topology Model"
+  completedItem: "0.9.7.9"
+  completedItemName: "Intent Lowering and Diagnostic Honesty"
   primaryStream: "core"
-  activeCorrectionWorkPackage: "0.9.7.9.9"
+  activeCorrectionWorkPackage: ".flow-agent/work-packages/v0.9.7.9.9-parser-conformance-architecture-integrity.yaml"
   activeCorrectionWorkPackageName: "Parser, Conformance and Architecture Evidence Integrity"
-  blockedCoreItem: "0.9.7.10"
-  blockedCoreItemName: "Bounded Semantic Closure Gate"
+  nextCoreItem: "0.9.7.10"
+  nextCoreItemName: "Bounded Semantic Closure Gate"
   boundedClosureItem: "0.9.7.10"
   activeRoadmaps:
     core: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
@@ -102,9 +102,10 @@ lastKnownValidation:
   cleanTest: "passed-on-merged-v0.9.7.9.8-follow-up-head"
   conformance: "passed-on-merged-v0.9.7.9.8-follow-up-head"
   executableReferenceEvidence: "passed-on-merged-v0.9.7.9.8-follow-up-head"
-  validationSource: "Historical merged validation only; v0.9.7.9.9 has no passing implementation evidence yet."
+  validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa; later v0.9.7.9.8 evidence remains historical and v0.9.7.9.9 has no passing implementation evidence yet."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
+    - "v0.9.7.9.8 completed after external exact-head CI evidence: Flow CI #2025, run 30144935197, passed implementation head af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319."
     - "v0.9.7.9 was reopened after proving silent retry-policy coercion and discard on the public .flow parser path."
     - "The same audit also found circular compliance conformance, incomplete serializer-boundary scope, indentation-based module governance and unnecessary Jenkins anchoring of universal evidence."
     - "v0.9.7.10 remains blocked until v0.9.7.9.9 has independent exact-head and merge-candidate validation evidence."
