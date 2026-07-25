@@ -44,7 +44,7 @@ internal class ProjectionSurfaceChecks(
         val expectedTasks = setOf("build", "test", "deploy", "notify")
         val targetIds = listOf("jenkins", "github-actions", "tekton")
         targetIds.forEach { target ->
-            val manifest = manifestPipeline.generateDiagnosticEvidence(plan, target)
+            val manifest = manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(plan, target, "conformance:v0.4.4"))
             val taskNames = mutableSetOf<String>()
             var deployGuard: String? = null
             fun walk(steps: List<TargetStep>, guard: String?) {

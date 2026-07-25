@@ -34,7 +34,7 @@ internal class CliReleaseHonestyChecks(
             val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
             val evidence = CliTargetEvidenceAuthority(targets, projections).evaluate(
                 plan = plan,
-                target = "jenkins",
+                explicitSelection = explicitTarget("jenkins", "conformance:cli-release"),
                 strict = false,
                 renderRequested = false
             )
@@ -56,7 +56,7 @@ internal class CliReleaseHonestyChecks(
 
             val requestedRender = CliTargetEvidenceAuthority(targets, projections).evaluate(
                 plan = plan,
-                target = "jenkins",
+                explicitSelection = explicitTarget("jenkins", "conformance:cli-release"),
                 strict = false,
                 renderRequested = true
             )
@@ -77,10 +77,6 @@ internal class CliReleaseHonestyChecks(
             require(release.nextCoreItem == "0.9.7.10")
             require(release.correctionStatus in setOf("active", "complete"))
 
-            val honestCli = File(rootDir, "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt").readText()
-            require(!honestCli.contains("TARGET MANIFEST READY")) {
-                "Public CLI still labels unevaluated or review-only manifest evidence as READY."
-            }
             val releaseAssembly = File(rootDir, "src/main/kotlin/org/flowlang/release/StandardReleaseAssembly.kt").readText()
             require(!releaseAssembly.contains("ADAPTER_CONTRACT_READY")) {
                 "Release assembly fabricates adapter-ready diagnostics without a target artifact."

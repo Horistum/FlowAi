@@ -203,11 +203,11 @@ class UniversalEffectStateTransitionModelTests {
             params = mapOf("operation" to "build-image", "capability" to "build-image")
         )
 
-        authority.authorizeDiagnosticEvidence(ExecutionPlan(flowName = "valid", nodes = listOf(base)), "jenkins")
+        authority.authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(ExecutionPlan(flowName = "valid", nodes = listOf(base)), "jenkins", targets))
 
         val omitted = base.copy(effectModel = emptyList(), effects = emptyList())
         val omittedFailure = assertFailsWith<InvalidPlanningEvidenceException> {
-            authority.authorizeDiagnosticEvidence(ExecutionPlan(flowName = "omitted", nodes = listOf(omitted)), "jenkins")
+            authority.authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(ExecutionPlan(flowName = "omitted", nodes = listOf(omitted)), "jenkins", targets))
         }
         assertTrue(omittedFailure.issues.any { it.code == "planning.effect.evidence.invalid" })
 
@@ -217,7 +217,7 @@ class UniversalEffectStateTransitionModelTests {
             effects = forgedEffect.map(SemanticEffect::resource)
         )
         val forgedFailure = assertFailsWith<InvalidPlanningEvidenceException> {
-            authority.authorizeDiagnosticEvidence(ExecutionPlan(flowName = "forged", nodes = listOf(forged)), "jenkins")
+            authority.authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(ExecutionPlan(flowName = "forged", nodes = listOf(forged)), "jenkins", targets))
         }
         assertTrue(forgedFailure.issues.any { it.code == "planning.effect.evidence.invalid" })
     }

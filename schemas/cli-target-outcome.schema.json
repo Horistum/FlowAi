@@ -4,24 +4,113 @@
   "title": "Flow CLI Target Outcome",
   "type": "object",
   "additionalProperties": false,
-  "required": ["target", "outcome", "diagnosticFallbackUsed", "renderRequested", "renderAuthorized", "diagnostics"],
+  "required": [
+    "target",
+    "targetSelection",
+    "outcome",
+    "diagnosticFallbackUsed",
+    "renderRequested",
+    "renderAuthorized",
+    "diagnostics"
+  ],
   "properties": {
-    "target": { "type": "string", "minLength": 1 },
-    "outcome": { "enum": ["EXECUTABLE", "REVIEW_ONLY", "BLOCKED"] },
-    "diagnosticFallbackUsed": { "type": "boolean" },
-    "renderRequested": { "type": "boolean" },
-    "renderAuthorized": { "type": "boolean" },
+    "target": {
+      "type": "string",
+      "minLength": 1
+    },
+    "outcome": {
+      "enum": [
+        "EXECUTABLE",
+        "REVIEW_ONLY",
+        "BLOCKED"
+      ]
+    },
+    "diagnosticFallbackUsed": {
+      "type": "boolean"
+    },
+    "renderRequested": {
+      "type": "boolean"
+    },
+    "renderAuthorized": {
+      "type": "boolean"
+    },
     "diagnostics": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["code", "severity", "message"],
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
         "properties": {
-          "code": { "type": "string", "minLength": 1 },
-          "severity": { "enum": ["info", "warning", "error"] },
-          "message": { "type": "string", "minLength": 1 },
-          "causeType": { "type": ["string", "null"] }
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "warning",
+              "error"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "causeType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "targetSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "standardVersion",
+        "planVersion",
+        "flowName",
+        "target",
+        "origin",
+        "source",
+        "explicit"
+      ],
+      "properties": {
+        "standardVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "flowName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "origin": {
+          "enum": [
+            "CLI_OPTION",
+            "INTENT_DECLARATION",
+            "EXPLICIT_CONFIGURATION"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "explicit": {
+          "const": true
         }
       }
     }

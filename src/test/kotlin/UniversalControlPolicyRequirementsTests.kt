@@ -112,11 +112,11 @@ class UniversalControlPolicyRequirementsTests {
         assertTrue("approval.manual" in plan.requiredCapabilities)
         assertTrue("condition.evaluate" in plan.requiredCapabilities)
         assertFailsWith<UnresolvedPlanningControlException> {
-            MandatoryMaterializationAuthority(targets, modules).authorize(plan, "jenkins")
+            MandatoryMaterializationAuthority(targets, modules).authorize(testMaterializationRequest(plan, "jenkins", targets))
         }
         assertTrue(
             MandatoryMaterializationAuthority(targets, modules)
-                .authorizeDiagnosticEvidence(plan, "jenkins")
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "jenkins", targets))
                 .compatibility.hasErrors
         )
     }
@@ -144,8 +144,8 @@ class UniversalControlPolicyRequirementsTests {
         val authority = MandatoryMaterializationAuthority(targets, modules)
 
         assertEquals(ControlDecisionStatus.BLOCKED, plan.controlDecision.status)
-        assertFailsWith<UnresolvedPlanningControlException> { authority.authorize(plan, "jenkins") }
-        val diagnostic = authority.authorizeDiagnosticEvidence(plan, "jenkins")
+        assertFailsWith<UnresolvedPlanningControlException> { authority.authorize(testMaterializationRequest(plan, "jenkins", targets)) }
+        val diagnostic = authority.authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "jenkins", targets))
         assertTrue(diagnostic.compatibility.hasErrors)
         assertTrue(diagnostic.compatibility.issues.any { it.feature.startsWith("control.") })
     }
@@ -210,7 +210,7 @@ class UniversalControlPolicyRequirementsTests {
         val forged = ExecutionPlan(flowName = "forged", nodes = listOf(task))
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
-            MandatoryMaterializationAuthority(targets, modules).authorizeDiagnosticEvidence(forged, "jenkins")
+            MandatoryMaterializationAuthority(targets, modules).authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(forged, "jenkins", targets))
         }
         assertTrue(failure.issues.any { it.code == "planning.control.requirement.invalid" })
     }

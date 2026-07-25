@@ -40,9 +40,9 @@ class DerivedModelGovernanceIntegrityTests {
         val preliminarySelection = TargetSelectionAnalyzer(targets).analyze(plan)
         val pipeline = BuiltInTargetProjections.pipeline(targets)
         val manifests = listOf(
-            pipeline.generate(plan, "jenkins"),
-            pipeline.generateDiagnosticEvidence(plan, "github-actions"),
-            pipeline.generateDiagnosticEvidence(plan, "tekton")
+            pipeline.generate(testMaterializationRequest(plan, "jenkins", targets)),
+            pipeline.generateDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "github-actions", targets)),
+            pipeline.generateDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "tekton", targets))
         )
 
         DerivedModelIntegrityAuthority.requireNegotiation(preliminaryNegotiation)
@@ -118,7 +118,7 @@ class DerivedModelGovernanceIntegrityTests {
     fun duplicateManifestEvidenceCannotBeSilentlyOverwritten() {
         val plan = referencePlan()
         val selection = TargetSelectionAnalyzer(targets).analyze(plan)
-        val manifest = BuiltInTargetProjections.pipeline(targets).generate(plan, "jenkins")
+        val manifest = BuiltInTargetProjections.pipeline(targets).generate(testMaterializationRequest(plan, "jenkins", targets))
 
         val failure = assertFailsWith<IllegalArgumentException> {
             TargetCompatibilityReadinessAnalyzer.reconcile(selection, listOf(manifest, manifest))
@@ -131,7 +131,7 @@ class DerivedModelGovernanceIntegrityTests {
     fun readinessAwareSelectionCannotBeUsedAsPreliminaryEvidenceAgain() {
         val plan = referencePlan()
         val pipeline = BuiltInTargetProjections.pipeline(targets)
-        val manifests = listOf(pipeline.generate(plan, "jenkins"))
+        val manifests = listOf(pipeline.generate(testMaterializationRequest(plan, "jenkins", targets)))
         val reconciled = TargetCompatibilityReadinessAnalyzer.reconcile(
             TargetSelectionAnalyzer(targets).analyze(plan),
             manifests

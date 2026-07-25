@@ -4,6 +4,8 @@ import java.io.File
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.materialization.TargetMaterializationRequest
+import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
@@ -25,9 +27,12 @@ internal object TargetManifestGenerationPipeline {
         plan: ExecutionPlan,
         compatibility: CompatibilityReport,
         strict: Boolean = false
-    ): TargetManifest = pipeline.generate(plan, compatibility.target, strict)
+    ): TargetManifest {
+        val selection = TargetSelectionAuthority.fromExplicitConfiguration(
+            compatibility.target,
+            "cli:compatibility-report",
+            targets
+        )
+        return pipeline.generate(TargetMaterializationRequest(plan, selection, strict))
+    }
 }
-
-internal typealias JenkinsManifestRenderer = org.flowlang.targets.builtin.JenkinsManifestRenderer
-internal typealias GitHubActionsManifestRenderer = org.flowlang.targets.builtin.GitHubActionsManifestRenderer
-internal typealias TektonManifestRenderer = org.flowlang.targets.builtin.TektonManifestRenderer

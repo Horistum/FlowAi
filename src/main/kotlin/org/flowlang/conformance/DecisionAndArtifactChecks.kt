@@ -34,7 +34,7 @@ internal class DecisionAndArtifactChecks(
         val compatibility = CompatibilityAnalyzer(targets)
         val manifests = targets.keys.sorted()
             .filter { target -> projections.providerFor(target) != null }
-            .map { target -> manifestPipeline.generateDiagnosticEvidence(core.plan, target) }
+            .map { target -> manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(core.plan, target, "conformance:decision-artifact")) }
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
             compatibility.negotiate(core.plan, strict = false),
             manifests
