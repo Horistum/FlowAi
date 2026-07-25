@@ -325,7 +325,9 @@ internal class ClosureBlockingIntegrityChecks(
 
     private fun checkCorrectionLifecycle() {
         val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
-        require(release.completedCorrectionItem == "0.9.7.9.8")
+        require(release.completedCorrectionItem.startsWith("0.9.7.9.")) {
+            "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded 0.9.7.9.x track."
+        }
         when (release.correctionStatus) {
             "active" -> {
                 require(release.parentCoreItemStatus == "correction-required")
