@@ -242,19 +242,19 @@ class ProjectionBindingContractTests {
 
     @Test
     fun serializationOmitsFieldsThatDoNotBelongToBindingKind() {
-        val registryJson = Json.mapper.writeValueAsString(
+        val registryJson = Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
             ProjectionBinding.secret("registry-token")
         )
-        val manifestJson = Json.mapper.writeValueAsString(
+        val manifestJson = Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
             ProjectionBinding.secret("registry-token").asManifestBinding()
         )
 
-        assertTrue(registryJson.contains("\"kind\":\"SECRET\""))
-        assertTrue(registryJson.contains("\"name\":\"registry-token\""))
-        assertFalse(registryJson.contains("\"resolutionStatus\""))
-        assertFalse(registryJson.contains("\"value\""))
-        assertTrue(manifestJson.contains("\"resolutionStatus\":\"SYMBOLIC\""))
-        assertFalse(manifestJson.contains("\"reason\""))
+        assertEquals("SECRET", registryJson.path("kind").asText())
+        assertEquals("registry-token", registryJson.path("name").asText())
+        assertFalse(registryJson.has("resolutionStatus"))
+        assertFalse(registryJson.has("value"))
+        assertEquals("SYMBOLIC", manifestJson.path("resolutionStatus").asText())
+        assertFalse(manifestJson.has("reason"))
     }
 
     @Test
