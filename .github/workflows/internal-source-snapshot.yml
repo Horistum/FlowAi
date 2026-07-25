@@ -1,0 +1,41 @@
+name: Internal Source Snapshot
+
+on:
+  push:
+    branches:
+      - 'assembly/**'
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Exact Assembly Head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify And Package Source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          git rev-parse HEAD > snapshot-commit.txt
+          git rev-parse HEAD^{tree} > snapshot-tree.txt
+          tar --exclude=.git --exclude=source-snapshot.tar.gz -czf source-snapshot.tar.gz .
+
+      - name: Upload Source Snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: internal-source-snapshot
+          path: |
+            source-snapshot.tar.gz
+            snapshot-commit.txt
+            snapshot-tree.txt
+          if-no-files-found: error
+          retention-days: 1
