@@ -5,15 +5,15 @@ Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
-Core roadmap item status: `correction-required`
-Active correction item: `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity`
-Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`blocked`)
+Core roadmap item status: `completed`
+Completed correction item: `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity`
+Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
 
 ## Active direction
 
 Core, implementation and conformance planning remain separate authorities. Existing executable reference evidence stays active as falsification feedback and does not define Core meaning. Package, public-standard, artifact-contract and bounded-work versions remain independent axes.
 
-The v0.9.7 track cannot enter its bounded closure gate while `0.9.7.9.8` is active. The correction was reopened after proving that generic safety prose, missing canonical source provenance and merge-ref CI evidence could still satisfy stronger claims than the implementation supported. `0.9.7.10` remains blocked until the corrected implementation head and its synthetic merge candidate pass separately.
+The v0.9.7 track may now enter its bounded closure gate. `0.9.7.9.8` was completed only after the corrected implementation head and GitHub's synthetic merge candidate passed independent validation. `0.9.7.10` is now `next`; it remains a finite verification step and may not introduce new requirements.
 
 ## Correction ledger
 
@@ -24,7 +24,7 @@ The v0.9.7 track cannot enter its bounded closure gate while `0.9.7.9.8` is acti
 5. `0.9.7.9.5 Provider-Backed Approval and Topology Identity` required provider evidence and collision-safe semantic identity.
 6. `0.9.7.9.6 Derived Model and Governance Integrity` made report summaries and governance verdicts reproducible from detailed evidence.
 7. `0.9.7.9.7 CLI Diagnostic and Release Honesty` separated manifest evidence, render authorization and staged release publication.
-8. `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity` remains active until its strengthened implementation and governance state pass truthful validation.
+8. `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity` repaired the remaining closure blockers and completed after dual validation.
 
 ## v0.9.7.9.8 implementation boundary
 
@@ -43,8 +43,7 @@ The v0.9.7 track cannot enter its bounded closure gate while `0.9.7.9.8` is acti
 - Active semantic identifiers and control/default literals remain actionable.
 - CLI, release, scenario, conformance and adapter-owned vocabulary are classified separately from Core semantic source.
 - Retained public compatibility symbols remain visible inventory and are not treated as hidden implementation defaults.
-- Evidence is localized to its actual source line rather than the first line of a multi-line lexer span.
-- Health status is derived only from actionable active-semantic evidence.
+- Health status is derived only from actionable active-semantic evidence and passed in Flow CI #2025.
 
 ### Diagnostic CLI
 
@@ -60,38 +59,39 @@ The v0.9.7 track cannot enter its bounded closure gate while `0.9.7.9.8` is acti
 - Canonical requirements stored on an execution plan are never reused as the expected authority for their own validation.
 - Intent-derived source signals without `sourceIntent` produce `planning.topology.canonical.provenance.missing` before provider invocation.
 - Missing, forged, orphaned or provenance-free canonical topology is rejected.
-- Legacy `dependencies` and `effects` fields are retained as compatibility projections, not independent semantic authorities.
-- Materialization and conformance reject divergence from `dependsOn` and the typed semantic effect model.
+- Legacy `dependencies` and `effects` fields remain mechanically validated compatibility projections.
 
 ### GitHub Actions cancellation and validation identity
 
 - Ordinary dependency jobs retain GitHub's native success and cancellation semantics.
 - `always()` is not added to every job with `needs`.
-- Explicit failure handlers and provider-approval skip paths may evaluate after failure or skip, but remain guarded by `!cancelled()`.
-- The standard Flow CI job checks out `github.event.pull_request.head.sha` for exact-head validation and verifies it with `git rev-parse HEAD`.
-- A separate job validates GitHub's synthetic pull-request merge candidate; its success is not relabeled as exact-head evidence.
+- Explicit failure handlers and provider-approval skip paths remain guarded by `!cancelled()`.
+- The standard Flow CI job checks out `github.event.pull_request.head.sha` and verifies it with `git rev-parse HEAD`.
+- A separate job validates GitHub's synthetic pull-request merge candidate; its success is never relabeled as exact-head evidence.
 
 ## Roadmap order
 
 1. `0.9.7.1 Governance Signal Integrity` completed
 2. `0.9.7.2 Canonical Module and Notes Authority` completed
 3. `0.9.7.3 Mandatory Materialization Authority` completed
-4. `0.9.7.4 Universal Dependency and Continuity Contract` completed with derived compatibility projections explicitly retained and enforced
+4. `0.9.7.4 Universal Dependency and Continuity Contract` completed
 5. `0.9.7.5 Canonical Intent Meaning` completed
 6. `0.9.7.6 Universal Effect and State Transition Model` completed
 7. `0.9.7.7 Universal Control and Policy Requirements` completed
-8. `0.9.7.8 Abstract Execution Topology Model` completed with canonical provenance re-derived at materialization
-9. `0.9.7.9 Intent Lowering and Diagnostic Honesty` correction-required
-10. `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity` active
-11. `0.9.7.10 Bounded Semantic Closure Gate` blocked
+8. `0.9.7.8 Abstract Execution Topology Model` completed
+9. `0.9.7.9 Intent Lowering and Diagnostic Honesty` completed after bounded corrections
+10. `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity` complete
+11. `0.9.7.10 Bounded Semantic Closure Gate` next
 
 ## Validation
 
-Last merged validation: Flow CI #2011, run `30083768491`, passed implementation head `f970561c568f3fea0dcf8f858acfff15b4a3eaaa` for `v0.9.7.9.7`, including Flow Agent checks, clean compilation, the complete test suite and standalone conformance.
+Last merged validation: Flow CI #2011, run `30083768491`, passed implementation head `f970561c568f3fea0dcf8f858acfff15b4a3eaaa` for `v0.9.7.9.7`.
 
-The earlier Flow CI #2021 and #2022 runs checked GitHub pull-request merge refs. They remain useful historical merge-candidate evidence but are not exact-head evidence and do not complete `0.9.7.9.8`.
+Correction implementation validation: Flow CI #2025, run `30144935197`, passed exact implementation head `af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319`, including Flow Agent tooling, structure validation, context generation, clean compilation, complete tests and standalone conformance.
 
-The corrected implementation must pass both the exact-head `compile-test-conformance` job and the separate `merge-candidate-compile-test-conformance` job. Only then may a metadata-only head mark the correction complete, restore `0.9.7.9` to completed and advance `0.9.7.10` to next.
+The same run independently passed synthetic merge candidate `2e30830d55fe73ec0c46c75dfd425c1047dc9853` through the corresponding repository, test and conformance boundaries.
+
+The completion-metadata head must pass the same dual CI workflow before the pull request is ready for review.
 
 ## Architecture boundary
 
