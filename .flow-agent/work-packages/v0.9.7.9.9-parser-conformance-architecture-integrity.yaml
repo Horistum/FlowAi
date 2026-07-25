@@ -1,0 +1,37 @@
+version: "0.9.7.9.9"
+name: "Parser, Conformance and Architecture Evidence Integrity"
+type: "bounded-correction"
+stream: core
+status: implementation-candidate
+parentCoreItem: "0.9.7.9"
+objective: "Repair silent .flow retry-policy loss, circular compliance proof, incomplete serialization boundaries, whitespace-based module governance and unnecessary concrete-target anchoring of universal conformance evidence."
+scopeBoundary:
+  - "Reject unknown, duplicate or incorrectly typed retry policy fields with path-aware parser diagnostics."
+  - "Keep retry defaults only for omitted fields; never use them to replace malformed authored values."
+  - "Prove compliance and public-draft acceptance and rejection from opposite conformance-manifest polarities."
+  - "Enforce Jackson and YAML exclusion across every semantic Core package, including projection contracts."
+  - "Exercise module target-ownership rejection through CanonicalModuleLoader semantics rather than indentation matching."
+  - "Build universal evidence, schemas and decision artifacts from a target-neutral Core fixture."
+  - "Retain target-specific checks only for adapter contracts, manifests and rendered artifacts."
+  - "Keep package, public-standard and artifact contract versions unchanged."
+universalInvariants:
+  - "Every authored retry policy value is preserved or rejected; no malformed or unknown value disappears into a default."
+  - "A release compliance gate is falsifiable and fails when its conformance manifest fails."
+  - "Semantic Core contracts do not depend on serialization frameworks."
+  - "Module target ownership is rejected by canonical descriptor structure, independent of YAML whitespace."
+  - "Universal conformance evidence has no concrete target identity or renderer dependency."
+implementedSlices:
+  - id: flow-retry-parser-fail-closed
+  - id: compliance-positive-negative-polarity
+  - id: semantic-serialization-boundary
+  - id: canonical-module-target-ownership-proof
+  - id: target-neutral-conformance-fixture
+  - id: decision-and-schema-substrate-neutralization
+  - id: correction-governance-reopen
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "The final implementation head and synthetic merge candidate must independently pass Flow Agent checks, clean tests, standalone conformance and executable reference evidence before completion metadata may be written."
+  buildDiscipline: "Do not mark this work package complete and do not unblock v0.9.7.10 until exact-head and merge-candidate evidence exists."
+blockedWorkItem:
+  version: "0.9.7.10"
+  name: "Bounded Semantic Closure Gate"
