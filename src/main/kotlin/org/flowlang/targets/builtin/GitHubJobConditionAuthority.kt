@@ -4,7 +4,7 @@ import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.sanitizeId
 
-/** Preserves GitHub cancellation semantics while translating explicit Flow conditions. */
+/** Preserves GitHub cancellation and dependency success semantics while translating explicit Flow conditions. */
 internal object GitHubJobConditionAuthority {
     fun expression(job: TargetJob, manifest: TargetManifest): String? {
         val own = job.metadata["condition"]?.let {
@@ -16,16 +16,24 @@ internal object GitHubJobConditionAuthority {
             return parts.joinToString(" && ")
         }
 
-        val dependencyConditions = job.dependsOn.mapNotNull { dependency ->
+        val dependencyKinds = job.dependsOn.map { dependency ->
             val safeDependency = sanitizeId(dependency)
             val isProviderBackedApproval = manifest.jobs.firstOrNull {
                 sanitizeId(it.id) == safeDependency
             }?.metadata?.get("providerApprovalPayload") == "true"
-            if (isProviderBackedApproval) {
-                "(needs.$safeDependency.result == 'success' || needs.$safeDependency.result == 'skipped')"
-            } else {
-                null
+            safeDependency to isProviderBackedApproval
+        }
+        val hasProviderBackedApproval = dependencyKinds.any { (_, isApproval) -> isApproval }
+        val dependencyConditions = if (hasProviderBackedApproval) {
+            dependencyKinds.map { (safeDependency, isApproval) ->
+                if (isApproval) {
+                    "(needs.$safeDependency.result == 'success' || needs.$safeDependency.result == 'skipped')"
+                } else {
+                    "needs.$safeDependency.result == 'success'"
+                }
             }
+        } else {
+            emptyList()
         }
 
         val parts = mutableListOf<String>()
