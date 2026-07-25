@@ -24,12 +24,13 @@ class ProviderApprovalMetadataHonestyTests {
                 "test:github-actions#topology"
             )
         )
-        val manifest = BuiltInTargetProjections.pipeline(mapOf(target.target to target)).generate(
-            ExecutionPlan(
-                flowName = "approval-metadata",
-                nodes = listOf(ApprovalNode(id = "approve"))
-            ),
-            target.target
+        val targets = mapOf(target.target to target)
+        val plan = ExecutionPlan(
+            flowName = "approval-metadata",
+            nodes = listOf(ApprovalNode(id = "approve"))
+        )
+        val manifest = BuiltInTargetProjections.pipeline(targets).generate(
+            testMaterializationRequest(plan, target.target, targets)
         )
         val job = manifest.jobs.single()
 

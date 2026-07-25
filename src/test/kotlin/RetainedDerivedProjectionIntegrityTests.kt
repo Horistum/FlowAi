@@ -32,7 +32,7 @@ class RetainedDerivedProjectionIntegrityTests {
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
             MandatoryMaterializationAuthority(targets, modules)
-                .authorizeDiagnosticEvidence(plan, "jenkins")
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "jenkins", targets))
         }
 
         assertTrue(failure.issues.any { it.code == "planning.dependency.projection.invalid" })
@@ -53,7 +53,7 @@ class RetainedDerivedProjectionIntegrityTests {
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
             MandatoryMaterializationAuthority(targets, modules)
-                .authorizeDiagnosticEvidence(plan, "jenkins")
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "jenkins", targets))
         }
 
         assertTrue(failure.issues.any { it.code == "planning.dependency.projection.invalid" })

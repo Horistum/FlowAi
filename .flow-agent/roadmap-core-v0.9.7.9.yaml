@@ -171,7 +171,7 @@ items:
   - version: 0.9.7.9
     name: Intent Lowering and Diagnostic Honesty
     type: lowering-integrity
-    status: completed
+    status: correction-required
     purpose: Preserve or diagnose every meaningful input.
     universalInvariant: Accepted information never disappears silently.
     forbiddenScope:
@@ -189,7 +189,7 @@ items:
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: next
+    status: blocked
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:

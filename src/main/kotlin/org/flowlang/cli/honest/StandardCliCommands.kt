@@ -34,21 +34,21 @@ internal object StandardCliCommands {
         "scenario"
     )
 
-    fun run(command: String, args: List<String>) {
+    fun run(command: String, args: List<String>, output: CliOutputCollector) {
         when (command) {
-            "flow" -> runFlow(args)
-            "conformance" -> runConformance(args)
-            "reference-snapshot" -> runReferenceSnapshot(args)
-            "catalog" -> runCatalog(args)
-            "targets" -> runTargets()
-            "modules" -> runModules()
-            "scenarios" -> runScenarios(args)
-            "scenario" -> runScenario(args)
+            "flow" -> runFlow(args, output)
+            "conformance" -> runConformance(args, output)
+            "reference-snapshot" -> runReferenceSnapshot(args, output)
+            "catalog" -> runCatalog(args, output)
+            "targets" -> runTargets(output)
+            "modules" -> runModules(output)
+            "scenarios" -> runScenarios(args, output)
+            "scenario" -> runScenario(args, output)
             else -> error("Unsupported explicit standard command '$command'.")
         }
     }
 
-    private fun runFlow(args: List<String>) {
+    private fun runFlow(args: List<String>, output: CliOutputCollector) {
         val source = args.firstOrNull { !it.startsWith("--") }
             ?: error("flow requires a source .flow file.")
         val file = File(source)
@@ -61,23 +61,23 @@ internal object StandardCliCommands {
         }
         val plan = FlowPlanner(modules).plan(ast)
         val targets = targetRegistry()
-        printSection("FLOW AST", ast)
-        printSection("VALIDATION REPORT", validation)
-        printSection("EXECUTION PLAN", plan)
-        printSection("CANONICAL EXECUTION PLAN", ExecutionPlanCanonicalizer.canonicalize(plan))
-        printSection("PLAN PREVIEW", PlanPreview().render(plan))
-        printSection("TARGET-NEUTRAL NEGOTIATION REPORT", CompatibilityAnalyzer(targets).negotiate(plan))
+        output.section("FLOW AST", ast)
+        output.section("VALIDATION REPORT", validation)
+        output.section("EXECUTION PLAN", plan)
+        output.section("CANONICAL EXECUTION PLAN", ExecutionPlanCanonicalizer.canonicalize(plan))
+        output.section("PLAN PREVIEW", PlanPreview().render(plan))
+        output.section("TARGET-NEUTRAL NEGOTIATION REPORT", CompatibilityAnalyzer(targets).negotiate(plan))
     }
 
-    private fun runConformance(args: List<String>) {
+    private fun runConformance(args: List<String>, output: CliOutputCollector) {
         val summary = ConformanceRunner().run()
         val manifest = ConformanceManifestBuilder().build(summary)
         val vectorIndex = ConformanceVectorIndexBuilder().build(
             runnerChecks = summary.checks.map { it.name },
             releaseProfileChecks = StandardReleaseProfile.report().requiredConformanceChecks
         )
-        printSection("FLOW CONFORMANCE REPORT", summary)
-        printSection("FLOW CONFORMANCE MANIFEST", manifest)
+        output.section("FLOW CONFORMANCE REPORT", summary)
+        output.section("FLOW CONFORMANCE MANIFEST", manifest)
         parseOption(args, "--out")?.let { out ->
             val directory = File(out)
             require(directory.mkdirs() || directory.isDirectory)
@@ -88,11 +88,11 @@ internal object StandardCliCommands {
         require(summary.ok) { "Flow conformance failed." }
     }
 
-    private fun runReferenceSnapshot(args: List<String>) {
+    private fun runReferenceSnapshot(args: List<String>, output: CliOutputCollector) {
         val source = parseOption(args, "--intent")
             ?: args.firstOrNull { !it.startsWith("--") }
             ?: "examples/intent/build-test-deploy.intent.yaml"
-        val output = parseOption(args, "--out") ?: "conformance/snapshots/build-test-deploy"
+        val outputPath = parseOption(args, "--out") ?: "conformance/snapshots/build-test-deploy"
         val scenarioId = parseOption(args, "--scenario-id")
             ?: File(source).nameWithoutExtension.removeSuffix(".intent")
         val targets = parseOption(args, "--targets")
@@ -103,50 +103,50 @@ internal object StandardCliCommands {
             ?: BuiltInTargetProjections.registry.targetIds
         val snapshot = ReferenceSnapshotBundleGenerator().generate(
             intentFile = File(source),
-            outputDir = File(output),
+            outputDir = File(outputPath),
             scenarioId = scenarioId,
             targetIds = targets
         )
-        printSection("REFERENCE SNAPSHOT INDEX", snapshot)
-        println("===== EXPORTED REFERENCE SNAPSHOT =====")
-        println(File(output).absolutePath)
+        output.section("REFERENCE SNAPSHOT INDEX", snapshot)
+        output.text("===== EXPORTED REFERENCE SNAPSHOT =====")
+        output.text(File(outputPath).absolutePath)
     }
 
-    private fun runCatalog(args: List<String>) {
+    private fun runCatalog(args: List<String>, output: CliOutputCollector) {
         if ("--markdown" in args) {
-            println(StandardIntentCatalog.markdown())
+            output.text(StandardIntentCatalog.markdown())
         } else {
-            printSection("FLOW STANDARD INTENT CATALOG", StandardIntentCatalog.definitions)
+            output.section("FLOW STANDARD INTENT CATALOG", StandardIntentCatalog.definitions)
         }
     }
 
-    private fun runTargets() {
+    private fun runTargets(output: CliOutputCollector) {
         val targets = targetRegistry().values.sortedBy { it.target }
-        printSection("FLOW TARGET CAPABILITY MATRIX", targets)
+        output.section("FLOW TARGET CAPABILITY MATRIX", targets)
     }
 
-    private fun runModules() {
-        printSection("FLOW CAPABILITY MODULE CONTRACT REPORT", ModuleContractAnalyzer.analyze(moduleRegistry()))
+    private fun runModules(output: CliOutputCollector) {
+        output.section("FLOW CAPABILITY MODULE CONTRACT REPORT", ModuleContractAnalyzer.analyze(moduleRegistry()))
     }
 
-    private fun runScenarios(args: List<String>) {
+    private fun runScenarios(args: List<String>, output: CliOutputCollector) {
         if ("--markdown" in args) {
-            println(ScenarioPackRegistry.markdown())
+            output.text(ScenarioPackRegistry.markdown())
         } else {
-            printSection("FLOW SCENARIO PACKS", ScenarioPackRegistry.jsonReady())
+            output.section("FLOW SCENARIO PACKS", ScenarioPackRegistry.jsonReady())
         }
     }
 
-    private fun runScenario(args: List<String>) {
+    private fun runScenario(args: List<String>, output: CliOutputCollector) {
         val id = args.firstOrNull { !it.startsWith("--") }
             ?: error("scenario requires a scenario pack id.")
         val pack = ScenarioPackRegistry.packs.firstOrNull { it.definition.id == id }
             ?: error("Unknown scenario pack '$id'. Run 'scenarios' to list available packs.")
         if ("--examples" in args) {
-            println("===== SCENARIO EXAMPLES: ${pack.definition.id} =====")
-            pack.definition.exampleRequests.forEach { println("- $it") }
+            output.text("===== SCENARIO EXAMPLES: ${pack.definition.id} =====")
+            pack.definition.exampleRequests.forEach { output.text("- $it") }
         } else {
-            printSection("SCENARIO PACK: ${pack.definition.id}", pack.definition)
+            output.section("SCENARIO PACK: ${pack.definition.id}", pack.definition)
         }
     }
 
@@ -168,11 +168,6 @@ internal object StandardCliCommands {
         return args.firstOrNull { it.startsWith("$name=") }?.substringAfter('=')?.also {
             require(it.isNotBlank()) { "$name requires a value." }
         }
-    }
-
-    private fun printSection(title: String, value: Any) {
-        println("===== $title =====")
-        println(Json.mapper.writeValueAsString(value))
     }
 
     private fun writeJson(directory: File, name: String, value: Any) {

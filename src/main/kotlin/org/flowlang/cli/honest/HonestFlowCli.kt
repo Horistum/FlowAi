@@ -26,6 +26,9 @@ import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDecisionAnalyzer
 import org.flowlang.intent.IntentDesignAnalyzer
 import org.flowlang.intent.IntentToAstPlanner
+import org.flowlang.materialization.MissingExplicitTargetSelectionException
+import org.flowlang.materialization.TargetSelectionAuthority
+import org.flowlang.materialization.TargetSelectionDecision
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.ExecutionPlanCanonicalizer
@@ -58,6 +61,7 @@ data class CliTargetNeutralPlanningEvidence(
 
 data class CliTargetOutcomeReport(
     val target: String,
+    val targetSelection: org.flowlang.materialization.TargetSelectionEvidenceReport,
     val outcome: CliTargetEvidenceOutcome,
     val diagnosticFallbackUsed: Boolean,
     val renderRequested: Boolean,
@@ -70,59 +74,84 @@ fun main(args: Array<String>) {
     if (status != 0) exitProcess(status)
 }
 
-/** Public testable entrypoint. Expected command failures are emitted as JSON without stack traces. */
+/** Public facade: execute one typed command result, then present it. */
 fun runCli(args: Array<String>): Int {
+    val result = executeCli(args)
+    CliPresenter.present(result)
+    return result.exitCode
+}
+
+/** Testable execution boundary. It returns typed outcomes and does not write to stdout. */
+fun executeCli(args: Array<String>): CliExecutionResult {
+    val output = CliOutputCollector()
     val command = args.firstOrNull()
     if (command == null) {
-        printHelp()
-        return 0
+        printHelp(output)
+        return CliExecutionResult.Help(output.snapshot())
     }
     return try {
         when (command) {
-            "intent" -> runIntentCommand(args.drop(1))
-            "normalize" -> runNormalizeCommand(args.drop(1))
-            "diagnostics" -> runDiagnosticsCommand(args.drop(1))
-            "release-profile" -> runReleaseProfileCommand(args.drop(1))
-            "standard-draft" -> runStandardDraftCommand(args.drop(1))
-            "standard-export" -> runStandardExportCommand(args.drop(1))
-            "standard-verify" -> runStandardVerifyCommand(args.drop(1))
+            "intent" -> runIntentCommand(args.drop(1), output)
+            "normalize" -> runNormalizeCommand(args.drop(1), output)
+            "diagnostics" -> runDiagnosticsCommand(args.drop(1), output)
+            "release-profile" -> runReleaseProfileCommand(args.drop(1), output)
+            "standard-draft" -> runStandardDraftCommand(args.drop(1), output)
+            "standard-export" -> runStandardExportCommand(args.drop(1), output)
+            "standard-verify" -> runStandardVerifyCommand(args.drop(1), output)
             in StandardCliCommands.names -> {
-                StandardCliCommands.run(command, args.drop(1))
-                0
+                StandardCliCommands.run(command, args.drop(1), output)
+                CliExecutionResult.Completed(output.snapshot())
             }
-            else -> throw IllegalArgumentException(
+            else -> throw CliTypedFailure(
+                CliDiagnosticCode.UNKNOWN_COMMAND,
                 "Unknown command '$command'. Supported commands: ${supportedCommands.joinToString()}."
             )
         }
     } catch (failure: Exception) {
-        val report = CliCommandFailureReport(
-            code = when (failure) {
-                is IllegalArgumentException -> "CLI_INVALID_INPUT"
-                is IllegalStateException -> "CLI_INTEGRITY_BLOCKED"
-                else -> "CLI_INTERNAL_ERROR"
-            },
-            command = command,
+        val code = when (failure) {
+            is CliTypedFailure -> failure.diagnosticCode
+            is MissingExplicitTargetSelectionException -> CliDiagnosticCode.TARGET_REQUIRED_FOR_RENDER
+            is IllegalArgumentException -> CliDiagnosticCode.INVALID_INPUT
+            is IllegalStateException -> CliDiagnosticCode.INTEGRITY_BLOCKED
+            else -> CliDiagnosticCode.INTERNAL_ERROR
+        }
+        val diagnostic = CliExecutionDiagnostic(
+            code = code,
             message = failure.message ?: "CLI command failed without a diagnostic message.",
             causeType = failure::class.qualifiedName ?: failure::class.simpleName.orEmpty()
         )
-        printSection("CLI DIAGNOSTIC FAILURE", report)
-        2
+        output.section(
+            "CLI DIAGNOSTIC FAILURE",
+            CliCommandFailureReport(
+                code = code.wireCode,
+                command = command,
+                message = diagnostic.message,
+                causeType = diagnostic.causeType.orEmpty()
+            )
+        )
+        CliExecutionResult.Rejected(command, diagnostic, output.snapshot())
     }
 }
 
-private fun runIntentCommand(args: List<String>): Int {
+private fun runIntentCommand(
+    args: List<String>,
+    output: CliOutputCollector
+): CliExecutionResult {
     val source = args.firstOrNull { !it.startsWith("--") }
         ?: "examples/intent/build-test-deploy.intent.yaml"
-    val target = parseOption(args, "--target")
     val strict = "--strict" in args || "--fail-on-unsupported" in args
     val renderRequested = "--render" in args
     val outDir = parseOption(args, "--out")?.let(::File)
-    require(!renderRequested || target != null) { "--render requires an explicit --target; Flow does not select Jenkins or any other target implicitly." }
     val file = File(source)
     require(file.isFile) { "Intent file does not exist: $source" }
 
     val registry = moduleRegistry()
     val targets = targetRegistry()
+    val selectionDecision = TargetSelectionAuthority.fromCliOption(parseOption(args, "--target"), targets)
+    if (renderRequested) {
+        TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
+    }
+
     val intent = IntentYamlLoader.load(file)
     val design = IntentDesignAnalyzer(registry).analyze(intent)
     val decision = IntentDecisionAnalyzer(registry).analyze(intent)
@@ -135,18 +164,18 @@ private fun runIntentCommand(args: List<String>): Int {
     }
     val plan = FlowPlanner(registry).plan(ast)
 
-    printSection("INTENT DESIGN REPORT", design)
-    printSection("INTENT DECISION REPORT", decision)
-    printSection("NORMALIZED INTENT JSON", intent)
-    printSection("INTENT CAPABILITY VALIDATION REPORT", intentValidation)
-    printSection("GENERATED FLOW AST JSON", ast)
-    printSection("VALIDATION REPORT", validation)
-    printSection("EXECUTION PLAN JSON", plan)
-    printSection("CANONICAL EXECUTION PLAN JSON", ExecutionPlanCanonicalizer.canonicalize(plan))
+    output.section("INTENT DESIGN REPORT", design)
+    output.section("INTENT DECISION REPORT", decision)
+    output.section("NORMALIZED INTENT JSON", intent)
+    output.section("INTENT CAPABILITY VALIDATION REPORT", intentValidation)
+    output.section("GENERATED FLOW AST JSON", ast)
+    output.section("VALIDATION REPORT", validation)
+    output.section("EXECUTION PLAN JSON", plan)
+    output.section("CANONICAL EXECUTION PLAN JSON", ExecutionPlanCanonicalizer.canonicalize(plan))
 
-    if (target == null) {
+    if (selectionDecision == TargetSelectionDecision.NotSelected) {
         val planning = targetNeutralPlanningEvidence(plan, targets, strict)
-        printSection("TARGET-NEUTRAL PLANNING EVIDENCE", planning)
+        output.section("TARGET-NEUTRAL PLANNING EVIDENCE", planning)
         outDir?.let {
             writePlanningArtifacts(
                 directory = it,
@@ -161,11 +190,16 @@ private fun runIntentCommand(args: List<String>): Int {
                 strict = strict
             )
         }
-        return 0
+        return CliExecutionResult.TargetNeutral(
+            planning = planning,
+            presentation = output.snapshot(),
+            artifacts = planningArtifacts(persisted = outDir != null)
+        )
     }
 
-    val evidence = CliTargetEvidenceAuthority(targets).evaluate(plan, target, strict, renderRequested)
-    printTargetEvidence(evidence, renderRequested)
+    val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
+    val evidence = CliTargetEvidenceAuthority(targets).evaluate(plan, selection, strict, renderRequested)
+    printTargetEvidence(evidence, renderRequested, output)
     outDir?.let {
         writeIntentArtifacts(
             directory = it,
@@ -181,18 +215,32 @@ private fun runIntentCommand(args: List<String>): Int {
             renderRequested = renderRequested
         )
     }
-    return targetCommandStatus(evidence, strict, renderRequested)
+    return CliExecutionResult.Targeted(
+        selection = selection,
+        evidence = evidence,
+        strict = strict,
+        renderRequested = renderRequested,
+        presentation = output.snapshot(),
+        artifacts = targetedArtifacts(evidence, persisted = outDir != null)
+    )
 }
 
-private fun runNormalizeCommand(args: List<String>): Int {
+private fun runNormalizeCommand(
+    args: List<String>,
+    output: CliOutputCollector
+): CliExecutionResult {
     val text = parseOption(args, "--file")?.let { File(it).readText() }
         ?: args.takeWhile { !it.startsWith("--") }.joinToString(" ").trim()
     require(text.isNotBlank()) { "normalize requires text arguments or --file <path>." }
-    val target = parseOption(args, "--target")
     val strict = "--strict" in args || "--fail-on-unsupported" in args
     val renderRequested = "--render" in args
     val lower = "--lower" in args || "--pipeline" in args || renderRequested
-    require(!renderRequested || target != null) { "--render requires an explicit --target; Flow does not select Jenkins or any other target implicitly." }
+    val targets = targetRegistry()
+    val selectionDecision = TargetSelectionAuthority.fromCliOption(parseOption(args, "--target"), targets)
+    if (renderRequested) {
+        TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
+    }
+    val selectedTarget = (selectionDecision as? TargetSelectionDecision.Selected)?.selection?.target
     val mode = when {
         "--strict" in args -> NormalizationMode.STRICT
         "--explain" in args -> NormalizationMode.EXPLAIN
@@ -203,7 +251,7 @@ private fun runNormalizeCommand(args: List<String>): Int {
         AiIntentRequest(
             text,
             AiIntentContext(
-                target = target,
+                target = selectedTarget,
                 defaultApplication = parseOption(args, "--app"),
                 defaultEnvironment = parseOption(args, "--environment"),
                 repositoryUrl = parseOption(args, "--repo"),
@@ -212,31 +260,42 @@ private fun runNormalizeCommand(args: List<String>): Int {
             mode
         )
     )
-    printSection("AI INTENT NORMALIZATION REPORT", response.report)
-    printSection("NORMALIZED INTENT JSON", response.normalizedIntent)
+    output.section("AI INTENT NORMALIZATION REPORT", response.report)
+    output.section("NORMALIZED INTENT JSON", response.normalizedIntent)
     val registry = moduleRegistry()
     val decision = IntentDecisionAnalyzer(registry).analyze(response.normalizedIntent)
-    printSection("INTENT DECISION REPORT", decision)
+    output.section("INTENT DECISION REPORT", decision)
     if (strict) response.assertUsableForLowering()
 
+    val outputDir = parseOption(args, "--out")?.let(::File)
     if (!lower) {
-        parseOption(args, "--out")?.let { out ->
-            val values = linkedMapOf<String, Any>(
-                "standard-diagnostic-catalog.json" to StandardDiagnosticCatalog.report(),
-                "ai-normalization-report.json" to response.report,
-                "normalized-intent.json" to response.normalizedIntent,
-                "intent-decision-report.json" to decision
-            )
+        val values = linkedMapOf<String, Any>(
+            "standard-diagnostic-catalog.json" to StandardDiagnosticCatalog.report(),
+            "ai-normalization-report.json" to response.report,
+            "normalized-intent.json" to response.normalizedIntent,
+            "intent-decision-report.json" to decision
+        )
+        outputDir?.let {
             writeMinimalBundle(
-                directory = File(out),
+                directory = it,
                 flowName = response.normalizedIntent.name,
-                target = target.orEmpty(),
+                target = selectedTarget.orEmpty(),
                 strict = strict,
                 values = values,
                 includeAiNormalization = true
             )
         }
-        return 0
+        return CliExecutionResult.Completed(
+            presentation = output.snapshot(),
+            artifacts = values.keys.map { name ->
+                CliArtifact(
+                    name = name,
+                    role = if (name == "standard-diagnostic-catalog.json") CliArtifactRole.DIAGNOSTIC_EVIDENCE else CliArtifactRole.REVIEW_DOCUMENT,
+                    persisted = outputDir != null
+                )
+            },
+            selectionDecision = selectionDecision
+        )
     }
 
     when (val proposal = IntentProposalReview(registry).review(response)) {
@@ -255,20 +314,18 @@ private fun runNormalizeCommand(args: List<String>): Int {
         "Flow validation failed before planning: " + validation.issues.joinToString { it.code + ": " + it.message }
     }
     val plan = FlowPlanner(registry).plan(ast)
-    val targets = targetRegistry()
 
-    printSection("INTENT CAPABILITY VALIDATION REPORT", intentValidation)
-    printSection("INTENT DESIGN REPORT", design)
-    printSection("GENERATED FLOW AST JSON", ast)
-    printSection("VALIDATION REPORT", validation)
-    printSection("EXECUTION PLAN JSON", plan)
-    printSection("CANONICAL EXECUTION PLAN JSON", ExecutionPlanCanonicalizer.canonicalize(plan))
+    output.section("INTENT CAPABILITY VALIDATION REPORT", intentValidation)
+    output.section("INTENT DESIGN REPORT", design)
+    output.section("GENERATED FLOW AST JSON", ast)
+    output.section("VALIDATION REPORT", validation)
+    output.section("EXECUTION PLAN JSON", plan)
+    output.section("CANONICAL EXECUTION PLAN JSON", ExecutionPlanCanonicalizer.canonicalize(plan))
 
-    val output = parseOption(args, "--out")?.let(::File)
-    if (target == null) {
+    if (selectionDecision == TargetSelectionDecision.NotSelected) {
         val planning = targetNeutralPlanningEvidence(plan, targets, strict)
-        printSection("TARGET-NEUTRAL PLANNING EVIDENCE", planning)
-        output?.let {
+        output.section("TARGET-NEUTRAL PLANNING EVIDENCE", planning)
+        outputDir?.let {
             writePlanningArtifacts(
                 directory = it,
                 normalizedIntent = response.normalizedIntent,
@@ -283,12 +340,17 @@ private fun runNormalizeCommand(args: List<String>): Int {
                 normalizationReport = response.report
             )
         }
-        return 0
+        return CliExecutionResult.TargetNeutral(
+            planning = planning,
+            presentation = output.snapshot(),
+            artifacts = planningArtifacts(persisted = outputDir != null)
+        )
     }
 
-    val evidence = CliTargetEvidenceAuthority(targets).evaluate(plan, target, strict, renderRequested)
-    printTargetEvidence(evidence, renderRequested)
-    output?.let {
+    val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
+    val evidence = CliTargetEvidenceAuthority(targets).evaluate(plan, selection, strict, renderRequested)
+    printTargetEvidence(evidence, renderRequested, output)
+    outputDir?.let {
         writeIntentArtifacts(
             directory = it,
             normalizedIntent = response.normalizedIntent,
@@ -304,7 +366,14 @@ private fun runNormalizeCommand(args: List<String>): Int {
             normalizationReport = response.report
         )
     }
-    return targetCommandStatus(evidence, strict, renderRequested)
+    return CliExecutionResult.Targeted(
+        selection = selection,
+        evidence = evidence,
+        strict = strict,
+        renderRequested = renderRequested,
+        presentation = output.snapshot(),
+        artifacts = targetedArtifacts(evidence, persisted = outputDir != null)
+    )
 }
 
 private fun targetNeutralPlanningEvidence(
@@ -318,17 +387,12 @@ private fun targetNeutralPlanningEvidence(
     selection = TargetSelectionAnalyzer(targets).analyze(plan, strict)
 )
 
-private fun targetCommandStatus(
-    evidence: CliTargetEvidence,
-    strict: Boolean,
-    renderRequested: Boolean
-): Int = if ((strict || renderRequested) && evidence.outcome != CliTargetEvidenceOutcome.EXECUTABLE) 3 else 0
-
-private fun printTargetEvidence(evidence: CliTargetEvidence, renderRequested: Boolean) {
-    printSection(
+private fun printTargetEvidence(evidence: CliTargetEvidence, renderRequested: Boolean, output: CliOutputCollector) {
+    output.section(
         "CLI TARGET OUTCOME",
         CliTargetOutcomeReport(
             target = evidence.manifest.target,
+            targetSelection = evidence.targetSelection,
             outcome = evidence.outcome,
             diagnosticFallbackUsed = evidence.diagnosticFallbackUsed,
             renderRequested = renderRequested,
@@ -336,27 +400,48 @@ private fun printTargetEvidence(evidence: CliTargetEvidence, renderRequested: Bo
             diagnostics = evidence.diagnostics
         )
     )
-    printSection("RECONCILED TARGET COMPATIBILITY REPORT", evidence.compatibility)
-    printSection("RECONCILED TARGET CAPABILITY NEGOTIATION REPORT", evidence.negotiation)
-    printSection("RECONCILED EXECUTION READINESS REPORT", evidence.readiness)
-    printSection("RECONCILED TARGET SELECTION REPORT", evidence.selection)
-    printSection("RECONCILED TARGET DECISION TRACE REPORT", evidence.decisionTrace)
-    printSection("RECONCILED TARGET ADAPTER CONTRACT", evidence.adapterContract)
-    printSection("ADAPTER DIAGNOSTICS", evidence.adapterContract.diagnostics)
-    printSection("TARGET MANIFEST EVIDENCE", evidence.manifest)
-    printSection("TARGET RENDER READINESS", evidence.renderReadiness)
+    output.section("RECONCILED TARGET COMPATIBILITY REPORT", evidence.compatibility)
+    output.section("RECONCILED TARGET CAPABILITY NEGOTIATION REPORT", evidence.negotiation)
+    output.section("RECONCILED EXECUTION READINESS REPORT", evidence.readiness)
+    output.section("RECONCILED TARGET SELECTION REPORT", evidence.selection)
+    output.section("RECONCILED TARGET DECISION TRACE REPORT", evidence.decisionTrace)
+    output.section("RECONCILED TARGET ADAPTER CONTRACT", evidence.adapterContract)
+    output.section("ADAPTER DIAGNOSTICS", evidence.adapterContract.diagnostics)
+    output.section("TARGET MANIFEST EVIDENCE", evidence.manifest)
+    output.section("TARGET RENDER READINESS", evidence.renderReadiness)
     if (evidence.renderedArtifact != null) {
-        println("===== RENDERED EXECUTABLE TARGET OUTPUT: ${evidence.renderedArtifact.fileName} =====")
-        println(evidence.renderedArtifact.content)
+        output.text("===== RENDERED EXECUTABLE TARGET OUTPUT: ${evidence.renderedArtifact.fileName} =====")
+        output.text(evidence.renderedArtifact.content)
     } else {
-        println("===== TARGET OUTPUT NOT RENDERED =====")
-        println(
+        output.text("===== TARGET OUTPUT NOT RENDERED =====")
+        output.text(
             when (evidence.renderReadiness.mode) {
                 TargetRenderMode.EXECUTABLE -> "Executable evidence is available, but rendering was not requested. Use --render explicitly."
                 TargetRenderMode.REVIEW_ONLY -> "Manifest evidence is review-only; target syntax was not emitted."
                 TargetRenderMode.FAIL_FAST -> "Manifest evidence is blocked; target syntax was not emitted."
             }
         )
+    }
+}
+
+private fun planningArtifacts(persisted: Boolean): List<CliArtifact> = listOf(
+    CliArtifact("target-neutral-planning-report.json", CliArtifactRole.TARGET_NEUTRAL_PLANNING, persisted),
+    CliArtifact("standard-diagnostic-catalog.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted),
+    CliArtifact("execution-plan.json", CliArtifactRole.REVIEW_DOCUMENT, persisted),
+    CliArtifact("canonical-execution-plan.json", CliArtifactRole.REVIEW_DOCUMENT, persisted)
+)
+
+private fun targetedArtifacts(
+    evidence: CliTargetEvidence,
+    persisted: Boolean
+): List<CliArtifact> = buildList {
+    add(CliArtifact("target-selection-evidence.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted))
+    add(CliArtifact("cli-target-outcome.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted))
+    add(CliArtifact("target-manifest.json", CliArtifactRole.TARGET_MANIFEST, persisted))
+    add(CliArtifact("target-render-readiness.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted))
+    add(CliArtifact("target-decision-trace-report.json", CliArtifactRole.REVIEW_DOCUMENT, persisted))
+    evidence.renderedArtifact?.let {
+        add(CliArtifact(it.fileName, CliArtifactRole.RENDERED_TARGET, persisted))
     }
 }
 
@@ -430,6 +515,7 @@ private fun writeIntentArtifacts(
     }
     val outcome = CliTargetOutcomeReport(
         target = evidence.manifest.target,
+        targetSelection = evidence.targetSelection,
         outcome = evidence.outcome,
         diagnosticFallbackUsed = evidence.diagnosticFallbackUsed,
         renderRequested = renderRequested,
@@ -449,6 +535,7 @@ private fun writeIntentArtifacts(
         "validation-report.json" to validation,
         "execution-plan.json" to plan,
         "canonical-execution-plan.json" to ExecutionPlanCanonicalizer.canonicalize(plan),
+        "target-selection-evidence.json" to evidence.targetSelection,
         "cli-target-outcome.json" to outcome,
         "compatibility-report.json" to evidence.compatibility,
         "capability-negotiation-report.json" to evidence.negotiation,
@@ -550,64 +637,100 @@ private fun extractIssueDiagnostics(artifact: String, report: Any): List<Observe
     }
 }
 
-private fun runDiagnosticsCommand(args: List<String>): Int {
+private fun runDiagnosticsCommand(
+    args: List<String>,
+    output: CliOutputCollector
+): CliExecutionResult {
     val catalog = StandardDiagnosticCatalog.report()
-    printSection("FLOW STANDARD DIAGNOSTIC CATALOG", catalog)
-    parseOption(args, "--out")?.let { out ->
+    output.section("FLOW STANDARD DIAGNOSTIC CATALOG", catalog)
+    val persisted = parseOption(args, "--out")?.let { out ->
         val directory = File(out)
         require(directory.mkdirs() || directory.isDirectory)
         File(directory, "standard-diagnostic-catalog.json").writeText(Json.mapper.writeValueAsString(catalog) + "\n")
-    }
-    return 0
+        true
+    } ?: false
+    return CliExecutionResult.Completed(
+        presentation = output.snapshot(),
+        artifacts = listOf(CliArtifact("standard-diagnostic-catalog.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted))
+    )
 }
 
-private fun runReleaseProfileCommand(args: List<String>): Int {
+private fun runReleaseProfileCommand(
+    args: List<String>,
+    output: CliOutputCollector
+): CliExecutionResult {
     val profile = StandardReleaseProfile.report()
     val honesty = ReleaseMetadataHonestyAuthority().requireValid()
-    printSection("FLOW STANDARD RELEASE PROFILE", profile)
-    printSection("RELEASE METADATA HONESTY REPORT", honesty)
-    parseOption(args, "--out")?.let { out ->
+    output.section("FLOW STANDARD RELEASE PROFILE", profile)
+    output.section("RELEASE METADATA HONESTY REPORT", honesty)
+    val persisted = parseOption(args, "--out")?.let { out ->
         val directory = File(out)
         require(directory.mkdirs() || directory.isDirectory)
         File(directory, "standard-release-profile.json").writeText(Json.mapper.writeValueAsString(profile) + "\n")
         File(directory, "release-metadata-honesty-report.json").writeText(Json.mapper.writeValueAsString(honesty) + "\n")
-    }
-    return 0
+        true
+    } ?: false
+    return CliExecutionResult.Completed(
+        presentation = output.snapshot(),
+        artifacts = listOf(
+            CliArtifact("standard-release-profile.json", CliArtifactRole.REVIEW_DOCUMENT, persisted),
+            CliArtifact("release-metadata-honesty-report.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted)
+        )
+    )
 }
 
-private fun runStandardDraftCommand(args: List<String>): Int {
+private fun runStandardDraftCommand(
+    args: List<String>,
+    output: CliOutputCollector
+): CliExecutionResult {
     val authority = StandardReleaseAssemblyAuthority()
-    val output = parseOption(args, "--out")
-    val assembly = if (output == null) authority.assemble() else authority.writeValidatedDraft(File(output))
-    printSection("FLOW STANDARD DRAFT", assembly.artifacts.getValue("flow-standard-draft.json"))
-    return 0
+    val destination = parseOption(args, "--out")
+    val assembly = if (destination == null) authority.assemble() else authority.writeValidatedDraft(File(destination))
+    output.section("FLOW STANDARD DRAFT", assembly.artifacts.getValue("flow-standard-draft.json"))
+    return CliExecutionResult.Completed(
+        presentation = output.snapshot(),
+        artifacts = listOf(CliArtifact("flow-standard-draft.json", CliArtifactRole.REVIEW_DOCUMENT, destination != null))
+    )
 }
 
-private fun runStandardExportCommand(args: List<String>): Int {
-    val output = File(
+private fun runStandardExportCommand(
+    args: List<String>,
+    output: CliOutputCollector
+): CliExecutionResult {
+    val destination = File(
         parseOption(args, "--out")
             ?: "dist/flow-standard-${FlowStandardVersions.FLOW_STANDARD_VERSION}"
     )
-    val verification = StandardReleaseAssemblyAuthority().publishValidatedBundle(output)
-    printSection("FLOW STANDARD BUNDLE VERIFICATION", verification)
-    println("===== PUBLISHED VERIFIED FLOW STANDARD BUNDLE =====")
-    println(output.absolutePath)
-    return 0
+    val verification = StandardReleaseAssemblyAuthority().publishValidatedBundle(destination)
+    output.section("FLOW STANDARD BUNDLE VERIFICATION", verification)
+    output.text("===== PUBLISHED VERIFIED FLOW STANDARD BUNDLE =====")
+    output.text(destination.absolutePath)
+    return CliExecutionResult.Completed(
+        presentation = output.snapshot(),
+        artifacts = listOf(CliArtifact("standard-bundle-verification.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, true))
+    )
 }
 
-private fun runStandardVerifyCommand(args: List<String>): Int {
+private fun runStandardVerifyCommand(
+    args: List<String>,
+    output: CliOutputCollector
+): CliExecutionResult {
     val bundle = parseOption(args, "--bundle")
         ?: args.firstOrNull { !it.startsWith("--") }
         ?: throw IllegalArgumentException("standard-verify requires --bundle <dir>")
     val report = StandardBundleVerifier().verify(File(bundle))
-    printSection("FLOW STANDARD BUNDLE VERIFICATION", report)
-    parseOption(args, "--out")?.let { out ->
+    output.section("FLOW STANDARD BUNDLE VERIFICATION", report)
+    val persisted = parseOption(args, "--out")?.let { out ->
         val directory = File(out)
         require(directory.mkdirs() || directory.isDirectory)
         File(directory, "standard-bundle-verification.json").writeText(Json.mapper.writeValueAsString(report) + "\n")
-    }
+        true
+    } ?: false
     require(report.status == "PASS") { "Flow standard bundle verification failed." }
-    return 0
+    return CliExecutionResult.Completed(
+        presentation = output.snapshot(),
+        artifacts = listOf(CliArtifact("standard-bundle-verification.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted))
+    )
 }
 
 private fun moduleRegistry(): ModuleRegistry {
@@ -630,14 +753,9 @@ private fun parseOption(args: List<String>, name: String): String? {
     }
 }
 
-private fun printSection(title: String, value: Any) {
-    println("===== $title =====")
-    println(Json.mapper.writeValueAsString(value))
-}
-
-private fun printHelp() {
-    println("Flow CLI commands: ${supportedCommands.joinToString()}")
-    println("Target materialization requires --target. Rendering additionally requires --render.")
+private fun printHelp(output: CliOutputCollector) {
+    output.text("Flow CLI commands: ${supportedCommands.joinToString()}")
+    output.text("Target materialization requires --target. Rendering additionally requires --render.")
 }
 
 private val supportedCommands = (
@@ -658,6 +776,7 @@ private val knownJsonArtifacts = setOf(
     "execution-plan.json",
     "canonical-execution-plan.json",
     "target-neutral-planning-report.json",
+    "target-selection-evidence.json",
     "cli-target-outcome.json",
     "compatibility-report.json",
     "capability-negotiation-report.json",

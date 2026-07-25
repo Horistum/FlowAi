@@ -11,6 +11,8 @@ import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
+import org.flowlang.materialization.TargetMaterializationRequest
+import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.planner.FlowPlanner
@@ -67,7 +69,12 @@ class ReferenceSnapshotBundleGenerator(
                 evidence += ReferenceBlockedProjectionEvidence(compatibility, readiness)
             } else {
                 val provider = projections.requireProvider(target)
-                val manifest = manifestPipeline.generate(plan, target)
+                val selection = TargetSelectionAuthority.fromExplicitConfiguration(
+                    target,
+                    "reference-snapshot:$scenarioId",
+                    targets
+                )
+                val manifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
                 val renderReadiness = TargetRenderPolicy.evaluate(manifest)
                 require(renderReadiness.mode != TargetRenderMode.FAIL_FAST) {
                     "Target '$target' passed compatibility but manifest evidence is fail-fast: ${renderReadiness.findings}."

@@ -39,6 +39,9 @@ import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.lowering.IntentLoweringDisposition
 import org.flowlang.lowering.IntentLoweringReport
+import org.flowlang.materialization.ExplicitTargetSelection
+import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
+import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.intent.StandardCapability
 import org.flowlang.topology.ExecutionTopologyAssessment
 import org.flowlang.topology.ExecutionTopologyEvidenceStatus
@@ -58,12 +61,19 @@ enum class TargetProjectionAuthorizationPurpose {
 
 class TargetProjectionAuthorization internal constructor(
     val plan: ExecutionPlan,
+    val selection: ExplicitTargetSelection,
     val compatibility: CompatibilityReport,
     val strict: Boolean,
     val topology: ExecutionTopologyAssessment,
     val purpose: TargetProjectionAuthorizationPurpose = TargetProjectionAuthorizationPurpose.EXECUTION_CANDIDATE
 ) {
-    val target: String get() = compatibility.target
+    val target: String get() = selection.target
+
+    init {
+        require(compatibility.target == target) {
+            "Projection authorization target '$target' does not match compatibility target '${compatibility.target}'."
+        }
+    }
 }
 
 data class PlanningEvidenceIssue(
@@ -105,22 +115,20 @@ class MandatoryMaterializationAuthority(
         }
     }
 
-    fun authorize(
-        plan: ExecutionPlan,
-        target: String,
-        strict: Boolean = false
-    ): TargetProjectionAuthorization {
-        require(target.isNotBlank()) { "Materialization target must not be blank." }
+    fun authorize(request: TargetMaterializationRequest): TargetProjectionAuthorization {
+        val plan = request.plan
+        val target = request.target
         ExecutionPlanMaterializationValidator.requireValid(plan, modules)
         ExecutionPlanContinuityValidator.requireResolved(plan)
         ExecutionPlanControlValidator.requireAuthorized(plan)
         val targetCapability = requireNotNull(targets[target]) { "Unknown target '$target'." }
         val topology = ExecutionPlanTopologyValidator.requireMatched(plan, targetCapability)
-        val report = capabilityGate.requireProjectionAllowed(plan, target, strict)
+        val report = capabilityGate.requireProjectionAllowed(plan, target, request.strict)
         return TargetProjectionAuthorization(
             plan = plan,
+            selection = request.selection,
             compatibility = report.compatibility,
-            strict = strict,
+            strict = request.strict,
             topology = topology,
             purpose = TargetProjectionAuthorizationPurpose.EXECUTION_CANDIDATE
         )
@@ -134,10 +142,10 @@ class MandatoryMaterializationAuthority(
      * diagnostic intent.
      */
     fun authorizeDiagnosticEvidence(
-        plan: ExecutionPlan,
-        target: String
+        request: TargetDiagnosticMaterializationRequest
     ): TargetProjectionAuthorization {
-        require(target.isNotBlank()) { "Diagnostic materialization target must not be blank." }
+        val plan = request.plan
+        val target = request.target
         ExecutionPlanMaterializationValidator.requireValid(plan, modules)
         val report = capabilityGate.check(plan, target, strict = false)
         val continuityIssues = ExecutionPlanContinuityValidator.blockers(plan).map { relation ->
@@ -176,6 +184,7 @@ class MandatoryMaterializationAuthority(
         )
         return TargetProjectionAuthorization(
             plan = plan,
+            selection = request.selection,
             compatibility = compatibility,
             strict = false,
             topology = topology,

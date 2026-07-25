@@ -66,7 +66,7 @@ class UniversalModelCompletionTests {
         assertEquals(SupportLevel.SUPPORTED, preliminary.status)
         assertFalse(preliminary.readinessEvidenceAvailable)
 
-        val manifest = projectionPipeline.generate(plan, preliminary.target)
+        val manifest = projectionPipeline.generate(testMaterializationRequest(plan, preliminary.target, targets))
         val concrete = TargetCompatibilityReadinessAnalyzer.analyze(manifest)
 
         assertTrue(manifest.compatibility.readinessEvidenceAvailable)
@@ -79,7 +79,7 @@ class UniversalModelCompletionTests {
     @Test
     fun nativeProjectionRequiresRealPayloadAndProducesExecutableJenkinsSyntax() {
         val plan = checkoutPlan()
-        val manifest = projectionPipeline.generate(plan, "jenkins")
+        val manifest = projectionPipeline.generate(testMaterializationRequest(plan, "jenkins", targets))
         val step = manifest.jobs.single().steps.single()
 
         assertEquals(TargetMaterializationStatus.NATIVE, step.materialization.status)
@@ -107,7 +107,7 @@ class UniversalModelCompletionTests {
                 requiredCapabilities = listOf("custom.do")
             ))
         )
-        val manifest = projectionPipeline.generate(plan, "jenkins")
+        val manifest = projectionPipeline.generate(testMaterializationRequest(plan, "jenkins", targets))
         val step = manifest.jobs.single().steps.single()
 
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, step.materialization.status)
@@ -257,23 +257,29 @@ class UniversalModelCompletionTests {
         assertEquals("3.1", FlowStandardVersions.TARGET_REGISTRY_VERSION)
 
         val plan = checkoutPlan()
-        val manifest = projectionPipeline.generate(plan, "jenkins")
+        val manifest = projectionPipeline.generate(testMaterializationRequest(plan, "jenkins", targets))
         assertEquals("3.0", manifest.manifestVersion)
         assertFalse(File("schemas/target-manifest.schema.json").readText().contains("\"run\""))
     }
 
     @Test
     fun cliUsesTheCanonicalManifestGenerationBoundary() {
-        val legacyCli = File("src/main/kotlin/org/flowlang/cli/FlowCli.kt")
         val honestCli = File("src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt").readText()
         val authority = File("src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt").readText()
+        val pipeline = File("src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt").readText()
         val composition = File("src/main/kotlin/org/flowlang/cli/CliTargetProjectionComposition.kt").readText()
 
-        assertFalse(legacyCli.exists())
+        assertTrue(
+            Thread.currentThread().contextClassLoader.getResource("org/flowlang/cli/FlowCliKt.class") == null,
+            "The legacy CLI entrypoint remains on the compiled classpath."
+        )
         assertContains(honestCli, "CliTargetEvidenceAuthority")
-        assertFalse(honestCli.contains("legacyMain"))
+        assertContains(honestCli, "TargetSelectionAuthority.fromCliOption")
         assertContains(authority, "TargetManifestGenerationPipeline")
-        assertContains(authority, "pipeline.generate(plan, target, strict = strict)")
+        assertContains(authority, "pipeline.generate(TargetMaterializationRequest")
+        assertContains(pipeline, "fun generate(request: TargetMaterializationRequest)")
+        assertContains(pipeline, "fun generateDiagnosticEvidence(")
+        assertFalse(pipeline.contains("plan: ExecutionPlan,\n        target: String"))
         assertContains(composition, "BuiltInTargetProjections.pipeline(targets)")
         assertFalse(authority.contains("JenkinsManifestGenerator()"))
         assertFalse(authority.contains("GitHubActionsManifestGenerator()"))

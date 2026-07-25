@@ -28,6 +28,10 @@ import org.flowlang.generators.manifest.UnresolvedExecutionTopologyException
 import org.flowlang.generators.manifest.UnresolvedPlanningContinuityException
 import org.flowlang.generators.manifest.UnresolvedPlanningControlException
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.materialization.ExplicitTargetSelection
+import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
+import org.flowlang.materialization.TargetMaterializationRequest
+import org.flowlang.materialization.TargetSelectionEvidenceReport
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 data class CliRenderedArtifact(
@@ -50,6 +54,7 @@ data class CliTargetDiagnostic(
 
 data class CliTargetEvidence(
     val outcome: CliTargetEvidenceOutcome,
+    val targetSelection: TargetSelectionEvidenceReport,
     val diagnosticFallbackUsed: Boolean,
     val diagnostics: List<CliTargetDiagnostic>,
     val compatibility: CompatibilityReport,
@@ -79,12 +84,13 @@ class CliTargetEvidenceAuthority(
 
     fun evaluate(
         plan: ExecutionPlan,
-        target: String,
+        explicitSelection: ExplicitTargetSelection,
         strict: Boolean,
         renderRequested: Boolean
     ): CliTargetEvidence {
+        val target = explicitSelection.target
         require(target in targets) {
-            "Unknown target '$target'. Available targets: ${targets.keys.sorted().joinToString()}."
+            "Selected target '$target' is no longer present in the active target registry."
         }
 
         val compatibilityAnalyzer = CompatibilityAnalyzer(targets)
@@ -95,7 +101,7 @@ class CliTargetEvidenceAuthority(
         val diagnostics = mutableListOf<CliTargetDiagnostic>()
         var fallbackUsed = false
         val manifest = try {
-            pipeline.generate(plan, target, strict = strict)
+            pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict))
         } catch (failure: RuntimeException) {
             if (!failure.isExpectedTargetBlocker()) throw failure
             fallbackUsed = true
@@ -105,19 +111,19 @@ class CliTargetEvidenceAuthority(
                 message = failure.message ?: "Target materialization is not executable; diagnostic evidence was generated.",
                 causeType = failure::class.simpleName
             )
-            pipeline.generateDiagnosticEvidence(plan, target)
+            pipeline.generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest(plan, explicitSelection))
         }
 
         val manifests = listOf(manifest)
         val readiness = TargetCompatibilityReadinessAnalyzer.reconcile(preliminaryReadiness, manifest)
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(preliminaryNegotiation, manifests)
-        val selection = TargetCompatibilityReadinessAnalyzer.reconcile(preliminarySelection, manifests)
+        val selectionReport = TargetCompatibilityReadinessAnalyzer.reconcile(preliminarySelection, manifests)
         val decisionTrace = TargetDecisionTraceAnalyzer(targets).analyze(
             plan = plan,
             requestedTarget = target,
             strict = strict,
             negotiation = negotiation,
-            selection = selection
+            selection = selectionReport
         )
         val adapterContract = reconcileAdapterContract(
             TargetAdapterContractAnalyzer(targets).analyze(plan, target, strict = strict),
@@ -145,12 +151,13 @@ class CliTargetEvidenceAuthority(
 
         return CliTargetEvidence(
             outcome = outcome,
+            targetSelection = TargetSelectionEvidenceReport.from(plan, explicitSelection),
             diagnosticFallbackUsed = fallbackUsed,
             diagnostics = diagnostics,
             compatibility = manifest.compatibility,
             negotiation = negotiation,
             readiness = readiness,
-            selection = selection,
+            selection = selectionReport,
             decisionTrace = decisionTrace,
             adapterContract = adapterContract,
             manifest = manifest,

@@ -29,8 +29,9 @@ class MandatoryMaterializationAuthorityTests {
         var invoked = false
         val target = "future-orchestrator"
         val generator = syntheticGenerator(target) { invoked = true }
+        val targets = mapOf(target to testTargetCapability(target, "Synthetic target"))
         val pipeline = TargetManifestGenerationPipeline(
-            targets = mapOf(target to testTargetCapability(target, "Synthetic target")),
+            targets = targets,
             projections = TargetProjectionRegistry.of(
                 TargetProjectionProvider(generator, syntheticRenderer(target))
             )
@@ -44,7 +45,7 @@ class MandatoryMaterializationAuthorityTests {
         )
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
-            pipeline.generate(invalid, target)
+            pipeline.generate(testMaterializationRequest(invalid, target, targets))
         }
 
         assertFalse(invoked, "Invalid planning evidence must fail before a target generator is invoked.")
@@ -56,14 +57,15 @@ class MandatoryMaterializationAuthorityTests {
     fun futureTargetStillComposesThroughTheMandatoryAuthority() {
         var invoked = false
         val target = "future-orchestrator"
+        val targets = mapOf(target to testTargetCapability(target, "Synthetic target"))
         val pipeline = TargetManifestGenerationPipeline(
-            targets = mapOf(target to testTargetCapability(target, "Synthetic target")),
+            targets = targets,
             projections = TargetProjectionRegistry.of(
                 TargetProjectionProvider(syntheticGenerator(target) { invoked = true }, syntheticRenderer(target))
             )
         )
 
-        val manifest = pipeline.generate(ExecutionPlan(flowName = "future-flow"), target)
+        val manifest = pipeline.generate(testMaterializationRequest(ExecutionPlan(flowName = "future-flow"), target, targets))
 
         assertTrue(invoked)
         assertEquals(target, manifest.target)
@@ -81,10 +83,10 @@ class MandatoryMaterializationAuthorityTests {
         )
 
         assertFailsWith<UnresolvedExecutionTopologyException> {
-            pipeline.generate(plan, "tekton")
+            pipeline.generate(testMaterializationRequest(plan, "tekton", targets))
         }
 
-        val diagnostic = pipeline.generateDiagnosticEvidence(plan, "tekton")
+        val diagnostic = pipeline.generateDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "tekton", targets))
 
         assertTrue(diagnostic.compatibility.hasErrors)
         assertFalse(diagnostic.compatibility.executable)

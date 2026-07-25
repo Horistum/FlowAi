@@ -22,7 +22,10 @@ class FlowCiCdBiasInventoryTests {
             report.healthStatus
         )
         assertTrue(report.actionableEvidence.all {
-            it.classification == CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE && it.actionable
+            it.classification in setOf(
+                CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE,
+                CiCdBiasInventoryAnalyzer.APPLICATION_COMPOSITION
+            ) && it.actionable
         })
         assertTrue(report.evidence.none {
             it.lexicalContext == CiCdBiasLexicalContext.CATALOG_DECLARATION && it.actionable
@@ -54,7 +57,7 @@ class FlowCiCdBiasInventoryTests {
     }
 
     @Test
-    fun applicationCompositionVocabularyIsNotCoreSemanticBias() {
+    fun applicationCompositionConcreteTargetLiteralRequiresReview() {
         val root = Files.createTempDirectory("flow-cicd-application-composition").toFile()
         try {
             val cli = File(root, "src/main/kotlin/org/flowlang/cli/App.kt")
@@ -63,8 +66,9 @@ class FlowCiCdBiasInventoryTests {
 
             val report = CiCdBiasInventoryAnalyzer(root).analyze()
 
-            assertEquals("PASS", report.healthStatus)
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
             assertEquals(1, report.applicationCompositionEvidence.size)
+            assertEquals(report.applicationCompositionEvidence, report.actionableEvidence)
             assertTrue(report.requiredFollowUpAreas.contains(CiCdBiasFollowUpArea.APPLICATION_COMPOSITION))
         } finally {
             root.deleteRecursively()

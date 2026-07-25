@@ -74,7 +74,7 @@ class PlannerCapabilityConstraintTests {
         )
 
         assertFailsWith<UnresolvedExecutionTopologyException> {
-            pipeline.generate(approvalPlan(), "tekton")
+            pipeline.generate(testMaterializationRequest(approvalPlan(), "tekton", targets))
         }
         assertFalse(invoked, "Renderer projection must not start for unsupported target semantics.")
     }

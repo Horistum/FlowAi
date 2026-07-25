@@ -49,9 +49,9 @@ class FlowTargetDecisionTraceTests {
         val compatibilityAnalyzer = CompatibilityAnalyzer(targets)
         val pipeline = BuiltInTargetProjections.pipeline(targets)
         val manifests = listOf(
-            pipeline.generate(plan, "jenkins"),
-            pipeline.generateDiagnosticEvidence(plan, "github-actions"),
-            pipeline.generateDiagnosticEvidence(plan, "tekton")
+            pipeline.generate(testMaterializationRequest(plan, "jenkins", targets)),
+            pipeline.generateDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "github-actions", targets)),
+            pipeline.generateDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "tekton", targets))
         )
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
             compatibilityAnalyzer.negotiate(plan),
