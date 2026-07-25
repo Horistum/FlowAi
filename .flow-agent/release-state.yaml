@@ -87,6 +87,7 @@ qualityPrinciples:
   - "Committed metadata may cite only already-merged validation evidence."
   - "Unknown or placeholder authored text never satisfies a safety control."
   - "A completed bounded correction may unblock the Core closure item only after exact-head implementation evidence exists."
+  - "Exact-head and merge-candidate validation are separate evidence and neither may impersonate the other."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-merged-v0.9.7.9.7-head"
@@ -99,6 +100,6 @@ lastKnownValidation:
   validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.8 completed after external exact-head CI evidence: Flow CI #2021, run 30090943402, passed implementation head 64e4df9abe8a95adede53b2876c49031e0bfed8f."
-    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is now the next Core item."
-    - "The completion-metadata head must pass the unmodified standard Flow CI before the pull request is ready for review."
+    - "v0.9.7.9.8 is active; corrected implementation success remains external exact-head CI evidence until the exact checked-out head and the synthetic merge candidate both pass."
+    - "Core item v0.9.7.9 remains correction-required and v0.9.7.10 remains blocked."
+    - "No completion metadata may cite Flow CI #2021 or #2022 as exact-head validation because those runs checked refs/pull/86/merge."
