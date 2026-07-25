@@ -44,6 +44,24 @@ class GitHubJobConditionAuthorityTests {
     }
 
     @Test
+    fun mixedApprovalAndOrdinaryDependenciesRequireOrdinarySuccess() {
+        val manifest = manifest(
+            TargetJob(id = "build"),
+            TargetJob(id = "approve", metadata = mapOf("providerApprovalPayload" to "true")),
+            TargetJob(id = "deploy", dependsOn = listOf("approve", "build"))
+        )
+
+        val expression = GitHubJobConditionAuthority.expression(manifest.jobs.last(), manifest).orEmpty()
+
+        assertTrue(expression.startsWith("!cancelled()"))
+        assertTrue(expression.contains("needs.approve.result == 'success'"))
+        assertTrue(expression.contains("needs.approve.result == 'skipped'"))
+        assertTrue(expression.contains("needs.build.result == 'success'"))
+        assertFalse(expression.contains("needs.build.result == 'skipped'"))
+        assertFalse(expression.contains("always()"))
+    }
+
+    @Test
     fun errorHandlerRunsOnFailureButNotAfterWorkflowCancellation() {
         val manifest = manifest(
             TargetJob(id = "recover", metadata = mapOf("errorHandler" to "true"))

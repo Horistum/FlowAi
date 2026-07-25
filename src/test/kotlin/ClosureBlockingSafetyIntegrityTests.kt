@@ -123,6 +123,22 @@ class ClosureBlockingSafetyIntegrityTests {
     }
 
     @Test
+    fun contradictoryBackupEvidenceBlocksRegardlessOfStepOrder() {
+        val evidenceOrders = listOf(
+            arrayOf("s3://recovery/db-before-migration-42", "not available"),
+            arrayOf("not available", "s3://recovery/db-before-migration-42")
+        )
+
+        evidenceOrders.forEach { values ->
+            val assessment = CanonicalControlRequirementAuthority.assess(migrationIntent(*values))
+
+            assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status, values.joinToString())
+            assertEquals(ControlEvidenceStatus.UNSATISFIED, assessment.evidence.single().status)
+            assertTrue(assessment.evidence.single().detail.orEmpty().contains("Conflicting authored evidence"))
+        }
+    }
+
+    @Test
     fun concreteBackupReferenceAuthorizesCanonicalBackupRequirement() {
         val assessment = CanonicalControlRequirementAuthority.assess(
             migrationIntent("s3://recovery/db-before-migration-42")
@@ -134,19 +150,19 @@ class ClosureBlockingSafetyIntegrityTests {
         assertFalse(assessment.evidence.single().detail.orEmpty().contains("unknown", ignoreCase = true))
     }
 
-    private fun migrationIntent(backup: String): IntentDocument = IntentDocument(
+    private fun migrationIntent(vararg backups: String): IntentDocument = IntentDocument(
         name = "migration",
         workflows = listOf(
             IntentWorkflow(
                 name = "migration",
                 kind = IntentWorkflowKind.CUSTOM,
-                steps = listOf(
+                steps = backups.mapIndexed { index, backup ->
                     IntentStep(
-                        id = "migrate",
+                        id = "migrate-${index + 1}",
                         capability = StandardCapability.DATABASE_MIGRATE,
                         params = mapOf("backup" to IntentString(backup))
                     )
-                )
+                }
             )
         )
     )
