@@ -73,6 +73,37 @@ class ClosureBlockingTopologyIntegrityTests {
         assertTrue(failure.issues.any { it.code == "planning.topology.canonical.invalid" })
     }
 
+    @Test
+    fun retainedCanonicalClaimsWithoutSourceProvenanceAreRejected() {
+        val damaged = approvalPlan().copy(sourceIntent = null)
+
+        val failure = assertFailsWith<InvalidPlanningEvidenceException> {
+            MandatoryMaterializationAuthority(targets, modules)
+                .authorizeDiagnosticEvidence(damaged, "jenkins")
+        }
+
+        assertTrue(failure.issues.any { it.code == "planning.topology.canonical.provenance.missing" })
+    }
+
+    @Test
+    fun removingSourceAndCanonicalClaimsCannotHideIntentDerivedTopology() {
+        val plan = approvalPlan()
+        val damaged = plan.copy(
+            sourceIntent = null,
+            topologyRequirements = plan.topologyRequirements.filterNot {
+                it.source == ExecutionTopologyRequirementSource.CANONICAL_WORKFLOW ||
+                    it.source == ExecutionTopologyRequirementSource.CANONICAL_CAPABILITY
+            }
+        )
+
+        val failure = assertFailsWith<InvalidPlanningEvidenceException> {
+            MandatoryMaterializationAuthority(targets, modules)
+                .authorizeDiagnosticEvidence(damaged, "jenkins")
+        }
+
+        assertTrue(failure.issues.any { it.code == "planning.topology.canonical.provenance.missing" })
+    }
+
     private fun approvalPlan() = FlowPlanner(modules).plan(
         IntentToAstPlanner(modules).plan(
             IntentDocument(
