@@ -20,13 +20,16 @@ jobs:
           persist-credentials: true
 
       - name: Apply Reviewed Patch And Publish Clean Tree
+        id: materialize
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
+          exec > >(tee materialization.log) 2>&1
+          set -eux
           patch_file="$(mktemp)"
           base64 --decode .flow-agent/internal/variant2.patch.gz.b64 | gzip --decompress > "$patch_file"
           actual_hash="$(sha256sum "$patch_file" | awk '{print $1}')"
-          echo "patch-sha256=${actual_hash}"
           test "${actual_hash}" = "24166a3b39c80a3eb1f731f54da5a0663070ab5f944f7973cf77ab191a4e77d3"
           git apply --check --verbose "$patch_file"
           git apply --verbose "$patch_file"
@@ -39,3 +42,17 @@ jobs:
           git config user.email "flow-architecture-agent@users.noreply.github.com"
           git commit -m "Implement typed target selection and CLI execution evidence"
           git push origin HEAD:assembly/v0.9.7.9.9-target-selection-cli-result
+
+      - name: Upload Materialization Diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typed-target-selection-materialization-diagnostics
+          path: materialization.log
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Require Materialization Success
+        if: steps.materialize.outcome != 'success'
+        shell: bash
+        run: exit 1
