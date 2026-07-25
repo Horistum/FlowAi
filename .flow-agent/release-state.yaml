@@ -100,6 +100,7 @@ lastKnownValidation:
   validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.8 is active; corrected implementation success remains external exact-head CI evidence until the exact checked-out head and the synthetic merge candidate both pass."
-    - "Core item v0.9.7.9 remains correction-required and v0.9.7.10 remains blocked."
-    - "No completion metadata may cite Flow CI #2021 or #2022 as exact-head validation because those runs checked refs/pull/86/merge."
+    - "v0.9.7.9.8 completed after external exact-head CI evidence: Flow CI #2025, run 30144935197, passed implementation head af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319."
+    - "The same Flow CI run independently passed merge candidate 2e30830d55fe73ec0c46c75dfd425c1047dc9853."
+    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is now the next Core item."
+    - "The completion-metadata head must pass both exact-head and merge-candidate jobs before the pull request is ready for review."
