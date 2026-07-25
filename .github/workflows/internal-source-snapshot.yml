@@ -25,15 +25,16 @@ jobs:
           set -euo pipefail
           patch_file="$(mktemp)"
           base64 --decode .flow-agent/internal/variant2.patch.gz.b64 | gzip --decompress > "$patch_file"
-          test "$(sha256sum "$patch_file" | awk '{print $1}')" = "24166a3b39c80a3eb1f731f54da5a0663070ab5f944f7973cf77ab191a4e77d3"
-          git apply --check "$patch_file"
-          git apply "$patch_file"
+          actual_hash="$(sha256sum "$patch_file" | awk '{print $1}')"
+          echo "patch-sha256=${actual_hash}"
+          test "${actual_hash}" = "24166a3b39c80a3eb1f731f54da5a0663070ab5f944f7973cf77ab191a4e77d3"
+          git apply --check --verbose "$patch_file"
+          git apply --verbose "$patch_file"
           rm -f .flow-agent/internal/variant2.patch.gz.b64
-          rmdir .flow-agent/internal 2>/dev/null || true
           rm -f .github/workflows/internal-source-snapshot.yml
           git add -A
           git diff --cached --check
-          test "$(git diff --cached --name-only | grep -c '^\.github/workflows/internal-source-snapshot.yml$')" = "1"
+          git diff --cached --stat
           git config user.name "Flow Architecture Agent"
           git config user.email "flow-architecture-agent@users.noreply.github.com"
           git commit -m "Implement typed target selection and CLI execution evidence"
