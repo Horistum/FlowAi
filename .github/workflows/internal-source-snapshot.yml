@@ -27,13 +27,28 @@ jobs:
           set -o pipefail
           exec > >(tee materialization.log) 2>&1
           set -eux
+          printf '%s  %s\n' \
+            c7f1490306fbd15ed5d5b85fc4bef2c985fb63e8b8f5b38dbae69c9896b171ac .flow-agent/internal/variant2.part-00 \
+            378ee189e3d470a6cc37795db2225c1f1c0b01a47974f24384d76b6956b83b3e .flow-agent/internal/variant2.part-01 \
+            d4c4a474971cb9ee675b7358c4c1f8a53906d0c7d72835de565de777fd2c3e3c .flow-agent/internal/variant2.part-02 \
+            c5202ff4e8f791df5bee533a29bd7875156ed1ff86355963cd84ab285b51f8a0 .flow-agent/internal/variant2.part-03 \
+            dae34409dd7cc588d06c00acabbf322eba9a4b70c3b9ecab8f7f60f51ad005d3 .flow-agent/internal/variant2.part-04 \
+            23040102e07eadff9c23e5b700840cff32a0157367ac892ef8415d9c22eb407d .flow-agent/internal/variant2.part-05 \
+            0ad344797c9ca8b07e80d1cb9121a243ff611357a7c6b508b46d25aa46588241 .flow-agent/internal/variant2.part-06 \
+            | sha256sum --check --strict
+          encoded="$(mktemp)"
+          compressed="$(mktemp)"
           patch_file="$(mktemp)"
-          base64 --decode .flow-agent/internal/variant2.patch.gz.b64 | gzip --decompress > "$patch_file"
-          actual_hash="$(sha256sum "$patch_file" | awk '{print $1}')"
-          test "${actual_hash}" = "24166a3b39c80a3eb1f731f54da5a0663070ab5f944f7973cf77ab191a4e77d3"
+          cat .flow-agent/internal/variant2.part-* > "$encoded"
+          test "$(wc -c < "$encoded")" = "34704"
+          test "$(sha256sum "$encoded" | awk '{print $1}')" = "3d72b1763df7cf72cb9067c6bb7c243ecfaa66351516ecd00e87c0524a627e6c"
+          base64 --decode "$encoded" > "$compressed"
+          test "$(sha256sum "$compressed" | awk '{print $1}')" = "4b508c823f51268185d0a86090a4a5235bb86257b1787fa44f5436812eaccc34"
+          gzip --decompress --stdout "$compressed" > "$patch_file"
+          test "$(sha256sum "$patch_file" | awk '{print $1}')" = "24166a3b39c80a3eb1f731f54da5a0663070ab5f944f7973cf77ab191a4e77d3"
           git apply --check --verbose "$patch_file"
           git apply --verbose "$patch_file"
-          rm -f .flow-agent/internal/variant2.patch.gz.b64
+          rm -rf .flow-agent/internal
           rm -f .github/workflows/internal-source-snapshot.yml
           git add -A
           git diff --cached --check
