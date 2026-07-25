@@ -169,7 +169,7 @@ class FlowCompatibilityReadinessHonestyTests {
         val manifest = TargetManifestGenerationPipeline(
             targets,
             TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
-        ).generate(plan, "jenkins")
+        ).generate(testMaterializationRequest(plan, "jenkins", targets))
         assertEquals(SupportLevel.PARTIAL, manifest.compatibility.status)
         assertEquals(SupportLevel.SUPPORTED, manifest.compatibility.capabilityStatus)
         assertEquals(MaterializationReadinessStatus.REVIEW_REQUIRED, manifest.compatibility.materializationReadiness)
