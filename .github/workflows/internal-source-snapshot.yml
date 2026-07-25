@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'assembly/**'
+  pull_request:
 
 permissions:
   contents: read
@@ -16,17 +17,21 @@ jobs:
       - name: Checkout Exact Assembly Head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
-          fetch-depth: 1
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
           persist-credentials: false
 
       - name: Verify And Package Source
         shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
           git rev-parse HEAD > snapshot-commit.txt
           git rev-parse HEAD^{tree} > snapshot-tree.txt
+          parent="$(git rev-parse HEAD^)"
+          git rev-parse "${parent}^{tree}" > snapshot-parent-tree.txt
           tar --exclude=.git --exclude=source-snapshot.tar.gz -czf source-snapshot.tar.gz .
 
       - name: Upload Source Snapshot
@@ -37,5 +42,6 @@ jobs:
             source-snapshot.tar.gz
             snapshot-commit.txt
             snapshot-tree.txt
+            snapshot-parent-tree.txt
           if-no-files-found: error
           retention-days: 1
