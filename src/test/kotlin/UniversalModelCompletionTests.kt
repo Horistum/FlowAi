@@ -267,12 +267,17 @@ class UniversalModelCompletionTests {
         val honestCli = File("src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt").readText()
         val authority = File("src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt").readText()
         val pipeline = File("src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt").readText()
-        val composition = File("src/main/kotlin/org/flowlang/cli/CliTargetProjectionComposition.kt").readText()
+        val loader = Thread.currentThread().contextClassLoader
 
         assertTrue(
-            Thread.currentThread().contextClassLoader.getResource("org/flowlang/cli/FlowCliKt.class") == null,
+            loader.getResource("org/flowlang/cli/FlowCliKt.class") == null,
             "The legacy CLI entrypoint remains on the compiled classpath."
         )
+        assertTrue(
+            loader.getResource("org/flowlang/cli/TargetManifestGenerationPipeline.class") == null,
+            "The removed CLI projection composition facade remains on the compiled classpath."
+        )
+        assertNotNull(loader.getResource("org/flowlang/generators/manifest/TargetManifestGenerationPipeline.class"))
         assertContains(honestCli, "CliTargetEvidenceAuthority")
         assertContains(honestCli, "TargetSelectionAuthority.fromCliOption")
         assertContains(authority, "TargetManifestGenerationPipeline")
@@ -280,7 +285,6 @@ class UniversalModelCompletionTests {
         assertContains(pipeline, "fun generate(request: TargetMaterializationRequest)")
         assertContains(pipeline, "fun generateDiagnosticEvidence(")
         assertFalse(pipeline.contains("plan: ExecutionPlan,\n        target: String"))
-        assertContains(composition, "BuiltInTargetProjections.pipeline(targets)")
         assertFalse(authority.contains("JenkinsManifestGenerator()"))
         assertFalse(authority.contains("GitHubActionsManifestGenerator()"))
         assertFalse(authority.contains("TektonManifestGenerator()"))
