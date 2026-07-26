@@ -113,4 +113,4 @@ lastKnownValidation:
     - "v0.9.7.9.9 was merged through PR #88 after Flow CI #2087 and #2094 passed its implementation and completion-metadata boundaries."
     - "A post-merge audit proved that the removed CLI composition facade had laundered CompatibilityReport.target as EXPLICIT_CONFIGURATION and that BLOCKED CLI outcomes could return success."
     - "Bounded correction v0.9.7.9.10 is active; Core item v0.9.7.9 is correction-required and v0.9.7.10 remains blocked."
-    - "No passing validation claim exists for the active correction until its public exact head and synthetic merge candidate independently pass Flow CI."
+    - "Candidate validation remains external exact-head CI evidence until the public exact head and synthetic merge candidate independently pass Flow CI."
