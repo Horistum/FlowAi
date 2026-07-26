@@ -49,6 +49,7 @@ object ArtifactContractAuthority {
         "adapter-diagnostics.json" to "flow.adapter.diagnostics",
         "diagnostic-coverage-report.json" to "flow.diagnostics.coverage",
         "artifact-integrity-report.json" to "flow.artifact.integrity",
+        "conformance-manifest.json" to "flow.conformance.manifest",
         "standard-contract-index.json" to "flow.standard.contract-index",
         "standard-release-profile.json" to "flow.standard.release-profile",
         "artifact-evidence-report.json" to "flow.artifact.evidence",
