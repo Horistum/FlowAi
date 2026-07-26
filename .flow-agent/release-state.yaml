@@ -116,6 +116,7 @@ lastKnownValidation:
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "v0.9.7.9.10 was merged through PR #90 after external exact-head CI evidence from Flow CI #2100 and completion-metadata validation from Flow CI #2108."
-    - "Post-merge audit evidence opened bounded correction v0.9.7.9.11 for public status, target-semantics, provenance, derivation and bundle-verification integrity."
-    - "No external exact-head CI evidence is claimed for active v0.9.7.9.11."
-    - "Core item v0.9.7.9 is correction-required and v0.9.7.10 remains blocked until this work package completes."
+    - "v0.9.7.9.11 completed after external exact-head CI evidence from Flow CI #2116, run 30191458296, exact implementation head 018f69388163c14f65c03c2cf21029156fd94ede."
+    - "The same Flow CI #2116 run independently passed synthetic merge candidate 8854b0ed44e04347a9c60ca915e9b61ed24c9734."
+    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is next."
+    - "The completion-metadata head must still pass independent exact-head and merge-candidate Flow CI before PR #91 may become ready for review."
