@@ -2,7 +2,7 @@ version: "0.9.7.9.10"
 name: "Target Selection Provenance and CLI Status Integrity"
 type: "bounded-correction"
 stream: core
-status: active
+status: complete
 parentCoreItem: "0.9.7.9"
 objective: "Remove the dead CLI projection facade, prevent derived target reports from being relabeled as explicit configuration, and derive CLI process status from typed outcomes."
 scopeBoundary:
@@ -28,8 +28,8 @@ implementedSlices:
   - id: target-provenance-status-conformance
 validationPolicy:
   workflow: "Flow CI"
-  requirement: "The public pull-request head and its synthetic merge candidate must independently pass Flow Agent tooling, repository structure, complete tests and standalone conformance before this correction may become complete."
-  buildDiscipline: "Keep 0.9.7.9 correction-required and 0.9.7.10 blocked until implementation evidence and a later completion-metadata head each pass exact-head and merge-candidate validation."
+  requirement: "Flow CI #2100, run 30187033448, independently passed exact implementation head 155a61b5fc5a1e54da5677eab23eff516e215078 and synthetic merge candidate ce75e032d8c6a807e1aa368b3fdeab19c9d154bb, including Flow Agent tooling, repository structure, 577 tests and standalone conformance. The completion-metadata head must pass the same dual workflow before review readiness."
+  buildDiscipline: "Keep implementation evidence distinct from completion metadata and require a final exact-head plus merge-candidate run before marking the pull request ready for review."
 followUpWorkItem:
   version: "0.9.7.10"
   name: "Bounded Semantic Closure Gate"
