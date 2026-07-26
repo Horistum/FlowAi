@@ -92,9 +92,10 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 - Models CLI execution as sealed typed outcomes with stable diagnostic codes and semantic artifact roles before presentation.
 - Restores CLI and release composition to production coupling governance instead of treating application composition as an automatic exemption.
 - Replaces source-text CLI architecture checks with typed behavioral and classpath conformance.
-- Validation: Flow CI `#2048`, run `30155688901`, passed exact implementation head `869816b978a107545742553e598bcdd118d984b2` and independently passed merge candidate `5c4b0999b104f5501eb79980ab83014dac275df6`.
-- Status: active; assembly Flow CI `#2083`, run `30166636855`, passed the typed candidate, while public PR exact-head and merge-candidate validation remain pending.
+- Historical validation: Flow CI `#2048`, run `30155688901`, passed the earlier correction boundary; assembly Flow CI `#2083`, run `30166636855`, passed typed-candidate preflight.
+- Validation: Flow CI `#2087`, run `30167146445`, passed exact implementation head `54889f7907f1d95b900466fd438f9965ca24dbbe` and independently passed synthetic merge candidate `6dcd266e20638fcbb717e6582da711331251bd37`.
+- Status: complete on implementation evidence; the completion-metadata head still requires the same dual workflow before review readiness.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` remains `correction-required`. `0.9.7.10 Bounded Semantic Closure Gate` remains `blocked` until the public implementation head and completion-metadata head independently pass exact-head and merge-candidate validation. Package, public-standard and artifact-contract versions remain unchanged.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is the next Core item. Package, public-standard and artifact-contract versions remain unchanged.
