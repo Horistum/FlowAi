@@ -110,6 +110,12 @@ object BuiltInNativeProjectionCatalogs {
         )
     )
 
+    val byTarget: Map<String, TargetNativeProjectionCatalog> = listOf(
+        jenkins,
+        githubActions,
+        tekton
+    ).associateBy(TargetNativeProjectionCatalog::target)
+
     private fun imageBuildBindings(): Map<String, TargetNativeProjectionBindingContract> = mapOf(
         "image" to TargetNativeProjectionBindingContract(
             acceptedKinds = setOf(ProjectionBindingKind.TASK_PARAMETER)
