@@ -1,4 +1,5 @@
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,7 +39,7 @@ class FlowStandardBundleVerifierTests {
     fun missingReleaseGateFailsVerification() {
         val bundle = standardBundleFixture()
         val file = File(bundle, "conformance-manifest.json")
-        val manifest = Json.mapper.readTree(file)
+        val manifest = Json.mapper.readTree(file) as ObjectNode
         val required = manifest.withArray("requiredChecks") as ArrayNode
         val removed = required.first().asText()
         required.remove(0)
@@ -57,7 +58,7 @@ class FlowStandardBundleVerifierTests {
         val bundle = standardBundleFixture()
         val requiredGate = StandardReleaseProfile.report().requiredConformanceChecks.first()
         val file = File(bundle, "conformance-manifest.json")
-        val manifest = Json.mapper.readTree(file)
+        val manifest = Json.mapper.readTree(file) as ObjectNode
         manifest.put("status", "FAIL")
         manifest.put("passed", manifest.path("passed").asInt() - 1)
         manifest.put("failed", 1)
@@ -76,7 +77,7 @@ class FlowStandardBundleVerifierTests {
         val bundle = standardBundleFixture()
         val missingArtifact = StandardSurface.publicSurface().stableArtifacts.first()
         val file = File(bundle, "standard-export-bundle.json")
-        val export = Json.mapper.readTree(file)
+        val export = Json.mapper.readTree(file) as ObjectNode
         val required = export.withArray("requiredArtifacts") as ArrayNode
         val retained = required.map { it.asText() }.filterNot { it == missingArtifact }
         required.removeAll()
