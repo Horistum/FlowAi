@@ -69,10 +69,10 @@ class ReferenceSnapshotBundleGenerator(
                 evidence += ReferenceBlockedProjectionEvidence(compatibility, readiness)
             } else {
                 val provider = projections.requireProvider(target)
-                val selection = TargetSelectionAuthority.fromExplicitConfiguration(
-                    target,
-                    "reference-snapshot:$scenarioId",
-                    targets
+                val selection = TargetSelectionAuthority.fromReferenceSnapshot(
+                    value = target,
+                    scenarioId = scenarioId,
+                    targets = targets
                 )
                 val manifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
                 val renderReadiness = TargetRenderPolicy.evaluate(manifest)
