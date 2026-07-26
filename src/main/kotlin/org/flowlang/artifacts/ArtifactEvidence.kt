@@ -23,11 +23,12 @@ data class ArtifactEvidenceReport(
 class ArtifactEvidenceAnalyzer {
     fun analyze(bundle: FlowArtifactBundleReport): ArtifactEvidenceReport {
         val evidence = bundle.artifacts.map { artifact ->
+            val contract = ArtifactContractAuthority.definitionFor(artifact.name, artifact.role)
             ArtifactEvidenceEntry(
                 artifact = artifact.name,
                 derivedFrom = artifact.derivedFrom,
                 evidenceType = if (artifact.derived) "derived" else "source",
-                producer = producerFor(artifact.name),
+                producer = contract.producer,
                 schema = artifact.schema,
                 required = artifact.required
             )
@@ -36,43 +37,7 @@ class ArtifactEvidenceAnalyzer {
             flowName = bundle.flowName,
             target = bundle.target,
             evidence = evidence,
-            missingEvidence = evidence
-                .filter { it.required && it.evidenceType == "derived" && it.derivedFrom.isEmpty() }
-                .map { it.artifact }
-                .sorted()
+            missingEvidence = ArtifactContractAuthority.missingEvidence(bundle)
         )
-    }
-
-    private fun producerFor(artifact: String): String = when (artifact) {
-        "standard-contract-index.json" -> "StandardContractIndexAnalyzer"
-        "standard-release-profile.json" -> "StandardReleaseProfile"
-        "artifact-evidence-report.json" -> "ArtifactEvidenceAnalyzer"
-        "standard-compliance-report.json" -> "StandardComplianceAnalyzer"
-        "artifact-integrity-report.json" -> "ArtifactIntegrityAnalyzer"
-        "diagnostic-coverage-report.json" -> "DiagnosticCoverageAnalyzer"
-        "flow-artifact-bundle.json" -> "FlowArtifactBundleAnalyzer"
-        "standard-freeze-report.json" -> "PublicStandardDraft.freeze"
-        "compatibility-policy.json" -> "PublicStandardDraft.compatibilityPolicy"
-        "reference-corpus-index.json" -> "PublicStandardDraft.referenceCorpus"
-        "negative-conformance-corpus.json" -> "PublicStandardDraft.negativeCorpus"
-        "target-conformance-profile.json" -> "PublicStandardDraft.targetConformanceProfile"
-        "public-standard-surface.json" -> "StandardSurface.publicSurface"
-        "compatibility-migration-policy.json" -> "StandardSurface.compatibilityMigrationPolicy"
-        "reference-intent-corpus.json" -> "StandardSurface.referenceIntentCorpus"
-        "target-semantics-matrix.json" -> "StandardSurface.targetSemanticsMatrix"
-        "standard-export-bundle.json" -> "StandardSurface.standardExportBundle"
-        "conformance-levels.json" -> "StandardSurface.conformanceLevels"
-        "standard-export-manifest.json" -> "StandardSurface.standardExportManifest"
-        "conformance-manifest.json" -> "ConformanceManifestBuilder"
-        "conformance-vector-index.json" -> "ConformanceVectorIndexBuilder"
-        "standard-index.json" -> "PublicStandardDraft.standardIndex"
-        "conformance-suite.json" -> "PublicStandardDraft.conformanceSuite"
-        "flow-standard-draft.json" -> "PublicStandardDraft.draft"
-        "release-metadata-honesty-report.json" -> "ReleaseMetadataHonestyAuthority"
-        "target-neutral-planning-report.json" -> "CliTargetNeutralPlanningEvidence"
-        "target-selection-evidence.json" -> "TargetSelectionAuthority"
-        "cli-target-outcome.json" -> "CliTargetEvidenceAuthority"
-        "target-render-readiness.json" -> "TargetRenderPolicy"
-        else -> "flow-public-pipeline"
     }
 }
