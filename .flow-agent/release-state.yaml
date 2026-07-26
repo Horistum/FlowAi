@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 16
+stateVersion: 17
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -110,7 +110,7 @@ lastKnownValidation:
   validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.9 was merged through PR #88 after Flow CI #2087 and #2094 passed its implementation and completion-metadata boundaries."
-    - "A post-merge audit proved that the removed CLI composition facade had laundered CompatibilityReport.target as EXPLICIT_CONFIGURATION and that BLOCKED CLI outcomes could return success."
-    - "Bounded correction v0.9.7.9.10 is active; Core item v0.9.7.9 is correction-required and v0.9.7.10 remains blocked."
-    - "Candidate validation remains external exact-head CI evidence until the public exact head and synthetic merge candidate independently pass Flow CI."
+    - "v0.9.7.9.10 completed after external exact-head CI evidence: Flow CI #2100, run 30187033448, passed implementation head 155a61b5fc5a1e54da5677eab23eff516e215078."
+    - "The same Flow CI run independently passed synthetic merge candidate ce75e032d8c6a807e1aa368b3fdeab19c9d154bb."
+    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is now the next Core item."
+    - "The completion-metadata head must pass both exact-head and merge-candidate jobs before the pull request is ready for review."
