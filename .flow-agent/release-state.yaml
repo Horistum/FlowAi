@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 17
+stateVersion: 18
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -98,6 +98,11 @@ qualityPrinciples:
   - "Target-selection origin categories are a closed architecture contract."
   - "Blocked CLI outcomes must return a distinct non-success process status."
   - "Successful CLI outcomes cannot accept caller-authored exit codes."
+  - "A public PASS status must be computed from validated content and must have a negative counterpart."
+  - "Target semantics may publish only registry or provider-owned evidence, never target-name folklore."
+  - "Artifact producer and introduced-version metadata have no generic fallback."
+  - "Required artifact derivation rejects dangling evidence references."
+  - "Bundle verification parses exact JSON fields and never accepts substring occurrence as proof."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-merged-v0.9.7.9.8-follow-up-head"
@@ -110,7 +115,7 @@ lastKnownValidation:
   validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.10 completed after external exact-head CI evidence: Flow CI #2100, run 30187033448, passed implementation head 155a61b5fc5a1e54da5677eab23eff516e215078."
-    - "The same Flow CI run independently passed synthetic merge candidate ce75e032d8c6a807e1aa368b3fdeab19c9d154bb."
-    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is now the next Core item."
-    - "The completion-metadata head must pass both exact-head and merge-candidate jobs before the pull request is ready for review."
+    - "v0.9.7.9.10 was merged through PR #90 after external exact-head CI evidence from Flow CI #2100 and completion-metadata validation from Flow CI #2108."
+    - "Post-merge audit evidence opened bounded correction v0.9.7.9.11 for public status, target-semantics, provenance, derivation and bundle-verification integrity."
+    - "No external exact-head CI evidence is claimed for active v0.9.7.9.11."
+    - "Core item v0.9.7.9 is correction-required and v0.9.7.10 remains blocked until this work package completes."
