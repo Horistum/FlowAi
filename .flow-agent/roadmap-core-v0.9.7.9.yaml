@@ -171,7 +171,7 @@ items:
   - version: 0.9.7.9
     name: Intent Lowering and Diagnostic Honesty
     type: lowering-integrity
-    status: correction-required
+    status: completed
     purpose: Preserve or diagnose every meaningful input.
     universalInvariant: Accepted information never disappears silently and public evidence never certifies an unverified claim.
     forbiddenScope:
@@ -190,11 +190,13 @@ items:
       - A post-merge audit then proved that a dead CLI composition facade could relabel CompatibilityReport.target as EXPLICIT_CONFIGURATION, TargetSelectionOrigin lacked a closed-set guard, and BLOCKED CLI outcomes could return success.
       - Bounded correction 0.9.7.9.10 removed the duplicate CLI pipeline, closed explicit-configuration source categories and derived process status from typed outcomes; PR #90 was merged as 91de098f8f51176a76e34ef53bab1b424edaa8d0.
       - A later audit proved that public artifact status, target semantics, provenance, derivation and bundle verification still contained circular or text-occurrence evidence paths.
-      - Bounded correction 0.9.7.9.11 is active. No passing validation is claimed until its exact implementation head and synthetic merge candidate independently pass Flow CI.
+      - Bounded correction 0.9.7.9.11 replaced literal public status claims, handwritten provider semantics, generic artifact provenance, dangling lineage acceptance and substring verification with computed, provider-backed and fail-closed authorities.
+      - Flow CI #2116, run 30191458296, independently passed exact implementation head 018f69388163c14f65c03c2cf21029156fd94ede and synthetic merge candidate 8854b0ed44e04347a9c60ca915e9b61ed24c9734, including complete tests and standalone conformance.
+      - The completion-metadata head must pass the same two jobs before PR #91 may become ready for review.
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: blocked
+    status: next
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
