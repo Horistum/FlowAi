@@ -94,8 +94,21 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 - Replaces source-text CLI architecture checks with typed behavioral and classpath conformance.
 - Historical validation: Flow CI `#2048`, run `30155688901`, passed the earlier correction boundary; assembly Flow CI `#2083`, run `30166636855`, passed typed-candidate preflight.
 - Validation: Flow CI `#2087`, run `30167146445`, passed exact implementation head `54889f7907f1d95b900466fd438f9965ca24dbbe` and independently passed synthetic merge candidate `6dcd266e20638fcbb717e6582da711331251bd37`.
-- Status: complete on implementation evidence; the completion-metadata head still requires the same dual workflow before review readiness.
+- Completion metadata was validated by Flow CI `#2094`, run `30183785028`, before PR #88 was merged.
+- Status: historically complete, superseded by the post-merge reopening below.
+
+### v0.9.7.9.10 Target Selection Provenance and CLI Status Integrity
+
+- Deletes the dead `org.flowlang.cli.TargetManifestGenerationPipeline` facade that duplicated the canonical generator pipeline name.
+- Prevents `CompatibilityReport.target` or another analytical report from being relabeled as explicit target configuration.
+- Introduces a closed typed vocabulary for reference-snapshot, conformance and test configuration sources.
+- Rejects unknown source categories, including the former `cli:compatibility-report` label, before selection evidence is issued.
+- Locks `TargetSelectionOrigin` to `CLI_OPTION`, `INTENT_DECLARATION` and `EXPLICIT_CONFIGURATION` through unit and conformance checks.
+- Derives CLI process status from sealed outcomes: success `0`, invalid input `2`, review required `3`, blocked `4` and internal error `70`.
+- Removes the caller-supplied exit-code parameter from successful CLI results.
+- Adds classpath proof that only the canonical `org.flowlang.generators.manifest.TargetManifestGenerationPipeline` is compiled.
+- Status: active; no passing validation claim has been recorded.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is the next Core item. Package, public-standard and artifact-contract versions remain unchanged.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is `correction-required`. `0.9.7.10 Bounded Semantic Closure Gate` is `blocked` while `0.9.7.9.10` is active. Package, public-standard and artifact-contract versions remain unchanged.
