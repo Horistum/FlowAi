@@ -52,6 +52,20 @@ enum class CliDiagnosticCode(val wireCode: String) {
     INTERNAL_ERROR("CLI_INTERNAL_ERROR")
 }
 
+/**
+ * Stable process status contract derived from typed CLI outcomes.
+ *
+ * Review-required evidence is intentionally distinct from a blocking integrity
+ * failure so automation can decide whether to inspect evidence or stop outright.
+ */
+enum class CliProcessExit(val code: Int) {
+    SUCCESS(0),
+    INVALID_INPUT(2),
+    REVIEW_REQUIRED(3),
+    BLOCKED(4),
+    INTERNAL_ERROR(70)
+}
+
 data class CliExecutionDiagnostic(
     val code: CliDiagnosticCode,
     val message: String,
@@ -71,7 +85,7 @@ sealed interface CliExecutionResult {
     data class Help(
         override val presentation: CliPresentation
     ) : CliExecutionResult {
-        override val exitCode: Int = 0
+        override val exitCode: Int = CliProcessExit.SUCCESS.code
         override val artifacts: List<CliArtifact> = emptyList()
         override val diagnostics: List<CliExecutionDiagnostic> = emptyList()
     }
@@ -79,13 +93,12 @@ sealed interface CliExecutionResult {
     data class Completed(
         override val presentation: CliPresentation,
         override val artifacts: List<CliArtifact> = emptyList(),
-        val selectionDecision: TargetSelectionDecision = TargetSelectionDecision.NotSelected,
-        override val exitCode: Int = 0
+        val selectionDecision: TargetSelectionDecision = TargetSelectionDecision.NotSelected
     ) : CliExecutionResult {
+        override val exitCode: Int = CliProcessExit.SUCCESS.code
         override val diagnostics: List<CliExecutionDiagnostic> = emptyList()
 
         init {
-            require(exitCode >= 0) { "CLI completed result cannot use a negative exit code." }
             if (selectionDecision == TargetSelectionDecision.NotSelected) {
                 require(artifacts.none { it.role == CliArtifactRole.TARGET_MANIFEST || it.role == CliArtifactRole.RENDERED_TARGET }) {
                     "A command without explicit target selection cannot expose target artifacts."
@@ -99,7 +112,7 @@ sealed interface CliExecutionResult {
         override val presentation: CliPresentation,
         override val artifacts: List<CliArtifact>
     ) : CliExecutionResult {
-        override val exitCode: Int = 0
+        override val exitCode: Int = CliProcessExit.SUCCESS.code
         override val diagnostics: List<CliExecutionDiagnostic> = emptyList()
 
         init {
@@ -121,8 +134,12 @@ sealed interface CliExecutionResult {
         override val presentation: CliPresentation,
         override val artifacts: List<CliArtifact>
     ) : CliExecutionResult {
-        override val exitCode: Int =
-            if ((strict || renderRequested) && evidence.outcome != CliTargetEvidenceOutcome.EXECUTABLE) 3 else 0
+        override val exitCode: Int = when (evidence.outcome) {
+            CliTargetEvidenceOutcome.EXECUTABLE -> CliProcessExit.SUCCESS.code
+            CliTargetEvidenceOutcome.REVIEW_ONLY ->
+                if (strict || renderRequested) CliProcessExit.REVIEW_REQUIRED.code else CliProcessExit.SUCCESS.code
+            CliTargetEvidenceOutcome.BLOCKED -> CliProcessExit.BLOCKED.code
+        }
         override val diagnostics: List<CliExecutionDiagnostic> = emptyList()
 
         init {
@@ -154,7 +171,13 @@ sealed interface CliExecutionResult {
         val diagnostic: CliExecutionDiagnostic,
         override val presentation: CliPresentation
     ) : CliExecutionResult {
-        override val exitCode: Int = 2
+        override val exitCode: Int = when (diagnostic.code) {
+            CliDiagnosticCode.INTEGRITY_BLOCKED -> CliProcessExit.BLOCKED.code
+            CliDiagnosticCode.INTERNAL_ERROR -> CliProcessExit.INTERNAL_ERROR.code
+            CliDiagnosticCode.TARGET_REQUIRED_FOR_RENDER,
+            CliDiagnosticCode.UNKNOWN_COMMAND,
+            CliDiagnosticCode.INVALID_INPUT -> CliProcessExit.INVALID_INPUT.code
+        }
         override val artifacts: List<CliArtifact> = emptyList()
         override val diagnostics: List<CliExecutionDiagnostic> = listOf(diagnostic)
     }
