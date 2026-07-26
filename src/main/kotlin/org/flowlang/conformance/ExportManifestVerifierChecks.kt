@@ -1,6 +1,7 @@
 package org.flowlang.conformance
 
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import org.flowlang.artifacts.StandardBundleVerifier
 import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.artifacts.StandardSurface
@@ -70,7 +71,7 @@ internal class ExportManifestVerifierChecks(
 
         val failedConformanceBundle = StrictStandardBundleFixture.create(rootDir)
         val conformanceFile = File(failedConformanceBundle, "conformance-manifest.json")
-        val conformance = Json.mapper.readTree(conformanceFile)
+        val conformance = Json.mapper.readTree(conformanceFile) as ObjectNode
         conformance.put("status", "FAIL")
         val total = conformance.path("totalChecks").asInt()
         conformance.put("passed", total - 1)
@@ -86,12 +87,12 @@ internal class ExportManifestVerifierChecks(
 
         val substringBundle = StrictStandardBundleFixture.create(rootDir)
         val exportFile = File(substringBundle, "standard-export-bundle.json")
-        val export = Json.mapper.readTree(exportFile)
+        val export = Json.mapper.readTree(exportFile) as ObjectNode
         val missingArtifact = StandardSurface.publicSurface().stableArtifacts.first()
         val requiredArtifacts = export.withArray("requiredArtifacts") as ArrayNode
         val retained = requiredArtifacts.filterNot { it.asText() == missingArtifact }.map { it.asText() }
         requiredArtifacts.removeAll()
-        retained.forEach(requiredArtifacts::add)
+        retained.forEach { requiredArtifacts.add(it) }
         export.put("packageName", "mentions-$missingArtifact-but-does-not-declare-it")
         exportFile.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(export) + "\n")
         val substringReport = StandardBundleVerifier().verify(substringBundle)
