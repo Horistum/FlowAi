@@ -171,26 +171,30 @@ items:
   - version: 0.9.7.9
     name: Intent Lowering and Diagnostic Honesty
     type: lowering-integrity
-    status: completed
+    status: correction-required
     purpose: Preserve or diagnose every meaningful input.
-    universalInvariant: Accepted information never disappears silently.
+    universalInvariant: Accepted information never disappears silently and public evidence never certifies an unverified claim.
     forbiddenScope:
       - No source-form enforcement difference.
       - No accepted field or value dropped without diagnostic evidence.
       - No malformed declaration converted into empty or default meaning.
       - No unsupported policy or workflow shape flattened into a weaker contract.
+      - No literal PASS as a substitute for computed public validation.
+      - No handwritten target capability as provider evidence.
+      - No generic artifact producer or fictional introduced-version fallback.
+      - No dangling derivation or substring evidence accepted by a release gate.
     completionEvidence:
       - The original implementation evidence remains historical and was explicitly superseded after a false preservation claim was proven.
       - Bounded corrections 0.9.7.9.1 through 0.9.7.9.9 repaired confirmed lowering, identity, approval, governance, release, safety, diagnostic and architecture defects.
       - Flow CI #2087 and #2094 validated the implementation and completion-metadata boundaries later merged through PR #88.
       - A post-merge audit then proved that a dead CLI composition facade could relabel CompatibilityReport.target as EXPLICIT_CONFIGURATION, TargetSelectionOrigin lacked a closed-set guard, and BLOCKED CLI outcomes could return success.
-      - Bounded correction 0.9.7.9.10 removed the duplicate CLI pipeline, closed explicit-configuration source categories and derived process status from typed outcomes.
-      - Flow CI #2100, run 30187033448, passed exact implementation head 155a61b5fc5a1e54da5677eab23eff516e215078 and independently passed synthetic merge candidate ce75e032d8c6a807e1aa368b3fdeab19c9d154bb.
-      - The completion-metadata head must pass the same independent exact-head and merge-candidate workflow before the pull request is ready for review.
+      - Bounded correction 0.9.7.9.10 removed the duplicate CLI pipeline, closed explicit-configuration source categories and derived process status from typed outcomes; PR #90 was merged as 91de098f8f51176a76e34ef53bab1b424edaa8d0.
+      - A later audit proved that public artifact status, target semantics, provenance, derivation and bundle verification still contained circular or text-occurrence evidence paths.
+      - Bounded correction 0.9.7.9.11 is active. No passing validation is claimed until its exact implementation head and synthetic merge candidate independently pass Flow CI.
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: next
+    status: blocked
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
