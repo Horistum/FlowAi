@@ -2,7 +2,7 @@ version: "0.9.7.9.9"
 name: "Parser, Conformance and Architecture Evidence Integrity"
 type: "bounded-correction"
 stream: core
-status: active
+status: complete
 parentCoreItem: "0.9.7.9"
 objective: "Repair silent .flow retry-policy loss, circular compliance proof, incomplete serialization boundaries, whitespace-based module governance, unnecessary concrete-target anchoring and untyped target-selection and CLI execution evidence."
 scopeBoundary:
@@ -41,8 +41,8 @@ implementedSlices:
   - id: behavioral-cli-conformance
 validationPolicy:
   workflow: "Flow CI"
-  requirement: "Historical Flow CI #2048 validated the earlier correction boundary. Assembly Flow CI #2083, run 30166636855, passed the typed target-selection candidate at exact head 151e7f91f9fa8b9747b251a5f0e0878672920654 and its synthetic merge candidate. The public PR head and its merge candidate must now pass independently before this correction may return to complete."
-  buildDiscipline: "Keep the correction active and the closure item blocked until the public PR implementation head and a later completion-metadata head each pass exact-head and merge-candidate validation."
+  requirement: "Historical Flow CI #2048 validated the earlier correction boundary. Assembly Flow CI #2083, run 30166636855, passed typed-candidate preflight. Public Flow CI #2087, run 30167146445, passed exact implementation head 54889f7907f1d95b900466fd438f9965ca24dbbe and independently passed synthetic merge candidate 6dcd266e20638fcbb717e6582da711331251bd37. The completion-metadata head must pass the same dual workflow before review readiness."
+  buildDiscipline: "Keep completion metadata distinct from the validated implementation head and require a final exact-head plus merge-candidate run before marking the pull request ready for review."
 followUpWorkItem:
   version: "0.9.7.10"
   name: "Bounded Semantic Closure Gate"
