@@ -76,18 +76,20 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 
 ### v0.9.7.9.11 Public Artifact Evidence and Verification Integrity
 
-- Replaces literal public `PASS` fields with computed content validation and negative counterparts.
-- Derives target semantics from the target registry, `TargetExpressionSupport` and provider-owned native projection contracts.
-- Removes unsupported handwritten approval claims for GitHub Actions and Tekton; both remain adapter-required review-only.
-- Introduces one exact artifact contract authority for stable producer identity and introduced-version metadata.
-- Rejects unknown public artifacts instead of assigning a generic producer or fictional historical version.
-- Validates required artifact derivation against declared artifacts and registered external evidence sources.
-- Makes dangling `derivedFrom` references block `evidence.complete` and public compliance.
-- Parses conformance and export bundle JSON structurally with strict unknown-field and duplicate-key rejection.
-- Requires exact passing conformance evidence and exact stable-artifact membership in `requiredArtifacts`.
-- Adds negative tests for failed gates, malformed JSON and artifact ids mentioned outside the authoritative field.
-- Status: active; no passing validation is claimed.
+- Replaced literal public `PASS` fields with computed content validation and negative counterparts.
+- Derived target semantics from the target registry, `TargetExpressionSupport` and provider-owned native projection contracts.
+- Removed unsupported handwritten approval claims for GitHub Actions and Tekton; both remain adapter-required review-only.
+- Introduced one exact artifact contract authority for stable producer identity and introduced-version metadata.
+- Rejected unknown public artifacts instead of assigning a generic producer or fictional historical version.
+- Declared `conformance-manifest.json` as explicit required source evidence in the artifact bundle.
+- Validated required artifact derivation against declared artifacts and registered external evidence sources.
+- Made dangling `derivedFrom` references block `evidence.complete` and public compliance.
+- Parsed conformance and export bundle JSON structurally with strict unknown-field and duplicate-key rejection.
+- Required exact passing conformance evidence and exact stable-artifact membership in `requiredArtifacts`.
+- Added negative tests for failed gates, malformed JSON and artifact ids mentioned outside the authoritative field.
+- Validation: Flow CI `#2116`, run `30191458296`, exact implementation head `018f69388163c14f65c03c2cf21029156fd94ede`, synthetic merge candidate `8854b0ed44e04347a9c60ca915e9b61ed24c9734`; both passed complete tests and standalone conformance.
+- Status: complete; the completion-metadata head remains subject to its own dual Flow CI validation before PR #91 becomes ready for review.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` is `correction-required`. `0.9.7.10 Bounded Semantic Closure Gate` is `blocked` while `0.9.7.9.11` is active. Package, public-standard and artifact-contract versions remain unchanged.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is `next`. Package, public-standard and artifact-contract versions remain unchanged.
