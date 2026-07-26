@@ -173,10 +173,10 @@ class CliDiagnosticReleaseHonestyTests {
         assertEquals(FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION, report.implementationPackageVersion)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.publicStandardVersion)
         assertEquals("0.9.7.9.10", report.completedCorrectionItem)
-        assertEquals("active", report.correctionStatus)
-        assertEquals("correction-required", report.parentCoreItemStatus)
+        assertEquals("complete", report.correctionStatus)
+        assertEquals("completed", report.parentCoreItemStatus)
         assertEquals("0.9.7.10", report.nextCoreItem)
-        assertEquals("blocked", report.closureStatus)
+        assertEquals("next", report.closureStatus)
         assertTrue(report.failedChecks.isEmpty())
     }
 
