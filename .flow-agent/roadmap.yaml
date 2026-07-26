@@ -68,3 +68,4 @@ currentDecision:
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
   nextCoreItemStatus: "next"
+  decisionBasis: "Bounded correction 0.9.7.9.9 completed after Flow CI #2087, run 30167146445, independently passed exact implementation head 54889f7907f1d95b900466fd438f9965ca24dbbe and synthetic merge candidate 6dcd266e20638fcbb717e6582da711331251bd37. Core item 0.9.7.9 is completed and 0.9.7.10 is the next Core item; the completion-metadata head still requires the same dual validation before review readiness."

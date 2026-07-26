@@ -65,7 +65,7 @@ class FlowExecutionReadinessTests {
     fun githubReferencePlanIsBlockedWithoutWorkspaceContinuityEvidence() {
         val plan = referencePlan()
         val preliminary = ExecutionReadinessAnalyzer(targets).analyze(plan, "github-actions")
-        val manifest = BuiltInTargetProjections.pipeline(targets).generateDiagnosticEvidence(plan, "github-actions")
+        val manifest = BuiltInTargetProjections.pipeline(targets).generateDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "github-actions", targets))
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifest)
 
         assertEquals(ExecutionReadinessStatus.BLOCKED, report.readiness)
@@ -80,7 +80,7 @@ class FlowExecutionReadinessTests {
     fun tektonReferencePlanAndManifestRemainBlocked() {
         val plan = referencePlan()
         val preliminary = ExecutionReadinessAnalyzer(targets).analyze(plan, "tekton")
-        val manifest = BuiltInTargetProjections.pipeline(targets).generateDiagnosticEvidence(plan, "tekton")
+        val manifest = BuiltInTargetProjections.pipeline(targets).generateDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "tekton", targets))
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifest)
 
         assertEquals(ExecutionReadinessStatus.BLOCKED, report.readiness)

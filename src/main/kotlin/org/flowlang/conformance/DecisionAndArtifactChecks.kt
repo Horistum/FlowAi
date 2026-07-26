@@ -19,6 +19,8 @@ internal class DecisionAndArtifactChecks(
     targets: Map<String, org.flowlang.capabilities.TargetCapability>,
     projections: TargetProjectionRegistry
 ) : ConformanceCheckSupport(rootDir, registry, targets, projections) {
+    private val neutral = TargetNeutralConformanceFixture(rootDir, registry, targets)
+
     fun checks(): List<ConformanceCheck> = listOf(
         checkV039TargetDecisionTraceReport(),
         checkV0310PublicArtifactBundle(),
@@ -28,23 +30,21 @@ internal class DecisionAndArtifactChecks(
     )
 
     private fun checkV039TargetDecisionTraceReport(): ConformanceCheck = runCheck("v0.3.9.target-decision-trace") {
-        val artifacts = buildPipeline("jenkins", strict = false)
+        val core = neutral.build()
         val compatibility = CompatibilityAnalyzer(targets)
-        val manifests = listOf(
-            artifacts.manifest,
-            manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "github-actions"),
-            manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
-        )
+        val manifests = targets.keys.sorted()
+            .filter { target -> projections.providerFor(target) != null }
+            .map { target -> manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(core.plan, target, "conformance:decision-artifact")) }
         val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(
-            compatibility.negotiate(artifacts.plan, strict = false),
+            compatibility.negotiate(core.plan, strict = false),
             manifests
         )
         val selection = TargetCompatibilityReadinessAnalyzer.reconcile(
-            TargetSelectionAnalyzer(targets).analyze(artifacts.plan, strict = false),
+            TargetSelectionAnalyzer(targets).analyze(core.plan, strict = false),
             manifests
         )
         val report = TargetDecisionTraceAnalyzer(targets).analyze(
-            plan = artifacts.plan,
+            plan = core.plan,
             requestedTarget = "jenkins",
             strict = false,
             negotiation = negotiation,
@@ -70,23 +70,31 @@ internal class DecisionAndArtifactChecks(
     }
 
     private fun checkV0310PublicArtifactBundle(): ConformanceCheck = runCheck("v0.3.10.public-artifact-bundle") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val bundle = FlowArtifactBundleAnalyzer().intentBundle(
-            flowName = artifacts.plan.flowName,
+        val core = neutral.build()
+        val neutralBundle = neutral.artifactBundle(core)
+        require(neutralBundle.target == TargetNeutralConformanceFixture.TARGET_NEUTRAL) {
+            "Universal bundle evidence must remain target-neutral."
+        }
+        require(neutralBundle.optionalArtifacts.none { it == "target-manifest.json" || it == "Jenkinsfile" }) {
+            "Target-neutral bundle must not invent target artifacts."
+        }
+
+        val targetExtension = FlowArtifactBundleAnalyzer().intentBundle(
+            flowName = core.plan.flowName,
             target = "jenkins",
             strict = false,
             hasManifest = true,
             renderedArtifact = "Jenkinsfile"
         )
-        require(bundle.artifacts.isNotEmpty()) { "Artifact bundle must list public artifacts." }
-        require(bundle.pipeline.first() == "standard-version.txt") { "Bundle pipeline must start with standard-version.txt." }
-        require(bundle.pipeline.last() == "flow-artifact-bundle.json") { "Bundle pipeline must end with flow-artifact-bundle.json." }
-        require(bundle.requiredArtifacts.contains("execution-plan.json")) { "Bundle must require execution-plan.json." }
-        require(bundle.requiredArtifacts.contains("target-decision-trace-report.json")) { "Bundle must require target-decision-trace-report.json." }
-        require(bundle.requiredArtifacts.contains("flow-artifact-bundle.json")) { "Bundle must require itself as the public bundle manifest." }
-        require(bundle.optionalArtifacts.contains("target-manifest.json")) { "Target manifest must be listed as optional because not every target has a renderer." }
-        require(bundle.optionalArtifacts.contains("Jenkinsfile")) { "Rendered vendor artifact must be listed as optional." }
-        require(bundle.artifacts.map { it.pipelineIndex } == (1..bundle.artifacts.size).toList()) { "Artifact pipeline indexes must be contiguous." }
+        require(targetExtension.artifacts.isNotEmpty()) { "Artifact bundle must list public artifacts." }
+        require(targetExtension.pipeline.first() == "standard-version.txt") { "Bundle pipeline must start with standard-version.txt." }
+        require(targetExtension.pipeline.last() == "flow-artifact-bundle.json") { "Bundle pipeline must end with flow-artifact-bundle.json." }
+        require(targetExtension.requiredArtifacts.contains("execution-plan.json")) { "Bundle must require execution-plan.json." }
+        require(targetExtension.requiredArtifacts.contains("target-decision-trace-report.json")) { "Bundle must require target-decision-trace-report.json." }
+        require(targetExtension.requiredArtifacts.contains("flow-artifact-bundle.json")) { "Bundle must require itself as the public bundle manifest." }
+        require(targetExtension.optionalArtifacts.contains("target-manifest.json")) { "Target manifest must be listed as optional because not every target has a renderer." }
+        require(targetExtension.optionalArtifacts.contains("Jenkinsfile")) { "Rendered vendor artifact must be listed as optional." }
+        require(targetExtension.artifacts.map { it.pipelineIndex } == (1..targetExtension.artifacts.size).toList()) { "Artifact pipeline indexes must be contiguous." }
     }
 
     private fun checkV0311ConformanceManifest(): ConformanceCheck = runCheck("v0.3.11.conformance-manifest") {
@@ -109,8 +117,8 @@ internal class DecisionAndArtifactChecks(
     }
 
     private fun checkV0312TargetAdapterContract(): ConformanceCheck = runCheck("v0.3.12.target-adapter-contract") {
-        val artifacts = buildPipeline("jenkins", strict = false)
-        val contract = TargetAdapterContractAnalyzer(targets).analyze(artifacts.plan, "jenkins", strict = false)
+        val core = neutral.build()
+        val contract = TargetAdapterContractAnalyzer(targets).analyze(core.plan, "jenkins", strict = false)
         require(contract.generationAllowed) { "Jenkins adapter contract should allow generation for the reference plan." }
         require(contract.allowedInputArtifacts.any { it.name == "execution-plan.json" }) { "Adapter contract must allow execution-plan.json." }
         require(contract.allowedInputArtifacts.none { it.name == "normalized-intent.json" }) { "Adapter contract must not allow normalized-intent.json as adapter input." }
@@ -120,7 +128,7 @@ internal class DecisionAndArtifactChecks(
         require(contract.invariants.any { it.code == "ADAPTER_MUST_NOT_READ_INTENT" }) { "Adapter contract must include no-intent invariant." }
         require(contract.invariants.any { it.code == "ADAPTER_MUST_RESPECT_READINESS" }) { "Adapter contract must include readiness invariant." }
 
-        val tekton = TargetAdapterContractAnalyzer(targets).analyze(artifacts.plan, "tekton", strict = false)
+        val tekton = TargetAdapterContractAnalyzer(targets).analyze(core.plan, "tekton", strict = false)
         require(!tekton.generationAllowed) { "Tekton adapter contract should block generation for unsupported manual approval." }
         require(tekton.diagnostics.issues.any { it.code == "ADAPTER_CONTRACT_BLOCKED" }) { "Blocked adapter contract must emit blocking diagnostics." }
     }

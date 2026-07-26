@@ -126,9 +126,9 @@ class UniversalDependencyContinuityContractTests {
 
         val authority = MandatoryMaterializationAuthority(targets, canonicalModules)
         assertFailsWith<UnresolvedPlanningContinuityException> {
-            authority.authorize(plan, "jenkins")
+            authority.authorize(testMaterializationRequest(plan, "jenkins", targets))
         }
-        val diagnostic = authority.authorizeDiagnosticEvidence(plan, "jenkins")
+        val diagnostic = authority.authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(plan, "jenkins", targets))
         assertTrue(diagnostic.compatibility.hasErrors)
         assertTrue(diagnostic.compatibility.issues.any { it.feature == "continuity.workspace.planning" })
     }
@@ -150,7 +150,7 @@ class UniversalDependencyContinuityContractTests {
         )
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
-            MandatoryMaterializationAuthority(targets, canonicalModules).authorizeDiagnosticEvidence(forged, "jenkins")
+            MandatoryMaterializationAuthority(targets, canonicalModules).authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(forged, "jenkins", targets))
         }
         assertTrue(failure.issues.any { it.code == "planning.continuity.requirement.evidence" })
     }

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.org/schemas/target-selection-evidence.schema.json",
+  "title": "Flow Explicit Target Selection Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standardVersion", "planVersion", "flowName", "target", "origin", "source", "explicit"],
+  "properties": {
+    "standardVersion": { "type": "string", "minLength": 1 },
+    "planVersion": { "type": "string", "minLength": 1 },
+    "flowName": { "type": "string", "minLength": 1 },
+    "target": { "type": "string", "minLength": 1 },
+    "origin": { "enum": ["CLI_OPTION", "INTENT_DECLARATION", "EXPLICIT_CONFIGURATION"] },
+    "source": { "type": "string", "minLength": 1 },
+    "explicit": { "const": true }
+  }
+}

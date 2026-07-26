@@ -181,9 +181,11 @@ items:
       - No unsupported policy or workflow shape flattened into a weaker contract.
     completionEvidence:
       - The original implementation evidence remains historical and was explicitly superseded after a false preservation claim was proven.
-      - Bounded corrections 0.9.7.9.1 through 0.9.7.9.7 repaired confirmed lowering, identity, approval, governance and release defects.
-      - Bounded correction 0.9.7.9.8 repaired safety evidence, governance, CLI, canonical provenance, derived projections, adapter cancellation and validation identity.
-      - Flow CI 2025, run 30144935197, passed exact implementation head af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319 and independently passed merge candidate 2e30830d55fe73ec0c46c75dfd425c1047dc9853.
+      - Bounded corrections 0.9.7.9.1 through 0.9.7.9.8 repaired confirmed lowering, identity, approval, governance, release, safety and diagnostic defects.
+      - The item was reopened again after proving that the public .flow retry parser silently replaced malformed authored values with defaults and discarded unknown policy keys.
+      - Bounded correction 0.9.7.9.9 repaired parser fail-closed behavior, compliance rejection polarity, semantic serializer-boundary coverage, module-governance evidence, target-neutral conformance, typed target selection, typed CLI outcomes and application-composition governance.
+      - Flow CI #2087, run 30167146445, passed exact implementation head 54889f7907f1d95b900466fd438f9965ca24dbbe and independently passed synthetic merge candidate 6dcd266e20638fcbb717e6582da711331251bd37.
+      - The completion-metadata head must pass the same independent exact-head and merge-candidate workflow before the pull request is ready for review.
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure

@@ -1,5 +1,3 @@
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,6 +12,7 @@ import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetProjectionMode
 import org.flowlang.capabilities.TargetProjectionRule
 import org.flowlang.capabilities.TargetRendererPayloadTemplate
+import org.flowlang.cli.Json
 import org.flowlang.targets.builtin.GitHubActionsManifestRenderer
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
@@ -243,19 +242,19 @@ class ProjectionBindingContractTests {
 
     @Test
     fun serializationOmitsFieldsThatDoNotBelongToBindingKind() {
-        val registryJson = ObjectMapper().registerKotlinModule().writeValueAsString(
+        val registryJson = Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
             ProjectionBinding.secret("registry-token")
         )
-        val manifestJson = ObjectMapper().registerKotlinModule().writeValueAsString(
+        val manifestJson = Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
             ProjectionBinding.secret("registry-token").asManifestBinding()
         )
 
-        assertTrue(registryJson.contains("\"kind\":\"SECRET\""))
-        assertTrue(registryJson.contains("\"name\":\"registry-token\""))
-        assertFalse(registryJson.contains("\"resolutionStatus\""))
-        assertFalse(registryJson.contains("\"value\""))
-        assertTrue(manifestJson.contains("\"resolutionStatus\":\"SYMBOLIC\""))
-        assertFalse(manifestJson.contains("\"reason\""))
+        assertEquals("SECRET", registryJson.path("kind").asText())
+        assertEquals("registry-token", registryJson.path("name").asText())
+        assertFalse(registryJson.has("resolutionStatus"))
+        assertFalse(registryJson.has("value"))
+        assertEquals("SYMBOLIC", manifestJson.path("resolutionStatus").asText())
+        assertFalse(manifestJson.has("reason"))
     }
 
     @Test

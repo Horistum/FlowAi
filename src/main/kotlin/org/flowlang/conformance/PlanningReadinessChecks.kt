@@ -137,7 +137,7 @@ internal class PlanningReadinessChecks(
         require(!jenkins.productionReady && !jenkins.executable) { "Review-only Jenkins manifest must not be production-ready." }
         require(jenkins.readinessEvidenceAvailable) { "Concrete Jenkins readiness must carry manifest evidence." }
 
-        val githubManifest = manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "github-actions")
+        val githubManifest = manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(artifacts.plan, "github-actions", "conformance:planning-readiness"))
         val github = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "github-actions", strict = false),
             githubManifest
@@ -147,7 +147,7 @@ internal class PlanningReadinessChecks(
             "Blocked GitHub Actions evidence must not claim generation or production readiness."
         }
 
-        val tektonManifest = manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
+        val tektonManifest = manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(artifacts.plan, "tekton", "conformance:planning-readiness"))
         val tekton = TargetCompatibilityReadinessAnalyzer.reconcile(
             analyzer.analyze(artifacts.plan, "tekton", strict = false),
             tektonManifest
@@ -162,8 +162,8 @@ internal class PlanningReadinessChecks(
         require(preliminary.recommendedTarget.isEmpty()) { "Capability-only selection must not recommend a target." }
         val manifests = listOf(
             artifacts.manifest,
-            manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "github-actions"),
-            manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
+            manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(artifacts.plan, "github-actions", "conformance:planning-readiness")),
+            manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(artifacts.plan, "tekton", "conformance:planning-readiness"))
         )
         val manifestTargets = manifests.map { it.target }.toSet()
         val report = TargetCompatibilityReadinessAnalyzer.reconcile(preliminary, manifests)
@@ -189,14 +189,14 @@ internal class PlanningReadinessChecks(
                 flowName = "approval-proof",
                 nodes = listOf(ApprovalNode(id = "approve", message = "Approve release"))
             )
-            val jenkins = manifestPipeline.generateDiagnosticEvidence(plan, "jenkins")
+            val jenkins = manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(plan, "jenkins", "conformance:planning-readiness"))
             val jenkinsApproval = jenkins.jobs.single().steps.single()
             require(jenkinsApproval.materialization.status == TargetMaterializationStatus.NATIVE)
             require(jenkinsApproval.rendererPayload?.reference == "input") {
                 "Jenkins approval was not backed by its provider-owned input payload."
             }
 
-            val github = manifestPipeline.generateDiagnosticEvidence(plan, "github-actions")
+            val github = manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(plan, "github-actions", "conformance:planning-readiness"))
             val githubApproval = github.jobs.single().steps.single()
             require(githubApproval.materialization.status == TargetMaterializationStatus.ADAPTER_REQUIRED)
             require(githubApproval.rendererPayload == null)
@@ -244,8 +244,8 @@ internal class PlanningReadinessChecks(
 
             val manifests = listOf(
                 artifacts.manifest,
-                manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "github-actions"),
-                manifestPipeline.generateDiagnosticEvidence(artifacts.plan, "tekton")
+                manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(artifacts.plan, "github-actions", "conformance:planning-readiness")),
+                manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(artifacts.plan, "tekton", "conformance:planning-readiness"))
             )
             val negotiation = TargetCompatibilityReadinessAnalyzer.reconcile(preliminaryNegotiation, manifests)
             val selection = TargetCompatibilityReadinessAnalyzer.reconcile(preliminarySelection, manifests)

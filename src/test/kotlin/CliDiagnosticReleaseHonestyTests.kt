@@ -1,6 +1,4 @@
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.PrintStream
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,7 +12,11 @@ import org.flowlang.artifacts.StandardComplianceAnalyzer
 import org.flowlang.artifacts.StandardContractIndexAnalyzer
 import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.cli.Json
-import org.flowlang.cli.honest.runCli
+import org.flowlang.cli.honest.CliArtifactRole
+import org.flowlang.cli.honest.CliDiagnosticCode
+import org.flowlang.cli.honest.CliExecutionResult
+import org.flowlang.cli.honest.executeCli
+import org.flowlang.materialization.TargetSelectionOrigin
 import org.flowlang.release.ReleaseMetadataHonestyAuthority
 import org.flowlang.standard.DiagnosticCoverageAnalyzer
 import org.flowlang.standard.FlowStandardVersions
@@ -24,20 +26,18 @@ class CliDiagnosticReleaseHonestyTests {
     fun intentWithoutTargetProducesOnlyTargetNeutralPlanningEvidence() {
         val output = Files.createTempDirectory("flow-target-neutral-cli").toFile()
         try {
-            val capture = captureStdout {
-                runCli(arrayOf(
-                    "intent",
-                    "examples/intent/build-test-deploy.intent.yaml",
-                    "--out", output.path
-                ))
-            }
+            val result = executeCli(arrayOf(
+                "intent",
+                "examples/intent/build-test-deploy.intent.yaml",
+                "--out", output.path
+            ))
 
-            assertEquals(0, capture.status)
-            assertTrue(capture.text.contains("TARGET-NEUTRAL PLANNING EVIDENCE"))
-            assertFalse(capture.text.contains("TARGET MANIFEST EVIDENCE"))
+            assertTrue(result is CliExecutionResult.TargetNeutral)
+            assertEquals(0, result.exitCode)
+            assertTrue(result.artifacts.any { it.role == CliArtifactRole.TARGET_NEUTRAL_PLANNING && it.persisted })
+            assertTrue(result.artifacts.none { it.role == CliArtifactRole.TARGET_MANIFEST || it.role == CliArtifactRole.RENDERED_TARGET })
             assertTrue(File(output, "target-neutral-planning-report.json").isFile)
             assertFalse(File(output, "target-manifest.json").exists())
-            assertFalse(File(output, "Jenkinsfile").exists())
             val planning = Json.mapper.readTree(File(output, "target-neutral-planning-report.json"))
             assertFalse(planning.path("targetSelected").asBoolean(true))
         } finally {
@@ -49,22 +49,23 @@ class CliDiagnosticReleaseHonestyTests {
     fun intentExportDoesNotRenderWithoutExplicitRequest() {
         val output = Files.createTempDirectory("flow-honest-cli").toFile()
         try {
-            val capture = captureStdout {
-                runCli(arrayOf(
-                    "intent",
-                    "examples/intent/build-test-deploy.intent.yaml",
-                    "--target", "jenkins",
-                    "--out", output.path
-                ))
-            }
+            val result = executeCli(arrayOf(
+                "intent",
+                "examples/intent/build-test-deploy.intent.yaml",
+                "--target", "jenkins",
+                "--out", output.path
+            ))
 
-            assertEquals(0, capture.status)
-            assertTrue(capture.text.contains("TARGET MANIFEST EVIDENCE"))
-            assertTrue(capture.text.contains("TARGET RENDER READINESS"))
-            assertTrue(capture.text.contains("TARGET OUTPUT NOT RENDERED"))
-            assertFalse(capture.text.contains("TARGET MANIFEST READY"))
+            assertTrue(result is CliExecutionResult.Targeted)
+            assertEquals(0, result.exitCode)
+            assertEquals(TargetSelectionOrigin.CLI_OPTION, result.selection.evidence.origin)
+            assertEquals("cli:--target", result.selection.evidence.source)
+            assertTrue(result.artifacts.any { it.role == CliArtifactRole.TARGET_MANIFEST && it.persisted })
+            assertTrue(result.artifacts.any { it.name == "target-selection-evidence.json" && it.persisted })
+            assertTrue(result.artifacts.none { it.role == CliArtifactRole.RENDERED_TARGET })
             assertFalse(File(output, "Jenkinsfile").exists())
             assertTrue(File(output, "target-manifest.json").isFile)
+            assertTrue(File(output, "target-selection-evidence.json").isFile)
             assertTrue(File(output, "cli-target-outcome.json").isFile)
             assertTrue(File(output, "target-render-readiness.json").isFile)
 
@@ -82,24 +83,24 @@ class CliDiagnosticReleaseHonestyTests {
         val parent = Files.createTempDirectory("flow-blocked-render").toFile()
         val output = File(parent, "result")
         try {
-            val capture = captureStdout {
-                runCli(arrayOf(
-                    "intent",
-                    "examples/intent/build-test-deploy.intent.yaml",
-                    "--target", "jenkins",
-                    "--render",
-                    "--out", output.path
-                ))
-            }
+            val result = executeCli(arrayOf(
+                "intent",
+                "examples/intent/build-test-deploy.intent.yaml",
+                "--target", "jenkins",
+                "--render",
+                "--out", output.path
+            ))
 
-            assertEquals(3, capture.status)
-            assertTrue(capture.text.contains("CLI_RENDER_NOT_AUTHORIZED"))
+            assertTrue(result is CliExecutionResult.Targeted)
+            assertEquals(3, result.exitCode)
+            assertTrue(result.evidence.diagnostics.any { it.code == "CLI_RENDER_NOT_AUTHORIZED" })
             assertTrue(output.isDirectory)
             assertTrue(File(output, "target-manifest.json").isFile)
-            assertTrue(File(output, "cli-target-outcome.json").isFile)
-            assertFalse(File(output, "Jenkinsfile").exists())
+            assertTrue(File(output, "target-selection-evidence.json").isFile)
+            assertFalse(result.artifacts.any { it.role == CliArtifactRole.RENDERED_TARGET })
             val outcome = Json.mapper.readTree(File(output, "cli-target-outcome.json"))
             assertEquals("REVIEW_ONLY", outcome.path("outcome").asText())
+            assertEquals("CLI_OPTION", outcome.path("targetSelection").path("origin").asText())
             assertTrue(outcome.path("renderRequested").asBoolean())
             assertFalse(outcome.path("renderAuthorized").asBoolean(true))
         } finally {
@@ -108,26 +109,27 @@ class CliDiagnosticReleaseHonestyTests {
     }
 
     @Test
-    fun renderWithoutTargetFailsAsStructuredDiagnosticWithoutStackTrace() {
-        val capture = captureStdout {
-            runCli(arrayOf("intent", "examples/intent/build-test-deploy.intent.yaml", "--render"))
-        }
+    fun renderWithoutTargetFailsAsTypedDiagnostic() {
+        val result = executeCli(arrayOf("intent", "examples/intent/build-test-deploy.intent.yaml", "--render"))
 
-        assertEquals(2, capture.status)
-        assertTrue(capture.text.contains("CLI_INVALID_INPUT"))
-        assertTrue(capture.text.contains("--render requires an explicit --target"))
-        assertFalse(capture.text.contains("Exception in thread"))
-        assertFalse(capture.text.contains("at org.flowlang"))
+        assertTrue(result is CliExecutionResult.Rejected)
+        assertEquals(2, result.exitCode)
+        assertEquals(CliDiagnosticCode.TARGET_REQUIRED_FOR_RENDER, result.diagnostic.code)
+        assertTrue(result.diagnostic.message.contains("requires an explicit target selection"))
+        assertTrue(result.artifacts.isEmpty())
     }
 
     @Test
     fun unknownCommandDoesNotFallBackToLegacyCli() {
-        val capture = captureStdout { runCli(arrayOf("jenkins")) }
+        val result = executeCli(arrayOf("jenkins"))
 
-        assertEquals(2, capture.status)
-        assertTrue(capture.text.contains("Unknown command 'jenkins'"))
-        assertFalse(capture.text.contains("CANONICAL TARGET MANIFESTS"))
-        assertFalse(File("src/main/kotlin/org/flowlang/cli/FlowCli.kt").exists())
+        assertTrue(result is CliExecutionResult.Rejected)
+        assertEquals(CliDiagnosticCode.UNKNOWN_COMMAND, result.diagnostic.code)
+        assertTrue(result.diagnostic.message.contains("Unknown command 'jenkins'"))
+        assertTrue(
+            Thread.currentThread().contextClassLoader.getResource("org/flowlang/cli/FlowCliKt.class") == null,
+            "The removed legacy CLI entrypoint must not exist on the compiled classpath."
+        )
     }
 
     @Test
@@ -170,7 +172,7 @@ class CliDiagnosticReleaseHonestyTests {
         assertEquals("PASS", report.status)
         assertEquals(FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION, report.implementationPackageVersion)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.publicStandardVersion)
-        assertEquals("0.9.7.9.8", report.completedCorrectionItem)
+        assertEquals("0.9.7.9.9", report.completedCorrectionItem)
         assertEquals("0.9.7.10", report.nextCoreItem)
         assertTrue(report.failedChecks.isEmpty())
     }
@@ -178,6 +180,7 @@ class CliDiagnosticReleaseHonestyTests {
     @Test
     fun staleBoundedCorrectionCannotBeHiddenByCorrectParentRoadmapState() {
         val root = Files.createTempDirectory("flow-release-metadata-drift").toFile()
+        val correctionPath = ".flow-agent/work-packages/v0.9.7.9.9-parser-conformance-architecture-integrity.yaml"
         try {
             listOf(
                 "build.gradle.kts",
@@ -186,18 +189,18 @@ class CliDiagnosticReleaseHonestyTests {
                 ".flow-agent/release-state.yaml",
                 ".flow-agent/roadmap.yaml",
                 ".flow-agent/roadmap-core-v0.9.7.9.yaml",
-                ".flow-agent/work-packages/v0.9.7.9.8-closure-blocking-integrity.yaml"
+                correctionPath
             ).forEach { path ->
                 val source = File(path)
                 val destination = File(root, path)
                 destination.parentFile?.mkdirs()
                 source.copyTo(destination, overwrite = true)
             }
-            val workPackage = File(root, ".flow-agent/work-packages/v0.9.7.9.8-closure-blocking-integrity.yaml")
+            val workPackage = File(root, correctionPath)
             workPackage.writeText(
                 workPackage.readText().replace(
-                    "version: \"0.9.7.9.8\"",
-                    "version: \"0.9.7.9.7\""
+                    "version: \"0.9.7.9.9\"",
+                    "version: \"0.9.7.9.8\""
                 )
             )
 
@@ -206,7 +209,7 @@ class CliDiagnosticReleaseHonestyTests {
             assertEquals("FAIL", report.status)
             assertTrue("release.work-package.correction-item" in report.failedChecks)
             assertEquals(
-                "0.9.7.9.7",
+                "0.9.7.9.8",
                 report.checks.single { it.id == "release.work-package.correction-item" }.observed
             )
             assertEquals("PASS", report.checks.single { it.id == "release.state.parent-item" }.status)
@@ -215,16 +218,4 @@ class CliDiagnosticReleaseHonestyTests {
         }
     }
 
-    private fun captureStdout(block: () -> Int): CapturedCli {
-        val original = System.out
-        val bytes = ByteArrayOutputStream()
-        System.setOut(PrintStream(bytes, true, Charsets.UTF_8))
-        return try {
-            CapturedCli(block(), bytes.toString(Charsets.UTF_8))
-        } finally {
-            System.setOut(original)
-        }
-    }
-
-    private data class CapturedCli(val status: Int, val text: String)
 }

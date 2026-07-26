@@ -46,11 +46,11 @@ import org.flowlang.topology.PlanningTopologyAuthority
 class ProviderBackedApprovalTopologyIdentityTests {
     @Test
     fun jenkinsApprovalIsNativeOnlyWithOwnedProviderPayload() {
-        val manifest = pipeline(
+        val manifest = generateManifest(
             target = "jenkins",
             generator = JenkinsManifestGenerator(),
             renderer = JenkinsManifestRenderer()
-        ).generate(approvalPlan(), "jenkins")
+        )
         val step = manifest.jobs.single().steps.single()
         val payload = assertNotNull(step.rendererPayload)
 
@@ -69,11 +69,11 @@ class ProviderBackedApprovalTopologyIdentityTests {
     @Test
     fun missingProviderContractCannotClaimNativeApproval() {
         val generator = JenkinsManifestGenerator(TargetNativeProjectionCatalog.empty("jenkins"))
-        val manifest = pipeline(
+        val manifest = generateManifest(
             target = "jenkins",
             generator = generator,
             renderer = JenkinsManifestRenderer()
-        ).generate(approvalPlan(), "jenkins")
+        )
         val step = manifest.jobs.single().steps.single()
         val readiness = TargetRenderPolicy.evaluate(manifest)
 
@@ -87,11 +87,11 @@ class ProviderBackedApprovalTopologyIdentityTests {
 
     @Test
     fun githubEnvironmentCapabilityDoesNotForgeStepPayloadEvidence() {
-        val manifest = pipeline(
+        val manifest = generateManifest(
             target = "github-actions",
             generator = GitHubActionsManifestGenerator(),
             renderer = GitHubActionsManifestRenderer()
-        ).generate(approvalPlan(), "github-actions")
+        )
         val step = manifest.jobs.single().steps.single()
 
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, step.materialization.status)
@@ -213,11 +213,11 @@ class ProviderBackedApprovalTopologyIdentityTests {
         assertEquals("topology.workflowScope.release", requirement.id)
     }
 
-    private fun pipeline(
+    private fun generateManifest(
         target: String,
         generator: TargetManifestGenerator,
         renderer: TargetManifestRenderer
-    ): TargetManifestGenerationPipeline {
+    ): TargetManifest {
         val capability = TargetCapability(
             target = target,
             description = "Provider-backed approval test target.",
@@ -231,10 +231,11 @@ class ProviderBackedApprovalTopologyIdentityTests {
                 "test:$target#topology"
             )
         )
+        val targets = mapOf(target to capability)
         return TargetManifestGenerationPipeline(
-            targets = mapOf(target to capability),
+            targets = targets,
             projections = TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
-        )
+        ).generate(testMaterializationRequest(approvalPlan(), target, targets))
     }
 
     private fun approvalPlan(): ExecutionPlan = ExecutionPlan(

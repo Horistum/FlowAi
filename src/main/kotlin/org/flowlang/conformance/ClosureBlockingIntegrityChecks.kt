@@ -5,6 +5,10 @@ import org.flowlang.architecture.CiCdBiasInventoryAnalyzer
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
+import org.flowlang.cli.honest.CliArtifactRole
+import org.flowlang.cli.honest.CliDiagnosticCode
+import org.flowlang.cli.honest.CliExecutionResult
+import org.flowlang.cli.honest.executeCli
 import org.flowlang.controls.AuthoredControlEvidenceTextAuthority
 import org.flowlang.controls.AuthoredControlEvidenceTextStatus
 import org.flowlang.controls.CanonicalControlRequirementAuthority
@@ -127,18 +131,28 @@ internal class ClosureBlockingIntegrityChecks(
     }
 
     private fun checkCliBoundary() {
-        require(!File(rootDir, "src/main/kotlin/org/flowlang/cli/FlowCli.kt").exists()) {
-            "The legacy CLI entrypoint remains compiled in the application."
+        require(
+            Thread.currentThread().contextClassLoader.getResource("org/flowlang/cli/FlowCliKt.class") == null
+        ) { "The legacy CLI entrypoint remains on the compiled classpath." }
+
+        val missingTarget = executeCli(arrayOf(
+            "intent",
+            File(rootDir, "examples/intent/build-test-deploy.intent.yaml").path,
+            "--render"
+        ))
+        require(missingTarget is CliExecutionResult.Rejected) {
+            "Render without explicit target selection did not produce a typed rejection."
         }
-        val cli = File(rootDir, "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt").readText()
-        require(!Regex("parseOption\\(args, \\\"--target\\\"\\)\\s*\\?:\\s*\\\"jenkins\\\"").containsMatchIn(cli)) {
-            "The public CLI still selects Jenkins when target selection is absent."
+        require(missingTarget.diagnostic.code == CliDiagnosticCode.TARGET_REQUIRED_FOR_RENDER) {
+            "Render without target returned ${missingTarget.diagnostic.code} instead of TARGET_REQUIRED_FOR_RENDER."
         }
-        require(!cli.contains("legacyMain")) {
-            "The public CLI still delegates unknown commands to a legacy entrypoint."
-        }
-        require(cli.contains("--render requires an explicit --target")) {
-            "The CLI does not expose its explicit target-selection boundary."
+        require(missingTarget.artifacts.none {
+            it.role == CliArtifactRole.TARGET_MANIFEST || it.role == CliArtifactRole.RENDERED_TARGET
+        }) { "Render without target selection exposed target artifacts." }
+
+        val unknown = executeCli(arrayOf("unknown-target-command"))
+        require(unknown is CliExecutionResult.Rejected && unknown.diagnostic.code == CliDiagnosticCode.UNKNOWN_COMMAND) {
+            "Unknown command did not remain a typed terminal rejection."
         }
 
         val intent = org.flowlang.adapters.yaml.IntentYamlLoader.load(
@@ -147,7 +161,7 @@ internal class ClosureBlockingIntegrityChecks(
         val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
         val review = CliTargetEvidenceAuthority(targets, projections).evaluate(
             plan = plan,
-            target = "github-actions",
+            explicitSelection = explicitTarget("github-actions", "conformance:closure-cli"),
             strict = false,
             renderRequested = true
         )
@@ -185,7 +199,7 @@ internal class ClosureBlockingIntegrityChecks(
         )
         val omittedFailure = runCatching {
             MandatoryMaterializationAuthority(targets, registry)
-                .authorizeDiagnosticEvidence(omitted, "jenkins")
+                .authorizeDiagnosticEvidence(diagnosticMaterializationRequest(omitted, "jenkins", "conformance:closure-topology-omitted"))
         }.exceptionOrNull()
         require(omittedFailure is InvalidPlanningEvidenceException) {
             "Omitted canonical topology did not fail at the materialization authority."
@@ -197,7 +211,7 @@ internal class ClosureBlockingIntegrityChecks(
         val withoutProvenance = plan.copy(sourceIntent = null)
         val provenanceFailure = runCatching {
             MandatoryMaterializationAuthority(targets, registry)
-                .authorizeDiagnosticEvidence(withoutProvenance, "jenkins")
+                .authorizeDiagnosticEvidence(diagnosticMaterializationRequest(withoutProvenance, "jenkins", "conformance:closure-topology-provenance"))
         }.exceptionOrNull()
         require(provenanceFailure is InvalidPlanningEvidenceException) {
             "Canonical topology without source provenance was accepted."
@@ -215,7 +229,7 @@ internal class ClosureBlockingIntegrityChecks(
         )
         val strippedFailure = runCatching {
             MandatoryMaterializationAuthority(targets, registry)
-                .authorizeDiagnosticEvidence(fullyStripped, "jenkins")
+                .authorizeDiagnosticEvidence(diagnosticMaterializationRequest(fullyStripped, "jenkins", "conformance:closure-topology-stripped"))
         }.exceptionOrNull()
         require(strippedFailure is InvalidPlanningEvidenceException) {
             "Removing both canonical claims and their source provenance hid intent-derived topology."
@@ -246,7 +260,7 @@ internal class ClosureBlockingIntegrityChecks(
         )
         val failure = runCatching {
             MandatoryMaterializationAuthority(targets, registry)
-                .authorizeDiagnosticEvidence(damaged, "jenkins")
+                .authorizeDiagnosticEvidence(diagnosticMaterializationRequest(damaged, "jenkins", "conformance:closure-derived-projection"))
         }.exceptionOrNull()
         require(failure is InvalidPlanningEvidenceException) {
             "Divergent retained dependency projections were accepted."
@@ -325,7 +339,9 @@ internal class ClosureBlockingIntegrityChecks(
 
     private fun checkCorrectionLifecycle() {
         val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
-        require(release.completedCorrectionItem == "0.9.7.9.8")
+        require(release.completedCorrectionItem.startsWith("0.9.7.9.")) {
+            "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded 0.9.7.9.x track."
+        }
         when (release.correctionStatus) {
             "active" -> {
                 require(release.parentCoreItemStatus == "correction-required")

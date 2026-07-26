@@ -107,7 +107,7 @@ class AbstractExecutionTopologyModelTests {
         )))
 
         assertFailsWith<UnresolvedExecutionTopologyException> {
-            MandatoryMaterializationAuthority(mapOf(target.target to target), modules).authorize(plan, target.target)
+            MandatoryMaterializationAuthority(mapOf(target.target to target), modules).authorize(testMaterializationRequest(plan, target.target, mapOf(target.target to target)))
         }
     }
 

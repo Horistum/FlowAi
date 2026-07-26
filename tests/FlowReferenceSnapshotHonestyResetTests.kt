@@ -44,7 +44,7 @@ class FlowReferenceSnapshotHonestyResetTests {
             )
         )
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
-        val manifest = BuiltInTargetProjections.pipeline(targets).generate(plan, compatibility.target)
+        val manifest = BuiltInTargetProjections.pipeline(targets).generate(testMaterializationRequest(plan, compatibility.target, targets))
         val readiness = TargetRenderPolicy.evaluate(manifest)
 
         assertEquals(TargetRenderMode.EXECUTABLE, readiness.mode)
@@ -110,7 +110,7 @@ class FlowReferenceSnapshotHonestyResetTests {
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "tekton")
         assertTrue(compatibility.hasErrors)
         assertFailsWith<UnresolvedExecutionTopologyException> {
-            BuiltInTargetProjections.pipeline(targets).generate(plan, compatibility.target)
+            BuiltInTargetProjections.pipeline(targets).generate(testMaterializationRequest(plan, compatibility.target, targets))
         }
     }
 

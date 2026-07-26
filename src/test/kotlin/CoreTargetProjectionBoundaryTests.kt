@@ -25,7 +25,7 @@ class CoreTargetProjectionBoundaryTests {
         val targets = mapOf("future-orchestrator" to testTargetCapability("future-orchestrator", "Synthetic future target"))
         val pipeline = TargetManifestGenerationPipeline(targets, registry)
 
-        val manifest = pipeline.generate(ExecutionPlan(flowName = "future-flow"), "future-orchestrator")
+        val manifest = pipeline.generate(testMaterializationRequest(ExecutionPlan(flowName = "future-flow"), "future-orchestrator", targets))
         val rendered = registry.requireProvider("future-orchestrator").render(manifest)
 
         assertEquals("future-orchestrator", manifest.target)
@@ -75,7 +75,7 @@ class CoreTargetProjectionBoundaryTests {
         val pipeline = TargetManifestGenerationPipeline(targets, TargetProjectionRegistry.empty())
 
         val failure = assertFailsWith<IllegalStateException> {
-            pipeline.generate(ExecutionPlan(flowName = "missing"), "missing-target")
+            pipeline.generate(testMaterializationRequest(ExecutionPlan(flowName = "missing"), "missing-target", targets))
         }
 
         assertTrue(failure.message.orEmpty().contains("No target projection provider is registered"))

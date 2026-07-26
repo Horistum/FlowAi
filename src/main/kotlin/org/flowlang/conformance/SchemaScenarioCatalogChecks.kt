@@ -11,7 +11,6 @@ import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
 import org.flowlang.cli.Json
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDecisionAnalyzer
-import org.flowlang.intent.IntentDocument
 import org.flowlang.modules.ModuleContractAnalyzer
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlanCanonicalizer
@@ -26,38 +25,45 @@ internal class SchemaScenarioCatalogChecks(
     targets: Map<String, org.flowlang.capabilities.TargetCapability>,
     projections: TargetProjectionRegistry
 ) : ConformanceCheckSupport(rootDir, registry, targets, projections) {
+    private val neutral = TargetNeutralConformanceFixture(rootDir, registry, targets)
+
     fun checks(): List<ConformanceCheck> = listOf(
         checkPublicOutputsMatchSchemas(),
         checkScenarioPackCatalog()
     )
 
     private fun checkPublicOutputsMatchSchemas(): ConformanceCheck = runCheck("schemas.public-outputs") {
-        val artifacts = buildPipeline("jenkins", strict = false)
+        val core = neutral.build()
         val schemaDir = File(rootDir, "schemas")
-        val intent = artifacts.intent as org.flowlang.intent.IntentDocument
+        val intent = core.intent
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(intent), Json.mapper.readTree(File(schemaDir, "intent.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(IntentDecisionAnalyzer(registry).analyze(intent)), Json.mapper.readTree(File(schemaDir, "intent-decision-report.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(IntentCapabilityValidator(registry).validate(intent)), Json.mapper.readTree(File(schemaDir, "intent-capability-validation-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(artifacts.ast), Json.mapper.readTree(File(schemaDir, "ast.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(artifacts.validation), Json.mapper.readTree(File(schemaDir, "validation-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(artifacts.plan), Json.mapper.readTree(File(schemaDir, "execution-plan.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ExecutionPlanCanonicalizer.canonicalize(artifacts.plan)), Json.mapper.readTree(File(schemaDir, "execution-plan.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(artifacts.compatibility), Json.mapper.readTree(File(schemaDir, "compatibility-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(CompatibilityAnalyzer(targets).negotiate(artifacts.plan)), Json.mapper.readTree(File(schemaDir, "capability-negotiation-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ExecutionReadinessAnalyzer(targets).analyze(artifacts.plan, "jenkins")), Json.mapper.readTree(File(schemaDir, "execution-readiness-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(TargetSelectionAnalyzer(targets).analyze(artifacts.plan)), Json.mapper.readTree(File(schemaDir, "target-selection-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(TargetDecisionTraceAnalyzer(targets).analyze(artifacts.plan, requestedTarget = "jenkins")), Json.mapper.readTree(File(schemaDir, "target-decision-trace-report.schema.json")))
-        val adapterContract = TargetAdapterContractAnalyzer(targets).analyze(artifacts.plan, "jenkins")
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(adapterContract), Json.mapper.readTree(File(schemaDir, "target-adapter-contract.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(adapterContract.diagnostics), Json.mapper.readTree(File(schemaDir, "adapter-diagnostics.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(core.ast), Json.mapper.readTree(File(schemaDir, "ast.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(core.validation), Json.mapper.readTree(File(schemaDir, "validation-report.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(core.plan), Json.mapper.readTree(File(schemaDir, "execution-plan.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ExecutionPlanCanonicalizer.canonicalize(core.plan)), Json.mapper.readTree(File(schemaDir, "execution-plan.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(CompatibilityAnalyzer(targets).negotiate(core.plan)), Json.mapper.readTree(File(schemaDir, "capability-negotiation-report.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(TargetSelectionAnalyzer(targets).analyze(core.plan)), Json.mapper.readTree(File(schemaDir, "target-selection-report.schema.json")))
+
+        targets.keys.sorted().forEach { target ->
+            JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(CompatibilityAnalyzer(targets).analyze(core.plan, target)), Json.mapper.readTree(File(schemaDir, "compatibility-report.schema.json")))
+            JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ExecutionReadinessAnalyzer(targets).analyze(core.plan, target)), Json.mapper.readTree(File(schemaDir, "execution-readiness-report.schema.json")))
+            JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(TargetDecisionTraceAnalyzer(targets).analyze(core.plan, requestedTarget = target)), Json.mapper.readTree(File(schemaDir, "target-decision-trace-report.schema.json")))
+            val adapterContract = TargetAdapterContractAnalyzer(targets).analyze(core.plan, target)
+            JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(adapterContract), Json.mapper.readTree(File(schemaDir, "target-adapter-contract.schema.json")))
+            JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(adapterContract.diagnostics), Json.mapper.readTree(File(schemaDir, "adapter-diagnostics.schema.json")))
+        }
+
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardDiagnosticCatalog.report()), Json.mapper.readTree(File(schemaDir, "standard-diagnostic-catalog.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceDiagnosticCoverage(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "diagnostic-coverage-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceArtifactIntegrity(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "artifact-integrity-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceContractIndex(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "standard-contract-index.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.diagnosticCoverage(core)), Json.mapper.readTree(File(schemaDir, "diagnostic-coverage-report.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.artifactIntegrity(core)), Json.mapper.readTree(File(schemaDir, "artifact-integrity-report.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.contractIndex(core)), Json.mapper.readTree(File(schemaDir, "standard-contract-index.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceReleaseProfile()), Json.mapper.readTree(File(schemaDir, "standard-release-profile.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceEvidence(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "artifact-evidence-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceCompliance(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "standard-compliance-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceFreeze(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "standard-freeze-report.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.evidence(core)), Json.mapper.readTree(File(schemaDir, "artifact-evidence-report.schema.json")))
+        val passingCompliance = neutral.compliance(core, neutral.passingManifest())
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(passingCompliance), Json.mapper.readTree(File(schemaDir, "standard-compliance-report.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.freeze(core)), Json.mapper.readTree(File(schemaDir, "standard-freeze-report.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(PublicStandardDraft.compatibilityPolicy()), Json.mapper.readTree(File(schemaDir, "compatibility-policy.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(PublicStandardDraft.referenceCorpus()), Json.mapper.readTree(File(schemaDir, "reference-corpus-index.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(PublicStandardDraft.negativeCorpus()), Json.mapper.readTree(File(schemaDir, "negative-conformance-corpus.schema.json")))
@@ -71,13 +77,15 @@ internal class SchemaScenarioCatalogChecks(
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.standardExportManifest()), Json.mapper.readTree(File(schemaDir, "standard-export-manifest.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ConformanceVectorIndexBuilder(rootDir).build()), Json.mapper.readTree(File(schemaDir, "conformance-vector-index.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardBundleVerifier().verify(standardBundleFixture())), Json.mapper.readTree(File(schemaDir, "standard-bundle-verification.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceStandardIndex(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "standard-index.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.standardIndex(core)), Json.mapper.readTree(File(schemaDir, "standard-index.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceConformanceSuite()), Json.mapper.readTree(File(schemaDir, "conformance-suite.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceDraft(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "flow-standard-draft.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceArtifactBundle(artifacts, "jenkins")), Json.mapper.readTree(File(schemaDir, "flow-artifact-bundle.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.draft(core, passingCompliance)), Json.mapper.readTree(File(schemaDir, "flow-standard-draft.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.artifactBundle(core)), Json.mapper.readTree(File(schemaDir, "flow-artifact-bundle.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ConformanceManifestBuilder(rootDir).build(ConformanceSummary(listOf(ConformanceCheck("schemas.public-outputs", true))))), Json.mapper.readTree(File(schemaDir, "conformance-manifest.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ModuleContractAnalyzer.analyze(registry)), Json.mapper.readTree(File(schemaDir, "capability-module-contract-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(artifacts.manifest), Json.mapper.readTree(File(schemaDir, "target-manifest.schema.json")))
+
+        val targetManifest = buildPipeline("jenkins", strict = false).manifest
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(targetManifest), Json.mapper.readTree(File(schemaDir, "target-manifest.schema.json")))
     }
 
     private fun checkScenarioPackCatalog(): ConformanceCheck = runCheck("scenario-packs.catalog") {

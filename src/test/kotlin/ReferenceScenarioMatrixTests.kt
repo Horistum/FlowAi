@@ -107,7 +107,7 @@ class ReferenceScenarioMatrixTests {
                         manifest = null
                     )
                     else -> {
-                        val manifest = BuiltInTargetProjections.pipeline(targets).generate(plan, target)
+                        val manifest = BuiltInTargetProjections.pipeline(targets).generate(testMaterializationRequest(plan, target, targets))
                         ReferenceAdapterProjectionMatrix.evaluate(
                             scenario = scenario,
                             target = target,
@@ -144,7 +144,7 @@ class ReferenceScenarioMatrixTests {
             if (compatibility.hasErrors) {
                 ReferenceAdapterProjectionMatrix.evaluate(scenario, target, coreBlocked = false, compatibility = compatibility)
             } else {
-                val manifest = BuiltInTargetProjections.pipeline(targets).generate(plan, target)
+                val manifest = BuiltInTargetProjections.pipeline(targets).generate(testMaterializationRequest(plan, target, targets))
                 ReferenceAdapterProjectionMatrix.evaluate(scenario, target, coreBlocked = false, compatibility = compatibility, manifest = manifest)
             }
         }

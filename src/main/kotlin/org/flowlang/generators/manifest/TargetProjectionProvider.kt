@@ -3,6 +3,8 @@ package org.flowlang.generators.manifest
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
+import org.flowlang.materialization.TargetMaterializationRequest
 
 /**
  * Target-neutral generation boundary. Concrete target implementations live outside
@@ -148,13 +150,9 @@ class TargetManifestGenerationPipeline(
 ) {
     private val authority = MandatoryMaterializationAuthority(targets)
 
-    fun generate(
-        plan: ExecutionPlan,
-        target: String,
-        strict: Boolean = false
-    ): TargetManifest {
-        val provider = projections.requireProvider(target)
-        val authorization = authority.authorize(plan, target, strict)
+    fun generate(request: TargetMaterializationRequest): TargetManifest {
+        val provider = projections.requireProvider(request.target)
+        val authorization = authority.authorize(request)
         return provider.generate(authorization)
     }
 
@@ -164,11 +162,10 @@ class TargetManifestGenerationPipeline(
      * resulting manifest is forbidden from claiming executable readiness.
      */
     fun generateDiagnosticEvidence(
-        plan: ExecutionPlan,
-        target: String
+        request: TargetDiagnosticMaterializationRequest
     ): TargetManifest {
-        val provider = projections.requireProvider(target)
-        val authorization = authority.authorizeDiagnosticEvidence(plan, target)
+        val provider = projections.requireProvider(request.target)
+        val authorization = authority.authorizeDiagnosticEvidence(request)
         return provider.generate(authorization)
     }
 }

@@ -47,7 +47,7 @@ class ClosureBlockingTopologyIntegrityTests {
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
             MandatoryMaterializationAuthority(targets, modules)
-                .authorizeDiagnosticEvidence(damaged, "jenkins")
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(damaged, "jenkins", targets))
         }
 
         assertTrue(failure.issues.any { it.code == "planning.topology.canonical.missing" })
@@ -67,7 +67,7 @@ class ClosureBlockingTopologyIntegrityTests {
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
             MandatoryMaterializationAuthority(targets, modules)
-                .authorizeDiagnosticEvidence(damaged, "jenkins")
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(damaged, "jenkins", targets))
         }
 
         assertTrue(failure.issues.any { it.code == "planning.topology.canonical.invalid" })
@@ -79,7 +79,7 @@ class ClosureBlockingTopologyIntegrityTests {
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
             MandatoryMaterializationAuthority(targets, modules)
-                .authorizeDiagnosticEvidence(damaged, "jenkins")
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(damaged, "jenkins", targets))
         }
 
         assertTrue(failure.issues.any { it.code == "planning.topology.canonical.provenance.missing" })
@@ -98,7 +98,7 @@ class ClosureBlockingTopologyIntegrityTests {
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
             MandatoryMaterializationAuthority(targets, modules)
-                .authorizeDiagnosticEvidence(damaged, "jenkins")
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(damaged, "jenkins", targets))
         }
 
         assertTrue(failure.issues.any { it.code == "planning.topology.canonical.provenance.missing" })

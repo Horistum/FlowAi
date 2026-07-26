@@ -1,7 +1,5 @@
 package org.flowlang.projection
 
-import com.fasterxml.jackson.annotation.JsonInclude
-
 /** Target-neutral projection binding vocabulary. */
 enum class ProjectionBindingKind {
     LITERAL,
@@ -29,7 +27,6 @@ enum class TaskMetadataField { ID, TARGET }
  * Registry templates omit [resolutionStatus]. Manifest generation assigns one
  * of RESOLVED, SYMBOLIC or UNRESOLVED while preserving the semantic source.
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProjectionBinding(
     val kind: ProjectionBindingKind,
     val value: String? = null,

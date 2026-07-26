@@ -20,6 +20,10 @@ import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentToAstPlanner
+import org.flowlang.materialization.ExplicitTargetSelection
+import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
+import org.flowlang.materialization.TargetMaterializationRequest
+import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.CanonicalPlanNode
 import org.flowlang.planner.FlowPlanner
@@ -55,10 +59,36 @@ internal abstract class ConformanceCheckSupport(
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target, strict = strict)
         val provider = projections.requireProvider(target)
-        val manifest = manifestPipeline.generate(plan, target, strict = strict)
+        val manifest = manifestPipeline.generate(materializationRequest(plan, target, strict, "conformance:build-pipeline"))
         val rendered = provider.render(manifest)
         return PipelineArtifacts(intent, ast, validation, plan, compatibility, manifest, rendered)
     }
+
+
+    protected fun explicitTarget(
+        target: String,
+        source: String
+    ): ExplicitTargetSelection = TargetSelectionAuthority.fromExplicitConfiguration(target, source, targets)
+
+    protected fun materializationRequest(
+        plan: ExecutionPlan,
+        target: String,
+        strict: Boolean = false,
+        source: String
+    ): TargetMaterializationRequest = TargetMaterializationRequest(
+        plan = plan,
+        selection = explicitTarget(target, source),
+        strict = strict
+    )
+
+    protected fun diagnosticMaterializationRequest(
+        plan: ExecutionPlan,
+        target: String,
+        source: String
+    ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest(
+        plan = plan,
+        selection = explicitTarget(target, source)
+    )
 
     protected fun referenceDiagnosticCoverage(artifacts: PipelineArtifacts, target: String) =
         DiagnosticCoverageAnalyzer().analyze(referenceObservedDiagnostics(artifacts, target))

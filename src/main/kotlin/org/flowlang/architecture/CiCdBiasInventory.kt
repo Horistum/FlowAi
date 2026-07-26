@@ -92,7 +92,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         val documentationEvidence = evidence.filter { it.classification == DOCUMENTATION }
         val moduleAndTargetNoteEvidence = evidence.filter { it.classification == MODULE_OR_TARGET_NOTE }
         val categories = evidence.groupingBy { it.category }.eachCount().toSortedMap()
-        val actionableEvidence = activeSemanticEvidence.filter(CiCdBiasEvidence::actionable)
+        val actionableEvidence = evidence.filter(CiCdBiasEvidence::actionable)
         val healthStatus = if (actionableEvidence.isEmpty()) "PASS" else "REVIEW_REQUIRED"
 
         return CiCdBiasInventoryReport(
@@ -182,9 +182,12 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         snippet: String,
         context: CiCdBiasLexicalContext
     ): CiCdBiasEvidence {
-        val actionable = classification == ACTIVE_SEMANTIC_SOURCE &&
+        val actionable = classification in PRODUCTION_CLASSIFICATIONS &&
             term.category in ACTIONABLE_CATEGORIES &&
-            context in setOf(CiCdBiasLexicalContext.CODE_IDENTIFIER, CiCdBiasLexicalContext.CONTROL_LITERAL)
+            context in setOf(
+                CiCdBiasLexicalContext.CODE_IDENTIFIER,
+                CiCdBiasLexicalContext.CONTROL_LITERAL
+            )
         return CiCdBiasEvidence(
             path = path,
             line = line,
@@ -261,6 +264,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         const val MODULE_OR_TARGET_NOTE = "module-or-target-note"
 
         private val ACTIONABLE_CATEGORIES = setOf("target", "infrastructure", "tool", "data-system")
+        private val PRODUCTION_CLASSIFICATIONS = setOf(ACTIVE_SEMANTIC_SOURCE, APPLICATION_COMPOSITION)
         private val retainedCompatibilitySymbols = setOf("KUBERNETES_MAINTENANCE")
 
         fun catalog(): List<CiCdBiasTerm> = listOf(

@@ -26,6 +26,7 @@ import org.flowlang.intent.IntentWorkflow
 import org.flowlang.intent.IntentWorkflowKind
 import org.flowlang.intent.StandardCapability
 import org.flowlang.lowering.IntentLoweringAuthority
+import org.flowlang.modules.CanonicalModuleLoader
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.parser.FlowParser
@@ -436,30 +437,64 @@ internal class StandardArchitectureNormalizationChecks(
 
     private fun checkCorePackagesDoNotImportJackson(): ConformanceCheck = runCheck("architecture.core-no-jackson-imports") {
         val src = File(rootDir, "src/main/kotlin/org/flowlang")
-        val coreDirs = listOf("ast", "planner", "capabilities", "standard", "core")
-        val offenders = coreDirs.flatMap { dir ->
+        val semanticPackages = listOf(
+            "ast",
+            "capabilities",
+            "controls",
+            "core",
+            "effects",
+            "identity",
+            "intent",
+            "lowering",
+            "materialization",
+            "modules",
+            "notes",
+            "planner",
+            "projection",
+            "safety",
+            "semantic",
+            "standard",
+            "topology",
+            "validator"
+        )
+        val missingPackages = semanticPackages.filterNot { File(src, it).isDirectory }
+        require(missingPackages.isEmpty()) {
+            "Semantic serialization boundary references missing packages: ${missingPackages.joinToString()}"
+        }
+        val forbiddenTokens = listOf("com.fasterxml.jackson", "org.yaml.snakeyaml", "YAMLFactory", "ObjectMapper")
+        val offenders = semanticPackages.flatMap { dir ->
             File(src, dir).walkTopDown().filter { it.isFile && it.extension == "kt" }.filter { file ->
                 val text = file.readText()
-                text.contains("com.fasterxml.jackson") || text.contains("YAMLFactory") || text.contains("ObjectMapper")
+                forbiddenTokens.any(text::contains)
             }.map { it.relativeTo(rootDir).path }.toList()
+        }.sorted()
+        require(offenders.isEmpty()) {
+            "Semantic Core packages must not import Jackson/YAML infrastructure: ${offenders.joinToString()}"
         }
-        require(offenders.isEmpty()) { "Core packages must not import Jackson/YAML: ${offenders.joinToString()}" }
     }
 
     private fun checkModulesDoNotOwnTargetRendering(): ConformanceCheck = runCheck("architecture.modules-do-not-own-target-rendering") {
         val moduleDir = File(rootDir, "modules")
-        val offenders = moduleDir.walkTopDown()
+        val descriptorFiles = moduleDir.walkTopDown()
             .filter { it.isFile && (it.extension == "yaml" || it.extension == "yml") }
-            .flatMap { file ->
-                file.readLines().mapIndexedNotNull { index, line ->
-                    val forbidden = Regex("^\\s{4}(runtime|generators):\\s*$").containsMatchIn(line) ||
-                        Regex("^\\s{8}template:\\s*").containsMatchIn(line) ||
-                        Regex("^\\s{8}entrypoint:\\s*").containsMatchIn(line)
-                    if (forbidden) "${file.relativeTo(rootDir).path}:${index + 1}:${line.trim()}" else null
+            .toList()
+            .sortedBy { it.relativeTo(rootDir).path }
+        require(descriptorFiles.isNotEmpty()) { "No canonical module descriptors were found." }
+
+        val loaded = CanonicalModuleLoader.loadDirectory(moduleDir)
+        require(loaded.size == descriptorFiles.size) {
+            "Canonical module loading did not account for every descriptor: files=${descriptorFiles.size}, modules=${loaded.size}."
+        }
+        require(loaded.all { module ->
+            module.actions.values.all { action ->
+                action.requiredCapabilities.none { capability ->
+                    capability.contains("jenkins", ignoreCase = true) ||
+                        capability.contains("github-actions", ignoreCase = true) ||
+                        capability.contains("tekton", ignoreCase = true)
                 }
-            }.toList()
-        require(offenders.isEmpty()) {
-            "Module descriptors must describe capabilities/effects/safety, not runtime hooks or renderer templates: ${offenders.joinToString()}"
+            }
+        }) {
+            "Canonical module contracts contain target-owned capability vocabulary."
         }
     }
 

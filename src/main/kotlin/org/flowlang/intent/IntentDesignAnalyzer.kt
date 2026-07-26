@@ -116,7 +116,7 @@ class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry
 
         val portability = mutableListOf<String>()
         if (steps.any { it.capability == StandardCapability.APPROVE } || intent.policies.any { it.type == IntentPolicyType.APPROVAL }) {
-            portability += "Approval semantics differ by target. Jenkins/GitHub/Azure have native options; Tekton usually requires an external gate."
+            portability += "Approval materialization varies by target and requires either a provider-backed native approval contract or explicit external-gate evidence."
         }
         if (steps.any { it.requires.isNotEmpty() }) portability += "Intent uses DAG dependencies through requires; target generator must preserve dependency semantics."
         if (resolution.bindings.any { it.status == IntentBindingStatus.RESOLVED }) portability += "Explicit module bindings are implementation evidence and do not alter canonical intent meaning."
