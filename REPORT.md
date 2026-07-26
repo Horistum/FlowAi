@@ -5,15 +5,15 @@ Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
-Core roadmap item status: `correction-required`
-Active correction item: `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity`
-Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`blocked`)
+Core roadmap item status: `completed`
+Completed correction item: `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity`
+Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
 
 ## Active direction
 
 Core, implementation and conformance planning remain separate authorities. Existing executable reference evidence stays active as falsification feedback and does not define Core meaning. Package, public-standard, artifact-contract and bounded-work versions remain independent axes.
 
-PR #88 completed the typed target-selection and CLI-result boundary, but a post-merge audit found a dead duplicate CLI composition facade that could relabel `CompatibilityReport.target` as `EXPLICIT_CONFIGURATION`. The same audit proved that target-selection origins were not mechanically closed and that a `BLOCKED` CLI result could return process success. Bounded correction `0.9.7.9.10` is therefore active; closure remains blocked until the repaired public head and its synthetic merge candidate pass independent validation.
+PR #88 completed the typed target-selection and CLI-result boundary, but a post-merge audit found a dead duplicate CLI composition facade that could relabel `CompatibilityReport.target` as `EXPLICIT_CONFIGURATION`. Bounded correction `0.9.7.9.10` removed that facade, closed explicit-configuration source categories and derived CLI process status from typed outcomes. Flow CI #2100 independently passed the public implementation head and synthetic merge candidate. The correction is complete, the parent item is restored to completed and the bounded closure gate is again next; completion metadata still requires its own dual validation before review readiness.
 
 ## Correction ledger
 
@@ -26,7 +26,7 @@ PR #88 completed the typed target-selection and CLI-result boundary, but a post-
 7. `0.9.7.9.7 CLI Diagnostic and Release Honesty` separated manifest evidence, render authorization and staged release publication.
 8. `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity` repaired the previously known closure blockers and completed after dual validation.
 9. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity` repaired parser, conformance, serialization, module governance, target-selection, CLI-result and application-composition integrity and completed after public dual validation.
-10. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity` removes the dead composition facade, closes configuration-source provenance and separates review from blocked process status.
+10. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity` removed the dead composition facade, closed configuration-source provenance and separated review from blocked process status.
 
 ## v0.9.7.9.8 retained implementation boundary
 
@@ -90,7 +90,7 @@ PR #88 completed the typed target-selection and CLI-result boundary, but a post-
 - CLI execution uses sealed typed outcomes, stable diagnostic codes and semantic artifact roles before presentation.
 - CLI and release application composition are covered by production coupling governance rather than an automatic directory exemption.
 
-## v0.9.7.9.10 active implementation boundary
+## v0.9.7.9.10 implementation boundary
 
 ### Target-selection provenance
 
@@ -122,9 +122,9 @@ PR #88 completed the typed target-selection and CLI-result boundary, but a post-
 6. `0.9.7.6 Universal Effect and State Transition Model` completed
 7. `0.9.7.7 Universal Control and Policy Requirements` completed
 8. `0.9.7.8 Abstract Execution Topology Model` completed
-9. `0.9.7.9 Intent Lowering and Diagnostic Honesty` correction-required
-10. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity` active
-11. `0.9.7.10 Bounded Semantic Closure Gate` blocked
+9. `0.9.7.9 Intent Lowering and Diagnostic Honesty` completed
+10. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity` completed
+11. `0.9.7.10 Bounded Semantic Closure Gate` next
 
 ## Validation
 
@@ -134,7 +134,9 @@ Historical correction validation: Flow CI #2025, run `30144935197`, passed exact
 
 Historical `0.9.7.9.9` validation: Flow CI #2087, run `30167146445`, passed exact implementation head `54889f7907f1d95b900466fd438f9965ca24dbbe` and synthetic merge candidate `6dcd266e20638fcbb717e6582da711331251bd37`; Flow CI #2094 validated completion metadata before PR #88 merged.
 
-No passing validation is yet claimed for `0.9.7.9.10`. The public implementation head and its synthetic merge candidate must pass independently before completion metadata is written.
+Current correction implementation validation: Flow CI #2100, run `30187033448`, passed exact implementation head `155a61b5fc5a1e54da5677eab23eff516e215078` and synthetic merge candidate `ce75e032d8c6a807e1aa368b3fdeab19c9d154bb`, including complete tests and standalone conformance.
+
+The completion-metadata head must independently pass both Flow CI jobs before the pull request is marked ready for review.
 
 ## Architecture boundary
 
