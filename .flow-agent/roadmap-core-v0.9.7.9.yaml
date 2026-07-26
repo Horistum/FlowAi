@@ -171,7 +171,7 @@ items:
   - version: 0.9.7.9
     name: Intent Lowering and Diagnostic Honesty
     type: lowering-integrity
-    status: correction-required
+    status: completed
     purpose: Preserve or diagnose every meaningful input.
     universalInvariant: Accepted information never disappears silently.
     forbiddenScope:
@@ -184,12 +184,13 @@ items:
       - Bounded corrections 0.9.7.9.1 through 0.9.7.9.9 repaired confirmed lowering, identity, approval, governance, release, safety, diagnostic and architecture defects.
       - Flow CI #2087 and #2094 validated the implementation and completion-metadata boundaries later merged through PR #88.
       - A post-merge audit then proved that a dead CLI composition facade could relabel CompatibilityReport.target as EXPLICIT_CONFIGURATION, TargetSelectionOrigin lacked a closed-set guard, and BLOCKED CLI outcomes could return success.
-      - Bounded correction 0.9.7.9.10 is active to repair target-selection provenance and CLI process-status integrity.
-      - The public implementation head and a later completion-metadata head must each independently pass exact-head and synthetic merge-candidate validation before this item can return to completed.
+      - Bounded correction 0.9.7.9.10 removed the duplicate CLI pipeline, closed explicit-configuration source categories and derived process status from typed outcomes.
+      - Flow CI #2100, run 30187033448, passed exact implementation head 155a61b5fc5a1e54da5677eab23eff516e215078 and independently passed synthetic merge candidate ce75e032d8c6a807e1aa368b3fdeab19c9d154bb.
+      - The completion-metadata head must pass the same independent exact-head and merge-candidate workflow before the pull request is ready for review.
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: blocked
+    status: next
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
