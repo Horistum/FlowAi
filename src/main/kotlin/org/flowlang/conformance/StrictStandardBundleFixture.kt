@@ -6,8 +6,8 @@ import org.flowlang.cli.Json
 import org.flowlang.standard.FlowStandardVersions
 import java.io.File
 
-/** Builds a structurally valid exported standard bundle for verifier conformance. */
-internal object StrictStandardBundleFixture {
+/** Builds a structurally valid exported standard bundle for verifier conformance and tests. */
+object StrictStandardBundleFixture {
     fun create(rootDir: File): File {
         val dir = File(System.getProperty("java.io.tmpdir"), "flow-standard-bundle-${System.nanoTime()}")
         dir.mkdirs()
