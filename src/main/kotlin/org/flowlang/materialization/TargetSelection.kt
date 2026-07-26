@@ -17,6 +17,70 @@ enum class TargetSelectionOrigin {
     EXPLICIT_CONFIGURATION
 }
 
+/**
+ * Closed vocabulary for explicit configuration sources.
+ *
+ * A configuration category is selected by type rather than by an arbitrary
+ * caller-authored label. The stable [evidenceId] remains serializable evidence.
+ */
+sealed interface ExplicitConfigurationSource {
+    val evidenceId: String
+
+    data class ReferenceSnapshot internal constructor(
+        val scenarioId: String
+    ) : ExplicitConfigurationSource {
+        init {
+            requireSourceComponent(scenarioId, "Reference snapshot scenario id")
+        }
+
+        override val evidenceId: String = "reference-snapshot:$scenarioId"
+    }
+
+    data class ConformanceCheck internal constructor(
+        val checkId: String
+    ) : ExplicitConfigurationSource {
+        init {
+            requireSourceComponent(checkId, "Conformance check id")
+        }
+
+        override val evidenceId: String = "conformance:$checkId"
+    }
+
+    data class TestFixture internal constructor(
+        val fixtureId: String
+    ) : ExplicitConfigurationSource {
+        init {
+            requireSourceComponent(fixtureId, "Test fixture id")
+        }
+
+        override val evidenceId: String = "test:$fixtureId"
+    }
+
+    companion object {
+        fun referenceSnapshot(scenarioId: String): ExplicitConfigurationSource =
+            ReferenceSnapshot(requireSourceComponent(scenarioId, "Reference snapshot scenario id"))
+
+        internal fun conformanceCheck(checkId: String): ExplicitConfigurationSource =
+            ConformanceCheck(requireSourceComponent(checkId, "Conformance check id"))
+
+        internal fun testFixture(fixtureId: String): ExplicitConfigurationSource =
+            TestFixture(requireSourceComponent(fixtureId, "Test fixture id"))
+
+        internal fun parseLegacy(source: String): ExplicitConfigurationSource {
+            val normalized = source.trim()
+            return when {
+                normalized.startsWith("reference-snapshot:") ->
+                    referenceSnapshot(normalized.removePrefix("reference-snapshot:"))
+                normalized.startsWith("conformance:") ->
+                    conformanceCheck(normalized.removePrefix("conformance:"))
+                normalized.startsWith("test:") ->
+                    testFixture(normalized.removePrefix("test:"))
+                else -> throw UnsupportedExplicitConfigurationSourceException(normalized)
+            }
+        }
+    }
+}
+
 data class TargetSelectionEvidence(
     val target: String,
     val origin: TargetSelectionOrigin,
@@ -64,19 +128,59 @@ object TargetSelectionAuthority {
     ): ExplicitTargetSelection = issue(
         value = value,
         origin = TargetSelectionOrigin.INTENT_DECLARATION,
-        source = sourcePath,
+        source = requireSourceComponent(sourcePath, "Intent target source path"),
         targets = targets
     )
 
-    fun fromExplicitConfiguration(
+    fun fromReferenceSnapshot(
+        value: String,
+        scenarioId: String,
+        targets: Map<String, TargetCapability>
+    ): ExplicitTargetSelection = issueExplicitConfiguration(
+        value,
+        ExplicitConfigurationSource.referenceSnapshot(scenarioId),
+        targets
+    )
+
+    internal fun fromConformanceCheck(
+        value: String,
+        checkId: String,
+        targets: Map<String, TargetCapability>
+    ): ExplicitTargetSelection = issueExplicitConfiguration(
+        value,
+        ExplicitConfigurationSource.conformanceCheck(checkId.removePrefix("conformance:")),
+        targets
+    )
+
+    internal fun fromTestFixture(
+        value: String,
+        fixtureId: String,
+        targets: Map<String, TargetCapability>
+    ): ExplicitTargetSelection = issueExplicitConfiguration(
+        value,
+        ExplicitConfigurationSource.testFixture(fixtureId.removePrefix("test:")),
+        targets
+    )
+
+    /**
+     * Transitional adapter for the existing conformance support layer.
+     *
+     * Unlike the former API, this method does not accept an arbitrary source label.
+     * Only the closed configuration-source vocabulary is recognized and every
+     * unknown category fails before selection evidence can be issued.
+     */
+    @Deprecated(
+        message = "Use the typed source-specific target selection factory.",
+        level = DeprecationLevel.WARNING
+    )
+    internal fun fromExplicitConfiguration(
         value: String,
         source: String,
         targets: Map<String, TargetCapability>
-    ): ExplicitTargetSelection = issue(
-        value = value,
-        origin = TargetSelectionOrigin.EXPLICIT_CONFIGURATION,
-        source = source,
-        targets = targets
+    ): ExplicitTargetSelection = issueExplicitConfiguration(
+        value,
+        ExplicitConfigurationSource.parseLegacy(source),
+        targets
     )
 
     fun requireSelected(
@@ -86,6 +190,17 @@ object TargetSelectionAuthority {
         TargetSelectionDecision.NotSelected -> throw MissingExplicitTargetSelectionException(operation)
         is TargetSelectionDecision.Selected -> decision.selection
     }
+
+    private fun issueExplicitConfiguration(
+        value: String,
+        source: ExplicitConfigurationSource,
+        targets: Map<String, TargetCapability>
+    ): ExplicitTargetSelection = issue(
+        value = value,
+        origin = TargetSelectionOrigin.EXPLICIT_CONFIGURATION,
+        source = source.evidenceId,
+        targets = targets
+    )
 
     private fun issue(
         value: String,
@@ -117,6 +232,10 @@ class UnknownExplicitTargetSelectionException(
     availableTargets: List<String>
 ) : IllegalArgumentException(
     "Unknown target '$target'. Available targets: ${availableTargets.joinToString().ifBlank { "none" }}."
+)
+
+class UnsupportedExplicitConfigurationSourceException(source: String) : IllegalArgumentException(
+    "Unsupported explicit target configuration source '$source'. Use a typed reference-snapshot, conformance or test source."
 )
 
 data class TargetMaterializationRequest(
@@ -153,4 +272,11 @@ data class TargetSelectionEvidenceReport(
                 source = selection.evidence.source
             )
     }
+}
+
+private fun requireSourceComponent(value: String, label: String): String {
+    val normalized = value.trim()
+    require(normalized.isNotEmpty()) { "$label must not be blank." }
+    require('\n' !in normalized && '\r' !in normalized) { "$label must be a single line." }
+    return normalized
 }
