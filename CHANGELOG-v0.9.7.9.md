@@ -107,8 +107,9 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 - Derives CLI process status from sealed outcomes: success `0`, invalid input `2`, review required `3`, blocked `4` and internal error `70`.
 - Removes the caller-supplied exit-code parameter from successful CLI results.
 - Adds classpath proof that only the canonical `org.flowlang.generators.manifest.TargetManifestGenerationPipeline` is compiled.
-- Status: active; no passing validation claim has been recorded.
+- Validation: Flow CI `#2100`, run `30187033448`, passed exact implementation head `155a61b5fc5a1e54da5677eab23eff516e215078` and independently passed synthetic merge candidate `ce75e032d8c6a807e1aa368b3fdeab19c9d154bb`, including complete tests and standalone conformance.
+- Status: complete on implementation evidence; completion metadata still requires the same dual workflow before review readiness.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` is `correction-required`. `0.9.7.10 Bounded Semantic Closure Gate` is `blocked` while `0.9.7.9.10` is active. Package, public-standard and artifact-contract versions remain unchanged.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is `next`. Package, public-standard and artifact-contract versions remain unchanged.
