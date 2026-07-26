@@ -3,6 +3,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
@@ -122,14 +123,17 @@ class CoreTargetProjectionBoundaryTests {
     }
 
     @Test
-    fun compositionRootsUseExplicitBuiltInProjectionComposition() {
-        val cliComposition = File("src/main/kotlin/org/flowlang/cli/CliTargetProjectionComposition.kt").readText()
+    fun compositionRootsUseOnlyTheCanonicalProjectionPipeline() {
         val referenceGenerator = File(
             "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
         ).readText()
+        val loader = Thread.currentThread().contextClassLoader
 
-        assertTrue(cliComposition.contains("BuiltInTargetProjections.pipeline(targets)"))
+        assertFalse(File("src/main/kotlin/org/flowlang/cli/CliTargetProjectionComposition.kt").exists())
+        assertTrue(loader.getResource("org/flowlang/cli/TargetManifestGenerationPipeline.class") == null)
+        assertNotNull(loader.getResource("org/flowlang/generators/manifest/TargetManifestGenerationPipeline.class"))
         assertTrue(referenceGenerator.contains("BuiltInTargetProjections.registry"))
+        assertTrue(referenceGenerator.contains("TargetSelectionAuthority.fromReferenceSnapshot"))
         assertTrue(referenceGenerator.contains("projections.requireProvider(target)"))
         assertFalse(referenceGenerator.contains("when (manifest.target)"))
     }
