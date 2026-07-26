@@ -172,15 +172,18 @@ class CliDiagnosticReleaseHonestyTests {
         assertEquals("PASS", report.status)
         assertEquals(FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION, report.implementationPackageVersion)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.publicStandardVersion)
-        assertEquals("0.9.7.9.9", report.completedCorrectionItem)
+        assertEquals("0.9.7.9.10", report.completedCorrectionItem)
+        assertEquals("active", report.correctionStatus)
+        assertEquals("correction-required", report.parentCoreItemStatus)
         assertEquals("0.9.7.10", report.nextCoreItem)
+        assertEquals("blocked", report.closureStatus)
         assertTrue(report.failedChecks.isEmpty())
     }
 
     @Test
     fun staleBoundedCorrectionCannotBeHiddenByCorrectParentRoadmapState() {
         val root = Files.createTempDirectory("flow-release-metadata-drift").toFile()
-        val correctionPath = ".flow-agent/work-packages/v0.9.7.9.9-parser-conformance-architecture-integrity.yaml"
+        val correctionPath = ".flow-agent/work-packages/v0.9.7.9.10-target-selection-provenance-cli-status-integrity.yaml"
         try {
             listOf(
                 "build.gradle.kts",
@@ -199,8 +202,8 @@ class CliDiagnosticReleaseHonestyTests {
             val workPackage = File(root, correctionPath)
             workPackage.writeText(
                 workPackage.readText().replace(
-                    "version: \"0.9.7.9.9\"",
-                    "version: \"0.9.7.9.8\""
+                    "version: \"0.9.7.9.10\"",
+                    "version: \"0.9.7.9.9\""
                 )
             )
 
@@ -209,7 +212,7 @@ class CliDiagnosticReleaseHonestyTests {
             assertEquals("FAIL", report.status)
             assertTrue("release.work-package.correction-item" in report.failedChecks)
             assertEquals(
-                "0.9.7.9.8",
+                "0.9.7.9.9",
                 report.checks.single { it.id == "release.work-package.correction-item" }.observed
             )
             assertEquals("PASS", report.checks.single { it.id == "release.state.parent-item" }.status)
@@ -217,5 +220,4 @@ class CliDiagnosticReleaseHonestyTests {
             root.deleteRecursively()
         }
     }
-
 }
