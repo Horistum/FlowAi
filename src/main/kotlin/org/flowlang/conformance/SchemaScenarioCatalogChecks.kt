@@ -1,23 +1,23 @@
 package org.flowlang.conformance
 
+import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
+import org.flowlang.artifacts.PublicStandardDraft
+import org.flowlang.artifacts.StandardBundleVerifier
+import org.flowlang.artifacts.StandardSurface
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.TargetDecisionTraceAnalyzer
 import org.flowlang.capabilities.TargetSelectionAnalyzer
-import org.flowlang.artifacts.StandardBundleVerifier
-import org.flowlang.artifacts.StandardSurface
-import org.flowlang.artifacts.PublicStandardDraft
-import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
 import org.flowlang.cli.Json
+import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDecisionAnalyzer
 import org.flowlang.modules.ModuleContractAnalyzer
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlanCanonicalizer
-import org.flowlang.standard.StandardDiagnosticCatalog
 import org.flowlang.scenarios.ScenarioPackRegistry
+import org.flowlang.standard.StandardDiagnosticCatalog
 import java.io.File
-import org.flowlang.generators.manifest.TargetProjectionRegistry
 
 internal class SchemaScenarioCatalogChecks(
     rootDir: File,
@@ -76,7 +76,7 @@ internal class SchemaScenarioCatalogChecks(
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.conformanceLevels()), Json.mapper.readTree(File(schemaDir, "conformance-levels.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.standardExportManifest()), Json.mapper.readTree(File(schemaDir, "standard-export-manifest.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ConformanceVectorIndexBuilder(rootDir).build()), Json.mapper.readTree(File(schemaDir, "conformance-vector-index.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardBundleVerifier().verify(standardBundleFixture())), Json.mapper.readTree(File(schemaDir, "standard-bundle-verification.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardBundleVerifier().verify(StrictStandardBundleFixture.create(rootDir))), Json.mapper.readTree(File(schemaDir, "standard-bundle-verification.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.standardIndex(core)), Json.mapper.readTree(File(schemaDir, "standard-index.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceConformanceSuite()), Json.mapper.readTree(File(schemaDir, "conformance-suite.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.draft(core, passingCompliance)), Json.mapper.readTree(File(schemaDir, "flow-standard-draft.schema.json")))
