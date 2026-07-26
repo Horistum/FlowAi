@@ -1,11 +1,14 @@
+import com.fasterxml.jackson.databind.node.ArrayNode
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.flowlang.artifacts.StandardBundleVerifier
 import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.artifacts.StandardSurface
+import org.flowlang.cli.Json
+import org.flowlang.conformance.StrictStandardBundleFixture
 import org.flowlang.standard.FlowStandardVersions
-import java.io.File
 
 class FlowStandardBundleVerifierTests {
     @Test
@@ -15,7 +18,7 @@ class FlowStandardBundleVerifierTests {
 
         assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, File(bundle, "standard-version.txt").readText().trim())
-        assertEquals("PASS", report.status, report.checks.filter { it.status != "PASS" }.joinToString { it.id })
+        assertEquals("PASS", report.status, report.checks.filter { it.status != "PASS" }.joinToString { "${it.id}:${it.missing}" })
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.observedStandardVersion)
         assertTrue(report.checks.any { it.id == "bundle.release-gates-in-conformance-manifest" && it.status == "PASS" })
     }
@@ -34,56 +37,70 @@ class FlowStandardBundleVerifierTests {
     @Test
     fun missingReleaseGateFailsVerification() {
         val bundle = standardBundleFixture()
-        File(bundle, "conformance-manifest.json").writeText("{ \"requiredChecks\": [] }\n")
+        val file = File(bundle, "conformance-manifest.json")
+        val manifest = Json.mapper.readTree(file)
+        val required = manifest.withArray("requiredChecks") as ArrayNode
+        val removed = required.first().asText()
+        required.remove(0)
+        manifest.put("totalChecks", manifest.path("totalChecks").asInt() - 1)
+        manifest.put("passed", manifest.path("passed").asInt() - 1)
+        file.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest) + "\n")
 
         val report = StandardBundleVerifier().verify(bundle)
 
         assertEquals("FAIL", report.status)
-        assertTrue(report.missingReleaseGateChecks.contains("v0.5.3.standard-bundle-verifier"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.5.4.data-driven-conformance-index"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.1.intent-corpus-expansion"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.2.required-clarification-contract"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.3.safety-policy-matrix"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.4.target-semantics-negative-corpus"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.5.execution-plan-semantic-invariants"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.6.ai-input-trust-boundary"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.7.standard-example-bundle"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.6.8.compatibility-promise"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.0.reference-corpus-execution-harness"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.1.architecture-debt-cleanup-and-drift-enforcement"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.3.standard-model-projection-coherence"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.4.architecture-delta-analyzer"))
-        assertTrue(report.missingReleaseGateChecks.contains("v0.7.5.purpose-coverage-ratio"))
+        assertTrue(report.missingReleaseGateChecks.contains(removed))
     }
 
-    private fun standardBundleFixture(): File {
-        val dir = File(System.getProperty("java.io.tmpdir"), "flow-standard-bundle-test-${System.nanoTime()}")
-        dir.mkdirs()
+    @Test
+    fun failedGateDoesNotPassBecauseItsIdIsPresent() {
+        val bundle = standardBundleFixture()
+        val requiredGate = StandardReleaseProfile.report().requiredConformanceChecks.first()
+        val file = File(bundle, "conformance-manifest.json")
+        val manifest = Json.mapper.readTree(file)
+        manifest.put("status", "FAIL")
+        manifest.put("passed", manifest.path("passed").asInt() - 1)
+        manifest.put("failed", 1)
+        (manifest.withArray("failedChecks") as ArrayNode).add(requiredGate)
+        file.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest) + "\n")
 
-        val manifest = StandardSurface.standardExportManifest()
-        val export = StandardSurface.standardExportBundle()
-        val surface = StandardSurface.publicSurface()
-        val releaseChecks = StandardReleaseProfile.report().requiredConformanceChecks
+        val report = StandardBundleVerifier().verify(bundle)
 
-        fun write(path: String, text: String = "{}\n") {
-            val file = File(dir, path)
-            file.parentFile?.mkdirs()
-            file.writeText(text)
-        }
-
-        manifest.requiredDirectories.forEach { File(dir, it.trimEnd('/')).mkdirs() }
-        export.requiredDirectories.forEach { File(dir, it.trimEnd('/')).mkdirs() }
-        write("standard-version.txt", FlowStandardVersions.FLOW_STANDARD_VERSION + "\n")
-        manifest.requiredDocuments.forEach { write(it, "Reference document for $it\n") }
-        manifest.requiredSchemas.forEach { write(it, "{}\n") }
-        manifest.requiredJsonArtifacts.forEach { write(it, "{}\n") }
-        manifest.evidenceArtifacts.forEach { write(it, "{}\n") }
-        export.requiredFiles
-            .filterNot { it == "standard-version.txt" }
-            .forEach { write(it, "{}\n") }
-        write("standard-export-bundle.json", surface.stableArtifacts.joinToString(prefix = "{ \"requiredArtifacts\": [\"", separator = "\", \"", postfix = "\"] }\n"))
-        write("conformance-manifest.json", releaseChecks.joinToString(prefix = "{ \"requiredChecks\": [\"", separator = "\", \"", postfix = "\"] }\n"))
-        write("standard-release-profile.json", releaseChecks.joinToString(prefix = "{ \"requiredConformanceChecks\": [\"", separator = "\", \"", postfix = "\"] }\n"))
-        return dir
+        assertEquals("FAIL", report.status)
+        assertTrue(report.missingReleaseGateChecks.contains("conformance-manifest.status"))
+        assertTrue(report.missingReleaseGateChecks.contains("$requiredGate:failed"))
     }
+
+    @Test
+    fun stableArtifactMentionOutsideRequiredArtifactsDoesNotCount() {
+        val bundle = standardBundleFixture()
+        val missingArtifact = StandardSurface.publicSurface().stableArtifacts.first()
+        val file = File(bundle, "standard-export-bundle.json")
+        val export = Json.mapper.readTree(file)
+        val required = export.withArray("requiredArtifacts") as ArrayNode
+        val retained = required.map { it.asText() }.filterNot { it == missingArtifact }
+        required.removeAll()
+        retained.forEach { required.add(it) }
+        export.put("packageName", "text-mentions-$missingArtifact")
+        file.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(export) + "\n")
+
+        val report = StandardBundleVerifier().verify(bundle)
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.missingStableSurfaceArtifactsInExportBundle.contains(missingArtifact))
+    }
+
+    @Test
+    fun malformedJsonContainingEveryGateFailsClosed() {
+        val bundle = standardBundleFixture()
+        val gates = StandardReleaseProfile.report().requiredConformanceChecks.joinToString()
+        File(bundle, "conformance-manifest.json").writeText("{ \"message\": \"$gates\", \"broken\": [ }")
+
+        val report = StandardBundleVerifier().verify(bundle)
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.missingReleaseGateChecks.contains("conformance-manifest.json:invalid"))
+    }
+
+    private fun standardBundleFixture(): File = StrictStandardBundleFixture.create(File("."))
 }
