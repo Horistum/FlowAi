@@ -5,11 +5,11 @@ Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
-Core roadmap item status: `correction-required`
-Active correction item: `0.9.7.9.11 Public Artifact Evidence and Verification Integrity`
-Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`blocked`)
+Core roadmap item status: `completed`
+Completed correction item: `0.9.7.9.11 Public Artifact Evidence and Verification Integrity`
+Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
 
-## Active direction
+## Completed direction
 
 PR #90 completed target-selection provenance and CLI status repair and was merged as `91de098f8f51176a76e34ef53bab1b424edaa8d0`. A later audit proved that five public evidence paths remained unsound:
 
@@ -19,7 +19,7 @@ PR #90 completed target-selection provenance and CLI status repair and was merge
 4. required `derivedFrom` evidence was checked only for non-emptiness, not for resolvable references;
 5. standard bundle verification treated substring occurrence in JSON text as structured proof.
 
-Bounded correction `0.9.7.9.11` is active. It replaces these paths with computed status authorities, provider-backed target semantics, an exact artifact contract authority, fail-closed derivation validation and strict structured bundle verification. No passing validation is claimed yet. Closure item `0.9.7.10` remains blocked.
+Bounded correction `0.9.7.9.11` replaced these paths with computed status authorities, provider-backed target semantics, an exact artifact contract authority, fail-closed derivation validation and strict structured bundle verification. Flow CI #2116 independently validated the implementation head and its synthetic merge candidate. Closure item `0.9.7.10` is now the next Core work item, subject to final completion-metadata validation for this pull request.
 
 ## Correction ledger
 
@@ -33,7 +33,7 @@ Bounded correction `0.9.7.9.11` is active. It replaces these paths with computed
 8. `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity`
 9. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity`
 10. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity`
-11. `0.9.7.9.11 Public Artifact Evidence and Verification Integrity` (`active`)
+11. `0.9.7.9.11 Public Artifact Evidence and Verification Integrity` (`completed`)
 
 ## Retained implementation boundaries
 
@@ -68,11 +68,13 @@ Bounded correction `0.9.7.9.11` is active. It replaces these paths with computed
 - Secret and artifact support comes from typed native projection bindings.
 - Missing provider evidence is published as review-only rather than as a positive target capability.
 - Jenkins owns native manual approval; GitHub Actions and Tekton remain adapter-required review-only.
+- Feature rows without an implemented evidence resolver are not published.
 
 ### Artifact contract and derivation integrity
 
 - Producer identity and introduced-version metadata come from one exact artifact contract authority.
-- Unknown public artifacts fail closed; there is no generic producer or `pre-0.3.10` fallback.
+- Unknown public artifacts fail closed; there is no generic producer or fictional introduction fallback.
+- `conformance-manifest.json` is an explicit required source-evidence member of the artifact bundle.
 - Required derived artifacts must reference another declared artifact or a registered external evidence source.
 - Non-empty dangling references block `evidence.complete` and therefore block public compliance.
 
@@ -91,10 +93,10 @@ The implementation package remains `0.9.5`, the public standard remains `0.8.0`,
 ## Roadmap order
 
 1. `0.9.7.1` through `0.9.7.8` completed
-2. `0.9.7.9 Intent Lowering and Diagnostic Honesty` `correction-required`
+2. `0.9.7.9 Intent Lowering and Diagnostic Honesty` completed after all bounded corrections
 3. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity` completed and merged
-4. `0.9.7.9.11 Public Artifact Evidence and Verification Integrity` active
-5. `0.9.7.10 Bounded Semantic Closure Gate` blocked
+4. `0.9.7.9.11 Public Artifact Evidence and Verification Integrity` completed
+5. `0.9.7.10 Bounded Semantic Closure Gate` next
 
 ## Validation
 
@@ -102,7 +104,15 @@ Historical `0.9.7.9.9` implementation and completion metadata passed Flow CI #20
 
 Historical `0.9.7.9.10` implementation and completion metadata passed Flow CI #2100 and #2108 before PR #90 merged.
 
-No external exact-head CI evidence is claimed for active `0.9.7.9.11`. The public implementation head and its synthetic merge candidate must independently pass Flow Agent tooling, repository structure, complete tests and standalone conformance. A later completion-metadata head must pass the same two jobs before review readiness.
+Current `0.9.7.9.11` implementation evidence passed Flow CI #2116, run `30191458296`:
+
+- exact implementation head `018f69388163c14f65c03c2cf21029156fd94ede`;
+- synthetic merge candidate `8854b0ed44e04347a9c60ca915e9b61ed24c9734`;
+- Flow Agent tooling and repository structure;
+- complete tests;
+- standalone conformance.
+
+The completion-metadata head must independently pass the same exact-head and merge-candidate jobs before PR #91 may become ready for review.
 
 ## Architecture boundary
 
