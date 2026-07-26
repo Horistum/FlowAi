@@ -18,7 +18,7 @@ internal fun testTargetSelection(
     target: String,
     targets: Map<String, TargetCapability>,
     source: String = "test:explicit-target"
-): ExplicitTargetSelection = TargetSelectionAuthority.fromExplicitConfiguration(target, source, targets)
+): ExplicitTargetSelection = TargetSelectionAuthority.fromTestFixture(target, source, targets)
 
 internal fun testTargetSelection(
     target: String,

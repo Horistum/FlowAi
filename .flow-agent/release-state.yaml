@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 15
+stateVersion: 17
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -94,6 +94,10 @@ qualityPrinciples:
   - "Target materialization requires registry-validated explicit selection evidence rather than a raw target string."
   - "CLI execution outcomes are typed before presentation and target-neutral outcomes cannot carry target artifacts."
   - "Application composition remains in production coupling governance and is not an automatic exemption."
+  - "Derived compatibility or readiness reports cannot be relabeled as explicit target-selection provenance."
+  - "Target-selection origin categories are a closed architecture contract."
+  - "Blocked CLI outcomes must return a distinct non-success process status."
+  - "Successful CLI outcomes cannot accept caller-authored exit codes."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-merged-v0.9.7.9.8-follow-up-head"
@@ -106,7 +110,7 @@ lastKnownValidation:
   validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "v0.9.7.9.9 completed after external exact-head CI evidence: Flow CI #2087, run 30167146445, passed implementation head 54889f7907f1d95b900466fd438f9965ca24dbbe."
-    - "The same Flow CI run independently passed synthetic merge candidate 6dcd266e20638fcbb717e6582da711331251bd37."
+    - "v0.9.7.9.10 completed after external exact-head CI evidence: Flow CI #2100, run 30187033448, passed implementation head 155a61b5fc5a1e54da5677eab23eff516e215078."
+    - "The same Flow CI run independently passed synthetic merge candidate ce75e032d8c6a807e1aa368b3fdeab19c9d154bb."
     - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is now the next Core item."
     - "The completion-metadata head must pass both exact-head and merge-candidate jobs before the pull request is ready for review."
