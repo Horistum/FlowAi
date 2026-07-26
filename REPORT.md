@@ -5,15 +5,15 @@ Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
-Core roadmap item status: `completed`
-Completed correction item: `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity`
-Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
+Core roadmap item status: `correction-required`
+Active correction item: `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity`
+Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`blocked`)
 
 ## Active direction
 
 Core, implementation and conformance planning remain separate authorities. Existing executable reference evidence stays active as falsification feedback and does not define Core meaning. Package, public-standard, artifact-contract and bounded-work versions remain independent axes.
 
-The final architecture audit kept `0.9.7.9.9` open after proving that target materialization still accepted raw target strings, CLI execution semantics were coupled to presentation effects and `cli/` plus `release/` retained an obsolete governance exemption. Flow CI #2087 independently passed the corrected public implementation head and its synthetic merge candidate. The correction is complete, the parent item is restored to completed and the bounded closure gate is again the next Core item. The completion-metadata head still requires its own dual validation before review readiness.
+PR #88 completed the typed target-selection and CLI-result boundary, but a post-merge audit found a dead duplicate CLI composition facade that could relabel `CompatibilityReport.target` as `EXPLICIT_CONFIGURATION`. The same audit proved that target-selection origins were not mechanically closed and that a `BLOCKED` CLI result could return process success. Bounded correction `0.9.7.9.10` is therefore active; closure remains blocked until the repaired public head and its synthetic merge candidate pass independent validation.
 
 ## Correction ledger
 
@@ -26,6 +26,7 @@ The final architecture audit kept `0.9.7.9.9` open after proving that target mat
 7. `0.9.7.9.7 CLI Diagnostic and Release Honesty` separated manifest evidence, render authorization and staged release publication.
 8. `0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity` repaired the previously known closure blockers and completed after dual validation.
 9. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity` repaired parser, conformance, serialization, module governance, target-selection, CLI-result and application-composition integrity and completed after public dual validation.
+10. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity` removes the dead composition facade, closes configuration-source provenance and separates review from blocked process status.
 
 ## v0.9.7.9.8 retained implementation boundary
 
@@ -70,33 +71,46 @@ The final architecture audit kept `0.9.7.9.9` open after proving that target mat
 - The standard Flow CI job checks out `github.event.pull_request.head.sha` and verifies it with `git rev-parse HEAD`.
 - A separate job validates GitHub's synthetic pull-request merge candidate; its success is never relabeled as exact-head evidence.
 
-## v0.9.7.9.9 implementation boundary
+## v0.9.7.9.9 retained implementation boundary
 
-### Parser integrity
+### Parser and conformance integrity
 
 - Retry defaults apply only to omitted fields.
 - Incorrectly typed, fractional, unknown and duplicate retry declarations fail closed with `retry.<field>` diagnostic paths.
-- Authored policy values are no longer replaced by defaults or discarded.
-
-### Falsifiable conformance
-
 - Compliance checks exercise both passing and failing conformance manifests.
-- A failing conformance manifest fails the `conformance.pass` gate and the public standard draft.
 - Universal artifact, schema, decision and draft evidence is built from a target-neutral Core fixture.
-- Concrete providers remain in tests only where a target contract, manifest or renderer is actually under examination.
 
 ### Architecture boundaries
 
 - Serializer annotations are removed from the target-neutral projection contract.
 - Jackson and YAML imports are checked across the declared semantic Core package set.
 - Module target ownership is rejected by `CanonicalModuleLoader` structure rather than source indentation.
-- Release metadata honesty selects the active or latest bounded correction instead of hard-coding a historical work item.
 - Explicit target selection is registry-validated before materialization and raw nullable target parameters are absent from materialization authorities.
 - Selection provenance is emitted independently so deterministic target manifests are not mutated by CLI origin.
 - CLI execution uses sealed typed outcomes, stable diagnostic codes and semantic artifact roles before presentation.
-- Target-neutral CLI outcomes cannot carry target manifests or rendered target syntax.
 - CLI and release application composition are covered by production coupling governance rather than an automatic directory exemption.
-- CLI conformance is behavioral and classpath-based rather than source-message matching.
+
+## v0.9.7.9.10 active implementation boundary
+
+### Target-selection provenance
+
+- The duplicate `org.flowlang.cli.TargetManifestGenerationPipeline` facade is removed.
+- Classpath checks require the canonical generator pipeline and reject the removed CLI duplicate.
+- Reference snapshots use a typed reference-snapshot source rather than a caller-authored provenance label.
+- Conformance and test sources are bounded categories; `cli:compatibility-report` and unknown labels fail closed.
+- `TargetSelectionOrigin` remains exactly `CLI_OPTION`, `INTENT_DECLARATION` and `EXPLICIT_CONFIGURATION`.
+
+### CLI process status
+
+- Process statuses are a typed contract: success `0`, invalid input `2`, review required `3`, blocked `4` and internal error `70`.
+- `REVIEW_ONLY` remains successful when evidence is merely inspected, but becomes `REVIEW_REQUIRED` when strict or render behavior is requested.
+- `BLOCKED` always returns a blocking non-success status.
+- `Completed` no longer accepts an independent exit-code parameter.
+- Unit and standalone conformance exercise the status mapping and provenance boundary.
+
+### Deliberate scope boundary
+
+- The retained compatibility-symbol manifest and dual version-axis expiration remain a separately bounded governance improvement. This correction does not falsely claim that the existing `KUBERNETES_MAINTENANCE` allowlist has been replaced.
 
 ## Roadmap order
 
@@ -108,9 +122,9 @@ The final architecture audit kept `0.9.7.9.9` open after proving that target mat
 6. `0.9.7.6 Universal Effect and State Transition Model` completed
 7. `0.9.7.7 Universal Control and Policy Requirements` completed
 8. `0.9.7.8 Abstract Execution Topology Model` completed
-9. `0.9.7.9 Intent Lowering and Diagnostic Honesty` completed
-10. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity` completed
-11. `0.9.7.10 Bounded Semantic Closure Gate` next
+9. `0.9.7.9 Intent Lowering and Diagnostic Honesty` correction-required
+10. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity` active
+11. `0.9.7.10 Bounded Semantic Closure Gate` blocked
 
 ## Validation
 
@@ -118,13 +132,9 @@ Last merged validation: Flow CI #2011, run `30083768491`, passed implementation 
 
 Historical correction validation: Flow CI #2025, run `30144935197`, passed exact implementation head `af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319` and synthetic merge candidate `2e30830d55fe73ec0c46c75dfd425c1047dc9853` for `v0.9.7.9.8`.
 
-Historical correction validation: Flow CI #2048, run `30155688901`, passed the earlier `v0.9.7.9.9` boundary.
+Historical `0.9.7.9.9` validation: Flow CI #2087, run `30167146445`, passed exact implementation head `54889f7907f1d95b900466fd438f9965ca24dbbe` and synthetic merge candidate `6dcd266e20638fcbb717e6582da711331251bd37`; Flow CI #2094 validated completion metadata before PR #88 merged.
 
-Typed-candidate preflight: Flow CI #2083, run `30166636855`, passed assembly exact head `151e7f91f9fa8b9747b251a5f0e0878672920654` and its synthetic merge candidate.
-
-Current correction validation: Flow CI #2087, run `30167146445`, passed exact public implementation head `54889f7907f1d95b900466fd438f9965ca24dbbe` and synthetic merge candidate `6dcd266e20638fcbb717e6582da711331251bd37`.
-
-The completion-metadata head must independently pass both Flow CI jobs before the pull request is marked ready for review.
+No passing validation is yet claimed for `0.9.7.9.10`. The public implementation head and its synthetic merge candidate must pass independently before completion metadata is written.
 
 ## Architecture boundary
 
