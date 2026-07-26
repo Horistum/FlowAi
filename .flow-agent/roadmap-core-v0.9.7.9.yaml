@@ -171,7 +171,7 @@ items:
   - version: 0.9.7.9
     name: Intent Lowering and Diagnostic Honesty
     type: lowering-integrity
-    status: correction-required
+    status: completed
     purpose: Preserve or diagnose every meaningful input.
     universalInvariant: Accepted information never disappears silently.
     forbiddenScope:
@@ -183,13 +183,13 @@ items:
       - The original implementation evidence remains historical and was explicitly superseded after a false preservation claim was proven.
       - Bounded corrections 0.9.7.9.1 through 0.9.7.9.8 repaired confirmed lowering, identity, approval, governance, release, safety and diagnostic defects.
       - The item was reopened again after proving that the public .flow retry parser silently replaced malformed authored values with defaults and discarded unknown policy keys.
-      - Bounded correction 0.9.7.9.9 repaired parser fail-closed behavior, compliance rejection polarity, semantic serializer-boundary coverage, module-governance evidence and target-neutral conformance substrates.
-      - Flow CI #2048, run 30155688901, passed exact implementation head 869816b978a107545742553e598bcdd118d984b2 and independently passed synthetic merge candidate 5c4b0999b104f5501eb79980ab83014dac275df6.
+      - Bounded correction 0.9.7.9.9 repaired parser fail-closed behavior, compliance rejection polarity, semantic serializer-boundary coverage, module-governance evidence, target-neutral conformance, typed target selection, typed CLI outcomes and application-composition governance.
+      - Flow CI #2087, run 30167146445, passed exact implementation head 54889f7907f1d95b900466fd438f9965ca24dbbe and independently passed synthetic merge candidate 6dcd266e20638fcbb717e6582da711331251bd37.
       - The completion-metadata head must pass the same independent exact-head and merge-candidate workflow before the pull request is ready for review.
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: blocked
+    status: next
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
