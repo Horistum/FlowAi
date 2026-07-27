@@ -167,23 +167,25 @@ class CliDiagnosticReleaseHonestyTests {
 
     @Test
     fun releaseMetadataAxesAndCorrectionTrackAreConsistent() {
+        val expected = selectedCorrection(File("."))
         val report = ReleaseMetadataHonestyAuthority(File(".")).requireValid()
 
         assertEquals("PASS", report.status)
         assertEquals(FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION, report.implementationPackageVersion)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.publicStandardVersion)
-        assertEquals("0.9.7.9.10", report.completedCorrectionItem)
-        assertEquals("complete", report.correctionStatus)
-        assertEquals("completed", report.parentCoreItemStatus)
+        assertEquals(expected.version, report.completedCorrectionItem)
+        assertEquals(expected.status, report.correctionStatus)
+        assertEquals(if (expected.status == "complete") "completed" else "correction-required", report.parentCoreItemStatus)
         assertEquals("0.9.7.10", report.nextCoreItem)
-        assertEquals("next", report.closureStatus)
+        assertEquals(if (expected.status == "complete") "next" else "blocked", report.closureStatus)
         assertTrue(report.failedChecks.isEmpty())
     }
 
     @Test
     fun staleBoundedCorrectionCannotBeHiddenByCorrectParentRoadmapState() {
         val root = Files.createTempDirectory("flow-release-metadata-drift").toFile()
-        val correctionPath = ".flow-agent/work-packages/v0.9.7.9.10-target-selection-provenance-cli-status-integrity.yaml"
+        val selected = selectedCorrection(File("."))
+        val correctionPath = selected.file.relativeTo(File(".")).invariantSeparatorsPath
         try {
             listOf(
                 "build.gradle.kts",
@@ -199,11 +201,16 @@ class CliDiagnosticReleaseHonestyTests {
                 destination.parentFile?.mkdirs()
                 source.copyTo(destination, overwrite = true)
             }
+            val staleVersion = selected.version
+                .split('.')
+                .map(String::toInt)
+                .let { parts -> parts.dropLast(1) + (parts.last() - 1).coerceAtLeast(0) }
+                .joinToString(".")
             val workPackage = File(root, correctionPath)
             workPackage.writeText(
-                workPackage.readText().replace(
-                    "version: \"0.9.7.9.10\"",
-                    "version: \"0.9.7.9.9\""
+                workPackage.readText().replaceFirst(
+                    "version: \"${selected.version}\"",
+                    "version: \"$staleVersion\""
                 )
             )
 
@@ -212,12 +219,62 @@ class CliDiagnosticReleaseHonestyTests {
             assertEquals("FAIL", report.status)
             assertTrue("release.work-package.correction-item" in report.failedChecks)
             assertEquals(
-                "0.9.7.9.9",
+                staleVersion,
                 report.checks.single { it.id == "release.work-package.correction-item" }.observed
             )
             assertEquals("PASS", report.checks.single { it.id == "release.state.parent-item" }.status)
         } finally {
             root.deleteRecursively()
         }
+    }
+
+    private fun selectedCorrection(root: File): SelectedCorrection {
+        val roadmapText = File(root, ".flow-agent/roadmap.yaml").readText()
+        val activePointer = Regex(
+            "(?m)^\\s*activeCorrectionWorkPackage:\\s*\"([^\"]*)\"\\s*$"
+        ).find(roadmapText)?.groupValues?.get(1).orEmpty()
+        val file = if (activePointer.isNotBlank()) {
+            File(root, activePointer)
+        } else {
+            File(root, ".flow-agent/work-packages").listFiles().orEmpty()
+                .filter { it.isFile && CORRECTION_FILE.matches(it.name) }
+                .maxWithOrNull { left, right ->
+                    compareVersionKeys(versionKey(left.name), versionKey(right.name))
+                }
+                ?: error("No bounded correction work package exists.")
+        }
+        val text = file.readText()
+        val version = Regex("(?m)^version:\\s*\"([^\"]+)\"\\s*$")
+            .find(text)?.groupValues?.get(1)
+            ?: error("Selected work package has no version: ${file.path}")
+        val status = Regex("(?m)^status:\\s*([a-z-]+)\\s*$")
+            .find(text)?.groupValues?.get(1)
+            ?: error("Selected work package has no status: ${file.path}")
+        return SelectedCorrection(file, version, status)
+    }
+
+    private fun versionKey(name: String): List<Int> = CORRECTION_FILE.find(name)
+        ?.groupValues
+        ?.get(1)
+        ?.split('.')
+        ?.map(String::toInt)
+        .orEmpty()
+
+    private fun compareVersionKeys(left: List<Int>, right: List<Int>): Int {
+        repeat(maxOf(left.size, right.size)) { index ->
+            val comparison = (left.getOrElse(index) { 0 }).compareTo(right.getOrElse(index) { 0 })
+            if (comparison != 0) return comparison
+        }
+        return 0
+    }
+
+    private data class SelectedCorrection(
+        val file: File,
+        val version: String,
+        val status: String
+    )
+
+    companion object {
+        private val CORRECTION_FILE = Regex("v(0\\.9\\.7\\.9\\.\\d+)-.+\\.yaml")
     }
 }

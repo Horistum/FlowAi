@@ -14,102 +14,82 @@ This ledger records the bounded `0.9.7.9.x` repair sequence. These identifiers a
 
 - Separated typed literals, references and dynamic expressions across source and lowering boundaries.
 - Repaired source-path diagnostics and rejected lossy or ambiguous coercion.
-- Consolidated the correction roadmap and assigned remaining CLI/release wording to `0.9.7.9.7`.
-- Validation: Flow CI `#1907`, run `29988554228`, implementation head `740056b2cfc3823a510e35bd935bace1967ada2c`; final metadata head `6231fa89e84f79f2441834d36788e973b0439a26` remained metadata-only and did not claim a separate passing run.
+- Validation: Flow CI `#1907`, run `29988554228`, implementation head `740056b2cfc3823a510e35bd935bace1967ada2c`.
 
 ### v0.9.7.9.3 Environment Safety Production Integration
 
 - Connected typed environment evidence to production Flow validation and CLI lowering.
-- Replaced environment-name guessing with policy-declared literal, reference and dynamic evidence.
-- Added scoped approval reachability and exhaustive finite non-sensitive proof.
+- Replaced environment-name guessing with policy-declared evidence.
 - Validation: Flow CI `#1950`, run `29996882135`, exact final head `cf6f30f838126ad066bb823538d68285c42b1d2d`.
 
 ### v0.9.7.9.4 Scenario Negation and Token Boundary Honesty
 
 - Replaced substring and ordered-word heuristics with exact token boundaries, clause-local polarity and bounded grammar forms.
-- Prevented denied, unavailable or conflicting source text from creating positive backup, notification, repository or control behavior.
-- Preserved the public database migration corpus without restoring sentence-wide fuzzy matching.
+- Prevented denied, unavailable or conflicting source text from creating positive behavior.
 - Validation: Flow CI `#1989`, run `30070000839`, exact head `33c9481be344781a943d6d313e7a37fe442ba81e`.
 
 ### v0.9.7.9.5 Provider-Backed Approval and Topology Identity
 
 - Required provider-owned payload evidence before native approval materialization.
 - Preserved stricter compatibility blockers through readiness and rendering.
-- Added collision-safe control and topology identities and idempotent review findings.
 - Validation: Flow CI `#1997`, run `30073104137`, exact head `d2b02ede8caca9a1cad1f76072e9f4d4d8141b1e`.
 
 ### v0.9.7.9.6 Derived Model and Governance Integrity
 
 - Made negotiation, readiness, selection and decision-trace summaries reproducible from detailed evidence.
 - Rejected duplicate manifest evidence, repeated reconciliation and mixed artifact lineage.
-- Treated drift-score configuration as executable governance policy and scoped ADR exceptions to named signals and real conformance guardrails.
 - Validation: Flow CI `#2001`, run `30075088660`, exact head `002483835844c207df6375d4159e331bfcaf6415`.
 
 ### v0.9.7.9.7 CLI Diagnostic and Release Honesty
 
-- Routes the public Gradle application through the honest CLI entrypoint.
-- Reconciles CLI target reports against the exact emitted manifest.
-- Does not invoke a renderer without explicit `--render`; explicit rendering requires executable evidence.
-- Replaces `TARGET MANIFEST READY` wording with manifest evidence and render-readiness reporting.
-- Requires explicit passing conformance evidence for release compliance.
-- Assembles standard release artifacts from real conformance, integrity and metadata evidence.
-- Publishes standard bundles only after staged verification, preserving the previous destination on failure.
-- Adds machine-checked package, public-standard, roadmap, report and correction-ledger consistency.
-- Clarifies that runtime-required capabilities depend on external target-side infrastructure or adapters; Flow Core provides no runtime.
+- Routed the public application through the honest CLI entrypoint.
+- Required explicit rendering and explicit passing conformance evidence.
+- Published standard bundles only after staged verification.
 - Validation: Flow CI `#2011`, run `30083768491`, exact head `f970561c568f3fea0dcf8f858acfff15b4a3eaaa`.
 
 ### v0.9.7.9.8 Closure-Blocking Safety, Governance and Diagnostic Integrity
 
-- Replaces fail-open arbitrary-text control evidence with typed confirmed, denied and unknown classification.
-- Rejects placeholder, ambiguity and denial markers even when embedded in longer authored text.
-- Accepts only bounded explicit confirmations or concrete control-specific backup locators, rollback plans, change-ticket identifiers, retention durations and safety controls.
-- Rejects generic words such as `available`, `complete`, `approved`, `required` and `policy` as standalone evidence.
-- Replaces raw CI/CD bias substring matching with lexical code, control-literal, ordinary-string, comment, catalog and retained-compatibility contexts.
-- Makes governance health depend only on actionable coupling in active semantic source.
-- Removes the legacy CLI entrypoint and every implicit Jenkins target default.
-- Produces target-neutral planning evidence when no target is selected.
-- Produces typed review-only or blocked diagnostic manifest evidence for expected target incompatibility instead of a stack trace.
-- Re-derives canonical workflow and capability topology only from independent retained source provenance.
-- Rejects canonical claims and intent-derived source signals when `sourceIntent` is missing instead of validating retained claims against themselves.
-- Retains legacy `dependencies` and `effects` only as mechanically checked compatibility projections.
-- Preserves GitHub Actions cancellation semantics and removes `always()` from ordinary dependency jobs.
-- Validates the exact pull-request head independently from GitHub's synthetic merge candidate and verifies both checked-out SHAs.
-- Historical validation: Flow CI `#2025`, run `30144935197`, passed exact implementation head `af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319` and independently passed merge candidate `2e30830d55fe73ec0c46c75dfd425c1047dc9853`.
-- Status: historically complete, superseded by the later reopening described below.
+- Replaced fail-open arbitrary-text control evidence with typed confirmed, denied and unknown classification.
+- Replaced raw CI/CD bias substring matching with lexical evidence.
+- Removed legacy CLI defaults and validated exact PR heads independently from merge candidates.
+- Historical validation: Flow CI `#2025`, run `30144935197`, exact head `af2062a687e4fbf0a5ec4d3e50d44b8ba07e9319`, merge candidate `2e30830d55fe73ec0c46c75dfd425c1047dc9853`.
+- Status: historically complete, superseded by later reopenings.
 
 ### v0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity
 
-- Rejects malformed, fractional, unknown and duplicate `.flow` retry policy declarations with path-aware parser diagnostics.
-- Preserves retry defaults only for omitted values instead of using them as silent coercion targets.
-- Proves both PASS and FAIL compliance polarity and propagates failing compliance into the public standard draft.
-- Removes Jackson annotations from the target-neutral projection contract and expands serializer-boundary enforcement across the semantic Core package set.
-- Replaces indentation-based module governance with canonical module-loader evidence and structural negative tests.
-- Introduces a target-neutral conformance fixture for universal artifact, schema, compliance, draft and decision evidence.
-- Keeps concrete Jenkins projection evidence only where a target manifest or renderer is genuinely under test.
-- Generalizes release metadata honesty so bounded correction identity is selected from governance state instead of a hard-coded historical version.
-- Requires registry-validated explicit target selection before target materialization and removes raw nullable target parameters from materialization authorities.
-- Adds independent target-selection provenance evidence while keeping target manifests deterministic.
-- Models CLI execution as sealed typed outcomes with stable diagnostic codes and semantic artifact roles before presentation.
-- Restores CLI and release composition to production coupling governance instead of treating application composition as an automatic exemption.
-- Replaces source-text CLI architecture checks with typed behavioral and classpath conformance.
-- Historical validation: Flow CI `#2048`, run `30155688901`, passed the earlier correction boundary; assembly Flow CI `#2083`, run `30166636855`, passed typed-candidate preflight.
-- Validation: Flow CI `#2087`, run `30167146445`, passed exact implementation head `54889f7907f1d95b900466fd438f9965ca24dbbe` and independently passed synthetic merge candidate `6dcd266e20638fcbb717e6582da711331251bd37`.
-- Completion metadata was validated by Flow CI `#2094`, run `30183785028`, before PR #88 was merged.
-- Status: historically complete, superseded by the post-merge reopening below.
+- Rejected malformed, fractional, unknown and duplicate `.flow` retry declarations.
+- Proved both PASS and FAIL compliance polarity.
+- Added target-neutral universal evidence and typed target-selection/CLI outcomes.
+- Validation: Flow CI `#2087`, run `30167146445`, exact implementation head `54889f7907f1d95b900466fd438f9965ca24dbbe`, merge candidate `6dcd266e20638fcbb717e6582da711331251bd37`.
+- Completion metadata: Flow CI `#2094`, run `30183785028`; PR #88 merged.
+- Status: historically complete, superseded by later reopenings.
 
 ### v0.9.7.9.10 Target Selection Provenance and CLI Status Integrity
 
-- Deletes the dead `org.flowlang.cli.TargetManifestGenerationPipeline` facade that duplicated the canonical generator pipeline name.
-- Prevents `CompatibilityReport.target` or another analytical report from being relabeled as explicit target configuration.
-- Introduces a closed typed vocabulary for reference-snapshot, conformance and test configuration sources.
-- Rejects unknown source categories, including the former `cli:compatibility-report` label, before selection evidence is issued.
-- Locks `TargetSelectionOrigin` to `CLI_OPTION`, `INTENT_DECLARATION` and `EXPLICIT_CONFIGURATION` through unit and conformance checks.
-- Derives CLI process status from sealed outcomes: success `0`, invalid input `2`, review required `3`, blocked `4` and internal error `70`.
-- Removes the caller-supplied exit-code parameter from successful CLI results.
-- Adds classpath proof that only the canonical `org.flowlang.generators.manifest.TargetManifestGenerationPipeline` is compiled.
-- Validation: Flow CI `#2100`, run `30187033448`, passed exact implementation head `155a61b5fc5a1e54da5677eab23eff516e215078` and independently passed synthetic merge candidate `ce75e032d8c6a807e1aa368b3fdeab19c9d154bb`, including complete tests and standalone conformance.
-- Status: complete on implementation evidence; completion metadata still requires the same dual workflow before review readiness.
+- Deleted the dead duplicate CLI manifest pipeline.
+- Prevented analytical compatibility output from becoming target-selection provenance.
+- Closed selection origin and configuration-source categories.
+- Derived process status from typed CLI outcomes.
+- Validation: Flow CI `#2100`, run `30187033448`, exact implementation head `155a61b5fc5a1e54da5677eab23eff516e215078`, merge candidate `ce75e032d8c6a807e1aa368b3fdeab19c9d154bb`.
+- Completion metadata: Flow CI `#2108`, run `30187368343`; PR #90 merged as `91de098f8f51176a76e34ef53bab1b424edaa8d0`.
+- Status: complete, superseded only as the active parent state by the later correction below.
+
+### v0.9.7.9.11 Public Artifact Evidence and Verification Integrity
+
+- Replaced literal public `PASS` fields with computed content validation and negative counterparts.
+- Derived target semantics from the target registry, `TargetExpressionSupport` and provider-owned native projection contracts.
+- Removed unsupported handwritten approval claims for GitHub Actions and Tekton; both remain adapter-required review-only.
+- Introduced one exact artifact contract authority for stable producer identity and introduced-version metadata.
+- Rejected unknown public artifacts instead of assigning a generic producer or fictional historical version.
+- Declared `conformance-manifest.json` as explicit required source evidence in the artifact bundle.
+- Validated required artifact derivation against declared artifacts and registered external evidence sources.
+- Made dangling `derivedFrom` references block `evidence.complete` and public compliance.
+- Parsed conformance and export bundle JSON structurally with strict unknown-field and duplicate-key rejection.
+- Required exact passing conformance evidence and exact stable-artifact membership in `requiredArtifacts`.
+- Added negative tests for failed gates, malformed JSON and artifact ids mentioned outside the authoritative field.
+- Validation: Flow CI `#2116`, run `30191458296`, exact implementation head `018f69388163c14f65c03c2cf21029156fd94ede`, synthetic merge candidate `8854b0ed44e04347a9c60ca915e9b61ed24c9734`; both passed complete tests and standalone conformance.
+- Status: complete; the completion-metadata head remains subject to its own dual Flow CI validation before PR #91 becomes ready for review.
 
 ## Closure boundary
 
-`0.9.7.9 Intent Lowering and Diagnostic Honesty` is restored to `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is `next`. Package, public-standard and artifact-contract versions remain unchanged.
+`0.9.7.9 Intent Lowering and Diagnostic Honesty` is `completed`. `0.9.7.10 Bounded Semantic Closure Gate` is `next`. Package, public-standard and artifact-contract versions remain unchanged.

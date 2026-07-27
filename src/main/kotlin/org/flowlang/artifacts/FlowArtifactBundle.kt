@@ -121,6 +121,7 @@ class FlowArtifactBundleAnalyzer {
             add("adapter-diagnostics.json", FlowArtifactRole.REPORT, "schemas/adapter-diagnostics.schema.json", derivedFrom = listOf("target-adapter-contract.json"))
             add("diagnostic-coverage-report.json", FlowArtifactRole.REPORT, "schemas/diagnostic-coverage-report.schema.json", derivedFrom = listOf("intent-capability-validation-report.json", "validation-report.json", "execution-readiness-report.json", "target-adapter-contract.json", "adapter-diagnostics.json", "standard-diagnostic-catalog.json"))
             add("artifact-integrity-report.json", FlowArtifactRole.REPORT, "schemas/artifact-integrity-report.schema.json", derivedFrom = listOf("standard-version.txt", "diagnostic-coverage-report.json", "standard-diagnostic-catalog.json"))
+            add("conformance-manifest.json", FlowArtifactRole.REPORT, "schemas/conformance-manifest.schema.json", required = true, derived = false)
             add("standard-contract-index.json", FlowArtifactRole.METADATA, "schemas/standard-contract-index.schema.json", derivedFrom = listOf("flow-artifact-bundle.json", "conformance-manifest.json"))
             add("standard-release-profile.json", FlowArtifactRole.METADATA, "schemas/standard-release-profile.schema.json", derivedFrom = listOf("standard-contract-index.json"))
             add("artifact-evidence-report.json", FlowArtifactRole.REPORT, "schemas/artifact-evidence-report.schema.json", derivedFrom = listOf("flow-artifact-bundle.json"))

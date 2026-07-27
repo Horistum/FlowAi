@@ -1,12 +1,13 @@
 package org.flowlang.conformance
 
+import org.flowlang.artifacts.PublicStandardDraft
 import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.artifacts.StandardSurface
-import org.flowlang.artifacts.PublicStandardDraft
+import org.flowlang.capabilities.TargetExpressionSupport
+import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlanCanonicalizer
 import java.io.File
-import org.flowlang.generators.manifest.TargetProjectionRegistry
 
 internal class IntentSafetyChecks(
     rootDir: File,
@@ -125,14 +126,27 @@ internal class IntentSafetyChecks(
         require(features["strict-manual-approval"]?.requiredDiagnosticWhenUnsupported == "approval.strict") {
             "Target semantics matrix must explicitly model strict manual approval portability."
         }
-        require(features["unsupported-condition-fallback"]?.requiredDiagnosticWhenUnsupported == "condition.expression") {
-            "Target semantics matrix must reject silent unsupported-condition fallback."
+        require(features["conditions"]?.requiredDiagnosticWhenUnsupported == "condition.expression") {
+            "The provider-backed condition feature must retain its unsupported-expression diagnostic."
         }
-        require(features["rollback-portability"]?.requiredDiagnosticWhenUnsupported == "rollback.capability") {
-            "Target semantics matrix must model rollback portability."
+        require("unsupported-condition-fallback" !in features && "rollback-portability" !in features) {
+            "The public matrix must not publish feature rows without an implemented evidence resolver."
         }
-        require(negativeDiagnostics.containsAll(setOf("approval.strict", "condition.expression", "rollback.capability"))) {
-            "Negative conformance corpus must cover target semantics degradation/blocking diagnostics."
+        require(negativeDiagnostics.containsAll(setOf("approval.strict", "condition.expression"))) {
+            "Negative conformance corpus must cover provider-backed target semantics degradation diagnostics."
+        }
+
+        val unsupportedCondition = listOf(
+            "name matches '^prod-'",
+            "region in ['eu', 'us']"
+        ).firstOrNull { expression ->
+            TargetExpressionSupport.unsupportedReason(targets.getValue("tekton"), expression) != null
+        }
+        require(unsupportedCondition != null) {
+            "Tekton reference evidence must retain at least one unsupported condition expression."
+        }
+        require(TargetExpressionSupport.unsupportedReason(targets.getValue("jenkins"), unsupportedCondition) == null) {
+            "The same reference condition must remain natively expressible by Jenkins."
         }
     }
 

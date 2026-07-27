@@ -1,0 +1,36 @@
+version: "0.9.7.9.11"
+name: "Public Artifact Evidence and Verification Integrity"
+type: "bounded-correction"
+stream: core
+status: complete
+parentCoreItem: "0.9.7.9"
+objective: "Replace self-certified public statuses, handwritten target claims, decorative artifact provenance, dangling derivation acceptance and substring bundle verification with computed, provider-backed, fail-closed authorities."
+scopeBoundary:
+  - "Compute every published StandardSurface status from validated report content and prove negative counterparts."
+  - "Derive target semantics from registry and provider-owned projection evidence rather than target-name maps."
+  - "Use one exact artifact contract authority for producer identity and introduced-version metadata; reject unknown artifacts."
+  - "Validate every derivedFrom reference against declared artifacts or registered external evidence sources."
+  - "Parse conformance and export bundle JSON structurally with strict duplicate and unknown-field rejection."
+  - "Require conformance status PASS, exact required-check membership and absence from failedChecks."
+  - "Require exact stable-artifact membership in standard-export-bundle requiredArtifacts."
+  - "Preserve package, public-standard and artifact contract versions."
+universalInvariants:
+  - "A public PASS status is a validation result, never a literal assertion."
+  - "A target feature claim has provider or registry evidence, otherwise it is explicitly undeclared or review-only."
+  - "Artifact provenance and introduced-version metadata have no generic fallback."
+  - "Dangling derivation references block evidence completeness."
+  - "Text occurrence is never accepted as structured conformance evidence."
+implementedSlices:
+  - id: computed-public-status-authority
+  - id: provider-backed-target-semantics
+  - id: exact-artifact-contract-authority
+  - id: derivation-reference-integrity
+  - id: strict-structured-bundle-verification
+  - id: negative-conformance-counterexamples
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "Flow CI #2116, run 30191458296, independently passed exact implementation head 018f69388163c14f65c03c2cf21029156fd94ede and synthetic merge candidate 8854b0ed44e04347a9c60ca915e9b61ed24c9734, including Flow Agent tooling, repository structure, complete tests and standalone conformance."
+  buildDiscipline: "The later completion-metadata head must independently pass the same exact-head and merge-candidate jobs before this pull request may become ready for review."
+followUpWorkItem:
+  version: "0.9.7.10"
+  name: "Bounded Semantic Closure Gate"

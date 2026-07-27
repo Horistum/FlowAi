@@ -67,7 +67,6 @@ data class ReferenceIntentCorpusReport(
     val negativeScenarioIds: List<String>
 )
 
-
 data class ReferenceCorpusHarnessAssertion(
     val id: String,
     val scope: String,
@@ -213,67 +212,46 @@ object StandardSurface {
                 notes = artifact.notes
             )
         }
+        val requiredChangeGates = listOf(
+            "public-surface-review",
+            "schema-compatibility-review",
+            "migration-note-review",
+            "negative-conformance-review"
+        )
         return PublicStandardSurfaceReport(
-            status = "PASS",
+            status = StandardSurfaceStatusAuthority.publicSurface(entries, requiredChangeGates),
             entries = entries,
             stableArtifacts = entries.filter { it.stability == "stable" }.map { it.artifact },
             draftArtifacts = entries.filter { it.stability == "draft" }.map { it.artifact },
             experimentalArtifacts = entries.filter { it.stability == "experimental" }.map { it.artifact },
-            internalArtifacts = emptyList(),
-            requiredChangeGates = listOf(
-                "public-surface-review",
-                "schema-compatibility-review",
-                "migration-note-review",
-                "negative-conformance-review"
-            )
+            internalArtifacts = entries.filter { it.stability == "internal" }.map { it.artifact },
+            requiredChangeGates = requiredChangeGates
         )
     }
 
-    fun compatibilityMigrationPolicy(): CompatibilityMigrationPolicyReport = CompatibilityMigrationPolicyReport(
-        status = "PASS",
-        compatibilityRules = listOf(
-            CompatibilityPolicyRule(
-                id = "minor.add-optional-field",
-                category = "minor",
-                allowedInMinor = true,
-                requiresMigrationNote = false,
-                requiresDeprecationWindow = false,
-                description = "A minor release may add optional fields to public JSON artifacts."
-            ),
-            CompatibilityPolicyRule(
-                id = "minor.add-conformance-vector",
-                category = "minor",
-                allowedInMinor = true,
-                requiresMigrationNote = false,
-                requiresDeprecationWindow = false,
-                description = "A minor release may add stricter conformance vectors when the behavior was already required by the standard."
-            ),
-            CompatibilityPolicyRule(
-                id = "breaking.remove-public-field",
-                category = "breaking",
-                allowedInMinor = false,
-                requiresMigrationNote = true,
-                requiresDeprecationWindow = true,
-                description = "Removing or renaming a public field is a breaking change."
-            ),
-            CompatibilityPolicyRule(
-                id = "breaking-change-semantics",
-                category = "breaking",
-                allowedInMinor = false,
-                requiresMigrationNote = true,
-                requiresDeprecationWindow = true,
-                description = "Changing the meaning of an existing capability, diagnostic or safety invariant is a breaking change."
-            )
-        ),
-        deprecationWindowMinorReleases = 2,
-        migrationArtifacts = listOf(
+    fun compatibilityMigrationPolicy(): CompatibilityMigrationPolicyReport {
+        val rules = listOf(
+            CompatibilityPolicyRule("minor.add-optional-field", "minor", true, false, false, "A minor release may add optional fields to public JSON artifacts."),
+            CompatibilityPolicyRule("minor.add-conformance-vector", "minor", true, false, false, "A minor release may add stricter conformance vectors when the behavior was already required by the standard."),
+            CompatibilityPolicyRule("breaking.remove-public-field", "breaking", false, true, true, "Removing or renaming a public field is a breaking change."),
+            CompatibilityPolicyRule("breaking-change-semantics", "breaking", false, true, true, "Changing the meaning of an existing capability, diagnostic or safety invariant is a breaking change.")
+        )
+        val window = 2
+        val migrationArtifacts = listOf(
             "CHANGELOG.md",
             "docs/COMPATIBILITY_POLICY.md",
             "standard-release-profile.json",
             "conformance-manifest.json"
-        ),
-        breakingChangeGate = "major-version-or-explicit-standard-review"
-    )
+        )
+        val gate = "major-version-or-explicit-standard-review"
+        return CompatibilityMigrationPolicyReport(
+            status = StandardSurfaceStatusAuthority.compatibilityMigrationPolicy(rules, window, migrationArtifacts, gate),
+            compatibilityRules = rules,
+            deprecationWindowMinorReleases = window,
+            migrationArtifacts = migrationArtifacts,
+            breakingChangeGate = gate
+        )
+    }
 
     fun referenceIntentCorpus(): ReferenceIntentCorpusReport {
         val scenarios = listOf(
@@ -298,42 +276,47 @@ object StandardSurface {
             blockedByGate("kubernetes-maintenance-without-dry-run", "Kubernetes maintenance without dry-run", "Apply cluster maintenance to production now.", listOf("KUBERNETES_MAINTENANCE"), "SAFETY_REQUIRES_DRY_RUN"),
             blockedByGate("prod-deploy-without-approval", "Production deploy without approval", "Deploy billing-api to production without approval.", listOf("DEPLOY"), "SAFETY_REQUIRES_APPROVAL")
         )
+        val requiredScenarioIds = scenarios.map { it.id }
+        val negativeScenarioIds = scenarios.filter { it.expectedStatus == "BLOCKED" }.map { it.id }
         return ReferenceIntentCorpusReport(
-            status = "PASS",
+            status = StandardSurfaceStatusAuthority.referenceIntentCorpus(scenarios, requiredScenarioIds, negativeScenarioIds),
             scenarios = scenarios,
-            requiredScenarioIds = scenarios.map { it.id },
-            negativeScenarioIds = scenarios.filter { it.expectedStatus == "BLOCKED" }.map { it.id }
+            requiredScenarioIds = requiredScenarioIds,
+            negativeScenarioIds = negativeScenarioIds
         )
     }
 
-
     fun referenceCorpusExecutionHarness(): ReferenceCorpusExecutionHarnessReport {
         val corpus = referenceIntentCorpus()
+        val replayStages = listOf(
+            "normalize scenario input with ScenarioPackIntentNormalizer",
+            "compare selected scenario output against reference expected capabilities, entities, clarifications and rejection codes",
+            "review normalized intent through IntentProposalReview",
+            "lower accepted scenarios through intent validation, AST validation and execution-plan planning",
+            "prove blocked scenarios are not lowerable"
+        )
+        val assertions = listOf(
+            ReferenceCorpusHarnessAssertion("corpus.actual-normalizer", "all", true, "The reference corpus must be replayed through the real deterministic normalizer, not compared against static metadata."),
+            ReferenceCorpusHarnessAssertion("corpus.accepted-lowers", "accepted", true, "Every accepted reference scenario must pass normalization, proposal review, intent validation, AST validation and execution planning."),
+            ReferenceCorpusHarnessAssertion("corpus.blocked-stays-blocked", "blocked", true, "Every blocked reference scenario must remain blocked by a required clarification or safety diagnostic."),
+            ReferenceCorpusHarnessAssertion("corpus.entities-observed", "all", true, "Expected entities must be observed in the normalization report with canonical values."),
+            ReferenceCorpusHarnessAssertion("corpus.no-custom-fallback", "reference", true, "Reference scenarios must select a standard scenario pack rather than the custom fallback."),
+            ReferenceCorpusHarnessAssertion("corpus.no-auto-approval", "safety", true, "Production risk may create an approval obligation, but it must not synthesize an APPROVE step or APPROVAL policy without explicit user intent."),
+            ReferenceCorpusHarnessAssertion("corpus.rollback-review-lowerable", "rollback", true, "Rollback review intents must remain lowerable; missing application context is a review question, not a blocking clarification."),
+            ReferenceCorpusHarnessAssertion("corpus.semantic-capabilities", "capabilities", true, "Capability semantics must stay precise, for example rollout verification uses VERIFY rather than generic VALIDATE."),
+            ReferenceCorpusHarnessAssertion("corpus.negative-reason", "blocked", true, "Every blocked reference scenario must declare an expected clarification field or expected rejection code."),
+            ReferenceCorpusHarnessAssertion("corpus.plan-not-empty", "accepted", true, "Accepted reference scenarios must produce a non-empty execution plan.")
+        )
+        val mustLowerAccepted = true
+        val mustBlockNegative = true
         return ReferenceCorpusExecutionHarnessReport(
-            status = "PASS",
-            replayStages = listOf(
-                "normalize scenario input with ScenarioPackIntentNormalizer",
-                "compare selected scenario output against reference expected capabilities, entities, clarifications and rejection codes",
-                "review normalized intent through IntentProposalReview",
-                "lower accepted scenarios through intent validation, AST validation and execution-plan planning",
-                "prove blocked scenarios are not lowerable"
-            ),
-            assertions = listOf(
-                ReferenceCorpusHarnessAssertion("corpus.actual-normalizer", "all", true, "The reference corpus must be replayed through the real deterministic normalizer, not compared against static metadata."),
-                ReferenceCorpusHarnessAssertion("corpus.accepted-lowers", "accepted", true, "Every accepted reference scenario must pass normalization, proposal review, intent validation, AST validation and execution planning."),
-                ReferenceCorpusHarnessAssertion("corpus.blocked-stays-blocked", "blocked", true, "Every blocked reference scenario must remain blocked by a required clarification or safety diagnostic."),
-                ReferenceCorpusHarnessAssertion("corpus.entities-observed", "all", true, "Expected entities must be observed in the normalization report with canonical values."),
-                ReferenceCorpusHarnessAssertion("corpus.no-custom-fallback", "reference", true, "Reference scenarios must select a standard scenario pack rather than the custom fallback."),
-                ReferenceCorpusHarnessAssertion("corpus.no-auto-approval", "safety", true, "Production risk may create an approval obligation, but it must not synthesize an APPROVE step or APPROVAL policy without explicit user intent."),
-                ReferenceCorpusHarnessAssertion("corpus.rollback-review-lowerable", "rollback", true, "Rollback review intents must remain lowerable; missing application context is a review question, not a blocking clarification."),
-                ReferenceCorpusHarnessAssertion("corpus.semantic-capabilities", "capabilities", true, "Capability semantics must stay precise, for example rollout verification uses VERIFY rather than generic VALIDATE."),
-                ReferenceCorpusHarnessAssertion("corpus.negative-reason", "blocked", true, "Every blocked reference scenario must declare an expected clarification field or expected rejection code."),
-                ReferenceCorpusHarnessAssertion("corpus.plan-not-empty", "accepted", true, "Accepted reference scenarios must produce a non-empty execution plan." )
-            ),
+            status = StandardSurfaceStatusAuthority.referenceCorpusExecutionHarness(corpus, replayStages, assertions, mustLowerAccepted, mustBlockNegative),
+            replayStages = replayStages,
+            assertions = assertions,
             requiredScenarioIds = corpus.requiredScenarioIds,
             negativeScenarioIds = corpus.negativeScenarioIds,
-            mustLowerAccepted = true,
-            mustBlockNegative = true,
+            mustLowerAccepted = mustLowerAccepted,
+            mustBlockNegative = mustBlockNegative,
             notes = "v0.7.0 turns the reference intent corpus into an executable standard harness while keeping the core standard free of runtime, SDK and plugin-framework behavior."
         )
     }
@@ -393,70 +376,18 @@ object StandardSurface {
     )
 
     fun publicContractAliasInvariants(): List<PublicContractAliasInvariant> = listOf(
-        PublicContractAliasInvariant(
-            id = "execution-plan.task.dependencies-alias",
-            canonicalField = "TaskNode.dependsOn",
-            aliasField = "TaskNode.dependencies",
-            removalTarget = "0.8.0",
-            blocking = true,
-            description = "TaskNode.dependencies is a compatibility alias and must equal TaskNode.dependsOn until the public schema can remove it."
-        ),
-        PublicContractAliasInvariant(
-            id = "execution-plan.approval.dependencies-alias",
-            canonicalField = "ApprovalNode.dependsOn",
-            aliasField = "ApprovalNode.dependencies",
-            removalTarget = "0.8.0",
-            blocking = true,
-            description = "ApprovalNode.dependencies is a compatibility alias and must equal ApprovalNode.dependsOn until the public schema can remove it."
-        ),
-        PublicContractAliasInvariant(
-            id = "normalization-report.entities-alias",
-            canonicalField = "NormalizationReport.entities",
-            aliasField = "NormalizationReport.extractedEntities",
-            removalTarget = "0.8.0",
-            blocking = true,
-            description = "NormalizationReport.extractedEntities is a compatibility alias and must equal entities until the public schema can remove it."
-        ),
-        PublicContractAliasInvariant(
-            id = "normalization-report.confidence-derived",
-            canonicalField = "NormalizationReport.confidence",
-            aliasField = "NormalizationReport.confidenceByArea",
-            removalTarget = "0.8.0",
-            blocking = true,
-            description = "NormalizationReport.confidenceByArea is a derived compatibility view and must remain synchronized with confidence."
-        )
+        PublicContractAliasInvariant("execution-plan.task.dependencies-alias", "TaskNode.dependsOn", "TaskNode.dependencies", "0.8.0", true, "TaskNode.dependencies is a compatibility alias and must equal TaskNode.dependsOn until the public schema can remove it."),
+        PublicContractAliasInvariant("execution-plan.approval.dependencies-alias", "ApprovalNode.dependsOn", "ApprovalNode.dependencies", "0.8.0", true, "ApprovalNode.dependencies is a compatibility alias and must equal ApprovalNode.dependsOn until the public schema can remove it."),
+        PublicContractAliasInvariant("normalization-report.entities-alias", "NormalizationReport.entities", "NormalizationReport.extractedEntities", "0.8.0", true, "NormalizationReport.extractedEntities is a compatibility alias and must equal entities until the public schema can remove it."),
+        PublicContractAliasInvariant("normalization-report.confidence-derived", "NormalizationReport.confidence", "NormalizationReport.confidenceByArea", "0.8.0", true, "NormalizationReport.confidenceByArea is a derived compatibility view and must remain synchronized with confidence.")
     )
 
-    fun targetSemanticsMatrix(rootDir: File = File(".")): TargetSemanticsMatrixReport {
-        val targetIds = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")).keys.sorted()
-        val known = listOf(
-            semantics("conditions", mapOf("jenkins" to "native", "github-actions" to "partial", "tekton" to "partial"), "condition.expression", targetIds),
-            semantics("approvals", mapOf("jenkins" to "native", "github-actions" to "environment-gate", "tekton" to "partial"), "approval.strict", targetIds),
-            semantics("secrets", mapOf("jenkins" to "native-binding", "github-actions" to "native-binding", "tekton" to "native-binding"), "secret.binding", targetIds),
-            semantics("artifacts", mapOf("jenkins" to "archive", "github-actions" to "upload-artifact", "tekton" to "workspace-result"), "artifact.transport", targetIds),
-            semantics("parallelism", mapOf("jenkins" to "parallel-stage", "github-actions" to "matrix-or-jobs", "tekton" to "dag-tasks"), "parallelism.model", targetIds),
-            semantics("rollback", mapOf("jenkins" to "explicit-step", "github-actions" to "explicit-job", "tekton" to "explicit-task"), "rollback.capability", targetIds),
-            semantics("manual-gates", mapOf("jenkins" to "input-step", "github-actions" to "environment-review", "tekton" to "external-required"), "manual.gate", targetIds),
-            semantics("environment-gates", mapOf("jenkins" to "stage-env", "github-actions" to "environment", "tekton" to "namespace-or-param"), "environment.gate", targetIds),
-            semantics("matrix-builds", mapOf("jenkins" to "native", "github-actions" to "native", "tekton" to "expanded-dag"), "matrix.expression", targetIds),
-            semantics("dynamic-expressions", mapOf("jenkins" to "groovy-expression", "github-actions" to "workflow-expression", "tekton" to "limited-when-expression"), "condition.expression", targetIds),
-            semantics("strict-manual-approval", mapOf("jenkins" to "native", "github-actions" to "environment-gate-not-equivalent", "tekton" to "unsupported-blocked"), "approval.strict", targetIds),
-            semantics("unsupported-condition-fallback", targetIds.associateWith { "diagnostic-required" }, "condition.expression", targetIds),
-            semantics("rollback-portability", mapOf("jenkins" to "explicit-step", "github-actions" to "explicit-job", "tekton" to "explicit-task-or-blocked"), "rollback.capability", targetIds)
-        )
-        return TargetSemanticsMatrixReport(
-            status = if (targetIds.isEmpty()) "FAIL" else "PASS",
-            targetIds = targetIds,
-            entries = known,
-            portabilityRule = "Unsupported, undeclared or partial target semantics must produce diagnostics or blocked readiness before rendering."
-        )
-    }
+    fun targetSemanticsMatrix(rootDir: File = File(".")): TargetSemanticsMatrixReport =
+        TargetSemanticsAuthority.build(TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")))
 
-    fun standardExportBundle(): StandardExportBundleReport = StandardExportBundleReport(
-        status = "PASS",
-        command = "standard-export --out dist/flow-standard-${FlowStandardVersions.FLOW_STANDARD_VERSION}",
-        requiredDirectories = listOf("docs/", "schemas/", "conformance/", "standard/", "targets/", "examples/"),
-        requiredFiles = listOf(
+    fun standardExportBundle(): StandardExportBundleReport {
+        val requiredDirectories = listOf("docs/", "schemas/", "conformance/", "standard/", "targets/", "examples/")
+        val requiredFiles = listOf(
             "standard-version.txt",
             "conformance-manifest.json",
             "standard-index.json",
@@ -470,56 +401,42 @@ object StandardSurface {
             "conformance-levels.json",
             "standard-export-manifest.json",
             "conformance-vector-index.json"
-        ),
-        requiredArtifacts = StandardModel.stableArtifacts(),
-        packageName = "flow-standard-${FlowStandardVersions.FLOW_STANDARD_VERSION}"
-    )
+        )
+        val requiredArtifacts = StandardModel.stableArtifacts()
+        val packageName = "flow-standard-${FlowStandardVersions.FLOW_STANDARD_VERSION}"
+        return StandardExportBundleReport(
+            status = StandardSurfaceStatusAuthority.standardExportBundle(requiredDirectories, requiredFiles, requiredArtifacts, packageName),
+            command = "standard-export --out dist/$packageName",
+            requiredDirectories = requiredDirectories,
+            requiredFiles = requiredFiles,
+            requiredArtifacts = requiredArtifacts,
+            packageName = packageName
+        )
+    }
 
     fun conformanceLevels(): ConformanceLevelsReport {
         val required = StandardModel.candidateCheckIds()
         val artifacts = StandardModel.candidateArtifacts()
         val levels = listOf(
-            ConformanceLevelEntry(
-                id = "surface-reader",
-                title = "Surface Reader",
-                requiredChecks = listOf("v0.4.5.standard-surface-freeze"),
-                requiredArtifacts = listOf("public-standard-surface.json", "standard-contract-index.json"),
-                description = "Implementation can read the frozen public standard surface and public contract index."
-            ),
-            ConformanceLevelEntry(
-                id = "corpus-runner",
-                title = "Corpus Runner",
-                requiredChecks = listOf("v0.4.7.reference-intent-corpus"),
-                requiredArtifacts = listOf("reference-intent-corpus.json", "conformance-manifest.json"),
-                description = "Implementation can replay reference intent scenarios and preserve accepted/blocked behavior."
-            ),
-            ConformanceLevelEntry(
-                id = "target-semantics-reader",
-                title = "Target Semantics Reader",
-                requiredChecks = listOf("v0.4.8.target-semantics-matrix"),
-                requiredArtifacts = listOf("target-semantics-matrix.json", "execution-readiness-report.json"),
-                description = "Implementation can reason about target portability without silent semantic fallback."
-            ),
-            ConformanceLevelEntry(
-                id = "standard-candidate",
-                title = "Public Standard Candidate",
-                requiredChecks = required,
-                requiredArtifacts = artifacts,
-                description = "Implementation satisfies the current public standard candidate surface."
-            )
+            ConformanceLevelEntry("surface-reader", "Surface Reader", listOf("v0.4.5.standard-surface-freeze"), listOf("public-standard-surface.json", "standard-contract-index.json"), "Implementation can read the frozen public standard surface and public contract index."),
+            ConformanceLevelEntry("corpus-runner", "Corpus Runner", listOf("v0.4.7.reference-intent-corpus"), listOf("reference-intent-corpus.json", "conformance-manifest.json"), "Implementation can replay reference intent scenarios and preserve accepted/blocked behavior."),
+            ConformanceLevelEntry("target-semantics-reader", "Target Semantics Reader", listOf("v0.4.8.target-semantics-matrix"), listOf("target-semantics-matrix.json", "execution-readiness-report.json"), "Implementation can reason about target portability without silent semantic fallback."),
+            ConformanceLevelEntry("standard-candidate", "Public Standard Candidate", required, artifacts, "Implementation satisfies the current public standard candidate surface.")
         )
+        val defaultLevel = "standard-candidate"
+        val order = levels.map { it.id }
         return ConformanceLevelsReport(
-            status = "PASS",
-            defaultLevel = "standard-candidate",
+            status = StandardSurfaceStatusAuthority.conformanceLevels(defaultLevel, levels, order),
+            defaultLevel = defaultLevel,
             levels = levels,
-            levelOrder = levels.map { it.id }
+            levelOrder = order
         )
     }
 
-    fun standardExportManifest(): StandardExportManifestReport = StandardExportManifestReport(
-        status = "PASS",
-        candidate = "public-standard-candidate",
-        requiredDocuments = listOf(
+    fun standardExportManifest(): StandardExportManifestReport {
+        val export = standardExportBundle()
+        val candidate = "public-standard-candidate"
+        val requiredDocuments = listOf(
             "docs/ARCHITECTURE_CONSTITUTION.md",
             "docs/PUBLIC_STANDARD_SURFACE.md",
             "docs/COMPATIBILITY_POLICY.md",
@@ -530,28 +447,27 @@ object StandardSurface {
             "docs/V0_7_5_PURPOSE_COVERAGE_RATIO.md",
             "docs/IMPLEMENTER_GUIDE.md",
             "docs/STANDARD_EXPORT_MANIFEST.md"
-        ),
-        requiredJsonArtifacts = standardExportBundle().requiredFiles.filter { it.endsWith(".json") },
-        requiredSchemas = StandardModel.stableSchemas()
+        )
+        val requiredJsonArtifacts = export.requiredFiles.filter { it.endsWith(".json") }
+        val requiredSchemas = StandardModel.stableSchemas()
             .plus("schemas/standard-bundle-verification.schema.json")
             .distinct()
-            .sorted(),
-        requiredDirectories = standardExportBundle().requiredDirectories,
-        implementationBoundary = listOf(
+            .sorted()
+        val implementationBoundary = listOf(
             "Read Standard Intent Model artifacts.",
             "Preserve required clarifications and safety-gate blocking.",
             "Lower only validated intent into the canonical execution plan.",
             "Use target semantics and readiness before rendering target manifests.",
             "Publish conformance evidence without requiring Kotlin internals."
-        ),
-        nonGoals = listOf(
+        )
+        val nonGoals = listOf(
             "No runtime executor.",
             "No SDK or plugin lifecycle.",
             "No target-specific public DSL.",
             "No silent semantic fallback.",
             "No model-backed AI provider inside the core standard."
-        ),
-        acceptanceCriteria = listOf(
+        )
+        val acceptanceCriteria = listOf(
             "All required public documents, schemas and standard directories are present.",
             "All stable public surface artifacts are covered by the export bundle.",
             "The standard-candidate conformance level requires every current public candidate gate.",
@@ -560,9 +476,9 @@ object StandardSurface {
             "Architecture delta analysis compares the active model against the frozen previous release baseline.",
             "Purpose coverage ratio keeps public standard growth tied to executable automation intent evidence.",
             "Reference intent corpus, target semantics matrix and negative conformance remain active gates."
-        ),
-        releaseGateChecks = StandardModel.standardExportManifestCheckIds(),
-        evidenceArtifacts = listOf(
+        )
+        val releaseGateChecks = StandardModel.standardExportManifestCheckIds()
+        val evidenceArtifacts = listOf(
             "conformance-manifest.json",
             "standard-release-profile.json",
             "public-standard-surface.json",
@@ -570,24 +486,24 @@ object StandardSurface {
             "conformance-levels.json",
             "standard-export-manifest.json",
             "conformance-vector-index.json"
-        ),
-        selfVerificationCommands = listOf(
+        )
+        val selfVerificationCommands = listOf(
             "./gradlew clean test",
             "./gradlew run --args=\"conformance\"",
             "./gradlew run --args=\"standard-export --out dist/flow-standard-${FlowStandardVersions.FLOW_STANDARD_VERSION}\"",
             "./gradlew run --args=\"standard-verify --bundle dist/flow-standard-${FlowStandardVersions.FLOW_STANDARD_VERSION}\""
-        ),
-        bundleVerificationChecks = listOf(
+        )
+        val bundleVerificationChecks = listOf(
             "Every required document in standard-export-manifest.json exists in the exported bundle.",
             "Every stable public surface artifact is included by standard-export-bundle.json.",
             "Every stable public surface schema exists and is referenced by the export manifest.",
-            "Every required release-profile check is present in the conformance manifest.",
+            "Every required release-profile check is present and passing in the conformance manifest.",
             "Every evidence artifact declared by the export manifest is emitted by standard-draft or standard-export.",
             "The exported standard-version.txt equals the active Flow standard version.",
             "The standard-verify command emits a PASS standard-bundle-verification report.",
             "The conformance-vector-index.json artifact reconciles public vector files with runner and release-profile checks."
-        ),
-        verificationInputs = listOf(
+        )
+        val verificationInputs = listOf(
             "standard-export-manifest.json",
             "standard-export-bundle.json",
             "public-standard-surface.json",
@@ -596,30 +512,86 @@ object StandardSurface {
             "conformance-levels.json",
             "conformance-vector-index.json"
         )
+        return StandardExportManifestReport(
+            status = StandardSurfaceStatusAuthority.standardExportManifest(
+                candidate,
+                requiredDocuments,
+                requiredJsonArtifacts,
+                requiredSchemas,
+                export.requiredDirectories,
+                releaseGateChecks,
+                evidenceArtifacts,
+                selfVerificationCommands,
+                verificationInputs
+            ),
+            candidate = candidate,
+            requiredDocuments = requiredDocuments,
+            requiredJsonArtifacts = requiredJsonArtifacts,
+            requiredSchemas = requiredSchemas,
+            requiredDirectories = export.requiredDirectories,
+            implementationBoundary = implementationBoundary,
+            nonGoals = nonGoals,
+            acceptanceCriteria = acceptanceCriteria,
+            releaseGateChecks = releaseGateChecks,
+            evidenceArtifacts = evidenceArtifacts,
+            selfVerificationCommands = selfVerificationCommands,
+            bundleVerificationChecks = bundleVerificationChecks,
+            verificationInputs = verificationInputs
+        )
+    }
+
+    private fun accepted(
+        id: String,
+        title: String,
+        inputText: String,
+        capabilities: List<String>,
+        entities: Map<String, String> = emptyMap()
+    ): ReferenceIntentScenario = ReferenceIntentScenario(
+        id,
+        title,
+        inputText,
+        "ACCEPTED",
+        capabilities,
+        emptyList(),
+        emptyList(),
+        entities,
+        "Free-text intent that the standard normalizes, validates and accepts for lowering."
     )
 
+    private fun blockedByClarification(
+        id: String,
+        title: String,
+        inputText: String,
+        capabilities: List<String>,
+        clarification: String
+    ): ReferenceIntentScenario = ReferenceIntentScenario(
+        id,
+        title,
+        inputText,
+        "BLOCKED",
+        capabilities,
+        listOf(clarification),
+        emptyList(),
+        emptyMap(),
+        "Intent that the standard blocks until a required clarification is answered."
+    )
 
-    private fun accepted(id: String, title: String, inputText: String, capabilities: List<String>, entities: Map<String, String> = emptyMap()): ReferenceIntentScenario =
-        ReferenceIntentScenario(id, title, inputText, "ACCEPTED", capabilities, emptyList(), emptyList(), entities,
-            "Free-text intent that the standard normalizes, validates and accepts for lowering.")
-
-    private fun blockedByClarification(id: String, title: String, inputText: String, capabilities: List<String>, clarification: String): ReferenceIntentScenario =
-        ReferenceIntentScenario(id, title, inputText, "BLOCKED", capabilities, listOf(clarification), emptyList(), emptyMap(),
-            "Intent that the standard blocks until a required clarification is answered.")
-
-    private fun blockedByGate(id: String, title: String, inputText: String, capabilities: List<String>, rejectionCode: String): ReferenceIntentScenario =
-        ReferenceIntentScenario(id, title, inputText, "BLOCKED", capabilities, emptyList(), listOf(rejectionCode), emptyMap(),
-            "Intent that the proposal-review gate rejects on a mandated safety obligation.")
-
-    private fun semantics(
-        feature: String,
-        declared: Map<String, String>,
-        diagnostic: String,
-        targetIds: List<String>
-    ): TargetSemanticsEntry = TargetSemanticsEntry(
-        feature = feature,
-        semanticsByTarget = targetIds.associateWith { target -> declared[target] ?: "not-declared" },
-        requiredDiagnosticWhenUnsupported = diagnostic
+    private fun blockedByGate(
+        id: String,
+        title: String,
+        inputText: String,
+        capabilities: List<String>,
+        rejectionCode: String
+    ): ReferenceIntentScenario = ReferenceIntentScenario(
+        id,
+        title,
+        inputText,
+        "BLOCKED",
+        capabilities,
+        emptyList(),
+        listOf(rejectionCode),
+        emptyMap(),
+        "Intent that the proposal-review gate rejects on a mandated safety obligation."
     )
 
     private fun standardExampleArtifacts(): List<String> = listOf(

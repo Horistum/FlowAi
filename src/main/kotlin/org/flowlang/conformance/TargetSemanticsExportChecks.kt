@@ -1,11 +1,13 @@
 package org.flowlang.conformance
 
-import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.artifacts.StandardSurface
+import org.flowlang.artifacts.StandardSurfaceStatusAuthority
+import org.flowlang.capabilities.TargetExpressionSupport
+import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
 import java.io.File
-import org.flowlang.generators.manifest.TargetProjectionRegistry
 
 internal class TargetSemanticsExportChecks(
     rootDir: File,
@@ -20,53 +22,69 @@ internal class TargetSemanticsExportChecks(
 
     private fun checkV048TargetSemanticsMatrix(): ConformanceCheck = runCheck("v0.4.8.target-semantics-matrix") {
         val matrix = StandardSurface.targetSemanticsMatrix()
-        require(matrix.status == "PASS") { "Target semantics matrix must pass." }
-        require(matrix.targetIds.all { it in targets.keys }) {
-            "Target semantics matrix references targets absent from the registry: ${matrix.targetIds.filter { it !in targets.keys }}."
-        }
-        require(matrix.targetIds.containsAll(listOf("jenkins", "github-actions", "tekton"))) {
-            "Target semantics matrix must cover Jenkins, GitHub Actions and Tekton."
+        require(matrix.status == "PASS") { "Target semantics matrix must pass computed validation." }
+        require(matrix.targetIds.toSet() == targets.keys) {
+            "Target semantics matrix inventory ${matrix.targetIds} disagrees with registry ${targets.keys.sorted()}."
         }
         val features = matrix.entries.map { it.feature }.toSet()
-        require(features.containsAll(setOf("conditions", "approvals", "secrets", "artifacts", "parallelism", "rollback"))) {
-            "Target semantics matrix is missing core portable features."
+        require(features == setOf("conditions", "approvals", "manual-gates", "strict-manual-approval", "secrets", "artifacts")) {
+            "Target semantics matrix may publish only feature families derived by the active evidence authority: $features"
         }
-        val referenceConditions = listOf("env == 'prod'", "stage != 'dev'", "count > 1", "name matches '^prod-'", "region in ['eu', 'us']")
+
+        val referenceConditions = listOf(
+            "env == 'prod'",
+            "stage != 'dev'",
+            "count > 1",
+            "name matches '^prod-'",
+            "region in ['eu', 'us']"
+        )
         fun derivedConditionSupport(target: String): String {
             val capability = targets.getValue(target)
-            val unsupported = referenceConditions.count { TargetExpressionSupport.unsupportedReason(capability, it) != null }
+            val unsupported = referenceConditions.count {
+                TargetExpressionSupport.unsupportedReason(capability, it) != null
+            }
             return when {
                 unsupported == 0 -> "native"
                 unsupported < referenceConditions.size -> "partial"
-                else -> "unsupported"
+                else -> "unsupported-blocked"
             }
         }
-        val conditions = matrix.entries.first { it.feature == "conditions" }
-        listOf("jenkins", "github-actions", "tekton").forEach { target ->
-            val declared = conditions.semanticsByTarget.getValue(target)
-            val derived = derivedConditionSupport(target)
-            require(declared == derived) {
-                "Matrix target '$target' conditions '$declared' disagree with TargetExpressionSupport ('$derived')."
+
+        val conditions = matrix.entries.single { it.feature == "conditions" }
+        matrix.targetIds.forEach { target ->
+            require(conditions.semanticsByTarget.getValue(target) == derivedConditionSupport(target)) {
+                "Condition support for '$target' is not derived from TargetExpressionSupport."
             }
         }
-        require(conditions.requiredDiagnosticWhenUnsupported == "condition.expression") {
-            "Unsupported condition expressions must surface the condition.expression diagnostic."
+
+        val approvals = matrix.entries.single { it.feature == "approvals" }
+        val manualGates = matrix.entries.single { it.feature == "manual-gates" }
+        val strictApproval = matrix.entries.single { it.feature == "strict-manual-approval" }
+        matrix.targetIds.forEach { target ->
+            val provider = BuiltInNativeProjectionCatalogs.byTarget[target]
+            val expected = when {
+                provider == null -> "not-declared-review-only"
+                provider.approvalDefinitions.any { it.capability == "approval.manual" } -> "native"
+                else -> "adapter-required-review-only"
+            }
+            require(approvals.semanticsByTarget.getValue(target) == expected)
+            require(manualGates.semanticsByTarget.getValue(target) == expected)
+            require(strictApproval.semanticsByTarget.getValue(target) == expected)
         }
-        val unsupportedReference = referenceConditions.firstOrNull {
-            TargetExpressionSupport.unsupportedReason(targets.getValue("tekton"), it) != null
+
+        val invalid = matrix.entries.toMutableList().also { entries ->
+            val first = entries.first()
+            entries[0] = first.copy(semanticsByTarget = first.semanticsByTarget + (matrix.targetIds.first() to "handwritten-optimism"))
         }
-        require(unsupportedReference != null) {
-            "Tekton must report at least one unsupported reference guard expression."
-        }
-        require(TargetExpressionSupport.unsupportedReason(targets.getValue("jenkins"), unsupportedReference) == null) {
-            "Jenkins must natively express the reference guard expression '$unsupportedReference'."
+        require(StandardSurfaceStatusAuthority.targetSemanticsMatrix(matrix.targetIds, invalid) == "FAIL") {
+            "Unknown target-semantics labels must fail the public matrix status authority."
         }
     }
 
     private fun checkV049StandardExportBundle(): ConformanceCheck = runCheck("v0.4.9.standard-export-bundle") {
         val export = StandardSurface.standardExportBundle()
         val surface = StandardSurface.publicSurface()
-        require(export.status == "PASS") { "Standard export bundle must pass." }
+        require(export.status == "PASS") { "Standard export bundle must pass computed validation." }
         require(export.command.startsWith("standard-export --out")) { "Standard export bundle must define a CLI export command." }
         require(export.command.contains(FlowStandardVersions.FLOW_STANDARD_VERSION)) {
             "Export command must target the current standard version."
@@ -82,9 +100,17 @@ internal class TargetSemanticsExportChecks(
         require(export.requiredArtifacts.toSet() == surface.stableArtifacts.toSet()) {
             "Standard export bundle artifacts must match the public surface stable artifacts."
         }
-        require(export.requiredFiles.contains("standard-index.json")) { "Standard export bundle must include standard-index.json." }
-        require(export.requiredFiles.contains("public-standard-surface.json")) { "Standard export bundle must include public-standard-surface.json." }
-        require(export.requiredFiles.contains("conformance-manifest.json")) { "Standard export bundle must include conformance-manifest.json for self-verification." }
-        require(export.requiredArtifacts.contains("standard-export-bundle.json")) { "Standard export bundle must declare itself as a required artifact." }
+        require(export.requiredFiles.contains("standard-index.json"))
+        require(export.requiredFiles.contains("public-standard-surface.json"))
+        require(export.requiredFiles.contains("conformance-manifest.json"))
+        require(export.requiredArtifacts.contains("standard-export-bundle.json"))
+        require(
+            StandardSurfaceStatusAuthority.standardExportBundle(
+                export.requiredDirectories,
+                emptyList(),
+                export.requiredArtifacts,
+                export.packageName
+            ) == "FAIL"
+        ) { "An export bundle without required files must fail its computed status authority." }
     }
 }

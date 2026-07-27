@@ -1,5 +1,9 @@
 package org.flowlang.artifacts
 
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationFeature
+import org.flowlang.cli.Json
+import org.flowlang.conformance.ConformanceManifestReport
 import org.flowlang.standard.FlowStandardVersions
 import java.io.File
 
@@ -30,10 +34,15 @@ data class StandardBundleVerificationReport(
 /**
  * Verifies an exported Flow standard bundle.
  *
- * This is deliberately a bundle verifier, not a runtime executor. It checks
- * public standard artifacts, schemas, conformance evidence and version stamps.
+ * Public JSON evidence is parsed into its contract model with unknown fields and
+ * duplicate keys rejected. A check id merely occurring somewhere in JSON text
+ * is not conformance evidence.
  */
 class StandardBundleVerifier {
+    private val strictMapper = Json.mapper.copy()
+        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .also { mapper -> mapper.factory.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION) }
+
     fun verify(bundleDir: File): StandardBundleVerificationReport {
         val manifest = StandardSurface.standardExportManifest()
         val export = StandardSurface.standardExportBundle()
@@ -54,11 +63,11 @@ class StandardBundleVerifier {
             .filterNot { File(bundleDir, it).isDirectory }
             .sorted()
         val missingEvidence = manifest.evidenceArtifacts.missingFiles(bundleDir)
-        val missingReleaseChecks = missingTextEntries(
+        val missingReleaseChecks = missingReleaseChecks(
             file = File(bundleDir, "conformance-manifest.json"),
             required = releaseProfile.requiredConformanceChecks
         )
-        val missingSurfaceArtifacts = missingTextEntries(
+        val missingSurfaceArtifacts = missingStableSurfaceArtifacts(
             file = File(bundleDir, "standard-export-bundle.json"),
             required = surface.stableArtifacts
         )
@@ -108,14 +117,14 @@ class StandardBundleVerifier {
             check(
                 id = "bundle.release-gates-in-conformance-manifest",
                 missing = missingReleaseChecks,
-                passMessage = "Every release-profile conformance gate is present in conformance-manifest.json.",
-                failMessage = "Conformance manifest is missing release-profile checks."
+                passMessage = "The conformance manifest is structurally valid, passing, and contains every required release gate as a successful check.",
+                failMessage = "Conformance manifest evidence is malformed, failing, or missing required successful checks."
             ),
             check(
                 id = "bundle.stable-surface-covered-by-export-bundle",
                 missing = missingSurfaceArtifacts,
-                passMessage = "Every stable public surface artifact is declared by standard-export-bundle.json.",
-                failMessage = "Standard export bundle is missing stable public surface artifacts."
+                passMessage = "The export bundle is structurally valid, passing, and declares every stable public surface artifact in requiredArtifacts.",
+                failMessage = "Standard export bundle evidence is malformed, failing, or missing stable public surface artifacts."
             ),
             check(
                 id = "bundle.standard-version-matches",
@@ -141,6 +150,44 @@ class StandardBundleVerifier {
         )
     }
 
+    private fun missingReleaseChecks(file: File, required: List<String>): List<String> {
+        if (!file.isFile) return (required + "conformance-manifest.json:missing").distinct().sorted()
+        val report = strictRead(file, ConformanceManifestReport::class.java)
+            ?: return (required + "conformance-manifest.json:invalid").distinct().sorted()
+        val issues = mutableListOf<String>()
+        if (report.standardVersion != FlowStandardVersions.FLOW_STANDARD_VERSION) {
+            issues += "conformance-manifest.standardVersion"
+        }
+        if (report.status != "PASS") issues += "conformance-manifest.status"
+        if (report.failed != report.failedChecks.size) issues += "conformance-manifest.failed-count"
+        if (report.passed + report.failed != report.totalChecks) issues += "conformance-manifest.total-count"
+        if (report.requiredChecks.size != report.requiredChecks.distinct().size) {
+            issues += "conformance-manifest.requiredChecks:duplicates"
+        }
+        issues += required.filterNot { it in report.requiredChecks }
+        issues += required.filter { it in report.failedChecks }.map { "$it:failed" }
+        return issues.distinct().sorted()
+    }
+
+    private fun missingStableSurfaceArtifacts(file: File, required: List<String>): List<String> {
+        if (!file.isFile) return (required + "standard-export-bundle.json:missing").distinct().sorted()
+        val report = strictRead(file, StandardExportBundleReport::class.java)
+            ?: return (required + "standard-export-bundle.json:invalid").distinct().sorted()
+        val issues = mutableListOf<String>()
+        if (report.standardVersion != FlowStandardVersions.FLOW_STANDARD_VERSION) {
+            issues += "standard-export-bundle.standardVersion"
+        }
+        if (report.status != "PASS") issues += "standard-export-bundle.status"
+        if (report.requiredArtifacts.size != report.requiredArtifacts.distinct().size) {
+            issues += "standard-export-bundle.requiredArtifacts:duplicates"
+        }
+        issues += required.filterNot { it in report.requiredArtifacts }
+        return issues.distinct().sorted()
+    }
+
+    private fun <T> strictRead(file: File, type: Class<T>): T? =
+        runCatching { strictMapper.readValue(file, type) }.getOrNull()
+
     private fun check(id: String, missing: List<String>, passMessage: String, failMessage: String): StandardBundleVerificationCheck =
         StandardBundleVerificationCheck(
             id = id,
@@ -151,10 +198,4 @@ class StandardBundleVerifier {
 
     private fun List<String>.missingFiles(bundleDir: File): List<String> =
         filterNot { File(bundleDir, it).isFile }.distinct().sorted()
-
-    private fun missingTextEntries(file: File, required: List<String>): List<String> {
-        if (!file.isFile) return required.sorted()
-        val text = file.readText()
-        return required.filterNot { text.contains(it) }.distinct().sorted()
-    }
 }
