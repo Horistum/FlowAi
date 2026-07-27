@@ -14,7 +14,7 @@ data class ReleaseMetadataHonestyCheck(
 )
 
 data class ReleaseMetadataHonestyReport(
-    val reportVersion: String = "1.3",
+    val reportVersion: String = "1.4",
     val implementationPackageVersion: String = FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION,
     val publicStandardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
     val completedCorrectionItem: String,
@@ -36,10 +36,10 @@ data class ReleaseMetadataHonestyReport(
  * Reconciles package, public-standard, Core-roadmap, bounded-correction and
  * bounded-closure axes.
  *
- * The correction identity remains historical after closure. The closure work
- * package owns only the READY to CLOSED transition; it cannot relabel the
- * correction item or publish a new package or public-standard version merely
- * because the paperwork has finally stopped moving.
+ * A previously CLOSED item may enter CORRECTION_REQUIRED only through an active
+ * bounded correction that explicitly names the closure item as its parent. The
+ * repository must then pass READY and CLOSED again; historical evidence remains
+ * evidence of the earlier candidate, never proof for the repaired one.
  */
 class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
     fun analyze(): ReleaseMetadataHonestyReport {
@@ -51,7 +51,6 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml"
         )
         val reportFile = File(rootDir, "REPORT.md")
-        val changelogFile = File(rootDir, "CHANGELOG-v0.9.7.9.md")
         val gradleFile = File(rootDir, "build.gradle.kts")
 
         val releaseState = requiredYaml(releaseStateFile)
@@ -59,36 +58,44 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
         val coreRoadmap = requiredYaml(coreRoadmapFile)
         val closureWorkPackage = requiredYaml(closureWorkPackageFile)
         val reportText = requiredText(reportFile)
-        val changelogText = requiredText(changelogFile)
         val gradleText = requiredText(gradleFile)
 
         val packageVersion = FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION
         val standardVersion = FlowStandardVersions.FLOW_STANDARD_VERSION
-        val parentItem = "0.9.7.9"
-        val parentName = "Intent Lowering and Diagnostic Honesty"
         val closureItem = "0.9.7.10"
         val closureName = "Bounded Semantic Closure Gate"
+        val preClosureItem = "0.9.7.9"
+        val preClosureName = "Intent Lowering and Diagnostic Honesty"
 
         val selectedPointer = roadmap.string("currentDecision", "activeCorrectionWorkPackage")
         val correctionWorkPackageFile = selectCorrectionWorkPackage(selectedPointer)
         val correctionPath = correctionWorkPackageFile.relativeTo(rootDir).invariantSeparatorsPath
         val correctionWorkPackage = requiredYaml(correctionWorkPackageFile)
-        val correctionItem = correctionVersionFromPath(correctionPath)
+        val correctionItem = correctionWorkPackage.string("version")
         val correctionName = roadmap.string("currentDecision", "activeCorrectionWorkPackageName")
             .ifBlank { correctionWorkPackage.string("name") }
         val correctionStatus = correctionWorkPackage.string("status")
-        val closureWorkStatus = closureWorkPackage.string("status")
+        val correctionTerminal = correctionStatus in TERMINAL_CORRECTION_STATUSES
+        val parentItem = correctionWorkPackage.string("parentCoreItem")
+        val parentName = coreRoadmap.itemName(parentItem)
         val parentStatus = coreRoadmap.itemStatus(parentItem)
+        val closureWorkStatus = closureWorkPackage.string("status")
         val closureStatus = coreRoadmap.itemStatus(closureItem)
         val coreTrackStatus = coreRoadmap.string("status")
 
         val closurePhase = when {
-            correctionStatus == "complete" &&
+            correctionStatus == "active" &&
+                parentItem == closureItem &&
+                closureWorkStatus == "correction-required" &&
+                parentStatus == "correction-required" &&
+                closureStatus == "correction-required" &&
+                coreTrackStatus == "active" -> "CORRECTION_REQUIRED"
+            correctionTerminal &&
                 closureWorkStatus == "active" &&
                 parentStatus == "completed" &&
                 closureStatus == "next" &&
                 coreTrackStatus == "active" -> "READY"
-            correctionStatus == "complete" &&
+            correctionTerminal &&
                 closureWorkStatus == "complete" &&
                 parentStatus == "completed" &&
                 closureStatus == "completed" &&
@@ -96,38 +103,44 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             else -> "INVALID"
         }
         val expectedClosureStatus = when (closurePhase) {
+            "CORRECTION_REQUIRED" -> "correction-required"
             "READY" -> "next"
             "CLOSED" -> "completed"
-            else -> if (correctionStatus == "complete") closureStatus else "blocked"
+            else -> closureStatus
         }
         val expectedTrackStatus = if (closurePhase == "CLOSED") "completed" else "active"
-        val expectedCompletedItem = if (closurePhase == "CLOSED") closureItem else parentItem
-        val expectedCompletedName = if (closurePhase == "CLOSED") closureName else parentName
+        val expectedCompletedItem = if (closurePhase == "CLOSED") closureItem else preClosureItem
+        val expectedCompletedName = if (closurePhase == "CLOSED") closureName else preClosureName
         val expectedActivePointer = if (correctionStatus == "active") correctionPath else ""
         val validationSource = releaseState.string("lastKnownValidation", "validationSource")
         val validationNotes = releaseState.string("lastKnownValidation", "notes")
+        val correctionChangelogFile = File(
+            rootDir,
+            if (correctionItem.startsWith("0.9.7.10.")) "CHANGELOG-v0.9.7.10.md" else "CHANGELOG-v0.9.7.9.md"
+        )
+        val correctionChangelogText = requiredText(correctionChangelogFile)
 
         val checks = buildList {
             add(booleanCheck(
                 id = "release.correction.lifecycle-status",
-                passed = correctionStatus in setOf("active", "complete"),
+                passed = correctionStatus == "active" || correctionTerminal,
                 observed = correctionStatus,
                 source = correctionWorkPackageFile.path,
-                message = "A bounded correction must be either active or complete."
+                message = "A bounded correction must be active or explicitly terminal."
             ))
             add(booleanCheck(
                 id = "release.closure.lifecycle-status",
-                passed = closureWorkStatus in setOf("active", "complete"),
+                passed = closureWorkStatus in setOf("correction-required", "active", "complete"),
                 observed = closureWorkStatus,
                 source = closureWorkPackageFile.path,
-                message = "The bounded closure work package must be either active or complete."
+                message = "The bounded closure work package must declare correction-required, active or complete."
             ))
             add(booleanCheck(
                 id = "release.closure.phase",
-                passed = closurePhase in setOf("READY", "CLOSED"),
+                passed = closurePhase in VALID_PHASES,
                 observed = closurePhase,
                 source = closureWorkPackageFile.path,
-                message = "Closure metadata must form one exact READY or CLOSED lifecycle state."
+                message = "Closure metadata must form one exact CORRECTION_REQUIRED, READY or CLOSED lifecycle state."
             ))
             add(equalsCheck(
                 "release.package.gradle",
@@ -208,8 +221,8 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             ))
             add(equalsCheck(
                 "release.work-package.correction-item",
+                correctionVersionFromPath(correctionPath),
                 correctionItem,
-                correctionWorkPackage.string("version"),
                 correctionWorkPackageFile.path,
                 "The bounded correction identity must match its selected work-package path."
             ))
@@ -220,12 +233,12 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
                 correctionWorkPackageFile.path,
                 "The bounded correction work package must carry the correction name."
             ))
-            add(equalsCheck(
+            add(booleanCheck(
                 "release.work-package.parent",
-                parentItem,
-                correctionWorkPackage.string("parentCoreItem"),
+                parentItem.isNotBlank() && parentName.isNotBlank(),
+                "$parentItem:$parentName",
                 correctionWorkPackageFile.path,
-                "The correction must name its parent Core item explicitly."
+                "The correction must name an existing parent Core item explicitly."
             ))
             add(equalsCheck(
                 "release.work-package.closure-item",
@@ -243,7 +256,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             ))
             add(equalsCheck(
                 "release.roadmap.correction-state",
-                if (correctionStatus == "complete") "complete" else "active",
+                if (correctionStatus == "active") "active" else "complete",
                 roadmap.string("currentDecision", "correctionState"),
                 roadmapFile.path,
                 "The roadmap correction state must match the correction work-package lifecycle."
@@ -257,7 +270,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             ))
             add(equalsCheck(
                 "release.core.parent-status",
-                if (correctionStatus == "complete") "completed" else "correction-required",
+                if (correctionStatus == "active") "correction-required" else "completed",
                 parentStatus,
                 coreRoadmapFile.path,
                 "The parent Core item status must match the correction lifecycle."
@@ -320,21 +333,25 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             ))
             add(booleanCheck(
                 "release.closure.phase-alignment",
-                closurePhase in setOf("READY", "CLOSED"),
+                closurePhase in VALID_PHASES,
                 "correction=$correctionStatus, closureWork=$closureWorkStatus, parent=$parentStatus, " +
                     "closure=$closureStatus, track=$coreTrackStatus",
                 closureWorkPackageFile.path,
-                "Closure cannot start before corrections complete or close while any lifecycle axis remains active."
+                "Closure may reopen only through CORRECTION_REQUIRED and may close only after READY."
             ))
             add(booleanCheck(
                 "release.closure.implementation-evidence",
-                closureImplementationEvidenceValid(closureWorkPackage, closureWorkStatus),
-                closureWorkPackage.string("validationEvidence", "status").ifBlank { "active phase" },
+                closureImplementationEvidenceValid(
+                    closureWorkPackage = closureWorkPackage,
+                    closureWorkStatus = closureWorkStatus,
+                    correctionItem = correctionItem
+                ),
+                closureWorkPackage.string("validationEvidence", "status").ifBlank { closureWorkStatus },
                 closureWorkPackageFile.path,
-                "A completed closure work package must cite structured passing exact-head and merge-candidate implementation evidence."
+                "Closure evidence must be absent while READY, superseded during correction, and structurally passing when CLOSED."
             ))
 
-            val correctionLabel = if (correctionStatus == "complete") "Completed correction item" else "Active correction item"
+            val correctionLabel = if (correctionStatus == "active") "Active correction item" else "Completed correction item"
             add(containsCheck(
                 "release.report.correction",
                 reportText,
@@ -345,35 +362,30 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             add(containsCheck(
                 "release.report.parent-status",
                 reportText,
-                "Core roadmap item status: `${if (correctionStatus == "complete") "completed" else "correction-required"}`",
+                "Core roadmap item status: `${if (correctionStatus == "active") "correction-required" else "completed"}`",
                 reportFile.path,
                 "REPORT.md must expose the parent Core item status."
             ))
-            val closureReportFragment = if (closurePhase == "CLOSED") {
-                "Completed Core closure item: `$closureItem $closureName` (`completed`)"
-            } else {
-                "Next Core roadmap item: `$closureItem $closureName` (`next`)"
+            val closureReportFragment = when (closurePhase) {
+                "CORRECTION_REQUIRED" -> "Core closure correction: `$closureItem $closureName` (`correction-required`)"
+                "READY" -> "Next Core roadmap item: `$closureItem $closureName` (`next`)"
+                "CLOSED" -> "Completed Core closure item: `$closureItem $closureName` (`completed`)"
+                else -> "INVALID"
             }
             add(containsCheck(
                 "release.report.closure-status",
                 reportText,
                 closureReportFragment,
                 reportFile.path,
-                "REPORT.md must expose whether closure is READY or CLOSED."
+                "REPORT.md must expose whether closure is CORRECTION_REQUIRED, READY or CLOSED."
             ))
-
-            val correctionOrdinal = correctionItem.substringAfterLast('.').toIntOrNull() ?: 0
-            (1..correctionOrdinal).forEach { item ->
-                val id = "0.9.7.9.$item"
-                add(containsCheck(
-                    "release.changelog.$id",
-                    changelogText,
-                    "### v$id ",
-                    changelogFile.path,
-                    "The bounded correction changelog must record every work item exactly once."
-                ))
-            }
-
+            add(containsCheck(
+                "release.changelog.$correctionItem",
+                correctionChangelogText,
+                "### v$correctionItem ",
+                correctionChangelogFile.path,
+                "The bounded correction changelog must record the selected work item."
+            ))
             add(booleanCheck(
                 "release.validation.last-merged-run",
                 Regex("Flow CI #\\d+").containsMatchIn(validationSource),
@@ -395,7 +407,6 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
                 releaseStateFile.path,
                 "Candidate validation must remain external evidence until the candidate head passes."
             ))
-
             val activeRoadmap = releaseState.string("roadmapState", "activeRoadmaps", "core")
             add(booleanCheck(
                 "release.roadmap.active-file",
@@ -432,20 +443,28 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
 
     private fun closureImplementationEvidenceValid(
         closureWorkPackage: Map<String, Any?>,
-        closureWorkStatus: String
+        closureWorkStatus: String,
+        correctionItem: String
     ): Boolean {
         val evidence = closureWorkPackage.map("validationEvidence")
-        if (closureWorkStatus == "active") return evidence.isEmpty() || evidence.string("status").isBlank()
-        val exactHead = evidence.string("exactHead")
-        val mergeCandidate = evidence.string("mergeCandidate")
-        return closureWorkStatus == "complete" &&
-            evidence.string("status") == "passed" &&
-            evidence.string("workflow") == "Flow CI" &&
-            evidence.string("runNumber").toIntOrNull()?.let { it > 0 } == true &&
-            evidence.string("runId").toLongOrNull()?.let { it > 0 } == true &&
-            SHA.matches(exactHead) &&
-            SHA.matches(mergeCandidate) &&
-            exactHead != mergeCandidate
+        return when (closureWorkStatus) {
+            "correction-required" ->
+                closureWorkPackage.string("supersededByCorrection") == correctionItem &&
+                    evidence.string("status") == "passed"
+            "active" -> evidence.isEmpty() || evidence.string("status").isBlank()
+            "complete" -> {
+                val exactHead = evidence.string("exactHead")
+                val mergeCandidate = evidence.string("mergeCandidate")
+                evidence.string("status") == "passed" &&
+                    evidence.string("workflow") == "Flow CI" &&
+                    evidence.string("runNumber").toIntOrNull()?.let { it > 0 } == true &&
+                    evidence.string("runId").toLongOrNull()?.let { it > 0 } == true &&
+                    SHA.matches(exactHead) &&
+                    SHA.matches(mergeCandidate) &&
+                    exactHead != mergeCandidate
+            }
+            else -> false
+        }
     }
 
     private fun selectCorrectionWorkPackage(activePointer: String): File {
@@ -454,28 +473,29 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             require(selected.isFile) { "Active bounded correction work package is missing: $activePointer" }
             return selected
         }
-        val directory = File(rootDir, ".flow-agent/work-packages")
-        val candidates = directory.listFiles().orEmpty()
-            .filter { it.isFile && CORRECTION_FILE.matches(it.name) }
-        return candidates.maxWithOrNull { left, right ->
-            compareVersionKeys(versionKey(left.name), versionKey(right.name))
-        } ?: error("No bounded correction work package exists for v0.9.7.9.x")
+        return correctionWorkPackages().maxWithOrNull { left, right ->
+            compareVersionKeys(versionKey(left), versionKey(right))
+        } ?: error("No bounded correction work package exists for the v0.9.7 track")
     }
+
+    private fun correctionWorkPackages(): List<File> =
+        File(rootDir, ".flow-agent/work-packages").listFiles().orEmpty()
+            .filter { it.isFile && it.extension in setOf("yaml", "yml") }
+            .filter { file -> runCatching { requiredYaml(file).string("type") == "bounded-correction" }.getOrDefault(false) }
+            .filter { file -> requiredYaml(file).string("version").startsWith("0.9.7.") }
 
     private fun correctionVersionFromPath(path: String): String =
         CORRECTION_FILE.find(File(path).name)?.groupValues?.get(1)
-            ?: error("Selected correction path does not carry a v0.9.7.9.x identity: $path")
+            ?: error("Selected correction path does not carry a v0.9.7.x bounded-correction identity: $path")
 
-    private fun versionKey(name: String): List<Int> =
-        CORRECTION_FILE.find(name)?.groupValues?.get(1)
-            ?.split('.')
-            ?.map { it.toInt() }
-            ?: emptyList()
+    private fun versionKey(file: File): List<Int> = requiredYaml(file).string("version")
+        .split('.')
+        .mapNotNull(String::toIntOrNull)
 
     private fun compareVersionKeys(left: List<Int>, right: List<Int>): Int {
         val size = maxOf(left.size, right.size)
         for (index in 0 until size) {
-            val comparison = (left.getOrElse(index) { 0 }).compareTo(right.getOrElse(index) { 0 })
+            val comparison = left.getOrElse(index) { 0 }.compareTo(right.getOrElse(index) { 0 })
             if (comparison != 0) return comparison
         }
         return 0
@@ -507,15 +527,16 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             .orEmpty()
     }
 
-    private fun Map<String, Any?>.mapList(key: String): List<Map<String, Any?>> {
-        val values = this[key] as? Iterable<*> ?: return emptyList()
-        return values.mapNotNull { value ->
+    private fun Map<String, Any?>.mapList(key: String): List<Map<String, Any?>> =
+        (this[key] as? Iterable<*>)?.mapNotNull { value ->
             (value as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
-        }
-    }
+        }.orEmpty()
 
     private fun Map<String, Any?>.itemStatus(version: String): String =
         mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
+
+    private fun Map<String, Any?>.itemName(version: String): String =
+        mapList("items").firstOrNull { it.string("version") == version }?.string("name").orEmpty()
 
     private fun equalsCheck(
         id: String,
@@ -563,7 +584,9 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
     )
 
     companion object {
-        private val CORRECTION_FILE = Regex("v(0\\.9\\.7\\.9\\.\\d+)-.+\\.ya?ml")
+        private val CORRECTION_FILE = Regex("v(0\\.9\\.7\\.(?:9|10)\\.\\d+)-.+\\.ya?ml")
         private val SHA = Regex("[0-9a-f]{40}")
+        private val TERMINAL_CORRECTION_STATUSES = setOf("complete", "completed")
+        private val VALID_PHASES = setOf("CORRECTION_REQUIRED", "READY", "CLOSED")
     }
 }
