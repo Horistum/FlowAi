@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 18
+stateVersion: 19
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -103,20 +103,23 @@ qualityPrinciples:
   - "Artifact producer and introduced-version metadata have no generic fallback."
   - "Required artifact derivation rejects dangling evidence references."
   - "Bundle verification parses exact JSON fields and never accepts substring occurrence as proof."
+  - "The bounded semantic closure catalog is frozen before closure and rejects missing, failing, duplicate, unexpected and circular check evidence."
+  - "Closure completion is a second metadata phase and cannot reuse the implementation head's PASS as its own certification."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-merged-v0.9.7.9.8-follow-up-head"
-  flowAgentStructure: "passed-on-merged-v0.9.7.9.8-follow-up-head"
-  flowAgentContextGeneration: "passed-on-merged-v0.9.7.9.8-follow-up-head"
-  offlineCacheAwareChecks: "passed-on-merged-v0.9.7.9.8-follow-up-head"
-  cleanTest: "passed-on-merged-v0.9.7.9.8-follow-up-head"
-  conformance: "passed-on-merged-v0.9.7.9.8-follow-up-head"
-  executableReferenceEvidence: "passed-on-merged-v0.9.7.9.8-follow-up-head"
-  validationSource: "Flow CI #2011 passed on merged implementation head f970561c568f3fea0dcf8f858acfff15b4a3eaaa."
+  flowAgentTooling: "passed-on-merged-v0.9.7.9.11-head"
+  flowAgentStructure: "passed-on-merged-v0.9.7.9.11-head"
+  flowAgentContextGeneration: "passed-on-merged-v0.9.7.9.11-head"
+  offlineCacheAwareChecks: "passed-on-merged-v0.9.7.9.11-head"
+  cleanTest: "passed-on-merged-v0.9.7.9.11-head"
+  conformance: "passed-on-merged-v0.9.7.9.11-head"
+  executableReferenceEvidence: "passed-on-merged-v0.9.7.9.11-head"
+  validationSource: "Flow CI #2123 passed exact completion-metadata head dc6dc0e29943df8da83a9f507b15e3661e6b7310 before that head was merged through PR #91 as 794c4232cb07ec5aa1a7568728c08c82c835c79d."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "v0.9.7.9.10 was merged through PR #90 after external exact-head CI evidence from Flow CI #2100 and completion-metadata validation from Flow CI #2108."
-    - "v0.9.7.9.11 completed after external exact-head CI evidence from Flow CI #2116, run 30191458296, exact implementation head 018f69388163c14f65c03c2cf21029156fd94ede."
-    - "The same Flow CI #2116 run independently passed synthetic merge candidate 8854b0ed44e04347a9c60ca915e9b61ed24c9734."
-    - "Core item v0.9.7.9 is restored to completed and v0.9.7.10 is next."
-    - "The completion-metadata head must still pass independent exact-head and merge-candidate Flow CI before PR #91 may become ready for review."
+    - "v0.9.7.9.11 passed external exact-head CI evidence in Flow CI #2116 and completion-metadata validation in Flow CI #2123."
+    - "PR #91 merged v0.9.7.9.11 into main as 794c4232cb07ec5aa1a7568728c08c82c835c79d."
+    - "Core item v0.9.7.9 remains completed and v0.9.7.10 is the active next closure item."
+    - "No external exact-head CI evidence is claimed yet for the active v0.9.7.10 implementation branch."
+    - "The closure implementation head and synthetic merge candidate must pass independently before completion metadata may close the track."
