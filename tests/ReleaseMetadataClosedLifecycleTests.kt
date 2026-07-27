@@ -40,8 +40,10 @@ class ReleaseMetadataClosedLifecycleTests {
         val report = ReleaseMetadataHonestyAuthority(root).analyze()
 
         assertEquals("FAIL", report.status)
+        assertEquals("INVALID", report.closurePhase)
+        assertEquals("active", report.coreTrackStatus)
         assertTrue("release.closure.phase" in report.failedChecks, report.failedChecks.joinToString())
-        assertTrue("release.core.track-status" in report.failedChecks, report.failedChecks.joinToString())
+        assertTrue("release.closure.phase-alignment" in report.failedChecks, report.failedChecks.joinToString())
     }
 
     @Test
