@@ -1,0 +1,29 @@
+version: "0.9.7.10"
+name: "Bounded Semantic Closure Gate"
+type: "architecture-closure"
+stream: core
+status: active
+objective: "Close the v0.9.7 universal semantic foundation only when the already-declared finite evidence set is complete, passing and internally consistent."
+universalInvariant: "The track closes by falsifiable evidence, never by a narrative completion claim."
+forbiddenScope:
+  - "No new semantic requirement introduced during closure."
+  - "No new public artifact or public-standard version introduced by the closure gate."
+  - "No successful closure while a bounded correction remains active."
+  - "No missing or failed required conformance check treated as satisfied."
+  - "No substring, filename ordering or metadata prose used as evidence of a passing gate."
+closureChecklist:
+  - "closure.checklist-exact"
+  - "closure.no-active-corrections"
+  - "closure.prior-core-items-complete"
+  - "closure.release-metadata-honest"
+  - "closure.required-checks-present"
+  - "closure.required-checks-pass"
+  - "closure.no-failed-conformance"
+  - "closure.version-boundary-unchanged"
+  - "closure.reference-evidence-live"
+completionEvidence:
+  - "The SemanticClosureAuthority emits PASS for every declared checklist item."
+  - "The exact pull-request head and synthetic merge candidate independently pass complete tests and standalone conformance."
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "The implementation head and a later completion-metadata head must each pass exact-head and synthetic merge-candidate validation."
