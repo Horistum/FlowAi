@@ -2,7 +2,7 @@ project: Flow Core
 stream: core
 roadmapVersion: 5
 track: v0.9.7-universal-semantic-foundation
-status: active
+status: completed
 trackObjective: Complete the universal semantic foundation with continuous reference evidence.
 continuousFeedback:
   - Every Core item runs the existing reference and regression suite.
@@ -191,16 +191,20 @@ items:
       - Bounded correction 0.9.7.9.10 removed the duplicate CLI pipeline, closed explicit-configuration source categories and derived process status from typed outcomes; PR #90 was merged as 91de098f8f51176a76e34ef53bab1b424edaa8d0.
       - A later audit proved that public artifact status, target semantics, provenance, derivation and bundle verification still contained circular or text-occurrence evidence paths.
       - Bounded correction 0.9.7.9.11 replaced literal public status claims, handwritten provider semantics, generic artifact provenance, dangling lineage acceptance and substring verification with computed, provider-backed and fail-closed authorities.
-      - Flow CI #2116, run 30191458296, independently passed exact implementation head 018f69388163c14f65c03c2cf21029156fd94ede and synthetic merge candidate 8854b0ed44e04347a9c60ca915e9b61ed24c9734, including complete tests and standalone conformance.
-      - The completion-metadata head must pass the same two jobs before PR #91 may become ready for review.
+      - Flow CI #2116 and #2123 validated implementation and completion-metadata boundaries before PR #91 merged as 794c4232cb07ec5aa1a7568728c08c82c835c79d.
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: next
+    status: completed
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
       - No new requirement introduced during closure.
       - No closure execution while a bounded correction is active.
     completionEvidence:
-      - The declared checklist and reference evidence pass after all correction work packages are complete.
+      - The frozen pre-closure catalog reconciles exactly with every prior ConformanceRunner result.
+      - Missing, unexpected, duplicate, failing and circular evidence is rejected by unit and standalone conformance counterexamples.
+      - Release-profile, anchored StandardModel, Jenkins, snapshot, corpus and governance evidence remains present and passing.
+      - GitHub Actions retains separate exact-head and synthetic merge-candidate jobs with revision verification, complete tests and standalone conformance.
+      - Flow CI #2135, run 30236729729, independently passed exact implementation head 19a11e2c1c78e916f19843ef0d3d2aaa96382c82 and synthetic merge candidate 86bf0d40aa1f83249727a4b374a872fd8cb7dfbc.
+      - The later completion-metadata head must pass the same dual Flow CI boundary before PR #92 may become ready for review.
