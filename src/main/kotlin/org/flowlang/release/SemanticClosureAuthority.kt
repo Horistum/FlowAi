@@ -26,11 +26,10 @@ data class SemanticClosureReport(
 /**
  * Finite, fail-closed authority for the v0.9.7 semantic-foundation closure.
  *
- * Release-profile membership determines public release obligations. It does not
- * define whether the complete conformance producer is still present. The latter
- * is proven independently by the exact pre-closure suite inventory. Bounded
- * corrections are discovered from parsed work-package type and version rather
- * than from one historical filename prefix.
+ * Release-profile membership, durable StandardModel ownership and complete
+ * runner presence are distinct projections. Closure proves their declared
+ * relationships instead of pretending that one partial list represents all
+ * three concerns.
  */
 class SemanticClosureAuthority(private val rootDir: File = File(".")) {
     fun evaluate(completedConformance: List<ConformanceCheck>): SemanticClosureReport {
@@ -47,8 +46,13 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
             .filterValues { it > 1 }.keys.sorted()
         val missingInventoryChecks = expectedChecks.filterNot(observedById::containsKey)
         val unexpectedChecks = observedChecks.filterNot(expectedCheckSet::contains)
+
         val releaseProfileChecks = StandardModel.releaseProfileCheckIds()
         val releaseChecksMissingFromInventory = releaseProfileChecks.filterNot(expectedCheckSet::contains)
+        val modeledPreClosureChecks = StandardModel.modeledPreClosureCheckIds()
+        val modeledChecksMissingFromInventory = modeledPreClosureChecks.filterNot(expectedCheckSet::contains)
+        val modeledPostClosureChecks = StandardModel.modeledPostClosureCheckIds()
+        val postClosureModelAligned = modeledPostClosureChecks == listOf(inventory.closureCheck)
         val failedRequiredChecks = releaseProfileChecks.filter { observedById[it]?.passed == false }
         val allObservedFailures = completedConformance.filterNot { it.passed }.map { it.name }
 
@@ -81,7 +85,9 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
         val exactInventory = inventory.closureCheck == CHECK_ID &&
             observedChecks == expectedChecks &&
             duplicateObserved.isEmpty() &&
-            releaseChecksMissingFromInventory.isEmpty()
+            releaseChecksMissingFromInventory.isEmpty() &&
+            modeledChecksMissingFromInventory.isEmpty() &&
+            postClosureModelAligned
 
         val checks = listOf(
             check(
@@ -120,12 +126,18 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
                     "inventoryVersion=${inventory.version}",
                     "expected=${expectedChecks.size}",
                     "observed=${observedChecks.size}",
-                    "orderMatches=${observedChecks == expectedChecks}"
+                    "orderMatches=${observedChecks == expectedChecks}",
+                    "modeledPreClosure=${modeledPreClosureChecks.size}",
+                    "modeledPostClosure=${modeledPostClosureChecks.joinToString()}"
                 ) + missingInventoryChecks.map { "missing=$it" } +
                     unexpectedChecks.map { "unexpected=$it" } +
                     duplicateObserved.map { "duplicate=$it" } +
-                    releaseChecksMissingFromInventory.map { "release-profile-not-in-inventory=$it" },
-                message = "The complete declared pre-closure conformance sequence must execute exactly once and in order."
+                    releaseChecksMissingFromInventory.map { "release-profile-not-in-inventory=$it" } +
+                    modeledChecksMissingFromInventory.map { "modeled-check-not-in-inventory=$it" } +
+                    if (postClosureModelAligned) emptyList() else listOf(
+                        "modeled-post-closure-mismatch=${modeledPostClosureChecks.joinToString()} expected=${inventory.closureCheck}"
+                    ),
+                message = "The complete suite, public release subset and durable modeled checks must reconcile exactly."
             ),
             check(
                 id = "closure.required-checks-pass",
