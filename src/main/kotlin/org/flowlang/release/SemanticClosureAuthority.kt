@@ -28,7 +28,9 @@ data class SemanticClosureReport(
  *
  * Release-profile membership determines public release obligations. It does not
  * define whether the complete conformance producer is still present. The latter
- * is proven independently by the exact pre-closure suite inventory.
+ * is proven independently by the exact pre-closure suite inventory. Bounded
+ * corrections are discovered from parsed work-package type and version rather
+ * than from one historical filename prefix.
  */
 class SemanticClosureAuthority(private val rootDir: File = File(".")) {
     fun evaluate(completedConformance: List<ConformanceCheck>): SemanticClosureReport {
@@ -38,24 +40,30 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
         val declaredChecklist = workPackage.stringList("closureChecklist")
         val inventory = ConformanceSuiteInventory.load(rootDir)
         val expectedChecks = inventory.preClosureChecks
+        val expectedCheckSet = expectedChecks.toSet()
         val observedChecks = completedConformance.map { it.name }
         val observedById = completedConformance.associateBy { it.name }
         val duplicateObserved = observedChecks.groupingBy { it }.eachCount()
             .filterValues { it > 1 }.keys.sorted()
         val missingInventoryChecks = expectedChecks.filterNot(observedById::containsKey)
-        val unexpectedChecks = observedChecks.filterNot(expectedChecks.toSet()::contains)
+        val unexpectedChecks = observedChecks.filterNot(expectedCheckSet::contains)
         val releaseProfileChecks = StandardModel.releaseProfileCheckIds()
-        val releaseChecksMissingFromInventory = releaseProfileChecks.filterNot(expectedChecks.toSet()::contains)
+        val releaseChecksMissingFromInventory = releaseProfileChecks.filterNot(expectedCheckSet::contains)
         val failedRequiredChecks = releaseProfileChecks.filter { observedById[it]?.passed == false }
         val allObservedFailures = completedConformance.filterNot { it.passed }.map { it.name }
 
-        val correctionStates = correctionWorkPackages().map { file ->
-            val status = requiredYaml(file).string("status")
-            CorrectionState(file.name, status)
+        val correctionStates = correctionWorkPackages().map { (file, yaml) ->
+            CorrectionState(
+                fileName = file.name,
+                version = yaml.string("version"),
+                status = yaml.string("status")
+            )
         }
-        val activeCorrections = correctionStates.filter { it.status == "active" }.map { it.fileName }.sorted()
+        val activeCorrections = correctionStates.filter { it.status == "active" }
+            .map { "${it.version}:${it.fileName}" }
+            .sorted()
         val invalidCorrections = correctionStates.filterNot { it.status in TERMINAL_OR_ACTIVE_STATUSES }
-            .map { "${it.fileName}:${it.status.ifBlank { "<missing>" }}" }
+            .map { "${it.version.ifBlank { "<missing-version>" }}:${it.fileName}:${it.status.ifBlank { "<missing>" }}" }
             .sorted()
 
         val incompletePriorItems = (1..9).map { "0.9.7.$it" }
@@ -87,8 +95,8 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
                 passed = activeCorrections.isEmpty() && invalidCorrections.isEmpty(),
                 evidence = when {
                     invalidCorrections.isNotEmpty() -> invalidCorrections.map { "invalid=$it" }
-                    activeCorrections.isNotEmpty() -> activeCorrections
-                    else -> listOf("all v0.9.7.9.x work packages have an explicit terminal status")
+                    activeCorrections.isNotEmpty() -> activeCorrections.map { "active=$it" }
+                    else -> listOf("all bounded v0.9.7 correction work packages have an explicit terminal status")
                 },
                 message = "Every bounded correction status must be active, complete or completed, and none may remain active during closure."
             ),
@@ -166,9 +174,14 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
             }
         }
 
-    private fun correctionWorkPackages(): List<File> =
+    private fun correctionWorkPackages(): List<Pair<File, Map<String, Any?>>> =
         File(rootDir, ".flow-agent/work-packages").listFiles().orEmpty()
-            .filter { it.isFile && it.name.matches(Regex("v0\\.9\\.7\\.9\\.\\d+-.+\\.yaml")) }
+            .filter { it.isFile && it.extension in setOf("yaml", "yml") }
+            .map { it to requiredYaml(it) }
+            .filter { (_, yaml) ->
+                yaml.string("type") == "bounded-correction" &&
+                    BOUNDED_CORRECTION_VERSION.matches(yaml.string("version"))
+            }
 
     private fun requiredYaml(file: File): Map<String, Any?> {
         require(file.isFile) { "Required closure evidence is missing: ${file.path}" }
@@ -195,7 +208,11 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
     private fun check(id: String, passed: Boolean, evidence: List<String>, message: String): SemanticClosureCheck =
         SemanticClosureCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
-    private data class CorrectionState(val fileName: String, val status: String)
+    private data class CorrectionState(
+        val fileName: String,
+        val version: String,
+        val status: String
+    )
 
     companion object {
         const val CHECK_ID = "v0.9.7.10.bounded-semantic-closure"
@@ -203,6 +220,7 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
         const val CORE_ROADMAP = ".flow-agent/roadmap-core-v0.9.7.9.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         private val TERMINAL_OR_ACTIVE_STATUSES = setOf("active", "complete", "completed")
+        private val BOUNDED_CORRECTION_VERSION = Regex("0\\.9\\.7\\.(?:9|10)\\.\\d+")
 
         val CHECKLIST: List<String> = listOf(
             "closure.checklist-exact",
