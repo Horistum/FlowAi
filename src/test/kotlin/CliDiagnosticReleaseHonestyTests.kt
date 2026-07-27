@@ -229,36 +229,11 @@ class CliDiagnosticReleaseHonestyTests {
         val correctionPath = correction.file.relativeTo(File(".")).invariantSeparatorsPath
         try {
             metadataFiles(correctionPath).forEach { path -> copyToRoot(root, path) }
-            val closurePath = ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml"
-            val closureFile = File(root, closurePath)
-            closureFile.writeText(closureFile.readText().replaceFirst("status: active", "status: complete"))
-            val coreRoadmap = File(root, ".flow-agent/roadmap-core-v0.9.7.9.yaml")
-            coreRoadmap.writeText(
-                coreRoadmap.readText()
-                    .replaceFirst("status: active", "status: completed")
-                    .replaceFirst(
-                        Regex("(?s)(- version: 0\\.9\\.7\\.10.*?status:) next"),
-                        "$1 completed"
-                    )
-            )
-            val roadmap = File(root, ".flow-agent/roadmap.yaml")
-            roadmap.writeText(
-                roadmap.readText()
-                    .replace("completedItem: \"0.9.7.9\"", "completedItem: \"0.9.7.10\"")
-                    .replace("completedItemName: \"Intent Lowering and Diagnostic Honesty\"", "completedItemName: \"Bounded Semantic Closure Gate\"")
-                    .replace("nextCoreItemStatus: \"next\"", "nextCoreItemStatus: \"completed\"")
-            )
-            val releaseState = File(root, ".flow-agent/release-state.yaml")
-            releaseState.writeText(
-                releaseState.readText()
-                    .replace("completedItem: \"0.9.7.9\"", "completedItem: \"0.9.7.10\"")
-                    .replace("completedItemName: \"Intent Lowering and Diagnostic Honesty\"", "completedItemName: \"Bounded Semantic Closure Gate\"")
-            )
-            val reportFile = File(root, "REPORT.md")
-            reportFile.writeText(
-                reportFile.readText().replace(
-                    "Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)",
-                    "Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)"
+            val closureFile = File(root, ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml")
+            closureFile.writeText(
+                closureFile.readText().replaceFirst(
+                    "  exactHead: \"19a11e2c1c78e916f19843ef0d3d2aaa96382c82\"",
+                    "  exactHead: \"not-a-valid-sha\""
                 )
             )
 
