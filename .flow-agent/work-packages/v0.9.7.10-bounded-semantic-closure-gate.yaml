@@ -2,7 +2,7 @@ version: "0.9.7.10"
 name: "Bounded Semantic Closure Gate"
 type: "architecture-closure"
 stream: core
-status: active
+status: complete
 objective: "Close the v0.9.7 universal semantic foundation only when the already-declared finite evidence set is complete, passing and internally consistent."
 universalInvariant: "The track closes by falsifiable evidence, never by a narrative completion claim."
 forbiddenScope:
@@ -35,3 +35,10 @@ completionEvidence:
 validationPolicy:
   workflow: "Flow CI"
   requirement: "The implementation head and a later completion-metadata head must each pass exact-head and synthetic merge-candidate validation."
+validationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: "2177"
+  runId: "30252725533"
+  exactHead: "5a06e0e8c9e2c3c354f8b331c50564f7a903d9f4"
+  mergeCandidate: "93e4d032ea384abd12cb754edbaabd3aef90b300"
