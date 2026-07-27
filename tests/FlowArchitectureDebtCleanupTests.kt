@@ -30,7 +30,8 @@ class FlowArchitectureDebtCleanupTests {
         assertFalse(report.driftScore.negativeSignals.any { it.id == "report-without-validation-purpose" && it.present })
         assertEquals("PASS", report.reportBudget.status)
         assertTrue(report.reportBudget.publicArtifactsChecked >= 10)
-        assertEquals(1, report.reportBudget.registryConsistencyChecks)
+        assertEquals(0, report.reportBudget.registryConsistencyChecks)
+        assertEquals(1, StandardModel.modeledRegistryConsistencyGateCount)
     }
 
     @Test
