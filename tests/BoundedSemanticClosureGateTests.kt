@@ -13,11 +13,11 @@ class BoundedSemanticClosureGateTests {
     }
 
     @Test
-    fun activeClosureWorkPackageIsReadyOnlyWhenEveryDeclaredEvidencePasses() {
+    fun completedClosurePassesOnlyWhenEveryDeclaredEvidencePasses() {
         val report = authority.analyze(passingChecks)
 
-        assertEquals("PASS", report.status, report.failedChecks.joinToString())
-        assertEquals("READY", report.phase)
+        assertEquals("PASS", report.status, report.checks.filter { it.status == "FAIL" }.joinToString { "${it.id}:${it.observed}" })
+        assertEquals("CLOSED", report.phase)
         assertTrue(report.incompleteCoreItems.isEmpty())
         assertTrue(report.missingConformanceChecks.isEmpty())
         assertTrue(report.unexpectedConformanceChecks.isEmpty())
