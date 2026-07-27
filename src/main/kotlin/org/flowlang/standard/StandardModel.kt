@@ -116,7 +116,15 @@ object StandardModel {
         StandardCheck("v0.7.7.scenario-pack-quality-gates", "0.7.7", GateKind.BEHAVIOR, inReleaseProfile = false, externalAnchor = "src/main/kotlin/org/flowlang/standard/ScenarioPackQualityAnalyzer.kt"),
         StandardCheck("v0.8.0.core-contract-check", "0.8.0", GateKind.CONTRACT, inReleaseProfile = false, externalAnchor = "docs/V0_8_0_CORE_CONTRACT_CHECK.md"),
         StandardCheck("v0.8.1.target-capability-matrix", "0.8.1", GateKind.COMPATIBILITY, inReleaseProfile = false, externalAnchor = "src/main/kotlin/org/flowlang/capabilities/TargetCapabilityMatrix.kt"),
-        StandardCheck("v0.8.2.target-negotiation-report", "0.8.2", GateKind.COMPATIBILITY, inReleaseProfile = false, externalAnchor = "src/main/kotlin/org/flowlang/capabilities/TargetNegotiationReportAnalyzer.kt")
+        StandardCheck("v0.8.2.target-negotiation-report", "0.8.2", GateKind.COMPATIBILITY, inReleaseProfile = false, externalAnchor = "src/main/kotlin/org/flowlang/capabilities/TargetNegotiationReportAnalyzer.kt"),
+        StandardCheck(
+            id = "v0.9.7.10.bounded-semantic-closure",
+            introducedIn = "0.9.7.10",
+            kind = GateKind.GOVERNANCE,
+            inReleaseProfile = false,
+            negativeFixture = "tests/BoundedSemanticClosureGateTests.kt",
+            externalAnchor = ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml"
+        )
     )
 
     val artifacts: List<StandardArtifact> = listOf(
