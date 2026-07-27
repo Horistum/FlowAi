@@ -167,9 +167,9 @@ validationEvidence:
         val pattern = Regex(
             "(?ms)(^\\s*- version:\\s*[\"']?0\\.9\\.7\\.10[\"']?\\s*$.*?^\\s*status:\\s*)([a-z-]+)(\\s*$)"
         )
-        return pattern.replaceFirst(text) { match ->
-            match.groupValues[1] + status + match.groupValues[3]
-        }
+        val match = pattern.find(text) ?: error("Closure roadmap item 0.9.7.10 is missing.")
+        val replacement = match.groupValues[1] + status + match.groupValues[3]
+        return text.replaceRange(match.range, replacement)
     }
 
     private fun withMetadataFixture(assertions: (File) -> Unit) {
