@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 22
+stateVersion: 23
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -21,9 +21,9 @@ roadmapState:
   completedItem: "0.9.7.9"
   completedItemName: "Intent Lowering and Diagnostic Honesty"
   primaryStream: "core"
-  nextCoreItem: "0.9.7.10"
-  nextCoreItemName: "Bounded Semantic Closure Gate"
-  boundedClosureItem: "0.9.7.10"
+  closureItem: "0.9.7.10"
+  closureItemName: "Bounded Semantic Closure Gate"
+  closureItemStatus: "correction-required"
   activeRoadmaps:
     core: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
@@ -107,6 +107,7 @@ qualityPrinciples:
   - "Closure-blocking conformance must consume CORRECTION_REQUIRED, READY and CLOSED rather than infer lifecycle from correction status."
   - "The complete pre-closure conformance sequence must execute exactly once and in declared order."
   - "Unknown or missing bounded-correction status blocks closure."
+  - "closureItem is permanent identity; nextCoreItem exists only while an item is actually next."
   - "A completed primary track contains no next item and remains valid only when every Core item is completed."
 
 lastKnownValidation:
@@ -120,7 +121,7 @@ lastKnownValidation:
   validationSource: "Flow CI #2183 passed exact completion-metadata head ea0ec0e948fb0c6b9f9a09690d571abbf4c53967 before that head was merged through PR #93 as df099137ce65b206519db7141f8eb3573d0018a2."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "A post-merge audit disproved complete-suite presence and bounded-correction status integrity in the first closure implementation."
-    - "Flow CI #2185 supplied external exact-head CI evidence on exact implementation head 0351468319f0586c1f8595d115690478b580dc73."
-    - "The same Flow CI #2185 run independently passed its synthetic merge candidate, complete tests and standalone conformance."
-    - "Core item v0.9.7.10 and the v0.9.7 Core track are correction-required until bounded correction 0.9.7.10.1 completes."
+    - "A post-merge audit disproved complete-suite presence, bounded-correction status integrity and StandardModel coherence in the first closure implementation."
+    - "Flow CI #2218 supplied external exact-head CI evidence on implementation head c10bd83aa4c0bf48dcc4b0faef90c035525842c7."
+    - "The same Flow CI #2218 run independently passed synthetic merge candidate 651cca496a6b8a7e54cde2b992751c2630dbc30a, complete tests and standalone conformance."
+    - "Core item v0.9.7.10 and the v0.9.7 Core track remain correction-required until READY and CLOSED metadata boundaries pass independently."
