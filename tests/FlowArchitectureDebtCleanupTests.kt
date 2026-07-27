@@ -71,6 +71,12 @@ class FlowArchitectureDebtCleanupTests {
             copyDirectory(File("conformance"), File(root, "conformance"))
             copyDirectory(File("tests"), File(root, "tests"))
             copyDirectory(File("src/main/kotlin"), File(root, "src/main/kotlin"))
+            copyDirectory(File(".flow-agent/work-packages"), File(root, ".flow-agent/work-packages"))
+
+            val baseline = ArchitectureGovernanceAnalyzer(root).analyze()
+            assertEquals("PASS", baseline.driftScore.status, baseline.driftScore.negativeSignals.filter { it.present }.joinToString { it.id })
+            assertEquals(0, baseline.driftScore.finalScore)
+
             val badSource = File(root, "src/main/kotlin/org/flowlang/example/BadRuntimeDirection.kt")
             badSource.parentFile.mkdirs()
             badSource.writeText(
@@ -84,10 +90,12 @@ class FlowArchitectureDebtCleanupTests {
             )
 
             val report = ArchitectureGovernanceAnalyzer(root).analyze()
+            val runtimeDirection = report.driftScore.negativeSignals.single { it.id == "runtime-direction" }
 
             assertEquals("FAIL", report.driftScore.status)
-            assertEquals(-3, report.driftScore.finalScore)
-            assertTrue(report.driftScore.negativeSignals.any { it.id == "runtime-direction" && it.present })
+            assertTrue(runtimeDirection.present)
+            assertTrue(runtimeDirection.score < 0)
+            assertEquals(baseline.driftScore.finalScore + runtimeDirection.score, report.driftScore.finalScore)
             assertTrue(report.issues.any { it.code == "ARCHITECTURE_DRIFT_SCORE_FAILED" })
         } finally {
             root.deleteRecursively()
