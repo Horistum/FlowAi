@@ -23,7 +23,7 @@
     "failedChecks"
   ],
   "properties": {
-    "reportVersion": { "type": "string", "const": "1.4" },
+    "reportVersion": { "type": "string", "const": "1.5" },
     "implementationPackageVersion": { "type": "string", "minLength": 1 },
     "publicStandardVersion": { "type": "string", "minLength": 1 },
     "completedCorrectionItem": { "type": "string", "pattern": "^0\\.9\\.7\\.(9|10)\\.[0-9]+$" },
@@ -35,7 +35,12 @@
     "closureStatus": { "enum": ["correction-required", "next", "completed"] },
     "coreTrackStatus": { "enum": ["active", "completed"] },
     "completedCoreItem": { "type": "string", "minLength": 1 },
-    "nextCoreItem": { "type": "string", "const": "0.9.7.10" },
+    "nextCoreItem": {
+      "oneOf": [
+        { "type": "string", "const": "0.9.7.10" },
+        { "type": "null" }
+      ]
+    },
     "status": { "type": "string", "enum": ["PASS", "FAIL"] },
     "checks": {
       "type": "array",
