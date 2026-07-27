@@ -166,41 +166,35 @@ class CliDiagnosticReleaseHonestyTests {
     }
 
     @Test
-    fun releaseMetadataAxesAndCorrectionTrackAreConsistent() {
-        val expected = selectedCorrection(File("."))
+    fun releaseMetadataAxesCorrectionAndClosureLifecyclesAreConsistent() {
+        val correction = selectedCorrection(File("."))
+        val closure = selectedClosure(File("."))
         val report = ReleaseMetadataHonestyAuthority(File(".")).requireValid()
+
+        val expectedClosureStatus = when {
+            correction.status != "complete" -> "blocked"
+            closure.status == "complete" -> "completed"
+            else -> "next"
+        }
 
         assertEquals("PASS", report.status)
         assertEquals(FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION, report.implementationPackageVersion)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.publicStandardVersion)
-        assertEquals(expected.version, report.completedCorrectionItem)
-        assertEquals(expected.status, report.correctionStatus)
-        assertEquals(if (expected.status == "complete") "completed" else "correction-required", report.parentCoreItemStatus)
+        assertEquals(correction.version, report.completedCorrectionItem)
+        assertEquals(correction.status, report.correctionStatus)
+        assertEquals(if (correction.status == "complete") "completed" else "correction-required", report.parentCoreItemStatus)
         assertEquals("0.9.7.10", report.nextCoreItem)
-        assertEquals(if (expected.status == "complete") "next" else "blocked", report.closureStatus)
+        assertEquals(expectedClosureStatus, report.closureStatus)
         assertTrue(report.failedChecks.isEmpty())
     }
 
     @Test
-    fun staleBoundedCorrectionCannotBeHiddenByCorrectParentRoadmapState() {
+    fun staleBoundedCorrectionCannotBeHiddenByCorrectClosureState() {
         val root = Files.createTempDirectory("flow-release-metadata-drift").toFile()
         val selected = selectedCorrection(File("."))
         val correctionPath = selected.file.relativeTo(File(".")).invariantSeparatorsPath
         try {
-            listOf(
-                "build.gradle.kts",
-                "REPORT.md",
-                "CHANGELOG-v0.9.7.9.md",
-                ".flow-agent/release-state.yaml",
-                ".flow-agent/roadmap.yaml",
-                ".flow-agent/roadmap-core-v0.9.7.9.yaml",
-                correctionPath
-            ).forEach { path ->
-                val source = File(path)
-                val destination = File(root, path)
-                destination.parentFile?.mkdirs()
-                source.copyTo(destination, overwrite = true)
-            }
+            metadataFiles(correctionPath).forEach { path -> copyToRoot(root, path) }
             val staleVersion = selected.version
                 .split('.')
                 .map(String::toInt)
@@ -222,13 +216,80 @@ class CliDiagnosticReleaseHonestyTests {
                 staleVersion,
                 report.checks.single { it.id == "release.work-package.correction-item" }.observed
             )
-            assertEquals("PASS", report.checks.single { it.id == "release.state.parent-item" }.status)
+            assertEquals("PASS", report.checks.single { it.id == "release.state.completed-item" }.status)
         } finally {
             root.deleteRecursively()
         }
     }
 
-    private fun selectedCorrection(root: File): SelectedCorrection {
+    @Test
+    fun completedClosureWithoutStructuredImplementationEvidenceFailsHonesty() {
+        val root = Files.createTempDirectory("flow-closure-metadata-drift").toFile()
+        val correction = selectedCorrection(File("."))
+        val correctionPath = correction.file.relativeTo(File(".")).invariantSeparatorsPath
+        try {
+            metadataFiles(correctionPath).forEach { path -> copyToRoot(root, path) }
+            val closurePath = ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml"
+            val closureFile = File(root, closurePath)
+            closureFile.writeText(closureFile.readText().replaceFirst("status: active", "status: complete"))
+            val coreRoadmap = File(root, ".flow-agent/roadmap-core-v0.9.7.9.yaml")
+            coreRoadmap.writeText(
+                coreRoadmap.readText()
+                    .replaceFirst("status: active", "status: completed")
+                    .replaceFirst(
+                        Regex("(?s)(- version: 0\\.9\\.7\\.10.*?status:) next"),
+                        "$1 completed"
+                    )
+            )
+            val roadmap = File(root, ".flow-agent/roadmap.yaml")
+            roadmap.writeText(
+                roadmap.readText()
+                    .replace("completedItem: \"0.9.7.9\"", "completedItem: \"0.9.7.10\"")
+                    .replace("completedItemName: \"Intent Lowering and Diagnostic Honesty\"", "completedItemName: \"Bounded Semantic Closure Gate\"")
+                    .replace("nextCoreItemStatus: \"next\"", "nextCoreItemStatus: \"completed\"")
+            )
+            val releaseState = File(root, ".flow-agent/release-state.yaml")
+            releaseState.writeText(
+                releaseState.readText()
+                    .replace("completedItem: \"0.9.7.9\"", "completedItem: \"0.9.7.10\"")
+                    .replace("completedItemName: \"Intent Lowering and Diagnostic Honesty\"", "completedItemName: \"Bounded Semantic Closure Gate\"")
+            )
+            val reportFile = File(root, "REPORT.md")
+            reportFile.writeText(
+                reportFile.readText().replace(
+                    "Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)",
+                    "Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)"
+                )
+            )
+
+            val report = ReleaseMetadataHonestyAuthority(root).analyze()
+
+            assertEquals("FAIL", report.status)
+            assertTrue("release.closure.implementation-evidence" in report.failedChecks)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    private fun metadataFiles(correctionPath: String): List<String> = listOf(
+        "build.gradle.kts",
+        "REPORT.md",
+        "CHANGELOG-v0.9.7.9.md",
+        ".flow-agent/release-state.yaml",
+        ".flow-agent/roadmap.yaml",
+        ".flow-agent/roadmap-core-v0.9.7.9.yaml",
+        ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml",
+        correctionPath
+    )
+
+    private fun copyToRoot(root: File, path: String) {
+        val source = File(path)
+        val destination = File(root, path)
+        destination.parentFile?.mkdirs()
+        source.copyTo(destination, overwrite = true)
+    }
+
+    private fun selectedCorrection(root: File): SelectedWorkPackage {
         val roadmapText = File(root, ".flow-agent/roadmap.yaml").readText()
         val activePointer = Regex(
             "(?m)^\\s*activeCorrectionWorkPackage:\\s*\"([^\"]*)\"\\s*$"
@@ -243,6 +304,14 @@ class CliDiagnosticReleaseHonestyTests {
                 }
                 ?: error("No bounded correction work package exists.")
         }
+        return readWorkPackage(file)
+    }
+
+    private fun selectedClosure(root: File): SelectedWorkPackage = readWorkPackage(
+        File(root, ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml")
+    )
+
+    private fun readWorkPackage(file: File): SelectedWorkPackage {
         val text = file.readText()
         val version = Regex("(?m)^version:\\s*\"([^\"]+)\"\\s*$")
             .find(text)?.groupValues?.get(1)
@@ -250,7 +319,7 @@ class CliDiagnosticReleaseHonestyTests {
         val status = Regex("(?m)^status:\\s*([a-z-]+)\\s*$")
             .find(text)?.groupValues?.get(1)
             ?: error("Selected work package has no status: ${file.path}")
-        return SelectedCorrection(file, version, status)
+        return SelectedWorkPackage(file, version, status)
     }
 
     private fun versionKey(name: String): List<Int> = CORRECTION_FILE.find(name)
@@ -268,7 +337,7 @@ class CliDiagnosticReleaseHonestyTests {
         return 0
     }
 
-    private data class SelectedCorrection(
+    private data class SelectedWorkPackage(
         val file: File,
         val version: String,
         val status: String
