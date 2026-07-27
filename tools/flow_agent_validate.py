@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from flow_agent_roadmap import validate_roadmap_structure
+from flow_agent_lifecycle import validate_roadmap_structure_with_completed_track
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,7 +60,7 @@ def assert_immutable_principles() -> None:
 
 
 def assert_roadmap_structure() -> None:
-    validate_roadmap_structure(ROOT, AGENT_DIR / "roadmap.yaml")
+    validate_roadmap_structure_with_completed_track(ROOT, AGENT_DIR / "roadmap.yaml")
 
 
 def assert_no_obvious_forbidden_contract_terms() -> None:
