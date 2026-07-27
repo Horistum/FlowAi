@@ -65,6 +65,7 @@ class ReleaseMetadataClosedLifecycleTests {
 
     @Test
     fun activeClosureCannotPublishCompletedRoadmapStatus() = withMetadataFixture { root ->
+        readyMetadata(root)
         val core = File(root, CORE_ROADMAP)
         core.writeText(updateCoreClosureStatus(core.readText(), "completed"))
         val roadmap = File(root, ROADMAP)
@@ -103,6 +104,7 @@ class ReleaseMetadataClosedLifecycleTests {
     }
 
     private fun closeMetadata(root: File, includeImplementationEvidence: Boolean) {
+        readyMetadata(root)
         val closure = File(root, CLOSURE_WORK_PACKAGE)
         val evidence = if (includeImplementationEvidence) {
             """
@@ -119,7 +121,7 @@ validationEvidence:
             ""
         }
         closure.writeText(
-            closure.readText().replaceFirst("status: active", "status: complete").trimEnd() + evidence + "\n"
+            updateTopLevelStatus(closure.readText(), "complete").trimEnd() + evidence + "\n"
         )
 
         val core = File(root, CORE_ROADMAP)
@@ -163,6 +165,75 @@ validationEvidence:
                     "Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)"
                 )
         )
+    }
+
+    private fun readyMetadata(root: File) {
+        val closure = File(root, CLOSURE_WORK_PACKAGE)
+        closure.writeText(
+            updateTopLevelStatus(
+                removeTopLevelSection(closure.readText(), "validationEvidence"),
+                "active"
+            ).trimEnd() + "\n"
+        )
+
+        val core = File(root, CORE_ROADMAP)
+        core.writeText(
+            updateCoreClosureStatus(
+                updateCoreTrackStatus(core.readText(), "active"),
+                "next"
+            )
+        )
+
+        val roadmap = File(root, ROADMAP)
+        roadmap.writeText(
+            roadmap.readText()
+                .replaceFirst("completedItem: \"0.9.7.10\"", "completedItem: \"0.9.7.9\"")
+                .replaceFirst(
+                    "completedItemName: \"Bounded Semantic Closure Gate\"",
+                    "completedItemName: \"Intent Lowering and Diagnostic Honesty\""
+                )
+                .replaceFirst("nextCoreItemStatus: \"completed\"", "nextCoreItemStatus: \"next\"")
+        )
+
+        val releaseState = File(root, RELEASE_STATE)
+        releaseState.writeText(
+            releaseState.readText()
+                .replaceFirst("completedItem: \"0.9.7.10\"", "completedItem: \"0.9.7.9\"")
+                .replaceFirst(
+                    "completedItemName: \"Bounded Semantic Closure Gate\"",
+                    "completedItemName: \"Intent Lowering and Diagnostic Honesty\""
+                )
+        )
+
+        val report = File(root, REPORT)
+        report.writeText(
+            report.readText()
+                .replaceFirst(
+                    "Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`",
+                    "Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`"
+                )
+                .replaceFirst(
+                    "Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)",
+                    "Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)"
+                )
+        )
+    }
+
+    private fun removeTopLevelSection(text: String, section: String): String {
+        val lines = text.lines()
+        val start = lines.indexOfFirst { it == "$section:" }
+        if (start < 0) return text
+        val end = (start + 1 until lines.size).firstOrNull { index ->
+            lines[index].isNotBlank() && !lines[index].first().isWhitespace()
+        } ?: lines.size
+        return (lines.take(start) + lines.drop(end)).joinToString("\n")
+    }
+
+    private fun updateTopLevelStatus(text: String, status: String): String {
+        val pattern = Regex("(?m)^(status:\\s*)([a-z-]+)(\\s*)$")
+        val match = pattern.find(text) ?: error("Closure work-package status is missing.")
+        val replacement = match.groupValues[1] + status + match.groupValues[3]
+        return text.replaceRange(match.range, replacement)
     }
 
     private fun updateCoreTrackStatus(text: String, status: String): String {
