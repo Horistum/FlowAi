@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 19
+stateVersion: 20
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,8 +18,8 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.9"
-  completedItemName: "Intent Lowering and Diagnostic Honesty"
+  completedItem: "0.9.7.10"
+  completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "core"
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
@@ -120,6 +120,7 @@ lastKnownValidation:
     - "v0.9.7.9.10 was merged through PR #90 after external exact-head CI evidence from Flow CI #2100 and completion-metadata validation from Flow CI #2108."
     - "v0.9.7.9.11 passed external exact-head CI evidence in Flow CI #2116 and completion-metadata validation in Flow CI #2123."
     - "PR #91 merged v0.9.7.9.11 into main as 794c4232cb07ec5aa1a7568728c08c82c835c79d."
-    - "Core item v0.9.7.9 remains completed and v0.9.7.10 is the active next closure item."
-    - "No external exact-head CI evidence is claimed yet for the active v0.9.7.10 implementation branch."
-    - "The closure implementation head and synthetic merge candidate must pass independently before completion metadata may close the track."
+    - "v0.9.7.10 passed external exact-head implementation evidence in Flow CI #2135, run 30236729729, exact head 19a11e2c1c78e916f19843ef0d3d2aaa96382c82."
+    - "The same Flow CI #2135 run independently passed synthetic merge candidate 86bf0d40aa1f83249727a4b374a872fd8cb7dfbc."
+    - "Core item v0.9.7.10 and the v0.9.7 track are marked completed on this later metadata head."
+    - "This completion-metadata head and its synthetic merge candidate must still pass independently before PR #92 may become ready for review."
