@@ -4,14 +4,16 @@ Current published package line: `0.9.5`
 Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
-Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
+Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.9.11 Public Artifact Evidence and Verification Integrity`
-Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
+Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
 
-## Completed direction
+## Active closure direction
 
-The v0.9.7 universal semantic foundation is closed through a finite, falsifiable and non-circular evidence gate. Closure introduces no new semantic capability, public standard artifact, package version or artifact-contract version. It reconciles the Core roadmap, completed correction ledger, release metadata, pre-existing conformance checks and retained reference evidence.
+The v0.9.7 universal semantic foundation is in the explicit `READY` phase. The finite closure authority, release metadata lifecycle, JSON schema, negative lifecycle tests and completed-track Flow Agent tooling are implemented. Closure metadata was temporarily advanced to `CLOSED`, but Flow CI #2169 correctly rejected it because an older closure-blocking conformance integration still treated correction completion as permanent proof that the closure item must remain `next`.
+
+That stale invariant has been repaired at `ClosureBlockingIntegrityChecks`: conformance now consumes the authoritative `READY/CLOSED` phase and validates the complete lifecycle combination rather than independently re-deriving closure status from the correction work package.
 
 ## Correction ledger
 
@@ -26,8 +28,6 @@ The v0.9.7 universal semantic foundation is closed through a finite, falsifiable
 9. `0.9.7.9.9 Parser, Conformance and Architecture Evidence Integrity`
 10. `0.9.7.9.10 Target Selection Provenance and CLI Status Integrity`
 11. `0.9.7.9.11 Public Artifact Evidence and Verification Integrity` (`completed`)
-
-The corrections preserve accepted intent or emit explicit diagnostics, keep target selection provenance typed, distinguish blocked CLI outcomes, compute public status from validated content, derive target semantics from provider-owned evidence, reject generic artifact provenance, reject dangling lineage and verify structured JSON fields rather than textual occurrence.
 
 ## v0.9.7.10 closure boundary
 
@@ -56,39 +56,38 @@ The closure check runs last against an immutable snapshot of prior conformance r
 
 Every mixed lifecycle is `INVALID`. Completed metadata without a positive Flow CI run, exact SHA, merge SHA or distinct candidates fails closed. The report schema is aligned with runtime contract version `1.3` and permits `closureStatus: completed`.
 
+### Closure-blocking conformance integration
+
+`governance.closure-blocking-safety-diagnostic-integrity` now requires the release metadata authority to pass and then verifies the exact phase:
+
+- `READY` requires closure work package `active`, closure item `next`, Core track `active` and completed item `0.9.7.9`.
+- `CLOSED` requires closure work package `complete`, closure item `completed`, Core track `completed` and completed item equal to the closure identity.
+
+`INVALID` remains blocking. This is not a permissive `next|completed` exception.
+
 ### Completed-track tooling
 
-Flow Agent validation and context generation accept a primary track without a next item only when:
-
-- the track status is `completed`;
-- every Core item is `completed`;
-- no active correction pointer remains;
-- the roadmap index identifies `0.9.7.10` as the completed item;
-- no `status: next` Core item remains.
-
-An active or incomplete track without a next item remains an error.
+Flow Agent validation and context generation accept a primary track without a next item only when the track and every Core item are completed, no active correction remains, and the roadmap index identifies `0.9.7.10` as completed. An active or incomplete track without a next item remains an error.
 
 ### Negative evidence
 
-Tests prove failure for missing required evidence, failing prior conformance, reactivated corrections, checklist drift, completed closure without implementation evidence, a completed closure with an active Core track, stale completed-item metadata, an active closure publishing completed status and an incomplete primary track without a next item.
+Tests prove failure for missing required evidence, failing prior conformance, reactivated corrections, checklist drift, completed closure without implementation evidence, a completed closure with an active Core track, stale completed-item metadata, an active closure publishing completed status and an incomplete primary track without a next item. Lifecycle fixtures normalize their source state explicitly and remain valid before and after repository closure.
 
 ## Version boundary
 
 The implementation package remains `0.9.5`, the public standard remains `0.8.0`, and the artifact contract remains `2.0`.
 
-## Implementation validation
+## Validation history and current boundary
 
-Flow CI #2163, run `30250550271`, independently passed:
+Flow CI #2163 passed the lifecycle implementation before the first completion metadata transition.
 
-- exact implementation head `de5b680917f1d704081b01f17829d96da1fe8565`;
-- synthetic merge candidate `bd9d4f703261a96a2bf68c15a1ed31c136b76943`;
-- Flow Agent tooling and repository structure;
-- complete tests;
-- standalone conformance, including the final semantic closure gate.
+Flow CI #2169 then provided negative completion evidence:
 
-## Completion-metadata validation boundary
+- completed-track Flow Agent tooling and structure passed;
+- merge-candidate full tests rejected the stale closure-blocking conformance assumption;
+- no completion claim was retained.
 
-This later metadata head and its synthetic merge candidate must independently pass the same Flow CI jobs before PR #93 may become ready for review.
+A new exact-head and synthetic merge-candidate implementation run must pass after the conformance lifecycle repair. Only then may a later metadata head restore `CLOSED` and undergo a second independent dual validation.
 
 ## Architecture boundary
 
