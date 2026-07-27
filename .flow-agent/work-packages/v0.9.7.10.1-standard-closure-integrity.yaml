@@ -1,0 +1,53 @@
+version: "0.9.7.10.1"
+name: "Standard and Closure Integrity Correction"
+type: "bounded-correction"
+stream: core
+status: active
+parentCoreItem: "0.9.7.10"
+objective: "Reopen the v0.9.7 closure claim after proving that conformance-suite presence and bounded-correction lifecycle evidence were incomplete or fail-open."
+scopeBoundary:
+  - "Require the complete pre-closure conformance sequence to execute exactly once and in order."
+  - "Reject missing, unknown and non-terminal bounded-correction statuses."
+  - "Use the shared FlowYaml boundary for closure metadata."
+  - "Reconcile StandardModel check ownership, purpose coverage and artifact projections before re-closing the track."
+  - "Preserve package 0.9.5, public standard 0.8.0 and artifact contract 2.0."
+universalInvariants:
+  - "A green subset cannot certify the presence of the complete conformance suite."
+  - "Every bounded-correction status belongs to an explicit closed vocabulary."
+  - "A target-specific capability cannot become a universal purpose requirement by historical convenience."
+  - "Public standard projections are data-driven and do not infer membership from check-id spelling."
+confirmedFindings:
+  - id: S1-C1
+    status: active
+    summary: "The release profile declared 38 checks while 90 checks ran before closure, so non-release check removal was invisible to the presence gate."
+  - id: S2
+    status: active
+    summary: "Purpose coverage count ratios have zero headroom and mechanically prevent honest model growth."
+  - id: S3
+    status: active
+    summary: "Purpose coverage forbids every registry-consistency gate while StandardModel permits a bounded ratio."
+  - id: S4
+    status: active
+    summary: "DIAGNOSTICS and REGISTRY_CONSISTENCY are declared GateKind values with no check owner."
+  - id: S5
+    status: active
+    summary: "Export-manifest membership is inferred from check-id prefixes and exact string exclusions."
+  - id: S7
+    status: active
+    summary: "KUBERNETES_MAINTENANCE remains a target-specific mandatory Core purpose capability."
+  - id: S8
+    status: active
+    summary: "internalArtifacts is a literal empty list rather than a model projection."
+  - id: C2-C3
+    status: active
+    summary: "Closure accepted every correction status except literal active and parsed YAML through ad-hoc regexes."
+  - id: C4
+    status: active
+    summary: "A redundant source-file deletion assertion remains beside the authoritative classpath check."
+  - id: C5
+    status: active
+    summary: "Closed metadata retains misleading nextCoreItem names for the closure identity."
+validationPolicy:
+  workflow: "Flow CI"
+  implementationBoundary: "Every code slice must pass exact-head and synthetic merge-candidate tests and standalone conformance before its completion metadata is recorded."
+  completionBoundary: "The completed correction and re-closed track require a later independent exact-head and synthetic merge-candidate validation."
