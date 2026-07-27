@@ -75,8 +75,14 @@ internal class ArchitectureCoherenceChecks(
         require(releaseProfile.registryConsistencyChecks.isEmpty()) {
             "Registry-consistency evidence must not be promoted into the public release profile implicitly."
         }
-        require(governance.reportBudget.registryConsistencyChecks == 1) {
-            "Report budget must expose the single scoped roadmap registry-consistency owner."
+        require(governance.reportBudget.registryConsistencyChecks == 0) {
+            "The public report budget must count only public release-profile registry-consistency gates."
+        }
+        require(StandardModel.releaseRegistryConsistencyCheckIds().isEmpty()) {
+            "The public release profile must remain free of registry-consistency bookkeeping."
+        }
+        require(StandardModel.modeledRegistryConsistencyGateCount == 1) {
+            "Exactly one package-level registry-consistency owner must remain modeled."
         }
         require(StandardModel.registryConsistencyCheckIds() == listOf("governance.derived-model-integrity")) {
             "The package-level derived-model integrity check must be the sole registry-consistency owner."
