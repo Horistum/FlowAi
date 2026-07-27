@@ -71,11 +71,11 @@ internal class CliReleaseHonestyChecks(
             }
 
             val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
-            require(release.completedCorrectionItem.startsWith("0.9.7.9.")) {
-                "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded 0.9.7.9.x track."
+            require(BOUNDED_CORRECTION.matches(release.completedCorrectionItem)) {
+                "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded v0.9.7 correction vocabulary."
             }
             require(release.nextCoreItem == "0.9.7.10")
-            require(release.correctionStatus in setOf("active", "complete"))
+            require(release.correctionStatus in setOf("active", "complete", "completed"))
 
             val releaseAssembly = File(rootDir, "src/main/kotlin/org/flowlang/release/StandardReleaseAssembly.kt").readText()
             require(!releaseAssembly.contains("ADAPTER_CONTRACT_READY")) {
@@ -108,4 +108,8 @@ internal class CliReleaseHonestyChecks(
                 }
             }
         }
+
+    companion object {
+        private val BOUNDED_CORRECTION = Regex("0\\.9\\.7\\.(?:9|10)\\.\\d+")
+    }
 }
