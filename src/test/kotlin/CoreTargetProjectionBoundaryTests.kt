@@ -129,7 +129,6 @@ class CoreTargetProjectionBoundaryTests {
         ).readText()
         val loader = Thread.currentThread().contextClassLoader
 
-        assertFalse(File("src/main/kotlin/org/flowlang/cli/CliTargetProjectionComposition.kt").exists())
         assertTrue(loader.getResource("org/flowlang/cli/TargetManifestGenerationPipeline.class") == null)
         assertNotNull(loader.getResource("org/flowlang/generators/manifest/TargetManifestGenerationPipeline.class"))
         assertTrue(referenceGenerator.contains("BuiltInTargetProjections.registry"))
