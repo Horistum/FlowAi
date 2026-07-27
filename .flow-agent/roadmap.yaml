@@ -61,12 +61,12 @@ architectureConstitution:
     - "No governance signal whose status contradicts the property measured."
 
 currentDecision:
-  completedItem: "0.9.7.9"
-  completedItemName: "Intent Lowering and Diagnostic Honesty"
+  completedItem: "0.9.7.10"
+  completedItemName: "Bounded Semantic Closure Gate"
   correctionState: "complete"
   activeCorrectionWorkPackage: ""
   activeCorrectionWorkPackageName: ""
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
-  nextCoreItemStatus: "next"
-  decisionBasis: "Bounded correction 0.9.7.9.11 replaced literal public status assertions, handwritten target capability claims, generic artifact provenance, dangling derivation acceptance and substring bundle verification with computed and fail-closed authorities. Flow CI #2116, run 30191458296, independently passed exact implementation head 018f69388163c14f65c03c2cf21029156fd94ede and synthetic merge candidate 8854b0ed44e04347a9c60ca915e9b61ed24c9734. Completion metadata remains subject to a later independent dual validation run."
+  nextCoreItemStatus: "completed"
+  decisionBasis: "The finite v0.9.7 closure authority, explicit READY/CLOSED release-metadata lifecycle, negative closure fixtures and completed-track Flow Agent tooling passed Flow CI #2163, run 30250550271, on exact implementation head de5b680917f1d704081b01f17829d96da1fe8565 and synthetic merge candidate bd9d4f703261a96a2bf68c15a1ed31c136b76943. The Core track and item 0.9.7.10 are completed on this later metadata head, which must independently pass the same dual validation boundary before PR #93 becomes ready for review."
