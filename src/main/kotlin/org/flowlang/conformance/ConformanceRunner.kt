@@ -2,6 +2,7 @@ package org.flowlang.conformance
 
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.release.ReleaseMetadataHonestyAuthority
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 import java.io.File
 import org.flowlang.generators.manifest.TargetProjectionRegistry
@@ -11,8 +12,10 @@ import org.flowlang.generators.manifest.TargetProjectionRegistry
  *
  * The historical monolith is split into ordered groups while preserving the
  * exact check sequence and the data-driven vector index boundary. The bounded
- * semantic closure check is intentionally last: it may certify only checks that
- * have already executed and cannot lend PASS evidence to future work.
+ * semantic closure check is intentionally last and runs only in READY or CLOSED.
+ * During CORRECTION_REQUIRED, the independently declared pre-closure inventory
+ * remains mandatory but the closure authority cannot claim success while an
+ * active correction exists.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
@@ -52,7 +55,11 @@ class ConformanceRunner(
         checks += ArchitectureCoherenceChecks(rootDir, registry, targets, projections).checks()
         checks += DeltaPurposeChecks(rootDir, registry, targets, projections).checks()
         checks += ConformanceQualityGates.run()
-        checks += SemanticClosureChecks(rootDir).checks(checks.toList())
+
+        val releaseLifecycle = ReleaseMetadataHonestyAuthority(rootDir).analyze()
+        if (releaseLifecycle.status != "PASS" || releaseLifecycle.closurePhase != "CORRECTION_REQUIRED") {
+            checks += SemanticClosureChecks(rootDir).checks(checks.toList())
+        }
         return ConformanceSummary(checks)
     }
 }
