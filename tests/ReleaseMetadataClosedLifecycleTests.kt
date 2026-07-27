@@ -289,7 +289,7 @@ validationEvidence:
     private fun addNextProjection(file: File, section: String) {
         val text = file.readText()
         if (Regex("(?m)^\\s*nextCoreItem:").containsMatchIn(text)) return
-        val anchor = Regex("(?m)^(\\s*)closureItemStatus:\s*\"?[^\"\\n]+\"?\\s*$")
+        val anchor = Regex("(?m)^(\\s*)closureItemStatus:\\s*\"?[^\"\\n]+\"?\\s*$")
             .find(text) ?: error("closureItemStatus missing in $section")
         val indent = anchor.groupValues[1]
         val addition = "\n${indent}nextCoreItem: \"0.9.7.10\"" +
