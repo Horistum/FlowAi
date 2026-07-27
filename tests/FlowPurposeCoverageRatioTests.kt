@@ -41,7 +41,7 @@ class FlowPurposeCoverageRatioTests {
 
         assertEquals("PASS", report.status, report.issues.joinToString { it.code + ":" + it.subject })
         assertTrue("KUBERNETES_MAINTENANCE" !in report.requiredPurposeCapabilities)
-        assertTrue("KUBERNETES_MAINTENANCE" !in report.requiredBlockedRiskCapabilities)
+        assertTrue("KUBERNETES_MAINTENANCE" !in PurposeCoverageAnalyzer.requiredBlockedRiskCapabilities)
     }
 
     @Test
