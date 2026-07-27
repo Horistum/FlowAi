@@ -14,7 +14,7 @@ data class ReleaseMetadataHonestyCheck(
 )
 
 data class ReleaseMetadataHonestyReport(
-    val reportVersion: String = "1.4",
+    val reportVersion: String = "1.5",
     val implementationPackageVersion: String = FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION,
     val publicStandardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
     val completedCorrectionItem: String,
@@ -26,7 +26,7 @@ data class ReleaseMetadataHonestyReport(
     val closureStatus: String,
     val coreTrackStatus: String,
     val completedCoreItem: String,
-    val nextCoreItem: String,
+    val nextCoreItem: String?,
     val status: String,
     val checks: List<ReleaseMetadataHonestyCheck>,
     val failedChecks: List<String>
@@ -36,11 +36,9 @@ data class ReleaseMetadataHonestyReport(
  * Reconciles package, public-standard, Core-roadmap, bounded-correction and
  * bounded-closure axes.
  *
- * A previously CLOSED item may enter CORRECTION_REQUIRED only through an active
- * bounded correction that explicitly names the closure item as its parent. A
- * correction of the closure item then transitions that same item from
- * correction-required to next to completed; it cannot also pretend that the
- * parent remained completed throughout the repair.
+ * closureItem is permanent identity. nextCoreItem is a phase projection and is
+ * present only while the closure item is genuinely READY/next. A reopened or
+ * completed track therefore cannot describe the closure identity as future work.
  */
 class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
     fun analyze(): ReleaseMetadataHonestyReport {
@@ -101,6 +99,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
                 coreTrackStatus == "completed" -> "CLOSED"
             else -> "INVALID"
         }
+
         val expectedClosureStatus = when (closurePhase) {
             "CORRECTION_REQUIRED" -> "correction-required"
             "READY" -> "next"
@@ -117,6 +116,10 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
         val expectedCompletedItem = if (closurePhase == "CLOSED") closureItem else preClosureItem
         val expectedCompletedName = if (closurePhase == "CLOSED") closureName else preClosureName
         val expectedActivePointer = if (correctionStatus == "active") correctionPath else ""
+        val expectedNextItem = if (closurePhase == "READY") closureItem else ""
+        val expectedNextName = if (closurePhase == "READY") closureName else ""
+        val expectedNextStatus = if (closurePhase == "READY") "next" else ""
+
         val validationSource = releaseState.string("lastKnownValidation", "validationSource")
         val validationNotes = releaseState.string("lastKnownValidation", "notes")
         val correctionChangelogFile = File(
@@ -164,188 +167,97 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             gradleFile,
             "Gradle package version must match the typed implementation package version."
         )
-        equal(
-            "release.package.state-current",
-            packageVersion,
-            releaseState.string("currentVersion"),
-            releaseStateFile,
-            "Release-state currentVersion must describe the published package axis."
-        )
-        equal(
-            "release.package.state-published",
-            packageVersion,
-            releaseState.string("versionBoundary", "publishedPackageVersion"),
-            releaseStateFile,
-            "Release-state publishedPackageVersion must match the package axis."
-        )
-        equal(
-            "release.standard.state-active",
-            standardVersion,
-            releaseState.string("activeStandardVersion"),
-            releaseStateFile,
-            "Release-state active standard version must match the typed public standard version."
-        )
-        equal(
-            "release.standard.state-boundary",
-            standardVersion,
-            releaseState.string("versionBoundary", "publicStandardVersion"),
-            releaseStateFile,
-            "Release-state public standard boundary must match the typed public standard version."
-        )
-        contains(
-            "release.report.package",
-            reportText,
-            "Current published package line: `$packageVersion`",
-            reportFile,
-            "REPORT.md must state the current package line explicitly."
-        )
-        contains(
-            "release.report.standard",
-            reportText,
-            "Active public standard version: `$standardVersion`",
-            reportFile,
-            "REPORT.md must state the public standard axis explicitly."
-        )
-        equal(
-            "release.state.completed-item",
-            expectedCompletedItem,
-            releaseState.string("roadmapState", "completedItem"),
-            releaseStateFile,
-            "Release state must expose the latest completed Core item."
-        )
-        equal(
-            "release.state.completed-name",
-            expectedCompletedName,
-            releaseState.string("roadmapState", "completedItemName"),
-            releaseStateFile,
-            "Release state must expose the latest completed Core item name."
-        )
-        equal(
-            "release.roadmap.completed-item",
-            expectedCompletedItem,
-            roadmap.string("currentDecision", "completedItem"),
-            roadmapFile,
-            "The roadmap index must expose the latest completed Core item."
-        )
-        equal(
-            "release.roadmap.completed-name",
-            expectedCompletedName,
-            roadmap.string("currentDecision", "completedItemName"),
-            roadmapFile,
-            "The roadmap index must expose the latest completed Core item name."
-        )
-        equal(
-            "release.work-package.correction-item",
-            correctionVersionFromPath(correctionPath),
-            correctionItem,
-            correctionFile,
-            "The bounded correction identity must match its selected work-package path."
-        )
-        equal(
-            "release.work-package.correction-name",
-            correctionName,
-            correction.string("name"),
-            correctionFile,
-            "The bounded correction work package must carry the correction name."
-        )
-        boolean(
-            "release.work-package.parent",
-            parentItem.isNotBlank() && parentName.isNotBlank(),
-            "$parentItem:$parentName",
-            correctionFile,
-            "The correction must name an existing parent Core item explicitly."
-        )
-        equal(
-            "release.work-package.closure-item",
-            closureItem,
-            closureWorkPackage.string("version"),
-            closureWorkPackageFile,
-            "The closure work package must carry the bounded closure identity."
-        )
-        equal(
-            "release.work-package.closure-name",
-            closureName,
-            closureWorkPackage.string("name"),
-            closureWorkPackageFile,
-            "The closure work package must carry the bounded closure name."
-        )
-        equal(
-            "release.roadmap.correction-state",
-            if (correctionStatus == "active") "active" else "complete",
-            roadmap.string("currentDecision", "correctionState"),
-            roadmapFile,
-            "The roadmap correction state must match the correction work-package lifecycle."
-        )
-        equal(
-            "release.roadmap.active-correction-pointer",
-            expectedActivePointer,
-            selectedPointer,
-            roadmapFile,
-            "Only an active correction may be selected as the current correction work package."
-        )
-        equal(
-            "release.core.parent-status",
-            expectedParentStatus,
-            parentStatus,
-            coreRoadmapFile,
-            "The corrected parent status must match the explicit lifecycle and may be next when the correction owns the closure item itself."
-        )
-        equal(
-            "release.core.closure-status",
-            expectedClosureStatus,
-            closureStatus,
-            coreRoadmapFile,
-            "The closure item status must match the explicit closure phase."
-        )
-        equal(
-            "release.core.track-status",
-            expectedTrackStatus,
-            coreTrackStatus,
-            coreRoadmapFile,
-            "The Core track may become completed only in the CLOSED phase."
-        )
-        equal(
-            "release.roadmap.closure-status",
-            expectedClosureStatus,
-            roadmap.string("currentDecision", "nextCoreItemStatus"),
-            roadmapFile,
-            "The roadmap index must expose the same closure status as the Core roadmap."
-        )
-        equal(
-            "release.state.closure-item",
-            closureItem,
-            releaseState.string("roadmapState", "nextCoreItem"),
-            releaseStateFile,
-            "Release state must retain the bounded closure item identity."
-        )
-        equal(
-            "release.state.closure-name",
-            closureName,
-            releaseState.string("roadmapState", "nextCoreItemName"),
-            releaseStateFile,
-            "Release state must retain the bounded closure item name."
-        )
-        equal(
-            "release.state.bounded-closure-item",
-            closureItem,
-            releaseState.string("roadmapState", "boundedClosureItem"),
-            releaseStateFile,
-            "Release state must retain the explicit bounded closure identity."
-        )
-        equal(
-            "release.roadmap.closure-item",
-            closureItem,
-            roadmap.string("currentDecision", "nextCoreItem"),
-            roadmapFile,
-            "The roadmap index must retain the bounded closure item identity."
-        )
-        equal(
-            "release.roadmap.closure-name",
-            closureName,
-            roadmap.string("currentDecision", "nextCoreItemName"),
-            roadmapFile,
-            "The roadmap index must retain the bounded closure item name."
-        )
+        equal("release.package.state-current", packageVersion, releaseState.string("currentVersion"), releaseStateFile,
+            "Release-state currentVersion must describe the published package axis.")
+        equal("release.package.state-published", packageVersion,
+            releaseState.string("versionBoundary", "publishedPackageVersion"), releaseStateFile,
+            "Release-state publishedPackageVersion must match the package axis.")
+        equal("release.standard.state-active", standardVersion, releaseState.string("activeStandardVersion"),
+            releaseStateFile, "Release-state active standard version must match the typed public standard version.")
+        equal("release.standard.state-boundary", standardVersion,
+            releaseState.string("versionBoundary", "publicStandardVersion"), releaseStateFile,
+            "Release-state public standard boundary must match the typed public standard version.")
+        contains("release.report.package", reportText, "Current published package line: `$packageVersion`", reportFile,
+            "REPORT.md must state the current package line explicitly.")
+        contains("release.report.standard", reportText, "Active public standard version: `$standardVersion`", reportFile,
+            "REPORT.md must state the public standard axis explicitly.")
+
+        equal("release.state.completed-item", expectedCompletedItem,
+            releaseState.string("roadmapState", "completedItem"), releaseStateFile,
+            "Release state must expose the latest completed Core item.")
+        equal("release.state.completed-name", expectedCompletedName,
+            releaseState.string("roadmapState", "completedItemName"), releaseStateFile,
+            "Release state must expose the latest completed Core item name.")
+        equal("release.roadmap.completed-item", expectedCompletedItem,
+            roadmap.string("currentDecision", "completedItem"), roadmapFile,
+            "The roadmap index must expose the latest completed Core item.")
+        equal("release.roadmap.completed-name", expectedCompletedName,
+            roadmap.string("currentDecision", "completedItemName"), roadmapFile,
+            "The roadmap index must expose the latest completed Core item name.")
+
+        equal("release.work-package.correction-item", correctionVersionFromPath(correctionPath), correctionItem,
+            correctionFile, "The bounded correction identity must match its selected work-package path.")
+        equal("release.work-package.correction-name", correctionName, correction.string("name"), correctionFile,
+            "The bounded correction work package must carry the correction name.")
+        boolean("release.work-package.parent", parentItem.isNotBlank() && parentName.isNotBlank(),
+            "$parentItem:$parentName", correctionFile,
+            "The correction must name an existing parent Core item explicitly.")
+        equal("release.work-package.closure-item", closureItem, closureWorkPackage.string("version"),
+            closureWorkPackageFile, "The closure work package must carry the bounded closure identity.")
+        equal("release.work-package.closure-name", closureName, closureWorkPackage.string("name"),
+            closureWorkPackageFile, "The closure work package must carry the bounded closure name.")
+
+        equal("release.roadmap.correction-state", if (correctionStatus == "active") "active" else "complete",
+            roadmap.string("currentDecision", "correctionState"), roadmapFile,
+            "The roadmap correction state must match the correction work-package lifecycle.")
+        equal("release.roadmap.active-correction-pointer", expectedActivePointer, selectedPointer, roadmapFile,
+            "Only an active correction may be selected as the current correction work package.")
+
+        equal("release.core.parent-status", expectedParentStatus, parentStatus, coreRoadmapFile,
+            "The corrected parent status must match the explicit lifecycle.")
+        equal("release.core.closure-status", expectedClosureStatus, closureStatus, coreRoadmapFile,
+            "The closure item status must match the explicit closure phase.")
+        equal("release.core.track-status", expectedTrackStatus, coreTrackStatus, coreRoadmapFile,
+            "The Core track may become completed only in the CLOSED phase.")
+
+        equal("release.roadmap.closure-item", closureItem,
+            roadmap.string("currentDecision", "closureItem"), roadmapFile,
+            "The roadmap index must carry an explicit closure item identity.")
+        equal("release.roadmap.closure-name", closureName,
+            roadmap.string("currentDecision", "closureItemName"), roadmapFile,
+            "The roadmap index must carry an explicit closure item name.")
+        equal("release.roadmap.closure-status", expectedClosureStatus,
+            roadmap.string("currentDecision", "closureItemStatus"), roadmapFile,
+            "The roadmap index closure status must match the Core roadmap.")
+        equal("release.state.closure-item", closureItem,
+            releaseState.string("roadmapState", "closureItem"), releaseStateFile,
+            "Release state must carry an explicit closure item identity.")
+        equal("release.state.closure-name", closureName,
+            releaseState.string("roadmapState", "closureItemName"), releaseStateFile,
+            "Release state must carry an explicit closure item name.")
+        equal("release.state.closure-status", expectedClosureStatus,
+            releaseState.string("roadmapState", "closureItemStatus"), releaseStateFile,
+            "Release state closure status must match the Core roadmap.")
+
+        equal("release.roadmap.next-item", expectedNextItem,
+            roadmap.string("currentDecision", "nextCoreItem"), roadmapFile,
+            "The roadmap may expose a next Core item only in READY.")
+        equal("release.roadmap.next-name", expectedNextName,
+            roadmap.string("currentDecision", "nextCoreItemName"), roadmapFile,
+            "The roadmap may expose a next Core item name only in READY.")
+        equal("release.roadmap.next-status", expectedNextStatus,
+            roadmap.string("currentDecision", "nextCoreItemStatus"), roadmapFile,
+            "The roadmap may expose next status only in READY.")
+        equal("release.state.next-item", expectedNextItem,
+            releaseState.string("roadmapState", "nextCoreItem"), releaseStateFile,
+            "Release state may expose a next Core item only in READY.")
+        equal("release.state.next-name", expectedNextName,
+            releaseState.string("roadmapState", "nextCoreItemName"), releaseStateFile,
+            "Release state may expose a next Core item name only in READY.")
+        equal("release.state.next-status", expectedNextStatus,
+            releaseState.string("roadmapState", "nextCoreItemStatus"), releaseStateFile,
+            "Release state may expose next status only in READY.")
+
         boolean(
             "release.closure.phase-alignment",
             closurePhase in VALID_PHASES,
@@ -359,73 +271,38 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             closureImplementationEvidenceValid(closureWorkPackage, closureWorkStatus, correctionItem),
             closureWorkPackage.string("validationEvidence", "status").ifBlank { closureWorkStatus },
             closureWorkPackageFile,
-            "Closure evidence must be absent while READY, superseded during correction, and structurally passing when CLOSED."
+            "Closure evidence must be superseded during correction, absent while READY and structurally passing when CLOSED."
         )
 
         val correctionLabel = if (correctionStatus == "active") "Active correction item" else "Completed correction item"
-        contains(
-            "release.report.correction",
-            reportText,
-            "$correctionLabel: `$correctionItem $correctionName`",
-            reportFile,
-            "REPORT.md must expose the bounded correction lifecycle."
-        )
-        contains(
-            "release.report.parent-status",
-            reportText,
-            "Core roadmap item status: `$expectedParentStatus`",
-            reportFile,
-            "REPORT.md must expose the corrected parent Core item status."
-        )
+        contains("release.report.correction", reportText, "$correctionLabel: `$correctionItem $correctionName`",
+            reportFile, "REPORT.md must expose the bounded correction lifecycle.")
+        contains("release.report.parent-status", reportText, "Core roadmap item status: `$expectedParentStatus`",
+            reportFile, "REPORT.md must expose the corrected parent Core item status.")
         val closureReportFragment = when (closurePhase) {
             "CORRECTION_REQUIRED" -> "Core closure correction: `$closureItem $closureName` (`correction-required`)"
             "READY" -> "Next Core roadmap item: `$closureItem $closureName` (`next`)"
             "CLOSED" -> "Completed Core closure item: `$closureItem $closureName` (`completed`)"
             else -> "INVALID"
         }
-        contains(
-            "release.report.closure-status",
-            reportText,
-            closureReportFragment,
-            reportFile,
-            "REPORT.md must expose whether closure is CORRECTION_REQUIRED, READY or CLOSED."
-        )
-        contains(
-            "release.changelog.$correctionItem",
-            correctionChangelogText,
-            "### v$correctionItem ",
-            correctionChangelogFile,
-            "The bounded correction changelog must record the selected work item."
-        )
-        boolean(
-            "release.validation.last-merged-run",
-            Regex("Flow CI #\\d+").containsMatchIn(validationSource),
-            validationSource,
+        contains("release.report.closure-status", reportText, closureReportFragment, reportFile,
+            "REPORT.md must expose whether closure is CORRECTION_REQUIRED, READY or CLOSED.")
+        contains("release.changelog.$correctionItem", correctionChangelogText, "### v$correctionItem ",
+            correctionChangelogFile, "The bounded correction changelog must record the selected work item.")
+
+        boolean("release.validation.last-merged-run", Regex("Flow CI #\\d+").containsMatchIn(validationSource),
+            validationSource, releaseStateFile,
+            "Committed metadata must identify an already-merged Flow CI run.")
+        boolean("release.validation.last-merged-head", Regex("\\b[0-9a-f]{40}\\b").containsMatchIn(validationSource),
+            validationSource, releaseStateFile,
+            "Committed metadata must identify the exact already-merged validation head.")
+        contains("release.validation.external-candidate-policy", validationNotes, "external exact-head CI evidence",
             releaseStateFile,
-            "Committed metadata must identify an already-merged Flow CI run."
-        )
-        boolean(
-            "release.validation.last-merged-head",
-            Regex("\\b[0-9a-f]{40}\\b").containsMatchIn(validationSource),
-            validationSource,
-            releaseStateFile,
-            "Committed metadata must identify the exact already-merged validation head."
-        )
-        contains(
-            "release.validation.external-candidate-policy",
-            validationNotes,
-            "external exact-head CI evidence",
-            releaseStateFile,
-            "Candidate validation must remain external evidence until the candidate head passes."
-        )
+            "Candidate validation must remain external evidence until the candidate head passes.")
+
         val activeRoadmap = releaseState.string("roadmapState", "activeRoadmaps", "core")
-        boolean(
-            "release.roadmap.active-file",
-            File(rootDir, activeRoadmap).isFile,
-            activeRoadmap,
-            releaseStateFile,
-            "The active Core roadmap path must resolve to a repository file."
-        )
+        boolean("release.roadmap.active-file", File(rootDir, activeRoadmap).isFile, activeRoadmap,
+            releaseStateFile, "The active Core roadmap path must resolve to a repository file.")
 
         val failed = checks.filter { it.status == "FAIL" }.map { it.id }
         return ReleaseMetadataHonestyReport(
@@ -438,7 +315,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             closureStatus = closureStatus,
             coreTrackStatus = coreTrackStatus,
             completedCoreItem = roadmap.string("currentDecision", "completedItem"),
-            nextCoreItem = closureItem,
+            nextCoreItem = expectedNextItem.ifBlank { null },
             status = if (failed.isEmpty()) "PASS" else "FAIL",
             checks = checks,
             failedChecks = failed
@@ -492,7 +369,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
         File(rootDir, ".flow-agent/work-packages").listFiles().orEmpty()
             .filter { it.isFile && it.extension in setOf("yaml", "yml") }
             .filter { file -> runCatching { requiredYaml(file).string("type") == "bounded-correction" }.getOrDefault(false) }
-            .filter { file -> requiredYaml(file).string("version").startsWith("0.9.7.") }
+            .filter { file -> BOUNDED_CORRECTION_VERSION.matches(requiredYaml(file).string("version")) }
 
     private fun correctionVersionFromPath(path: String): String =
         CORRECTION_FILE.find(File(path).name)?.groupValues?.get(1)
@@ -599,6 +476,7 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
             ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml"
         private const val REPORT = "REPORT.md"
         private val CORRECTION_FILE = Regex("v(0\\.9\\.7\\.(?:9|10)\\.\\d+)-.+\\.ya?ml")
+        private val BOUNDED_CORRECTION_VERSION = Regex("0\\.9\\.7\\.(?:9|10)\\.\\d+")
         private val SHA = Regex("[0-9a-f]{40}")
         private val TERMINAL_CORRECTION_STATUSES = setOf("complete", "completed")
         private val VALID_PHASES = setOf("CORRECTION_REQUIRED", "READY", "CLOSED")
