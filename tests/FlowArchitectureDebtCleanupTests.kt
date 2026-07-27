@@ -95,6 +95,7 @@ class FlowArchitectureDebtCleanupTests {
             copyDirectory(File("conformance"), File(root, "conformance"))
             copyDirectory(File("tests"), File(root, "tests"))
             copyDirectory(File("src/main/kotlin"), File(root, "src/main/kotlin"))
+            copyDirectory(File("src/test/kotlin"), File(root, "src/test/kotlin"))
             val badSource = File(root, "src/main/kotlin/org/flowlang/example/BadRuntimeDirection.kt")
             badSource.parentFile.mkdirs()
             badSource.writeText(
