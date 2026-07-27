@@ -2,7 +2,7 @@ project: Flow Core
 stream: core
 roadmapVersion: 5
 track: v0.9.7-universal-semantic-foundation
-status: active
+status: completed
 trackObjective: Complete the universal semantic foundation with continuous reference evidence.
 continuousFeedback:
   - Every Core item runs the existing reference and regression suite.
@@ -195,7 +195,7 @@ items:
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: next
+    status: completed
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
@@ -207,5 +207,6 @@ items:
       - ClosureBlockingIntegrityChecks consumes the explicit lifecycle rather than permanently requiring closureStatus next after corrections complete.
       - Negative tests cover missing evidence, failing prior checks, active corrections, checklist drift and invalid closed metadata combinations.
       - Flow Agent validation and context generation accept only a structurally completed primary track when no next item remains.
-      - Flow CI #2169 rejected the first CLOSED metadata candidate because the older closure-blocking conformance integration still required closureStatus next; that invariant was repaired at its owner.
-      - A new exact-head and synthetic merge-candidate implementation run must pass before CLOSED metadata is restored.
+      - Flow CI #2169 rejected the first CLOSED metadata candidate because the older closure-blocking conformance integration still required closureStatus next; that invariant was repaired at its owner and the completion claim was reopened.
+      - Flow CI #2177, run 30252725533, independently passed exact implementation head 5a06e0e8c9e2c3c354f8b331c50564f7a903d9f4 and synthetic merge candidate 93e4d032ea384abd12cb754edbaabd3aef90b300.
+      - The later completion-metadata head must pass the same exact-head and merge-candidate boundary before PR #93 may become ready for review.
