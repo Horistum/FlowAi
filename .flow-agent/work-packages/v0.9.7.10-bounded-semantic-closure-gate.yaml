@@ -11,6 +11,10 @@ forbiddenScope:
   - "No successful closure while a bounded correction remains active."
   - "No missing or failed required conformance check treated as satisfied."
   - "No substring, filename ordering or metadata prose used as evidence of a passing gate."
+  - "No CLOSED metadata without structured exact-head and merge-candidate implementation evidence."
+lifecycle:
+  ready: "Correction complete, closure work package active, Core track active and item 0.9.7.10 next."
+  closed: "Closure work package complete, Core track completed, item 0.9.7.10 completed and implementation evidence recorded structurally."
 closureChecklist:
   - "closure.checklist-exact"
   - "closure.no-active-corrections"
@@ -23,6 +27,9 @@ closureChecklist:
   - "closure.reference-evidence-live"
 completionEvidence:
   - "The SemanticClosureAuthority emits PASS for every declared checklist item."
+  - "ReleaseMetadataHonestyAuthority accepts both READY and CLOSED and rejects every mixed lifecycle state."
+  - "The release metadata report schema matches runtime version 1.3 and permits explicit completed closure status."
+  - "Flow Agent validation and context generation accept a structurally completed primary track without inventing another next item."
   - "The exact pull-request head and synthetic merge candidate independently pass complete tests and standalone conformance."
 validationPolicy:
   workflow: "Flow CI"
