@@ -35,13 +35,13 @@ class ReleaseMetadataClosedLifecycleTests {
     fun completedClosureWithActiveCoreTrackFails() = withMetadataFixture { root ->
         closeMetadata(root, includeImplementationEvidence = true)
         val core = File(root, CORE_ROADMAP)
-        core.writeText(core.readText().replaceFirst("status: completed", "status: active"))
+        core.writeText(updateCoreTrackStatus(core.readText(), "active"))
 
         val report = ReleaseMetadataHonestyAuthority(root).analyze()
 
         assertEquals("FAIL", report.status)
-        assertTrue("release.closure.phase" in report.failedChecks)
-        assertTrue("release.core.track-status" in report.failedChecks)
+        assertTrue("release.closure.phase" in report.failedChecks, report.failedChecks.joinToString())
+        assertTrue("release.core.track-status" in report.failedChecks, report.failedChecks.joinToString())
     }
 
     @Test
@@ -123,7 +123,7 @@ validationEvidence:
         val core = File(root, CORE_ROADMAP)
         core.writeText(
             updateCoreClosureStatus(
-                core.readText().replaceFirst("status: active", "status: completed"),
+                updateCoreTrackStatus(core.readText(), "completed"),
                 "completed"
             )
         )
@@ -161,6 +161,13 @@ validationEvidence:
                     "Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)"
                 )
         )
+    }
+
+    private fun updateCoreTrackStatus(text: String, status: String): String {
+        val pattern = Regex("(?m)^(status:\\s*)([a-z-]+)(\\s*)$")
+        val match = pattern.find(text) ?: error("Core roadmap track status is missing.")
+        val replacement = match.groupValues[1] + status + match.groupValues[3]
+        return text.replaceRange(match.range, replacement)
     }
 
     private fun updateCoreClosureStatus(text: String, status: String): String {
