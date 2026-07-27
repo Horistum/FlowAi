@@ -61,12 +61,12 @@ architectureConstitution:
     - "No governance signal whose status contradicts the property measured."
 
 currentDecision:
-  completedItem: "0.9.7.10"
-  completedItemName: "Bounded Semantic Closure Gate"
+  completedItem: "0.9.7.9"
+  completedItemName: "Intent Lowering and Diagnostic Honesty"
   correctionState: "complete"
   activeCorrectionWorkPackage: ""
   activeCorrectionWorkPackageName: ""
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
-  nextCoreItemStatus: "completed"
-  decisionBasis: "The finite v0.9.7 closure authority, explicit READY/CLOSED release-metadata lifecycle, negative closure fixtures and completed-track Flow Agent tooling passed Flow CI #2163, run 30250550271, on exact implementation head de5b680917f1d704081b01f17829d96da1fe8565 and synthetic merge candidate bd9d4f703261a96a2bf68c15a1ed31c136b76943. The Core track and item 0.9.7.10 are completed on this later metadata head, which must independently pass the same dual validation boundary before PR #93 becomes ready for review."
+  nextCoreItemStatus: "next"
+  decisionBasis: "Flow CI #2169 proved that the first real CLOSED metadata candidate passed completed-track Flow Agent structure but failed the older governance.closure-blocking-safety-diagnostic-integrity check because it permanently required closureStatus next after correction completion. ClosureBlockingIntegrityChecks now consumes the explicit READY/CLOSED release lifecycle. The closure item is restored to READY until a new exact-head and synthetic merge-candidate implementation run passes."
