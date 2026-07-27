@@ -4,16 +4,16 @@ Current published package line: `0.9.5`
 Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
-Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
+Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.9.11 Public Artifact Evidence and Verification Integrity`
-Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
+Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
 
-## Active closure direction
+## Completed direction
 
-The v0.9.7 universal semantic foundation is in the explicit `READY` phase. The finite closure authority, release metadata lifecycle, JSON schema, negative lifecycle tests and completed-track Flow Agent tooling are implemented. Closure metadata was temporarily advanced to `CLOSED`, but Flow CI #2169 correctly rejected it because an older closure-blocking conformance integration still treated correction completion as permanent proof that the closure item must remain `next`.
+The v0.9.7 universal semantic foundation is closed through a finite, falsifiable and non-circular evidence gate. Closure introduces no new semantic capability, public standard artifact, package version or artifact-contract version. It reconciles the Core roadmap, completed correction ledger, release metadata, pre-existing conformance checks and retained reference evidence.
 
-That stale invariant has been repaired at `ClosureBlockingIntegrityChecks`: conformance now consumes the authoritative `READY/CLOSED` phase and validates the complete lifecycle combination rather than independently re-deriving closure status from the correction work package.
+The first real `CLOSED` metadata candidate was rejected by Flow CI #2169 because an older closure-blocking conformance integration still treated correction completion as permanent proof that the closure item must remain `next`. The completion claim was reopened, the invariant was repaired at its owner, and no failed result was waived.
 
 ## Correction ledger
 
@@ -58,7 +58,7 @@ Every mixed lifecycle is `INVALID`. Completed metadata without a positive Flow C
 
 ### Closure-blocking conformance integration
 
-`governance.closure-blocking-safety-diagnostic-integrity` now requires the release metadata authority to pass and then verifies the exact phase:
+`governance.closure-blocking-safety-diagnostic-integrity` consumes the authoritative release report rather than maintaining a second lifecycle rule:
 
 - `READY` requires closure work package `active`, closure item `next`, Core track `active` and completed item `0.9.7.9`.
 - `CLOSED` requires closure work package `complete`, closure item `completed`, Core track `completed` and completed item equal to the closure identity.
@@ -77,17 +77,19 @@ Tests prove failure for missing required evidence, failing prior conformance, re
 
 The implementation package remains `0.9.5`, the public standard remains `0.8.0`, and the artifact contract remains `2.0`.
 
-## Validation history and current boundary
+## Implementation validation
 
-Flow CI #2163 passed the lifecycle implementation before the first completion metadata transition.
+Flow CI #2177, run `30252725533`, independently passed:
 
-Flow CI #2169 then provided negative completion evidence:
+- exact implementation head `5a06e0e8c9e2c3c354f8b331c50564f7a903d9f4`;
+- synthetic merge candidate `93e4d032ea384abd12cb754edbaabd3aef90b300`;
+- Flow Agent tooling and repository structure;
+- complete tests;
+- standalone conformance, including the repaired closure-blocking integrity check and final semantic closure gate.
 
-- completed-track Flow Agent tooling and structure passed;
-- merge-candidate full tests rejected the stale closure-blocking conformance assumption;
-- no completion claim was retained.
+## Completion-metadata validation boundary
 
-A new exact-head and synthetic merge-candidate implementation run must pass after the conformance lifecycle repair. Only then may a later metadata head restore `CLOSED` and undergo a second independent dual validation.
+This later metadata head and its synthetic merge candidate must independently pass the same Flow CI jobs before PR #93 may become ready for review.
 
 ## Architecture boundary
 
