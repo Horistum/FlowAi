@@ -4,15 +4,28 @@
 
 ### v0.9.7.10.1 Standard and Closure Integrity Correction
 
-Reopened `v0.9.7.10 Bounded Semantic Closure Gate` after a post-merge audit proved that the completed closure claim did not establish complete conformance-suite presence and treated every bounded-correction status other than the literal `active` as terminal.
+Reopened `v0.9.7.10 Bounded Semantic Closure Gate` after a post-merge audit proved that the completed closure claim did not establish complete conformance-suite presence, accepted unknown bounded-correction statuses and retained drift between the public standard model and the actual conformance producer.
 
-Confirmed correction scope:
+Implemented correction scope:
 
-- declare the exact complete pre-closure conformance sequence independently from the runner;
+- declare the exact 90-check pre-closure conformance sequence independently from the runner;
 - reject missing, duplicate, reordered and unexpected checks;
-- reject missing and unknown correction statuses;
-- replace ad-hoc closure YAML parsing with the shared `FlowYaml` boundary;
-- reconcile the stale `StandardModel`, purpose-coverage policy, target-neutral capability scope and artifact projections before re-closing the track;
+- reject missing and unknown correction statuses through the shared `FlowYaml` boundary;
+- separate the unchanged public 0.8.0 release profile from durable package-level conformance identities;
+- remove non-runner pseudo-check identities and reconcile modeled checks against the complete inventory;
+- replace count-ratio purpose gates with target-neutral structural coverage and evidence requirements;
+- keep the package registry-consistency owner outside the public release profile;
+- assign actual DIAGNOSTICS and REGISTRY_CONSISTENCY owners;
+- replace string-prefix export membership with explicit model data;
+- remove `KUBERNETES_MAINTENANCE` from universal mandatory purpose coverage;
+- derive internal artifacts from explicit artifact visibility;
+- retain only the compiled classpath check for the deleted CLI composition facade;
+- separate permanent `closureItem` identity from nullable READY-only `nextCoreItem` projection;
 - preserve package `0.9.5`, public standard `0.8.0` and artifact contract `2.0`.
 
-Flow CI #2185 established the first implementation boundary for complete-suite presence and fail-closed correction statuses on exact head `0351468319f0586c1f8595d115690478b580dc73` and its synthetic merge candidate.
+Validation history:
+
+- Flow CI #2185 established the first implementation boundary for complete-suite presence and fail-closed correction statuses.
+- Flow CI #2204 validated the explicit CORRECTION_REQUIRED lifecycle on exact and merge-candidate revisions.
+- Flow CI #2218 passed the reconciled StandardModel, structural purpose policy, artifact visibility and complete standalone conformance on exact head `c10bd83aa4c0bf48dcc4b0faef90c035525842c7` and synthetic merge candidate `651cca496a6b8a7e54cde2b992751c2630dbc30a`.
+- The explicit closure-identity migration and later READY/CLOSED metadata heads still require independent exact-head and synthetic merge-candidate validation.
