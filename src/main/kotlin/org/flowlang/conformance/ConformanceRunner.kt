@@ -10,7 +10,9 @@ import org.flowlang.generators.manifest.TargetProjectionRegistry
  * CLI-facing conformance orchestrator.
  *
  * The historical monolith is split into ordered groups while preserving the
- * exact check sequence and the data-driven vector index boundary.
+ * exact check sequence and the data-driven vector index boundary. The bounded
+ * semantic closure check is intentionally last: it may certify only checks that
+ * have already executed and cannot lend PASS evidence to future work.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
@@ -49,8 +51,8 @@ class ConformanceRunner(
         checks += TrustAndReferenceChecks(rootDir, registry, targets, projections).checks()
         checks += ArchitectureCoherenceChecks(rootDir, registry, targets, projections).checks()
         checks += DeltaPurposeChecks(rootDir, registry, targets, projections).checks()
-
         checks += ConformanceQualityGates.run()
+        checks += SemanticClosureChecks(rootDir).checks(checks.toList())
         return ConformanceSummary(checks)
     }
 }

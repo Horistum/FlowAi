@@ -1,0 +1,44 @@
+version: "0.9.7.10"
+name: "Bounded Semantic Closure Gate"
+type: "architecture-closure"
+stream: core
+status: complete
+objective: "Close the v0.9.7 universal semantic foundation only when the already-declared finite evidence set is complete, passing and internally consistent."
+universalInvariant: "The track closes by falsifiable evidence, never by a narrative completion claim."
+forbiddenScope:
+  - "No new semantic requirement introduced during closure."
+  - "No new public artifact or public-standard version introduced by the closure gate."
+  - "No successful closure while a bounded correction remains active."
+  - "No missing or failed required conformance check treated as satisfied."
+  - "No substring, filename ordering or metadata prose used as evidence of a passing gate."
+  - "No CLOSED metadata without structured exact-head and merge-candidate implementation evidence."
+lifecycle:
+  ready: "Correction complete, closure work package active, Core track active and item 0.9.7.10 next."
+  closed: "Closure work package complete, Core track completed, item 0.9.7.10 completed and implementation evidence recorded structurally."
+closureChecklist:
+  - "closure.checklist-exact"
+  - "closure.no-active-corrections"
+  - "closure.prior-core-items-complete"
+  - "closure.release-metadata-honest"
+  - "closure.required-checks-present"
+  - "closure.required-checks-pass"
+  - "closure.no-failed-conformance"
+  - "closure.version-boundary-unchanged"
+  - "closure.reference-evidence-live"
+completionEvidence:
+  - "The SemanticClosureAuthority emits PASS for every declared checklist item."
+  - "ReleaseMetadataHonestyAuthority accepts both READY and CLOSED and rejects every mixed lifecycle state."
+  - "ClosureBlockingIntegrityChecks consumes the explicit release lifecycle instead of treating correction completion as permanent evidence that closure must remain next."
+  - "The release metadata report schema matches runtime version 1.3 and permits explicit completed closure status."
+  - "Flow Agent validation and context generation accept a structurally completed primary track without inventing another next item."
+  - "The exact pull-request head and synthetic merge candidate independently pass complete tests and standalone conformance."
+validationPolicy:
+  workflow: "Flow CI"
+  requirement: "The implementation head and a later completion-metadata head must each pass exact-head and synthetic merge-candidate validation."
+validationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: "2177"
+  runId: "30252725533"
+  exactHead: "5a06e0e8c9e2c3c354f8b331c50564f7a903d9f4"
+  mergeCandidate: "93e4d032ea384abd12cb754edbaabd3aef90b300"

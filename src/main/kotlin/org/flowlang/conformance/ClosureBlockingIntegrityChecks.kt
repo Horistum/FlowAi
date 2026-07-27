@@ -54,7 +54,7 @@ internal class ClosureBlockingIntegrityChecks(
             checkRetainedDerivedProjection()
             checkGitHubCancellationSemantics()
             checkExactHeadCiBoundary()
-            checkCorrectionLifecycle()
+            checkReleaseLifecycle()
         }
 
     private fun checkAuthoredControlEvidence() {
@@ -337,21 +337,32 @@ internal class ClosureBlockingIntegrityChecks(
         }
     }
 
-    private fun checkCorrectionLifecycle() {
+    private fun checkReleaseLifecycle() {
         val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
         require(release.completedCorrectionItem.startsWith("0.9.7.9.")) {
             "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded 0.9.7.9.x track."
         }
-        when (release.correctionStatus) {
-            "active" -> {
-                require(release.parentCoreItemStatus == "correction-required")
-                require(release.closureStatus == "blocked")
-            }
-            "complete" -> {
-                require(release.parentCoreItemStatus == "completed")
+        require(release.correctionStatus == "complete") {
+            "Semantic closure conformance cannot run while bounded correction '${release.completedCorrectionItem}' is ${release.correctionStatus}."
+        }
+        require(release.parentCoreItemStatus == "completed") {
+            "The corrected parent Core item must be completed before READY or CLOSED closure validation."
+        }
+
+        when (release.closurePhase) {
+            "READY" -> {
+                require(release.closureWorkPackageStatus == "active")
                 require(release.closureStatus == "next")
+                require(release.coreTrackStatus == "active")
+                require(release.completedCoreItem == "0.9.7.9")
             }
-            else -> error("Unknown bounded correction status '${release.correctionStatus}'.")
+            "CLOSED" -> {
+                require(release.closureWorkPackageStatus == "complete")
+                require(release.closureStatus == "completed")
+                require(release.coreTrackStatus == "completed")
+                require(release.completedCoreItem == release.closureItem)
+            }
+            else -> error("Unknown or invalid semantic closure phase '${release.closurePhase}'.")
         }
     }
 }
