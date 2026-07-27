@@ -28,7 +28,7 @@
     "publicStandardVersion": { "type": "string", "minLength": 1 },
     "completedCorrectionItem": { "type": "string", "pattern": "^0\\.9\\.7\\.(9|10)\\.[0-9]+$" },
     "correctionStatus": { "enum": ["active", "complete", "completed"] },
-    "parentCoreItemStatus": { "enum": ["correction-required", "completed"] },
+    "parentCoreItemStatus": { "enum": ["correction-required", "next", "completed"] },
     "closureItem": { "type": "string", "const": "0.9.7.10" },
     "closureWorkPackageStatus": { "enum": ["correction-required", "active", "complete"] },
     "closurePhase": { "enum": ["CORRECTION_REQUIRED", "READY", "CLOSED", "INVALID"] },
