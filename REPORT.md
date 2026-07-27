@@ -4,16 +4,16 @@ Current published package line: `0.9.5`
 Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
-Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
+Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.9.11 Public Artifact Evidence and Verification Integrity`
-Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
+Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
 
-## Current direction
+## Completed direction
 
-PR #91 merged bounded correction `0.9.7.9.11` into `main` as `794c4232cb07ec5aa1a7568728c08c82c835c79d`. The `0.9.7.9` semantic foundation is therefore eligible for its declared final item: `0.9.7.10 Bounded Semantic Closure Gate`.
+PR #91 merged bounded correction `0.9.7.9.11` into `main` as `794c4232cb07ec5aa1a7568728c08c82c835c79d`. The final `0.9.7.10 Bounded Semantic Closure Gate` then verified the finite evidence set that already existed when closure began.
 
-The closure implementation is active. It does not create new semantic capabilities, public artifacts, target behavior or version axes. It verifies the finite evidence set that already existed when closure began. No passing closure implementation evidence is claimed yet.
+The closure implementation creates no new semantic capabilities, public artifacts, target behavior or version axes. It closes the v0.9.7 Core track only because the frozen non-circular checklist passed on both the exact implementation head and its synthetic merge candidate.
 
 ## Completed correction boundary
 
@@ -37,25 +37,27 @@ The final correction replaced literal public status claims, unsupported handwrit
 
 ### Frozen prior-check catalog
 
-`BoundedSemanticClosureCatalog` freezes the exact pre-closure conformance identities. Closure fails when an expected check is missing, a new check appears without reopening planning, an identity is duplicated, or any prior check fails.
+`BoundedSemanticClosureCatalog` freezes the exact pre-closure conformance identities. The first closure run proved an older helper catalog had drifted from the actual runner, so the final catalog was reconciled against the real composed check groups rather than copied from stale metadata.
+
+Closure fails when an expected check is missing, a new check appears without reopening planning, an identity is duplicated, or any prior check fails.
 
 The closure result is deliberately excluded from its own prior-evidence set. A closure PASS cannot certify closure merely by being present. Humanity has already invented enough circular approval processes without adding one to Kotlin.
 
 ### Parsed roadmap lifecycle
 
-Closure parses the Core roadmap and requires:
+Closure structurally verifies:
 
-- Core items `0.9.7.1` through `0.9.7.9` to be `completed`;
-- no active bounded correction pointer;
-- the latest correction work package to remain `complete`;
-- closure to be exactly `next` while its work package is active;
-- closure and the track to become `completed` only after structured implementation evidence is committed.
+- Core items `0.9.7.1` through `0.9.7.9` are `completed`;
+- no active bounded correction pointer remains;
+- the latest correction work package remains `complete`;
+- closure is `next` only while its work package is active;
+- closure and the track become `completed` only with structured implementation evidence.
 
 ### Existing conformance authorities
 
-The gate requires every existing release-profile check, every `StandardModel` check with an external or negative evidence anchor, and every frozen prior runner check to be present exactly once and pass.
+Every existing release-profile check, every `StandardModel` check with an external or negative evidence anchor, and every frozen prior runner check must be present exactly once and pass.
 
-The following reference evidence remains explicitly retained:
+The retained reference evidence includes:
 
 - Jenkins manifest generation;
 - end-to-end file and content snapshots;
@@ -75,8 +77,11 @@ Unit and standalone conformance counterexamples prove that closure rejects:
 - an omitted prior check;
 - a failed prior check;
 - duplicate evidence;
+- unexpected evidence;
 - its own PASS result used as prior evidence;
 - completed metadata without structured exact-head and merge-candidate implementation evidence.
+
+The architecture drift test was also corrected to verify the score delta of the injected forbidden direction against a complete baseline, rather than relying on a historical absolute score that changed when legitimate governance evidence was added.
 
 ## Version boundary
 
@@ -86,7 +91,15 @@ The implementation package remains `0.9.5`, the public standard remains `0.8.0`,
 
 Historical `0.9.7.9.11` implementation and completion metadata passed Flow CI #2116 and #2123 before PR #91 merged.
 
-No external exact-head CI evidence is claimed for the active `0.9.7.10` implementation. The implementation head and its synthetic merge candidate must independently pass Flow Agent tooling, repository structure, complete tests and standalone conformance. Only then may a separate completion-metadata head close the track, and that later head must pass the same dual boundary.
+The `0.9.7.10` implementation passed Flow CI #2135, run `30236729729`:
+
+- exact implementation head `19a11e2c1c78e916f19843ef0d3d2aaa96382c82`;
+- synthetic merge candidate `86bf0d40aa1f83249727a4b374a872fd8cb7dfbc`;
+- Flow Agent tooling and repository structure;
+- complete tests;
+- standalone conformance, including the final closure gate.
+
+This later completion-metadata head must independently pass the same exact-head and merge-candidate jobs before PR #92 may become ready for review.
 
 ## Architecture boundary
 
