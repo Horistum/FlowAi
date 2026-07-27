@@ -4,7 +4,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from flow_agent_roadmap import active_roadmap_paths, find_scalar, find_unique_next_roadmap_item
+from flow_agent_lifecycle import resolve_primary_roadmap_focus
+from flow_agent_roadmap import active_roadmap_paths, find_scalar
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENT_DIR = ROOT / ".flow-agent"
@@ -37,7 +38,7 @@ def generate_agent_context() -> Path:
 
     release_state = contents["release-state.yaml"]
     main_roadmap = AGENT_DIR / "roadmap.yaml"
-    next_item = find_unique_next_roadmap_item(ROOT, main_roadmap)
+    focus = resolve_primary_roadmap_focus(ROOT, main_roadmap)
 
     for path in active_roadmap_paths(ROOT, main_roadmap):
         relative_source = path.relative_to(AGENT_DIR.resolve())
@@ -45,15 +46,17 @@ def generate_agent_context() -> Path:
 
     current_version = find_scalar(release_state, "currentVersion") or "unknown"
     primary_stream = find_scalar(contents["roadmap.yaml"], "primaryRoadmapStream") or "core"
+    item_label = "Next" if focus.lifecycle == "next" else "Completed"
 
     context = [
         "# Flow Agent Generated Context",
         "",
         f"Current version: {current_version}",
         f"Primary roadmap stream: {primary_stream}",
-        f"Next version: {next_item.version}",
-        f"Next item: {next_item.name}",
-        f"Purpose: {next_item.purpose}",
+        f"Primary roadmap lifecycle: {focus.lifecycle}",
+        f"{item_label} version: {focus.item.version}",
+        f"{item_label} item: {focus.item.name}",
+        f"Purpose: {focus.item.purpose}",
         "",
     ]
     for name, content in contents.items():
