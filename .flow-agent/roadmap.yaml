@@ -61,12 +61,12 @@ architectureConstitution:
     - "No governance signal whose status contradicts the property measured."
 
 currentDecision:
-  completedItem: "0.9.7.9"
-  completedItemName: "Intent Lowering and Diagnostic Honesty"
+  completedItem: "0.9.7.10"
+  completedItemName: "Bounded Semantic Closure Gate"
   correctionState: "complete"
   activeCorrectionWorkPackage: ""
   activeCorrectionWorkPackageName: ""
   nextCoreItem: "0.9.7.10"
   nextCoreItemName: "Bounded Semantic Closure Gate"
-  nextCoreItemStatus: "next"
-  decisionBasis: "PR #91 merged bounded correction 0.9.7.9.11 into main as 794c4232cb07ec5aa1a7568728c08c82c835c79d after Flow CI #2116 and #2123 independently validated implementation and completion-metadata heads plus their synthetic merge candidates. Work package .flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml is active. Closure remains next, not completed, until its frozen non-circular checklist passes on an exact implementation head and synthetic merge candidate and a later completion-metadata head passes the same dual boundary."
+  nextCoreItemStatus: "completed"
+  decisionBasis: "The frozen non-circular closure catalog reconciled exactly with all pre-closure ConformanceRunner results. Flow CI #2135, run 30236729729, independently passed exact implementation head 19a11e2c1c78e916f19843ef0d3d2aaa96382c82 and synthetic merge candidate 86bf0d40aa1f83249727a4b374a872fd8cb7dfbc, including Flow Agent tooling, repository structure, complete tests and standalone conformance. Work package 0.9.7.10 and the v0.9.7 Core track are completed, subject to this later completion-metadata head passing the same dual CI boundary before PR #92 becomes ready for review."
