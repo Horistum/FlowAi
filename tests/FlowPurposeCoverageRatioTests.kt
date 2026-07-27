@@ -2,7 +2,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.flowlang.artifacts.ReferenceIntentCorpusReport
-import org.flowlang.artifacts.ReferenceIntentScenario
 import org.flowlang.artifacts.StandardSurface
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.GateKind
@@ -20,8 +19,8 @@ class FlowPurposeCoverageRatioTests {
         assertTrue(report.referenceScenarioCount >= PurposeCoverageAnalyzer.minimumReferenceScenarios)
         assertEquals(emptyList(), report.missingCapabilities)
         assertEquals(emptyList(), report.missingBlockedRiskCapabilities)
-        assertTrue(report.automationPurposeRatio >= PurposeCoverageAnalyzer.minimumAutomationPurposeRatio)
-        assertTrue(report.governanceRatio <= PurposeCoverageAnalyzer.maximumGovernanceRatio)
+        assertEquals(emptyList(), report.missingPurposeKinds)
+        assertEquals(emptyList(), report.missingEvidenceBackedPurposeKinds)
         assertTrue("v0.7.5.purpose-coverage-ratio" in StandardModel.releaseProfileCheckIds())
     }
 
@@ -33,6 +32,16 @@ class FlowPurposeCoverageRatioTests {
         assertEquals("FAIL", report.status)
         assertTrue(report.issues.any { it.code == "PURPOSE_COVERAGE_CAPABILITY_MISSING" })
         assertTrue("CERTIFICATE_RENEW" in report.missingCapabilities)
+    }
+
+    @Test
+    fun targetSpecificMaintenanceIsNotAMandatoryUniversalPurpose() {
+        val reducedCorpus = StandardSurface.referenceIntentCorpus().withoutCapability("KUBERNETES_MAINTENANCE")
+        val report = PurposeCoverageAnalyzer(corpus = reducedCorpus).analyze()
+
+        assertEquals("PASS", report.status, report.issues.joinToString { it.code + ":" + it.subject })
+        assertTrue("KUBERNETES_MAINTENANCE" !in report.requiredPurposeCapabilities)
+        assertTrue("KUBERNETES_MAINTENANCE" !in report.requiredBlockedRiskCapabilities)
     }
 
     @Test
@@ -51,23 +60,36 @@ class FlowPurposeCoverageRatioTests {
     }
 
     @Test
-    fun governanceHeavyReleaseProfileFails() {
-        val governanceNoise = (1..20).map { index ->
+    fun governanceGrowthDoesNotFailPurposeCoverageByDenominator() {
+        val governanceEvidence = (1..20).map { index ->
             StandardCheck(
-                id = "v9.governance-noise-$index",
+                id = "v9.governance-evidence-$index",
                 introducedIn = "9.0.$index",
                 kind = GateKind.GOVERNANCE,
                 negativeFixture = "tests/FlowPurposeCoverageRatioTests.kt"
             )
         }
-        val report = PurposeCoverageAnalyzer(checks = StandardModel.checks + governanceNoise).analyze()
+        val report = PurposeCoverageAnalyzer(checks = StandardModel.checks + governanceEvidence).analyze()
 
-        assertEquals("FAIL", report.status)
-        assertTrue(report.issues.any { it.code == "PURPOSE_COVERAGE_GOVERNANCE_RATIO_HIGH" })
+        assertEquals("PASS", report.status, report.issues.joinToString { it.code + ":" + it.subject })
+        assertTrue(report.governanceRatio > PurposeCoverageAnalyzer().analyze().governanceRatio)
+        assertEquals(emptyList(), report.missingPurposeKinds)
     }
 
     @Test
-    fun weakEvidenceForPurposeChecksFails() {
+    fun missingPurposeCategoryFails() {
+        val withoutNormalization = StandardModel.checks.filterNot {
+            it.inReleaseProfile && it.kind == GateKind.NORMALIZATION
+        }
+        val report = PurposeCoverageAnalyzer(checks = withoutNormalization).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.issues.any { it.code == "PURPOSE_COVERAGE_KIND_MISSING" })
+        assertTrue("normalization" in report.missingPurposeKinds)
+    }
+
+    @Test
+    fun weakEvidenceForPurposeCategoryFails() {
         val weakenedChecks = StandardModel.checks.map { check ->
             if (check.kind in PurposeCoverageAnalyzer.automationPurposeKinds) {
                 check.copy(negativeFixture = "", externalAnchor = "")
@@ -78,7 +100,8 @@ class FlowPurposeCoverageRatioTests {
         val report = PurposeCoverageAnalyzer(checks = weakenedChecks).analyze()
 
         assertEquals("FAIL", report.status)
-        assertTrue(report.issues.any { it.code == "PURPOSE_COVERAGE_EVIDENCE_RATIO_LOW" })
+        assertTrue(report.issues.any { it.code == "PURPOSE_COVERAGE_KIND_EVIDENCE_MISSING" })
+        assertTrue(report.missingEvidenceBackedPurposeKinds.isNotEmpty())
     }
 
     private fun ReferenceIntentCorpusReport.withoutCapability(capability: String): ReferenceIntentCorpusReport = copy(
