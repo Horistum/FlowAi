@@ -117,7 +117,7 @@ lastKnownValidation:
   validationSource: "Flow CI #2123 passed exact completion-metadata head dc6dc0e29943df8da83a9f507b15e3661e6b7310 before that head was merged through PR #91 as 794c4232cb07ec5aa1a7568728c08c82c835c79d."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "Flow CI #2163 validated the lifecycle implementation before the first CLOSED metadata candidate."
+    - "Flow CI #2163 supplied external exact-head CI evidence for the lifecycle implementation before the first CLOSED metadata candidate."
     - "Flow CI #2169 rejected that CLOSED candidate because governance.closure-blocking-safety-diagnostic-integrity retained a pre-closure requirement that closureStatus remain next."
     - "ClosureBlockingIntegrityChecks was repaired to consume the explicit READY/CLOSED release lifecycle."
     - "The closure work package and roadmap are restored to READY until a new implementation head and synthetic merge candidate pass independently."
