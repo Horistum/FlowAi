@@ -2,13 +2,14 @@ import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.flowlang.cli.Json
 import org.flowlang.release.ReleaseMetadataHonestyAuthority
 
 class ReleaseMetadataClosedLifecycleTests {
     @Test
-    fun structuredCorrectionRequiredLifecyclePasses() = withMetadataFixture { root ->
+    fun structuredCorrectionRequiredLifecyclePassesWithoutNextProjection() = withMetadataFixture { root ->
         val report = ReleaseMetadataHonestyAuthority(root).analyze()
 
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
@@ -19,10 +20,11 @@ class ReleaseMetadataClosedLifecycleTests {
         assertEquals("correction-required", report.closureStatus)
         assertEquals("active", report.coreTrackStatus)
         assertEquals("0.9.7.9", report.completedCoreItem)
+        assertNull(report.nextCoreItem)
     }
 
     @Test
-    fun structuredReadyLifecyclePasses() = withMetadataFixture { root ->
+    fun structuredReadyLifecyclePassesWithRealNextProjection() = withMetadataFixture { root ->
         readyMetadata(root)
 
         val report = ReleaseMetadataHonestyAuthority(root).analyze()
@@ -35,10 +37,11 @@ class ReleaseMetadataClosedLifecycleTests {
         assertEquals("next", report.closureStatus)
         assertEquals("active", report.coreTrackStatus)
         assertEquals("0.9.7.9", report.completedCoreItem)
+        assertEquals("0.9.7.10", report.nextCoreItem)
     }
 
     @Test
-    fun structuredClosedLifecyclePasses() = withMetadataFixture { root ->
+    fun structuredClosedLifecyclePassesWithoutNextProjection() = withMetadataFixture { root ->
         closeMetadata(root, includeImplementationEvidence = true)
 
         val report = ReleaseMetadataHonestyAuthority(root).analyze()
@@ -51,6 +54,7 @@ class ReleaseMetadataClosedLifecycleTests {
         assertEquals("completed", report.closureStatus)
         assertEquals("completed", report.coreTrackStatus)
         assertEquals("0.9.7.10", report.completedCoreItem)
+        assertNull(report.nextCoreItem)
     }
 
     @Test
@@ -64,18 +68,56 @@ class ReleaseMetadataClosedLifecycleTests {
     }
 
     @Test
+    fun correctionRequiredCannotPublishNextProjection() = withMetadataFixture { root ->
+        addNextProjection(File(root, ROADMAP), "currentDecision")
+        addNextProjection(File(root, RELEASE_STATE), "roadmapState")
+
+        val report = ReleaseMetadataHonestyAuthority(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertEquals("CORRECTION_REQUIRED", report.closurePhase)
+        assertTrue("release.roadmap.next-item" in report.failedChecks)
+        assertTrue("release.state.next-item" in report.failedChecks)
+    }
+
+    @Test
+    fun readyLifecycleWithoutNextProjectionFails() = withMetadataFixture { root ->
+        readyMetadata(root)
+        removeNextProjection(File(root, ROADMAP))
+        removeNextProjection(File(root, RELEASE_STATE))
+
+        val report = ReleaseMetadataHonestyAuthority(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertEquals("READY", report.closurePhase)
+        assertTrue("release.roadmap.next-item" in report.failedChecks)
+        assertTrue("release.state.next-item" in report.failedChecks)
+    }
+
+    @Test
+    fun closedLifecycleCannotRetainNextProjection() = withMetadataFixture { root ->
+        closeMetadata(root, includeImplementationEvidence = true)
+        addNextProjection(File(root, ROADMAP), "currentDecision")
+        addNextProjection(File(root, RELEASE_STATE), "roadmapState")
+
+        val report = ReleaseMetadataHonestyAuthority(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertEquals("CLOSED", report.closurePhase)
+        assertTrue("release.roadmap.next-item" in report.failedChecks)
+        assertTrue("release.state.next-item" in report.failedChecks)
+    }
+
+    @Test
     fun activeCorrectionCannotPublishReadyClosureStatus() = withMetadataFixture { root ->
         val closure = File(root, CLOSURE_WORK_PACKAGE)
         closure.writeText(updateTopLevelStatus(closure.readText(), "active"))
         val core = File(root, CORE_ROADMAP)
         core.writeText(updateCoreClosureStatus(core.readText(), "next"))
-        val roadmap = File(root, ROADMAP)
-        roadmap.writeText(
-            roadmap.readText().replaceFirst(
-                "nextCoreItemStatus: \"correction-required\"",
-                "nextCoreItemStatus: \"next\""
-            )
-        )
+        setClosureStatus(File(root, ROADMAP), "next")
+        setClosureStatus(File(root, RELEASE_STATE), "next")
+        addNextProjection(File(root, ROADMAP), "currentDecision")
+        addNextProjection(File(root, RELEASE_STATE), "roadmapState")
 
         val report = ReleaseMetadataHonestyAuthority(root).analyze()
 
@@ -86,21 +128,7 @@ class ReleaseMetadataClosedLifecycleTests {
 
     @Test
     fun completedCorrectionCannotLeaveClosureCorrectionRequired() = withMetadataFixture { root ->
-        val correction = File(root, CORRECTION_WORK_PACKAGE)
-        correction.writeText(correction.readText().replaceFirst("status: active", "status: complete"))
-        val roadmap = File(root, ROADMAP)
-        roadmap.writeText(
-            roadmap.readText()
-                .replaceFirst("correctionState: \"active\"", "correctionState: \"complete\"")
-                .replaceFirst(
-                    "activeCorrectionWorkPackage: \"$CORRECTION_WORK_PACKAGE\"",
-                    "activeCorrectionWorkPackage: \"\""
-                )
-                .replaceFirst(
-                    "activeCorrectionWorkPackageName: \"Standard and Closure Integrity Correction\"",
-                    "activeCorrectionWorkPackageName: \"\""
-                )
-        )
+        completeCorrection(root)
 
         val report = ReleaseMetadataHonestyAuthority(root).analyze()
 
@@ -125,13 +153,7 @@ class ReleaseMetadataClosedLifecycleTests {
     @Test
     fun completedClosureWithStaleCompletedItemFails() = withMetadataFixture { root ->
         closeMetadata(root, includeImplementationEvidence = true)
-        val roadmap = File(root, ROADMAP)
-        roadmap.writeText(
-            roadmap.readText().replaceFirst(
-                "completedItem: \"0.9.7.10\"",
-                "completedItem: \"0.9.7.9\""
-            )
-        )
+        replaceScalar(File(root, ROADMAP), "completedItem", "0.9.7.9")
 
         val report = ReleaseMetadataHonestyAuthority(root).analyze()
 
@@ -146,24 +168,26 @@ class ReleaseMetadataClosedLifecycleTests {
         val required = schema.path("required").map { it.asText() }.toSet()
         val phases = schema.path("properties").path("closurePhase").path("enum").map { it.asText() }.toSet()
         val closureStatuses = schema.path("properties").path("closureStatus").path("enum").map { it.asText() }.toSet()
+        val nextVariants = schema.path("properties").path("nextCoreItem").path("oneOf")
 
         assertEquals(report.reportVersion, schema.path("properties").path("reportVersion").path("const").asText())
         assertTrue(setOf("CORRECTION_REQUIRED", "READY", "CLOSED", "INVALID").all { it in phases })
         assertTrue(setOf("correction-required", "next", "completed").all { it in closureStatuses })
+        assertTrue(nextVariants.any { it.path("type").asText() == "null" })
         assertTrue(
             setOf(
                 "closureItem",
                 "closureWorkPackageStatus",
                 "closurePhase",
                 "coreTrackStatus",
-                "completedCoreItem"
+                "completedCoreItem",
+                "nextCoreItem"
             ).all { it in required }
         )
     }
 
     private fun readyMetadata(root: File) {
-        val correction = File(root, CORRECTION_WORK_PACKAGE)
-        correction.writeText(correction.readText().replaceFirst("status: active", "status: complete"))
+        completeCorrection(root)
 
         val closure = File(root, CLOSURE_WORK_PACKAGE)
         closure.writeText(
@@ -178,21 +202,10 @@ class ReleaseMetadataClosedLifecycleTests {
 
         val core = File(root, CORE_ROADMAP)
         core.writeText(updateCoreClosureStatus(core.readText(), "next"))
-
-        val roadmap = File(root, ROADMAP)
-        roadmap.writeText(
-            roadmap.readText()
-                .replaceFirst("correctionState: \"active\"", "correctionState: \"complete\"")
-                .replaceFirst(
-                    "activeCorrectionWorkPackage: \"$CORRECTION_WORK_PACKAGE\"",
-                    "activeCorrectionWorkPackage: \"\""
-                )
-                .replaceFirst(
-                    "activeCorrectionWorkPackageName: \"Standard and Closure Integrity Correction\"",
-                    "activeCorrectionWorkPackageName: \"\""
-                )
-                .replaceFirst("nextCoreItemStatus: \"correction-required\"", "nextCoreItemStatus: \"next\"")
-        )
+        setClosureStatus(File(root, ROADMAP), "next")
+        setClosureStatus(File(root, RELEASE_STATE), "next")
+        addNextProjection(File(root, ROADMAP), "currentDecision")
+        addNextProjection(File(root, RELEASE_STATE), "roadmapState")
 
         val report = File(root, REPORT)
         report.writeText(
@@ -233,26 +246,12 @@ validationEvidence:
             )
         )
 
-        val roadmap = File(root, ROADMAP)
-        roadmap.writeText(
-            roadmap.readText()
-                .replaceFirst("completedItem: \"0.9.7.9\"", "completedItem: \"0.9.7.10\"")
-                .replaceFirst(
-                    "completedItemName: \"Intent Lowering and Diagnostic Honesty\"",
-                    "completedItemName: \"Bounded Semantic Closure Gate\""
-                )
-                .replaceFirst("nextCoreItemStatus: \"next\"", "nextCoreItemStatus: \"completed\"")
-        )
-
-        val releaseState = File(root, RELEASE_STATE)
-        releaseState.writeText(
-            releaseState.readText()
-                .replaceFirst("completedItem: \"0.9.7.9\"", "completedItem: \"0.9.7.10\"")
-                .replaceFirst(
-                    "completedItemName: \"Intent Lowering and Diagnostic Honesty\"",
-                    "completedItemName: \"Bounded Semantic Closure Gate\""
-                )
-        )
+        listOf(File(root, ROADMAP), File(root, RELEASE_STATE)).forEach { file ->
+            replaceScalar(file, "completedItem", "0.9.7.10")
+            replaceScalar(file, "completedItemName", "Bounded Semantic Closure Gate")
+            setClosureStatus(file, "completed")
+            removeNextProjection(file)
+        }
 
         val report = File(root, REPORT)
         report.writeText(
@@ -267,6 +266,56 @@ validationEvidence:
                     "Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)"
                 )
         )
+    }
+
+    private fun completeCorrection(root: File) {
+        val correction = File(root, CORRECTION_WORK_PACKAGE)
+        correction.writeText(correction.readText().replaceFirst("status: active", "status: complete"))
+        val roadmap = File(root, ROADMAP)
+        roadmap.writeText(
+            roadmap.readText()
+                .replaceFirst("correctionState: \"active\"", "correctionState: \"complete\"")
+                .replaceFirst(
+                    "activeCorrectionWorkPackage: \"$CORRECTION_WORK_PACKAGE\"",
+                    "activeCorrectionWorkPackage: \"\""
+                )
+                .replaceFirst(
+                    "activeCorrectionWorkPackageName: \"Standard and Closure Integrity Correction\"",
+                    "activeCorrectionWorkPackageName: \"\""
+                )
+        )
+    }
+
+    private fun addNextProjection(file: File, section: String) {
+        val text = file.readText()
+        if (Regex("(?m)^\\s*nextCoreItem:").containsMatchIn(text)) return
+        val anchor = Regex("(?m)^(\\s*)closureItemStatus:\s*\"?[^\"\\n]+\"?\\s*$")
+            .find(text) ?: error("closureItemStatus missing in $section")
+        val indent = anchor.groupValues[1]
+        val addition = "\n${indent}nextCoreItem: \"0.9.7.10\"" +
+            "\n${indent}nextCoreItemName: \"Bounded Semantic Closure Gate\"" +
+            "\n${indent}nextCoreItemStatus: \"next\""
+        file.writeText(text.replaceRange(anchor.range, anchor.value + addition))
+    }
+
+    private fun removeNextProjection(file: File) {
+        val filtered = file.readText().lines().filterNot { line ->
+            line.trimStart().startsWith("nextCoreItem:") ||
+                line.trimStart().startsWith("nextCoreItemName:") ||
+                line.trimStart().startsWith("nextCoreItemStatus:")
+        }
+        file.writeText(filtered.joinToString("\n").trimEnd() + "\n")
+    }
+
+    private fun setClosureStatus(file: File, status: String) {
+        replaceScalar(file, "closureItemStatus", status)
+    }
+
+    private fun replaceScalar(file: File, key: String, value: String) {
+        val pattern = Regex("(?m)^(\\s*${Regex.escape(key)}:\\s*)[^\\n#]+(\\s*)$")
+        val text = file.readText()
+        val match = pattern.find(text) ?: error("$key missing in ${file.path}")
+        file.writeText(text.replaceRange(match.range, match.groupValues[1] + "\"$value\"" + match.groupValues[2]))
     }
 
     private fun removeTopLevelSection(text: String, section: String): String {
