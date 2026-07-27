@@ -163,9 +163,25 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
     }
 
     private fun yamlList(text: String, key: String): List<String> {
-        val block = Regex("(?ms)^$key:\\s*\\n((?:^[ ]{2}- .+\\n?)*)").find(text)?.groupValues?.get(1).orEmpty()
-        return Regex("(?m)^[ ]{2}- \\\"([^\\\"]+)\\\"\\s*$")
-            .findAll(block).map { it.groupValues[1] }.toList()
+        val lines = text.lineSequence().toList()
+        val headerIndex = lines.indexOfFirst { it.trim() == "$key:" }
+        if (headerIndex < 0) return emptyList()
+
+        val headerIndent = lines[headerIndex].indexOfFirst { !it.isWhitespace() }
+            .let { if (it < 0) 0 else it }
+        return lines.drop(headerIndex + 1)
+            .takeWhile { line ->
+                line.isBlank() || line.indexOfFirst { !it.isWhitespace() }
+                    .let { indent -> indent < 0 || indent > headerIndent }
+            }
+            .mapNotNull { line ->
+                val trimmed = line.trim()
+                if (!trimmed.startsWith("- ")) return@mapNotNull null
+                trimmed.removePrefix("- ")
+                    .trim()
+                    .removeSurrounding("\"")
+                    .takeIf { it.isNotBlank() }
+            }
     }
 
     private fun check(id: String, passed: Boolean, evidence: List<String>, message: String): SemanticClosureCheck =
