@@ -1,0 +1,47 @@
+version: "0.9.7.10"
+name: "Bounded Semantic Closure Gate"
+type: "architecture-closure"
+stream: core
+status: active
+objective: "Close the v0.9.7 universal semantic foundation only from previously declared roadmap, conformance, release, reference and negative-evidence authorities."
+universalInvariant: "The track closes by a finite, non-circular and falsifiable checklist."
+forbiddenScope:
+  - "No new semantic requirement introduced during closure."
+  - "No new public standard, package or artifact-contract version."
+  - "No closure PASS derived from the closure item's own status or result."
+  - "No omitted, failing or duplicate conformance result accepted as evidence."
+  - "No active bounded correction or incomplete Core item accepted at closure."
+  - "No textual occurrence accepted instead of parsed roadmap and evidence structure."
+declaredEvidenceAuthorities:
+  - id: core-roadmap-items
+    source: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
+  - id: roadmap-decision
+    source: ".flow-agent/roadmap.yaml"
+  - id: release-metadata-honesty
+    source: "ReleaseMetadataHonestyAuthority"
+  - id: standard-model
+    source: "StandardModel"
+  - id: executed-conformance-results
+    source: "ConformanceRunner prior checks"
+  - id: reference-and-negative-anchors
+    source: "StandardModel externalAnchor and negativeFixture declarations"
+  - id: exact-and-merge-ci-boundary
+    source: ".github/workflows/flow-agent-check.yml"
+finiteChecklist:
+  - "Core items 0.9.7.1 through 0.9.7.9 are parsed and completed."
+  - "No active bounded correction pointer remains and the latest bounded correction is complete."
+  - "Release metadata honesty passes without stale package or standard axes."
+  - "StandardModel is well formed and every declared evidence anchor resolves."
+  - "Every conformance check executed before closure has a unique identity and passes."
+  - "Every release-profile check is present exactly once and passes."
+  - "Every StandardModel external and negative evidence check is present exactly once and passes."
+  - "The Jenkins reference proof and closure-blocking governance checks remain present and passing."
+  - "Exact-head and synthetic merge-candidate CI remain separate workflow jobs."
+validationPolicy:
+  workflow: "Flow CI"
+  implementationBoundary: "The exact public branch head and synthetic merge candidate must independently pass Flow Agent tooling, repository structure, complete tests and standalone conformance while this work package remains active."
+  completionBoundary: "Only a later metadata head may mark this work package and Core track complete, and that head must independently pass the same two jobs."
+versionBoundary:
+  packageVersion: "0.9.5"
+  publicStandardVersion: "0.8.0"
+  artifactContractVersion: "2.0"
