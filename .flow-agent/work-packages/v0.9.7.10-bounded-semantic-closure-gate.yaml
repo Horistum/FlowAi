@@ -2,7 +2,7 @@ version: "0.9.7.10"
 name: "Bounded Semantic Closure Gate"
 type: "architecture-closure"
 stream: core
-status: active
+status: complete
 objective: "Close the v0.9.7 universal semantic foundation only from previously declared roadmap, conformance, release, reference and negative-evidence authorities."
 universalInvariant: "The track closes by a finite, non-circular and falsifiable checklist."
 forbiddenScope:
@@ -39,8 +39,15 @@ finiteChecklist:
   - "Exact-head and synthetic merge-candidate CI remain separate workflow jobs."
 validationPolicy:
   workflow: "Flow CI"
-  implementationBoundary: "The exact public branch head and synthetic merge candidate must independently pass Flow Agent tooling, repository structure, complete tests and standalone conformance while this work package remains active."
-  completionBoundary: "Only a later metadata head may mark this work package and Core track complete, and that head must independently pass the same two jobs."
+  implementationBoundary: "Flow CI #2135 independently passed the exact public implementation head and synthetic merge candidate, including Flow Agent tooling, repository structure, complete tests and standalone conformance."
+  completionBoundary: "This later completion-metadata head must independently pass the same exact-head and merge-candidate jobs before PR #92 may become ready for review."
+validationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: "2135"
+  runId: "30236729729"
+  exactHead: "19a11e2c1c78e916f19843ef0d3d2aaa96382c82"
+  mergeCandidate: "86bf0d40aa1f83249727a4b374a872fd8cb7dfbc"
 versionBoundary:
   packageVersion: "0.9.5"
   publicStandardVersion: "0.8.0"
