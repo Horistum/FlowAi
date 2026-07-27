@@ -339,15 +339,18 @@ internal class ClosureBlockingIntegrityChecks(
 
     private fun checkReleaseLifecycle() {
         val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
+        val correctionOwnsClosure = release.completedCorrectionItem.startsWith("0.9.7.10.")
         require(
-            release.completedCorrectionItem.startsWith("0.9.7.9.") ||
-                release.completedCorrectionItem.startsWith("0.9.7.10.")
+            release.completedCorrectionItem.startsWith("0.9.7.9.") || correctionOwnsClosure
         ) {
             "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded v0.9.7 correction vocabulary."
         }
 
         when (release.closurePhase) {
             "CORRECTION_REQUIRED" -> {
+                require(correctionOwnsClosure) {
+                    "Only a correction owned by the closure item may reopen a previously CLOSED track."
+                }
                 require(release.correctionStatus == "active")
                 require(release.parentCoreItemStatus == "correction-required")
                 require(release.closureWorkPackageStatus == "correction-required")
@@ -357,7 +360,7 @@ internal class ClosureBlockingIntegrityChecks(
             }
             "READY" -> {
                 require(release.correctionStatus in setOf("complete", "completed"))
-                require(release.parentCoreItemStatus == "completed")
+                require(release.parentCoreItemStatus == if (correctionOwnsClosure) "next" else "completed")
                 require(release.closureWorkPackageStatus == "active")
                 require(release.closureStatus == "next")
                 require(release.coreTrackStatus == "active")
