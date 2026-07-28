@@ -10,67 +10,81 @@ Completed correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Corre
 Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
 Completed adapter roadmap item: `A0.1 Adapter Portfolio Reassessment` (`completed`)
 Next adapter roadmap item: `A0.2 Topology Evidence Adoption` (`next`)
+Active adapter work package: `A0.2 Topology Evidence Adoption` (`active`)
 
 ## Core boundary
 
-PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0d5b34cf34185b19ed498`. Core v0.9.7 remains CLOSED. Its exact 91-check pre-closure inventory remains frozen and adapter work runs after the semantic closure check rather than rewriting that historical evidence set.
+PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0d5b34cf34185b19ed498`. Core v0.9.7 remains CLOSED. Its exact 91-check pre-closure inventory remains frozen. Adapter checks continue only after `v0.9.7.10.bounded-semantic-closure`.
 
 The implementation package remains `0.9.5`, the public standard remains `0.8.0`, and the artifact contract remains `2.0`.
 
-## A0.1 portfolio reassessment
+## A0.1 baseline
 
-The built-in target registry declares six targets. A0.1 classifies them from actual registry, provider and committed scenario evidence:
+PR #96 merged A0.1 as `dbd1529cd9da1b21d13bd45d3af1a84361b9abf1`. The resulting portfolio classes remain:
 
-| Target | Role | Support class | Honest boundary |
-| --- | --- | --- | --- |
-| `local` | semantic reference | `PROFILE_ONLY` | Target-neutral planning reference; no shipped generator or renderer. |
-| `jenkins` | target adapter | `EXECUTABLE_REFERENCE` | Native checkout and image-build leaves plus the committed `checkout-build-image` executable scenario. |
-| `github-actions` | target adapter | `NATIVE_LEAF_ONLY` | Reviewed checkout and image-build actions; workspace continuity does not support an end-to-end executable claim. |
-| `tekton` | target adapter | `NATIVE_LEAF_ONLY` | Reviewed git-clone and buildah tasks; Pipeline-level workspace and production readiness remain incomplete. |
-| `argo-workflows` | target adapter | `PROFILE_ONLY` | Capability and topology profile only; no composed projection provider or native rules. |
-| `azure-devops` | target adapter | `PROFILE_ONLY` | Capability and topology profile only; no composed projection provider or native rules. |
+| Target | Role | Support class |
+| --- | --- | --- |
+| `local` | semantic reference | `PROFILE_ONLY` |
+| `jenkins` | target adapter | `EXECUTABLE_REFERENCE` |
+| `github-actions` | target adapter | `NATIVE_LEAF_ONLY` |
+| `tekton` | target adapter | `NATIVE_LEAF_ONLY` |
+| `argo-workflows` | target adapter | `PROFILE_ONLY` |
+| `azure-devops` | target adapter | `PROFILE_ONLY` |
 
-These are not marketing tiers. `PROFILE_ONLY`, `NATIVE_LEAF_ONLY` and `EXECUTABLE_REFERENCE` are mechanically constrained evidence classes. Capability support cannot impersonate a renderer, and native leaf coverage cannot impersonate multi-step continuity.
+A0.2 consumes those classifications. It does not promote a target merely because a platform is generally capable of a feature.
 
-## Authority and conformance
+## A0.2 defect and correction
 
-`adapters/portfolio/builtin-adapter-portfolio.yaml` is the distribution-owned support, limitation and evidence record. `AdapterPortfolioAuthority` reconciles it against:
+The previous target registry topology blocks were complete in shape but self-referential in evidence: each target cited its own `targets/builtin-targets.yaml` topology block. Therefore an authored `supported` value certified itself.
 
-- every target registry identity;
-- actual built-in provider composition;
-- actual native projection rules;
-- evidence reference existence;
-- role and support-class invariants;
-- explicit limitations for every record.
+This produced unsupported claims, including fully supported Jenkins attempt, durable-state and state-propagation properties and broad Argo Workflows and Azure DevOps topology claims despite neither target having a composed provider.
 
-`AdapterRoadmapLifecycleAuthority` separately proves that roadmap and work-package metadata move atomically:
+A0.2 introduces `adapters/topology/builtin-adapter-topology.yaml` as the distribution-owned evidence authority. Every target now declares:
 
-- implementation: A0.1 `next`, A0.2 `planned`, work package `active`, no authored implementation evidence;
-- completion: A0.1 `completed`, A0.2 `next`, work package `complete`, one structurally passing exact-head and merge-candidate Flow CI boundary.
+- all eleven frozen Core topology kinds;
+- interaction evidence;
+- concurrency evidence;
+- one closed support status per claim;
+- a concrete mechanism;
+- repository evidence references;
+- explicit limitations for every non-supported status.
 
-Adapter conformance has its own committed inventory under `adapters/conformance/check-inventory.yaml`. It certifies:
+Self-references to the topology manifest or target registry, unresolved references, unknown claims, missing claims, duplicates and facet mismatches fail closed.
 
-- A0.1 lifecycle integrity;
-- exact portfolio reassessment coverage;
-- committed executable-reference evidence;
-- absence of Adapter Portfolio dependencies from semantic Core packages.
+## Runtime authority
 
-The adapter checks execute only after `v0.9.7.10.bounded-semantic-closure`. Therefore A0.x can evolve without silently changing what closed Core v0.9.7.
+`TargetRegistryYamlLoader` now derives runtime `ExecutionTopologyProfile` instances through `AdapterTopologyProfileFactory` whenever the adapter evidence manifest is present.
 
-## Validation history
+Legacy inline registry topology blocks remain parseable for isolated fixtures, but they cannot override distribution evidence. Runtime declarations point to the exact adapter claim and retain mechanism and limitation detail for diagnostics.
 
-Flow CI #2263 passed the initial portfolio and roadmap-transition implementation before lifecycle certification was added. It remains historical evidence and is not the A0.1 completion authority.
+The important reassessment outcomes are:
 
-Flow CI #2270, run `30342473373`, passed the complete A0.1 implementation with lifecycle certification on:
+- Jenkins keeps `SUPPORTED` workflow scope, workflow lifetime, ephemeral workspace, workspace propagation and failure propagation. Attempt isolation becomes `UNKNOWN`; several broader properties become `PARTIAL`.
+- GitHub Actions keeps supported workflow scope, workflow lifetime and ephemeral workspace. Workspace and state propagation remain `UNSUPPORTED`.
+- Tekton keeps supported workflow scope, branch isolation and workflow lifetime. Workspace evidence remains `PARTIAL`; durable state, state propagation and suspend/resume remain `UNSUPPORTED`.
+- Argo Workflows and Azure DevOps are demoted to `UNKNOWN` for every topology claim because their A0.1 support class is `PROFILE_ONLY` and no provider is composed.
+- Local remains a semantic reference and does not become production execution evidence.
 
-- exact head `20191d2d7b9460894c81f9bfee73b3c11b8f78f4`;
-- synthetic merge candidate `d3238468ba01fe8b97bc6f500c9f96f2beeb4760`;
-- Flow Agent tooling, structure validation and context generation;
-- complete compilation and tests;
-- standalone Core closure plus the separate adapter conformance inventory.
+## Executable reference preservation
 
-The current completion-metadata head and its synthetic merge candidate must independently pass before PR #96 may become ready for review. A0.2 is selected as next, but no A0.2 implementation belongs to this PR.
+The committed Jenkins `checkout-build-image` scenario requires only workflow scope, workflow lifetime, ephemeral workspace and workspace propagation. All four remain `SUPPORTED` by adapter-owned evidence.
+
+The new executable topology conformance check loads the committed snapshot and semantic execution plan, evaluates it through the production `ExecutionTopologyMatchingAuthority`, and requires every consumed claim to be `SUPPORTED` with evidence originating in the adapter topology manifest.
+
+Jenkins therefore remains an executable reference without retaining unrelated unproven topology claims.
+
+## Adapter conformance
+
+The adapter inventory is version `1.1` and contains the four A0.1 checks plus five A0.2 checks:
+
+- A0.2 lifecycle integrity;
+- topology evidence integrity;
+- runtime topology authority;
+- profile-only demotion;
+- executable topology proof.
+
+A0.2 remains `next` and its work package remains `active`. No implementation evidence is authored until an exact-head and synthetic merge-candidate Flow CI run passes with the new authority and checks active.
 
 ## Architecture boundary
 
-A0.1 did not add a renderer, target-specific public syntax, runtime executor, SDK lifecycle or new Core semantic requirement. It reassessed existing distribution claims before further adapter work is allowed.
+A0.2 does not add a renderer, provider, runtime executor, storage mechanism, target-specific public DSL or new Core topology kind. It changes adapter evidence ownership and intentionally demotes unsupported claims while preserving the frozen Core model.
