@@ -195,7 +195,7 @@ items:
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: correction-required
+    status: next
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
@@ -211,7 +211,7 @@ items:
       - Flow CI #2177 and #2183 validated the first closure implementation and completion metadata before PR #93 merged as df099137ce65b206519db7141f8eb3573d0018a2.
       - A post-merge audit then proved that the presence gate covered only the public release subset and that unknown correction statuses passed as terminal evidence.
       - Bounded correction 0.9.7.10.1 repaired the complete-suite, correction-status, StandardModel, purpose, artifact and lifecycle findings.
-      - Flow CI #2245 passed exact corrected implementation head cd7600b845ec229ac41559c312de5844ca3e7051 and synthetic merge candidate 601bc4a2062c5c5aea579d6054b2f00b69775522 with complete tests and standalone conformance.
-      - Flow CI #2250 passed later completion metadata head a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9 and synthetic merge candidate 238d62fdf974129a93e1f743e1f93aecef34906b.
-      - PR #94 merged as cbe1d23a25e0224be565cad322b097bf2aaa50a1, but repository authority still recorded Flow CI #2245 as both implementation and completion evidence.
-      - Bounded correction 0.9.7.10.2 reopens the closure claim until distinct later evidence is enforced and recorded structurally.
+      - PR #94 merged as cbe1d23a25e0224be565cad322b097bf2aaa50a1, but repository authority represented implementation and completion with the same Flow CI #2245 evidence.
+      - Bounded correction 0.9.7.10.2 added a dedicated evidence-boundary authority, negative tests and the 91st pre-closure conformance identity.
+      - Flow CI #2252 passed exact correction implementation head 3176009e660c95d873e9eeb8d1845b7f54142d2c and synthetic merge candidate bba152a0eeccf87fffe19a11a3340dd2d1d6a569 with complete tests and standalone conformance.
+      - The closure item is READY with implementationEvidence #2252 and no validationEvidence; a later independent boundary is required before CLOSED.
