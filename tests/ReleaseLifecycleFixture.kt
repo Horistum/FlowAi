@@ -141,10 +141,7 @@ object ReleaseLifecycleFixture {
     }
 
     private fun copyStaticEvidence(root: File) {
-        listOf(
-            "build.gradle.kts",
-            ConformanceSuiteInventory.PATH
-        ).forEach { path ->
+        listOf("build.gradle.kts", ConformanceSuiteInventory.PATH).forEach { path ->
             val source = File(path)
             require(source.isFile) { "Required fixture source is missing: $path" }
             val destination = File(root, path)
@@ -157,14 +154,14 @@ object ReleaseLifecycleFixture {
         write(
             root,
             CORRECTION_WORK_PACKAGE,
-            """
-            version: "0.9.7.10.1"
-            name: "Standard and Closure Integrity Correction"
-            type: "bounded-correction"
-            stream: core
-            status: $status
-            parentCoreItem: "0.9.7.10"
-            """.trimIndent()
+            buildString {
+                appendLine("version: \"0.9.7.10.1\"")
+                appendLine("name: \"Standard and Closure Integrity Correction\"")
+                appendLine("type: \"bounded-correction\"")
+                appendLine("stream: core")
+                appendLine("status: $status")
+                appendLine("parentCoreItem: \"0.9.7.10\"")
+            }
         )
     }
 
@@ -174,80 +171,71 @@ object ReleaseLifecycleFixture {
         status: String,
         includeClosedEvidence: Boolean
     ) {
-        val lifecycleEvidence = when (phase) {
-            Phase.CORRECTION_REQUIRED -> """
-                supersededByCorrection: "0.9.7.10.1"
-                validationEvidence:
-                  status: passed
-                  workflow: "Flow CI"
-                  runNumber: "2183"
-                  runId: "30255409444"
-                  exactHead: "1111111111111111111111111111111111111111"
-                  mergeCandidate: "2222222222222222222222222222222222222222"
-            """.trimIndent()
-            Phase.READY -> ""
-            Phase.CLOSED -> if (includeClosedEvidence) {
-                """
-                validationEvidence:
-                  status: passed
-                  workflow: "Flow CI"
-                  runNumber: "9999"
-                  runId: "123456789"
-                  exactHead: "3333333333333333333333333333333333333333"
-                  mergeCandidate: "4444444444444444444444444444444444444444"
-                """.trimIndent()
-            } else {
-                ""
+        val content = buildString {
+            appendLine("version: \"0.9.7.10\"")
+            appendLine("name: \"Bounded Semantic Closure Gate\"")
+            appendLine("type: \"architecture-closure\"")
+            appendLine("stream: core")
+            appendLine("status: $status")
+            appendLine("closureChecklist:")
+            SemanticClosureAuthority.CHECKLIST.forEach { appendLine("  - \"$it\"") }
+            when (phase) {
+                Phase.CORRECTION_REQUIRED -> {
+                    appendLine("supersededByCorrection: \"0.9.7.10.1\"")
+                    appendPassingValidationEvidence(
+                        runNumber = "2183",
+                        runId = "30255409444",
+                        exactHead = "1111111111111111111111111111111111111111",
+                        mergeCandidate = "2222222222222222222222222222222222222222"
+                    )
+                }
+                Phase.READY -> Unit
+                Phase.CLOSED -> if (includeClosedEvidence) {
+                    appendPassingValidationEvidence(
+                        runNumber = "9999",
+                        runId = "123456789",
+                        exactHead = "3333333333333333333333333333333333333333",
+                        mergeCandidate = "4444444444444444444444444444444444444444"
+                    )
+                }
             }
         }
-        val suffix = lifecycleEvidence.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()
-        write(
-            root,
-            SemanticClosureAuthority.WORK_PACKAGE,
-            """
-            version: "0.9.7.10"
-            name: "Bounded Semantic Closure Gate"
-            type: "architecture-closure"
-            stream: core
-            status: $status
-            closureChecklist:
-              - "closure.checklist-exact"
-              - "closure.no-active-corrections"
-              - "closure.prior-core-items-complete"
-              - "closure.release-metadata-honest"
-              - "closure.required-checks-present"
-              - "closure.required-checks-pass"
-              - "closure.no-failed-conformance"
-              - "closure.version-boundary-unchanged"
-              - "closure.reference-evidence-live"$suffix
-            """.trimIndent()
-        )
+        write(root, SemanticClosureAuthority.WORK_PACKAGE, content)
+    }
+
+    private fun StringBuilder.appendPassingValidationEvidence(
+        runNumber: String,
+        runId: String,
+        exactHead: String,
+        mergeCandidate: String
+    ) {
+        appendLine("validationEvidence:")
+        appendLine("  status: passed")
+        appendLine("  workflow: \"Flow CI\"")
+        appendLine("  runNumber: \"$runNumber\"")
+        appendLine("  runId: \"$runId\"")
+        appendLine("  exactHead: \"$exactHead\"")
+        appendLine("  mergeCandidate: \"$mergeCandidate\"")
     }
 
     private fun writeCoreRoadmap(root: File, trackStatus: String, closureItemStatus: String) {
-        val priorItems = (1..9).joinToString("\n") { item ->
-            """
-              - version: "0.9.7.$item"
-                name: "Completed Core Item $item"
-                status: completed
-            """.trimIndent()
+        val content = buildString {
+            appendLine("project: Flow Core")
+            appendLine("stream: core")
+            appendLine("roadmapVersion: 5")
+            appendLine("track: v0.9.7-universal-semantic-foundation")
+            appendLine("status: $trackStatus")
+            appendLine("items:")
+            (1..9).forEach { item ->
+                appendLine("  - version: \"0.9.7.$item\"")
+                appendLine("    name: \"Completed Core Item $item\"")
+                appendLine("    status: completed")
+            }
+            appendLine("  - version: \"0.9.7.10\"")
+            appendLine("    name: \"Bounded Semantic Closure Gate\"")
+            appendLine("    status: $closureItemStatus")
         }
-        write(
-            root,
-            CORE_ROADMAP,
-            """
-            project: Flow Core
-            stream: core
-            roadmapVersion: 5
-            track: v0.9.7-universal-semantic-foundation
-            status: $trackStatus
-            items:
-            $priorItems
-              - version: "0.9.7.10"
-                name: "Bounded Semantic Closure Gate"
-                status: $closureItemStatus
-            """.trimIndent()
-        )
+        write(root, CORE_ROADMAP, content)
     }
 
     private fun writeRoadmap(
@@ -258,33 +246,23 @@ object ReleaseLifecycleFixture {
         closureItemStatus: String
     ) {
         val active = phase == Phase.CORRECTION_REQUIRED
-        val next = if (phase == Phase.READY) {
-            """
-              nextCoreItem: "0.9.7.10"
-              nextCoreItemName: "Bounded Semantic Closure Gate"
-              nextCoreItemStatus: "next"
-            """.trimIndent()
-        } else {
-            ""
+        val content = buildString {
+            appendLine("project: Flow Core")
+            appendLine("roadmapVersion: 5")
+            appendLine("currentDecision:")
+            appendLine("  completedItem: \"$completedItem\"")
+            appendLine("  completedItemName: \"$completedName\"")
+            appendLine("  correctionState: \"${if (active) "active" else "complete"}\"")
+            appendLine("  activeCorrectionWorkPackage: \"${if (active) CORRECTION_WORK_PACKAGE else ""}\"")
+            appendLine(
+                "  activeCorrectionWorkPackageName: \"${if (active) "Standard and Closure Integrity Correction" else ""}\""
+            )
+            appendLine("  closureItem: \"0.9.7.10\"")
+            appendLine("  closureItemName: \"Bounded Semantic Closure Gate\"")
+            appendLine("  closureItemStatus: \"$closureItemStatus\"")
+            if (phase == Phase.READY) appendNextProjection()
         }
-        write(
-            root,
-            ROADMAP,
-            """
-            project: Flow Core
-            roadmapVersion: 5
-            currentDecision:
-              completedItem: "$completedItem"
-              completedItemName: "$completedName"
-              correctionState: "${if (active) "active" else "complete"}"
-              activeCorrectionWorkPackage: "${if (active) CORRECTION_WORK_PACKAGE else ""}"
-              activeCorrectionWorkPackageName: "${if (active) "Standard and Closure Integrity Correction" else ""}"
-              closureItem: "0.9.7.10"
-              closureItemName: "Bounded Semantic Closure Gate"
-              closureItemStatus: "$closureItemStatus"
-            ${next.prependIndent("  ").trimEnd()}
-            """.trimIndent().lines().filterNot { it.isBlank() }.joinToString("\n")
-        )
+        write(root, ROADMAP, content)
     }
 
     private fun writeReleaseState(
@@ -294,42 +272,39 @@ object ReleaseLifecycleFixture {
         completedName: String,
         closureItemStatus: String
     ) {
-        val next = if (phase == Phase.READY) {
-            """
-              nextCoreItem: "0.9.7.10"
-              nextCoreItemName: "Bounded Semantic Closure Gate"
-              nextCoreItemStatus: "next"
-            """.trimIndent()
-        } else {
-            ""
+        val content = buildString {
+            appendLine("project: Flow Core")
+            appendLine("stateVersion: 24")
+            appendLine("currentVersion: \"0.9.5\"")
+            appendLine("activeStandardVersion: \"0.8.0\"")
+            appendLine("versionBoundary:")
+            appendLine("  publishedPackageVersion: \"0.9.5\"")
+            appendLine("  publicStandardVersion: \"0.8.0\"")
+            appendLine("  artifactContractVersion: \"2.0\"")
+            appendLine("roadmapState:")
+            appendLine("  completedItem: \"$completedItem\"")
+            appendLine("  completedItemName: \"$completedName\"")
+            appendLine("  closureItem: \"0.9.7.10\"")
+            appendLine("  closureItemName: \"Bounded Semantic Closure Gate\"")
+            appendLine("  closureItemStatus: \"$closureItemStatus\"")
+            if (phase == Phase.READY) appendNextProjection()
+            appendLine("  activeRoadmaps:")
+            appendLine("    core: \"$CORE_ROADMAP\"")
+            appendLine("lastKnownValidation:")
+            appendLine(
+                "  validationSource: \"Flow CI #2183 passed exact completion-metadata head " +
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa before merge.\""
+            )
+            appendLine("  notes:")
+            appendLine("    - \"Flow CI #2231 supplied external exact-head CI evidence for the candidate.\"")
         }
-        write(
-            root,
-            RELEASE_STATE,
-            """
-            project: Flow Core
-            stateVersion: 24
-            currentVersion: "0.9.5"
-            activeStandardVersion: "0.8.0"
-            versionBoundary:
-              publishedPackageVersion: "0.9.5"
-              publicStandardVersion: "0.8.0"
-              artifactContractVersion: "2.0"
-            roadmapState:
-              completedItem: "$completedItem"
-              completedItemName: "$completedName"
-              closureItem: "0.9.7.10"
-              closureItemName: "Bounded Semantic Closure Gate"
-              closureItemStatus: "$closureItemStatus"
-            ${next.prependIndent("  ").trimEnd()}
-              activeRoadmaps:
-                core: "$CORE_ROADMAP"
-            lastKnownValidation:
-              validationSource: "Flow CI #2183 passed exact completion-metadata head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa before merge."
-              notes:
-                - "Flow CI #2231 supplied external exact-head CI evidence for the candidate."
-            """.trimIndent().lines().filterNot { it.isBlank() }.joinToString("\n")
-        )
+        write(root, RELEASE_STATE, content)
+    }
+
+    private fun StringBuilder.appendNextProjection() {
+        appendLine("  nextCoreItem: \"0.9.7.10\"")
+        appendLine("  nextCoreItemName: \"Bounded Semantic Closure Gate\"")
+        appendLine("  nextCoreItemStatus: \"next\"")
     }
 
     private fun writeReport(root: File, phase: Phase, correctionStatus: String, closureItemStatus: String) {
@@ -345,15 +320,17 @@ object ReleaseLifecycleFixture {
         write(
             root,
             REPORT,
-            """
-            # Flow Core Report
-
-            Current published package line: `0.9.5`
-            Active public standard version: `0.8.0`
-            $correctionLabel correction item: `0.9.7.10.1 Standard and Closure Integrity Correction`
-            Core roadmap item status: `$closureItemStatus`
-            $closureLine
-            """.trimIndent()
+            buildString {
+                appendLine("# Flow Core Report")
+                appendLine()
+                appendLine("Current published package line: `0.9.5`")
+                appendLine("Active public standard version: `0.8.0`")
+                appendLine(
+                    "$correctionLabel correction item: `0.9.7.10.1 Standard and Closure Integrity Correction`"
+                )
+                appendLine("Core roadmap item status: `$closureItemStatus`")
+                appendLine(closureLine)
+            }
         )
     }
 
@@ -361,13 +338,10 @@ object ReleaseLifecycleFixture {
         write(
             root,
             "CHANGELOG-v0.9.7.10.md",
-            """
-            # v0.9.7.10 correction track
-
-            ### v0.9.7.10.1 Standard and Closure Integrity Correction
-            """.trimIndent()
+            "# v0.9.7.10 correction track\n\n" +
+                "### v0.9.7.10.1 Standard and Closure Integrity Correction\n"
         )
-        write(root, "CHANGELOG-v0.9.7.9.md", "# v0.9.7.9 correction track")
+        write(root, "CHANGELOG-v0.9.7.9.md", "# v0.9.7.9 correction track\n")
     }
 
     private fun replaceTopLevelStatus(file: File, status: String) {
