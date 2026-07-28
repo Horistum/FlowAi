@@ -145,4 +145,4 @@ lastKnownValidation:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
     - "A0.1, A0.2 and A0.3 are completed and merged."
-    - "A0.4 is active and has no authored implementation evidence until exact-head and merge-candidate Flow CI pass."
+    - "A0.4 remains external exact-head CI evidence until its exact implementation head and synthetic merge candidate pass independently."
