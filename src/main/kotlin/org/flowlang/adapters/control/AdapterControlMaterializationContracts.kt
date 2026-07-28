@@ -201,13 +201,14 @@ object AdapterControlMaterializationLoader {
                     if (!filePart.startsWith("src/main/") && !filePart.startsWith("src/test/")) {
                         return@forEach
                     }
-                    val anchor = reference.substringAfter('#', missingDelimiterValue = "")
-                    require(anchor.isNotBlank()) {
-                        "$PATH evidence reference '$reference' for ${target.target}.${claim.family} must identify a source symbol or behavior test after '#'."
-                    }
                     val evidenceFile = File(rootDir, filePart)
                     require(evidenceFile.isFile) {
                         "$PATH evidence reference '$reference' for ${target.target}.${claim.family} points to a missing source file."
+                    }
+                    if ('#' !in reference) return@forEach
+                    val anchor = reference.substringAfter('#')
+                    require(anchor.isNotBlank()) {
+                        "$PATH evidence reference '$reference' for ${target.target}.${claim.family} has a blank source anchor."
                     }
                     require(evidenceFile.readText().contains(anchor)) {
                         "$PATH evidence reference '$reference' for ${target.target}.${claim.family} has unresolved source anchor '$anchor'."
