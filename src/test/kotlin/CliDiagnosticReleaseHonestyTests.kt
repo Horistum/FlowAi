@@ -72,7 +72,20 @@ class CliDiagnosticReleaseHonestyTests {
             val readiness = Json.mapper.readTree(File(output, "execution-readiness-report.json"))
             assertTrue(readiness.path("readinessEvidenceAvailable").asBoolean())
             assertFalse(readiness.path("executable").asBoolean())
-            assertEquals("DEGRADED", readiness.path("readiness").asText())
+            assertEquals("BLOCKED", readiness.path("readiness").asText())
+
+            val manifest = Json.mapper.readTree(File(output, "target-manifest.json"))
+            assertEquals("BLOCKED", manifest.path("metadata").path("adapterControlDecision").asText())
+            assertTrue(
+                manifest.path("compatibility").path("issues").any {
+                    it.path("feature").asText().startsWith("control.")
+                }
+            )
+
+            val outcome = Json.mapper.readTree(File(output, "cli-target-outcome.json"))
+            assertEquals("REVIEW_ONLY", outcome.path("outcome").asText())
+            assertFalse(outcome.path("renderRequested").asBoolean(true))
+            assertFalse(outcome.path("renderAuthorized").asBoolean(true))
         } finally {
             output.deleteRecursively()
         }
