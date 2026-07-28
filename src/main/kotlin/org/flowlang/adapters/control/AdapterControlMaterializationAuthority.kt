@@ -97,6 +97,11 @@ class AdapterControlMaterializationAuthority(
         val evidence = requirements.map { requirement ->
             val claim = claims[requirement.family]
             when {
+                requirement.completeness != AdapterControlRequirementCompleteness.COMPLETE -> AdapterControlEvidence(
+                    requirementId = requirement.id,
+                    status = AdapterControlEvidenceStatus.UNKNOWN,
+                    detail = "Preserved ${requirement.family.name.lowercase()} metadata lacks the exact scope or value needed for provider certification."
+                )
                 claim == null -> AdapterControlEvidence(
                     requirementId = requirement.id,
                     status = AdapterControlEvidenceStatus.UNKNOWN,
@@ -313,15 +318,17 @@ class AdapterControlMaterializationAuthority(
             when (policy.type.uppercase()) {
                 "RETRY" -> requirements += requirement(
                     family = AdapterControlFamily.RETRY,
-                    semantic = "retry.attempt-limit",
+                    semantic = "retry.unspecified",
                     subject = "policy:${policy.name}",
-                    detail = "Source RETRY policy is preserved but requires concrete execution evidence"
+                    detail = "Source RETRY policy preserves type and name but not an exact attempt, delay, backoff or scope contract",
+                    completeness = AdapterControlRequirementCompleteness.PRESERVED_UNSPECIFIED
                 )
                 "TIMEOUT" -> requirements += requirement(
                     family = AdapterControlFamily.TIMEOUT,
-                    semantic = "timeout.workflow",
+                    semantic = "timeout.unspecified",
                     subject = "policy:${policy.name}",
-                    detail = "Source TIMEOUT policy is preserved but requires concrete execution evidence"
+                    detail = "Source TIMEOUT policy preserves type and name but not an exact duration or scope contract",
+                    completeness = AdapterControlRequirementCompleteness.PRESERVED_UNSPECIFIED
                 )
             }
         }
@@ -495,13 +502,15 @@ class AdapterControlMaterializationAuthority(
         family: AdapterControlFamily,
         semantic: String,
         subject: String,
-        detail: String
+        detail: String,
+        completeness: AdapterControlRequirementCompleteness = AdapterControlRequirementCompleteness.COMPLETE
     ): AdapterControlRequirement = AdapterControlRequirement(
         id = "adapter-control.${family.name.lowercase()}.${semantic.substringAfterLast('.')}.${canonicalId(subject)}",
         family = family,
         semantic = semantic,
         subject = subject,
-        detail = detail
+        detail = detail,
+        completeness = completeness
     )
 
     private fun flatten(nodes: List<PlanNode>): List<PlanNode> = nodes.flatMap { node ->
