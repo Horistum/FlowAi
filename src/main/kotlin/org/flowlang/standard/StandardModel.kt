@@ -19,8 +19,8 @@ enum class GateKind(val category: String, val isSubstance: Boolean) {
 
 /**
  * PUBLIC_STANDARD checks define the published release and candidate projections.
- * ROADMAP_GOVERNANCE checks are durable package-level checks that really execute
- * in the conformance runner, but are not silently promoted into public 0.8.0.
+ * ROADMAP_GOVERNANCE checks are durable package-level identities that really run
+ * in conformance, but are not silently promoted into public standard 0.8.0.
  */
 enum class StandardCheckScope {
     PUBLIC_STANDARD,
@@ -32,7 +32,7 @@ enum class ArtifactVisibility {
     INTERNAL
 }
 
-/** One explicitly modeled conformance check. */
+/** One explicitly modeled conformance obligation. */
 data class StandardCheck(
     val id: String,
     val introducedIn: String,
@@ -63,14 +63,19 @@ data class StandardArtifact(
 )
 
 /**
- * Source of truth for public standard projections and durable named conformance
- * obligations.
+ * Source of truth for public standard projections and durable package-level
+ * conformance identities.
  *
- * This is intentionally not a handwritten inventory of every implementation
- * probe. ConformanceSuiteInventory owns the exact complete runner sequence.
- * StandardModel owns the public release gates and the smaller set of package
- * checks whose identities are architecture contracts. SemanticClosureAuthority
- * proves that every modeled pre-closure check exists in the complete inventory.
+ * This is deliberately not the complete runner inventory. The exact ordered
+ * suite is owned by ConformanceSuiteInventory. StandardModel owns only:
+ *
+ * 1. public release/candidate/export obligations, and
+ * 2. package checks whose identities are durable architecture contracts.
+ *
+ * SemanticClosureAuthority proves that every modeled pre-closure identity is
+ * present in the independent complete inventory. This separation prevents a
+ * partial public profile from impersonating the complete suite while avoiding
+ * a second handwritten copy of every implementation probe.
  */
 object StandardModel {
     val checks: List<StandardCheck> = listOf(
@@ -123,13 +128,15 @@ object StandardModel {
             "v0.4.4.ai-proposal-review",
             "0.4.4",
             GateKind.NORMALIZATION,
-            inExportManifest = true
+            inExportManifest = true,
+            externalAnchor = "src/main/kotlin/org/flowlang/conformance/SemanticBoundaryChecks.kt"
         ),
         publicCheck(
             "v0.4.4.condition-expression-readiness",
             "0.4.4",
             GateKind.EXECUTION_PLAN,
-            inExportManifest = true
+            inExportManifest = true,
+            externalAnchor = "src/main/kotlin/org/flowlang/conformance/SemanticBoundaryChecks.kt"
         ),
         publicCheck(
             "v0.4.4.no-silent-condition-fallback",
@@ -325,57 +332,57 @@ object StandardModel {
             "intent.canonical-meaning.inventory-independent",
             "0.9.7.5",
             GateKind.BEHAVIOR,
-            "standard/conformance/pre-closure-check-inventory.yaml"
+            "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
         ),
         roadmapCheck(
             "intent.effects.universal-state-transition-model",
             "0.9.7.6",
             GateKind.BEHAVIOR,
-            "standard/conformance/pre-closure-check-inventory.yaml"
+            "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
         ),
         roadmapCheck(
             "intent.controls.universal-policy-requirements",
             "0.9.7.7",
             GateKind.SAFETY,
-            "standard/conformance/pre-closure-check-inventory.yaml",
+            "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt",
             negativeFixture = "src/test/kotlin/ClosureBlockingSafetyIntegrityTests.kt"
         ),
         roadmapCheck(
             "planning.topology.abstract-execution-model",
             "0.9.7.8",
             GateKind.EXECUTION_PLAN,
-            "standard/conformance/pre-closure-check-inventory.yaml"
+            "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
         ),
         roadmapCheck(
             "intent.lowering.diagnostic-honesty",
             "0.9.7.9",
             GateKind.DIAGNOSTICS,
-            "standard/conformance/pre-closure-check-inventory.yaml"
+            "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
         ),
         roadmapCheck(
             "flow.environment-safety.production-integration",
             "0.9.7.9.3",
             GateKind.SAFETY,
-            "standard/conformance/pre-closure-check-inventory.yaml",
+            "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt",
             negativeFixture = "src/test/kotlin/ClosureBlockingSafetyIntegrityTests.kt"
         ),
         roadmapCheck(
             "ai.normalization.scenario-negation-token-boundary-honesty",
             "0.9.7.9.4",
             GateKind.NORMALIZATION,
-            "standard/conformance/pre-closure-check-inventory.yaml"
+            "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
         ),
         roadmapCheck(
             "planning.provider-backed-approval-topology-identity",
             "0.9.7.9.5",
             GateKind.PORTABILITY,
-            "standard/conformance/pre-closure-check-inventory.yaml"
+            "src/main/kotlin/org/flowlang/conformance/PlanningReadinessChecks.kt"
         ),
         roadmapCheck(
             "governance.derived-model-integrity",
             "0.9.7.9.6",
             GateKind.REGISTRY_CONSISTENCY,
-            "standard/conformance/pre-closure-check-inventory.yaml"
+            "src/main/kotlin/org/flowlang/conformance/PlanningReadinessChecks.kt"
         ),
         roadmapCheck(
             "cli.release.diagnostic-honesty",
@@ -480,7 +487,7 @@ object StandardModel {
     val substanceGateCount: Int
         get() = checks.count { it.kind.isSubstance }
 
-    /** Public report-budget count. Package-level integrity checks are tracked separately. */
+    /** Public report-budget count. Package-level consistency is tracked separately. */
     val registryConsistencyGateCount: Int
         get() = releaseRegistryConsistencyCheckIds().size
 
