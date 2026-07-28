@@ -184,6 +184,8 @@ targets:
           unknown: {}
         evidenceReferences:
           - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTry"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#toJenkinsTargetSteps"
+          - "src/test/kotlin/AdapterControlProviderBehaviorTests.kt#jenkinsFlowLevelErrorHandlerRendersProtectedTryCatchBoundary"
           - "targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard.rollback"
         platformReferences:
           - "https://www.jenkins.io/doc/book/pipeline/syntax/#post"
@@ -208,6 +210,7 @@ targets:
         evidenceReferences:
           - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTriggers"
           - "src/main/kotlin/org/flowlang/lowering/IntentLoweringContracts.kt#trigger-schedule"
+          - "src/test/kotlin/AdapterControlProviderBehaviorTests.kt#jenkinsCronControlRendersNativeTrigger"
         platformReferences:
           - "https://www.jenkins.io/doc/book/pipeline/syntax/#triggers"
         prerequisites: []
@@ -322,6 +325,7 @@ targets:
         evidenceReferences:
           - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#schedule"
           - "src/main/kotlin/org/flowlang/lowering/IntentLoweringContracts.kt#trigger-schedule"
+          - "src/test/kotlin/AdapterControlProviderBehaviorTests.kt#githubCronControlRendersNativeSchedule"
         platformReferences:
           - "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule"
         prerequisites: []
