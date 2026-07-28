@@ -2,7 +2,7 @@ version: "0.9.7.10.2"
 name: "Closure Evidence Boundary Integrity Correction"
 type: "bounded-correction"
 stream: core
-status: active
+status: complete
 parentCoreItem: "0.9.7.10"
 objective: "Reopen the v0.9.7 closure claim after proving that implementation and completion validation boundaries could be represented by the same evidence and that the later successful completion run was not recorded by the repository authority."
 scopeBoundary:
@@ -19,15 +19,22 @@ universalInvariants:
   - "A correction repairs the evidence authority rather than merely replacing stale metadata."
 confirmedFindings:
   - id: E1
-    status: active
-    summary: "The merged closure work package records Flow CI #2245 as both implementationEvidence and validationEvidence."
+    status: complete
+    summary: "ClosureEvidenceBoundaryAuthority now rejects reused run, exact-head and merge-candidate identities across implementation and completion boundaries."
   - id: E2
-    status: active
-    summary: "ReleaseMetadataHonestyAuthority validates only validationEvidence structure and does not require a distinct later implementation/completion pair."
+    status: complete
+    summary: "A dedicated pre-closure conformance check owns typed phase, supersession, implementation, completion and boundary-distinction failures."
   - id: E3
-    status: active
-    summary: "Flow CI #2250 passed the later completion head and merge candidate, but that evidence exists only in PR metadata and is absent from repository authority files."
+    status: complete
+    summary: "Lifecycle and pure authority tests prove READY absence rules, CLOSED ordering and fail-closed parsing before later evidence is recorded."
 validationPolicy:
   workflow: "Flow CI"
   implementationBoundary: "The authority and negative tests must pass exact-head and synthetic merge-candidate validation while the closure remains CORRECTION_REQUIRED."
   completionBoundary: "After implementation validation, a later metadata head must record distinct implementation and completion evidence and independently pass exact-head and synthetic merge-candidate validation."
+validationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: "2252"
+  runId: "30333130152"
+  exactHead: "3176009e660c95d873e9eeb8d1845b7f54142d2c"
+  mergeCandidate: "bba152a0eeccf87fffe19a11a3340dd2d1d6a569"
