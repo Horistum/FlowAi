@@ -38,12 +38,11 @@ rules:
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
 
 currentDecision:
-  completedItem: "A0.1"
-  completedItemName: "Adapter Portfolio Reassessment"
-  nextItem: "A0.2"
-  nextItemName: "Topology Evidence Adoption"
-  activeWorkPackage: ".flow-agent/work-packages/A0.2-topology-evidence-adoption.yaml"
-  decisionBasis: "PR #96 merged A0.1 as dbd1529cd9da1b21d13bd45d3af1a84361b9abf1. A0.2 is active to replace self-referential topology profiles with complete adapter-owned evidence before capability binding work begins."
+  completedItem: "A0.2"
+  completedItemName: "Topology Evidence Adoption"
+  nextItem: "A0.3"
+  nextItemName: "Capability Binding Migration"
+  decisionBasis: "Flow CI #2284 passed A0.2 on exact implementation head 6d441628c4d3101bfd0c32c5d2eb370b00fbc4fe and synthetic merge candidate 6168e45d292a34f3d648c0e645016f88c813e25b. A0.3 is the next bounded adapter item."
 
 items:
   - version: "A0.1"
@@ -63,22 +62,24 @@ items:
   - version: "A0.2"
     name: "Topology Evidence Adoption"
     type: "adapter-topology"
-    status: next
+    status: completed
     purpose: "Declare execution isolation, state lifetime, transfer, scope, interaction and concurrency evidence for each adapter."
     dependsOnCore: "0.9.7.8"
     dependsOnAdapters: "A0.1"
     completionEvidence:
       - "Every target declares exactly one complete adapter-owned topology record."
       - "Runtime profiles are derived from that record rather than self-citing registry values."
+      - "Detailed adapter mechanism and limitation prose remains outside target-neutral Core runtime profiles."
       - "Every executable claim is backed by complete supported topology evidence."
       - "Unknown properties and profile-only targets fail closed."
       - "Claims that fail reassessment are intentionally demoted."
       - "A0.2 lifecycle integrity blocks evidence-free completion and premature A0.3 selection."
+      - "Flow CI #2284 passed exact and merge-candidate validation with the final A0.2 authority active."
 
   - version: "A0.3"
     name: "Capability Binding Migration"
     type: "adapter-binding"
-    status: planned
+    status: next
     purpose: "Bind canonical capabilities to concrete implementations without changing canonical meaning."
     dependsOnCore: "0.9.7.5"
     dependsOnAdapters: "A0.2"
