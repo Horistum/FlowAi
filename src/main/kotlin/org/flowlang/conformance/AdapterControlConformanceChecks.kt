@@ -7,6 +7,7 @@ import org.flowlang.adapters.control.AdapterControlEvidenceStatus
 import org.flowlang.adapters.control.AdapterControlFamily
 import org.flowlang.adapters.control.AdapterControlMaterializationAuthority
 import org.flowlang.adapters.control.AdapterControlMaterializationLoader
+import org.flowlang.adapters.control.AdapterControlRequirementCompleteness
 import org.flowlang.adapters.control.AdapterControlRoadmapLifecycleAuthority
 import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.adapters.portfolio.AdapterPortfolioRole
@@ -109,8 +110,15 @@ class AdapterControlConformanceChecks(
             )
         )
         val timeout = authority.assess(timeoutPolicy, "jenkins")
-        if (timeout.decision != AdapterControlDecision.BLOCKED || timeout.requirements.none { it.semantic == "timeout.workflow" }) {
-            add("Preserved TIMEOUT policy must become an explicit blocked adapter requirement.")
+        if (
+            timeout.decision != AdapterControlDecision.BLOCKED ||
+            timeout.requirements.none {
+                it.semantic == "timeout.unspecified" &&
+                    it.completeness == AdapterControlRequirementCompleteness.PRESERVED_UNSPECIFIED
+            } ||
+            timeout.evidence.none { it.status == AdapterControlEvidenceStatus.UNKNOWN }
+        ) {
+            add("Preserved TIMEOUT policy must remain an explicit UNKNOWN adapter requirement until duration and scope survive lowering.")
         }
     }
 
