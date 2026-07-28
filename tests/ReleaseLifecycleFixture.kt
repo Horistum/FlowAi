@@ -2,17 +2,61 @@ import java.io.File
 import java.nio.file.Files
 import org.flowlang.conformance.ConformanceSuiteInventory
 import org.flowlang.release.SemanticClosureAuthority
+import org.flowlang.serialization.FlowYaml
 
 /**
- * Builds lifecycle fixtures from explicit metadata rather than mutating the
- * repository's current lifecycle phase. Tests therefore remain stable when the
- * real branch advances from CORRECTION_REQUIRED to READY and finally CLOSED.
+ * Builds complete, phase-atomic release metadata fixtures.
+ *
+ * A lifecycle phase is one immutable specification. Every metadata surface is
+ * generated from that same specification and then parsed back through FlowYaml.
+ * Tests therefore cannot accidentally combine an active correction with READY
+ * closure metadata, nor depend on the repository's current lifecycle phase.
  */
 object ReleaseLifecycleFixture {
-    enum class Phase {
-        CORRECTION_REQUIRED,
-        READY,
-        CLOSED
+    enum class Phase(
+        val correctionStatus: String,
+        val closureWorkStatus: String,
+        val closureItemStatus: String,
+        val trackStatus: String,
+        val completedItem: String,
+        val completedName: String,
+        val correctionState: String,
+        val activeCorrectionPointer: Boolean,
+        val hasNextProjection: Boolean
+    ) {
+        CORRECTION_REQUIRED(
+            correctionStatus = "active",
+            closureWorkStatus = "correction-required",
+            closureItemStatus = "correction-required",
+            trackStatus = "active",
+            completedItem = "0.9.7.9",
+            completedName = "Intent Lowering and Diagnostic Honesty",
+            correctionState = "active",
+            activeCorrectionPointer = true,
+            hasNextProjection = false
+        ),
+        READY(
+            correctionStatus = "complete",
+            closureWorkStatus = "active",
+            closureItemStatus = "next",
+            trackStatus = "active",
+            completedItem = "0.9.7.9",
+            completedName = "Intent Lowering and Diagnostic Honesty",
+            correctionState = "complete",
+            activeCorrectionPointer = false,
+            hasNextProjection = true
+        ),
+        CLOSED(
+            correctionStatus = "complete",
+            closureWorkStatus = "complete",
+            closureItemStatus = "completed",
+            trackStatus = "completed",
+            completedItem = "0.9.7.10",
+            completedName = "Bounded Semantic Closure Gate",
+            correctionState = "complete",
+            activeCorrectionPointer = false,
+            hasNextProjection = false
+        )
     }
 
     const val REPORT = "REPORT.md"
@@ -31,6 +75,7 @@ object ReleaseLifecycleFixture {
         try {
             copyStaticEvidence(root)
             writePhase(root, phase, includeClosedEvidence)
+            verifyWrittenPhase(root, phase)
             assertions(root)
         } finally {
             root.deleteRecursively()
@@ -38,31 +83,12 @@ object ReleaseLifecycleFixture {
     }
 
     fun writePhase(root: File, phase: Phase, includeClosedEvidence: Boolean = true) {
-        val correctionStatus = if (phase == Phase.CORRECTION_REQUIRED) "active" else "complete"
-        val closureWorkStatus = when (phase) {
-            Phase.CORRECTION_REQUIRED -> "correction-required"
-            Phase.READY -> "active"
-            Phase.CLOSED -> "complete"
-        }
-        val closureItemStatus = when (phase) {
-            Phase.CORRECTION_REQUIRED -> "correction-required"
-            Phase.READY -> "next"
-            Phase.CLOSED -> "completed"
-        }
-        val trackStatus = if (phase == Phase.CLOSED) "completed" else "active"
-        val completedItem = if (phase == Phase.CLOSED) "0.9.7.10" else "0.9.7.9"
-        val completedName = if (phase == Phase.CLOSED) {
-            "Bounded Semantic Closure Gate"
-        } else {
-            "Intent Lowering and Diagnostic Honesty"
-        }
-
-        writeCorrectionWorkPackage(root, correctionStatus)
-        writeClosureWorkPackage(root, phase, closureWorkStatus, includeClosedEvidence)
-        writeCoreRoadmap(root, trackStatus, closureItemStatus)
-        writeRoadmap(root, phase, completedItem, completedName, closureItemStatus)
-        writeReleaseState(root, phase, completedItem, completedName, closureItemStatus)
-        writeReport(root, phase, correctionStatus, closureItemStatus)
+        writeCorrectionWorkPackage(root, phase)
+        writeClosureWorkPackage(root, phase, includeClosedEvidence)
+        writeCoreRoadmap(root, phase)
+        writeRoadmap(root, phase)
+        writeReleaseState(root, phase)
+        writeReport(root, phase)
         writeChangelog(root)
     }
 
@@ -71,27 +97,21 @@ object ReleaseLifecycleFixture {
         val lines = file.readText().lines().toMutableList()
         val index = lines.indexOfFirst { it.startsWith("status:") }
         require(index >= 0) { "Correction status is missing in ${file.path}" }
-        if (status == null) {
-            lines.removeAt(index)
-        } else {
-            lines[index] = "status: $status"
-        }
+        if (status == null) lines.removeAt(index) else lines[index] = "status: \"$status\""
         file.writeText(lines.joinToString("\n").trimEnd() + "\n")
     }
 
-    fun setClosureWorkPackageStatus(root: File, status: String) {
+    fun setClosureWorkPackageStatus(root: File, status: String) =
         replaceTopLevelStatus(File(root, SemanticClosureAuthority.WORK_PACKAGE), status)
-    }
 
-    fun setCoreTrackStatus(root: File, status: String) {
+    fun setCoreTrackStatus(root: File, status: String) =
         replaceTopLevelStatus(File(root, CORE_ROADMAP), status)
-    }
 
     fun setCoreClosureStatus(root: File, status: String) {
         val file = File(root, CORE_ROADMAP)
         val text = file.readText()
         val pattern = Regex(
-            "(?ms)(^\\s*- version:\\s*\"0\\.9\\.7\\.10\"\\s*$.*?^\\s*status:\\s*)([a-z-]+)(\\s*$)"
+            "(?ms)(^\\s*- version:\\s*\"0\\.9\\.7\\.10\"\\s*$.*?^\\s*status:\\s*\")([^\"]+)(\"\\s*$)"
         )
         val match = pattern.find(text) ?: error("Closure roadmap item 0.9.7.10 is missing.")
         file.writeText(text.replaceRange(match.range, match.groupValues[1] + status + match.groupValues[3]))
@@ -107,11 +127,7 @@ object ReleaseLifecycleFixture {
     fun setRoadmapCorrectionState(root: File, status: String, activePointer: Boolean) {
         val file = File(root, ROADMAP)
         replaceScalar(file, "correctionState", status)
-        replaceScalar(
-            file,
-            "activeCorrectionWorkPackage",
-            if (activePointer) CORRECTION_WORK_PACKAGE else ""
-        )
+        replaceScalar(file, "activeCorrectionWorkPackage", if (activePointer) CORRECTION_WORK_PACKAGE else "")
         replaceScalar(
             file,
             "activeCorrectionWorkPackageName",
@@ -122,7 +138,7 @@ object ReleaseLifecycleFixture {
     fun addNextProjection(file: File) {
         if (file.readText().lineSequence().any { it.trimStart().startsWith("nextCoreItem:") }) return
         val text = file.readText()
-        val anchor = Regex("(?m)^(\\s*)closureItemStatus:\\s*\"?[^\"\\n]+\"?\\s*$")
+        val anchor = Regex("(?m)^(\\s*)closureItemStatus:\\s*\"[^\"]+\"\\s*$")
             .find(text) ?: error("closureItemStatus missing in ${file.path}")
         val indent = anchor.groupValues[1]
         val addition = "\n${indent}nextCoreItem: \"0.9.7.10\"" +
@@ -150,33 +166,26 @@ object ReleaseLifecycleFixture {
         }
     }
 
-    private fun writeCorrectionWorkPackage(root: File, status: String) {
-        write(
-            root,
-            CORRECTION_WORK_PACKAGE,
-            buildString {
-                appendLine("version: \"0.9.7.10.1\"")
-                appendLine("name: \"Standard and Closure Integrity Correction\"")
-                appendLine("type: \"bounded-correction\"")
-                appendLine("stream: core")
-                appendLine("status: $status")
-                appendLine("parentCoreItem: \"0.9.7.10\"")
-            }
-        )
-    }
+    private fun writeCorrectionWorkPackage(root: File, phase: Phase) = write(
+        root,
+        CORRECTION_WORK_PACKAGE,
+        """
+        version: "0.9.7.10.1"
+        name: "Standard and Closure Integrity Correction"
+        type: "bounded-correction"
+        stream: "core"
+        status: "${phase.correctionStatus}"
+        parentCoreItem: "0.9.7.10"
+        """.trimIndent()
+    )
 
-    private fun writeClosureWorkPackage(
-        root: File,
-        phase: Phase,
-        status: String,
-        includeClosedEvidence: Boolean
-    ) {
+    private fun writeClosureWorkPackage(root: File, phase: Phase, includeClosedEvidence: Boolean) {
         val content = buildString {
             appendLine("version: \"0.9.7.10\"")
             appendLine("name: \"Bounded Semantic Closure Gate\"")
             appendLine("type: \"architecture-closure\"")
-            appendLine("stream: core")
-            appendLine("status: $status")
+            appendLine("stream: \"core\"")
+            appendLine("status: \"${phase.closureWorkStatus}\"")
             appendLine("closureChecklist:")
             SemanticClosureAuthority.CHECKLIST.forEach { appendLine("  - \"$it\"") }
             when (phase) {
@@ -210,7 +219,7 @@ object ReleaseLifecycleFixture {
         mergeCandidate: String
     ) {
         appendLine("validationEvidence:")
-        appendLine("  status: passed")
+        appendLine("  status: \"passed\"")
         appendLine("  workflow: \"Flow CI\"")
         appendLine("  runNumber: \"$runNumber\"")
         appendLine("  runId: \"$runId\"")
@@ -218,62 +227,51 @@ object ReleaseLifecycleFixture {
         appendLine("  mergeCandidate: \"$mergeCandidate\"")
     }
 
-    private fun writeCoreRoadmap(root: File, trackStatus: String, closureItemStatus: String) {
+    private fun writeCoreRoadmap(root: File, phase: Phase) {
         val content = buildString {
-            appendLine("project: Flow Core")
-            appendLine("stream: core")
+            appendLine("project: \"Flow Core\"")
+            appendLine("stream: \"core\"")
             appendLine("roadmapVersion: 5")
-            appendLine("track: v0.9.7-universal-semantic-foundation")
-            appendLine("status: $trackStatus")
+            appendLine("track: \"v0.9.7-universal-semantic-foundation\"")
+            appendLine("status: \"${phase.trackStatus}\"")
             appendLine("items:")
             (1..9).forEach { item ->
                 appendLine("  - version: \"0.9.7.$item\"")
                 appendLine("    name: \"Completed Core Item $item\"")
-                appendLine("    status: completed")
+                appendLine("    status: \"completed\"")
             }
             appendLine("  - version: \"0.9.7.10\"")
             appendLine("    name: \"Bounded Semantic Closure Gate\"")
-            appendLine("    status: $closureItemStatus")
+            appendLine("    status: \"${phase.closureItemStatus}\"")
         }
         write(root, CORE_ROADMAP, content)
     }
 
-    private fun writeRoadmap(
-        root: File,
-        phase: Phase,
-        completedItem: String,
-        completedName: String,
-        closureItemStatus: String
-    ) {
-        val active = phase == Phase.CORRECTION_REQUIRED
+    private fun writeRoadmap(root: File, phase: Phase) {
         val content = buildString {
-            appendLine("project: Flow Core")
+            appendLine("project: \"Flow Core\"")
             appendLine("roadmapVersion: 5")
             appendLine("currentDecision:")
-            appendLine("  completedItem: \"$completedItem\"")
-            appendLine("  completedItemName: \"$completedName\"")
-            appendLine("  correctionState: \"${if (active) "active" else "complete"}\"")
-            appendLine("  activeCorrectionWorkPackage: \"${if (active) CORRECTION_WORK_PACKAGE else ""}\"")
+            appendLine("  completedItem: \"${phase.completedItem}\"")
+            appendLine("  completedItemName: \"${phase.completedName}\"")
+            appendLine("  correctionState: \"${phase.correctionState}\"")
             appendLine(
-                "  activeCorrectionWorkPackageName: \"${if (active) "Standard and Closure Integrity Correction" else ""}\""
+                "  activeCorrectionWorkPackage: \"${if (phase.activeCorrectionPointer) CORRECTION_WORK_PACKAGE else ""}\""
+            )
+            appendLine(
+                "  activeCorrectionWorkPackageName: \"${if (phase.activeCorrectionPointer) "Standard and Closure Integrity Correction" else ""}\""
             )
             appendLine("  closureItem: \"0.9.7.10\"")
             appendLine("  closureItemName: \"Bounded Semantic Closure Gate\"")
-            appendLine("  closureItemStatus: \"$closureItemStatus\"")
-            if (phase == Phase.READY) appendNextProjection()
+            appendLine("  closureItemStatus: \"${phase.closureItemStatus}\"")
+            if (phase.hasNextProjection) appendNextProjection()
         }
         write(root, ROADMAP, content)
     }
 
-    private fun writeReleaseState(
-        root: File,
-        phase: Phase,
-        completedItem: String,
-        completedName: String,
-        closureItemStatus: String
-    ) {
+    private fun writeReleaseState(root: File, phase: Phase) {
         val content = buildString {
-            appendLine("project: Flow Core")
+            appendLine("project: \"Flow Core\"")
             appendLine("stateVersion: 24")
             appendLine("currentVersion: \"0.9.5\"")
             appendLine("activeStandardVersion: \"0.8.0\"")
@@ -282,12 +280,12 @@ object ReleaseLifecycleFixture {
             appendLine("  publicStandardVersion: \"0.8.0\"")
             appendLine("  artifactContractVersion: \"2.0\"")
             appendLine("roadmapState:")
-            appendLine("  completedItem: \"$completedItem\"")
-            appendLine("  completedItemName: \"$completedName\"")
+            appendLine("  completedItem: \"${phase.completedItem}\"")
+            appendLine("  completedItemName: \"${phase.completedName}\"")
             appendLine("  closureItem: \"0.9.7.10\"")
             appendLine("  closureItemName: \"Bounded Semantic Closure Gate\"")
-            appendLine("  closureItemStatus: \"$closureItemStatus\"")
-            if (phase == Phase.READY) appendNextProjection()
+            appendLine("  closureItemStatus: \"${phase.closureItemStatus}\"")
+            if (phase.hasNextProjection) appendNextProjection()
             appendLine("  activeRoadmaps:")
             appendLine("    core: \"$CORE_ROADMAP\"")
             appendLine("lastKnownValidation:")
@@ -307,8 +305,8 @@ object ReleaseLifecycleFixture {
         appendLine("  nextCoreItemStatus: \"next\"")
     }
 
-    private fun writeReport(root: File, phase: Phase, correctionStatus: String, closureItemStatus: String) {
-        val correctionLabel = if (correctionStatus == "active") "Active" else "Completed"
+    private fun writeReport(root: File, phase: Phase) {
+        val correctionLabel = if (phase.correctionStatus == "active") "Active" else "Completed"
         val closureLine = when (phase) {
             Phase.CORRECTION_REQUIRED ->
                 "Core closure correction: `0.9.7.10 Bounded Semantic Closure Gate` (`correction-required`)"
@@ -328,7 +326,7 @@ object ReleaseLifecycleFixture {
                 appendLine(
                     "$correctionLabel correction item: `0.9.7.10.1 Standard and Closure Integrity Correction`"
                 )
-                appendLine("Core roadmap item status: `$closureItemStatus`")
+                appendLine("Core roadmap item status: `${phase.closureItemStatus}`")
                 appendLine(closureLine)
             }
         )
@@ -344,11 +342,45 @@ object ReleaseLifecycleFixture {
         write(root, "CHANGELOG-v0.9.7.9.md", "# v0.9.7.9 correction track\n")
     }
 
+    private fun verifyWrittenPhase(root: File, phase: Phase) {
+        val correction = FlowYaml.readMap(File(root, CORRECTION_WORK_PACKAGE))
+        val closure = FlowYaml.readMap(File(root, SemanticClosureAuthority.WORK_PACKAGE))
+        val core = FlowYaml.readMap(File(root, CORE_ROADMAP))
+        val roadmap = FlowYaml.readMap(File(root, ROADMAP))
+        val release = FlowYaml.readMap(File(root, RELEASE_STATE))
+
+        require(correction.scalar("status") == phase.correctionStatus)
+        require(closure.scalar("status") == phase.closureWorkStatus)
+        require(core.scalar("status") == phase.trackStatus)
+        require(core.itemStatus("0.9.7.10") == phase.closureItemStatus)
+        require(roadmap.nestedScalar("currentDecision", "closureItemStatus") == phase.closureItemStatus)
+        require(release.nestedScalar("roadmapState", "closureItemStatus") == phase.closureItemStatus)
+        require(
+            roadmap.nestedScalar("currentDecision", "activeCorrectionWorkPackage") ==
+                if (phase.activeCorrectionPointer) CORRECTION_WORK_PACKAGE else ""
+        )
+        require((roadmap.nestedScalar("currentDecision", "nextCoreItem").isNotBlank()) == phase.hasNextProjection)
+        require((release.nestedScalar("roadmapState", "nextCoreItem").isNotBlank()) == phase.hasNextProjection)
+    }
+
+    private fun Map<String, Any?>.scalar(key: String): String = get(key)?.toString().orEmpty()
+
+    private fun Map<String, Any?>.nestedScalar(parent: String, key: String): String =
+        ((get(parent) as? Map<*, *>)?.get(key))?.toString().orEmpty()
+
+    private fun Map<String, Any?>.itemStatus(version: String): String =
+        (get("items") as? Iterable<*>)
+            ?.mapNotNull { it as? Map<*, *> }
+            ?.firstOrNull { it["version"]?.toString() == version }
+            ?.get("status")
+            ?.toString()
+            .orEmpty()
+
     private fun replaceTopLevelStatus(file: File, status: String) {
         val text = file.readText()
-        val pattern = Regex("(?m)^(status:\\s*)([a-z-]+)(\\s*)$")
+        val pattern = Regex("(?m)^(status:\\s*)\"?[^\"\\n]+\"?(\\s*)$")
         val match = pattern.find(text) ?: error("Top-level status is missing in ${file.path}")
-        file.writeText(text.replaceRange(match.range, match.groupValues[1] + status + match.groupValues[3]))
+        file.writeText(text.replaceRange(match.range, match.groupValues[1] + "\"$status\"" + match.groupValues[2]))
     }
 
     private fun replaceScalar(file: File, key: String, value: String) {
