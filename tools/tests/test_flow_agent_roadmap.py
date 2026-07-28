@@ -29,6 +29,8 @@ VALID_CORE_ITEM = '''items:
       - "Behavioral tests verify analyzer outcomes."
 '''
 
+COMPLETED_CORE_ITEM = VALID_CORE_ITEM.replace("status: next", "status: completed")
+
 
 class FlowAgentRoadmapTests(unittest.TestCase):
     def _write_split_roadmaps(
@@ -37,12 +39,13 @@ class FlowAgentRoadmapTests(unittest.TestCase):
         core: str = VALID_CORE_ITEM,
         adapters: str | None = None,
         conformance: str | None = None,
+        primary_stream: str = "core",
     ) -> Path:
         agent = root / ".flow-agent"
         agent.mkdir()
         main = agent / "roadmap.yaml"
         main.write_text(
-            'primaryRoadmapStream: core\n'
+            f'primaryRoadmapStream: {primary_stream}\n'
             'roadmapIndex:\n'
             '  activeRoadmaps:\n'
             '    core: ".flow-agent/roadmap-core.yaml"\n'
@@ -79,6 +82,32 @@ class FlowAgentRoadmapTests(unittest.TestCase):
             self.assertEqual("0.9.7.1", item.version)
             self.assertEqual("core", item.stream)
             self.assertEqual((root / ".flow-agent/roadmap-core.yaml").resolve(), item.source)
+
+    def test_resolves_next_item_from_primary_adapter_stream_after_core_completion(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            adapters = (
+                'stream: adapters\nitems:\n  - version: "A0.1"\n'
+                '    name: "Adapter Portfolio Reassessment"\n'
+                '    type: "adapter-governance"\n'
+                '    status: next\n'
+                '    purpose: "Reassess existing adapter claims."\n'
+                '    dependsOnCore: "0.9.7.1"\n'
+            )
+            main = self._write_split_roadmaps(
+                root,
+                core=COMPLETED_CORE_ITEM,
+                adapters=adapters,
+                primary_stream="adapters",
+            )
+
+            validate_roadmap_structure(root, main)
+            item = find_unique_next_roadmap_item(root, main)
+
+            self.assertEqual("A0.1", item.version)
+            self.assertEqual("Adapter Portfolio Reassessment", item.name)
+            self.assertEqual("adapters", item.stream)
+            self.assertEqual((root / ".flow-agent/roadmap-adapters.yaml").resolve(), item.source)
 
     def test_allows_independent_next_item_per_stream(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -184,6 +213,20 @@ class FlowAgentRoadmapTests(unittest.TestCase):
             main = self._write_split_roadmaps(root, adapters=adapters)
 
             with self.assertRaisesRegex(RuntimeError, "references unknown Core item"):
+                validate_roadmap_structure(root, main)
+
+    def test_rejects_unknown_adapter_dependency_from_adapter(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            adapters = (
+                'stream: adapters\nitems:\n  - version: "A0.1"\n'
+                '    status: planned\n'
+                '    dependsOnCore: "0.9.7.1"\n'
+                '    dependsOnAdapters: "A0.99"\n'
+            )
+            main = self._write_split_roadmaps(root, adapters=adapters)
+
+            with self.assertRaisesRegex(RuntimeError, "references unknown adapter item"):
                 validate_roadmap_structure(root, main)
 
     def test_adapter_roadmap_may_contain_concrete_target_names(self) -> None:
