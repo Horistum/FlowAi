@@ -32,7 +32,8 @@ enum class AdapterControlScope {
     WORKFLOW,
     TRIGGER,
     ENVIRONMENT,
-    RESOURCE
+    RESOURCE,
+    UNSPECIFIED
 }
 
 data class AdapterControlSemanticPartition(
@@ -91,6 +92,7 @@ data class AdapterControlRequirement(
     val family: AdapterControlFamily,
     val semantic: String,
     val subject: String,
+    val scope: AdapterControlScope,
     val detail: String,
     val completeness: AdapterControlRequirementCompleteness = AdapterControlRequirementCompleteness.COMPLETE
 )
@@ -167,18 +169,23 @@ object AdapterControlSemanticContract {
 
 object AdapterControlMaterializationLoader {
     const val PATH = "adapters/controls/builtin-control-materialization.yaml"
+    const val SUPPORTED_VERSION = "1.0"
 
     fun load(rootDir: File = File(".")): AdapterControlMaterializationDocument {
         val file = File(rootDir, PATH)
         require(file.isFile) { "Adapter control materialization manifest is missing: ${file.path}" }
         val root = FlowYaml.readMap(file)
         requireExactKeys(root, ROOT_KEYS, PATH)
+        val version = text(root, "version", PATH)
+        require(version == SUPPORTED_VERSION) {
+            "$PATH.version '$version' is unsupported; expected '$SUPPORTED_VERSION'."
+        }
         val targets = objectList(root["targets"], "$PATH.targets").mapIndexed { index, raw ->
             parseTarget(raw, "$PATH.targets[$index]")
         }
         require(targets.isNotEmpty()) { "$PATH.targets must not be empty." }
         return AdapterControlMaterializationDocument(
-            version = text(root, "version", PATH),
+            version = version,
             targets = targets
         )
     }
