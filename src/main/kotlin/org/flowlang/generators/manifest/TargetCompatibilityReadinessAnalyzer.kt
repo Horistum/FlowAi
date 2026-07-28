@@ -16,6 +16,44 @@ import org.flowlang.capabilities.TargetSelectionCandidate
 import org.flowlang.capabilities.TargetSelectionReport
 
 /**
+ * Closed mapping from internal materialization/projection statuses to stable
+ * public diagnostic codes.
+ *
+ * Internal status labels are not public diagnostic identifiers. Concatenating
+ * `TARGET_` with an implementation status can emit uncatalogued public codes and
+ * break otherwise valid diagnostic bundles. New internal statuses must choose an
+ * existing stable public category deliberately or extend the public catalog in a
+ * separately governed contract change.
+ */
+internal object TargetReadinessDiagnosticCodeAuthority {
+    private val codesByStatus = mapOf(
+        TargetMaterializationStatus.NOTES_PROJECTED.name to "TARGET_NOTES_PROJECTED",
+        TargetMaterializationStatus.ADAPTER_REQUIRED.name to "TARGET_REQUIRES_RUNTIME",
+        TargetMaterializationStatus.DECLARATIVE_ONLY.name to "TARGET_PARTIAL_FEATURE",
+        TargetMaterializationStatus.SEMANTIC_ONLY.name to "TARGET_PARTIAL_FEATURE",
+        TargetMaterializationStatus.UNSUPPORTED.name to "TARGET_UNSUPPORTED_FEATURE",
+        TargetMaterializationStatus.BLOCKED.name to "TARGET_UNSUPPORTED_FEATURE",
+        "COMPATIBILITY_UNSUPPORTED" to "TARGET_UNSUPPORTED_FEATURE",
+        "COMPATIBILITY_PARTIAL" to "TARGET_PARTIAL_FEATURE",
+        "COMPATIBILITY_REQUIRES_RUNTIME" to "TARGET_REQUIRES_RUNTIME",
+        "CAPABILITY_UNSUPPORTED" to "TARGET_UNSUPPORTED_CAPABILITY",
+        "CAPABILITY_PARTIAL" to "TARGET_PARTIAL_CAPABILITY",
+        "CAPABILITY_REQUIRES_RUNTIME" to "TARGET_REQUIRES_RUNTIME",
+        "TARGET_PAYLOAD_MISSING" to "TARGET_UNSUPPORTED_FEATURE",
+        "TARGET_PAYLOAD_MISMATCH" to "TARGET_UNSUPPORTED_FEATURE",
+        "TARGET_PAYLOAD_KIND_MISSING" to "TARGET_UNSUPPORTED_FEATURE",
+        "TARGET_PAYLOAD_KIND_INVALID" to "TARGET_UNSUPPORTED_FEATURE",
+        "TARGET_PAYLOAD_REFERENCE_MISSING" to "TARGET_UNSUPPORTED_FEATURE",
+        "TARGET_PAYLOAD_EVIDENCE_MISSING" to "TARGET_UNSUPPORTED_FEATURE",
+        "TARGET_BINDING_INVALID" to "TARGET_UNSUPPORTED_FEATURE",
+        "TARGET_BINDING_UNRESOLVED" to "TARGET_TARGET_BINDING_UNRESOLVED"
+    )
+
+    fun codeFor(status: String): String = codesByStatus[status]
+        ?: error("Internal target readiness status '$status' has no stable public diagnostic mapping.")
+}
+
+/**
  * Reconciles target capability declarations with concrete manifest evidence.
  *
  * This analyzer does not materialize work and does not add renderer payloads. It
@@ -107,7 +145,7 @@ object TargetCompatibilityReadinessAnalyzer {
                 concrete.materializationReadiness == MaterializationReadinessStatus.BLOCKED ||
                 concrete.projectionReadiness == ProjectionReadinessStatus.FAIL_FAST
             ReadinessFinding(
-                code = "TARGET_${finding.status}",
+                code = TargetReadinessDiagnosticCodeAuthority.codeFor(finding.status),
                 severity = if (blocker) ReadinessSeverity.BLOCKER else ReadinessSeverity.WARNING,
                 target = manifest.target,
                 nodeId = finding.nodeId,
