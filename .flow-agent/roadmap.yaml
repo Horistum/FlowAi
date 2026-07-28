@@ -76,4 +76,5 @@ currentDecision:
   nextItem: "A0.4"
   nextItemName: "Control Requirement Materialization"
   nextItemStream: "adapters"
-  decisionBasis: "Flow CI #2303 passed A0.3 on exact implementation head f475ae8317122b986dec23a3d36bb8df05a31db3 and synthetic merge candidate afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8. Completion metadata selects A0.4 without modifying the closed Core track or adding A0.4 implementation scope."
+  activeWorkPackage: ".flow-agent/work-packages/A0.4-control-requirement-materialization.yaml"
+  decisionBasis: "PR #98 merged A0.3 as 9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930. A0.4 is active to certify exact provider-owned control materialization without modifying the closed Core track."
