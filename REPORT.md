@@ -46,7 +46,7 @@ Repository audit found concrete mismatches:
 - GitHub Actions and Tekton flattened retry groups into ordinary jobs/tasks;
 - the GitHub Actions provider had no approval payload even though environment protection exists as external resource configuration;
 - Tekton did not compose an approval CustomRun/controller, PipelineRun timeout, retries, `finally` tasks or trigger scheduling;
-- Jenkins rendered `try/catch`, but not guaranteed `finally`, always-run behavior or native domain rollback;
+- Jenkins rendered protected `try/catch`, but not guaranteed `finally`, always-run behavior or native domain rollback;
 - GitHub Actions and Tekton error-handler lowering did not certify failure/always/finally execution semantics;
 - Jenkins and GitHub Actions emitted CRON expressions but did not preserve the separate Flow timezone, scheduler concurrency or missed-run contract;
 - preserved RETRY and TIMEOUT policy metadata retained type and name but not enough scope/value detail for exact provider certification.
@@ -55,55 +55,66 @@ A platform feature list therefore could not remain a materialization authority.
 
 ## Adapter-owned control evidence
 
-`adapters/controls/builtin-control-materialization.yaml` declares exactly one claim per target for each family:
+`adapters/controls/builtin-control-materialization.yaml` declares exactly one claim per target for approval, retry, timeout, compensation and scheduling. Its supported evidence contract version is exactly `1.0`.
 
-- approval;
-- retry;
-- timeout;
-- compensation;
-- scheduling.
-
-Each family has a closed semantic contract and a complete partition into `supported`, `unsupported` and `unknown` entries. Every claim also records mechanism, ownership, scope, repository evidence, official platform context, prerequisites and limitations.
+Each family has a closed semantic contract and a complete partition into `supported`, `unsupported` and `unknown` entries. Every claim records mechanism, ownership, scope, repository evidence, official platform context, prerequisites and limitations.
 
 The current honest matrix is:
 
 | Target | Approval | Retry | Timeout | Compensation | Scheduling |
 | --- | --- | --- | --- | --- | --- |
 | `local` | unknown | unknown | unknown | unknown | unknown |
-| `jenkins` | partial: inline manual approval | unsupported | unsupported | partial: error handler | partial: CRON |
+| `jenkins` | partial: inline manual approval | unsupported | unsupported | partial: protected error handler | partial: CRON |
 | `github-actions` | unsupported | unsupported | unsupported | unsupported | partial: CRON |
 | `tekton` | unsupported | unsupported | unsupported | unsupported | unsupported |
 | `argo-workflows` | unknown | unknown | unknown | unknown | unknown |
 | `azure-devops` | unknown | unknown | unknown | unknown | unknown |
 
-Supported semantics require at least one independent `src/main` or `src/test` implementation evidence reference. Target registry evidence may corroborate an unsupported projection state, but it cannot be the only evidence and cannot certify support. Official platform URLs are stored separately and never satisfy repository implementation evidence.
+Every supported semantic requires both an independent `src/main` implementation reference and an independent `src/test` behavioral reference. Target registry evidence may corroborate an unsupported projection state, but it cannot be the only evidence and cannot certify support. Official platform URLs are stored separately.
+
+Source references with `#symbol` must resolve the symbol. File-level source references remain available for negative absence evidence. Evidence paths must remain repository-relative and cannot escape the repository root. YAML-loaded and typed documents pass through the same evidence-integrity rules.
+
+## Internal authority split
+
+The production entry point remains `AdapterControlMaterializationAuthority`, while internal responsibilities are separated:
+
+- `AdapterControlEvidenceIntegrityAuthority` certifies evidence inventory, partitions, ownership, provider composition, paths and anchors;
+- `AdapterControlRequirementAuthority` derives target-neutral requirements from `ExecutionPlan` without consulting provider inventory;
+- `AdapterControlMaterializationAuthority` performs matching and reconciles the decision into manifest evidence.
+
+Runtime compositions may intentionally expose a subset of distribution targets. Runtime certification validates every active target exactly; full adapter conformance still validates the complete built-in target inventory.
 
 ## Runtime control assessment
 
-`AdapterControlMaterializationAuthority` derives requirements from the actual plan:
+Requirement derivation preserves exact semantic and scope:
 
-- `ApprovalNode` produces `approval.manual.inline`;
-- `RetryGroupNode` produces attempt-limit, delay and backoff requirements according to its authored fields;
-- `TryPlanNode.errorHandler` produces an error-handler requirement and a rollback task adds domain rollback;
-- `PlanTrigger` and `PlanSchedule` produce exact scheduling requirements, including authored timezone, concurrency and catch-up properties;
+- manual approval produces `approval.manual.inline` at `STEP` scope;
+- environment approval produces `approval.environment.resource` at `ENVIRONMENT` scope;
+- external and unknown modes cannot impersonate manual approval;
+- retry produces attempt, delay and backoff requirements at `TASK` scope;
+- protected `TryPlanNode` handlers produce `compensation.error-handler` at `WORKFLOW` scope;
+- a detached empty-body handler without protected work remains unknown and blocking;
+- schedules produce exact trigger requirements, including timezone, concurrency and catch-up properties;
 - `failure.rollback=true` produces a rollback requirement;
-- preserved RETRY/TIMEOUT metadata produces a `PRESERVED_UNSPECIFIED` blocker because the current lowering evidence lacks exact scope or value.
+- incomplete RETRY/TIMEOUT metadata produces a `PRESERVED_UNSPECIFIED` blocker.
 
-An adapter assessment is `MATCHED` only when every exact and complete requirement is supported. Unknown and unsupported requirements block executable target generation.
+Requirement identity contains full semantic and subject identity. Conflicting collisions fail rather than being discarded by deduplication.
+
+An adapter assessment is `MATCHED` only when every exact and complete requirement is supported at the required scope. Unknown and unsupported requirements block executable target generation.
 
 ## Production boundary
 
-`CliTargetEvidenceAuthority` evaluates adapter control evidence before executable materialization.
+`CliTargetEvidenceAuthority` evaluates adapter control evidence before executable materialization. Successful and diagnostic paths use the same reconciliation method and therefore publish the same evidence-version, decision, requirement-count and blocker-count metadata.
 
-Matched requirements permit the normal target pipeline. A blocked assessment enters the existing diagnostic materialization path, adds exact control compatibility findings, marks the manifest non-executable and prevents target syntax emission. Review evidence remains available; the diagnostic path is not an alternate execution path.
+A blocked assessment enters diagnostic materialization, adds exact control compatibility findings and prevents target syntax emission. Execution readiness becomes `BLOCKED`; render policy remains `REVIEW_ONLY`, so evidence remains inspectable while an explicit render request returns review-required status and no target artifact.
 
-A new CLI integration test proves that unsupported Jenkins retry produces persisted review evidence, no `Jenkinsfile`, explicit control blockers and `CLI_RENDER_NOT_AUTHORIZED`.
+Integration tests prove this behavior for unsupported Jenkins retry. Provider behavior tests prove Jenkins manual approval, canonical and nested protected `try/catch`, and Jenkins/GitHub CRON through the production materialization boundary.
 
 ## Stable diagnostic normalization
 
 A0.4 exposed a pre-existing defect in `TargetCompatibilityReadinessAnalyzer`: internal renderer status was converted into a public diagnostic code using string concatenation, for example `TARGET_COMPATIBILITY_UNSUPPORTED`.
 
-That code was not in the stable diagnostic catalog, so an otherwise correct diagnostic bundle failed public diagnostic coverage. The fix introduces a closed `TargetReadinessDiagnosticCodeAuthority` that maps every known internal materialization/projection status to an existing stable catalog code. Unknown future statuses fail closed instead of inventing public API identifiers.
+`TargetReadinessDiagnosticCodeAuthority` now maps known internal materialization/projection statuses to existing stable catalog codes. Unknown future statuses fail closed instead of inventing public API identifiers.
 
 This is diagnostic integrity maintenance, not a new Core semantic contract or public standard version change.
 
@@ -121,9 +132,7 @@ The common pattern is separation of ownership rather than a universal control bo
 - error handlers, `finally`, exit handlers and domain rollback are different guarantees;
 - CRON expression, timezone, concurrency and missed-run behavior are separate schedule semantics.
 
-This supports Flow's current direction: target-neutral meaning, exact derived requirement, then provider-owned evidence. It rejects the opposite direction in which a target feature flag or popular platform pattern becomes universal semantic truth.
-
-The official external references are retained in `docs/A0_4_CONTROL_REQUIREMENT_MATERIALIZATION.md` and in the adapter evidence manifest, separately from repository implementation evidence.
+This supports Flow's direction: target-neutral meaning, exact derived requirement, then provider-owned evidence. It rejects the opposite direction in which a target feature flag or popular platform pattern becomes universal semantic truth.
 
 ## Behavior and conformance
 
@@ -135,32 +144,40 @@ Adapter inventory `1.3` adds five A0.4 checks after the frozen Core closure:
 - unsupported control demotion;
 - platform capability separation.
 
-Tests prove positive and negative polarity for:
+Tests and conformance prove positive and negative polarity for:
 
+- approval mode and scope preservation;
 - Jenkins provider-owned inline approval;
-- Jenkins and GitHub Actions CRON;
+- Jenkins flow-level and nested protected error handlers;
+- detached-handler rejection;
+- Jenkins and GitHub Actions CRON through production generation;
 - authored timezone rejection;
 - retry flattening rejection for Jenkins, GitHub Actions and Tekton;
 - incomplete preserved timeout remaining UNKNOWN;
 - profile-only targets remaining UNKNOWN;
 - registry-only evidence rejection;
-- independent positive implementation evidence;
+- separate positive implementation and behavior evidence;
+- symbolic anchor resolution;
+- typed evidence shape and repository-path containment;
 - stable public readiness diagnostic mapping;
-- CLI review-only behavior with no target syntax;
+- blocked readiness with review-only rendering and no target syntax;
 - forward-stable A0.4 lifecycle progress.
 
 ## Validation history
 
-Flow CI #2315 rejected the first implementation because one negative test constructed an incomplete `RetryGroupNode` fixture. Production sources compiled; the fixture was corrected without changing runtime behavior.
+Flow CI #2315 rejected an incomplete negative `RetryGroupNode` fixture. Production sources compiled; the fixture was corrected without changing runtime behavior.
 
-Flow CI #2316 compiled the implementation and rejected two honesty defects:
+Flow CI #2316 rejected release-honesty wording and an imprecise evidence-polarity rule. Release wording was corrected and registry-only corroboration was separated from positive implementation proof.
 
-- release metadata did not use the exact `external exact-head CI evidence` wording required by the release policy;
-- two negative compensation claims cited target registry evidence under an authority rule that had not yet distinguished support proof from negative corroboration.
+Flow CI #2324 rejected persisted reference CLI bundles because the existing readiness reconciler invented an uncatalogued diagnostic code. A closed mapping now emits only stable catalog codes.
 
-Release wording was corrected. The evidence authority was refactored into separate contracts/loader and assessment classes. Registry-only evidence now fails, supported semantics require independent implementation evidence, and registry references can only supplement a negative claim.
+Flow CI #2333 proved that the reference intent correctly becomes blocked by incomplete preserved control metadata. An older optimistic test was strengthened to verify exact blockers and absent rendering.
 
-Flow CI #2324 rejected persisted reference CLI bundles because the existing readiness reconciler invented `TARGET_COMPATIBILITY_UNSUPPORTED` through string concatenation. A closed mapping now emits only existing stable catalog codes and rejects unknown future internal statuses.
+Flow CI #2338 rejected the first runtime certification because subset test compositions intentionally loaded one target while the evidence document described the complete distribution. Runtime certification now validates the active target set; full conformance validates the complete distribution.
+
+Flow CI #2359 rejected two schedule behavior tests that manually constructed incomplete manifests and therefore bypassed the renderer contract. They now use explicit target selection, control assessment, production manifest generation, readiness reconciliation and concrete rendering.
+
+The senior review also corrected approval-mode collapse, unused scope declarations, unvalidated runtime evidence, unenforced evidence version, lossy requirement IDs, divergent success/diagnostic metadata, missing behavior evidence, unresolved anchors, typed-input bypasses, repository path traversal, an oversized multi-responsibility authority and inaccurate A0.3 validation wording.
 
 The current A0.4 head remains external exact-head CI evidence. No implementation evidence is authored and no A0.5 transition is selected until exact-head and synthetic merge-candidate Flow CI pass independently with adapter inventory `1.3` active.
 
