@@ -55,11 +55,11 @@ Self-references to the topology manifest or target registry, unresolved referenc
 
 `TargetRegistryYamlLoader` now derives runtime `ExecutionTopologyProfile` instances through `AdapterTopologyProfileFactory` whenever the adapter evidence manifest is present.
 
-Legacy inline registry topology blocks remain parseable for isolated fixtures, but they cannot override distribution evidence. Runtime declarations point to the exact adapter claim and retain mechanism and limitation detail for diagnostics.
+Legacy inline registry topology blocks remain parseable for isolated fixtures, but they cannot override distribution evidence. Runtime declarations carry only the closed status and an exact reference to the adapter claim. Detailed mechanism and limitation prose remains exclusively in the adapter manifest rather than being duplicated into Core compatibility diagnostics and canonical snapshots.
 
 The important reassessment outcomes are:
 
-- Jenkins keeps `SUPPORTED` workflow scope, workflow lifetime, ephemeral workspace, workspace propagation and failure propagation. Attempt isolation becomes `UNKNOWN`; several broader properties become `PARTIAL`.
+- Jenkins keeps `SUPPORTED` workflow scope, workflow lifetime, suspend/resume for provider-owned manual approval, ephemeral workspace, workspace propagation and failure propagation. Attempt isolation becomes `UNKNOWN`; several broader properties become `PARTIAL`.
 - GitHub Actions keeps supported workflow scope, workflow lifetime and ephemeral workspace. Workspace and state propagation remain `UNSUPPORTED`.
 - Tekton keeps supported workflow scope, branch isolation and workflow lifetime. Workspace evidence remains `PARTIAL`; durable state, state propagation and suspend/resume remain `UNSUPPORTED`.
 - Argo Workflows and Azure DevOps are demoted to `UNKNOWN` for every topology claim because their A0.1 support class is `PROFILE_ONLY` and no provider is composed.
@@ -67,11 +67,11 @@ The important reassessment outcomes are:
 
 ## Executable reference preservation
 
-The committed Jenkins `checkout-build-image` scenario requires only workflow scope, workflow lifetime, ephemeral workspace and workspace propagation. All four remain `SUPPORTED` by adapter-owned evidence.
+The committed Jenkins `checkout-build-image` scenario requires workflow scope, workflow lifetime, ephemeral workspace and workspace propagation. All four remain `SUPPORTED` by adapter-owned evidence.
 
-The new executable topology conformance check loads the committed snapshot and semantic execution plan, evaluates it through the production `ExecutionTopologyMatchingAuthority`, and requires every consumed claim to be `SUPPORTED` with evidence originating in the adapter topology manifest.
+The executable topology conformance check validates the committed snapshot and semantic-plan artifact, regenerates the plan from its reference intent through the production semantic pipeline, evaluates it through `ExecutionTopologyMatchingAuthority`, and requires every consumed claim to be `SUPPORTED` with evidence originating in the adapter topology manifest.
 
-Jenkins therefore remains an executable reference without retaining unrelated unproven topology claims.
+Jenkins therefore remains an executable reference without retaining unrelated unproven topology claims or treating canonical JSON export as an internal polymorphic plan loader.
 
 ## Adapter conformance
 
@@ -83,7 +83,11 @@ The adapter inventory is version `1.1` and contains the four A0.1 checks plus fi
 - profile-only demotion;
 - executable topology proof.
 
-A0.2 remains `next` and its work package remains `active`. No implementation evidence is authored until an exact-head and synthetic merge-candidate Flow CI run passes with the new authority and checks active.
+Flow CI #2274 correctly rejected the first A0.2 implementation because the relative target loader bypassed the adapter manifest, Jenkins approval was under-classified, the executable proof attempted unsupported plan deserialization, and release evidence wording violated the external-candidate policy.
+
+Flow CI #2279 confirmed that those production issues were fixed, then rejected a remaining architectural duplication: adapter mechanism prose had been copied into Core runtime profile diagnostics, changing canonical reference snapshots. The runtime profile now carries only status and evidence identity while the detailed prose remains adapter-owned.
+
+A0.2 remains `next` and its work package remains `active`. No implementation evidence is authored until an exact-head and synthetic merge-candidate Flow CI run passes with the corrected authority and checks active.
 
 ## Architecture boundary
 
