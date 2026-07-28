@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 31
+stateVersion: 32
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -21,11 +21,10 @@ roadmapState:
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "adapters"
-  completedAdapterItem: "A0.1"
-  completedAdapterItemName: "Adapter Portfolio Reassessment"
-  nextItem: "A0.2"
-  nextItemName: "Topology Evidence Adoption"
-  activeWorkPackage: ".flow-agent/work-packages/A0.2-topology-evidence-adoption.yaml"
+  completedAdapterItem: "A0.2"
+  completedAdapterItemName: "Topology Evidence Adoption"
+  nextItem: "A0.3"
+  nextItemName: "Capability Binding Migration"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -82,6 +81,7 @@ qualityPrinciples:
   - "Missing, partial, unsupported and contradictory topology evidence blocks provider invocation."
   - "Target topology profiles must be complete, explicit and independent from renderer layout."
   - "Adapter topology profiles are derived from adapter-owned evidence and never from self-referential target registry assertions."
+  - "Target-neutral runtime topology profiles carry status and exact evidence identity without duplicating adapter-specific prose."
   - "Profile-only target adapters remain UNKNOWN until a composed provider supplies concrete evidence."
   - "Every executable-reference scenario may consume only SUPPORTED topology claims."
   - "Every accepted meaningful intent input is preserved or rejected with explicit path-aware diagnostic evidence."
@@ -135,4 +135,5 @@ lastKnownValidation:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
     - "A0.1 is completed and merged."
-    - "A0.2 is next and its active work package remains external exact-head CI evidence until the exact head and synthetic merge candidate pass independently."
+    - "Flow CI #2284 is external exact-head CI evidence for completed A0.2 implementation metadata until the later completion-metadata head and synthetic merge candidate pass independently."
+    - "A0.3 is selected as the next adapter roadmap item but no A0.3 work package is active in this PR."
