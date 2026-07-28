@@ -1,0 +1,33 @@
+version: "0.9.7.10.2"
+name: "Closure Evidence Boundary Integrity Correction"
+type: "bounded-correction"
+stream: core
+status: active
+parentCoreItem: "0.9.7.10"
+objective: "Reopen the v0.9.7 closure claim after proving that implementation and completion validation boundaries could be represented by the same evidence and that the later successful completion run was not recorded by the repository authority."
+scopeBoundary:
+  - "Require distinct structured implementation and completion evidence before CLOSED."
+  - "Require the completion workflow run to be later than the implementation workflow run."
+  - "Reject reused run ids, exact heads and synthetic merge candidates across the two boundaries."
+  - "Record the already-passed PR #94 completion boundary without treating a PR description as repository authority."
+  - "Preserve the nine-item closure checklist and the committed pre-closure inventory; their diagnostic and authoring ergonomics remain non-blocking follow-up concerns."
+  - "Preserve package 0.9.5, public standard 0.8.0 and artifact contract 2.0."
+universalInvariants:
+  - "Two declared validation boundaries cannot be satisfied by one workflow run."
+  - "A later completion boundary must have its own exact-head and merge-candidate evidence."
+  - "External PR prose cannot substitute for structured repository evidence."
+  - "A correction repairs the evidence authority rather than merely replacing stale metadata."
+confirmedFindings:
+  - id: E1
+    status: active
+    summary: "The merged closure work package records Flow CI #2245 as both implementationEvidence and validationEvidence."
+  - id: E2
+    status: active
+    summary: "ReleaseMetadataHonestyAuthority validates only validationEvidence structure and does not require a distinct later implementation/completion pair."
+  - id: E3
+    status: active
+    summary: "Flow CI #2250 passed the later completion head and merge candidate, but that evidence exists only in PR metadata and is absent from repository authority files."
+validationPolicy:
+  workflow: "Flow CI"
+  implementationBoundary: "The authority and negative tests must pass exact-head and synthetic merge-candidate validation while the closure remains CORRECTION_REQUIRED."
+  completionBoundary: "After implementation validation, a later metadata head must record distinct implementation and completion evidence and independently pass exact-head and synthetic merge-candidate validation."
