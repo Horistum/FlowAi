@@ -9,6 +9,7 @@ import org.flowlang.adapters.control.AdapterControlMaterializationAuthority
 import org.flowlang.adapters.control.AdapterControlMaterializationLoader
 import org.flowlang.adapters.control.AdapterControlRequirementCompleteness
 import org.flowlang.adapters.control.AdapterControlRoadmapLifecycleAuthority
+import org.flowlang.adapters.control.AdapterControlScope
 import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.adapters.portfolio.AdapterPortfolioRole
 import org.flowlang.adapters.portfolio.AdapterSupportClass
@@ -83,8 +84,41 @@ class AdapterControlConformanceChecks(
             ExecutionPlan(flowName = "approval", nodes = listOf(ApprovalNode(id = "approve"))),
             "jenkins"
         )
-        if (approval.decision != AdapterControlDecision.MATCHED) {
-            add("Jenkins provider-backed manual approval must match: ${approval.blockingRequirementIds.joinToString()}")
+        if (
+            approval.decision != AdapterControlDecision.MATCHED ||
+            approval.requirements.singleOrNull()?.semantic != "approval.manual.inline" ||
+            approval.requirements.singleOrNull()?.scope != AdapterControlScope.STEP
+        ) {
+            add("Jenkins provider-backed manual approval must match only approval.manual.inline at STEP scope.")
+        }
+
+        val environmentApproval = authority.assess(
+            ExecutionPlan(
+                flowName = "environment-approval",
+                nodes = listOf(ApprovalNode(id = "approve", mode = "environment"))
+            ),
+            "jenkins"
+        )
+        if (
+            environmentApproval.decision != AdapterControlDecision.BLOCKED ||
+            environmentApproval.requirements.singleOrNull()?.semantic != "approval.environment.resource" ||
+            environmentApproval.requirements.singleOrNull()?.scope != AdapterControlScope.ENVIRONMENT
+        ) {
+            add("Approval modes must retain their exact semantic and scope instead of being reinterpreted as manual inline approval.")
+        }
+
+        val unknownApproval = authority.assess(
+            ExecutionPlan(
+                flowName = "unknown-approval",
+                nodes = listOf(ApprovalNode(id = "approve", mode = "four-eyes"))
+            ),
+            "jenkins"
+        )
+        if (
+            unknownApproval.decision != AdapterControlDecision.BLOCKED ||
+            unknownApproval.evidence.singleOrNull()?.status != AdapterControlEvidenceStatus.UNKNOWN
+        ) {
+            add("Unknown approval modes must remain explicit UNKNOWN blockers.")
         }
 
         val cron = ExecutionPlan(
@@ -97,8 +131,11 @@ class AdapterControlConformanceChecks(
         )
         listOf("jenkins", "github-actions").forEach { target ->
             val assessment = authority.assess(cron, target)
-            if (assessment.decision != AdapterControlDecision.MATCHED) {
-                add("$target CRON must match its concrete renderer evidence: ${assessment.blockingRequirementIds.joinToString()}")
+            if (
+                assessment.decision != AdapterControlDecision.MATCHED ||
+                assessment.requirements.singleOrNull()?.scope != AdapterControlScope.TRIGGER
+            ) {
+                add("$target CRON must match its concrete renderer evidence at TRIGGER scope: ${assessment.blockingRequirementIds.joinToString()}")
             }
         }
 
@@ -114,11 +151,33 @@ class AdapterControlConformanceChecks(
             timeout.decision != AdapterControlDecision.BLOCKED ||
             timeout.requirements.none {
                 it.semantic == "timeout.unspecified" &&
+                    it.scope == AdapterControlScope.UNSPECIFIED &&
                     it.completeness == AdapterControlRequirementCompleteness.PRESERVED_UNSPECIFIED
             } ||
             timeout.evidence.none { it.status == AdapterControlEvidenceStatus.UNKNOWN }
         ) {
             add("Preserved TIMEOUT policy must remain an explicit UNKNOWN adapter requirement until duration and scope survive lowering.")
+        }
+
+        val document = AdapterControlMaterializationLoader.load(rootDir)
+        val malformed = document.copy(
+            targets = document.targets.map { record ->
+                if (record.target != "jenkins") record else record.copy(
+                    claims = record.claims + record.claims.single { it.family == AdapterControlFamily.APPROVAL }
+                )
+            }
+        )
+        val invalidAuthority = AdapterControlMaterializationAuthority(
+            rootDir = rootDir,
+            targets = targets,
+            projections = BuiltInTargetProjections.registry,
+            documentOverride = malformed
+        )
+        val failure = runCatching {
+            invalidAuthority.assess(ExecutionPlan(flowName = "invalid-evidence"), "jenkins")
+        }.exceptionOrNull()
+        if (failure?.message?.contains("CONTROL_FAMILY_DUPLICATE") != true) {
+            add("Runtime control assessment must refuse an invalid evidence document before matching requirements.")
         }
     }
 
@@ -136,6 +195,9 @@ class AdapterControlConformanceChecks(
             if (assessment.evidence.none { it.status == AdapterControlEvidenceStatus.UNSUPPORTED }) {
                 add("$target retry blocker must be explicit UNSUPPORTED evidence.")
             }
+            if (assessment.requirements.any { it.scope != AdapterControlScope.TASK }) {
+                add("$target retry requirements must retain TASK scope.")
+            }
         }
 
         val timezone = ExecutionPlan(
@@ -148,8 +210,12 @@ class AdapterControlConformanceChecks(
         )
         listOf("jenkins", "github-actions").forEach { target ->
             val assessment = authority.assess(timezone, target)
-            if (assessment.decision != AdapterControlDecision.BLOCKED ||
-                assessment.requirements.none { it.semantic == "scheduling.timezone" }) {
+            if (
+                assessment.decision != AdapterControlDecision.BLOCKED ||
+                assessment.requirements.none {
+                    it.semantic == "scheduling.timezone" && it.scope == AdapterControlScope.TRIGGER
+                }
+            ) {
                 add("$target must not discard an authored schedule timezone.")
             }
         }
@@ -172,6 +238,9 @@ class AdapterControlConformanceChecks(
                 if (claim.semantics.supported.isNotEmpty() && claim.evidenceReferences.isEmpty()) {
                     add("${record.target}.${claim.family}: supported semantics have no repository implementation evidence.")
                 }
+                if (claim.semantics.supported.isNotEmpty() && claim.scopes.isEmpty()) {
+                    add("${record.target}.${claim.family}: supported semantics have no declared enforcement scope.")
+                }
                 if (claim.evidenceReferences.any { it.startsWith("http://") || it.startsWith("https://") }) {
                     add("${record.target}.${claim.family}: external platform documentation cannot be implementation evidence.")
                 }
@@ -185,8 +254,10 @@ class AdapterControlConformanceChecks(
             ExecutionPlan(flowName = "approval", nodes = listOf(ApprovalNode(id = "approve"))),
             "argo-workflows"
         )
-        if (profileOnlyApproval.decision != AdapterControlDecision.BLOCKED ||
-            profileOnlyApproval.evidence.none { it.status == AdapterControlEvidenceStatus.UNKNOWN }) {
+        if (
+            profileOnlyApproval.decision != AdapterControlDecision.BLOCKED ||
+            profileOnlyApproval.evidence.none { it.status == AdapterControlEvidenceStatus.UNKNOWN }
+        ) {
             add("Argo Workflows suspend folklore must not become approval evidence without a composed provider.")
         }
     }
