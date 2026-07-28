@@ -4,6 +4,7 @@ import java.io.File
 import org.flowlang.adapters.portfolio.AdapterPortfolioAuthority
 import org.flowlang.adapters.portfolio.AdapterPortfolioDocument
 import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
+import org.flowlang.adapters.portfolio.AdapterRoadmapLifecycleAuthority
 import org.flowlang.adapters.portfolio.AdapterSupportClass
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.cli.Json
@@ -23,11 +24,20 @@ class AdapterPortfolioConformanceChecks(
             runCatching { AdapterPortfolioAuthority(rootDir, targets, projections).evaluate(it) }
         }
         val assessment = assessmentResult?.getOrNull()
+        val lifecycleResult = runCatching { AdapterRoadmapLifecycleAuthority(rootDir).analyze() }
+        val lifecycle = lifecycleResult.getOrNull()
 
         val assessmentErrors = buildList {
             documentResult.exceptionOrNull()?.let { add(it.message ?: it.javaClass.simpleName) }
             assessmentResult?.exceptionOrNull()?.let { add(it.message ?: it.javaClass.simpleName) }
             assessment?.findings?.forEach { add("${it.code}:${it.target}:${it.message}") }
+        }
+        val lifecycleErrors = buildList {
+            lifecycleResult.exceptionOrNull()?.let { add(it.message ?: it.javaClass.simpleName) }
+            lifecycle?.failedChecks?.forEach { failedId ->
+                val failed = lifecycle.checks.first { it.id == failedId }
+                add("$failedId:${failed.evidence.joinToString()}:${failed.message}")
+            }
         }
         val executableErrors = if (document == null) {
             listOf("Adapter portfolio document did not load.")
@@ -37,6 +47,11 @@ class AdapterPortfolioConformanceChecks(
         val coreDependencyErrors = coreDependencyErrors()
 
         return listOf(
+            ConformanceCheck(
+                name = LIFECYCLE_CHECK,
+                passed = lifecycle?.status == "PASS",
+                message = lifecycleErrors.takeIf { it.isNotEmpty() }?.joinToString(" | ")
+            ),
             ConformanceCheck(
                 name = PORTFOLIO_CHECK,
                 passed = assessment?.status == "PASS",
@@ -56,19 +71,21 @@ class AdapterPortfolioConformanceChecks(
     }
 
     private fun executableEvidenceErrors(document: AdapterPortfolioDocument): List<String> = buildList {
-        document.records.forEach { record ->
-            if (record.supportClass != AdapterSupportClass.EXECUTABLE_REFERENCE) return@forEach
-            record.executableEvidence.forEach { reference ->
+        for (record in document.records) {
+            if (record.supportClass != AdapterSupportClass.EXECUTABLE_REFERENCE) continue
+            for (reference in record.executableEvidence) {
                 val file = File(rootDir, reference.substringBefore('#'))
                 if (!file.isFile) {
                     add("${record.target}: executable evidence is missing: $reference")
-                    return@forEach
+                    continue
                 }
-                val snapshot = runCatching {
+                val snapshotResult = runCatching {
                     Json.mapper.readValue(file, ReferenceSnapshotSet::class.java)
-                }.getOrElse { error ->
-                    add("${record.target}: executable evidence cannot be parsed: ${error.message}")
-                    return@forEach
+                }
+                val snapshot = snapshotResult.getOrNull()
+                if (snapshot == null) {
+                    add("${record.target}: executable evidence cannot be parsed: ${snapshotResult.exceptionOrNull()?.message}")
+                    continue
                 }
                 ReferenceSnapshotHonesty.validate(snapshot).forEach { issue ->
                     add("${record.target}: invalid executable evidence: $issue")
@@ -99,6 +116,7 @@ class AdapterPortfolioConformanceChecks(
     }
 
     companion object {
+        const val LIFECYCLE_CHECK = "adapters.a0.1.lifecycle-integrity"
         const val PORTFOLIO_CHECK = "adapters.a0.1.portfolio-reassessment"
         const val EXECUTABLE_EVIDENCE_CHECK = "adapters.a0.1.executable-reference-evidence"
         const val CORE_INDEPENDENCE_CHECK = "adapters.a0.1.core-independence"
