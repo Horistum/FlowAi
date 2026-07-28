@@ -11,7 +11,6 @@ import org.flowlang.adapters.topology.AdapterTopologyRoadmapLifecycleAuthority
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.cli.Json
 import org.flowlang.generators.manifest.TargetProjectionRegistry
-import org.flowlang.planner.ExecutionPlan
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.topology.ExecutionTopologyDecisionStatus
 import org.flowlang.topology.ExecutionTopologyEvidenceStatus
@@ -134,6 +133,11 @@ class AdapterTopologyConformanceChecks(
         val portfolio = AdapterPortfolioLoader.load(rootDir)
         val topologyDocument = AdapterTopologyEvidenceLoader.load(rootDir)
         val evidenceByTarget = topologyDocument.records.associateBy { it.target }
+        val planGenerator = ReferenceSnapshotBundleGenerator(
+            rootDir = rootDir,
+            targets = targets,
+            projections = projections
+        )
         val executableRecords = portfolio.records.filter {
             it.supportClass == AdapterSupportClass.EXECUTABLE_REFERENCE
         }
@@ -178,11 +182,20 @@ class AdapterTopologyConformanceChecks(
                     add("${record.target}: snapshot '${snapshot.scenarioId}' must contain exactly one semantic plan artifact.")
                     continue
                 }
-                val planFile = File(snapshotFile.parentFile, planArtifacts.single().file)
-                val planResult = runCatching { Json.mapper.readValue(planFile, ExecutionPlan::class.java) }
+                val committedPlanFile = File(snapshotFile.parentFile, planArtifacts.single().file)
+                if (!committedPlanFile.isFile) {
+                    add("${record.target}: committed semantic plan artifact is missing: ${committedPlanFile.path}")
+                    continue
+                }
+                val intentFile = File(rootDir, "examples/intent/${snapshot.scenarioId}.intent.yaml")
+                if (!intentFile.isFile) {
+                    add("${record.target}: reference intent is missing for scenario '${snapshot.scenarioId}': ${intentFile.path}")
+                    continue
+                }
+                val planResult = runCatching { planGenerator.planFor(intentFile) }
                 val plan = planResult.getOrNull()
                 if (plan == null) {
-                    add("${record.target}: execution plan cannot be parsed: ${planResult.exceptionOrNull()?.message}")
+                    add("${record.target}: semantic plan cannot be regenerated: ${planResult.exceptionOrNull()?.message}")
                     continue
                 }
                 val assessment = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, profile)
