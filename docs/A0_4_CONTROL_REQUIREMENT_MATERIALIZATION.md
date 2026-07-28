@@ -105,6 +105,8 @@ For each target and family it declares:
 
 Repository evidence proves what this distribution implements. Official platform documentation supplies external context and cannot satisfy an implementation claim by itself.
 
+A target registry record may corroborate an unsupported projection state, but it cannot be the only repository evidence. Every supported semantic requires at least one independent implementation or behavioral reference under `src/main` or `src/test`.
+
 ## Current honest target matrix
 
 | Target | Approval | Retry | Timeout | Compensation | Scheduling |
@@ -162,10 +164,19 @@ Examples:
 - a non-empty `TryPlanNode.errorHandler` requires `compensation.error-handler`;
 - a rollback task or preserved `failure.rollback=true` requires `compensation.rollback`;
 - a CRON trigger requires `scheduling.cron`;
-- an authored timezone adds `scheduling.timezone`;
-- preserved `TIMEOUT` policy metadata requires explicit timeout evidence rather than disappearing during lowering.
+- an authored timezone adds `scheduling.timezone`.
 
-An assessment is `MATCHED` only when every exact requirement is supported by the target claim.
+An assessment is `MATCHED` only when every exact and complete requirement is supported by the target claim.
+
+## Incomplete preserved requirements
+
+Current lowering evidence for generic `RETRY` and `TIMEOUT` policies retains policy type and name, but not enough information to reconstruct exact attempt count, duration, scope or retry/timeout interaction.
+
+A0.4 therefore creates `retry.unspecified` or `timeout.unspecified` requirements with completeness `PRESERVED_UNSPECIFIED`.
+
+These requirements always produce `UNKNOWN` evidence and block materialization. They are not matched against a convenient target-wide retry or timeout capability. This prevents a future provider improvement from falsely certifying a requirement whose authored details were already lost upstream.
+
+A later Core evolution may preserve a typed exact timeout/retry contract. A0.4 does not invent that missing meaning in the adapter layer.
 
 ## Production materialization boundary
 
@@ -185,6 +196,14 @@ When any requirement is unsupported or unknown:
 - target syntax is not emitted.
 
 The diagnostic path preserves facts. It does not provide a second route to executable output.
+
+## Stable public diagnostics
+
+A0.4 exposed that `TargetCompatibilityReadinessAnalyzer` previously derived public diagnostic codes by concatenating `TARGET_` with internal renderer status.
+
+That could emit uncatalogued identifiers such as `TARGET_COMPATIBILITY_UNSUPPORTED`, causing a truthful review bundle to fail diagnostic coverage during persistence.
+
+`TargetReadinessDiagnosticCodeAuthority` now provides a closed mapping from known internal materialization and projection statuses to existing stable catalog codes. Unknown future internal statuses fail closed. Adding a new public diagnostic remains a separately governed contract change rather than a side effect of introducing an internal enum value.
 
 ## External ecosystem assessment
 
@@ -228,9 +247,13 @@ Positive and negative behavior proves:
 - Jenkins and GitHub Actions CRON subsets match;
 - authored timezone is not discarded;
 - retry flattening is blocked for Jenkins, GitHub Actions and Tekton;
-- preserved timeout policy cannot disappear into executable output;
+- preserved timeout policy remains an explicit incomplete UNKNOWN requirement;
 - profile-only platform features remain unknown;
 - official platform documentation cannot impersonate implementation evidence;
+- registry-only evidence fails;
+- supported claims require independent implementation evidence;
+- internal renderer statuses map only to existing stable diagnostic codes;
+- unsupported control requirements persist review evidence without emitting target syntax;
 - completion requires a distinct passed implementation boundary.
 
 ## Non-goals
