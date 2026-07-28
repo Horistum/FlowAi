@@ -1,4 +1,4 @@
-version: "1.0"
+version: "1.1"
 closureCheck: "v0.9.7.10.bounded-semantic-closure"
 preClosureChecks:
   - "intent.valid.build-test-deploy"
@@ -75,6 +75,7 @@ preClosureChecks:
   - "cli.release.diagnostic-honesty"
   - "governance.target-selection-provenance-cli-status-integrity"
   - "governance.closure-blocking-safety-diagnostic-integrity"
+  - "governance.closure-evidence-boundary-integrity"
   - "v0.5.4.data-driven-conformance-index"
   - "v0.6.1.intent-corpus-expansion"
   - "v0.6.2.required-clarification-contract"

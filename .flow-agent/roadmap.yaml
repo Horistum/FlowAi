@@ -71,4 +71,4 @@ currentDecision:
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
-  decisionBasis: "Flow CI #2243 independently passed READY metadata exact head 530eb284f445f0ceee7772eb98edd8d8403959f6 and synthetic merge candidate 68acbcf6eb2009eda35f5365e77da303a593b293 with complete tests and standalone conformance. The bounded v0.9.7 semantic-foundation track is CLOSED; no next Core item is published."
+  decisionBasis: "Bounded correction 0.9.7.10.2 completed after Flow CI #2252 passed implementation head 3176009e660c95d873e9eeb8d1845b7f54142d2c and merge candidate bba152a0eeccf87fffe19a11a3340dd2d1d6a569, followed by Flow CI #2253 on later completion head 8fcbf9485fe23ac283c47d560d32327cf6d2faa2 and merge candidate ba4b78e05445de5ef4bc6c79241d59b683138dc9. ClosureEvidenceBoundaryAuthority proves the boundaries are structured, ordered and distinct."
