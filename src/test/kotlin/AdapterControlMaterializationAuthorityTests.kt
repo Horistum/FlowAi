@@ -11,8 +11,8 @@ import org.flowlang.adapters.control.AdapterControlFamily
 import org.flowlang.adapters.control.AdapterControlMaterializationAuthority
 import org.flowlang.adapters.control.AdapterControlMaterializationLoader
 import org.flowlang.adapters.control.UnresolvedAdapterControlMaterializationException
-import org.flowlang.adapters.portfolio.AdapterSupportClass
 import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
+import org.flowlang.adapters.portfolio.AdapterSupportClass
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.manifest.TargetManifest
@@ -160,6 +160,49 @@ class AdapterControlMaterializationAuthorityTests {
         assertFalse(reconciled.compatibility.executable)
         assertTrue(reconciled.compatibility.issues.any { it.feature.contains("control.retry") })
         assertEquals(AdapterControlDecision.BLOCKED.name, reconciled.metadata["adapterControlDecision"])
+    }
+
+    @Test
+    fun supportedSemanticCannotUseTargetRegistryAsImplementationEvidence() {
+        val document = AdapterControlMaterializationLoader.load(rootDir)
+        val malformed = document.copy(
+            targets = document.targets.map { record ->
+                if (record.target != "jenkins") record else record.copy(
+                    claims = record.claims.map { claim ->
+                        if (claim.family != AdapterControlFamily.APPROVAL) claim else claim.copy(
+                            evidenceReferences = claim.evidenceReferences +
+                                "targets/builtin-targets.yaml#targets.jenkins.features.approvals"
+                        )
+                    }
+                )
+            }
+        )
+
+        val report = authority.analyze(malformed)
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "CONTROL_SUPPORTED_FROM_REGISTRY" })
+    }
+
+    @Test
+    fun targetRegistryCannotBeTheOnlyNegativeEvidence() {
+        val document = AdapterControlMaterializationLoader.load(rootDir)
+        val malformed = document.copy(
+            targets = document.targets.map { record ->
+                if (record.target != "github-actions") record else record.copy(
+                    claims = record.claims.map { claim ->
+                        if (claim.family != AdapterControlFamily.COMPENSATION) claim else claim.copy(
+                            evidenceReferences = listOf(
+                                "targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard.rollback"
+                            )
+                        )
+                    }
+                )
+            }
+        )
+
+        val report = authority.analyze(malformed)
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "CONTROL_EVIDENCE_REGISTRY_ONLY" })
     }
 
     @Test
