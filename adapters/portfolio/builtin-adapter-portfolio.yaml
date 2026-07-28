@@ -1,0 +1,117 @@
+kind: FlowAdapterPortfolio
+version: "1.0"
+records:
+  - target: local
+    role: semantic_reference
+    supportClass: profile_only
+    summary: "Target-neutral semantic reference used to exercise planning contracts; it is not a shipped target adapter or production execution claim."
+    evidenceReferences:
+      - "targets/builtin-targets.yaml#targets.local"
+      - "docs/CORE_ADAPTER_SPLIT.md"
+    executableEvidence: []
+    limitations:
+      - id: no-projection-provider
+        statement: "The built-in distribution does not compose a local target generator or renderer."
+        evidenceReference: "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+      - id: non-production-reference
+        statement: "Local capability declarations validate target-neutral semantics and do not certify a production adapter."
+        evidenceReference: "docs/CORE_ADAPTER_SPLIT.md"
+
+  - target: jenkins
+    role: target_adapter
+    supportClass: executable_reference
+    summary: "Composed Jenkins provider with reviewed native checkout and image-build leaves and one committed end-to-end executable reference scenario."
+    evidenceReferences:
+      - "targets/builtin-targets.yaml#targets.jenkins"
+      - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+      - "docs/adr/ADR_0_9_6_7_FIRST_EXECUTABLE_REFERENCE_SCENARIO.md"
+    executableEvidence:
+      - "conformance/snapshots/checkout-build-image/snapshot-index.json"
+    limitations:
+      - id: standard-actions-review-only
+        statement: "Generic standard execute and rollback actions remain notes-projected without concrete Jenkins integration payloads."
+        evidenceReference: "targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard"
+      - id: state-continuity-partial
+        statement: "Feature-level mutable state continuity remains partial even though the reference checkout-build-image workspace path is proven."
+        evidenceReference: "targets/builtin-targets.yaml#targets.jenkins.features.continuity.state"
+      - id: trigger-coverage-partial
+        statement: "Interval, calendar, event and webhook trigger materialization remains partial."
+        evidenceReference: "targets/builtin-targets.yaml#targets.jenkins.features.trigger"
+
+  - target: github-actions
+    role: target_adapter
+    supportClass: native_leaf_only
+    summary: "Composed GitHub Actions provider with reviewed checkout and image-build action contracts, but no current end-to-end executable reference claim."
+    evidenceReferences:
+      - "targets/builtin-targets.yaml#targets.github-actions"
+      - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+      - "docs/TARGET_REGISTRY.md#executable-reference-scope"
+    executableEvidence: []
+    limitations:
+      - id: workspace-propagation-unsupported
+        statement: "The declared topology does not prove workspace propagation across the job-per-task projection."
+        evidenceReference: "targets/builtin-targets.yaml#targets.github-actions.topology.workspacePropagation"
+      - id: durable-state-unsupported
+        statement: "Durable state and state propagation are unsupported in the current profile."
+        evidenceReference: "targets/builtin-targets.yaml#targets.github-actions.topology.durableState"
+      - id: standard-actions-review-only
+        statement: "Generic standard execute and rollback actions remain notes-projected."
+        evidenceReference: "targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard"
+
+  - target: tekton
+    role: target_adapter
+    supportClass: native_leaf_only
+    summary: "Composed Tekton provider with reviewed git-clone and buildah leaf contracts, while Pipeline-level continuity and production readiness remain incomplete."
+    evidenceReferences:
+      - "targets/builtin-targets.yaml#targets.tekton"
+      - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+      - "docs/TARGET_REGISTRY.md#executable-reference-scope"
+    executableEvidence: []
+    limitations:
+      - id: pipeline-workspace-proof-incomplete
+        statement: "Workspace support is partial and complete PipelineRun workspace binding is not committed as executable reference evidence."
+        evidenceReference: "docs/TARGET_REGISTRY.md#executable-reference-scope"
+      - id: approvals-unsupported
+        statement: "Manual approval is unsupported and external gate evidence is only partial."
+        evidenceReference: "targets/builtin-targets.yaml#targets.tekton.features.approval"
+      - id: renderer-partial
+        statement: "The renderer explicitly emits partial-support metadata and requires review before production use."
+        evidenceReference: "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+
+  - target: argo-workflows
+    role: target_adapter
+    supportClass: profile_only
+    summary: "Capability and topology profile exists, but this distribution ships no Argo Workflows projection provider or native projection rules."
+    evidenceReferences:
+      - "targets/builtin-targets.yaml#targets.argo-workflows"
+      - "docs/TARGET_REGISTRY.md#projection-rules"
+    executableEvidence: []
+    limitations:
+      - id: no-projection-provider
+        statement: "No built-in generator, renderer or native projection catalog is composed for Argo Workflows."
+        evidenceReference: "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+      - id: no-native-rules
+        statement: "The target profile declares no native action projection rules."
+        evidenceReference: "targets/builtin-targets.yaml#targets.argo-workflows"
+      - id: expression-evidence-unavailable
+        statement: "No target expression adapter evidence is declared."
+        evidenceReference: "targets/builtin-targets.yaml#expressionProfiles.unavailable"
+
+  - target: azure-devops
+    role: target_adapter
+    supportClass: profile_only
+    summary: "Capability and topology profile exists, but this distribution ships no Azure DevOps projection provider or native projection rules."
+    evidenceReferences:
+      - "targets/builtin-targets.yaml#targets.azure-devops"
+      - "docs/TARGET_REGISTRY.md#projection-rules"
+    executableEvidence: []
+    limitations:
+      - id: no-projection-provider
+        statement: "No built-in generator, renderer or native projection catalog is composed for Azure DevOps."
+        evidenceReference: "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+      - id: no-native-rules
+        statement: "The target profile declares no native action projection rules."
+        evidenceReference: "targets/builtin-targets.yaml#targets.azure-devops"
+      - id: expression-evidence-unavailable
+        statement: "No target expression adapter evidence is declared."
+        evidenceReference: "targets/builtin-targets.yaml#expressionProfiles.unavailable"
