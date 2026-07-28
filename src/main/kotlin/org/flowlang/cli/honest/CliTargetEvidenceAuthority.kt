@@ -113,12 +113,13 @@ class CliTargetEvidenceAuthority(
         var fallbackUsed = false
         val manifest = try {
             val controlAssessment = controlAuthority.requireMatched(plan, target)
-            pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict)).copy(
-                metadata = mapOf(
+            val generated = pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict))
+            generated.copy(
+                metadata = generated.metadata + mapOf(
                     "adapterControlDecision" to controlAssessment.decision.name,
                     "adapterControlRequirementCount" to controlAssessment.requirements.size.toString(),
                     "adapterControlBlockerCount" to "0"
-                ) + pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict)).metadata
+                )
             )
         } catch (failure: RuntimeException) {
             if (!failure.isExpectedTargetBlocker()) throw failure
