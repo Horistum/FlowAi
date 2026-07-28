@@ -135,7 +135,13 @@ class AdapterControlMaterializationAuthorityTests {
     fun diagnosticReconciliationCannotRetainExecutableCompatibility() {
         val plan = ExecutionPlan(
             flowName = "retry",
-            nodes = listOf(RetryGroupNode(id = "retry", body = emptyList()))
+            nodes = listOf(RetryGroupNode(
+                id = "retry",
+                max = 3,
+                delay = "10s",
+                backoff = "fixed",
+                body = emptyList()
+            ))
         )
         val assessment = authority.assess(plan, "jenkins")
         val manifest = TargetManifest(
