@@ -22,6 +22,7 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.RetryGroupNode
+import org.flowlang.planner.TryPlanNode
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 class AdapterControlConformanceChecks(
@@ -119,6 +120,27 @@ class AdapterControlConformanceChecks(
             unknownApproval.evidence.singleOrNull()?.status != AdapterControlEvidenceStatus.UNKNOWN
         ) {
             add("Unknown approval modes must remain explicit UNKNOWN blockers.")
+        }
+
+        val detachedHandler = authority.assess(
+            ExecutionPlan(
+                flowName = "detached-handler",
+                nodes = listOf(
+                    TryPlanNode(
+                        id = "detached",
+                        body = emptyList(),
+                        errorHandler = listOf(ApprovalNode(id = "handler"))
+                    )
+                )
+            ),
+            "jenkins"
+        )
+        if (
+            detachedHandler.decision != AdapterControlDecision.BLOCKED ||
+            detachedHandler.requirements.none { it.semantic == "compensation.detached-error-handler" } ||
+            detachedHandler.evidence.none { it.status == AdapterControlEvidenceStatus.UNKNOWN }
+        ) {
+            add("A detached error handler without protected work must not be certified as a Jenkins try/catch boundary.")
         }
 
         val cron = ExecutionPlan(
@@ -235,8 +257,12 @@ class AdapterControlConformanceChecks(
                 }
             }
             record.claims.forEach { claim ->
-                if (claim.semantics.supported.isNotEmpty() && claim.evidenceReferences.isEmpty()) {
+                val evidenceFiles = claim.evidenceReferences.map { it.substringBefore('#') }
+                if (claim.semantics.supported.isNotEmpty() && evidenceFiles.none { it.startsWith("src/main/") }) {
                     add("${record.target}.${claim.family}: supported semantics have no repository implementation evidence.")
+                }
+                if (claim.semantics.supported.isNotEmpty() && evidenceFiles.none { it.startsWith("src/test/") }) {
+                    add("${record.target}.${claim.family}: supported semantics have no independent behavioral evidence.")
                 }
                 if (claim.semantics.supported.isNotEmpty() && claim.scopes.isEmpty()) {
                     add("${record.target}.${claim.family}: supported semantics have no declared enforcement scope.")
