@@ -169,10 +169,10 @@ class AdapterCapabilityBindingAuthority(
             finding(findings, "BINDING_CLAIM_DUPLICATE", key.toString(), "Binding claim occurs ${records.size} times.")
         }
 
-        (claims.keys - recordsByKey.keys).sortedBy(String::valueOf).forEach { key ->
+        (claims.keys - recordsByKey.keys).sortedBy { it.toString() }.forEach { key ->
             finding(findings, "BINDING_EVIDENCE_MISSING", key.toString(), "Built-in implementation claim has no adapter binding evidence.")
         }
-        (recordsByKey.keys - claims.keys).sortedBy(String::valueOf).forEach { key ->
+        (recordsByKey.keys - claims.keys).sortedBy { it.toString() }.forEach { key ->
             finding(findings, "BINDING_CLAIM_UNKNOWN", key.toString(), "Adapter binding evidence has no matching built-in implementation claim.")
         }
 
