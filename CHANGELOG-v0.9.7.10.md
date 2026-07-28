@@ -28,4 +28,6 @@ Validation history:
 - Flow CI #2185 established the first implementation boundary for complete-suite presence and fail-closed correction statuses.
 - Flow CI #2204 validated the explicit CORRECTION_REQUIRED lifecycle on exact and merge-candidate revisions.
 - Flow CI #2218 passed the reconciled StandardModel, structural purpose policy, artifact visibility and complete standalone conformance on exact head `c10bd83aa4c0bf48dcc4b0faef90c035525842c7` and synthetic merge candidate `651cca496a6b8a7e54cde2b992751c2630dbc30a`.
-- The explicit closure-identity migration and later READY/CLOSED metadata heads still require independent exact-head and synthetic merge-candidate validation.
+- Flow CI #2231 passed the complete corrected implementation, lifecycle projection and standalone conformance on exact head `ca5f0d921975bce724ff99a01f9e2b8d9793a0c0` and synthetic merge candidate `7bbabd0ccfdedd3862fa0b140e0c4c4fdc30f87b`.
+- Bounded correction `0.9.7.10.1` is complete and `0.9.7.10` is now READY/next.
+- The READY metadata head and later CLOSED metadata head each require independent exact-head and synthetic merge-candidate validation.
