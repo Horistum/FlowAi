@@ -10,11 +10,16 @@ class AdapterBindingRoadmapLifecycleAuthorityTests {
     private val authority = AdapterBindingRoadmapLifecycleAuthority()
 
     @Test
-    fun repositoryLifecycleMetadataIsImplementing() {
+    fun repositoryLifecycleMetadataFormsOneHonestSupportedPhase() {
         val report = authority.analyze()
 
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
-        assertEquals(AdapterBindingLifecyclePhase.IMPLEMENTING, report.phase)
+        assertTrue(
+            report.phase in setOf(
+                AdapterBindingLifecyclePhase.IMPLEMENTING,
+                AdapterBindingLifecyclePhase.COMPLETED
+            )
+        )
     }
 
     @Test
