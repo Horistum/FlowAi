@@ -29,5 +29,6 @@ Validation history:
 - Flow CI #2204 validated the explicit CORRECTION_REQUIRED lifecycle on exact and merge-candidate revisions.
 - Flow CI #2218 passed the reconciled StandardModel, structural purpose policy, artifact visibility and complete standalone conformance on exact head `c10bd83aa4c0bf48dcc4b0faef90c035525842c7` and synthetic merge candidate `651cca496a6b8a7e54cde2b992751c2630dbc30a`.
 - Flow CI #2231 passed the complete corrected implementation, lifecycle projection and standalone conformance on exact head `ca5f0d921975bce724ff99a01f9e2b8d9793a0c0` and synthetic merge candidate `7bbabd0ccfdedd3862fa0b140e0c4c4fdc30f87b`.
-- Bounded correction `0.9.7.10.1` is complete and `0.9.7.10` is now READY/next.
-- The READY metadata head and later CLOSED metadata head each require independent exact-head and synthetic merge-candidate validation.
+- Flow CI #2243 passed the READY metadata boundary on exact head `530eb284f445f0ceee7772eb98edd8d8403959f6` and synthetic merge candidate `68acbcf6eb2009eda35f5365e77da303a593b293`.
+- Bounded correction `0.9.7.10.1` and Core item `0.9.7.10` are complete; the v0.9.7 Core track is CLOSED with no next Core item.
+- The CLOSED metadata head and its synthetic merge candidate require one final independent validation before PR #94 is ready for review.
