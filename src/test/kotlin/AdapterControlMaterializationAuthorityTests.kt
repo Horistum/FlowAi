@@ -29,6 +29,7 @@ import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
+import org.flowlang.planner.TryPlanNode
 import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
@@ -82,6 +83,21 @@ class AdapterControlMaterializationAuthorityTests {
     }
 
     @Test
+    fun runtimeCompositionCanUseAnExactSubsetOfDistributionTargets() {
+        val subset = mapOf("jenkins" to targets.getValue("jenkins"))
+        val subsetAuthority = AdapterControlMaterializationAuthority(
+            rootDir = rootDir,
+            targets = subset,
+            projections = BuiltInTargetProjections.registry
+        )
+
+        assertEquals(
+            AdapterControlDecision.MATCHED,
+            subsetAuthority.assess(ExecutionPlan(flowName = "subset"), "jenkins").decision
+        )
+    }
+
+    @Test
     fun jenkinsProviderBackedManualApprovalMatchesAtStepScope() {
         val assessment = authority.assess(
             ExecutionPlan(flowName = "approval", nodes = listOf(ApprovalNode(id = "approve-production"))),
@@ -119,6 +135,27 @@ class AdapterControlMaterializationAuthorityTests {
         assertEquals(listOf("approval.mode.four-eyes"), custom.requirements.map { it.semantic })
         assertEquals(listOf(AdapterControlScope.UNSPECIFIED), custom.requirements.map { it.scope })
         assertEquals(listOf(AdapterControlEvidenceStatus.UNKNOWN), custom.evidence.map { it.status })
+    }
+
+    @Test
+    fun detachedErrorHandlerWithoutProtectedBodyIsBlocked() {
+        val assessment = authority.assess(
+            ExecutionPlan(
+                flowName = "detached-handler",
+                nodes = listOf(
+                    TryPlanNode(
+                        id = "detached",
+                        body = emptyList(),
+                        errorHandler = listOf(ApprovalNode(id = "handler", message = "handle"))
+                    )
+                )
+            ),
+            "jenkins"
+        )
+
+        assertEquals(AdapterControlDecision.BLOCKED, assessment.decision)
+        assertTrue(assessment.requirements.any { it.semantic == "compensation.detached-error-handler" })
+        assertTrue(assessment.evidence.any { it.status == AdapterControlEvidenceStatus.UNKNOWN })
     }
 
     @Test
@@ -316,6 +353,19 @@ class AdapterControlMaterializationAuthorityTests {
         assertEquals("FAIL", report.status)
         assertTrue(report.findings.any { it.code == "CONTROL_EVIDENCE_REGISTRY_ONLY" })
         assertTrue(report.findings.any { it.code == "CONTROL_SUPPORTED_IMPLEMENTATION_EVIDENCE_MISSING" })
+    }
+
+    @Test
+    fun supportedSemanticRequiresIndependentBehaviorEvidence() {
+        val malformed = AdapterControlMaterializationLoader.load(rootDir)
+            .mapClaim("jenkins", AdapterControlFamily.SCHEDULING) { claim ->
+                claim.copy(evidenceReferences = claim.evidenceReferences.filterNot { it.startsWith("src/test/") })
+            }
+
+        val report = authority.analyze(malformed)
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "CONTROL_SUPPORTED_BEHAVIOR_EVIDENCE_MISSING" })
+        assertFalse(report.findings.any { it.code == "CONTROL_SUPPORTED_IMPLEMENTATION_EVIDENCE_MISSING" })
     }
 
     @Test
