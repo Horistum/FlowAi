@@ -187,35 +187,7 @@ object AdapterControlMaterializationLoader {
         return AdapterControlMaterializationDocument(
             version = version,
             targets = targets
-        ).also { document -> validateSourceEvidenceAnchors(rootDir, document) }
-    }
-
-    private fun validateSourceEvidenceAnchors(
-        rootDir: File,
-        document: AdapterControlMaterializationDocument
-    ) {
-        document.targets.forEach { target ->
-            target.claims.forEach { claim ->
-                claim.evidenceReferences.forEach { reference ->
-                    val filePart = reference.substringBefore('#')
-                    if (!filePart.startsWith("src/main/") && !filePart.startsWith("src/test/")) {
-                        return@forEach
-                    }
-                    val evidenceFile = File(rootDir, filePart)
-                    require(evidenceFile.isFile) {
-                        "$PATH evidence reference '$reference' for ${target.target}.${claim.family} points to a missing source file."
-                    }
-                    if ('#' !in reference) return@forEach
-                    val anchor = reference.substringAfter('#')
-                    require(anchor.isNotBlank()) {
-                        "$PATH evidence reference '$reference' for ${target.target}.${claim.family} has a blank source anchor."
-                    }
-                    require(evidenceFile.readText().contains(anchor)) {
-                        "$PATH evidence reference '$reference' for ${target.target}.${claim.family} has unresolved source anchor '$anchor'."
-                    }
-                }
-            }
-        }
+        )
     }
 
     private fun parseTarget(raw: Map<String, Any?>, path: String): AdapterControlTargetRecord {
