@@ -129,7 +129,41 @@ class UnresolvedAdapterControlMaterializationException(
         assessment.blockingRequirementIds.joinToString()
 )
 
+/**
+ * Closed target-neutral adapter control semantics and their exact Flow scopes.
+ *
+ * A claim-level scope set is valid for support only when it equals the union of
+ * the scopes declared here for the supported semantics. This prevents a family
+ * claim from accidentally authorizing the cartesian product of unrelated
+ * semantics and scopes.
+ */
 object AdapterControlSemanticContract {
+    val scopesBySemantic: Map<String, Set<AdapterControlScope>> = mapOf(
+        "approval.manual.inline" to setOf(AdapterControlScope.STEP),
+        "approval.environment.resource" to setOf(AdapterControlScope.ENVIRONMENT),
+        "approval.external" to setOf(AdapterControlScope.STEP),
+        "retry.attempt-limit" to setOf(AdapterControlScope.TASK),
+        "retry.delay.fixed" to setOf(AdapterControlScope.TASK),
+        "retry.backoff.variable" to setOf(AdapterControlScope.TASK),
+        "retry.failure-filter" to setOf(AdapterControlScope.TASK),
+        "retry.cancellation" to setOf(AdapterControlScope.TASK),
+        "timeout.step" to setOf(AdapterControlScope.STEP),
+        "timeout.task" to setOf(AdapterControlScope.TASK),
+        "timeout.workflow" to setOf(AdapterControlScope.WORKFLOW),
+        "timeout.per-attempt" to setOf(AdapterControlScope.TASK),
+        "timeout.cumulative" to setOf(AdapterControlScope.WORKFLOW),
+        "compensation.error-handler" to setOf(AdapterControlScope.WORKFLOW),
+        "compensation.finally" to setOf(AdapterControlScope.WORKFLOW),
+        "compensation.rollback" to setOf(AdapterControlScope.WORKFLOW),
+        "compensation.always-run" to setOf(AdapterControlScope.WORKFLOW),
+        "scheduling.cron" to setOf(AdapterControlScope.TRIGGER),
+        "scheduling.interval" to setOf(AdapterControlScope.TRIGGER),
+        "scheduling.calendar" to setOf(AdapterControlScope.TRIGGER),
+        "scheduling.timezone" to setOf(AdapterControlScope.TRIGGER),
+        "scheduling.concurrency" to setOf(AdapterControlScope.TRIGGER),
+        "scheduling.catch-up" to setOf(AdapterControlScope.TRIGGER)
+    )
+
     val byFamily: Map<AdapterControlFamily, Set<String>> = mapOf(
         AdapterControlFamily.APPROVAL to setOf(
             "approval.manual.inline",
@@ -165,6 +199,17 @@ object AdapterControlSemanticContract {
             "scheduling.catch-up"
         )
     )
+
+    init {
+        require(byFamily.values.flatten().toSet() == scopesBySemantic.keys) {
+            "Adapter control semantic scope contract must cover every closed family semantic exactly once."
+        }
+    }
+
+    fun scopesFor(semantic: String): Set<AdapterControlScope>? = scopesBySemantic[semantic]
+
+    fun supportedScopes(semantics: Set<String>): Set<AdapterControlScope> =
+        semantics.flatMap { semantic -> scopesBySemantic.getValue(semantic) }.toSet()
 }
 
 object AdapterControlMaterializationLoader {
@@ -244,8 +289,8 @@ object AdapterControlMaterializationLoader {
     private fun requireExactKeys(value: Map<String, Any?>, keys: Set<String>, path: String) {
         val unknown = value.keys - keys
         val missing = keys - value.keys
-        require(unknown.isEmpty()) { "$path has unknown fields: ${unknown.sorted().joinToString()}." }
-        require(missing.isEmpty()) { "$path is missing fields: ${missing.sorted().joinToString()}." }
+        require(unknown.isEmpty()) { "$path has unknown fields: ${unknown.sorted().joinToString()}.")
+        require(missing.isEmpty()) { "$path is missing fields: ${missing.sorted().joinToString()}.")
     }
 
     private fun text(value: Map<String, Any?>, key: String, path: String): String =
