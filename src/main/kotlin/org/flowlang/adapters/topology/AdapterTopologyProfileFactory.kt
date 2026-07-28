@@ -5,9 +5,12 @@ import org.flowlang.topology.ExecutionTopologyProfileAuthority
 import org.flowlang.topology.ExecutionTopologySupportDeclaration
 
 /**
- * Converts the adapter-owned evidence record into the target-neutral profile
- * consumed by Core topology matching. Inline target-registry topology text is
- * retained only for backward-compatible document parsing and is not an authority.
+ * Converts adapter-owned evidence into the target-neutral profile consumed by
+ * Core topology matching. The runtime profile carries only the closed status and
+ * an exact evidence reference. Mechanisms and limitations remain in the adapter
+ * authority instead of becoming duplicated target-specific prose inside Core.
+ * Inline target-registry topology text is retained only for backward-compatible
+ * document parsing and is not an authority.
  */
 object AdapterTopologyProfileFactory {
     fun profiles(document: AdapterTopologyEvidenceDocument): Map<String, ExecutionTopologyProfile> {
@@ -35,14 +38,7 @@ object AdapterTopologyProfileFactory {
                 ExecutionTopologySupportDeclaration(
                     kind = kind,
                     status = claim.status.toCoreStatus(),
-                    evidenceReference = AdapterTopologyClaimContract.registryEvidenceReference(record.target, key),
-                    detail = buildString {
-                        append(claim.mechanism)
-                        if (claim.limitations.isNotEmpty()) {
-                            append(" Limitations: ")
-                            append(claim.limitations.joinToString("; "))
-                        }
-                    }
+                    evidenceReference = AdapterTopologyClaimContract.registryEvidenceReference(record.target, key)
                 )
             }
         val profile = ExecutionTopologyProfile(record.target, declarations)
