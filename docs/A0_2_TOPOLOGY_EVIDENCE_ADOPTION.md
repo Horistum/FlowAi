@@ -110,6 +110,15 @@ A0.2 adds five checks to the separate adapter inventory:
 
 These checks run after the frozen Core semantic closure check. A0.2 completion requires a passed exact-head and synthetic merge-candidate Flow CI boundary, followed by a separately validated completion-metadata boundary before A0.3 becomes active work.
 
+Lifecycle authorities distinguish current implementation from historical completion:
+
+- while an item is being implemented, its authority requires the exact current transition shape and forbids premature evidence;
+- after completion, it preserves the item's work-package evidence and requires the current `completedItem` and `nextItem` to remain one adjacent A0.x step;
+- a later completed item therefore does not invalidate earlier completed authorities;
+- reopening an earlier item, skipping a roadmap item or diverging roadmap index and release state still fails closed.
+
+Flow CI #2285 exposed the earlier defect in which the completed A0.1 authority permanently required `A0.2 next`. The shared `AdapterRoadmapSequence` contract now keeps both A0.1 and A0.2 historical authorities valid during later adjacent progress without allowing gaps.
+
 ## Non-goals
 
 A0.2 does not:
