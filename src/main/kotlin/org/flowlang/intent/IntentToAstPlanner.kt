@@ -84,7 +84,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         )
     }
 
-
     private fun IntentTrigger.toTriggerNode(): TriggerNode = TriggerNode(
         id = id,
         triggerType = type.name,
@@ -208,26 +207,17 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         val moduleName = requireNotNull(binding.module)
         val actionName = requireNotNull(binding.action)
         val systemName = requireNotNull(binding.system)
-        val contract = requireNotNull(registry.findAction(moduleName, actionName)) {
-            "Internal planner invariant: resolved binding '${binding.requestedAction}' has no module action contract."
+        requireNotNull(binding.bindingContractId) {
+            "Internal planner invariant: resolved binding '${binding.requestedAction}' has no binding contract identity."
         }
-        val supplied = step.params.filterKeys { it !in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
-        val params = linkedMapOf<String, ExpressionNode>()
-        contract.input.forEach { (name, field) ->
-            val value = supplied[name]
-            when {
-                value != null -> params[name] = value.toExpression()
-                field.defaultValue != null -> params[name] = field.defaultValue.toExpressionNode()
-            }
-        }
-        if (contract.additionalParams) {
-            supplied.filterKeys { it !in params }.forEach { (name, value) -> params[name] = value.toExpression() }
+        require(binding.effectPolicy == IntentBindingEffectPolicy.PRESERVE_CANONICAL) {
+            "Internal planner invariant: resolved binding '${binding.requestedAction}' does not preserve canonical effects."
         }
         return ActionNode(
             module = moduleName,
             action = actionName,
             target = ref(systemName),
-            params = params,
+            params = binding.resolvedParameters.mapValues { (_, value) -> value.toExpression() },
             result = result(step.id),
             semanticCapability = step.capability.name,
             semanticEffects = semanticEffects,
@@ -293,7 +283,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
             declaredOutputs = step.produces
         )
     }
-
 
     private fun buildErrorHandler(intent: IntentDocument): ErrorHandlerNode? {
         if (!intent.failure.notify && !intent.failure.rollback) return null
@@ -364,21 +353,8 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
 
     private fun IntentValue.toExpression(): ExpressionNode = IntentValueExpressionLowering.lower(this)
 
-    private fun Any.toExpressionNode(): ExpressionNode = when (this) {
-        is String -> StringLiteralNode(value = this)
-        is Boolean -> BooleanLiteralNode(value = this)
-        is Int -> NumberLiteralNode(value = toDouble(), isInteger = true)
-        is Long -> NumberLiteralNode(value = toDouble(), isInteger = true)
-        is Float -> NumberLiteralNode(value = toDouble(), isInteger = false)
-        is Double -> NumberLiteralNode(value = this, isInteger = this % 1.0 == 0.0)
-        is Number -> NumberLiteralNode(value = toDouble(), isInteger = false)
-        else -> StringLiteralNode(value = toString())
-    }
-
-
     private fun approvalPolicy(intent: IntentDocument): IntentPolicy? = intent.policies.firstOrNull { it.type == IntentPolicyType.APPROVAL }
     private fun approvalMessage(intent: IntentDocument): String = approvalPolicy(intent)?.message ?: "Approval required for ${intent.name}"
     private fun approvalCondition(intent: IntentDocument): ExpressionNode? = approvalPolicy(intent)?.condition?.let { parseCondition(it) }
     private fun parseCondition(raw: String): ExpressionNode = ExpressionParser.parseSource(raw)
-
 }

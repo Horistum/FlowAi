@@ -232,6 +232,7 @@ class AdapterTopologyConformanceChecks(
     }
 }
 
+/** Canonical complete post-Core adapter certification composition. */
 class AdapterStreamConformanceRunner(
     private val rootDir: File,
     private val targets: Map<String, TargetCapability>,
@@ -239,7 +240,8 @@ class AdapterStreamConformanceRunner(
 ) {
     fun checks(): List<ConformanceCheck> {
         val produced = AdapterPortfolioConformanceChecks(rootDir, targets, projections).checks() +
-            AdapterTopologyConformanceChecks(rootDir, targets, projections).checks()
+            AdapterTopologyConformanceChecks(rootDir, targets, projections).checks() +
+            AdapterBindingConformanceChecks(rootDir).checks()
         val inventoryResult = runCatching { AdapterConformanceInventory.load(rootDir) }
         val inventory = inventoryResult.getOrNull()
         val observed = produced.map { it.name }

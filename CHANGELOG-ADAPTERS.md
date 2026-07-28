@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+### A0.3 Capability Binding Migration
+
+Started after A0.2 merged through PR #97 as `964a9c4f8bf9ce9dc8771c99a68393c9edc35807`.
+
+Completed scope:
+
+- add one target-neutral `IntentBindingContractAuthority` for explicit module-action bindings;
+- keep implementation selection explicit through `uses` and `params.system`;
+- partition canonical parameters into mapped and unsupported semantics plus binding-only action inputs;
+- resolve authored values and module descriptor defaults exactly once before AST lowering;
+- retain parameter source evidence as semantic, binding or default;
+- make AST lowering consume resolved binding evidence rather than re-reading module descriptors;
+- preserve canonical capability, semantic effects and source selection provenance through ExecutionPlan;
+- add a strict adapter-owned binding manifest for every built-in `implements` claim;
+- distinguish concrete adapter implementations from the `standard.rollback` semantic fallback;
+- remove the unsupported `argocd.sync → SYNC` claim because source and destination cannot be represented;
+- add positive and negative binding authority, lifecycle and behavior tests;
+- extend the post-Core adapter inventory to version `1.2` with five A0.3 checks;
+- retain one canonical `AdapterStreamConformanceRunner` and remove a duplicate complete-stream composition found during final review;
+- preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
+
+Validation history:
+
+- Flow CI #2293 rejected the first implementation because binding-key sorting was not type-safe and nullable resolved inputs did not smart-cast across the validity boundary.
+- Flow CI #2298 passed compilation and most binding tests, then rejected a provenance assertion against a quoted legacy presentation string and release metadata that did not satisfy the exact external-candidate wording policy.
+- Provenance validation was corrected to compare ExecutionPlan fields with typed `IntentBindingEvidence`; the release evidence policy was preserved rather than weakened.
+- Flow CI #2300 passed exact-head and merge-candidate validation before final review found two competing complete adapter-stream composition classes.
+- The duplicate runner was removed and the existing canonical `AdapterStreamConformanceRunner` was extended to own inventory `1.2`.
+- Flow CI #2303, run `30354834937`, passed the final implementation on exact head `f475ae8317122b986dec23a3d36bb8df05a31db3` and synthetic merge candidate `afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8`.
+- Flow CI #2310 rejected the first completion head because the repository lifecycle integration test was hardcoded to `IMPLEMENTING` even though exact phase tests already covered IMPLEMENTING and COMPLETED independently.
+- The repository test now accepts exactly one honest supported lifecycle phase while retaining explicit failure tests for missing evidence, premature evidence, skipped items and non-adjacent progress.
+- A0.3 remains `completed`, A0.4 remains `next`, and the corrected completion-metadata head must independently pass exact-head and merge-candidate validation before PR #98 becomes ready for review.
+
 ### A0.2 Topology Evidence Adoption
 
 Started after A0.1 merged through PR #96 as `dbd1529cd9da1b21d13bd45d3af1a84361b9abf1`.
@@ -35,7 +68,7 @@ Validation history:
 - Flow CI #2284, run `30348796256`, passed the final implementation on exact head `6d441628c4d3101bfd0c32c5d2eb370b00fbc4fe` and synthetic merge candidate `6168e45d292a34f3d648c0e645016f88c813e25b`.
 - Flow CI #2285 rejected the first completion state because the completed A0.1 authority permanently required `A0.2 next`, making any later roadmap progress invalid.
 - `AdapterRoadmapSequence` now requires current completed and next items to remain adjacent while completed item authorities preserve their own historical evidence instead of freezing the global pointer.
-- A0.2 remains `completed`, A0.3 remains `next`, and the corrected completion head must independently pass exact-head and merge-candidate validation before PR #97 is ready for review.
+- Flow CI #2291 passed the corrected completion state before PR #97 merged.
 
 ### A0.1 Adapter Portfolio Reassessment
 
