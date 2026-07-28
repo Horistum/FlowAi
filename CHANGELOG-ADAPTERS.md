@@ -6,24 +6,33 @@
 
 Started after A0.1 merged through PR #96 as `dbd1529cd9da1b21d13bd45d3af1a84361b9abf1`.
 
-Implemented scope under validation:
+Completed scope:
 
 - add a strict adapter-owned topology evidence manifest covering every target;
 - require every frozen Core topology kind plus interaction and concurrency evidence;
 - require concrete mechanisms, repository references and explicit limitations;
 - reject missing, duplicate, unknown, unresolved and self-referential claims;
 - derive runtime `ExecutionTopologyProfile` instances from adapter evidence;
+- keep runtime profiles target-neutral by carrying only status and exact evidence identity;
+- retain detailed mechanisms and limitations exclusively in the adapter authority;
 - retain legacy inline registry topology only as a non-authoritative fixture fallback;
-- intentionally narrow unsupported Jenkins topology claims while preserving the executable reference requirements;
+- intentionally narrow unsupported Jenkins topology claims while preserving the executable reference and provider-owned manual approval requirements;
 - retain GitHub Actions workspace and state propagation as unsupported;
 - retain Tekton workspace evidence as partial until PipelineRun provisioning is proven;
 - demote every Argo Workflows and Azure DevOps topology claim to unknown while no provider is composed;
 - prove that profile-only targets block topology-dependent execution;
-- prove the Jenkins executable snapshot consumes only supported adapter topology evidence;
+- validate the committed Jenkins snapshot and regenerate its semantic plan through the production planning pipeline;
+- prove the Jenkins executable reference consumes only supported adapter topology evidence;
 - add A0.2 lifecycle integrity and five new checks to the post-Core adapter inventory;
 - preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
 
-A0.2 remains `next` and its work package remains `active`. No implementation evidence or A0.3 transition is authored until Flow CI passes the exact implementation head and synthetic merge candidate with the A0.2 authority active.
+Validation history:
+
+- Flow CI #2274 rejected the first implementation because the relative target loader bypassed adapter evidence, Jenkins manual approval was under-classified, executable proof attempted unsupported plan deserialization and release-state wording violated external-candidate policy.
+- Flow CI #2279 confirmed those production fixes and then rejected duplicated adapter prose in Core runtime diagnostics through canonical snapshot mismatches.
+- The runtime profile was corrected to retain only target-neutral status and exact evidence identity instead of regenerating snapshots around an architectural duplication.
+- Flow CI #2284, run `30348796256`, passed the final implementation on exact head `6d441628c4d3101bfd0c32c5d2eb370b00fbc4fe` and synthetic merge candidate `6168e45d292a34f3d648c0e645016f88c813e25b`.
+- A0.2 is now `completed`, A0.3 is `next`, and the completion-metadata head must independently pass exact-head and merge-candidate validation before PR #97 is ready for review.
 
 ### A0.1 Adapter Portfolio Reassessment
 
