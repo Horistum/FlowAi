@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 27
+stateVersion: 28
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,15 +18,12 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.9"
-  completedItemName: "Intent Lowering and Diagnostic Honesty"
+  completedItem: "0.9.7.10"
+  completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "core"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
-  closureItemStatus: "next"
-  nextCoreItem: "0.9.7.10"
-  nextCoreItemName: "Bounded Semantic Closure Gate"
-  nextCoreItemStatus: "next"
+  closureItemStatus: "completed"
   activeRoadmaps:
     core: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
@@ -125,7 +122,7 @@ lastKnownValidation:
   validationSource: "Flow CI #2250 passed exact completion-metadata head a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9 before that head was merged through PR #94 as cbe1d23a25e0224be565cad322b097bf2aaa50a1."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "Flow CI #2252 supplied external exact-head CI evidence on correction implementation head 3176009e660c95d873e9eeb8d1845b7f54142d2c."
-    - "The same Flow CI #2252 run independently passed synthetic merge candidate bba152a0eeccf87fffe19a11a3340dd2d1d6a569, complete tests and standalone conformance."
-    - "Bounded correction 0.9.7.10.2 is complete and closure is READY with implementationEvidence recorded structurally."
-    - "The READY metadata head and its synthetic merge candidate require external exact-head CI evidence before CLOSED validationEvidence may be authored."
+    - "Flow CI #2252 supplied external exact-head CI evidence on correction implementation head 3176009e660c95d873e9eeb8d1845b7f54142d2c and merge candidate bba152a0eeccf87fffe19a11a3340dd2d1d6a569."
+    - "Flow CI #2253 later supplied external exact-head CI evidence on READY completion head 8fcbf9485fe23ac283c47d560d32327cf6d2faa2 and merge candidate ba4b78e05445de5ef4bc6c79241d59b683138dc9."
+    - "ClosureEvidenceBoundaryAuthority proves #2252 and #2253 are structurally valid, ordered and distinct."
+    - "The current CLOSED metadata head and its synthetic merge candidate require external exact-head CI evidence before PR #95 may become ready for review."
