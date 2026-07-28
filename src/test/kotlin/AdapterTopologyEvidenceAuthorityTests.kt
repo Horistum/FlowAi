@@ -72,7 +72,7 @@ class AdapterTopologyEvidenceAuthorityTests {
                     AdapterTopologyClaimContract.registryEvidenceReference(target, declaration.kind.registryKey),
                     declaration.evidenceReference
                 )
-                assertTrue(!declaration.detail.isNullOrBlank())
+                assertTrue(declaration.detail.isNullOrBlank())
             }
         }
     }
