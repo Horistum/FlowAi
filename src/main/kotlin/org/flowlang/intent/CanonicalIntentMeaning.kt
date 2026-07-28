@@ -61,6 +61,11 @@ data class IntentBindingEvidence(
     val implementedCapabilities: List<String> = emptyList(),
     val semanticParameters: List<String> = emptyList(),
     val bindingParameters: List<String> = emptyList(),
+    val bindingContractId: String? = null,
+    val resolvedParameters: Map<String, IntentValue> = emptyMap(),
+    val parameterSources: Map<String, IntentBindingParameterSource> = emptyMap(),
+    val effectPolicy: IntentBindingEffectPolicy? = null,
+    val evidenceReferences: List<String> = emptyList(),
     val issues: List<IntentBindingIssue> = emptyList()
 ) {
     val resolved: Boolean get() = status == IntentBindingStatus.RESOLVED
@@ -98,7 +103,6 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
                 status = IntentBindingStatus.UNBOUND,
                 semanticParameters = semanticParameterNames(step).sorted()
             )
-
         val issues = mutableListOf<IntentBindingIssue>()
         val parts = requested.split('.')
         val moduleName = parts.getOrNull(0)?.takeIf { it.isNotBlank() }
@@ -126,6 +130,14 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
                 "Action '$requested' does not declare implementation of canonical capability '${step.capability.name}'."
             )
         }
+        val bindingContract = if (
+            moduleName != null && actionName != null && action != null &&
+            step.capability.name in action.implementedCapabilities
+        ) {
+            IntentBindingContractAuthority.derive(moduleName, actionName, step.capability, action)
+        } else {
+            null
+        }
 
         val systemName = step.params[BINDING_SYSTEM_PARAM].asTextOrNull()
         if (action != null && systemName.isNullOrBlank()) {
@@ -146,14 +158,22 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
             )
         }
 
-        if (action != null) validateParameters(step, requested, action, issues)
+        if (action != null && bindingContract != null) {
+            validateParameters(step, requested, action, bindingContract, issues)
+        }
 
         val semanticNames = semanticParameterNames(step)
-        val bindingNames = bindingParameterNames(step, action, semanticNames)
+        val bindingNames = bindingParameterNames(step, action, bindingContract, semanticNames)
+        val valid = issues.isEmpty() && action != null && bindingContract != null
+        val resolved = if (valid) {
+            IntentBindingContractAuthority.resolveParameters(step, bindingContract, action)
+        } else {
+            ResolvedIntentBindingParameters(emptyMap(), emptyMap())
+        }
         return IntentBindingEvidence(
             stepId = step.id,
             capability = step.capability,
-            status = if (issues.isEmpty()) IntentBindingStatus.RESOLVED else IntentBindingStatus.INVALID,
+            status = if (valid) IntentBindingStatus.RESOLVED else IntentBindingStatus.INVALID,
             requestedAction = requested,
             module = moduleName,
             action = actionName,
@@ -162,6 +182,15 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
             implementedCapabilities = implemented,
             semanticParameters = semanticNames.sorted(),
             bindingParameters = bindingNames.sorted(),
+            bindingContractId = bindingContract?.id,
+            resolvedParameters = resolved.values,
+            parameterSources = resolved.sources,
+            effectPolicy = bindingContract?.effectPolicy,
+            evidenceReferences = if (module != null && actionName != null) {
+                listOf("module-contract:${module.name}/${module.version}/actions/$actionName")
+            } else {
+                emptyList()
+            },
             issues = issues
         )
     }
@@ -170,11 +199,12 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
         step: IntentStep,
         requested: String,
         action: ModuleActionContract,
+        binding: IntentBindingContract,
         issues: MutableList<IntentBindingIssue>
     ) {
         val candidateParams = step.params.filterKeys { it !in BINDING_METADATA_PARAMS }
-        action.input.filterValues { it.required }.keys.forEach { required ->
-            if (candidateParams[required].isBlankIntent()) {
+        action.input.forEach { (required, field) ->
+            if (field.required && field.defaultValue == null && candidateParams[required].isBlankIntent()) {
                 issues += issue(
                     "BINDING_REQUIRED_PARAM_MISSING",
                     "Action '$requested' requires parameter '$required' on step '${step.id}'."
@@ -182,20 +212,23 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
             }
         }
 
+        candidateParams.keys.filter { it in binding.unsupportedSemanticParameters }.forEach { name ->
+            issues += issue(
+                "BINDING_SEMANTIC_PARAM_UNSUPPORTED",
+                "Action '$requested' cannot represent canonical parameter '$name' from step '${step.id}'."
+            )
+        }
+
         if (!action.additionalParams) {
-            candidateParams.keys.filter { it !in action.input }.forEach { name ->
-                if (name in semanticParameterNames(step)) {
-                    issues += issue(
-                        "BINDING_SEMANTIC_PARAM_UNSUPPORTED",
-                        "Action '$requested' cannot represent canonical parameter '$name' from step '${step.id}'."
-                    )
-                } else {
+            candidateParams.keys
+                .filter { it !in action.input }
+                .filter { it !in binding.unsupportedSemanticParameters }
+                .forEach { name ->
                     issues += issue(
                         "BINDING_PARAMETER_UNKNOWN",
                         "Action '$requested' does not declare parameter '$name' on step '${step.id}'."
                     )
                 }
-            }
         }
     }
 
@@ -252,11 +285,15 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
         private fun bindingParameterNames(
             step: IntentStep,
             action: ModuleActionContract?,
+            binding: IntentBindingContract?,
             semanticNames: Set<String>
         ): Set<String> {
             val actionInputs = action?.input?.keys.orEmpty()
             return step.params.keys.filterTo(linkedSetOf()) { name ->
-                name in BINDING_METADATA_PARAMS || (name in actionInputs && name !in semanticNames)
+                name in BINDING_METADATA_PARAMS ||
+                    name in binding?.bindingOnlyParameters.orEmpty() ||
+                    (action?.additionalParams == true && name !in semanticNames && name !in BINDING_METADATA_PARAMS) ||
+                    (name in actionInputs && name !in semanticNames)
             }
         }
 
