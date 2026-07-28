@@ -44,11 +44,10 @@ class AdapterTopologyEvidenceAuthorityTests {
     fun profileOnlyAdaptersAreDeliberatelyUnknown() {
         listOf("argo-workflows", "azure-devops").forEach { target ->
             val claims = document.records.single { it.target == target }.claims
+            val profile = requireNotNull(targets.getValue(target).topologyProfile)
             assertTrue(claims.all { it.status == AdapterTopologyClaimStatus.UNKNOWN }, target)
             assertTrue(
-                targets.getValue(target).topologyProfile.declarations.all {
-                    it.status == ExecutionTopologySupportStatus.UNKNOWN
-                },
+                profile.declarations.all { it.status == ExecutionTopologySupportStatus.UNKNOWN },
                 target
             )
         }
@@ -56,8 +55,8 @@ class AdapterTopologyEvidenceAuthorityTests {
 
     @Test
     fun runtimeProfilesComeFromAdapterEvidenceNotInlineRegistryClaims() {
-        val jenkins = targets.getValue("jenkins").topologyProfile
-        val argo = targets.getValue("argo-workflows").topologyProfile
+        val jenkins = requireNotNull(targets.getValue("jenkins").topologyProfile)
+        val argo = requireNotNull(targets.getValue("argo-workflows").topologyProfile)
 
         assertEquals(
             ExecutionTopologySupportStatus.UNKNOWN,
@@ -68,7 +67,7 @@ class AdapterTopologyEvidenceAuthorityTests {
             argo.declarations.single { it.kind == ExecutionTopologyKind.WORKFLOW_SCOPE }.status
         )
         targets.forEach { (target, capability) ->
-            capability.topologyProfile.declarations.forEach { declaration ->
+            requireNotNull(capability.topologyProfile).declarations.forEach { declaration ->
                 assertEquals(
                     AdapterTopologyClaimContract.registryEvidenceReference(target, declaration.kind.registryKey),
                     declaration.evidenceReference
