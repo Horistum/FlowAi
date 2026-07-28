@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### A0.2 Topology Evidence Adoption
+
+Started after A0.1 merged through PR #96 as `dbd1529cd9da1b21d13bd45d3af1a84361b9abf1`.
+
+Implemented scope under validation:
+
+- add a strict adapter-owned topology evidence manifest covering every target;
+- require every frozen Core topology kind plus interaction and concurrency evidence;
+- require concrete mechanisms, repository references and explicit limitations;
+- reject missing, duplicate, unknown, unresolved and self-referential claims;
+- derive runtime `ExecutionTopologyProfile` instances from adapter evidence;
+- retain legacy inline registry topology only as a non-authoritative fixture fallback;
+- intentionally narrow unsupported Jenkins topology claims while preserving the executable reference requirements;
+- retain GitHub Actions workspace and state propagation as unsupported;
+- retain Tekton workspace evidence as partial until PipelineRun provisioning is proven;
+- demote every Argo Workflows and Azure DevOps topology claim to unknown while no provider is composed;
+- prove that profile-only targets block topology-dependent execution;
+- prove the Jenkins executable snapshot consumes only supported adapter topology evidence;
+- add A0.2 lifecycle integrity and five new checks to the post-Core adapter inventory;
+- preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
+
+A0.2 remains `next` and its work package remains `active`. No implementation evidence or A0.3 transition is authored until Flow CI passes the exact implementation head and synthetic merge candidate with the A0.2 authority active.
+
 ### A0.1 Adapter Portfolio Reassessment
 
 Started the adapter roadmap after Core `0.9.7.10` and bounded correction `0.9.7.10.2` were merged and validated.
@@ -27,6 +50,6 @@ Completed scope:
 Validation history:
 
 - Flow CI #2256 rejected the first roadmap transition because A0.1 used unsupported item status `active`; the primary-stream tooling and metadata were corrected to the existing `next` lifecycle rather than weakening validation.
-- Flow CI #2263 passed the portfolio implementation before lifecycle certification was added and is retained only as historical evidence.
-- Flow CI #2270, run `30342473373`, passed the complete implementation on exact head `20191d2d7b9460894c81f9bfee73b3c11b8f78f4` and synthetic merge candidate `d3238468ba01fe8b97bc6f500c9f96f2beeb4760`, including Flow Agent tooling, complete tests, Core closure and adapter conformance.
-- The completion-metadata head marks A0.1 `completed`, selects A0.2 as `next` and records #2270 structurally. It must independently pass exact-head and synthetic merge-candidate validation before PR #96 is ready for review.
+- Flow CI #2270, run `30342473373`, passed the complete implementation on exact head `20191d2d7b9460894c81f9bfee73b3c11b8f78f4` and synthetic merge candidate `d3238468ba01fe8b97bc6f500c9f96f2beeb4760`.
+- Flow CI #2272, run `30343249002`, passed the completion metadata on exact head `9d8e75bfd5d38f0b4827881174ea4201c063f2f4` and synthetic merge candidate `1934370c2a26a930961ab96a67fc2280b2ce3a39`.
+- PR #96 merged A0.1 as `dbd1529cd9da1b21d13bd45d3af1a84361b9abf1`.
