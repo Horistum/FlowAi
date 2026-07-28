@@ -219,18 +219,19 @@ class AdapterCapabilityBindingAuthorityTests {
         val ast = IntentToAstPlanner(registry).plan(intent)
         val plan = FlowPlanner(registry).plan(ast)
         val meaningByStep = resolution.meaning.workflows.flatMap { it.steps }.associateBy { it.id }
+        val bindingByStep = resolution.bindings.associateBy { it.stepId }
 
         assertTrue(resolution.bindings.all { it.status == IntentBindingStatus.RESOLVED })
         plan.tasks.forEach { task ->
             val sourceId = requireNotNull(task.sourceId)
             val meaning = meaningByStep.getValue(sourceId)
+            val binding = bindingByStep.getValue(sourceId)
             assertEquals(meaning.capability.name, task.semanticCapability)
             assertEquals(meaning.effects, task.effectModel)
             assertEquals(sourceId, task.sourceId)
-            assertTrue(task.module.isNotBlank())
-            assertTrue(task.action.isNotBlank())
-            assertTrue(task.target.isNotBlank())
-            assertEquals(task.target, task.bindingMetadata["system"])
+            assertEquals(binding.module, task.module)
+            assertEquals(binding.action, task.action)
+            assertEquals(binding.system, task.target)
         }
     }
 
