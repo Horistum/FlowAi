@@ -1,4 +1,4 @@
-# Flow Core Report
+# Flow Portfolio Report
 
 Current published package line: `0.9.5`
 Package release status: `release-candidate`
@@ -8,63 +8,69 @@ Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Correction`
 Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
+Completed adapter roadmap item: `A0.1 Adapter Portfolio Reassessment` (`completed`)
+Next adapter roadmap item: `A0.2 Topology Evidence Adoption` (`next`)
 
-## CLOSED closure claim
+## Core boundary
 
-PR #94 merged bounded correction `0.9.7.10.1` as `cbe1d23a25e0224be565cad322b097bf2aaa50a1`. Its implementation boundary passed Flow CI #2245 and its later completion-metadata boundary passed Flow CI #2250, but the merged closure work package recorded #2245 in both structured evidence sections.
-
-Bounded correction `0.9.7.10.2` repaired the evidence authority rather than merely replacing the stale YAML value.
-
-`ClosureEvidenceBoundaryAuthority` now gives the property its own production owner and typed reasons. READY requires valid implementation evidence and forbids a completion claim. CLOSED requires a later completion run with distinct run id, exact head and synthetic merge candidate.
-
-Flow CI #2252 passed the correction implementation boundary. Flow CI #2253 later passed the READY completion boundary. The closure work package records the two runs separately and the authority proves they are structured, ordered and distinct.
-
-## Corrected evidence boundary
-
-- `implementationEvidence`: Flow CI #2252, exact head `3176009e660c95d873e9eeb8d1845b7f54142d2c`, merge candidate `bba152a0eeccf87fffe19a11a3340dd2d1d6a569`;
-- `validationEvidence`: Flow CI #2253, exact head `8fcbf9485fe23ac283c47d560d32327cf6d2faa2`, merge candidate `ba4b78e05445de5ef4bc6c79241d59b683138dc9`;
-- completion run `2253` is later than implementation run `2252`;
-- run ids, exact heads and merge candidates are pairwise distinct;
-- duplicate, non-later, malformed and premature completion evidence have negative tests.
-
-## Complete conformance presence
-
-`standard/conformance/pre-closure-check-inventory.yaml` independently declares the exact 91 checks that must execute before `v0.9.7.10.bounded-semantic-closure`.
-
-The closure authority requires exact identity, count and order; rejects duplicates and unexpected checks; and verifies that every modeled and public-release check belongs to the complete inventory. Deleting a conformance group therefore produces explicit missing evidence instead of a smaller green suite.
-
-The inventory is a committed golden manifest, not a generated authority. A developer-only candidate generator may reduce authoring work, but CI must compare against the committed manifest and must never rewrite it automatically.
-
-## Checklist diagnostics
-
-The nine-item top-level checklist remains stable. Complete-suite mismatch modes are still grouped under `closure.required-checks-present`, but the evidence-boundary defect owns a dedicated conformance identity and five typed reasons. A later governance improvement may add nested reason codes for the existing inventory reconciliation item without retroactively changing the frozen top-level checklist.
-
-## Purpose coverage
-
-The current public release profile contains 38 checks. Nineteen belong to behavior, safety, normalization, execution-plan or portability purpose categories, so the observed automation-purpose ratio remains `19/38 = 0.500000`. Five are public governance checks, so the governance ratio is `5/38 = 0.131579`. Seventeen of the nineteen purpose checks carry direct evidence, so the evidence-backed purpose ratio is `17/19 = 0.894737`.
-
-No numerical headroom was created. The correction removed those ratios from pass/fail authority and retained them as observations. Pass/fail instead requires target-neutral capability coverage, blocked risk scenarios, all required purpose categories and real evidence for each category.
-
-## Validation history
-
-Flow CI #2252, run `30333130152`, independently passed:
-
-- exact correction implementation head `3176009e660c95d873e9eeb8d1845b7f54142d2c`;
-- synthetic merge candidate `bba152a0eeccf87fffe19a11a3340dd2d1d6a569`;
-- Flow Agent tooling, complete compilation and tests, and standalone conformance.
-
-Flow CI #2253, run `30333777951`, later independently passed:
-
-- exact READY completion head `8fcbf9485fe23ac283c47d560d32327cf6d2faa2`;
-- synthetic merge candidate `ba4b78e05445de5ef4bc6c79241d59b683138dc9`;
-- the same complete validation boundary with 91 ordered pre-closure checks and final semantic closure.
-
-The current CLOSED metadata head and its merge candidate must pass before PR #95 may become ready for review.
-
-## Version boundary
+PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0d5b34cf34185b19ed498`. Core v0.9.7 remains CLOSED. Its exact 91-check pre-closure inventory remains frozen and adapter work runs after the semantic closure check rather than rewriting that historical evidence set.
 
 The implementation package remains `0.9.5`, the public standard remains `0.8.0`, and the artifact contract remains `2.0`.
 
+## A0.1 portfolio reassessment
+
+The built-in target registry declares six targets. A0.1 classifies them from actual registry, provider and committed scenario evidence:
+
+| Target | Role | Support class | Honest boundary |
+| --- | --- | --- | --- |
+| `local` | semantic reference | `PROFILE_ONLY` | Target-neutral planning reference; no shipped generator or renderer. |
+| `jenkins` | target adapter | `EXECUTABLE_REFERENCE` | Native checkout and image-build leaves plus the committed `checkout-build-image` executable scenario. |
+| `github-actions` | target adapter | `NATIVE_LEAF_ONLY` | Reviewed checkout and image-build actions; workspace continuity does not support an end-to-end executable claim. |
+| `tekton` | target adapter | `NATIVE_LEAF_ONLY` | Reviewed git-clone and buildah tasks; Pipeline-level workspace and production readiness remain incomplete. |
+| `argo-workflows` | target adapter | `PROFILE_ONLY` | Capability and topology profile only; no composed projection provider or native rules. |
+| `azure-devops` | target adapter | `PROFILE_ONLY` | Capability and topology profile only; no composed projection provider or native rules. |
+
+These are not marketing tiers. `PROFILE_ONLY`, `NATIVE_LEAF_ONLY` and `EXECUTABLE_REFERENCE` are mechanically constrained evidence classes. Capability support cannot impersonate a renderer, and native leaf coverage cannot impersonate multi-step continuity.
+
+## Authority and conformance
+
+`adapters/portfolio/builtin-adapter-portfolio.yaml` is the distribution-owned support, limitation and evidence record. `AdapterPortfolioAuthority` reconciles it against:
+
+- every target registry identity;
+- actual built-in provider composition;
+- actual native projection rules;
+- evidence reference existence;
+- role and support-class invariants;
+- explicit limitations for every record.
+
+`AdapterRoadmapLifecycleAuthority` separately proves that roadmap and work-package metadata move atomically:
+
+- implementation: A0.1 `next`, A0.2 `planned`, work package `active`, no authored implementation evidence;
+- completion: A0.1 `completed`, A0.2 `next`, work package `complete`, one structurally passing exact-head and merge-candidate Flow CI boundary.
+
+Adapter conformance has its own committed inventory under `adapters/conformance/check-inventory.yaml`. It certifies:
+
+- A0.1 lifecycle integrity;
+- exact portfolio reassessment coverage;
+- committed executable-reference evidence;
+- absence of Adapter Portfolio dependencies from semantic Core packages.
+
+The adapter checks execute only after `v0.9.7.10.bounded-semantic-closure`. Therefore A0.x can evolve without silently changing what closed Core v0.9.7.
+
+## Validation history
+
+Flow CI #2263 passed the initial portfolio and roadmap-transition implementation before lifecycle certification was added. It remains historical evidence and is not the A0.1 completion authority.
+
+Flow CI #2270, run `30342473373`, passed the complete A0.1 implementation with lifecycle certification on:
+
+- exact head `20191d2d7b9460894c81f9bfee73b3c11b8f78f4`;
+- synthetic merge candidate `d3238468ba01fe8b97bc6f500c9f96f2beeb4760`;
+- Flow Agent tooling, structure validation and context generation;
+- complete compilation and tests;
+- standalone Core closure plus the separate adapter conformance inventory.
+
+The current completion-metadata head and its synthetic merge candidate must independently pass before PR #96 may become ready for review. A0.2 is selected as next, but no A0.2 implementation belongs to this PR.
+
 ## Architecture boundary
 
-This correction changes release and conformance evidence authority only. It does not alter canonical intent, effects, controls, topology, lowering or materialization semantics.
+A0.1 did not add a renderer, target-specific public syntax, runtime executor, SDK lifecycle or new Core semantic requirement. It reassessed existing distribution claims before further adapter work is allowed.

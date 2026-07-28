@@ -208,23 +208,23 @@ def find_unique_next_roadmap_item(root: Path, main_roadmap: Path) -> RoadmapItem
     main_text = read_text(main_roadmap)
     primary_stream = find_scalar(main_text, "primaryRoadmapStream") or "core"
     items_by_stream = next_items_by_stream(root, main_roadmap)
-    core_item = items_by_stream.get(primary_stream)
+    primary_item = items_by_stream.get(primary_stream)
     correction_path = active_correction_work_package(root, main_roadmap)
 
     if correction_path is not None:
-        if core_item is not None:
+        if primary_item is not None:
             raise RuntimeError(
-                "An active correction work package and a primary Core status: next item must not coexist."
+                "An active correction work package and a primary roadmap status: next item must not coexist."
             )
         return correction_item(correction_path)
 
-    if core_item is None:
+    if primary_item is None:
         checked = roadmap_paths_by_stream(root, main_roadmap).get(primary_stream)
         location = str(checked.relative_to(root.resolve())) if checked else primary_stream
         raise RuntimeError(
             f"No roadmap item with status: next found for primary stream {primary_stream}: {location}"
         )
-    return core_item
+    return primary_item
 
 
 def _roadmap_versions(path: Path) -> set[str]:
@@ -286,6 +286,14 @@ def _validate_cross_stream_references(paths: dict[str, Path]) -> None:
                         f"{stream} roadmap item {version} references unknown Core item: {dependency}"
                     )
 
+    for block in roadmap_item_blocks(read_text(paths["adapters"])):
+        version = _item_version(block)
+        for dependency in _dependency_values(block, "dependsOnAdapters"):
+            if dependency not in adapter_versions:
+                raise RuntimeError(
+                    f"adapters roadmap item {version} references unknown adapter item: {dependency}"
+                )
+
     for block in roadmap_item_blocks(read_text(paths["conformance"])):
         version = _item_version(block)
         for dependency in _dependency_values(block, "dependsOnAdapters"):
@@ -306,10 +314,11 @@ def _validate_active_correction(root: Path, main_roadmap: Path, paths: dict[str,
         raise RuntimeError(
             f"Active correction {correction.version} references unknown parent Core item: {parent or 'missing'}"
         )
-    core_next = next_items_in(paths["core"], "core")
-    if core_next:
+    primary_stream = find_scalar(read_text(main_roadmap), "primaryRoadmapStream") or "core"
+    primary_next = next_items_in(paths[primary_stream], primary_stream)
+    if primary_next:
         raise RuntimeError(
-            "The Core closure item must remain blocked while an active correction work package exists."
+            "The primary roadmap item must remain blocked while an active correction work package exists."
         )
 
 
