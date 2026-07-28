@@ -81,12 +81,18 @@ data class AdapterControlMaterializationReport(
     val claimCount: Int
 )
 
+enum class AdapterControlRequirementCompleteness {
+    COMPLETE,
+    PRESERVED_UNSPECIFIED
+}
+
 data class AdapterControlRequirement(
     val id: String,
     val family: AdapterControlFamily,
     val semantic: String,
     val subject: String,
-    val detail: String
+    val detail: String,
+    val completeness: AdapterControlRequirementCompleteness = AdapterControlRequirementCompleteness.COMPLETE
 )
 
 enum class AdapterControlEvidenceStatus {
