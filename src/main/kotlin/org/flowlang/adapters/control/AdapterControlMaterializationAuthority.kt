@@ -42,14 +42,20 @@ class AdapterControlMaterializationAuthority(
         documentOverride ?: AdapterControlMaterializationLoader.load(rootDir)
     }
 
+    /**
+     * Runtime composition may intentionally expose only a subset of distribution
+     * targets. Certify every active target exactly, while the public [analyze]
+     * path continues to verify the complete distribution inventory.
+     */
     private val certifiedDocument: AdapterControlMaterializationDocument by lazy {
         val loaded = document
-        val report = analyze(loaded)
+        val active = loaded.copy(targets = loaded.targets.filter { it.target in targets })
+        val report = analyze(active)
         check(report.status == "PASS") {
             "Adapter control materialization evidence is invalid: " +
                 report.findings.joinToString(" | ") { "${it.code}:${it.target}:${it.family}:${it.message}" }
         }
-        loaded
+        active
     }
 
     fun analyze(
@@ -226,11 +232,19 @@ class AdapterControlMaterializationAuthority(
 
     fun requirementsFor(plan: ExecutionPlan): List<AdapterControlRequirement> {
         val requirements = mutableListOf<AdapterControlRequirement>()
+        val canonicalFlowHandler = plan.nodes.lastOrNull()
+            ?.takeIf { node ->
+                node is TryPlanNode && node.body.isEmpty() && node.errorHandler.isNotEmpty() && plan.nodes.size > 1
+            }
         flatten(plan.nodes).forEach { node ->
             when (node) {
                 is ApprovalNode -> requirements += approvalRequirement(node)
                 is RetryGroupNode -> addRetryRequirements(node, requirements)
-                is TryPlanNode -> addCompensationRequirements(node, requirements)
+                is TryPlanNode -> addCompensationRequirements(
+                    node = node,
+                    canonicalFlowHandler = node === canonicalFlowHandler,
+                    requirements = requirements
+                )
                 else -> Unit
             }
         }
@@ -242,7 +256,7 @@ class AdapterControlMaterializationAuthority(
         require(conflicting.isEmpty()) {
             "Adapter control requirement identity collision: " + conflicting.keys.sorted().joinToString()
         }
-        return byId.values.map(List<AdapterControlRequirement>::first).sortedBy(AdapterControlRequirement::id)
+        return byId.values.map { it.first() }.sortedBy(AdapterControlRequirement::id)
     }
 
     private fun approvalRequirement(node: ApprovalNode): AdapterControlRequirement = when (node.mode) {
@@ -309,15 +323,21 @@ class AdapterControlMaterializationAuthority(
 
     private fun addCompensationRequirements(
         node: TryPlanNode,
+        canonicalFlowHandler: Boolean,
         requirements: MutableList<AdapterControlRequirement>
     ) {
         if (node.errorHandler.isEmpty()) return
+        val detached = node.body.isEmpty() && !canonicalFlowHandler
         requirements += requirement(
             family = AdapterControlFamily.COMPENSATION,
-            semantic = "compensation.error-handler",
+            semantic = if (detached) "compensation.detached-error-handler" else "compensation.error-handler",
             subject = node.id,
             scope = AdapterControlScope.WORKFLOW,
-            detail = "TryPlanNode(errorHandler=${node.errorHandler.size})"
+            detail = if (detached) {
+                "TryPlanNode has an error handler but no protected body or canonical flow-level boundary"
+            } else {
+                "TryPlanNode(errorHandler=${node.errorHandler.size})"
+            }
         )
         val containsRollback = flatten(node.errorHandler)
             .filterIsInstance<TaskNode>()
@@ -564,22 +584,29 @@ class AdapterControlMaterializationAuthority(
                 "Target registry data may corroborate unsupported projection state but cannot be the only repository evidence."
             )
         }
-        if (
-            claim.semantics.supported.isNotEmpty() &&
-            fileParts.none(::isIndependentImplementationEvidence)
-        ) {
+        if (claim.semantics.supported.isNotEmpty() && fileParts.none(::isImplementationEvidence)) {
             finding(
                 findings,
                 "CONTROL_SUPPORTED_IMPLEMENTATION_EVIDENCE_MISSING",
                 target,
                 claim.family.name,
-                "Supported semantics require at least one independent src/main or src/test implementation evidence reference."
+                "Supported semantics require at least one independent src/main implementation evidence reference."
+            )
+        }
+        if (claim.semantics.supported.isNotEmpty() && fileParts.none(::isBehaviorEvidence)) {
+            finding(
+                findings,
+                "CONTROL_SUPPORTED_BEHAVIOR_EVIDENCE_MISSING",
+                target,
+                claim.family.name,
+                "Supported semantics require at least one independent src/test behavioral evidence reference."
             )
         }
     }
 
-    private fun isIndependentImplementationEvidence(path: String): Boolean =
-        path.startsWith("src/main/") || path.startsWith("src/test/")
+    private fun isImplementationEvidence(path: String): Boolean = path.startsWith("src/main/")
+
+    private fun isBehaviorEvidence(path: String): Boolean = path.startsWith("src/test/")
 
     private fun AdapterControlClaimStatus.matches(
         semantics: AdapterControlSemanticPartition,
