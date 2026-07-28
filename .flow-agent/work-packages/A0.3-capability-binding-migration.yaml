@@ -2,7 +2,7 @@ version: "A0.3"
 name: "Capability Binding Migration"
 type: "adapter-binding"
 stream: adapters
-status: active
+status: complete
 objective: "Certify explicit canonical capability bindings to concrete module actions while preserving canonical meaning, effects and provenance."
 activationEvidence:
   adapterItem: "A0.2"
@@ -25,5 +25,13 @@ completionEvidence:
   - "Mapped, unsupported and binding-only parameters are complete and fail closed."
   - "Canonical meaning and semantic effects remain stable across explicit implementations."
   - "Unbound and invalid bindings remain explicit and never become implicit implementations."
+  - "The canonical AdapterStreamConformanceRunner owns the complete post-Core adapter inventory without a duplicate composition."
   - "A0.3 lifecycle integrity rejects premature or evidence-free completion metadata."
-  - "Flow CI passes exact-head and synthetic merge-candidate validation before completion metadata is authored."
+  - "Flow CI #2303 passed exact-head and synthetic merge-candidate validation with the final A0.3 authority active."
+implementationEvidence:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: "2303"
+  runId: "30354834937"
+  exactHead: "f475ae8317122b986dec23a3d36bb8df05a31db3"
+  mergeCandidate: "afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8"
