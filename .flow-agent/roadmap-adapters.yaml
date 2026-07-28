@@ -35,16 +35,17 @@ rules:
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
 
 currentDecision:
-  activeItem: "A0.1"
-  activeItemName: "Adapter Portfolio Reassessment"
-  nextItem: ""
+  completedItem: ""
+  completedItemName: ""
+  nextItem: "A0.1"
+  nextItemName: "Adapter Portfolio Reassessment"
   decisionBasis: "Core 0.9.7.10 is completed. A0.1 reassesses the existing portfolio before any topology, binding, control, continuity or renderer expansion is allowed."
 
 items:
   - version: "A0.1"
     name: "Adapter Portfolio Reassessment"
     type: "adapter-governance"
-    status: active
+    status: next
     purpose: "Reclassify existing adapters against frozen universal requirements and remove unsupported readiness claims."
     dependsOnCore: "0.9.7.10"
     completionEvidence:
