@@ -10,6 +10,7 @@ import org.flowlang.adapters.control.AdapterControlEvidenceStatus
 import org.flowlang.adapters.control.AdapterControlFamily
 import org.flowlang.adapters.control.AdapterControlMaterializationAuthority
 import org.flowlang.adapters.control.AdapterControlMaterializationLoader
+import org.flowlang.adapters.control.AdapterControlRequirementCompleteness
 import org.flowlang.adapters.control.UnresolvedAdapterControlMaterializationException
 import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.adapters.portfolio.AdapterSupportClass
@@ -117,7 +118,7 @@ class AdapterControlMaterializationAuthorityTests {
     }
 
     @Test
-    fun preservedTimeoutPolicyCannotDisappearIntoExecutableOutput() {
+    fun preservedTimeoutPolicyCannotDisappearOrBecomeFalselySpecific() {
         val plan = ExecutionPlan(
             flowName = "timeout-policy",
             sourceIntent = IntentSourceMetadata(
@@ -128,7 +129,12 @@ class AdapterControlMaterializationAuthorityTests {
 
         val assessment = authority.assess(plan, "jenkins")
         assertEquals(AdapterControlDecision.BLOCKED, assessment.decision)
-        assertEquals(listOf("timeout.workflow"), assessment.requirements.map { it.semantic })
+        assertEquals(listOf("timeout.unspecified"), assessment.requirements.map { it.semantic })
+        assertEquals(
+            listOf(AdapterControlRequirementCompleteness.PRESERVED_UNSPECIFIED),
+            assessment.requirements.map { it.completeness }
+        )
+        assertEquals(listOf(AdapterControlEvidenceStatus.UNKNOWN), assessment.evidence.map { it.status })
     }
 
     @Test
