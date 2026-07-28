@@ -8,7 +8,8 @@ Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Correction`
 Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
-Active adapter roadmap item: `A0.1 Adapter Portfolio Reassessment` (`active`)
+Next adapter roadmap item: `A0.1 Adapter Portfolio Reassessment` (`next`)
+Active adapter work package: `A0.1 Adapter Portfolio Reassessment` (`active`)
 
 ## Core boundary
 
@@ -52,7 +53,7 @@ The adapter checks execute only after `v0.9.7.10.bounded-semantic-closure`. Ther
 
 ## Validation state
 
-A0.1 is active. Implementation and roadmap-transition metadata require exact-head and synthetic merge-candidate Flow CI validation before the item may be marked complete or A0.2 may become next.
+A0.1 is `next` in the adapter roadmap and its work package is `active`. Implementation and roadmap-transition metadata require exact-head and synthetic merge-candidate Flow CI validation before the item may be marked `completed` or A0.2 may become `next`.
 
 ## Architecture boundary
 
