@@ -14,7 +14,11 @@ import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.topology.ExecutionTopologyDecisionStatus
+import org.flowlang.topology.ExecutionTopologyEvidenceStatus
+import org.flowlang.topology.ExecutionTopologyKind
 import org.flowlang.topology.ExecutionTopologyMatchingAuthority
+import org.flowlang.topology.ExecutionTopologyRequirement
+import org.flowlang.topology.ExecutionTopologyRequirementSource
 import org.flowlang.topology.ExecutionTopologySupportStatus
 
 class AdapterTopologyConformanceChecks(
@@ -27,9 +31,9 @@ class AdapterTopologyConformanceChecks(
         val lifecycle = lifecycleResult.getOrNull()
         val topologyResult = runCatching { AdapterTopologyEvidenceAuthority(rootDir, targets, projections).analyze() }
         val topology = topologyResult.getOrNull()
-        val runtimeErrors = runtimeAuthorityErrors()
-        val demotionErrors = profileOnlyDemotionErrors()
-        val executableErrors = executableTopologyErrors()
+        val runtimeResult = runCatching(::runtimeAuthorityErrors)
+        val demotionResult = runCatching(::profileOnlyDemotionErrors)
+        val executableResult = runCatching(::executableTopologyErrors)
 
         val lifecycleErrors = buildList {
             lifecycleResult.exceptionOrNull()?.let { add(it.message ?: it.javaClass.simpleName) }
@@ -42,6 +46,9 @@ class AdapterTopologyConformanceChecks(
             topologyResult.exceptionOrNull()?.let { add(it.message ?: it.javaClass.simpleName) }
             topology?.findings?.forEach { add("${it.code}:${it.target}:${it.claim}:${it.message}") }
         }
+        val runtimeErrors = resultErrors(runtimeResult)
+        val demotionErrors = resultErrors(demotionResult)
+        val executableErrors = resultErrors(executableResult)
 
         return listOf(
             ConformanceCheck(
@@ -73,12 +80,12 @@ class AdapterTopologyConformanceChecks(
     }
 
     private fun runtimeAuthorityErrors(): List<String> = buildList {
-        targets.toSortedMap().forEach { (targetName, target) ->
+        for ((targetName, target) in targets.toSortedMap()) {
             val declarations = target.topologyProfile?.declarations.orEmpty()
             if (declarations.size != AdapterTopologyClaimContract.coreClaimKinds.size) {
                 add("$targetName: runtime topology profile is incomplete (${declarations.size}/${AdapterTopologyClaimContract.coreClaimKinds.size}).")
             }
-            declarations.forEach { declaration ->
+            for (declaration in declarations) {
                 val key = declaration.kind.registryKey
                 val expected = AdapterTopologyClaimContract.registryEvidenceReference(targetName, key)
                 if (declaration.evidenceReference != expected) {
@@ -93,92 +100,115 @@ class AdapterTopologyConformanceChecks(
 
     private fun profileOnlyDemotionErrors(): List<String> = buildList {
         val portfolio = AdapterPortfolioLoader.load(rootDir)
-        portfolio.records.filter { it.supportClass == AdapterSupportClass.PROFILE_ONLY && it.target != "local" }
-            .forEach { record ->
-                val profile = targets[record.target]?.topologyProfile
-                if (profile == null) {
-                    add("${record.target}: runtime topology profile is missing.")
-                    return@forEach
-                }
-                val promoted = profile.declarations.filter { it.status != ExecutionTopologySupportStatus.UNKNOWN }
-                promoted.forEach { declaration ->
-                    add("${record.target}.${declaration.kind.registryKey}: profile-only target was promoted to ${declaration.status}.")
-                }
-                val probe = ExecutionTopologyMatchingAuthority.assess(
-                    listOf(
-                        org.flowlang.topology.ExecutionTopologyRequirement(
-                            id = "a0.2.profile-only.${record.target}",
-                            kind = org.flowlang.topology.ExecutionTopologyKind.WORKFLOW_SCOPE,
-                            subject = record.target,
-                            source = org.flowlang.topology.ExecutionTopologyRequirementSource.PLAN_STRUCTURE,
-                            evidenceReference = AdapterTopologyEvidenceLoader.PATH
-                        )
-                    ),
-                    profile
-                )
-                if (probe.decision.status != ExecutionTopologyDecisionStatus.BLOCKED) {
-                    add("${record.target}: profile-only target must block topology-dependent execution.")
-                }
+        val profileOnlyTargets = portfolio.records.filter {
+            it.supportClass == AdapterSupportClass.PROFILE_ONLY && it.target != "local"
+        }
+        for (record in profileOnlyTargets) {
+            val profile = targets[record.target]?.topologyProfile
+            if (profile == null) {
+                add("${record.target}: runtime topology profile is missing.")
+                continue
             }
+            for (declaration in profile.declarations.filter { it.status != ExecutionTopologySupportStatus.UNKNOWN }) {
+                add("${record.target}.${declaration.kind.registryKey}: profile-only target was promoted to ${declaration.status}.")
+            }
+            val probe = ExecutionTopologyMatchingAuthority.assess(
+                listOf(
+                    ExecutionTopologyRequirement(
+                        id = "a0.2.profile-only.${record.target}",
+                        kind = ExecutionTopologyKind.WORKFLOW_SCOPE,
+                        subject = record.target,
+                        source = ExecutionTopologyRequirementSource.PLAN_STRUCTURE,
+                        evidenceReference = AdapterTopologyEvidenceLoader.PATH
+                    )
+                ),
+                profile
+            )
+            if (probe.decision.status != ExecutionTopologyDecisionStatus.BLOCKED) {
+                add("${record.target}: profile-only target must block topology-dependent execution.")
+            }
+        }
     }
 
     private fun executableTopologyErrors(): List<String> = buildList {
         val portfolio = AdapterPortfolioLoader.load(rootDir)
         val topologyDocument = AdapterTopologyEvidenceLoader.load(rootDir)
         val evidenceByTarget = topologyDocument.records.associateBy { it.target }
-        portfolio.records.filter { it.supportClass == AdapterSupportClass.EXECUTABLE_REFERENCE }.forEach { record ->
+        val executableRecords = portfolio.records.filter {
+            it.supportClass == AdapterSupportClass.EXECUTABLE_REFERENCE
+        }
+
+        for (record in executableRecords) {
             val target = targets[record.target]
             if (target == null) {
                 add("${record.target}: executable target is absent from runtime registry.")
-                return@forEach
+                continue
+            }
+            val profile = target.topologyProfile
+            if (profile == null) {
+                add("${record.target}: executable target has no runtime topology profile.")
+                continue
             }
             val topologyRecord = evidenceByTarget[record.target]
             if (topologyRecord == null) {
                 add("${record.target}: executable target has no topology evidence record.")
-                return@forEach
+                continue
             }
-            record.executableEvidence.forEach { reference ->
+
+            for (reference in record.executableEvidence) {
                 val snapshotFile = File(rootDir, reference.substringBefore('#'))
-                val snapshotResult = runCatching { Json.mapper.readValue(snapshotFile, ReferenceSnapshotSet::class.java) }
+                val snapshotResult = runCatching {
+                    Json.mapper.readValue(snapshotFile, ReferenceSnapshotSet::class.java)
+                }
                 val snapshot = snapshotResult.getOrNull()
                 if (snapshot == null) {
                     add("${record.target}: snapshot cannot be parsed: ${snapshotResult.exceptionOrNull()?.message}")
-                    return@forEach
+                    continue
                 }
                 ReferenceSnapshotHonesty.validate(snapshot).forEach { issue ->
                     add("${record.target}: invalid snapshot '${snapshot.scenarioId}': $issue")
                 }
+                val targetState = snapshot.targets.singleOrNull { it.target == record.target }
+                if (targetState == null || !targetState.executable) {
+                    add("${record.target}: snapshot '${snapshot.scenarioId}' does not contain one executable target state.")
+                    continue
+                }
                 val planArtifacts = snapshot.artifacts.filter { it.layer == ReferenceSnapshotLayer.SEMANTIC_PLAN }
                 if (planArtifacts.size != 1) {
                     add("${record.target}: snapshot '${snapshot.scenarioId}' must contain exactly one semantic plan artifact.")
-                    return@forEach
+                    continue
                 }
                 val planFile = File(snapshotFile.parentFile, planArtifacts.single().file)
                 val planResult = runCatching { Json.mapper.readValue(planFile, ExecutionPlan::class.java) }
                 val plan = planResult.getOrNull()
                 if (plan == null) {
                     add("${record.target}: execution plan cannot be parsed: ${planResult.exceptionOrNull()?.message}")
-                    return@forEach
+                    continue
                 }
-                val assessment = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, target.topologyProfile)
+                val assessment = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, profile)
                 if (assessment.decision.status != ExecutionTopologyDecisionStatus.MATCHED) {
                     val blockers = assessment.evidence.filter {
-                        it.status != org.flowlang.topology.ExecutionTopologyEvidenceStatus.SATISFIED
+                        it.status != ExecutionTopologyEvidenceStatus.SATISFIED
                     }.joinToString { "${it.requirementId}=${it.status}" }
                     add("${record.target}: executable snapshot '${snapshot.scenarioId}' lacks matched topology evidence: $blockers")
                 }
-                assessment.evidence.forEach { evidence ->
-                    val claim = topologyRecord.claims.singleOrNull { it.key == evidence.kind.registryKey }
+                for (evidence in assessment.evidence) {
+                    val key = evidence.kind.registryKey
+                    val claim = topologyRecord.claims.singleOrNull { it.key == key }
                     if (claim == null || claim.status != AdapterTopologyClaimStatus.SUPPORTED) {
-                        add("${record.target}.${evidence.kind.registryKey}: executable requirement is not backed by a SUPPORTED adapter claim.")
+                        add("${record.target}.$key: executable requirement is not backed by a SUPPORTED adapter claim.")
                     }
-                    if (evidence.evidenceReference != AdapterTopologyClaimContract.registryEvidenceReference(record.target, evidence.kind.registryKey)) {
-                        add("${record.target}.${evidence.kind.registryKey}: executable assessment did not consume adapter-owned evidence.")
+                    val expectedReference = AdapterTopologyClaimContract.registryEvidenceReference(record.target, key)
+                    if (evidence.evidenceReference != expectedReference) {
+                        add("${record.target}.$key: executable assessment did not consume adapter-owned evidence '$expectedReference'.")
                     }
                 }
             }
         }
     }
+
+    private fun resultErrors(result: Result<List<String>>): List<String> =
+        result.getOrElse { listOf(it.message ?: it.javaClass.simpleName) }
 
     companion object {
         const val LIFECYCLE_CHECK = "adapters.a0.2.lifecycle-integrity"
