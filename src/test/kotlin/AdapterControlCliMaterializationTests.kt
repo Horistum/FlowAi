@@ -5,9 +5,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.flowlang.adapters.control.AdapterControlDecision
+import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
+import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.RetryGroupNode
@@ -48,6 +50,8 @@ class AdapterControlCliMaterializationTests {
         )
 
         assertTrue(result.diagnosticFallbackUsed)
+        assertEquals(ExecutionReadinessStatus.BLOCKED, result.readiness.readiness)
+        assertEquals(TargetRenderMode.REVIEW_ONLY, result.renderReadiness.mode)
         assertEquals(CliTargetEvidenceOutcome.REVIEW_ONLY, result.outcome)
         assertNull(result.renderedArtifact)
         assertEquals(AdapterControlDecision.BLOCKED.name, result.manifest.metadata["adapterControlDecision"])
