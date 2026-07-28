@@ -31,7 +31,9 @@ Validation history:
 - Flow CI #2300 passed exact-head and merge-candidate validation before final review found two competing complete adapter-stream composition classes.
 - The duplicate runner was removed and the existing canonical `AdapterStreamConformanceRunner` was extended to own inventory `1.2`.
 - Flow CI #2303, run `30354834937`, passed the final implementation on exact head `f475ae8317122b986dec23a3d36bb8df05a31db3` and synthetic merge candidate `afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8`.
-- A0.3 is now `completed`, A0.4 is `next`, and the completion-metadata head must independently pass exact-head and merge-candidate validation before PR #98 becomes ready for review.
+- Flow CI #2310 rejected the first completion head because the repository lifecycle integration test was hardcoded to `IMPLEMENTING` even though exact phase tests already covered IMPLEMENTING and COMPLETED independently.
+- The repository test now accepts exactly one honest supported lifecycle phase while retaining explicit failure tests for missing evidence, premature evidence, skipped items and non-adjacent progress.
+- A0.3 remains `completed`, A0.4 remains `next`, and the corrected completion-metadata head must independently pass exact-head and merge-candidate validation before PR #98 becomes ready for review.
 
 ### A0.2 Topology Evidence Adoption
 
