@@ -115,7 +115,6 @@ data class TargetProjectionRuleDescriptor(
     }
 }
 
-
 data class TargetTopologyProfileDescriptor(
     val evidenceReference: String = "",
     val capabilities: Map<String, String> = emptyMap()
@@ -158,7 +157,10 @@ data class TargetDescriptor(
     val topology: TargetTopologyProfileDescriptor? = null,
     val projectionRules: List<TargetProjectionRuleDescriptor> = emptyList()
 ) {
-    fun toCapability(expressionProfiles: Map<String, TargetExpressionSupportDeclaration> = emptyMap()): TargetCapability {
+    fun toCapability(
+        expressionProfiles: Map<String, TargetExpressionSupportDeclaration> = emptyMap(),
+        topologyProfile: ExecutionTopologyProfile? = null
+    ): TargetCapability {
         val expressionDeclaration = expressionProfile?.let { profileId ->
             expressionProfiles[profileId]
                 ?: error("Unknown expression profile '$profileId' for target '$name'.")
@@ -181,7 +183,8 @@ data class TargetDescriptor(
             features = features.mapValues { (_, raw) -> parseSupport(raw, name) },
             expressionSupport = expressionDeclaration,
             projectionRules = projectionRules.map { it.toRule(name) },
-            topologyProfile = requireNotNull(topology) { "Target '$name' must declare a complete topology profile." }.toProfile(name)
+            topologyProfile = topologyProfile
+                ?: requireNotNull(topology) { "Target '$name' must declare a complete topology profile." }.toProfile(name)
         )
     }
 

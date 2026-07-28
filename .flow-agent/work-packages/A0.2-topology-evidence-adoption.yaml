@@ -1,0 +1,37 @@
+version: "A0.2"
+name: "Topology Evidence Adoption"
+type: "adapter-topology"
+stream: adapters
+status: complete
+objective: "Replace self-referential target topology declarations with complete adapter-owned evidence for execution isolation, lifetime, transfer, scope, interaction and concurrency."
+activationEvidence:
+  adapterItem: "A0.1"
+  adapterStatus: "completed"
+  mergedPullRequest: "PR #96 merged as dbd1529cd9da1b21d13bd45d3af1a84361b9abf1"
+universalBoundary:
+  - "A0.2 consumes the frozen Core topology vocabulary and matching semantics without adding or redefining topology kinds."
+  - "Capability declarations, provider presence and platform folklore do not constitute topology evidence."
+  - "Runtime target profiles are derived from adapter-owned evidence rather than self-citing target registry fields."
+  - "Unknown, unsupported and contradictory evidence continues to block executable topology matching."
+forbiddenScope:
+  - "No new Core semantic or topology requirement."
+  - "No renderer or provider implementation added merely to improve topology status."
+  - "No promotion based only on a platform's documented capabilities."
+  - "No silent approximation of value, workspace, state or failure transfer."
+  - "No mutation of the frozen v0.9.7 Core pre-closure inventory."
+completionEvidence:
+  - "Every target has exactly one complete record covering all Core topology kinds plus interaction and concurrency."
+  - "Every non-supported claim has an explicit limitation and every evidence reference resolves outside the topology manifest and target registry."
+  - "Runtime ExecutionTopologyProfile instances are generated from the adapter evidence manifest."
+  - "Runtime profiles carry only target-neutral status and exact evidence identity; detailed mechanism prose remains adapter-owned."
+  - "Profile-only target adapters remain UNKNOWN and block topology-dependent execution."
+  - "Every executable-reference scenario matches only SUPPORTED adapter topology claims."
+  - "A0.2 lifecycle integrity rejects premature or evidence-free completion metadata."
+  - "Flow CI #2284 passed exact-head and synthetic merge-candidate validation with the final A0.2 authority active."
+implementationEvidence:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: "2284"
+  runId: "30348796256"
+  exactHead: "6d441628c4d3101bfd0c32c5d2eb370b00fbc4fe"
+  mergeCandidate: "6168e45d292a34f3d648c0e645016f88c813e25b"

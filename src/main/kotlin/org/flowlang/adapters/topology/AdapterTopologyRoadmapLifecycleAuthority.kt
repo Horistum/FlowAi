@@ -1,54 +1,22 @@
-package org.flowlang.adapters.portfolio
+package org.flowlang.adapters.topology
 
 import java.io.File
+import org.flowlang.adapters.portfolio.AdapterRoadmapSequence
+import org.flowlang.adapters.portfolio.AdapterWorkflowEvidence
 import org.flowlang.serialization.FlowYaml
 
-enum class AdapterRoadmapLifecyclePhase {
+enum class AdapterTopologyLifecyclePhase {
     IMPLEMENTING,
     COMPLETED,
     INVALID
 }
 
-data class AdapterWorkflowEvidence(
-    val status: String,
-    val workflow: String,
-    val runNumber: Int?,
-    val runId: Long?,
-    val exactHead: String,
-    val mergeCandidate: String,
-    val unknownFields: List<String>,
-    val present: Boolean
-) {
-    val structurallyValid: Boolean
-        get() = present &&
-            unknownFields.isEmpty() &&
-            status == "passed" &&
-            workflow == "Flow CI" &&
-            runNumber?.let { it > 0 } == true &&
-            runId?.let { it > 0 } == true &&
-            SHA.matches(exactHead) &&
-            SHA.matches(mergeCandidate) &&
-            exactHead != mergeCandidate
-
-    fun summary(): String = if (!present) {
-        "absent"
-    } else {
-        "status=$status,workflow=$workflow,runNumber=${runNumber ?: "invalid"}," +
-            "runId=${runId ?: "invalid"},exactHead=$exactHead,mergeCandidate=$mergeCandidate," +
-            "unknown=${unknownFields.joinToString()}"
-    }
-
-    companion object {
-        private val SHA = Regex("[0-9a-f]{40}")
-        val ABSENT = AdapterWorkflowEvidence("", "", null, null, "", "", emptyList(), false)
-    }
-}
-
-data class AdapterRoadmapLifecycleInput(
+data class AdapterTopologyLifecycleInput(
     val workPackageStatus: String,
     val adapterTrackStatus: String,
     val a01Status: String,
     val a02Status: String,
+    val a03Status: String,
     val adapterCompletedItem: String,
     val adapterNextItem: String,
     val primaryStream: String,
@@ -59,41 +27,41 @@ data class AdapterRoadmapLifecycleInput(
     val implementationEvidence: AdapterWorkflowEvidence
 )
 
-data class AdapterRoadmapLifecycleCheck(
+data class AdapterTopologyLifecycleCheck(
     val id: String,
     val status: String,
     val evidence: List<String>,
     val message: String
 )
 
-data class AdapterRoadmapLifecycleReport(
+data class AdapterTopologyLifecycleReport(
     val reportVersion: String = "1.1",
-    val phase: AdapterRoadmapLifecyclePhase,
+    val phase: AdapterTopologyLifecyclePhase,
     val status: String,
-    val checks: List<AdapterRoadmapLifecycleCheck>,
+    val checks: List<AdapterTopologyLifecycleCheck>,
     val failedChecks: List<String>
 )
 
 /**
- * Historical lifecycle authority for A0.1.
+ * Historical lifecycle authority for A0.2 Topology Evidence Adoption.
  *
- * During implementation it requires the exact A0.1 -> A0.2 transition shape.
- * After completion it preserves A0.1 evidence while allowing later adjacent
- * A0.x roadmap progress. A completed authority must certify history, not freeze
- * the global roadmap pointer on its immediate successor forever.
+ * During implementation it requires the exact A0.2 -> A0.3 transition shape.
+ * After completion it preserves A0.2 evidence while allowing later adjacent
+ * A0.x progress without reopening or silently skipping the guarded item.
  */
-class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
-    fun analyze(): AdapterRoadmapLifecycleReport {
+class AdapterTopologyRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
+    fun analyze(): AdapterTopologyLifecycleReport {
         val workPackage = requiredYaml(WORK_PACKAGE)
         val adapterRoadmap = requiredYaml(ADAPTER_ROADMAP)
         val roadmap = requiredYaml(ROADMAP_INDEX)
         val releaseState = requiredYaml(RELEASE_STATE)
         return evaluate(
-            AdapterRoadmapLifecycleInput(
+            AdapterTopologyLifecycleInput(
                 workPackageStatus = workPackage.string("status"),
                 adapterTrackStatus = adapterRoadmap.string("status"),
                 a01Status = adapterRoadmap.itemStatus("A0.1"),
                 a02Status = adapterRoadmap.itemStatus("A0.2"),
+                a03Status = adapterRoadmap.itemStatus("A0.3"),
                 adapterCompletedItem = adapterRoadmap.string("currentDecision", "completedItem"),
                 adapterNextItem = adapterRoadmap.string("currentDecision", "nextItem"),
                 primaryStream = roadmap.string("primaryRoadmapStream"),
@@ -106,37 +74,34 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
         )
     }
 
-    fun evaluate(input: AdapterRoadmapLifecycleInput): AdapterRoadmapLifecycleReport {
+    fun evaluate(input: AdapterTopologyLifecycleInput): AdapterTopologyLifecycleReport {
         val phase = when {
-            input.workPackageStatus == "active" && input.a01Status == "next" ->
-                AdapterRoadmapLifecyclePhase.IMPLEMENTING
-            input.workPackageStatus == "complete" && input.a01Status == "completed" ->
-                AdapterRoadmapLifecyclePhase.COMPLETED
-            else -> AdapterRoadmapLifecyclePhase.INVALID
+            input.workPackageStatus == "active" && input.a02Status == "next" -> AdapterTopologyLifecyclePhase.IMPLEMENTING
+            input.workPackageStatus == "complete" && input.a02Status == "completed" -> AdapterTopologyLifecyclePhase.COMPLETED
+            else -> AdapterTopologyLifecyclePhase.INVALID
         }
-
-        val trackAligned = input.adapterTrackStatus == "active"
+        val trackAligned = input.adapterTrackStatus == "active" && input.a01Status == "completed"
         val linearProgress = AdapterRoadmapSequence.isAdjacentProgress(
             input.adapterCompletedItem,
             input.adapterNextItem,
-            minimumCompletedOrdinal = 1
+            minimumCompletedOrdinal = 2
         )
         val adapterStateAligned = when (phase) {
-            AdapterRoadmapLifecyclePhase.IMPLEMENTING ->
-                input.a02Status == "planned" &&
-                    input.adapterCompletedItem.isBlank() &&
-                    input.adapterNextItem == "A0.1"
-            AdapterRoadmapLifecyclePhase.COMPLETED -> when (input.a02Status) {
+            AdapterTopologyLifecyclePhase.IMPLEMENTING ->
+                input.a03Status == "planned" &&
+                    input.adapterCompletedItem == "A0.1" &&
+                    input.adapterNextItem == "A0.2"
+            AdapterTopologyLifecyclePhase.COMPLETED -> when (input.a03Status) {
                 "next" ->
                     linearProgress &&
-                        input.adapterCompletedItem == "A0.1" &&
-                        input.adapterNextItem == "A0.2"
+                        input.adapterCompletedItem == "A0.2" &&
+                        input.adapterNextItem == "A0.3"
                 "completed" ->
                     linearProgress &&
-                        (AdapterRoadmapSequence.ordinal(input.adapterCompletedItem) ?: 0) >= 2
+                        (AdapterRoadmapSequence.ordinal(input.adapterCompletedItem) ?: 0) >= 3
                 else -> false
             }
-            AdapterRoadmapLifecyclePhase.INVALID -> false
+            AdapterTopologyLifecyclePhase.INVALID -> false
         }
         val indexAligned = input.primaryStream == "adapters" &&
             input.indexNextStream == "adapters" &&
@@ -144,70 +109,66 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
         val releaseAligned = input.releasePrimaryStream == "adapters" &&
             input.releaseNextItem == input.adapterNextItem
         val evidenceAligned = when (phase) {
-            AdapterRoadmapLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
-            AdapterRoadmapLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
-            AdapterRoadmapLifecyclePhase.INVALID -> false
+            AdapterTopologyLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
+            AdapterTopologyLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
+            AdapterTopologyLifecyclePhase.INVALID -> false
         }
 
         val checks = listOf(
             check(
-                "adapters.a0.1.lifecycle-phase",
-                phase != AdapterRoadmapLifecyclePhase.INVALID,
-                listOf(
-                    "workPackage=${input.workPackageStatus}",
-                    "a01=${input.a01Status}",
-                    "phase=$phase"
-                ),
-                "A0.1 lifecycle must be exactly IMPLEMENTING or COMPLETED."
+                "adapters.a0.2.lifecycle-phase",
+                phase != AdapterTopologyLifecyclePhase.INVALID,
+                listOf("workPackage=${input.workPackageStatus}", "a02=${input.a02Status}", "phase=$phase"),
+                "A0.2 lifecycle must be exactly IMPLEMENTING or COMPLETED."
             ),
             check(
-                "adapters.a0.1.track-state",
+                "adapters.a0.2.track-state",
                 trackAligned,
-                listOf("adapterTrack=${input.adapterTrackStatus}"),
-                "The adapter portfolio track remains active while A0.1 or later A0.x work is selected."
+                listOf("track=${input.adapterTrackStatus}", "a01=${input.a01Status}"),
+                "A0.2 requires the active adapter track and completed A0.1."
             ),
             check(
-                "adapters.a0.1.adapter-roadmap-state",
+                "adapters.a0.2.adapter-roadmap-state",
                 adapterStateAligned,
                 listOf(
-                    "a01=${input.a01Status}",
                     "a02=${input.a02Status}",
+                    "a03=${input.a03Status}",
                     "completed=${input.adapterCompletedItem}",
                     "next=${input.adapterNextItem}",
                     "linear=$linearProgress"
                 ),
-                "A0.1 implementation must transition to A0.2; after completion later adapter progress must remain adjacent and must not reopen A0.1."
+                "A0.2 implementation must transition to A0.3; after completion later adapter progress must remain adjacent and must not reopen A0.2."
             ),
             check(
-                "adapters.a0.1.index-state",
+                "adapters.a0.2.index-state",
                 indexAligned,
                 listOf(
                     "primary=${input.primaryStream}",
                     "adapterNext=${input.adapterNextItem}",
                     "indexNext=${input.indexNextItem}",
-                    "nextStream=${input.indexNextStream}"
+                    "stream=${input.indexNextStream}"
                 ),
-                "The roadmap index must select the same current adapter item and stream as the adapter roadmap."
+                "The roadmap index must select the same current adapter item as the adapter roadmap."
             ),
             check(
-                "adapters.a0.1.release-state",
+                "adapters.a0.2.release-state",
                 releaseAligned,
                 listOf(
                     "primary=${input.releasePrimaryStream}",
                     "adapterNext=${input.adapterNextItem}",
                     "releaseNext=${input.releaseNextItem}"
                 ),
-                "Release state must expose the same current adapter item as the adapter roadmap."
+                "Release state must expose the same current adapter lifecycle focus."
             ),
             check(
-                "adapters.a0.1.implementation-evidence",
+                "adapters.a0.2.implementation-evidence",
                 evidenceAligned,
                 listOf(input.implementationEvidence.summary()),
-                "IMPLEMENTING forbids authored validation evidence; COMPLETED requires one structurally passing Flow CI boundary."
+                "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."
             )
         )
         val failed = checks.filter { it.status == "FAIL" }.map { it.id }
-        return AdapterRoadmapLifecycleReport(
+        return AdapterTopologyLifecycleReport(
             phase = phase,
             status = if (failed.isEmpty()) "PASS" else "FAIL",
             checks = checks,
@@ -217,7 +178,7 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
 
     private fun requiredYaml(path: String): Map<String, Any?> {
         val file = File(rootDir, path)
-        require(file.isFile) { "Required A0.1 lifecycle evidence is missing: ${file.path}" }
+        require(file.isFile) { "Required A0.2 lifecycle evidence is missing: ${file.path}" }
         return FlowYaml.readMap(file)
     }
 
@@ -253,30 +214,14 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
             (value as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
         }.orEmpty()
 
-    private fun check(
-        id: String,
-        passed: Boolean,
-        evidence: List<String>,
-        message: String
-    ): AdapterRoadmapLifecycleCheck = AdapterRoadmapLifecycleCheck(
-        id = id,
-        status = if (passed) "PASS" else "FAIL",
-        evidence = evidence,
-        message = message
-    )
+    private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) =
+        AdapterTopologyLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/A0.1-adapter-portfolio-reassessment.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/A0.2-topology-evidence-adoption.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
-        private val EVIDENCE_FIELDS = setOf(
-            "status",
-            "workflow",
-            "runNumber",
-            "runId",
-            "exactHead",
-            "mergeCandidate"
-        )
+        private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
     }
 }

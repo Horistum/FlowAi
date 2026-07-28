@@ -1,16 +1,24 @@
 package org.flowlang.targets
 
+import java.io.File
+import org.flowlang.adapters.topology.AdapterTopologyEvidenceLoader
+import org.flowlang.adapters.topology.AdapterTopologyProfileFactory
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.capabilities.TargetExpressionSupportDeclaration
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.standard.FlowStandardVersions
-import java.io.File
+import org.flowlang.topology.ExecutionTopologyProfile
 
 /**
  * Single loading boundary for the versioned target capability registry.
  * Registry documents are declarative evidence; missing or inconsistent evidence
  * fails closed before manifest generation.
+ *
+ * Adapter topology evidence is distribution-owned. When the adapter topology
+ * manifest is present beside the target registry, it is the sole runtime source
+ * for ExecutionTopologyProfile. Legacy inline topology blocks remain parseable
+ * for isolated fixtures but cannot override distribution evidence.
  */
 object TargetRegistryYamlLoader {
     fun load(file: File): TargetRegistryDocument = FlowYaml.read(file, TargetRegistryDocument::class.java)
@@ -20,6 +28,7 @@ object TargetRegistryYamlLoader {
         val docs = dir.listFiles { file ->
             file.isFile && (file.extension == "yaml" || file.extension == "yml")
         }?.sortedBy { it.name } ?: emptyList()
+        val topologyProfiles = adapterTopologyProfiles(dir)
 
         val out = linkedMapOf<String, TargetCapability>()
         docs.forEach { file ->
@@ -36,16 +45,34 @@ object TargetRegistryYamlLoader {
                 require(descriptor.expressionProfile?.isNotBlank() == true) {
                     "Target '${descriptor.name}' must declare expressionProfile in ${file.path}; missing expression evidence fails closed."
                 }
-                require(descriptor.topology != null) {
+                require(topologyProfiles.isNotEmpty() || descriptor.topology != null) {
                     "Target '${descriptor.name}' must declare topology evidence in ${file.path}; missing topology evidence fails closed."
                 }
                 require(descriptor.name !in out) {
                     "Target '${descriptor.name}' is declared more than once across target registry files."
                 }
-                out[descriptor.name] = descriptor.toCapability(profiles)
+                val topology = topologyProfiles[descriptor.name]
+                    ?: descriptor.topology?.toProfile(descriptor.name)
+                require(topology != null) {
+                    "Adapter topology evidence does not declare target '${descriptor.name}'."
+                }
+                out[descriptor.name] = descriptor.toCapability(profiles, topology)
+            }
+        }
+        if (topologyProfiles.isNotEmpty()) {
+            val undeclaredProfiles = topologyProfiles.keys - out.keys
+            require(undeclaredProfiles.isEmpty()) {
+                "Adapter topology evidence declares unknown targets: ${undeclaredProfiles.sorted().joinToString()}."
             }
         }
         return out
+    }
+
+    private fun adapterTopologyProfiles(dir: File): Map<String, ExecutionTopologyProfile> {
+        val root = dir.absoluteFile.parentFile ?: return emptyMap()
+        val evidenceFile = File(root, AdapterTopologyEvidenceLoader.PATH)
+        if (!evidenceFile.isFile) return emptyMap()
+        return AdapterTopologyProfileFactory.profiles(AdapterTopologyEvidenceLoader.load(root))
     }
 
     private fun expressionProfiles(

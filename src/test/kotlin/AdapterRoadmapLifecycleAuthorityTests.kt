@@ -39,6 +39,38 @@ class AdapterRoadmapLifecycleAuthorityTests {
     }
 
     @Test
+    fun completedA01RemainsValidAfterA02Completes() {
+        val report = authority.evaluate(
+            completedInput().copy(
+                a02Status = "completed",
+                adapterCompletedItem = "A0.2",
+                adapterNextItem = "A0.3",
+                indexNextItem = "A0.3",
+                releaseNextItem = "A0.3"
+            )
+        )
+
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+        assertEquals(AdapterRoadmapLifecyclePhase.COMPLETED, report.phase)
+    }
+
+    @Test
+    fun completedA01RejectsSkippedLaterRoadmapItem() {
+        val report = authority.evaluate(
+            completedInput().copy(
+                a02Status = "completed",
+                adapterCompletedItem = "A0.2",
+                adapterNextItem = "A0.4",
+                indexNextItem = "A0.4",
+                releaseNextItem = "A0.4"
+            )
+        )
+
+        assertEquals("FAIL", report.status)
+        assertTrue("adapters.a0.1.adapter-roadmap-state" in report.failedChecks)
+    }
+
+    @Test
     fun completedPhaseWithoutImplementationEvidenceFailsClosed() {
         val report = authority.evaluate(
             completedInput().copy(implementationEvidence = AdapterWorkflowEvidence.ABSENT)

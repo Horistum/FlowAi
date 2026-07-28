@@ -14,6 +14,7 @@ import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.targets.builtin.BuiltInTargetProjections
@@ -35,6 +36,21 @@ class ReferenceSnapshotBundleGenerator(
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
     private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
+
+    /**
+     * Rebuilds a semantic execution plan through the same production pipeline
+     * used by committed reference generation. Canonical snapshot JSON is an
+     * export format and is deliberately not treated as a polymorphic plan loader.
+     */
+    internal fun planFor(intentFile: File): ExecutionPlan {
+        require(intentFile.isFile) { "Reference intent does not exist: ${intentFile.path}" }
+        val intent = IntentYamlLoader.load(intentFile)
+        IntentCapabilityValidator(registry).validate(intent).assertValid()
+        val ast = IntentToAstPlanner(registry).plan(intent)
+        val validation = FlowValidator(registry).validate(ast)
+        require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
+        return FlowPlanner(registry).plan(ast)
+    }
 
     fun generate(
         intentFile: File,

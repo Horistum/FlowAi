@@ -1,0 +1,358 @@
+kind: FlowAdapterTopologyEvidence
+version: "1.0"
+records:
+  - target: local
+    claims:
+      workflowScope:
+        facet: scope
+        status: supported
+        mechanism: "Target-neutral planning fixture keeps all nodes under one synthetic workflow identity."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt", "docs/CORE_ADAPTER_SPLIT.md"]
+        limitations: []
+      branchIsolation:
+        facet: execution_isolation
+        status: supported
+        mechanism: "The semantic fixture models parallel branches as distinct plan branches."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt"]
+        limitations: []
+      attemptIsolation:
+        facet: execution_isolation
+        status: supported
+        mechanism: "The semantic fixture represents retry attempts as distinct abstract attempts."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt"]
+        limitations: []
+      workflowLifetime:
+        facet: state_lifetime
+        status: supported
+        mechanism: "The fixture retains canonical workflow lifetime for the complete plan."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt"]
+        limitations: []
+      suspendResume:
+        facet: state_lifetime
+        status: partial
+        mechanism: "Suspend and resume are modeled semantically but no production runtime is composed."
+        evidenceReferences: ["docs/CORE_ADAPTER_SPLIT.md"]
+        limitations: ["This is semantic reference evidence, not an executable adapter mechanism."]
+      ephemeralWorkspace:
+        facet: scope
+        status: supported
+        mechanism: "Workspace continuity is represented as an abstract workflow-scoped dependency."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt"]
+        limitations: []
+      durableState:
+        facet: state_lifetime
+        status: partial
+        mechanism: "Durable state lifetime is represented in the model without a storage implementation."
+        evidenceReferences: ["docs/CORE_ADAPTER_SPLIT.md"]
+        limitations: ["No production persistence provider is implied."]
+      valuePropagation:
+        facet: transfer
+        status: supported
+        mechanism: "Canonical value dependencies are preserved between plan nodes."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt"]
+        limitations: []
+      workspacePropagation:
+        facet: transfer
+        status: supported
+        mechanism: "Workspace dependency relations are represented explicitly in the plan."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt"]
+        limitations: []
+      statePropagation:
+        facet: transfer
+        status: partial
+        mechanism: "State propagation is represented abstractly without a concrete transport."
+        evidenceReferences: ["docs/CORE_ADAPTER_SPLIT.md"]
+        limitations: ["No production state transport is provided."]
+      failurePropagation:
+        facet: transfer
+        status: supported
+        mechanism: "Failure relationships remain explicit in canonical plan structure."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt"]
+        limitations: []
+      interaction:
+        facet: interaction
+        status: partial
+        mechanism: "Human interaction requirements can be represented but are not executed locally by Flow Core."
+        evidenceReferences: ["docs/CORE_ADAPTER_SPLIT.md"]
+        limitations: ["External interaction enforcement is required."]
+      concurrency:
+        facet: concurrency
+        status: supported
+        mechanism: "Parallel branch structure is represented independently from any concrete scheduler."
+        evidenceReferences: ["src/test/kotlin/AbstractExecutionTopologyModelTests.kt"]
+        limitations: []
+
+  - target: jenkins
+    claims:
+      workflowScope:
+        facet: scope
+        status: supported
+        mechanism: "One generated declarative Pipeline owns all materialized stages."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt", "conformance/snapshots/checkout-build-image/jenkins.executable.yaml"]
+        limitations: []
+      branchIsolation:
+        facet: execution_isolation
+        status: partial
+        mechanism: "Flow preserves branch structure, but the current renderer does not prove independent agents or workspaces for every branch."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"]
+        limitations: ["Parallel branches may share agent and workspace context."]
+      attemptIsolation:
+        facet: execution_isolation
+        status: unknown
+        mechanism: "No owned Jenkins retry projection proves fresh attempt scope."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"]
+        limitations: ["Retry attempt isolation is not certified by current renderer evidence."]
+      workflowLifetime:
+        facet: state_lifetime
+        status: supported
+        mechanism: "Generated stages execute within one Jenkins Pipeline run."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt", "tests/FlowFirstExecutableReferenceScenarioTests.kt"]
+        limitations: []
+      suspendResume:
+        facet: state_lifetime
+        status: supported
+        mechanism: "Provider-owned manual approval renders Jenkins input and can pause and resume one Pipeline run."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt", "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt"]
+        limitations: []
+      ephemeralWorkspace:
+        facet: scope
+        status: supported
+        mechanism: "Checkout and image build execute in the workflow workspace used by the executable reference."
+        evidenceReferences: ["conformance/snapshots/checkout-build-image/execution-plan.json", "conformance/snapshots/checkout-build-image/jenkins.executable.yaml"]
+        limitations: []
+      durableState:
+        facet: state_lifetime
+        status: partial
+        mechanism: "Jenkins can retain build state, but the Flow provider does not own a complete durable-state contract."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"]
+        limitations: ["Feature-level mutable state continuity remains partial."]
+      valuePropagation:
+        facet: transfer
+        status: partial
+        mechanism: "Inputs and selected bindings propagate inside one Pipeline, but arbitrary task outputs are not certified."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"]
+        limitations: ["General result-to-result propagation is not proven."]
+      workspacePropagation:
+        facet: transfer
+        status: supported
+        mechanism: "The executable checkout-build-image scenario consumes checkout output through one Jenkins workspace."
+        evidenceReferences: ["conformance/snapshots/checkout-build-image/execution-plan.json", "conformance/snapshots/checkout-build-image/jenkins.executable.yaml", "tests/FlowFirstExecutableReferenceScenarioTests.kt"]
+        limitations: []
+      statePropagation:
+        facet: transfer
+        status: partial
+        mechanism: "State can remain inside one Pipeline run, but no general Flow state channel is owned."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"]
+        limitations: ["Cross-run and provider-neutral state propagation are not proven."]
+      failurePropagation:
+        facet: transfer
+        status: supported
+        mechanism: "Generated Pipeline structure preserves stop-on-error and owned try/catch behavior."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"]
+        limitations: []
+      interaction:
+        facet: interaction
+        status: partial
+        mechanism: "Provider-owned manual approval renders a Jenkins input step."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt", "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt"]
+        limitations: ["Other interaction modes remain unsupported or review-only."]
+      concurrency:
+        facet: concurrency
+        status: partial
+        mechanism: "Parallel structure is accepted, but the current renderer does not prove full branch scheduling and isolation."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"]
+        limitations: ["Concurrency topology is not executable for every plan shape."]
+
+  - target: github-actions
+    claims:
+      workflowScope:
+        facet: scope
+        status: supported
+        mechanism: "One generated workflow owns all jobs."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: []
+      branchIsolation:
+        facet: execution_isolation
+        status: partial
+        mechanism: "Jobs use separate runners, while steps inside one job share runner state."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: ["Isolation depends on whether Flow groups work into jobs or steps."]
+      attemptIsolation:
+        facet: execution_isolation
+        status: unknown
+        mechanism: "The provider owns no retry projection that proves fresh runner attempts."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: ["Attempt isolation is not certified."]
+      workflowLifetime:
+        facet: state_lifetime
+        status: supported
+        mechanism: "Generated jobs belong to one workflow run."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: []
+      suspendResume:
+        facet: state_lifetime
+        status: partial
+        mechanism: "Environment protection can gate a job, but inline generic suspension is not rendered."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt", "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt"]
+        limitations: ["Only environment-backed interaction is represented."]
+      ephemeralWorkspace:
+        facet: scope
+        status: supported
+        mechanism: "Each job runs on an ephemeral runner workspace."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: []
+      durableState:
+        facet: state_lifetime
+        status: unsupported
+        mechanism: "The provider emits no durable state store or persistence binding."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: ["Artifacts and caches are not modeled as general durable state."]
+      valuePropagation:
+        facet: transfer
+        status: partial
+        mechanism: "Job dependencies are rendered, but general output wiring is not owned."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: ["Needs alone does not transfer arbitrary values."]
+      workspacePropagation:
+        facet: transfer
+        status: unsupported
+        mechanism: "Separate jobs receive separate workspaces and the provider emits no upload/download bridge."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt", "docs/A0_1_ADAPTER_PORTFOLIO_REASSESSMENT.md"]
+        limitations: ["The checkout-build-image multi-job path cannot preserve workspace continuity."]
+      statePropagation:
+        facet: transfer
+        status: unsupported
+        mechanism: "The provider emits no state channel between jobs."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: ["Job ordering is not state propagation."]
+      failurePropagation:
+        facet: transfer
+        status: partial
+        mechanism: "Needs and job conditions preserve basic failure dependencies."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: ["Complex error-handler semantics remain partial."]
+      interaction:
+        facet: interaction
+        status: partial
+        mechanism: "Environment protection can require external approval before a job starts."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt", "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt"]
+        limitations: ["Inline interaction and arbitrary suspend/resume are not supported."]
+      concurrency:
+        facet: concurrency
+        status: partial
+        mechanism: "Needs expresses a job DAG, but complete Flow branch semantics are not proven."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"]
+        limitations: ["Concurrent workspace and state behavior remain constrained."]
+
+  - target: tekton
+    claims:
+      workflowScope:
+        facet: scope
+        status: supported
+        mechanism: "One generated Tekton Pipeline owns all materialized Tasks."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: []
+      branchIsolation:
+        facet: execution_isolation
+        status: supported
+        mechanism: "Each Pipeline Task executes as an independently scheduled task workload."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: []
+      attemptIsolation:
+        facet: execution_isolation
+        status: partial
+        mechanism: "Task execution is isolated, but Flow does not own complete retry-attempt projection."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: ["Fresh retry scope is not proven for every Task implementation."]
+      workflowLifetime:
+        facet: state_lifetime
+        status: supported
+        mechanism: "Tasks belong to one generated Pipeline/PipelineRun lifecycle."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: []
+      suspendResume:
+        facet: state_lifetime
+        status: unsupported
+        mechanism: "The provider emits no owned suspension or manual approval Task."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt", "docs/A0_1_ADAPTER_PORTFOLIO_REASSESSMENT.md"]
+        limitations: ["External gates are not native suspend/resume evidence."]
+      ephemeralWorkspace:
+        facet: scope
+        status: partial
+        mechanism: "The Pipeline declares named workspaces but not their PipelineRun binding or storage class."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: ["Workspace provisioning remains external to the rendered Pipeline."]
+      durableState:
+        facet: state_lifetime
+        status: unsupported
+        mechanism: "The provider emits no durable state binding."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: ["A workspace is not automatically durable state."]
+      valuePropagation:
+        facet: transfer
+        status: partial
+        mechanism: "Task ordering is rendered, while general result wiring is not."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: ["runAfter does not transfer values."]
+      workspacePropagation:
+        facet: transfer
+        status: partial
+        mechanism: "Git clone and buildah bind the same named Pipeline workspace."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt", "src/test/kotlin/TargetProjectionTestBoundaryTests.kt"]
+        limitations: ["PipelineRun workspace provisioning and end-to-end execution remain unproven."]
+      statePropagation:
+        facet: transfer
+        status: unsupported
+        mechanism: "The provider emits no general mutable-state channel."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: ["Shared workspace files are not a typed state contract."]
+      failurePropagation:
+        facet: transfer
+        status: partial
+        mechanism: "Task dependencies preserve basic failure ordering."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: ["Complete error-handler and compensation behavior is not rendered."]
+      interaction:
+        facet: interaction
+        status: partial
+        mechanism: "An external gate may be composed around a Pipeline, but the provider owns no native interaction payload."
+        evidenceReferences: ["docs/A0_1_ADAPTER_PORTFOLIO_REASSESSMENT.md", "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: ["Manual approval remains external and review-only."]
+      concurrency:
+        facet: concurrency
+        status: partial
+        mechanism: "runAfter expresses task ordering and permits independent tasks to run concurrently."
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        limitations: ["Full branch isolation and shared-resource constraints are not certified."]
+
+  - target: argo-workflows
+    claims:
+      workflowScope: { facet: scope, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["Platform capability folklore is not adapter evidence."] }
+      branchIsolation: { facet: execution_isolation, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      attemptIsolation: { facet: execution_isolation, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      workflowLifetime: { facet: state_lifetime, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      suspendResume: { facet: state_lifetime, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["A platform feature is not a shipped Flow adapter mechanism."] }
+      ephemeralWorkspace: { facet: scope, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      durableState: { facet: state_lifetime, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      valuePropagation: { facet: transfer, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      workspacePropagation: { facet: transfer, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      statePropagation: { facet: transfer, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      failurePropagation: { facet: transfer, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      interaction: { facet: interaction, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["Suspend templates are not Flow adapter evidence."] }
+      concurrency: { facet: concurrency, status: unknown, mechanism: "No Argo provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["DAG capability is not Flow adapter evidence."] }
+
+  - target: azure-devops
+    claims:
+      workflowScope: { facet: scope, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["Platform capability folklore is not adapter evidence."] }
+      branchIsolation: { facet: execution_isolation, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      attemptIsolation: { facet: execution_isolation, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      workflowLifetime: { facet: state_lifetime, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      suspendResume: { facet: state_lifetime, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["Environment checks are not Flow adapter evidence."] }
+      ephemeralWorkspace: { facet: scope, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      durableState: { facet: state_lifetime, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      valuePropagation: { facet: transfer, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      workspacePropagation: { facet: transfer, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      statePropagation: { facet: transfer, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      failurePropagation: { facet: transfer, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["No implementation evidence exists."] }
+      interaction: { facet: interaction, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["Environment approvals are not Flow adapter evidence."] }
+      concurrency: { facet: concurrency, status: unknown, mechanism: "No Azure DevOps provider is composed.", evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt", "adapters/portfolio/builtin-adapter-portfolio.yaml"], limitations: ["Stage and job DAG capability is not Flow adapter evidence."] }
