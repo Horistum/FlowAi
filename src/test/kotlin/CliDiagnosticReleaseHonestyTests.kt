@@ -188,9 +188,10 @@ class CliDiagnosticReleaseHonestyTests {
             "READY" -> if (correction.version.startsWith("0.9.7.10.")) "next" else "completed"
             else -> "completed"
         }
+        val expectedNextItem = if (expectedPhase == "READY") "0.9.7.10" else null
 
         assertEquals("PASS", report.status)
-        assertEquals("1.4", report.reportVersion)
+        assertEquals("1.5", report.reportVersion)
         assertEquals(FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION, report.implementationPackageVersion)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.publicStandardVersion)
         assertEquals(correction.version, report.completedCorrectionItem)
@@ -202,7 +203,7 @@ class CliDiagnosticReleaseHonestyTests {
         assertEquals(expectedClosureStatus, report.closureStatus)
         assertEquals(expectedTrackStatus, report.coreTrackStatus)
         assertEquals(expectedCompletedItem, report.completedCoreItem)
-        assertEquals("0.9.7.10", report.nextCoreItem)
+        assertEquals(expectedNextItem, report.nextCoreItem)
         assertTrue(report.failedChecks.isEmpty())
     }
 
