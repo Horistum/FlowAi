@@ -1,0 +1,5 @@
+version: "1.0"
+checks:
+  - "adapters.a0.1.portfolio-reassessment"
+  - "adapters.a0.1.executable-reference-evidence"
+  - "adapters.a0.1.core-independence"
