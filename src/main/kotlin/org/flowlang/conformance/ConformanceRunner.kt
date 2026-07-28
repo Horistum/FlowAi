@@ -60,7 +60,7 @@ class ConformanceRunner(
         if (releaseLifecycle.status != "PASS" || releaseLifecycle.closurePhase != "CORRECTION_REQUIRED") {
             checks += SemanticClosureChecks(rootDir).checks(checks.toList())
         }
-        checks += AdapterStreamCertificationRunner(rootDir, targets, projections).checks()
+        checks += AdapterStreamConformanceRunner(rootDir, targets, projections).checks()
         return ConformanceSummary(checks)
     }
 }
