@@ -4,34 +4,29 @@ Current published package line: `0.9.5`
 Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
-Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
-Core roadmap item status: `completed`
-Completed correction item: `0.9.7.10.1 Standard and Closure Integrity Correction`
-Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
+Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
+Core roadmap item status: `correction-required`
+Active correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Correction`
+Core closure correction: `0.9.7.10 Bounded Semantic Closure Gate` (`correction-required`)
 
-## CLOSED closure claim
+## Reopened closure claim
 
-PR #93 merged the first `v0.9.7.10` closure as `df099137ce65b206519db7141f8eb3573d0018a2`. A post-merge audit proved that the completed claim did not exclude complete-suite removal, unknown correction statuses or drift between the public model and the actual conformance producer.
+PR #94 merged bounded correction `0.9.7.10.1` as `cbe1d23a25e0224be565cad322b097bf2aaa50a1`. Its implementation boundary passed Flow CI #2245 and its later completion-metadata boundary passed Flow CI #2250.
 
-Bounded correction `0.9.7.10.1` repairs those defects at their owners. Flow CI #2245 independently passed the current corrected exact head and synthetic merge candidate, including complete tests, the exact 90-check pre-closure inventory and standalone conformance in the real CLOSED lifecycle. No next Core item is published for the completed track.
+The repository closure work package nevertheless recorded Flow CI #2245 as both `implementationEvidence` and `validationEvidence`. `ReleaseMetadataHonestyAuthority` validated only the shape of `validationEvidence`; it did not require a distinct later pair. The committed CLOSED state could therefore represent two required boundaries with one workflow run while the real later evidence existed only in PR metadata.
 
-## Confirmed audit ledger
+Bounded correction `0.9.7.10.2` reopens the claim at that evidence owner. The semantic model is unchanged; the correction is limited to release evidence authority, lifecycle fixtures, tests and governance metadata.
 
-| Finding | Implementation status | Owner |
-| --- | --- | --- |
-| S1 / C1 complete-suite presence | implemented, current validation passed | `ConformanceSuiteInventory`, `SemanticClosureAuthority` |
-| S2 zero-headroom purpose ratios | implemented, current validation passed | structural `PurposeCoverageAnalyzer` policy |
-| S3 contradictory registry policy | implemented, current validation passed | public vs package registry projections |
-| S4 unused GateKind values | implemented, current validation passed | explicit DIAGNOSTICS and REGISTRY_CONSISTENCY owners |
-| S5 string-prefix manifest projection | implemented, current validation passed | `StandardCheck.inExportManifest` |
-| S6 fictional introduced-version fallback | completed previously | `ArtifactContractAuthority` |
-| S7 target-specific mandatory purpose | implemented, current validation passed | target-neutral purpose capability set |
-| S8 literal empty internal artifacts | implemented, current validation passed | `ArtifactVisibility` projection |
-| C2 / C3 fail-open status and regex YAML | implemented, current validation passed | `SemanticClosureAuthority`, `FlowYaml` |
-| C4 redundant source deletion assertion | implemented, current validation passed | compiled classpath authority |
-| C5 misleading closed-state naming | implemented, current validation passed | explicit closure and READY-only next metadata |
+## Confirmed correction scope
 
-## Corrected closure architecture
+- require structurally valid implementation evidence in READY and CLOSED;
+- require completion evidence to be absent in READY and structurally valid in CLOSED;
+- require the completion run number to be later than the implementation run number;
+- reject reused workflow run ids, exact heads and synthetic merge candidates across boundaries;
+- add negative tests for duplicated and non-later completion evidence;
+- record Flow CI #2250 structurally only after the authority can prove it is distinct from Flow CI #2245.
+
+## Existing closure architecture
 
 ### Complete conformance presence
 
@@ -47,33 +42,34 @@ Export-manifest membership is explicit data. DIAGNOSTICS has real owners. The si
 
 ### Purpose and artifact integrity
 
-Purpose coverage retains ratios only as observations. Pass/fail requires target-neutral capability coverage, blocked risk scenarios, required purpose categories and real evidence for each category. `KUBERNETES_MAINTENANCE` is no longer a universal mandatory purpose.
+The current public release profile contains 38 checks. Nineteen belong to behavior, safety, normalization, execution-plan or portability purpose categories, so the observed automation-purpose ratio remains `19/38 = 0.500000`. Five are public governance checks, so the governance ratio is `5/38 = 0.131579`. Seventeen of the nineteen purpose checks carry direct evidence, so the evidence-backed purpose ratio is `17/19 = 0.894737`.
+
+No numerical headroom was created. The correction removed those ratios from pass/fail authority and retained them as observations. Pass/fail instead requires target-neutral capability coverage, blocked risk scenarios, all required purpose categories and real evidence for each category. `KUBERNETES_MAINTENANCE` is not a universal mandatory purpose.
 
 Artifact visibility is modeled explicitly and `internalArtifacts()` is derived from that model. The current internal set is legitimately empty rather than hardcoded empty.
 
-### Fail-closed lifecycle
+## Non-blocking observations
 
-Closure metadata is parsed through `FlowYaml`. Every bounded correction must use `active`, `complete` or the retained historical terminal alias `completed`; missing and unknown values block closure.
+The nine-item top-level checklist intentionally groups complete-suite reconciliation under `closure.required-checks-present`. That item currently exposes missing, unexpected, duplicate, ordering, release-profile, modeled-pre-closure and post-closure mismatches through evidence strings rather than typed nested reason codes. Every mode still blocks closure, so this is a diagnostic-granularity limitation rather than a fail-open defect. A later governance improvement should add typed subchecks without changing the frozen top-level checklist retroactively.
 
-`ReleaseMetadataHonestyAuthority` report contract `1.5` distinguishes:
+The 90-entry pre-closure inventory is a committed golden manifest, not a generated authority. That independence is what makes runner deletion detectable. A developer-only candidate generator may reduce authoring work, but CI must compare against the committed manifest and must never rewrite it automatically.
 
-- `CORRECTION_REQUIRED`: closure identity is explicit, the correction is active and there is no next Core item;
-- `READY`: the correction is terminal, the closure item is genuinely next and `nextCoreItem` is present;
-- `CLOSED`: the closure identity is completed and there is no next Core item.
+## Validation history
 
-Every mixed state is `INVALID`. `closureItem` is permanent identity; `nextCoreItem` is a nullable phase projection rather than a second name for closure. Lifecycle tests generate each phase from one immutable specification and parse every generated metadata surface back through production `FlowYaml` before evaluating the authority.
+Flow CI #2245, run `30325244443`, passed:
 
-## Validation boundary
-
-Flow CI #2245, run `30325244443`, independently passed:
-
-- exact corrected head `cd7600b845ec229ac41559c312de5844ca3e7051`;
+- exact implementation head `cd7600b845ec229ac41559c312de5844ca3e7051`;
 - synthetic merge candidate `601bc4a2062c5c5aea579d6054b2f00b69775522`;
 - Flow Agent tooling, repository structure and context generation;
-- complete compilation and tests;
-- standalone conformance including the final semantic closure check.
+- complete compilation, tests and standalone conformance.
 
-The later completion-metadata head and its synthetic merge candidate must independently pass before PR #94 becomes ready for review. That final candidate validation remains external evidence rather than a self-referential committed claim.
+Flow CI #2250, run `30325740892`, later passed:
+
+- exact completion-metadata head `a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9`;
+- synthetic merge candidate `238d62fdf974129a93e1f743e1f93aecef34906b`;
+- the same complete validation boundary before PR #94 merged.
+
+Those two runs are real and distinct. The repository authority did not enforce or record that distinction, which is why the closure is reopened rather than merely reworded.
 
 ## Version boundary
 
