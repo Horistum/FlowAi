@@ -1,6 +1,6 @@
 project: Flow Adapter Portfolio
 stream: adapters
-roadmapVersion: 4
+roadmapVersion: 5
 status: active
 
 purpose: >-
@@ -31,6 +31,10 @@ rules:
   - "Adapter topology evidence cannot cite the target registry or its own manifest as proof."
   - "Runtime topology profiles are derived from adapter-owned evidence rather than duplicated authored status."
   - "Profile-only targets remain unknown until a composed provider supplies evidence."
+  - "Explicit capability bindings require authored uses and system selection; inventory order never selects an implementation."
+  - "Binding parameter mapping is complete: every canonical parameter is mapped or explicitly unsupported."
+  - "Resolved binding parameters and descriptor defaults are applied once before AST lowering."
+  - "Module effects may support adapter evidence but never replace canonical semantic effects."
   - "Adapter tests prove preserved semantics, not merely syntactically valid output."
   - "Adapter implementation lifecycle is distribution-owned and is not part of the public Flow standard."
   - "Maintenance evidence stays live throughout adapter work."
@@ -42,7 +46,8 @@ currentDecision:
   completedItemName: "Topology Evidence Adoption"
   nextItem: "A0.3"
   nextItemName: "Capability Binding Migration"
-  decisionBasis: "Flow CI #2284 passed A0.2 on exact implementation head 6d441628c4d3101bfd0c32c5d2eb370b00fbc4fe and synthetic merge candidate 6168e45d292a34f3d648c0e645016f88c813e25b. A0.3 is the next bounded adapter item."
+  activeWorkPackage: ".flow-agent/work-packages/A0.3-capability-binding-migration.yaml"
+  decisionBasis: "PR #97 merged A0.2 as 964a9c4f8bf9ce9dc8771c99a68393c9edc35807. A0.3 is active to migrate explicit capability bindings onto one resolved contract and independent adapter certification authority."
 
 items:
   - version: "A0.1"
@@ -84,8 +89,12 @@ items:
     dependsOnCore: "0.9.7.5"
     dependsOnAdapters: "A0.2"
     completionEvidence:
-      - "Bindings preserve semantic, effect and provenance contracts."
-      - "Missing bindings remain unresolved or unsupported."
+      - "Every built-in implementation claim has exactly one strict adapter-owned binding record."
+      - "Bindings preserve canonical semantic parameters, effects and explicit selection provenance."
+      - "Binding-only parameters and descriptor defaults are resolved exactly once."
+      - "Unsupported canonical parameters fail before AST lowering."
+      - "Missing bindings remain unbound or invalid and never select an implementation implicitly."
+      - "A0.3 lifecycle integrity blocks evidence-free completion and premature A0.4 selection."
 
   - version: "A0.4"
     name: "Control Requirement Materialization"
