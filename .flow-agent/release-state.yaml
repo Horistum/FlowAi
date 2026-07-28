@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 33
+stateVersion: 34
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -21,11 +21,10 @@ roadmapState:
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "adapters"
-  completedAdapterItem: "A0.2"
-  completedAdapterItemName: "Topology Evidence Adoption"
-  nextItem: "A0.3"
-  nextItemName: "Capability Binding Migration"
-  activeWorkPackage: ".flow-agent/work-packages/A0.3-capability-binding-migration.yaml"
+  completedAdapterItem: "A0.3"
+  completedAdapterItemName: "Capability Binding Migration"
+  nextItem: "A0.4"
+  nextItemName: "Control Requirement Materialization"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -129,16 +128,16 @@ qualityPrinciples:
   - "An adapter item may become completed only after its lifecycle authority records a passed implementation boundary."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-merged-pr-97-head"
-  flowAgentStructure: "passed-on-merged-pr-97-head"
-  flowAgentContextGeneration: "passed-on-merged-pr-97-head"
-  offlineCacheAwareChecks: "passed-on-merged-pr-97-head"
-  cleanTest: "passed-on-merged-pr-97-head"
-  conformance: "passed-on-merged-pr-97-head"
-  executableReferenceEvidence: "passed-on-merged-pr-97-head"
-  validationSource: "Flow CI #2291 passed exact A0.2 completion head f1363e78b1787ec07edd598a9b74706c68e853f3 and synthetic merge candidate ceb71c29724ef41bbe133d435855234a337690b2 before PR #97 merged as 964a9c4f8bf9ce9dc8771c99a68393c9edc35807."
+  flowAgentTooling: "passed-on-a0.3-implementation-head"
+  flowAgentStructure: "passed-on-a0.3-implementation-head"
+  flowAgentContextGeneration: "passed-on-a0.3-implementation-head"
+  offlineCacheAwareChecks: "passed-on-a0.3-implementation-head"
+  cleanTest: "passed-on-a0.3-implementation-head"
+  conformance: "passed-on-a0.3-implementation-head"
+  executableReferenceEvidence: "passed-on-a0.3-implementation-head"
+  validationSource: "Flow CI #2303 passed exact A0.3 implementation head f475ae8317122b986dec23a3d36bb8df05a31db3 and synthetic merge candidate afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8 with adapter inventory 1.2 active."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
-    - "A0.1 and A0.2 are completed and merged."
-    - "A0.3 remains external exact-head CI evidence until its exact implementation head and synthetic merge candidate pass independently."
+    - "A0.1, A0.2 and A0.3 are completed; A0.4 is next and no A0.4 work package or implementation is included."
+    - "The A0.3 completion metadata remains external exact-head CI evidence until its exact completion head and synthetic merge candidate pass independently."
