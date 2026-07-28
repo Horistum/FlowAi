@@ -71,6 +71,14 @@ The executable topology conformance check validates the committed snapshot and s
 
 Jenkins therefore remains an executable reference without retaining unrelated unproven topology claims or treating canonical JSON export as an internal polymorphic plan loader.
 
+## Forward-stable lifecycle governance
+
+A completed adapter item authority now preserves its own immutable work-package evidence while validating current roadmap progress independently.
+
+`AdapterRoadmapSequence` requires `completedItem` and `nextItem` to be adjacent A0.x identities. During implementation, each item authority still requires its exact transition shape and forbids premature evidence. After completion, later adjacent progress remains valid, while reopening an earlier item, skipping an item or diverging roadmap, index and release-state focus fails closed.
+
+This rule applies to both A0.1 and A0.2. It prevents historical lifecycle checks from freezing the global roadmap pointer on their immediate successor.
+
 ## Validation history
 
 Flow CI #2274 correctly rejected the first A0.2 implementation because the relative target loader bypassed adapter evidence, Jenkins approval was under-classified, the executable proof attempted unsupported plan deserialization, and release-state wording violated external-candidate policy.
@@ -86,7 +94,9 @@ Flow CI #2284, run `30348796256`, passed the final implementation on:
 - frozen Core closure followed by adapter inventory version `1.1`;
 - all A0.1 and A0.2 conformance checks.
 
-A0.2 is now `completed` and A0.3 is `next`. The current completion-metadata head and its synthetic merge candidate must independently pass before PR #97 may become ready for review. No A0.3 work package or implementation belongs to this PR.
+Flow CI #2285 correctly rejected the first completion state because the completed A0.1 authority still required the global roadmap to remain at `A0.2 next`. That would have made A0.3 and every later adapter item impossible to complete. A0.1 and A0.2 lifecycle authorities now consume the shared adjacent-progression contract and have explicit positive and negative tests for later progress.
+
+A0.2 remains `completed` and A0.3 remains `next`. The corrected completion head and its synthetic merge candidate must independently pass before PR #97 may become ready for review. No A0.3 work package or implementation belongs to this PR.
 
 ## Architecture boundary
 
