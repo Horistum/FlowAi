@@ -163,15 +163,16 @@ class AdapterControlMaterializationAuthorityTests {
     }
 
     @Test
-    fun supportedSemanticCannotUseTargetRegistryAsImplementationEvidence() {
+    fun supportedSemanticRequiresIndependentImplementationEvidence() {
         val document = AdapterControlMaterializationLoader.load(rootDir)
         val malformed = document.copy(
             targets = document.targets.map { record ->
                 if (record.target != "jenkins") record else record.copy(
                     claims = record.claims.map { claim ->
                         if (claim.family != AdapterControlFamily.APPROVAL) claim else claim.copy(
-                            evidenceReferences = claim.evidenceReferences +
+                            evidenceReferences = listOf(
                                 "targets/builtin-targets.yaml#targets.jenkins.features.approvals"
+                            )
                         )
                     }
                 )
@@ -180,7 +181,8 @@ class AdapterControlMaterializationAuthorityTests {
 
         val report = authority.analyze(malformed)
         assertEquals("FAIL", report.status)
-        assertTrue(report.findings.any { it.code == "CONTROL_SUPPORTED_FROM_REGISTRY" })
+        assertTrue(report.findings.any { it.code == "CONTROL_EVIDENCE_REGISTRY_ONLY" })
+        assertTrue(report.findings.any { it.code == "CONTROL_SUPPORTED_IMPLEMENTATION_EVIDENCE_MISSING" })
     }
 
     @Test
