@@ -35,16 +35,37 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 class AdapterControlMaterializationAuthority(
     private val rootDir: File = File("."),
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
+    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    private val documentOverride: AdapterControlMaterializationDocument? = null
 ) {
     private val document: AdapterControlMaterializationDocument by lazy {
-        AdapterControlMaterializationLoader.load(rootDir)
+        documentOverride ?: AdapterControlMaterializationLoader.load(rootDir)
+    }
+
+    private val certifiedDocument: AdapterControlMaterializationDocument by lazy {
+        val loaded = document
+        val report = analyze(loaded)
+        check(report.status == "PASS") {
+            "Adapter control materialization evidence is invalid: " +
+                report.findings.joinToString(" | ") { "${it.code}:${it.target}:${it.family}:${it.message}" }
+        }
+        loaded
     }
 
     fun analyze(
         input: AdapterControlMaterializationDocument = document
     ): AdapterControlMaterializationReport {
         val findings = mutableListOf<AdapterControlMaterializationFinding>()
+        if (input.version != AdapterControlMaterializationLoader.SUPPORTED_VERSION) {
+            finding(
+                findings,
+                "CONTROL_MANIFEST_VERSION_UNSUPPORTED",
+                "manifest",
+                "all",
+                "Version '${input.version}' is unsupported; expected '${AdapterControlMaterializationLoader.SUPPORTED_VERSION}'."
+            )
+        }
+
         val recordsByTarget = input.targets.groupBy(AdapterControlTargetRecord::target)
         val expectedTargets = targets.keys
 
@@ -90,8 +111,7 @@ class AdapterControlMaterializationAuthority(
 
     fun assess(plan: ExecutionPlan, target: String): AdapterControlAssessment {
         require(target in targets) { "Unknown target '$target'." }
-        val record = document.targets.singleOrNull { it.target == target }
-            ?: error("Target '$target' has no adapter control materialization record.")
+        val record = certifiedDocument.targets.single { it.target == target }
         val claims = record.claims.associateBy(AdapterControlClaim::family)
         val requirements = requirementsFor(plan)
         val evidence = requirements.map { requirement ->
@@ -107,10 +127,16 @@ class AdapterControlMaterializationAuthority(
                     status = AdapterControlEvidenceStatus.UNKNOWN,
                     detail = "No control-family claim exists for ${requirement.family}."
                 )
+                requirement.semantic in claim.semantics.supported && requirement.scope !in claim.scopes -> AdapterControlEvidence(
+                    requirementId = requirement.id,
+                    status = AdapterControlEvidenceStatus.UNSUPPORTED,
+                    detail = "${claim.mechanism} Supported scopes are ${claim.scopes.sortedBy { it.name }.joinToString()}, " +
+                        "not required scope ${requirement.scope}."
+                )
                 requirement.semantic in claim.semantics.supported -> AdapterControlEvidence(
                     requirementId = requirement.id,
                     status = AdapterControlEvidenceStatus.SATISFIED,
-                    detail = "${claim.mechanism} Evidence: ${claim.evidenceReferences.joinToString()}"
+                    detail = "${claim.mechanism} Scope: ${requirement.scope}. Evidence: ${claim.evidenceReferences.joinToString()}"
                 )
                 requirement.semantic in claim.semantics.unsupported -> AdapterControlEvidence(
                     requirementId = requirement.id,
@@ -152,17 +178,28 @@ class AdapterControlMaterializationAuthority(
         manifest: TargetManifest,
         assessment: AdapterControlAssessment
     ): TargetManifest {
-        if (assessment.decision == AdapterControlDecision.MATCHED) return manifest
+        require(manifest.target == assessment.target) {
+            "Diagnostic manifest target '${manifest.target}' does not match control assessment target '${assessment.target}'."
+        }
+        val metadata = manifest.metadata + assessmentMetadata(assessment)
+        if (assessment.decision == AdapterControlDecision.MATCHED) {
+            return manifest.copy(metadata = metadata)
+        }
+
         val evidenceById = assessment.evidence.associateBy(AdapterControlEvidence::requirementId)
+        require(evidenceById.size == assessment.evidence.size) {
+            "Adapter control assessment for '${assessment.target}' contains duplicate evidence ids."
+        }
         val issues = assessment.requirements.mapNotNull { requirement ->
-            val evidence = evidenceById[requirement.id] ?: return@mapNotNull null
+            val evidence = evidenceById[requirement.id]
+                ?: error("Adapter control requirement '${requirement.id}' has no assessment evidence.")
             if (evidence.status == AdapterControlEvidenceStatus.SATISFIED) return@mapNotNull null
             CompatibilityIssue(
                 level = CompatibilityLevel.ERROR,
                 target = assessment.target,
                 nodeId = requirement.subject,
-                feature = "control.${requirement.family.name.lowercase()}.${requirement.semantic}.adapter",
-                message = "Adapter control requirement '${requirement.id}' is " +
+                feature = "control.${requirement.semantic}.adapter",
+                message = "Adapter control requirement '${requirement.id}' at scope ${requirement.scope} is " +
                     "${evidence.status.name.lowercase()}: ${evidence.detail}"
             )
         }
@@ -183,11 +220,7 @@ class AdapterControlMaterializationAuthority(
                 readinessEvidenceAvailable = true
             ),
             mappingNotes = (manifest.mappingNotes + notes).distinct(),
-            metadata = manifest.metadata + mapOf(
-                "adapterControlDecision" to assessment.decision.name,
-                "adapterControlRequirementCount" to assessment.requirements.size.toString(),
-                "adapterControlBlockerCount" to assessment.blockingRequirementIds.size.toString()
-            )
+            metadata = metadata
         )
     }
 
@@ -195,12 +228,7 @@ class AdapterControlMaterializationAuthority(
         val requirements = mutableListOf<AdapterControlRequirement>()
         flatten(plan.nodes).forEach { node ->
             when (node) {
-                is ApprovalNode -> requirements += requirement(
-                    family = AdapterControlFamily.APPROVAL,
-                    semantic = "approval.manual.inline",
-                    subject = node.id,
-                    detail = "ApprovalNode(mode=${node.mode})"
-                )
+                is ApprovalNode -> requirements += approvalRequirement(node)
                 is RetryGroupNode -> addRetryRequirements(node, requirements)
                 is TryPlanNode -> addCompensationRequirements(node, requirements)
                 else -> Unit
@@ -208,9 +236,44 @@ class AdapterControlMaterializationAuthority(
         }
         addScheduleRequirements(plan, requirements)
         addPreservedSourceRequirements(plan, requirements)
-        return requirements
-            .distinctBy(AdapterControlRequirement::id)
-            .sortedBy(AdapterControlRequirement::id)
+
+        val byId = requirements.groupBy(AdapterControlRequirement::id)
+        val conflicting = byId.filterValues { group -> group.distinct().size > 1 }
+        require(conflicting.isEmpty()) {
+            "Adapter control requirement identity collision: " + conflicting.keys.sorted().joinToString()
+        }
+        return byId.values.map(List<AdapterControlRequirement>::first).sortedBy(AdapterControlRequirement::id)
+    }
+
+    private fun approvalRequirement(node: ApprovalNode): AdapterControlRequirement = when (node.mode) {
+        "manual" -> requirement(
+            family = AdapterControlFamily.APPROVAL,
+            semantic = "approval.manual.inline",
+            subject = node.id,
+            scope = AdapterControlScope.STEP,
+            detail = "ApprovalNode(mode=${node.mode})"
+        )
+        "environment" -> requirement(
+            family = AdapterControlFamily.APPROVAL,
+            semantic = "approval.environment.resource",
+            subject = node.id,
+            scope = AdapterControlScope.ENVIRONMENT,
+            detail = "ApprovalNode(mode=${node.mode})"
+        )
+        "external" -> requirement(
+            family = AdapterControlFamily.APPROVAL,
+            semantic = "approval.external",
+            subject = node.id,
+            scope = AdapterControlScope.STEP,
+            detail = "ApprovalNode(mode=${node.mode})"
+        )
+        else -> requirement(
+            family = AdapterControlFamily.APPROVAL,
+            semantic = "approval.mode.${canonicalId(node.mode)}",
+            subject = node.id,
+            scope = AdapterControlScope.UNSPECIFIED,
+            detail = "ApprovalNode declares unsupported mode '${node.mode}'"
+        )
     }
 
     private fun addRetryRequirements(
@@ -221,6 +284,7 @@ class AdapterControlMaterializationAuthority(
             family = AdapterControlFamily.RETRY,
             semantic = "retry.attempt-limit",
             subject = node.id,
+            scope = AdapterControlScope.TASK,
             detail = "RetryGroupNode(max=${node.max})"
         )
         if (!node.delay.isZeroDuration()) {
@@ -228,6 +292,7 @@ class AdapterControlMaterializationAuthority(
                 family = AdapterControlFamily.RETRY,
                 semantic = "retry.delay.fixed",
                 subject = node.id,
+                scope = AdapterControlScope.TASK,
                 detail = "RetryGroupNode(delay=${node.delay})"
             )
         }
@@ -236,6 +301,7 @@ class AdapterControlMaterializationAuthority(
                 family = AdapterControlFamily.RETRY,
                 semantic = "retry.backoff.variable",
                 subject = node.id,
+                scope = AdapterControlScope.TASK,
                 detail = "RetryGroupNode(backoff=${node.backoff})"
             )
         }
@@ -250,6 +316,7 @@ class AdapterControlMaterializationAuthority(
             family = AdapterControlFamily.COMPENSATION,
             semantic = "compensation.error-handler",
             subject = node.id,
+            scope = AdapterControlScope.WORKFLOW,
             detail = "TryPlanNode(errorHandler=${node.errorHandler.size})"
         )
         val containsRollback = flatten(node.errorHandler)
@@ -260,6 +327,7 @@ class AdapterControlMaterializationAuthority(
                 family = AdapterControlFamily.COMPENSATION,
                 semantic = "compensation.rollback",
                 subject = node.id,
+                scope = AdapterControlScope.WORKFLOW,
                 detail = "TryPlanNode contains canonical rollback work"
             )
         }
@@ -275,12 +343,13 @@ class AdapterControlMaterializationAuthority(
                 "CRON" -> "scheduling.cron"
                 "INTERVAL" -> "scheduling.interval"
                 "CALENDAR" -> "scheduling.calendar"
-                else -> "scheduling.${schedule.kind.lowercase()}"
+                else -> "scheduling.${canonicalId(schedule.kind)}"
             }
             requirements += requirement(
                 family = AdapterControlFamily.SCHEDULING,
                 semantic = semantic,
                 subject = trigger.id,
+                scope = AdapterControlScope.TRIGGER,
                 detail = "PlanSchedule(kind=${schedule.kind}, expression=${schedule.expression})"
             )
             if (!schedule.timezone.isNullOrBlank()) {
@@ -288,6 +357,7 @@ class AdapterControlMaterializationAuthority(
                     family = AdapterControlFamily.SCHEDULING,
                     semantic = "scheduling.timezone",
                     subject = trigger.id,
+                    scope = AdapterControlScope.TRIGGER,
                     detail = "PlanSchedule(timezone=${schedule.timezone})"
                 )
             }
@@ -296,6 +366,7 @@ class AdapterControlMaterializationAuthority(
                     family = AdapterControlFamily.SCHEDULING,
                     semantic = "scheduling.concurrency",
                     subject = trigger.id,
+                    scope = AdapterControlScope.TRIGGER,
                     detail = "Trigger declares scheduler concurrency policy"
                 )
             }
@@ -304,6 +375,7 @@ class AdapterControlMaterializationAuthority(
                     family = AdapterControlFamily.SCHEDULING,
                     semantic = "scheduling.catch-up",
                     subject = trigger.id,
+                    scope = AdapterControlScope.TRIGGER,
                     detail = "Trigger declares missed-run behavior"
                 )
             }
@@ -320,6 +392,7 @@ class AdapterControlMaterializationAuthority(
                     family = AdapterControlFamily.RETRY,
                     semantic = "retry.unspecified",
                     subject = "policy:${policy.name}",
+                    scope = AdapterControlScope.UNSPECIFIED,
                     detail = "Source RETRY policy preserves type and name but not an exact attempt, delay, backoff or scope contract",
                     completeness = AdapterControlRequirementCompleteness.PRESERVED_UNSPECIFIED
                 )
@@ -327,6 +400,7 @@ class AdapterControlMaterializationAuthority(
                     family = AdapterControlFamily.TIMEOUT,
                     semantic = "timeout.unspecified",
                     subject = "policy:${policy.name}",
+                    scope = AdapterControlScope.UNSPECIFIED,
                     detail = "Source TIMEOUT policy preserves type and name but not an exact duration or scope contract",
                     completeness = AdapterControlRequirementCompleteness.PRESERVED_UNSPECIFIED
                 )
@@ -337,6 +411,7 @@ class AdapterControlMaterializationAuthority(
                 family = AdapterControlFamily.COMPENSATION,
                 semantic = "compensation.rollback",
                 subject = "failure.rollback",
+                scope = AdapterControlScope.WORKFLOW,
                 detail = "Source failure.rollback=true"
             )
         }
@@ -390,6 +465,24 @@ class AdapterControlMaterializationAuthority(
                 target,
                 claim.family.name,
                 "Supported control semantics require a composed provider."
+            )
+        }
+        if (claim.semantics.supported.isNotEmpty() && claim.ownership == AdapterControlOwnership.NONE) {
+            finding(
+                findings,
+                "CONTROL_SUPPORTED_WITHOUT_OWNER",
+                target,
+                claim.family.name,
+                "Supported control semantics require an explicit enforcement owner."
+            )
+        }
+        if (AdapterControlScope.UNSPECIFIED in claim.scopes) {
+            finding(
+                findings,
+                "CONTROL_CLAIM_SCOPE_UNSPECIFIED",
+                target,
+                claim.family.name,
+                "Evidence claims must declare concrete supported or unsupported scopes."
             )
         }
         if (role == AdapterPortfolioRole.SEMANTIC_REFERENCE && claim.status != AdapterControlClaimStatus.UNKNOWN) {
@@ -502,15 +595,24 @@ class AdapterControlMaterializationAuthority(
         family: AdapterControlFamily,
         semantic: String,
         subject: String,
+        scope: AdapterControlScope,
         detail: String,
         completeness: AdapterControlRequirementCompleteness = AdapterControlRequirementCompleteness.COMPLETE
     ): AdapterControlRequirement = AdapterControlRequirement(
-        id = "adapter-control.${family.name.lowercase()}.${semantic.substringAfterLast('.')}.${canonicalId(subject)}",
+        id = "adapter-control.$semantic.${canonicalId(subject)}",
         family = family,
         semantic = semantic,
         subject = subject,
+        scope = scope,
         detail = detail,
         completeness = completeness
+    )
+
+    private fun assessmentMetadata(assessment: AdapterControlAssessment): Map<String, String> = mapOf(
+        "adapterControlEvidenceVersion" to AdapterControlMaterializationLoader.SUPPORTED_VERSION,
+        "adapterControlDecision" to assessment.decision.name,
+        "adapterControlRequirementCount" to assessment.requirements.size.toString(),
+        "adapterControlBlockerCount" to assessment.blockingRequirementIds.size.toString()
     )
 
     private fun flatten(nodes: List<PlanNode>): List<PlanNode> = nodes.flatMap { node ->
