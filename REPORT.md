@@ -8,8 +8,8 @@ Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Correction`
 Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
-Next adapter roadmap item: `A0.1 Adapter Portfolio Reassessment` (`next`)
-Active adapter work package: `A0.1 Adapter Portfolio Reassessment` (`active`)
+Completed adapter roadmap item: `A0.1 Adapter Portfolio Reassessment` (`completed`)
+Next adapter roadmap item: `A0.2 Topology Evidence Adoption` (`next`)
 
 ## Core boundary
 
@@ -19,9 +19,9 @@ The implementation package remains `0.9.5`, the public standard remains `0.8.0`,
 
 ## A0.1 portfolio reassessment
 
-The built-in target registry currently declares six targets. A0.1 classifies them from actual registry, provider and committed scenario evidence:
+The built-in target registry declares six targets. A0.1 classifies them from actual registry, provider and committed scenario evidence:
 
-| Target | Role | Current support class | Honest boundary |
+| Target | Role | Support class | Honest boundary |
 | --- | --- | --- | --- |
 | `local` | semantic reference | `PROFILE_ONLY` | Target-neutral planning reference; no shipped generator or renderer. |
 | `jenkins` | target adapter | `EXECUTABLE_REFERENCE` | Native checkout and image-build leaves plus the committed `checkout-build-image` executable scenario. |
@@ -57,12 +57,20 @@ Adapter conformance has its own committed inventory under `adapters/conformance/
 
 The adapter checks execute only after `v0.9.7.10.bounded-semantic-closure`. Therefore A0.x can evolve without silently changing what closed Core v0.9.7.
 
-## Validation state
+## Validation history
 
-Flow CI #2263 passed the portfolio implementation before lifecycle certification was added. It is useful historical evidence but is not the A0.1 implementation boundary.
+Flow CI #2263 passed the initial portfolio and roadmap-transition implementation before lifecycle certification was added. It remains historical evidence and is not the A0.1 completion authority.
 
-A0.1 remains `next` in the adapter roadmap and its work package remains `active`. A later exact-head and synthetic merge-candidate Flow CI run must include the lifecycle authority itself before completion metadata can record that run, mark A0.1 `completed` or select A0.2 as `next`.
+Flow CI #2270, run `30342473373`, passed the complete A0.1 implementation with lifecycle certification on:
+
+- exact head `20191d2d7b9460894c81f9bfee73b3c11b8f78f4`;
+- synthetic merge candidate `d3238468ba01fe8b97bc6f500c9f96f2beeb4760`;
+- Flow Agent tooling, structure validation and context generation;
+- complete compilation and tests;
+- standalone Core closure plus the separate adapter conformance inventory.
+
+The current completion-metadata head and its synthetic merge candidate must independently pass before PR #96 may become ready for review. A0.2 is selected as next, but no A0.2 implementation belongs to this PR.
 
 ## Architecture boundary
 
-This item does not add a renderer, target-specific public syntax, runtime executor, SDK lifecycle or new Core semantic requirement. It reassesses existing distribution claims before further adapter work is allowed.
+A0.1 did not add a renderer, target-specific public syntax, runtime executor, SDK lifecycle or new Core semantic requirement. It reassessed existing distribution claims before further adapter work is allowed.
