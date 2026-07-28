@@ -2,7 +2,7 @@ version: "0.9.7.10"
 name: "Bounded Semantic Closure Gate"
 type: "architecture-closure"
 stream: core
-status: complete
+status: correction-required
 objective: "Close the v0.9.7 universal semantic foundation only when the already-declared finite evidence set is complete, passing and internally consistent."
 universalInvariant: "The track closes by falsifiable evidence, never by a narrative completion claim."
 forbiddenScope:
@@ -33,11 +33,13 @@ completionEvidence:
   - "The complete pre-closure conformance sequence is independently declared and must execute exactly once and in order."
   - "StandardModel separates the unchanged public standard profile from durable package-level evidence and uses only runner-produced identities."
   - "Purpose coverage is structural and evidence-backed; ratios remain observable but do not block legitimate governance additions by denominator arithmetic."
-  - "Flow CI #2245 independently passed the current corrected exact head cd7600b845ec229ac41559c312de5844ca3e7051 and synthetic merge candidate 601bc4a2062c5c5aea579d6054b2f00b69775522 with complete tests and standalone conformance in CLOSED."
-  - "The later completion-metadata head and its synthetic merge candidate must independently pass before PR #94 is ready for review."
+  - "Flow CI #2245 passed the corrected implementation boundary on exact head cd7600b845ec229ac41559c312de5844ca3e7051 and synthetic merge candidate 601bc4a2062c5c5aea579d6054b2f00b69775522."
+  - "Flow CI #2250 later passed completion metadata head a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9 and synthetic merge candidate 238d62fdf974129a93e1f743e1f93aecef34906b, but that boundary was not recorded structurally."
+  - "Bounded correction 0.9.7.10.2 supersedes the CLOSED claim until distinct boundary enforcement and repository evidence are repaired."
 validationPolicy:
   workflow: "Flow CI"
   requirement: "The implementation head and a later completion-metadata head must each pass exact-head and synthetic merge-candidate validation."
+supersededByCorrection: "0.9.7.10.2"
 implementationEvidence:
   status: passed
   workflow: "Flow CI"
