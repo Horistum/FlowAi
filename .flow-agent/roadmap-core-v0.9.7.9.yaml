@@ -2,7 +2,7 @@ project: Flow Core
 stream: core
 roadmapVersion: 5
 track: v0.9.7-universal-semantic-foundation
-status: active
+status: completed
 trackObjective: Complete the universal semantic foundation with continuous reference evidence.
 continuousFeedback:
   - Every Core item runs the existing reference and regression suite.
@@ -195,7 +195,7 @@ items:
   - version: 0.9.7.10
     name: Bounded Semantic Closure Gate
     type: architecture-closure
-    status: next
+    status: completed
     purpose: Verify declared evidence with a finite checklist.
     universalInvariant: The track closes by falsifiable evidence.
     forbiddenScope:
@@ -212,4 +212,6 @@ items:
       - A post-merge audit then proved that the presence gate covered only the public release subset and that unknown correction statuses passed as terminal evidence.
       - Bounded correction 0.9.7.10.1 repaired the complete-suite, correction-status, StandardModel, purpose, artifact and lifecycle findings.
       - Flow CI #2231 passed exact corrected implementation head ca5f0d921975bce724ff99a01f9e2b8d9793a0c0 and synthetic merge candidate 7bbabd0ccfdedd3862fa0b140e0c4c4fdc30f87b with complete tests and standalone conformance.
-      - The closure item is READY; this metadata head and its synthetic merge candidate must pass independently before CLOSED metadata may be authored.
+      - Flow CI #2243 passed READY metadata exact head 530eb284f445f0ceee7772eb98edd8d8403959f6 and synthetic merge candidate 68acbcf6eb2009eda35f5365e77da303a593b293 with complete tests and standalone conformance.
+      - The closure item and v0.9.7 Core track are CLOSED; no next Core item is published.
+      - The CLOSED metadata head and its synthetic merge candidate must pass independently before PR #94 is ready for review.
