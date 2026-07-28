@@ -107,7 +107,7 @@ An explicit binding remains invalid when:
 
 An intent step without `uses` remains `UNBOUND` and lowers to target-neutral semantic work. It is never silently attached to the only, first or apparently compatible implementation in the registry.
 
-## Conformance and lifecycle
+## Conformance ownership
 
 A0.3 adds five checks to adapter inventory `1.2` after the frozen Core semantic closure boundary:
 
@@ -117,7 +117,22 @@ A0.3 adds five checks to adapter inventory `1.2` after the frozen Core semantic 
 - semantic effect and provenance preservation;
 - unresolved and unsupported polarity.
 
-A0.3 remains in the IMPLEMENTING phase until a distinct exact-head and synthetic merge-candidate Flow CI boundary passes. Completion metadata and A0.4 selection require a later independent validation boundary.
+The existing `AdapterStreamConformanceRunner` remains the single complete post-Core adapter composition authority. During final review, a newly introduced parallel complete-stream runner was removed and A0.3 was attached to the existing composition instead. The committed inventory order therefore has one owner rather than two classes that could drift independently.
+
+## Lifecycle and validation
+
+A0.3 completion requires two separate evidence boundaries.
+
+The implementation boundary is Flow CI #2303, run `30354834937`, which passed:
+
+- exact implementation head `f475ae8317122b986dec23a3d36bb8df05a31db3`;
+- synthetic merge candidate `afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8`;
+- Flow Agent tooling and metadata structure;
+- complete compilation and tests;
+- the frozen Core closure sequence;
+- adapter inventory `1.2` with every A0.1, A0.2 and A0.3 check.
+
+The work package records that implementation evidence structurally. A0.3 is `completed` and A0.4 is `next`, but no A0.4 work package or implementation is included. The completion metadata remains external exact-head CI evidence until its exact completion head and synthetic merge candidate pass independently.
 
 ## Non-goals
 
