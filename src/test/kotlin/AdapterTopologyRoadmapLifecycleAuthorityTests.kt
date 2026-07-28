@@ -39,6 +39,38 @@ class AdapterTopologyRoadmapLifecycleAuthorityTests {
     }
 
     @Test
+    fun completedA02RemainsValidAfterA03Completes() {
+        val report = authority.evaluate(
+            completedInput().copy(
+                a03Status = "completed",
+                adapterCompletedItem = "A0.3",
+                adapterNextItem = "A0.4",
+                indexNextItem = "A0.4",
+                releaseNextItem = "A0.4"
+            )
+        )
+
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+        assertEquals(AdapterTopologyLifecyclePhase.COMPLETED, report.phase)
+    }
+
+    @Test
+    fun completedA02RejectsSkippedLaterRoadmapItem() {
+        val report = authority.evaluate(
+            completedInput().copy(
+                a03Status = "completed",
+                adapterCompletedItem = "A0.3",
+                adapterNextItem = "A0.5",
+                indexNextItem = "A0.5",
+                releaseNextItem = "A0.5"
+            )
+        )
+
+        assertEquals("FAIL", report.status)
+        assertTrue("adapters.a0.2.adapter-roadmap-state" in report.failedChecks)
+    }
+
+    @Test
     fun completionWithoutImplementationEvidenceFailsClosed() {
         val report = authority.evaluate(
             completedInput().copy(implementationEvidence = AdapterWorkflowEvidence.ABSENT)
@@ -119,8 +151,8 @@ class AdapterTopologyRoadmapLifecycleAuthorityTests {
     private fun passingEvidence() = AdapterWorkflowEvidence(
         status = "passed",
         workflow = "Flow CI",
-        runNumber = 2300,
-        runId = 30350000000,
+        runNumber = 2284,
+        runId = 30348796256,
         exactHead = "1111111111111111111111111111111111111111",
         mergeCandidate = "2222222222222222222222222222222222222222",
         unknownFields = emptyList(),
