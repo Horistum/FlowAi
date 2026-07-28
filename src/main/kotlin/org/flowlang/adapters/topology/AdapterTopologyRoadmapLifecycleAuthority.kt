@@ -1,6 +1,7 @@
 package org.flowlang.adapters.topology
 
 import java.io.File
+import org.flowlang.adapters.portfolio.AdapterRoadmapSequence
 import org.flowlang.adapters.portfolio.AdapterWorkflowEvidence
 import org.flowlang.serialization.FlowYaml
 
@@ -34,14 +35,20 @@ data class AdapterTopologyLifecycleCheck(
 )
 
 data class AdapterTopologyLifecycleReport(
-    val reportVersion: String = "1.0",
+    val reportVersion: String = "1.1",
     val phase: AdapterTopologyLifecyclePhase,
     val status: String,
     val checks: List<AdapterTopologyLifecycleCheck>,
     val failedChecks: List<String>
 )
 
-/** Bounded lifecycle authority for A0.2 Topology Evidence Adoption. */
+/**
+ * Historical lifecycle authority for A0.2 Topology Evidence Adoption.
+ *
+ * During implementation it requires the exact A0.2 -> A0.3 transition shape.
+ * After completion it preserves A0.2 evidence while allowing later adjacent
+ * A0.x progress without reopening or silently skipping the guarded item.
+ */
 class AdapterTopologyRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
     fun analyze(): AdapterTopologyLifecycleReport {
         val workPackage = requiredYaml(WORK_PACKAGE)
@@ -74,26 +81,33 @@ class AdapterTopologyRoadmapLifecycleAuthority(private val rootDir: File = File(
             else -> AdapterTopologyLifecyclePhase.INVALID
         }
         val trackAligned = input.adapterTrackStatus == "active" && input.a01Status == "completed"
+        val linearProgress = AdapterRoadmapSequence.isAdjacentProgress(
+            input.adapterCompletedItem,
+            input.adapterNextItem,
+            minimumCompletedOrdinal = 2
+        )
         val adapterStateAligned = when (phase) {
             AdapterTopologyLifecyclePhase.IMPLEMENTING ->
                 input.a03Status == "planned" &&
                     input.adapterCompletedItem == "A0.1" &&
                     input.adapterNextItem == "A0.2"
-            AdapterTopologyLifecyclePhase.COMPLETED ->
-                input.a03Status == "next" &&
-                    input.adapterCompletedItem == "A0.2" &&
-                    input.adapterNextItem == "A0.3"
+            AdapterTopologyLifecyclePhase.COMPLETED -> when (input.a03Status) {
+                "next" ->
+                    linearProgress &&
+                        input.adapterCompletedItem == "A0.2" &&
+                        input.adapterNextItem == "A0.3"
+                "completed" ->
+                    linearProgress &&
+                        (AdapterRoadmapSequence.ordinal(input.adapterCompletedItem) ?: 0) >= 3
+                else -> false
+            }
             AdapterTopologyLifecyclePhase.INVALID -> false
-        }
-        val expectedNext = when (phase) {
-            AdapterTopologyLifecyclePhase.IMPLEMENTING -> "A0.2"
-            AdapterTopologyLifecyclePhase.COMPLETED -> "A0.3"
-            AdapterTopologyLifecyclePhase.INVALID -> ""
         }
         val indexAligned = input.primaryStream == "adapters" &&
             input.indexNextStream == "adapters" &&
-            input.indexNextItem == expectedNext
-        val releaseAligned = input.releasePrimaryStream == "adapters" && input.releaseNextItem == expectedNext
+            input.indexNextItem == input.adapterNextItem
+        val releaseAligned = input.releasePrimaryStream == "adapters" &&
+            input.releaseNextItem == input.adapterNextItem
         val evidenceAligned = when (phase) {
             AdapterTopologyLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
             AdapterTopologyLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
@@ -120,21 +134,31 @@ class AdapterTopologyRoadmapLifecycleAuthority(private val rootDir: File = File(
                     "a02=${input.a02Status}",
                     "a03=${input.a03Status}",
                     "completed=${input.adapterCompletedItem}",
-                    "next=${input.adapterNextItem}"
+                    "next=${input.adapterNextItem}",
+                    "linear=$linearProgress"
                 ),
-                "The adapter roadmap must move atomically from A0.2 next to A0.2 completed and A0.3 next."
+                "A0.2 implementation must transition to A0.3; after completion later adapter progress must remain adjacent and must not reopen A0.2."
             ),
             check(
                 "adapters.a0.2.index-state",
                 indexAligned,
-                listOf("primary=${input.primaryStream}", "next=${input.indexNextItem}", "stream=${input.indexNextStream}"),
-                "The roadmap index must select the same adapter item as the adapter roadmap."
+                listOf(
+                    "primary=${input.primaryStream}",
+                    "adapterNext=${input.adapterNextItem}",
+                    "indexNext=${input.indexNextItem}",
+                    "stream=${input.indexNextStream}"
+                ),
+                "The roadmap index must select the same current adapter item as the adapter roadmap."
             ),
             check(
                 "adapters.a0.2.release-state",
                 releaseAligned,
-                listOf("primary=${input.releasePrimaryStream}", "next=${input.releaseNextItem}"),
-                "Release state must expose the same adapter lifecycle focus."
+                listOf(
+                    "primary=${input.releasePrimaryStream}",
+                    "adapterNext=${input.adapterNextItem}",
+                    "releaseNext=${input.releaseNextItem}"
+                ),
+                "Release state must expose the same current adapter lifecycle focus."
             ),
             check(
                 "adapters.a0.2.implementation-evidence",
