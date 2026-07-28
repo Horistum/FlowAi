@@ -1,4 +1,4 @@
-version: "1.2"
+version: "1.3"
 checks:
   - "adapters.a0.1.lifecycle-integrity"
   - "adapters.a0.1.portfolio-reassessment"
@@ -14,3 +14,8 @@ checks:
   - "adapters.a0.3.runtime-binding-authority"
   - "adapters.a0.3.semantic-effect-provenance-preservation"
   - "adapters.a0.3.unresolved-unsupported-polarity"
+  - "adapters.a0.4.lifecycle-integrity"
+  - "adapters.a0.4.control-evidence-integrity"
+  - "adapters.a0.4.runtime-control-authority"
+  - "adapters.a0.4.unsupported-control-demotion"
+  - "adapters.a0.4.platform-capability-separation"
