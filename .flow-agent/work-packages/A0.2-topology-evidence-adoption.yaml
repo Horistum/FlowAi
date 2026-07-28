@@ -2,7 +2,7 @@ version: "A0.2"
 name: "Topology Evidence Adoption"
 type: "adapter-topology"
 stream: adapters
-status: active
+status: complete
 objective: "Replace self-referential target topology declarations with complete adapter-owned evidence for execution isolation, lifetime, transfer, scope, interaction and concurrency."
 activationEvidence:
   adapterItem: "A0.1"
@@ -23,7 +23,15 @@ completionEvidence:
   - "Every target has exactly one complete record covering all Core topology kinds plus interaction and concurrency."
   - "Every non-supported claim has an explicit limitation and every evidence reference resolves outside the topology manifest and target registry."
   - "Runtime ExecutionTopologyProfile instances are generated from the adapter evidence manifest."
+  - "Runtime profiles carry only target-neutral status and exact evidence identity; detailed mechanism prose remains adapter-owned."
   - "Profile-only target adapters remain UNKNOWN and block topology-dependent execution."
   - "Every executable-reference scenario matches only SUPPORTED adapter topology claims."
   - "A0.2 lifecycle integrity rejects premature or evidence-free completion metadata."
-  - "Flow CI passes exact-head and synthetic merge-candidate validation before completion metadata is authored."
+  - "Flow CI #2284 passed exact-head and synthetic merge-candidate validation with the final A0.2 authority active."
+implementationEvidence:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: "2284"
+  runId: "30348796256"
+  exactHead: "6d441628c4d3101bfd0c32c5d2eb370b00fbc4fe"
+  mergeCandidate: "6168e45d292a34f3d648c0e645016f88c813e25b"
