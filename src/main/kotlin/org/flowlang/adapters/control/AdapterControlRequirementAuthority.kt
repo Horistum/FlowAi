@@ -20,7 +20,12 @@ internal object AdapterControlRequirementAuthority {
         val requirements = mutableListOf<AdapterControlRequirement>()
         val canonicalFlowHandler = plan.nodes.lastOrNull()
             ?.takeIf { node ->
-                node is TryPlanNode && node.body.isEmpty() && node.errorHandler.isNotEmpty() && plan.nodes.size > 1
+                node is TryPlanNode &&
+                    node.body.isEmpty() &&
+                    node.errorHandler.isNotEmpty() &&
+                    plan.nodes.size > 1 &&
+                    FLOW_ERROR_HANDLER_ID.matches(node.id) &&
+                    "errorHandlers.finally" in plan.requiredCapabilities
             }
         flatten(plan.nodes).forEach { node ->
             when (node) {
@@ -120,7 +125,7 @@ internal object AdapterControlRequirementAuthority {
             subject = node.id,
             scope = AdapterControlScope.WORKFLOW,
             detail = if (detached) {
-                "TryPlanNode has an error handler but no protected body or canonical flow-level boundary"
+                "TryPlanNode has an error handler but no protected body or certified planner flow-level boundary"
             } else {
                 "TryPlanNode(errorHandler=${node.errorHandler.size})"
             }
@@ -261,6 +266,7 @@ internal object AdapterControlRequirementAuthority {
         .trim('-')
         .ifBlank { "control" }
 
+    private val FLOW_ERROR_HANDLER_ID = Regex("^onError_[0-9]+$")
     private val SCHEDULER_CONCURRENCY_KEYS = setOf("concurrency", "concurrencyPolicy")
     private val SCHEDULER_CATCH_UP_KEYS = setOf("catchUp", "startingDeadlineSeconds")
 }
