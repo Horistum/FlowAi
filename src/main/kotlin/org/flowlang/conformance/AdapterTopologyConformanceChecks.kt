@@ -90,8 +90,8 @@ class AdapterTopologyConformanceChecks(
                 if (declaration.evidenceReference != expected) {
                     add("$targetName.$key: runtime evidence '${declaration.evidenceReference}' must be '$expected'.")
                 }
-                if (declaration.detail.isNullOrBlank()) {
-                    add("$targetName.$key: runtime topology evidence must retain mechanism detail.")
+                if (!declaration.detail.isNullOrBlank()) {
+                    add("$targetName.$key: adapter-specific prose must remain in the adapter evidence authority, not the Core runtime profile.")
                 }
             }
         }
