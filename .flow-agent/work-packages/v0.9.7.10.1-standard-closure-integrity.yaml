@@ -19,22 +19,22 @@ universalInvariants:
 confirmedFindings:
   - id: S1-C1
     status: complete
-    summary: "A versioned independent inventory now requires all 90 pre-closure checks exactly once and in runner order."
+    summary: "A versioned independent inventory requires all 90 pre-closure checks exactly once and in runner order."
   - id: S2
     status: complete
-    summary: "Purpose coverage ratios remain observations while structural purpose categories and evidence own pass/fail."
+    summary: "Purpose coverage ratios are observations while structural purpose categories, capabilities, blocked risks and evidence own pass/fail."
   - id: S3
     status: complete
     summary: "Public release registry-consistency remains empty while one explicit package-governance owner is modeled separately."
   - id: S4
     status: complete
-    summary: "DIAGNOSTICS and REGISTRY_CONSISTENCY now have explicit modeled owners."
+    summary: "DIAGNOSTICS and REGISTRY_CONSISTENCY have explicit modeled owners with real evidence."
   - id: S5
     status: complete
     summary: "Export-manifest membership is an explicit StandardCheck field rather than check-id string inference."
   - id: S7
     status: complete
-    summary: "KUBERNETES_MAINTENANCE is no longer a mandatory target-neutral purpose capability."
+    summary: "KUBERNETES_MAINTENANCE is not a mandatory target-neutral purpose capability."
   - id: S8
     status: complete
     summary: "Internal artifacts are projected from explicit artifact visibility."
@@ -54,7 +54,7 @@ validationPolicy:
 validationEvidence:
   status: passed
   workflow: "Flow CI"
-  runNumber: "2231"
-  runId: "30323064898"
-  exactHead: "ca5f0d921975bce724ff99a01f9e2b8d9793a0c0"
-  mergeCandidate: "7bbabd0ccfdedd3862fa0b140e0c4c4fdc30f87b"
+  runNumber: "2245"
+  runId: "30325244443"
+  exactHead: "cd7600b845ec229ac41559c312de5844ca3e7051"
+  mergeCandidate: "601bc4a2062c5c5aea579d6054b2f00b69775522"
