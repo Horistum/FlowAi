@@ -1,6 +1,11 @@
-version: "1.0"
+version: "1.1"
 checks:
   - "adapters.a0.1.lifecycle-integrity"
   - "adapters.a0.1.portfolio-reassessment"
   - "adapters.a0.1.executable-reference-evidence"
   - "adapters.a0.1.core-independence"
+  - "adapters.a0.2.lifecycle-integrity"
+  - "adapters.a0.2.topology-evidence-integrity"
+  - "adapters.a0.2.runtime-topology-authority"
+  - "adapters.a0.2.profile-only-demotion"
+  - "adapters.a0.2.executable-topology-proof"
