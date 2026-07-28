@@ -6,7 +6,7 @@
 
 Started after A0.2 merged through PR #97 as `964a9c4f8bf9ce9dc8771c99a68393c9edc35807`.
 
-Implementation scope under validation:
+Completed scope:
 
 - add one target-neutral `IntentBindingContractAuthority` for explicit module-action bindings;
 - keep implementation selection explicit through `uses` and `params.system`;
@@ -20,9 +20,18 @@ Implementation scope under validation:
 - remove the unsupported `argocd.sync → SYNC` claim because source and destination cannot be represented;
 - add positive and negative binding authority, lifecycle and behavior tests;
 - extend the post-Core adapter inventory to version `1.2` with five A0.3 checks;
+- retain one canonical `AdapterStreamConformanceRunner` and remove a duplicate complete-stream composition found during final review;
 - preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
 
-A0.3 remains `next` and its work package remains `active`. No implementation evidence or A0.4 transition is authored until Flow CI passes the exact implementation head and synthetic merge candidate with A0.3 lifecycle integrity active.
+Validation history:
+
+- Flow CI #2293 rejected the first implementation because binding-key sorting was not type-safe and nullable resolved inputs did not smart-cast across the validity boundary.
+- Flow CI #2298 passed compilation and most binding tests, then rejected a provenance assertion against a quoted legacy presentation string and release metadata that did not satisfy the exact external-candidate wording policy.
+- Provenance validation was corrected to compare ExecutionPlan fields with typed `IntentBindingEvidence`; the release evidence policy was preserved rather than weakened.
+- Flow CI #2300 passed exact-head and merge-candidate validation before final review found two competing complete adapter-stream composition classes.
+- The duplicate runner was removed and the existing canonical `AdapterStreamConformanceRunner` was extended to own inventory `1.2`.
+- Flow CI #2303, run `30354834937`, passed the final implementation on exact head `f475ae8317122b986dec23a3d36bb8df05a31db3` and synthetic merge candidate `afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8`.
+- A0.3 is now `completed`, A0.4 is `next`, and the completion-metadata head must independently pass exact-head and merge-candidate validation before PR #98 becomes ready for review.
 
 ### A0.2 Topology Evidence Adoption
 
