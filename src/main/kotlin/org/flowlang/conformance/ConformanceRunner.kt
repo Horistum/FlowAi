@@ -49,6 +49,7 @@ class ConformanceRunner(
         checks += CliReleaseHonestyChecks(rootDir, registry, targets, projections).checks()
         checks += TargetSelectionProvenanceIntegrityChecks(rootDir, registry, targets, projections).checks()
         checks += ClosureBlockingIntegrityChecks(rootDir, registry, targets, projections).checks()
+        checks += ClosureEvidenceBoundaryChecks(rootDir, registry, targets, projections).checks()
         checks += VectorIndexChecks(rootDir, registry, targets, projections).checks(checks.map { it.name })
         checks += IntentSafetyChecks(rootDir, registry, targets, projections).checks()
         checks += TrustAndReferenceChecks(rootDir, registry, targets, projections).checks()
