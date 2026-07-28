@@ -17,6 +17,8 @@ internal class AdapterControlEvidenceIntegrityAuthority(
     private val targets: Map<String, TargetCapability>,
     private val projections: TargetProjectionRegistry
 ) {
+    private val repositoryRoot = rootDir.canonicalFile.toPath()
+
     fun analyze(input: AdapterControlMaterializationDocument): AdapterControlMaterializationReport {
         val findings = mutableListOf<AdapterControlMaterializationFinding>()
         if (input.version != AdapterControlMaterializationLoader.SUPPORTED_VERSION) {
@@ -31,6 +33,9 @@ internal class AdapterControlEvidenceIntegrityAuthority(
 
         val recordsByTarget = input.targets.groupBy(AdapterControlTargetRecord::target)
         val expectedTargets = targets.keys
+        input.targets.filter { it.target.isBlank() }.forEach {
+            finding(findings, "CONTROL_TARGET_BLANK", "manifest", "all", "Target identity must not be blank.")
+        }
         recordsByTarget.filterValues { it.size > 1 }.forEach { (target, records) ->
             finding(findings, "CONTROL_TARGET_DUPLICATE", target, "all", "Target occurs ${records.size} times.")
         }
@@ -78,6 +83,7 @@ internal class AdapterControlEvidenceIntegrityAuthority(
         supportClass: AdapterSupportClass?,
         findings: MutableList<AdapterControlMaterializationFinding>
     ) {
+        validateClaimShape(target, claim, findings)
         val expected = AdapterControlSemanticContract.byFamily.getValue(claim.family)
         if (claim.semantics.all != expected) {
             finding(
@@ -183,6 +189,49 @@ internal class AdapterControlEvidenceIntegrityAuthority(
         }
     }
 
+    private fun validateClaimShape(
+        target: String,
+        claim: AdapterControlClaim,
+        findings: MutableList<AdapterControlMaterializationFinding>
+    ) {
+        if (claim.mechanism.isBlank()) {
+            finding(findings, "CONTROL_MECHANISM_BLANK", target, claim.family.name, "Mechanism must not be blank.")
+        }
+        if (claim.scopes.isEmpty()) {
+            finding(findings, "CONTROL_SCOPES_EMPTY", target, claim.family.name, "At least one control scope is required.")
+        }
+        if (claim.evidenceReferences.isEmpty()) {
+            finding(findings, "CONTROL_EVIDENCE_MISSING", target, claim.family.name, "At least one repository evidence reference is required.")
+        }
+        if (claim.evidenceReferences.size != claim.evidenceReferences.toSet().size) {
+            finding(findings, "CONTROL_EVIDENCE_DUPLICATE", target, claim.family.name, "Repository evidence references must be unique.")
+        }
+        if (claim.evidenceReferences.any(String::isBlank)) {
+            finding(findings, "CONTROL_EVIDENCE_BLANK", target, claim.family.name, "Repository evidence references must not be blank.")
+        }
+        if (claim.platformReferences.size != claim.platformReferences.toSet().size) {
+            finding(findings, "CONTROL_PLATFORM_REFERENCE_DUPLICATE", target, claim.family.name, "Platform references must be unique.")
+        }
+        if (claim.prerequisites.size != claim.prerequisites.toSet().size) {
+            finding(findings, "CONTROL_PREREQUISITE_DUPLICATE", target, claim.family.name, "Prerequisites must be unique.")
+        }
+        if (claim.limitations.isEmpty() || claim.limitations.any(String::isBlank)) {
+            finding(findings, "CONTROL_LIMITATIONS_INVALID", target, claim.family.name, "At least one non-blank limitation is required.")
+        }
+        val blankReasons = (claim.semantics.unsupported + claim.semantics.unknown)
+            .filter { (semantic, reason) -> semantic.isBlank() || reason.isBlank() }
+            .keys
+        if (blankReasons.isNotEmpty()) {
+            finding(
+                findings,
+                "CONTROL_SEMANTIC_REASON_BLANK",
+                target,
+                claim.family.name,
+                "Semantic reasons must be non-blank: ${blankReasons.sorted().joinToString()}."
+            )
+        }
+    }
+
     private fun validateEvidenceReferences(
         target: String,
         claim: AdapterControlClaim,
@@ -191,7 +240,7 @@ internal class AdapterControlEvidenceIntegrityAuthority(
         val fileParts = claim.evidenceReferences.map { it.substringBefore('#') }
         fileParts.forEachIndexed { index, filePart ->
             val reference = claim.evidenceReferences[index]
-            val evidenceFile = File(rootDir, filePart)
+            val candidate = runCatching { File(rootDir, filePart).canonicalFile.toPath() }.getOrNull()
             when {
                 filePart == AdapterControlMaterializationLoader.PATH -> finding(
                     findings,
@@ -200,7 +249,14 @@ internal class AdapterControlEvidenceIntegrityAuthority(
                     claim.family.name,
                     "Evidence cannot cite its own authority '$filePart'."
                 )
-                !evidenceFile.isFile -> finding(
+                File(filePart).isAbsolute || candidate == null || !candidate.startsWith(repositoryRoot) -> finding(
+                    findings,
+                    "CONTROL_EVIDENCE_PATH_OUTSIDE_REPOSITORY",
+                    target,
+                    claim.family.name,
+                    "Evidence must be a repository-relative path: $reference"
+                )
+                !candidate.toFile().isFile -> finding(
                     findings,
                     "CONTROL_EVIDENCE_UNRESOLVED",
                     target,
@@ -217,7 +273,7 @@ internal class AdapterControlEvidenceIntegrityAuthority(
                             claim.family.name,
                             "Source evidence reference has a blank anchor: $reference"
                         )
-                    } else if (!evidenceFile.readText().contains(anchor)) {
+                    } else if (!candidate.toFile().readText().contains(anchor)) {
                         finding(
                             findings,
                             "CONTROL_EVIDENCE_ANCHOR_UNRESOLVED",
@@ -229,7 +285,7 @@ internal class AdapterControlEvidenceIntegrityAuthority(
                 }
             }
         }
-        if (fileParts.all { it == TARGET_REGISTRY_PATH }) {
+        if (fileParts.isNotEmpty() && fileParts.all { it == TARGET_REGISTRY_PATH }) {
             finding(
                 findings,
                 "CONTROL_EVIDENCE_REGISTRY_ONLY",
