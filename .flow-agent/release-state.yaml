@@ -1,5 +1,5 @@
 project: Flow Core
-stateVersion: 25
+stateVersion: 26
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,12 +18,12 @@ versionBoundary:
 roadmapState:
   roadmapVersion: 5
   activeTrack: "v0.9.7-universal-semantic-foundation"
-  completedItem: "0.9.7.10"
-  completedItemName: "Bounded Semantic Closure Gate"
+  completedItem: "0.9.7.9"
+  completedItemName: "Intent Lowering and Diagnostic Honesty"
   primaryStream: "core"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
-  closureItemStatus: "completed"
+  closureItemStatus: "correction-required"
   activeRoadmaps:
     core: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
@@ -109,21 +109,21 @@ qualityPrinciples:
   - "Unknown or missing bounded-correction status blocks closure."
   - "closureItem is permanent identity; nextCoreItem exists only while an item is actually next."
   - "A completed primary track contains no next item and remains valid only when every Core item is completed."
+  - "Implementation and completion validation boundaries must use distinct workflow runs, exact heads and synthetic merge candidates."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-merged-v0.9.7.10-head"
-  flowAgentStructure: "passed-on-merged-v0.9.7.10-head"
-  flowAgentContextGeneration: "passed-on-merged-v0.9.7.10-head"
-  offlineCacheAwareChecks: "passed-on-merged-v0.9.7.10-head"
-  cleanTest: "passed-on-merged-v0.9.7.10-head"
-  conformance: "passed-on-merged-v0.9.7.10-head"
-  executableReferenceEvidence: "passed-on-merged-v0.9.7.10-head"
-  validationSource: "Flow CI #2183 passed exact completion-metadata head ea0ec0e948fb0c6b9f9a09690d571abbf4c53967 before that head was merged through PR #93 as df099137ce65b206519db7141f8eb3573d0018a2."
+  flowAgentTooling: "passed-on-merged-pr-94-head"
+  flowAgentStructure: "passed-on-merged-pr-94-head"
+  flowAgentContextGeneration: "passed-on-merged-pr-94-head"
+  offlineCacheAwareChecks: "passed-on-merged-pr-94-head"
+  cleanTest: "passed-on-merged-pr-94-head"
+  conformance: "passed-on-merged-pr-94-head"
+  executableReferenceEvidence: "passed-on-merged-pr-94-head"
+  validationSource: "Flow CI #2250 passed exact completion-metadata head a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9 before that head was merged through PR #94 as cbe1d23a25e0224be565cad322b097bf2aaa50a1."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "Flow CI #2231 supplied external exact-head CI evidence on corrected implementation head ca5f0d921975bce724ff99a01f9e2b8d9793a0c0."
-    - "The same Flow CI #2231 run independently passed synthetic merge candidate 7bbabd0ccfdedd3862fa0b140e0c4c4fdc30f87b, complete tests and standalone conformance."
-    - "Flow CI #2243 supplied external exact-head CI evidence on READY metadata head 530eb284f445f0ceee7772eb98edd8d8403959f6."
-    - "The same Flow CI #2243 run independently passed synthetic merge candidate 68acbcf6eb2009eda35f5365e77da303a593b293, complete tests and standalone conformance."
-    - "Bounded correction 0.9.7.10.1 and Core item 0.9.7.10 are complete; the v0.9.7 Core track is CLOSED."
-    - "The CLOSED metadata head and its synthetic merge candidate remain external validation evidence until this candidate passes."
+    - "Flow CI #2245 passed implementation head cd7600b845ec229ac41559c312de5844ca3e7051 and synthetic merge candidate 601bc4a2062c5c5aea579d6054b2f00b69775522."
+    - "Flow CI #2250 passed later completion head a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9 and synthetic merge candidate 238d62fdf974129a93e1f743e1f93aecef34906b."
+    - "PR #94 merged, but the closure work package still represented both boundaries with Flow CI #2245."
+    - "Bounded correction 0.9.7.10.2 is active and the v0.9.7 Core closure claim is CORRECTION_REQUIRED."
+    - "The correction candidate requires external exact-head CI evidence before the closure item may return to READY."
