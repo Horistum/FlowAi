@@ -133,13 +133,13 @@ qualityPrinciples:
   - "An adapter item may become completed only after its lifecycle authority records a passed implementation boundary."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-merged-pr-98-head"
-  flowAgentStructure: "passed-on-merged-pr-98-head"
-  flowAgentContextGeneration: "passed-on-merged-pr-98-head"
-  offlineCacheAwareChecks: "passed-on-merged-pr-98-head"
-  cleanTest: "passed-on-merged-pr-98-head"
-  conformance: "passed-on-merged-pr-98-head"
-  executableReferenceEvidence: "passed-on-merged-pr-98-head"
+  flowAgentTooling: "passed-on-a0.3-completion-boundary"
+  flowAgentStructure: "passed-on-a0.3-completion-boundary"
+  flowAgentContextGeneration: "passed-on-a0.3-completion-boundary"
+  offlineCacheAwareChecks: "passed-on-a0.3-completion-boundary"
+  cleanTest: "passed-on-a0.3-completion-boundary"
+  conformance: "passed-on-a0.3-completion-boundary"
+  executableReferenceEvidence: "passed-on-a0.3-completion-boundary"
   validationSource: "Flow CI #2313 passed exact A0.3 completion head 53d9794e7d4165942339b8ae37db6c911f01f83a and synthetic merge candidate 3a052e10fcbfca4e3fe237b5864f1efab0912758 before PR #98 merged as 9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
