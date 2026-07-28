@@ -8,8 +8,8 @@ Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Correction`
 Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
-Completed adapter roadmap item: `A0.2 Topology Evidence Adoption` (`completed`)
-Active adapter roadmap item: `A0.3 Capability Binding Migration` (`next`, work package `active`)
+Completed adapter roadmap item: `A0.3 Capability Binding Migration` (`completed`)
+Next adapter roadmap item: `A0.4 Control Requirement Materialization` (`next`)
 
 ## Core boundary
 
@@ -54,7 +54,7 @@ Built-in `implements` declarations also had no independent distribution-owned ev
 
 It partitions canonical parameters into mapped and unsupported semantics and identifies binding-only action inputs. `CanonicalIntentMeaningAuthority` resolves authored values and descriptor defaults once and records each value source as `SEMANTIC`, `BINDING` or `DEFAULT`.
 
-`IntentToAstPlanner` now consumes `IntentBindingEvidence.resolvedParameters`. It no longer re-reads the action descriptor or reapplies defaults. Selection remains explicit through `uses` and `params.system`; no registry order or apparent compatibility chooses an implementation.
+`IntentToAstPlanner` consumes `IntentBindingEvidence.resolvedParameters`. It no longer re-reads the action descriptor or reapplies defaults. Selection remains explicit through `uses` and `params.system`; no registry order or apparent compatibility chooses an implementation.
 
 Canonical semantic effects are derived before binding. The only accepted binding effect policy is `PRESERVE_CANONICAL`.
 
@@ -112,10 +112,32 @@ Adapter inventory `1.2` adds five A0.3 checks after the frozen Core closure:
 - semantic effect and provenance preservation;
 - unresolved and unsupported polarity.
 
-## Validation state
+The existing `AdapterStreamConformanceRunner` remains the single composition authority for A0.1, A0.2 and A0.3. A duplicate complete-stream runner found during final review was removed before the authoritative implementation boundary.
 
-A0.3 remains `next`; its work package is `active`. No implementation evidence is authored yet. The exact implementation head and synthetic merge candidate must pass Flow CI with the A0.3 authority active before completion metadata can be written.
+## Validation history
+
+Flow CI #2293 correctly rejected the first implementation because two binding-key sort expressions were not type-safe and nullable action/binding inputs did not smart-cast across the computed validity boundary.
+
+Flow CI #2298 passed compilation and most binding tests, then rejected two remaining issues:
+
+- a new test compared typed target provenance with the quoted legacy presentation string in `bindingMetadata`;
+- release metadata did not use the exact external-candidate evidence wording required by release honesty policy.
+
+The test was corrected to compare `ExecutionPlan` selection fields against typed `IntentBindingEvidence`, and release metadata was corrected without weakening the policy.
+
+Flow CI #2300 passed exact-head and merge-candidate tests and conformance before final review found two competing classes claiming to compose the complete adapter stream. The new duplicate runner was removed and the existing canonical `AdapterStreamConformanceRunner` was extended to own inventory `1.2`.
+
+Flow CI #2303, run `30354834937`, passed the final implementation on:
+
+- exact head `f475ae8317122b986dec23a3d36bb8df05a31db3`;
+- synthetic merge candidate `afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8`;
+- Flow Agent tooling, structure validation and context generation;
+- complete compilation and tests;
+- frozen Core closure followed by adapter inventory `1.2`;
+- all A0.1, A0.2 and A0.3 checks.
+
+A0.3 is now `completed` and A0.4 is `next`. The current completion-metadata head and its synthetic merge candidate must independently pass before PR #98 becomes ready for review. No A0.4 work package or implementation belongs to this PR.
 
 ## Architecture boundary
 
-A0.3 does not add a renderer, provider, runtime executor, target-specific public DSL, automatic implementation selection, new canonical capability or new Core conformance check. It changes the explicit binding boundary and independent adapter certification while preserving the frozen Core model.
+A0.3 did not add a renderer, provider, runtime executor, target-specific public DSL, automatic implementation selection, new canonical capability or new Core conformance check. It changed the explicit binding boundary and independent adapter certification while preserving the frozen Core model.
