@@ -24,6 +24,7 @@ Completed scope:
 - validate the committed Jenkins snapshot and regenerate its semantic plan through the production planning pipeline;
 - prove the Jenkins executable reference consumes only supported adapter topology evidence;
 - add A0.2 lifecycle integrity and five new checks to the post-Core adapter inventory;
+- make completed A0.1 and A0.2 lifecycle authorities historical and forward-stable while requiring adjacent current roadmap progress;
 - preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
 
 Validation history:
@@ -32,7 +33,9 @@ Validation history:
 - Flow CI #2279 confirmed those production fixes and then rejected duplicated adapter prose in Core runtime diagnostics through canonical snapshot mismatches.
 - The runtime profile was corrected to retain only target-neutral status and exact evidence identity instead of regenerating snapshots around an architectural duplication.
 - Flow CI #2284, run `30348796256`, passed the final implementation on exact head `6d441628c4d3101bfd0c32c5d2eb370b00fbc4fe` and synthetic merge candidate `6168e45d292a34f3d648c0e645016f88c813e25b`.
-- A0.2 is now `completed`, A0.3 is `next`, and the completion-metadata head must independently pass exact-head and merge-candidate validation before PR #97 is ready for review.
+- Flow CI #2285 rejected the first completion state because the completed A0.1 authority permanently required `A0.2 next`, making any later roadmap progress invalid.
+- `AdapterRoadmapSequence` now requires current completed and next items to remain adjacent while completed item authorities preserve their own historical evidence instead of freezing the global pointer.
+- A0.2 remains `completed`, A0.3 remains `next`, and the corrected completion head must independently pass exact-head and merge-candidate validation before PR #97 is ready for review.
 
 ### A0.1 Adapter Portfolio Reassessment
 
