@@ -2,7 +2,7 @@ version: "0.9.7.10"
 name: "Bounded Semantic Closure Gate"
 type: "architecture-closure"
 stream: core
-status: correction-required
+status: active
 objective: "Close the v0.9.7 universal semantic foundation only when the already-declared finite evidence set is complete, passing and internally consistent."
 universalInvariant: "The track closes by falsifiable evidence, never by a narrative completion claim."
 forbiddenScope:
@@ -31,26 +31,19 @@ completionEvidence:
   - "ReleaseMetadataHonestyAuthority accepts CORRECTION_REQUIRED, READY and CLOSED and rejects every mixed lifecycle state."
   - "ClosureBlockingIntegrityChecks consumes the explicit release lifecycle rather than inferring closure from correction status."
   - "The complete pre-closure conformance sequence is independently declared and must execute exactly once and in order."
+  - "ClosureEvidenceBoundaryAuthority assigns typed failure reasons and requires a later distinct completion boundary before CLOSED."
+  - "The committed inventory now contains 91 ordered pre-closure checks, including governance.closure-evidence-boundary-integrity."
   - "StandardModel separates the unchanged public standard profile from durable package-level evidence and uses only runner-produced identities."
   - "Purpose coverage is structural and evidence-backed; ratios remain observable but do not block legitimate governance additions by denominator arithmetic."
-  - "Flow CI #2245 passed the corrected implementation boundary on exact head cd7600b845ec229ac41559c312de5844ca3e7051 and synthetic merge candidate 601bc4a2062c5c5aea579d6054b2f00b69775522."
-  - "Flow CI #2250 later passed completion metadata head a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9 and synthetic merge candidate 238d62fdf974129a93e1f743e1f93aecef34906b, but that boundary was not recorded structurally."
-  - "Bounded correction 0.9.7.10.2 supersedes the CLOSED claim until distinct boundary enforcement and repository evidence are repaired."
+  - "Flow CI #2252 passed the correction implementation boundary on exact head 3176009e660c95d873e9eeb8d1845b7f54142d2c and synthetic merge candidate bba152a0eeccf87fffe19a11a3340dd2d1d6a569."
+  - "The READY metadata head and its synthetic merge candidate must pass before a distinct validationEvidence block may be authored."
 validationPolicy:
   workflow: "Flow CI"
   requirement: "The implementation head and a later completion-metadata head must each pass exact-head and synthetic merge-candidate validation."
-supersededByCorrection: "0.9.7.10.2"
 implementationEvidence:
   status: passed
   workflow: "Flow CI"
-  runNumber: "2245"
-  runId: "30325244443"
-  exactHead: "cd7600b845ec229ac41559c312de5844ca3e7051"
-  mergeCandidate: "601bc4a2062c5c5aea579d6054b2f00b69775522"
-validationEvidence:
-  status: passed
-  workflow: "Flow CI"
-  runNumber: "2245"
-  runId: "30325244443"
-  exactHead: "cd7600b845ec229ac41559c312de5844ca3e7051"
-  mergeCandidate: "601bc4a2062c5c5aea579d6054b2f00b69775522"
+  runNumber: "2252"
+  runId: "30333130152"
+  exactHead: "3176009e660c95d873e9eeb8d1845b7f54142d2c"
+  mergeCandidate: "bba152a0eeccf87fffe19a11a3340dd2d1d6a569"
