@@ -10,8 +10,21 @@ class AdapterRoadmapLifecycleAuthorityTests {
     private val authority = AdapterRoadmapLifecycleAuthority()
 
     @Test
-    fun repositoryImplementationPhaseIsHonest() {
+    fun repositoryLifecycleMetadataFormsOneHonestSupportedPhase() {
         val report = authority.analyze()
+
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+        assertTrue(
+            report.phase in setOf(
+                AdapterRoadmapLifecyclePhase.IMPLEMENTING,
+                AdapterRoadmapLifecyclePhase.COMPLETED
+            )
+        )
+    }
+
+    @Test
+    fun implementationPhaseRequiresA01NextAndNoEvidence() {
+        val report = authority.evaluate(implementingInput())
 
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
         assertEquals(AdapterRoadmapLifecyclePhase.IMPLEMENTING, report.phase)
@@ -102,8 +115,8 @@ class AdapterRoadmapLifecycleAuthorityTests {
     private fun passingEvidence() = AdapterWorkflowEvidence(
         status = "passed",
         workflow = "Flow CI",
-        runNumber = 2264,
-        runId = 30340000000,
+        runNumber = 2270,
+        runId = 30342473373,
         exactHead = "1111111111111111111111111111111111111111",
         mergeCandidate = "2222222222222222222222222222222222222222",
         unknownFields = emptyList(),
