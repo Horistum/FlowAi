@@ -8,20 +8,27 @@ Started after A0.3 merged through PR #98 as `9c09a03b3fa6a5b7b2114ff1d7aa7f533ba
 
 Implementation scope under validation:
 
-- add a strict adapter-owned control materialization manifest for every built-in target;
+- add a strict adapter-owned control materialization document for every built-in target;
 - declare exactly one approval, retry, timeout, compensation and scheduling claim per target;
 - partition each closed family contract into supported, unsupported and unknown semantics;
-- separate repository implementation evidence from official platform capability context;
-- require independent `src/main` or `src/test` evidence for every supported semantic;
-- permit target registry data only as supplemental negative corroboration and reject registry-only evidence;
-- derive exact requirements from `ApprovalNode`, `RetryGroupNode`, `TryPlanNode`, failure rollback and schedule triggers;
+- retain exact requirement semantic, subject, completeness and scope;
+- preserve manual, environment, external and unknown approval modes without reinterpretation;
+- separate repository implementation evidence from repository behavioral evidence and official platform capability context;
+- require independent `src/main` implementation and `src/test` behavior evidence for every supported semantic;
+- validate source anchors when declared and reject repository-path escape, missing, duplicate, blank, self-referential and registry-only evidence;
+- apply the same integrity rules to YAML-loaded and typed evidence documents;
+- derive exact requirements from `ApprovalNode`, `RetryGroupNode`, protected `TryPlanNode`, failure rollback and schedule triggers;
 - retain preserved RETRY/TIMEOUT metadata as `PRESERVED_UNSPECIFIED` UNKNOWN blockers until exact scope and value survive lowering;
-- certify only Jenkins inline manual approval, Jenkins/GitHub CRON and Jenkins error-handler subsets currently implemented by composed providers;
+- reject detached error handlers that do not protect work or represent the canonical Jenkins flow-level boundary;
+- certify only Jenkins inline manual approval, protected Jenkins error handlers and Jenkins/GitHub CRON subsets currently implemented by composed providers;
+- prove supported behavior through the production target-selection, control, manifest, readiness and renderer boundary;
 - explicitly demote retry flattening, timeout absence, unguarded compensation, uncomposed environment approval and Tekton scheduling;
 - evaluate adapter controls before executable target materialization;
-- preserve blocked facts through review evidence while preventing target syntax emission;
+- use one reconciliation authority for successful and diagnostic manifest metadata;
+- expose blocked execution readiness while retaining review-only render evidence and preventing target syntax emission;
 - replace dynamic readiness diagnostic code concatenation with one closed mapping to existing stable catalog codes;
-- add positive, negative, CLI integration, lifecycle and stable diagnostic mapping tests;
+- split evidence integrity, requirement derivation and materialization orchestration without creating a second production decision path;
+- add positive, negative, CLI integration, provider behavior, lifecycle, typed-evidence and stable diagnostic mapping tests;
 - extend the post-Core adapter inventory to version `1.3` with five A0.4 checks;
 - preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
 
@@ -36,10 +43,14 @@ Validation history:
 
 - Flow CI #2315 rejected the first implementation because one negative test used an incomplete `RetryGroupNode` fixture; production sources compiled and the fixture was corrected.
 - Flow CI #2316 compiled the implementation and rejected release metadata that lacked exact external-candidate wording plus an evidence rule that did not distinguish positive proof from negative registry corroboration.
-- Release honesty remained strict; contracts/loader and runtime assessment were separated, supported claims now require independent implementation evidence, and registry-only evidence fails.
+- Release honesty remained strict; registry-only evidence fails and positive support requires independent repository proof.
 - Flow CI #2324 rejected persisted CLI review bundles because the existing readiness reconciler invented uncatalogued diagnostic code `TARGET_COMPATIBILITY_UNSUPPORTED` through string concatenation.
 - `TargetReadinessDiagnosticCodeAuthority` now maps known internal statuses to existing stable public codes and rejects unknown statuses instead of inventing public identifiers.
-- A0.4 remains `next` and its work package remains `active`. No implementation evidence or A0.5 transition is authored until exact-head and synthetic merge-candidate Flow CI pass independently.
+- Flow CI #2333 proved that incomplete preserved controls correctly block the reference intent; the older optimistic readiness assertion was strengthened instead of weakening the new authority.
+- Flow CI #2338 rejected runtime certification that assumed every test composition loaded the complete target inventory. Runtime certification now validates the active target subset while full conformance validates the complete distribution.
+- Flow CI #2359 rejected two schedule behavior tests that manually constructed invalid manifests. Both now prove CRON through explicit target selection, control assessment, production manifest generation, readiness reconciliation and concrete rendering.
+- The senior review corrected approval-mode collapse, unused scopes, runtime use of uncertified evidence, unenforced evidence version, lossy requirement identity, divergent success/diagnostic metadata, missing behavior evidence, unresolved source anchors, typed-input integrity bypasses, repository path traversal, detached-handler over-certification, multi-responsibility authority structure and inaccurate A0.3 validation wording.
+- A0.4 remains `next` and its work package remains `active`. No implementation evidence or A0.5 transition is authored until the reviewed exact head and synthetic merge candidate pass independently.
 
 ### A0.3 Capability Binding Migration
 
