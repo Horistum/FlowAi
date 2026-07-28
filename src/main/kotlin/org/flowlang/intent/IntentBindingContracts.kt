@@ -65,35 +65,37 @@ object IntentBindingContractAuthority {
 
     fun resolveParameters(
         step: IntentStep,
-        binding: IntentBindingContract,
-        action: ModuleActionContract
+        binding: IntentBindingContract?,
+        action: ModuleActionContract?
     ): ResolvedIntentBindingParameters {
+        val resolvedBinding = requireNotNull(binding) { "Resolved parameter calculation requires a binding contract." }
+        val resolvedAction = requireNotNull(action) { "Resolved parameter calculation requires an action contract." }
         val supplied = step.params.filterKeys { it !in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
         val values = linkedMapOf<String, IntentValue>()
         val sources = linkedMapOf<String, IntentBindingParameterSource>()
 
-        action.input.forEach { (name, field) ->
+        resolvedAction.input.forEach { (name, field) ->
             val suppliedValue = supplied[name]
             when {
                 suppliedValue != null -> {
                     values[name] = suppliedValue
-                    sources[name] = if (name in binding.mappedSemanticParameters) {
+                    sources[name] = if (name in resolvedBinding.mappedSemanticParameters) {
                         IntentBindingParameterSource.SEMANTIC
                     } else {
                         IntentBindingParameterSource.BINDING
                     }
                 }
                 field.defaultValue != null -> {
-                    values[name] = defaultIntentValue(field.defaultValue, "${binding.id}.$name")
+                    values[name] = defaultIntentValue(field.defaultValue, "${resolvedBinding.id}.$name")
                     sources[name] = IntentBindingParameterSource.DEFAULT
                 }
             }
         }
 
-        if (action.additionalParams) {
+        if (resolvedAction.additionalParams) {
             supplied.filterKeys { it !in values }.forEach { (name, value) ->
                 values[name] = value
-                sources[name] = if (name in binding.mappedSemanticParameters) {
+                sources[name] = if (name in resolvedBinding.mappedSemanticParameters) {
                     IntentBindingParameterSource.SEMANTIC
                 } else {
                     IntentBindingParameterSource.BINDING
