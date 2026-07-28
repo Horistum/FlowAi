@@ -1,0 +1,32 @@
+version: "A0.4"
+name: "Control Requirement Materialization"
+type: "adapter-control"
+stream: adapters
+status: active
+objective: "Certify concrete provider satisfaction for approval, retry, timeout, compensation and scheduling requirements without redefining frozen Core meaning."
+activationEvidence:
+  adapterItem: "A0.3"
+  adapterStatus: "completed"
+  mergedPullRequest: "PR #98 merged as 9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930"
+universalBoundary:
+  - "Core control requirements, evidence and decisions remain target-neutral and unchanged."
+  - "Retry, timeout, compensation and scheduling consume their existing intent, AST, plan, failure and trigger contracts rather than being forced into the frozen ControlRequirementKind enum."
+  - "Adapter evidence states what the composed provider can enforce; general platform capability is context only."
+  - "A supported control semantic requires repository implementation evidence and behavioral proof."
+forbiddenScope:
+  - "No new public target-specific control DSL and no Core dependency on adapter evidence."
+  - "No renderer implementation added merely to preserve an optimistic support label; artifact rendering remains bounded by A0.6."
+  - "No platform documentation, target registry flag or provider name accepted as implementation evidence."
+  - "No retry, timeout, compensation, approval or schedule requirement silently flattened, discarded or approximated."
+  - "No mutation of the frozen v0.9.7 Core pre-closure inventory."
+completionEvidence:
+  - "Every target has exactly one complete claim for approval, retry, timeout, compensation and scheduling."
+  - "Every family partitions the closed semantic contract into supported, unsupported and unknown evidence."
+  - "Profile-only targets and the local semantic reference remain unknown until a provider is composed."
+  - "Runtime adapter assessment is derived from actual ApprovalNode, RetryGroupNode, TryPlanNode, preserved policies, failure rollback and schedule trigger requirements."
+  - "Unsupported or unknown requirements force diagnostic review-only evidence before target syntax can be emitted."
+  - "Jenkins manual approval and Jenkins/GitHub CRON are proven as the only currently supported control subsets."
+  - "Retry flattening, timeout absence, unguarded compensation and uncomposed environment approvals are rejected explicitly."
+  - "A0.4 lifecycle integrity rejects premature evidence, skipped progress and evidence-free completion."
+  - "Flow CI passes exact-head and synthetic merge-candidate validation before completion metadata is authored."
+implementationEvidence: {}
