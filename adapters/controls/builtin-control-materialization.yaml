@@ -1,0 +1,654 @@
+version: "1.0"
+targets:
+  - target: local
+    claims:
+      - family: APPROVAL
+        status: UNKNOWN
+        mechanism: "Semantic reference only; no production target provider owns an approval mechanism."
+        ownership: NONE
+        scopes: [STEP]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            approval.manual.inline: "No production provider is composed for the local semantic reference."
+            approval.environment.resource: "No target resource gate is composed."
+            approval.external: "No external approval controller is composed."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local"
+        platformReferences: []
+        prerequisites: []
+        limitations:
+          - "Local is a semantic reference and cannot certify production enforcement."
+      - family: RETRY
+        status: UNKNOWN
+        mechanism: "Semantic reference only."
+        ownership: NONE
+        scopes: [TASK]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            retry.attempt-limit: "No production provider evidence."
+            retry.delay.fixed: "No production provider evidence."
+            retry.backoff.variable: "No production provider evidence."
+            retry.failure-filter: "No production provider evidence."
+            retry.cancellation: "No production provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local"
+        platformReferences: []
+        prerequisites: []
+        limitations:
+          - "Semantic structure is not execution evidence."
+      - family: TIMEOUT
+        status: UNKNOWN
+        mechanism: "Semantic reference only."
+        ownership: NONE
+        scopes: [STEP, TASK, WORKFLOW]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            timeout.step: "No production provider evidence."
+            timeout.task: "No production provider evidence."
+            timeout.workflow: "No production provider evidence."
+            timeout.per-attempt: "No production provider evidence."
+            timeout.cumulative: "No production provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local"
+        platformReferences: []
+        prerequisites: []
+        limitations:
+          - "The current execution plan has no target-neutral timeout node."
+      - family: COMPENSATION
+        status: UNKNOWN
+        mechanism: "Semantic reference only."
+        ownership: NONE
+        scopes: [WORKFLOW]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            compensation.error-handler: "No production provider evidence."
+            compensation.finally: "No production provider evidence."
+            compensation.rollback: "No production provider evidence."
+            compensation.always-run: "No production provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local"
+        platformReferences: []
+        prerequisites: []
+        limitations:
+          - "A target-neutral error path does not prove provider compensation."
+      - family: SCHEDULING
+        status: UNKNOWN
+        mechanism: "Semantic reference only."
+        ownership: NONE
+        scopes: [TRIGGER]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            scheduling.cron: "No production provider evidence."
+            scheduling.interval: "No production provider evidence."
+            scheduling.calendar: "No production provider evidence."
+            scheduling.timezone: "No production provider evidence."
+            scheduling.concurrency: "No production provider evidence."
+            scheduling.catch-up: "No production provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local"
+        platformReferences: []
+        prerequisites: []
+        limitations:
+          - "A preserved trigger is not a deployed scheduler."
+
+  - target: jenkins
+    claims:
+      - family: APPROVAL
+        status: PARTIAL
+        mechanism: "Provider-owned Jenkins Pipeline input step payload rendered inside the protected dependency path."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [STEP]
+        semantics:
+          supported:
+            - approval.manual.inline
+          unsupported:
+            approval.environment.resource: "The Jenkins provider does not own an external environment protection resource contract."
+            approval.external: "No external approval controller contract is composed."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt#approval.manual.input"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsApproval"
+          - "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt#jenkinsApprovalIsNativeOnlyWithOwnedProviderPayload"
+        platformReferences:
+          - "https://www.jenkins.io/doc/pipeline/steps/pipeline-input-step/"
+        prerequisites:
+          - "The composed provider must retain the JENKINS_STEP/input approval definition."
+        limitations:
+          - "The current payload does not model submitter identity, approver groups or approval timeout."
+      - family: RETRY
+        status: UNSUPPORTED
+        mechanism: "RetryGroupNode is preserved in the target manifest but the Jenkins renderer currently emits only its children."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [TASK]
+        semantics:
+          supported: []
+          unsupported:
+            retry.attempt-limit: "The renderer does not emit retry count."
+            retry.delay.fixed: "The renderer does not emit delay."
+            retry.backoff.variable: "The renderer does not emit backoff."
+            retry.failure-filter: "No failure filter contract is represented."
+            retry.cancellation: "Cancellation behavior is not certified."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt#RetryGroupNode"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsStep"
+        platformReferences:
+          - "https://www.jenkins.io/doc/pipeline/steps/workflow-basic-steps/#retry-retry-the-body-up-to-n-times"
+        prerequisites: []
+        limitations:
+          - "General Jenkins capability does not compensate for missing Flow provider behavior."
+      - family: TIMEOUT
+        status: UNSUPPORTED
+        mechanism: "No timeout node, target manifest control payload or Jenkins renderer contract exists in the current distribution."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [STEP, TASK, WORKFLOW]
+        semantics:
+          supported: []
+          unsupported:
+            timeout.step: "No step timeout contract."
+            timeout.task: "No task timeout contract."
+            timeout.workflow: "No workflow timeout contract."
+            timeout.per-attempt: "No timeout/retry interaction contract."
+            timeout.cumulative: "No cumulative timeout contract."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/planner/ExecutionPlan.kt#PlanNode"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+        platformReferences:
+          - "https://www.jenkins.io/doc/pipeline/steps/workflow-basic-steps/#timeout-enforce-time-limit"
+        prerequisites: []
+        limitations:
+          - "Platform timeout support is intentionally not promoted without a Flow projection contract."
+      - family: COMPENSATION
+        status: PARTIAL
+        mechanism: "TryPlanNode is rendered as Jenkins try/catch; concrete rollback remains notes-projected."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [WORKFLOW]
+        semantics:
+          supported:
+            - compensation.error-handler
+          unsupported:
+            compensation.finally: "The renderer emits catch, not a guaranteed finally boundary."
+            compensation.rollback: "standard.rollback has no concrete Jenkins projection payload."
+            compensation.always-run: "No always-run control contract is emitted."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTry"
+          - "targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard.rollback"
+        platformReferences:
+          - "https://www.jenkins.io/doc/book/pipeline/syntax/#post"
+        prerequisites: []
+        limitations:
+          - "An error handler is not automatically a compensating transaction."
+      - family: SCHEDULING
+        status: PARTIAL
+        mechanism: "Jenkins renderer emits declarative cron triggers from preserved CRON schedules."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [TRIGGER]
+        semantics:
+          supported:
+            - scheduling.cron
+          unsupported:
+            scheduling.interval: "Executable renderer accepts CRON only."
+            scheduling.calendar: "Executable renderer accepts CRON only."
+            scheduling.timezone: "The separate Flow timezone field is not rendered."
+            scheduling.concurrency: "No scheduler concurrency policy contract is emitted."
+            scheduling.catch-up: "No missed-run behavior contract is emitted."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTriggers"
+          - "src/main/kotlin/org/flowlang/lowering/IntentLoweringContracts.kt#trigger-schedule"
+        platformReferences:
+          - "https://www.jenkins.io/doc/book/pipeline/syntax/#triggers"
+        prerequisites: []
+        limitations:
+          - "Only the CRON expression is certified."
+
+  - target: github-actions
+    claims:
+      - family: APPROVAL
+        status: UNSUPPORTED
+        mechanism: "The renderer can attach an environment only after provider approval evidence, but the composed provider declares no approval payload definition."
+        ownership: TARGET_RESOURCE
+        scopes: [ENVIRONMENT]
+        semantics:
+          supported: []
+          unsupported:
+            approval.manual.inline: "GitHub Actions has no provider-owned inline approval payload in this distribution."
+            approval.environment.resource: "Environment protection configuration is external and no concrete provider evidence is composed."
+            approval.external: "No external approval controller contract is composed."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt#githubActions"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#providerApprovalPayload"
+          - "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt#githubEnvironmentCapabilityDoesNotForgeStepPayloadEvidence"
+        platformReferences:
+          - "https://docs.github.com/en/actions/reference/deployments-and-environments"
+        prerequisites:
+          - "A future provider must own environment identity and protection evidence without embedding policy meaning in Flow Core."
+        limitations:
+          - "A registry feature flag is not environment protection evidence."
+      - family: RETRY
+        status: UNSUPPORTED
+        mechanism: "RetryGroupNode is flattened into ordinary jobs and no retry contract reaches target syntax."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [TASK, JOB]
+        semantics:
+          supported: []
+          unsupported:
+            retry.attempt-limit: "Retry count is discarded during job lowering."
+            retry.delay.fixed: "Delay is discarded during job lowering."
+            retry.backoff.variable: "Backoff is discarded during job lowering."
+            retry.failure-filter: "No failure filter is emitted."
+            retry.cancellation: "No cancellation interaction is certified."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#RetryGroupNode"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+        platformReferences:
+          - "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax"
+        prerequisites: []
+        limitations:
+          - "Workflow rerun is not equivalent to task-scoped retry semantics."
+      - family: TIMEOUT
+        status: UNSUPPORTED
+        mechanism: "No timeout requirement is lowered into a GitHub Actions job or step."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [STEP, JOB, WORKFLOW]
+        semantics:
+          supported: []
+          unsupported:
+            timeout.step: "No step timeout mapping."
+            timeout.task: "No task timeout mapping."
+            timeout.workflow: "No workflow timeout mapping."
+            timeout.per-attempt: "No retry interaction contract."
+            timeout.cumulative: "No cumulative timeout contract."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/planner/ExecutionPlan.kt#PlanNode"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+        platformReferences:
+          - "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idtimeout-minutes"
+        prerequisites: []
+        limitations:
+          - "Available platform syntax is not implementation evidence."
+      - family: COMPENSATION
+        status: UNSUPPORTED
+        mechanism: "Error-handler jobs are not emitted with a certified failure/always guard and rollback remains notes-projected."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [WORKFLOW, JOB]
+        semantics:
+          supported: []
+          unsupported:
+            compensation.error-handler: "Dependency metadata alone does not guarantee failure-path execution."
+            compensation.finally: "No always/failure condition is emitted for the handler."
+            compensation.rollback: "standard.rollback has no concrete GitHub Actions payload."
+            compensation.always-run: "No always-run contract is emitted."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#TryPlanNode"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#GitHubJobConditionAuthority"
+          - "targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard.rollback"
+        platformReferences:
+          - "https://docs.github.com/en/actions/reference/evaluate-expressions-in-workflows-and-actions#status-check-functions"
+        prerequisites: []
+        limitations:
+          - "A downstream job is not a compensation guarantee."
+      - family: SCHEDULING
+        status: PARTIAL
+        mechanism: "GitHub Actions renderer emits workflow schedule entries for CRON triggers."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [TRIGGER]
+        semantics:
+          supported:
+            - scheduling.cron
+          unsupported:
+            scheduling.interval: "GitHub schedule syntax is CRON-only."
+            scheduling.calendar: "No calendar contract is emitted."
+            scheduling.timezone: "GitHub schedules run in UTC and the Flow timezone field is not emitted."
+            scheduling.concurrency: "No scheduler concurrency policy is derived from the trigger."
+            scheduling.catch-up: "No delayed or missed-run guarantee is represented."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#schedule"
+          - "src/main/kotlin/org/flowlang/lowering/IntentLoweringContracts.kt#trigger-schedule"
+        platformReferences:
+          - "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule"
+        prerequisites: []
+        limitations:
+          - "Only the CRON expression is certified."
+
+  - target: tekton
+    claims:
+      - family: APPROVAL
+        status: UNSUPPORTED
+        mechanism: "The composed Tekton provider has no approval payload; external CustomRun approval implementations are not composed."
+        ownership: EXTERNAL_CONTROLLER
+        scopes: [TASK]
+        semantics:
+          supported: []
+          unsupported:
+            approval.manual.inline: "No native approval payload."
+            approval.environment.resource: "No environment resource gate contract."
+            approval.external: "No CustomRun approval controller is composed."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt#tekton"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+        platformReferences:
+          - "https://github.com/tektoncd/experimental/tree/main/custom-tasks/approvals"
+        prerequisites: []
+        limitations:
+          - "A possible extension is not a shipped provider mechanism."
+      - family: RETRY
+        status: UNSUPPORTED
+        mechanism: "RetryGroupNode is flattened into ordinary Pipeline tasks."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [TASK]
+        semantics:
+          supported: []
+          unsupported:
+            retry.attempt-limit: "Task retries are not emitted."
+            retry.delay.fixed: "Delay is not emitted."
+            retry.backoff.variable: "Backoff is not emitted."
+            retry.failure-filter: "No failure filter contract."
+            retry.cancellation: "No cancellation behavior is certified."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#RetryGroupNode"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+        platformReferences:
+          - "https://tekton.dev/docs/pipelines/pipelines/#using-the-retries-field"
+        prerequisites: []
+        limitations:
+          - "Tekton support exists generally but is absent from the Flow provider."
+      - family: TIMEOUT
+        status: UNSUPPORTED
+        mechanism: "The provider emits neither PipelineRun timeout contracts nor task timeouts."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [TASK, WORKFLOW]
+        semantics:
+          supported: []
+          unsupported:
+            timeout.step: "No step timeout mapping."
+            timeout.task: "No Pipeline task timeout mapping."
+            timeout.workflow: "No PipelineRun timeout mapping."
+            timeout.per-attempt: "No retry/timeout interaction contract."
+            timeout.cumulative: "No cumulative timeout contract."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+          - "src/main/kotlin/org/flowlang/planner/ExecutionPlan.kt#PlanNode"
+        platformReferences:
+          - "https://tekton.dev/docs/pipelines/pipelineruns/#configuring-the-failure-timeout"
+        prerequisites: []
+        limitations:
+          - "The current provider renders a Pipeline, not the PipelineRun lifecycle contract."
+      - family: COMPENSATION
+        status: UNSUPPORTED
+        mechanism: "Error-handler tasks are flattened without Tekton finally semantics."
+        ownership: WORKFLOW_DEFINITION
+        scopes: [WORKFLOW, TASK]
+        semantics:
+          supported: []
+          unsupported:
+            compensation.error-handler: "Handler metadata is not executable failure routing."
+            compensation.finally: "No finally section is emitted."
+            compensation.rollback: "No concrete rollback Task is composed."
+            compensation.always-run: "No finally/always-run contract is emitted."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#TryPlanNode"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+        platformReferences:
+          - "https://tekton.dev/docs/pipelines/pipelines/#using-the-finally-field"
+        prerequisites: []
+        limitations:
+          - "runAfter does not replace finally semantics."
+      - family: SCHEDULING
+        status: UNSUPPORTED
+        mechanism: "The Tekton generator does not carry plan triggers into the target manifest."
+        ownership: EXTERNAL_CONTROLLER
+        scopes: [TRIGGER]
+        semantics:
+          supported: []
+          unsupported:
+            scheduling.cron: "No Trigger/CronJob integration is composed."
+            scheduling.interval: "No scheduler integration."
+            scheduling.calendar: "No scheduler integration."
+            scheduling.timezone: "No scheduler integration."
+            scheduling.concurrency: "No scheduler integration."
+            scheduling.catch-up: "No scheduler integration."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#TektonManifestGenerator"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+        platformReferences:
+          - "https://tekton.dev/docs/triggers/"
+        prerequisites: []
+        limitations:
+          - "Pipeline execution and schedule ownership are separate integrations."
+
+  - target: argo-workflows
+    claims:
+      - family: APPROVAL
+        status: UNKNOWN
+        mechanism: "No Argo Workflows provider is composed in the distribution."
+        ownership: NONE
+        scopes: [STEP]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            approval.manual.inline: "Suspend capability is not approval authority and no provider is composed."
+            approval.environment.resource: "No resource gate provider."
+            approval.external: "No external approval controller provider."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.argo-workflows"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#registry"
+        platformReferences:
+          - "https://argo-workflows.readthedocs.io/en/latest/walk-through/suspending/"
+        prerequisites: []
+        limitations:
+          - "Platform suspend support is not a composed approval mechanism."
+      - family: RETRY
+        status: UNKNOWN
+        mechanism: "No Argo Workflows provider is composed."
+        ownership: NONE
+        scopes: [TASK]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            retry.attempt-limit: "No provider evidence."
+            retry.delay.fixed: "No provider evidence."
+            retry.backoff.variable: "No provider evidence."
+            retry.failure-filter: "No provider evidence."
+            retry.cancellation: "No provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.argo-workflows"
+        platformReferences:
+          - "https://argo-workflows.readthedocs.io/en/latest/retries/"
+        prerequisites: []
+        limitations:
+          - "General platform documentation is not implementation evidence."
+      - family: TIMEOUT
+        status: UNKNOWN
+        mechanism: "No Argo Workflows provider is composed."
+        ownership: NONE
+        scopes: [TASK, WORKFLOW]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            timeout.step: "No provider evidence."
+            timeout.task: "No provider evidence."
+            timeout.workflow: "No provider evidence."
+            timeout.per-attempt: "No provider evidence."
+            timeout.cumulative: "No provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.argo-workflows"
+        platformReferences:
+          - "https://argo-workflows.readthedocs.io/en/latest/fields/#workflow-spec"
+        prerequisites: []
+        limitations:
+          - "No provider-owned timeout contract."
+      - family: COMPENSATION
+        status: UNKNOWN
+        mechanism: "No Argo Workflows provider is composed."
+        ownership: NONE
+        scopes: [WORKFLOW]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            compensation.error-handler: "No provider evidence."
+            compensation.finally: "No provider evidence."
+            compensation.rollback: "No provider evidence."
+            compensation.always-run: "No provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.argo-workflows"
+        platformReferences:
+          - "https://argo-workflows.readthedocs.io/en/latest/walk-through/exit-handlers/"
+        prerequisites: []
+        limitations:
+          - "Exit handlers do not prove domain rollback semantics."
+      - family: SCHEDULING
+        status: UNKNOWN
+        mechanism: "No Argo Workflows provider is composed."
+        ownership: NONE
+        scopes: [TRIGGER]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            scheduling.cron: "No provider evidence."
+            scheduling.interval: "No provider evidence."
+            scheduling.calendar: "No provider evidence."
+            scheduling.timezone: "No provider evidence."
+            scheduling.concurrency: "No provider evidence."
+            scheduling.catch-up: "No provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.argo-workflows"
+        platformReferences:
+          - "https://argo-workflows.readthedocs.io/en/latest/cron-workflows/"
+        prerequisites: []
+        limitations:
+          - "CronWorkflow support is not composed in this distribution."
+
+  - target: azure-devops
+    claims:
+      - family: APPROVAL
+        status: UNKNOWN
+        mechanism: "No Azure DevOps provider is composed; approvals and checks are resource-owned outside pipeline YAML."
+        ownership: TARGET_RESOURCE
+        scopes: [ENVIRONMENT, RESOURCE]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            approval.manual.inline: "No provider evidence."
+            approval.environment.resource: "No resource owner/check evidence is composed."
+            approval.external: "No external check integration is composed."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#registry"
+        platformReferences:
+          - "https://learn.microsoft.com/en-us/azure/devops/pipelines/process/approvals"
+        prerequisites: []
+        limitations:
+          - "Pipeline YAML cannot itself prove resource-owner approval configuration."
+      - family: RETRY
+        status: UNKNOWN
+        mechanism: "No Azure DevOps provider is composed."
+        ownership: NONE
+        scopes: [TASK, JOB]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            retry.attempt-limit: "No provider evidence."
+            retry.delay.fixed: "No provider evidence."
+            retry.backoff.variable: "No provider evidence."
+            retry.failure-filter: "No provider evidence."
+            retry.cancellation: "No provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops"
+        platformReferences:
+          - "https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/"
+        prerequisites: []
+        limitations:
+          - "No composed provider contract."
+      - family: TIMEOUT
+        status: UNKNOWN
+        mechanism: "No Azure DevOps provider is composed."
+        ownership: NONE
+        scopes: [TASK, JOB]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            timeout.step: "No provider evidence."
+            timeout.task: "No provider evidence."
+            timeout.workflow: "No provider evidence."
+            timeout.per-attempt: "No provider evidence."
+            timeout.cumulative: "No provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops"
+        platformReferences:
+          - "https://learn.microsoft.com/en-us/azure/devops/pipelines/process/phases#timeouts"
+        prerequisites: []
+        limitations:
+          - "No composed provider contract."
+      - family: COMPENSATION
+        status: UNKNOWN
+        mechanism: "No Azure DevOps provider is composed."
+        ownership: NONE
+        scopes: [WORKFLOW, JOB]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            compensation.error-handler: "No provider evidence."
+            compensation.finally: "No provider evidence."
+            compensation.rollback: "No provider evidence."
+            compensation.always-run: "No provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops"
+        platformReferences:
+          - "https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions"
+        prerequisites: []
+        limitations:
+          - "A condition syntax is not domain compensation evidence."
+      - family: SCHEDULING
+        status: UNKNOWN
+        mechanism: "No Azure DevOps provider is composed."
+        ownership: NONE
+        scopes: [TRIGGER]
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            scheduling.cron: "No provider evidence."
+            scheduling.interval: "No provider evidence."
+            scheduling.calendar: "No provider evidence."
+            scheduling.timezone: "No provider evidence."
+            scheduling.concurrency: "No provider evidence."
+            scheduling.catch-up: "No provider evidence."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops"
+        platformReferences:
+          - "https://learn.microsoft.com/en-us/azure/devops/pipelines/process/scheduled-triggers"
+        prerequisites: []
+        limitations:
+          - "No composed provider contract."
