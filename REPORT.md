@@ -5,15 +5,15 @@ Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
-Core roadmap item status: `correction-required`
-Active correction item: `0.9.7.10.1 Standard and Closure Integrity Correction`
-Core closure correction: `0.9.7.10 Bounded Semantic Closure Gate` (`correction-required`)
+Core roadmap item status: `next`
+Completed correction item: `0.9.7.10.1 Standard and Closure Integrity Correction`
+Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
 
-## Reopened closure claim
+## READY closure claim
 
 PR #93 merged the first `v0.9.7.10` closure as `df099137ce65b206519db7141f8eb3573d0018a2`. A post-merge audit proved that the completed claim did not exclude complete-suite removal, unknown correction statuses or drift between the public model and the actual conformance producer.
 
-The closure claim is therefore reopened under bounded correction `0.9.7.10.1`. Earlier closure CI remains historical and explicitly superseded; it is not reused as evidence for the repaired closure.
+Bounded correction `0.9.7.10.1` repaired those defects and completed its implementation boundary. The closure item is now explicitly READY, not CLOSED. A separate exact-head and synthetic merge-candidate validation must pass before completion metadata may be authored.
 
 ## Confirmed audit ledger
 
@@ -29,7 +29,7 @@ The closure claim is therefore reopened under bounded correction `0.9.7.10.1`. E
 | S8 literal empty internal artifacts | implemented, validation passed | `ArtifactVisibility` projection |
 | C2 / C3 fail-open status and regex YAML | implemented, validation passed | `SemanticClosureAuthority`, `FlowYaml` |
 | C4 redundant source deletion assertion | implemented, validation passed | compiled classpath authority |
-| C5 misleading closed-state naming | implemented, lifecycle validation pending | explicit closure and phase-only next metadata |
+| C5 misleading closed-state naming | implemented, validation passed | explicit closure and READY-only next metadata |
 
 ## Corrected closure architecture
 
@@ -65,9 +65,9 @@ Every mixed state is `INVALID`. `closureItem` is permanent identity; `nextCoreIt
 
 ## Validation boundary
 
-Flow CI #2218 passed the corrected implementation boundary on exact head `c10bd83aa4c0bf48dcc4b0faef90c035525842c7` and synthetic merge candidate `651cca496a6b8a7e54cde2b992751c2630dbc30a`, including complete tests and standalone conformance.
+Flow CI #2231 passed the corrected implementation boundary on exact head `ca5f0d921975bce724ff99a01f9e2b8d9793a0c0` and synthetic merge candidate `7bbabd0ccfdedd3862fa0b140e0c4c4fdc30f87b`, including complete tests and standalone conformance.
 
-That evidence covers S1-S5, S7-S8 and C1-C4 before the C5 metadata migration. The current correction-required head must independently pass exact-head and synthetic merge-candidate validation before correction completion may be recorded.
+That evidence completes bounded correction `0.9.7.10.1` and permits the closure item to enter READY. The current READY metadata head and its synthetic merge candidate must pass independently before CLOSED metadata may be authored.
 
 ## Version boundary
 
