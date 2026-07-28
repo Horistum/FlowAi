@@ -446,13 +446,6 @@ class AdapterControlMaterializationAuthority(
                     claim.family.name,
                     "Evidence cannot cite its own authority '$filePart'."
                 )
-                filePart == TARGET_REGISTRY_PATH && claim.semantics.supported.isNotEmpty() -> finding(
-                    findings,
-                    "CONTROL_SUPPORTED_FROM_REGISTRY",
-                    target,
-                    claim.family.name,
-                    "Supported semantics cannot cite target registry summaries as implementation evidence."
-                )
                 !File(rootDir, filePart).isFile -> finding(
                     findings,
                     "CONTROL_EVIDENCE_UNRESOLVED",
@@ -471,7 +464,22 @@ class AdapterControlMaterializationAuthority(
                 "Target registry data may corroborate unsupported projection state but cannot be the only repository evidence."
             )
         }
+        if (
+            claim.semantics.supported.isNotEmpty() &&
+            fileParts.none(::isIndependentImplementationEvidence)
+        ) {
+            finding(
+                findings,
+                "CONTROL_SUPPORTED_IMPLEMENTATION_EVIDENCE_MISSING",
+                target,
+                claim.family.name,
+                "Supported semantics require at least one independent src/main or src/test implementation evidence reference."
+            )
+        }
     }
+
+    private fun isIndependentImplementationEvidence(path: String): Boolean =
+        path.startsWith("src/main/") || path.startsWith("src/test/")
 
     private fun AdapterControlClaimStatus.matches(
         semantics: AdapterControlSemanticPartition,
