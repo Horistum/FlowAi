@@ -16,9 +16,9 @@ import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.intent.IntentFailureMetadata
-import org.flowlang.intent.IntentPolicyMetadata
-import org.flowlang.intent.IntentSourceMetadata
+import org.flowlang.lowering.IntentFailureMetadata
+import org.flowlang.lowering.IntentPolicyMetadata
+import org.flowlang.lowering.IntentSourceMetadata
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanSchedule
