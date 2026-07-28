@@ -3,13 +3,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import org.flowlang.capabilities.CompatibilityReport
-import org.flowlang.capabilities.SupportLevel
 import org.flowlang.cli.honest.CliTargetEvidence
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
-import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetTrigger
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
@@ -18,8 +14,6 @@ import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.TryPlanNode
 import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.BuiltInTargetProjections
-import org.flowlang.targets.builtin.GitHubActionsManifestRenderer
-import org.flowlang.targets.builtin.JenkinsManifestRenderer
 
 class AdapterControlProviderBehaviorTests {
     private val rootDir = File(".")
@@ -27,7 +21,8 @@ class AdapterControlProviderBehaviorTests {
 
     @Test
     fun jenkinsFlowLevelErrorHandlerRendersProtectedTryCatchBoundary() {
-        val result = evaluateJenkins(
+        val result = evaluate(
+            target = "jenkins",
             fixtureId = "a0.4-jenkins-flow-error-boundary",
             plan = ExecutionPlan(
                 flowName = "jenkins-flow-error-boundary",
@@ -51,7 +46,8 @@ class AdapterControlProviderBehaviorTests {
 
     @Test
     fun jenkinsNestedTryNodeRendersItsOwnProtectedTryCatchBoundary() {
-        val result = evaluateJenkins(
+        val result = evaluate(
+            target = "jenkins",
             fixtureId = "a0.4-jenkins-nested-error-boundary",
             plan = ExecutionPlan(
                 flowName = "jenkins-nested-error-boundary",
@@ -71,24 +67,36 @@ class AdapterControlProviderBehaviorTests {
     }
 
     @Test
-    fun jenkinsCronControlRendersNativeTrigger() {
-        val rendered = JenkinsManifestRenderer().render(scheduleManifest("jenkins"))
+    fun jenkinsCronControlRendersNativeTriggerThroughProductionBoundary() {
+        val result = evaluate(
+            target = "jenkins",
+            fixtureId = "a0.4-jenkins-cron",
+            plan = schedulePlan("jenkins-cron")
+        )
 
+        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome)
+        val rendered = assertNotNull(result.renderedArtifact).content
         assertTrue(rendered.contains("triggers {"), rendered)
         assertTrue(rendered.contains("cron("), rendered)
         assertTrue(rendered.contains("0 2 * * *"), rendered)
     }
 
     @Test
-    fun githubCronControlRendersNativeSchedule() {
-        val rendered = GitHubActionsManifestRenderer().render(scheduleManifest("github-actions"))
+    fun githubCronControlRendersNativeScheduleThroughProductionBoundary() {
+        val result = evaluate(
+            target = "github-actions",
+            fixtureId = "a0.4-github-cron",
+            plan = schedulePlan("github-cron")
+        )
 
+        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome)
+        val rendered = assertNotNull(result.renderedArtifact).content
         assertTrue(rendered.contains("  schedule:"), rendered)
         assertTrue(rendered.contains("- cron:"), rendered)
         assertTrue(rendered.contains("0 2 * * *"), rendered)
     }
 
-    private fun evaluateJenkins(fixtureId: String, plan: ExecutionPlan): CliTargetEvidence =
+    private fun evaluate(target: String, fixtureId: String, plan: ExecutionPlan): CliTargetEvidence =
         CliTargetEvidenceAuthority(
             targets = targets,
             projections = BuiltInTargetProjections.registry,
@@ -96,13 +104,24 @@ class AdapterControlProviderBehaviorTests {
         ).evaluate(
             plan = plan,
             explicitSelection = TargetSelectionAuthority.fromTestFixture(
-                value = "jenkins",
+                value = target,
                 fixtureId = fixtureId,
                 targets = targets
             ),
             strict = false,
             renderRequested = true
         )
+
+    private fun schedulePlan(flowName: String) = ExecutionPlan(
+        flowName = flowName,
+        triggers = listOf(
+            PlanTrigger(
+                id = "nightly",
+                type = "SCHEDULE",
+                schedule = PlanSchedule(kind = "CRON", expression = "0 2 * * *")
+            )
+        )
+    )
 
     private fun assertTryCatchOrder(rendered: String, protectedMessage: String, handlerMessage: String) {
         assertTrue(rendered.contains("try {"), rendered)
@@ -114,23 +133,4 @@ class AdapterControlProviderBehaviorTests {
         assertTrue(tryIndex >= 0 && protectedIndex > tryIndex && protectedIndex < catchIndex, rendered)
         assertTrue(handlerIndex > catchIndex, rendered)
     }
-
-    private fun scheduleManifest(target: String) = TargetManifest(
-        target = target,
-        flowName = "$target-cron",
-        compatibility = CompatibilityReport(
-            target = target,
-            status = SupportLevel.SUPPORTED,
-            capabilityStatus = SupportLevel.SUPPORTED
-        ),
-        triggers = listOf(
-            TargetTrigger(
-                id = "nightly",
-                type = "SCHEDULE",
-                scheduleKind = "CRON",
-                scheduleExpression = "0 2 * * *"
-            )
-        ),
-        jobs = emptyList()
-    )
 }
