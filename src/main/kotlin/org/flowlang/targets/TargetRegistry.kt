@@ -69,7 +69,7 @@ object TargetRegistryYamlLoader {
     }
 
     private fun adapterTopologyProfiles(dir: File): Map<String, ExecutionTopologyProfile> {
-        val root = dir.parentFile ?: return emptyMap()
+        val root = dir.absoluteFile.parentFile ?: return emptyMap()
         val evidenceFile = File(root, AdapterTopologyEvidenceLoader.PATH)
         if (!evidenceFile.isFile) return emptyMap()
         return AdapterTopologyProfileFactory.profiles(AdapterTopologyEvidenceLoader.load(root))
