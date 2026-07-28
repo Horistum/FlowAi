@@ -1,0 +1,60 @@
+version: "0.9.7.10.1"
+name: "Standard and Closure Integrity Correction"
+type: "bounded-correction"
+stream: core
+status: complete
+parentCoreItem: "0.9.7.10"
+objective: "Reopen the v0.9.7 closure claim after proving that conformance-suite presence and bounded-correction lifecycle evidence were incomplete or fail-open."
+scopeBoundary:
+  - "Require the complete pre-closure conformance sequence to execute exactly once and in order."
+  - "Reject missing, unknown and non-terminal bounded-correction statuses."
+  - "Use the shared FlowYaml boundary for closure metadata."
+  - "Reconcile StandardModel check ownership, purpose coverage and artifact projections before re-closing the track."
+  - "Preserve package 0.9.5, public standard 0.8.0 and artifact contract 2.0."
+universalInvariants:
+  - "A green subset cannot certify the presence of the complete conformance suite."
+  - "Every bounded-correction status belongs to an explicit closed vocabulary."
+  - "A target-specific capability cannot become a universal purpose requirement by historical convenience."
+  - "Public standard projections are data-driven and do not infer membership from check-id spelling."
+confirmedFindings:
+  - id: S1-C1
+    status: complete
+    summary: "A versioned independent inventory requires all 90 pre-closure checks exactly once and in runner order."
+  - id: S2
+    status: complete
+    summary: "Purpose coverage ratios are observations while structural purpose categories, capabilities, blocked risks and evidence own pass/fail."
+  - id: S3
+    status: complete
+    summary: "Public release registry-consistency remains empty while one explicit package-governance owner is modeled separately."
+  - id: S4
+    status: complete
+    summary: "DIAGNOSTICS and REGISTRY_CONSISTENCY have explicit modeled owners with real evidence."
+  - id: S5
+    status: complete
+    summary: "Export-manifest membership is an explicit StandardCheck field rather than check-id string inference."
+  - id: S7
+    status: complete
+    summary: "KUBERNETES_MAINTENANCE is not a mandatory target-neutral purpose capability."
+  - id: S8
+    status: complete
+    summary: "Internal artifacts are projected from explicit artifact visibility."
+  - id: C2-C3
+    status: complete
+    summary: "Closure parses work packages through FlowYaml and rejects every status outside active, complete and completed."
+  - id: C4
+    status: complete
+    summary: "The redundant source-file deletion assertion was removed; compiled classpath absence remains authoritative."
+  - id: C5
+    status: complete
+    summary: "closureItem is permanent identity while nullable nextCoreItem exists only in READY."
+validationPolicy:
+  workflow: "Flow CI"
+  implementationBoundary: "Every code slice must pass exact-head and synthetic merge-candidate tests and standalone conformance before its completion metadata is recorded."
+  completionBoundary: "The completed correction and re-closed track require a later independent exact-head and synthetic merge-candidate validation."
+validationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: "2245"
+  runId: "30325244443"
+  exactHead: "cd7600b845ec229ac41559c312de5844ca3e7051"
+  mergeCandidate: "601bc4a2062c5c5aea579d6054b2f00b69775522"

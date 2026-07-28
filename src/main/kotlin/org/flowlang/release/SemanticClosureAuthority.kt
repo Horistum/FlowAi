@@ -2,6 +2,8 @@ package org.flowlang.release
 
 import java.io.File
 import org.flowlang.conformance.ConformanceCheck
+import org.flowlang.conformance.ConformanceSuiteInventory
+import org.flowlang.serialization.FlowYaml
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.StandardModel
 
@@ -13,7 +15,7 @@ data class SemanticClosureCheck(
 )
 
 data class SemanticClosureReport(
-    val closureVersion: String = "1.0",
+    val closureVersion: String = "1.1",
     val track: String = "v0.9.7-universal-semantic-foundation",
     val item: String = "0.9.7.10",
     val status: String,
@@ -24,32 +26,54 @@ data class SemanticClosureReport(
 /**
  * Finite, fail-closed authority for the v0.9.7 semantic-foundation closure.
  *
- * The authority introduces no new semantic requirement. It reconciles the
- * already-declared roadmap, correction, release and conformance evidence and
- * refuses closure when any required input is missing, failing or ambiguous.
+ * Release-profile membership, durable StandardModel ownership and complete
+ * runner presence are distinct projections. Closure proves their declared
+ * relationships instead of pretending that one partial list represents all
+ * three concerns.
  */
 class SemanticClosureAuthority(private val rootDir: File = File(".")) {
     fun evaluate(completedConformance: List<ConformanceCheck>): SemanticClosureReport {
-        val workPackage = File(rootDir, WORK_PACKAGE)
-        val workPackageText = requiredText(workPackage)
-        val roadmap = File(rootDir, CORE_ROADMAP)
-        val roadmapText = requiredText(roadmap)
-        val releaseState = File(rootDir, RELEASE_STATE)
-        val releaseStateText = requiredText(releaseState)
-        val declaredChecklist = yamlList(workPackageText, "closureChecklist")
-        val requiredConformance = StandardModel.releaseProfileCheckIds()
+        val workPackage = requiredYaml(File(rootDir, WORK_PACKAGE))
+        val roadmap = requiredYaml(File(rootDir, CORE_ROADMAP))
+        val releaseState = requiredYaml(File(rootDir, RELEASE_STATE))
+        val declaredChecklist = workPackage.stringList("closureChecklist")
+        val inventory = ConformanceSuiteInventory.load(rootDir)
+        val expectedChecks = inventory.preClosureChecks
+        val expectedCheckSet = expectedChecks.toSet()
+        val observedChecks = completedConformance.map { it.name }
         val observedById = completedConformance.associateBy { it.name }
-        val activeCorrections = correctionWorkPackages()
-            .filter { yamlScalar(requiredText(it), "status") == "active" }
-            .map { it.name }
-            .sorted()
-        val incompletePriorItems = (1..9).map { "0.9.7.$it" }
-            .filter { roadmapItemStatus(roadmapText, it) != "completed" }
-        val releaseHonesty = ReleaseMetadataHonestyAuthority(rootDir).analyze()
-        val missingRequiredChecks = requiredConformance.filterNot(observedById::containsKey)
-        val failedRequiredChecks = requiredConformance.filter { observedById[it]?.passed == false }
+        val duplicateObserved = observedChecks.groupingBy { it }.eachCount()
+            .filterValues { it > 1 }.keys.sorted()
+        val missingInventoryChecks = expectedChecks.filterNot(observedById::containsKey)
+        val unexpectedChecks = observedChecks.filterNot(expectedCheckSet::contains)
+
+        val releaseProfileChecks = StandardModel.releaseProfileCheckIds()
+        val releaseChecksMissingFromInventory = releaseProfileChecks.filterNot(expectedCheckSet::contains)
+        val modeledPreClosureChecks = StandardModel.modeledPreClosureCheckIds()
+        val modeledChecksMissingFromInventory = modeledPreClosureChecks.filterNot(expectedCheckSet::contains)
+        val modeledPostClosureChecks = StandardModel.modeledPostClosureCheckIds()
+        val postClosureModelAligned = modeledPostClosureChecks == listOf(inventory.closureCheck)
+        val failedRequiredChecks = releaseProfileChecks.filter { observedById[it]?.passed == false }
         val allObservedFailures = completedConformance.filterNot { it.passed }.map { it.name }
-        val closureItemStatus = roadmapItemStatus(roadmapText, "0.9.7.10")
+
+        val correctionStates = correctionWorkPackages().map { (file, yaml) ->
+            CorrectionState(
+                fileName = file.name,
+                version = yaml.string("version"),
+                status = yaml.string("status")
+            )
+        }
+        val activeCorrections = correctionStates.filter { it.status == "active" }
+            .map { "${it.version}:${it.fileName}" }
+            .sorted()
+        val invalidCorrections = correctionStates.filterNot { it.status in TERMINAL_OR_ACTIVE_STATUSES }
+            .map { "${it.version.ifBlank { "<missing-version>" }}:${it.fileName}:${it.status.ifBlank { "<missing>" }}" }
+            .sorted()
+
+        val incompletePriorItems = (1..9).map { "0.9.7.$it" }
+            .filter { roadmap.itemStatus(it) != "completed" }
+        val closureItemStatus = roadmap.itemStatus("0.9.7.10")
+        val releaseHonesty = ReleaseMetadataHonestyAuthority(rootDir).analyze()
         val referenceChecks = listOf(
             "v0.4.4.behavioral-generator-equivalence",
             "v0.4.7.reference-intent-corpus",
@@ -57,6 +81,13 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
         )
         val missingReferenceChecks = referenceChecks.filterNot(observedById::containsKey)
         val failedReferenceChecks = referenceChecks.filter { observedById[it]?.passed == false }
+
+        val exactInventory = inventory.closureCheck == CHECK_ID &&
+            observedChecks == expectedChecks &&
+            duplicateObserved.isEmpty() &&
+            releaseChecksMissingFromInventory.isEmpty() &&
+            modeledChecksMissingFromInventory.isEmpty() &&
+            postClosureModelAligned
 
         val checks = listOf(
             check(
@@ -67,9 +98,13 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
             ),
             check(
                 id = "closure.no-active-corrections",
-                passed = activeCorrections.isEmpty(),
-                evidence = if (activeCorrections.isEmpty()) listOf("all v0.9.7.9.x work packages complete") else activeCorrections,
-                message = "No bounded v0.9.7.9.x correction may remain active during closure."
+                passed = activeCorrections.isEmpty() && invalidCorrections.isEmpty(),
+                evidence = when {
+                    invalidCorrections.isNotEmpty() -> invalidCorrections.map { "invalid=$it" }
+                    activeCorrections.isNotEmpty() -> activeCorrections.map { "active=$it" }
+                    else -> listOf("all bounded v0.9.7 correction work packages have an explicit terminal status")
+                },
+                message = "Every bounded correction status must be active, complete or completed, and none may remain active during closure."
             ),
             check(
                 id = "closure.prior-core-items-complete",
@@ -85,15 +120,30 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
             ),
             check(
                 id = "closure.required-checks-present",
-                passed = missingRequiredChecks.isEmpty(),
-                evidence = listOf("required=${requiredConformance.size}", "observed=${completedConformance.size}") + missingRequiredChecks,
-                message = "Every check already required by the public release profile must have executed before closure."
+                passed = exactInventory,
+                evidence = listOf(
+                    ConformanceSuiteInventory.PATH,
+                    "inventoryVersion=${inventory.version}",
+                    "expected=${expectedChecks.size}",
+                    "observed=${observedChecks.size}",
+                    "orderMatches=${observedChecks == expectedChecks}",
+                    "modeledPreClosure=${modeledPreClosureChecks.size}",
+                    "modeledPostClosure=${modeledPostClosureChecks.joinToString()}"
+                ) + missingInventoryChecks.map { "missing=$it" } +
+                    unexpectedChecks.map { "unexpected=$it" } +
+                    duplicateObserved.map { "duplicate=$it" } +
+                    releaseChecksMissingFromInventory.map { "release-profile-not-in-inventory=$it" } +
+                    modeledChecksMissingFromInventory.map { "modeled-check-not-in-inventory=$it" } +
+                    if (postClosureModelAligned) emptyList() else listOf(
+                        "modeled-post-closure-mismatch=${modeledPostClosureChecks.joinToString()} expected=${inventory.closureCheck}"
+                    ),
+                message = "The complete suite, public release subset and durable modeled checks must reconcile exactly."
             ),
             check(
                 id = "closure.required-checks-pass",
                 passed = failedRequiredChecks.isEmpty(),
                 evidence = if (failedRequiredChecks.isEmpty()) listOf("all required release-profile checks passed") else failedRequiredChecks,
-                message = "Every check already required by the public release profile must pass."
+                message = "Every check required by the public release profile must pass."
             ),
             check(
                 id = "closure.no-failed-conformance",
@@ -105,11 +155,11 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
                 id = "closure.version-boundary-unchanged",
                 passed = FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION == "0.9.5" &&
                     FlowStandardVersions.FLOW_STANDARD_VERSION == "0.8.0" &&
-                    yamlNestedScalar(releaseStateText, "versionBoundary", "artifactContractVersion") == "2.0",
+                    releaseState.string("versionBoundary", "artifactContractVersion") == "2.0",
                 evidence = listOf(
                     "package=${FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION}",
                     "standard=${FlowStandardVersions.FLOW_STANDARD_VERSION}",
-                    "artifactContract=${yamlNestedScalar(releaseStateText, "versionBoundary", "artifactContractVersion")}"
+                    "artifactContract=${releaseState.string("versionBoundary", "artifactContractVersion")}"
                 ),
                 message = "Closure must not smuggle in a package, public-standard or artifact-contract version change."
             ),
@@ -136,62 +186,53 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
             }
         }
 
-    private fun correctionWorkPackages(): List<File> =
+    private fun correctionWorkPackages(): List<Pair<File, Map<String, Any?>>> =
         File(rootDir, ".flow-agent/work-packages").listFiles().orEmpty()
-            .filter { it.isFile && it.name.matches(Regex("v0\\.9\\.7\\.9\\.\\d+-.+\\.yaml")) }
+            .filter { it.isFile && it.extension in setOf("yaml", "yml") }
+            .map { it to requiredYaml(it) }
+            .filter { (_, yaml) ->
+                yaml.string("type") == "bounded-correction" &&
+                    BOUNDED_CORRECTION_VERSION.matches(yaml.string("version"))
+            }
 
-    private fun requiredText(file: File): String {
+    private fun requiredYaml(file: File): Map<String, Any?> {
         require(file.isFile) { "Required closure evidence is missing: ${file.path}" }
-        return file.readText()
+        return FlowYaml.readMap(file)
     }
 
-    private fun roadmapItemStatus(text: String, version: String): String {
-        val item = Regex(
-            "(?ms)^\\s*- version:\\s*$version\\s*\\n(?:(?!^\\s*- version:).)*?^\\s*status:\\s*([a-z-]+)\\s*$"
-        ).find(text)
-        return item?.groupValues?.get(1).orEmpty()
+    private fun Map<String, Any?>.string(vararg path: String): String {
+        var current: Any? = this
+        path.forEach { key -> current = (current as? Map<*, *>)?.get(key) }
+        return current?.toString().orEmpty()
     }
 
-    private fun yamlScalar(text: String, key: String): String =
-        Regex("(?m)^$key:\\s*\\\"?([^\\\"\\n]+)\\\"?\\s*$")
-            .find(text)?.groupValues?.get(1)?.trim().orEmpty()
+    private fun Map<String, Any?>.stringList(key: String): List<String> =
+        (this[key] as? Iterable<*>)?.mapNotNull { it as? String }.orEmpty()
 
-    private fun yamlNestedScalar(text: String, section: String, key: String): String {
-        val block = Regex("(?ms)^$section:\\s*\\n((?:^[ ]{2}.+\\n?)*)").find(text)?.groupValues?.get(1).orEmpty()
-        return Regex("(?m)^[ ]{2}$key:\\s*\\\"?([^\\\"\\n]+)\\\"?\\s*$")
-            .find(block)?.groupValues?.get(1)?.trim().orEmpty()
-    }
+    private fun Map<String, Any?>.mapList(key: String): List<Map<String, Any?>> =
+        (this[key] as? Iterable<*>)?.mapNotNull { value ->
+            (value as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
+        }.orEmpty()
 
-    private fun yamlList(text: String, key: String): List<String> {
-        val lines = text.lineSequence().toList()
-        val headerIndex = lines.indexOfFirst { it.trim() == "$key:" }
-        if (headerIndex < 0) return emptyList()
-
-        val headerIndent = lines[headerIndex].indexOfFirst { !it.isWhitespace() }
-            .let { if (it < 0) 0 else it }
-        return lines.drop(headerIndex + 1)
-            .takeWhile { line ->
-                line.isBlank() || line.indexOfFirst { !it.isWhitespace() }
-                    .let { indent -> indent < 0 || indent > headerIndent }
-            }
-            .mapNotNull { line ->
-                val trimmed = line.trim()
-                if (!trimmed.startsWith("- ")) return@mapNotNull null
-                trimmed.removePrefix("- ")
-                    .trim()
-                    .removeSurrounding("\"")
-                    .takeIf { it.isNotBlank() }
-            }
-    }
+    private fun Map<String, Any?>.itemStatus(version: String): String =
+        mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
 
     private fun check(id: String, passed: Boolean, evidence: List<String>, message: String): SemanticClosureCheck =
         SemanticClosureCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
+
+    private data class CorrectionState(
+        val fileName: String,
+        val version: String,
+        val status: String
+    )
 
     companion object {
         const val CHECK_ID = "v0.9.7.10.bounded-semantic-closure"
         const val WORK_PACKAGE = ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml"
         const val CORE_ROADMAP = ".flow-agent/roadmap-core-v0.9.7.9.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
+        private val TERMINAL_OR_ACTIVE_STATUSES = setOf("active", "complete", "completed")
+        private val BOUNDED_CORRECTION_VERSION = Regex("0\\.9\\.7\\.(?:9|10)\\.\\d+")
 
         val CHECKLIST: List<String> = listOf(
             "closure.checklist-exact",

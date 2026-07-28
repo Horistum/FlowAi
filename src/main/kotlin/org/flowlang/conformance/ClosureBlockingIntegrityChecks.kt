@@ -339,24 +339,36 @@ internal class ClosureBlockingIntegrityChecks(
 
     private fun checkReleaseLifecycle() {
         val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
-        require(release.completedCorrectionItem.startsWith("0.9.7.9.")) {
-            "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded 0.9.7.9.x track."
-        }
-        require(release.correctionStatus == "complete") {
-            "Semantic closure conformance cannot run while bounded correction '${release.completedCorrectionItem}' is ${release.correctionStatus}."
-        }
-        require(release.parentCoreItemStatus == "completed") {
-            "The corrected parent Core item must be completed before READY or CLOSED closure validation."
+        val correctionOwnsClosure = release.completedCorrectionItem.startsWith("0.9.7.10.")
+        require(
+            release.completedCorrectionItem.startsWith("0.9.7.9.") || correctionOwnsClosure
+        ) {
+            "Release honesty selected correction '${release.completedCorrectionItem}' outside the bounded v0.9.7 correction vocabulary."
         }
 
         when (release.closurePhase) {
+            "CORRECTION_REQUIRED" -> {
+                require(correctionOwnsClosure) {
+                    "Only a correction owned by the closure item may reopen a previously CLOSED track."
+                }
+                require(release.correctionStatus == "active")
+                require(release.parentCoreItemStatus == "correction-required")
+                require(release.closureWorkPackageStatus == "correction-required")
+                require(release.closureStatus == "correction-required")
+                require(release.coreTrackStatus == "active")
+                require(release.completedCoreItem == "0.9.7.9")
+            }
             "READY" -> {
+                require(release.correctionStatus in setOf("complete", "completed"))
+                require(release.parentCoreItemStatus == if (correctionOwnsClosure) "next" else "completed")
                 require(release.closureWorkPackageStatus == "active")
                 require(release.closureStatus == "next")
                 require(release.coreTrackStatus == "active")
                 require(release.completedCoreItem == "0.9.7.9")
             }
             "CLOSED" -> {
+                require(release.correctionStatus in setOf("complete", "completed"))
+                require(release.parentCoreItemStatus == "completed")
                 require(release.closureWorkPackageStatus == "complete")
                 require(release.closureStatus == "completed")
                 require(release.coreTrackStatus == "completed")

@@ -10,6 +10,8 @@ import org.flowlang.artifacts.StandardSurface
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.standard.GateKind
+import org.flowlang.standard.StandardCheckScope
 import org.flowlang.standard.StandardModel
 import java.io.File
 import java.nio.file.Files
@@ -29,6 +31,7 @@ class FlowArchitectureDebtCleanupTests {
         assertEquals("PASS", report.reportBudget.status)
         assertTrue(report.reportBudget.publicArtifactsChecked >= 10)
         assertEquals(0, report.reportBudget.registryConsistencyChecks)
+        assertEquals(1, StandardModel.modeledRegistryConsistencyGateCount)
     }
 
     @Test
@@ -43,10 +46,16 @@ class FlowArchitectureDebtCleanupTests {
         assertTrue("v0.7.5.purpose-coverage-ratio" in profile.behaviorSafetyNormalizationChecks)
         assertTrue("v0.7.0.reference-corpus-execution-harness" in profile.behaviorSafetyNormalizationChecks)
         assertTrue(profile.registryConsistencyChecks.isEmpty())
+        assertEquals(
+            listOf("governance.derived-model-integrity"),
+            StandardModel.registryConsistencyCheckIds()
+        )
+        assertTrue(StandardModel.checks.single { it.id == "governance.derived-model-integrity" }
+            .scope == StandardCheckScope.ROADMAP_GOVERNANCE)
     }
 
     @Test
-    fun standardModelIsTheSingleSourceForSurfaceManifestAndReleaseProfile() {
+    fun standardModelIsTheSingleSourceForPublicProjectionsAndDurableRoadmapChecks() {
         val profile = StandardReleaseProfile.report()
         val manifest = StandardSurface.standardExportManifest()
         val candidate = StandardSurface.conformanceLevels().levels.first { it.id == "standard-candidate" }
@@ -57,9 +66,24 @@ class FlowArchitectureDebtCleanupTests {
         assertEquals(StandardModel.standardExportManifestCheckIds(), manifest.releaseGateChecks)
         assertEquals(StandardModel.candidateCheckIds(), candidate.requiredChecks)
         assertEquals(StandardModel.stableArtifacts().toSet(), surface.stableArtifacts.toSet())
-        assertTrue(StandardModel.registryConsistencyCheckIds().isEmpty())
-        assertTrue(StandardModel.checks.filter { it.kind.name in setOf("BEHAVIOR", "SAFETY", "GOVERNANCE") }
+        assertTrue(StandardModel.checks.any { it.introducedIn == "0.9.7.10" })
+        assertTrue(StandardModel.checks.any { it.kind == GateKind.DIAGNOSTICS })
+        assertTrue(StandardModel.checks.any { it.kind == GateKind.REGISTRY_CONSISTENCY })
+        assertTrue(StandardModel.checks.filter { it.kind in setOf(GateKind.BEHAVIOR, GateKind.SAFETY, GateKind.DIAGNOSTICS, GateKind.GOVERNANCE) }
             .all { it.negativeFixture.isNotBlank() || it.externalAnchor.isNotBlank() })
+        assertEquals(emptyList(), StandardModel.internalArtifacts())
+        assertTrue(StandardModel.artifacts.all { artifact ->
+            (artifact.visibility.name == "INTERNAL") == (artifact.artifact in StandardModel.internalArtifacts())
+        })
+    }
+
+    @Test
+    fun exportManifestMembershipIsExplicitData() {
+        assertEquals(
+            StandardModel.checks.filter { it.inExportManifest }.map { it.id },
+            StandardModel.standardExportManifestCheckIds()
+        )
+        assertTrue(StandardModel.checks.filter { it.inExportManifest }.all { it.inReleaseProfile })
     }
 
     @Test
@@ -71,6 +95,7 @@ class FlowArchitectureDebtCleanupTests {
             copyDirectory(File("conformance"), File(root, "conformance"))
             copyDirectory(File("tests"), File(root, "tests"))
             copyDirectory(File("src/main/kotlin"), File(root, "src/main/kotlin"))
+            copyDirectory(File("src/test/kotlin"), File(root, "src/test/kotlin"))
             val badSource = File(root, "src/main/kotlin/org/flowlang/example/BadRuntimeDirection.kt")
             badSource.parentFile.mkdirs()
             badSource.writeText(

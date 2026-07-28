@@ -13,6 +13,7 @@ forbiddenScope:
   - "No substring, filename ordering or metadata prose used as evidence of a passing gate."
   - "No CLOSED metadata without structured exact-head and merge-candidate implementation evidence."
 lifecycle:
+  correctionRequired: "A post-closure audit has falsified a closure invariant; an active bounded correction owns the repair and the Core track is reopened."
   ready: "Correction complete, closure work package active, Core track active and item 0.9.7.10 next."
   closed: "Closure work package complete, Core track completed, item 0.9.7.10 completed and implementation evidence recorded structurally."
 closureChecklist:
@@ -27,18 +28,27 @@ closureChecklist:
   - "closure.reference-evidence-live"
 completionEvidence:
   - "The SemanticClosureAuthority emits PASS for every declared checklist item."
-  - "ReleaseMetadataHonestyAuthority accepts both READY and CLOSED and rejects every mixed lifecycle state."
-  - "ClosureBlockingIntegrityChecks consumes the explicit release lifecycle instead of treating correction completion as permanent evidence that closure must remain next."
-  - "The release metadata report schema matches runtime version 1.3 and permits explicit completed closure status."
-  - "Flow Agent validation and context generation accept a structurally completed primary track without inventing another next item."
-  - "The exact pull-request head and synthetic merge candidate independently pass complete tests and standalone conformance."
+  - "ReleaseMetadataHonestyAuthority accepts CORRECTION_REQUIRED, READY and CLOSED and rejects every mixed lifecycle state."
+  - "ClosureBlockingIntegrityChecks consumes the explicit release lifecycle rather than inferring closure from correction status."
+  - "The complete pre-closure conformance sequence is independently declared and must execute exactly once and in order."
+  - "StandardModel separates the unchanged public standard profile from durable package-level evidence and uses only runner-produced identities."
+  - "Purpose coverage is structural and evidence-backed; ratios remain observable but do not block legitimate governance additions by denominator arithmetic."
+  - "Flow CI #2245 independently passed the current corrected exact head cd7600b845ec229ac41559c312de5844ca3e7051 and synthetic merge candidate 601bc4a2062c5c5aea579d6054b2f00b69775522 with complete tests and standalone conformance in CLOSED."
+  - "The later completion-metadata head and its synthetic merge candidate must independently pass before PR #94 is ready for review."
 validationPolicy:
   workflow: "Flow CI"
   requirement: "The implementation head and a later completion-metadata head must each pass exact-head and synthetic merge-candidate validation."
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: "2245"
+  runId: "30325244443"
+  exactHead: "cd7600b845ec229ac41559c312de5844ca3e7051"
+  mergeCandidate: "601bc4a2062c5c5aea579d6054b2f00b69775522"
 validationEvidence:
   status: passed
   workflow: "Flow CI"
-  runNumber: "2177"
-  runId: "30252725533"
-  exactHead: "5a06e0e8c9e2c3c354f8b331c50564f7a903d9f4"
-  mergeCandidate: "93e4d032ea384abd12cb754edbaabd3aef90b300"
+  runNumber: "2245"
+  runId: "30325244443"
+  exactHead: "cd7600b845ec229ac41559c312de5844ca3e7051"
+  mergeCandidate: "601bc4a2062c5c5aea579d6054b2f00b69775522"

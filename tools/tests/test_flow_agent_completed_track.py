@@ -30,9 +30,22 @@ items:
 
 
 class FlowAgentCompletedTrackTests(unittest.TestCase):
-    def _write_repository(self, root: Path, core: str, closure_status: str = "completed") -> Path:
+    def _write_repository(
+        self,
+        root: Path,
+        core: str,
+        closure_status: str = "completed",
+        include_next_projection: bool = False,
+    ) -> Path:
         agent = root / ".flow-agent"
         agent.mkdir()
+        next_projection = (
+            '  nextCoreItem: "0.9.7.10"\n'
+            '  nextCoreItemName: "Bounded Semantic Closure Gate"\n'
+            '  nextCoreItemStatus: "next"\n'
+            if include_next_projection
+            else ""
+        )
         main = agent / "roadmap.yaml"
         main.write_text(
             'primaryRoadmapStream: core\n'
@@ -45,9 +58,10 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
             '  completedItem: "0.9.7.10"\n'
             '  completedItemName: "Bounded Semantic Closure Gate"\n'
             '  activeCorrectionWorkPackage: ""\n'
-            '  nextCoreItem: "0.9.7.10"\n'
-            '  nextCoreItemName: "Bounded Semantic Closure Gate"\n'
-            f'  nextCoreItemStatus: "{closure_status}"\n',
+            '  closureItem: "0.9.7.10"\n'
+            '  closureItemName: "Bounded Semantic Closure Gate"\n'
+            f'  closureItemStatus: "{closure_status}"\n'
+            + next_projection,
             encoding="utf-8",
         )
         (agent / "roadmap-core.yaml").write_text(core, encoding="utf-8")
@@ -101,12 +115,24 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "non-completed items"):
                 validate_roadmap_structure_with_completed_track(root, main)
 
-    def test_rejects_completed_track_without_completed_decision(self) -> None:
+    def test_rejects_completed_track_without_completed_closure_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             main = self._write_repository(root, COMPLETED_CORE_ITEM, closure_status="next")
 
-            with self.assertRaisesRegex(RuntimeError, "nextCoreItemStatus: completed"):
+            with self.assertRaisesRegex(RuntimeError, "closureItemStatus: completed"):
+                validate_roadmap_structure_with_completed_track(root, main)
+
+    def test_rejects_completed_track_with_next_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            main = self._write_repository(
+                root,
+                COMPLETED_CORE_ITEM,
+                include_next_projection=True,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "must not retain nextCoreItem metadata"):
                 validate_roadmap_structure_with_completed_track(root, main)
 
     def test_rejects_completed_track_with_stale_completed_item(self) -> None:
@@ -121,7 +147,7 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with self.assertRaisesRegex(RuntimeError, "same completedItem and closure item"):
+            with self.assertRaisesRegex(RuntimeError, "same completedItem and closureItem"):
                 validate_roadmap_structure_with_completed_track(root, main)
 
 

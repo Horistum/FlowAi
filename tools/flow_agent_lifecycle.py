@@ -49,21 +49,28 @@ def _completed_primary_item(root: Path, main_roadmap: Path) -> RoadmapItem:
 
     completed_item = find_scalar(main_text, "completedItem") or ""
     completed_name = find_scalar(main_text, "completedItemName") or ""
-    closure_item = find_scalar(main_text, "nextCoreItem") or ""
-    closure_name = find_scalar(main_text, "nextCoreItemName") or ""
-    closure_status = find_scalar(main_text, "nextCoreItemStatus") or ""
+    closure_item = find_scalar(main_text, "closureItem") or ""
+    closure_name = find_scalar(main_text, "closureItemName") or ""
+    closure_status = find_scalar(main_text, "closureItemStatus") or ""
+    next_item = find_scalar(main_text, "nextCoreItem") or ""
+    next_name = find_scalar(main_text, "nextCoreItemName") or ""
+    next_status = find_scalar(main_text, "nextCoreItemStatus") or ""
 
     if closure_status != "completed":
         raise RuntimeError(
-            "A primary roadmap without a next item must declare nextCoreItemStatus: completed."
+            "A completed primary track must declare closureItemStatus: completed."
+        )
+    if next_item or next_name or next_status:
+        raise RuntimeError(
+            "A completed primary track must not retain nextCoreItem metadata."
         )
     if not completed_item or completed_item != closure_item:
         raise RuntimeError(
-            "Completed roadmap metadata must identify the same completedItem and closure item identity."
+            "Completed roadmap metadata must identify the same completedItem and closureItem identity."
         )
     if not completed_name or completed_name != closure_name:
         raise RuntimeError(
-            "Completed roadmap metadata must identify the same completedItemName and closure item name."
+            "Completed roadmap metadata must identify the same completedItemName and closureItemName."
         )
 
     selected_block: str | None = None

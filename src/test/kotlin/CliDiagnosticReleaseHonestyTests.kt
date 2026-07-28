@@ -170,25 +170,40 @@ class CliDiagnosticReleaseHonestyTests {
         val correction = selectedCorrection(File("."))
         val closure = selectedClosure(File("."))
         val report = ReleaseMetadataHonestyAuthority(File(".")).requireValid()
-        val expectedPhase = if (closure.status == "complete") "CLOSED" else "READY"
-        val expectedClosureStatus = if (closure.status == "complete") "completed" else "next"
-        val expectedTrackStatus = if (closure.status == "complete") "completed" else "active"
-        val expectedCompletedItem = if (closure.status == "complete") "0.9.7.10" else "0.9.7.9"
+        val expectedPhase = when (closure.status) {
+            "correction-required" -> "CORRECTION_REQUIRED"
+            "active" -> "READY"
+            "complete" -> "CLOSED"
+            else -> error("Unexpected closure status ${closure.status}")
+        }
+        val expectedClosureStatus = when (expectedPhase) {
+            "CORRECTION_REQUIRED" -> "correction-required"
+            "READY" -> "next"
+            else -> "completed"
+        }
+        val expectedTrackStatus = if (expectedPhase == "CLOSED") "completed" else "active"
+        val expectedCompletedItem = if (expectedPhase == "CLOSED") "0.9.7.10" else "0.9.7.9"
+        val expectedParentStatus = when (expectedPhase) {
+            "CORRECTION_REQUIRED" -> "correction-required"
+            "READY" -> if (correction.version.startsWith("0.9.7.10.")) "next" else "completed"
+            else -> "completed"
+        }
+        val expectedNextItem = if (expectedPhase == "READY") "0.9.7.10" else null
 
         assertEquals("PASS", report.status)
-        assertEquals("1.3", report.reportVersion)
+        assertEquals("1.5", report.reportVersion)
         assertEquals(FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION, report.implementationPackageVersion)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.publicStandardVersion)
         assertEquals(correction.version, report.completedCorrectionItem)
         assertEquals(correction.status, report.correctionStatus)
-        assertEquals("completed", report.parentCoreItemStatus)
+        assertEquals(expectedParentStatus, report.parentCoreItemStatus)
         assertEquals("0.9.7.10", report.closureItem)
         assertEquals(closure.status, report.closureWorkPackageStatus)
         assertEquals(expectedPhase, report.closurePhase)
         assertEquals(expectedClosureStatus, report.closureStatus)
         assertEquals(expectedTrackStatus, report.coreTrackStatus)
         assertEquals(expectedCompletedItem, report.completedCoreItem)
-        assertEquals("0.9.7.10", report.nextCoreItem)
+        assertEquals(expectedNextItem, report.nextCoreItem)
         assertTrue(report.failedChecks.isEmpty())
     }
 
@@ -230,6 +245,7 @@ class CliDiagnosticReleaseHonestyTests {
         "build.gradle.kts",
         "REPORT.md",
         "CHANGELOG-v0.9.7.9.md",
+        "CHANGELOG-v0.9.7.10.md",
         ".flow-agent/release-state.yaml",
         ".flow-agent/roadmap.yaml",
         ".flow-agent/roadmap-core-v0.9.7.9.yaml",
@@ -286,7 +302,7 @@ class CliDiagnosticReleaseHonestyTests {
 
     private fun compareVersionKeys(left: List<Int>, right: List<Int>): Int {
         repeat(maxOf(left.size, right.size)) { index ->
-            val comparison = (left.getOrElse(index) { 0 }).compareTo(right.getOrElse(index) { 0 })
+            val comparison = left.getOrElse(index) { 0 }.compareTo(right.getOrElse(index) { 0 })
             if (comparison != 0) return comparison
         }
         return 0
@@ -299,6 +315,6 @@ class CliDiagnosticReleaseHonestyTests {
     )
 
     companion object {
-        private val CORRECTION_FILE = Regex("v(0\\.9\\.7\\.9\\.\\d+)-.+\\.yaml")
+        private val CORRECTION_FILE = Regex("v(0\\.9\\.7\\.(?:9|10)\\.\\d+)-.+\\.yaml")
     }
 }

@@ -4,10 +4,10 @@ import org.flowlang.artifacts.ReferenceIntentCorpusReport
 import org.flowlang.artifacts.StandardSurface
 
 /**
- * Measures whether the public standard still grows around Flow's purpose:
- * portable automation intent, safety boundaries, normalization, planning and
- * target portability. The report is intentionally derived from the public
- * StandardModel and reference intent corpus, not from implementation internals.
+ * Purpose coverage retains ratios as observations, but pass/fail is structural:
+ * required target-neutral capabilities, blocked-risk scenarios, semantic purpose
+ * categories and evidence-backed categories. Adding an honest governance check
+ * cannot make Flow less purposeful merely by changing a denominator.
  */
 data class PurposeCoverageReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
@@ -20,6 +20,11 @@ data class PurposeCoverageReport(
     val missingCapabilities: List<String>,
     val blockedRiskCapabilities: List<String>,
     val missingBlockedRiskCapabilities: List<String>,
+    val requiredPurposeKinds: List<String>,
+    val coveredPurposeKinds: List<String>,
+    val missingPurposeKinds: List<String>,
+    val evidenceBackedPurposeKinds: List<String>,
+    val missingEvidenceBackedPurposeKinds: List<String>,
     val automationPurposeCheckCount: Int,
     val governanceCheckCount: Int,
     val releaseCheckCount: Int,
@@ -38,10 +43,9 @@ data class PurposeCoverageIssue(
 )
 
 /**
- * Purpose coverage is a behavioral quality signal, not another registry parity
- * check. It fails when the standard surface grows away from executable intent
- * evidence, or when the reference corpus stops covering the core automation
- * scenarios Flow promises to standardize.
+ * Purpose coverage is a behavioral quality signal, not a quota system for check
+ * kinds. It fails when the public standard loses a required semantic category,
+ * loses evidence for that category or loses target-neutral corpus coverage.
  */
 class PurposeCoverageAnalyzer(
     private val corpus: ReferenceIntentCorpusReport = StandardSurface.referenceIntentCorpus(),
@@ -58,11 +62,15 @@ class PurposeCoverageAnalyzer(
             .distinct()
             .sorted()
         val releaseChecks = checks.filter { it.inReleaseProfile }
-        val automationPurposeChecks = releaseChecks.filter { it.kind in automationPurposeKinds }
+        val automationPurposeChecks = releaseChecks.filter { it.kind in requiredPurposeKinds }
         val governanceChecks = releaseChecks.filter { it.kind == GateKind.GOVERNANCE }
         val evidenceBackedPurposeChecks = automationPurposeChecks.filter { it.hasEvidence() }
-        val missingCapabilities = requiredPurposeCapabilities.filterNot { it in coveredCapabilities }
-        val missingBlockedRiskCapabilities = requiredBlockedRiskCapabilities.filterNot { it in blockedRiskCapabilities }
+        val coveredPurposeKinds = automationPurposeChecks.map { it.kind }.distinct().sortedBy { it.name }
+        val evidenceBackedPurposeKinds = evidenceBackedPurposeChecks.map { it.kind }.distinct().sortedBy { it.name }
+        val missingPurposeKinds = requiredPurposeKinds.filterNot(coveredPurposeKinds::contains)
+        val missingEvidenceBackedPurposeKinds = requiredPurposeKinds.filterNot(evidenceBackedPurposeKinds::contains)
+        val missingCapabilities = requiredPurposeCapabilities.filterNot(coveredCapabilities::contains)
+        val missingBlockedRiskCapabilities = requiredBlockedRiskCapabilities.filterNot(blockedRiskCapabilities::contains)
         val automationPurposeRatio = ratio(automationPurposeChecks.size, releaseChecks.size)
         val governanceRatio = ratio(governanceChecks.size, releaseChecks.size)
         val evidenceBackedPurposeRatio = ratio(evidenceBackedPurposeChecks.size, automationPurposeChecks.size)
@@ -80,7 +88,7 @@ class PurposeCoverageAnalyzer(
             issues += PurposeCoverageIssue(
                 code = "PURPOSE_COVERAGE_CAPABILITY_MISSING",
                 severity = "error",
-                message = "Reference corpus does not cover all required purpose capabilities.",
+                message = "Reference corpus does not cover all required target-neutral purpose capabilities.",
                 subject = missingCapabilities.joinToString()
             )
         }
@@ -88,40 +96,24 @@ class PurposeCoverageAnalyzer(
             issues += PurposeCoverageIssue(
                 code = "PURPOSE_COVERAGE_BLOCKED_RISK_MISSING",
                 severity = "error",
-                message = "Risk-sensitive capabilities need at least one blocked reference scenario.",
+                message = "Risk-sensitive target-neutral capabilities need at least one blocked reference scenario.",
                 subject = missingBlockedRiskCapabilities.joinToString()
             )
         }
-        if (automationPurposeRatio < minimumAutomationPurposeRatio) {
+        if (missingPurposeKinds.isNotEmpty()) {
             issues += PurposeCoverageIssue(
-                code = "PURPOSE_COVERAGE_AUTOMATION_RATIO_LOW",
+                code = "PURPOSE_COVERAGE_KIND_MISSING",
                 severity = "error",
-                message = "Automation-purpose checks must stay at or above ${minimumAutomationPurposeRatio.formatRatio()} of release checks.",
-                subject = "automationPurposeRatio=${automationPurposeRatio.formatRatio()}"
+                message = "The release profile is missing required automation-purpose categories.",
+                subject = missingPurposeKinds.joinToString { it.category }
             )
         }
-        if (governanceRatio > maximumGovernanceRatio) {
+        if (missingEvidenceBackedPurposeKinds.isNotEmpty()) {
             issues += PurposeCoverageIssue(
-                code = "PURPOSE_COVERAGE_GOVERNANCE_RATIO_HIGH",
+                code = "PURPOSE_COVERAGE_KIND_EVIDENCE_MISSING",
                 severity = "error",
-                message = "Governance checks must not dominate the release profile.",
-                subject = "governanceRatio=${governanceRatio.formatRatio()}"
-            )
-        }
-        if (evidenceBackedPurposeRatio < minimumEvidenceBackedPurposeRatio) {
-            issues += PurposeCoverageIssue(
-                code = "PURPOSE_COVERAGE_EVIDENCE_RATIO_LOW",
-                severity = "error",
-                message = "Automation-purpose checks must be backed by fixtures or external anchors.",
-                subject = "evidenceBackedPurposeRatio=${evidenceBackedPurposeRatio.formatRatio()}"
-            )
-        }
-        if (StandardModel.registryConsistencyCheckIds().isNotEmpty()) {
-            issues += PurposeCoverageIssue(
-                code = "PURPOSE_COVERAGE_REGISTRY_GATE_PRESENT",
-                severity = "error",
-                message = "Registry-consistency gates are bookkeeping, not purpose coverage.",
-                subject = StandardModel.registryConsistencyCheckIds().joinToString()
+                message = "Every required automation-purpose category needs at least one fixture or external evidence anchor.",
+                subject = missingEvidenceBackedPurposeKinds.joinToString { it.category }
             )
         }
 
@@ -135,6 +127,11 @@ class PurposeCoverageAnalyzer(
             missingCapabilities = missingCapabilities,
             blockedRiskCapabilities = blockedRiskCapabilities,
             missingBlockedRiskCapabilities = missingBlockedRiskCapabilities,
+            requiredPurposeKinds = requiredPurposeKinds.map { it.category },
+            coveredPurposeKinds = coveredPurposeKinds.map { it.category },
+            missingPurposeKinds = missingPurposeKinds.map { it.category },
+            evidenceBackedPurposeKinds = evidenceBackedPurposeKinds.map { it.category },
+            missingEvidenceBackedPurposeKinds = missingEvidenceBackedPurposeKinds.map { it.category },
             automationPurposeCheckCount = automationPurposeChecks.size,
             governanceCheckCount = governanceChecks.size,
             releaseCheckCount = releaseChecks.size,
@@ -146,21 +143,22 @@ class PurposeCoverageAnalyzer(
         )
     }
 
-    private fun StandardCheck.hasEvidence(): Boolean = negativeFixture.isNotBlank() || externalAnchor.isNotBlank()
+    private fun StandardCheck.hasEvidence(): Boolean =
+        negativeFixture.isNotBlank() || externalAnchor.isNotBlank()
 
     private fun ratio(numerator: Int, denominator: Int): Double =
         if (denominator == 0) 0.0 else numerator.toDouble() / denominator.toDouble()
 
-    private fun Double.formatRatio(): String = "%.2f".format(this)
-
     companion object {
-        val automationPurposeKinds: Set<GateKind> = setOf(
+        val requiredPurposeKinds: List<GateKind> = listOf(
             GateKind.BEHAVIOR,
             GateKind.SAFETY,
             GateKind.NORMALIZATION,
             GateKind.EXECUTION_PLAN,
             GateKind.PORTABILITY
         )
+
+        val automationPurposeKinds: Set<GateKind> = requiredPurposeKinds.toSet()
 
         val requiredPurposeCapabilities: List<String> = listOf(
             "APPROVE",
@@ -172,7 +170,6 @@ class PurposeCoverageAnalyzer(
             "CLEANUP",
             "DATABASE_MIGRATE",
             "DEPLOY",
-            "KUBERNETES_MAINTENANCE",
             "NOTIFY",
             "ROLLBACK",
             "SECRET_ROTATE",
@@ -186,14 +183,9 @@ class PurposeCoverageAnalyzer(
             "CLEANUP",
             "DATABASE_MIGRATE",
             "DEPLOY",
-            "KUBERNETES_MAINTENANCE",
             "SECRET_ROTATE"
         ).sorted()
 
         const val minimumReferenceScenarios: Int = 20
-        const val minimumAutomationPurposeRatio: Double = 0.50
-        const val maximumGovernanceRatio: Double = 0.15
-        const val minimumEvidenceBackedPurposeRatio: Double = 0.60
     }
 }
-

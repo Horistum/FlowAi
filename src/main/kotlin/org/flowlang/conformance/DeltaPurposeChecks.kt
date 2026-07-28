@@ -54,7 +54,7 @@ internal class DeltaPurposeChecks(
             "Architecture delta history must include the v0.7.4 gate. Added checks: ${delta.addedChecks}."
         }
         require(delta.registryConsistencyCheckGrowth == 0) {
-            "Architecture delta must not reintroduce registry-consistency gates."
+            "Public-standard delta must not reintroduce registry-consistency gates."
         }
         require(delta.stablePublicArtifactGrowth == 0) {
             "v0.7.4 must not grow public stable artifacts; it only introduces delta measurement."
@@ -71,16 +71,16 @@ internal class DeltaPurposeChecks(
         val candidate = StandardSurface.conformanceLevels().levels.first { it.id == "standard-candidate" }
 
         require(activeStandardAtLeast(0, 7, 5)) {
-            "Purpose coverage ratio must carry standardVersion 0.7.5 or later."
+            "Purpose coverage gate must carry standardVersion 0.7.5 or later."
         }
         require(requiredGate in profile.requiredConformanceChecks) {
-            "Release profile must require the purpose coverage ratio gate."
+            "Release profile must require the purpose coverage gate."
         }
         require(requiredGate in manifest.releaseGateChecks) {
-            "Standard export manifest must publish the purpose coverage ratio gate."
+            "Standard export manifest must publish the purpose coverage gate."
         }
         require(requiredGate in candidate.requiredChecks) {
-            "Standard-candidate level must require the purpose coverage ratio gate."
+            "Standard-candidate level must require the purpose coverage gate."
         }
         require(coverage.status == "PASS") {
             "Purpose coverage must pass: ${coverage.issues.joinToString { it.code + ":" + it.subject }}"
@@ -89,16 +89,16 @@ internal class DeltaPurposeChecks(
             "Reference corpus must not shrink below the v0.7.5 minimum."
         }
         require(coverage.missingCapabilities.isEmpty()) {
-            "Reference corpus misses required purpose capabilities: ${coverage.missingCapabilities.joinToString()}."
+            "Reference corpus misses required target-neutral purpose capabilities: ${coverage.missingCapabilities.joinToString()}."
         }
         require(coverage.missingBlockedRiskCapabilities.isEmpty()) {
-            "Blocked corpus misses risk-sensitive capabilities: ${coverage.missingBlockedRiskCapabilities.joinToString()}."
+            "Blocked corpus misses target-neutral risk capabilities: ${coverage.missingBlockedRiskCapabilities.joinToString()}."
         }
-        require(coverage.automationPurposeRatio >= PurposeCoverageAnalyzer.minimumAutomationPurposeRatio) {
-            "Automation-purpose ratio is too low: ${coverage.automationPurposeRatio}."
+        require(coverage.missingPurposeKinds.isEmpty()) {
+            "Release profile misses purpose categories: ${coverage.missingPurposeKinds.joinToString()}."
         }
-        require(coverage.governanceRatio <= PurposeCoverageAnalyzer.maximumGovernanceRatio) {
-            "Governance ratio is too high: ${coverage.governanceRatio}."
+        require(coverage.missingEvidenceBackedPurposeKinds.isEmpty()) {
+            "Purpose categories lack evidence anchors: ${coverage.missingEvidenceBackedPurposeKinds.joinToString()}."
         }
         require(delta.status == "PASS") {
             "v0.7.5 architecture delta must pass: ${delta.issues.joinToString { it.code + ":" + it.subject }}"
@@ -107,13 +107,13 @@ internal class DeltaPurposeChecks(
             "v0.7.5 delta baseline must be v0.7.4."
         }
         require(delta.addedChecks == listOf(requiredGate)) {
-            "v0.7.5 must add only the purpose coverage ratio gate, not unrelated surface area: ${delta.addedChecks}."
+            "v0.7.5 must add only the purpose coverage gate to the public standard: ${delta.addedChecks}."
         }
         require(delta.stablePublicArtifactGrowth == 0) {
             "v0.7.5 must not grow public stable artifacts; it adds purpose coverage measurement."
         }
         require(delta.registryConsistencyCheckGrowth == 0) {
-            "Purpose coverage must not reintroduce registry-consistency gates."
+            "Purpose coverage must not add registry-consistency checks to the public standard."
         }
     }
 }

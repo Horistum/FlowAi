@@ -7,8 +7,8 @@ import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.TaskNode
+import org.flowlang.standard.StandardCheckScope
 import org.flowlang.standard.StandardModel
-import org.flowlang.validator.FlowValidator
 import java.io.File
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 
@@ -73,10 +73,22 @@ internal class ArchitectureCoherenceChecks(
             "The v0.7.1 gate must be classified as governance."
         }
         require(releaseProfile.registryConsistencyChecks.isEmpty()) {
-            "Registry-consistency gates must be collapsed into StandardModel projection coherence, not kept as active release gates."
+            "Registry-consistency evidence must not be promoted into the public release profile implicitly."
         }
         require(governance.reportBudget.registryConsistencyChecks == 0) {
-            "Report budget must report zero registry-consistency gates after the collapse."
+            "The public report budget must count only public release-profile registry-consistency gates."
+        }
+        require(StandardModel.releaseRegistryConsistencyCheckIds().isEmpty()) {
+            "The public release profile must remain free of registry-consistency bookkeeping."
+        }
+        require(StandardModel.modeledRegistryConsistencyGateCount == 1) {
+            "Exactly one package-level registry-consistency owner must remain modeled."
+        }
+        require(StandardModel.registryConsistencyCheckIds() == listOf("governance.derived-model-integrity")) {
+            "The package-level derived-model integrity check must be the sole registry-consistency owner."
+        }
+        require(StandardModel.checks.single { it.id == "governance.derived-model-integrity" }.scope == StandardCheckScope.ROADMAP_GOVERNANCE) {
+            "Registry-consistency evidence must remain outside public release projections."
         }
         require(StandardModel.wellFormednessIssues(rootDir).isEmpty()) {
             "StandardModel must be well formed: ${StandardModel.wellFormednessIssues(rootDir).joinToString()}"
@@ -131,7 +143,7 @@ internal class ArchitectureCoherenceChecks(
             "Release profile must be projected from StandardModel."
         }
         require(StandardModel.standardExportManifestCheckIds() == manifest.releaseGateChecks) {
-            "Standard export manifest gates must be projected from StandardModel."
+            "Standard export manifest gates must use explicit StandardModel membership."
         }
         require(StandardModel.candidateCheckIds() == candidate.requiredChecks) {
             "Standard-candidate checks must be projected from StandardModel."
@@ -139,8 +151,12 @@ internal class ArchitectureCoherenceChecks(
         require(StandardModel.stableArtifacts().toSet() == surface.stableArtifacts.toSet()) {
             "Public surface stable artifacts must be projected from StandardModel."
         }
-        require(StandardModel.registryConsistencyCheckIds().isEmpty()) {
-            "Registry-consistency gates must not remain in the public release model after the collapse."
+        require(StandardModel.internalArtifacts() == StandardModel.artifacts
+            .filter { it.visibility.name == "INTERNAL" }.map { it.artifact }) {
+            "Internal artifact projection must be derived from modeled visibility."
+        }
+        require(StandardModel.modeledPostClosureCheckIds() == listOf("v0.9.7.10.bounded-semantic-closure")) {
+            "The final closure check must be the only modeled check outside the pre-closure suite."
         }
     }
 }
