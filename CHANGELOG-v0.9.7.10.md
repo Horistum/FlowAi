@@ -26,9 +26,11 @@ Validation history:
 - Flow CI #2245, run `30325244443`, passed the historical 0.9.7.10.1 implementation head `cd7600b845ec229ac41559c312de5844ca3e7051` and merge candidate `601bc4a2062c5c5aea579d6054b2f00b69775522`.
 - Flow CI #2250, run `30325740892`, later passed completion-metadata head `a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9` and merge candidate `238d62fdf974129a93e1f743e1f93aecef34906b` before PR #94 merged as `cbe1d23a25e0224be565cad322b097bf2aaa50a1`.
 - The merged closure work package still cited #2245 in both evidence sections, so bounded correction `0.9.7.10.2` reopened the claim.
-- Flow CI #2252, run `30333130152`, passed the corrected authority on exact implementation head `3176009e660c95d873e9eeb8d1845b7f54142d2c` and synthetic merge candidate `bba152a0eeccf87fffe19a11a3340dd2d1d6a569`, including complete tests and standalone conformance.
-- Bounded correction `0.9.7.10.2` is complete and closure is READY with #2252 recorded only as `implementationEvidence`.
-- The READY metadata head and its synthetic merge candidate must pass independently before CLOSED `validationEvidence` may be authored.
+- Flow CI #2252, run `30333130152`, passed the corrected authority on exact implementation head `3176009e660c95d873e9eeb8d1845b7f54142d2c` and synthetic merge candidate `bba152a0eeccf87fffe19a11a3340dd2d1d6a569`.
+- Flow CI #2253, run `30333777951`, later passed READY completion head `8fcbf9485fe23ac283c47d560d32327cf6d2faa2` and synthetic merge candidate `ba4b78e05445de5ef4bc6c79241d59b683138dc9`.
+- The closure work package records #2252 only as `implementationEvidence` and #2253 only as `validationEvidence`; the authority proves that #2253 is later and all run/head identities are distinct.
+- Bounded correction `0.9.7.10.2` and Core item `0.9.7.10` are complete; the v0.9.7 Core track is CLOSED with no next item.
+- The current CLOSED metadata head and synthetic merge candidate require final external validation before PR #95 is ready for review.
 
 ### v0.9.7.10.1 Standard and Closure Integrity Correction
 
