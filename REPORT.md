@@ -4,16 +4,16 @@ Current published package line: `0.9.5`
 Package release status: `release-candidate`
 Next package line: `0.9.6`
 Active public standard version: `0.8.0`
-Completed Core roadmap identity: `0.9.7.9 Intent Lowering and Diagnostic Honesty`
-Core roadmap item status: `next`
+Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
+Core roadmap item status: `completed`
 Completed correction item: `0.9.7.10.1 Standard and Closure Integrity Correction`
-Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)
+Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
 
-## READY closure claim
+## CLOSED closure claim
 
 PR #93 merged the first `v0.9.7.10` closure as `df099137ce65b206519db7141f8eb3573d0018a2`. A post-merge audit proved that the completed claim did not exclude complete-suite removal, unknown correction statuses or drift between the public model and the actual conformance producer.
 
-Bounded correction `0.9.7.10.1` repaired those defects and completed its implementation boundary. The closure item is now explicitly READY, not CLOSED. A separate exact-head and synthetic merge-candidate validation must pass before completion metadata may be authored.
+Bounded correction `0.9.7.10.1` repaired those defects. Flow CI #2231 validated the corrected implementation boundary. Flow CI #2243 then independently validated the READY metadata exact head and synthetic merge candidate, permitting the lifecycle to enter CLOSED. No next Core item is published for the completed track.
 
 ## Confirmed audit ledger
 
@@ -67,7 +67,9 @@ Every mixed state is `INVALID`. `closureItem` is permanent identity; `nextCoreIt
 
 Flow CI #2231 passed the corrected implementation boundary on exact head `ca5f0d921975bce724ff99a01f9e2b8d9793a0c0` and synthetic merge candidate `7bbabd0ccfdedd3862fa0b140e0c4c4fdc30f87b`, including complete tests and standalone conformance.
 
-That evidence completes bounded correction `0.9.7.10.1` and permits the closure item to enter READY. The current READY metadata head and its synthetic merge candidate must pass independently before CLOSED metadata may be authored.
+Flow CI #2243 independently passed the READY metadata boundary on exact head `530eb284f445f0ceee7772eb98edd8d8403959f6` and synthetic merge candidate `68acbcf6eb2009eda35f5365e77da303a593b293`, including complete tests and standalone conformance. This evidence permits the explicit CLOSED lifecycle recorded by the current metadata.
+
+The later CLOSED metadata head and its synthetic merge candidate must independently pass before PR #94 is ready for review. That final candidate validation remains external evidence rather than a self-referential committed claim.
 
 ## Version boundary
 
