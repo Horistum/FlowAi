@@ -136,23 +136,31 @@ class SemanticClosureAuthorityTests {
         )
 
         val core = File(root, CORE_ROADMAP)
-        core.writeText(
-            updateCoreClosureStatus(core.readText(), "next")
-        )
+        core.writeText(updateCoreClosureStatus(core.readText(), "next"))
 
         val roadmap = File(root, ROADMAP)
         roadmap.writeText(
-            roadmap.readText()
-                .replaceFirst("correctionState: \"active\"", "correctionState: \"complete\"")
-                .replaceFirst(
-                    "activeCorrectionWorkPackage: \"$CORRECTION_WORK_PACKAGE\"",
-                    "activeCorrectionWorkPackage: \"\""
-                )
-                .replaceFirst(
-                    "activeCorrectionWorkPackageName: \"Standard and Closure Integrity Correction\"",
-                    "activeCorrectionWorkPackageName: \"\""
-                )
-                .replaceFirst("nextCoreItemStatus: \"correction-required\"", "nextCoreItemStatus: \"next\"")
+            addReadyNextProjection(
+                roadmap.readText()
+                    .replaceFirst("correctionState: \"active\"", "correctionState: \"complete\"")
+                    .replaceFirst(
+                        "activeCorrectionWorkPackage: \"$CORRECTION_WORK_PACKAGE\"",
+                        "activeCorrectionWorkPackage: \"\""
+                    )
+                    .replaceFirst(
+                        "activeCorrectionWorkPackageName: \"Standard and Closure Integrity Correction\"",
+                        "activeCorrectionWorkPackageName: \"\""
+                    )
+                    .replaceFirst("closureItemStatus: \"correction-required\"", "closureItemStatus: \"next\"")
+            )
+        )
+
+        val releaseState = File(root, RELEASE_STATE)
+        releaseState.writeText(
+            addReadyNextProjection(
+                releaseState.readText()
+                    .replaceFirst("closureItemStatus: \"correction-required\"", "closureItemStatus: \"next\"")
+            )
         )
 
         val report = File(root, REPORT)
@@ -164,6 +172,16 @@ class SemanticClosureAuthorityTests {
                     "Core closure correction: `0.9.7.10 Bounded Semantic Closure Gate` (`correction-required`)",
                     "Next Core roadmap item: `0.9.7.10 Bounded Semantic Closure Gate` (`next`)"
                 )
+        )
+    }
+
+    private fun addReadyNextProjection(text: String): String {
+        require("nextCoreItem:" !in text) { "READY fixture source already contains a nextCoreItem projection." }
+        val anchor = "  closureItemStatus: \"next\""
+        require(anchor in text) { "READY fixture has no closureItemStatus anchor." }
+        return text.replaceFirst(
+            anchor,
+            "$anchor\n  nextCoreItem: \"0.9.7.10\"\n  nextCoreItemName: \"Bounded Semantic Closure Gate\"\n  nextCoreItemStatus: \"next\""
         )
     }
 
@@ -191,7 +209,7 @@ class SemanticClosureAuthorityTests {
             REPORT,
             "CHANGELOG-v0.9.7.9.md",
             "CHANGELOG-v0.9.7.10.md",
-            ".flow-agent/release-state.yaml",
+            RELEASE_STATE,
             ROADMAP,
             CORE_ROADMAP,
             SemanticClosureAuthority.WORK_PACKAGE,
@@ -208,6 +226,7 @@ class SemanticClosureAuthorityTests {
 
     companion object {
         private const val REPORT = "REPORT.md"
+        private const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         private const val ROADMAP = ".flow-agent/roadmap.yaml"
         private const val CORE_ROADMAP = ".flow-agent/roadmap-core-v0.9.7.9.yaml"
         private const val CORRECTION_WORK_PACKAGE =
