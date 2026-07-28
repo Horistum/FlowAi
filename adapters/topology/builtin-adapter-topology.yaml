@@ -110,10 +110,10 @@ records:
         limitations: []
       suspendResume:
         facet: state_lifetime
-        status: partial
-        mechanism: "Owned manual approval renders Jenkins input and can pause one Pipeline run."
+        status: supported
+        mechanism: "Provider-owned manual approval renders Jenkins input and can pause and resume one Pipeline run."
         evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt", "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt"]
-        limitations: ["Only provider-owned manual approval is proven; generic suspension is not."]
+        limitations: []
       ephemeralWorkspace:
         facet: scope
         status: supported
