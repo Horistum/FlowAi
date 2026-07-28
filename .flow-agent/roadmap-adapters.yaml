@@ -42,12 +42,11 @@ rules:
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
 
 currentDecision:
-  completedItem: "A0.2"
-  completedItemName: "Topology Evidence Adoption"
-  nextItem: "A0.3"
-  nextItemName: "Capability Binding Migration"
-  activeWorkPackage: ".flow-agent/work-packages/A0.3-capability-binding-migration.yaml"
-  decisionBasis: "PR #97 merged A0.2 as 964a9c4f8bf9ce9dc8771c99a68393c9edc35807. A0.3 is active to migrate explicit capability bindings onto one resolved contract and independent adapter certification authority."
+  completedItem: "A0.3"
+  completedItemName: "Capability Binding Migration"
+  nextItem: "A0.4"
+  nextItemName: "Control Requirement Materialization"
+  decisionBasis: "Flow CI #2303 passed the final A0.3 implementation on exact head f475ae8317122b986dec23a3d36bb8df05a31db3 and synthetic merge candidate afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8. A0.4 is selected as the next bounded adapter item without including its work package or implementation."
 
 items:
   - version: "A0.1"
@@ -84,7 +83,7 @@ items:
   - version: "A0.3"
     name: "Capability Binding Migration"
     type: "adapter-binding"
-    status: next
+    status: completed
     purpose: "Bind canonical capabilities to concrete implementations without changing canonical meaning."
     dependsOnCore: "0.9.7.5"
     dependsOnAdapters: "A0.2"
@@ -94,12 +93,14 @@ items:
       - "Binding-only parameters and descriptor defaults are resolved exactly once."
       - "Unsupported canonical parameters fail before AST lowering."
       - "Missing bindings remain unbound or invalid and never select an implementation implicitly."
+      - "The canonical adapter stream runner owns the exact inventory 1.2 without a duplicate composition."
       - "A0.3 lifecycle integrity blocks evidence-free completion and premature A0.4 selection."
+      - "Flow CI #2303 passed exact and merge-candidate validation with the final A0.3 authority active."
 
   - version: "A0.4"
     name: "Control Requirement Materialization"
     type: "adapter-control"
-    status: planned
+    status: next
     purpose: "Provide evidence for concrete satisfaction of approval, retry, timeout, compensation and scheduling requirements."
     dependsOnCore: "0.9.7.7"
     dependsOnAdapters: "A0.3"
