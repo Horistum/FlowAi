@@ -1,0 +1,29 @@
+version: "A0.3"
+name: "Capability Binding Migration"
+type: "adapter-binding"
+stream: adapters
+status: active
+objective: "Certify explicit canonical capability bindings to concrete module actions while preserving canonical meaning, effects and provenance."
+activationEvidence:
+  adapterItem: "A0.2"
+  adapterStatus: "completed"
+  mergedPullRequest: "PR #97 merged as 964a9c4f8bf9ce9dc8771c99a68393c9edc35807"
+universalBoundary:
+  - "Canonical intent meaning and semantic effects are derived before implementation binding."
+  - "A binding never selects itself; uses and params.system remain explicit author evidence."
+  - "The target-neutral binding resolver derives one contract and one resolved parameter set before AST lowering."
+  - "Adapter-owned binding evidence certifies built-in implementation claims without becoming Core semantic authority."
+forbiddenScope:
+  - "No implicit preferred-module selection or inventory-driven enrichment of canonical meaning."
+  - "No target renderer, provider or artifact implementation added to improve binding coverage."
+  - "No silent parameter rename, value coercion or unsupported canonical parameter discard."
+  - "No replacement of canonical effects with module-declared effects."
+  - "No mutation of the frozen v0.9.7 Core pre-closure inventory."
+completionEvidence:
+  - "Every built-in implements claim has exactly one strict adapter-owned binding evidence record."
+  - "Runtime binding resolution applies action parameters and defaults exactly once."
+  - "Mapped, unsupported and binding-only parameters are complete and fail closed."
+  - "Canonical meaning and semantic effects remain stable across explicit implementations."
+  - "Unbound and invalid bindings remain explicit and never become implicit implementations."
+  - "A0.3 lifecycle integrity rejects premature or evidence-free completion metadata."
+  - "Flow CI passes exact-head and synthetic merge-candidate validation before completion metadata is authored."
