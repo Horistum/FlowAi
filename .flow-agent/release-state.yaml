@@ -127,4 +127,4 @@ lastKnownValidation:
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
-    - "A0.1 is the next adapter roadmap item and its active work package requires external exact-head and synthetic merge-candidate evidence before completion metadata may be authored."
+    - "A0.1 is the next adapter roadmap item; its active work package remains external exact-head CI evidence until the exact head and synthetic merge candidate pass independently."
