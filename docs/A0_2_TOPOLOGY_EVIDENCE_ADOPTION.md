@@ -40,12 +40,14 @@ Unknown claims, missing claims, duplicate claims, facet mismatches, unresolved r
 
 `TargetRegistryYamlLoader` loads the adapter topology manifest beside the distribution target registry and derives each `ExecutionTopologyProfile` through `AdapterTopologyProfileFactory`.
 
-The runtime profile contains:
+The target-neutral runtime profile contains:
 
 - one declaration for every frozen Core topology kind;
 - status copied from the adapter evidence claim;
 - an evidence reference pointing back to the exact adapter claim;
-- mechanism and limitation detail retained for diagnostics.
+- no duplicated adapter-specific mechanism or limitation prose.
+
+Mechanisms and limitations remain in the adapter-owned manifest as the single detailed evidence authority. Core matching consumes their closed status and exact evidence identity without importing target-specific prose into canonical blocker messages or reference snapshots.
 
 Legacy inline `topology.capabilities` blocks remain parseable for isolated fixtures and backward-compatible registry documents. They are not runtime authority when the adapter evidence manifest is present and cannot override it.
 
@@ -55,10 +57,12 @@ Legacy inline `topology.capabilities` blocks remain parseable for isolated fixtu
 
 The executable `checkout-build-image` scenario requires workflow scope, workflow lifetime, ephemeral workspace and workspace propagation. Those four claims remain `SUPPORTED` and are tied to the committed plan, Jenkins projection and executable snapshot.
 
+Provider-owned manual approval also keeps suspend/resume `SUPPORTED` because the renderer emits Jenkins `input` and behavior tests prove pause and continuation within one Pipeline run.
+
 Earlier broad claims were narrowed where evidence is incomplete:
 
 - attempt isolation becomes `UNKNOWN`;
-- branch isolation, suspend/resume, durable state, value propagation, state propagation, interaction and concurrency become `PARTIAL`;
+- branch isolation, durable state, value propagation, state propagation, interaction and concurrency become `PARTIAL`;
 - failure propagation remains `SUPPORTED`.
 
 The Jenkins executable reference therefore remains valid without pretending that every Jenkins topology property is fully proven.
@@ -81,17 +85,18 @@ A0.1 classified both as `PROFILE_ONLY`: no provider, renderer or native projecti
 
 ## Executable topology proof
 
-Adapter conformance loads every `EXECUTABLE_REFERENCE` record from the A0.1 portfolio, resolves its committed snapshot and semantic execution plan, and evaluates the plan through the production `ExecutionTopologyMatchingAuthority` using the runtime profile derived from adapter evidence.
+Adapter conformance loads every `EXECUTABLE_REFERENCE` record from the A0.1 portfolio, validates its committed snapshot and confirms that the committed semantic-plan artifact exists. It then regenerates the execution plan from the reference intent through the production intent → AST → validation → planning pipeline and evaluates that plan through `ExecutionTopologyMatchingAuthority` using the runtime profile derived from adapter evidence.
 
 The proof passes only when:
 
 - the committed snapshot remains honest and executable for the target;
-- the semantic plan is present and parseable;
+- the committed semantic-plan artifact remains present;
+- the plan can be regenerated through the canonical semantic pipeline;
 - all plan topology requirements produce a `MATCHED` decision;
 - every consumed adapter claim is `SUPPORTED`;
 - every assessment evidence reference points to the adapter topology manifest.
 
-This prevents an executable label from surviving on capability coverage or a self-citing profile.
+This prevents an executable label from surviving on capability coverage, self-citing profiles or unsupported deserialization of an export artifact back into the internal plan model.
 
 ## Conformance and lifecycle
 
