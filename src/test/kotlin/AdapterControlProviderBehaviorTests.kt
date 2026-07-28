@@ -7,8 +7,11 @@ import org.flowlang.cli.honest.CliTargetEvidence
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
 import org.flowlang.materialization.TargetSelectionAuthority
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.parser.FlowParser
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.TryPlanNode
@@ -21,22 +24,33 @@ class AdapterControlProviderBehaviorTests {
 
     @Test
     fun jenkinsFlowLevelErrorHandlerRendersProtectedTryCatchBoundary() {
+        val plan = FlowPlanner(ModuleRegistry()).plan(
+            FlowParser.parse(
+                """
+                version "1.0"
+                flow "jenkins-flow-error-boundary" {
+                  steps {
+                    approve manual {
+                      message: "protected work"
+                    }
+                  }
+                  on error {
+                    approve manual {
+                      message: "failure handler"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        )
+        assertTrue(plan.nodes.last() is TryPlanNode)
+        assertTrue(plan.nodes.last().id.startsWith("onError_"))
+        assertTrue("errorHandlers.finally" in plan.requiredCapabilities)
+
         val result = evaluate(
             target = "jenkins",
             fixtureId = "a0.4-jenkins-flow-error-boundary",
-            plan = ExecutionPlan(
-                flowName = "jenkins-flow-error-boundary",
-                nodes = listOf(
-                    ApprovalNode(id = "protected-work", message = "protected work"),
-                    TryPlanNode(
-                        id = "flow-error-handler",
-                        body = emptyList(),
-                        errorHandler = listOf(
-                            ApprovalNode(id = "failure-handler", message = "failure handler")
-                        )
-                    )
-                )
-            )
+            plan = plan
         )
 
         assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome)
