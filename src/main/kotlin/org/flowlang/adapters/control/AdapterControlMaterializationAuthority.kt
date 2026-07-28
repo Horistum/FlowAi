@@ -57,11 +57,23 @@ class AdapterControlMaterializationAuthority(
         val requirements = requirementsFor(plan)
         val evidence = requirements.map { requirement ->
             val claim = claims[requirement.family]
+            val semanticScopes = AdapterControlSemanticContract.scopesFor(requirement.semantic)
             when {
                 requirement.completeness != AdapterControlRequirementCompleteness.COMPLETE -> AdapterControlEvidence(
                     requirementId = requirement.id,
                     status = AdapterControlEvidenceStatus.UNKNOWN,
                     detail = "Preserved ${requirement.family.name.lowercase()} metadata lacks the exact scope or value needed for provider certification."
+                )
+                semanticScopes == null -> AdapterControlEvidence(
+                    requirementId = requirement.id,
+                    status = AdapterControlEvidenceStatus.UNKNOWN,
+                    detail = "Control semantic '${requirement.semantic}' is outside the closed adapter control contract."
+                )
+                requirement.scope !in semanticScopes -> AdapterControlEvidence(
+                    requirementId = requirement.id,
+                    status = AdapterControlEvidenceStatus.UNKNOWN,
+                    detail = "Derived scope ${requirement.scope} contradicts the target-neutral semantic scope contract " +
+                        "${semanticScopes.sortedBy { it.name }.joinToString()} for '${requirement.semantic}'."
                 )
                 claim == null -> AdapterControlEvidence(
                     requirementId = requirement.id,
