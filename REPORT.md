@@ -136,7 +136,9 @@ Flow CI #2303, run `30354834937`, passed the final implementation on:
 - frozen Core closure followed by adapter inventory `1.2`;
 - all A0.1, A0.2 and A0.3 checks.
 
-A0.3 is now `completed` and A0.4 is `next`. The current completion-metadata head and its synthetic merge candidate must independently pass before PR #98 becomes ready for review. No A0.4 work package or implementation belongs to this PR.
+Flow CI #2310 correctly rejected the first completion head because the repository integration test asserted that the live metadata must remain in the `IMPLEMENTING` phase. Separate tests already proved the exact IMPLEMENTING and COMPLETED contracts, missing and premature evidence, adjacent later progress and skipped-item rejection. The repository test was corrected to require one valid supported phase rather than permanently freezing the item before completion.
+
+A0.3 remains `completed` and A0.4 remains `next`. The corrected completion-metadata head and its synthetic merge candidate must independently pass before PR #98 becomes ready for review. No A0.4 work package or implementation belongs to this PR.
 
 ## Architecture boundary
 
