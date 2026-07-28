@@ -135,6 +135,19 @@ internal class AdapterControlEvidenceIntegrityAuthority(
                 "Supported control semantics require an explicit enforcement owner."
             )
         }
+        if (claim.semantics.supported.isNotEmpty()) {
+            val expectedSupportedScopes = AdapterControlSemanticContract.supportedScopes(claim.semantics.supported)
+            if (claim.scopes != expectedSupportedScopes) {
+                finding(
+                    findings,
+                    "CONTROL_SUPPORTED_SCOPE_CONTRACT_MISMATCH",
+                    target,
+                    claim.family.name,
+                    "Supported semantics require exact scopes ${expectedSupportedScopes.sortedBy { it.name }}; " +
+                        "declared=${claim.scopes.sortedBy { it.name }}."
+                )
+            }
+        }
         if (AdapterControlScope.UNSPECIFIED in claim.scopes) {
             finding(
                 findings,
