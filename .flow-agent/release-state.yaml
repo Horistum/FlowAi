@@ -1,5 +1,5 @@
-project: Flow Core
-stateVersion: 28
+project: Flow
+stateVersion: 29
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,11 +16,13 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 5
-  activeTrack: "v0.9.7-universal-semantic-foundation"
+  roadmapVersion: 6
+  activeTrack: "adapter-portfolio"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
-  primaryStream: "core"
+  primaryStream: "adapters"
+  activeItem: "A0.1"
+  activeItemName: "Adapter Portfolio Reassessment"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -47,10 +49,10 @@ qualityPrinciples:
   - "Do not bend code only to make tests pass."
   - "Every public behavior change must have tests."
   - "Every public contract change must have a migration document."
-  - "Every Core roadmap item must declare a universal invariant, forbidden scope and completion evidence."
+  - "Every roadmap item must declare an invariant, forbidden scope and completion evidence."
   - "Concrete implementation coverage must not define universal semantic meaning."
-  - "Existing executable reference evidence remains live throughout the Core track."
-  - "A previous executable label has no grandfathered status."
+  - "Existing executable reference evidence remains live throughout every roadmap stream."
+  - "A previous executable or support label has no grandfathered status."
   - "Missing implementation evidence fails closed."
   - "Governance status and score polarity must match the property claimed."
   - "Every public module loading path must use one canonical descriptor authority."
@@ -107,22 +109,22 @@ qualityPrinciples:
   - "Closure-blocking conformance must consume CORRECTION_REQUIRED, READY and CLOSED rather than infer lifecycle from correction status."
   - "The complete pre-closure conformance sequence must execute exactly once and in declared order."
   - "Unknown or missing bounded-correction status blocks closure."
-  - "closureItem is permanent identity; nextCoreItem exists only while an item is actually next."
-  - "A completed primary track contains no next item and remains valid only when every Core item is completed."
+  - "closureItem is permanent identity; an active non-Core item cannot rewrite it."
+  - "A completed Core track contains no next Core item and remains valid while later streams consume its contracts."
   - "Implementation and completion validation boundaries must use distinct workflow runs, exact heads and synthetic merge candidates."
+  - "Adapter capability profiles, native leaf support and executable scenarios are separate evidence classes."
+  - "Adapter conformance runs after frozen Core closure and cannot mutate the Core pre-closure inventory."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-merged-pr-94-head"
-  flowAgentStructure: "passed-on-merged-pr-94-head"
-  flowAgentContextGeneration: "passed-on-merged-pr-94-head"
-  offlineCacheAwareChecks: "passed-on-merged-pr-94-head"
-  cleanTest: "passed-on-merged-pr-94-head"
-  conformance: "passed-on-merged-pr-94-head"
-  executableReferenceEvidence: "passed-on-merged-pr-94-head"
-  validationSource: "Flow CI #2250 passed exact completion-metadata head a1b8515d2c37b92a4350d0dbb103d4ee6e5e28c9 before that head was merged through PR #94 as cbe1d23a25e0224be565cad322b097bf2aaa50a1."
+  flowAgentTooling: "passed-on-merged-pr-95-head"
+  flowAgentStructure: "passed-on-merged-pr-95-head"
+  flowAgentContextGeneration: "passed-on-merged-pr-95-head"
+  offlineCacheAwareChecks: "passed-on-merged-pr-95-head"
+  cleanTest: "passed-on-merged-pr-95-head"
+  conformance: "passed-on-merged-pr-95-head"
+  executableReferenceEvidence: "passed-on-merged-pr-95-head"
+  validationSource: "Flow CI #2254 passed exact CLOSED head b62b4465ff11d0bdf8715712f24a2b9c9ddf59b1 before that head was merged through PR #95 as e25a81b9c7e7802556a0d5b34cf34185b19ed498."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
-    - "Flow CI #2252 supplied external exact-head CI evidence on correction implementation head 3176009e660c95d873e9eeb8d1845b7f54142d2c and merge candidate bba152a0eeccf87fffe19a11a3340dd2d1d6a569."
-    - "Flow CI #2253 later supplied external exact-head CI evidence on READY completion head 8fcbf9485fe23ac283c47d560d32327cf6d2faa2 and merge candidate ba4b78e05445de5ef4bc6c79241d59b683138dc9."
-    - "ClosureEvidenceBoundaryAuthority proves #2252 and #2253 are structurally valid, ordered and distinct."
-    - "The current CLOSED metadata head and its synthetic merge candidate require external exact-head CI evidence before PR #95 may become ready for review."
+    - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
+    - "A0.1 is active and requires external exact-head and synthetic merge-candidate evidence before completion metadata may be authored."
