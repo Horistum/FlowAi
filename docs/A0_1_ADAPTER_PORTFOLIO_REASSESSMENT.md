@@ -65,6 +65,17 @@ Both targets are `TARGET_ADAPTER / PROFILE_ONLY`.
 
 They have capability and topology profiles, but this distribution composes no generator, renderer or native projection catalog for them and their registry entries declare no native action rules. Their presence in target compatibility data is not an implementation promise.
 
+## Roadmap lifecycle authority
+
+Flow Agent tooling selects A0.1 as the `next` item in the primary `adapters` stream. The A0.1 work package is independently `active` while implementation is in progress.
+
+`AdapterRoadmapLifecycleAuthority` reconciles the adapter roadmap, roadmap index, release state and A0.1 work package. It accepts only two states:
+
+- `IMPLEMENTING`: A0.1 is `next`, A0.2 is `planned`, the work package is `active` and no authored implementation evidence exists;
+- `COMPLETED`: A0.1 is `completed`, A0.2 is `next`, the work package is `complete` and a structurally passing exact-head plus synthetic merge-candidate Flow CI boundary is recorded.
+
+Mixed statuses, premature evidence, malformed workflow fields, unknown evidence keys and a completion transition that does not select A0.2 fail closed.
+
 ## Separate conformance stream
 
 The frozen Core inventory under `standard/conformance/pre-closure-check-inventory.yaml` remains unchanged.
@@ -73,6 +84,7 @@ Adapter checks are declared separately in `adapters/conformance/check-inventory.
 
 A0.1 checks:
 
+- lifecycle integrity across work package and roadmap metadata;
 - portfolio coverage and classification integrity;
 - executable-reference snapshot honesty;
 - absence of adapter-portfolio dependencies from semantic Core packages.
