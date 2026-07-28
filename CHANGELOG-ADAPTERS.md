@@ -2,6 +2,45 @@
 
 ## Unreleased
 
+### A0.4 Control Requirement Materialization
+
+Started after A0.3 merged through PR #98 as `9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930`.
+
+Implementation scope under validation:
+
+- add a strict adapter-owned control materialization manifest for every built-in target;
+- declare exactly one approval, retry, timeout, compensation and scheduling claim per target;
+- partition each closed family contract into supported, unsupported and unknown semantics;
+- separate repository implementation evidence from official platform capability context;
+- require independent `src/main` or `src/test` evidence for every supported semantic;
+- permit target registry data only as supplemental negative corroboration and reject registry-only evidence;
+- derive exact requirements from `ApprovalNode`, `RetryGroupNode`, `TryPlanNode`, failure rollback and schedule triggers;
+- retain preserved RETRY/TIMEOUT metadata as `PRESERVED_UNSPECIFIED` UNKNOWN blockers until exact scope and value survive lowering;
+- certify only Jenkins inline manual approval, Jenkins/GitHub CRON and Jenkins error-handler subsets currently implemented by composed providers;
+- explicitly demote retry flattening, timeout absence, unguarded compensation, uncomposed environment approval and Tekton scheduling;
+- evaluate adapter controls before executable target materialization;
+- preserve blocked facts through review evidence while preventing target syntax emission;
+- replace dynamic readiness diagnostic code concatenation with one closed mapping to existing stable catalog codes;
+- add positive, negative, CLI integration, lifecycle and stable diagnostic mapping tests;
+- extend the post-Core adapter inventory to version `1.3` with five A0.4 checks;
+- preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
+
+Architecture assessment:
+
+- Jenkins, GitHub Actions, Tekton, Argo Workflows, GitLab CI/CD and Azure Pipelines expose materially different control ownership and scope;
+- workflow primitives, run-object configuration, target-resource checks and external controllers cannot be represented by one target feature boolean;
+- Flow's meaning → exact requirement → provider evidence direction is retained;
+- general platform support and popular repository patterns remain context, not implementation authority.
+
+Validation history:
+
+- Flow CI #2315 rejected the first implementation because one negative test used an incomplete `RetryGroupNode` fixture; production sources compiled and the fixture was corrected.
+- Flow CI #2316 compiled the implementation and rejected release metadata that lacked exact external-candidate wording plus an evidence rule that did not distinguish positive proof from negative registry corroboration.
+- Release honesty remained strict; contracts/loader and runtime assessment were separated, supported claims now require independent implementation evidence, and registry-only evidence fails.
+- Flow CI #2324 rejected persisted CLI review bundles because the existing readiness reconciler invented uncatalogued diagnostic code `TARGET_COMPATIBILITY_UNSUPPORTED` through string concatenation.
+- `TargetReadinessDiagnosticCodeAuthority` now maps known internal statuses to existing stable public codes and rejects unknown statuses instead of inventing public identifiers.
+- A0.4 remains `next` and its work package remains `active`. No implementation evidence or A0.5 transition is authored until exact-head and synthetic merge-candidate Flow CI pass independently.
+
 ### A0.3 Capability Binding Migration
 
 Started after A0.2 merged through PR #97 as `964a9c4f8bf9ce9dc8771c99a68393c9edc35807`.
@@ -33,7 +72,7 @@ Validation history:
 - Flow CI #2303, run `30354834937`, passed the final implementation on exact head `f475ae8317122b986dec23a3d36bb8df05a31db3` and synthetic merge candidate `afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8`.
 - Flow CI #2310 rejected the first completion head because the repository lifecycle integration test was hardcoded to `IMPLEMENTING` even though exact phase tests already covered IMPLEMENTING and COMPLETED independently.
 - The repository test now accepts exactly one honest supported lifecycle phase while retaining explicit failure tests for missing evidence, premature evidence, skipped items and non-adjacent progress.
-- A0.3 remains `completed`, A0.4 remains `next`, and the corrected completion-metadata head must independently pass exact-head and merge-candidate validation before PR #98 becomes ready for review.
+- Flow CI #2313, run `30356352115`, passed the corrected completion state on exact head `53d9794e7d4165942339b8ae37db6c911f01f83a` and synthetic merge candidate `3a052e10fcbfca4e3fe237b5864f1efab0912758` before PR #98 merged.
 
 ### A0.2 Topology Evidence Adoption
 
