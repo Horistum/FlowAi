@@ -6,7 +6,7 @@
 
 Started the adapter roadmap after Core `0.9.7.10` and bounded correction `0.9.7.10.2` were merged and validated.
 
-Implemented scope:
+Completed scope:
 
 - transition the primary roadmap stream from completed Core work to adapters;
 - generalize Flow Agent roadmap selection and tests for a non-Core primary stream;
@@ -24,4 +24,9 @@ Implemented scope:
 - prove semantic Core packages do not depend on adapter portfolio authority;
 - preserve package `0.9.5`, public standard `0.8.0` and artifact contract `2.0`.
 
-Flow CI #2263 passed the initial portfolio implementation before lifecycle certification was added, so it is not used as the completion authority. A0.1 remains `next` and its work package remains `active` until a later exact-head and synthetic merge-candidate run includes the lifecycle check itself. Completion metadata and A0.2 selection are intentionally deferred until that evidence exists.
+Validation history:
+
+- Flow CI #2256 rejected the first roadmap transition because A0.1 used unsupported item status `active`; the primary-stream tooling and metadata were corrected to the existing `next` lifecycle rather than weakening validation.
+- Flow CI #2263 passed the portfolio implementation before lifecycle certification was added and is retained only as historical evidence.
+- Flow CI #2270, run `30342473373`, passed the complete implementation on exact head `20191d2d7b9460894c81f9bfee73b3c11b8f78f4` and synthetic merge candidate `d3238468ba01fe8b97bc6f500c9f96f2beeb4760`, including Flow Agent tooling, complete tests, Core closure and adapter conformance.
+- The completion-metadata head marks A0.1 `completed`, selects A0.2 as `next` and records #2270 structurally. It must independently pass exact-head and synthetic merge-candidate validation before PR #96 is ready for review.
