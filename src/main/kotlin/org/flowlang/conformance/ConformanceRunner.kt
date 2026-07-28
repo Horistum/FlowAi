@@ -11,11 +11,10 @@ import org.flowlang.generators.manifest.TargetProjectionRegistry
  * CLI-facing conformance orchestrator.
  *
  * The historical monolith is split into ordered groups while preserving the
- * exact check sequence and the data-driven vector index boundary. The bounded
- * semantic closure check is intentionally last and runs only in READY or CLOSED.
- * During CORRECTION_REQUIRED, the independently declared pre-closure inventory
- * remains mandatory but the closure authority cannot claim success while an
- * active correction exists.
+ * exact Core pre-closure sequence and the data-driven vector index boundary.
+ * The bounded semantic closure check terminates the frozen Core evidence phase.
+ * Adapter-stream certification runs afterwards from its own committed inventory,
+ * so adapter evolution cannot rewrite the evidence set that closed Core v0.9.7.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
@@ -61,6 +60,7 @@ class ConformanceRunner(
         if (releaseLifecycle.status != "PASS" || releaseLifecycle.closurePhase != "CORRECTION_REQUIRED") {
             checks += SemanticClosureChecks(rootDir).checks(checks.toList())
         }
+        checks += AdapterConformanceRunner(rootDir, targets, projections).checks()
         return ConformanceSummary(checks)
     }
 }
