@@ -43,8 +43,14 @@ These are not marketing tiers. `PROFILE_ONLY`, `NATIVE_LEAF_ONLY` and `EXECUTABL
 - role and support-class invariants;
 - explicit limitations for every record.
 
+`AdapterRoadmapLifecycleAuthority` separately proves that roadmap and work-package metadata move atomically:
+
+- implementation: A0.1 `next`, A0.2 `planned`, work package `active`, no authored implementation evidence;
+- completion: A0.1 `completed`, A0.2 `next`, work package `complete`, one structurally passing exact-head and merge-candidate Flow CI boundary.
+
 Adapter conformance has its own committed inventory under `adapters/conformance/check-inventory.yaml`. It certifies:
 
+- A0.1 lifecycle integrity;
 - exact portfolio reassessment coverage;
 - committed executable-reference evidence;
 - absence of Adapter Portfolio dependencies from semantic Core packages.
@@ -53,7 +59,9 @@ The adapter checks execute only after `v0.9.7.10.bounded-semantic-closure`. Ther
 
 ## Validation state
 
-A0.1 is `next` in the adapter roadmap and its work package is `active`. Implementation and roadmap-transition metadata require exact-head and synthetic merge-candidate Flow CI validation before the item may be marked `completed` or A0.2 may become `next`.
+Flow CI #2263 passed the portfolio implementation before lifecycle certification was added. It is useful historical evidence but is not the A0.1 implementation boundary.
+
+A0.1 remains `next` in the adapter roadmap and its work package remains `active`. A later exact-head and synthetic merge-candidate Flow CI run must include the lifecycle authority itself before completion metadata can record that run, mark A0.1 `completed` or select A0.2 as `next`.
 
 ## Architecture boundary
 
