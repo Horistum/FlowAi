@@ -20,21 +20,28 @@ universalInvariants:
 confirmedFindings:
   - id: E1
     status: complete
-    summary: "ClosureEvidenceBoundaryAuthority now rejects reused run, exact-head and merge-candidate identities across implementation and completion boundaries."
+    summary: "ClosureEvidenceBoundaryAuthority rejects reused run, exact-head and merge-candidate identities across implementation and completion boundaries."
   - id: E2
     status: complete
     summary: "A dedicated pre-closure conformance check owns typed phase, supersession, implementation, completion and boundary-distinction failures."
   - id: E3
     status: complete
-    summary: "Lifecycle and pure authority tests prove READY absence rules, CLOSED ordering and fail-closed parsing before later evidence is recorded."
+    summary: "Flow CI #2252 and later #2253 are recorded as distinct ordered implementation and completion boundaries."
 validationPolicy:
   workflow: "Flow CI"
   implementationBoundary: "The authority and negative tests must pass exact-head and synthetic merge-candidate validation while the closure remains CORRECTION_REQUIRED."
   completionBoundary: "After implementation validation, a later metadata head must record distinct implementation and completion evidence and independently pass exact-head and synthetic merge-candidate validation."
-validationEvidence:
+implementationEvidence:
   status: passed
   workflow: "Flow CI"
   runNumber: "2252"
   runId: "30333130152"
   exactHead: "3176009e660c95d873e9eeb8d1845b7f54142d2c"
   mergeCandidate: "bba152a0eeccf87fffe19a11a3340dd2d1d6a569"
+completionEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: "2253"
+  runId: "30333777951"
+  exactHead: "8fcbf9485fe23ac283c47d560d32327cf6d2faa2"
+  mergeCandidate: "ba4b78e05445de5ef4bc6c79241d59b683138dc9"
