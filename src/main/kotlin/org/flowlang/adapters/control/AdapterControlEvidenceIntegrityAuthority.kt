@@ -191,6 +191,7 @@ internal class AdapterControlEvidenceIntegrityAuthority(
         val fileParts = claim.evidenceReferences.map { it.substringBefore('#') }
         fileParts.forEachIndexed { index, filePart ->
             val reference = claim.evidenceReferences[index]
+            val evidenceFile = File(rootDir, filePart)
             when {
                 filePart == AdapterControlMaterializationLoader.PATH -> finding(
                     findings,
@@ -199,13 +200,33 @@ internal class AdapterControlEvidenceIntegrityAuthority(
                     claim.family.name,
                     "Evidence cannot cite its own authority '$filePart'."
                 )
-                !File(rootDir, filePart).isFile -> finding(
+                !evidenceFile.isFile -> finding(
                     findings,
                     "CONTROL_EVIDENCE_UNRESOLVED",
                     target,
                     claim.family.name,
                     "Evidence file does not exist: $reference"
                 )
+                isSourceEvidence(filePart) && '#' in reference -> {
+                    val anchor = reference.substringAfter('#')
+                    if (anchor.isBlank()) {
+                        finding(
+                            findings,
+                            "CONTROL_EVIDENCE_ANCHOR_BLANK",
+                            target,
+                            claim.family.name,
+                            "Source evidence reference has a blank anchor: $reference"
+                        )
+                    } else if (!evidenceFile.readText().contains(anchor)) {
+                        finding(
+                            findings,
+                            "CONTROL_EVIDENCE_ANCHOR_UNRESOLVED",
+                            target,
+                            claim.family.name,
+                            "Source evidence anchor '$anchor' does not exist in $filePart."
+                        )
+                    }
+                }
             }
         }
         if (fileParts.all { it == TARGET_REGISTRY_PATH }) {
@@ -236,6 +257,9 @@ internal class AdapterControlEvidenceIntegrityAuthority(
             )
         }
     }
+
+    private fun isSourceEvidence(path: String): Boolean =
+        path.startsWith("src/main/") || path.startsWith("src/test/")
 
     private fun isImplementationEvidence(path: String): Boolean = path.startsWith("src/main/")
 
