@@ -14,7 +14,6 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
-import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.BuiltInTargetProjections
@@ -22,10 +21,11 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 class AdapterControlProviderBehaviorTests {
     private val rootDir = File(".")
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
+    private val modules = ModuleRegistry.fromDirectory(File(rootDir, "modules"), includeDefaults = true)
 
     @Test
     fun jenkinsFlowLevelErrorHandlerRendersProtectedTryCatchBoundary() {
-        val plan = FlowPlanner(ModuleRegistry()).plan(
+        val plan = FlowPlanner(modules).plan(
             FlowParser().parse(
                 """
                 version "1.0"
@@ -129,31 +129,41 @@ class AdapterControlProviderBehaviorTests {
             renderRequested = true
         )
 
-    private fun schedulePlan(flowName: String) = ExecutionPlan(
-        flowName = flowName,
-        requiredCapabilities = listOf("git.checkout"),
-        nodes = listOf(
-            TaskNode(
-                id = "checkout",
-                module = "git",
-                action = "checkout",
-                target = "source",
-                params = linkedMapOf(
-                    "url" to "https://github.com/openai/openai.git",
-                    "branch" to "main",
-                    "depth" to "0"
-                ),
-                requiredCapabilities = listOf("git.checkout")
-            )
-        ),
-        triggers = listOf(
-            PlanTrigger(
-                id = "nightly",
-                type = "SCHEDULE",
-                schedule = PlanSchedule(kind = "CRON", expression = "0 2 * * *")
+    private fun schedulePlan(flowName: String): ExecutionPlan {
+        val planned = FlowPlanner(modules).plan(
+            FlowParser().parse(
+                """
+                version "1.0"
+                use module "git" version "1.0"
+
+                flow "$flowName" {
+                  systems {
+                    system "repo" {
+                      type: git
+                      url: "https://github.com/openai/openai.git"
+                      branch: "main"
+                    }
+                  }
+
+                  steps {
+                    git.checkout repo {
+                      depth: 0
+                    } -> source
+                  }
+                }
+                """.trimIndent()
             )
         )
-    )
+        return planned.copy(
+            triggers = listOf(
+                PlanTrigger(
+                    id = "nightly",
+                    type = "SCHEDULE",
+                    schedule = PlanSchedule(kind = "CRON", expression = "0 2 * * *")
+                )
+            )
+        )
+    }
 
     private fun assertTryCatchOrder(rendered: String, protectedMessage: String, handlerMessage: String) {
         assertTrue(rendered.contains("try {"), rendered)
