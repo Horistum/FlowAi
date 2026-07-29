@@ -11,12 +11,15 @@ This report is not A0.5 completion evidence and does not promote any adapter sup
 ## Inventory
 
 - immutable source records: 15;
-- broad scenarios: 44;
+- broad hypothesis scenarios: 44;
+- accepted scenario index entries: 6;
 - complete executable cases: 6;
 - executed negative mutations: 8;
 - strict document schemas: 9;
 - post-Core checks: 8;
 - focused regression tests for declared output continuity and strict corpus parsing.
+
+The broad scenario catalog remains research input. `accepted-scenarios.yaml` is a separate machine-checked authority whose IDs and case paths must match the executable packages exactly. This permits a negative case such as N01 to cite both its semantic reference and the independent valid workflow used as a mutation fixture without rewriting the original research record.
 
 ## Accepted cases
 
