@@ -3,7 +3,7 @@ version: '0.2'
 id: serialize-and-drop-fan-in
 intent: intent.yaml
 expectedGenerated: true
-expectedOutcome: BLOCKED_BY_TARGET_CAPABILITY
+expectedOutcome: SEMANTIC_ONLY
 expectedDiagnostics: [REAL_WORLD_REQUIRED_RELATION_MISSING, REAL_WORLD_REQUIRED_PARALLELISM_SERIALIZED]
 tasks:
 - {sourceId: A, semanticCapability: CUSTOM, nodeKind: Task}
