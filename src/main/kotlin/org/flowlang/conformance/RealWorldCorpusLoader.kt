@@ -31,26 +31,36 @@ class RealWorldCorpusLoader(private val rootDir: File = File(".")) {
                 "Real-world corpus schema '$id' must be a JSON schema: $path"
             }
         }
+        require(manifest.catalogs.keys == REQUIRED_CATALOG_KEYS) {
+            "Real-world corpus catalogs must be exactly ${REQUIRED_CATALOG_KEYS.sorted()}, got ${manifest.catalogs.keys.sorted()}."
+        }
 
         val sourcesFile = resolveRootFile(manifest.catalogs.getValue("sources"), "source catalog")
         val scenariosFile = resolveRootFile(manifest.catalogs.getValue("scenarios"), "scenario catalog")
-        require(manifest.catalogs.keys == setOf("sources", "scenarios")) {
-            "Real-world corpus catalogs must contain only sources and scenarios."
-        }
+        val acceptedScenariosFile = resolveRootFile(
+            manifest.catalogs.getValue("acceptedScenarios"),
+            "accepted scenario catalog"
+        )
 
         val sources = RealWorldCorpusSerialization.readYaml(sourcesFile, RealWorldSourceCatalog::class.java)
         val scenarios = RealWorldCorpusSerialization.readYaml(scenariosFile, RealWorldScenarioCatalog::class.java)
+        val acceptedScenarios = RealWorldCorpusSerialization.readYaml(
+            acceptedScenariosFile,
+            RealWorldScenarioCatalog::class.java
+        )
         validateSchema(sources, manifest.schema("sources"))
         validateSchema(scenarios, manifest.schema("scenarios"))
+        validateSchema(acceptedScenarios, manifest.schema("scenarios"))
         validateCatalogs(sources, scenarios, manifest)
+        validateAcceptedScenarioIndex(sources, scenarios, acceptedScenarios, manifest)
 
         val sourcesById = sources.sources.associateBy { it.id }
-        val scenariosById = scenarios.scenarios.associateBy { it.id }
+        val acceptedScenariosById = acceptedScenarios.scenarios.associateBy { it.id }
         val cases = manifest.casePackages.map { relativePath ->
             loadCase(
                 caseDir = resolveCorpusDirectory(relativePath, "case package"),
                 sourcesById = sourcesById,
-                scenariosById = scenariosById,
+                acceptedScenariosById = acceptedScenariosById,
                 manifest = manifest
             )
         }
@@ -60,6 +70,9 @@ class RealWorldCorpusLoader(private val rootDir: File = File(".")) {
         }
         require(cases.map { it.directory.canonicalPath }.distinct().size == cases.size) {
             "Real-world case packages must resolve to unique directories."
+        }
+        require(cases.map { it.definition.id }.toSet() == acceptedScenariosById.keys) {
+            "Accepted scenario ids and loaded case ids must match exactly."
         }
         require(manifest.counts.executableCases == cases.size) {
             "Manifest executableCases=${manifest.counts.executableCases}, actual=${cases.size}."
@@ -110,30 +123,7 @@ class RealWorldCorpusLoader(private val rootDir: File = File(".")) {
             "Real-world scenario ids must be unique."
         }
         val sourceIds = sources.sources.map { it.id }.toSet()
-        scenarios.scenarios.forEach { scenario ->
-            require(scenario.id.isNotBlank()) { "Real-world scenario id must not be blank." }
-            require(scenario.category in SCENARIO_CATEGORIES) {
-                "Scenario '${scenario.id}' has unsupported category '${scenario.category}'."
-            }
-            require(scenario.admission in SCENARIO_ADMISSIONS) {
-                "Scenario '${scenario.id}' has unsupported admission '${scenario.admission}'."
-            }
-            require(scenario.sourceRefs.distinct().size == scenario.sourceRefs.size) {
-                "Scenario '${scenario.id}' contains duplicate source references."
-            }
-            val missingSources = scenario.sourceRefs.filter { it !in sourceIds }
-            require(missingSources.isEmpty()) {
-                "Scenario '${scenario.id}' references unknown sources ${missingSources.sorted()}."
-            }
-            require(scenario.continuityKinds.all { it in CONTINUITY_VOCABULARY }) {
-                "Scenario '${scenario.id}' uses unknown continuity kinds ${scenario.continuityKinds}."
-            }
-            if (scenario.sourceCoverage == "missing") {
-                require(scenario.sourceRefs.isEmpty() && !scenario.coverageGap.isNullOrBlank()) {
-                    "Scenario '${scenario.id}' with missing coverage must have no source refs and must explain the gap."
-                }
-            }
-        }
+        scenarios.scenarios.forEach { scenario -> validateScenarioRecord(scenario, sourceIds) }
 
         val counts = manifest.counts
         require(counts.sources == sources.sources.size) { "Manifest sources=${counts.sources}, actual=${sources.sources.size}." }
@@ -157,10 +147,87 @@ class RealWorldCorpusLoader(private val rootDir: File = File(".")) {
         }
     }
 
+    private fun validateAcceptedScenarioIndex(
+        sources: RealWorldSourceCatalog,
+        broadScenarios: RealWorldScenarioCatalog,
+        acceptedScenarios: RealWorldScenarioCatalog,
+        manifest: RealWorldCorpusManifest
+    ) {
+        require(acceptedScenarios.kind == "FlowRealWorldScenarioCatalog") {
+            "Unexpected accepted scenario catalog kind '${acceptedScenarios.kind}'."
+        }
+        require(acceptedScenarios.version == "0.2" && acceptedScenarios.status == "executable-index") {
+            "Accepted scenario catalog must be version 0.2 with status executable-index."
+        }
+        require(acceptedScenarios.resultVocabulary.toSet() == RealWorldResult.entries.toSet()) {
+            "Accepted scenario result vocabulary must exactly match RealWorldResult."
+        }
+        require(acceptedScenarios.continuityVocabulary.toSet() == CONTINUITY_VOCABULARY) {
+            "Accepted scenario continuity vocabulary must be exactly ${CONTINUITY_VOCABULARY.sorted()}."
+        }
+        require(acceptedScenarios.scenarios.size == manifest.counts.executableCases) {
+            "Accepted scenario count ${acceptedScenarios.scenarios.size} differs from executableCases ${manifest.counts.executableCases}."
+        }
+        require(acceptedScenarios.scenarios.map { it.id }.distinct().size == acceptedScenarios.scenarios.size) {
+            "Accepted scenario ids must be unique."
+        }
+        val broadById = broadScenarios.scenarios.associateBy { it.id }
+        val sourceIds = sources.sources.map { it.id }.toSet()
+        acceptedScenarios.scenarios.forEach { accepted ->
+            validateScenarioRecord(accepted, sourceIds)
+            val broad = broadById[accepted.id] ?: error(
+                "Accepted scenario '${accepted.id}' is absent from the broad scenario catalog."
+            )
+            require(accepted.category == broad.category && accepted.admission == broad.admission) {
+                "Accepted scenario '${accepted.id}' category/admission differs from the broad catalog."
+            }
+            require(accepted.lifecycle == RealWorldLifecycle.ACCEPTED) {
+                "Accepted scenario '${accepted.id}' must have lifecycle ACCEPTED."
+            }
+            require(accepted.claim == "accepted-evidence") {
+                "Accepted scenario '${accepted.id}' must declare claim accepted-evidence."
+            }
+            require(!accepted.casePath.isNullOrBlank()) {
+                "Accepted scenario '${accepted.id}' must name its casePath."
+            }
+            require(accepted.sourceRefs.isNotEmpty()) {
+                "Accepted scenario '${accepted.id}' must cite at least one immutable source."
+            }
+        }
+        require(acceptedScenarios.scenarios.mapNotNull { it.casePath }.toSet() == manifest.casePackages.toSet()) {
+            "Accepted scenario casePath values must match manifest casePackages exactly."
+        }
+    }
+
+    private fun validateScenarioRecord(scenario: RealWorldScenarioRecord, sourceIds: Set<String>) {
+        require(scenario.id.isNotBlank()) { "Real-world scenario id must not be blank." }
+        require(scenario.category in SCENARIO_CATEGORIES) {
+            "Scenario '${scenario.id}' has unsupported category '${scenario.category}'."
+        }
+        require(scenario.admission in SCENARIO_ADMISSIONS) {
+            "Scenario '${scenario.id}' has unsupported admission '${scenario.admission}'."
+        }
+        require(scenario.sourceRefs.distinct().size == scenario.sourceRefs.size) {
+            "Scenario '${scenario.id}' contains duplicate source references."
+        }
+        val missingSources = scenario.sourceRefs.filter { it !in sourceIds }
+        require(missingSources.isEmpty()) {
+            "Scenario '${scenario.id}' references unknown sources ${missingSources.sorted()}."
+        }
+        require(scenario.continuityKinds.all { it in CONTINUITY_VOCABULARY }) {
+            "Scenario '${scenario.id}' uses unknown continuity kinds ${scenario.continuityKinds}."
+        }
+        if (scenario.sourceCoverage == "missing") {
+            require(scenario.sourceRefs.isEmpty() && !scenario.coverageGap.isNullOrBlank()) {
+                "Scenario '${scenario.id}' with missing coverage must have no source refs and must explain the gap."
+            }
+        }
+    }
+
     private fun loadCase(
         caseDir: File,
         sourcesById: Map<String, RealWorldSourceRecord>,
-        scenariosById: Map<String, RealWorldScenarioRecord>,
+        acceptedScenariosById: Map<String, RealWorldScenarioRecord>,
         manifest: RealWorldCorpusManifest
     ): LoadedRealWorldCase {
         val definitionFile = requiredFile(caseDir, "case.yaml", "case definition")
@@ -182,15 +249,20 @@ class RealWorldCorpusLoader(private val rootDir: File = File(".")) {
             "Case '${definition.id}' contains duplicate mutation definition paths."
         }
 
-        val scenario = scenariosById[definition.id] ?: error("Case '${definition.id}' is absent from scenarios.yaml.")
+        val scenario = acceptedScenariosById[definition.id] ?: error(
+            "Case '${definition.id}' is absent from accepted-scenarios.yaml."
+        )
         val source = sourcesById[definition.sourceRef] ?: error(
             "Case '${definition.id}' references unknown source '${definition.sourceRef}'."
         )
         require(definition.category == scenario.category) {
-            "Case '${definition.id}' category '${definition.category}' differs from scenario '${scenario.category}'."
+            "Case '${definition.id}' category '${definition.category}' differs from accepted scenario '${scenario.category}'."
         }
         require(definition.sourceRef in scenario.sourceRefs) {
-            "Case '${definition.id}' source '${definition.sourceRef}' is absent from scenario sourceRefs."
+            "Case '${definition.id}' primary source '${definition.sourceRef}' is absent from accepted scenario sourceRefs."
+        }
+        require(scenario.casePath == caseDir.relativeTo(corpusRoot).invariantSeparatorsPath) {
+            "Case '${definition.id}' directory differs from accepted scenario casePath '${scenario.casePath}'."
         }
         require(source.license.status == "verified" && !source.license.spdx.isNullOrBlank()) {
             "Executable case '${definition.id}' requires verified SPDX source evidence, got ${source.license.status}/${source.license.spdx}."
@@ -229,6 +301,9 @@ class RealWorldCorpusLoader(private val rootDir: File = File(".")) {
         val expectedPlan = RealWorldCorpusSerialization.readJson(expectedPlanFile, RealWorldExpectedPlan::class.java)
         validateSchema(expectedPlan, manifest.schema("expectedPlan"))
         validateExpectedPlan(definition.id, expectedPlan)
+        require(expectedPlan.expectedOutcome == scenario.baselineExpectation) {
+            "Case '${definition.id}' expected outcome differs from accepted scenario result."
+        }
 
         val targetFile = requiredFile(caseDir, definition.expected.targetAssessments, "target assessments")
         val targetExpectations = RealWorldCorpusSerialization.readYaml(
@@ -370,6 +445,7 @@ class RealWorldCorpusLoader(private val rootDir: File = File(".")) {
     companion object {
         private const val BOOTSTRAP_MANIFEST_SCHEMA = "schemas/real-world-corpus.schema.json"
         private val REVISION_PATTERN = Regex("^[0-9a-f]{40}$")
+        private val REQUIRED_CATALOG_KEYS = setOf("sources", "scenarios", "acceptedScenarios")
         private val REQUIRED_SCHEMA_KEYS = setOf(
             "manifest",
             "sources",
