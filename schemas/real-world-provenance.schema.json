@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Case Provenance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["repository", "revision", "path", "license"],
+  "properties": {
+    "repository": {"type": "string"},
+    "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "path": {"type": "string"},
+    "license": {"type": "string"}
+  }
+}
