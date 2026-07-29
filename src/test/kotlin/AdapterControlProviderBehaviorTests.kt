@@ -1,6 +1,7 @@
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.flowlang.cli.honest.CliTargetEvidence
@@ -54,7 +55,7 @@ class AdapterControlProviderBehaviorTests {
             plan = plan
         )
 
-        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome)
+        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome, result.failureSummary())
         val rendered = assertNotNull(result.renderedArtifact).content
         assertTryCatchOrder(rendered, "protected work", "failure handler")
     }
@@ -76,7 +77,7 @@ class AdapterControlProviderBehaviorTests {
             )
         )
 
-        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome)
+        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome, result.failureSummary())
         val rendered = assertNotNull(result.renderedArtifact).content
         assertTryCatchOrder(rendered, "nested work", "nested failure")
     }
@@ -89,7 +90,8 @@ class AdapterControlProviderBehaviorTests {
             plan = schedulePlan("jenkins-cron")
         )
 
-        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome)
+        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome, result.failureSummary())
+        assertFalse(result.diagnosticFallbackUsed, result.failureSummary())
         val rendered = assertNotNull(result.renderedArtifact).content
         assertTrue(rendered.contains("triggers {"), rendered)
         assertTrue(rendered.contains("cron("), rendered)
@@ -105,7 +107,8 @@ class AdapterControlProviderBehaviorTests {
             plan = schedulePlan("github-cron")
         )
 
-        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome)
+        assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome, result.failureSummary())
+        assertFalse(result.diagnosticFallbackUsed, result.failureSummary())
         val rendered = assertNotNull(result.renderedArtifact).content
         assertTrue(rendered.contains("  schedule:"), rendered)
         assertTrue(rendered.contains("- cron:"), rendered)
@@ -147,8 +150,8 @@ class AdapterControlProviderBehaviorTests {
 
                   steps {
                     git.checkout repo {
-                      depth: 0
-                    } -> source
+                      depth: 2
+                    }
                   }
                 }
                 """.trimIndent()
@@ -163,6 +166,15 @@ class AdapterControlProviderBehaviorTests {
                 )
             )
         )
+    }
+
+    private fun CliTargetEvidence.failureSummary(): String = buildString {
+        append("outcome=").append(outcome)
+        append(", fallback=").append(diagnosticFallbackUsed)
+        append(", render=").append(renderReadiness)
+        append(", compatibility=").append(compatibility)
+        append(", readiness=").append(readiness)
+        append(", diagnostics=").append(diagnostics)
     }
 
     private fun assertTryCatchOrder(rendered: String, protectedMessage: String, handlerMessage: String) {
