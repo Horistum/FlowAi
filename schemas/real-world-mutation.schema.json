@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Negative Mutation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "version", "id", "intent", "expectedGenerated", "expectedOutcome", "expectedDiagnostics", "tasks", "requiredRelations", "forbiddenOrdering", "requiredFeatures"],
+  "properties": {
+    "kind": {"const": "FlowRealWorldMutation"},
+    "version": {"const": "0.2"},
+    "id": {"type": "string"},
+    "intent": {"type": "string"},
+    "expectedGenerated": {"type": "boolean"},
+    "expectedOutcome": {"enum": ["SUPPORTED", "SUPPORTED_WITH_BINDING", "SEMANTIC_ONLY", "BLOCKED_BY_TARGET_CAPABILITY", "AMBIGUOUS_SOURCE_INTENT", "UNSUPPORTED_DYNAMIC_CONSTRUCTION", "INVALID_SOURCE_PIPELINE"]},
+    "expectedDiagnostics": {"type": "array", "items": {"type": "string"}},
+    "tasks": {"type": "array", "items": {"type": "object", "required": ["sourceId"]}},
+    "requiredRelations": {"type": "array", "items": {"type": "object", "required": ["source", "target", "kind"]}},
+    "forbiddenOrdering": {"type": "array", "items": {"type": "object", "required": ["source", "target"]}},
+    "requiredFeatures": {"type": "array", "items": {"type": "string"}}
+  }
+}
