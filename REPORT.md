@@ -8,20 +8,22 @@ Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Correction`
 Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
-Completed adapter roadmap item: `A0.3 Capability Binding Migration` (`completed`)
-Next adapter roadmap item: `A0.4 Control Requirement Materialization` (`next`)
+Completed adapter roadmap item: `A0.4 Control Requirement Materialization` (`completed`)
+Next adapter roadmap item: `A0.5 Continuity Satisfaction Proof` (`next`, no work package or implementation included)
 
 ## Core boundary
 
-PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0d5b34cf34185b19ed498`. Core v0.9.7 remains CLOSED. Its exact 91-check pre-closure inventory remains frozen. Adapter checks continue only after `v0.9.7.10.bounded-semantic-closure`.
+PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0d5b34cf34185b19ed498`. Core v0.9.7 remains CLOSED and its exact 91-check pre-closure inventory remains frozen.
 
-The implementation package remains `0.9.5`, the public standard remains `0.8.0`, and the artifact contract remains `2.0`.
+A0.4 consumes existing Core, intent, AST, execution-plan, failure and trigger contracts. It does not extend the frozen `ControlRequirementKind` enum, add target-specific public syntax or make Core depend on adapter evidence.
+
+Package `0.9.5`, public standard `0.8.0` and artifact contract `2.0` remain unchanged.
 
 ## Completed adapter baseline
 
-PR #96 merged A0.1 as `dbd1529cd9da1b21d13bd45d3af1a84361b9abf1`. PR #97 merged A0.2 as `964a9c4f8bf9ce9dc8771c99a68393c9edc35807`.
+PR #96 merged A0.1 as `dbd1529cd9da1b21d13bd45d3af1a84361b9abf1`. PR #97 merged A0.2 as `964a9c4f8bf9ce9dc8771c99a68393c9edc35807`. PR #98 merged A0.3 as `9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930`.
 
-The adapter portfolio classes remain:
+The adapter portfolio remains:
 
 | Target | Role | Support class |
 | --- | --- | --- |
@@ -32,114 +34,121 @@ The adapter portfolio classes remain:
 | `argo-workflows` | target adapter | `PROFILE_ONLY` |
 | `azure-devops` | target adapter | `PROFILE_ONLY` |
 
-A0.2 provides strict adapter-owned topology evidence and leaves profile-only target topology claims unknown. A0.3 consumes the closed Core meaning/effect contracts and does not promote target support.
+A0.4 does not promote any support class. Jenkins remains the only committed end-to-end executable reference.
 
-## A0.3 defect boundary
+## Problem corrected by A0.4
 
-Before A0.3, explicit binding validation and AST lowering both interpreted the module action contract independently.
+Registry summaries such as `retry: supported`, `approvals: supported` or `cron.schedule: supported` did not prove that the composed provider preserved an exact Flow control requirement.
 
-The validation boundary checked the requested action, selected system and supplied parameters. `IntentToAstPlanner` then looked up the action again, filtered parameters again and reapplied descriptor defaults. These two decision paths could diverge while still appearing to represent one explicit binding.
+The audit found concrete mismatches:
 
-Built-in `implements` declarations also had no independent distribution-owned evidence describing:
+- Jenkins, GitHub Actions and Tekton could traverse or flatten retry bodies while discarding attempt, delay or backoff semantics;
+- GitHub environment protection and Azure approvals are resource-owned configuration, not proof that the current provider composes them;
+- Tekton did not compose approval controllers, retries, PipelineRun timeouts, `finally` tasks or scheduling;
+- error handlers, `finally`, always-run behavior and domain rollback were being treated too loosely;
+- CRON expression support did not prove timezone, concurrency or catch-up semantics;
+- preserved RETRY and TIMEOUT policy metadata lacked enough value and scope detail for exact certification.
 
-- which canonical parameters an action represents;
-- which canonical parameters it cannot represent;
-- which inputs are binding-only;
-- whether canonical semantic effects remain authoritative;
-- whether an implementation claim is concrete or only a semantic fallback.
+A platform feature list therefore remains context, not materialization authority.
 
-## Single runtime binding contract
+## Adapter-owned control evidence
 
-`IntentBindingContractAuthority` derives one target-neutral contract for an explicitly selected capability/module/action combination.
+`adapters/controls/builtin-control-materialization.yaml` declares exactly one claim per built-in target for approval, retry, timeout, compensation and scheduling. Evidence contract version `1.0` is enforced.
 
-It partitions canonical parameters into mapped and unsupported semantics and identifies binding-only action inputs. `CanonicalIntentMeaningAuthority` resolves authored values and descriptor defaults once and records each value source as `SEMANTIC`, `BINDING` or `DEFAULT`.
+Every family has a closed semantic contract partitioned into `supported`, `unsupported` and `unknown`. Each claim records mechanism, owner, exact scope, repository evidence, external platform context, prerequisites and limitations.
 
-`IntentToAstPlanner` consumes `IntentBindingEvidence.resolvedParameters`. It no longer re-reads the action descriptor or reapplies defaults. Selection remains explicit through `uses` and `params.system`; no registry order or apparent compatibility chooses an implementation.
+The completed honest matrix is:
 
-Canonical semantic effects are derived before binding. The only accepted binding effect policy is `PRESERVE_CANONICAL`.
+| Target | Approval | Retry | Timeout | Compensation | Scheduling |
+| --- | --- | --- | --- | --- | --- |
+| `local` | unknown | unknown | unknown | unknown | unknown |
+| `jenkins` | partial: inline manual approval | unsupported | unsupported | partial: protected error handler | partial: CRON |
+| `github-actions` | unsupported | unsupported | unsupported | unsupported | partial: CRON |
+| `tekton` | unsupported | unsupported | unsupported | unsupported | unsupported |
+| `argo-workflows` | unknown | unknown | unknown | unknown | unknown |
+| `azure-devops` | unknown | unknown | unknown | unknown | unknown |
 
-## Adapter binding certification
+Supported semantics require both independent `src/main` implementation evidence and independent `src/test` behavioral evidence. Registry references and official documentation cannot certify implementation support.
 
-`adapters/bindings/builtin-capability-bindings.yaml` is the strict distribution evidence authority for built-in implementation claims.
+Symbolic `#anchors` must resolve. Evidence paths are repository-relative, cannot escape through `..` or symlinks, and are validated identically for YAML-loaded and typed documents.
 
-Every record contains exact capability, module, action, binding class, system types, semantic parameter partition, binding-only parameters, effect policy, repository evidence and limitations.
+Supported claim scopes must equal the union required by their supported target-neutral semantics. Unknown future semantics produce a fail-closed report rather than an unhandled lookup exception.
 
-`AdapterCapabilityBindingAuthority` requires exact agreement between:
+## Runtime authority
 
-- module `implements` declarations;
-- canonical capability parameter contracts;
-- derived runtime binding contracts;
-- adapter-owned evidence records.
+Production responsibilities are separated while retaining one orchestration path:
 
-Missing, duplicate, unknown, unresolved, self-referential and incomplete evidence fails closed. Universally required canonical parameters cannot be declared unsupported.
+- `AdapterControlEvidenceIntegrityAuthority` validates inventory, semantic partitions, scopes, provider composition and evidence integrity;
+- `AdapterControlRequirementAuthority` derives target-neutral requirements from the actual `ExecutionPlan`;
+- `AdapterControlMaterializationAuthority` matches certified evidence and reconciles the decision into manifest evidence.
 
-## Honest implementation classifications
+Requirement derivation preserves exact semantic, subject, completeness and scope:
 
-Concrete implementation records currently cover:
+- manual approval becomes `approval.manual.inline` at `STEP` scope;
+- environment approval remains `approval.environment.resource` at `ENVIRONMENT` scope;
+- external and unknown modes cannot impersonate manual approval;
+- retry requirements remain at `TASK` scope;
+- timeout variants retain step, task, workflow, per-attempt or cumulative scope;
+- canonical flow-level error handling is recognized only from planner provenance (`onError_<n>` plus `errorHandlers.finally` capability) and actual preceding protected work;
+- detached empty-body handlers remain blocking;
+- scheduling derives CRON, interval, calendar, timezone, concurrency and catch-up requirements at `TRIGGER` scope;
+- incomplete preserved RETRY/TIMEOUT metadata remains `PRESERVED_UNSPECIFIED` and blocking.
 
-- `git.checkout#CHECKOUT`;
-- `docker.build#BUILD_IMAGE`;
-- `docker.push#PUSH_IMAGE`;
-- `argocd.sync#DEPLOY`;
-- `helm.upgrade#DEPLOY`;
-- `kubernetes.deploy#DEPLOY`;
-- `notify.send#NOTIFY`;
-- `notify.email#NOTIFY`;
-- `rest.call#CALL_API`.
+Requirement identifiers contain full semantic and canonical subject identity. Conflicting collisions fail rather than being silently deduplicated.
 
-`standard.rollback#ROLLBACK` is retained as `SEMANTIC_FALLBACK`; it does not certify native target rollback materialization.
+## Production materialization boundary
 
-A0.3 intentionally removes `argocd.sync → SYNC`. Canonical SYNC requires source and destination, while the action represents an Argo CD application plus sync options. The old claim could not preserve required meaning and is demoted instead of being approximated.
+`CliTargetEvidenceAuthority` evaluates control evidence before executable materialization. Successful and diagnostic paths use the same reconciliation method and record evidence version, decision, requirement count and blocker count.
 
-## Behavior and conformance
+Any unsupported or unknown requirement:
 
-A0.3 tests prove:
+- blocks executable readiness;
+- produces exact compatibility diagnostics;
+- retains a `REVIEW_ONLY` manifest for inspection;
+- prevents target syntax emission;
+- returns a distinct non-success CLI outcome when rendering was requested.
 
-- built-in evidence exactly matches implementation claims;
-- descriptor defaults are resolved once before AST lowering;
-- unsupported canonical parameters fail before AST creation;
-- the removed Argo CD SYNC claim cannot bind;
-- canonical meaning and effects survive explicit bindings;
-- source step, module, action and selected system provenance survive into ExecutionPlan;
-- missing `uses` remains unbound semantic work;
-- lifecycle completion requires independent implementation evidence and adjacent roadmap progress.
+Stable readiness diagnostics are produced by `TargetReadinessDiagnosticCodeAuthority`. Unknown internal statuses fail closed instead of inventing public diagnostic codes.
 
-Adapter inventory `1.2` adds five A0.3 checks after the frozen Core closure:
+## Behavioral proof
 
-- lifecycle integrity;
-- binding evidence integrity;
-- runtime binding authority;
-- semantic effect and provenance preservation;
-- unresolved and unsupported polarity.
+Tests cover positive and negative polarity for:
 
-The existing `AdapterStreamConformanceRunner` remains the single composition authority for A0.1, A0.2 and A0.3. A duplicate complete-stream runner found during final review was removed before the authoritative implementation boundary.
+- approval mode and scope preservation;
+- Jenkins provider-owned inline approval;
+- canonical and nested Jenkins protected `try/catch` boundaries;
+- detached-handler rejection;
+- Jenkins and GitHub Actions CRON through parser, planner, explicit target selection, control assessment, production manifest generation, readiness reconciliation and concrete rendering;
+- planner-derived `trigger.schedule.cron` provenance;
+- authored timezone rejection;
+- retry flattening rejection;
+- incomplete preserved timeout remaining unknown;
+- profile-only targets remaining unknown;
+- independent implementation and behavior evidence;
+- anchor resolution and repository-path containment;
+- typed evidence integrity;
+- stable diagnostic mapping;
+- blocked readiness with review-only evidence and no target artifact;
+- lifecycle rejection of premature evidence, skipped progress, missing required files and evidence-free completion.
+
+Adapter inventory `1.3` adds five A0.4 checks after the frozen Core closure: lifecycle integrity, control evidence integrity, runtime authority, unsupported-control demotion and platform-capability separation.
 
 ## Validation history
 
-Flow CI #2293 correctly rejected the first implementation because two binding-key sort expressions were not type-safe and nullable action/binding inputs did not smart-cast across the computed validity boundary.
+Earlier CI runs correctly rejected incomplete fixtures, imprecise evidence polarity, dynamic diagnostic codes, optimistic readiness assumptions, invalid runtime target-subset certification and schedule tests that bypassed production generation.
 
-Flow CI #2298 passed compilation and most binding tests, then rejected two remaining issues:
+The final review then exposed additional test-construction defects instead of hiding them:
 
-- a new test compared typed target provenance with the quoted legacy presentation string in `bindingMetadata`;
-- release metadata did not use the exact external-candidate evidence wording required by release honesty policy.
+- Flow CI #2371 rejected an invalid scope expectation and CRON fixtures that lacked executable provider work;
+- Flow CI #2373 rejected manually authored tasks without canonical effect evidence;
+- Flow CI #2374 proved Jenkins rendering and exposed missing GitHub schedule capability provenance;
+- Flow CI #2375 isolated the remaining GitHub failure to a trigger attached after planning;
+- the final fixture now injects the trigger into canonical AST and lets `FlowPlanner` derive `trigger.schedule.cron` before materialization.
 
-The test was corrected to compare `ExecutionPlan` selection fields against typed `IntentBindingEvidence`, and release metadata was corrected without weakening the policy.
+Flow CI #2376, run `30420527005`, passed exact implementation head `a5040767698fed38d6efd0118de40312c77c913e` and synthetic merge candidate `8c3b837cb9416acb2de3333a81b1c7eb811d492d`. Both compile/test and conformance jobs passed independently with adapter inventory `1.3` active.
 
-Flow CI #2300 passed exact-head and merge-candidate tests and conformance before final review found two competing classes claiming to compose the complete adapter stream. The new duplicate runner was removed and the existing canonical `AdapterStreamConformanceRunner` was extended to own inventory `1.2`.
-
-Flow CI #2303, run `30354834937`, passed the final implementation on:
-
-- exact head `f475ae8317122b986dec23a3d36bb8df05a31db3`;
-- synthetic merge candidate `afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8`;
-- Flow Agent tooling, structure validation and context generation;
-- complete compilation and tests;
-- frozen Core closure followed by adapter inventory `1.2`;
-- all A0.1, A0.2 and A0.3 checks.
-
-Flow CI #2310 correctly rejected the first completion head because the repository integration test asserted that the live metadata must remain in the `IMPLEMENTING` phase. Separate tests already proved the exact IMPLEMENTING and COMPLETED contracts, missing and premature evidence, adjacent later progress and skipped-item rejection. The repository test was corrected to require one valid supported phase rather than permanently freezing the item before completion.
-
-A0.3 remains `completed` and A0.4 remains `next`. The corrected completion-metadata head and its synthetic merge candidate must independently pass before PR #98 becomes ready for review. No A0.4 work package or implementation belongs to this PR.
+That passed implementation boundary is recorded in the A0.4 work package. The completion metadata commit must pass a separate exact-head and synthetic merge-candidate CI boundary before the PR is marked ready for review.
 
 ## Architecture boundary
 
-A0.3 did not add a renderer, provider, runtime executor, target-specific public DSL, automatic implementation selection, new canonical capability or new Core conformance check. It changed the explicit binding boundary and independent adapter certification while preserving the frozen Core model.
+A0.4 adds no renderer, provider, runtime executor, automatic target selection, target-specific public DSL, new canonical capability, new Core control kind or Core conformance check. Missing provider behavior remains explicit future adapter work.

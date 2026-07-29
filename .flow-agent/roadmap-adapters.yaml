@@ -35,6 +35,10 @@ rules:
   - "Binding parameter mapping is complete: every canonical parameter is mapped or explicitly unsupported."
   - "Resolved binding parameters and descriptor defaults are applied once before AST lowering."
   - "Module effects may support adapter evidence but never replace canonical semantic effects."
+  - "Control materialization consumes existing Core, intent, AST, failure and trigger contracts without redefining them."
+  - "A target registry summary flag or platform feature is never concrete control implementation evidence."
+  - "Every control family declares a complete supported, unsupported and unknown semantic partition."
+  - "Unsupported approval, retry, timeout, compensation and scheduling requirements force review-only diagnostic evidence."
   - "Adapter tests prove preserved semantics, not merely syntactically valid output."
   - "Adapter implementation lifecycle is distribution-owned and is not part of the public Flow standard."
   - "Maintenance evidence stays live throughout adapter work."
@@ -42,11 +46,11 @@ rules:
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
 
 currentDecision:
-  completedItem: "A0.3"
-  completedItemName: "Capability Binding Migration"
-  nextItem: "A0.4"
-  nextItemName: "Control Requirement Materialization"
-  decisionBasis: "Flow CI #2303 passed the final A0.3 implementation on exact head f475ae8317122b986dec23a3d36bb8df05a31db3 and synthetic merge candidate afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8. A0.4 is selected as the next bounded adapter item without including its work package or implementation."
+  completedItem: "A0.4"
+  completedItemName: "Control Requirement Materialization"
+  nextItem: "A0.5"
+  nextItemName: "Continuity Satisfaction Proof"
+  decisionBasis: "Flow CI #2376 passed the final A0.4 implementation on exact head a5040767698fed38d6efd0118de40312c77c913e and synthetic merge candidate 8c3b837cb9416acb2de3333a81b1c7eb811d492d. A0.5 is selected as the next bounded adapter item without including its work package or implementation."
 
 items:
   - version: "A0.1"
@@ -100,18 +104,24 @@ items:
   - version: "A0.4"
     name: "Control Requirement Materialization"
     type: "adapter-control"
-    status: next
+    status: completed
     purpose: "Provide evidence for concrete satisfaction of approval, retry, timeout, compensation and scheduling requirements."
     dependsOnCore: "0.9.7.7"
     dependsOnAdapters: "A0.3"
     completionEvidence:
-      - "Every native control claim has implementation and behavioral evidence."
-      - "Unsupported control forms are not approximated silently."
+      - "Every target has one complete claim for approval, retry, timeout, compensation and scheduling."
+      - "Every family partitions its closed semantic contract into supported, unsupported and unknown evidence."
+      - "Supported semantics require composed provider implementation and repository behavioral evidence."
+      - "Profile-only targets and semantic references remain unknown until a provider exists."
+      - "Runtime assessment is derived from actual plan nodes, preserved policies, failure rollback and schedule triggers."
+      - "Unsupported or unknown control forms become review-only diagnostic evidence and are never approximated silently."
+      - "A0.4 lifecycle integrity blocks evidence-free completion, missing required files and premature A0.5 selection."
+      - "Flow CI #2376 passed exact-head and synthetic merge-candidate compile, test and conformance validation with adapter inventory 1.3 active."
 
   - version: "A0.5"
     name: "Continuity Satisfaction Proof"
     type: "adapter-continuity"
-    status: planned
+    status: next
     purpose: "Prove that each adapter can satisfy declared data, artifact, mutable-state and durable-state dependencies."
     dependsOnCore: "0.9.7.4"
     dependsOnAdapters: "A0.4"

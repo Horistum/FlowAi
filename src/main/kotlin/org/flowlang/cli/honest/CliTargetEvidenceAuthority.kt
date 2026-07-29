@@ -1,5 +1,8 @@
 package org.flowlang.cli.honest
 
+import java.io.File
+import org.flowlang.adapters.control.AdapterControlMaterializationAuthority
+import org.flowlang.adapters.control.UnresolvedAdapterControlMaterializationException
 import org.flowlang.adapters.contract.AdapterDiagnosticIssue
 import org.flowlang.adapters.contract.AdapterDiagnosticSeverity
 import org.flowlang.adapters.contract.AdapterDiagnosticsReport
@@ -75,12 +78,20 @@ data class CliTargetEvidence(
  * not an exception. Structurally invalid or internally inconsistent plans still
  * fail, because diagnostic fallback must not become a bypass around materialization
  * integrity.
+ *
+ * Target-neutral planning authorization is necessary but not sufficient. The
+ * adapter control authority independently proves that approval, retry, timeout,
+ * compensation and scheduling requirements have a concrete provider mechanism.
+ * Platform capability folklore and registry summary flags are never accepted as
+ * enforcement evidence.
  */
 class CliTargetEvidenceAuthority(
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
+    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    rootDir: File = File(".")
 ) {
     private val pipeline = TargetManifestGenerationPipeline(targets, projections)
+    private val controlAuthority = AdapterControlMaterializationAuthority(rootDir, targets, projections)
 
     fun evaluate(
         plan: ExecutionPlan,
@@ -101,7 +112,9 @@ class CliTargetEvidenceAuthority(
         val diagnostics = mutableListOf<CliTargetDiagnostic>()
         var fallbackUsed = false
         val manifest = try {
-            pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict))
+            val controlAssessment = controlAuthority.requireMatched(plan, target)
+            val generated = pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict))
+            controlAuthority.reconcileDiagnostic(generated, controlAssessment)
         } catch (failure: RuntimeException) {
             if (!failure.isExpectedTargetBlocker()) throw failure
             fallbackUsed = true
@@ -111,7 +124,12 @@ class CliTargetEvidenceAuthority(
                 message = failure.message ?: "Target materialization is not executable; diagnostic evidence was generated.",
                 causeType = failure::class.simpleName
             )
-            pipeline.generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest(plan, explicitSelection))
+            val diagnostic = pipeline.generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest(plan, explicitSelection))
+            val controlAssessment = when (failure) {
+                is UnresolvedAdapterControlMaterializationException -> failure.assessment
+                else -> controlAuthority.assess(plan, target)
+            }
+            controlAuthority.reconcileDiagnostic(diagnostic, controlAssessment)
         }
 
         val manifests = listOf(manifest)
@@ -170,7 +188,8 @@ class CliTargetEvidenceAuthority(
         this is PlannerCapabilityConstraintViolation ||
             this is UnresolvedExecutionTopologyException ||
             this is UnresolvedPlanningContinuityException ||
-            this is UnresolvedPlanningControlException
+            this is UnresolvedPlanningControlException ||
+            this is UnresolvedAdapterControlMaterializationException
 
     private fun reconcileAdapterContract(
         preliminary: TargetAdapterContractReport,

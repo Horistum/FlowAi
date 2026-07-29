@@ -2,6 +2,58 @@
 
 ## Unreleased
 
+### A0.4 Control Requirement Materialization
+
+Started after A0.3 merged through PR #98 as `9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930`.
+
+Completed scope:
+
+- add a strict adapter-owned control materialization document for every built-in target;
+- declare exactly one approval, retry, timeout, compensation and scheduling claim per target;
+- partition each closed family contract into supported, unsupported and unknown semantics;
+- retain exact requirement semantic, subject, completeness and scope;
+- preserve manual, environment, external and unknown approval modes without reinterpretation;
+- separate repository implementation evidence from repository behavioral evidence and official platform capability context;
+- require independent `src/main` implementation and `src/test` behavior evidence for every supported semantic;
+- validate source anchors and reject repository-path escape, missing, duplicate, blank, self-referential and registry-only evidence;
+- apply identical integrity rules to YAML-loaded and typed evidence documents;
+- require supported claim scopes to equal the union required by supported target-neutral semantics;
+- return fail-closed reports for unknown future semantics instead of throwing lookup exceptions;
+- derive exact requirements from `ApprovalNode`, `RetryGroupNode`, protected `TryPlanNode`, failure rollback and schedule triggers;
+- retain preserved RETRY/TIMEOUT metadata as `PRESERVED_UNSPECIFIED` UNKNOWN blockers until exact scope and value survive lowering;
+- recognize the canonical flow-level handler only from planner provenance (`onError_<n>`, `errorHandlers.finally` and preceding protected work);
+- reject detached error handlers that do not protect work;
+- certify only Jenkins inline manual approval, protected Jenkins error handlers and Jenkins/GitHub CRON subsets currently implemented by composed providers;
+- prove CRON behavior through canonical AST, parser, planner, explicit selection, control assessment, manifest generation, readiness reconciliation and concrete rendering;
+- explicitly demote retry flattening, timeout absence, unguarded compensation, uncomposed environment approval and Tekton scheduling;
+- evaluate adapter controls before executable target materialization;
+- use one reconciliation authority for successful and diagnostic manifest metadata;
+- expose blocked execution readiness while retaining review-only evidence and preventing target syntax emission;
+- replace dynamic readiness diagnostic code concatenation with one closed mapping to stable catalog codes;
+- split evidence integrity, requirement derivation and materialization orchestration without creating a second production decision path;
+- require the complete production, test, conformance and documentation boundary before lifecycle completion;
+- extend the post-Core adapter inventory to version `1.3` with five A0.4 checks;
+- preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
+
+Architecture assessment:
+
+- Jenkins, GitHub Actions, Tekton, Argo Workflows, GitLab CI/CD and Azure Pipelines expose materially different control ownership and scope;
+- workflow primitives, run-object configuration, target-resource checks and external controllers cannot be represented by one target feature boolean;
+- Flow's meaning → exact requirement → provider evidence direction is retained;
+- general platform support and popular repository patterns remain context, not implementation authority.
+
+Validation history:
+
+- Earlier Flow CI runs rejected incomplete fixtures, release-honesty wording, imprecise evidence polarity, dynamic public diagnostic codes, optimistic readiness assumptions, invalid runtime subset certification and schedule tests that bypassed production generation.
+- Flow CI #2371 rejected a scope test that expected malformed evidence to pass and CRON fixtures without executable provider work.
+- Flow CI #2373 rejected manually authored tasks without canonical effect evidence.
+- Flow CI #2374 proved Jenkins rendering and exposed missing GitHub schedule capability provenance.
+- Flow CI #2375 isolated the remaining GitHub failure to a trigger attached after planning.
+- The final CRON fixture injects the trigger into canonical AST and lets `FlowPlanner` derive `trigger.schedule.cron` before provider materialization.
+- Flow CI #2376, run `30420527005`, passed exact implementation head `a5040767698fed38d6efd0118de40312c77c913e` and synthetic merge candidate `8c3b837cb9416acb2de3333a81b1c7eb811d492d`; both compile/test and conformance jobs passed independently.
+- The A0.4 work package records that passed implementation boundary, A0.4 is completed, and A0.5 is selected as next without including its work package or implementation.
+- The completion metadata head must pass a distinct exact-head and synthetic merge-candidate boundary before PR readiness.
+
 ### A0.3 Capability Binding Migration
 
 Started after A0.2 merged through PR #97 as `964a9c4f8bf9ce9dc8771c99a68393c9edc35807`.
@@ -33,7 +85,7 @@ Validation history:
 - Flow CI #2303, run `30354834937`, passed the final implementation on exact head `f475ae8317122b986dec23a3d36bb8df05a31db3` and synthetic merge candidate `afdfa505e96ba00eecf42a94d9b2e1ebe7059ec8`.
 - Flow CI #2310 rejected the first completion head because the repository lifecycle integration test was hardcoded to `IMPLEMENTING` even though exact phase tests already covered IMPLEMENTING and COMPLETED independently.
 - The repository test now accepts exactly one honest supported lifecycle phase while retaining explicit failure tests for missing evidence, premature evidence, skipped items and non-adjacent progress.
-- A0.3 remains `completed`, A0.4 remains `next`, and the corrected completion-metadata head must independently pass exact-head and merge-candidate validation before PR #98 becomes ready for review.
+- Flow CI #2313, run `30356352115`, passed the corrected completion state on exact head `53d9794e7d4165942339b8ae37db6c911f01f83a` and synthetic merge candidate `3a052e10fcbfca4e3fe237b5864f1efab0912758` before PR #98 merged.
 
 ### A0.2 Topology Evidence Adoption
 
