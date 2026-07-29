@@ -6,6 +6,8 @@ Next package line: `0.9.6`
 Active public standard version: `0.8.0`
 Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
+Completed correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Correction`
+Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
 Completed adapter roadmap item: `A0.4 Control Requirement Materialization` (`completed`)
 Next adapter roadmap item: `A0.5 Continuity Satisfaction Proof` (`next`, no work package or implementation included)
 
