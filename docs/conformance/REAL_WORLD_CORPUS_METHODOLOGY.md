@@ -4,6 +4,20 @@
 
 The corpus measures whether Flow preserves externally authored automation intent across normalization, planning and target assessment. It is not a syntax-transpilation benchmark.
 
+## Catalog authority separation
+
+`scenarios.yaml` remains the broad research catalog. Its entries are hypotheses and coverage planning records.
+
+`accepted-scenarios.yaml` is a separate executable authority. Every entry must:
+
+- exist in the broad catalog with the same category and admission class;
+- have lifecycle `ACCEPTED` and claim `accepted-evidence`;
+- identify an exact case package;
+- cite all immutable sources used by the accepted evidence;
+- agree with the case package's actual expected outcome.
+
+This separation prevents later evidence from silently rewriting the historical research hypothesis. It also permits a negative case to cite both a semantic reference and an independent valid workflow used as the mutation fixture.
+
 ## Executed evaluation pipeline
 
 Every accepted case is exercised through the production semantic path:
@@ -33,7 +47,7 @@ Nine schemas cover:
 
 - corpus manifest;
 - source catalog;
-- scenario catalog;
+- scenario catalogs;
 - case definition;
 - immutable provenance;
 - expected plan semantics;
@@ -41,7 +55,7 @@ Nine schemas cover:
 - accepted evidence;
 - negative mutations.
 
-The loader additionally verifies repository-bounded paths, immutable revisions, SPDX agreement, catalog counts, source references, unique task and mutation identities, continuity channel names and evidence-to-expectation agreement.
+The loader additionally verifies repository-bounded paths, immutable revisions, SPDX agreement, catalog counts, source references, accepted-index identity and case-path parity, unique task and mutation identities, continuity channel names and evidence-to-expectation agreement.
 
 ## Source admission
 
@@ -60,7 +74,7 @@ MUTATION_VALIDATED
 ACCEPTED
 ```
 
-A case cannot be loaded as executable evidence below `MUTATION_VALIDATED`, and its committed evidence must be `ACCEPTED`.
+A case cannot be loaded as executable evidence below `MUTATION_VALIDATED`, its accepted-index entry must be `ACCEPTED`, and its committed evidence must be `ACCEPTED`.
 
 ## Complete case package
 
@@ -78,7 +92,7 @@ mutations/<mutation>/intent.yaml
 evidence/result.yaml
 ```
 
-`case.yaml` owns identity, source linkage and invariants. Generated plan output never rewrites that authority.
+`case.yaml` owns identity, primary source linkage and invariants. The accepted index may cite additional independent supporting sources. Generated plan output never rewrites either authority.
 
 ## Intent reconstruction
 
