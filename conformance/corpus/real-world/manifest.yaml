@@ -11,6 +11,16 @@ scope:
 catalogs:
   sources: conformance/corpus/real-world/sources.yaml
   scenarios: conformance/corpus/real-world/scenarios.yaml
+schemas:
+  manifest: schemas/real-world-corpus.schema.json
+  sources: schemas/real-world-source.schema.json
+  scenarios: schemas/real-world-scenario.schema.json
+  case: schemas/real-world-case.schema.json
+  provenance: schemas/real-world-provenance.schema.json
+  expectedPlan: schemas/real-world-expected-plan.schema.json
+  targetAssessments: schemas/real-world-target-assessments.schema.json
+  evidence: schemas/real-world-evidence.schema.json
+  mutation: schemas/real-world-mutation.schema.json
 casePackages:
 - cases/C02-ordering-only-diamond
 - cases/C06-artifact-transfer
