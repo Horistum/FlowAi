@@ -4,6 +4,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.flowlang.ast.ScheduleNode
+import org.flowlang.ast.TriggerNode
 import org.flowlang.cli.honest.CliTargetEvidence
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
@@ -13,8 +15,6 @@ import org.flowlang.parser.FlowParser
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
-import org.flowlang.planner.PlanSchedule
-import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.TryPlanNode
 import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.BuiltInTargetProjections
@@ -133,39 +133,43 @@ class AdapterControlProviderBehaviorTests {
         )
 
     private fun schedulePlan(flowName: String): ExecutionPlan {
-        val planned = FlowPlanner(modules).plan(
-            FlowParser().parse(
-                """
-                version "1.0"
-                use module "git" version "1.0"
+        val document = FlowParser().parse(
+            """
+            version "1.0"
+            use module "git" version "1.0"
 
-                flow "$flowName" {
-                  systems {
-                    system "repo" {
-                      type: git
-                      url: "https://github.com/openai/openai.git"
-                      branch: "main"
-                    }
-                  }
-
-                  steps {
-                    git.checkout repo {
-                      depth: 2
-                    }
-                  }
+            flow "$flowName" {
+              systems {
+                system "repo" {
+                  type: git
+                  url: "https://github.com/openai/openai.git"
+                  branch: "main"
                 }
-                """.trimIndent()
-            )
+              }
+
+              steps {
+                git.checkout repo {
+                  depth: 2
+                }
+              }
+            }
+            """.trimIndent()
         )
-        return planned.copy(
-            triggers = listOf(
-                PlanTrigger(
-                    id = "nightly",
-                    type = "SCHEDULE",
-                    schedule = PlanSchedule(kind = "CRON", expression = "0 2 * * *")
+        val scheduledDocument = document.copy(
+            flow = document.flow.copy(
+                triggers = listOf(
+                    TriggerNode(
+                        id = "nightly",
+                        triggerType = "SCHEDULE",
+                        schedule = ScheduleNode(kind = "CRON", expression = "0 2 * * *")
+                    )
                 )
             )
         )
+        val plan = FlowPlanner(modules).plan(scheduledDocument)
+        assertEquals(listOf("trigger.schedule.cron"), plan.triggers.single().requiredCapabilities)
+        assertTrue("trigger.schedule.cron" in plan.requiredCapabilities)
+        return plan
     }
 
     private fun CliTargetEvidence.failureSummary(): String = buildString {
