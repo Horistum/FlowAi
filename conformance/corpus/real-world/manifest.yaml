@@ -19,9 +19,9 @@ counts:
   admittedSources: 11
   screenedSources: 4
   scenarios: 44
-  admittedScenarios: 21
-  screenedScenarios: 8
-  plannedScenarios: 15
+  admittedScenarios: 19
+  screenedScenarios: 9
+  plannedScenarios: 16
 invariants:
 - A source is never admitted from a mutable branch reference.
 - A source workflow is evidence of platform behavior, not the authority for universal Flow meaning.
