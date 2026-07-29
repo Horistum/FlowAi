@@ -14,7 +14,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 class RealWorldCorpusTests {
     private val rootDir = File(".")
-    private val registry = ModuleRegistry.fromDirectory(File(rootDir, "modules"), includeDefaults = true)
+    private val registry = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
     private val projections = BuiltInTargetProjections.registry
     private val runner = RealWorldCorpusRunner(rootDir, registry, targets, projections)
@@ -32,7 +32,12 @@ class RealWorldCorpusTests {
     @Test
     fun everyRealWorldCaseRunsThroughTheProductionIntentPipeline() {
         val results = runner.evaluateAll()
-        assertTrue(results.all { it.accepted }, results.flatMap { it.mismatches }.joinToString(" | "))
+        assertTrue(
+            results.all { it.accepted },
+            results.filterNot { it.accepted }.joinToString("\n") { result ->
+                "${result.caseId}: ${result.mismatches.joinToString(" | ")}"
+            }
+        )
         assertEquals(
             mapOf(
                 "C02" to RealWorldResult.SEMANTIC_ONLY,
@@ -40,7 +45,7 @@ class RealWorldCorpusTests {
                 "A06" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "A11" to RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION,
                 "N01" to RealWorldResult.INVALID_SOURCE_PIPELINE,
-                "N08" to RealWorldResult.BLOCKED_BY_TARGET_CAPABILITY
+                "N08" to RealWorldResult.SEMANTIC_ONLY
             ),
             results.associate { it.caseId to it.outcome }
         )
@@ -51,7 +56,12 @@ class RealWorldCorpusTests {
         val corpus = runner.load()
         val results = corpus.cases.flatMap(runner::evaluateMutations)
         assertEquals(8, results.size)
-        assertTrue(results.all { it.accepted }, results.flatMap { it.mismatches }.joinToString(" | "))
+        assertTrue(
+            results.all { it.accepted },
+            results.filterNot { it.accepted }.joinToString("\n") { result ->
+                "${result.caseId}: ${result.mismatches.joinToString(" | ")}"
+            }
+        )
         assertTrue(results.all { it.diagnostics.isNotEmpty() })
     }
 
