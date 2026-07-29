@@ -77,6 +77,16 @@ class AdapterControlRoadmapLifecycleAuthorityTests {
     }
 
     @Test
+    fun completionWithMissingRequiredFilesFailsClosed() {
+        val report = authority.evaluate(
+            completedInput().copy(requiredFilesPresent = false)
+        )
+
+        assertEquals("FAIL", report.status)
+        assertTrue("adapters.a0.4.required-files" in report.failedChecks)
+    }
+
+    @Test
     fun implementationRejectsPrematureEvidence() {
         val report = authority.evaluate(
             implementingInput().copy(implementationEvidence = passingEvidence())
@@ -100,7 +110,8 @@ class AdapterControlRoadmapLifecycleAuthorityTests {
         releasePrimaryStream = "adapters",
         releaseCompletedItem = "A0.3",
         releaseNextItem = "A0.4",
-        implementationEvidence = AdapterWorkflowEvidence.ABSENT
+        implementationEvidence = AdapterWorkflowEvidence.ABSENT,
+        requiredFilesPresent = true
     )
 
     private fun completedInput() = AdapterControlLifecycleInput(
@@ -117,7 +128,8 @@ class AdapterControlRoadmapLifecycleAuthorityTests {
         releasePrimaryStream = "adapters",
         releaseCompletedItem = "A0.4",
         releaseNextItem = "A0.5",
-        implementationEvidence = passingEvidence()
+        implementationEvidence = passingEvidence(),
+        requiredFilesPresent = true
     )
 
     private fun passingEvidence() = AdapterWorkflowEvidence(
