@@ -1,0 +1,17 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: c06-artifact-transfer
+description: Preserve named artifact identity from producer to consumer.
+workflows:
+- name: main
+  kind: CUSTOM
+  steps:
+  - id: produce-artifact
+    capability: CUSTOM
+    produces: [package_bundle]
+    params: {operation: package}
+  - id: consume-artifact
+    capability: CUSTOM
+    requires: [produce-artifact]
+    params: {operation: consume, artifact: 'ref:package_bundle'}
+failure: {notify: false, rollback: false, stopOnError: true}

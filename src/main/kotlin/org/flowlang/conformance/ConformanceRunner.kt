@@ -15,20 +15,16 @@ import org.flowlang.generators.manifest.TargetProjectionRegistry
  * The bounded semantic closure check terminates the frozen Core evidence phase.
  * Adapter-stream certification runs afterwards from its own committed inventory,
  * so adapter evolution cannot rewrite the evidence set that closed Core v0.9.7.
+ * The real-world corpus runs last as a post-Core, non-activating behavioral
+ * evidence track and therefore cannot rewrite either frozen inventory.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
     private val registry: ModuleRegistry =
-        if (File(rootDir, "modules").isDirectory) {
-            ModuleRegistry.fromDirectory(File(rootDir, "modules"))
-        } else {
-            ModuleRegistry()
-        },
+        if (File(rootDir, "modules").isDirectory) ModuleRegistry.fromDirectory(File(rootDir, "modules")) else ModuleRegistry(),
     private val targets: Map<String, org.flowlang.capabilities.TargetCapability> =
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")).also {
-            require(it.isNotEmpty()) {
-                "No target registry found under ${File(rootDir, "targets").path}."
-            }
+            require(it.isNotEmpty()) { "No target registry found under ${File(rootDir, "targets").path}." }
         },
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
@@ -55,12 +51,12 @@ class ConformanceRunner(
         checks += ArchitectureCoherenceChecks(rootDir, registry, targets, projections).checks()
         checks += DeltaPurposeChecks(rootDir, registry, targets, projections).checks()
         checks += ConformanceQualityGates.run()
-
         val releaseLifecycle = ReleaseMetadataHonestyAuthority(rootDir).analyze()
         if (releaseLifecycle.status != "PASS" || releaseLifecycle.closurePhase != "CORRECTION_REQUIRED") {
             checks += SemanticClosureChecks(rootDir).checks(checks.toList())
         }
         checks += AdapterStreamConformanceRunner(rootDir, targets, projections).checks()
+        checks += RealWorldCorpusConformanceChecks(rootDir, registry, targets, projections).checks()
         return ConformanceSummary(checks)
     }
 }

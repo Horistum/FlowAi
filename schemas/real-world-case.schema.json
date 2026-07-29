@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Case",
+  "type": "object",
+  "required": ["kind", "version", "id", "title", "lifecycle", "category", "sourceRef", "source", "sourceObservations", "intent", "expected", "evidence", "mutations", "invariants"],
+  "properties": {
+    "kind": {"const": "FlowRealWorldCase"},
+    "version": {"type": "string"},
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "lifecycle": {"enum": ["MUTATION_VALIDATED", "ACCEPTED"]},
+    "category": {"enum": ["common", "production", "advanced", "negative"]},
+    "sourceRef": {"type": "string"},
+    "source": {"type": "object", "required": ["workflow", "provenance", "license"]},
+    "sourceObservations": {"type": "string"},
+    "intent": {"type": "string"},
+    "expected": {"type": "object", "required": ["executionPlan", "targetAssessments"]},
+    "evidence": {"type": "string"},
+    "mutations": {"type": "array", "items": {"type": "object", "required": ["id", "definition"]}},
+    "invariants": {"type": "array", "items": {"type": "string"}}
+  }
+}

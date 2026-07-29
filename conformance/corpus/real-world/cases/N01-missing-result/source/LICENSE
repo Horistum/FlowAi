@@ -1,0 +1,2 @@
+SPDX-License-Identifier: Apache-2.0
+Source: argoproj/argo-workflows@d98d7b7d73d1b24dd7258153453ea612dbb70092:examples/artifact-passing.yaml

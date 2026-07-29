@@ -2,160 +2,99 @@
 
 ## Purpose
 
-The corpus measures whether Flow preserves externally authored automation intent across normalization, planning and target assessment.
+The corpus measures whether Flow preserves externally authored automation intent across normalization, planning and target assessment. It is not a syntax-transpilation benchmark.
 
-It is not a syntax-transpilation benchmark. Textual similarity to the source pipeline is irrelevant unless it corresponds to preserved observable meaning.
+## Executed evaluation pipeline
 
-## Evaluation pipeline
+Every accepted case is exercised through the production semantic path:
 
 ```text
 immutable external source
-    -> source behavior inventory
-    -> reconstructed author intent
-    -> universal requirements and invariants
-    -> Flow canonical intent
-    -> Flow AST
-    -> ExecutionPlan
-    -> explicit target selection
-    -> target assessment or materialization
-    -> semantic comparison and negative mutations
+-> source behavior inventory
+-> reconstructed author intent
+-> strict Intent YAML loader
+-> IntentCapabilityValidator
+-> IntentToAstPlanner
+-> FlowValidator
+-> FlowPlanner
+-> semantic expectation comparison
+-> target compatibility/readiness/materialization assessment
+-> negative mutations
 ```
 
-No stage may use the output of the stage it is validating as its own expected evidence.
+No stage uses the output it validates as its own expectation. Expected task identities, dependency relations, required features and diagnostics are committed independently in each case package.
 
 ## Source admission
 
-An admitted source must record:
+An admitted source records repository identity, immutable commit revision, exact path, source class, license evidence and semantic reason for inclusion. Every executable case vendors a bounded attributed source fixture plus provenance and an SPDX notice. The fixture is evidence input, not a target template.
 
-1. repository identity;
-2. immutable commit revision;
-3. exact path;
-4. source class;
-5. license evidence;
-6. semantic reason for inclusion.
+## Case lifecycle
 
-A mutable branch, a marketing page or a hand-written paraphrase is insufficient.
+```text
+CATALOGUED
+SOURCE_VERIFIED
+INTENT_RECONSTRUCTED
+FIXTURE_AUTHORED
+PLAN_VALIDATED
+TARGET_ASSESSED
+MUTATION_VALIDATED
+ACCEPTED
+```
 
-An official semantic reference may remain `screened`. It can justify a research hypothesis, but cannot certify executable behavior.
+A case cannot be loaded as executable evidence below `MUTATION_VALIDATED`, and its committed evidence must be `ACCEPTED`.
 
-## Intent reconstruction
-
-The source must first be described without vendor syntax.
-
-For every case, record:
-
-- desired outcome;
-- actors and external systems;
-- triggers;
-- dependency graph;
-- values and artifacts transferred;
-- workspace and state lifetime;
-- controls, approvals, retry, timeout and compensation;
-- security and identity assumptions;
-- failure and cleanup behavior;
-- invariants that must remain true.
-
-Ambiguity is an allowed result. The evaluator must not invent author intent simply because Flow requires a field.
-
-## Continuity classification
-
-Ordering only proves that a predecessor completes before a consumer may run.
-
-Continuity must be classified separately:
-
-- `value`: scalar or structured data consumed by later work;
-- `artifact`: a named, immutable or packaged output transferred through an artifact mechanism;
-- `workspace`: files shared through a workspace lifetime;
-- `state`: mutable or durable state whose identity survives task boundaries.
-
-`artifact` is a corpus observation, not automatically a new Core dependency kind. The Flow mapping must state whether the artifact is represented by VALUE, WORKSPACE, STATE and the artifact contract, and why.
-
-## Result vocabulary
-
-- `SUPPORTED`: universal meaning is represented and the selected target has complete evidence.
-- `SUPPORTED_WITH_BINDING`: meaning is represented but a concrete, explicit adapter binding is required.
-- `SEMANTIC_ONLY`: Flow preserves intent and requirements but no selected target has executable evidence.
-- `BLOCKED_BY_TARGET_CAPABILITY`: Flow meaning is valid, but the selected target cannot satisfy a required invariant.
-- `AMBIGUOUS_SOURCE_INTENT`: the source does not establish one safe interpretation.
-- `UNSUPPORTED_DYNAMIC_CONSTRUCTION`: runtime creation of workflow structure exceeds the current planning contract.
-- `INVALID_SOURCE_PIPELINE`: the reconstructed source contains a missing, contradictory or invalid dependency.
-
-A baseline expectation is only a hypothesis. It becomes a result only after committed evidence is produced.
-
-## Scoring dimensions
-
-Each completed case receives an evidence-backed assessment in seven dimensions:
-
-1. **Intent fidelity**: desired outcome and source identity remain present.
-2. **Constraint fidelity**: policies, permissions, environment and resource constraints remain present.
-3. **Failure fidelity**: failure propagation, retry, cleanup and compensation remain equivalent.
-4. **Continuity fidelity**: values, artifacts, workspaces and state reach the correct consumers with the required identity and lifetime.
-5. **Portability honesty**: unsupported target behavior is blocked rather than approximated.
-6. **Diagnostic precision**: failure identifies the exact relation, source, consumer and missing evidence.
-7. **Target neutrality**: no vendor object becomes universal Core meaning.
-
-A numeric aggregate may be reported for observation, but cannot override a blocking invariant.
-
-## Case package
-
-A completed case should contain:
+## Complete case package
 
 ```text
 case.yaml
+source/workflow.yaml
+source/provenance.yaml
+source/LICENSE
 source-observations.md
 canonical.intent.yaml
 expected/execution-plan.json
 expected/target-assessments.yaml
-mutations/
-evidence/
+mutations/<mutation>/mutation.yaml
+mutations/<mutation>/intent.yaml
+evidence/result.yaml
 ```
 
-`case.yaml` owns identity and required invariants. Generated artifacts never rewrite that authority.
+`case.yaml` owns identity, source linkage and invariants. Generated plan output never rewrites that authority.
+
+## Intent reconstruction
+
+Each observation file records observed behavior, reconstructed target-neutral intent, invariants and ambiguities. Ambiguity is an allowed result.
+
+## Continuity classification
+
+Ordering proves only that one node completes before another may run. Continuity is classified separately as value, artifact, workspace or state. Artifact remains a corpus observation and maps explicitly to an existing VALUE, WORKSPACE or STATE relation plus an adapter artifact contract.
+
+## Result vocabulary
+
+- `SUPPORTED`: universal meaning and selected target evidence are executable.
+- `SUPPORTED_WITH_BINDING`: universal meaning is represented but a concrete adapter binding is required.
+- `SEMANTIC_ONLY`: intent is understood but a required structure or selected target remains review-only.
+- `BLOCKED_BY_TARGET_CAPABILITY`: target execution would violate a required invariant.
+- `AMBIGUOUS_SOURCE_INTENT`: no single safe interpretation is established.
+- `UNSUPPORTED_DYNAMIC_CONSTRUCTION`: runtime-created topology exceeds the current planning contract.
+- `INVALID_SOURCE_PIPELINE`: a producer, relation or other required dependency is missing or contradictory.
+
+## Plan comparison
+
+Expected plans compare exact authored task source IDs, semantic capability, node kind, producer-to-consumer relations, relation kind, channel identity, forbidden sibling ordering, required structural features, exact diagnostics and expected representability outcome.
+
+## Target assessment
+
+For each target expectation the harness executes CompatibilityAnalyzer, ExecutionReadinessAnalyzer, TargetManifestGenerationPipeline where allowed and TargetRenderPolicy. Cases with known semantic loss are blocked before target materialization.
 
 ## Negative mutations
 
-Each positive case should produce mutations that remove or corrupt one important property:
+The initial baseline covers removed fan-in, removed branch, wrong artifact reference, ordering-only artifact substitution, removed approval output, removed matrix producer output, missing consumer result and serialized siblings with incomplete fan-in. A mutation passes only when exact diagnostics and outcome match.
 
-- remove a producer;
-- rename a consumed output;
-- change artifact identity;
-- replace workspace transfer with ordering only;
-- shorten state lifetime;
-- remove approval;
-- change fail-fast behavior;
-- serialize required parallel branches;
-- detach cleanup from protected work;
-- replace an immutable revision with a mutable source.
+## Core boundary
 
-A mutation passes only when Flow rejects it or produces the exact declared review-only result.
+The corpus runs after frozen Core and adapter inventories. It cannot rewrite closure evidence or adapter certification counts.
 
-## Core-change gate
+## Current executable baseline
 
-An external feature may lead to a Core proposal only when:
-
-1. it appears across more than one implementation family;
-2. it describes author intent rather than target syntax;
-3. bindings cannot preserve it without semantic loss;
-4. the missing concept causes an observable invariant to be lost;
-5. its dependencies, effects, failure semantics and diagnostics can be specified independently;
-6. negative examples prove its boundary.
-
-Until then, the corpus records the gap. It does not reward architectural impatience with a new enum.
-
-## A0.5 use
-
-A0.5 should select the continuity-focused cases and prove adapter behavior against existing `ORDERING`, `VALUE`, `WORKSPACE` and `STATE` relations.
-
-The corpus must not allow:
-
-- target registry labels to certify themselves;
-- action support to substitute for producer-to-consumer behavior;
-- artifact upload support to imply correct artifact identity;
-- a shared filesystem to imply durable state;
-- successful ordering to imply value or workspace transfer.
-
-## C0.1 use
-
-C0.1 may later activate the broader three-domain corpus after its lifecycle and evidence boundaries are defined.
-
-This baseline is input to that work. It is not completion evidence for it.
+Six cases are executed: C02, C06, A06, A11, N01 and N08. Remaining catalog entries stay research hypotheses until they receive the same complete package and mutation evidence.

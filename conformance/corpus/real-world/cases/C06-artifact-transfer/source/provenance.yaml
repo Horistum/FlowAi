@@ -1,0 +1,4 @@
+repository: argoproj/argo-workflows
+revision: d98d7b7d73d1b24dd7258153453ea612dbb70092
+path: examples/artifact-passing.yaml
+license: Apache-2.0

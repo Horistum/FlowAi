@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Corpus Manifest",
+  "type": "object",
+  "required": ["kind", "version", "status", "name", "catalogs", "casePackages", "counts", "invariants"],
+  "properties": {
+    "kind": {"const": "FlowRealWorldCorpus"},
+    "version": {"type": "string"},
+    "status": {"const": "executable-baseline"},
+    "name": {"type": "string"},
+    "catalogs": {"type": "object", "required": ["sources", "scenarios"]},
+    "casePackages": {"type": "array", "items": {"type": "string"}},
+    "counts": {"type": "object", "required": ["sources", "scenarios", "executableCases", "mutationCases"]},
+    "invariants": {"type": "array", "items": {"type": "string"}}
+  }
+}

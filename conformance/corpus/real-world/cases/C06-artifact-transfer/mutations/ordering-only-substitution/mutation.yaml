@@ -1,0 +1,13 @@
+kind: FlowRealWorldMutation
+version: '0.2'
+id: ordering-only-substitution
+intent: intent.yaml
+expectedGenerated: true
+expectedOutcome: SEMANTIC_ONLY
+expectedDiagnostics: [REAL_WORLD_REQUIRED_RELATION_MISSING, REAL_WORLD_ARTIFACT_IDENTITY_NOT_REPRESENTED]
+tasks:
+- {sourceId: produce-artifact, semanticCapability: CUSTOM, nodeKind: Task}
+- {sourceId: consume-artifact, semanticCapability: CUSTOM, nodeKind: Task}
+requiredRelations: [{source: produce-artifact, target: consume-artifact, kind: VALUE, channel: package_bundle}]
+forbiddenOrdering: []
+requiredFeatures: [artifact-identity]

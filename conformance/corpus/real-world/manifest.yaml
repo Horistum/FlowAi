@@ -1,19 +1,23 @@
 kind: FlowRealWorldCorpus
-version: '0.1'
-status: baseline
+version: '0.2'
+status: executable-baseline
 name: real-world-pipeline-representability
 scope:
-  domains:
-  - software-delivery
-  - data-transformation
-  - infrastructure-state-change
-  primaryUse: Independent representability and continuity evidence.
+  domains: [software-delivery, data-transformation, infrastructure-state-change]
+  primaryUse: Independent representability, continuity and negative-mutation evidence.
   roadmapRelationship:
-    A0.5: Consumes continuity-focused cases without redefining or replacing the adapter work item.
-    C0.1: Receives this catalog as non-activating research input for the later bounded domain corpus.
+    A0.5: Consumes continuity-focused behavioral cases without redefining or replacing the adapter work item.
+    C0.1: Receives the broader catalog and accepted case packages as bounded-domain evidence.
 catalogs:
   sources: conformance/corpus/real-world/sources.yaml
   scenarios: conformance/corpus/real-world/scenarios.yaml
+casePackages:
+- cases/C02-ordering-only-diamond
+- cases/C06-artifact-transfer
+- cases/A06-typed-human-input
+- cases/A11-output-driven-matrix
+- cases/N01-missing-result
+- cases/N08-parallelism-loss
 counts:
   sources: 15
   admittedSources: 11
@@ -22,11 +26,13 @@ counts:
   admittedScenarios: 19
   screenedScenarios: 9
   plannedScenarios: 16
+  executableCases: 6
+  mutationCases: 8
 invariants:
 - A source is never admitted from a mutable branch reference.
 - A source workflow is evidence of platform behavior, not the authority for universal Flow meaning.
 - Ordering is not accepted as value, workspace, artifact or state continuity.
-- Every result is a hypothesis until a canonical intent, execution plan and target assessment are committed.
+- Every accepted case owns a canonical intent, expected plan semantics, target assessment, mutation evidence and immutable source provenance.
 - Unsupported or ambiguous behavior remains explicit and cannot be converted to PASS by approximation.
-- The corpus cannot mutate the frozen Core pre-closure inventory.
+- The corpus runs after frozen Core and adapter inventories and cannot mutate either evidence boundary.
 - No corpus case creates a new Core capability merely because one platform exposes a feature.

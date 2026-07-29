@@ -1,0 +1,10 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: n01-second-missing-result
+workflows:
+- name: main
+  kind: CUSTOM
+  steps:
+  - {id: produce-artifact, capability: CUSTOM, produces: [package_bundle], params: {operation: package}}
+  - {id: consume-artifact, capability: CUSTOM, requires: [produce-artifact], params: {operation: consume, artifact: 'ref:another_missing_bundle'}}
+failure: {notify: false, rollback: false, stopOnError: true}

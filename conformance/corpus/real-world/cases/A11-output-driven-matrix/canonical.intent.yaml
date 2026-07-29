@@ -1,0 +1,14 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: a11-output-driven-matrix
+description: Preserve output continuity while refusing to approximate runtime matrix expansion.
+workflows:
+- name: main
+  kind: CUSTOM
+  steps:
+  - {id: discover-versions, capability: CUSTOM, produces: [versions], params: {operation: discover-lts}}
+  - id: test-versions
+    capability: CUSTOM
+    requires: [discover-versions]
+    params: {operation: test-matrix, versions: 'ref:versions'}
+failure: {notify: false, rollback: false, stopOnError: true}

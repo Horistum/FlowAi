@@ -1,0 +1,19 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: C06
+title: Named artifact producer-to-consumer transfer
+lifecycle: MUTATION_VALIDATED
+category: common
+sourceRef: argo-artifact-passing
+source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: wrong-artifact-reference, definition: mutations/wrong-artifact-reference/mutation.yaml}
+- {id: ordering-only-substitution, definition: mutations/ordering-only-substitution/mutation.yaml}
+invariants:
+- The consumer receives the exact artifact identity produced upstream.
+- Ordering alone is insufficient continuity evidence.
+- A renamed or missing artifact blocks the case.

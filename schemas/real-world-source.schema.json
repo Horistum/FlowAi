@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Source Catalog",
+  "type": "object",
+  "required": ["kind", "version", "status", "sources"],
+  "properties": {
+    "kind": {"const": "FlowRealWorldSourceCatalog"},
+    "version": {"type": "string"},
+    "status": {"type": "string"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "platform", "sourceKind", "admission", "repository", "revision", "path", "license", "semanticLoad"],
+        "properties": {
+          "id": {"type": "string"},
+          "platform": {"type": "string"},
+          "sourceKind": {"type": "string"},
+          "admission": {"type": "string"},
+          "repository": {"type": "string"},
+          "revision": {"type": "string"},
+          "path": {"type": "string"},
+          "license": {"type": "object", "required": ["status", "evidence"]},
+          "semanticLoad": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

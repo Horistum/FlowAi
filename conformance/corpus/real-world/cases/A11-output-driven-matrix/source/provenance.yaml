@@ -1,0 +1,4 @@
+repository: prometheus/prometheus
+revision: 40ea54d0b1d265b8dc830c88ef96b0b65f3ba0be
+path: .github/workflows/ci.yml
+license: Apache-2.0

@@ -1,0 +1,18 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: A11
+title: Output-driven downstream matrix
+lifecycle: MUTATION_VALIDATED
+category: advanced
+sourceRef: prometheus-ci
+source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: versions-output-removed, definition: mutations/versions-output-removed/mutation.yaml}
+invariants:
+- The producer value reaches the matrix consumer.
+- Matrix cardinality is derived at runtime from the producer output.
+- The workflow is not approximated as one ordinary task.

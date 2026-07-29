@@ -2,103 +2,55 @@
 
 ## Status
 
-`BASELINE_ONLY`
+`EXECUTABLE_BASELINE`
 
-This report records the survey and expected pressure points on main commit `a3b8c13783a37ea7b6176eddc4760cae3149a983`.
+Base reviewed from main commit `a3b8c13783a37ea7b6176eddc4760cae3149a983`; executable evidence is owned by PR #100 case packages and post-Core conformance checks.
 
-It is not a Flow execution result, target certification or roadmap transition.
+This report is not A0.5 completion evidence and does not promote any adapter support class.
 
-## Corpus inventory
+## Inventory
 
-- sources: 15
-- admitted immutable sources: 11
-- screened semantic references: 4
-- scenarios: 44
-- admitted scenarios: 19
-- screened scenarios: 9
-- planned scenarios: 16
+- immutable source records: 15;
+- broad scenarios: 44;
+- complete executable cases: 6;
+- executed negative mutations: 8;
+- schemas: 3;
+- post-Core checks: 8.
 
-## Existing universal boundary
+## Accepted cases
 
-The current ExecutionPlan distinguishes:
+| Case | Actual result | Key proof |
+|---|---|---|
+| C02 | SEMANTIC_ONLY | required diamond is detected as serialized |
+| C06 | SUPPORTED_WITH_BINDING | named producer-to-consumer value continuity |
+| A06 | SUPPORTED_WITH_BINDING | typed inputs, approval and approval output |
+| A11 | UNSUPPORTED_DYNAMIC_CONSTRUCTION | value preserved, runtime matrix absent |
+| N01 | INVALID_SOURCE_PIPELINE | missing producer blocks planning |
+| N08 | BLOCKED_BY_TARGET_CAPABILITY | silent loss of parallelism is blocking |
 
-- `ORDERING`;
-- `VALUE`;
-- `WORKSPACE`;
-- `STATE`.
+## Behavioral evidence
 
-That is an appropriate starting model. The baseline found no justification for changing it before behavioral adapter evidence exists.
+The harness uses the real Intent loader, capability validator, Intent-to-AST lowering, Flow validation and planner. Target expectations use compatibility, execution readiness, manifest generation where allowed and render policy.
 
-External workflows do, however, make artifact identity highly visible. The corpus records `artifact` as an observation and requires an explicit mapping to existing continuity plus artifact contracts. It does not silently add another Core dependency kind.
+Expected artifacts compare authored task identities, dependency relations, continuity channel names, forbidden sibling ordering and exact diagnostics. They do not self-certify from target registry claims.
 
-## Current representability hypotheses
+## Current architecture findings
 
-### Likely representable with explicit binding
-
-- conventional checkout, build and test;
-- static fan-out/fan-in;
-- tag-triggered releases;
-- static matrices;
-- ordinary artifact upload/download;
-- OIDC-backed release identity;
-- DAG ordering.
-
-### Semantically representable but not yet executable across targets
-
-- build-once promote-many;
-- typed human input beyond boolean approval;
-- parent/child pipeline composition;
-- cross-project continuity;
-- cleanup that consumes failed-task results;
-- partial-success aggregation;
-- durable-state promotion.
-
-### Explicitly outside the current planning contract
-
-- arbitrary code that creates new workflow structure at runtime.
-
-The dynamic-matrix case remains deliberately separate. A bounded matrix derived from a prior value may require a narrower contract than unrestricted pipeline upload.
+1. VALUE continuity is representable through named references and verified producer-to-consumer relations.
+2. Artifact identity can be observed through VALUE plus binding evidence without inventing a new Core dependency kind.
+3. Typed global inputs and approval outputs are representable.
+4. Explicit sibling parallelism is not representable by the current Standard Intent lowering.
+5. Bounded runtime matrix expansion is not represented by the current ExecutionPlan.
+6. Missing references require a corpus-level pre-planning integrity authority because accepting them would silently erase author meaning.
 
 ## A0.5 implications
 
-A0.5 should not begin by adding renderer behavior.
+A0.5 should build on C06 and A06 while extending behavioral evidence for WORKSPACE and STATE. It must also retain C02/N08 as ordering-only controls.
 
-It should first produce independent provider evidence for:
-
-1. value output to consumer input;
-2. packaged artifact producer to consumer;
-3. shared workspace producer to consumer;
-4. mutable state identity and lifetime;
-5. durable state identity across execution boundaries;
-6. missing producer and missing output diagnostics;
-7. prevention of ordering-only false positives.
-
-The first source-backed probes should use:
-
-- Buildkite artifact transfer;
-- Argo artifact passing;
-- Prometheus output-derived matrix;
-- Argo DAG diamond as the ordering-only control;
-- Argo CD digest and provenance propagation;
-- Buildkite typed release input.
-
-Build-once promotion remains a required scenario, but its current release sources cover only immutable identity and publication. A production promotion source must be admitted before that case can become evidence.
-
-## Adapter-risk observations
-
-- GitHub Actions exposes artifact transfer while workspace propagation is currently unsupported in Flow evidence. A0.5 must prove that those claims remain distinct.
-- Tekton exposes both task results and workspaces. Partial labels cannot be promoted without concrete provider composition and behavior tests.
-- Jenkins is the executable reference, but its existing success cannot certify every continuity class. In particular, durable and mutable state need identity and lifetime evidence rather than a shared agent assumption.
-- Argo Workflows and Azure DevOps remain useful research targets, but profile-level platform knowledge is not composed-provider evidence.
+No target may be promoted to executable continuity support until producer identity, consumer identity, channel, lifetime and target materialization evidence all agree.
 
 ## Honest limitations
 
-No external pipeline has yet been converted into canonical Flow intent in this baseline.
+Thirty-eight catalogued scenarios do not yet have complete case packages.
 
-No scenario has an accepted representability result.
-
-No adapter claim changes.
-
-No Core or conformance inventory changes.
-
-The baseline is successful only in the modest sense that the repository now has a reviewable, immutable research input instead of a confident list in a chat window, humanity's least durable storage format.
+The executable baseline proves the harness and exposes real current gaps. It does not prove general representability, target parity, workspace continuity, durable state continuity or production promotion semantics.

@@ -1,0 +1,19 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: C02
+title: Ordering-only diamond with required sibling parallelism
+lifecycle: MUTATION_VALIDATED
+category: common
+sourceRef: argo-dag-diamond
+source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: remove-fan-in-edge, definition: mutations/remove-fan-in-edge/mutation.yaml}
+- {id: remove-branch-c, definition: mutations/remove-branch-c/mutation.yaml}
+invariants:
+- A completes before B and C.
+- B and C are siblings and must not depend on each other.
+- D starts only after both B and C complete.
