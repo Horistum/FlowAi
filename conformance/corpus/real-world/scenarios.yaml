@@ -87,7 +87,7 @@ scenarios:
   dominantSemantics:
   - artifact
   continuityKinds:
-  - value
+  - artifact
   baselineExpectation: SUPPORTED_WITH_BINDING
   claim: hypothesis-only
 - id: C07
@@ -115,7 +115,7 @@ scenarios:
   baselineExpectation: SUPPORTED_WITH_BINDING
   claim: hypothesis-only
 - id: C09
-  title: branch-and-path-filtering
+  title: branch-and-tag-filtering
   category: common
   admission: admitted
   sourceRefs:
@@ -140,7 +140,7 @@ scenarios:
   baselineExpectation: SUPPORTED_WITH_BINDING
   claim: hypothesis-only
 - id: C11
-  title: required-and-optional-checks
+  title: result-qualified-dependencies
   category: common
   admission: admitted
   sourceRefs:
@@ -165,14 +165,13 @@ scenarios:
   baselineExpectation: SUPPORTED_WITH_BINDING
   claim: hypothesis-only
 - id: P01
-  title: build-scan-push-image
+  title: build-and-push-image
   category: production
   admission: admitted
   sourceRefs:
   - argocd-release
   dominantSemantics:
   - image
-  - security-scan
   - publish
   continuityKinds:
   - value
@@ -214,7 +213,7 @@ scenarios:
 - id: P04
   title: build-once-promote-many
   category: production
-  admission: admitted
+  admission: screened
   sourceRefs:
   - argocd-release
   - helm-release
@@ -226,6 +225,8 @@ scenarios:
   - state
   baselineExpectation: SEMANTIC_ONLY
   claim: hypothesis-only
+  sourceCoverage: partial
+  coverageGap: The sources prove immutable release identity and publication, not promotion through multiple environments.
 - id: P05
   title: dev-stage-production-promotion
   category: production
@@ -247,7 +248,6 @@ scenarios:
   - buildkite-typed-human-input
   dominantSemantics:
   - approval
-  - environment
   continuityKinds:
   - value
   baselineExpectation: SUPPORTED_WITH_BINDING
@@ -303,9 +303,8 @@ scenarios:
 - id: P11
   title: monorepo-changed-components
   category: production
-  admission: admitted
-  sourceRefs:
-  - buildkite-dynamic-pipeline
+  admission: planned
+  sourceRefs: []
   dominantSemantics:
   - change-detection
   - dynamic-selection
@@ -313,6 +312,8 @@ scenarios:
   - value
   baselineExpectation: UNSUPPORTED_DYNAMIC_CONSTRUCTION
   claim: hypothesis-only
+  sourceCoverage: missing
+  coverageGap: A pinned production source that selects only changed monorepo components has not yet been admitted.
 - id: P12
   title: deployment-concurrency-lock
   category: production
@@ -368,7 +369,7 @@ scenarios:
   baselineExpectation: SEMANTIC_ONLY
   claim: hypothesis-only
 - id: A04
-  title: data-or-ml-dag
+  title: non-ci-dag-orchestration
   category: advanced
   admission: admitted
   sourceRefs:
