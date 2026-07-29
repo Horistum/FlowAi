@@ -14,6 +14,7 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
+import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.BuiltInTargetProjections
@@ -93,6 +94,7 @@ class AdapterControlProviderBehaviorTests {
         assertTrue(rendered.contains("triggers {"), rendered)
         assertTrue(rendered.contains("cron("), rendered)
         assertTrue(rendered.contains("0 2 * * *"), rendered)
+        assertTrue(rendered.contains("checkout scmGit("), rendered)
     }
 
     @Test
@@ -108,6 +110,7 @@ class AdapterControlProviderBehaviorTests {
         assertTrue(rendered.contains("  schedule:"), rendered)
         assertTrue(rendered.contains("- cron:"), rendered)
         assertTrue(rendered.contains("0 2 * * *"), rendered)
+        assertTrue(rendered.contains("uses: \"actions/checkout@v4\""), rendered)
     }
 
     private fun evaluate(target: String, fixtureId: String, plan: ExecutionPlan): CliTargetEvidence =
@@ -128,6 +131,21 @@ class AdapterControlProviderBehaviorTests {
 
     private fun schedulePlan(flowName: String) = ExecutionPlan(
         flowName = flowName,
+        requiredCapabilities = listOf("git.checkout"),
+        nodes = listOf(
+            TaskNode(
+                id = "checkout",
+                module = "git",
+                action = "checkout",
+                target = "source",
+                params = linkedMapOf(
+                    "url" to "https://github.com/openai/openai.git",
+                    "branch" to "main",
+                    "depth" to "0"
+                ),
+                requiredCapabilities = listOf("git.checkout")
+            )
+        ),
         triggers = listOf(
             PlanTrigger(
                 id = "nightly",
