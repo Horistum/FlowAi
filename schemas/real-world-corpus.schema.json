@@ -2,15 +2,65 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Flow Real-World Corpus Manifest",
   "type": "object",
-  "required": ["kind", "version", "status", "name", "catalogs", "casePackages", "counts", "invariants"],
+  "additionalProperties": false,
+  "required": ["kind", "version", "status", "name", "scope", "catalogs", "schemas", "casePackages", "counts", "invariants"],
   "properties": {
     "kind": {"const": "FlowRealWorldCorpus"},
-    "version": {"type": "string"},
+    "version": {"const": "0.2"},
     "status": {"const": "executable-baseline"},
     "name": {"type": "string"},
-    "catalogs": {"type": "object", "required": ["sources", "scenarios"]},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domains", "primaryUse", "roadmapRelationship"],
+      "properties": {
+        "domains": {"type": "array", "items": {"type": "string"}},
+        "primaryUse": {"type": "string"},
+        "roadmapRelationship": {"type": "object"}
+      }
+    },
+    "catalogs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sources", "scenarios"],
+      "properties": {
+        "sources": {"type": "string"},
+        "scenarios": {"type": "string"}
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "sources", "scenarios", "case", "provenance", "expectedPlan", "targetAssessments", "evidence", "mutation"],
+      "properties": {
+        "manifest": {"type": "string"},
+        "sources": {"type": "string"},
+        "scenarios": {"type": "string"},
+        "case": {"type": "string"},
+        "provenance": {"type": "string"},
+        "expectedPlan": {"type": "string"},
+        "targetAssessments": {"type": "string"},
+        "evidence": {"type": "string"},
+        "mutation": {"type": "string"}
+      }
+    },
     "casePackages": {"type": "array", "items": {"type": "string"}},
-    "counts": {"type": "object", "required": ["sources", "scenarios", "executableCases", "mutationCases"]},
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sources", "admittedSources", "screenedSources", "scenarios", "admittedScenarios", "screenedScenarios", "plannedScenarios", "executableCases", "mutationCases"],
+      "properties": {
+        "sources": {"type": "integer"},
+        "admittedSources": {"type": "integer"},
+        "screenedSources": {"type": "integer"},
+        "scenarios": {"type": "integer"},
+        "admittedScenarios": {"type": "integer"},
+        "screenedScenarios": {"type": "integer"},
+        "plannedScenarios": {"type": "integer"},
+        "executableCases": {"type": "integer"},
+        "mutationCases": {"type": "integer"}
+      }
+    },
     "invariants": {"type": "array", "items": {"type": "string"}}
   }
 }
