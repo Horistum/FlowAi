@@ -53,6 +53,21 @@ class AdapterControlTypedEvidenceIntegrityTests {
         assertTrue(report.findings.any { it.code == "CONTROL_EVIDENCE_DUPLICATE" })
     }
 
+    @Test
+    fun typedEvidenceWithUnknownSupportedSemanticProducesReportInsteadOfThrowing() {
+        val malformed = document().mapClaim("jenkins", AdapterControlFamily.APPROVAL) { claim ->
+            claim.copy(
+                semantics = claim.semantics.copy(
+                    supported = claim.semantics.supported + "approval.future-provider-contract"
+                )
+            )
+        }
+
+        val report = authority.analyze(malformed)
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "CONTROL_SEMANTIC_PARTITION_MISMATCH" })
+    }
+
     private fun document() = AdapterControlMaterializationLoader.load(rootDir)
 
     private fun AdapterControlMaterializationDocument.mapClaim(
