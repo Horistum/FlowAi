@@ -209,7 +209,7 @@ object AdapterControlSemanticContract {
     fun scopesFor(semantic: String): Set<AdapterControlScope>? = scopesBySemantic[semantic]
 
     fun supportedScopes(semantics: Set<String>): Set<AdapterControlScope> =
-        semantics.flatMap { semantic -> scopesBySemantic.getValue(semantic) }.toSet()
+        semantics.flatMap { semantic -> scopesBySemantic[semantic].orEmpty() }.toSet()
 }
 
 object AdapterControlMaterializationLoader {
@@ -289,8 +289,12 @@ object AdapterControlMaterializationLoader {
     private fun requireExactKeys(value: Map<String, Any?>, keys: Set<String>, path: String) {
         val unknown = value.keys - keys
         val missing = keys - value.keys
-        require(unknown.isEmpty()) { "$path has unknown fields: ${unknown.sorted().joinToString()}.")
-        require(missing.isEmpty()) { "$path is missing fields: ${missing.sorted().joinToString()}.")
+        require(unknown.isEmpty()) {
+            "$path has unknown fields: ${unknown.sorted().joinToString()}."
+        }
+        require(missing.isEmpty()) {
+            "$path is missing fields: ${missing.sorted().joinToString()}."
+        }
     }
 
     private fun text(value: Map<String, Any?>, key: String, path: String): String =
