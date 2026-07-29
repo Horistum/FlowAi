@@ -6,7 +6,7 @@
 
 Started after A0.3 merged through PR #98 as `9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930`.
 
-Implementation scope under validation:
+Completed scope:
 
 - add a strict adapter-owned control materialization document for every built-in target;
 - declare exactly one approval, retry, timeout, compensation and scheduling claim per target;
@@ -15,20 +15,23 @@ Implementation scope under validation:
 - preserve manual, environment, external and unknown approval modes without reinterpretation;
 - separate repository implementation evidence from repository behavioral evidence and official platform capability context;
 - require independent `src/main` implementation and `src/test` behavior evidence for every supported semantic;
-- validate source anchors when declared and reject repository-path escape, missing, duplicate, blank, self-referential and registry-only evidence;
-- apply the same integrity rules to YAML-loaded and typed evidence documents;
+- validate source anchors and reject repository-path escape, missing, duplicate, blank, self-referential and registry-only evidence;
+- apply identical integrity rules to YAML-loaded and typed evidence documents;
+- require supported claim scopes to equal the union required by supported target-neutral semantics;
+- return fail-closed reports for unknown future semantics instead of throwing lookup exceptions;
 - derive exact requirements from `ApprovalNode`, `RetryGroupNode`, protected `TryPlanNode`, failure rollback and schedule triggers;
 - retain preserved RETRY/TIMEOUT metadata as `PRESERVED_UNSPECIFIED` UNKNOWN blockers until exact scope and value survive lowering;
-- reject detached error handlers that do not protect work or represent the canonical Jenkins flow-level boundary;
+- recognize the canonical flow-level handler only from planner provenance (`onError_<n>`, `errorHandlers.finally` and preceding protected work);
+- reject detached error handlers that do not protect work;
 - certify only Jenkins inline manual approval, protected Jenkins error handlers and Jenkins/GitHub CRON subsets currently implemented by composed providers;
-- prove supported behavior through the production target-selection, control, manifest, readiness and renderer boundary;
+- prove CRON behavior through canonical AST, parser, planner, explicit selection, control assessment, manifest generation, readiness reconciliation and concrete rendering;
 - explicitly demote retry flattening, timeout absence, unguarded compensation, uncomposed environment approval and Tekton scheduling;
 - evaluate adapter controls before executable target materialization;
 - use one reconciliation authority for successful and diagnostic manifest metadata;
-- expose blocked execution readiness while retaining review-only render evidence and preventing target syntax emission;
-- replace dynamic readiness diagnostic code concatenation with one closed mapping to existing stable catalog codes;
+- expose blocked execution readiness while retaining review-only evidence and preventing target syntax emission;
+- replace dynamic readiness diagnostic code concatenation with one closed mapping to stable catalog codes;
 - split evidence integrity, requirement derivation and materialization orchestration without creating a second production decision path;
-- add positive, negative, CLI integration, provider behavior, lifecycle, typed-evidence and stable diagnostic mapping tests;
+- require the complete production, test, conformance and documentation boundary before lifecycle completion;
 - extend the post-Core adapter inventory to version `1.3` with five A0.4 checks;
 - preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
 
@@ -41,16 +44,15 @@ Architecture assessment:
 
 Validation history:
 
-- Flow CI #2315 rejected the first implementation because one negative test used an incomplete `RetryGroupNode` fixture; production sources compiled and the fixture was corrected.
-- Flow CI #2316 compiled the implementation and rejected release metadata that lacked exact external-candidate wording plus an evidence rule that did not distinguish positive proof from negative registry corroboration.
-- Release honesty remained strict; registry-only evidence fails and positive support requires independent repository proof.
-- Flow CI #2324 rejected persisted CLI review bundles because the existing readiness reconciler invented uncatalogued diagnostic code `TARGET_COMPATIBILITY_UNSUPPORTED` through string concatenation.
-- `TargetReadinessDiagnosticCodeAuthority` now maps known internal statuses to existing stable public codes and rejects unknown statuses instead of inventing public identifiers.
-- Flow CI #2333 proved that incomplete preserved controls correctly block the reference intent; the older optimistic readiness assertion was strengthened instead of weakening the new authority.
-- Flow CI #2338 rejected runtime certification that assumed every test composition loaded the complete target inventory. Runtime certification now validates the active target subset while full conformance validates the complete distribution.
-- Flow CI #2359 rejected two schedule behavior tests that manually constructed invalid manifests. Both now prove CRON through explicit target selection, control assessment, production manifest generation, readiness reconciliation and concrete rendering.
-- The senior review corrected approval-mode collapse, unused scopes, runtime use of uncertified evidence, unenforced evidence version, lossy requirement identity, divergent success/diagnostic metadata, missing behavior evidence, unresolved source anchors, typed-input integrity bypasses, repository path traversal, detached-handler over-certification, multi-responsibility authority structure and inaccurate A0.3 validation wording.
-- A0.4 remains `next` and its work package remains `active`. No implementation evidence or A0.5 transition is authored until the reviewed exact head and synthetic merge candidate pass independently.
+- Earlier Flow CI runs rejected incomplete fixtures, release-honesty wording, imprecise evidence polarity, dynamic public diagnostic codes, optimistic readiness assumptions, invalid runtime subset certification and schedule tests that bypassed production generation.
+- Flow CI #2371 rejected a scope test that expected malformed evidence to pass and CRON fixtures without executable provider work.
+- Flow CI #2373 rejected manually authored tasks without canonical effect evidence.
+- Flow CI #2374 proved Jenkins rendering and exposed missing GitHub schedule capability provenance.
+- Flow CI #2375 isolated the remaining GitHub failure to a trigger attached after planning.
+- The final CRON fixture injects the trigger into canonical AST and lets `FlowPlanner` derive `trigger.schedule.cron` before provider materialization.
+- Flow CI #2376, run `30420527005`, passed exact implementation head `a5040767698fed38d6efd0118de40312c77c913e` and synthetic merge candidate `8c3b837cb9416acb2de3333a81b1c7eb811d492d`; both compile/test and conformance jobs passed independently.
+- The A0.4 work package records that passed implementation boundary, A0.4 is completed, and A0.5 is selected as next without including its work package or implementation.
+- The completion metadata head must pass a distinct exact-head and synthetic merge-candidate boundary before PR readiness.
 
 ### A0.3 Capability Binding Migration
 
