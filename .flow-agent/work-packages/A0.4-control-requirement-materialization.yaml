@@ -2,7 +2,7 @@ version: "A0.4"
 name: "Control Requirement Materialization"
 type: "adapter-control"
 stream: adapters
-status: active
+status: complete
 objective: "Certify concrete provider satisfaction for approval, retry, timeout, compensation and scheduling requirements without redefining frozen Core meaning."
 activationEvidence:
   adapterItem: "A0.3"
@@ -19,6 +19,23 @@ forbiddenScope:
   - "No platform documentation, target registry flag or provider name accepted as implementation evidence."
   - "No retry, timeout, compensation, approval or schedule requirement silently flattened, discarded or approximated."
   - "No mutation of the frozen v0.9.7 Core pre-closure inventory."
+plannedChanges:
+  - "adapters/controls/builtin-control-materialization.yaml"
+  - "src/main/kotlin/org/flowlang/adapters/control/AdapterControlMaterializationContracts.kt"
+  - "src/main/kotlin/org/flowlang/adapters/control/AdapterControlEvidenceIntegrityAuthority.kt"
+  - "src/main/kotlin/org/flowlang/adapters/control/AdapterControlRequirementAuthority.kt"
+  - "src/main/kotlin/org/flowlang/adapters/control/AdapterControlMaterializationAuthority.kt"
+  - "src/main/kotlin/org/flowlang/adapters/control/AdapterControlRoadmapLifecycleAuthority.kt"
+  - "src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt"
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetCompatibilityReadinessAnalyzer.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AdapterControlConformanceChecks.kt"
+  - "src/test/kotlin/AdapterControlProviderBehaviorTests.kt"
+  - "src/test/kotlin/AdapterControlMaterializationAuthorityTests.kt"
+  - "src/test/kotlin/AdapterControlCliMaterializationTests.kt"
+  - "src/test/kotlin/AdapterControlTypedEvidenceIntegrityTests.kt"
+  - "src/test/kotlin/AdapterControlEvidenceAnchorTests.kt"
+  - "src/test/kotlin/org/flowlang/generators/manifest/TargetReadinessDiagnosticCodeAuthorityTests.kt"
+  - "docs/A0_4_CONTROL_REQUIREMENT_MATERIALIZATION.md"
 completionEvidence:
   - "Every target has exactly one complete claim for approval, retry, timeout, compensation and scheduling."
   - "Every family partitions the closed semantic contract into supported, unsupported and unknown evidence."
@@ -27,6 +44,12 @@ completionEvidence:
   - "Unsupported or unknown requirements force diagnostic review-only evidence before target syntax can be emitted."
   - "Jenkins manual approval and Jenkins/GitHub CRON are proven as the only currently supported control subsets."
   - "Retry flattening, timeout absence, unguarded compensation and uncomposed environment approvals are rejected explicitly."
-  - "A0.4 lifecycle integrity rejects premature evidence, skipped progress and evidence-free completion."
-  - "Flow CI passes exact-head and synthetic merge-candidate validation before completion metadata is authored."
-implementationEvidence: {}
+  - "A0.4 lifecycle integrity rejects premature evidence, skipped progress, missing required files and evidence-free completion."
+  - "Flow CI #2376 passed exact-head and synthetic merge-candidate compile, test and conformance validation with adapter inventory 1.3 active."
+implementationEvidence:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: "2376"
+  runId: "30420527005"
+  exactHead: "a5040767698fed38d6efd0118de40312c77c913e"
+  mergeCandidate: "8c3b837cb9416acb2de3333a81b1c7eb811d492d"
