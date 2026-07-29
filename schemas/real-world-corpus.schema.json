@@ -22,10 +22,11 @@
     "catalogs": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sources", "scenarios"],
+      "required": ["sources", "scenarios", "acceptedScenarios"],
       "properties": {
         "sources": {"type": "string"},
-        "scenarios": {"type": "string"}
+        "scenarios": {"type": "string"},
+        "acceptedScenarios": {"type": "string"}
       }
     },
     "schemas": {
