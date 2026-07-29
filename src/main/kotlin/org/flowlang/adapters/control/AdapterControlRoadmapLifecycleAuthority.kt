@@ -25,7 +25,8 @@ data class AdapterControlLifecycleInput(
     val releasePrimaryStream: String,
     val releaseCompletedItem: String,
     val releaseNextItem: String,
-    val implementationEvidence: AdapterWorkflowEvidence
+    val implementationEvidence: AdapterWorkflowEvidence,
+    val requiredFilesPresent: Boolean
 )
 
 data class AdapterControlLifecycleCheck(
@@ -65,7 +66,8 @@ class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File("
                 releasePrimaryStream = releaseState.string("roadmapState", "primaryStream"),
                 releaseCompletedItem = releaseState.string("roadmapState", "completedAdapterItem"),
                 releaseNextItem = releaseState.string("roadmapState", "nextItem"),
-                implementationEvidence = workPackage.workflowEvidence("implementationEvidence")
+                implementationEvidence = workPackage.workflowEvidence("implementationEvidence"),
+                requiredFilesPresent = REQUIRED_FILES.all { File(rootDir, it).isFile }
             )
         )
     }
@@ -148,6 +150,12 @@ class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File("
                 evidenceAligned,
                 listOf(input.implementationEvidence.summary()),
                 "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."
+            ),
+            check(
+                "adapters.a0.4.required-files",
+                input.requiredFilesPresent,
+                listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"),
+                "A0.4 lifecycle requires the complete production, test, conformance and documentation boundary."
             )
         )
         val failed = checks.filter { it.status == "FAIL" }.map { it.id }
@@ -206,5 +214,23 @@ class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File("
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
+        private val REQUIRED_FILES = listOf(
+            "adapters/controls/builtin-control-materialization.yaml",
+            "src/main/kotlin/org/flowlang/adapters/control/AdapterControlMaterializationContracts.kt",
+            "src/main/kotlin/org/flowlang/adapters/control/AdapterControlEvidenceIntegrityAuthority.kt",
+            "src/main/kotlin/org/flowlang/adapters/control/AdapterControlRequirementAuthority.kt",
+            "src/main/kotlin/org/flowlang/adapters/control/AdapterControlMaterializationAuthority.kt",
+            "src/main/kotlin/org/flowlang/adapters/control/AdapterControlRoadmapLifecycleAuthority.kt",
+            "src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt",
+            "src/main/kotlin/org/flowlang/generators/manifest/TargetCompatibilityReadinessAnalyzer.kt",
+            "src/main/kotlin/org/flowlang/conformance/AdapterControlConformanceChecks.kt",
+            "src/test/kotlin/AdapterControlProviderBehaviorTests.kt",
+            "src/test/kotlin/AdapterControlMaterializationAuthorityTests.kt",
+            "src/test/kotlin/AdapterControlCliMaterializationTests.kt",
+            "src/test/kotlin/AdapterControlTypedEvidenceIntegrityTests.kt",
+            "src/test/kotlin/AdapterControlEvidenceAnchorTests.kt",
+            "src/test/kotlin/org/flowlang/generators/manifest/TargetReadinessDiagnosticCodeAuthorityTests.kt",
+            "docs/A0_4_CONTROL_REQUIREMENT_MATERIALIZATION.md"
+        )
     }
 }
