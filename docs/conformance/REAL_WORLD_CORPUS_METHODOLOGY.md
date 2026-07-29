@@ -17,12 +17,31 @@ immutable external source
 -> IntentToAstPlanner
 -> FlowValidator
 -> FlowPlanner
--> semantic expectation comparison
+-> authored-semantics comparison
+-> generated-plan comparison
 -> target compatibility/readiness/materialization assessment
 -> negative mutations
 ```
 
 No stage uses the output it validates as its own expectation. Expected task identities, dependency relations, required features and diagnostics are committed independently in each case package.
+
+## Strict corpus document boundary
+
+Executable evidence is loaded through a dedicated strict YAML/JSON boundary. Duplicate keys, unknown properties, numeric enum coercion and null-to-primitive coercion fail before evidence can enter the runner.
+
+Nine schemas cover:
+
+- corpus manifest;
+- source catalog;
+- scenario catalog;
+- case definition;
+- immutable provenance;
+- expected plan semantics;
+- target assessments;
+- accepted evidence;
+- negative mutations.
+
+The loader additionally verifies repository-bounded paths, immutable revisions, SPDX agreement, catalog counts, source references, unique task and mutation identities, continuity channel names and evidence-to-expectation agreement.
 
 ## Source admission
 
@@ -69,6 +88,14 @@ Each observation file records observed behavior, reconstructed target-neutral in
 
 Ordering proves only that one node completes before another may run. Continuity is classified separately as value, artifact, workspace or state. Artifact remains a corpus observation and maps explicitly to an existing VALUE, WORKSPACE or STATE relation plus an adapter artifact contract.
 
+Declared Intent outputs are existing canonical evidence. They become lexical references only after their producer validates; a consumer cannot refer to a future, missing or self-produced output.
+
+## Authored versus generated dependency evidence
+
+The runner checks source-authored `requires` relations independently from generated ExecutionPlan edges. This separation is mandatory because conservative lowering may add sequential dependencies. Such generated ordering cannot prove that the author declared fan-in or intended serialization.
+
+The generated plan is then checked separately for exact task identities, dependency kind, channel identity and forbidden ordering reachability.
+
 ## Result vocabulary
 
 - `SUPPORTED`: universal meaning and selected target evidence are executable.
@@ -79,9 +106,11 @@ Ordering proves only that one node completes before another may run. Continuity 
 - `UNSUPPORTED_DYNAMIC_CONSTRUCTION`: runtime-created topology exceeds the current planning contract.
 - `INVALID_SOURCE_PIPELINE`: a producer, relation or other required dependency is missing or contradictory.
 
+Semantic loss is not mislabeled as a target limitation. For example, silent sibling serialization is `SEMANTIC_ONLY`; a target-specific result is assessed only after universal semantics are intact.
+
 ## Plan comparison
 
-Expected plans compare exact authored task source IDs, semantic capability, node kind, producer-to-consumer relations, relation kind, channel identity, forbidden sibling ordering, required structural features, exact diagnostics and expected representability outcome.
+Expected plans compare exact authored task source IDs, semantic capability, node kind, source-authored relations, generated producer-to-consumer relations, relation kind, channel identity, forbidden sibling ordering, required structural features, exact diagnostics and expected representability outcome.
 
 ## Target assessment
 
@@ -94,6 +123,8 @@ The initial baseline covers removed fan-in, removed branch, wrong artifact refer
 ## Core boundary
 
 The corpus runs after frozen Core and adapter inventories. It cannot rewrite closure evidence or adapter certification counts.
+
+The FlowValidator correction in this PR aligns validation with the existing `produces` and `declaredOutputs` contract already retained by lowering and planning. It adds no capability, dependency kind, target behavior or public semantic invention.
 
 ## Current executable baseline
 
