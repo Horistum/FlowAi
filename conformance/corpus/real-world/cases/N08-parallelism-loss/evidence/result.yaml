@@ -2,7 +2,7 @@ kind: FlowRealWorldEvidence
 version: '0.2'
 caseId: N08
 status: ACCEPTED
-outcome: BLOCKED_BY_TARGET_CAPABILITY
+outcome: SEMANTIC_ONLY
 expectedDiagnostics: [REAL_WORLD_REQUIRED_PARALLELISM_SERIALIZED]
 sourceRevision: d98d7b7d73d1b24dd7258153453ea612dbb70092
 validatedBy: [real-world-corpus.case.n08, real-world-corpus.mutations]
