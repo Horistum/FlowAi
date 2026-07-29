@@ -14,7 +14,8 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "title", "category", "admission", "sourceRefs", "baselineExpectation", "claim"],
+        "additionalProperties": false,
+        "required": ["id", "title", "category", "admission", "sourceRefs", "dominantSemantics", "continuityKinds", "baselineExpectation", "claim"],
         "properties": {
           "id": {"type": "string"},
           "title": {"type": "string"},
@@ -23,8 +24,12 @@
           "lifecycle": {"enum": ["CATALOGUED", "SOURCE_VERIFIED", "INTENT_RECONSTRUCTED", "FIXTURE_AUTHORED", "PLAN_VALIDATED", "TARGET_ASSESSED", "MUTATION_VALIDATED", "ACCEPTED"]},
           "casePath": {"type": "string"},
           "sourceRefs": {"type": "array", "items": {"type": "string"}},
+          "dominantSemantics": {"type": "array", "items": {"type": "string"}},
+          "continuityKinds": {"type": "array", "items": {"type": "string"}},
           "baselineExpectation": {"enum": ["SUPPORTED", "SUPPORTED_WITH_BINDING", "SEMANTIC_ONLY", "BLOCKED_BY_TARGET_CAPABILITY", "AMBIGUOUS_SOURCE_INTENT", "UNSUPPORTED_DYNAMIC_CONSTRUCTION", "INVALID_SOURCE_PIPELINE"]},
-          "claim": {"type": "string"}
+          "claim": {"type": "string"},
+          "sourceCoverage": {"type": "string"},
+          "coverageGap": {"type": "string"}
         }
       }
     }
