@@ -14,9 +14,9 @@ It is not a Flow execution result, target certification or roadmap transition.
 - admitted immutable sources: 11
 - screened semantic references: 4
 - scenarios: 44
-- admitted scenarios: 21
-- screened scenarios: 8
-- planned scenarios: 15
+- admitted scenarios: 19
+- screened scenarios: 9
+- planned scenarios: 16
 
 ## Existing universal boundary
 
@@ -81,6 +81,8 @@ The first source-backed probes should use:
 - Argo DAG diamond as the ordering-only control;
 - Argo CD digest and provenance propagation;
 - Buildkite typed release input.
+
+Build-once promotion remains a required scenario, but its current release sources cover only immutable identity and publication. A production promotion source must be admitted before that case can become evidence.
 
 ## Adapter-risk observations
 
