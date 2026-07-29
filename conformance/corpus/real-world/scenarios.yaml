@@ -1,0 +1,582 @@
+kind: FlowRealWorldScenarioCatalog
+version: '0.1'
+status: baseline
+resultVocabulary:
+- SUPPORTED
+- SUPPORTED_WITH_BINDING
+- SEMANTIC_ONLY
+- BLOCKED_BY_TARGET_CAPABILITY
+- AMBIGUOUS_SOURCE_INTENT
+- UNSUPPORTED_DYNAMIC_CONSTRUCTION
+- INVALID_SOURCE_PIPELINE
+continuityVocabulary:
+- value
+- workspace
+- state
+- artifact
+scenarios:
+- id: C01
+  title: checkout-build-test
+  category: common
+  admission: admitted
+  sourceRefs:
+  - gha-gradle-ci
+  dominantSemantics:
+  - ordering
+  continuityKinds: []
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: C02
+  title: parallel-lint-test-package-fan-in
+  category: common
+  admission: admitted
+  sourceRefs:
+  - argo-dag-diamond
+  - prometheus-ci
+  dominantSemantics:
+  - parallel
+  - fan-in
+  continuityKinds: []
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: C03
+  title: static-os-runtime-matrix
+  category: common
+  admission: admitted
+  sourceRefs:
+  - prometheus-ci
+  dominantSemantics:
+  - matrix
+  - parallel
+  continuityKinds: []
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: C04
+  title: test-with-service-dependency
+  category: common
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - service-dependency
+  continuityKinds:
+  - workspace
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: C05
+  title: dependency-cache
+  category: common
+  admission: screened
+  sourceRefs:
+  - gha-gradle-ci
+  - circleci-fan-in-out
+  dominantSemantics:
+  - cache
+  - optimization-boundary
+  continuityKinds:
+  - workspace
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: C06
+  title: artifact-transfer-between-jobs
+  category: common
+  admission: admitted
+  sourceRefs:
+  - buildkite-artifact-transfer
+  - argo-artifact-passing
+  dominantSemantics:
+  - artifact
+  continuityKinds:
+  - value
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: C07
+  title: nightly-scheduled-pipeline
+  category: common
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - schedule
+  continuityKinds: []
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: C08
+  title: tag-triggered-release
+  category: common
+  admission: admitted
+  sourceRefs:
+  - argocd-release
+  - helm-release
+  dominantSemantics:
+  - tag-trigger
+  - release
+  continuityKinds:
+  - value
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: C09
+  title: branch-and-path-filtering
+  category: common
+  admission: admitted
+  sourceRefs:
+  - helm-release
+  dominantSemantics:
+  - trigger-filter
+  - condition
+  continuityKinds: []
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: C10
+  title: reusable-workflow-composition
+  category: common
+  admission: admitted
+  sourceRefs:
+  - argocd-release
+  dominantSemantics:
+  - composition
+  - binding
+  continuityKinds:
+  - value
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: C11
+  title: required-and-optional-checks
+  category: common
+  admission: admitted
+  sourceRefs:
+  - argo-enhanced-dependencies
+  dominantSemantics:
+  - failure-policy
+  - partial-success
+  continuityKinds: []
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: C12
+  title: unconditional-cleanup-finally
+  category: common
+  admission: screened
+  sourceRefs:
+  - tekton-pipeline-semantics
+  dominantSemantics:
+  - finally
+  - failure-policy
+  continuityKinds:
+  - state
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: P01
+  title: build-scan-push-image
+  category: production
+  admission: admitted
+  sourceRefs:
+  - argocd-release
+  dominantSemantics:
+  - image
+  - security-scan
+  - publish
+  continuityKinds:
+  - value
+  - artifact
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: P02
+  title: multiarchitecture-image-build
+  category: production
+  admission: admitted
+  sourceRefs:
+  - argocd-release
+  - helm-release
+  dominantSemantics:
+  - matrix
+  - aggregation
+  - image
+  continuityKinds:
+  - value
+  - artifact
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: P03
+  title: sbom-signing-and-provenance
+  category: production
+  admission: admitted
+  sourceRefs:
+  - argocd-release
+  dominantSemantics:
+  - sbom
+  - signing
+  - provenance
+  - oidc
+  continuityKinds:
+  - value
+  - artifact
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: P04
+  title: build-once-promote-many
+  category: production
+  admission: admitted
+  sourceRefs:
+  - argocd-release
+  - helm-release
+  dominantSemantics:
+  - immutable-artifact
+  - promotion
+  continuityKinds:
+  - artifact
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: P05
+  title: dev-stage-production-promotion
+  category: production
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - environment
+  - promotion
+  continuityKinds:
+  - artifact
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: P06
+  title: production-approval
+  category: production
+  admission: admitted
+  sourceRefs:
+  - buildkite-typed-human-input
+  dominantSemantics:
+  - approval
+  - environment
+  continuityKinds:
+  - value
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: P07
+  title: gitops-manifest-update
+  category: production
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - gitops
+  - repository-mutation
+  continuityKinds:
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: P08
+  title: argocd-sync-and-health
+  category: production
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - external-readiness
+  - deployment
+  continuityKinds:
+  - state
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: P09
+  title: pull-request-preview-environment
+  category: production
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - dynamic-environment
+  - lifecycle
+  continuityKinds:
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: P10
+  title: preview-environment-cleanup
+  category: production
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - cleanup
+  - lifecycle
+  continuityKinds:
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: P11
+  title: monorepo-changed-components
+  category: production
+  admission: admitted
+  sourceRefs:
+  - buildkite-dynamic-pipeline
+  dominantSemantics:
+  - change-detection
+  - dynamic-selection
+  continuityKinds:
+  - value
+  baselineExpectation: UNSUPPORTED_DYNAMIC_CONSTRUCTION
+  claim: hypothesis-only
+- id: P12
+  title: deployment-concurrency-lock
+  category: production
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - concurrency
+  - resource-lock
+  continuityKinds:
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: A01
+  title: runtime-generated-fan-out
+  category: advanced
+  admission: admitted
+  sourceRefs:
+  - buildkite-dynamic-pipeline
+  dominantSemantics:
+  - dynamic-plan
+  - fan-out
+  continuityKinds:
+  - value
+  baselineExpectation: UNSUPPORTED_DYNAMIC_CONSTRUCTION
+  claim: hypothesis-only
+- id: A02
+  title: parent-child-pipeline
+  category: advanced
+  admission: screened
+  sourceRefs:
+  - gitlab-downstream-pipelines
+  dominantSemantics:
+  - plan-composition
+  - status-propagation
+  continuityKinds:
+  - value
+  - artifact
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: A03
+  title: cross-project-pipeline
+  category: advanced
+  admission: screened
+  sourceRefs:
+  - gitlab-downstream-pipelines
+  dominantSemantics:
+  - cross-project
+  - plan-composition
+  continuityKinds:
+  - value
+  - artifact
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: A04
+  title: data-or-ml-dag
+  category: advanced
+  admission: admitted
+  sourceRefs:
+  - argo-dag-diamond
+  dominantSemantics:
+  - dag
+  - non-ci-domain
+  continuityKinds:
+  - value
+  - artifact
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: A05
+  title: suspend-and-resume
+  category: advanced
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - suspend
+  - resume
+  - long-lived-state
+  continuityKinds:
+  - state
+  baselineExpectation: BLOCKED_BY_TARGET_CAPABILITY
+  claim: hypothesis-only
+- id: A06
+  title: typed-human-input-form
+  category: advanced
+  admission: admitted
+  sourceRefs:
+  - buildkite-typed-human-input
+  dominantSemantics:
+  - human-input
+  - approval
+  continuityKinds:
+  - value
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: A07
+  title: partial-success-aggregation
+  category: advanced
+  admission: admitted
+  sourceRefs:
+  - argo-enhanced-dependencies
+  dominantSemantics:
+  - partial-success
+  - aggregation
+  continuityKinds:
+  - value
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: A08
+  title: rollback-or-compensation
+  category: advanced
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - rollback
+  - compensation
+  continuityKinds:
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: A09
+  title: scarce-runner-or-gpu-scheduling
+  category: advanced
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - resource-constraint
+  - scheduler
+  continuityKinds:
+  - state
+  baselineExpectation: BLOCKED_BY_TARGET_CAPABILITY
+  claim: hypothesis-only
+- id: A10
+  title: oidc-without-static-credentials
+  category: advanced
+  admission: admitted
+  sourceRefs:
+  - argocd-release
+  dominantSemantics:
+  - identity
+  - oidc
+  continuityKinds:
+  - value
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: A11
+  title: output-driven-downstream-dag
+  category: advanced
+  admission: screened
+  sourceRefs:
+  - prometheus-ci
+  - azure-output-variables
+  dominantSemantics:
+  - data-dependent-plan
+  - matrix
+  continuityKinds:
+  - value
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
+- id: A12
+  title: cleanup-consuming-failed-results
+  category: advanced
+  admission: screened
+  sourceRefs:
+  - tekton-pipeline-semantics
+  dominantSemantics:
+  - finally
+  - failure-data
+  continuityKinds:
+  - value
+  - state
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: N01
+  title: consumer-references-missing-result
+  category: negative
+  admission: screened
+  sourceRefs:
+  - tekton-pipeline-semantics
+  dominantSemantics:
+  - diagnostic
+  - missing-value
+  continuityKinds:
+  - value
+  baselineExpectation: INVALID_SOURCE_PIPELINE
+  claim: hypothesis-only
+- id: N02
+  title: target-lacks-required-capability
+  category: negative
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - capability-block
+  continuityKinds: []
+  baselineExpectation: BLOCKED_BY_TARGET_CAPABILITY
+  claim: hypothesis-only
+- id: N03
+  title: retry-conflicts-with-failure-policy
+  category: negative
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - retry
+  - failure-policy
+  - conflict
+  continuityKinds: []
+  baselineExpectation: INVALID_SOURCE_PIPELINE
+  claim: hypothesis-only
+- id: N04
+  title: opaque-plugin-without-contract
+  category: negative
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - opaque-binding
+  - unknown-effect
+  continuityKinds: []
+  baselineExpectation: SEMANTIC_ONLY
+  claim: hypothesis-only
+- id: N05
+  title: pipeline-generated-by-arbitrary-code
+  category: negative
+  admission: admitted
+  sourceRefs:
+  - buildkite-dynamic-pipeline
+  dominantSemantics:
+  - dynamic-plan
+  - opaque-code
+  continuityKinds: []
+  baselineExpectation: UNSUPPORTED_DYNAMIC_CONSTRUCTION
+  claim: hypothesis-only
+- id: N06
+  title: dynamic-secret-or-environment-name
+  category: negative
+  admission: planned
+  sourceRefs: []
+  dominantSemantics:
+  - dynamic-reference
+  - security
+  continuityKinds:
+  - value
+  baselineExpectation: BLOCKED_BY_TARGET_CAPABILITY
+  claim: hypothesis-only
+- id: N07
+  title: cleanup-requires-nonexistent-output
+  category: negative
+  admission: screened
+  sourceRefs:
+  - tekton-pipeline-semantics
+  dominantSemantics:
+  - cleanup
+  - missing-value
+  continuityKinds:
+  - value
+  baselineExpectation: INVALID_SOURCE_PIPELINE
+  claim: hypothesis-only
+- id: N08
+  title: parallelism-silently-sequentialized
+  category: negative
+  admission: admitted
+  sourceRefs:
+  - argo-dag-diamond
+  dominantSemantics:
+  - semantic-loss
+  - parallel
+  continuityKinds: []
+  baselineExpectation: BLOCKED_BY_TARGET_CAPABILITY
+  claim: hypothesis-only
