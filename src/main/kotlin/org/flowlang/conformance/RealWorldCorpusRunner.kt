@@ -36,8 +36,7 @@ import org.flowlang.validator.FlowValidator
 
 class RealWorldCorpusRunner(
     private val rootDir: File = File("."),
-    private val registry: ModuleRegistry =
-        ModuleRegistry.fromDirectory(File(rootDir, "modules"), includeDefaults = true),
+    private val registry: ModuleRegistry = ModuleRegistry.fromDirectory(File(rootDir, "modules")),
     private val targets: Map<String, TargetCapability> =
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
@@ -54,7 +53,6 @@ class RealWorldCorpusRunner(
         val intentFile = requiredFile(case.directory, case.definition.intent, "canonical intent")
         val evaluation = evaluateIntent(
             caseId = case.definition.id,
-            category = case.definition.category,
             intentFile = intentFile,
             expected = case.expectedPlan,
             targetExpectations = case.targetExpectations
@@ -78,7 +76,6 @@ class RealWorldCorpusRunner(
         case.mutations.map { (mutation, mutationDir) ->
             evaluateIntent(
                 caseId = "${case.definition.id}:${mutation.id}",
-                category = "negative",
                 intentFile = requiredFile(mutationDir, mutation.intent, "mutation intent"),
                 expected = mutation.expectedPlan(),
                 targetExpectations = RealWorldTargetAssessmentDocument()
@@ -87,15 +84,16 @@ class RealWorldCorpusRunner(
 
     private fun evaluateIntent(
         caseId: String,
-        category: String,
         intentFile: File,
         expected: RealWorldExpectedPlan,
         targetExpectations: RealWorldTargetAssessmentDocument
     ): RealWorldEvaluationResult {
         val semanticDiagnostics = linkedSetOf<String>()
         val mismatches = mutableListOf<String>()
+        var authoredIntent: IntentDocument? = null
         val build = runCatching {
             val intent = IntentYamlLoader.load(intentFile)
+            authoredIntent = intent
             semanticDiagnostics += missingReferenceDiagnostics(intent)
             if (semanticDiagnostics.isNotEmpty()) return@runCatching PlanBuild(null)
 
@@ -116,13 +114,14 @@ class RealWorldCorpusRunner(
             null
         }
 
+        authoredIntent?.let { semanticDiagnostics += compareAuthoredIntent(it, expected) }
         val plan = build?.plan
         if ((plan != null) != expected.generated) {
             mismatches += "Expected generated=${expected.generated}, actual=${plan != null}."
         }
         if (plan != null) semanticDiagnostics += comparePlan(plan, expected)
 
-        val outcome = determineOutcome(category, semanticDiagnostics)
+        val outcome = determineOutcome(semanticDiagnostics)
         if (outcome != expected.expectedOutcome) {
             mismatches += "Expected outcome ${expected.expectedOutcome}, actual $outcome."
         }
@@ -149,6 +148,32 @@ class RealWorldCorpusRunner(
             targetAssessments = actualTargets,
             mismatches = mismatches
         )
+    }
+
+    /**
+     * Verifies authored ordering independently from the generated plan.
+     *
+     * Intent lowering currently inserts conservative sequential edges. Those edges
+     * must never be accepted as proof that a source-authored fan-in relation existed.
+     */
+    private fun compareAuthoredIntent(
+        intent: IntentDocument,
+        expected: RealWorldExpectedPlan
+    ): List<String> {
+        val diagnostics = linkedSetOf<String>()
+        val steps = intent.workflows.flatMap { it.steps }
+        val ordering = steps
+            .flatMap { target -> target.requires.map { source -> source to target.id } }
+            .groupBy({ it.first }, { it.second })
+
+        expected.requiredRelations
+            .filter { it.kind == PlanDependencyKind.ORDERING }
+            .forEach { relation ->
+                if (!reachable(relation.source, relation.target, ordering)) {
+                    diagnostics += REQUIRED_RELATION_MISSING
+                }
+            }
+        return diagnostics.toList()
     }
 
     private fun comparePlan(plan: ExecutionPlan, expected: RealWorldExpectedPlan): List<String> {
@@ -279,15 +304,17 @@ class RealWorldCorpusRunner(
         }
     }
 
+    /** Detect references before their producer is authored, not merely anywhere in the file. */
     private fun missingReferenceDiagnostics(intent: IntentDocument): List<String> {
         val known = linkedSetOf<String>()
         known += intent.inputs.map { it.name }
+        val missing = mutableListOf<String>()
         intent.workflows.flatMap { it.steps }.forEach { step ->
+            missing += step.params.values
+                .flatMap(::referenceRoots)
+                .filter { it !in known }
             known += step.id
             known += step.produces
-        }
-        val missing = intent.workflows.flatMap { workflow ->
-            workflow.steps.flatMap { step -> step.params.values.flatMap(::referenceRoots).filter { it !in known } }
         }
         return if (missing.isEmpty()) emptyList() else listOf(MISSING_VALUE_PRODUCER)
     }
@@ -320,11 +347,9 @@ class RealWorldCorpusRunner(
         return false
     }
 
-    private fun determineOutcome(category: String, diagnostics: Set<String>): RealWorldResult = when {
+    private fun determineOutcome(diagnostics: Set<String>): RealWorldResult = when {
         MISSING_VALUE_PRODUCER in diagnostics -> RealWorldResult.INVALID_SOURCE_PIPELINE
         DYNAMIC_MATRIX_NOT_REPRESENTED in diagnostics -> RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION
-        REQUIRED_PARALLELISM_SERIALIZED in diagnostics && category == "negative" -> RealWorldResult.BLOCKED_BY_TARGET_CAPABILITY
-        REQUIRED_PARALLELISM_SERIALIZED in diagnostics -> RealWorldResult.SEMANTIC_ONLY
         diagnostics.isNotEmpty() -> RealWorldResult.SEMANTIC_ONLY
         else -> RealWorldResult.SUPPORTED_WITH_BINDING
     }
