@@ -24,6 +24,12 @@ enum class RealWorldLifecycle {
     ACCEPTED
 }
 
+data class RealWorldCorpusScope(
+    val domains: List<String> = emptyList(),
+    val primaryUse: String = "",
+    val roadmapRelationship: Map<String, String> = emptyMap()
+)
+
 data class RealWorldCorpusCounts(
     val sources: Int = 0,
     val admittedSources: Int = 0,
@@ -41,7 +47,9 @@ data class RealWorldCorpusManifest(
     val version: String = "",
     val status: String = "",
     val name: String = "",
+    val scope: RealWorldCorpusScope = RealWorldCorpusScope(),
     val catalogs: Map<String, String> = emptyMap(),
+    val schemas: Map<String, String> = emptyMap(),
     val casePackages: List<String> = emptyList(),
     val counts: RealWorldCorpusCounts = RealWorldCorpusCounts(),
     val invariants: List<String> = emptyList()
@@ -69,6 +77,7 @@ data class RealWorldSourceCatalog(
     val kind: String = "",
     val version: String = "",
     val status: String = "",
+    val admissionPolicy: Map<String, String> = emptyMap(),
     val sources: List<RealWorldSourceRecord> = emptyList()
 )
 
@@ -80,14 +89,20 @@ data class RealWorldScenarioRecord(
     val lifecycle: RealWorldLifecycle = RealWorldLifecycle.CATALOGUED,
     val casePath: String? = null,
     val sourceRefs: List<String> = emptyList(),
+    val dominantSemantics: List<String> = emptyList(),
+    val continuityKinds: List<String> = emptyList(),
     val baselineExpectation: RealWorldResult = RealWorldResult.SEMANTIC_ONLY,
-    val claim: String = ""
+    val claim: String = "",
+    val sourceCoverage: String? = null,
+    val coverageGap: String? = null
 )
 
 data class RealWorldScenarioCatalog(
     val kind: String = "",
     val version: String = "",
     val status: String = "",
+    val resultVocabulary: List<RealWorldResult> = emptyList(),
+    val continuityVocabulary: List<String> = emptyList(),
     val scenarios: List<RealWorldScenarioRecord> = emptyList()
 )
 
