@@ -25,7 +25,7 @@ class AdapterControlProviderBehaviorTests {
     @Test
     fun jenkinsFlowLevelErrorHandlerRendersProtectedTryCatchBoundary() {
         val plan = FlowPlanner(ModuleRegistry()).plan(
-            FlowParser.parse(
+            FlowParser().parse(
                 """
                 version "1.0"
                 flow "jenkins-flow-error-boundary" {
