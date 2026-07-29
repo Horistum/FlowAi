@@ -193,7 +193,8 @@ class FlowValidator(
             is SkipNode -> checkExpr(stmt.message, scope, "auto", null, issues)
             is ApproveNode -> {
                 stmt.params.values.forEach { checkExpr(it, scope, "auto", null, issues) }
-                stmt.result?.let { if (!results.add(it.name)) issues += err("DUPLICATE_RESULT", "Result '${it.name}' is already defined", stmt.sourceLocation); scope.declare(it.name) }
+                stmt.result?.let { declareResult(it.name, scope, results, stmt.sourceLocation, issues) }
+                stmt.declaredOutputs.forEach { declareResult(it, scope, results, stmt.sourceLocation, issues) }
             }
             is ExpectNode -> stmt.expressions.forEach { checkExpr(it, scope, "implicitResult", null, issues) }
             is ErrorHandlerNode -> {
@@ -244,11 +245,10 @@ class FlowValidator(
         action.params.values.forEach { checkExpr(it, scope, "auto", null, issues) }
         action.safety?.condition?.let { checkExpr(it, scope, "auto", null, issues) }
 
-        // result binding
-        action.result?.let {
-            if (!results.add(it.name)) issues += err("DUPLICATE_RESULT", "Result '${it.name}' is already defined", action.sourceLocation)
-            scope.declare(it.name)
-        }
+        // Result bindings and canonical declared outputs become referenceable only
+        // after the producing statement validates, so self-references remain invalid.
+        action.result?.let { declareResult(it.name, scope, results, action.sourceLocation, issues) }
+        action.declaredOutputs.forEach { declareResult(it, scope, results, action.sourceLocation, issues) }
         if (action.handler != null && action.result == null)
             issues += err("HANDLER_WITHOUT_RESULT", "Result handler requires a result binding", action.sourceLocation)
 
@@ -267,6 +267,23 @@ class FlowValidator(
                 }
             }
         }
+    }
+
+    private fun declareResult(
+        name: String,
+        scope: Scope,
+        results: MutableSet<String>,
+        location: SourceLocation?,
+        issues: MutableList<ValidationIssue>
+    ) {
+        if (name.isBlank()) {
+            issues += err("RESULT_NAME_EMPTY", "Result and declared output names must not be empty", location)
+            return
+        }
+        if (!results.add(name)) {
+            issues += err("DUPLICATE_RESULT", "Result '$name' is already defined", location)
+        }
+        scope.declare(name)
     }
 
     // --- expression checking --------------------------------------------------
