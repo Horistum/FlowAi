@@ -121,7 +121,7 @@ The first implementation batch should be continuity-led because it directly supp
 1. C06 artifact transfer between jobs;
 2. A11 output-driven downstream matrix;
 3. C02 parallel fan-out/fan-in with no data transfer;
-4. P04 build-once promote-many;
+4. P04 build-once promote-many after admitting a complete promotion source;
 5. A06 typed human input;
 6. N01 and N07 missing-result diagnostics;
 7. N08 parallelism loss.
