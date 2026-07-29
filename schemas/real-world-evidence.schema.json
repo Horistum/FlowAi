@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Accepted Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "version", "caseId", "status", "outcome", "expectedDiagnostics", "sourceRevision", "validatedBy"],
+  "properties": {
+    "kind": {"const": "FlowRealWorldEvidence"},
+    "version": {"const": "0.2"},
+    "caseId": {"type": "string"},
+    "status": {"const": "ACCEPTED"},
+    "outcome": {"enum": ["SUPPORTED", "SUPPORTED_WITH_BINDING", "SEMANTIC_ONLY", "BLOCKED_BY_TARGET_CAPABILITY", "AMBIGUOUS_SOURCE_INTENT", "UNSUPPORTED_DYNAMIC_CONSTRUCTION", "INVALID_SOURCE_PIPELINE"]},
+    "expectedDiagnostics": {"type": "array", "items": {"type": "string"}},
+    "sourceRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "validatedBy": {"type": "array", "items": {"type": "string"}}
+  }
+}
