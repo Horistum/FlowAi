@@ -185,21 +185,24 @@ class AdapterControlMaterializationAuthorityTests {
     }
 
     @Test
-    fun supportedSemanticAtWrongScopeIsBlocked() {
+    fun supportedSemanticAtWrongScopeFailsEvidenceCertification() {
         val document = AdapterControlMaterializationLoader.load(rootDir)
         val malformed = document.mapClaim("jenkins", AdapterControlFamily.APPROVAL) { claim ->
             claim.copy(scopes = setOf(AdapterControlScope.WORKFLOW))
         }
         val scopedAuthority = authorityFor(malformed)
 
-        assertEquals("PASS", scopedAuthority.analyze().status)
-        val assessment = scopedAuthority.assess(
-            ExecutionPlan(flowName = "approval", nodes = listOf(ApprovalNode(id = "approve"))),
-            "jenkins"
-        )
-        assertEquals(AdapterControlDecision.BLOCKED, assessment.decision)
-        assertEquals(listOf(AdapterControlEvidenceStatus.UNSUPPORTED), assessment.evidence.map { it.status })
-        assertTrue(assessment.evidence.single().detail.contains("not required scope STEP"))
+        val report = scopedAuthority.analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "CONTROL_SUPPORTED_SCOPE_CONTRACT_MISMATCH" })
+
+        val failure = assertFailsWith<IllegalStateException> {
+            scopedAuthority.assess(
+                ExecutionPlan(flowName = "approval", nodes = listOf(ApprovalNode(id = "approve"))),
+                "jenkins"
+            )
+        }
+        assertTrue(failure.message.orEmpty().contains("CONTROL_SUPPORTED_SCOPE_CONTRACT_MISMATCH"))
     }
 
     @Test
