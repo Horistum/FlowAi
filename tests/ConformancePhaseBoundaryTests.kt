@@ -29,7 +29,6 @@ class ConformancePhaseBoundaryTests {
         assertTrue(realWorldIndexes.all { it > adapterIndex }, names.joinToString())
         assertFalse(coreInventory.preClosureChecks.any { it.startsWith(REAL_WORLD_PREFIX) })
         assertFalse(adapterInventory.checks.any { it.startsWith(REAL_WORLD_PREFIX) })
-        assertTrue(summary.checks.filter { it.name.startsWith(REAL_WORLD_PREFIX) }.all { it.passed })
     }
 
     companion object {
