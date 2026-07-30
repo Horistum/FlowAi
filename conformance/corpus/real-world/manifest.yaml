@@ -50,7 +50,7 @@ invariants:
 - A source workflow is evidence of platform behavior, not the authority for universal Flow meaning.
 - Ordering is not accepted as value, workspace, artifact or state continuity.
 - Broad scenario hypotheses and accepted executable evidence remain separate authorities.
-- Source composition and executable-case provenance are explicit; vendor examples are not described as production pipelines.
+- Source composition and executable-case primary provenance are explicit; official examples are not described as production workflows.
 - Every accepted case owns a canonical intent, expected plan semantics, target assessment, mutation evidence and immutable source provenance.
 - Unsupported or ambiguous behavior remains explicit and cannot be converted to PASS by approximation.
 - The corpus runs after frozen Core and adapter inventories and cannot mutate either evidence boundary.
