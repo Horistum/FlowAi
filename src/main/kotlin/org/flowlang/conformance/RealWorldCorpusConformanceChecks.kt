@@ -19,7 +19,15 @@ class RealWorldCorpusConformanceChecks(
         if (corpus == null) {
             return listOf(ConformanceCheck(RealWorldCorpusRunner.INTEGRITY_CHECK, false, corpusResult.exceptionOrNull()?.message))
         }
-        val checks = mutableListOf(ConformanceCheck(RealWorldCorpusRunner.INTEGRITY_CHECK, true))
+
+        val compositionErrors = sourceCompositionErrors(corpus)
+        val checks = mutableListOf(
+            ConformanceCheck(
+                name = RealWorldCorpusRunner.INTEGRITY_CHECK,
+                passed = compositionErrors.isEmpty(),
+                message = compositionErrors.takeIf { it.isNotEmpty() }?.joinToString(" | ")
+            )
+        )
         corpus.cases.forEach { case ->
             val result = runCatching { runner.evaluate(case) }
             val evaluation = result.getOrNull()
@@ -41,5 +49,45 @@ class RealWorldCorpusConformanceChecks(
                 .takeIf { it.isNotEmpty() }?.joinToString(" | ")
         )
         return checks
+    }
+
+    private fun sourceCompositionErrors(corpus: LoadedRealWorldCorpus): List<String> = buildList {
+        val counts = corpus.manifest.counts
+        val sourceKinds = corpus.sources.sources.groupingBy { it.sourceKind }.eachCount()
+        val caseKinds = corpus.cases.groupingBy { it.source.sourceKind }.eachCount()
+        val unknownSourceKinds = sourceKinds.keys - SOURCE_KINDS
+        val unknownCaseKinds = caseKinds.keys - SOURCE_KINDS
+
+        if (unknownSourceKinds.isNotEmpty()) {
+            add("Unknown source kinds: ${unknownSourceKinds.sorted()}.")
+        }
+        if (unknownCaseKinds.isNotEmpty()) {
+            add("Executable cases use unknown primary source kinds: ${unknownCaseKinds.sorted()}.")
+        }
+
+        compareCount("productionSources", counts.productionSources, sourceKinds[PRODUCTION] ?: 0)
+        compareCount("exampleSources", counts.exampleSources, sourceKinds[EXAMPLE] ?: 0)
+        compareCount("semanticReferenceSources", counts.semanticReferenceSources, sourceKinds[SEMANTIC_REFERENCE] ?: 0)
+        compareCount("productionCases", counts.productionCases, caseKinds[PRODUCTION] ?: 0)
+        compareCount("exampleCases", counts.exampleCases, caseKinds[EXAMPLE] ?: 0)
+        compareCount("semanticReferenceCases", counts.semanticReferenceCases, caseKinds[SEMANTIC_REFERENCE] ?: 0)
+
+        if (counts.productionSources + counts.exampleSources + counts.semanticReferenceSources != counts.sources) {
+            add("Declared source-class counts do not sum to sources=${counts.sources}.")
+        }
+        if (counts.productionCases + counts.exampleCases + counts.semanticReferenceCases != counts.executableCases) {
+            add("Declared executable-case source-class counts do not sum to executableCases=${counts.executableCases}.")
+        }
+    }
+
+    private fun MutableList<String>.compareCount(label: String, declared: Int, actual: Int) {
+        if (declared != actual) add("Manifest $label=$declared, actual=$actual.")
+    }
+
+    companion object {
+        private const val PRODUCTION = "production-workflow"
+        private const val EXAMPLE = "official-example"
+        private const val SEMANTIC_REFERENCE = "official-semantic-reference"
+        private val SOURCE_KINDS = setOf(PRODUCTION, EXAMPLE, SEMANTIC_REFERENCE)
     }
 }
