@@ -34,11 +34,17 @@ data class RealWorldCorpusCounts(
     val sources: Int = 0,
     val admittedSources: Int = 0,
     val screenedSources: Int = 0,
+    val productionSources: Int = 0,
+    val exampleSources: Int = 0,
+    val semanticReferenceSources: Int = 0,
     val scenarios: Int = 0,
     val admittedScenarios: Int = 0,
     val screenedScenarios: Int = 0,
     val plannedScenarios: Int = 0,
     val executableCases: Int = 0,
+    val productionCases: Int = 0,
+    val exampleCases: Int = 0,
+    val semanticReferenceCases: Int = 0,
     val mutationCases: Int = 0
 )
 
