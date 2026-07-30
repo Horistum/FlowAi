@@ -30,6 +30,23 @@ class RealWorldCorpusTests {
     }
 
     @Test
+    fun sourceCompositionIsExplicitAndMatchesExecutableCaseProvenance() {
+        val corpus = runner.load()
+        val counts = corpus.manifest.counts
+
+        assertEquals(3, counts.productionSources)
+        assertEquals(8, counts.exampleSources)
+        assertEquals(4, counts.semanticReferenceSources)
+        assertEquals(1, counts.productionCases)
+        assertEquals(5, counts.exampleCases)
+        assertEquals(0, counts.semanticReferenceCases)
+        assertEquals(counts.sources, counts.productionSources + counts.exampleSources + counts.semanticReferenceSources)
+        assertEquals(counts.executableCases, counts.productionCases + counts.exampleCases + counts.semanticReferenceCases)
+        assertEquals(1, corpus.cases.count { it.source.sourceKind == "production-workflow" })
+        assertEquals(5, corpus.cases.count { it.source.sourceKind == "official-example" })
+    }
+
+    @Test
     fun everyRealWorldCaseRunsThroughTheProductionIntentPipeline() {
         val results = runner.evaluateAll()
         assertTrue(
