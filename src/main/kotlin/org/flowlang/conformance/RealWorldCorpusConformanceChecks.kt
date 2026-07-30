@@ -54,6 +54,27 @@ class RealWorldCorpusConformanceChecks(
     private fun sourceCompositionErrors(corpus: LoadedRealWorldCorpus): List<String> {
         val errors = mutableListOf<String>()
         val counts = corpus.manifest.counts
+        val declaredCounts = mapOf(
+            "sources" to counts.sources,
+            "admittedSources" to counts.admittedSources,
+            "screenedSources" to counts.screenedSources,
+            "productionSources" to counts.productionSources,
+            "exampleSources" to counts.exampleSources,
+            "semanticReferenceSources" to counts.semanticReferenceSources,
+            "scenarios" to counts.scenarios,
+            "admittedScenarios" to counts.admittedScenarios,
+            "screenedScenarios" to counts.screenedScenarios,
+            "plannedScenarios" to counts.plannedScenarios,
+            "executableCases" to counts.executableCases,
+            "productionCases" to counts.productionCases,
+            "exampleCases" to counts.exampleCases,
+            "semanticReferenceCases" to counts.semanticReferenceCases,
+            "mutationCases" to counts.mutationCases
+        )
+        declaredCounts.filterValues { it < 0 }.forEach { (name, value) ->
+            errors += "Manifest $name must not be negative, got $value."
+        }
+
         val unclassifiedSources = corpus.sources.sources.filter { it.classifiedKind() == null }
         val unclassifiedCases = corpus.cases.filter { it.source.classifiedKind() == null }
         val sourceKinds = corpus.sources.sources.mapNotNull { it.classifiedKind() }.groupingBy { it }.eachCount()
