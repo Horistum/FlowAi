@@ -54,10 +54,10 @@ class RealWorldCorpusConformanceChecks(
     private fun sourceCompositionErrors(corpus: LoadedRealWorldCorpus): List<String> {
         val errors = mutableListOf<String>()
         val counts = corpus.manifest.counts
-        val unclassifiedSources = corpus.sources.sources.filter { it.classifiedKind == null }
-        val unclassifiedCases = corpus.cases.filter { it.source.classifiedKind == null }
-        val sourceKinds = corpus.sources.sources.mapNotNull { it.classifiedKind }.groupingBy { it }.eachCount()
-        val caseKinds = corpus.cases.mapNotNull { it.source.classifiedKind }.groupingBy { it }.eachCount()
+        val unclassifiedSources = corpus.sources.sources.filter { it.classifiedKind() == null }
+        val unclassifiedCases = corpus.cases.filter { it.source.classifiedKind() == null }
+        val sourceKinds = corpus.sources.sources.mapNotNull { it.classifiedKind() }.groupingBy { it }.eachCount()
+        val caseKinds = corpus.cases.mapNotNull { it.source.classifiedKind() }.groupingBy { it }.eachCount()
 
         if (unclassifiedSources.isNotEmpty()) {
             errors += "Unknown source kinds: ${unclassifiedSources.map { it.sourceKind }.distinct().sorted()}."
