@@ -24,6 +24,16 @@ enum class RealWorldLifecycle {
     ACCEPTED
 }
 
+enum class RealWorldSourceKind(val documentValue: String) {
+    PRODUCTION_WORKFLOW("production-workflow"),
+    OFFICIAL_EXAMPLE("official-example"),
+    OFFICIAL_SEMANTIC_REFERENCE("official-semantic-reference");
+
+    companion object {
+        fun fromDocument(value: String): RealWorldSourceKind? = entries.singleOrNull { it.documentValue == value }
+    }
+}
+
 data class RealWorldCorpusScope(
     val domains: List<String> = emptyList(),
     val primaryUse: String = "",
@@ -77,7 +87,9 @@ data class RealWorldSourceRecord(
     val path: String = "",
     val license: RealWorldSourceLicense = RealWorldSourceLicense(),
     val semanticLoad: List<String> = emptyList()
-)
+) {
+    val classifiedKind: RealWorldSourceKind? get() = RealWorldSourceKind.fromDocument(sourceKind)
+}
 
 data class RealWorldSourceCatalog(
     val kind: String = "",
