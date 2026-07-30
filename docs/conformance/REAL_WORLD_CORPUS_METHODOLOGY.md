@@ -4,6 +4,8 @@
 
 The corpus measures whether Flow preserves externally authored automation intent across normalization, planning and target assessment. It is not a syntax-transpilation benchmark.
 
+"Real-world" means externally authored and independently sourced. It does not imply that every source is a mature production pipeline.
+
 ## Catalog authority separation
 
 `scenarios.yaml` remains the broad research catalog. Its entries are hypotheses and coverage planning records.
@@ -57,9 +59,19 @@ Nine schemas cover:
 
 The loader additionally verifies repository-bounded paths, immutable revisions, SPDX agreement, catalog counts, source references, accepted-index identity and case-path parity, unique task and mutation identities, continuity channel names and evidence-to-expectation agreement.
 
-## Source admission
+## Source admission and source classes
 
 An admitted source records repository identity, immutable commit revision, exact path, source class, license evidence and semantic reason for inclusion. Every executable case vendors a bounded attributed source fixture plus provenance and an SPDX notice. The fixture is evidence input, not a target template.
+
+The corpus recognizes three source classes:
+
+- `production-workflow`: repository-specific automation used by the source project for its own delivery or verification;
+- `official-example`: an official vendor or project example designed to demonstrate bounded platform semantics;
+- `official-semantic-reference`: official documentation or a semantic reference used to define or screen behavior.
+
+The manifest declares counts for all three classes and for the primary source class of executable cases. Post-Core integrity checks compare those declarations with `sources.yaml` and each case package's primary `sourceRef`.
+
+Official examples are valuable independent probes, but they are intentionally narrow and often didactic. They must not be described as equivalent to production configurations with accumulated policy, compatibility workarounds and historical complexity.
 
 ## Case lifecycle
 
@@ -134,6 +146,21 @@ For each target expectation the harness executes CompatibilityAnalyzer, Executio
 
 The initial baseline covers removed fan-in, removed branch, wrong artifact reference, ordering-only artifact substitution, removed approval output, removed matrix producer output, missing consumer result and serialized siblings with incomplete fan-in. A mutation passes only when exact diagnostics and outcome match.
 
+## Conformance phase ownership
+
+The runner constructs four explicit phases:
+
+1. frozen Core pre-closure evidence;
+2. semantic closure derived only from that pre-closure collection;
+3. adapter-stream certification from its separate inventory;
+4. real-world behavioral evidence.
+
+The semantic closure authority receives the dedicated pre-closure collection directly. It does not receive a mutable aggregate whose contents depend on the position of later append statements.
+
+Real-world check IDs must remain absent from both `standard/conformance/pre-closure-check-inventory.yaml` and `adapters/conformance/check-inventory.yaml`. A regression test verifies inventory exclusion and final execution order.
+
+The closure authority is deliberately not filtered by known prefixes. Prefix filtering could hide an accidentally introduced Core check instead of failing on the missing inventory declaration.
+
 ## Core boundary
 
 The corpus runs after frozen Core and adapter inventories. It cannot rewrite closure evidence or adapter certification counts.
@@ -142,4 +169,4 @@ The FlowValidator correction in this PR aligns validation with the existing `pro
 
 ## Current executable baseline
 
-Six cases are executed: C02, C06, A06, A11, N01 and N08. Remaining catalog entries stay research hypotheses until they receive the same complete package and mutation evidence.
+Six cases are executed: C02, C06, A06, A11, N01 and N08. A11 is the only case whose primary fixture is currently a production workflow. The other five use official examples. Remaining catalog entries stay research hypotheses until they receive the same complete package and mutation evidence.
