@@ -57,21 +57,21 @@
         "mutationCases"
       ],
       "properties": {
-        "sources": {"type": "integer", "minimum": 0},
-        "admittedSources": {"type": "integer", "minimum": 0},
-        "screenedSources": {"type": "integer", "minimum": 0},
-        "productionSources": {"type": "integer", "minimum": 0},
-        "exampleSources": {"type": "integer", "minimum": 0},
-        "semanticReferenceSources": {"type": "integer", "minimum": 0},
-        "scenarios": {"type": "integer", "minimum": 0},
-        "admittedScenarios": {"type": "integer", "minimum": 0},
-        "screenedScenarios": {"type": "integer", "minimum": 0},
-        "plannedScenarios": {"type": "integer", "minimum": 0},
-        "executableCases": {"type": "integer", "minimum": 0},
-        "productionCases": {"type": "integer", "minimum": 0},
-        "exampleCases": {"type": "integer", "minimum": 0},
-        "semanticReferenceCases": {"type": "integer", "minimum": 0},
-        "mutationCases": {"type": "integer", "minimum": 0}
+        "sources": {"type": "integer"},
+        "admittedSources": {"type": "integer"},
+        "screenedSources": {"type": "integer"},
+        "productionSources": {"type": "integer"},
+        "exampleSources": {"type": "integer"},
+        "semanticReferenceSources": {"type": "integer"},
+        "scenarios": {"type": "integer"},
+        "admittedScenarios": {"type": "integer"},
+        "screenedScenarios": {"type": "integer"},
+        "plannedScenarios": {"type": "integer"},
+        "executableCases": {"type": "integer"},
+        "productionCases": {"type": "integer"},
+        "exampleCases": {"type": "integer"},
+        "semanticReferenceCases": {"type": "integer"},
+        "mutationCases": {"type": "integer"}
       }
     },
     "invariants": {"type": "array", "items": {"type": "string"}}
