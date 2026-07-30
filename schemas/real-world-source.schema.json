@@ -18,7 +18,7 @@
         "properties": {
           "id": {"type": "string"},
           "platform": {"type": "string"},
-          "sourceKind": {"type": "string"},
+          "sourceKind": {"enum": ["production-workflow", "official-example", "official-semantic-reference"]},
           "admission": {"enum": ["admitted", "screened", "candidate"]},
           "repository": {"type": "string"},
           "revision": {"type": "string"},
