@@ -30,7 +30,8 @@ enum class RealWorldSourceKind(val documentValue: String) {
     OFFICIAL_SEMANTIC_REFERENCE("official-semantic-reference");
 
     companion object {
-        fun fromDocument(value: String): RealWorldSourceKind? = entries.singleOrNull { it.documentValue == value }
+        fun fromDocument(value: String): RealWorldSourceKind? =
+            values().singleOrNull { it.documentValue == value }
     }
 }
 
@@ -88,7 +89,7 @@ data class RealWorldSourceRecord(
     val license: RealWorldSourceLicense = RealWorldSourceLicense(),
     val semanticLoad: List<String> = emptyList()
 ) {
-    val classifiedKind: RealWorldSourceKind? get() = RealWorldSourceKind.fromDocument(sourceKind)
+    fun classifiedKind(): RealWorldSourceKind? = RealWorldSourceKind.fromDocument(sourceKind)
 }
 
 data class RealWorldSourceCatalog(
