@@ -43,9 +43,9 @@ class RealWorldCorpusTests {
         assertEquals(0, counts.semanticReferenceCases)
         assertEquals(counts.sources, counts.productionSources + counts.exampleSources + counts.semanticReferenceSources)
         assertEquals(counts.executableCases, counts.productionCases + counts.exampleCases + counts.semanticReferenceCases)
-        assertEquals(1, corpus.cases.count { it.source.classifiedKind == RealWorldSourceKind.PRODUCTION_WORKFLOW })
-        assertEquals(5, corpus.cases.count { it.source.classifiedKind == RealWorldSourceKind.OFFICIAL_EXAMPLE })
-        assertEquals(0, corpus.cases.count { it.source.classifiedKind == RealWorldSourceKind.OFFICIAL_SEMANTIC_REFERENCE })
+        assertEquals(1, corpus.cases.count { it.source.classifiedKind() == RealWorldSourceKind.PRODUCTION_WORKFLOW })
+        assertEquals(5, corpus.cases.count { it.source.classifiedKind() == RealWorldSourceKind.OFFICIAL_EXAMPLE })
+        assertEquals(0, corpus.cases.count { it.source.classifiedKind() == RealWorldSourceKind.OFFICIAL_SEMANTIC_REFERENCE })
     }
 
     @Test
