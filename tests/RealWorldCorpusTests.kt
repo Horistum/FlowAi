@@ -9,6 +9,7 @@ import org.flowlang.conformance.RealWorldCorpusConformanceChecks
 import org.flowlang.conformance.RealWorldCorpusRunner
 import org.flowlang.conformance.RealWorldLifecycle
 import org.flowlang.conformance.RealWorldResult
+import org.flowlang.conformance.RealWorldSourceKind
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
@@ -42,8 +43,9 @@ class RealWorldCorpusTests {
         assertEquals(0, counts.semanticReferenceCases)
         assertEquals(counts.sources, counts.productionSources + counts.exampleSources + counts.semanticReferenceSources)
         assertEquals(counts.executableCases, counts.productionCases + counts.exampleCases + counts.semanticReferenceCases)
-        assertEquals(1, corpus.cases.count { it.source.sourceKind == "production-workflow" })
-        assertEquals(5, corpus.cases.count { it.source.sourceKind == "official-example" })
+        assertEquals(1, corpus.cases.count { it.source.classifiedKind == RealWorldSourceKind.PRODUCTION_WORKFLOW })
+        assertEquals(5, corpus.cases.count { it.source.classifiedKind == RealWorldSourceKind.OFFICIAL_EXAMPLE })
+        assertEquals(0, corpus.cases.count { it.source.classifiedKind == RealWorldSourceKind.OFFICIAL_SEMANTIC_REFERENCE })
     }
 
     @Test
