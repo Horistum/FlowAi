@@ -103,5 +103,20 @@ class FlowStandardBundleVerifierTests {
         assertTrue(report.missingReleaseGateChecks.contains("conformance-manifest.json:invalid"))
     }
 
+    @Test
+    fun malformedExportBundleContainingEveryStableArtifactFailsClosed() {
+        val bundle = standardBundleFixture()
+        val artifacts = StandardSurface.publicSurface().stableArtifacts.joinToString()
+        File(bundle, "standard-export-bundle.json")
+            .writeText("{ \"message\": \"$artifacts\", \"requiredArtifacts\": [ }")
+
+        val report = StandardBundleVerifier().verify(bundle)
+
+        assertEquals("FAIL", report.status)
+        assertTrue(
+            report.missingStableSurfaceArtifactsInExportBundle.contains("standard-export-bundle.json:invalid")
+        )
+    }
+
     private fun standardBundleFixture(): File = StrictStandardBundleFixture.create(File("."))
 }
