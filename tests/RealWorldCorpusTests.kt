@@ -71,6 +71,16 @@ class RealWorldCorpusTests {
     }
 
     @Test
+    fun outputDrivenMatrixRequiresExplicitPlanRepresentation() {
+        val case = runner.load().cases.single { it.definition.id == "A11" }
+        val result = runner.evaluate(case)
+
+        assertTrue(result.accepted, result.mismatches.joinToString(" | "))
+        assertEquals(RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION, result.outcome)
+        assertEquals(listOf(RealWorldCorpusRunner.DYNAMIC_MATRIX_NOT_REPRESENTED), result.diagnostics)
+    }
+
+    @Test
     fun allNegativeMutationsProduceExactExpectedDiagnostics() {
         val corpus = runner.load()
         val results = corpus.cases.flatMap(runner::evaluateMutations)
