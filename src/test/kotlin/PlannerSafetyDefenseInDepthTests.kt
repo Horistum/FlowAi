@@ -8,6 +8,7 @@ import org.flowlang.ast.FlowNode
 import org.flowlang.ast.ReferenceNode
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.MissingPlanningActionContractException
+import org.flowlang.validator.FlowValidator
 
 class PlannerSafetyDefenseInDepthTests {
     @Test
@@ -24,6 +25,9 @@ class PlannerSafetyDefenseInDepthTests {
                 )
             )
         )
+
+        val validation = FlowValidator().validate(document)
+        assertTrue(validation.issues.any { issue -> issue.code == "ACTION_NOT_FOUND" })
 
         val failure = assertFailsWith<MissingPlanningActionContractException> {
             FlowPlanner().plan(document)
