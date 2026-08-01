@@ -24,8 +24,6 @@ import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
-import org.flowlang.planner.LoopNode
-import org.flowlang.planner.ParallelGroupNode
 import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.planner.PlanDependencyRelation
 import org.flowlang.planner.PlanDependencyRelations
@@ -55,7 +53,8 @@ class RealWorldCorpusRunner(
             caseId = case.definition.id,
             intentFile = intentFile,
             expected = case.expectedPlan,
-            targetExpectations = case.targetExpectations
+            targetExpectations = case.targetExpectations,
+            sourceSemantics = case.source.semanticLoad.toSet()
         )
         val evidenceMismatches = buildList {
             if (case.evidence.outcome != evaluation.outcome) {
@@ -78,7 +77,8 @@ class RealWorldCorpusRunner(
                 caseId = "${case.definition.id}:${mutation.id}",
                 intentFile = requiredFile(mutationDir, mutation.intent, "mutation intent"),
                 expected = mutation.expectedPlan(),
-                targetExpectations = RealWorldTargetAssessmentDocument()
+                targetExpectations = RealWorldTargetAssessmentDocument(),
+                sourceSemantics = emptySet()
             )
         }
 
@@ -86,7 +86,8 @@ class RealWorldCorpusRunner(
         caseId: String,
         intentFile: File,
         expected: RealWorldExpectedPlan,
-        targetExpectations: RealWorldTargetAssessmentDocument
+        targetExpectations: RealWorldTargetAssessmentDocument,
+        sourceSemantics: Set<String>
     ): RealWorldEvaluationResult {
         val semanticDiagnostics = linkedSetOf<String>()
         val mismatches = mutableListOf<String>()
@@ -119,7 +120,10 @@ class RealWorldCorpusRunner(
         if ((plan != null) != expected.generated) {
             mismatches += "Expected generated=${expected.generated}, actual=${plan != null}."
         }
-        if (plan != null) semanticDiagnostics += comparePlan(plan, expected)
+        if (DYNAMIC_MATRIX_SOURCE_SEMANTIC in sourceSemantics && DYNAMIC_MATRIX_FEATURE !in expected.requiredFeatures) {
+            mismatches += "Expected plan omitted source-observed feature '$DYNAMIC_MATRIX_FEATURE'."
+        }
+        if (plan != null) semanticDiagnostics += comparePlan(plan, expected, sourceSemantics)
 
         val outcome = determineOutcome(semanticDiagnostics)
         if (outcome != expected.expectedOutcome) {
@@ -176,7 +180,11 @@ class RealWorldCorpusRunner(
         return diagnostics.toList()
     }
 
-    private fun comparePlan(plan: ExecutionPlan, expected: RealWorldExpectedPlan): List<String> {
+    private fun comparePlan(
+        plan: ExecutionPlan,
+        expected: RealWorldExpectedPlan,
+        sourceSemantics: Set<String>
+    ): List<String> {
         val diagnostics = linkedSetOf<String>()
         val nodes = PlanDependencyRelations.flatten(plan.nodes)
         val sourceNodes = nodes.mapNotNull { node -> sourceId(node)?.let { it to node } }.toMap()
@@ -220,35 +228,44 @@ class RealWorldCorpusRunner(
             }
         }
 
-        expected.requiredFeatures.forEach { feature ->
-            when (feature) {
-                "dynamic-matrix" -> {
-                    val represented = plan.nodes.any { it is LoopNode || it is ParallelGroupNode } ||
-                        plan.requiredCapabilities.any { it.contains("matrix", ignoreCase = true) }
-                    if (!represented) diagnostics += DYNAMIC_MATRIX_NOT_REPRESENTED
-                }
-                "typed-human-input" -> {
-                    val hasTypedChoice = plan.inputs.any { it.choices.isNotEmpty() }
-                    val hasApprovalOutput = nodes.filterIsInstance<ApprovalNode>().any { it.outputs.isNotEmpty() }
-                    if (!hasTypedChoice || !hasApprovalOutput) diagnostics += TYPED_HUMAN_INPUT_NOT_REPRESENTED
-                }
-                "artifact-identity" -> {
-                    val hasNamedContinuity = plan.dependencyRelations.any {
-                        it.kind == PlanDependencyKind.VALUE && !it.channel.isNullOrBlank()
+        if (DYNAMIC_MATRIX_SOURCE_SEMANTIC in sourceSemantics && !hasExplicitDynamicMatrixRepresentation(plan)) {
+            diagnostics += DYNAMIC_MATRIX_NOT_REPRESENTED
+        }
+
+        expected.requiredFeatures
+            .filterNot { it == DYNAMIC_MATRIX_FEATURE }
+            .forEach { feature ->
+                when (feature) {
+                    "typed-human-input" -> {
+                        val hasTypedChoice = plan.inputs.any { it.choices.isNotEmpty() }
+                        val hasApprovalOutput = nodes.filterIsInstance<ApprovalNode>().any { it.outputs.isNotEmpty() }
+                        if (!hasTypedChoice || !hasApprovalOutput) diagnostics += TYPED_HUMAN_INPUT_NOT_REPRESENTED
                     }
-                    if (!hasNamedContinuity) diagnostics += ARTIFACT_IDENTITY_NOT_REPRESENTED
-                }
-                "fan-in" -> {
-                    val incoming = plan.dependencyRelations
-                        .filter { it.kind == PlanDependencyKind.ORDERING && it.sourceNodeId != null }
-                        .groupingBy { it.targetNodeId }
-                        .eachCount()
-                    if (incoming.values.none { it >= 2 }) diagnostics += REQUIRED_RELATION_MISSING
+                    "artifact-identity" -> {
+                        val hasNamedContinuity = plan.dependencyRelations.any {
+                            it.kind == PlanDependencyKind.VALUE && !it.channel.isNullOrBlank()
+                        }
+                        if (!hasNamedContinuity) diagnostics += ARTIFACT_IDENTITY_NOT_REPRESENTED
+                    }
+                    "fan-in" -> {
+                        val incoming = plan.dependencyRelations
+                            .filter { it.kind == PlanDependencyKind.ORDERING && it.sourceNodeId != null }
+                            .groupingBy { it.targetNodeId }
+                            .eachCount()
+                        if (incoming.values.none { it >= 2 }) diagnostics += REQUIRED_RELATION_MISSING
+                    }
                 }
             }
-        }
         return diagnostics.toList()
     }
+
+    /**
+     * Generic loop or parallel nodes are not matrix evidence: neither carries both
+     * output-derived cardinality and per-item binding. The corpus therefore accepts
+     * the feature only when ExecutionPlan owns an explicit matrix representation.
+     */
+    private fun hasExplicitDynamicMatrixRepresentation(plan: ExecutionPlan): Boolean =
+        PlanDependencyRelations.flatten(plan.nodes).any { node -> node.kind == DYNAMIC_MATRIX_NODE_KIND }
 
     private fun assessTarget(
         caseId: String,
@@ -376,5 +393,8 @@ class RealWorldCorpusRunner(
         const val DYNAMIC_MATRIX_NOT_REPRESENTED = "REAL_WORLD_DYNAMIC_MATRIX_NOT_REPRESENTED"
         const val TYPED_HUMAN_INPUT_NOT_REPRESENTED = "REAL_WORLD_TYPED_HUMAN_INPUT_NOT_REPRESENTED"
         const val ARTIFACT_IDENTITY_NOT_REPRESENTED = "REAL_WORLD_ARTIFACT_IDENTITY_NOT_REPRESENTED"
+        private const val DYNAMIC_MATRIX_SOURCE_SEMANTIC = "dynamic-matrix-from-output"
+        private const val DYNAMIC_MATRIX_FEATURE = "dynamic-matrix"
+        private const val DYNAMIC_MATRIX_NODE_KIND = "DynamicMatrix"
     }
 }
