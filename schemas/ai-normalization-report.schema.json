@@ -3,23 +3,46 @@
   "$id": "https://flowlang.dev/schemas/ai-normalization-report.schema.json",
   "title": "Flow AI Normalization Report",
   "type": "object",
-  "required": ["standardVersion", "mode", "classification", "confidence", "guardrails"],
+  "required": ["standardVersion", "mode", "classification", "confidence", "targetPortability", "explanation", "guardrails"],
   "properties": {
     "standardVersion": { "type": "string" },
-    "mode": { "type": "string" },
+    "mode": { "type": "string", "enum": ["DRAFT", "STRICT", "EXPLAIN", "REPAIR"] },
     "classification": { "type": "object" },
     "confidence": { "type": "object" },
     "entities": { "type": "object" },
     "extractedEntities": { "type": "object" },
-    "missingDecisions": { "type": "array" },
-    "assumptions": { "type": "array" },
-    "openQuestions": { "type": "array" },
-    "risks": { "type": "array" },
+    "missingDecisions": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "object" } },
+    "openQuestions": { "type": "array", "items": { "type": "object" } },
+    "risks": { "type": "array", "items": { "type": "object" } },
     "safetyGates": { "type": "array", "items": { "type": "string" } },
-    "targetPortability": { "type": "object" },
-    "scenarioSelection": { "type": "object" },
+    "targetPortability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "requestedTarget", "authoritativeArtifacts"],
+      "properties": {
+        "status": { "type": "string", "const": "DEFERRED" },
+        "requestedTarget": { "type": "string" },
+        "authoritativeArtifacts": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "compatibility-report.json",
+              "execution-readiness-report.json",
+              "target-selection-report.json",
+              "target-decision-trace-report.json"
+            ]
+          }
+        }
+      }
+    },
+    "scenarioSelection": { "type": ["object", "null"] },
     "confidenceByArea": { "type": "object" },
     "explanation": { "type": "array", "items": { "type": "string" } },
     "guardrails": { "type": "array", "items": { "type": "string" } }
-  }
+  },
+  "additionalProperties": false
 }
