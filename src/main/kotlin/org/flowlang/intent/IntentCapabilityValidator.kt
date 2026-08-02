@@ -87,10 +87,10 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         issues += IntentSourceContradictionAuthority.validationIssues(intent)
 
         intent.systems.forEach { system ->
-            val normalizedType = normalizeSystemType(system.type)
-            val resolved = registry.findSystemType(normalizedType)
+            val bindingType = IntentSystemTypeAuthority.bindingType(system.type)
+            val resolved = registry.findSystemType(bindingType)
             if (resolved == null) {
-                issues += warn("UNKNOWN_SYSTEM_TYPE", "System '${system.name}' uses unknown type '$normalizedType'.")
+                issues += warn("UNKNOWN_SYSTEM_TYPE", "System '${system.name}' uses unknown type '$bindingType'.")
             } else {
                 val (_, contract) = resolved
                 validateConfig("System '${system.name}'", system.config, contract.input, issues)
@@ -211,12 +211,6 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
     }
 
     private enum class VisitState { VISITING, DONE }
-
-    private fun normalizeSystemType(type: String): String = when (type) {
-        "dockerRegistry", "containerRegistry" -> "docker"
-        "notification", "email" -> "notify"
-        else -> type
-    }
 
     private fun err(code: String, message: String) = IntentValidationIssue("error", code, message)
 
