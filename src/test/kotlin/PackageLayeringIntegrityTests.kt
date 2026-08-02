@@ -62,7 +62,7 @@ class PackageLayeringIntegrityTests {
             .filter { it.isFile && it.extension == "kt" }
             .mapNotNull { file ->
                 val imports = file.readLines()
-                    .map(String::trim)
+                    .map { it.trim() }
                     .filter { it.startsWith("import ") }
                     .map { it.removePrefix("import ").substringBefore(" as ") }
                 val forbidden = imports.filter { imported ->
