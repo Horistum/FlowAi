@@ -85,6 +85,10 @@ object TargetPortabilityEvidence {
     ) + authorityArtifacts
 }
 
+/** Internal map implementation used by scenario normalization without changing the public JSON shape. */
+internal class TargetPortabilityDisposition(requestedTarget: String = "not-specified") :
+    LinkedHashMap<String, String>(TargetPortabilityEvidence.deferred(requestedTarget))
+
 data class NormalizationReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
     val mode: NormalizationMode,
