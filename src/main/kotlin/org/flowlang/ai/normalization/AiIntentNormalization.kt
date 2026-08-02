@@ -58,24 +58,32 @@ data class AiIntentResponse(
     }
 }
 
-enum class TargetPortabilityStatus {
-    DEFERRED
-}
-
 /**
- * Normalization cannot certify target portability because no execution plan,
- * compatibility analysis or adapter evidence exists at this boundary.
+ * Normalization has no execution plan or adapter evidence, so it can only defer
+ * target portability to the public post-planning reports that own that decision.
+ * The map shape is retained for public artifact compatibility.
  */
-data class TargetPortabilityDisposition(
-    val status: TargetPortabilityStatus = TargetPortabilityStatus.DEFERRED,
-    val requestedTarget: String = "not-specified",
-    val authoritativeArtifacts: List<String> = listOf(
-        "compatibility-report.json",
-        "execution-readiness-report.json",
-        "target-selection-report.json",
-        "target-decision-trace-report.json"
+object TargetPortabilityEvidence {
+    const val STATUS_KEY = "status"
+    const val REQUESTED_TARGET_KEY = "requestedTarget"
+    const val COMPATIBILITY_AUTHORITY_KEY = "compatibilityAuthority"
+    const val READINESS_AUTHORITY_KEY = "readinessAuthority"
+    const val SELECTION_AUTHORITY_KEY = "selectionAuthority"
+    const val DECISION_TRACE_AUTHORITY_KEY = "decisionTraceAuthority"
+    const val DEFERRED = "DEFERRED"
+
+    val authorityArtifacts: Map<String, String> = linkedMapOf(
+        COMPATIBILITY_AUTHORITY_KEY to "compatibility-report.json",
+        READINESS_AUTHORITY_KEY to "execution-readiness-report.json",
+        SELECTION_AUTHORITY_KEY to "target-selection-report.json",
+        DECISION_TRACE_AUTHORITY_KEY to "target-decision-trace-report.json"
     )
-)
+
+    fun deferred(requestedTarget: String?): Map<String, String> = linkedMapOf(
+        STATUS_KEY to DEFERRED,
+        REQUESTED_TARGET_KEY to (requestedTarget ?: "not-specified")
+    ) + authorityArtifacts
+}
 
 data class NormalizationReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
@@ -89,7 +97,7 @@ data class NormalizationReport(
     val openQuestions: List<ClarificationQuestion> = emptyList(),
     val risks: List<IntentRisk> = emptyList(),
     val safetyGates: List<String> = emptyList(),
-    val targetPortability: TargetPortabilityDisposition = TargetPortabilityDisposition(),
+    val targetPortability: Map<String, String> = emptyMap(),
     val scenarioSelection: ScenarioSelectionReport? = null,
     val confidenceByArea: Map<String, Double> = mapOf(
         "overall" to confidence.overall,
