@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentStep
+import org.flowlang.intent.IntentSystemTypeAuthority
 import org.flowlang.intent.IntentValue
 import org.flowlang.intent.asTextOrNull
 import org.flowlang.planner.ApprovalNode
@@ -106,11 +107,7 @@ data class IntentFailureMetadata(
 object IntentLoweringAuthority {
     private val bindingMetadataParams = setOf("system", "tool", "engine")
 
-    fun canonicalSystemType(type: String): String = when (type) {
-        "dockerRegistry", "containerRegistry" -> "docker"
-        "notification", "email" -> "notify"
-        else -> type
-    }
+    fun canonicalSystemType(type: String): String = IntentSystemTypeAuthority.bindingType(type)
 
     fun sourceMetadata(intent: IntentDocument): IntentSourceMetadata {
         val inputNames = intent.inputs.map { it.name }.toSet()
