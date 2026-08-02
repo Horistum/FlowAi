@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Target Assessments",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["assessments"],
+  "properties": {
+    "assessments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "allowedResults", "mustNotBeExecutable"],
+        "properties": {
+          "target": {"type": "string"},
+          "allowedResults": {"type": "array", "items": {"enum": ["SUPPORTED", "SUPPORTED_WITH_BINDING", "SEMANTIC_ONLY", "BLOCKED_BY_TARGET_CAPABILITY", "AMBIGUOUS_SOURCE_INTENT", "UNSUPPORTED_DYNAMIC_CONSTRUCTION", "INVALID_SOURCE_PIPELINE"]}},
+          "mustNotBeExecutable": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}

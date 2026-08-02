@@ -1,0 +1,8 @@
+kind: FlowRealWorldEvidence
+version: '0.2'
+caseId: N01
+status: ACCEPTED
+outcome: INVALID_SOURCE_PIPELINE
+expectedDiagnostics: [REAL_WORLD_MISSING_VALUE_PRODUCER]
+sourceRevision: d98d7b7d73d1b24dd7258153453ea612dbb70092
+validatedBy: [real-world-corpus.case.n01, real-world-corpus.mutations]

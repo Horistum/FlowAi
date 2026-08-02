@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "version", "id", "title", "lifecycle", "category", "sourceRef", "source", "sourceObservations", "intent", "expected", "evidence", "mutations", "invariants"],
+  "properties": {
+    "kind": {"const": "FlowRealWorldCase"},
+    "version": {"const": "0.2"},
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "lifecycle": {"enum": ["MUTATION_VALIDATED", "ACCEPTED"]},
+    "category": {"enum": ["common", "production", "advanced", "negative"]},
+    "sourceRef": {"type": "string"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow", "provenance", "license"],
+      "properties": {
+        "workflow": {"type": "string"},
+        "provenance": {"type": "string"},
+        "license": {"type": "string"}
+      }
+    },
+    "sourceObservations": {"type": "string"},
+    "intent": {"type": "string"},
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executionPlan", "targetAssessments"],
+      "properties": {
+        "executionPlan": {"type": "string"},
+        "targetAssessments": {"type": "string"}
+      }
+    },
+    "evidence": {"type": "string"},
+    "mutations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "definition"],
+        "properties": {
+          "id": {"type": "string"},
+          "definition": {"type": "string"}
+        }
+      }
+    },
+    "invariants": {"type": "array", "items": {"type": "string"}}
+  }
+}

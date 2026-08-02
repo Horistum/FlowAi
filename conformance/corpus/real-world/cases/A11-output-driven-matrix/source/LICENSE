@@ -1,0 +1,2 @@
+SPDX-License-Identifier: Apache-2.0
+Source: prometheus/prometheus@40ea54d0b1d265b8dc830c88ef96b0b65f3ba0be:.github/workflows/ci.yml

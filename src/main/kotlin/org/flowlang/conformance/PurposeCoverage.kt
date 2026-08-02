@@ -1,7 +1,11 @@
-package org.flowlang.standard
+package org.flowlang.conformance
 
 import org.flowlang.artifacts.ReferenceIntentCorpusReport
 import org.flowlang.artifacts.StandardSurface
+import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.standard.GateKind
+import org.flowlang.standard.StandardCheck
+import org.flowlang.standard.StandardModel
 
 /**
  * Purpose coverage retains ratios as observations, but pass/fail is structural:

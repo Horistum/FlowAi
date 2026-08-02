@@ -1,0 +1,8 @@
+kind: FlowRealWorldEvidence
+version: '0.2'
+caseId: A11
+status: ACCEPTED
+outcome: UNSUPPORTED_DYNAMIC_CONSTRUCTION
+expectedDiagnostics: [REAL_WORLD_DYNAMIC_MATRIX_NOT_REPRESENTED]
+sourceRevision: 40ea54d0b1d265b8dc830c88ef96b0b65f3ba0be
+validatedBy: [real-world-corpus.case.a11, real-world-corpus.mutations]

@@ -8,6 +8,7 @@ import org.flowlang.artifacts.ArtifactEvidenceReport
 import org.flowlang.artifacts.ArtifactIntegrityAnalyzer
 import org.flowlang.artifacts.ArtifactIntegrityReport
 import org.flowlang.artifacts.ArtifactIntegrityVersionObservation
+import org.flowlang.artifacts.ConformanceManifestReport
 import org.flowlang.artifacts.FlowArtifactBundleAnalyzer
 import org.flowlang.artifacts.FlowArtifactBundleReport
 import org.flowlang.artifacts.PublicStandardDraft

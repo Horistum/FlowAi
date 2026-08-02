@@ -83,43 +83,42 @@ class CoreTargetProjectionBoundaryTests {
     }
 
     @Test
-    fun coreGenerationSourcesContainNoBuiltInTargetRouting() {
-        val coreFiles = listOf(
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetMaterializationResolverEngine.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt"
-        )
-        val forbidden = listOf(
+    fun coreGenerationPackageContainsNoBuiltInTargetOwnership() {
+        val coreDirectory = File("src/main/kotlin/org/flowlang/generators/manifest")
+        require(coreDirectory.isDirectory) { "Missing Core manifest package: ${coreDirectory.path}" }
+        val sources = coreDirectory.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .sortedBy { it.path }
+            .toList()
+        assertTrue(sources.isNotEmpty(), "Core manifest package must contain production sources.")
+
+        val forbiddenTokens = listOf(
+            "org.flowlang.targets.builtin",
             "jenkins",
             "github-actions",
+            "githubactions",
             "tekton",
-            "JenkinsManifestGenerator",
-            "GitHubActionsManifestGenerator",
-            "TektonManifestGenerator",
-            "JENKINS_STEP",
-            "GITHUB_ACTION",
-            "TEKTON_TASK"
+            "jenkins-pipeline",
+            "github-actions-workflow",
+            "tekton-pipeline",
+            "jenkins_step",
+            "github_action",
+            "tekton_task",
+            "when (manifest.target)"
         )
-
-        coreFiles.forEach { path ->
-            val source = File(path).readText()
-            forbidden.forEach { token ->
-                assertFalse(source.contains(token, ignoreCase = true), "$path must not own built-in target token '$token'.")
+        val offenders = buildList {
+            sources.forEach { file ->
+                val relative = file.relativeTo(File(".")).path
+                val searchable = file.nameWithoutExtension + "\n" + file.readText()
+                forbiddenTokens.forEach { token ->
+                    if (searchable.contains(token, ignoreCase = true)) {
+                        add("$relative owns built-in target token '$token'")
+                    }
+                }
             }
         }
 
-        listOf(
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestGeneration.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/JenkinsManifestRenderer.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/GitHubActionsManifestRenderer.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/TektonManifestRenderer.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionRenderingSupport.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetExpressionTranslator.kt",
-            "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionPayloadKinds.kt"
-        ).forEach { path ->
-            assertFalse(File(path).exists(), "$path must not remain in the Core package.")
-        }
+        assertTrue(offenders.isEmpty(), offenders.joinToString("\n"))
     }
 
     @Test

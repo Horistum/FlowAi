@@ -1,0 +1,15 @@
+kind: FlowRealWorldMutation
+version: '0.2'
+id: remove-branch-c
+intent: intent.yaml
+expectedGenerated: true
+expectedOutcome: SEMANTIC_ONLY
+expectedDiagnostics: [REAL_WORLD_EXPECTED_TASK_MISSING, REAL_WORLD_EXPECTED_TASK_MISMATCH, REAL_WORLD_REQUIRED_RELATION_MISSING]
+tasks:
+- {sourceId: A, semanticCapability: CUSTOM, nodeKind: Task}
+- {sourceId: B, semanticCapability: CUSTOM, nodeKind: Task}
+- {sourceId: C, semanticCapability: CUSTOM, nodeKind: Task}
+- {sourceId: D, semanticCapability: CUSTOM, nodeKind: Task}
+requiredRelations: [{source: C, target: D, kind: ORDERING}]
+forbiddenOrdering: []
+requiredFeatures: []

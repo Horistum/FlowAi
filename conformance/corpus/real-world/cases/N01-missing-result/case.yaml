@@ -1,0 +1,18 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: N01
+title: Consumer references a result with no producer
+lifecycle: MUTATION_VALIDATED
+category: negative
+sourceRef: argo-artifact-passing
+source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: second-missing-result, definition: mutations/second-missing-result/mutation.yaml}
+invariants:
+- Every consumed named value has exactly one producer.
+- A missing value fails before target selection.
+- The diagnostic identifies a producer-to-consumer integrity failure.

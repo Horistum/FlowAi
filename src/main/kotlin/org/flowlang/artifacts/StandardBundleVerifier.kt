@@ -3,7 +3,6 @@ package org.flowlang.artifacts
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationFeature
 import org.flowlang.cli.Json
-import org.flowlang.conformance.ConformanceManifestReport
 import org.flowlang.standard.FlowStandardVersions
 import java.io.File
 

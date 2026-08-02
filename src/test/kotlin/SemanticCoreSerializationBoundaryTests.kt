@@ -1,45 +1,22 @@
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import org.flowlang.architecture.SemanticSerializationBoundary
+import org.flowlang.core.SemanticCorePackageBoundary
 
 class SemanticCoreSerializationBoundaryTests {
     @Test
     fun everySemanticCorePackageIsFreeOfJacksonAndYamlImports() {
         val root = File(".").canonicalFile
         val sourceRoot = File(root, "src/main/kotlin/org/flowlang")
-        val semanticPackages = listOf(
-            "ast",
-            "capabilities",
-            "controls",
-            "core",
-            "effects",
-            "identity",
-            "intent",
-            "lowering",
-            "materialization",
-            "modules",
-            "notes",
-            "planner",
-            "projection",
-            "safety",
-            "semantic",
-            "standard",
-            "topology",
-            "validator"
-        )
+        val semanticPackages = SemanticCorePackageBoundary.packages
         val missingDirectories = semanticPackages.filterNot { File(sourceRoot, it).isDirectory }
         assertTrue(missingDirectories.isEmpty(), "Semantic boundary references missing packages: $missingDirectories")
 
-        val forbiddenTokens = listOf(
-            "com.fasterxml.jackson",
-            "org.yaml.snakeyaml",
-            "YAMLFactory",
-            "ObjectMapper"
-        )
         val offenders = semanticPackages.flatMap { packageName ->
             File(sourceRoot, packageName).walkTopDown()
                 .filter { it.isFile && it.extension == "kt" }
-                .filter { file -> forbiddenTokens.any(file.readText()::contains) }
+                .filter { file -> SemanticSerializationBoundary.forbiddenTokens.any(file.readText()::contains) }
                 .map { it.relativeTo(root).invariantSeparatorsPath }
                 .toList()
         }.sorted()

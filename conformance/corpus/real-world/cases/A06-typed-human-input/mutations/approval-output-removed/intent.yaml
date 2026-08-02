@@ -1,0 +1,17 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: a06-approval-output-removed
+inputs:
+- {name: release_name, type: text, required: true}
+- {name: release_notes, type: text, required: false, default: ''}
+- {name: release_type, type: 'option[beta,stable]', required: true, default: beta}
+workflows:
+- name: main
+  kind: CUSTOM
+  steps:
+  - {id: approval, capability: APPROVE, params: {message: Approve release metadata}}
+  - id: release
+    capability: CUSTOM
+    requires: [approval]
+    params: {operation: release, approval: 'ref:release_approved', releaseName: 'ref:release_name', releaseNotes: 'ref:release_notes', releaseType: 'ref:release_type'}
+failure: {notify: false, rollback: false, stopOnError: true}

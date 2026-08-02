@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Source Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "version", "status", "admissionPolicy", "sources"],
+  "properties": {
+    "kind": {"const": "FlowRealWorldSourceCatalog"},
+    "version": {"type": "string"},
+    "status": {"type": "string"},
+    "admissionPolicy": {"type": "object"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "platform", "sourceKind", "admission", "repository", "revision", "path", "license", "semanticLoad"],
+        "properties": {
+          "id": {"type": "string"},
+          "platform": {"type": "string"},
+          "sourceKind": {"enum": ["production-workflow", "official-example", "official-semantic-reference"]},
+          "admission": {"enum": ["admitted", "screened", "candidate"]},
+          "repository": {"type": "string"},
+          "revision": {"type": "string"},
+          "path": {"type": "string"},
+          "license": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "evidence"],
+            "properties": {
+              "status": {"type": "string"},
+              "spdx": {"type": "string"},
+              "evidence": {"type": "string"}
+            }
+          },
+          "semanticLoad": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

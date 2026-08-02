@@ -1,0 +1,18 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: A06
+title: Typed human release input and approval output
+lifecycle: MUTATION_VALIDATED
+category: advanced
+sourceRef: buildkite-typed-human-input
+source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: approval-output-removed, definition: mutations/approval-output-removed/mutation.yaml}
+invariants:
+- Release type remains a constrained beta/stable choice.
+- Approval is distinct from typed release metadata.
+- The release step consumes an explicit approval output.

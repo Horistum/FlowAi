@@ -6,8 +6,12 @@ import org.flowlang.standard.StandardModel
  * Compatibility facade over [StandardModel].
  *
  * New projections should read StandardModel directly. This facade remains only to
- * avoid forcing older callers through a noisy migration in the same patch.
+ * preserve the published migration window for external callers.
  */
+@Deprecated(
+    message = "Use org.flowlang.standard.StandardModel for public artifact and gate authority.",
+    replaceWith = ReplaceWith("StandardModel", "org.flowlang.standard.StandardModel")
+)
 object StandardArtifactRegistry {
     fun publicSurfaceEntries(): List<PublicSurfaceEntry> = StandardModel.artifacts.map { artifact ->
         PublicSurfaceEntry(

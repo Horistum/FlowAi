@@ -15,6 +15,22 @@ import org.flowlang.topology.PlanningTopologyAuthority
 import org.flowlang.lowering.IntentLoweringAuthority
 
 /**
+ * Raised when the public planner boundary receives an AST action that has no
+ * registered semantic and safety contract.
+ *
+ * Validation normally rejects this condition first. The planner still enforces
+ * the invariant independently so callers cannot bypass validation and silently
+ * turn unknown safety evidence into a non-destructive task.
+ */
+class MissingPlanningActionContractException(
+    val moduleName: String,
+    val actionName: String
+) : IllegalStateException(
+    "Cannot plan unregistered action '$moduleName.$actionName'. " +
+        "Validate the Flow document and provide its authoritative module registry before planning."
+)
+
+/**
  * Converts validated Flow AST into a platform-neutral ExecutionPlan.
  *
  * RC4 rule: dependencies are semantic, not textual. The planner no longer adds
@@ -209,8 +225,9 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     private fun planAction(action: ActionNode, ctx: Ctx): TaskNode {
         val id = ctx.id("${action.module}_${action.action}")
         val contract = registry.findAction(action.module, action.action)
+            ?: throw MissingPlanningActionContractException(action.module, action.action)
         val effectModel = action.semanticEffects.ifEmpty {
-            contract?.effects?.let(ModuleEffectCanonicalizer::canonicalize).orEmpty()
+            ModuleEffectCanonicalizer.canonicalize(contract.effects)
         }
         val effects = effectModel.map(SemanticEffect::resource).distinct()
 
@@ -228,7 +245,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             .distinct()
             .filter { it != id }
 
-        val continuityRelations = contract?.continuity?.requires.orEmpty().map { requirement ->
+        val continuityRelations = contract.continuity.requires.map { requirement ->
             ctx.resolveContinuityRequirement(id, deps, requirement, action.module, action.action)
         }
         val orderingRelations = deps.map { sourceNodeId ->
@@ -276,7 +293,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             effects = effects,
             inputs = renderedParams,
             outputs = outputNames,
-            destructive = contract?.safety?.destructive ?: false,
+            destructive = contract.safety.destructive,
             safety = action.safety?.let { it.rule + (it.condition?.let { condition -> " " + ExpressionRenderer.render(condition) } ?: "") },
             params = renderedParams,
             requiredCapabilities = (
@@ -320,15 +337,15 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     private fun inferRequiredCapabilities(
         action: ActionNode,
-        contract: ModuleActionContract?
+        contract: ModuleActionContract
     ): List<String> = buildList {
         add("task.execute")
-        addAll(contract?.requiredCapabilities.orEmpty())
+        addAll(contract.requiredCapabilities)
         if (action.module == "standard") {
             val operation = action.params["operation"]?.let(ExpressionRenderer::render)?.trim('"')
             if (!operation.isNullOrBlank()) add("standard.$operation")
         }
-        if (contract?.safety?.destructive == true) add("safety.destructiveOperation")
+        if (contract.safety.destructive) add("safety.destructiveOperation")
     }.distinct()
 
     private fun collectDependencies(nodes: List<PlanNode>): List<String> = nodes.flatMap { node ->
@@ -391,9 +408,9 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             return "${prefix}_$n"
         }
 
-        fun registerTask(task: TaskNode, contract: ModuleActionContract?) {
+        fun registerTask(task: TaskNode, contract: ModuleActionContract) {
             taskDependencies[task.id] = task.dependsOn
-            taskContinuity[task.id] = contract?.continuity ?: ContinuityContract()
+            taskContinuity[task.id] = contract.continuity
         }
 
         fun resolveContinuityRequirement(

@@ -3,9 +3,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.flowlang.artifacts.ReferenceIntentCorpusReport
 import org.flowlang.artifacts.StandardSurface
+import org.flowlang.conformance.PurposeCoverageAnalyzer
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.GateKind
-import org.flowlang.standard.PurposeCoverageAnalyzer
 import org.flowlang.standard.StandardCheck
 import org.flowlang.standard.StandardModel
 

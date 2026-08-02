@@ -1,8 +1,8 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.flowlang.conformance.ScenarioPackQualityAnalyzer
 import org.flowlang.scenarios.ScenarioPackRegistry
-import org.flowlang.standard.ScenarioPackQualityAnalyzer
 
 class ScenarioPackQualityAnalyzerTests {
     @Test

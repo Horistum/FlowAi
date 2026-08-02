@@ -58,6 +58,37 @@ data class AiIntentResponse(
     }
 }
 
+/**
+ * Normalization has no execution plan or adapter evidence, so it can only defer
+ * target portability to the public post-planning reports that own that decision.
+ * The map shape is retained for public artifact compatibility.
+ */
+object TargetPortabilityEvidence {
+    const val STATUS_KEY = "status"
+    const val REQUESTED_TARGET_KEY = "requestedTarget"
+    const val COMPATIBILITY_AUTHORITY_KEY = "compatibilityAuthority"
+    const val READINESS_AUTHORITY_KEY = "readinessAuthority"
+    const val SELECTION_AUTHORITY_KEY = "selectionAuthority"
+    const val DECISION_TRACE_AUTHORITY_KEY = "decisionTraceAuthority"
+    const val DEFERRED = "DEFERRED"
+
+    val authorityArtifacts: Map<String, String> = linkedMapOf(
+        COMPATIBILITY_AUTHORITY_KEY to "compatibility-report.json",
+        READINESS_AUTHORITY_KEY to "execution-readiness-report.json",
+        SELECTION_AUTHORITY_KEY to "target-selection-report.json",
+        DECISION_TRACE_AUTHORITY_KEY to "target-decision-trace-report.json"
+    )
+
+    fun deferred(requestedTarget: String?): Map<String, String> = linkedMapOf(
+        STATUS_KEY to DEFERRED,
+        REQUESTED_TARGET_KEY to (requestedTarget ?: "not-specified")
+    ) + authorityArtifacts
+}
+
+/** Internal map implementation used by scenario normalization without changing the public JSON shape. */
+internal class TargetPortabilityDisposition(requestedTarget: String = "not-specified") :
+    LinkedHashMap<String, String>(TargetPortabilityEvidence.deferred(requestedTarget))
+
 data class NormalizationReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
     val mode: NormalizationMode,

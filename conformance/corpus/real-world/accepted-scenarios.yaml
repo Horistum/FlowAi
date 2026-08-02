@@ -1,0 +1,79 @@
+kind: FlowRealWorldScenarioCatalog
+version: '0.2'
+status: executable-index
+resultVocabulary:
+- SUPPORTED
+- SUPPORTED_WITH_BINDING
+- SEMANTIC_ONLY
+- BLOCKED_BY_TARGET_CAPABILITY
+- AMBIGUOUS_SOURCE_INTENT
+- UNSUPPORTED_DYNAMIC_CONSTRUCTION
+- INVALID_SOURCE_PIPELINE
+continuityVocabulary: [value, workspace, state, artifact]
+scenarios:
+- id: C02
+  title: parallel-lint-test-package-fan-in
+  category: common
+  admission: admitted
+  lifecycle: ACCEPTED
+  casePath: cases/C02-ordering-only-diamond
+  sourceRefs: [argo-dag-diamond, prometheus-ci]
+  dominantSemantics: [parallel, fan-in, ordering]
+  continuityKinds: []
+  baselineExpectation: SEMANTIC_ONLY
+  claim: accepted-evidence
+- id: C06
+  title: artifact-transfer-between-jobs
+  category: common
+  admission: admitted
+  lifecycle: ACCEPTED
+  casePath: cases/C06-artifact-transfer
+  sourceRefs: [buildkite-artifact-transfer, argo-artifact-passing]
+  dominantSemantics: [artifact, producer-consumer]
+  continuityKinds: [artifact, value]
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: accepted-evidence
+- id: A06
+  title: typed-human-input-form
+  category: advanced
+  admission: admitted
+  lifecycle: ACCEPTED
+  casePath: cases/A06-typed-human-input
+  sourceRefs: [buildkite-typed-human-input]
+  dominantSemantics: [human-input, approval]
+  continuityKinds: [value]
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: accepted-evidence
+- id: A11
+  title: output-driven-downstream-dag
+  category: advanced
+  admission: screened
+  lifecycle: ACCEPTED
+  casePath: cases/A11-output-driven-matrix
+  sourceRefs: [prometheus-ci, azure-output-variables]
+  dominantSemantics: [data-dependent-plan, matrix]
+  continuityKinds: [value]
+  baselineExpectation: UNSUPPORTED_DYNAMIC_CONSTRUCTION
+  claim: accepted-evidence
+- id: N01
+  title: consumer-references-missing-result
+  category: negative
+  admission: screened
+  lifecycle: ACCEPTED
+  casePath: cases/N01-missing-result
+  sourceRefs: [tekton-pipeline-semantics, argo-artifact-passing]
+  dominantSemantics: [diagnostic, missing-value, mutation-fixture]
+  continuityKinds: [value, artifact]
+  baselineExpectation: INVALID_SOURCE_PIPELINE
+  claim: accepted-evidence
+- id: N08
+  title: parallelism-silently-sequentialized
+  category: negative
+  admission: admitted
+  lifecycle: ACCEPTED
+  casePath: cases/N08-parallelism-loss
+  sourceRefs: [argo-dag-diamond]
+  dominantSemantics: [semantic-loss, parallel]
+  continuityKinds: []
+  baselineExpectation: SEMANTIC_ONLY
+  claim: accepted-evidence

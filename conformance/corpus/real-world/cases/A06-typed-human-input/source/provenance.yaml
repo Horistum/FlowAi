@@ -1,0 +1,4 @@
+repository: buildkite/block-step-example
+revision: 740623ea16a9e4df08b3cc456b48efa00ae6c0d3
+path: .buildkite/pipeline.yml
+license: MIT

@@ -1,0 +1,18 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: N08
+title: Required parallel siblings are silently serialized
+lifecycle: MUTATION_VALIDATED
+category: negative
+sourceRef: argo-dag-diamond
+source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: serialize-and-drop-fan-in, definition: mutations/serialize-and-drop-fan-in/mutation.yaml}
+invariants:
+- B and C remain unordered siblings.
+- A target or lowering path must not serialize required parallel branches silently.
+- Loss of fan-in or sibling parallelism blocks acceptance.

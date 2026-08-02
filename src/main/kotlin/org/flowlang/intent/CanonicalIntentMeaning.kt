@@ -150,11 +150,11 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
         if (!systemName.isNullOrBlank() && system == null) {
             issues += issue("UNKNOWN_INTENT_SYSTEM", "Step '${step.id}' references unknown system '$systemName'.")
         }
-        val normalizedSystemType = system?.type?.let(::normalizeSystemType)
-        if (action != null && normalizedSystemType != null && normalizedSystemType !in action.targetTypes) {
+        val bindingSystemType = system?.type?.let(IntentSystemTypeAuthority::bindingType)
+        if (action != null && bindingSystemType != null && bindingSystemType !in action.targetTypes) {
             issues += issue(
                 "BINDING_SYSTEM_TYPE_MISMATCH",
-                "Action '$requested' supports ${action.targetTypes.sorted()}, but system '$systemName' is '$normalizedSystemType'."
+                "Action '$requested' supports ${action.targetTypes.sorted()}, but system '$systemName' is '$bindingSystemType'."
             )
         }
 
@@ -178,7 +178,7 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
             module = moduleName,
             action = actionName,
             system = systemName,
-            systemType = normalizedSystemType,
+            systemType = bindingSystemType,
             implementedCapabilities = implemented,
             semanticParameters = semanticNames.sorted(),
             bindingParameters = bindingNames.sorted(),
@@ -295,12 +295,6 @@ class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
                     (action?.additionalParams == true && name !in semanticNames && name !in BINDING_METADATA_PARAMS) ||
                     (name in actionInputs && name !in semanticNames)
             }
-        }
-
-        private fun normalizeSystemType(type: String): String = when (type) {
-            "dockerRegistry", "containerRegistry" -> "docker"
-            "notification", "email" -> "notify"
-            else -> type
         }
 
         private fun IntentValue?.isBlankIntent(): Boolean = when (this) {

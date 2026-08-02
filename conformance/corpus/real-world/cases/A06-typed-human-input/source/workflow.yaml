@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+steps:
+- block: Release
+  prompt: Fill out the details for release
+  fields:
+  - {text: Release Name, key: release-name}
+  - {text: Changelog, key: release-notes, required: false}
+  - select: Type
+    key: release-type
+    default: beta
+    options: [{label: Beta, value: beta}, {label: Stable, value: stable}]
+- {command: release.sh, label: ':rocket:'}

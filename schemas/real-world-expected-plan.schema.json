@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flow Real-World Expected Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["generated", "exactTaskSources", "expectedOutcome", "tasks", "requiredRelations", "forbiddenOrdering", "requiredFeatures", "expectedDiagnostics"],
+  "properties": {
+    "generated": {"type": "boolean"},
+    "exactTaskSources": {"type": "boolean"},
+    "expectedOutcome": {"enum": ["SUPPORTED", "SUPPORTED_WITH_BINDING", "SEMANTIC_ONLY", "BLOCKED_BY_TARGET_CAPABILITY", "AMBIGUOUS_SOURCE_INTENT", "UNSUPPORTED_DYNAMIC_CONSTRUCTION", "INVALID_SOURCE_PIPELINE"]},
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceId"],
+        "properties": {
+          "sourceId": {"type": "string"},
+          "semanticCapability": {"type": "string"},
+          "nodeKind": {"type": "string"}
+        }
+      }
+    },
+    "requiredRelations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "target", "kind"],
+        "properties": {
+          "source": {"type": "string"},
+          "target": {"type": "string"},
+          "kind": {"enum": ["ORDERING", "VALUE", "WORKSPACE", "STATE"]},
+          "channel": {"type": "string"}
+        }
+      }
+    },
+    "forbiddenOrdering": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "target"],
+        "properties": {"source": {"type": "string"}, "target": {"type": "string"}}
+      }
+    },
+    "requiredFeatures": {"type": "array", "items": {"type": "string"}},
+    "expectedDiagnostics": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -30,7 +30,7 @@ import java.io.File
  */
 class ReferenceSnapshotBundleGenerator(
     private val rootDir: File = File("."),
-    private val registry: ModuleRegistry = ModuleRegistry.fromDirectory(File(rootDir, "modules"), includeDefaults = true),
+    private val registry: ModuleRegistry = ModuleRegistry.fromDirectory(File(rootDir, "modules")),
     private val targets: Map<String, org.flowlang.capabilities.TargetCapability> =
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
