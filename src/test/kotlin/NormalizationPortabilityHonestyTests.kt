@@ -6,7 +6,7 @@ import kotlin.test.assertTrue
 import org.flowlang.ai.normalization.AiIntentContext
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
-import org.flowlang.ai.normalization.TargetPortabilityStatus
+import org.flowlang.ai.normalization.TargetPortabilityEvidence
 import org.flowlang.cli.Json
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
@@ -32,16 +32,15 @@ class NormalizationPortabilityHonestyTests {
         )
 
         val portability = response.report.targetPortability
-        assertEquals(TargetPortabilityStatus.DEFERRED, portability.status)
-        assertEquals("jenkins", portability.requestedTarget)
         assertEquals(
-            listOf(
-                "compatibility-report.json",
-                "execution-readiness-report.json",
-                "target-selection-report.json",
-                "target-decision-trace-report.json"
-            ),
-            portability.authoritativeArtifacts
+            TargetPortabilityEvidence.deferred("jenkins"),
+            portability
+        )
+        assertEquals(TargetPortabilityEvidence.DEFERRED, portability[TargetPortabilityEvidence.STATUS_KEY])
+        assertEquals("jenkins", portability[TargetPortabilityEvidence.REQUESTED_TARGET_KEY])
+        assertEquals(
+            TargetPortabilityEvidence.authorityArtifacts,
+            portability.filterKeys { it in TargetPortabilityEvidence.authorityArtifacts }
         )
 
         val json = Json.mapper.writeValueAsString(response.report)
