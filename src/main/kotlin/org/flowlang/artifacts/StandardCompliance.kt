@@ -1,6 +1,5 @@
 package org.flowlang.artifacts
 
-import org.flowlang.conformance.ConformanceManifestReport
 import org.flowlang.standard.FlowStandardVersions
 
 data class ComplianceGate(
