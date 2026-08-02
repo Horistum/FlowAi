@@ -73,12 +73,12 @@ class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry
         }
 
         declaredSystems.values.forEach { sys ->
-            val normalizedType = normalizeSystemType(sys.type)
-            val contract = registry.findSystemType(normalizedType)?.second
+            val bindingType = IntentSystemTypeAuthority.bindingType(sys.type)
+            val contract = registry.findSystemType(bindingType)?.second
             val requiredFields = contract?.input?.filter { it.value.required }?.keys?.toList().orEmpty()
             required[sys.name] = IntentRequiredSystem(
                 name = sys.name,
-                type = normalizedType,
+                type = bindingType,
                 declared = true,
                 requiredConfig = requiredFields,
                 missingConfig = requiredFields.filter { it !in sys.config },
@@ -135,10 +135,3 @@ class IntentDesignAnalyzer(private val registry: ModuleRegistry = ModuleRegistry
         )
     }
 }
-
-private fun normalizeSystemType(type: String): String = when (type) {
-    "dockerRegistry", "containerRegistry" -> "docker"
-    "notification", "email" -> "notify"
-    else -> type
-}
-
