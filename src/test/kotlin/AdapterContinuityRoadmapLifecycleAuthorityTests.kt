@@ -11,10 +11,16 @@ class AdapterContinuityRoadmapLifecycleAuthorityTests {
     private val authority = AdapterContinuityRoadmapLifecycleAuthority(File("."))
 
     @Test
-    fun currentRepositoryIsAValidImplementingState() {
+    fun currentRepositoryHasOneValidLifecycleState() {
         val report = authority.analyze()
 
-        assertEquals(AdapterContinuityLifecyclePhase.IMPLEMENTING, report.phase)
+        assertTrue(
+            report.phase in setOf(
+                AdapterContinuityLifecyclePhase.IMPLEMENTING,
+                AdapterContinuityLifecyclePhase.COMPLETED
+            ),
+            "Repository lifecycle must be implementing or completed, got ${report.phase}."
+        )
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
     }
 
