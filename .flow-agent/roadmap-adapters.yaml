@@ -1,6 +1,6 @@
 project: Flow Adapter Portfolio
 stream: adapters
-roadmapVersion: 5
+roadmapVersion: 6
 status: active
 
 purpose: >-
@@ -39,6 +39,12 @@ rules:
   - "A target registry summary flag or platform feature is never concrete control implementation evidence."
   - "Every control family declares a complete supported, unsupported and unknown semantic partition."
   - "Unsupported approval, retry, timeout, compensation and scheduling requirements force review-only diagnostic evidence."
+  - "Continuity materialization consumes only existing ORDERING, VALUE, WORKSPACE and STATE relations."
+  - "ORDERING never proves data, artifact or state continuity."
+  - "A STATE relation requires both mutable transfer and durable lifetime evidence."
+  - "Supported continuity claims require a composed provider, production implementation evidence and independent behavioral proof."
+  - "Profile-only continuity claims remain UNKNOWN until a provider supplies relation-specific evidence."
+  - "Unsupported or unknown continuity blocks provider rendering while preserving diagnostic evidence."
   - "Adapter tests prove preserved semantics, not merely syntactically valid output."
   - "Adapter implementation lifecycle is distribution-owned and is not part of the public Flow standard."
   - "Maintenance evidence stays live throughout adapter work."
@@ -46,11 +52,11 @@ rules:
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
 
 currentDecision:
-  completedItem: "A0.4"
-  completedItemName: "Control Requirement Materialization"
-  nextItem: "A0.5"
-  nextItemName: "Continuity Satisfaction Proof"
-  decisionBasis: "Flow CI #2376 passed the final A0.4 implementation on exact head a5040767698fed38d6efd0118de40312c77c913e and synthetic merge candidate 8c3b837cb9416acb2de3333a81b1c7eb811d492d. A0.5 is selected as the next bounded adapter item without including its work package or implementation."
+  completedItem: "A0.5"
+  completedItemName: "Continuity Satisfaction Proof"
+  nextItem: "A0.6"
+  nextItemName: "Adapter Artifact Rendering"
+  decisionBasis: "Flow CI #2468, run 30741864674, passed the A0.5 implementation on exact head b1b996508aa9bfb1f645cfd69f7ddb777e22c1d5 and synthetic merge candidate 3538862c7ad1878d8d6d3ae00e8f5447949511aa with 753 tests and 126 conformance checks. A0.6 is selected as the next bounded adapter item; its work package and implementation are not part of A0.5."
 
 items:
   - version: "A0.1"
@@ -121,19 +127,27 @@ items:
   - version: "A0.5"
     name: "Continuity Satisfaction Proof"
     type: "adapter-continuity"
-    status: next
+    status: completed
     purpose: "Prove that each adapter can satisfy declared data, artifact, mutable-state and durable-state dependencies."
     dependsOnCore: "0.9.7.4"
     dependsOnAdapters: "A0.4"
     completionEvidence:
-      - "Behavioral tests validate producer-to-consumer continuity."
+      - "Every target declares exactly one DATA, ARTIFACT, MUTABLE_STATE and DURABLE_STATE claim."
+      - "Every closed family semantic is classified as supported, unsupported or unknown."
+      - "Behavioral tests validate producer-to-consumer continuity through the production planner, materialization pipeline and renderer."
       - "Ordering-only support is never promoted to continuity support."
-      - "Any existing executable claim without continuity proof becomes REVIEW_ONLY."
+      - "STATE continuity requires both mutable transfer and durable lifetime evidence."
+      - "Jenkins shared-workspace continuity remains the only supported current subset and is bounded to the admitted checkout-build-image scenario."
+      - "Generic Jenkins value and state continuity and current GitHub Actions and Tekton continuity remain unsupported."
+      - "Profile-only targets remain UNKNOWN."
+      - "CLI diagnostic fallback preserves blockers and emits no target syntax when continuity is unsupported or unknown."
+      - "The adapter stream inventory is exactly version 1.4 with six A0.5 checks."
+      - "Flow CI #2468 passed exact-head and synthetic merge-candidate compile, 753 tests and 126 conformance checks."
 
   - version: "A0.6"
     name: "Adapter Artifact Rendering"
     type: "adapter-rendering"
-    status: planned
+    status: next
     purpose: "Generate concrete target artifacts only after capability, control, topology and continuity evidence is complete."
     dependsOnCore: "0.9.7.10"
     dependsOnAdapters: "A0.5"
