@@ -74,15 +74,12 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         }
     }
 
-    private fun IntentSystem.toSystemNode(): SystemNode {
-        val normalizedType = IntentLoweringAuthority.canonicalSystemType(type)
-        return SystemNode(
-            name = name,
-            systemType = normalizedType,
-            purpose = purpose,
-            config = config.mapValues { (_, value) -> value.toExpression() }
-        )
-    }
+    private fun IntentSystem.toSystemNode(): SystemNode = SystemNode(
+        name = name,
+        systemType = IntentSystemTypeAuthority.bindingType(type),
+        purpose = purpose,
+        config = config.mapValues { (_, value) -> value.toExpression() }
+    )
 
     private fun IntentTrigger.toTriggerNode(): TriggerNode = TriggerNode(
         id = id,
@@ -111,14 +108,6 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         )
     }
 
-    /**
-     * Returns a deterministic topological order without introducing implicit parallelism.
-     *
-     * `requires` is an ordering constraint, not permission to parallelize every other
-     * independent step. Flow has an explicit ParallelNode for true parallel intent;
-     * lowering from the Standard Intent Model must therefore keep authored automation
-     * safe and ordered unless parallelism is expressed in the source model itself.
-     */
     private fun orderedSteps(steps: List<IntentStep>): List<IntentStep> {
         if (steps.none { it.requires.isNotEmpty() }) return steps
         val orderIndex = steps.mapIndexed { index, step -> step.id to index }.toMap()
