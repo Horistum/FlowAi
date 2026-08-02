@@ -152,7 +152,7 @@ internal object StandardCliCommands {
 
     private fun moduleRegistry(): ModuleRegistry {
         val directory = File("modules")
-        return if (directory.isDirectory) ModuleRegistry.fromDirectory(directory, includeDefaults = true) else ModuleRegistry()
+        return if (directory.isDirectory) ModuleRegistry.fromDirectory(directory) else ModuleRegistry()
     }
 
     private fun targetRegistry() = TargetRegistryYamlLoader.loadDirectory(File("targets")).also {
