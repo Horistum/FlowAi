@@ -226,15 +226,18 @@ class AdapterContinuityRoadmapLifecycleAuthority(private val rootDir: File = Fil
         private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val REQUIRED_FILES = listOf(
             "adapters/continuity/builtin-continuity-satisfaction.yaml",
+            "adapters/conformance/check-inventory.yaml",
             "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityContracts.kt",
             "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityEvidenceIntegrityAuthority.kt",
             "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuitySatisfactionAuthority.kt",
             "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityRoadmapLifecycleAuthority.kt",
             "src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/AdapterContinuityConformanceChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/AdapterTopologyConformanceChecks.kt",
             "src/test/kotlin/AdapterContinuityEvidenceIntegrityTests.kt",
             "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt",
             "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt",
+            "src/test/kotlin/AdapterContinuityCliEvidenceTests.kt",
             "src/test/kotlin/AdapterContinuityRoadmapLifecycleAuthorityTests.kt",
             "docs/A0_5_CONTINUITY_SATISFACTION_PROOF.md"
         )
