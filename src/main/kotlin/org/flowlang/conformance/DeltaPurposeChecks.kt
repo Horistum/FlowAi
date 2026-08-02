@@ -6,7 +6,6 @@ import org.flowlang.architecture.ArchitectureDeltaAnalyzer
 import org.flowlang.architecture.StandardModelSnapshot
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.standard.FlowStandardVersions
-import org.flowlang.standard.PurposeCoverageAnalyzer
 import java.io.File
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 
