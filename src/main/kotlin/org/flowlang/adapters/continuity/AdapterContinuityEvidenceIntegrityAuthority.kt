@@ -23,7 +23,8 @@ class AdapterContinuityEvidenceIntegrityAuthority(
     private val portfolio: AdapterPortfolioDocument = AdapterPortfolioLoader.load(rootDir)
 ) {
     fun analyze(
-        document: AdapterContinuityEvidenceDocument = AdapterContinuityEvidenceLoader.load(rootDir)
+        document: AdapterContinuityEvidenceDocument = AdapterContinuityEvidenceLoader.load(rootDir),
+        requireCompletePortfolio: Boolean = true
     ): AdapterContinuityEvidenceReport {
         val findings = mutableListOf<AdapterContinuityFinding>()
         val duplicateTargets = document.targets.groupingBy(AdapterContinuityTargetRecord::target)
@@ -35,13 +36,15 @@ class AdapterContinuityEvidenceIntegrityAuthority(
         val declaredTargets = document.targets.map(AdapterContinuityTargetRecord::target).toSet()
         val portfolioTargets = portfolio.records.map { it.target }.toSet()
         (targets.keys - declaredTargets).sorted().forEach { target ->
-            findings += finding("ADAPTER_CONTINUITY_TARGET_MISSING", target, "", "Every target registry entry requires continuity evidence.")
+            findings += finding("ADAPTER_CONTINUITY_TARGET_MISSING", target, "", "Every active target registry entry requires continuity evidence.")
         }
         (declaredTargets - targets.keys).sorted().forEach { target ->
-            findings += finding("ADAPTER_CONTINUITY_TARGET_UNKNOWN", target, "", "Continuity evidence has no target registry entry.")
+            findings += finding("ADAPTER_CONTINUITY_TARGET_UNKNOWN", target, "", "Continuity evidence has no active target registry entry.")
         }
-        (portfolioTargets - declaredTargets).sorted().forEach { target ->
-            findings += finding("ADAPTER_CONTINUITY_PORTFOLIO_TARGET_MISSING", target, "", "Every adapter portfolio record requires continuity evidence.")
+        if (requireCompletePortfolio) {
+            (portfolioTargets - declaredTargets).sorted().forEach { target ->
+                findings += finding("ADAPTER_CONTINUITY_PORTFOLIO_TARGET_MISSING", target, "", "Every adapter portfolio record requires continuity evidence.")
+            }
         }
 
         val portfolioByTarget = portfolio.records.associateBy { it.target }
