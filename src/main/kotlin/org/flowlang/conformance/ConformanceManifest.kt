@@ -1,6 +1,10 @@
 package org.flowlang.conformance
 
 import java.io.File
+import org.flowlang.artifacts.ConformanceAreaSummary
+import org.flowlang.artifacts.ConformanceManifestReport
+import org.flowlang.artifacts.ConformanceSchemaEntry
+import org.flowlang.artifacts.ConformanceVectorEntry
 
 class ConformanceManifestBuilder(private val rootDir: File = File(".")) {
     fun build(summary: ConformanceSummary, implementation: String = "flow-kotlin-cli"): ConformanceManifestReport {
