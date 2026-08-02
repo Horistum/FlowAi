@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### A0.5 Continuity Satisfaction Proof
+
+Started after PR #100 merged the real-world pipeline corpus baseline as `52b15c1822d38397e13f772859d8f6b9a0606972`.
+
+Completed scope:
+
+- add one strict adapter-owned continuity evidence document covering DATA, ARTIFACT, MUTABLE_STATE and DURABLE_STATE for every target;
+- consume the frozen Core `VALUE`, `WORKSPACE` and `STATE` relations without adding adapter meaning to Core;
+- keep `ORDERING` outside continuity and prove that ordering-only plans create no transfer requirement;
+- require a STATE relation to satisfy both mutable transfer and durable lifetime evidence;
+- require every supported claim to cite a composed provider, production implementation and independent behavioral test;
+- reject self-referential, registry-only, external-documentation and incomplete evidence;
+- keep local, Argo Workflows and Azure DevOps continuity UNKNOWN without a composed provider;
+- retain Jenkins DATA and STATE continuity as unsupported rather than inferring support from Groovy variables or job durability;
+- retain GitHub Actions and Tekton data, workspace and state continuity as unsupported without relation-specific bindings;
+- certify only Jenkins `artifact.shared-workspace` for the admitted checkout-build-image reference scenario;
+- replay that scenario through the production intent loader, validator, planner, materialization pipeline and Jenkins renderer;
+- require every executable reference to exercise at least one real continuity relation, avoiding vacuous empty-set proof;
+- match adapter continuity before provider rendering and preserve unsupported or unknown blockers through diagnostic manifest evidence;
+- prevent review-only outcomes from emitting target syntax;
+- validate complete distribution evidence while allowing runtime tests to certify an exact active target subset;
+- extend the canonical post-Core adapter inventory to version `1.4` with six A0.5 checks;
+- keep package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory unchanged.
+
+Validation history:
+
+- Flow CI #2466 rejected the first implementation because runtime tests composed a target subset while the continuity authority validated the complete distribution document against that subset.
+- The public integrity report still requires all distribution targets, while runtime certification now validates exactly the active target subset and still rejects missing active evidence.
+- Flow CI #2468, run `30741864674`, passed the implementation boundary on exact head `b1b996508aa9bfb1f645cfd69f7ddb777e22c1d5` and synthetic merge candidate `3538862c7ad1878d8d6d3ae00e8f5447949511aa`.
+- Both jobs passed compile, 753 tests with zero failures, and 126 conformance checks with zero failures.
+- The completion metadata head must pass a distinct exact-head and synthetic merge-candidate boundary before PR readiness.
+
 ### A0.4 Control Requirement Materialization
 
 Started after A0.3 merged through PR #98 as `9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930`.
