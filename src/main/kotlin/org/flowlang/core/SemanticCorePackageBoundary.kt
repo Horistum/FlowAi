@@ -27,11 +27,4 @@ object SemanticCorePackageBoundary {
         "topology",
         "validator"
     )
-
-    val forbiddenSerializationTokens: List<String> = listOf(
-        "com.fasterxml.jackson",
-        "org.yaml.snakeyaml",
-        "YAMLFactory",
-        "ObjectMapper"
-    )
 }
