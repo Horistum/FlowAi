@@ -3,6 +3,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.flowlang.architecture.SemanticSerializationBoundary
 import org.flowlang.core.SemanticCorePackageBoundary
 
 class PackageLayeringIntegrityTests {
@@ -45,7 +46,7 @@ class PackageLayeringIntegrityTests {
         ) { "Production conformance no longer exposes its serialization token inventory." }
 
         assertEquals(SemanticCorePackageBoundary.packages, quotedValues(packageBlock.groupValues[1]))
-        assertEquals(SemanticCorePackageBoundary.forbiddenSerializationTokens, quotedValues(tokenBlock.groupValues[1]))
+        assertEquals(SemanticSerializationBoundary.forbiddenTokens, quotedValues(tokenBlock.groupValues[1]))
     }
 
     @Test
