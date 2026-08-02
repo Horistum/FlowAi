@@ -1,5 +1,9 @@
 package org.flowlang.conformance
 
+import org.flowlang.ai.normalization.AiIntentContext
+import org.flowlang.ai.normalization.AiIntentRequest
+import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
+import org.flowlang.ai.normalization.TargetPortabilityStatus
 import org.flowlang.standard.CoreContractCheck
 
 object ConformanceQualityGateNames {
@@ -27,6 +31,29 @@ object ConformanceQualityGates {
         require(report.metadataCompletePackCount == report.packCount) { "Every scenario pack must have complete metadata." }
         require(report.usefulExamplePackCount == report.packCount) { "Every scenario pack must have at least one useful example." }
         require(report.requiredBlockedCapabilities == report.coveredBlockedCapabilities) { "Every risk-sensitive capability must have blocked corpus coverage." }
+
+        val normalization = ScenarioPackIntentNormalizer().normalize(
+            AiIntentRequest(
+                userText = "Build and test the repository.",
+                context = AiIntentContext(target = "jenkins")
+            )
+        ).report.targetPortability
+        require(normalization.status == TargetPortabilityStatus.DEFERRED) {
+            "Normalization must defer target portability until post-planning evidence exists."
+        }
+        require(normalization.requestedTarget == "jenkins") {
+            "Normalization must preserve the requested target without claiming support."
+        }
+        require(
+            normalization.authoritativeArtifacts.toSet() == setOf(
+                "compatibility-report.json",
+                "execution-readiness-report.json",
+                "target-selection-report.json",
+                "target-decision-trace-report.json"
+            )
+        ) {
+            "Normalization must point to the complete evidence-backed target assessment chain."
+        }
     }
 
     private fun runGate(name: String, body: () -> Unit): ConformanceCheck = try {
