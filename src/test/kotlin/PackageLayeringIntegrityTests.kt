@@ -112,11 +112,9 @@ class PackageLayeringIntegrityTests {
     }
 
     private fun quotedValues(value: String): List<String> =
-        value.lineSequence()
-            .map { it.trim().trimEnd(',') }
-            .filter { it.startsWith('"') && it.endsWith('"') }
-            .map { it.removeSurrounding("\"") }
-            .toList()
+        value.split(',')
+            .map { it.trim().removeSurrounding("\"") }
+            .filter { it.isNotBlank() }
 
     private fun codeWithoutComments(text: String): String =
         text.replace(Regex("""(?s)/\*.*?\*/"""), "")
