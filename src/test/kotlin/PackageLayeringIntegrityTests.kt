@@ -1,7 +1,9 @@
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.flowlang.core.SemanticCorePackageBoundary
 
 class PackageLayeringIntegrityTests {
     private val sourceRoot = File("src/main/kotlin/org/flowlang")
@@ -24,6 +26,26 @@ class PackageLayeringIntegrityTests {
             packageName = "artifacts",
             forbiddenPrefixes = listOf("org.flowlang.conformance")
         )
+    }
+
+    @Test
+    fun productionConformanceUsesTheCanonicalSemanticPackageBoundary() {
+        val source = File(sourceRoot, "conformance/StandardArchitectureNormalizationChecks.kt").readText()
+        val packageBlock = requireNotNull(
+            Regex(
+                "val semanticPackages = listOf\\((.*?)\\)\\s*val missingPackages",
+                RegexOption.DOT_MATCHES_ALL
+            ).find(source)
+        ) { "Production conformance no longer exposes its semanticPackages inventory." }
+        val tokenBlock = requireNotNull(
+            Regex(
+                "val forbiddenTokens = listOf\\((.*?)\\)\\s*val offenders",
+                RegexOption.DOT_MATCHES_ALL
+            ).find(source)
+        ) { "Production conformance no longer exposes its serialization token inventory." }
+
+        assertEquals(SemanticCorePackageBoundary.packages, quotedValues(packageBlock.groupValues[1]))
+        assertEquals(SemanticCorePackageBoundary.forbiddenSerializationTokens, quotedValues(tokenBlock.groupValues[1]))
     }
 
     @Test
@@ -88,6 +110,13 @@ class PackageLayeringIntegrityTests {
             offenders.joinToString("\n") { (file, imports) -> "$file imports ${imports.joinToString()}" }
         )
     }
+
+    private fun quotedValues(value: String): List<String> =
+        value.lineSequence()
+            .map { it.trim().trimEnd(',') }
+            .filter { it.startsWith('"') && it.endsWith('"') }
+            .map { it.removeSurrounding("\"") }
+            .toList()
 
     private fun codeWithoutComments(text: String): String =
         text.replace(Regex("""(?s)/\*.*?\*/"""), "")
