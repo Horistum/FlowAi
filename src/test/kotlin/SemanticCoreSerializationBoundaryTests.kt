@@ -11,7 +11,6 @@ class SemanticCoreSerializationBoundaryTests {
             "ast",
             "capabilities",
             "controls",
-            "core",
             "effects",
             "identity",
             "intent",
