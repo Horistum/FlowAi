@@ -3,7 +3,7 @@
   "$id": "https://flowlang.dev/schemas/ai-normalization-report.schema.json",
   "title": "Flow AI Normalization Report",
   "type": "object",
-  "required": ["standardVersion", "mode", "classification", "confidence", "targetPortability", "explanation", "guardrails"],
+  "required": ["standardVersion", "mode", "classification", "confidence", "explanation", "guardrails"],
   "properties": {
     "standardVersion": { "type": "string" },
     "mode": { "type": "string", "enum": ["DRAFT", "STRICT", "EXPLAIN", "REPAIR"] },
@@ -18,31 +18,11 @@
     "safetyGates": { "type": "array", "items": { "type": "string" } },
     "targetPortability": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["status", "requestedTarget", "authoritativeArtifacts"],
-      "properties": {
-        "status": { "type": "string", "const": "DEFERRED" },
-        "requestedTarget": { "type": "string" },
-        "authoritativeArtifacts": {
-          "type": "array",
-          "minItems": 4,
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "enum": [
-              "compatibility-report.json",
-              "execution-readiness-report.json",
-              "target-selection-report.json",
-              "target-decision-trace-report.json"
-            ]
-          }
-        }
-      }
+      "additionalProperties": { "type": "string" }
     },
     "scenarioSelection": { "type": ["object", "null"] },
     "confidenceByArea": { "type": "object" },
     "explanation": { "type": "array", "items": { "type": "string" } },
     "guardrails": { "type": "array", "items": { "type": "string" } }
-  },
-  "additionalProperties": false
+  }
 }
