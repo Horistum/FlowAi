@@ -87,7 +87,9 @@ object ScenarioPackRegistry {
             openQuestions = result.openQuestions,
             risks = result.risks,
             safetyGates = safetyGates(result),
-            targetPortability = targetPortabilityHints(request.context),
+            targetPortability = TargetPortabilityDisposition(
+                requestedTarget = request.context.target ?: "not-specified"
+            ),
             scenarioSelection = ScenarioSelectionReport(
                 selectedPack = result.match.packId,
                 matchedTriggers = result.match.matchedTriggers,
@@ -163,13 +165,6 @@ object ScenarioPackRegistry {
         result.intent.policies.filter { it.type == IntentPolicyType.APPROVAL }.forEach { add("requiresApproval:${it.name}") }
         result.intent.policies.filter { it.type == IntentPolicyType.SAFETY }.forEach { add("safetyPolicy:${it.name}") }
     }.distinct()
-
-    private fun targetPortabilityHints(context: AiIntentContext): Map<String, String> = mapOf(
-        "jenkins" to "likely-full",
-        "github-actions" to "depends-on-environment-gates-and-runtime-workarounds",
-        "tekton" to "check-approval-and-rollback-capabilities",
-        "requestedTarget" to (context.target ?: "not-specified")
-    )
 }
 
 abstract class BaseScenarioPack : ScenarioPack {
@@ -452,8 +447,6 @@ abstract class BaseScenarioPack : ScenarioPack {
         return cleaned
     }
 
-
-
     private fun entityTokens(value: String): List<String> =
         Regex("[a-z0-9._/-]+").findAll(value.lowercase()).map { it.value.trim('.', ',', ';', ':') }.filter { it.isNotBlank() }.toList()
 
@@ -470,9 +463,6 @@ abstract class BaseScenarioPack : ScenarioPack {
         "monthly", "nightly", "morning", "evening", "everything", "anything", "something", "all",
         "any", "none", "here", "there", "it", "them", "this", "that", "these", "those", "first",
         "last", "next", "previous", "current", "default", "unknown", "unspecified",
-        // imperative/command verbs that can precede a domain noun and be wrongly
-        // captured by the "<word> <noun>" fallback patterns (e.g. "Run database
-        // migration." must not yield database = "run").
         "run", "execute", "perform", "start", "stop", "trigger", "launch", "do", "go", "please", "kick", "setup"
     )
 }
@@ -585,7 +575,6 @@ object RollbackScenarioPack : BaseScenarioPack() {
 
     override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult {
         val text = request.userText
-        val lower = normalizeText(text)
         val app = applicationEntity(text, request.context)
         val rollbackTarget = rollbackTargetEntity(text)
         val wantsNotify = notificationRequested(text)
@@ -875,8 +864,7 @@ object DatabaseMigrationScenarioPack : BaseScenarioPack() {
             request.context,
             includeSource = IntentSourceDirectiveAuthority.analyze(text, IntentSourceDirectiveConcept.REPOSITORY).requested,
             notify = wantsNotify
-        ) +
-            IntentSystem("standard", "standard", "semantic database migration operations")
+        ) + IntentSystem("standard", "standard", "semantic database migration operations")
         val steps = mutableListOf<IntentStep>()
         if (backupDirective.requested) {
             steps += IntentStep("backup-database", StandardCapability.BACKUP, params = mapOfNotNullValue("subject" to database?.let { IntentString(it) }))
@@ -944,8 +932,7 @@ object CertificateRenewalScenarioPack : BaseScenarioPack() {
             questions += recommendedQuestion("certificate-provider", "entities.certificate.provider", "Which certificate provider or secret store owns this certificate?")
         }
         if (service == null) questions += recommendedQuestion("certificate-service", "entities.affectedService", "Which service or endpoint should be verified after renewal?")
-        val systems = commonSystems(text, request.context, notify = wantsNotify) +
-            IntentSystem("standard", "standard", "semantic certificate renewal operations")
+        val systems = commonSystems(text, request.context, notify = wantsNotify) + IntentSystem("standard", "standard", "semantic certificate renewal operations")
         val triggers = recurringSchedule(text)?.let { schedule ->
             listOf(IntentTrigger("certificate-renewal-schedule", IntentTriggerType.SCHEDULE, listOf("main"), schedule))
         }.orEmpty()
@@ -1005,8 +992,7 @@ object KubernetesMaintenanceScenarioPack : BaseScenarioPack() {
         if (scope == null) questions += requiredQuestion("missing-kubernetes-scope", "entities.kubernetes.scope", "Which cluster, namespace or resource scope is affected?")
         if (prod && window == null) questions += requiredQuestion("missing-maintenance-window", "safety.maintenance.window", "Which maintenance window authorizes this production maintenance?")
         if (!wantsDryRun && destructive) questions += recommendedQuestion("maintenance-dry-run", "safety.dryRun", "Should this maintenance run in dry-run mode before applying changes?")
-        val systems = commonSystems(text, request.context, notify = wantsNotify) +
-            IntentSystem("standard", "standard", "semantic Kubernetes maintenance operations")
+        val systems = commonSystems(text, request.context, notify = wantsNotify) + IntentSystem("standard", "standard", "semantic Kubernetes maintenance operations")
         val steps = mutableListOf<IntentStep>()
         if (wantsApproval) steps += IntentStep("approve-maintenance", StandardCapability.APPROVE, params = mapOf("message" to IntentString("Approve Kubernetes maintenance")))
         steps += IntentStep(
