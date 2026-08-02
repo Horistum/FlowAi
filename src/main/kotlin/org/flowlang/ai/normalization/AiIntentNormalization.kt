@@ -58,6 +58,25 @@ data class AiIntentResponse(
     }
 }
 
+enum class TargetPortabilityStatus {
+    DEFERRED
+}
+
+/**
+ * Normalization cannot certify target portability because no execution plan,
+ * compatibility analysis or adapter evidence exists at this boundary.
+ */
+data class TargetPortabilityDisposition(
+    val status: TargetPortabilityStatus = TargetPortabilityStatus.DEFERRED,
+    val requestedTarget: String = "not-specified",
+    val authoritativeArtifacts: List<String> = listOf(
+        "compatibility-report.json",
+        "execution-readiness-report.json",
+        "target-selection-report.json",
+        "target-decision-trace-report.json"
+    )
+)
+
 data class NormalizationReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
     val mode: NormalizationMode,
@@ -70,7 +89,7 @@ data class NormalizationReport(
     val openQuestions: List<ClarificationQuestion> = emptyList(),
     val risks: List<IntentRisk> = emptyList(),
     val safetyGates: List<String> = emptyList(),
-    val targetPortability: Map<String, String> = emptyMap(),
+    val targetPortability: TargetPortabilityDisposition = TargetPortabilityDisposition(),
     val scenarioSelection: ScenarioSelectionReport? = null,
     val confidenceByArea: Map<String, Double> = mapOf(
         "overall" to confidence.overall,
