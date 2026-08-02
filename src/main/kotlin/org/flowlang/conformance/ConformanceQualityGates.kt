@@ -1,7 +1,6 @@
 package org.flowlang.conformance
 
 import org.flowlang.standard.CoreContractCheck
-import org.flowlang.standard.ScenarioPackQualityAnalyzer
 
 object ConformanceQualityGateNames {
     const val CORE_CONTRACT_CHECK = "v0.8.x.core-contract-check"
