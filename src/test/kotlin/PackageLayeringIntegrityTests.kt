@@ -27,6 +27,15 @@ class PackageLayeringIntegrityTests {
     }
 
     @Test
+    fun stableScenarioQualityEvidencePathDoesNotRestoreACompatibilityFacade() {
+        val marker = File(sourceRoot, "standard/ScenarioPackQualityAnalyzer.kt")
+        val text = marker.readText()
+        assertTrue(text.contains("org.flowlang.conformance.ScenarioPackQualityAnalyzer"))
+        assertFalse(text.lineSequence().any { it.trim().startsWith("import ") })
+        assertFalse(Regex("""\b(class|object|interface|typealias|fun|val|var)\b""").containsMatchIn(codeWithoutComments(text)))
+    }
+
+    @Test
     fun scenarioNormalizationContainsNoTargetSupportVerdicts() {
         val file = File(sourceRoot, "scenarios/ScenarioPacks.kt")
         val text = file.readText()
@@ -79,4 +88,10 @@ class PackageLayeringIntegrityTests {
             offenders.joinToString("\n") { (file, imports) -> "$file imports ${imports.joinToString()}" }
         )
     }
+
+    private fun codeWithoutComments(text: String): String =
+        text.replace(Regex("""(?s)/\*.*?\*/"""), "")
+            .lineSequence()
+            .filterNot { it.trim().startsWith("//") }
+            .joinToString("\n")
 }
