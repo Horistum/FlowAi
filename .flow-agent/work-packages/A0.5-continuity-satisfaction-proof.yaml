@@ -2,7 +2,7 @@ version: "A0.5"
 name: "Continuity Satisfaction Proof"
 type: "adapter-continuity"
 stream: adapters
-status: active
+status: complete
 objective: "Certify concrete provider satisfaction for data, artifact, mutable-state and durable-state continuity without treating ordering or target capability summaries as transfer evidence."
 activationEvidence:
   adapterItem: "A0.4"
@@ -44,4 +44,10 @@ completionEvidence:
   - "Every executable reference scenario replays its producer-to-consumer continuity and is demoted when proof is absent."
   - "CLI diagnostic fallback preserves continuity blockers through manifest, readiness, selection and adapter-contract evidence without rendering target syntax."
   - "A0.5 lifecycle integrity rejects authored completion evidence while implementing and blocks premature A0.6 selection."
-implementationEvidence: {}
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2468
+  runId: 30741864674
+  exactHead: "b1b996508aa9bfb1f645cfd69f7ddb777e22c1d5"
+  mergeCandidate: "3538862c7ad1878d8d6d3ae00e8f5447949511aa"
