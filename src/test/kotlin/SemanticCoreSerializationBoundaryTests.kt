@@ -1,6 +1,7 @@
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import org.flowlang.architecture.SemanticSerializationBoundary
 import org.flowlang.core.SemanticCorePackageBoundary
 
 class SemanticCoreSerializationBoundaryTests {
@@ -15,7 +16,7 @@ class SemanticCoreSerializationBoundaryTests {
         val offenders = semanticPackages.flatMap { packageName ->
             File(sourceRoot, packageName).walkTopDown()
                 .filter { it.isFile && it.extension == "kt" }
-                .filter { file -> SemanticCorePackageBoundary.forbiddenSerializationTokens.any(file.readText()::contains) }
+                .filter { file -> SemanticSerializationBoundary.forbiddenTokens.any(file.readText()::contains) }
                 .map { it.relativeTo(root).invariantSeparatorsPath }
                 .toList()
         }.sorted()
