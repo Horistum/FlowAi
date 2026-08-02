@@ -1,4 +1,4 @@
-version: "1.3"
+version: "1.4"
 checks:
   - "adapters.a0.1.lifecycle-integrity"
   - "adapters.a0.1.portfolio-reassessment"
@@ -19,3 +19,9 @@ checks:
   - "adapters.a0.4.runtime-control-authority"
   - "adapters.a0.4.unsupported-control-demotion"
   - "adapters.a0.4.platform-capability-separation"
+  - "adapters.a0.5.lifecycle-integrity"
+  - "adapters.a0.5.continuity-evidence-integrity"
+  - "adapters.a0.5.runtime-continuity-authority"
+  - "adapters.a0.5.ordering-continuity-separation"
+  - "adapters.a0.5.executable-continuity-proof"
+  - "adapters.a0.5.profile-only-demotion"
