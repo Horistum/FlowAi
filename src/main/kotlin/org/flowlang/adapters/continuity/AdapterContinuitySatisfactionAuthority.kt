@@ -31,13 +31,14 @@ class AdapterContinuitySatisfactionAuthority(
     private val integrity = AdapterContinuityEvidenceIntegrityAuthority(rootDir, targets, projections)
 
     private val certifiedDocument: AdapterContinuityEvidenceDocument by lazy {
-        val report = integrity.analyze(document)
+        val active = document.copy(targets = document.targets.filter { it.target in targets })
+        val report = integrity.analyze(active, requireCompletePortfolio = false)
         check(report.status == "PASS") {
             "Adapter continuity evidence is invalid: " + report.findings.joinToString(" | ") {
                 "${it.code}:${it.target}:${it.family}:${it.message}"
             }
         }
-        document
+        active
     }
 
     fun analyze(
