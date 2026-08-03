@@ -73,4 +73,6 @@ The Core pre-closure inventory and adapter inventory remain unchanged.
 
 ## Completion boundary
 
-The work package remains `active` and C0.1 remains `next` until Flow CI passes both the exact implementation head and its synthetic merge candidate. Only then may completion metadata select C0.2.
+Flow CI #2641 passed the exact C0.1 implementation head and its synthetic merge candidate with 808 tests and 120 conformance checks. The work package therefore records C0.1 as complete and the roadmap selects C0.2 without adding C0.2 implementation scope.
+
+This metadata is a completion candidate until its own distinct exact-head and synthetic merge-candidate Flow CI boundary passes. The completion boundary must not reuse or impersonate the implementation evidence.
