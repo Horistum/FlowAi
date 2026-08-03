@@ -1,6 +1,7 @@
 package org.flowlang.conformance
 
 import java.io.File
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.architecture.CiCdBiasInventoryAnalyzer
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
@@ -165,14 +166,26 @@ internal class ClosureBlockingIntegrityChecks(
             strict = false,
             renderRequested = true
         )
-        require(review.outcome != CliTargetEvidenceOutcome.EXECUTABLE) {
-            "The bounded build-test-deploy GitHub Actions target unexpectedly became executable."
+        require(review.outcome == CliTargetEvidenceOutcome.REVIEW_ONLY) {
+            "The bounded build-test-deploy GitHub Actions target did not remain review-only."
         }
-        require(review.renderedArtifact == null) {
-            "Review or blocked diagnostic evidence emitted target syntax."
+        val rendered = requireNotNull(review.renderedArtifact) {
+            "Review-only target evidence did not emit its dedicated review document."
+        }
+        require(rendered.kind == AdapterRenderedArtifactKind.REVIEW_EVIDENCE) {
+            "Review-only target evidence was mislabeled as executable target syntax."
+        }
+        require(rendered.fileName == "flow-github-actions-review.yaml") {
+            "GitHub Actions review evidence used executable or unexpected file identity '${rendered.fileName}'."
+        }
+        require(
+            "kind: TargetProjectionReview" in rendered.content &&
+                "executable: false" in rendered.content
+        ) {
+            "Review artifact does not explicitly identify itself as non-executable Flow evidence."
         }
         require(review.diagnostics.any { it.code == "CLI_RENDER_NOT_AUTHORIZED" }) {
-            "A blocked render request lacks stable CLI diagnostics."
+            "A denied executable render request lacks stable CLI diagnostics."
         }
     }
 
