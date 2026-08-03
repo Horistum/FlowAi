@@ -1,0 +1,8 @@
+kind: FlowRealWorldEvidence
+version: '0.2'
+caseId: P13
+status: ACCEPTED
+outcome: SUPPORTED_WITH_BINDING
+expectedDiagnostics: []
+sourceRevision: 8620a60d7c841f00a53b5dd39f0027c2d042082f
+validatedBy: [real-world-corpus.case.p13, real-world-corpus.mutations]
