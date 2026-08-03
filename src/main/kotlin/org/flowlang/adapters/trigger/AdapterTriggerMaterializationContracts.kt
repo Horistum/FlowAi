@@ -188,11 +188,13 @@ object AdapterTriggerRequirementAuthority {
                     semanticIdentity = listOf(
                         requirement.family.name,
                         requirement.semantic,
-                        requirement.workflows.sorted(),
+                        requirement.workflows.sorted().joinToString("\u0000"),
                         requirement.expression,
                         requirement.timezone,
                         requirement.event,
-                        requirement.params.toSortedMap(),
+                        requirement.params.toSortedMap().entries.joinToString("\u0000") { (key, value) ->
+                            "$key\u0001$value"
+                        },
                         requirement.completeness.name,
                         requirement.diagnostic
                     ),
@@ -249,7 +251,7 @@ object AdapterTriggerRequirementAuthority {
 
     private fun shapeDiagnostic(trigger: PlanTrigger, family: AdapterTriggerFamily): String? {
         if (trigger.id.isBlank()) return "Trigger id is blank."
-        if (trigger.workflows.isEmpty() || trigger.workflows.any(String::isBlank)) {
+        if (trigger.workflows.isEmpty() || trigger.workflows.any { it.isBlank() }) {
             return "Trigger workflows must contain non-blank workflow identities."
         }
         if (trigger.workflows.size != trigger.workflows.toSet().size) {
@@ -284,7 +286,7 @@ object AdapterTriggerRequirementAuthority {
 
     fun isPortablePosixCron(expression: String): Boolean {
         val normalized = expression.trim()
-        if (normalized.startsWith("@") || normalized.contains(Regex("(^|[^A-Za-z])H([^A-Za-z]|$)"))) return false
+        if (normalized.startsWith("@") || JENKINS_HASH_TOKEN.containsMatchIn(normalized)) return false
         return normalized.split(Regex("\\s+")).size == 5
     }
 
@@ -304,6 +306,7 @@ object AdapterTriggerRequirementAuthority {
     }
 
     private val EVENT_NAME = Regex("[a-z][a-z0-9_-]*")
+    private val JENKINS_HASH_TOKEN = Regex("(^|[^A-Za-z])H([^A-Za-z]|$)")
 }
 
 object AdapterTriggerEvidenceLoader {
