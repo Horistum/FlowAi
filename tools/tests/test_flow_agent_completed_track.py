@@ -201,11 +201,11 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
                 root,
                 adapters=COMPLETED_ADAPTER_ITEMS.replace(
                     '    status: completed\n    purpose: "Materialize only faithfully supported trigger semantics."',
-                    '    status: next\n    purpose: "Materialize only faithfully supported trigger semantics."',
+                    '    status: planned\n    purpose: "Materialize only faithfully supported trigger semantics."',
                 ),
             )
 
-            with self.assertRaisesRegex(RuntimeError, "must not retain a status: next item"):
+            with self.assertRaisesRegex(RuntimeError, "non-completed items"):
                 validate_roadmap_structure_with_completed_track(root, main)
 
     def test_rejects_completed_track_without_completed_closure_identity(self) -> None:
