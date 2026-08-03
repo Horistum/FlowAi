@@ -1,6 +1,7 @@
 package org.flowlang.conformance
 
 import java.io.File
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
@@ -48,7 +49,7 @@ internal class CliReleaseHonestyChecks(
                 "CLI target selection was not reconciled against the emitted Jenkins manifest."
             }
             require(evidence.renderedArtifact == null) {
-                "CLI rendered target syntax even though rendering was not requested."
+                "CLI emitted an adapter artifact even though rendering was not requested."
             }
             require(evidence.renderReadiness.mode == TargetRenderMode.REVIEW_ONLY) {
                 "The reference Jenkins manifest should remain review-only, not executable."
@@ -63,11 +64,26 @@ internal class CliReleaseHonestyChecks(
             require(requestedRender.outcome == CliTargetEvidenceOutcome.REVIEW_ONLY) {
                 "Review-only target evidence was not preserved as a typed CLI outcome."
             }
-            require(requestedRender.renderedArtifact == null) {
-                "Review-only target evidence produced rendered target syntax."
+            val rendered = requireNotNull(requestedRender.renderedArtifact) {
+                "Requested review-only evidence did not emit its dedicated review artifact."
+            }
+            require(rendered.kind == AdapterRenderedArtifactKind.REVIEW_EVIDENCE) {
+                "Review-only target evidence was mislabeled as executable target syntax."
+            }
+            require(rendered.fileName == "flow-jenkins-review.yaml") {
+                "Review-only Jenkins evidence used executable or unexpected file identity '${rendered.fileName}'."
+            }
+            require(
+                "kind: TargetProjectionReview" in rendered.content &&
+                    "executable: false" in rendered.content
+            ) {
+                "Review-only artifact lacks explicit non-executable identity."
+            }
+            require(rendered.evidence.renderMode == TargetRenderMode.REVIEW_ONLY) {
+                "Review-only artifact receipt contradicts its render mode."
             }
             require(requestedRender.diagnostics.any { it.code == "CLI_RENDER_NOT_AUTHORIZED" }) {
-                "A denied render request lacks a stable diagnostic code."
+                "A denied executable render request lacks a stable diagnostic code."
             }
 
             val release = ReleaseMetadataHonestyAuthority(rootDir).requireValid()
