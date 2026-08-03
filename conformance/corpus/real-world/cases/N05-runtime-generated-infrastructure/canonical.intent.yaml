@@ -1,0 +1,20 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: n05-runtime-generated-infrastructure
+description: Preserve the visible infrastructure deployment intent while rejecting arbitrary runtime plan generation.
+workflows:
+- name: main
+  kind: PROVISION
+  steps:
+  - id: discover
+    capability: CUSTOM
+    produces: [discovered_components]
+    params: {description: Discover deployable components at runtime}
+  - id: deploy
+    capability: DEPLOY
+    requires: [discover]
+    params:
+      subject: infrastructure
+      environment: production
+      artifact: 'ref:discovered_components'
+failure: {notify: false, rollback: false, stopOnError: true}
