@@ -4,6 +4,7 @@ id: A11
 title: Output-driven downstream matrix
 lifecycle: MUTATION_VALIDATED
 category: advanced
+domain: software-delivery
 sourceRef: prometheus-ci
 source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
 sourceObservations: source-observations.md
