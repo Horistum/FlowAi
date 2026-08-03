@@ -121,21 +121,32 @@ class CoreTargetProjectionBoundaryTests {
     }
 
     @Test
-    fun compositionRootsUseCanonicalProjectionAndArtifactRenderingAuthorities() {
+    fun compositionRootsUseCanonicalProjectionTriggerAndArtifactRenderingAuthorities() {
         val referenceGenerator = File(
             "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
+        ).readText()
+        val triggerDecorator = File(
+            "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerAuthorizedRenderingAuthority.kt"
         ).readText()
         val loader = Thread.currentThread().contextClassLoader
 
         assertTrue(loader.getResource("org/flowlang/cli/TargetManifestGenerationPipeline.class") == null)
         assertNotNull(loader.getResource("org/flowlang/generators/manifest/TargetManifestGenerationPipeline.class"))
         assertNotNull(loader.getResource("org/flowlang/adapters/rendering/AdapterArtifactRenderingAuthority.class"))
+        assertNotNull(loader.getResource("org/flowlang/adapters/trigger/AdapterTriggerMaterializationAuthority.class"))
+        assertNotNull(loader.getResource("org/flowlang/adapters/trigger/AdapterTriggerAuthorizedRenderingAuthority.class"))
         assertTrue(referenceGenerator.contains("BuiltInTargetProjections.registry"))
         assertTrue(referenceGenerator.contains("TargetSelectionAuthority.fromReferenceSnapshot"))
-        assertTrue(referenceGenerator.contains("AdapterArtifactRenderingAuthority(rootDir, projections)"))
+        assertTrue(referenceGenerator.contains("AdapterTriggerMaterializationAuthority(rootDir, targets, projections)"))
+        assertTrue(referenceGenerator.contains("AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)"))
+        assertTrue(referenceGenerator.contains("triggerAuthority.reconcileDiagnostic(generated, triggerAssessment)"))
         assertTrue(referenceGenerator.contains("renderingAuthority.render(manifest)"))
+        assertFalse(referenceGenerator.contains("AdapterArtifactRenderingAuthority(rootDir, projections)"))
         assertFalse(referenceGenerator.contains("projections.requireProvider(target)"))
         assertFalse(referenceGenerator.contains("when (manifest.target)"))
+        assertTrue(triggerDecorator.contains("AdapterArtifactRenderingAuthority(rootDir, projections)"))
+        assertTrue(triggerDecorator.contains("delegate.render(manifest)"))
+        assertFalse(triggerDecorator.contains("when (manifest.target)"))
     }
 
     private class SyntheticGenerator(
