@@ -3,6 +3,7 @@ package org.flowlang.adapters.trigger
 import java.io.File
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingBundle
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.targets.builtin.BuiltInTargetProjections
@@ -10,9 +11,9 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 /**
  * Trigger-aware decorator over the single A0.6 artifact rendering authority.
  *
- * It does not render content and does not choose a file identity. It only proves
- * that every explicit manifest trigger already passed A0.7 materialization before
- * delegating the unchanged manifest to A0.6.
+ * It does not render content and does not choose a file identity. It verifies the
+ * A0.7 assessment before delegation and then ensures that a blocked trigger can
+ * produce review evidence only, never executable target syntax.
  */
 class AdapterTriggerAuthorizedRenderingAuthority(
     rootDir: File = File("."),
@@ -21,23 +22,36 @@ class AdapterTriggerAuthorizedRenderingAuthority(
         AdapterArtifactRenderingAuthority(rootDir, projections)
 ) {
     fun render(manifest: TargetManifest): AdapterArtifactRenderingBundle {
-        requireAuthorized(manifest)
-        return delegate.render(manifest)
+        val decision = requireAssessment(manifest)
+        val bundle = delegate.render(manifest)
+        if (decision == AdapterTriggerDecision.BLOCKED) {
+            require(bundle.artifact.kind == AdapterRenderedArtifactKind.REVIEW_EVIDENCE) {
+                "Blocked adapter trigger evidence produced executable target syntax for '${manifest.target}'."
+            }
+        }
+        return bundle
     }
 
-    fun requireAuthorized(manifest: TargetManifest) {
-        if (manifest.triggers.isEmpty()) return
+    fun requireAssessment(manifest: TargetManifest): AdapterTriggerDecision? {
+        if (manifest.triggers.isEmpty()) return null
         val decision = manifest.metadata["adapterTriggerDecision"]
+            ?.let { value -> runCatching { AdapterTriggerDecision.valueOf(value) }.getOrNull() }
+            ?: error(
+                "Manifest '${manifest.flowName}' for '${manifest.target}' contains explicit triggers without a valid A0.7 adapter trigger decision."
+            )
         val requirementCount = manifest.metadata["adapterTriggerRequirementCount"]?.toIntOrNull()
         val blockerCount = manifest.metadata["adapterTriggerBlockerCount"]?.toIntOrNull()
-        require(decision == AdapterTriggerDecision.MATCHED.name) {
-            "Manifest '${manifest.flowName}' for '${manifest.target}' contains explicit triggers without MATCHED adapter trigger evidence."
-        }
         require(requirementCount == manifest.triggers.size) {
             "Manifest '${manifest.flowName}' trigger evidence count '$requirementCount' does not match ${manifest.triggers.size} preserved triggers."
         }
-        require(blockerCount == 0) {
-            "Manifest '${manifest.flowName}' declares adapter trigger blockers and cannot be rendered."
+        when (decision) {
+            AdapterTriggerDecision.MATCHED -> require(blockerCount == 0) {
+                "Matched adapter trigger evidence for '${manifest.flowName}' declares blocker count '$blockerCount'."
+            }
+            AdapterTriggerDecision.BLOCKED -> require(blockerCount != null && blockerCount > 0) {
+                "Blocked adapter trigger evidence for '${manifest.flowName}' does not declare a positive blocker count."
+            }
         }
+        return decision
     }
 }
