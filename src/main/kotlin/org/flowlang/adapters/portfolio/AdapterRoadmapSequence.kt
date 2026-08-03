@@ -3,11 +3,12 @@ package org.flowlang.adapters.portfolio
 /**
  * Shared adapter-roadmap ordering contract.
  *
- * Historical lifecycle authorities must accept both an adjacent active focus
- * and the one declared terminal state. They must never infer a successor after
- * A0.7 merely to keep an old "completed + next" shape alive.
+ * Historical lifecycle authorities accept the initial A0.1 focus, adjacent
+ * active progress and the one declared terminal state. They never infer an
+ * imaginary predecessor or successor merely to preserve one metadata shape.
  */
 object AdapterRoadmapSequence {
+    const val FIRST_ITEM: String = "A0.1"
     const val TERMINAL_ITEM: String = "A0.7"
 
     fun ordinal(item: String): Int? = ITEM.matchEntire(item)?.groupValues?.get(1)?.toIntOrNull()
@@ -40,10 +41,10 @@ object AdapterRoadmapSequence {
         trackStatus: String,
         completedItem: String,
         nextItem: String
-    ): Boolean = if (nextItem.isBlank()) {
-        trackStatus == "completed" && completedItem == TERMINAL_ITEM
-    } else {
-        trackStatus == "active" && isAdjacentProgress(completedItem, nextItem, minimumCompletedOrdinal = 1)
+    ): Boolean = when {
+        nextItem.isBlank() -> trackStatus == "completed" && completedItem == TERMINAL_ITEM
+        completedItem.isBlank() -> trackStatus == "active" && nextItem == FIRST_ITEM
+        else -> trackStatus == "active" && isAdjacentProgress(completedItem, nextItem, minimumCompletedOrdinal = 1)
     }
 
     fun isIndexFocusAligned(
