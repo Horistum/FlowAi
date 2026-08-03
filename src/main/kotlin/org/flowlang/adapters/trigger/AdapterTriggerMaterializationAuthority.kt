@@ -111,6 +111,12 @@ class AdapterTriggerMaterializationAuthority(
         require(manifest.target == assessment.target) {
             "Diagnostic manifest target '${manifest.target}' does not match trigger assessment target '${assessment.target}'."
         }
+        if (assessment.requirements.isEmpty()) {
+            require(assessment.evidence.isEmpty() && assessment.blockingRequirementIds.isEmpty()) {
+                "Trigger-free assessment for '${assessment.target}' contains synthetic evidence or blockers."
+            }
+            return manifest
+        }
         val metadata = manifest.metadata + assessmentMetadata(assessment)
         if (assessment.decision == AdapterTriggerDecision.MATCHED) {
             return manifest.copy(metadata = metadata)
