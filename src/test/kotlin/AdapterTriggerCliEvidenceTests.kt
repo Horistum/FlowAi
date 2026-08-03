@@ -7,30 +7,31 @@ import kotlin.test.assertTrue
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.trigger.AdapterTriggerDecision
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+import org.flowlang.ast.ScheduleNode
+import org.flowlang.ast.TriggerNode
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
 import org.flowlang.materialization.TargetSelectionAuthority
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.parser.FlowParser
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.PlanSchedule
-import org.flowlang.planner.PlanTrigger
-import org.flowlang.planner.TaskNode
+import org.flowlang.planner.FlowPlanner
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 class AdapterTriggerCliEvidenceTests {
     private val root = File(".")
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
+    private val modules = ModuleRegistry.fromDirectory(File(root, "modules"), includeDefaults = true)
     private val cli = CliTargetEvidenceAuthority(targets, BuiltInTargetProjections.registry, root)
 
     @Test
     fun jenkinsPortableCronRemainsExecutableThroughCompleteCliBoundary() {
-        val plan = imageBuildPlan(
-            PlanTrigger(
+        val plan = triggerPlan(
+            TriggerNode(
                 id = "nightly",
-                type = "SCHEDULE",
-                workflows = listOf("main"),
-                schedule = PlanSchedule("CRON", "0 3 * * *", null)
-            ),
-            "trigger.schedule.cron"
+                triggerType = "SCHEDULE",
+                schedule = ScheduleNode("CRON", "0 3 * * *")
+            )
         )
         val selection = TargetSelectionAuthority.fromTestFixture(
             value = "jenkins",
@@ -52,14 +53,12 @@ class AdapterTriggerCliEvidenceTests {
 
     @Test
     fun unsupportedIntervalProducesTypedReviewEvidence() {
-        val plan = imageBuildPlan(
-            PlanTrigger(
+        val plan = triggerPlan(
+            TriggerNode(
                 id = "frequent",
-                type = "SCHEDULE",
-                workflows = listOf("main"),
-                schedule = PlanSchedule("INTERVAL", "PT15M", null)
-            ),
-            "trigger.schedule.interval"
+                triggerType = "SCHEDULE",
+                schedule = ScheduleNode("INTERVAL", "PT15M")
+            )
         )
         val selection = TargetSelectionAuthority.fromTestFixture(
             value = "github-actions",
@@ -84,14 +83,12 @@ class AdapterTriggerCliEvidenceTests {
 
     @Test
     fun jenkinsExplicitTimezoneIsNotSilentlyDiscarded() {
-        val plan = imageBuildPlan(
-            PlanTrigger(
+        val plan = triggerPlan(
+            TriggerNode(
                 id = "nightly",
-                type = "SCHEDULE",
-                workflows = listOf("main"),
-                schedule = PlanSchedule("CRON", "0 3 * * *", "Europe/Prague")
-            ),
-            "trigger.schedule.cron"
+                triggerType = "SCHEDULE",
+                schedule = ScheduleNode("CRON", "0 3 * * *", "Europe/Prague")
+            )
         )
         val selection = TargetSelectionAuthority.fromTestFixture(
             value = "jenkins",
@@ -111,23 +108,33 @@ class AdapterTriggerCliEvidenceTests {
         assertFalse(result.renderedArtifact?.content.orEmpty().contains("cron('0 3 * * *')"))
     }
 
-    private fun imageBuildPlan(trigger: PlanTrigger, capability: String): ExecutionPlan = ExecutionPlan(
-        flowName = "trigger-cli-image-build",
-        triggers = listOf(trigger),
-        requiredCapabilities = listOf("container.image", "docker.build", capability),
-        nodes = listOf(
-            TaskNode(
-                id = "build-image",
-                module = "docker",
-                action = "build",
-                target = "registry",
-                params = mapOf(
-                    "image" to "acme/service:1.0",
-                    "path" to ".",
-                    "push" to "false"
-                ),
-                requiredCapabilities = listOf("container.image", "docker.build")
-            )
+    private fun triggerPlan(trigger: TriggerNode): ExecutionPlan {
+        val document = FlowParser().parse(
+            """
+            version "1.0"
+            use module "git" version "1.0"
+
+            flow "trigger-cli-checkout" {
+              systems {
+                system "repo" {
+                  type: git
+                  url: "https://github.com/openai/openai.git"
+                  branch: "main"
+                }
+              }
+
+              steps {
+                git.checkout repo {
+                  depth: 2
+                }
+              }
+            }
+            """.trimIndent()
         )
-    )
+        val triggered = document.copy(flow = document.flow.copy(triggers = listOf(trigger)))
+        return FlowPlanner(modules).plan(triggered).also { plan ->
+            assertEquals(1, plan.triggers.size)
+            assertTrue(plan.triggers.single().requiredCapabilities.isNotEmpty())
+        }
+    }
 }
