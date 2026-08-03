@@ -42,12 +42,12 @@ object AdapterTriggerEvidenceLoader {
             )
         }
 
-        require(indexedFiles.map(File::getCanonicalPath).size == indexedFiles.size) {
+        require(indexedFiles.map(File::getCanonicalPath).toSet().size == indexedFiles.size) {
             "$PATH.targetFiles resolves more than one entry to the same target file."
         }
         requireCompleteDirectoryIndex(repositoryRoot, targetDirectory, indexedFiles)
 
-        val targets = indexedFiles.map(::parseTargetFile)
+        val targets = indexedFiles.map { file -> parseTargetFile(repositoryRoot, file) }
         val duplicateTargets = targets.groupingBy(AdapterTriggerTargetRecord::target)
             .eachCount()
             .filterValues { count -> count > 1 }
@@ -120,8 +120,8 @@ object AdapterTriggerEvidenceLoader {
         }
     }
 
-    private fun parseTargetFile(file: File): AdapterTriggerTargetRecord {
-        val repositoryPath = repositoryPathFromKnownRoot(file)
+    private fun parseTargetFile(repositoryRoot: File, file: File): AdapterTriggerTargetRecord {
+        val repositoryPath = repositoryPath(repositoryRoot, file)
         val raw = FlowYaml.readMap(file)
         requireExactKeys(raw, TARGET_KEYS, repositoryPath)
         val target = text(raw, "target", repositoryPath)
@@ -213,13 +213,6 @@ object AdapterTriggerEvidenceLoader {
 
     private fun repositoryPath(repositoryRoot: File, file: File): String =
         file.relativeTo(repositoryRoot).invariantSeparatorsPath
-
-    private fun repositoryPathFromKnownRoot(file: File): String {
-        val normalized = file.invariantSeparatorsPath
-        val marker = "/$TARGET_DIRECTORY/"
-        val suffix = normalized.substringAfter(marker, missingDelimiterValue = normalized)
-        return if (suffix == normalized) normalized else "$TARGET_DIRECTORY/$suffix"
-    }
 
     private inline fun <reified T : Enum<T>> enumValue(value: String, path: String): T =
         runCatching { enumValueOf<T>(value) }
