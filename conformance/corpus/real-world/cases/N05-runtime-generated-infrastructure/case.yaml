@@ -1,0 +1,19 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: N05
+title: Runtime-generated infrastructure deployment plan
+lifecycle: MUTATION_VALIDATED
+category: negative
+domain: infrastructure-state-change
+sourceRef: buildkite-dynamic-pipeline
+source: {workflow: source/workflow.sh, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: deployment-input-missing, definition: mutations/deployment-input-missing/mutation.yaml}
+invariants:
+- Runtime-discovered fan-out is not approximated as a fixed static plan.
+- The conditional deployment remains visible as infrastructure state-changing intent.
+- Unsupported dynamic construction blocks executable classification with an exact diagnostic.
