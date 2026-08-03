@@ -166,4 +166,4 @@ lastKnownValidation:
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
     - "A0.1 through A0.7 are completed and merged."
     - "C0.1 is selected as the first independent conformance item."
-    - "C0.1 implementation evidence is intentionally absent until an exact-head and synthetic merge-candidate boundary passes."
+    - "C0.1 implementation evidence is intentionally absent until external exact-head CI evidence and a synthetic merge-candidate boundary pass."
