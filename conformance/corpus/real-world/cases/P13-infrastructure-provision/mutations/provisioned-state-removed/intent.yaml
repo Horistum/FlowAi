@@ -9,12 +9,11 @@ workflows:
   - id: initialize
     capability: CUSTOM
     produces: [initialized_configuration]
-    params: {description: Initialize the pinned Terraform configuration}
+    params: {description: Initialize the pinned infrastructure configuration}
   - id: apply
     capability: PROVISION
     requires: [initialize]
     params:
-      tool: terraform
       mode: apply
       resource: local-test-infrastructure
       stack: 'ref:initialized_configuration'
