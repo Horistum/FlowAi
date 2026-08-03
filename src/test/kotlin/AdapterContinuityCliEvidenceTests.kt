@@ -3,9 +3,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.flowlang.adapters.continuity.AdapterContinuityDecision
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
@@ -40,6 +40,7 @@ class AdapterContinuityCliEvidenceTests {
         assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome)
         assertEquals(TargetRenderMode.EXECUTABLE, result.renderReadiness.mode)
         assertNotNull(result.renderedArtifact)
+        assertEquals(AdapterRenderedArtifactKind.EXECUTABLE_TARGET, result.renderedArtifact?.kind)
         assertEquals("Jenkinsfile", result.renderedArtifact?.fileName)
     }
 
@@ -58,7 +59,12 @@ class AdapterContinuityCliEvidenceTests {
         assertEquals(AdapterContinuityDecision.BLOCKED.name, result.manifest.metadata["adapterContinuityDecision"])
         assertEquals(CliTargetEvidenceOutcome.REVIEW_ONLY, result.outcome)
         assertEquals(TargetRenderMode.REVIEW_ONLY, result.renderReadiness.mode)
-        assertNull(result.renderedArtifact)
+        val rendered = requireNotNull(result.renderedArtifact)
+        assertEquals(AdapterRenderedArtifactKind.REVIEW_EVIDENCE, rendered.kind)
+        assertEquals("flow-jenkins-review.yaml", rendered.fileName)
+        assertTrue(rendered.content.contains("kind: TargetProjectionReview"))
+        assertTrue(rendered.content.contains("executable: false"))
+        assertEquals(TargetRenderMode.REVIEW_ONLY, rendered.evidence.renderMode)
         assertFalse(result.compatibility.executable)
         assertTrue(result.compatibility.issues.any { it.feature == "continuity.data.value.adapter" })
         assertTrue(result.diagnostics.any { it.code == "CLI_RENDER_NOT_AUTHORIZED" })
