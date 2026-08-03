@@ -342,15 +342,16 @@ object AdapterTriggerEvidenceLoader {
     }
 
     private fun parseClaim(raw: Map<String, Any?>, path: String): AdapterTriggerClaim {
-        requireExactKeys(raw, CLAIM_KEYS, path)
-        val semantics = map(raw["semantics"], "$path.semantics")
+        val claim = expandClaimTemplate(raw, path)
+        requireExactKeys(claim, CLAIM_KEYS, path)
+        val semantics = map(claim["semantics"], "$path.semantics")
         requireExactKeys(semantics, SEMANTIC_KEYS, "$path.semantics")
-        val constraints = map(raw["constraints"], "$path.constraints")
+        val constraints = map(claim["constraints"], "$path.constraints")
         requireExactKeys(constraints, CONSTRAINT_KEYS, "$path.constraints")
         return AdapterTriggerClaim(
-            family = enumValue(text(raw, "family", path), "$path.family"),
-            status = enumValue(text(raw, "status", path), "$path.status"),
-            mechanism = text(raw, "mechanism", path),
+            family = enumValue(text(claim, "family", path), "$path.family"),
+            status = enumValue(text(claim, "status", path), "$path.status"),
+            mechanism = text(claim, "mechanism", path),
             semantics = AdapterTriggerSemanticPartition(
                 supported = stringList(semantics["supported"], "$path.semantics.supported").toSet(),
                 unsupported = reasonMap(semantics["unsupported"], "$path.semantics.unsupported"),
@@ -363,10 +364,30 @@ object AdapterTriggerEvidenceLoader {
                 timezoneMode = enumValue(text(constraints, "timezoneMode", "$path.constraints"), "$path.constraints.timezoneMode"),
                 expressionMode = enumValue(text(constraints, "expressionMode", "$path.constraints"), "$path.constraints.expressionMode")
             ),
-            evidenceReferences = stringList(raw["evidenceReferences"], "$path.evidenceReferences", required = true),
-            prerequisites = stringList(raw["prerequisites"], "$path.prerequisites"),
-            limitations = stringList(raw["limitations"], "$path.limitations", required = true)
+            evidenceReferences = stringList(claim["evidenceReferences"], "$path.evidenceReferences", required = true),
+            prerequisites = stringList(claim["prerequisites"], "$path.prerequisites"),
+            limitations = stringList(claim["limitations"], "$path.limitations", required = true)
         )
+    }
+
+    /**
+     * Jackson exposes the bounded YAML claim template as a literal `<<` map.
+     * Resolve exactly one map template before strict key validation. Explicit
+     * claim fields override the template; nested or sequence merges are rejected.
+     */
+    private fun expandClaimTemplate(raw: Map<String, Any?>, path: String): Map<String, Any?> {
+        val inheritedRaw = raw[MERGE_KEY] ?: return raw
+        val inherited = map(inheritedRaw, "$path.$MERGE_KEY")
+        require(MERGE_KEY !in inherited) {
+            "$path.$MERGE_KEY must not contain a nested claim template."
+        }
+        requireExactKeys(inherited, CLAIM_KEYS, "$path.$MERGE_KEY")
+        val explicit = raw - MERGE_KEY
+        val unknownExplicit = explicit.keys - CLAIM_KEYS
+        require(unknownExplicit.isEmpty()) {
+            "$path has unknown explicit fields: ${unknownExplicit.sorted().joinToString()}."
+        }
+        return inherited + explicit
     }
 
     private inline fun <reified T : Enum<T>> enumValue(value: String, path: String): T =
@@ -414,6 +435,7 @@ object AdapterTriggerEvidenceLoader {
         else -> error("$path must be a list.")
     }
 
+    private const val MERGE_KEY = "<<"
     private val ROOT_KEYS = setOf("version", "targets")
     private val TARGET_KEYS = setOf("target", "claims")
     private val CLAIM_KEYS = setOf(
