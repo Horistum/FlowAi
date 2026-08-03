@@ -2,7 +2,7 @@ version: "A0.6"
 name: "Adapter Artifact Rendering"
 type: "adapter-rendering"
 stream: adapters
-status: active
+status: complete
 objective: "Emit executable target syntax, review evidence or no artifact through one adapter-owned rendering authority after capability, topology, control and continuity evidence is reconciled."
 activationEvidence:
   adapterItem: "A0.5"
@@ -49,4 +49,10 @@ completionEvidence:
   - "CLI and artifact bundle exports preserve the primary artifact and rendering evidence receipt consistently."
   - "Executable reference behavior is replayed through the production planner, materialization and rendering authority."
   - "A0.6 lifecycle integrity rejects authored completion evidence while implementing and blocks premature A0.7 selection."
-implementationEvidence: {}
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2486
+  runId: 30790917001
+  exactHead: "8d45a90120c3daeea0a3079b2d5ba8d0f9fce34d"
+  mergeCandidate: "87782cecadebc33c195447983ccff84095276080"
