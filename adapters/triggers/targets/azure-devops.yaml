@@ -1,0 +1,116 @@
+target: azure-devops
+claims:
+- family: MANUAL
+  status: UNKNOWN
+  mechanism: Profile-only target; no composed provider owns trigger materialization.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      manual.explicit: No composed provider evidence.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops
+  prerequisites: []
+  limitations:
+  - Platform capability is not provider implementation evidence.
+- family: CRON
+  status: UNKNOWN
+  mechanism: Profile-only target; no composed provider owns trigger materialization.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      schedule.cron: No composed provider evidence.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops
+  prerequisites: []
+  limitations:
+  - Platform capability is not provider implementation evidence.
+- family: INTERVAL
+  status: UNKNOWN
+  mechanism: Profile-only target; no composed provider owns trigger materialization.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      schedule.interval: No composed provider evidence.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops
+  prerequisites: []
+  limitations:
+  - Platform capability is not provider implementation evidence.
+- family: CALENDAR
+  status: UNKNOWN
+  mechanism: Profile-only target; no composed provider owns trigger materialization.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      schedule.calendar: No composed provider evidence.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops
+  prerequisites: []
+  limitations:
+  - Platform capability is not provider implementation evidence.
+- family: EVENT
+  status: UNKNOWN
+  mechanism: Profile-only target; no composed provider owns trigger materialization.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      event.named: No composed provider evidence.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops
+  prerequisites: []
+  limitations:
+  - Platform capability is not provider implementation evidence.
+- family: WEBHOOK
+  status: UNKNOWN
+  mechanism: Profile-only target; no composed provider owns trigger materialization.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      webhook.external: No composed provider evidence.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops
+  prerequisites: []
+  limitations:
+  - Platform capability is not provider implementation evidence.

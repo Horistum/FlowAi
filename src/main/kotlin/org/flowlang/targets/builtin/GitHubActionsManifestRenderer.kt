@@ -32,50 +32,18 @@ class GitHubActionsManifestRenderer(
             sb.appendLine("# Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}")
         }
         sb.appendLine("name: ${yamlScalar(manifest.flowName)}")
-        sb.appendLine("on:")
-        val manual = manifest.triggers.isEmpty() || manifest.triggers.any { it.type == "MANUAL" }
-        if (manual) {
-            sb.appendLine("  workflow_dispatch:")
-            renderGithubInputs(manifest, sb)
-        }
-        val schedules = manifest.triggers.filter { it.type == "SCHEDULE" }
-        if (schedules.isNotEmpty()) {
-            sb.appendLine("  schedule:")
-            schedules.forEach { trigger ->
-                require(trigger.scheduleKind == "CRON") {
-                    "Executable GitHub schedule '${trigger.id}' must be CRON."
-                }
-                val expression = requireNotNull(trigger.scheduleExpression) {
-                    "GitHub schedule '${trigger.id}' is missing expression."
-                }
-                sb.appendLine("    - cron: ${yamlScalar(expression)}")
-            }
-        }
+        sb.append(scheduleProjection(manifest))
         sb.appendLine("jobs:")
         manifest.jobs.forEach { job -> renderGitHubJob(job, manifest, sb) }
         return sb.toString()
     }
 
-    private fun renderGithubInputs(manifest: TargetManifest, sb: StringBuilder) {
-        if (manifest.inputs.isEmpty()) return
-        sb.appendLine("    inputs:")
-        manifest.inputs.forEach { input ->
-            sb.appendLine("      ${sanitizeId(input.name)}:")
-            sb.appendLine("        description: ${yamlScalar(input.name)}")
-            sb.appendLine("        required: ${input.required}")
-            val type = when (input.type) {
-                "boolean" -> "boolean"
-                "option" -> "choice"
-                else -> "string"
-            }
-            sb.appendLine("        type: $type")
-            if (input.choices.isNotEmpty()) {
-                sb.appendLine("        options:")
-                input.choices.forEach { sb.appendLine("          - ${yamlScalar(it)}") }
-            }
-            input.defaultValue?.let { sb.appendLine("        default: ${yamlScalar(it)}") }
-        }
-    }
+    /**
+     * Retains the renderer-owned scheduling evidence boundary while delegating
+     * the complete trigger mapping to the production trigger planner.
+     */
+    private fun scheduleProjection(manifest: TargetManifest): String =
+        GitHubActionsTriggerProjectionPlanner.render(manifest)
 
     private fun renderGitHubJob(job: TargetJob, manifest: TargetManifest, sb: StringBuilder) {
         val materializedSteps = job.steps.flatMap { it.flatten() }

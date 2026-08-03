@@ -1,4 +1,4 @@
-version: "1.5"
+version: "1.6"
 checks:
   - "adapters.a0.1.lifecycle-integrity"
   - "adapters.a0.1.portfolio-reassessment"
@@ -31,3 +31,10 @@ checks:
   - "adapters.a0.6.review-artifact-separation"
   - "adapters.a0.6.artifact-receipt-integrity"
   - "adapters.a0.6.executable-rendering-proof"
+  - "adapters.a0.7.lifecycle-integrity"
+  - "adapters.a0.7.trigger-evidence-integrity"
+  - "adapters.a0.7.runtime-trigger-authority"
+  - "adapters.a0.7.no-trigger-approximation"
+  - "adapters.a0.7.trigger-review-evidence"
+  - "adapters.a0.7.executable-trigger-proof"
+  - "adapters.a0.7.bounded-event-projection"

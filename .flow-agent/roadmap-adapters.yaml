@@ -1,7 +1,7 @@
 project: Flow Adapter Portfolio
 stream: adapters
-roadmapVersion: 7
-status: active
+roadmapVersion: 8
+status: completed
 
 purpose: >-
   Manage concrete implementation bindings and artifact generation independently
@@ -58,11 +58,11 @@ rules:
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
 
 currentDecision:
-  completedItem: "A0.6"
-  completedItemName: "Adapter Artifact Rendering"
-  nextItem: "A0.7"
-  nextItemName: "Trigger Materialization Coverage"
-  decisionBasis: "Flow CI #2486, run 30790917001, passed A0.6 on exact implementation head 8d45a90120c3daeea0a3079b2d5ba8d0f9fce34d and synthetic merge candidate 87782cecadebc33c195447983ccff84095276080 with 770 tests and 132 conformance checks. A0.7 is selected as the next bounded adapter item without including its work package or implementation."
+  completedItem: "A0.7"
+  completedItemName: "Trigger Materialization Coverage"
+  nextItem: ""
+  nextItemName: ""
+  decisionBasis: "Flow CI #2526, run 30803256865, passed A0.7 on exact implementation head 9528d67cc568af4539015ac583eca500ea3b29bc and synthetic merge candidate 56b664fac9a0c353073d73439487862f658e8a3c. A0.7 is the terminal declared adapter item; the adapter roadmap closes without fabricating A0.8 or selecting undeclared work."
 
 items:
   - version: "A0.1"
@@ -173,7 +173,7 @@ items:
   - version: "A0.7"
     name: "Trigger Materialization Coverage"
     type: "adapter-trigger"
-    status: next
+    status: completed
     purpose: "Materialize interval, calendar, event and webhook requirements only where an adapter can represent them faithfully."
     dependsOnCore: "0.9.7.7"
     dependsOnAdapters: "A0.6"

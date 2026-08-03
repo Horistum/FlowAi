@@ -1,0 +1,129 @@
+target: github-actions
+claims:
+- family: MANUAL
+  status: SUPPORTED
+  mechanism: GitHub Actions emits workflow_dispatch for an explicit MANUAL trigger.
+  semantics:
+    supported:
+    - manual.explicit
+    unsupported: {}
+    unknown: {}
+  constraints:
+    workflowScopes:
+    - main
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt#workflow_dispatch
+  - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#githubManualTriggerRendersWorkflowDispatch
+  prerequisites: []
+  limitations:
+  - Manual input declarations remain governed by the separate target input contract.
+- family: CRON
+  status: SUPPORTED
+  mechanism: GitHub Actions emits one schedule entry for each portable five-field CRON requirement and preserves an optional IANA timezone.
+  semantics:
+    supported:
+    - schedule.cron
+    unsupported: {}
+    unknown: {}
+  constraints:
+    workflowScopes:
+    - main
+    eventNames: []
+    parameterNames: []
+    timezoneMode: IANA_OPTIONAL
+    expressionMode: POSIX_CRON_5_FIELD
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt#schedule
+  - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#githubPortableCronPreservesExpressionAndTimezone
+  prerequisites:
+  - The CRON expression contains exactly five portable POSIX fields.
+  limitations:
+  - GitHub schedules execute from the default branch and may be delayed under high load.
+  - A five-minute minimum interval is a platform constraint and is not inferred from arbitrary Flow intervals.
+- family: INTERVAL
+  status: UNSUPPORTED
+  mechanism: GitHub schedule and event syntax does not approximate unrelated trigger families.
+  semantics:
+    supported: []
+    unsupported:
+      schedule.interval: An interval duration is not converted to CRON because alignment and delayed-run semantics differ.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt
+  prerequisites: []
+  limitations:
+  - Only the bounded portable CRON subset is materialized.
+- family: CALENDAR
+  status: UNSUPPORTED
+  mechanism: GitHub schedule and event syntax does not approximate unrelated trigger families.
+  semantics:
+    supported: []
+    unsupported:
+      schedule.calendar: Calendar exceptions and recurrence rules cannot be represented faithfully by the current provider.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt
+  prerequisites: []
+  limitations:
+  - Only the bounded portable CRON subset is materialized.
+- family: EVENT
+  status: SUPPORTED
+  mechanism: GitHub Actions emits a closed no-parameter event vocabulary directly under the workflow on mapping.
+  semantics:
+    supported:
+    - event.named
+    unsupported: {}
+    unknown: {}
+  constraints:
+    workflowScopes:
+    - main
+    eventNames:
+    - push
+    - pull_request
+    - release
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt#events
+  - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#githubNamedEventPreservesIdentityWithoutClaimingScenarioReadiness
+  prerequisites:
+  - The event identity is one of push, pull_request or release and declares no unmodeled filters.
+  limitations:
+  - Branch, path, activity-type and payload filters remain unsupported until represented by a typed Flow event contract.
+  - Native event leaf evidence does not by itself establish whole-scenario executable readiness.
+- family: WEBHOOK
+  status: UNSUPPORTED
+  mechanism: GitHub schedule and event syntax does not approximate unrelated trigger families.
+  semantics:
+    supported: []
+    unsupported:
+      webhook.external: repository_dispatch is an authenticated repository event API, not a generic webhook listener with equivalent delivery semantics.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt
+  prerequisites: []
+  limitations:
+  - No endpoint, authentication, replay, signature or payload schema contract is emitted.

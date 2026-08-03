@@ -1,5 +1,5 @@
 project: Flow
-roadmapVersion: 8
+roadmapVersion: 9
 currentTrack: "adapter-portfolio"
 primaryRoadmapStream: adapters
 
@@ -71,9 +71,9 @@ currentDecision:
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
-  completedAdapterItem: "A0.6"
-  completedAdapterItemName: "Adapter Artifact Rendering"
-  nextItem: "A0.7"
-  nextItemName: "Trigger Materialization Coverage"
-  nextItemStream: "adapters"
-  decisionBasis: "Flow CI #2486, run 30790917001, passed A0.6 on exact implementation head 8d45a90120c3daeea0a3079b2d5ba8d0f9fce34d and synthetic merge candidate 87782cecadebc33c195447983ccff84095276080 with 770 tests and 132 conformance checks. Completion metadata selects A0.7 without modifying the closed Core track or adding A0.7 implementation scope."
+  completedAdapterItem: "A0.7"
+  completedAdapterItemName: "Trigger Materialization Coverage"
+  nextItem: ""
+  nextItemName: ""
+  nextItemStream: ""
+  decisionBasis: "Flow CI #2526, run 30803256865, passed terminal A0.7 on exact implementation head 9528d67cc568af4539015ac583eca500ea3b29bc and synthetic merge candidate 56b664fac9a0c353073d73439487862f658e8a3c. The adapter stream has no declared successor, so the index records no fabricated next item and leaves the closed Core track unchanged."

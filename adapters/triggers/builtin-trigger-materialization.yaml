@@ -1,0 +1,8 @@
+version: "1.0"
+targetFiles:
+  - "adapters/triggers/targets/local.yaml"
+  - "adapters/triggers/targets/jenkins.yaml"
+  - "adapters/triggers/targets/github-actions.yaml"
+  - "adapters/triggers/targets/tekton.yaml"
+  - "adapters/triggers/targets/argo-workflows.yaml"
+  - "adapters/triggers/targets/azure-devops.yaml"

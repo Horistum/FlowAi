@@ -11,8 +11,10 @@ import org.flowlang.adapters.contract.AdapterDiagnosticsReport
 import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
 import org.flowlang.adapters.contract.TargetAdapterContractReport
 import org.flowlang.adapters.rendering.AdapterArtifactEvidenceReceipt
-import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
+import org.flowlang.adapters.trigger.AdapterTriggerAuthorizedRenderingAuthority
+import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
+import org.flowlang.adapters.trigger.UnresolvedAdapterTriggerMaterializationException
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
@@ -91,8 +93,9 @@ data class CliTargetEvidence(
  *
  * Target-neutral planning authorization is necessary but not sufficient. Adapter
  * authorities independently prove concrete control mechanisms, producer-to-
- * consumer continuity and final artifact rendering. Platform capability folklore,
- * registry summary flags and syntactic validity are never accepted as evidence.
+ * consumer continuity, trigger delivery semantics and final artifact rendering.
+ * Platform capability folklore, registry summary flags and syntactic validity are
+ * never accepted as implementation evidence.
  */
 class CliTargetEvidenceAuthority(
     private val targets: Map<String, TargetCapability>,
@@ -102,7 +105,8 @@ class CliTargetEvidenceAuthority(
     private val pipeline = TargetManifestGenerationPipeline(targets, projections)
     private val controlAuthority = AdapterControlMaterializationAuthority(rootDir, targets, projections)
     private val continuityAuthority = AdapterContinuitySatisfactionAuthority(rootDir, targets, projections)
-    private val renderingAuthority = AdapterArtifactRenderingAuthority(rootDir, projections)
+    private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
+    private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
 
     fun evaluate(
         plan: ExecutionPlan,
@@ -125,9 +129,11 @@ class CliTargetEvidenceAuthority(
         val manifest = try {
             val controlAssessment = controlAuthority.requireMatched(plan, target)
             val continuityAssessment = continuityAuthority.requireMatched(plan, target)
+            val triggerAssessment = triggerAuthority.requireMatched(plan, target)
             val generated = pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict))
             val withControls = controlAuthority.reconcileDiagnostic(generated, controlAssessment)
-            continuityAuthority.reconcileDiagnostic(withControls, continuityAssessment)
+            val withContinuity = continuityAuthority.reconcileDiagnostic(withControls, continuityAssessment)
+            triggerAuthority.reconcileDiagnostic(withContinuity, triggerAssessment)
         } catch (failure: RuntimeException) {
             if (!failure.isExpectedTargetBlocker()) throw failure
             fallbackUsed = true
@@ -146,8 +152,13 @@ class CliTargetEvidenceAuthority(
                 is UnresolvedAdapterContinuitySatisfactionException -> failure.assessment
                 else -> continuityAuthority.assess(plan, target)
             }
+            val triggerAssessment = when (failure) {
+                is UnresolvedAdapterTriggerMaterializationException -> failure.assessment
+                else -> triggerAuthority.assess(plan, target)
+            }
             val withControls = controlAuthority.reconcileDiagnostic(diagnostic, controlAssessment)
-            continuityAuthority.reconcileDiagnostic(withControls, continuityAssessment)
+            val withContinuity = continuityAuthority.reconcileDiagnostic(withControls, continuityAssessment)
+            triggerAuthority.reconcileDiagnostic(withContinuity, triggerAssessment)
         }
 
         val manifests = listOf(manifest)
@@ -226,7 +237,8 @@ class CliTargetEvidenceAuthority(
             this is UnresolvedPlanningContinuityException ||
             this is UnresolvedPlanningControlException ||
             this is UnresolvedAdapterControlMaterializationException ||
-            this is UnresolvedAdapterContinuitySatisfactionException
+            this is UnresolvedAdapterContinuitySatisfactionException ||
+            this is UnresolvedAdapterTriggerMaterializationException
 
     private fun reconcileAdapterContract(
         preliminary: TargetAdapterContractReport,

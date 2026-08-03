@@ -1,6 +1,7 @@
 package org.flowlang.conformance
 
-import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
+import org.flowlang.adapters.trigger.AdapterTriggerAuthorizedRenderingAuthority
+import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
@@ -24,11 +25,11 @@ import java.io.File
 
 /**
  * Generates the committed reference snapshot bundle through the real semantic,
- * compatibility, materialization and adapter artifact rendering boundaries.
+ * compatibility, materialization, trigger and adapter artifact rendering boundaries.
  *
  * A blocked target contributes diagnostic evidence only. A manifest-backed target
- * always passes through the same rendering authority as the CLI, so review evidence
- * cannot be written under an executable provider identity.
+ * always passes through the same trigger-aware rendering authority as the CLI, so
+ * review evidence cannot be written under an executable provider identity.
  */
 class ReferenceSnapshotBundleGenerator(
     private val rootDir: File = File("."),
@@ -38,7 +39,8 @@ class ReferenceSnapshotBundleGenerator(
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
     private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
-    private val renderingAuthority = AdapterArtifactRenderingAuthority(rootDir, projections)
+    private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
+    private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
 
     /**
      * Rebuilds a semantic execution plan through the same production pipeline
@@ -92,7 +94,9 @@ class ReferenceSnapshotBundleGenerator(
                     scenarioId = scenarioId,
                     targets = targets
                 )
-                val manifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
+                val generated = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
+                val triggerAssessment = triggerAuthority.assess(plan, target)
+                val manifest = triggerAuthority.reconcileDiagnostic(generated, triggerAssessment)
                 val renderReadiness = TargetRenderPolicy.evaluate(manifest)
                 require(renderReadiness.mode != TargetRenderMode.FAIL_FAST) {
                     "Target '$target' passed compatibility but manifest evidence is fail-fast: ${renderReadiness.findings}."
