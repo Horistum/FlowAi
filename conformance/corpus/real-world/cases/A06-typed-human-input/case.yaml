@@ -4,6 +4,7 @@ id: A06
 title: Typed human release input and approval output
 lifecycle: MUTATION_VALIDATED
 category: advanced
+domain: software-delivery
 sourceRef: buildkite-typed-human-input
 source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
 sourceObservations: source-observations.md
