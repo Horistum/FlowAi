@@ -12,6 +12,7 @@ import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.artifacts.StandardSurface
 import org.flowlang.artifacts.PublicStandardDraft
 import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
+import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.Json
 import org.flowlang.generators.manifest.TargetManifest
@@ -48,6 +49,7 @@ internal abstract class ConformanceCheckSupport(
     protected val projections: TargetProjectionRegistry
 ) {
     protected val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
+    protected val artifactRendering = AdapterArtifactRenderingAuthority(rootDir, projections)
 
     protected fun buildPipeline(target: String, strict: Boolean = false): PipelineArtifacts {
         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
@@ -58,12 +60,19 @@ internal abstract class ConformanceCheckSupport(
         require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target, strict = strict)
-        val provider = projections.requireProvider(target)
         val manifest = manifestPipeline.generate(materializationRequest(plan, target, strict, "conformance:build-pipeline"))
-        val rendered = provider.render(manifest)
-        return PipelineArtifacts(intent, ast, validation, plan, compatibility, manifest, rendered)
+        val rendering = artifactRendering.render(manifest)
+        return PipelineArtifacts(
+            intent = intent,
+            ast = ast,
+            validation = validation,
+            plan = plan,
+            compatibility = compatibility,
+            manifest = manifest,
+            renderedArtifactName = rendering.artifact.fileName,
+            rendered = rendering.artifact.content
+        )
     }
-
 
     protected fun explicitTarget(
         target: String,
@@ -99,7 +108,7 @@ internal abstract class ConformanceCheckSupport(
             target = target,
             strict = false,
             hasManifest = true,
-            renderedArtifact = projections.providerFor(target)?.artifactFileName
+            renderedArtifact = artifacts.renderedArtifactName
         )
 
     protected fun referenceArtifactIntegrity(artifacts: PipelineArtifacts, target: String) =
@@ -396,5 +405,6 @@ data class PipelineArtifacts(
     val plan: ExecutionPlan,
     val compatibility: Any,
     val manifest: TargetManifest,
+    val renderedArtifactName: String,
     val rendered: String
 )
