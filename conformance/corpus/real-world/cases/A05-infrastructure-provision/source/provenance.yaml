@@ -1,0 +1,4 @@
+repository: hashicorp/setup-terraform
+revision: 8620a60d7c841f00a53b5dd39f0027c2d042082f
+path: .github/workflows/setup-terraform.yml
+license: MPL-2.0
