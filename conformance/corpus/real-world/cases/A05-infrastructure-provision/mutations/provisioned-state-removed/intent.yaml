@@ -1,0 +1,26 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: a05-infrastructure-provision-missing-state
+description: Mutation removes the provisioned-state producer while verification still consumes it.
+workflows:
+- name: main
+  kind: PROVISION
+  steps:
+  - id: initialize
+    capability: CUSTOM
+    produces: [initialized_configuration]
+    params: {description: Initialize the pinned Terraform configuration}
+  - id: apply
+    capability: PROVISION
+    requires: [initialize]
+    params:
+      resource: local-test-infrastructure
+      operation: apply
+      configuration: 'ref:initialized_configuration'
+  - id: verify
+    capability: VERIFY
+    requires: [apply]
+    params:
+      subject: provisioned infrastructure
+      state: 'ref:provisioned_state'
+failure: {notify: false, rollback: false, stopOnError: true}
