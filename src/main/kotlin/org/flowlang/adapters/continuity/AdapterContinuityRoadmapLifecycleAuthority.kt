@@ -27,7 +27,7 @@ data class AdapterContinuityLifecycleInput(
 
 data class AdapterContinuityLifecycleCheck(val id: String, val status: String, val evidence: List<String>, val message: String)
 data class AdapterContinuityLifecycleReport(
-    val reportVersion: String = "1.1",
+    val reportVersion: String = "1.2",
     val phase: AdapterContinuityLifecyclePhase,
     val status: String,
     val checks: List<AdapterContinuityLifecycleCheck>,
@@ -70,7 +70,8 @@ class AdapterContinuityRoadmapLifecycleAuthority(private val rootDir: File = Fil
             AdapterContinuityLifecyclePhase.INVALID -> false
         }
         val indexAligned = AdapterRoadmapSequence.isIndexFocusAligned(input.primaryStream, input.indexNextItem, input.indexNextStream, input.adapterNextItem)
-        val releaseAligned = input.releasePrimaryStream == "adapters" && input.releaseCompletedItem == input.adapterCompletedItem && input.releaseNextItem == input.adapterNextItem
+        val releaseAligned = input.releaseCompletedItem == input.adapterCompletedItem &&
+            AdapterRoadmapSequence.isReleaseFocusAligned(input.releasePrimaryStream, input.releaseNextItem, input.adapterNextItem)
         val evidenceAligned = when (phase) {
             AdapterContinuityLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
             AdapterContinuityLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
@@ -80,8 +81,8 @@ class AdapterContinuityRoadmapLifecycleAuthority(private val rootDir: File = Fil
             check("adapters.a0.5.lifecycle-phase", phase != AdapterContinuityLifecyclePhase.INVALID, listOf("workPackage=${input.workPackageStatus}", "a05=${input.a05Status}", "phase=$phase"), "A0.5 lifecycle must be exactly IMPLEMENTING or COMPLETED."),
             check("adapters.a0.5.track-state", trackAligned, listOf("track=${input.adapterTrackStatus}", "a04=${input.a04Status}", "completed=${input.adapterCompletedItem}", "next=${input.adapterNextItem}"), "A0.5 requires completed A0.4 and either adjacent active progress or terminal A0.7 completion."),
             check("adapters.a0.5.adapter-roadmap-state", adapterStateAligned, listOf("a05=${input.a05Status}", "a06=${input.a06Status}", "completed=${input.adapterCompletedItem}", "next=${input.adapterNextItem}", "historicalProgress=$historicalProgress"), "A0.5 completion permits adjacent later progress or terminal A0.7 completion only."),
-            check("adapters.a0.5.index-state", indexAligned, listOf("primary=${input.primaryStream}", "next=${input.indexNextItem}", "stream=${input.indexNextStream}"), "The roadmap index must mirror an active adapter focus or an empty terminal focus."),
-            check("adapters.a0.5.release-state", releaseAligned, listOf("primary=${input.releasePrimaryStream}", "completed=${input.releaseCompletedItem}", "next=${input.releaseNextItem}"), "Release state must expose the same completed and next adapter items."),
+            check("adapters.a0.5.index-state", indexAligned, listOf("primary=${input.primaryStream}", "next=${input.indexNextItem}", "stream=${input.indexNextStream}"), "The roadmap index must mirror active adapter work, terminal adapter focus, or the explicit conformance successor."),
+            check("adapters.a0.5.release-state", releaseAligned, listOf("primary=${input.releasePrimaryStream}", "completed=${input.releaseCompletedItem}", "next=${input.releaseNextItem}"), "Release state must retain terminal adapter completion while exposing the explicit conformance successor."),
             check("adapters.a0.5.implementation-evidence", evidenceAligned, listOf(input.implementationEvidence.summary()), "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."),
             check("adapters.a0.5.required-files", input.requiredFilesPresent, listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"), "A0.5 lifecycle requires the complete evidence, production, test, conformance and documentation boundary.")
         )
