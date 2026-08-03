@@ -1,5 +1,6 @@
 package org.flowlang.cli.honest
 
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.materialization.ExplicitTargetSelection
 import org.flowlang.materialization.TargetSelectionDecision
 
@@ -157,11 +158,28 @@ sealed interface CliExecutionResult {
             require(artifacts.any { it.name == "target-selection-evidence.json" && it.role == CliArtifactRole.DIAGNOSTIC_EVIDENCE }) {
                 "Targeted CLI result must expose target-selection provenance evidence."
             }
-            require(artifacts.any { it.role == CliArtifactRole.RENDERED_TARGET } == (evidence.renderedArtifact != null)) {
-                "Rendered artifact role must agree with concrete rendered evidence."
+
+            val rendered = evidence.renderedArtifact
+            val executableArtifactPresent = artifacts.any { it.role == CliArtifactRole.RENDERED_TARGET }
+            require(executableArtifactPresent == (rendered?.kind == AdapterRenderedArtifactKind.EXECUTABLE_TARGET)) {
+                "Rendered target role must be reserved for executable target syntax."
             }
-            require(evidence.renderedArtifact == null || renderRequested) {
-                "CLI cannot expose rendered target syntax without an explicit render request."
+            if (rendered?.kind == AdapterRenderedArtifactKind.REVIEW_EVIDENCE) {
+                require(artifacts.any { it.name == rendered.fileName && it.role == CliArtifactRole.REVIEW_DOCUMENT }) {
+                    "Review rendering must expose a review-document artifact, not a rendered target."
+                }
+            }
+            val receiptPresent = artifacts.any {
+                it.name == rendered?.evidenceFileName && it.role == CliArtifactRole.DIAGNOSTIC_EVIDENCE
+            }
+            require(receiptPresent == (rendered != null)) {
+                "Every produced adapter artifact must expose its rendering evidence receipt."
+            }
+            require(rendered == null || renderRequested) {
+                "CLI cannot expose an adapter artifact without an explicit render request."
+            }
+            require(rendered == null || rendered.evidence != null) {
+                "CLI adapter artifact must retain its rendering evidence receipt."
             }
         }
     }

@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
@@ -23,10 +24,11 @@ import java.io.File
 
 /**
  * Generates the committed reference snapshot bundle through the real semantic,
- * compatibility, materialization and render boundaries.
+ * compatibility, materialization and adapter artifact rendering boundaries.
  *
- * A blocked target contributes diagnostic evidence only. It never receives a
- * manifest and never emits target YAML merely to satisfy a snapshot fixture.
+ * A blocked target contributes diagnostic evidence only. A manifest-backed target
+ * always passes through the same rendering authority as the CLI, so review evidence
+ * cannot be written under an executable provider identity.
  */
 class ReferenceSnapshotBundleGenerator(
     private val rootDir: File = File("."),
@@ -36,6 +38,7 @@ class ReferenceSnapshotBundleGenerator(
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
     private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
+    private val renderingAuthority = AdapterArtifactRenderingAuthority(rootDir, projections)
 
     /**
      * Rebuilds a semantic execution plan through the same production pipeline
@@ -84,7 +87,6 @@ class ReferenceSnapshotBundleGenerator(
             if (compatibility.hasErrors || !readiness.generationAllowed) {
                 evidence += ReferenceBlockedProjectionEvidence(compatibility, readiness)
             } else {
-                val provider = projections.requireProvider(target)
                 val selection = TargetSelectionAuthority.fromReferenceSnapshot(
                     value = target,
                     scenarioId = scenarioId,
@@ -95,9 +97,12 @@ class ReferenceSnapshotBundleGenerator(
                 require(renderReadiness.mode != TargetRenderMode.FAIL_FAST) {
                     "Target '$target' passed compatibility but manifest evidence is fail-fast: ${renderReadiness.findings}."
                 }
-                val rendered = provider.render(manifest)
+                val rendering = renderingAuthority.render(manifest)
+                require(rendering.receipt.renderMode == renderReadiness.mode) {
+                    "Target '$target' rendering receipt mode ${rendering.receipt.renderMode} contradicts manifest readiness ${renderReadiness.mode}."
+                }
                 evidence += ReferenceManifestProjectionEvidence(manifest, renderedArtifactPresent = true)
-                renderedByTarget[target] = rendered
+                renderedByTarget[target] = rendering.artifact.content
             }
         }
 

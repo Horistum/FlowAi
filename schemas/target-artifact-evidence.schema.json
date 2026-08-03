@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.org/schemas/target-artifact-evidence.schema.json",
+  "title": "Flow Target Artifact Evidence Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reportVersion",
+    "target",
+    "flowName",
+    "kind",
+    "renderMode",
+    "artifactFileName",
+    "mediaType",
+    "artifactSha256",
+    "manifestSha256",
+    "standardVersion",
+    "manifestVersion",
+    "evidence"
+  ],
+  "properties": {
+    "reportVersion": { "const": "1.0" },
+    "target": { "type": "string", "minLength": 1 },
+    "flowName": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["EXECUTABLE_TARGET", "REVIEW_EVIDENCE"] },
+    "renderMode": { "enum": ["EXECUTABLE", "REVIEW_ONLY"] },
+    "artifactFileName": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^/\\\\]+$"
+    },
+    "mediaType": {
+      "type": "string",
+      "minLength": 3,
+      "pattern": "^[^/]+/[^/]+$"
+    },
+    "artifactSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "manifestSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "standardVersion": { "type": "string", "minLength": 1 },
+    "manifestVersion": { "type": "string", "minLength": 1 },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "category", "status", "reference", "detail"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+\\.[a-f0-9]{16}$"
+          },
+          "category": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "minLength": 1 },
+          "reference": { "type": "string", "minLength": 1 },
+          "detail": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

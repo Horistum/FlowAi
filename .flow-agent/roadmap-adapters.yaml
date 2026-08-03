@@ -1,6 +1,6 @@
 project: Flow Adapter Portfolio
 stream: adapters
-roadmapVersion: 6
+roadmapVersion: 7
 status: active
 
 purpose: >-
@@ -45,6 +45,12 @@ rules:
   - "Supported continuity claims require a composed provider, production implementation evidence and independent behavioral proof."
   - "Profile-only continuity claims remain UNKNOWN until a provider supplies relation-specific evidence."
   - "Unsupported or unknown continuity blocks provider rendering while preserving diagnostic evidence."
+  - "Executable provider filenames are reserved for executable target syntax."
+  - "Review-only evidence uses a distinct Flow-owned file identity and explicitly declares executable false."
+  - "Every produced adapter artifact is bound to the exact source manifest and artifact bytes by a rendering receipt."
+  - "Artifact rendering receipts preserve compatibility, materialization, payload, control, continuity and readiness evidence."
+  - "Fail-fast rendering produces no primary adapter artifact and no receipt."
+  - "Renderer support does not promote a scenario whose earlier adapter evidence is incomplete."
   - "Adapter tests prove preserved semantics, not merely syntactically valid output."
   - "Adapter implementation lifecycle is distribution-owned and is not part of the public Flow standard."
   - "Maintenance evidence stays live throughout adapter work."
@@ -52,11 +58,11 @@ rules:
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
 
 currentDecision:
-  completedItem: "A0.5"
-  completedItemName: "Continuity Satisfaction Proof"
-  nextItem: "A0.6"
-  nextItemName: "Adapter Artifact Rendering"
-  decisionBasis: "Flow CI #2468, run 30741864674, passed the A0.5 implementation on exact head b1b996508aa9bfb1f645cfd69f7ddb777e22c1d5 and synthetic merge candidate 3538862c7ad1878d8d6d3ae00e8f5447949511aa with 753 tests and 126 conformance checks. A0.6 is selected as the next bounded adapter item; its work package and implementation are not part of A0.5."
+  completedItem: "A0.6"
+  completedItemName: "Adapter Artifact Rendering"
+  nextItem: "A0.7"
+  nextItemName: "Trigger Materialization Coverage"
+  decisionBasis: "Flow CI #2486, run 30790917001, passed A0.6 on exact implementation head 8d45a90120c3daeea0a3079b2d5ba8d0f9fce34d and synthetic merge candidate 87782cecadebc33c195447983ccff84095276080 with 770 tests and 132 conformance checks. A0.7 is selected as the next bounded adapter item without including its work package or implementation."
 
 items:
   - version: "A0.1"
@@ -147,18 +153,27 @@ items:
   - version: "A0.6"
     name: "Adapter Artifact Rendering"
     type: "adapter-rendering"
-    status: next
+    status: completed
     purpose: "Generate concrete target artifacts only after capability, control, topology and continuity evidence is complete."
     dependsOnCore: "0.9.7.10"
     dependsOnAdapters: "A0.5"
     completionEvidence:
-      - "Rendered artifacts preserve all required semantic evidence."
-      - "Incomplete evidence produces review-only or fail-fast output."
+      - "One adapter-owned authority produces executable target syntax, dedicated review evidence or no artifact."
+      - "Provider-owned artifact names are used only for executable target syntax."
+      - "Review evidence uses distinct Flow-owned filenames and declares executable false."
+      - "Every produced artifact has a target-artifact-evidence receipt binding exact manifest and content SHA-256 digests."
+      - "Receipts preserve compatibility, mapping, input, trigger, materialization, renderer payload, binding, control, continuity and readiness evidence."
+      - "Tampered artifact content, manifest drift, missing evidence and duplicate evidence identities fail closed."
+      - "CLI and public artifact bundles preserve primary artifact and receipt roles consistently."
+      - "Jenkins checkout-build-image replays through the production planner, all adapter authorities and final renderer."
+      - "Tekton aggregate rendering remains review-only and profile-only targets remain unknown."
+      - "The adapter stream inventory is exactly version 1.5 with six A0.6 checks."
+      - "Flow CI #2486 passed exact-head and synthetic merge-candidate compile, 770 tests and 132 conformance checks."
 
   - version: "A0.7"
     name: "Trigger Materialization Coverage"
     type: "adapter-trigger"
-    status: planned
+    status: next
     purpose: "Materialize interval, calendar, event and webhook requirements only where an adapter can represent them faithfully."
     dependsOnCore: "0.9.7.7"
     dependsOnAdapters: "A0.6"

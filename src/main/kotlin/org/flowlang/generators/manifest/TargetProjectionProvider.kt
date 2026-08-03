@@ -96,11 +96,17 @@ class TargetProjectionProvider(
         return generator.generate(authorization).also(nativeProjectionCatalog::requireManifest)
     }
 
+    /**
+     * Emits only executable target syntax under the provider-owned artifact name.
+     * Review evidence is rendered by the adapter artifact rendering authority under
+     * a distinct review file identity.
+     */
     fun render(manifest: TargetManifest): String {
         require(manifest.target == target) {
             "Projection provider '$target' cannot render manifest target '${manifest.target}'."
         }
         nativeProjectionCatalog.requireManifest(manifest)
+        TargetRenderPolicy.requireExecutable(manifest)
         return renderer.render(manifest)
     }
 }

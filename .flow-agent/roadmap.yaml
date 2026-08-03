@@ -1,5 +1,5 @@
 project: Flow
-roadmapVersion: 7
+roadmapVersion: 8
 currentTrack: "adapter-portfolio"
 primaryRoadmapStream: adapters
 
@@ -71,9 +71,9 @@ currentDecision:
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
-  completedAdapterItem: "A0.5"
-  completedAdapterItemName: "Continuity Satisfaction Proof"
-  nextItem: "A0.6"
-  nextItemName: "Adapter Artifact Rendering"
+  completedAdapterItem: "A0.6"
+  completedAdapterItemName: "Adapter Artifact Rendering"
+  nextItem: "A0.7"
+  nextItemName: "Trigger Materialization Coverage"
   nextItemStream: "adapters"
-  decisionBasis: "Flow CI #2468, run 30741864674, passed A0.5 on exact implementation head b1b996508aa9bfb1f645cfd69f7ddb777e22c1d5 and synthetic merge candidate 3538862c7ad1878d8d6d3ae00e8f5447949511aa with 753 tests and 126 conformance checks. Completion metadata selects A0.6 without modifying the closed Core track or adding A0.6 implementation scope."
+  decisionBasis: "Flow CI #2486, run 30790917001, passed A0.6 on exact implementation head 8d45a90120c3daeea0a3079b2d5ba8d0f9fce34d and synthetic merge candidate 87782cecadebc33c195447983ccff84095276080 with 770 tests and 132 conformance checks. Completion metadata selects A0.7 without modifying the closed Core track or adding A0.7 implementation scope."

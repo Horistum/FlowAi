@@ -1,4 +1,4 @@
-version: "1.4"
+version: "1.5"
 checks:
   - "adapters.a0.1.lifecycle-integrity"
   - "adapters.a0.1.portfolio-reassessment"
@@ -25,3 +25,9 @@ checks:
   - "adapters.a0.5.ordering-continuity-separation"
   - "adapters.a0.5.executable-continuity-proof"
   - "adapters.a0.5.profile-only-demotion"
+  - "adapters.a0.6.lifecycle-integrity"
+  - "adapters.a0.6.rendering-evidence-integrity"
+  - "adapters.a0.6.runtime-rendering-authority"
+  - "adapters.a0.6.review-artifact-separation"
+  - "adapters.a0.6.artifact-receipt-integrity"
+  - "adapters.a0.6.executable-rendering-proof"

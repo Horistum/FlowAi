@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+### A0.6 Adapter Artifact Rendering
+
+Started after PR #101 merged A0.5 as `8501927ec908ad6b4afbc7b06a95c219810426ff`.
+
+Completed scope:
+
+- add one strict adapter-owned rendering evidence document covering every built-in target;
+- separate executable target syntax, non-executable review evidence and fail-fast outcomes;
+- reserve provider-owned filenames such as `Jenkinsfile`, `github-actions.yml` and `tekton-pipeline.yaml` for executable target syntax only;
+- add distinct Flow-owned review identities for every target and require review documents to declare `kind: TargetProjectionReview` and `executable: false`;
+- make `TargetProjectionProvider.render()` reject every non-executable manifest before a concrete renderer is invoked;
+- add one `AdapterArtifactRenderingAuthority` as the only application-edge decision path for executable and review artifacts;
+- classify Jenkins and GitHub Actions renderers as supported, Tekton aggregate rendering as review-only, and uncomposed targets as unknown;
+- preserve earlier capability, topology, control and continuity blockers instead of promoting scenarios from renderer availability;
+- add `target-artifact-evidence.json` and bind every produced artifact to exact artifact and manifest SHA-256 digests;
+- inventory compatibility, mapping, inputs, triggers, jobs, materialization, renderer payloads, typed bindings, adapter control and continuity metadata, render readiness, renderer evidence and limitations;
+- reject tampered content, manifest drift, missing evidence, duplicate evidence identities, unresolved evidence paths and review artifacts impersonating executable files;
+- emit no primary adapter artifact and no receipt for fail-fast rendering;
+- distinguish `RENDERED_TARGET`, `REVIEW_DOCUMENT` and `DIAGNOSTIC_EVIDENCE` in typed CLI outcomes;
+- make explicit review rendering produce a safe review artifact and review-required process status while retaining `CLI_RENDER_NOT_AUTHORIZED` for executable syntax;
+- add the receipt to the public artifact bundle, producer contract, conformance manifest and public schema surface;
+- route committed reference snapshots and shared conformance helpers through the canonical rendering authority rather than invoking providers directly;
+- replay the Jenkins checkout-build-image executable reference through the production planner, all prior adapter authorities, final renderer and receipt validator;
+- add positive executable, review-only, fail-fast and tamper-rejection behavior tests plus real CLI disk-export tests;
+- extend the canonical post-Core adapter inventory to version `1.5` with six A0.6 checks;
+- keep trigger expansion outside scope for A0.7;
+- preserve package `0.9.5`, public standard `0.8.0`, artifact contract `2.0` and the frozen 91-check Core pre-closure inventory.
+
+Validation history:
+
+- Flow CI #2477 rejected the first implementation with twelve failures. The findings identified a missing producer contract for the receipt, direct provider calls in snapshot and conformance generation, obsolete review-only tests, and one message-coupled assertion.
+- The provider executable-only guard was retained. Snapshot and conformance generation were migrated to the A0.6 authority, receipt provenance was registered explicitly, and review-only tests were updated to require a safe review document rather than no artifact.
+- Flow CI #2483 reduced the result to three failures. Those were governance checks that still equated any rendered content with executable target syntax and an architecture test that did not yet recognize the new canonical rendering authority.
+- The governance checks now inspect artifact kind, file identity, explicit non-executable markers and receipt mode instead of treating content existence as execution authority.
+- Flow CI #2486, run `30790917001`, passed the implementation boundary on exact head `8d45a90120c3daeea0a3079b2d5ba8d0f9fce34d` and synthetic merge candidate `87782cecadebc33c195447983ccff84095276080`.
+- Both jobs passed compile, 770 tests with zero failures, and 132 conformance checks with zero failures.
+- The completion metadata head must pass a distinct exact-head and synthetic merge-candidate boundary before PR readiness.
+
 ### A0.5 Continuity Satisfaction Proof
 
 Started after PR #100 merged the real-world pipeline corpus baseline as `52b15c1822d38397e13f772859d8f6b9a0606972`.

@@ -145,8 +145,20 @@ class FlowArtifactBundleAnalyzer {
             if (hasManifest) {
                 add("target-manifest.json", FlowArtifactRole.MANIFEST, "schemas/target-manifest.schema.json", required = false, derivedFrom = listOf("execution-plan.json", "target-adapter-contract.json"))
             }
-            renderedArtifact?.let {
-                add(it, FlowArtifactRole.RENDERED, required = false, derivedFrom = listOf("target-manifest.json"))
+            renderedArtifact?.let { artifactName ->
+                add(
+                    artifactName,
+                    FlowArtifactRole.RENDERED,
+                    required = false,
+                    derivedFrom = listOf("target-manifest.json")
+                )
+                add(
+                    "target-artifact-evidence.json",
+                    FlowArtifactRole.REPORT,
+                    "schemas/target-artifact-evidence.schema.json",
+                    required = false,
+                    derivedFrom = listOf("target-manifest.json", artifactName)
+                )
             }
         }
         add("flow-artifact-bundle.json", FlowArtifactRole.METADATA, "schemas/flow-artifact-bundle.schema.json", required = true, derived = true, derivedFrom = entries.map { it.name })
