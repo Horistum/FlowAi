@@ -44,12 +44,12 @@ scenarios:
   continuityKinds: [value]
   baselineExpectation: SUPPORTED_WITH_BINDING
   claim: accepted-evidence
-- id: A05
+- id: P13
   title: terraform-infrastructure-apply-and-verify
-  category: advanced
+  category: production
   admission: admitted
   lifecycle: ACCEPTED
-  casePath: cases/A05-infrastructure-provision
+  casePath: cases/P13-infrastructure-provision
   sourceRefs: [hashicorp-terraform-apply]
   dominantSemantics: [infrastructure-provision, state-change, verification]
   continuityKinds: [value]
