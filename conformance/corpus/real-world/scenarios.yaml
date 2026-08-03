@@ -326,6 +326,20 @@ scenarios:
   - state
   baselineExpectation: SEMANTIC_ONLY
   claim: hypothesis-only
+- id: P13
+  title: terraform-apply-and-state-verification
+  category: production
+  admission: admitted
+  sourceRefs:
+  - hashicorp-terraform-apply
+  dominantSemantics:
+  - infrastructure-provision
+  - state-change
+  - verification
+  continuityKinds:
+  - value
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: hypothesis-only
 - id: A01
   title: runtime-generated-fan-out
   category: advanced
