@@ -7,7 +7,7 @@ scope:
   primaryUse: Independent representability, continuity and negative-mutation evidence.
   roadmapRelationship:
     A0.5: Consumes continuity-focused behavioral cases without redefining or replacing the adapter work item.
-    C0.1: Receives the broader catalog and accepted case packages as bounded-domain evidence.
+    C0.1: Owns the closed domain classification, accepted behavioral packages and negative polarity required by bounded conformance.
 catalogs:
   sources: conformance/corpus/real-world/sources.yaml
   scenarios: conformance/corpus/real-world/scenarios.yaml
@@ -25,33 +25,36 @@ schemas:
 casePackages:
 - cases/C02-ordering-only-diamond
 - cases/C06-artifact-transfer
+- cases/A04-data-transformation-etl
 - cases/A06-typed-human-input
 - cases/A11-output-driven-matrix
 - cases/N01-missing-result
+- cases/N05-runtime-generated-infrastructure
 - cases/N08-parallelism-loss
 counts:
-  sources: 15
-  admittedSources: 11
+  sources: 16
+  admittedSources: 12
   screenedSources: 4
   productionSources: 3
-  exampleSources: 8
+  exampleSources: 9
   semanticReferenceSources: 4
   scenarios: 44
   admittedScenarios: 19
   screenedScenarios: 9
   plannedScenarios: 16
-  executableCases: 6
+  executableCases: 8
   productionCases: 1
-  exampleCases: 5
+  exampleCases: 7
   semanticReferenceCases: 0
-  mutationCases: 8
+  mutationCases: 10
 invariants:
 - A source is never admitted from a mutable branch reference.
 - A source workflow is evidence of platform behavior, not the authority for universal Flow meaning.
 - Ordering is not accepted as value, workspace, artifact or state continuity.
 - Broad scenario hypotheses and accepted executable evidence remain separate authorities.
 - Source composition and executable-case primary provenance are explicit; official examples are not described as production workflows.
-- Every accepted case owns a canonical intent, expected plan semantics, target assessment, mutation evidence and immutable source provenance.
+- Every accepted case owns one closed gating domain, a canonical intent, expected plan semantics, target assessment, mutation evidence and immutable source provenance.
+- Every gating domain owns accepted behavioral evidence and at least one accepted negative mutation.
 - Unsupported or ambiguous behavior remains explicit and cannot be converted to PASS by approximation.
 - The corpus runs after frozen Core and adapter inventories and cannot mutate either evidence boundary.
 - No corpus case creates a new Core capability merely because one platform exposes a feature.
