@@ -14,7 +14,9 @@ import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
+import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
@@ -221,10 +223,15 @@ class AdapterTriggerConformanceChecks(
             add("Bounded event leaf proof expected preliminary PARTIAL registry context.")
             return@buildList
         }
-        val provider = projections.requireProvider("github-actions")
-        val generated = provider.generate(plan, compatibility)
+        val selection = TargetSelectionAuthority.fromConformanceCheck(
+            value = "github-actions",
+            checkId = BOUNDED_EVENT_CHECK,
+            targets = targets
+        )
+        val diagnosticManifest = TargetManifestGenerationPipeline(targets, projections)
+            .generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest(plan, selection))
         val assessment = authority.requireMatched(plan, "github-actions")
-        val manifest = authority.reconcileDiagnostic(generated, assessment)
+        val manifest = authority.reconcileDiagnostic(diagnosticManifest, assessment)
         val rendered = GitHubActionsTriggerProjectionPlanner.render(manifest)
         if ("  release:" !in rendered) {
             add("GitHub bounded event planner did not preserve the exact release event identity.")
