@@ -90,18 +90,40 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
                 input.adapterCompletedItem == AdapterRoadmapSequence.TERMINAL_ITEM && input.adapterNextItem.isBlank()
             AdapterTriggerLifecyclePhase.INVALID -> false
         }
-        val indexAligned = AdapterRoadmapSequence.isIndexFocusAligned(
-            input.primaryStream,
-            input.indexNextItem,
-            input.indexNextStream,
-            input.adapterNextItem
-        )
-        val releaseAligned = input.releaseCompletedItem == input.adapterCompletedItem &&
-            AdapterRoadmapSequence.isReleaseFocusAligned(
-                input.releasePrimaryStream,
-                input.releaseNextItem,
-                input.adapterNextItem
-            )
+        val indexAligned = when (phase) {
+            AdapterTriggerLifecyclePhase.IMPLEMENTING ->
+                AdapterRoadmapSequence.isIndexFocusAligned(
+                    input.primaryStream,
+                    input.indexNextItem,
+                    input.indexNextStream,
+                    input.adapterNextItem
+                )
+            AdapterTriggerLifecyclePhase.COMPLETED ->
+                input.adapterNextItem.isBlank() &&
+                    AdapterRoadmapSequence.isIndexFocusAligned(
+                        input.primaryStream,
+                        input.indexNextItem,
+                        input.indexNextStream,
+                        input.adapterNextItem
+                    )
+            AdapterTriggerLifecyclePhase.INVALID -> false
+        }
+        val releaseAligned = input.releaseCompletedItem == input.adapterCompletedItem && when (phase) {
+            AdapterTriggerLifecyclePhase.IMPLEMENTING ->
+                AdapterRoadmapSequence.isReleaseFocusAligned(
+                    input.releasePrimaryStream,
+                    input.releaseNextItem,
+                    input.adapterNextItem
+                )
+            AdapterTriggerLifecyclePhase.COMPLETED ->
+                input.adapterNextItem.isBlank() &&
+                    AdapterRoadmapSequence.isReleaseFocusAligned(
+                        input.releasePrimaryStream,
+                        input.releaseNextItem,
+                        input.adapterNextItem
+                    )
+            AdapterTriggerLifecyclePhase.INVALID -> false
+        }
         val evidenceAligned = when (phase) {
             AdapterTriggerLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
             AdapterTriggerLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
