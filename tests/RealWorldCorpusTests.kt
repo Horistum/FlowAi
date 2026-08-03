@@ -24,12 +24,12 @@ class RealWorldCorpusTests {
     @Test
     fun executableCasePackagesAreCompleteAndLifecycleHonest() {
         val corpus = runner.load()
-        assertEquals(8, corpus.cases.size)
-        assertEquals(10, corpus.cases.sumOf { it.mutations.size })
+        assertEquals(9, corpus.cases.size)
+        assertEquals(11, corpus.cases.sumOf { it.mutations.size })
         assertTrue(corpus.cases.all { it.definition.lifecycle >= RealWorldLifecycle.MUTATION_VALIDATED })
         assertTrue(corpus.cases.all { it.evidence.status == RealWorldLifecycle.ACCEPTED })
         assertEquals(
-            setOf("C02", "C06", "A04", "A06", "A11", "N01", "N05", "N08"),
+            setOf("C02", "C06", "A04", "A05", "A06", "A11", "N01", "N05", "N08"),
             corpus.cases.map { it.definition.id }.toSet()
         )
     }
@@ -54,15 +54,15 @@ class RealWorldCorpusTests {
         val counts = corpus.manifest.counts
 
         assertEquals(3, counts.productionSources)
-        assertEquals(9, counts.exampleSources)
+        assertEquals(10, counts.exampleSources)
         assertEquals(4, counts.semanticReferenceSources)
         assertEquals(1, counts.productionCases)
-        assertEquals(7, counts.exampleCases)
+        assertEquals(8, counts.exampleCases)
         assertEquals(0, counts.semanticReferenceCases)
         assertEquals(counts.sources, counts.productionSources + counts.exampleSources + counts.semanticReferenceSources)
         assertEquals(counts.executableCases, counts.productionCases + counts.exampleCases + counts.semanticReferenceCases)
         assertEquals(1, corpus.cases.count { it.source.classifiedKind() == RealWorldSourceKind.PRODUCTION_WORKFLOW })
-        assertEquals(7, corpus.cases.count { it.source.classifiedKind() == RealWorldSourceKind.OFFICIAL_EXAMPLE })
+        assertEquals(8, corpus.cases.count { it.source.classifiedKind() == RealWorldSourceKind.OFFICIAL_EXAMPLE })
         assertEquals(0, corpus.cases.count { it.source.classifiedKind() == RealWorldSourceKind.OFFICIAL_SEMANTIC_REFERENCE })
     }
 
@@ -80,6 +80,7 @@ class RealWorldCorpusTests {
                 "C02" to RealWorldResult.SEMANTIC_ONLY,
                 "C06" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "A04" to RealWorldResult.SUPPORTED_WITH_BINDING,
+                "A05" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "A06" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "A11" to RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION,
                 "N01" to RealWorldResult.INVALID_SOURCE_PIPELINE,
@@ -101,6 +102,17 @@ class RealWorldCorpusTests {
     }
 
     @Test
+    fun infrastructureCasePreservesProvisionSemanticsAndStateRelations() {
+        val case = runner.load().cases.single { it.definition.id == "A05" }
+        val result = runner.evaluate(case)
+
+        assertEquals(RealWorldDomain.INFRASTRUCTURE_STATE_CHANGE, case.definition.classifiedDomain())
+        assertTrue(result.accepted, result.mismatches.joinToString(" | "))
+        assertEquals(RealWorldResult.SUPPORTED_WITH_BINDING, result.outcome)
+        assertTrue(result.diagnostics.isEmpty())
+    }
+
+    @Test
     fun outputDrivenMatrixRequiresExplicitPlanRepresentation() {
         val case = runner.load().cases.single { it.definition.id == "A11" }
         val result = runner.evaluate(case)
@@ -111,10 +123,11 @@ class RealWorldCorpusTests {
     }
 
     @Test
-    fun runtimeGeneratedInfrastructureRequiresExplicitPlanRepresentation() {
+    fun runtimeGeneratedPipelineRequiresExplicitPlanRepresentation() {
         val case = runner.load().cases.single { it.definition.id == "N05" }
         val result = runner.evaluate(case)
 
+        assertEquals(RealWorldDomain.SOFTWARE_DELIVERY, case.definition.classifiedDomain())
         assertTrue(result.accepted, result.mismatches.joinToString(" | "))
         assertEquals(RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION, result.outcome)
         assertEquals(listOf(RealWorldCorpusRunner.RUNTIME_PLAN_NOT_REPRESENTED), result.diagnostics)
@@ -125,7 +138,7 @@ class RealWorldCorpusTests {
     fun allNegativeMutationsProduceExactExpectedDiagnostics() {
         val corpus = runner.load()
         val results = corpus.cases.flatMap(runner::evaluateMutations)
-        assertEquals(10, results.size)
+        assertEquals(11, results.size)
         assertTrue(
             results.all { it.accepted },
             results.filterNot { it.accepted }.joinToString("\n") { result ->
@@ -149,7 +162,7 @@ class RealWorldCorpusTests {
         assertTrue(checks.any { it.name == RealWorldCorpusRunner.DOMAIN_COVERAGE_CHECK && it.passed })
         assertTrue(checks.any { it.name == RealWorldCorpusRunner.MUTATION_CHECK && it.passed })
         assertTrue(checks.any { it.name == RealWorldCorpusRunner.DOMAIN_MUTATION_CHECK && it.passed })
-        assertEquals(8, checks.count { it.name.startsWith("real-world-corpus.case.") })
+        assertEquals(9, checks.count { it.name.startsWith("real-world-corpus.case.") })
         assertTrue(checks.all { it.passed }, checks.filterNot { it.passed }.joinToString { "${it.name}: ${it.message}" })
     }
 }
