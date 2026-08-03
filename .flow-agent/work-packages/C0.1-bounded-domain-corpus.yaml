@@ -2,7 +2,7 @@ version: "C0.1"
 name: "Bounded Domain Corpus"
 type: "core-evidence"
 stream: conformance
-status: active
+status: complete
 objective: "Prove acceptance and rejection polarity across software delivery, data transformation and infrastructure state change without allowing source examples to define universal meaning."
 activationEvidence:
   coreItem: "0.9.7.10"
@@ -66,3 +66,10 @@ completionEvidence:
   - "All accepted cases and mutations execute through the production intent pipeline."
   - "The conformance inventory exactly matches the produced C0.1 checks."
   - "The frozen Core and adapter inventories remain byte-for-byte outside this work package."
+implementationEvidence:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: 2641
+  runId: 30817690333
+  exactHead: "2fd59e7fa0ae486cf073453d1b59a3d19ed2b4d4"
+  mergeCandidate: "cbd8788ccd212e263d80d141ea5f5bf2648073c3"
