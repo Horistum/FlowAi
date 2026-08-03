@@ -162,7 +162,7 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
                 "adapters.a0.7.required-files",
                 input.requiredFilesPresent,
                 listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"),
-                "A0.7 lifecycle requires the complete evidence, production, test, conformance and documentation boundary."
+                "A0.7 lifecycle requires the complete indexed evidence, production, test, conformance and documentation boundary."
             )
         )
         val failed = checks.filter { it.status == "FAIL" }.map { it.id }
@@ -223,7 +223,14 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
         private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val REQUIRED_FILES = listOf(
             "adapters/triggers/builtin-trigger-materialization.yaml",
-            "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerMaterializationContracts.kt",
+            "adapters/triggers/targets/local.yaml",
+            "adapters/triggers/targets/jenkins.yaml",
+            "adapters/triggers/targets/github-actions.yaml",
+            "adapters/triggers/targets/tekton.yaml",
+            "adapters/triggers/targets/argo-workflows.yaml",
+            "adapters/triggers/targets/azure-devops.yaml",
+            "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerContracts.kt",
+            "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerEvidenceLoader.kt",
             "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerEvidenceIntegrityAuthority.kt",
             "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerMaterializationAuthority.kt",
             "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerAuthorizedRenderingAuthority.kt",
