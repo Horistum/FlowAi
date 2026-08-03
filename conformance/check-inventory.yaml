@@ -6,6 +6,7 @@ checks:
 - real-world-corpus.case.c02
 - real-world-corpus.case.c06
 - real-world-corpus.case.a04
+- real-world-corpus.case.a05
 - real-world-corpus.case.a06
 - real-world-corpus.case.a11
 - real-world-corpus.case.n01
