@@ -5,11 +5,7 @@ import org.flowlang.adapters.portfolio.AdapterRoadmapSequence
 import org.flowlang.adapters.portfolio.AdapterWorkflowEvidence
 import org.flowlang.serialization.FlowYaml
 
-enum class AdapterControlLifecyclePhase {
-    IMPLEMENTING,
-    COMPLETED,
-    INVALID
-}
+enum class AdapterControlLifecyclePhase { IMPLEMENTING, COMPLETED, INVALID }
 
 data class AdapterControlLifecycleInput(
     val workPackageStatus: String,
@@ -29,22 +25,15 @@ data class AdapterControlLifecycleInput(
     val requiredFilesPresent: Boolean
 )
 
-data class AdapterControlLifecycleCheck(
-    val id: String,
-    val status: String,
-    val evidence: List<String>,
-    val message: String
-)
-
+data class AdapterControlLifecycleCheck(val id: String, val status: String, val evidence: List<String>, val message: String)
 data class AdapterControlLifecycleReport(
-    val reportVersion: String = "1.0",
+    val reportVersion: String = "1.1",
     val phase: AdapterControlLifecyclePhase,
     val status: String,
     val checks: List<AdapterControlLifecycleCheck>,
     val failedChecks: List<String>
 )
 
-/** Bounded and forward-stable lifecycle authority for A0.4. */
 class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
     fun analyze(): AdapterControlLifecycleReport {
         val workPackage = requiredYaml(WORK_PACKAGE)
@@ -53,21 +42,12 @@ class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File("
         val releaseState = requiredYaml(RELEASE_STATE)
         return evaluate(
             AdapterControlLifecycleInput(
-                workPackageStatus = workPackage.string("status"),
-                adapterTrackStatus = adapterRoadmap.string("status"),
-                a03Status = adapterRoadmap.itemStatus("A0.3"),
-                a04Status = adapterRoadmap.itemStatus("A0.4"),
-                a05Status = adapterRoadmap.itemStatus("A0.5"),
-                adapterCompletedItem = adapterRoadmap.string("currentDecision", "completedItem"),
-                adapterNextItem = adapterRoadmap.string("currentDecision", "nextItem"),
-                primaryStream = roadmap.string("primaryRoadmapStream"),
-                indexNextItem = roadmap.string("currentDecision", "nextItem"),
-                indexNextStream = roadmap.string("currentDecision", "nextItemStream"),
-                releasePrimaryStream = releaseState.string("roadmapState", "primaryStream"),
-                releaseCompletedItem = releaseState.string("roadmapState", "completedAdapterItem"),
-                releaseNextItem = releaseState.string("roadmapState", "nextItem"),
-                implementationEvidence = workPackage.workflowEvidence("implementationEvidence"),
-                requiredFilesPresent = REQUIRED_FILES.all { File(rootDir, it).isFile }
+                workPackage.string("status"), adapterRoadmap.string("status"),
+                adapterRoadmap.itemStatus("A0.3"), adapterRoadmap.itemStatus("A0.4"), adapterRoadmap.itemStatus("A0.5"),
+                adapterRoadmap.string("currentDecision", "completedItem"), adapterRoadmap.string("currentDecision", "nextItem"),
+                roadmap.string("primaryRoadmapStream"), roadmap.string("currentDecision", "nextItem"), roadmap.string("currentDecision", "nextItemStream"),
+                releaseState.string("roadmapState", "primaryStream"), releaseState.string("roadmapState", "completedAdapterItem"), releaseState.string("roadmapState", "nextItem"),
+                workPackage.workflowEvidence("implementationEvidence"), REQUIRED_FILES.all { File(rootDir, it).isFile }
             )
         )
     }
@@ -78,135 +58,40 @@ class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File("
             input.workPackageStatus == "complete" && input.a04Status == "completed" -> AdapterControlLifecyclePhase.COMPLETED
             else -> AdapterControlLifecyclePhase.INVALID
         }
-        val trackAligned = input.adapterTrackStatus == "active" && input.a03Status == "completed"
-        val currentProgress = AdapterRoadmapSequence.isAdjacentProgress(
-            input.adapterCompletedItem,
-            input.adapterNextItem,
-            minimumCompletedOrdinal = 4
-        )
+        val trackAligned = input.a03Status == "completed" && AdapterRoadmapSequence.isTrackStatusAligned(input.adapterTrackStatus, input.adapterCompletedItem, input.adapterNextItem)
+        val historicalProgress = AdapterRoadmapSequence.isHistoricalProgress(input.adapterCompletedItem, input.adapterNextItem, 4)
         val adapterStateAligned = when (phase) {
-            AdapterControlLifecyclePhase.IMPLEMENTING ->
-                input.a05Status == "planned" &&
-                    input.adapterCompletedItem == "A0.3" &&
-                    input.adapterNextItem == "A0.4"
-            AdapterControlLifecyclePhase.COMPLETED ->
-                input.a04Status == "completed" && currentProgress
+            AdapterControlLifecyclePhase.IMPLEMENTING -> input.a05Status == "planned" && input.adapterCompletedItem == "A0.3" && input.adapterNextItem == "A0.4"
+            AdapterControlLifecyclePhase.COMPLETED -> input.a04Status == "completed" && historicalProgress
             AdapterControlLifecyclePhase.INVALID -> false
         }
-        val indexAligned = input.primaryStream == "adapters" &&
-            input.indexNextStream == "adapters" &&
-            input.indexNextItem == input.adapterNextItem
-        val releaseAligned = input.releasePrimaryStream == "adapters" &&
-            input.releaseCompletedItem == input.adapterCompletedItem &&
-            input.releaseNextItem == input.adapterNextItem
+        val indexAligned = AdapterRoadmapSequence.isIndexFocusAligned(input.primaryStream, input.indexNextItem, input.indexNextStream, input.adapterNextItem)
+        val releaseAligned = input.releasePrimaryStream == "adapters" && input.releaseCompletedItem == input.adapterCompletedItem && input.releaseNextItem == input.adapterNextItem
         val evidenceAligned = when (phase) {
             AdapterControlLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
             AdapterControlLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
             AdapterControlLifecyclePhase.INVALID -> false
         }
-
         val checks = listOf(
-            check(
-                "adapters.a0.4.lifecycle-phase",
-                phase != AdapterControlLifecyclePhase.INVALID,
-                listOf("workPackage=${input.workPackageStatus}", "a04=${input.a04Status}", "phase=$phase"),
-                "A0.4 lifecycle must be exactly IMPLEMENTING or COMPLETED."
-            ),
-            check(
-                "adapters.a0.4.track-state",
-                trackAligned,
-                listOf("track=${input.adapterTrackStatus}", "a03=${input.a03Status}"),
-                "A0.4 requires the active adapter track and completed A0.3."
-            ),
-            check(
-                "adapters.a0.4.adapter-roadmap-state",
-                adapterStateAligned,
-                listOf(
-                    "a04=${input.a04Status}",
-                    "a05=${input.a05Status}",
-                    "completed=${input.adapterCompletedItem}",
-                    "next=${input.adapterNextItem}"
-                ),
-                "A0.4 implementation requires A0.3/A0.4 focus; completed A0.4 permits only adjacent later progress."
-            ),
-            check(
-                "adapters.a0.4.index-state",
-                indexAligned,
-                listOf("primary=${input.primaryStream}", "next=${input.indexNextItem}", "stream=${input.indexNextStream}"),
-                "The roadmap index must expose the same adapter focus as the adapter roadmap."
-            ),
-            check(
-                "adapters.a0.4.release-state",
-                releaseAligned,
-                listOf(
-                    "primary=${input.releasePrimaryStream}",
-                    "completed=${input.releaseCompletedItem}",
-                    "next=${input.releaseNextItem}"
-                ),
-                "Release state must expose the same completed and next adapter items."
-            ),
-            check(
-                "adapters.a0.4.implementation-evidence",
-                evidenceAligned,
-                listOf(input.implementationEvidence.summary()),
-                "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."
-            ),
-            check(
-                "adapters.a0.4.required-files",
-                input.requiredFilesPresent,
-                listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"),
-                "A0.4 lifecycle requires the complete production, test, conformance and documentation boundary."
-            )
+            check("adapters.a0.4.lifecycle-phase", phase != AdapterControlLifecyclePhase.INVALID, listOf("workPackage=${input.workPackageStatus}", "a04=${input.a04Status}", "phase=$phase"), "A0.4 lifecycle must be exactly IMPLEMENTING or COMPLETED."),
+            check("adapters.a0.4.track-state", trackAligned, listOf("track=${input.adapterTrackStatus}", "a03=${input.a03Status}", "completed=${input.adapterCompletedItem}", "next=${input.adapterNextItem}"), "A0.4 requires completed A0.3 and either adjacent active progress or terminal A0.7 completion."),
+            check("adapters.a0.4.adapter-roadmap-state", adapterStateAligned, listOf("a04=${input.a04Status}", "a05=${input.a05Status}", "completed=${input.adapterCompletedItem}", "next=${input.adapterNextItem}", "historicalProgress=$historicalProgress"), "A0.4 completion permits adjacent later progress or terminal A0.7 completion only."),
+            check("adapters.a0.4.index-state", indexAligned, listOf("primary=${input.primaryStream}", "next=${input.indexNextItem}", "stream=${input.indexNextStream}"), "The roadmap index must mirror an active adapter focus or an empty terminal focus."),
+            check("adapters.a0.4.release-state", releaseAligned, listOf("primary=${input.releasePrimaryStream}", "completed=${input.releaseCompletedItem}", "next=${input.releaseNextItem}"), "Release state must expose the same completed and next adapter items."),
+            check("adapters.a0.4.implementation-evidence", evidenceAligned, listOf(input.implementationEvidence.summary()), "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."),
+            check("adapters.a0.4.required-files", input.requiredFilesPresent, listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"), "A0.4 lifecycle requires the complete production, test, conformance and documentation boundary.")
         )
         val failed = checks.filter { it.status == "FAIL" }.map { it.id }
-        return AdapterControlLifecycleReport(
-            phase = phase,
-            status = if (failed.isEmpty()) "PASS" else "FAIL",
-            checks = checks,
-            failedChecks = failed
-        )
+        return AdapterControlLifecycleReport(phase = phase, status = if (failed.isEmpty()) "PASS" else "FAIL", checks = checks, failedChecks = failed)
     }
 
-    private fun requiredYaml(path: String): Map<String, Any?> {
-        val file = File(rootDir, path)
-        require(file.isFile) { "Required A0.4 lifecycle evidence is missing: ${file.path}" }
-        return FlowYaml.readMap(file)
-    }
-
-    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence {
-        val raw = map(key)
-        if (raw.isEmpty()) return AdapterWorkflowEvidence.ABSENT
-        return AdapterWorkflowEvidence(
-            status = raw.string("status"),
-            workflow = raw.string("workflow"),
-            runNumber = raw.string("runNumber").toIntOrNull(),
-            runId = raw.string("runId").toLongOrNull(),
-            exactHead = raw.string("exactHead"),
-            mergeCandidate = raw.string("mergeCandidate"),
-            unknownFields = (raw.keys - EVIDENCE_FIELDS).sorted(),
-            present = true
-        )
-    }
-
-    private fun Map<String, Any?>.itemStatus(version: String): String =
-        mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
-
-    private fun Map<String, Any?>.string(vararg path: String): String {
-        var current: Any? = this
-        path.forEach { key -> current = (current as? Map<*, *>)?.get(key) }
-        return current?.toString().orEmpty()
-    }
-
-    private fun Map<String, Any?>.map(key: String): Map<String, Any?> =
-        (get(key) as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }.orEmpty()
-
-    private fun Map<String, Any?>.mapList(key: String): List<Map<String, Any?>> =
-        (get(key) as? Iterable<*>)?.mapNotNull { value ->
-            (value as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
-        }.orEmpty()
-
-    private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) =
-        AdapterControlLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
+    private fun requiredYaml(path: String): Map<String, Any?> { val file = File(rootDir, path); require(file.isFile) { "Required A0.4 lifecycle evidence is missing: ${file.path}" }; return FlowYaml.readMap(file) }
+    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence { val raw = map(key); if (raw.isEmpty()) return AdapterWorkflowEvidence.ABSENT; return AdapterWorkflowEvidence(raw.string("status"), raw.string("workflow"), raw.string("runNumber").toIntOrNull(), raw.string("runId").toLongOrNull(), raw.string("exactHead"), raw.string("mergeCandidate"), (raw.keys - EVIDENCE_FIELDS).sorted(), true) }
+    private fun Map<String, Any?>.itemStatus(version: String): String = mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
+    private fun Map<String, Any?>.string(vararg path: String): String { var current: Any? = this; path.forEach { current = (current as? Map<*, *>)?.get(it) }; return current?.toString().orEmpty() }
+    private fun Map<String, Any?>.map(key: String): Map<String, Any?> = (get(key) as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }.orEmpty()
+    private fun Map<String, Any?>.mapList(key: String): List<Map<String, Any?>> = (get(key) as? Iterable<*>)?.mapNotNull { value -> (value as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value } }.orEmpty()
+    private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) = AdapterControlLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
         const val WORK_PACKAGE = ".flow-agent/work-packages/A0.4-control-requirement-materialization.yaml"
