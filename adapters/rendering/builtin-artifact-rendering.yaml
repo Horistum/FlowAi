@@ -1,0 +1,82 @@
+version: "1.0"
+targets:
+  - target: local
+    status: UNKNOWN
+    executable: {}
+    review:
+      fileName: "flow-local-review.yaml"
+      mediaType: "application/yaml"
+    evidenceReferences:
+      - "adapters/portfolio/builtin-adapter-portfolio.yaml"
+    limitations:
+      - "Local is a semantic reference and has no composed target renderer."
+
+  - target: jenkins
+    status: SUPPORTED
+    executable:
+      fileName: "Jenkinsfile"
+      mediaType: "text/x-groovy"
+    review:
+      fileName: "flow-jenkins-review.yaml"
+      mediaType: "application/yaml"
+    evidenceReferences:
+      - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+      - "src/test/kotlin/ProjectionStabilitySmokeTests.kt"
+      - "tests/FlowRendererFailureSemanticsTests.kt"
+    limitations:
+      - "Executable rendering is limited to manifests already certified executable by all prior adapter authorities."
+      - "The renderer emits no raw shell command fallback."
+
+  - target: github-actions
+    status: SUPPORTED
+    executable:
+      fileName: "github-actions.yml"
+      mediaType: "application/yaml"
+    review:
+      fileName: "flow-github-actions-review.yaml"
+      mediaType: "application/yaml"
+    evidenceReferences:
+      - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+      - "src/test/kotlin/TargetNeutralProjectionPayloadTests.kt"
+      - "src/test/kotlin/CrossTargetCheckoutProjectionTests.kt"
+    limitations:
+      - "Executable rendering does not imply end-to-end scenario continuity or topology support."
+      - "Only provider-owned structured action payloads are emitted."
+
+  - target: tekton
+    status: REVIEW_ONLY
+    executable:
+      fileName: "tekton-pipeline.yaml"
+      mediaType: "application/yaml"
+    review:
+      fileName: "flow-tekton-review.yaml"
+      mediaType: "application/yaml"
+    evidenceReferences:
+      - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+      - "src/test/kotlin/TargetNeutralProjectionPayloadTests.kt"
+      - "tests/FlowRendererFailureSemanticsTests.kt"
+    limitations:
+      - "The current Tekton generator deliberately marks its aggregate projection partial."
+      - "A Pipeline artifact is review evidence until topology, continuity and target-level provisioning are complete."
+
+  - target: argo-workflows
+    status: UNKNOWN
+    executable: {}
+    review:
+      fileName: "flow-argo-workflows-review.yaml"
+      mediaType: "application/yaml"
+    evidenceReferences:
+      - "adapters/portfolio/builtin-adapter-portfolio.yaml"
+    limitations:
+      - "No Argo Workflows provider is composed in this distribution."
+
+  - target: azure-devops
+    status: UNKNOWN
+    executable: {}
+    review:
+      fileName: "flow-azure-devops-review.yaml"
+      mediaType: "application/yaml"
+    evidenceReferences:
+      - "adapters/portfolio/builtin-adapter-portfolio.yaml"
+    limitations:
+      - "No Azure DevOps provider is composed in this distribution."
