@@ -1,0 +1,20 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: A05
+title: Terraform infrastructure apply with state verification
+lifecycle: MUTATION_VALIDATED
+category: advanced
+domain: infrastructure-state-change
+sourceRef: hashicorp-terraform-apply
+source: {workflow: source/workflow.yml, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: provisioned-state-removed, definition: mutations/provisioned-state-removed/mutation.yaml}
+invariants:
+- Terraform apply remains an explicit infrastructure PROVISION operation.
+- Initialization output reaches provisioning as a named value relation.
+- Provisioned state reaches verification as a separate named value relation.
+- Removing the provisioned-state producer fails before planning.
