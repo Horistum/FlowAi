@@ -1,0 +1,2 @@
+SPDX-License-Identifier: MPL-2.0
+Source: hashicorp/setup-terraform@8620a60d7c841f00a53b5dd39f0027c2d042082f:.github/workflows/setup-terraform.yml
