@@ -24,6 +24,17 @@ enum class RealWorldLifecycle {
     ACCEPTED
 }
 
+enum class RealWorldDomain(val documentValue: String) {
+    SOFTWARE_DELIVERY("software-delivery"),
+    DATA_TRANSFORMATION("data-transformation"),
+    INFRASTRUCTURE_STATE_CHANGE("infrastructure-state-change");
+
+    companion object {
+        fun fromDocument(value: String): RealWorldDomain? =
+            values().singleOrNull { it.documentValue == value }
+    }
+}
+
 enum class RealWorldSourceKind(val documentValue: String) {
     PRODUCTION_WORKFLOW("production-workflow"),
     OFFICIAL_EXAMPLE("official-example"),
@@ -148,6 +159,7 @@ data class RealWorldCaseDefinition(
     val title: String = "",
     val lifecycle: RealWorldLifecycle = RealWorldLifecycle.CATALOGUED,
     val category: String = "",
+    val domain: String = "",
     val sourceRef: String = "",
     val source: RealWorldCaseSource = RealWorldCaseSource(),
     val sourceObservations: String = "",
@@ -156,7 +168,9 @@ data class RealWorldCaseDefinition(
     val evidence: String = "",
     val mutations: List<RealWorldMutationRef> = emptyList(),
     val invariants: List<String> = emptyList()
-)
+) {
+    fun classifiedDomain(): RealWorldDomain? = RealWorldDomain.fromDocument(domain)
+}
 
 data class RealWorldCaseProvenance(
     val repository: String = "",
