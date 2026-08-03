@@ -45,7 +45,7 @@ Removing the extract output must fail before planning with `REAL_WORLD_MISSING_V
 
 ### Infrastructure state change
 
-`A05-infrastructure-provision` is derived from the pinned HashiCorp setup-terraform workflow. The source executes `terraform init`, `terraform apply -auto-approve` and reads Terraform output.
+`P13-infrastructure-provision` is a newly declared production scenario derived from the pinned HashiCorp setup-terraform workflow. It does not reuse the existing `A05 suspend-and-resume` identity. The source executes `terraform init`, `terraform apply -auto-approve` and reads Terraform output.
 
 The reconstructed intent requires:
 
