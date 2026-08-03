@@ -1,7 +1,4 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements. See the NOTICE file
-# distributed with this work for additional information.
-# The ASF licenses this file under the Apache License, Version 2.0.
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import json
