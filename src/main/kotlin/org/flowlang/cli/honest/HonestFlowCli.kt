@@ -2,6 +2,7 @@ package org.flowlang.cli.honest
 
 import java.io.File
 import kotlin.system.exitProcess
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.ai.normalization.AiIntentContext
@@ -388,6 +389,7 @@ private fun targetNeutralPlanningEvidence(
 )
 
 private fun printTargetEvidence(evidence: CliTargetEvidence, renderRequested: Boolean, output: CliOutputCollector) {
+    val rendered = evidence.renderedArtifact
     output.section(
         "CLI TARGET OUTCOME",
         CliTargetOutcomeReport(
@@ -396,7 +398,7 @@ private fun printTargetEvidence(evidence: CliTargetEvidence, renderRequested: Bo
             outcome = evidence.outcome,
             diagnosticFallbackUsed = evidence.diagnosticFallbackUsed,
             renderRequested = renderRequested,
-            renderAuthorized = evidence.renderedArtifact != null,
+            renderAuthorized = rendered?.kind == AdapterRenderedArtifactKind.EXECUTABLE_TARGET,
             diagnostics = evidence.diagnostics
         )
     )
@@ -409,16 +411,29 @@ private fun printTargetEvidence(evidence: CliTargetEvidence, renderRequested: Bo
     output.section("ADAPTER DIAGNOSTICS", evidence.adapterContract.diagnostics)
     output.section("TARGET MANIFEST EVIDENCE", evidence.manifest)
     output.section("TARGET RENDER READINESS", evidence.renderReadiness)
-    if (evidence.renderedArtifact != null) {
-        output.text("===== RENDERED EXECUTABLE TARGET OUTPUT: ${evidence.renderedArtifact.fileName} =====")
-        output.text(evidence.renderedArtifact.content)
+    if (rendered != null) {
+        output.section(
+            "TARGET ARTIFACT EVIDENCE RECEIPT",
+            requireNotNull(rendered.evidence) {
+                "Produced adapter artifact '${rendered.fileName}' has no rendering evidence receipt."
+            }
+        )
+        output.text(
+            when (rendered.kind) {
+                AdapterRenderedArtifactKind.EXECUTABLE_TARGET ->
+                    "===== RENDERED EXECUTABLE TARGET OUTPUT: ${rendered.fileName} ====="
+                AdapterRenderedArtifactKind.REVIEW_EVIDENCE ->
+                    "===== RENDERED NON-EXECUTABLE REVIEW EVIDENCE: ${rendered.fileName} ====="
+            }
+        )
+        output.text(rendered.content)
     } else {
         output.text("===== TARGET OUTPUT NOT RENDERED =====")
         output.text(
             when (evidence.renderReadiness.mode) {
                 TargetRenderMode.EXECUTABLE -> "Executable evidence is available, but rendering was not requested. Use --render explicitly."
-                TargetRenderMode.REVIEW_ONLY -> "Manifest evidence is review-only; target syntax was not emitted."
-                TargetRenderMode.FAIL_FAST -> "Manifest evidence is blocked; target syntax was not emitted."
+                TargetRenderMode.REVIEW_ONLY -> "Manifest evidence is review-only; use --render to emit a dedicated non-executable review artifact."
+                TargetRenderMode.FAIL_FAST -> "Manifest evidence is blocked; no adapter artifact can be emitted."
             }
         )
     }
@@ -440,8 +455,13 @@ private fun targetedArtifacts(
     add(CliArtifact("target-manifest.json", CliArtifactRole.TARGET_MANIFEST, persisted))
     add(CliArtifact("target-render-readiness.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted))
     add(CliArtifact("target-decision-trace-report.json", CliArtifactRole.REVIEW_DOCUMENT, persisted))
-    evidence.renderedArtifact?.let {
-        add(CliArtifact(it.fileName, CliArtifactRole.RENDERED_TARGET, persisted))
+    evidence.renderedArtifact?.let { artifact ->
+        val role = when (artifact.kind) {
+            AdapterRenderedArtifactKind.EXECUTABLE_TARGET -> CliArtifactRole.RENDERED_TARGET
+            AdapterRenderedArtifactKind.REVIEW_EVIDENCE -> CliArtifactRole.REVIEW_DOCUMENT
+        }
+        add(CliArtifact(artifact.fileName, role, persisted))
+        add(CliArtifact(artifact.evidenceFileName, CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted))
     }
 }
 
@@ -513,13 +533,14 @@ private fun writeIntentArtifacts(
     require(diagnosticCoverage.status == "PASS") {
         "CLI diagnostic coverage failed: ${diagnosticCoverage.unknownCodes.joinToString { it.code }}"
     }
+    val rendered = evidence.renderedArtifact
     val outcome = CliTargetOutcomeReport(
         target = evidence.manifest.target,
         targetSelection = evidence.targetSelection,
         outcome = evidence.outcome,
         diagnosticFallbackUsed = evidence.diagnosticFallbackUsed,
         renderRequested = renderRequested,
-        renderAuthorized = evidence.renderedArtifact != null,
+        renderAuthorized = rendered?.kind == AdapterRenderedArtifactKind.EXECUTABLE_TARGET,
         diagnostics = evidence.diagnostics
     )
     val values = linkedMapOf<String, Any>(
@@ -548,7 +569,12 @@ private fun writeIntentArtifacts(
         "target-manifest.json" to evidence.manifest,
         "target-render-readiness.json" to evidence.renderReadiness
     )
-    evidence.renderedArtifact?.let { values[it.fileName] = it.content }
+    rendered?.let { artifact ->
+        values[artifact.fileName] = artifact.content
+        values[artifact.evidenceFileName] = requireNotNull(artifact.evidence) {
+            "Produced adapter artifact '${artifact.fileName}' has no rendering evidence receipt."
+        }
+    }
     writeMinimalBundle(
         directory = directory,
         flowName = evidence.manifest.flowName,
@@ -787,5 +813,6 @@ private val knownJsonArtifacts = setOf(
     "adapter-diagnostics.json",
     "diagnostic-coverage-report.json",
     "target-manifest.json",
-    "target-render-readiness.json"
+    "target-render-readiness.json",
+    "target-artifact-evidence.json"
 )
