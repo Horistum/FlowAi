@@ -26,7 +26,7 @@ casePackages:
 - cases/C02-ordering-only-diamond
 - cases/C06-artifact-transfer
 - cases/A04-data-transformation-etl
-- cases/A05-infrastructure-provision
+- cases/P13-infrastructure-provision
 - cases/A06-typed-human-input
 - cases/A11-output-driven-matrix
 - cases/N01-missing-result
@@ -39,8 +39,8 @@ counts:
   productionSources: 3
   exampleSources: 10
   semanticReferenceSources: 4
-  scenarios: 44
-  admittedScenarios: 19
+  scenarios: 45
+  admittedScenarios: 20
   screenedScenarios: 9
   plannedScenarios: 16
   executableCases: 9
