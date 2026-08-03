@@ -45,11 +45,11 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 data class CliRenderedArtifact(
     val fileName: String,
     val content: String,
-    val kind: AdapterRenderedArtifactKind = AdapterRenderedArtifactKind.EXECUTABLE_TARGET,
-    val mediaType: String = "text/plain",
-    val sha256: String = "",
-    val evidenceFileName: String = "target-artifact-evidence.json",
-    val evidence: AdapterArtifactEvidenceReceipt? = null
+    val kind: AdapterRenderedArtifactKind,
+    val mediaType: String,
+    val sha256: String,
+    val evidenceFileName: String,
+    val evidence: AdapterArtifactEvidenceReceipt
 )
 
 enum class CliTargetEvidenceOutcome {
@@ -181,16 +181,25 @@ class CliTargetEvidenceAuthority(
                 )
                 null
             }
-            else -> renderingAuthority.render(manifest).let { bundle ->
-                CliRenderedArtifact(
-                    fileName = bundle.artifact.fileName,
-                    content = bundle.artifact.content,
-                    kind = bundle.artifact.kind,
-                    mediaType = bundle.artifact.mediaType,
-                    sha256 = bundle.artifact.sha256,
-                    evidenceFileName = bundle.evidenceFileName,
-                    evidence = bundle.receipt
-                )
+            else -> {
+                if (outcome == CliTargetEvidenceOutcome.REVIEW_ONLY) {
+                    diagnostics += CliTargetDiagnostic(
+                        code = "CLI_RENDER_NOT_AUTHORIZED",
+                        severity = "error",
+                        message = "Executable target syntax is not authorized; a dedicated non-executable review artifact was emitted instead."
+                    )
+                }
+                renderingAuthority.render(manifest).let { bundle ->
+                    CliRenderedArtifact(
+                        fileName = bundle.artifact.fileName,
+                        content = bundle.artifact.content,
+                        kind = bundle.artifact.kind,
+                        mediaType = bundle.artifact.mediaType,
+                        sha256 = bundle.artifact.sha256,
+                        evidenceFileName = bundle.evidenceFileName,
+                        evidence = bundle.receipt
+                    )
+                }
             }
         }
 
