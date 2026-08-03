@@ -7,6 +7,7 @@ import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
+import org.flowlang.generators.manifest.TargetRenderBlockedException
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.materialization.TargetSelectionAuthority
@@ -35,7 +36,7 @@ class AdapterArtifactRenderingProviderBehaviorTests {
             renderRequested = true
         )
         val rendered = requireNotNull(evidence.renderedArtifact)
-        val receipt = requireNotNull(rendered.evidence)
+        val receipt = rendered.evidence
 
         assertEquals(AdapterRenderedArtifactKind.EXECUTABLE_TARGET, rendered.kind)
         assertEquals("Jenkinsfile", rendered.fileName)
@@ -68,11 +69,11 @@ class AdapterArtifactRenderingProviderBehaviorTests {
             )
         )
 
-        val failure = assertFailsWith<IllegalStateException> {
+        val failure = assertFailsWith<TargetRenderBlockedException> {
             BuiltInTargetProjections.registry.requireProvider("jenkins").render(review)
         }
 
-        assertTrue(failure.message.orEmpty().contains("not executable"))
+        assertTrue(failure.message.orEmpty().contains("rendering is blocked"))
     }
 
     private fun referencePlan() = IntentYamlLoader.load(
