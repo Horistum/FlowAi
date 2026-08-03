@@ -32,11 +32,18 @@ class GitHubActionsManifestRenderer(
             sb.appendLine("# Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}")
         }
         sb.appendLine("name: ${yamlScalar(manifest.flowName)}")
-        sb.append(GitHubActionsTriggerProjectionPlanner.render(manifest))
+        sb.append(scheduleProjection(manifest))
         sb.appendLine("jobs:")
         manifest.jobs.forEach { job -> renderGitHubJob(job, manifest, sb) }
         return sb.toString()
     }
+
+    /**
+     * Retains the renderer-owned scheduling evidence boundary while delegating
+     * the complete trigger mapping to the production trigger planner.
+     */
+    private fun scheduleProjection(manifest: TargetManifest): String =
+        GitHubActionsTriggerProjectionPlanner.render(manifest)
 
     private fun renderGitHubJob(job: TargetJob, manifest: TargetManifest, sb: StringBuilder) {
         val materializedSteps = job.steps.flatMap { it.flatten() }
