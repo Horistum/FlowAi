@@ -4,6 +4,7 @@ id: C02
 title: Ordering-only diamond with required sibling parallelism
 lifecycle: MUTATION_VALIDATED
 category: common
+domain: software-delivery
 sourceRef: argo-dag-diamond
 source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
 sourceObservations: source-observations.md
