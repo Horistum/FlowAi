@@ -264,6 +264,12 @@ class RealWorldCorpusRunner(
                         }
                         if (transformTasks.isEmpty()) diagnostics += DATA_TRANSFORM_NOT_REPRESENTED
                     }
+                    "infrastructure-provision" -> {
+                        val provisionTasks = nodes.filterIsInstance<TaskNode>().filter {
+                            it.semanticCapability == "PROVISION"
+                        }
+                        if (provisionTasks.isEmpty()) diagnostics += INFRASTRUCTURE_PROVISION_NOT_REPRESENTED
+                    }
                 }
             }
         return diagnostics.toList()
@@ -312,7 +318,7 @@ class RealWorldCorpusRunner(
         return runCatching {
             val selection = TargetSelectionAuthority.fromReferenceSnapshot(
                 value = target,
-                scenarioId = "real-world-${caseId.replace(':', '-')}",
+                scenarioId = "real-world-${caseId.replace(':', '-')} ".trim(),
                 targets = targets
             )
             val manifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
@@ -408,6 +414,7 @@ class RealWorldCorpusRunner(
         const val DYNAMIC_MATRIX_NOT_REPRESENTED = "REAL_WORLD_DYNAMIC_MATRIX_NOT_REPRESENTED"
         const val RUNTIME_PLAN_NOT_REPRESENTED = "REAL_WORLD_RUNTIME_PLAN_NOT_REPRESENTED"
         const val DATA_TRANSFORM_NOT_REPRESENTED = "REAL_WORLD_DATA_TRANSFORM_NOT_REPRESENTED"
+        const val INFRASTRUCTURE_PROVISION_NOT_REPRESENTED = "REAL_WORLD_INFRASTRUCTURE_PROVISION_NOT_REPRESENTED"
         const val TYPED_HUMAN_INPUT_NOT_REPRESENTED = "REAL_WORLD_TYPED_HUMAN_INPUT_NOT_REPRESENTED"
         const val ARTIFACT_IDENTITY_NOT_REPRESENTED = "REAL_WORLD_ARTIFACT_IDENTITY_NOT_REPRESENTED"
         private const val DYNAMIC_MATRIX_SOURCE_SEMANTIC = "dynamic-matrix-from-output"
