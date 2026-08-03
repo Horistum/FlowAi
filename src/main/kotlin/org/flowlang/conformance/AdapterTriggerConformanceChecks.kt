@@ -14,9 +14,7 @@ import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
-import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetProjectionRegistry
-import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
@@ -24,6 +22,7 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
+import org.flowlang.targets.builtin.GitHubActionsTriggerProjectionPlanner
 
 class AdapterTriggerConformanceChecks(
     private val rootDir: File,
@@ -31,7 +30,7 @@ class AdapterTriggerConformanceChecks(
     private val projections: TargetProjectionRegistry
 ) {
     private val modules by lazy {
-        ModuleRegistry.fromDirectory(File(rootDir, "modules"), includeDefaults = true)
+        ModuleRegistry.fromDirectory(File(rootDir, "modules"))
     }
     private val authority by lazy {
         AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
@@ -217,33 +216,24 @@ class AdapterTriggerConformanceChecks(
         val plan = triggeredCheckoutPlan(
             TriggerNode(id = "release", triggerType = "EVENT", event = "release")
         )
-        val preliminary = CompatibilityAnalyzer(targets).analyze(plan, "github-actions")
-        if (preliminary.capabilityStatus != SupportLevel.PARTIAL) {
+        val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "github-actions")
+        if (compatibility.capabilityStatus != SupportLevel.PARTIAL) {
             add("Bounded event leaf proof expected preliminary PARTIAL registry context.")
             return@buildList
         }
-        val selection = TargetSelectionAuthority.fromConformanceCheck(
-            value = "github-actions",
-            checkId = BOUNDED_EVENT_CHECK,
-            targets = targets
-        )
-        val diagnosticManifest = TargetManifestGenerationPipeline(targets, projections)
-            .generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest(plan, selection))
-        val leafCompatibility = diagnosticManifest.compatibility.copy(
-            status = SupportLevel.SUPPORTED,
-            capabilityStatus = SupportLevel.SUPPORTED,
-            issues = emptyList(),
-            executable = true
-        )
-        val leafManifest = diagnosticManifest.copy(compatibility = leafCompatibility)
+        val provider = projections.requireProvider("github-actions")
+        val generated = provider.generate(plan, compatibility)
         val assessment = authority.requireMatched(plan, "github-actions")
-        val manifest = authority.reconcileDiagnostic(leafManifest, assessment)
-        val rendered = projections.requireProvider("github-actions").render(manifest)
+        val manifest = authority.reconcileDiagnostic(generated, assessment)
+        val rendered = GitHubActionsTriggerProjectionPlanner.render(manifest)
         if ("  release:" !in rendered) {
-            add("GitHub bounded event renderer did not preserve the exact release event identity.")
+            add("GitHub bounded event planner did not preserve the exact release event identity.")
         }
         if ("repository_dispatch" in rendered) {
-            add("GitHub bounded event renderer silently converted a named event to repository_dispatch.")
+            add("GitHub bounded event planner silently converted a named event to repository_dispatch.")
+        }
+        if (manifest.compatibility.status != SupportLevel.PARTIAL || manifest.compatibility.executable) {
+            add("Bounded event leaf proof promoted a partially compatible scenario to executable status.")
         }
     }
 
