@@ -1,6 +1,8 @@
 package org.flowlang.cli.honest
 
 import java.io.File
+import org.flowlang.adapters.continuity.AdapterContinuitySatisfactionAuthority
+import org.flowlang.adapters.continuity.UnresolvedAdapterContinuitySatisfactionException
 import org.flowlang.adapters.control.AdapterControlMaterializationAuthority
 import org.flowlang.adapters.control.UnresolvedAdapterControlMaterializationException
 import org.flowlang.adapters.contract.AdapterDiagnosticIssue
@@ -79,11 +81,10 @@ data class CliTargetEvidence(
  * fail, because diagnostic fallback must not become a bypass around materialization
  * integrity.
  *
- * Target-neutral planning authorization is necessary but not sufficient. The
- * adapter control authority independently proves that approval, retry, timeout,
- * compensation and scheduling requirements have a concrete provider mechanism.
- * Platform capability folklore and registry summary flags are never accepted as
- * enforcement evidence.
+ * Target-neutral planning authorization is necessary but not sufficient. Adapter
+ * authorities independently prove concrete control mechanisms and producer-to-
+ * consumer continuity. Platform capability folklore and registry summary flags are
+ * never accepted as enforcement or transfer evidence.
  */
 class CliTargetEvidenceAuthority(
     private val targets: Map<String, TargetCapability>,
@@ -92,6 +93,7 @@ class CliTargetEvidenceAuthority(
 ) {
     private val pipeline = TargetManifestGenerationPipeline(targets, projections)
     private val controlAuthority = AdapterControlMaterializationAuthority(rootDir, targets, projections)
+    private val continuityAuthority = AdapterContinuitySatisfactionAuthority(rootDir, targets, projections)
 
     fun evaluate(
         plan: ExecutionPlan,
@@ -113,8 +115,10 @@ class CliTargetEvidenceAuthority(
         var fallbackUsed = false
         val manifest = try {
             val controlAssessment = controlAuthority.requireMatched(plan, target)
+            val continuityAssessment = continuityAuthority.requireMatched(plan, target)
             val generated = pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict))
-            controlAuthority.reconcileDiagnostic(generated, controlAssessment)
+            val withControls = controlAuthority.reconcileDiagnostic(generated, controlAssessment)
+            continuityAuthority.reconcileDiagnostic(withControls, continuityAssessment)
         } catch (failure: RuntimeException) {
             if (!failure.isExpectedTargetBlocker()) throw failure
             fallbackUsed = true
@@ -129,7 +133,12 @@ class CliTargetEvidenceAuthority(
                 is UnresolvedAdapterControlMaterializationException -> failure.assessment
                 else -> controlAuthority.assess(plan, target)
             }
-            controlAuthority.reconcileDiagnostic(diagnostic, controlAssessment)
+            val continuityAssessment = when (failure) {
+                is UnresolvedAdapterContinuitySatisfactionException -> failure.assessment
+                else -> continuityAuthority.assess(plan, target)
+            }
+            val withControls = controlAuthority.reconcileDiagnostic(diagnostic, controlAssessment)
+            continuityAuthority.reconcileDiagnostic(withControls, continuityAssessment)
         }
 
         val manifests = listOf(manifest)
@@ -189,7 +198,8 @@ class CliTargetEvidenceAuthority(
             this is UnresolvedExecutionTopologyException ||
             this is UnresolvedPlanningContinuityException ||
             this is UnresolvedPlanningControlException ||
-            this is UnresolvedAdapterControlMaterializationException
+            this is UnresolvedAdapterControlMaterializationException ||
+            this is UnresolvedAdapterContinuitySatisfactionException
 
     private fun reconcileAdapterContract(
         preliminary: TargetAdapterContractReport,

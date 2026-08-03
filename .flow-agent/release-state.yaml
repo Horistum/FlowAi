@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 36
+stateVersion: 37
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,15 +16,15 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 6
+  roadmapVersion: 7
   activeTrack: "adapter-portfolio"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "adapters"
-  completedAdapterItem: "A0.4"
-  completedAdapterItemName: "Control Requirement Materialization"
-  nextItem: "A0.5"
-  nextItemName: "Continuity Satisfaction Proof"
+  completedAdapterItem: "A0.5"
+  completedAdapterItemName: "Continuity Satisfaction Proof"
+  nextItem: "A0.6"
+  nextItemName: "Adapter Artifact Rendering"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -63,6 +63,12 @@ qualityPrinciples:
   - "Diagnostic projection evidence may preserve blocked facts but must never claim executable readiness."
   - "Ordering never implies value, workspace or state continuity."
   - "Continuity must be declared by canonical module contracts and supported explicitly by the target."
+  - "Adapter continuity evidence consumes existing VALUE, WORKSPACE and STATE relations without redefining Core dependency meaning."
+  - "A STATE relation requires both mutable-state transfer and durable-state lifetime evidence."
+  - "Supported adapter continuity requires a composed provider, production implementation evidence and independent behavioral proof."
+  - "Target registry flags, provider identity and platform documentation are not continuity implementation evidence."
+  - "Profile-only continuity remains UNKNOWN until a composed provider supplies relation-specific evidence."
+  - "Unsupported or unknown continuity blocks provider rendering while preserving diagnostic manifest evidence."
   - "Committed reference evidence must be regenerated through the canonical production generator."
   - "Canonical intent meaning is derived before explicit binding and is never enriched from implementation inventory."
   - "Explicit binding requires a declared capability implementation and an explicitly selected compatible system."
@@ -135,18 +141,18 @@ qualityPrinciples:
   - "Adapter lifecycle completion requires the complete declared production, test, conformance and documentation boundary."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-a0.4-implementation-boundary"
-  flowAgentStructure: "passed-on-a0.4-implementation-boundary"
-  flowAgentContextGeneration: "passed-on-a0.4-implementation-boundary"
-  offlineCacheAwareChecks: "passed-on-a0.4-implementation-boundary"
-  cleanTest: "passed-on-a0.4-implementation-boundary"
-  conformance: "passed-on-a0.4-implementation-boundary"
-  executableReferenceEvidence: "passed-on-a0.4-implementation-boundary"
-  validationSource: "Flow CI #2376, run 30420527005, passed exact A0.4 implementation head a5040767698fed38d6efd0118de40312c77c913e and synthetic merge candidate 8c3b837cb9416acb2de3333a81b1c7eb811d492d."
+  flowAgentTooling: "passed-on-a0.5-implementation-boundary"
+  flowAgentStructure: "passed-on-a0.5-implementation-boundary"
+  flowAgentContextGeneration: "passed-on-a0.5-implementation-boundary"
+  cleanTest: "passed-on-a0.5-implementation-boundary"
+  conformance: "passed-on-a0.5-implementation-boundary"
+  executableReferenceEvidence: "passed-on-a0.5-implementation-boundary"
+  adapterContinuityEvidence: "passed-on-a0.5-implementation-boundary"
+  validationSource: "Flow CI #2468, run 30741864674, passed exact A0.5 implementation head b1b996508aa9bfb1f645cfd69f7ddb777e22c1d5 and synthetic merge candidate 3538862c7ad1878d8d6d3ae00e8f5447949511aa with 753 tests and 126 conformance checks."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
-    - "A0.1, A0.2 and A0.3 are completed and merged."
-    - "A0.4 remains external exact-head CI evidence until PR #99 merges; Flow CI #2376 proves the implementation boundary without impersonating merged history."
-    - "A0.4 completion metadata cites the passed implementation boundary; the PR completion head must pass a distinct exact-head and synthetic merge-candidate boundary before readiness."
-    - "A0.5 is selected as next without adding its work package or implementation scope."
+    - "A0.1 through A0.4 are completed and merged."
+    - "A0.5 implementation evidence is external exact-head CI evidence until PR #101 merges; it does not impersonate merged history."
+    - "A0.5 completion metadata cites the passed implementation boundary; the PR completion head must pass a distinct exact-head and synthetic merge-candidate boundary before readiness."
+    - "A0.6 is selected as next without adding its work package or implementation scope."

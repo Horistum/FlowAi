@@ -1,0 +1,393 @@
+version: "1.0"
+targets:
+  - target: local
+    claims:
+      - family: DATA
+        status: UNKNOWN
+        mechanism: "No composed local projection provider exists in the built-in distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            data.value: "The semantic reference profile cannot prove runtime value transfer without a composed provider."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.local"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose a concrete local generator and renderer."
+        limitations:
+          - "Target capability declarations are context, not implementation evidence."
+      - family: ARTIFACT
+        status: UNKNOWN
+        mechanism: "No composed local projection provider exists in the built-in distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            artifact.shared-workspace: "No provider-owned workspace transfer mechanism is available for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.local"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose a concrete local generator and renderer."
+        limitations:
+          - "A semantic profile cannot prove producer-to-consumer artifact continuity."
+      - family: MUTABLE_STATE
+        status: UNKNOWN
+        mechanism: "No composed local projection provider exists in the built-in distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            state.mutable.workflow: "No provider-owned mutable-state transfer mechanism is available for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.local"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose a concrete local generator and renderer."
+        limitations:
+          - "State continuity cannot be inferred from a target profile."
+      - family: DURABLE_STATE
+        status: UNKNOWN
+        mechanism: "No composed local projection provider exists in the built-in distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            state.durable.workflow: "No provider-owned durable-state lifetime mechanism is available for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.local"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose a concrete local generator and renderer."
+        limitations:
+          - "Durability requires implementation evidence beyond workflow ordering."
+
+  - target: jenkins
+    claims:
+      - family: DATA
+        status: UNSUPPORTED
+        mechanism: "The Jenkins renderer does not bind generic Flow task results into downstream parameter expressions."
+        semantics:
+          supported: []
+          unsupported:
+            data.value: "Result names are preserved as metadata, but no provider-owned generic value export/import contract is rendered."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt"
+        prerequisites:
+          - "Add typed producer output and consumer input bindings without raw command fallback."
+        limitations:
+          - "Stage ordering does not transfer arbitrary Flow values."
+      - family: ARTIFACT
+        status: SUPPORTED
+        mechanism: "Jenkins emits the admitted checkout and Docker build leaves as sequential stages under one pipeline agent and one workspace."
+        semantics:
+          supported:
+            - artifact.shared-workspace
+          unsupported: {}
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt"
+          - "conformance/snapshots/checkout-build-image/snapshot-index.json"
+        prerequisites:
+          - "The plan must contain a resolved WORKSPACE relation backed by module-contract evidence."
+          - "The admitted projection must remain a single Jenkins job with one pipeline agent."
+        limitations:
+          - "This proves shared-workspace continuity only; it does not certify generic artifact upload/download semantics."
+      - family: MUTABLE_STATE
+        status: UNSUPPORTED
+        mechanism: "The Jenkins provider has no generic Flow mutable-state transfer contract."
+        semantics:
+          supported: []
+          unsupported:
+            state.mutable.workflow: "No typed state handle is emitted or propagated between arbitrary Flow tasks."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
+        prerequisites:
+          - "Add a typed mutable-state provider and consumer mechanism."
+        limitations:
+          - "A shared workspace is not a generic mutable-state contract."
+      - family: DURABLE_STATE
+        status: UNSUPPORTED
+        mechanism: "The Jenkins provider has no generic Flow durable-state lifetime contract."
+        semantics:
+          supported: []
+          unsupported:
+            state.durable.workflow: "No provider-owned persistence and restoration contract is emitted for Flow STATE relations."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
+        prerequisites:
+          - "Add typed durable persistence, identity and restoration evidence."
+        limitations:
+          - "Jenkins job durability does not prove application-state continuity."
+
+  - target: github-actions
+    claims:
+      - family: DATA
+        status: UNSUPPORTED
+        mechanism: "The job-per-task projection emits dependencies but no generic Flow output contract through job outputs and needs bindings."
+        semantics:
+          supported: []
+          unsupported:
+            data.value: "needs ordering is emitted without typed producer output export and consumer import."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt"
+        prerequisites:
+          - "Add provider-owned job output and needs expression bindings."
+        limitations:
+          - "Job ordering does not prove data transfer."
+      - family: ARTIFACT
+        status: UNSUPPORTED
+        mechanism: "The job-per-task projection does not emit upload/download actions for the resolved Flow workspace path."
+        semantics:
+          supported: []
+          unsupported:
+            artifact.shared-workspace: "Independent jobs do not share a workspace and no transfer pair is generated."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt"
+        prerequisites:
+          - "Add explicit artifact upload/download identities derived from the resolved WORKSPACE relation."
+        limitations:
+          - "Native checkout and image-build leaves alone do not establish cross-job continuity."
+      - family: MUTABLE_STATE
+        status: UNSUPPORTED
+        mechanism: "The GitHub Actions provider has no generic mutable-state transfer contract."
+        semantics:
+          supported: []
+          unsupported:
+            state.mutable.workflow: "No typed state handle is propagated between generated jobs."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
+        prerequisites:
+          - "Add an explicit provider-owned state transfer mechanism."
+        limitations:
+          - "Job outputs and caches are not accepted without relation-specific implementation evidence."
+      - family: DURABLE_STATE
+        status: UNSUPPORTED
+        mechanism: "The GitHub Actions provider has no generic durable-state persistence contract."
+        semantics:
+          supported: []
+          unsupported:
+            state.durable.workflow: "No persistence identity, retention or restoration binding is generated for Flow STATE relations."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
+        prerequisites:
+          - "Add typed persistence and restoration evidence."
+        limitations:
+          - "General cache availability is not durable-state proof."
+
+  - target: tekton
+    claims:
+      - family: DATA
+        status: UNSUPPORTED
+        mechanism: "The Tekton projection emits task ordering but no generic result producer and consumer bindings."
+        semantics:
+          supported: []
+          unsupported:
+            data.value: "runAfter-style ordering is not a typed Tekton result reference."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt"
+        prerequisites:
+          - "Add explicit Task result and Pipeline parameter bindings."
+        limitations:
+          - "Task ordering does not transfer data."
+      - family: ARTIFACT
+        status: UNSUPPORTED
+        mechanism: "The current Tekton projection does not certify one PipelineRun workspace binding shared by producer and consumer tasks."
+        semantics:
+          supported: []
+          unsupported:
+            artifact.shared-workspace: "Leaf workspace payloads do not prove Pipeline-level binding and propagation."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt"
+        prerequisites:
+          - "Generate and verify a shared PipelineRun workspace identity across the complete path."
+        limitations:
+          - "Task-local workspace declarations cannot certify end-to-end continuity."
+      - family: MUTABLE_STATE
+        status: UNSUPPORTED
+        mechanism: "The Tekton provider has no generic mutable-state transfer contract."
+        semantics:
+          supported: []
+          unsupported:
+            state.mutable.workflow: "No typed state handle is propagated across generated tasks."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
+        prerequisites:
+          - "Add provider-owned state transfer evidence."
+        limitations:
+          - "A Kubernetes volume possibility is not a Flow state contract."
+      - family: DURABLE_STATE
+        status: UNSUPPORTED
+        mechanism: "The Tekton provider has no generic durable-state lifetime contract."
+        semantics:
+          supported: []
+          unsupported:
+            state.durable.workflow: "No persistence class, identity and restoration binding is generated for Flow STATE relations."
+          unknown: {}
+        evidenceReferences:
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
+          - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
+        prerequisites:
+          - "Add typed durable persistence and restoration evidence."
+        limitations:
+          - "Potential PVC usage is not certified without a generated relation-specific binding."
+
+  - target: argo-workflows
+    claims:
+      - family: DATA
+        status: UNKNOWN
+        mechanism: "No composed Argo Workflows provider exists in this distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            data.value: "Profile declarations cannot prove artifact or parameter wiring without a provider."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.argo-workflows"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose an Argo Workflows provider and behavioral fixtures."
+        limitations:
+          - "Platform capability is not repository implementation evidence."
+      - family: ARTIFACT
+        status: UNKNOWN
+        mechanism: "No composed Argo Workflows provider exists in this distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            artifact.shared-workspace: "No generated artifact or workspace binding is available for inspection."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.argo-workflows"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose an Argo Workflows provider and behavioral fixtures."
+        limitations:
+          - "General artifact support does not certify this Flow relation."
+      - family: MUTABLE_STATE
+        status: UNKNOWN
+        mechanism: "No composed Argo Workflows provider exists in this distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            state.mutable.workflow: "No provider-owned mutable-state mechanism exists for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.argo-workflows"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose an Argo Workflows provider and behavioral fixtures."
+        limitations:
+          - "A profile cannot substitute for generated state transfer."
+      - family: DURABLE_STATE
+        status: UNKNOWN
+        mechanism: "No composed Argo Workflows provider exists in this distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            state.durable.workflow: "No provider-owned durable-state mechanism exists for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.argo-workflows"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose an Argo Workflows provider and behavioral fixtures."
+        limitations:
+          - "Profile durability claims are not executable evidence."
+
+  - target: azure-devops
+    claims:
+      - family: DATA
+        status: UNKNOWN
+        mechanism: "No composed Azure DevOps provider exists in this distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            data.value: "No generated output-variable binding is available for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.azure-devops"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose an Azure DevOps provider and behavioral fixtures."
+        limitations:
+          - "Platform variable features are not repository implementation evidence."
+      - family: ARTIFACT
+        status: UNKNOWN
+        mechanism: "No composed Azure DevOps provider exists in this distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            artifact.shared-workspace: "No generated workspace or artifact transfer binding is available for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.azure-devops"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose an Azure DevOps provider and behavioral fixtures."
+        limitations:
+          - "A capability profile cannot prove producer-to-consumer continuity."
+      - family: MUTABLE_STATE
+        status: UNKNOWN
+        mechanism: "No composed Azure DevOps provider exists in this distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            state.mutable.workflow: "No provider-owned mutable-state transfer mechanism exists for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.azure-devops"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose an Azure DevOps provider and behavioral fixtures."
+        limitations:
+          - "General variable support is not a Flow state contract."
+      - family: DURABLE_STATE
+        status: UNKNOWN
+        mechanism: "No composed Azure DevOps provider exists in this distribution."
+        semantics:
+          supported: []
+          unsupported: {}
+          unknown:
+            state.durable.workflow: "No provider-owned durable-state mechanism exists for certification."
+        evidenceReferences:
+          - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.azure-devops"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        prerequisites:
+          - "Compose an Azure DevOps provider and behavioral fixtures."
+        limitations:
+          - "Profile persistence is not executable evidence."

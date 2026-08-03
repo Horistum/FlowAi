@@ -1,0 +1,53 @@
+version: "A0.5"
+name: "Continuity Satisfaction Proof"
+type: "adapter-continuity"
+stream: adapters
+status: complete
+objective: "Certify concrete provider satisfaction for data, artifact, mutable-state and durable-state continuity without treating ordering or target capability summaries as transfer evidence."
+activationEvidence:
+  adapterItem: "A0.4"
+  adapterStatus: "completed"
+  mergedPullRequest: "PR #100 merged as 52b15c1822d38397e13f772859d8f6b9a0606972"
+universalBoundary:
+  - "Core ORDERING, VALUE, WORKSPACE and STATE dependency relations remain unchanged and target-neutral."
+  - "Adapter continuity evidence consumes resolved ExecutionPlan relations and existing topology requirements; it does not redefine dependency meaning."
+  - "Artifact continuity is proved through explicit workspace or transfer mechanisms, not inferred from task order or an artifact capability flag."
+  - "STATE continuity requires both mutable transfer and durable lifetime evidence before executable materialization."
+forbiddenScope:
+  - "No renderer layout, target registry summary flag or platform documentation accepted as continuity implementation evidence."
+  - "No ORDERING relation promoted to VALUE, WORKSPACE or STATE continuity."
+  - "No existing executable claim retained without replayable producer-to-consumer behavioral proof."
+  - "No target-specific continuity syntax added to Core contracts."
+  - "No mutation of the frozen v0.9.7 Core pre-closure inventory."
+plannedChanges:
+  - "adapters/continuity/builtin-continuity-satisfaction.yaml"
+  - "adapters/conformance/check-inventory.yaml"
+  - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityContracts.kt"
+  - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityEvidenceIntegrityAuthority.kt"
+  - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuitySatisfactionAuthority.kt"
+  - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityRoadmapLifecycleAuthority.kt"
+  - "src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AdapterContinuityConformanceChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AdapterTopologyConformanceChecks.kt"
+  - "src/test/kotlin/AdapterContinuityEvidenceIntegrityTests.kt"
+  - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
+  - "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt"
+  - "src/test/kotlin/AdapterContinuityCliEvidenceTests.kt"
+  - "src/test/kotlin/AdapterContinuityRoadmapLifecycleAuthorityTests.kt"
+  - "docs/A0_5_CONTINUITY_SATISFACTION_PROOF.md"
+completionEvidence:
+  - "Every target has exactly one complete data, artifact, mutable-state and durable-state claim."
+  - "Supported claims require composed provider implementation evidence and independent behavioral proof."
+  - "Ordering-only support never satisfies a continuity requirement."
+  - "Resolved VALUE, WORKSPACE and STATE relations are matched against adapter-owned evidence before executable rendering."
+  - "Profile-only targets remain UNKNOWN and unsupported provider mechanisms remain explicit blockers."
+  - "Every executable reference scenario replays its producer-to-consumer continuity and is demoted when proof is absent."
+  - "CLI diagnostic fallback preserves continuity blockers through manifest, readiness, selection and adapter-contract evidence without rendering target syntax."
+  - "A0.5 lifecycle integrity rejects authored completion evidence while implementing and blocks premature A0.6 selection."
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2468
+  runId: 30741864674
+  exactHead: "b1b996508aa9bfb1f645cfd69f7ddb777e22c1d5"
+  mergeCandidate: "3538862c7ad1878d8d6d3ae00e8f5447949511aa"
