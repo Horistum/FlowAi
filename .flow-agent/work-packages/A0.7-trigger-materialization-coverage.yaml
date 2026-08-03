@@ -2,7 +2,7 @@ version: "A0.7"
 name: "Trigger Materialization Coverage"
 type: "adapter-trigger"
 stream: adapters
-status: active
+status: complete
 objective: "Materialize manual, CRON, interval, calendar, event and webhook requirements only where the selected adapter preserves exact timing, scope, event identity and delivery semantics."
 activationEvidence:
   adapterItem: "A0.6"
@@ -62,4 +62,10 @@ completionEvidence:
   - "Blocked triggers preserve dedicated non-executable review evidence and cannot emit provider target syntax."
   - "The adapter conformance inventory advances exactly to version 1.6 with seven A0.7 checks."
   - "A0.7 lifecycle integrity supports terminal adapter completion without inventing a later roadmap item."
-implementationEvidence: {}
+implementationEvidence:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: 2526
+  runId: 30803256865
+  exactHead: "9528d67cc568af4539015ac583eca500ea3b29bc"
+  mergeCandidate: "56b664fac9a0c353073d73439487862f658e8a3c"
