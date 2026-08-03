@@ -235,6 +235,8 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
             "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerMaterializationAuthority.kt",
             "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerAuthorizedRenderingAuthority.kt",
             "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerRoadmapLifecycleAuthority.kt",
+            "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt",
+            "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt",
             "src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt",
             "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt",
