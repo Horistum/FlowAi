@@ -2,7 +2,8 @@ kind: FlowRealWorldSourceCatalog
 version: '0.1'
 status: baseline
 admissionPolicy:
-  admitted: Exact immutable revision, inspected source path, repository identity, source purpose and license evidence are recorded.
+  admitted: Exact immutable revision, inspected source path, repository identity, source purpose and license evidence are
+    recorded.
   screened: Exact immutable revision and relevant semantics are recorded, but license or source-form review remains incomplete.
   candidate: Useful pattern identified but immutable source evidence is not yet complete.
 sources:
@@ -13,8 +14,17 @@ sources:
   repository: actions/starter-workflows
   revision: 61ca0e5a5c955fbed2d61eea3ffcb21d0baa08bc
   path: ci/gradle.yml
-  license: {status: verified, spdx: MIT, evidence: LICENSE}
-  semanticLoad: [trigger.pull-request, trigger.push, source.checkout, build.gradle, test, dependency-cache]
+  license:
+    status: verified
+    spdx: MIT
+    evidence: LICENSE
+  semanticLoad:
+  - trigger.pull-request
+  - trigger.push
+  - source.checkout
+  - build.gradle
+  - test
+  - dependency-cache
 - id: gha-gradle-publish
   platform: github-actions
   sourceKind: official-example
@@ -22,8 +32,15 @@ sources:
   repository: actions/starter-workflows
   revision: 61ca0e5a5c955fbed2d61eea3ffcb21d0baa08bc
   path: ci/gradle-publish.yml
-  license: {status: verified, spdx: MIT, evidence: LICENSE}
-  semanticLoad: [release, artifact.publish, permissions, secrets]
+  license:
+    status: verified
+    spdx: MIT
+    evidence: LICENSE
+  semanticLoad:
+  - release
+  - artifact.publish
+  - permissions
+  - secrets
 - id: argocd-release
   platform: github-actions
   sourceKind: production-workflow
@@ -31,8 +48,21 @@ sources:
   repository: argoproj/argo-cd
   revision: b49e9c08ff1f8cab7ea3d3b144622f08eb60133a
   path: .github/workflows/release.yaml
-  license: {status: verified, spdx: Apache-2.0, evidence: LICENSE}
-  semanticLoad: [trigger.tag, reusable-workflow, value-continuity, multi-architecture, artifact-identity, oidc, signing, provenance, sbom, release]
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - trigger.tag
+  - reusable-workflow
+  - value-continuity
+  - multi-architecture
+  - artifact-identity
+  - oidc
+  - signing
+  - provenance
+  - sbom
+  - release
 - id: helm-release
   platform: github-actions
   sourceKind: production-workflow
@@ -40,8 +70,18 @@ sources:
   repository: helm/helm
   revision: a8ab76e86f11e2ece5a3d0262313140e21db249b
   path: .github/workflows/release.yml
-  license: {status: verified, spdx: Apache-2.0, evidence: LICENSE}
-  semanticLoad: [trigger.tag, trigger.branch, conditional-release, cross-build, checksums, artifact-publish, canary]
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - trigger.tag
+  - trigger.branch
+  - conditional-release
+  - cross-build
+  - checksums
+  - artifact-publish
+  - canary
 - id: prometheus-ci
   platform: github-actions
   sourceKind: production-workflow
@@ -49,8 +89,18 @@ sources:
   repository: prometheus/prometheus
   revision: 40ea54d0b1d265b8dc830c88ef96b0b65f3ba0be
   path: .github/workflows/ci.yml
-  license: {status: verified, spdx: Apache-2.0, evidence: LICENSE}
-  semanticLoad: [parallel-fan-out, dynamic-matrix-from-output, value-continuity, artifact-continuity, cross-platform, conditional-build, fail-fast-policy]
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - parallel-fan-out
+  - dynamic-matrix-from-output
+  - value-continuity
+  - artifact-continuity
+  - cross-platform
+  - conditional-build
+  - fail-fast-policy
 - id: buildkite-dynamic-pipeline
   platform: buildkite
   sourceKind: official-example
@@ -58,8 +108,14 @@ sources:
   repository: buildkite/dynamic-pipeline-example
   revision: 4844590623f43e97c4e0a0e31e5bd5aff36c3cb0
   path: .buildkite/pipeline.sh
-  license: {status: verified, spdx: MIT, evidence: LICENSE.md}
-  semanticLoad: [runtime-plan-generation, dynamic-fan-out, conditional-deployment]
+  license:
+    status: verified
+    spdx: MIT
+    evidence: LICENSE.md
+  semanticLoad:
+  - runtime-plan-generation
+  - dynamic-fan-out
+  - conditional-deployment
 - id: buildkite-artifact-transfer
   platform: buildkite
   sourceKind: official-example
@@ -67,8 +123,15 @@ sources:
   repository: buildkite/artifacts-example
   revision: bc6a719395128f6a68357685dd30de09154ec2db
   path: .buildkite/pipeline.yml
-  license: {status: verified, spdx: MIT, evidence: LICENSE.md}
-  semanticLoad: [ordering, artifact-produce, artifact-consume, artifact-continuity]
+  license:
+    status: verified
+    spdx: MIT
+    evidence: LICENSE.md
+  semanticLoad:
+  - ordering
+  - artifact-produce
+  - artifact-consume
+  - artifact-continuity
 - id: buildkite-typed-human-input
   platform: buildkite
   sourceKind: official-example
@@ -76,8 +139,15 @@ sources:
   repository: buildkite/block-step-example
   revision: 740623ea16a9e4df08b3cc456b48efa00ae6c0d3
   path: .buildkite/pipeline.yml
-  license: {status: verified, spdx: MIT, evidence: LICENSE.md}
-  semanticLoad: [approval, typed-human-input, value-continuity, release]
+  license:
+    status: verified
+    spdx: MIT
+    evidence: LICENSE.md
+  semanticLoad:
+  - approval
+  - typed-human-input
+  - value-continuity
+  - release
 - id: argo-dag-diamond
   platform: argo-workflows
   sourceKind: official-example
@@ -85,8 +155,15 @@ sources:
   repository: argoproj/argo-workflows
   revision: d98d7b7d73d1b24dd7258153453ea612dbb70092
   path: examples/dag-diamond.yaml
-  license: {status: verified, spdx: Apache-2.0, evidence: LICENSE}
-  semanticLoad: [dag, parallel-fan-out, fan-in, ordering]
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - dag
+  - parallel-fan-out
+  - fan-in
+  - ordering
 - id: argo-enhanced-dependencies
   platform: argo-workflows
   sourceKind: official-example
@@ -94,8 +171,14 @@ sources:
   repository: argoproj/argo-workflows
   revision: d98d7b7d73d1b24dd7258153453ea612dbb70092
   path: examples/dag-enhanced-depends.yaml
-  license: {status: verified, spdx: Apache-2.0, evidence: LICENSE}
-  semanticLoad: [result-dependent-ordering, partial-success, failure-propagation]
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - result-dependent-ordering
+  - partial-success
+  - failure-propagation
 - id: argo-artifact-passing
   platform: argo-workflows
   sourceKind: official-example
@@ -103,8 +186,14 @@ sources:
   repository: argoproj/argo-workflows
   revision: d98d7b7d73d1b24dd7258153453ea612dbb70092
   path: examples/artifact-passing.yaml
-  license: {status: verified, spdx: Apache-2.0, evidence: LICENSE}
-  semanticLoad: [artifact-produce, artifact-consume, artifact-continuity]
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - artifact-produce
+  - artifact-consume
+  - artifact-continuity
 - id: airflow-taskflow-etl
   platform: airflow
   sourceKind: official-example
@@ -112,8 +201,16 @@ sources:
   repository: apache/airflow
   revision: 40ced09754fd50556de2a950bdea3a83261b25b0
   path: airflow-core/src/airflow/example_dags/tutorial_taskflow_api.py
-  license: {status: verified, spdx: Apache-2.0, evidence: LICENSE}
-  semanticLoad: [data-pipeline, extract, transform, load, value-continuity]
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - data-pipeline
+  - extract
+  - transform
+  - load
+  - value-continuity
 - id: tekton-pipeline-semantics
   platform: tekton
   sourceKind: official-semantic-reference
@@ -121,8 +218,16 @@ sources:
   repository: tektoncd/pipeline
   revision: f60dfb331f37737ec9352c726d3ce20cd5c54351
   path: docs/pipelines.md
-  license: {status: verified, spdx: Apache-2.0, evidence: LICENSE}
-  semanticLoad: [task-results, workspaces, finally, retry, matrix]
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - task-results
+  - workspaces
+  - finally
+  - retry
+  - matrix
 - id: gitlab-downstream-pipelines
   platform: gitlab-ci
   sourceKind: official-semantic-reference
@@ -130,8 +235,14 @@ sources:
   repository: gitlabhq/gitlabhq
   revision: 3aaa6172fb04c0cd477c5c8b2dfa55ba2fffc78d
   path: doc/ci/pipelines/downstream_pipelines.md
-  license: {status: review-required, evidence: repository-license-boundary-not-yet-recorded}
-  semanticLoad: [parent-child-pipeline, cross-project-pipeline, artifact-continuity, status-propagation]
+  license:
+    status: review-required
+    evidence: repository-license-boundary-not-yet-recorded
+  semanticLoad:
+  - parent-child-pipeline
+  - cross-project-pipeline
+  - artifact-continuity
+  - status-propagation
 - id: circleci-fan-in-out
   platform: circleci
   sourceKind: official-semantic-reference
@@ -139,8 +250,14 @@ sources:
   repository: circleci/circleci-docs
   revision: 447dc483ede459622c680265e914768f67aafce6
   path: docs/guides/modules/toolkit/pages/sample-config.adoc
-  license: {status: review-required, evidence: documentation-license-boundary-not-yet-recorded}
-  semanticLoad: [fan-out, fan-in, dependency-cache, workspace-continuity]
+  license:
+    status: review-required
+    evidence: documentation-license-boundary-not-yet-recorded
+  semanticLoad:
+  - fan-out
+  - fan-in
+  - dependency-cache
+  - workspace-continuity
 - id: azure-output-variables
   platform: azure-devops
   sourceKind: official-semantic-reference
@@ -148,5 +265,11 @@ sources:
   repository: MicrosoftDocs/azure-devops-docs
   revision: b6da3d6cb7f2c1c8bc9597891c83bec607cf36f0
   path: docs/pipelines/process/set-variables-scripts.md
-  license: {status: review-required, evidence: documentation-and-code-license-boundary-not-yet-recorded}
-  semanticLoad: [job-output, stage-output, value-continuity, scope]
+  license:
+    status: review-required
+    evidence: documentation-and-code-license-boundary-not-yet-recorded
+  semanticLoad:
+  - job-output
+  - stage-output
+  - value-continuity
+  - scope
