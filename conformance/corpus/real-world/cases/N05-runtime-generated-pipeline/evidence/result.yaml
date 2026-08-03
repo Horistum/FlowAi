@@ -1,0 +1,8 @@
+kind: FlowRealWorldEvidence
+version: '0.2'
+caseId: N05
+status: ACCEPTED
+outcome: UNSUPPORTED_DYNAMIC_CONSTRUCTION
+expectedDiagnostics: [REAL_WORLD_RUNTIME_PLAN_NOT_REPRESENTED]
+sourceRevision: 4844590623f43e97c4e0a0e31e5bd5aff36c3cb0
+validatedBy: [real-world-corpus.case.n05, real-world-corpus.mutations]
