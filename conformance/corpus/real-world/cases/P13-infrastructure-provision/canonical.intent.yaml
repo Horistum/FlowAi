@@ -15,13 +15,14 @@ workflows:
     requires: [initialize]
     produces: [provisioned_state]
     params:
+      tool: terraform
+      mode: apply
       resource: local-test-infrastructure
-      operation: apply
-      configuration: 'ref:initialized_configuration'
+      stack: 'ref:initialized_configuration'
   - id: verify
     capability: VERIFY
     requires: [apply]
     params:
       subject: provisioned infrastructure
-      state: 'ref:provisioned_state'
+      criteria: 'ref:provisioned_state'
 failure: {notify: false, rollback: false, stopOnError: true}
