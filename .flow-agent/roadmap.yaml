@@ -1,5 +1,5 @@
 project: Flow
-roadmapVersion: 10
+roadmapVersion: 11
 currentTrack: "bounded-conformance"
 primaryRoadmapStream: conformance
 
@@ -73,7 +73,7 @@ currentDecision:
   closureItemStatus: "completed"
   completedAdapterItem: "A0.7"
   completedAdapterItemName: "Trigger Materialization Coverage"
-  nextItem: "C0.1"
-  nextItemName: "Bounded Domain Corpus"
+  nextItem: "C0.2"
+  nextItemName: "Abstract Topology Matrix"
   nextItemStream: "conformance"
-  decisionBasis: "PR #103 merged terminal adapter item A0.7 as 6a46e33c914d77f5ffad0f680f4dc823a325ebfc. The next declared work is C0.1 in the independent conformance stream; no A0.8 is fabricated."
+  decisionBasis: "Flow CI #2641, run 30817690333, passed C0.1 on exact implementation head 2fd59e7fa0ae486cf073453d1b59a3d19ed2b4d4 and synthetic merge candidate cbd8788ccd212e263d80d141ea5f5bf2648073c3 with 808 tests and 120 conformance checks. Completion metadata selects C0.2 without adding C0.2 implementation scope or changing the closed Core and adapter tracks."
