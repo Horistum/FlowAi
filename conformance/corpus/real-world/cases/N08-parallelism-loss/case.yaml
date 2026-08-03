@@ -4,6 +4,7 @@ id: N08
 title: Required parallel siblings are silently serialized
 lifecycle: MUTATION_VALIDATED
 category: negative
+domain: software-delivery
 sourceRef: argo-dag-diamond
 source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
 sourceObservations: source-observations.md
