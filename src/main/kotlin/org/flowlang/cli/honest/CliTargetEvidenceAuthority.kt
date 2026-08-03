@@ -10,6 +10,9 @@ import org.flowlang.adapters.contract.AdapterDiagnosticSeverity
 import org.flowlang.adapters.contract.AdapterDiagnosticsReport
 import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
 import org.flowlang.adapters.contract.TargetAdapterContractReport
+import org.flowlang.adapters.rendering.AdapterArtifactEvidenceReceipt
+import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
@@ -41,7 +44,12 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 data class CliRenderedArtifact(
     val fileName: String,
-    val content: String
+    val content: String,
+    val kind: AdapterRenderedArtifactKind = AdapterRenderedArtifactKind.EXECUTABLE_TARGET,
+    val mediaType: String = "text/plain",
+    val sha256: String = "",
+    val evidenceFileName: String = "target-artifact-evidence.json",
+    val evidence: AdapterArtifactEvidenceReceipt? = null
 )
 
 enum class CliTargetEvidenceOutcome {
@@ -82,9 +90,9 @@ data class CliTargetEvidence(
  * integrity.
  *
  * Target-neutral planning authorization is necessary but not sufficient. Adapter
- * authorities independently prove concrete control mechanisms and producer-to-
- * consumer continuity. Platform capability folklore and registry summary flags are
- * never accepted as enforcement or transfer evidence.
+ * authorities independently prove concrete control mechanisms, producer-to-
+ * consumer continuity and final artifact rendering. Platform capability folklore,
+ * registry summary flags and syntactic validity are never accepted as evidence.
  */
 class CliTargetEvidenceAuthority(
     private val targets: Map<String, TargetCapability>,
@@ -94,6 +102,7 @@ class CliTargetEvidenceAuthority(
     private val pipeline = TargetManifestGenerationPipeline(targets, projections)
     private val controlAuthority = AdapterControlMaterializationAuthority(rootDir, targets, projections)
     private val continuityAuthority = AdapterContinuitySatisfactionAuthority(rootDir, targets, projections)
+    private val renderingAuthority = AdapterArtifactRenderingAuthority(rootDir, projections)
 
     fun evaluate(
         plan: ExecutionPlan,
@@ -162,18 +171,27 @@ class CliTargetEvidenceAuthority(
             TargetRenderMode.REVIEW_ONLY -> CliTargetEvidenceOutcome.REVIEW_ONLY
             TargetRenderMode.FAIL_FAST -> CliTargetEvidenceOutcome.BLOCKED
         }
-        val rendered = if (renderRequested && outcome == CliTargetEvidenceOutcome.EXECUTABLE) {
-            val provider = projections.requireProvider(target)
-            CliRenderedArtifact(provider.artifactFileName, provider.render(manifest))
-        } else {
-            if (renderRequested) {
+        val rendered = when {
+            !renderRequested -> null
+            outcome == CliTargetEvidenceOutcome.BLOCKED -> {
                 diagnostics += CliTargetDiagnostic(
                     code = "CLI_RENDER_NOT_AUTHORIZED",
                     severity = "error",
-                    message = "Target output was requested but manifest evidence is ${outcome.name.lowercase()}; review evidence remains available and no target syntax was emitted."
+                    message = "Target output was requested but manifest evidence is blocked; no artifact was emitted."
+                )
+                null
+            }
+            else -> renderingAuthority.render(manifest).let { bundle ->
+                CliRenderedArtifact(
+                    fileName = bundle.artifact.fileName,
+                    content = bundle.artifact.content,
+                    kind = bundle.artifact.kind,
+                    mediaType = bundle.artifact.mediaType,
+                    sha256 = bundle.artifact.sha256,
+                    evidenceFileName = bundle.evidenceFileName,
+                    evidence = bundle.receipt
                 )
             }
-            null
         }
 
         return CliTargetEvidence(
