@@ -30,7 +30,7 @@ class AdapterTriggerCliEvidenceTests {
             TriggerNode(
                 id = "nightly",
                 triggerType = "SCHEDULE",
-                schedule = ScheduleNode("CRON", "0 3 * * *")
+                schedule = ScheduleNode(kind = "CRON", expression = "0 3 * * *")
             )
         )
         val selection = TargetSelectionAuthority.fromTestFixture(
@@ -57,7 +57,7 @@ class AdapterTriggerCliEvidenceTests {
             TriggerNode(
                 id = "frequent",
                 triggerType = "SCHEDULE",
-                schedule = ScheduleNode("INTERVAL", "PT15M")
+                schedule = ScheduleNode(kind = "INTERVAL", expression = "PT15M")
             )
         )
         val selection = TargetSelectionAuthority.fromTestFixture(
@@ -87,7 +87,11 @@ class AdapterTriggerCliEvidenceTests {
             TriggerNode(
                 id = "nightly",
                 triggerType = "SCHEDULE",
-                schedule = ScheduleNode("CRON", "0 3 * * *", "Europe/Prague")
+                schedule = ScheduleNode(
+                    kind = "CRON",
+                    expression = "0 3 * * *",
+                    timezone = "Europe/Prague"
+                )
             )
         )
         val selection = TargetSelectionAuthority.fromTestFixture(
