@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 37
+stateVersion: 38
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,15 +16,15 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 7
+  roadmapVersion: 8
   activeTrack: "adapter-portfolio"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "adapters"
-  completedAdapterItem: "A0.5"
-  completedAdapterItemName: "Continuity Satisfaction Proof"
-  nextItem: "A0.6"
-  nextItemName: "Adapter Artifact Rendering"
+  completedAdapterItem: "A0.6"
+  completedAdapterItemName: "Adapter Artifact Rendering"
+  nextItem: "A0.7"
+  nextItemName: "Trigger Materialization Coverage"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -107,6 +107,14 @@ qualityPrinciples:
   - "Unsupported lowering shapes cannot be flattened into weaker canonical contracts."
   - "Materialization validates lowering coverage before provider invocation."
   - "Rendering is explicit and requires executable evidence; manifest existence is not render authorization."
+  - "Provider-owned artifact filenames are reserved for executable target syntax."
+  - "Review-only evidence uses a distinct Flow-owned artifact identity and explicitly declares executable false."
+  - "Every produced adapter artifact has a receipt binding the exact manifest and exact artifact bytes."
+  - "Rendering receipts preserve compatibility, mapping, input, trigger, materialization, payload, binding, control, continuity and readiness evidence."
+  - "Tampered artifact content, manifest drift, missing evidence and duplicate evidence identities fail closed."
+  - "Review-only output remains review evidence in CLI, bundle and conformance contracts and cannot be relabeled as target syntax."
+  - "Fail-fast rendering produces no primary adapter artifact and no rendering receipt."
+  - "Renderer support does not promote a scenario whose capability, topology, control or continuity evidence is incomplete."
   - "Release compliance requires an explicit PASS conformance manifest."
   - "Release publication occurs only after staged bundle verification."
   - "Committed metadata may cite only already-passed validation evidence."
@@ -141,18 +149,18 @@ qualityPrinciples:
   - "Adapter lifecycle completion requires the complete declared production, test, conformance and documentation boundary."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-a0.5-implementation-boundary"
-  flowAgentStructure: "passed-on-a0.5-implementation-boundary"
-  flowAgentContextGeneration: "passed-on-a0.5-implementation-boundary"
-  cleanTest: "passed-on-a0.5-implementation-boundary"
-  conformance: "passed-on-a0.5-implementation-boundary"
-  executableReferenceEvidence: "passed-on-a0.5-implementation-boundary"
-  adapterContinuityEvidence: "passed-on-a0.5-implementation-boundary"
-  validationSource: "Flow CI #2468, run 30741864674, passed exact A0.5 implementation head b1b996508aa9bfb1f645cfd69f7ddb777e22c1d5 and synthetic merge candidate 3538862c7ad1878d8d6d3ae00e8f5447949511aa with 753 tests and 126 conformance checks."
+  flowAgentTooling: "passed-on-a0.6-implementation-boundary"
+  flowAgentStructure: "passed-on-a0.6-implementation-boundary"
+  flowAgentContextGeneration: "passed-on-a0.6-implementation-boundary"
+  cleanTest: "passed-on-a0.6-implementation-boundary"
+  conformance: "passed-on-a0.6-implementation-boundary"
+  executableReferenceEvidence: "passed-on-a0.6-implementation-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-a0.6-implementation-boundary"
+  validationSource: "Flow CI #2486, run 30790917001, passed exact A0.6 implementation head 8d45a90120c3daeea0a3079b2d5ba8d0f9fce34d and synthetic merge candidate 87782cecadebc33c195447983ccff84095276080 with 770 tests and 132 conformance checks."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
-    - "A0.1 through A0.4 are completed and merged."
-    - "A0.5 implementation evidence is external exact-head CI evidence until PR #101 merges; it does not impersonate merged history."
-    - "A0.5 completion metadata cites the passed implementation boundary; the PR completion head must pass a distinct exact-head and synthetic merge-candidate boundary before readiness."
-    - "A0.6 is selected as next without adding its work package or implementation scope."
+    - "A0.1 through A0.5 are completed and merged."
+    - "A0.6 implementation evidence is external exact-head CI evidence until PR #102 merges; it does not impersonate merged history."
+    - "A0.6 completion metadata cites the passed implementation boundary; the PR completion head must pass a distinct exact-head and synthetic merge-candidate boundary before readiness."
+    - "A0.7 is selected as next without adding its work package or implementation scope."
