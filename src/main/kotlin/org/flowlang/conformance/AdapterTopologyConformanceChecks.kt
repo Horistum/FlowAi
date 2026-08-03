@@ -244,7 +244,8 @@ class AdapterStreamConformanceRunner(
             AdapterBindingConformanceChecks(rootDir).checks() +
             AdapterControlConformanceChecks(rootDir, targets).checks() +
             AdapterContinuityConformanceChecks(rootDir, targets, projections).checks() +
-            AdapterArtifactRenderingConformanceChecks(rootDir, targets, projections).checks()
+            AdapterArtifactRenderingConformanceChecks(rootDir, targets, projections).checks() +
+            AdapterTriggerConformanceChecks(rootDir, targets, projections).checks()
         val inventoryResult = runCatching { AdapterConformanceInventory.load(rootDir) }
         val inventory = inventoryResult.getOrNull()
         val observed = produced.map { it.name }
