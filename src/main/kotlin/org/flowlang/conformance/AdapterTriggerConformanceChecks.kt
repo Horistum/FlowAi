@@ -12,7 +12,9 @@ import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
+import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanSchedule
@@ -205,16 +207,23 @@ class AdapterTriggerConformanceChecks(
             add("Bounded event leaf proof expected preliminary PARTIAL registry context.")
             return@buildList
         }
-        val provider = projections.requireProvider("github-actions")
-        val leafCompatibility = preliminary.copy(
+        val selection = TargetSelectionAuthority.fromConformanceCheck(
+            value = "github-actions",
+            checkId = BOUNDED_EVENT_CHECK,
+            targets = targets
+        )
+        val diagnosticManifest = TargetManifestGenerationPipeline(targets, projections)
+            .generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest(plan, selection))
+        val leafCompatibility = diagnosticManifest.compatibility.copy(
             status = SupportLevel.SUPPORTED,
             capabilityStatus = SupportLevel.SUPPORTED,
-            issues = emptyList()
+            issues = emptyList(),
+            executable = true
         )
-        val generated = provider.generate(plan, leafCompatibility)
+        val leafManifest = diagnosticManifest.copy(compatibility = leafCompatibility)
         val assessment = authority.requireMatched(plan, "github-actions")
-        val manifest = authority.reconcileDiagnostic(generated, assessment)
-        val rendered = provider.render(manifest)
+        val manifest = authority.reconcileDiagnostic(leafManifest, assessment)
+        val rendered = projections.requireProvider("github-actions").render(manifest)
         if ("  release:" !in rendered) {
             add("GitHub bounded event renderer did not preserve the exact release event identity.")
         }
