@@ -1,0 +1,123 @@
+target: jenkins
+claims:
+- family: MANUAL
+  status: SUPPORTED
+  mechanism: A manual-only Flow plan emits no automatic Jenkins trigger block and remains explicitly user-invokable as a Jenkins Pipeline job.
+  semantics:
+    supported:
+    - manual.explicit
+    unsupported: {}
+    unknown: {}
+  constraints:
+    workflowScopes:
+    - main
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTriggers
+  - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#jenkinsManualTriggerRemainsManualOnly
+  prerequisites:
+  - The plan contains an explicit MANUAL trigger and no automatic trigger family.
+  limitations:
+  - Jenkins manual invocation policy and authorization remain administrator-owned.
+- family: CRON
+  status: SUPPORTED
+  mechanism: Jenkins declarative Pipeline emits one cron trigger for each preserved portable five-field CRON requirement.
+  semantics:
+    supported:
+    - schedule.cron
+    unsupported: {}
+    unknown: {}
+  constraints:
+    workflowScopes:
+    - main
+    eventNames: []
+    parameterNames: []
+    timezoneMode: FORBIDDEN
+    expressionMode: POSIX_CRON_5_FIELD
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTriggers
+  - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#jenkinsPortableCronPreservesExpression
+  prerequisites:
+  - The CRON expression contains exactly five portable POSIX fields.
+  limitations:
+  - Jenkins-specific H hashing syntax is intentionally outside the portable Flow CRON subset.
+  - The current provider does not preserve an explicit timezone.
+- family: INTERVAL
+  status: UNSUPPORTED
+  mechanism: The Jenkins provider emits only CRON schedule syntax and does not approximate other trigger families.
+  semantics:
+    supported: []
+    unsupported:
+      schedule.interval: An interval duration is not converted to CRON because the conversion changes alignment and catch-up semantics.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTriggers
+  prerequisites: []
+  limitations:
+  - Only the bounded portable CRON subset is materialized.
+- family: CALENDAR
+  status: UNSUPPORTED
+  mechanism: The Jenkins provider emits only CRON schedule syntax and does not approximate other trigger families.
+  semantics:
+    supported: []
+    unsupported:
+      schedule.calendar: Calendar recurrences are not reduced to CRON because exceptions and timezone rules would be lost.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTriggers
+  prerequisites: []
+  limitations:
+  - Only the bounded portable CRON subset is materialized.
+- family: EVENT
+  status: UNSUPPORTED
+  mechanism: The Jenkins provider emits only CRON schedule syntax and does not approximate other trigger families.
+  semantics:
+    supported: []
+    unsupported:
+      event.named: The provider does not materialize Jenkins SCM polling, upstream or plugin events from the generic Flow event contract.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTriggers
+  prerequisites: []
+  limitations:
+  - Only the bounded portable CRON subset is materialized.
+- family: WEBHOOK
+  status: UNSUPPORTED
+  mechanism: The Jenkins provider emits only CRON schedule syntax and does not approximate other trigger families.
+  semantics:
+    supported: []
+    unsupported:
+      webhook.external: No provider-owned webhook endpoint, authentication or payload contract is emitted.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTriggers
+  prerequisites: []
+  limitations:
+  - Only the bounded portable CRON subset is materialized.
