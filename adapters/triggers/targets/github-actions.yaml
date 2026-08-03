@@ -16,7 +16,7 @@ claims:
     timezoneMode: NOT_APPLICABLE
     expressionMode: NONE
   evidenceReferences:
-  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#workflow_dispatch
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt#workflow_dispatch
   - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#githubManualTriggerRendersWorkflowDispatch
   prerequisites: []
   limitations:
@@ -37,7 +37,7 @@ claims:
     timezoneMode: IANA_OPTIONAL
     expressionMode: POSIX_CRON_5_FIELD
   evidenceReferences:
-  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#schedule
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt#schedule
   - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#githubPortableCronPreservesExpressionAndTimezone
   prerequisites:
   - The CRON expression contains exactly five portable POSIX fields.
@@ -59,7 +59,7 @@ claims:
     timezoneMode: NOT_APPLICABLE
     expressionMode: NONE
   evidenceReferences:
-  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt
   prerequisites: []
   limitations:
   - Only the bounded portable CRON subset is materialized.
@@ -78,7 +78,7 @@ claims:
     timezoneMode: NOT_APPLICABLE
     expressionMode: NONE
   evidenceReferences:
-  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt
   prerequisites: []
   limitations:
   - Only the bounded portable CRON subset is materialized.
@@ -101,12 +101,13 @@ claims:
     timezoneMode: NOT_APPLICABLE
     expressionMode: NONE
   evidenceReferences:
-  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#renderGitHubEvents
-  - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#githubNamedEventPreservesIdentity
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt#events
+  - src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt#githubNamedEventPreservesIdentityWithoutClaimingScenarioReadiness
   prerequisites:
   - The event identity is one of push, pull_request or release and declares no unmodeled filters.
   limitations:
   - Branch, path, activity-type and payload filters remain unsupported until represented by a typed Flow event contract.
+  - Native event leaf evidence does not by itself establish whole-scenario executable readiness.
 - family: WEBHOOK
   status: UNSUPPORTED
   mechanism: GitHub schedule and event syntax does not approximate unrelated trigger families.
@@ -122,7 +123,7 @@ claims:
     timezoneMode: NOT_APPLICABLE
     expressionMode: NONE
   evidenceReferences:
-  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt
+  - src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt
   prerequisites: []
   limitations:
   - No endpoint, authentication, replay, signature or payload schema contract is emitted.
