@@ -44,6 +44,17 @@ scenarios:
   continuityKinds: [value]
   baselineExpectation: SUPPORTED_WITH_BINDING
   claim: accepted-evidence
+- id: A05
+  title: terraform-infrastructure-apply-and-verify
+  category: advanced
+  admission: admitted
+  lifecycle: ACCEPTED
+  casePath: cases/A05-infrastructure-provision
+  sourceRefs: [hashicorp-terraform-apply]
+  dominantSemantics: [infrastructure-provision, state-change, verification]
+  continuityKinds: [value]
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: accepted-evidence
 - id: A06
   title: typed-human-input-form
   category: advanced
@@ -82,10 +93,10 @@ scenarios:
   category: negative
   admission: admitted
   lifecycle: ACCEPTED
-  casePath: cases/N05-runtime-generated-infrastructure
+  casePath: cases/N05-runtime-generated-pipeline
   sourceRefs: [buildkite-dynamic-pipeline]
-  dominantSemantics: [dynamic-plan, infrastructure-state-change, opaque-code]
-  continuityKinds: [value, state]
+  dominantSemantics: [dynamic-plan, conditional-delivery, opaque-code]
+  continuityKinds: []
   baselineExpectation: UNSUPPORTED_DYNAMIC_CONSTRUCTION
   claim: accepted-evidence
 - id: N08
