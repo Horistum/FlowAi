@@ -1,0 +1,116 @@
+target: tekton
+claims:
+- family: MANUAL
+  status: UNSUPPORTED
+  mechanism: The current provider emits a Tekton Pipeline only; it does not emit PipelineRun or Tekton Triggers resources.
+  semantics:
+    supported: []
+    unsupported:
+      manual.explicit: A Pipeline definition alone does not create a manual invocation contract.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt
+  prerequisites: []
+  limitations:
+  - PipelineRun, EventListener, Trigger, TriggerTemplate and TriggerBinding ownership is outside the current provider.
+- family: CRON
+  status: UNSUPPORTED
+  mechanism: The current provider emits a Tekton Pipeline only; it does not emit PipelineRun or Tekton Triggers resources.
+  semantics:
+    supported: []
+    unsupported:
+      schedule.cron: The Pipeline artifact contains no scheduler resource.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt
+  prerequisites: []
+  limitations:
+  - PipelineRun, EventListener, Trigger, TriggerTemplate and TriggerBinding ownership is outside the current provider.
+- family: INTERVAL
+  status: UNSUPPORTED
+  mechanism: The current provider emits a Tekton Pipeline only; it does not emit PipelineRun or Tekton Triggers resources.
+  semantics:
+    supported: []
+    unsupported:
+      schedule.interval: The Pipeline artifact contains no interval scheduler resource.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt
+  prerequisites: []
+  limitations:
+  - PipelineRun, EventListener, Trigger, TriggerTemplate and TriggerBinding ownership is outside the current provider.
+- family: CALENDAR
+  status: UNSUPPORTED
+  mechanism: The current provider emits a Tekton Pipeline only; it does not emit PipelineRun or Tekton Triggers resources.
+  semantics:
+    supported: []
+    unsupported:
+      schedule.calendar: The Pipeline artifact contains no calendar scheduler resource.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt
+  prerequisites: []
+  limitations:
+  - PipelineRun, EventListener, Trigger, TriggerTemplate and TriggerBinding ownership is outside the current provider.
+- family: EVENT
+  status: UNSUPPORTED
+  mechanism: The current provider emits a Tekton Pipeline only; it does not emit PipelineRun or Tekton Triggers resources.
+  semantics:
+    supported: []
+    unsupported:
+      event.named: The provider does not emit Tekton Triggers EventListener or event routing resources.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt
+  prerequisites: []
+  limitations:
+  - PipelineRun, EventListener, Trigger, TriggerTemplate and TriggerBinding ownership is outside the current provider.
+- family: WEBHOOK
+  status: UNSUPPORTED
+  mechanism: The current provider emits a Tekton Pipeline only; it does not emit PipelineRun or Tekton Triggers resources.
+  semantics:
+    supported: []
+    unsupported:
+      webhook.external: The provider does not emit a webhook listener, interceptor, binding or trigger template.
+    unknown: {}
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt
+  prerequisites: []
+  limitations:
+  - PipelineRun, EventListener, Trigger, TriggerTemplate and TriggerBinding ownership is outside the current provider.
