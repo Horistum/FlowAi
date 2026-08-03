@@ -27,6 +27,18 @@ Every active target declares exactly one claim for every family. Each claim part
 
 ## Evidence boundary
 
+`adapters/triggers/builtin-trigger-materialization.yaml` is a strict index over `adapters/triggers/targets`.
+
+The loader fails before accepting claims when:
+
+1. an indexed file is missing;
+2. a YAML target file is present but not indexed;
+3. two index entries resolve to the same canonical file;
+4. an entry escapes or nests below the dedicated target directory;
+5. a file name is not lower-case kebab-case YAML;
+6. the file name and declared `target` identity differ;
+7. an index, target, claim, semantic or constraint object has unknown or missing fields.
+
 A supported claim requires all of the following:
 
 1. a composed target projection provider;
@@ -73,6 +85,8 @@ It does not render content and does not choose filenames. It verifies the A0.7 a
 - Missing or inconsistent A0.7 metadata fails closed.
 - A blocked trigger can never produce provider target syntax.
 
+`GitHubActionsTriggerProjectionPlanner` is the production authority for the GitHub Actions `on` mapping. The complete renderer consumes it after executable readiness succeeds. Conformance may also inspect the same leaf projection on a diagnostic manifest without relabeling the entire workflow as executable.
+
 This preserves diagnostic evidence without weakening executable authorization.
 
 ## Current honest support
@@ -112,7 +126,7 @@ Unsupported:
 - generic webhook materialization;
 - event filters, activity types, path filters, branch filters or payload contracts that are not represented by typed Flow fields.
 
-The bounded event claim proves exact renderer syntax only. It does not override separate topology, control, continuity or scenario-executability evidence.
+The bounded event claim proves exact production trigger-planner syntax only. It does not override separate capability, topology, control, continuity or scenario-executability evidence. Provider behavior fixtures are planned through the production `FlowParser` and `FlowPlanner`; no copied compatibility report is used to fabricate executable readiness.
 
 Official context:
 
