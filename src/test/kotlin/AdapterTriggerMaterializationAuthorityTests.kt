@@ -1,4 +1,5 @@
 import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -29,6 +30,29 @@ class AdapterTriggerMaterializationAuthorityTests {
         assertEquals("PASS", report.status, report.findings.joinToString("\n"))
         assertEquals(targets.size, report.targetCount)
         assertEquals(targets.size * 6, report.claimCount)
+    }
+
+    @Test
+    fun strictIndexRejectsUnindexedTargetFiles() {
+        val temporaryRoot = Files.createTempDirectory("flow-a0-7-strict-index").toFile()
+        try {
+            copyRecursively(File(root, "adapters/triggers"), File(temporaryRoot, "adapters/triggers"))
+            File(temporaryRoot, "adapters/triggers/targets/unindexed.yaml").writeText(
+                """
+                target: unindexed
+                claims: []
+                """.trimIndent()
+            )
+
+            val failure = assertFailsWith<IllegalArgumentException> {
+                AdapterTriggerEvidenceLoader.load(temporaryRoot)
+            }
+
+            assertTrue(failure.message.orEmpty().contains("Unindexed files"))
+            assertTrue(failure.message.orEmpty().contains("unindexed.yaml"))
+        } finally {
+            temporaryRoot.deleteRecursively()
+        }
     }
 
     @Test
@@ -145,6 +169,18 @@ class AdapterTriggerMaterializationAuthorityTests {
         assertEquals(AdapterTriggerEvidenceStatus.UNKNOWN, authority.assess(plan, "azure-devops").evidence.single().status)
         assertEquals(AdapterTriggerEvidenceStatus.UNKNOWN, authority.assess(plan, "local").evidence.single().status)
         assertEquals(AdapterTriggerEvidenceStatus.UNSUPPORTED, authority.assess(plan, "tekton").evidence.single().status)
+    }
+
+    private fun copyRecursively(source: File, destination: File) {
+        source.walkTopDown().forEach { current ->
+            val target = File(destination, current.relativeTo(source).path)
+            if (current.isDirectory) {
+                target.mkdirs()
+            } else {
+                target.parentFile.mkdirs()
+                current.copyTo(target, overwrite = true)
+            }
+        }
     }
 
     private fun manual(id: String) = PlanTrigger(id = id, type = "MANUAL", workflows = listOf("main"))
