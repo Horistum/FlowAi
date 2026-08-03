@@ -1,0 +1,1 @@
+{"generated":true,"exactTaskSources":true,"expectedOutcome":"UNSUPPORTED_DYNAMIC_CONSTRUCTION","tasks":[{"sourceId":"generate-pipeline","semanticCapability":"CUSTOM","nodeKind":"Task"}],"requiredRelations":[],"forbiddenOrdering":[],"requiredFeatures":["runtime-generated-plan"],"expectedDiagnostics":["REAL_WORLD_RUNTIME_PLAN_NOT_REPRESENTED"]}
