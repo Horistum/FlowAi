@@ -67,21 +67,14 @@ data class AdapterRoadmapLifecycleCheck(
 )
 
 data class AdapterRoadmapLifecycleReport(
-    val reportVersion: String = "1.1",
+    val reportVersion: String = "1.2",
     val phase: AdapterRoadmapLifecyclePhase,
     val status: String,
     val checks: List<AdapterRoadmapLifecycleCheck>,
     val failedChecks: List<String>
 )
 
-/**
- * Historical lifecycle authority for A0.1.
- *
- * During implementation it requires the exact A0.1 -> A0.2 transition shape.
- * After completion it preserves A0.1 evidence while allowing later adjacent
- * A0.x roadmap progress. A completed authority must certify history, not freeze
- * the global roadmap pointer on its immediate successor forever.
- */
+/** Historical lifecycle authority for A0.1. */
 class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
     fun analyze(): AdapterRoadmapLifecycleReport {
         val workPackage = requiredYaml(WORK_PACKAGE)
@@ -114,9 +107,12 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
                 AdapterRoadmapLifecyclePhase.COMPLETED
             else -> AdapterRoadmapLifecyclePhase.INVALID
         }
-
-        val trackAligned = input.adapterTrackStatus == "active"
-        val linearProgress = AdapterRoadmapSequence.isAdjacentProgress(
+        val trackAligned = AdapterRoadmapSequence.isTrackStatusAligned(
+            input.adapterTrackStatus,
+            input.adapterCompletedItem,
+            input.adapterNextItem
+        )
+        val historicalProgress = AdapterRoadmapSequence.isHistoricalProgress(
             input.adapterCompletedItem,
             input.adapterNextItem,
             minimumCompletedOrdinal = 1
@@ -128,19 +124,22 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
                     input.adapterNextItem == "A0.1"
             AdapterRoadmapLifecyclePhase.COMPLETED -> when (input.a02Status) {
                 "next" ->
-                    linearProgress &&
+                    historicalProgress &&
                         input.adapterCompletedItem == "A0.1" &&
                         input.adapterNextItem == "A0.2"
                 "completed" ->
-                    linearProgress &&
+                    historicalProgress &&
                         (AdapterRoadmapSequence.ordinal(input.adapterCompletedItem) ?: 0) >= 2
                 else -> false
             }
             AdapterRoadmapLifecyclePhase.INVALID -> false
         }
-        val indexAligned = input.primaryStream == "adapters" &&
-            input.indexNextStream == "adapters" &&
-            input.indexNextItem == input.adapterNextItem
+        val indexAligned = AdapterRoadmapSequence.isIndexFocusAligned(
+            input.primaryStream,
+            input.indexNextItem,
+            input.indexNextStream,
+            input.adapterNextItem
+        )
         val releaseAligned = input.releasePrimaryStream == "adapters" &&
             input.releaseNextItem == input.adapterNextItem
         val evidenceAligned = when (phase) {
@@ -153,18 +152,14 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
             check(
                 "adapters.a0.1.lifecycle-phase",
                 phase != AdapterRoadmapLifecyclePhase.INVALID,
-                listOf(
-                    "workPackage=${input.workPackageStatus}",
-                    "a01=${input.a01Status}",
-                    "phase=$phase"
-                ),
+                listOf("workPackage=${input.workPackageStatus}", "a01=${input.a01Status}", "phase=$phase"),
                 "A0.1 lifecycle must be exactly IMPLEMENTING or COMPLETED."
             ),
             check(
                 "adapters.a0.1.track-state",
                 trackAligned,
-                listOf("adapterTrack=${input.adapterTrackStatus}"),
-                "The adapter portfolio track remains active while A0.1 or later A0.x work is selected."
+                listOf("adapterTrack=${input.adapterTrackStatus}", "completed=${input.adapterCompletedItem}", "next=${input.adapterNextItem}"),
+                "The adapter track must be active for adjacent work or completed exactly at terminal A0.7."
             ),
             check(
                 "adapters.a0.1.adapter-roadmap-state",
@@ -174,30 +169,21 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
                     "a02=${input.a02Status}",
                     "completed=${input.adapterCompletedItem}",
                     "next=${input.adapterNextItem}",
-                    "linear=$linearProgress"
+                    "historicalProgress=$historicalProgress"
                 ),
-                "A0.1 implementation must transition to A0.2; after completion later adapter progress must remain adjacent and must not reopen A0.1."
+                "A0.1 completion permits adjacent later progress or the declared terminal A0.7 completion only."
             ),
             check(
                 "adapters.a0.1.index-state",
                 indexAligned,
-                listOf(
-                    "primary=${input.primaryStream}",
-                    "adapterNext=${input.adapterNextItem}",
-                    "indexNext=${input.indexNextItem}",
-                    "nextStream=${input.indexNextStream}"
-                ),
-                "The roadmap index must select the same current adapter item and stream as the adapter roadmap."
+                listOf("primary=${input.primaryStream}", "indexNext=${input.indexNextItem}", "nextStream=${input.indexNextStream}"),
+                "The roadmap index must mirror an active adapter focus or an empty terminal focus."
             ),
             check(
                 "adapters.a0.1.release-state",
                 releaseAligned,
-                listOf(
-                    "primary=${input.releasePrimaryStream}",
-                    "adapterNext=${input.adapterNextItem}",
-                    "releaseNext=${input.releaseNextItem}"
-                ),
-                "Release state must expose the same current adapter item as the adapter roadmap."
+                listOf("primary=${input.releasePrimaryStream}", "releaseNext=${input.releaseNextItem}"),
+                "Release state must expose the same current adapter lifecycle focus."
             ),
             check(
                 "adapters.a0.1.implementation-evidence",
@@ -253,30 +239,14 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
             (value as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
         }.orEmpty()
 
-    private fun check(
-        id: String,
-        passed: Boolean,
-        evidence: List<String>,
-        message: String
-    ): AdapterRoadmapLifecycleCheck = AdapterRoadmapLifecycleCheck(
-        id = id,
-        status = if (passed) "PASS" else "FAIL",
-        evidence = evidence,
-        message = message
-    )
+    private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) =
+        AdapterRoadmapLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
         const val WORK_PACKAGE = ".flow-agent/work-packages/A0.1-adapter-portfolio-reassessment.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
-        private val EVIDENCE_FIELDS = setOf(
-            "status",
-            "workflow",
-            "runNumber",
-            "runId",
-            "exactHead",
-            "mergeCandidate"
-        )
+        private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
     }
 }
