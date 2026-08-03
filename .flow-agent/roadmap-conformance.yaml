@@ -9,7 +9,9 @@ rules:
   - "The gating domains are software delivery, data transformation and infrastructure state change."
   - "Concrete source workflows are evidence inputs, never semantic authorities."
   - "Every accepted case declares exactly one gating domain and immutable source provenance."
-  - "Every gating domain has accepted positive or explicit unsupported evidence plus a negative mutation."
+  - "Every gating domain has accepted behavioral evidence plus a negative mutation."
+  - "Infrastructure state change requires explicit canonical PROVISION semantics; a generic deployment label or command text is insufficient."
+  - "Unsupported runtime-generated delivery structure remains explicit and cannot be approximated as a static plan."
   - "Corpus evidence runs only after frozen Core closure and adapter certification."
   - "Conformance work cannot mutate the Core pre-closure or adapter inventories."
   - "Other domains remain outside the active completion scope."
@@ -20,21 +22,23 @@ currentDecision:
   completedItemName: ""
   nextItem: "C0.1"
   nextItemName: "Bounded Domain Corpus"
-  decisionBasis: "A0.7 completed the terminal adapter item. C0.1 is the first declared successor in the independent conformance stream and consumes the existing real-world corpus without fabricating A0.8."
+  decisionBasis: "A0.7 completed the terminal adapter item. C0.1 is the first declared successor in the independent conformance stream and consumes the real-world corpus without fabricating A0.8 or enriching source meaning."
 
 items:
   - version: "C0.1"
     name: "Bounded Domain Corpus"
     type: "core-evidence"
     status: next
-    purpose: "Exercise preserved meaning, dependencies, controls and explicit model gaps across the three gating domains."
+    purpose: "Exercise preserved meaning, dependencies and explicit model gaps across the three gating domains."
     dependsOnCore: "0.9.7.7"
     completionEvidence:
-      - "Software delivery, data transformation and infrastructure state change each have accepted executable case evidence."
+      - "Software delivery, data transformation and infrastructure state change each have accepted behavioral case evidence."
+      - "Data transformation carries explicit DATA_TRANSFORM semantics and named value continuity."
+      - "Infrastructure state change carries explicit PROVISION semantics backed by a pinned apply workflow."
+      - "Runtime-generated delivery remains explicitly unsupported instead of being approximated or relabeled as infrastructure."
       - "Every accepted case declares one closed domain identity and immutable source provenance."
       - "Every domain has mutation evidence that proves rejection polarity rather than acceptance-only coverage."
       - "The corpus executes through the production intent, validation, AST and planning path."
-      - "Unsupported dynamic construction remains explicit and is never approximated as a static plan."
       - "The conformance inventory is exact and remains separate from frozen Core and adapter inventories."
 
   - version: "C0.2"
