@@ -1,24 +1,41 @@
 project: Flow Conformance
 stream: conformance
-roadmapVersion: 2
-status: gated
+roadmapVersion: 3
+status: active
 
-purpose: "Maintain bounded evidence for universal contracts and topology behavior."
+purpose: "Maintain bounded independent evidence for universal contracts and implementation behavior."
 
 rules:
-  - "The gating domains are software delivery, data transformation, and infrastructure state change."
-  - "Other domains are outside the active completion scope."
+  - "The gating domains are software delivery, data transformation and infrastructure state change."
+  - "Concrete source workflows are evidence inputs, never semantic authorities."
+  - "Every accepted case declares exactly one gating domain and immutable source provenance."
+  - "Every gating domain has accepted positive or explicit unsupported evidence plus a negative mutation."
+  - "Corpus evidence runs only after frozen Core closure and adapter certification."
+  - "Conformance work cannot mutate the Core pre-closure or adapter inventories."
+  - "Other domains remain outside the active completion scope."
   - "Concrete artifact checks remain separate from universal contract checks."
+
+currentDecision:
+  completedItem: ""
+  completedItemName: ""
+  nextItem: "C0.1"
+  nextItemName: "Bounded Domain Corpus"
+  decisionBasis: "A0.7 completed the terminal adapter item. C0.1 is the first declared successor in the independent conformance stream and consumes the existing real-world corpus without fabricating A0.8."
 
 items:
   - version: "C0.1"
     name: "Bounded Domain Corpus"
     type: "core-evidence"
-    status: planned
-    purpose: "Exercise shared contracts across the three gating domains."
+    status: next
+    purpose: "Exercise preserved meaning, dependencies, controls and explicit model gaps across the three gating domains."
     dependsOnCore: "0.9.7.7"
     completionEvidence:
-      - "Meaning, effects, dependencies, policy and controls remain preserved."
+      - "Software delivery, data transformation and infrastructure state change each have accepted executable case evidence."
+      - "Every accepted case declares one closed domain identity and immutable source provenance."
+      - "Every domain has mutation evidence that proves rejection polarity rather than acceptance-only coverage."
+      - "The corpus executes through the production intent, validation, AST and planning path."
+      - "Unsupported dynamic construction remains explicit and is never approximated as a static plan."
+      - "The conformance inventory is exact and remains separate from frozen Core and adapter inventories."
 
   - version: "C0.2"
     name: "Abstract Topology Matrix"
