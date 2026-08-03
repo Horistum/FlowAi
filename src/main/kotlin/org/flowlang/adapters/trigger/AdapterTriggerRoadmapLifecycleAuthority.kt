@@ -1,6 +1,7 @@
 package org.flowlang.adapters.trigger
 
 import java.io.File
+import org.flowlang.adapters.portfolio.AdapterRoadmapSequence
 import org.flowlang.adapters.portfolio.AdapterWorkflowEvidence
 import org.flowlang.serialization.FlowYaml
 
@@ -35,7 +36,7 @@ data class AdapterTriggerLifecycleCheck(
 )
 
 data class AdapterTriggerLifecycleReport(
-    val reportVersion: String = "1.0",
+    val reportVersion: String = "1.1",
     val phase: AdapterTriggerLifecyclePhase,
     val status: String,
     val checks: List<AdapterTriggerLifecycleCheck>,
@@ -86,23 +87,21 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
             AdapterTriggerLifecyclePhase.IMPLEMENTING ->
                 input.adapterCompletedItem == "A0.6" && input.adapterNextItem == "A0.7"
             AdapterTriggerLifecyclePhase.COMPLETED ->
-                input.adapterCompletedItem == "A0.7" && input.adapterNextItem.isBlank()
+                input.adapterCompletedItem == AdapterRoadmapSequence.TERMINAL_ITEM && input.adapterNextItem.isBlank()
             AdapterTriggerLifecyclePhase.INVALID -> false
         }
-        val indexAligned = input.primaryStream == "adapters" && when (phase) {
-            AdapterTriggerLifecyclePhase.IMPLEMENTING ->
-                input.indexNextItem == "A0.7" && input.indexNextStream == "adapters"
-            AdapterTriggerLifecyclePhase.COMPLETED ->
-                input.indexNextItem.isBlank() && input.indexNextStream.isBlank()
-            AdapterTriggerLifecyclePhase.INVALID -> false
-        }
-        val releaseAligned = input.releasePrimaryStream == "adapters" && when (phase) {
-            AdapterTriggerLifecyclePhase.IMPLEMENTING ->
-                input.releaseCompletedItem == "A0.6" && input.releaseNextItem == "A0.7"
-            AdapterTriggerLifecyclePhase.COMPLETED ->
-                input.releaseCompletedItem == "A0.7" && input.releaseNextItem.isBlank()
-            AdapterTriggerLifecyclePhase.INVALID -> false
-        }
+        val indexAligned = AdapterRoadmapSequence.isIndexFocusAligned(
+            input.primaryStream,
+            input.indexNextItem,
+            input.indexNextStream,
+            input.adapterNextItem
+        )
+        val releaseAligned = input.releaseCompletedItem == input.adapterCompletedItem &&
+            AdapterRoadmapSequence.isReleaseFocusAligned(
+                input.releasePrimaryStream,
+                input.releaseNextItem,
+                input.adapterNextItem
+            )
         val evidenceAligned = when (phase) {
             AdapterTriggerLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
             AdapterTriggerLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
@@ -140,7 +139,7 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
                     "next=${input.indexNextItem.ifBlank { "none" }}",
                     "stream=${input.indexNextStream.ifBlank { "none" }}"
                 ),
-                "The roadmap index must expose A0.7 while implementing and no fabricated next item after completion."
+                "After A0.7 completion the roadmap may be terminal or select the explicit conformance successor, but never fabricate A0.8."
             ),
             check(
                 "adapters.a0.7.release-state",
@@ -150,7 +149,7 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
                     "completed=${input.releaseCompletedItem}",
                     "next=${input.releaseNextItem.ifBlank { "none" }}"
                 ),
-                "Release state must expose the same terminal adapter progress."
+                "Release state must retain terminal A0.7 completion while exposing only the explicit conformance successor."
             ),
             check(
                 "adapters.a0.7.implementation-evidence",
