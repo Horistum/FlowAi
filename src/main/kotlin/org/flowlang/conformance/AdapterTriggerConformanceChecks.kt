@@ -7,6 +7,8 @@ import org.flowlang.adapters.trigger.AdapterTriggerEvidenceIntegrityAuthority
 import org.flowlang.adapters.trigger.AdapterTriggerEvidenceStatus
 import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
 import org.flowlang.adapters.trigger.AdapterTriggerRoadmapLifecycleAuthority
+import org.flowlang.ast.ScheduleNode
+import org.flowlang.ast.TriggerNode
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
@@ -16,16 +18,21 @@ import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.parser.FlowParser
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
-import org.flowlang.planner.TaskNode
 
 class AdapterTriggerConformanceChecks(
     private val rootDir: File,
     private val targets: Map<String, TargetCapability>,
     private val projections: TargetProjectionRegistry
 ) {
+    private val modules by lazy {
+        ModuleRegistry.fromDirectory(File(rootDir, "modules"), includeDefaults = true)
+    }
     private val authority by lazy {
         AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
     }
@@ -136,9 +143,12 @@ class AdapterTriggerConformanceChecks(
     }
 
     private fun reviewEvidenceErrors(): List<String> = buildList {
-        val plan = imageBuildPlan(
-            PlanTrigger("interval", "SCHEDULE", listOf("main"), PlanSchedule("INTERVAL", "PT15M", null)),
-            "trigger.schedule.interval"
+        val plan = triggeredCheckoutPlan(
+            TriggerNode(
+                id = "interval",
+                triggerType = "SCHEDULE",
+                schedule = ScheduleNode("INTERVAL", "PT15M")
+            )
         )
         val selection = TargetSelectionAuthority.fromConformanceCheck(
             value = "github-actions",
@@ -171,7 +181,13 @@ class AdapterTriggerConformanceChecks(
     }
 
     private fun executableTriggerErrors(): List<String> = buildList {
-        val plan = imageBuildPlan(cron("nightly", "0 3 * * *", null), "trigger.schedule.cron")
+        val plan = triggeredCheckoutPlan(
+            TriggerNode(
+                id = "nightly",
+                triggerType = "SCHEDULE",
+                schedule = ScheduleNode("CRON", "0 3 * * *")
+            )
+        )
         val selection = TargetSelectionAuthority.fromConformanceCheck(
             value = "jenkins",
             checkId = EXECUTABLE_PROOF_CHECK,
@@ -198,9 +214,8 @@ class AdapterTriggerConformanceChecks(
     }
 
     private fun boundedEventErrors(): List<String> = buildList {
-        val plan = imageBuildPlan(
-            PlanTrigger("release", "EVENT", listOf("main"), event = "release"),
-            "trigger.event"
+        val plan = triggeredCheckoutPlan(
+            TriggerNode(id = "release", triggerType = "EVENT", event = "release")
         )
         val preliminary = CompatibilityAnalyzer(targets).analyze(plan, "github-actions")
         if (preliminary.capabilityStatus != SupportLevel.PARTIAL) {
@@ -232,21 +247,33 @@ class AdapterTriggerConformanceChecks(
         }
     }
 
-    private fun imageBuildPlan(trigger: PlanTrigger, triggerCapability: String): ExecutionPlan = ExecutionPlan(
-        flowName = "a0.7-triggered-image-build",
-        triggers = listOf(trigger),
-        requiredCapabilities = listOf("container.image", "docker.build", triggerCapability),
-        nodes = listOf(
-            TaskNode(
-                id = "build-image",
-                module = "docker",
-                action = "build",
-                target = "registry",
-                params = mapOf("image" to "acme/service:1.0", "path" to ".", "push" to "false"),
-                requiredCapabilities = listOf("container.image", "docker.build")
-            )
+    private fun triggeredCheckoutPlan(trigger: TriggerNode): ExecutionPlan {
+        val document = FlowParser().parse(
+            """
+            version "1.0"
+            use module "git" version "1.0"
+
+            flow "a0.7-triggered-checkout" {
+              systems {
+                system "repo" {
+                  type: git
+                  url: "https://github.com/openai/openai.git"
+                  branch: "main"
+                }
+              }
+
+              steps {
+                git.checkout repo {
+                  depth: 2
+                }
+              }
+            }
+            """.trimIndent()
         )
-    )
+        return FlowPlanner(modules).plan(
+            document.copy(flow = document.flow.copy(triggers = listOf(trigger)))
+        )
+    }
 
     private fun cron(id: String, expression: String, timezone: String?) = PlanTrigger(
         id = id,
