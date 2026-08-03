@@ -1,7 +1,7 @@
 project: Flow
-roadmapVersion: 9
-currentTrack: "adapter-portfolio"
-primaryRoadmapStream: adapters
+roadmapVersion: 10
+currentTrack: "bounded-conformance"
+primaryRoadmapStream: conformance
 
 versionBoundary:
   publishedPackageVersion: "0.9.5"
@@ -73,7 +73,7 @@ currentDecision:
   closureItemStatus: "completed"
   completedAdapterItem: "A0.7"
   completedAdapterItemName: "Trigger Materialization Coverage"
-  nextItem: ""
-  nextItemName: ""
-  nextItemStream: ""
-  decisionBasis: "Flow CI #2526, run 30803256865, passed terminal A0.7 on exact implementation head 9528d67cc568af4539015ac583eca500ea3b29bc and synthetic merge candidate 56b664fac9a0c353073d73439487862f658e8a3c. The adapter stream has no declared successor, so the index records no fabricated next item and leaves the closed Core track unchanged."
+  nextItem: "C0.1"
+  nextItemName: "Bounded Domain Corpus"
+  nextItemStream: "conformance"
+  decisionBasis: "PR #103 merged terminal adapter item A0.7 as 6a46e33c914d77f5ffad0f680f4dc823a325ebfc. The next declared work is C0.1 in the independent conformance stream; no A0.8 is fabricated."
