@@ -29,7 +29,7 @@ class RealWorldCorpusTests {
         assertTrue(corpus.cases.all { it.definition.lifecycle >= RealWorldLifecycle.MUTATION_VALIDATED })
         assertTrue(corpus.cases.all { it.evidence.status == RealWorldLifecycle.ACCEPTED })
         assertEquals(
-            setOf("C02", "C06", "A04", "A05", "A06", "A11", "N01", "N05", "N08"),
+            setOf("C02", "C06", "A04", "P13", "A06", "A11", "N01", "N05", "N08"),
             corpus.cases.map { it.definition.id }.toSet()
         )
     }
@@ -80,7 +80,7 @@ class RealWorldCorpusTests {
                 "C02" to RealWorldResult.SEMANTIC_ONLY,
                 "C06" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "A04" to RealWorldResult.SUPPORTED_WITH_BINDING,
-                "A05" to RealWorldResult.SUPPORTED_WITH_BINDING,
+                "P13" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "A06" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "A11" to RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION,
                 "N01" to RealWorldResult.INVALID_SOURCE_PIPELINE,
@@ -103,7 +103,7 @@ class RealWorldCorpusTests {
 
     @Test
     fun infrastructureCasePreservesProvisionSemanticsAndStateRelations() {
-        val case = runner.load().cases.single { it.definition.id == "A05" }
+        val case = runner.load().cases.single { it.definition.id == "P13" }
         val result = runner.evaluate(case)
 
         assertEquals(RealWorldDomain.INFRASTRUCTURE_STATE_CHANGE, case.definition.classifiedDomain())
