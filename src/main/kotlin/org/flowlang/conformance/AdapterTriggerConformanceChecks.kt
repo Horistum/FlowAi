@@ -147,7 +147,7 @@ class AdapterTriggerConformanceChecks(
             TriggerNode(
                 id = "interval",
                 triggerType = "SCHEDULE",
-                schedule = ScheduleNode("INTERVAL", "PT15M")
+                schedule = ScheduleNode(kind = "INTERVAL", expression = "PT15M")
             )
         )
         val selection = TargetSelectionAuthority.fromConformanceCheck(
@@ -185,7 +185,7 @@ class AdapterTriggerConformanceChecks(
             TriggerNode(
                 id = "nightly",
                 triggerType = "SCHEDULE",
-                schedule = ScheduleNode("CRON", "0 3 * * *")
+                schedule = ScheduleNode(kind = "CRON", expression = "0 3 * * *")
             )
         )
         val selection = TargetSelectionAuthority.fromConformanceCheck(
