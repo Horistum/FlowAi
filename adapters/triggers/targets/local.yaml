@@ -1,0 +1,116 @@
+target: local
+claims:
+- family: MANUAL
+  status: UNKNOWN
+  mechanism: Semantic reference only; no production target provider owns trigger delivery.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      manual.explicit: No production provider is composed for the local semantic reference.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local
+  prerequisites: []
+  limitations:
+  - Preserved trigger structure is not delivery evidence.
+- family: CRON
+  status: UNKNOWN
+  mechanism: Semantic reference only; no production target provider owns trigger delivery.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      schedule.cron: No production scheduler is composed.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local
+  prerequisites: []
+  limitations:
+  - Preserved trigger structure is not delivery evidence.
+- family: INTERVAL
+  status: UNKNOWN
+  mechanism: Semantic reference only; no production target provider owns trigger delivery.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      schedule.interval: No production interval scheduler is composed.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local
+  prerequisites: []
+  limitations:
+  - Preserved trigger structure is not delivery evidence.
+- family: CALENDAR
+  status: UNKNOWN
+  mechanism: Semantic reference only; no production target provider owns trigger delivery.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      schedule.calendar: No production calendar scheduler is composed.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local
+  prerequisites: []
+  limitations:
+  - Preserved trigger structure is not delivery evidence.
+- family: EVENT
+  status: UNKNOWN
+  mechanism: Semantic reference only; no production target provider owns trigger delivery.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      event.named: No production event source is composed.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local
+  prerequisites: []
+  limitations:
+  - Preserved trigger structure is not delivery evidence.
+- family: WEBHOOK
+  status: UNKNOWN
+  mechanism: Semantic reference only; no production target provider owns trigger delivery.
+  semantics:
+    supported: []
+    unsupported: {}
+    unknown:
+      webhook.external: No production webhook listener is composed.
+  constraints:
+    workflowScopes: []
+    eventNames: []
+    parameterNames: []
+    timezoneMode: NOT_APPLICABLE
+    expressionMode: NONE
+  evidenceReferences:
+  - adapters/portfolio/builtin-adapter-portfolio.yaml#targets.local
+  prerequisites: []
+  limitations:
+  - Preserved trigger structure is not delivery evidence.
