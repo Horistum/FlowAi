@@ -8,27 +8,28 @@ import org.flowlang.adapters.trigger.AdapterTriggerAuthorizedRenderingAuthority
 import org.flowlang.adapters.trigger.AdapterTriggerDecision
 import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+import org.flowlang.ast.ScheduleNode
+import org.flowlang.ast.TriggerNode
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.SupportLevel
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.parser.FlowParser
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.PlanSchedule
-import org.flowlang.planner.PlanTrigger
-import org.flowlang.planner.TaskNode
+import org.flowlang.planner.FlowPlanner
 import org.flowlang.targets.builtin.BuiltInTargetProjections
+import org.flowlang.targets.builtin.GitHubActionsTriggerProjectionPlanner
 
 class AdapterTriggerProviderBehaviorTests {
     private val root = File(".")
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
+    private val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
     private val analyzer = CompatibilityAnalyzer(targets)
     private val triggerAuthority = AdapterTriggerMaterializationAuthority(root, targets, BuiltInTargetProjections.registry)
     private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(root, BuiltInTargetProjections.registry)
 
     @Test
     fun jenkinsManualTriggerRemainsManualOnly() {
-        val plan = imageBuildPlan(
-            triggers = listOf(PlanTrigger(id = "manual", type = "MANUAL", workflows = listOf("main"))),
-            triggerCapabilities = listOf("trigger.manual")
-        )
+        val plan = providerPlan(TriggerNode(id = "manual", triggerType = "MANUAL"))
 
         val bundle = renderAuthorized(plan, "jenkins")
 
@@ -44,10 +45,7 @@ class AdapterTriggerProviderBehaviorTests {
 
     @Test
     fun jenkinsPortableCronPreservesExpression() {
-        val plan = imageBuildPlan(
-            triggers = listOf(cron("nightly", "0 3 * * *", null)),
-            triggerCapabilities = listOf("trigger.schedule.cron")
-        )
+        val plan = providerPlan(cron("nightly", "0 3 * * *", null))
 
         val bundle = renderAuthorized(plan, "jenkins")
 
@@ -60,10 +58,7 @@ class AdapterTriggerProviderBehaviorTests {
 
     @Test
     fun githubManualTriggerRendersWorkflowDispatch() {
-        val plan = imageBuildPlan(
-            triggers = listOf(PlanTrigger(id = "manual", type = "MANUAL", workflows = listOf("main"))),
-            triggerCapabilities = listOf("trigger.manual")
-        )
+        val plan = providerPlan(TriggerNode(id = "manual", triggerType = "MANUAL"))
 
         val bundle = renderAuthorized(plan, "github-actions")
 
@@ -73,10 +68,7 @@ class AdapterTriggerProviderBehaviorTests {
 
     @Test
     fun githubPortableCronPreservesExpressionAndTimezone() {
-        val plan = imageBuildPlan(
-            triggers = listOf(cron("nightly", "0 3 * * *", "Europe/Prague")),
-            triggerCapabilities = listOf("trigger.schedule.cron")
-        )
+        val plan = providerPlan(cron("nightly", "0 3 * * *", "Europe/Prague"))
 
         val bundle = renderAuthorized(plan, "github-actions")
 
@@ -87,48 +79,33 @@ class AdapterTriggerProviderBehaviorTests {
 
     @Test
     fun githubNamedEventPreservesIdentityWithoutClaimingScenarioReadiness() {
-        val plan = imageBuildPlan(
-            triggers = listOf(
-                PlanTrigger(
-                    id = "release",
-                    type = "EVENT",
-                    workflows = listOf("main"),
-                    event = "release"
-                )
-            ),
-            triggerCapabilities = listOf("trigger.event")
-        )
-        val preliminary = analyzer.analyze(plan, "github-actions")
-        assertEquals(SupportLevel.PARTIAL, preliminary.capabilityStatus)
+        val plan = providerPlan(TriggerNode(id = "release", triggerType = "EVENT", event = "release"))
+        val compatibility = analyzer.analyze(plan, "github-actions")
+        assertEquals(SupportLevel.PARTIAL, compatibility.capabilityStatus)
         val provider = BuiltInTargetProjections.registry.requireProvider("github-actions")
-        val leafFixture = preliminary.copy(
-            status = SupportLevel.SUPPORTED,
-            capabilityStatus = SupportLevel.SUPPORTED,
-            issues = emptyList()
-        )
-        val generated = provider.generate(plan, leafFixture)
+        val generated = provider.generate(plan, compatibility)
         val assessment = triggerAuthority.requireMatched(plan, "github-actions")
         val manifest = triggerAuthority.reconcileDiagnostic(generated, assessment)
 
-        val rendered = provider.render(manifest)
+        val triggerProjection = GitHubActionsTriggerProjectionPlanner.render(manifest)
+        val reviewBundle = renderingAuthority.render(manifest)
 
-        assertTrue(rendered.contains("  release:"))
-        assertFalse(rendered.contains("repository_dispatch"))
+        assertTrue(triggerProjection.contains("  release:"))
+        assertFalse(triggerProjection.contains("repository_dispatch"))
+        assertEquals(SupportLevel.PARTIAL, manifest.compatibility.status)
+        assertFalse(manifest.compatibility.executable)
+        assertEquals(AdapterRenderedArtifactKind.REVIEW_EVIDENCE, reviewBundle.artifact.kind)
         assertEquals(AdapterTriggerDecision.MATCHED.name, manifest.metadata["adapterTriggerDecision"])
     }
 
     @Test
     fun unsupportedIntervalProducesReviewEvidenceAndNeverTargetSyntax() {
-        val plan = imageBuildPlan(
-            triggers = listOf(
-                PlanTrigger(
-                    id = "frequent",
-                    type = "SCHEDULE",
-                    workflows = listOf("main"),
-                    schedule = PlanSchedule("INTERVAL", "PT15M", null)
-                )
-            ),
-            triggerCapabilities = listOf("trigger.schedule.interval")
+        val plan = providerPlan(
+            TriggerNode(
+                id = "frequent",
+                triggerType = "SCHEDULE",
+                schedule = ScheduleNode(kind = "INTERVAL", expression = "PT15M")
+            )
         )
         val compatibility = analyzer.analyze(plan, "github-actions")
         val provider = BuiltInTargetProjections.registry.requireProvider("github-actions")
@@ -155,33 +132,37 @@ class AdapterTriggerProviderBehaviorTests {
             renderingAuthority.render(manifest)
         }
 
-    private fun imageBuildPlan(
-        triggers: List<PlanTrigger>,
-        triggerCapabilities: List<String>
-    ): ExecutionPlan = ExecutionPlan(
-        flowName = "triggered-image-build",
-        triggers = triggers,
-        requiredCapabilities = listOf("container.image", "docker.build") + triggerCapabilities,
-        nodes = listOf(
-            TaskNode(
-                id = "build-image",
-                module = "docker",
-                action = "build",
-                target = "registry",
-                params = mapOf(
-                    "image" to "acme/service:1.0",
-                    "path" to ".",
-                    "push" to "false"
-                ),
-                requiredCapabilities = listOf("container.image", "docker.build")
-            )
-        )
-    )
+    private fun providerPlan(trigger: TriggerNode): ExecutionPlan {
+        val document = FlowParser().parse(
+            """
+            version "1.0"
+            use module "git" version "1.0"
 
-    private fun cron(id: String, expression: String, timezone: String?) = PlanTrigger(
+            flow "a0.7-provider-behavior" {
+              systems {
+                system "repo" {
+                  type: git
+                  url: "https://github.com/openai/openai.git"
+                  branch: "main"
+                }
+              }
+
+              steps {
+                git.checkout repo {
+                  depth: 2
+                }
+              }
+            }
+            """.trimIndent()
+        )
+        return FlowPlanner(modules).plan(
+            document.copy(flow = document.flow.copy(triggers = listOf(trigger)))
+        )
+    }
+
+    private fun cron(id: String, expression: String, timezone: String?) = TriggerNode(
         id = id,
-        type = "SCHEDULE",
-        workflows = listOf("main"),
-        schedule = PlanSchedule("CRON", expression, timezone)
+        triggerType = "SCHEDULE",
+        schedule = ScheduleNode(kind = "CRON", expression = expression, timezone = timezone)
     )
 }
