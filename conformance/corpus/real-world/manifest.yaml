@@ -26,27 +26,28 @@ casePackages:
 - cases/C02-ordering-only-diamond
 - cases/C06-artifact-transfer
 - cases/A04-data-transformation-etl
+- cases/A05-infrastructure-provision
 - cases/A06-typed-human-input
 - cases/A11-output-driven-matrix
 - cases/N01-missing-result
-- cases/N05-runtime-generated-infrastructure
+- cases/N05-runtime-generated-pipeline
 - cases/N08-parallelism-loss
 counts:
-  sources: 16
-  admittedSources: 12
+  sources: 17
+  admittedSources: 13
   screenedSources: 4
   productionSources: 3
-  exampleSources: 9
+  exampleSources: 10
   semanticReferenceSources: 4
   scenarios: 44
   admittedScenarios: 19
   screenedScenarios: 9
   plannedScenarios: 16
-  executableCases: 8
+  executableCases: 9
   productionCases: 1
-  exampleCases: 7
+  exampleCases: 8
   semanticReferenceCases: 0
-  mutationCases: 10
+  mutationCases: 11
 invariants:
 - A source is never admitted from a mutable branch reference.
 - A source workflow is evidence of platform behavior, not the authority for universal Flow meaning.
@@ -55,6 +56,7 @@ invariants:
 - Source composition and executable-case primary provenance are explicit; official examples are not described as production workflows.
 - Every accepted case owns one closed gating domain, a canonical intent, expected plan semantics, target assessment, mutation evidence and immutable source provenance.
 - Every gating domain owns accepted behavioral evidence and at least one accepted negative mutation.
+- Infrastructure-state-change coverage requires a canonical PROVISION action backed by an immutable source that performs an apply operation.
 - Unsupported or ambiguous behavior remains explicit and cannot be converted to PASS by approximation.
 - The corpus runs after frozen Core and adapter inventories and cannot mutate either evidence boundary.
 - No corpus case creates a new Core capability merely because one platform exposes a feature.
