@@ -2,9 +2,9 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.flowlang.adapters.control.AdapterControlDecision
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.capabilities.ExecutionReadinessStatus
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
@@ -53,7 +53,12 @@ class AdapterControlCliMaterializationTests {
         assertEquals(ExecutionReadinessStatus.BLOCKED, result.readiness.readiness)
         assertEquals(TargetRenderMode.REVIEW_ONLY, result.renderReadiness.mode)
         assertEquals(CliTargetEvidenceOutcome.REVIEW_ONLY, result.outcome)
-        assertNull(result.renderedArtifact)
+        val rendered = requireNotNull(result.renderedArtifact)
+        assertEquals(AdapterRenderedArtifactKind.REVIEW_EVIDENCE, rendered.kind)
+        assertEquals("flow-jenkins-review.yaml", rendered.fileName)
+        assertTrue(rendered.content.contains("kind: TargetProjectionReview"))
+        assertTrue(rendered.content.contains("executable: false"))
+        assertEquals(TargetRenderMode.REVIEW_ONLY, rendered.evidence.renderMode)
         assertEquals(AdapterControlDecision.BLOCKED.name, result.manifest.metadata["adapterControlDecision"])
         assertEquals(SupportLevel.UNSUPPORTED, result.compatibility.status)
         assertFalse(result.compatibility.executable)
