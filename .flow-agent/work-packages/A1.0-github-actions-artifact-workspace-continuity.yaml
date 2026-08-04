@@ -21,3 +21,10 @@ forbiddenScope:
   - "No use of job ordering as artifact or workspace continuity evidence."
   - "No target-specific semantics added to Core."
   - "No C0.2 implementation before A1.0 executable evidence exists."
+implementationEvidence:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: 2661
+  runId: 30896680373
+  exactHead: "ec1de139c77725611e835387d1e0e3e6d2b2acac"
+  mergeCandidate: "3ff9c275ab07750873b00aff9ff5f1f40d63f835"
