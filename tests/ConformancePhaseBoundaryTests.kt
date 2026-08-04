@@ -20,7 +20,10 @@ class ConformancePhaseBoundaryTests {
         val adapterIndex = names.indexOf(AdapterConformanceRunner.INVENTORY_CHECK)
         val conformanceIndex = names.indexOf(RealWorldCorpusConformanceChecks.INVENTORY_CHECK)
         val boundedIndexes = names.withIndex()
-            .filter { (_, name) -> BOUNDED_PREFIXES.any(name::startsWith) }
+            .filter { (_, name) ->
+                name != RealWorldCorpusConformanceChecks.INVENTORY_CHECK &&
+                    BOUNDED_PREFIXES.any(name::startsWith)
+            }
             .map { it.index }
         val coreInventory = ConformanceSuiteInventory.load()
         val adapterInventory = AdapterConformanceInventory.load(File("."))
