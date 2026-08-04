@@ -34,9 +34,28 @@ class RoadmapStreamTransitionAuthorityTests {
         assertTrue(report.errors.any { "C0.2 must remain planned" in it })
     }
 
+    @Test
+    fun transitionRejectsAdapterOwnedCrossStreamKnowledge() {
+        val root = createA10Boundary()
+        File(root, RoadmapStreamTransitionAuthority.ADAPTER_SEQUENCE).writeText(
+            """
+            package fixture
+            object AdapterRoadmapSequence {
+                const val SUCCESSOR_STREAM = "conformance"
+            }
+            """.trimIndent() + "\n"
+        )
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "globally-owned successor knowledge" in it })
+    }
+
     private fun createA10Boundary(): File {
         val root = createTempDirectory("flow-roadmap-transition").toFile()
         REQUIRED_FILES.forEach { path -> File(root, path).apply { parentFile.mkdirs(); writeText("fixture\n") } }
+        File(root, RoadmapStreamTransitionAuthority.ADAPTER_SEQUENCE).writeText(
+            "package fixture\nobject AdapterRoadmapSequence\n"
+        )
         write(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX, """
             primaryRoadmapStream: adapters
             currentDecision:

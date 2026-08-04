@@ -43,6 +43,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                 add("Roadmap transition must be C0_1_1_ACTIVE or A1_0_ACTIVE.")
             }
             requireRetainedClosure(roadmap, releaseState, this)
+            adapterSequenceCouplingErrors().forEach(::add)
             if (conformanceRoadmap.itemStatus("C0.1") != "completed") {
                 add("C0.1 must remain completed historical evidence while C0.1.1 repairs its gates.")
             }
@@ -108,6 +109,17 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         )
     }
 
+    private fun adapterSequenceCouplingErrors(): List<String> {
+        val file = File(rootDir, ADAPTER_SEQUENCE)
+        if (!file.isFile) return listOf("Required adapter sequence authority is missing: ${file.path}")
+        val source = file.readText()
+        return FORBIDDEN_ADAPTER_SEQUENCE_PATTERNS.mapNotNull { pattern ->
+            pattern.find(source)?.let { match ->
+                "AdapterRoadmapSequence contains globally-owned successor knowledge '${match.value}' matched by ${pattern.pattern}."
+            }
+        }
+    }
+
     private fun requireRetainedClosure(
         roadmap: Map<String, Any?>,
         releaseState: Map<String, Any?>,
@@ -168,14 +180,23 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         const val CORRECTION_WORK_PACKAGE = ".flow-agent/work-packages/C0.1.1-bounded-domain-integrity-correction.yaml"
         const val A10_WORK_PACKAGE = ".flow-agent/work-packages/A1.0-github-actions-artifact-workspace-continuity.yaml"
+        const val ADAPTER_SEQUENCE = "src/main/kotlin/org/flowlang/adapters/portfolio/AdapterRoadmapSequence.kt"
         private const val CORRECTION_ITEM_NAME = "Bounded Domain Integrity Correction"
         private const val CORRECTION_PACKAGE_NAME = "C0.1.1 Bounded Domain Integrity Correction"
         private const val A10_NAME = "GitHub Actions Artifact and Workspace Continuity"
         private val SHA_PATTERN = Regex("[0-9a-f]{40}")
         private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
+        private val FORBIDDEN_ADAPTER_SEQUENCE_PATTERNS = listOf(
+            Regex("\\bSUCCESSOR_STREAM\\b"),
+            Regex("\\bCONFORMANCE_ITEM\\b"),
+            Regex("\\bisExplicitSuccessorFocus\\b"),
+            Regex("\\bconformance\\b", RegexOption.IGNORE_CASE),
+            Regex("\\bC0\\.\\d+")
+        )
         private val REQUIRED_FILES = listOf(
             CORRECTION_WORK_PACKAGE,
             A10_WORK_PACKAGE,
+            ADAPTER_SEQUENCE,
             "src/main/kotlin/org/flowlang/roadmap/RoadmapStreamTransitionAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/RealWorldPolarityAuthority.kt",
             "src/test/kotlin/RoadmapStreamTransitionAuthorityTests.kt",
