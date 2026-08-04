@@ -1,0 +1,23 @@
+version: "A1.0"
+name: "GitHub Actions Artifact and Workspace Continuity"
+type: "adapter-continuity"
+stream: adapters
+status: active
+objective: "Make checkout-build-image executable on GitHub Actions by implementing real cross-job artifact and workspace continuity without changing Core dependency meaning."
+dependsOnAdapters: "A0.7"
+dependsOnConformance: "C0.1.1"
+activationGate:
+  correction: "C0.1.1"
+  requiredStatus: "complete"
+requiredEvidence:
+  - "Production upload-artifact and download-artifact generation for declared ARTIFACT relations."
+  - "Explicit workspace reconstruction across isolated GitHub Actions jobs."
+  - "Needs topology derived from ExecutionPlan ordering without using ordering as continuity proof."
+  - "The checkout-build-image scenario renders executable GitHub Actions syntax through the production pipeline."
+  - "Jenkins executable reference evidence remains live and unchanged."
+  - "Behavioral tests verify producer bytes are available to the consumer job under the declared identity."
+forbiddenScope:
+  - "No generic claim that all VALUE, WORKSPACE or STATE continuity is supported."
+  - "No use of job ordering as artifact or workspace continuity evidence."
+  - "No target-specific semantics added to Core."
+  - "No C0.2 implementation before A1.0 executable evidence exists."

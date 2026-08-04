@@ -1,51 +1,65 @@
 project: Flow Conformance
 stream: conformance
-roadmapVersion: 4
+roadmapVersion: 6
 status: active
 
 purpose: "Maintain bounded independent evidence for universal contracts and implementation behavior."
 
 rules:
-  - "The gating domains are software delivery, data transformation and infrastructure state change."
+  - "The C0.1 domain vocabulary closes only C0.1 evidence scope, not the universe of automation domains."
   - "Concrete source workflows are evidence inputs, never semantic authorities."
-  - "Every accepted case declares exactly one gating domain and immutable source provenance."
-  - "Every gating domain has accepted behavioral evidence plus a negative mutation."
+  - "Every accepted case declares exactly one bounded domain and immutable source provenance."
+  - "Every bounded domain has at least one positively representable baseline."
+  - "Mutation polarity requires an observed REPRESENTABLE baseline to become an observed REJECTED mutation."
+  - "Unsupported dynamic construction is an independent honesty gate and cannot satisfy positive coverage."
   - "Infrastructure state change requires explicit canonical PROVISION semantics; a generic deployment label or command text is insufficient."
-  - "Unsupported runtime-generated delivery structure remains explicit and cannot be approximated as a static plan."
   - "Corpus evidence runs only after frozen Core closure and adapter certification."
   - "Conformance work cannot mutate the Core pre-closure or adapter inventories."
-  - "Other domains remain outside the active completion scope."
   - "Concrete artifact checks remain separate from universal contract checks."
+  - "C0.2 remains planned until A1.0 establishes a second executable target with real continuity evidence."
 
 currentDecision:
-  completedItem: "C0.1"
-  completedItemName: "Bounded Domain Corpus"
-  nextItem: "C0.2"
-  nextItemName: "Abstract Topology Matrix"
-  decisionBasis: "Flow CI #2641, run 30817690333, passed C0.1 on exact implementation head 2fd59e7fa0ae486cf073453d1b59a3d19ed2b4d4 and synthetic merge candidate cbd8788ccd212e263d80d141ea5f5bf2648073c3 with 808 tests and 120 conformance checks. C0.2 is selected without adding its implementation scope."
+  completedItem: "C0.1.1"
+  completedItemName: "Bounded Domain Integrity Correction"
+  nextItem: ""
+  nextItemName: ""
+  decisionBasis: "Flow CI #2655, run 30887655401, passed C0.1.1 on exact head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e. A1.0 is selected globally before C0.2."
 
 items:
   - version: "C0.1"
     name: "Bounded Domain Corpus"
     type: "core-evidence"
     status: completed
-    purpose: "Exercise preserved meaning, dependencies and explicit model gaps across the three gating domains."
+    purpose: "Exercise preserved meaning, dependencies and explicit model gaps across the three bounded evidence domains."
     dependsOnCore: "0.9.7.7"
     completionEvidence:
-      - "Software delivery, data transformation and infrastructure state change each have accepted behavioral case evidence."
+      - "Each bounded domain has a positively representable baseline."
       - "Data transformation carries explicit DATA_TRANSFORM semantics and named value continuity."
       - "Infrastructure state change carries explicit PROVISION semantics backed by a pinned apply workflow."
-      - "Runtime-generated delivery remains explicitly unsupported instead of being approximated or relabeled as infrastructure."
-      - "Every accepted case declares one closed domain identity and immutable source provenance."
-      - "Every domain has mutation evidence that proves rejection polarity rather than acceptance-only coverage."
+      - "Runtime-generated delivery remains explicitly unsupported instead of being approximated."
+      - "Mutation polarity compares baseline and mutation behavior rather than counting diagnostic mutations."
+      - "The domain vocabulary is explicitly scoped to C0.1 evidence and is not an exhaustive taxonomy."
       - "The corpus executes through the production intent, validation, AST and planning path."
       - "The conformance inventory is exact and remains separate from frozen Core and adapter inventories."
+
+  - version: "C0.1.1"
+    name: "Bounded Domain Integrity Correction"
+    type: "bounded-correction"
+    status: completed
+    purpose: "Repair C0.1 representability, mutation-polarity and roadmap-ownership enforcement without changing Core meaning."
+    dependsOnCore: "0.9.7.10"
+    completionEvidence:
+      - "Each domain has a positively representable baseline."
+      - "Mutation polarity compares observed baseline and mutation results."
+      - "Dynamic negative evidence is checked independently."
+      - "Cross-stream selection is globally owned."
+      - "Flow CI #2655 passed exact-head and synthetic merge-candidate validation."
 
   - version: "C0.2"
     name: "Abstract Topology Matrix"
     type: "topology-evidence"
-    status: next
-    purpose: "Exercise plans against synthetic topology profiles."
+    status: planned
+    purpose: "Exercise plans against synthetic topology profiles after the second executable target exists."
     dependsOnCore: "0.9.7.8"
     completionEvidence:
       - "Action coverage alone does not establish scenario readiness."

@@ -1,78 +1,42 @@
 # C0.1 Bounded Domain Corpus
 
-## Purpose
+## Scope
 
-C0.1 activates the independent conformance stream after terminal adapter item A0.7. It does not create A0.8 and does not extend Core or adapter meaning.
+C0.1 closes an evidence corpus for exactly three bounded domains: software delivery, data transformation and infrastructure state change. This is a completion boundary for C0.1 only. It is not an exhaustive taxonomy of automation and does not exclude later domains from later roadmap work.
 
-The bounded completion scope is exactly:
+Source workflows are behavioral evidence. They cannot add Core capabilities or redefine dependency, control, topology or materialization meaning.
 
-- software delivery
-- data transformation
-- infrastructure state change
+## Positive representability
 
-## Evidence model
+A domain is covered only when at least one accepted baseline produces a plan, emits no diagnostic and has `SUPPORTED` or `SUPPORTED_WITH_BINDING` outcome. Merely loading a negative example successfully is not positive domain evidence.
 
-Every accepted case owns:
+The positive baselines include:
 
-1. one closed domain identity,
-2. immutable repository revision and source path,
-3. explicit license evidence,
-4. reconstructed canonical intent,
-5. expected production-pipeline plan semantics,
-6. exact diagnostics for unsupported behavior,
-7. at least one accepted negative mutation.
+- software delivery through existing supported delivery cases,
+- data transformation through the pinned Airflow ETL case with canonical `DATA_TRANSFORM` tasks and named VALUE relations,
+- infrastructure state change through the pinned Terraform apply case with canonical `PROVISION` and state verification relations.
 
-A source workflow is behavioral evidence. It is not an authority that may add a Core capability or redefine dependency, control, topology or materialization meaning.
+## Mutation polarity
 
-## Domain coverage
+Mutation polarity is an observed transition, not a count of diagnostic fixtures. The baseline must classify as `REPRESENTABLE`; the mutation must classify as `REJECTED` with its exact expected diagnostics. A negative baseline followed by another negative outcome does not flip polarity and cannot satisfy the gate.
 
-### Software delivery
+## Dynamic boundary honesty
 
-The existing accepted cases retain build/release-style DAG, artifact, approval, matrix and negative semantic-loss evidence. Their domain is explicit rather than inferred from catalog prose.
+Runtime-generated Buildkite structure and the output-driven matrix remain `UNSUPPORTED_DYNAMIC_CONSTRUCTION`. Their exact diagnostics and non-executable assessments are checked by an independent dynamic-boundary gate. They do not impersonate positive coverage or mutation polarity.
 
-`N05-runtime-generated-pipeline` consumes the pinned Buildkite dynamic-pipeline example. The source discovers test directories at runtime and conditionally emits a delivery step, but it does not identify an application or infrastructure resource. C0.1 therefore preserves the runtime pipeline-generation request as software-delivery evidence and reports `UNSUPPORTED_DYNAMIC_CONSTRUCTION` with `REAL_WORLD_RUNTIME_PLAN_NOT_REPRESENTED`.
+## Roadmap ownership
 
-No fixed task list is allowed to impersonate runtime-generated structure, and the source's `echo Deploy!` text is not accepted as proof of infrastructure mutation.
+A0.7 remains terminal for the A0 adapter series and forbids fabricated A0.8 work. Completed adapter lifecycle code no longer names the conformance stream or recognizes C0 item syntax. Cross-stream focus belongs to `RoadmapStreamTransitionAuthority`.
 
-### Data transformation
+The correction has two legal states:
 
-`A04-data-transformation-etl` is derived from the pinned Apache Airflow TaskFlow ETL example. The case requires three canonical `DATA_TRANSFORM` tasks and two named VALUE relations:
+1. `CORRECTION_REQUIRED`, where normal roadmap selection is blocked;
+2. `A1_0_ACTIVE`, reached only after exact-head and synthetic merge-candidate correction evidence passes.
 
-- `orders`: extract to transform
-- `order_total`: transform to load
+A1.0 then implements real GitHub Actions artifact and workspace continuity. C0.2 follows A1.0, when a second executable target exists to exercise topology assumptions against reality.
 
-Removing the extract output must fail before planning with `REAL_WORLD_MISSING_VALUE_PRODUCER`.
+## Validation boundaries
 
-### Infrastructure state change
+The original implementation boundary is Flow CI #2641. The distinct PR completion boundary is Flow CI #2647 on exact head `f084a2705ba699b4b2f7b19921bd3923ba2f73fd` and synthetic merge candidate `fb67bef6844e9fcfb2c050bebf2edbae10efc863`. PR #104 merged as `c65b30d493e6348c2b73261c634a7bb35e6cce6a`.
 
-`P13-infrastructure-provision` is a newly declared production scenario derived from the pinned HashiCorp setup-terraform workflow. It does not reuse the existing `A05 suspend-and-resume` identity. The source executes `terraform init`, `terraform apply -auto-approve` and reads Terraform output.
-
-The reconstructed intent requires:
-
-- an initialization step producing `initialized_configuration`,
-- an explicit canonical `PROVISION` task consuming that configuration and producing `provisioned_state`,
-- a `VERIFY` task consuming the provisioned state,
-- exact ORDERING and named VALUE relations across both boundaries.
-
-Removing the `provisioned_state` producer must fail before planning with `REAL_WORLD_MISSING_VALUE_PRODUCER`. This proves infrastructure state-change semantics without claiming production cloud readiness or a specific provider.
-
-## Independent gates
-
-C0.1 adds a dedicated conformance inventory after frozen Core closure and the completed adapter inventory. The gates verify:
-
-- lifecycle alignment across work package, roadmap index, conformance roadmap and release state,
-- exact source and case composition,
-- closed domain coverage,
-- every accepted case through production intent loading, validation, AST lowering and planning,
-- explicit `DATA_TRANSFORM` and `PROVISION` semantic representation for their claimed domains,
-- all mutations with exact diagnostics,
-- at least one accepted diagnostic mutation per domain,
-- exact conformance check inventory.
-
-The Core pre-closure inventory and adapter inventory remain unchanged.
-
-## Completion boundary
-
-Flow CI #2641 passed the exact C0.1 implementation head and its synthetic merge candidate with 808 tests and 120 conformance checks. The work package therefore records C0.1 as complete and the roadmap selects C0.2 without adding C0.2 implementation scope.
-
-This metadata is a completion candidate until its own distinct exact-head and synthetic merge-candidate Flow CI boundary passes. The completion boundary must not reuse or impersonate the implementation evidence.
+C0.1.1 records the post-merge integrity correction separately; its evidence must not reuse either historical boundary.

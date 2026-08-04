@@ -13,14 +13,17 @@ import org.flowlang.release.SemanticClosureAuthority
 
 class ConformancePhaseBoundaryTests {
     @Test
-    fun boundedDomainEvidenceCannotEnterFrozenCoreOrAdapterInventories() {
+    fun boundedConformanceEvidenceCannotEnterFrozenCoreOrAdapterInventories() {
         val summary = ConformanceRunner().run()
         val names = summary.checks.map { it.name }
         val closureIndex = names.indexOf(SemanticClosureAuthority.CHECK_ID)
         val adapterIndex = names.indexOf(AdapterConformanceRunner.INVENTORY_CHECK)
         val conformanceIndex = names.indexOf(RealWorldCorpusConformanceChecks.INVENTORY_CHECK)
-        val realWorldIndexes = names.withIndex()
-            .filter { it.value.startsWith(REAL_WORLD_PREFIX) }
+        val boundedIndexes = names.withIndex()
+            .filter { (_, name) ->
+                name != RealWorldCorpusConformanceChecks.INVENTORY_CHECK &&
+                    BOUNDED_PREFIXES.any(name::startsWith)
+            }
             .map { it.index }
         val coreInventory = ConformanceSuiteInventory.load()
         val adapterInventory = AdapterConformanceInventory.load(File("."))
@@ -28,14 +31,13 @@ class ConformancePhaseBoundaryTests {
         assertTrue(closureIndex >= 0, names.joinToString())
         assertTrue(adapterIndex > closureIndex, names.joinToString())
         assertTrue(conformanceIndex > adapterIndex, names.joinToString())
-        assertTrue(realWorldIndexes.isNotEmpty(), names.joinToString())
-        assertTrue(realWorldIndexes.all { it > conformanceIndex }, names.joinToString())
-        assertFalse(coreInventory.preClosureChecks.any { it.startsWith(REAL_WORLD_PREFIX) || it.startsWith(CONFORMANCE_PREFIX) })
-        assertFalse(adapterInventory.checks.any { it.startsWith(REAL_WORLD_PREFIX) || it.startsWith(CONFORMANCE_PREFIX) })
+        assertTrue(boundedIndexes.isNotEmpty(), names.joinToString())
+        assertTrue(boundedIndexes.all { it > conformanceIndex }, names.joinToString())
+        assertFalse(coreInventory.preClosureChecks.any { name -> BOUNDED_PREFIXES.any(name::startsWith) })
+        assertFalse(adapterInventory.checks.any { name -> BOUNDED_PREFIXES.any(name::startsWith) })
     }
 
     companion object {
-        private const val REAL_WORLD_PREFIX = "real-world-corpus."
-        private const val CONFORMANCE_PREFIX = "conformance.c0.1."
+        private val BOUNDED_PREFIXES = listOf("real-world-corpus.", "conformance.c0.1.", "roadmap.stream-transition-")
     }
 }

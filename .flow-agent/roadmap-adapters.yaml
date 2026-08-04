@@ -1,7 +1,7 @@
 project: Flow Adapter Portfolio
 stream: adapters
-roadmapVersion: 8
-status: completed
+roadmapVersion: 9
+status: active
 
 purpose: >-
   Manage concrete implementation bindings and artifact generation independently
@@ -17,12 +17,12 @@ activationGate:
 continuousReferenceEvidence:
   scenario: "checkout-build-image"
   currentExecutableTarget: "jenkins"
-  rule: "The existing executable reference remains in the unmodified standard CI throughout every adapter work item."
+  rule: "The existing Jenkins executable reference remains in standard CI throughout A1.0."
   failurePolicy: "Repair an adapter-local regression or deliberately demote the claim with evidence; never weaken a Core invariant to preserve the previous label."
   otherBuiltInTargets:
     - "GitHub Actions and Tekton action-level native evidence remains tested."
     - "Action-level evidence does not imply scenario executability without continuity and topology proof."
-    - "Any existing executable claim that lacks the frozen proof is demoted to REVIEW_ONLY; the regression is intended."
+    - "Any executable promotion requires the complete production evidence path."
 
 rules:
   - "Concrete platform names belong only to adapter-specific work packages and evidence."
@@ -40,7 +40,7 @@ rules:
   - "Every control family declares a complete supported, unsupported and unknown semantic partition."
   - "Unsupported approval, retry, timeout, compensation and scheduling requirements force review-only diagnostic evidence."
   - "Continuity materialization consumes only existing ORDERING, VALUE, WORKSPACE and STATE relations."
-  - "ORDERING never proves data, artifact or state continuity."
+  - "ORDERING never proves data, workspace, artifact or state continuity."
   - "A STATE relation requires both mutable transfer and durable lifetime evidence."
   - "Supported continuity claims require a composed provider, production implementation evidence and independent behavioral proof."
   - "Profile-only continuity claims remain UNKNOWN until a provider supplies relation-specific evidence."
@@ -56,13 +56,14 @@ rules:
   - "Maintenance evidence stays live throughout adapter work."
   - "Capability profiles, native leaf projections and end-to-end executable scenarios are separate evidence classes."
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
+  - "A0.7 is terminal for the A0 series; A1.0 begins a separately declared executable-continuity series."
 
 currentDecision:
   completedItem: "A0.7"
   completedItemName: "Trigger Materialization Coverage"
-  nextItem: ""
-  nextItemName: ""
-  decisionBasis: "Flow CI #2526, run 30803256865, passed A0.7 on exact implementation head 9528d67cc568af4539015ac583eca500ea3b29bc and synthetic merge candidate 56b664fac9a0c353073d73439487862f658e8a3c. A0.7 is the terminal declared adapter item; the adapter roadmap closes without fabricating A0.8 or selecting undeclared work."
+  nextItem: "A1.0"
+  nextItemName: "GitHub Actions Artifact and Workspace Continuity"
+  decisionBasis: "Flow CI #2655, run 30887655401, passed the C0.1.1 activation gate on exact head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e. A1.0 is the first declared post-A0 adapter item; no A0.8 exists."
 
 items:
   - version: "A0.1"
@@ -180,3 +181,19 @@ items:
     completionEvidence:
       - "Unsupported trigger forms remain explicit."
       - "No trigger approximation changes timing or delivery semantics silently."
+
+  - version: "A1.0"
+    name: "GitHub Actions Artifact and Workspace Continuity"
+    type: "adapter-continuity"
+    status: next
+    purpose: "Implement real cross-job artifact transfer and workspace reconstruction so checkout-build-image can become executable on GitHub Actions without redefining Core dependency meaning."
+    dependsOnCore: "0.9.7.4"
+    dependsOnAdapters: "A0.7"
+    completionEvidence:
+      - "Declared ARTIFACT relations generate production upload-artifact and download-artifact steps with stable identities."
+      - "Workspace reconstruction is explicit across isolated jobs and is never inferred from ordering."
+      - "GitHub Actions needs topology preserves ExecutionPlan ordering without impersonating continuity evidence."
+      - "checkout-build-image renders executable GitHub Actions syntax through the production pipeline."
+      - "Behavioral tests prove producer bytes reach the consumer job under the declared identity."
+      - "Jenkins executable reference evidence remains live and unchanged."
+      - "Unsupported VALUE and STATE continuity forms remain explicit."

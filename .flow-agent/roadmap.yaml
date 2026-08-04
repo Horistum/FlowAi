@@ -1,7 +1,7 @@
 project: Flow
-roadmapVersion: 11
-currentTrack: "bounded-conformance"
-primaryRoadmapStream: conformance
+roadmapVersion: 13
+currentTrack: "adapter-executable-continuity"
+primaryRoadmapStream: adapters
 
 versionBoundary:
   publishedPackageVersion: "0.9.5"
@@ -30,9 +30,10 @@ roadmapIndex:
 
 rules:
   - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
+  - "Cross-stream focus is owned by a global roadmap transition authority, never by a completed stream lifecycle."
   - "The primary Flow Agent work item is selected from primaryRoadmapStream only after that stream's activation and dependency gates pass."
-  - "An active bounded correction overrides every normal roadmap stream and blocks selection of a new item."
-  - "A completed roadmap item remains immutable evidence; later streams consume it rather than reopening it without a falsified invariant."
+  - "A stream-local correction is selected as that stream's next item and blocks later normal work without impersonating a Core correction."
+  - "A completed roadmap item remains immutable evidence unless a concrete invariant is falsified and reopened as a bounded correction."
   - "closureItem identifies the bounded Core closure identity independently from the active non-Core work item."
   - "Each roadmap stream may advance independently without redefining another stream's contracts."
   - "Core work may not depend on unfinished adapter or conformance work."
@@ -42,7 +43,8 @@ rules:
   - "A previous executable or support label has no grandfathered status."
   - "No roadmap item may introduce runtime execution, an SDK-first architecture or implementation-specific public syntax."
   - "No roadmap item may bend code or weaken validation only to satisfy tests."
-  - "The gating corpus is bounded to software delivery, data transformation and infrastructure state change."
+  - "The three C0.1 domains close only its evidence scope, not the automation taxonomy."
+  - "A1.0 precedes C0.2 so topology conformance is exercised against a second real executable target rather than an invented abstraction."
 
 architectureConstitution:
   identity:
@@ -68,12 +70,15 @@ currentDecision:
   correctionState: "complete"
   activeCorrectionWorkPackage: ""
   activeCorrectionWorkPackageName: ""
+  conformanceCorrectionState: "complete"
+  activeConformanceCorrectionWorkPackage: ""
+  activeConformanceCorrectionWorkPackageName: ""
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
   completedAdapterItem: "A0.7"
   completedAdapterItemName: "Trigger Materialization Coverage"
-  nextItem: "C0.2"
-  nextItemName: "Abstract Topology Matrix"
-  nextItemStream: "conformance"
-  decisionBasis: "Flow CI #2641, run 30817690333, passed C0.1 on exact implementation head 2fd59e7fa0ae486cf073453d1b59a3d19ed2b4d4 and synthetic merge candidate cbd8788ccd212e263d80d141ea5f5bf2648073c3 with 808 tests and 120 conformance checks. Completion metadata selects C0.2 without adding C0.2 implementation scope or changing the closed Core and adapter tracks."
+  nextItem: "A1.0"
+  nextItemName: "GitHub Actions Artifact and Workspace Continuity"
+  nextItemStream: "adapters"
+  decisionBasis: "Flow CI #2655, run 30887655401, passed C0.1.1 on exact implementation head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e. C0.1.1 is complete, A1.0 is selected as the next adapter item, and C0.2 remains planned until real GitHub Actions executable continuity exists."
