@@ -2,28 +2,35 @@ package org.flowlang.adapters.continuity
 
 import java.io.File
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
 import org.flowlang.generators.manifest.TargetProjectionExecutionGate
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ExecutionPlan
 
 /**
- * Adapter-owned execution gate for continuity evidence.
+ * Adapter-owned continuity boundary composed at the production projection edge.
  *
- * Target capability and topology registries describe available platform
- * mechanisms. This gate proves that the selected provider implements every
- * continuity relation required by the concrete plan before target syntax can be
- * emitted.
+ * It has two distinct responsibilities over the same evidence source:
+ * 1. produce a bounded plan-specific capability view before generic matching;
+ * 2. require exact continuity satisfaction before executable provider rendering.
  */
 class AdapterContinuityProjectionExecutionGate(
     rootDir: File,
     targets: Map<String, TargetCapability>,
     projections: TargetProjectionRegistry
-) : TargetProjectionExecutionGate {
+) : TargetProjectionExecutionGate, TargetProjectionCapabilityResolver {
     private val authority = AdapterContinuitySatisfactionAuthority(
         rootDir = rootDir,
         targets = targets,
         projections = projections
     )
+    private val capabilityResolver = AdapterContinuityScopedCapabilityResolver()
+
+    override fun resolve(
+        plan: ExecutionPlan,
+        target: String,
+        declared: TargetCapability
+    ): TargetCapability = capabilityResolver.resolve(plan, target, declared)
 
     override fun requireAuthorized(plan: ExecutionPlan, target: String) {
         authority.requireMatched(plan, target)

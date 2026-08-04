@@ -23,8 +23,8 @@ import org.flowlang.validator.FlowValidator
 import java.io.File
 
 /**
- * Generates the committed reference snapshot bundle through the real semantic,
- * compatibility, materialization, trigger and adapter artifact rendering boundaries.
+ * Generates committed reference snapshots through the production semantic,
+ * plan-specific capability, materialization, trigger and rendering boundaries.
  */
 class ReferenceSnapshotBundleGenerator(
     private val rootDir: File = File("."),
@@ -68,14 +68,13 @@ class ReferenceSnapshotBundleGenerator(
         val validation = FlowValidator(registry).validate(ast)
         require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
         val plan = FlowPlanner(registry).plan(ast)
-        val compatibilityAnalyzer = CompatibilityAnalyzer(targets)
-        val readinessAnalyzer = ExecutionReadinessAnalyzer(targets)
         val evidence = mutableListOf<ReferenceTargetProjectionEvidence>()
         val renderedByTarget = linkedMapOf<String, String>()
 
         targetIds.sorted().forEach { target ->
-            val compatibility = compatibilityAnalyzer.analyze(plan, target, strict = false)
-            val readiness = readinessAnalyzer.analyze(plan, target, strict = false)
+            val effectiveTargets = manifestPipeline.effectiveTargets(plan, target)
+            val compatibility = CompatibilityAnalyzer(effectiveTargets).analyze(plan, target, strict = false)
+            val readiness = ExecutionReadinessAnalyzer(effectiveTargets).analyze(plan, target, strict = false)
             if (compatibility.hasErrors || !readiness.generationAllowed) {
                 evidence += ReferenceBlockedProjectionEvidence(compatibility, readiness)
             } else {
