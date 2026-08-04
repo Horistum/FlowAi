@@ -12,9 +12,10 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
  *
  * The historical monolith is split into explicit evidence phases. The frozen
  * Core pre-closure list is built independently and is the only input accepted
- * by [SemanticClosureChecks]. Adapter and real-world checks are composed only
- * after that snapshot, so moving their final presentation order cannot rewrite
- * the evidence set that closed Core v0.9.7.
+ * by [SemanticClosureChecks]. Frozen A0 adapter certification runs next. New
+ * adapter evolution is composed through a separate post-A0 inventory before
+ * the real-world conformance stream, so later work cannot rewrite either
+ * historical evidence boundary.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
@@ -30,10 +31,11 @@ class ConformanceRunner(
         val preClosureChecks = buildPreClosureChecks()
         val closureChecks = buildClosureChecks(preClosureChecks)
         val adapterChecks = AdapterStreamConformanceRunner(rootDir, targets, projections).checks()
+        val adapterEvolutionChecks = AdapterExecutableContinuityConformanceRunner(rootDir, targets, projections).checks()
         val realWorldChecks = RealWorldCorpusConformanceChecks(rootDir, registry, targets, projections).checks()
 
         return ConformanceSummary(
-            preClosureChecks + closureChecks + adapterChecks + realWorldChecks
+            preClosureChecks + closureChecks + adapterChecks + adapterEvolutionChecks + realWorldChecks
         )
     }
 

@@ -1,0 +1,7 @@
+version: "1.0"
+checks:
+  - "adapters.a1.0.lifecycle-integrity"
+  - "adapters.a1.0.promotion-integrity"
+  - "adapters.a1.0.executable-reference"
+  - "adapters.a1.0.fail-closed-boundary"
+  - "adapters.a1.0.jenkins-reference-preservation"
