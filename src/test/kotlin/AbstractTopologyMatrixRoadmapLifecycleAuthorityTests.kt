@@ -9,11 +9,11 @@ import org.flowlang.conformance.TopologyMatrixWorkflowEvidence
 
 class AbstractTopologyMatrixRoadmapLifecycleAuthorityTests {
     @Test
-    fun repositoryDeclaresValidImplementingC02Boundary() {
+    fun repositoryDeclaresValidatingC02BoundaryAfterImplementationEvidence() {
         val report = AbstractTopologyMatrixRoadmapLifecycleAuthority(File(".")).analyze()
 
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
-        assertEquals(AbstractTopologyMatrixLifecyclePhase.IMPLEMENTING, report.phase)
+        assertEquals(AbstractTopologyMatrixLifecyclePhase.VALIDATING, report.phase)
     }
 
     @Test
