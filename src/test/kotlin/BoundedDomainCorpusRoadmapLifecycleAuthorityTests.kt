@@ -29,13 +29,13 @@ class BoundedDomainCorpusRoadmapLifecycleAuthorityTests {
     }
 
     @Test
-    fun completedBoundaryRejectsPrematureC02Selection() {
+    fun completedBoundaryDoesNotOwnLaterC02Selection() {
         val root = createBoundary(false)
         val roadmap = File(root, BoundedDomainCorpusRoadmapLifecycleAuthority.CONFORMANCE_ROADMAP)
         roadmap.writeText(roadmap.readText().replace("status: planned", "status: next"))
         val report = BoundedDomainCorpusRoadmapLifecycleAuthority(root).analyze()
-        assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "C0.2 must remain planned" in it })
+        assertEquals("COMPLETED", report.phase)
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
     private fun createBoundary(sameBoundary: Boolean): File {

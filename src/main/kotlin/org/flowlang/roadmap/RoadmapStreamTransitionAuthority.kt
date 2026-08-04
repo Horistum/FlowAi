@@ -6,6 +6,7 @@ import org.flowlang.serialization.FlowYaml
 enum class RoadmapTransitionPhase {
     C0_1_1_ACTIVE,
     A1_0_ACTIVE,
+    C0_2_ACTIVE,
     INVALID
 }
 
@@ -15,7 +16,7 @@ data class RoadmapStreamTransitionReport(
     val errors: List<String>
 )
 
-/** Owns cross-stream focus after C0.1 without leaking future-stream knowledge into A0 lifecycle code. */
+/** Owns cross-stream focus without leaking successor-stream knowledge into adapter-local lifecycle code. */
 class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
     fun analyze(): RoadmapStreamTransitionReport {
         val roadmap = requiredYaml(ROADMAP_INDEX)
@@ -24,6 +25,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         val releaseState = requiredYaml(RELEASE_STATE)
         val correction = requiredYaml(CORRECTION_WORK_PACKAGE)
         val a10 = requiredYaml(A10_WORK_PACKAGE)
+        val c02 = requiredYaml(C02_WORK_PACKAGE)
 
         val conformanceCorrectionState = roadmap.string("currentDecision", "conformanceCorrectionState")
         val activeConformanceCorrection = roadmap.string("currentDecision", "activeConformanceCorrectionWorkPackage")
@@ -35,79 +37,58 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                 activeConformanceCorrection.isBlank() &&
                 correction.string("status") == "complete" &&
                 a10.string("status") == "active" -> RoadmapTransitionPhase.A1_0_ACTIVE
+            conformanceCorrectionState == "complete" &&
+                activeConformanceCorrection.isBlank() &&
+                correction.string("status") == "complete" &&
+                a10.string("status") == "complete" &&
+                c02.string("status") == "active" -> RoadmapTransitionPhase.C0_2_ACTIVE
             else -> RoadmapTransitionPhase.INVALID
         }
 
         val errors = buildList {
             if (phase == RoadmapTransitionPhase.INVALID) {
-                add("Roadmap transition must be C0_1_1_ACTIVE or A1_0_ACTIVE.")
+                add("Roadmap transition must be C0_1_1_ACTIVE, A1_0_ACTIVE or C0_2_ACTIVE.")
             }
-            requireRetainedClosure(roadmap, releaseState, this)
+            requireRetainedClosure(roadmap, releaseState, phase, this)
             adapterSequenceCouplingErrors().forEach(::add)
             if (conformanceRoadmap.itemStatus("C0.1") != "completed") {
-                add("C0.1 must remain completed historical evidence while C0.1.1 repairs its gates.")
+                add("C0.1 must remain completed historical evidence throughout later transitions.")
             }
-            if (conformanceRoadmap.itemStatus("C0.2") != "planned") {
-                add("C0.2 must remain planned until A1.0 executable continuity evidence is completed.")
+            val expectedC02Status = if (phase == RoadmapTransitionPhase.C0_2_ACTIVE) "next" else "planned"
+            if (phase != RoadmapTransitionPhase.INVALID && conformanceRoadmap.itemStatus("C0.2") != expectedC02Status) {
+                add("C0.2 must be '$expectedC02Status' in phase $phase.")
             }
             REQUIRED_FILES.filterNot { File(rootDir, it).isFile }.forEach {
                 add("Required stream-transition file is missing: $it")
             }
 
             when (phase) {
-                RoadmapTransitionPhase.C0_1_1_ACTIVE -> {
-                    if (roadmap.string("primaryRoadmapStream") != "conformance" ||
-                        roadmap.string("currentDecision", "nextItem") != "C0.1.1" ||
-                        roadmap.string("currentDecision", "nextItemName") != CORRECTION_ITEM_NAME ||
-                        roadmap.string("currentDecision", "nextItemStream") != "conformance"
-                    ) add("Roadmap index must select the active C0.1.1 conformance correction.")
-                    if (roadmap.string("currentDecision", "activeConformanceCorrectionWorkPackageName") != CORRECTION_PACKAGE_NAME) {
-                        add("Roadmap index must identify the active C0.1.1 work package by name.")
-                    }
-                    if (conformanceRoadmap.itemStatus("C0.1.1") != "next" ||
-                        conformanceRoadmap.string("currentDecision", "nextItem") != "C0.1.1"
-                    ) add("Conformance roadmap must select C0.1.1 as its next item.")
-                    if (adapterRoadmap.string("status") != "completed" ||
-                        adapterRoadmap.string("currentDecision", "completedItem") != "A0.7" ||
-                        adapterRoadmap.string("currentDecision", "nextItem").isNotBlank()
-                    ) add("The adapter roadmap must remain closed at A0.7 while C0.1.1 is active.")
-                    if (a10.string("status") != "planned") add("A1.0 must remain planned until correction evidence passes.")
-                    if (correction.map("implementationEvidence").isNotEmpty() ||
-                        correction.map("completionBoundary").isNotEmpty()
-                    ) {
-                        add("An active correction must not contain authored implementation or completion evidence.")
-                    }
-                }
-                RoadmapTransitionPhase.A1_0_ACTIVE -> {
-                    if (roadmap.string("primaryRoadmapStream") != "adapters" ||
-                        roadmap.string("currentDecision", "nextItem") != "A1.0" ||
-                        roadmap.string("currentDecision", "nextItemName") != A10_NAME ||
-                        roadmap.string("currentDecision", "nextItemStream") != "adapters"
-                    ) add("Roadmap index must select A1.0 after correction completion.")
-                    if (releaseState.string("roadmapState", "primaryStream") != "adapters" ||
-                        releaseState.string("roadmapState", "nextItem") != "A1.0" ||
-                        releaseState.string("roadmapState", "nextItemName") != A10_NAME
-                    ) add("Release state must select the same A1.0 adapter focus.")
-                    if (adapterRoadmap.string("status") != "active" ||
-                        adapterRoadmap.string("currentDecision", "completedItem") != "A0.7" ||
-                        adapterRoadmap.string("currentDecision", "nextItem") != "A1.0" ||
-                        adapterRoadmap.itemStatus("A1.0") != "next"
-                    ) add("Adapter roadmap must retain completed A0.7 and activate A1.0.")
-                    if (conformanceRoadmap.itemStatus("C0.1.1") != "completed") {
-                        add("C0.1.1 must be completed before A1.0 activation.")
-                    }
-                    val implementationEvidence = correction.map("implementationEvidence")
-                    val completionBoundary = correction.map("completionBoundary")
-                    if (!validEvidence(implementationEvidence)) {
-                        add("Completed correction requires strict exact-head and merge-candidate implementation evidence.")
-                    }
-                    if (!validEvidence(completionBoundary)) {
-                        add("Completed correction requires a strict exact-head and merge-candidate completion boundary.")
-                    }
-                    if (!distinctEvidenceBoundaries(implementationEvidence, completionBoundary)) {
-                        add("Correction implementation and completion evidence must use distinct runs and revisions.")
-                    }
-                }
+                RoadmapTransitionPhase.C0_1_1_ACTIVE -> validateCorrectionPhase(
+                    roadmap,
+                    adapterRoadmap,
+                    conformanceRoadmap,
+                    correction,
+                    a10,
+                    this
+                )
+                RoadmapTransitionPhase.A1_0_ACTIVE -> validateA10Phase(
+                    roadmap,
+                    releaseState,
+                    adapterRoadmap,
+                    conformanceRoadmap,
+                    correction,
+                    this
+                )
+                RoadmapTransitionPhase.C0_2_ACTIVE -> validateC02Phase(
+                    roadmap,
+                    releaseState,
+                    adapterRoadmap,
+                    conformanceRoadmap,
+                    correction,
+                    a10,
+                    c02,
+                    this
+                )
                 RoadmapTransitionPhase.INVALID -> Unit
             }
         }
@@ -117,6 +98,117 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             phase = phase,
             errors = errors
         )
+    }
+
+    private fun validateCorrectionPhase(
+        roadmap: Map<String, Any?>,
+        adapterRoadmap: Map<String, Any?>,
+        conformanceRoadmap: Map<String, Any?>,
+        correction: Map<String, Any?>,
+        a10: Map<String, Any?>,
+        errors: MutableList<String>
+    ) {
+        if (roadmap.string("primaryRoadmapStream") != "conformance" ||
+            roadmap.string("currentDecision", "nextItem") != "C0.1.1" ||
+            roadmap.string("currentDecision", "nextItemName") != CORRECTION_ITEM_NAME ||
+            roadmap.string("currentDecision", "nextItemStream") != "conformance"
+        ) errors += "Roadmap index must select the active C0.1.1 conformance correction."
+        if (roadmap.string("currentDecision", "activeConformanceCorrectionWorkPackageName") != CORRECTION_PACKAGE_NAME) {
+            errors += "Roadmap index must identify the active C0.1.1 work package by name."
+        }
+        if (conformanceRoadmap.itemStatus("C0.1.1") != "next" ||
+            conformanceRoadmap.string("currentDecision", "nextItem") != "C0.1.1"
+        ) errors += "Conformance roadmap must select C0.1.1 as its next item."
+        if (adapterRoadmap.string("status") != "completed" ||
+            adapterRoadmap.string("currentDecision", "completedItem") != "A0.7" ||
+            adapterRoadmap.string("currentDecision", "nextItem").isNotBlank()
+        ) errors += "The adapter roadmap must remain closed at A0.7 while C0.1.1 is active."
+        if (a10.string("status") != "planned") errors += "A1.0 must remain planned until correction evidence passes."
+        if (correction.map("implementationEvidence").isNotEmpty() ||
+            correction.map("completionBoundary").isNotEmpty()
+        ) errors += "An active correction must not contain authored implementation or completion evidence."
+    }
+
+    private fun validateA10Phase(
+        roadmap: Map<String, Any?>,
+        releaseState: Map<String, Any?>,
+        adapterRoadmap: Map<String, Any?>,
+        conformanceRoadmap: Map<String, Any?>,
+        correction: Map<String, Any?>,
+        errors: MutableList<String>
+    ) {
+        if (roadmap.string("primaryRoadmapStream") != "adapters" ||
+            roadmap.string("currentDecision", "nextItem") != "A1.0" ||
+            roadmap.string("currentDecision", "nextItemName") != A10_NAME ||
+            roadmap.string("currentDecision", "nextItemStream") != "adapters"
+        ) errors += "Roadmap index must select A1.0 after correction completion."
+        if (releaseState.string("roadmapState", "primaryStream") != "adapters" ||
+            releaseState.string("roadmapState", "nextItem") != "A1.0" ||
+            releaseState.string("roadmapState", "nextItemName") != A10_NAME
+        ) errors += "Release state must select the same A1.0 adapter focus."
+        if (adapterRoadmap.string("status") != "active" ||
+            adapterRoadmap.string("currentDecision", "completedItem") != "A0.7" ||
+            adapterRoadmap.string("currentDecision", "nextItem") != "A1.0" ||
+            adapterRoadmap.itemStatus("A1.0") != "next"
+        ) errors += "Adapter roadmap must retain completed A0.7 and activate A1.0."
+        if (conformanceRoadmap.itemStatus("C0.1.1") != "completed") {
+            errors += "C0.1.1 must be completed before A1.0 activation."
+        }
+        requireDistinctEvidence(correction, "Completed correction", errors)
+    }
+
+    private fun validateC02Phase(
+        roadmap: Map<String, Any?>,
+        releaseState: Map<String, Any?>,
+        adapterRoadmap: Map<String, Any?>,
+        conformanceRoadmap: Map<String, Any?>,
+        correction: Map<String, Any?>,
+        a10: Map<String, Any?>,
+        c02: Map<String, Any?>,
+        errors: MutableList<String>
+    ) {
+        if (roadmap.string("primaryRoadmapStream") != "conformance" ||
+            roadmap.string("currentDecision", "nextItem") != "C0.2" ||
+            roadmap.string("currentDecision", "nextItemName") != C02_NAME ||
+            roadmap.string("currentDecision", "nextItemStream") != "conformance"
+        ) errors += "Roadmap index must select C0.2 after A1.0 completion."
+        if (releaseState.string("roadmapState", "primaryStream") != "conformance" ||
+            releaseState.string("roadmapState", "nextItem") != "C0.2" ||
+            releaseState.string("roadmapState", "nextItemName") != C02_NAME
+        ) errors += "Release state must select the same C0.2 conformance focus."
+        if (adapterRoadmap.string("status") != "completed" ||
+            adapterRoadmap.string("currentDecision", "completedItem") != "A1.0" ||
+            adapterRoadmap.string("currentDecision", "nextItem").isNotBlank() ||
+            adapterRoadmap.itemStatus("A1.0") != "completed"
+        ) errors += "Adapter roadmap must close at A1.0 before C0.2 activation."
+        if (conformanceRoadmap.itemStatus("C0.1.1") != "completed" ||
+            conformanceRoadmap.itemStatus("C0.2") != "next" ||
+            conformanceRoadmap.string("currentDecision", "nextItem") != "C0.2"
+        ) errors += "Conformance roadmap must retain C0.1.1 and select C0.2."
+        requireDistinctEvidence(correction, "Completed correction", errors)
+        requireDistinctEvidence(a10, "Completed A1.0", errors)
+        if (c02.string("status") != "active") errors += "C0.2 work package must be active at handoff."
+        if (c02.map("implementationEvidence").isNotEmpty() || c02.map("completionBoundary").isNotEmpty()) {
+            errors += "Newly activated C0.2 must not contain authored implementation or completion evidence."
+        }
+    }
+
+    private fun requireDistinctEvidence(
+        workPackage: Map<String, Any?>,
+        subject: String,
+        errors: MutableList<String>
+    ) {
+        val implementationEvidence = workPackage.map("implementationEvidence")
+        val completionBoundary = workPackage.map("completionBoundary")
+        if (!validEvidence(implementationEvidence)) {
+            errors += "$subject requires strict exact-head and merge-candidate implementation evidence."
+        }
+        if (!validEvidence(completionBoundary)) {
+            errors += "$subject requires a strict exact-head and merge-candidate completion boundary."
+        }
+        if (!distinctEvidenceBoundaries(implementationEvidence, completionBoundary)) {
+            errors += "$subject implementation and completion evidence must use distinct runs and revisions."
+        }
     }
 
     private fun adapterSequenceCouplingErrors(): List<String> {
@@ -133,19 +225,21 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
     private fun requireRetainedClosure(
         roadmap: Map<String, Any?>,
         releaseState: Map<String, Any?>,
+        phase: RoadmapTransitionPhase,
         errors: MutableList<String>
     ) {
         if (roadmap.string("currentDecision", "closureItem") != "0.9.7.10" ||
             roadmap.string("currentDecision", "closureItemStatus") != "completed"
         ) errors += "Roadmap index must retain completed Core closure identity."
-        if (roadmap.string("currentDecision", "completedAdapterItem") != "A0.7") {
-            errors += "Roadmap index must retain completed adapter item A0.7."
-        }
         if (releaseState.string("roadmapState", "closureItem") != "0.9.7.10" ||
             releaseState.string("roadmapState", "closureItemStatus") != "completed"
         ) errors += "Release state must retain completed Core closure identity."
-        if (releaseState.string("roadmapState", "completedAdapterItem") != "A0.7") {
-            errors += "Release state must retain completed adapter item A0.7."
+        val expectedAdapter = if (phase == RoadmapTransitionPhase.C0_2_ACTIVE) "A1.0" else "A0.7"
+        if (phase != RoadmapTransitionPhase.INVALID && roadmap.string("currentDecision", "completedAdapterItem") != expectedAdapter) {
+            errors += "Roadmap index must retain completed adapter item $expectedAdapter."
+        }
+        if (phase != RoadmapTransitionPhase.INVALID && releaseState.string("roadmapState", "completedAdapterItem") != expectedAdapter) {
+            errors += "Release state must retain completed adapter item $expectedAdapter."
         }
     }
 
@@ -201,10 +295,12 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         const val CORRECTION_WORK_PACKAGE = ".flow-agent/work-packages/C0.1.1-bounded-domain-integrity-correction.yaml"
         const val A10_WORK_PACKAGE = ".flow-agent/work-packages/A1.0-github-actions-artifact-workspace-continuity.yaml"
+        const val C02_WORK_PACKAGE = ".flow-agent/work-packages/C0.2-abstract-topology-matrix.yaml"
         const val ADAPTER_SEQUENCE = "src/main/kotlin/org/flowlang/adapters/portfolio/AdapterRoadmapSequence.kt"
         private const val CORRECTION_ITEM_NAME = "Bounded Domain Integrity Correction"
         private const val CORRECTION_PACKAGE_NAME = "C0.1.1 Bounded Domain Integrity Correction"
         private const val A10_NAME = "GitHub Actions Artifact and Workspace Continuity"
+        private const val C02_NAME = "Abstract Topology Matrix"
         private val SHA_PATTERN = Regex("[0-9a-f]{40}")
         private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val FORBIDDEN_ADAPTER_SEQUENCE_PATTERNS = listOf(
@@ -217,6 +313,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         private val REQUIRED_FILES = listOf(
             CORRECTION_WORK_PACKAGE,
             A10_WORK_PACKAGE,
+            C02_WORK_PACKAGE,
             ADAPTER_SEQUENCE,
             "src/main/kotlin/org/flowlang/roadmap/RoadmapStreamTransitionAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/RealWorldPolarityAuthority.kt",

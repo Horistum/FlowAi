@@ -1,0 +1,16 @@
+kind: FlowAdapterExecutableReferencePromotions
+version: "1.0"
+promotions:
+  - target: github-actions
+    supportClass: executable_reference
+    scenarioId: checkout-build-image
+    snapshotReference: "conformance/snapshots/github-actions-checkout-build-image/snapshot-index.json"
+    scopeIdentity: "github-actions|ARTIFACT|artifact.shared-workspace|git.checkout|docker.build|source|git.checkout,docker.build"
+    evidenceReferences:
+      - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt"
+      - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedCapabilityResolver.kt"
+      - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityProjectionExecutionGate.kt"
+      - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+      - "src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt"
+      - "tests/FlowFirstExecutableReferenceScenarioTests.kt"
+      - "docs/A1_0_GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"

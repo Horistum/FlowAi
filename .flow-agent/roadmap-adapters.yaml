@@ -1,7 +1,7 @@
 project: Flow Adapter Portfolio
 stream: adapters
-roadmapVersion: 9
-status: active
+roadmapVersion: 10
+status: completed
 
 purpose: >-
   Manage concrete implementation bindings and artifact generation independently
@@ -16,11 +16,13 @@ activationGate:
 
 continuousReferenceEvidence:
   scenario: "checkout-build-image"
-  currentExecutableTarget: "jenkins"
-  rule: "The existing Jenkins executable reference remains in standard CI throughout A1.0."
+  currentExecutableTargets:
+    - "jenkins"
+    - "github-actions"
+  rule: "The Jenkins and bounded GitHub Actions executable references remain in standard CI after A1.0."
   failurePolicy: "Repair an adapter-local regression or deliberately demote the claim with evidence; never weaken a Core invariant to preserve the previous label."
   otherBuiltInTargets:
-    - "GitHub Actions and Tekton action-level native evidence remains tested."
+    - "Tekton action-level native evidence remains tested."
     - "Action-level evidence does not imply scenario executability without continuity and topology proof."
     - "Any executable promotion requires the complete production evidence path."
 
@@ -56,14 +58,15 @@ rules:
   - "Maintenance evidence stays live throughout adapter work."
   - "Capability profiles, native leaf projections and end-to-end executable scenarios are separate evidence classes."
   - "The frozen Core pre-closure inventory cannot be changed by adapter work."
-  - "A0.7 is terminal for the A0 series; A1.0 begins a separately declared executable-continuity series."
+  - "A0.7 is terminal for the A0 series; A1.0 is the completed terminal item of the declared executable-continuity series."
+  - "The historical A0 portfolio remains immutable; post-A0 executable promotions use a separate bounded authority and inventory."
 
 currentDecision:
-  completedItem: "A0.7"
-  completedItemName: "Trigger Materialization Coverage"
-  nextItem: "A1.0"
-  nextItemName: "GitHub Actions Artifact and Workspace Continuity"
-  decisionBasis: "Flow CI #2655, run 30887655401, passed the C0.1.1 activation gate on exact head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e. A1.0 is the first declared post-A0 adapter item; no A0.8 exists."
+  completedItem: "A1.0"
+  completedItemName: "GitHub Actions Artifact and Workspace Continuity"
+  nextItem: ""
+  nextItemName: ""
+  decisionBasis: "Flow CI #2669, run 30903883062, passed A1.0 promotion on exact head d69d5c68c5b7cc7490dd7723eeb75449a324962a and synthetic merge candidate eea1f7047de60dd91f03bbc8d8e184813bb00397. The adapter stream is complete at A1.0; cross-stream focus is handed to the global roadmap authority."
 
 items:
   - version: "A0.1"
@@ -144,8 +147,8 @@ items:
       - "Behavioral tests validate producer-to-consumer continuity through the production planner, materialization pipeline and renderer."
       - "Ordering-only support is never promoted to continuity support."
       - "STATE continuity requires both mutable transfer and durable lifetime evidence."
-      - "Jenkins shared-workspace continuity remains the only supported current subset and is bounded to the admitted checkout-build-image scenario."
-      - "Generic Jenkins value and state continuity and current GitHub Actions and Tekton continuity remain unsupported."
+      - "Jenkins shared-workspace continuity remains the only supported A0 subset and is bounded to the admitted checkout-build-image scenario."
+      - "Generic Jenkins value and state continuity and the A0 GitHub Actions and Tekton continuity claims remain unsupported."
       - "Profile-only targets remain UNKNOWN."
       - "CLI diagnostic fallback preserves blockers and emits no target syntax when continuity is unsupported or unknown."
       - "The adapter stream inventory is exactly version 1.4 with six A0.5 checks."
@@ -185,15 +188,19 @@ items:
   - version: "A1.0"
     name: "GitHub Actions Artifact and Workspace Continuity"
     type: "adapter-continuity"
-    status: next
+    status: completed
     purpose: "Implement real cross-job artifact transfer and workspace reconstruction so checkout-build-image can become executable on GitHub Actions without redefining Core dependency meaning."
     dependsOnCore: "0.9.7.4"
     dependsOnAdapters: "A0.7"
     completionEvidence:
-      - "Declared ARTIFACT relations generate production upload-artifact and download-artifact steps with stable identities."
+      - "Resolved checkout-to-build WORKSPACE continuity generates production actions/upload-artifact@v7 and actions/download-artifact@v8 steps with deterministic identity."
       - "Workspace reconstruction is explicit across isolated jobs and is never inferred from ordering."
       - "GitHub Actions needs topology preserves ExecutionPlan ordering without impersonating continuity evidence."
       - "checkout-build-image renders executable GitHub Actions syntax through the production pipeline."
-      - "Behavioral tests prove producer bytes reach the consumer job under the declared identity."
-      - "Jenkins executable reference evidence remains live and unchanged."
-      - "Unsupported VALUE and STATE continuity forms remain explicit."
+      - "Behavioral tests prove hidden and binary producer bytes reach the consumer boundary."
+      - "The generic GitHub Actions registry profile remains workspace-unsupported; only the exact complete plan receives an immutable effective capability view."
+      - "Additional tasks, other channels, unresolved producers and unsupported VALUE or STATE relations fail closed."
+      - "The historical Jenkins executable reference remains independently canonical and unchanged."
+      - "A separate post-A0 promotion authority and inventory certify the bounded executable claim without rewriting A0.1 evidence."
+      - "Flow CI #2668 passed the isolated implementation and snapshot boundary."
+      - "Flow CI #2669 passed exact-head and synthetic merge-candidate A1.0 promotion certification."

@@ -13,7 +13,6 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthorityTests {
     @Test
     fun currentRepositoryIsOneValidSupportedLifecycleState() {
         val report = authority.analyze()
-
         assertTrue(
             report.phase in setOf(
                 AdapterArtifactRenderingLifecyclePhase.IMPLEMENTING,
@@ -26,7 +25,6 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthorityTests {
     @Test
     fun implementingStateRejectsAuthoredCiEvidence() {
         val report = authority.evaluate(implementingInput().copy(implementationEvidence = passedEvidence()))
-
         assertEquals("FAIL", report.status)
         assertTrue("adapters.a0.6.implementation-evidence" in report.failedChecks)
     }
@@ -42,7 +40,6 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthorityTests {
                 releaseNextItem = "A0.7"
             )
         )
-
         assertEquals("FAIL", report.status)
         assertTrue("adapters.a0.6.adapter-roadmap-state" in report.failedChecks)
     }
@@ -62,7 +59,29 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthorityTests {
                 implementationEvidence = passedEvidence()
             )
         )
+        assertEquals(AdapterArtifactRenderingLifecyclePhase.COMPLETED, report.phase)
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+    }
 
+    @Test
+    fun completedA06RemainsValidAfterA10Completion() {
+        val report = authority.evaluate(
+            implementingInput().copy(
+                workPackageStatus = "complete",
+                adapterTrackStatus = "completed",
+                a06Status = "completed",
+                a07Status = "completed",
+                adapterCompletedItem = "A1.0",
+                adapterNextItem = "",
+                primaryStream = "conformance",
+                indexNextItem = "C0.2",
+                indexNextStream = "conformance",
+                releasePrimaryStream = "conformance",
+                releaseCompletedItem = "A1.0",
+                releaseNextItem = "C0.2",
+                implementationEvidence = passedEvidence()
+            )
+        )
         assertEquals(AdapterArtifactRenderingLifecyclePhase.COMPLETED, report.phase)
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
     }
@@ -83,7 +102,6 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthorityTests {
                 implementationEvidence = evidence
             )
         )
-
         assertEquals("FAIL", report.status)
         assertTrue("adapters.a0.6.implementation-evidence" in report.failedChecks)
     }

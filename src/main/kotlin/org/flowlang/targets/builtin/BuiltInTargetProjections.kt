@@ -1,5 +1,7 @@
 package org.flowlang.targets.builtin
 
+import java.io.File
+import org.flowlang.adapters.continuity.AdapterContinuityProjectionExecutionGate
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetProjectionRule
@@ -35,10 +37,7 @@ import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 
-/**
- * Explicit composition root for projection implementations shipped with this
- * distribution. This is an immutable catalog, not dynamic plugin discovery.
- */
+/** Explicit composition root for projection implementations shipped with this distribution. */
 object BuiltInTargetProjections {
     val registry: TargetProjectionRegistry = TargetProjectionRegistry.of(
         TargetProjectionProvider(JenkinsManifestGenerator(), JenkinsManifestRenderer()),
@@ -46,8 +45,16 @@ object BuiltInTargetProjections {
         TargetProjectionProvider(TektonManifestGenerator(), TektonManifestRenderer())
     )
 
-    fun pipeline(targets: Map<String, TargetCapability>): TargetManifestGenerationPipeline =
-        TargetManifestGenerationPipeline(targets, registry)
+    fun pipeline(
+        targets: Map<String, TargetCapability>,
+        rootDir: File = File(".")
+    ): TargetManifestGenerationPipeline = TargetManifestGenerationPipeline(
+        targets = targets,
+        projections = registry,
+        executionGates = listOf(
+            AdapterContinuityProjectionExecutionGate(rootDir, targets, registry)
+        )
+    )
 }
 
 class JenkinsManifestGenerator(
@@ -78,23 +85,38 @@ class GitHubActionsManifestGenerator(
     override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
         val jobs = mutableListOf<TargetJob>()
         plan.nodes.forEach {
-            it.toTargetJobs(jobs, condition = null, targetName = target, projectionRules = compatibility.projectionRules, nativeProjections = nativeProjectionCatalog)
+            it.toTargetJobs(
+                jobs,
+                condition = null,
+                targetName = target,
+                projectionRules = compatibility.projectionRules,
+                nativeProjections = nativeProjectionCatalog
+            )
         }
+        val baseJobs = jobs.ifEmpty {
+            listOf(
+                TargetJob(
+                    id = sanitizeId(plan.flowName),
+                    name = plan.flowName,
+                    steps = listOf(emptyProjectionStep(plan.flowName))
+                )
+            )
+        }
+        val materializedJobs = GitHubActionsWorkspaceContinuityPlanner.materialize(plan, baseJobs)
         return TargetManifest(
             target = target,
             flowName = plan.flowName,
             compatibility = compatibility,
             inputs = plan.inputs.map { it.toTargetInput() },
             triggers = plan.triggers.map { it.toTargetTrigger() },
-            jobs = jobs.ifEmpty {
-                listOf(TargetJob(
-                    id = sanitizeId(plan.flowName),
-                    name = plan.flowName,
-                    steps = listOf(emptyProjectionStep(plan.flowName))
-                ))
-            },
+            jobs = materializedJobs,
             mappingNotes = compatibility.toMappingNotes(target),
-            metadata = baseMetadata(plan, "GitHubActionsManifestGenerator") + ("jobPerTask" to "true")
+            metadata = baseMetadata(plan, "GitHubActionsManifestGenerator") + mapOf(
+                "jobPerTask" to "true",
+                "workspaceContinuityMechanism" to "workflow-artifact-transfer",
+                "workspaceContinuityTransferCount" to
+                    GitHubActionsWorkspaceContinuityPlanner.transferCount(plan).toString()
+            )
         )
     }
 }

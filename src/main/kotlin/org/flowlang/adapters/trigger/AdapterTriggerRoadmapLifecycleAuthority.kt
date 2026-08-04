@@ -36,15 +36,17 @@ data class AdapterTriggerLifecycleCheck(
 )
 
 data class AdapterTriggerLifecycleReport(
-    val reportVersion: String = "1.2",
+    val reportVersion: String = "1.3",
     val phase: AdapterTriggerLifecyclePhase,
     val status: String,
     val checks: List<AdapterTriggerLifecycleCheck>,
     val failedChecks: List<String>
 )
 
-/** Bounded lifecycle authority for terminal A0.7; global successor selection is intentionally out of scope. */
-class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
+/** Bounded lifecycle authority for terminal A0.7; later adapter and cross-stream focus are out of scope. */
+class AdapterTriggerRoadmapLifecycleAuthority(
+    private val rootDir: File = File(".")
+) {
     fun analyze(): AdapterTriggerLifecycleReport {
         val workPackage = requiredYaml(WORK_PACKAGE)
         val adapterRoadmap = requiredYaml(ADAPTER_ROADMAP)
@@ -72,25 +74,27 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
 
     fun evaluate(input: AdapterTriggerLifecycleInput): AdapterTriggerLifecycleReport {
         val phase = when {
-            input.workPackageStatus == "active" && input.a07Status == "next" -> AdapterTriggerLifecyclePhase.IMPLEMENTING
-            input.workPackageStatus == "complete" && input.a07Status == "completed" -> AdapterTriggerLifecyclePhase.COMPLETED
+            input.workPackageStatus == "active" && input.a07Status == "next" ->
+                AdapterTriggerLifecyclePhase.IMPLEMENTING
+            input.workPackageStatus == "complete" && input.a07Status == "completed" ->
+                AdapterTriggerLifecyclePhase.COMPLETED
             else -> AdapterTriggerLifecyclePhase.INVALID
         }
-        val trackAligned = when (phase) {
-            AdapterTriggerLifecyclePhase.IMPLEMENTING -> input.adapterTrackStatus == "active"
-            AdapterTriggerLifecyclePhase.COMPLETED -> when (input.adapterNextItem) {
-                "" -> input.adapterTrackStatus == "completed"
-                AdapterRoadmapSequence.NEXT_SERIES_FIRST_ITEM -> input.adapterTrackStatus == "active"
-                else -> false
-            }
-            AdapterTriggerLifecyclePhase.INVALID -> false
-        } && input.a06Status == "completed"
+        val trackAligned = input.a06Status == "completed" &&
+            AdapterRoadmapSequence.isTrackStatusAligned(
+                input.adapterTrackStatus,
+                input.adapterCompletedItem,
+                input.adapterNextItem
+            )
+        val historicalProgress = AdapterRoadmapSequence.isHistoricalProgress(
+            input.adapterCompletedItem,
+            input.adapterNextItem,
+            minimumCompletedOrdinal = 7
+        )
         val adapterStateAligned = when (phase) {
             AdapterTriggerLifecyclePhase.IMPLEMENTING ->
                 input.adapterCompletedItem == "A0.6" && input.adapterNextItem == "A0.7"
-            AdapterTriggerLifecyclePhase.COMPLETED ->
-                input.adapterCompletedItem == AdapterRoadmapSequence.TERMINAL_ITEM &&
-                    AdapterRoadmapSequence.isPostTerminalA0Focus(input.adapterNextItem)
+            AdapterTriggerLifecyclePhase.COMPLETED -> historicalProgress
             AdapterTriggerLifecyclePhase.INVALID -> false
         }
         val indexAligned = AdapterRoadmapSequence.isIndexFocusAligned(
@@ -112,13 +116,66 @@ class AdapterTriggerRoadmapLifecycleAuthority(private val rootDir: File = File("
         }
 
         val checks = listOf(
-            check("adapters.a0.7.lifecycle-phase", phase != AdapterTriggerLifecyclePhase.INVALID, listOf("workPackage=${input.workPackageStatus}", "a07=${input.a07Status}", "phase=$phase"), "A0.7 lifecycle must be exactly IMPLEMENTING or COMPLETED."),
-            check("adapters.a0.7.track-state", trackAligned, listOf("track=${input.adapterTrackStatus}", "a06=${input.a06Status}", "next=${input.adapterNextItem.ifBlank { "none" }}"), "A0.7 requires completed A0.6 and remains completed while an explicitly declared later adapter series is active."),
-            check("adapters.a0.7.adapter-roadmap-state", adapterStateAligned, listOf("a07=${input.a07Status}", "completed=${input.adapterCompletedItem}", "next=${input.adapterNextItem.ifBlank { "none" }}"), "A0.7 completion is terminal for the A0 series, forbids A0.8 and may precede declared A1.0 work."),
-            check("adapters.a0.7.index-state", indexAligned, listOf("primary=${input.primaryStream}", "next=${input.indexNextItem.ifBlank { "none" }}", "stream=${input.indexNextStream.ifBlank { "none" }}"), "The A0.7 authority validates only an active adapter-local focus; unrelated global focus is owned elsewhere."),
-            check("adapters.a0.7.release-state", releaseAligned, listOf("primary=${input.releasePrimaryStream}", "completed=${input.releaseCompletedItem}", "next=${input.releaseNextItem.ifBlank { "none" }}"), "Release focus is checked only while later adapter work is active; cross-stream selection is globally owned."),
-            check("adapters.a0.7.implementation-evidence", evidenceAligned, listOf(input.implementationEvidence.summary()), "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."),
-            check("adapters.a0.7.required-files", input.requiredFilesPresent, listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"), "A0.7 lifecycle requires the complete indexed evidence, production, test, conformance and documentation boundary.")
+            check(
+                "adapters.a0.7.lifecycle-phase",
+                phase != AdapterTriggerLifecyclePhase.INVALID,
+                listOf("workPackage=${input.workPackageStatus}", "a07=${input.a07Status}", "phase=$phase"),
+                "A0.7 lifecycle must be exactly IMPLEMENTING or COMPLETED."
+            ),
+            check(
+                "adapters.a0.7.track-state",
+                trackAligned,
+                listOf(
+                    "track=${input.adapterTrackStatus}",
+                    "a06=${input.a06Status}",
+                    "completed=${input.adapterCompletedItem}",
+                    "next=${input.adapterNextItem.ifBlank { "none" }}"
+                ),
+                "A0.7 requires completed A0.6 and a valid adapter-local historical state."
+            ),
+            check(
+                "adapters.a0.7.adapter-roadmap-state",
+                adapterStateAligned,
+                listOf(
+                    "a07=${input.a07Status}",
+                    "completed=${input.adapterCompletedItem}",
+                    "next=${input.adapterNextItem.ifBlank { "none" }}",
+                    "historicalProgress=$historicalProgress"
+                ),
+                "Completed A0.7 remains terminal for A0 and valid throughout explicitly declared later adapter history."
+            ),
+            check(
+                "adapters.a0.7.index-state",
+                indexAligned,
+                listOf(
+                    "primary=${input.primaryStream}",
+                    "next=${input.indexNextItem.ifBlank { "none" }}",
+                    "stream=${input.indexNextStream.ifBlank { "none" }}"
+                ),
+                "A0.7 validates active adapter-local focus only; unrelated global focus is owned elsewhere."
+            ),
+            check(
+                "adapters.a0.7.release-state",
+                releaseAligned,
+                listOf(
+                    "primary=${input.releasePrimaryStream}",
+                    "completed=${input.releaseCompletedItem}",
+                    "next=${input.releaseNextItem.ifBlank { "none" }}"
+                ),
+                "A0.7 requires release metadata to preserve the same current adapter history without selecting a successor stream."
+            ),
+            check(
+                "adapters.a0.7.implementation-evidence",
+                evidenceAligned,
+                listOf(input.implementationEvidence.summary()),
+                "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."
+            ),
+            check(
+                "adapters.a0.7.required-files",
+                input.requiredFilesPresent,
+                listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"),
+                "A0.7 lifecycle requires the complete indexed evidence, production, test, conformance and documentation boundary."
+            )
         )
         val failed = checks.filter { it.status == "FAIL" }.map { it.id }
         return AdapterTriggerLifecycleReport(

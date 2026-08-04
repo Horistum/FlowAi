@@ -1,6 +1,6 @@
 project: Flow Conformance
 stream: conformance
-roadmapVersion: 6
+roadmapVersion: 7
 status: active
 
 purpose: "Maintain bounded independent evidence for universal contracts and implementation behavior."
@@ -16,14 +16,14 @@ rules:
   - "Corpus evidence runs only after frozen Core closure and adapter certification."
   - "Conformance work cannot mutate the Core pre-closure or adapter inventories."
   - "Concrete artifact checks remain separate from universal contract checks."
-  - "C0.2 remains planned until A1.0 establishes a second executable target with real continuity evidence."
+  - "C0.2 activates only after A1.0 establishes a second executable target with real continuity evidence."
 
 currentDecision:
   completedItem: "C0.1.1"
   completedItemName: "Bounded Domain Integrity Correction"
-  nextItem: ""
-  nextItemName: ""
-  decisionBasis: "Flow CI #2655, run 30887655401, passed C0.1.1 on exact head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e. A1.0 is selected globally before C0.2."
+  nextItem: "C0.2"
+  nextItemName: "Abstract Topology Matrix"
+  decisionBasis: "Flow CI #2669, run 30903883062, passed the bounded A1.0 executable promotion on exact head d69d5c68c5b7cc7490dd7723eeb75449a324962a and synthetic merge candidate eea1f7047de60dd91f03bbc8d8e184813bb00397. A1.0 is complete and C0.2 is now the active conformance item."
 
 items:
   - version: "C0.1"
@@ -58,12 +58,15 @@ items:
   - version: "C0.2"
     name: "Abstract Topology Matrix"
     type: "topology-evidence"
-    status: planned
+    status: next
     purpose: "Exercise plans against synthetic topology profiles after the second executable target exists."
     dependsOnCore: "0.9.7.8"
+    dependsOnAdapters: "A1.0"
     completionEvidence:
       - "Action coverage alone does not establish scenario readiness."
       - "Earlier readiness labels change when required evidence is absent."
+      - "Synthetic profile mutations prove positive and negative topology matching polarity."
+      - "Concrete Jenkins and GitHub Actions references remain falsification inputs rather than semantic authorities."
 
   - version: "C0.3"
     name: "Semantic Equivalence Rules"

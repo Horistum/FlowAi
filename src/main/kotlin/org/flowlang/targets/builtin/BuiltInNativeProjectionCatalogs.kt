@@ -75,6 +75,36 @@ object BuiltInNativeProjectionCatalogs {
             kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
             reference = "docker/build-push-action@v7",
             bindings = imageBuildBindings()
+        ),
+        TargetNativeProjectionDefinition(
+            kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
+            reference = GitHubActionsWorkspaceContinuityPlanner.UPLOAD_REFERENCE,
+            bindings = mapOf(
+                "name" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.ARTIFACT)
+                ),
+                "path" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.LITERAL)
+                ),
+                "if-no-files-found" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.LITERAL)
+                ),
+                "include-hidden-files" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.LITERAL)
+                )
+            )
+        ),
+        TargetNativeProjectionDefinition(
+            kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
+            reference = GitHubActionsWorkspaceContinuityPlanner.DOWNLOAD_REFERENCE,
+            bindings = mapOf(
+                "name" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.ARTIFACT)
+                ),
+                "path" to TargetNativeProjectionBindingContract(
+                    acceptedKinds = setOf(ProjectionBindingKind.LITERAL)
+                )
+            )
         )
     )
 

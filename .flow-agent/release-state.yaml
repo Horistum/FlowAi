@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 42
+stateVersion: 43
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,15 +16,15 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 13
-  activeTrack: "adapter-executable-continuity"
+  roadmapVersion: 14
+  activeTrack: "conformance-topology-matrix"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
-  primaryStream: "adapters"
-  completedAdapterItem: "A0.7"
-  completedAdapterItemName: "Trigger Materialization Coverage"
-  nextItem: "A1.0"
-  nextItemName: "GitHub Actions Artifact and Workspace Continuity"
+  primaryStream: "conformance"
+  completedAdapterItem: "A1.0"
+  completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
+  nextItem: "C0.2"
+  nextItemName: "Abstract Topology Matrix"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -154,23 +154,28 @@ qualityPrinciples:
   - "Cross-stream roadmap focus is owned by the global transition authority."
   - "A1.0 may promote GitHub Actions only with production artifact and workspace continuity evidence."
   - "Ordering and needs topology never substitute for continuity proof."
+  - "A plan-specific capability view must not mutate the authored target registry or imply generic support."
+  - "Post-A0 executable promotions use an independent authority and inventory rather than rewriting historical portfolio evidence."
+  - "C0.2 may activate only after A1.0 has distinct implementation and completion evidence."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-c0.1.1-implementation-boundary"
-  flowAgentStructure: "passed-on-c0.1.1-implementation-boundary"
-  flowAgentContextGeneration: "passed-on-c0.1.1-implementation-boundary"
-  cleanTest: "passed-on-c0.1.1-implementation-boundary"
-  conformance: "passed-on-c0.1.1-implementation-boundary"
-  executableReferenceEvidence: "passed-on-c0.1.1-implementation-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-c0.1.1-implementation-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-c0.1.1-implementation-boundary"
-  boundedDomainCorpusEvidence: "passed-on-c0.1.1-implementation-boundary"
-  roadmapTransitionEvidence: "passed-on-c0.1.1-implementation-boundary"
-  validationSource: "Flow CI #2655, run 30887655401, passed exact C0.1.1 implementation head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e."
+  flowAgentTooling: "passed-on-a1.0-completion-boundary"
+  flowAgentStructure: "passed-on-a1.0-completion-boundary"
+  flowAgentContextGeneration: "passed-on-a1.0-completion-boundary"
+  cleanTest: "passed-on-a1.0-completion-boundary"
+  conformance: "passed-on-a1.0-completion-boundary"
+  executableReferenceEvidence: "passed-on-a1.0-completion-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-a1.0-completion-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-a1.0-completion-boundary"
+  boundedDomainCorpusEvidence: "passed-on-a1.0-completion-boundary"
+  roadmapTransitionEvidence: "passed-on-a1.0-completion-boundary"
+  validationSource: "Flow CI #2669, run 30903883062, passed exact A1.0 promotion head d69d5c68c5b7cc7490dd7723eeb75449a324962a and synthetic merge candidate eea1f7047de60dd91f03bbc8d8e184813bb00397."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
-    - "A0.1 through A0.7 are completed and merged; A0.8 does not exist."
-    - "C0.1.1 implementation evidence remains external exact-head CI evidence until PR #105 merges; it does not impersonate merged history."
-    - "A1.0 is selected as active work but has no executable support claim until its own evidence passes."
-    - "C0.2 remains planned after A1.0."
+    - "A0.1 through A0.7 and A1.0 are completed; A0.8 does not exist."
+    - "GitHub Actions is executable only for the bounded checkout-build-image workspace path; the generic workspace profile remains unsupported."
+    - "The historical Jenkins executable reference remains independently canonical and unchanged."
+    - "A1.0 post-A0 promotion evidence is isolated from the frozen A0 portfolio and inventory."
+    - "A1.0 completion evidence remains external exact-head CI evidence until PR #106 merges; it does not impersonate merged history."
+    - "C0.2 Abstract Topology Matrix is the active conformance item."

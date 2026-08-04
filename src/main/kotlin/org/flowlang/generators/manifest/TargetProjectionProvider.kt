@@ -6,14 +6,6 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
 
-/**
- * Target-neutral generation boundary. Concrete target implementations live outside
- * Flow Core and are composed explicitly at an application or conformance edge.
- *
- * The generator accepts only authorization issued by
- * [MandatoryMaterializationAuthority]. Raw plans and caller-provided compatibility
- * reports are deliberately not a public generation API.
- */
 interface TargetManifestGenerator {
     val target: String
     val nativeProjectionCatalog: TargetNativeProjectionCatalog
@@ -22,9 +14,6 @@ interface TargetManifestGenerator {
     fun generate(authorization: TargetProjectionAuthorization): TargetManifest
 }
 
-/**
- * Reconciles every generated manifest before it can leave a concrete provider.
- */
 abstract class ReconciledTargetManifestGenerator : TargetManifestGenerator {
     final override fun generate(authorization: TargetProjectionAuthorization): TargetManifest {
         require(authorization.target == target) {
@@ -51,9 +40,6 @@ abstract class ReconciledTargetManifestGenerator : TargetManifestGenerator {
     protected abstract fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest
 }
 
-/**
- * Target-neutral serialization boundary implemented only by edge projection code.
- */
 interface TargetManifestRenderer {
     val target: String
     val artifactFileName: String
@@ -61,9 +47,18 @@ interface TargetManifestRenderer {
 }
 
 /**
- * Immutable pairing of one manifest generator and one renderer for the same target.
- * This is explicit application composition, not a dynamic plugin lifecycle.
+ * Produces an immutable, plan-specific view of one declared target capability.
+ * The authored registry remains the general platform claim.
  */
+fun interface TargetProjectionCapabilityResolver {
+    fun resolve(plan: ExecutionPlan, target: String, declared: TargetCapability): TargetCapability
+}
+
+/** Adapter-owned evidence gate executed only for an execution candidate. */
+fun interface TargetProjectionExecutionGate {
+    fun requireAuthorized(plan: ExecutionPlan, target: String)
+}
+
 class TargetProjectionProvider(
     val generator: TargetManifestGenerator,
     val renderer: TargetManifestRenderer
@@ -96,11 +91,6 @@ class TargetProjectionProvider(
         return generator.generate(authorization).also(nativeProjectionCatalog::requireManifest)
     }
 
-    /**
-     * Emits only executable target syntax under the provider-owned artifact name.
-     * Review evidence is rendered by the adapter artifact rendering authority under
-     * a distinct review file identity.
-     */
     fun render(manifest: TargetManifest): String {
         require(manifest.target == target) {
             "Projection provider '$target' cannot render manifest target '${manifest.target}'."
@@ -111,11 +101,6 @@ class TargetProjectionProvider(
     }
 }
 
-/**
- * Closed, immutable registry supplied by a composition root.
- *
- * Core never discovers implementations and never enumerates platform ids.
- */
 class TargetProjectionRegistry private constructor(
     private val providersByTarget: Map<String, TargetProjectionProvider>
 ) {
@@ -146,31 +131,47 @@ class TargetProjectionRegistry private constructor(
     }
 }
 
-/**
- * Canonical manifest pipeline. Every public generation call passes through one
- * materialization authority before a concrete provider can see the plan.
- */
+/** Canonical manifest pipeline with plan-specific capability and execution evidence. */
 class TargetManifestGenerationPipeline(
-    targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry
+    private val targets: Map<String, TargetCapability>,
+    private val projections: TargetProjectionRegistry,
+    private val capabilityResolvers: List<TargetProjectionCapabilityResolver> = emptyList(),
+    private val executionGates: List<TargetProjectionExecutionGate> = emptyList()
 ) {
-    private val authority = MandatoryMaterializationAuthority(targets)
+    init {
+        require(targets.isNotEmpty()) { "Target manifest pipeline requires a non-empty target registry." }
+    }
+
+    private val composedCapabilityResolvers: List<TargetProjectionCapabilityResolver> =
+        capabilityResolvers + executionGates.filterIsInstance<TargetProjectionCapabilityResolver>()
+
+    fun effectiveTarget(plan: ExecutionPlan, target: String): TargetCapability {
+        val declared = requireNotNull(targets[target]) { "Unknown target '$target'." }
+        return composedCapabilityResolvers.fold(declared) { current, resolver ->
+            resolver.resolve(plan, target, current).also { resolved ->
+                require(resolved.target == target) {
+                    "Capability resolver for '$target' returned capability '${resolved.target}'."
+                }
+            }
+        }
+    }
+
+    fun effectiveTargets(plan: ExecutionPlan, target: String): Map<String, TargetCapability> =
+        targets + (target to effectiveTarget(plan, target))
 
     fun generate(request: TargetMaterializationRequest): TargetManifest {
         val provider = projections.requireProvider(request.target)
+        val authority = MandatoryMaterializationAuthority(effectiveTargets(request.plan, request.target))
         val authorization = authority.authorize(request)
+        executionGates.forEach { gate -> gate.requireAuthorized(authorization.plan, authorization.target) }
         return provider.generate(authorization)
     }
 
-    /**
-     * Generates auditable diagnostic evidence for compatibility analysis and
-     * conformance. Unsupported target semantics remain explicit and the
-     * resulting manifest is forbidden from claiming executable readiness.
-     */
     fun generateDiagnosticEvidence(
         request: TargetDiagnosticMaterializationRequest
     ): TargetManifest {
         val provider = projections.requireProvider(request.target)
+        val authority = MandatoryMaterializationAuthority(effectiveTargets(request.plan, request.target))
         val authorization = authority.authorizeDiagnosticEvidence(request)
         return provider.generate(authorization)
     }

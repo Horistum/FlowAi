@@ -7,7 +7,6 @@ import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.cli.Json
-import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
@@ -24,12 +23,8 @@ import org.flowlang.validator.FlowValidator
 import java.io.File
 
 /**
- * Generates the committed reference snapshot bundle through the real semantic,
- * compatibility, materialization, trigger and adapter artifact rendering boundaries.
- *
- * A blocked target contributes diagnostic evidence only. A manifest-backed target
- * always passes through the same trigger-aware rendering authority as the CLI, so
- * review evidence cannot be written under an executable provider identity.
+ * Generates committed reference snapshots through the production semantic,
+ * plan-specific capability, materialization, trigger and rendering boundaries.
  */
 class ReferenceSnapshotBundleGenerator(
     private val rootDir: File = File("."),
@@ -38,15 +33,10 @@ class ReferenceSnapshotBundleGenerator(
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
-    private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
+    private val manifestPipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
     private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
     private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
 
-    /**
-     * Rebuilds a semantic execution plan through the same production pipeline
-     * used by committed reference generation. Canonical snapshot JSON is an
-     * export format and is deliberately not treated as a polymorphic plan loader.
-     */
     internal fun planFor(intentFile: File): ExecutionPlan {
         require(intentFile.isFile) { "Reference intent does not exist: ${intentFile.path}" }
         val intent = IntentYamlLoader.load(intentFile)
@@ -78,14 +68,13 @@ class ReferenceSnapshotBundleGenerator(
         val validation = FlowValidator(registry).validate(ast)
         require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
         val plan = FlowPlanner(registry).plan(ast)
-        val compatibilityAnalyzer = CompatibilityAnalyzer(targets)
-        val readinessAnalyzer = ExecutionReadinessAnalyzer(targets)
         val evidence = mutableListOf<ReferenceTargetProjectionEvidence>()
         val renderedByTarget = linkedMapOf<String, String>()
 
         targetIds.sorted().forEach { target ->
-            val compatibility = compatibilityAnalyzer.analyze(plan, target, strict = false)
-            val readiness = readinessAnalyzer.analyze(plan, target, strict = false)
+            val effectiveTargets = manifestPipeline.effectiveTargets(plan, target)
+            val compatibility = CompatibilityAnalyzer(effectiveTargets).analyze(plan, target, strict = false)
+            val readiness = ExecutionReadinessAnalyzer(effectiveTargets).analyze(plan, target, strict = false)
             if (compatibility.hasErrors || !readiness.generationAllowed) {
                 evidence += ReferenceBlockedProjectionEvidence(compatibility, readiness)
             } else {

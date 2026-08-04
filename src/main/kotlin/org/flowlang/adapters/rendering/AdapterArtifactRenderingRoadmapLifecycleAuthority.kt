@@ -25,16 +25,25 @@ data class AdapterArtifactRenderingLifecycleInput(
     val requiredFilesPresent: Boolean
 )
 
-data class AdapterArtifactRenderingLifecycleCheck(val id: String, val status: String, val evidence: List<String>, val message: String)
+data class AdapterArtifactRenderingLifecycleCheck(
+    val id: String,
+    val status: String,
+    val evidence: List<String>,
+    val message: String
+)
+
 data class AdapterArtifactRenderingLifecycleReport(
-    val reportVersion: String = "1.2",
+    val reportVersion: String = "1.3",
     val phase: AdapterArtifactRenderingLifecyclePhase,
     val status: String,
     val checks: List<AdapterArtifactRenderingLifecycleCheck>,
     val failedChecks: List<String>
 )
 
-class AdapterArtifactRenderingRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
+/** A0.6 owns its local historical boundary and never selects a later roadmap stream. */
+class AdapterArtifactRenderingRoadmapLifecycleAuthority(
+    private val rootDir: File = File(".")
+) {
     fun analyze(): AdapterArtifactRenderingLifecycleReport {
         val workPackage = requiredYaml(WORK_PACKAGE)
         val adapterRoadmap = requiredYaml(ADAPTER_ROADMAP)
@@ -42,61 +51,188 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthority(private val rootDir: Fil
         val releaseState = requiredYaml(RELEASE_STATE)
         return evaluate(
             AdapterArtifactRenderingLifecycleInput(
-                workPackage.string("status"), adapterRoadmap.string("status"),
-                adapterRoadmap.itemStatus("A0.5"), adapterRoadmap.itemStatus("A0.6"), adapterRoadmap.itemStatus("A0.7"),
-                adapterRoadmap.string("currentDecision", "completedItem"), adapterRoadmap.string("currentDecision", "nextItem"),
-                roadmap.string("primaryRoadmapStream"), roadmap.string("currentDecision", "nextItem"), roadmap.string("currentDecision", "nextItemStream"),
-                releaseState.string("roadmapState", "primaryStream"), releaseState.string("roadmapState", "completedAdapterItem"), releaseState.string("roadmapState", "nextItem"),
-                workPackage.workflowEvidence("implementationEvidence"), REQUIRED_FILES.all { File(rootDir, it).isFile }
+                workPackageStatus = workPackage.string("status"),
+                adapterTrackStatus = adapterRoadmap.string("status"),
+                a05Status = adapterRoadmap.itemStatus("A0.5"),
+                a06Status = adapterRoadmap.itemStatus("A0.6"),
+                a07Status = adapterRoadmap.itemStatus("A0.7"),
+                adapterCompletedItem = adapterRoadmap.string("currentDecision", "completedItem"),
+                adapterNextItem = adapterRoadmap.string("currentDecision", "nextItem"),
+                primaryStream = roadmap.string("primaryRoadmapStream"),
+                indexNextItem = roadmap.string("currentDecision", "nextItem"),
+                indexNextStream = roadmap.string("currentDecision", "nextItemStream"),
+                releasePrimaryStream = releaseState.string("roadmapState", "primaryStream"),
+                releaseCompletedItem = releaseState.string("roadmapState", "completedAdapterItem"),
+                releaseNextItem = releaseState.string("roadmapState", "nextItem"),
+                implementationEvidence = workPackage.workflowEvidence("implementationEvidence"),
+                requiredFilesPresent = REQUIRED_FILES.all { File(rootDir, it).isFile }
             )
         )
     }
 
     fun evaluate(input: AdapterArtifactRenderingLifecycleInput): AdapterArtifactRenderingLifecycleReport {
         val phase = when {
-            input.workPackageStatus == "active" && input.a06Status == "next" -> AdapterArtifactRenderingLifecyclePhase.IMPLEMENTING
-            input.workPackageStatus == "complete" && input.a06Status == "completed" -> AdapterArtifactRenderingLifecyclePhase.COMPLETED
+            input.workPackageStatus == "active" && input.a06Status == "next" ->
+                AdapterArtifactRenderingLifecyclePhase.IMPLEMENTING
+            input.workPackageStatus == "complete" && input.a06Status == "completed" ->
+                AdapterArtifactRenderingLifecyclePhase.COMPLETED
             else -> AdapterArtifactRenderingLifecyclePhase.INVALID
         }
-        val trackAligned = input.a05Status == "completed" && AdapterRoadmapSequence.isTrackStatusAligned(input.adapterTrackStatus, input.adapterCompletedItem, input.adapterNextItem)
-        val historicalProgress = AdapterRoadmapSequence.isHistoricalProgress(input.adapterCompletedItem, input.adapterNextItem, 6)
+        val trackAligned = input.a05Status == "completed" &&
+            AdapterRoadmapSequence.isTrackStatusAligned(
+                input.adapterTrackStatus,
+                input.adapterCompletedItem,
+                input.adapterNextItem
+            )
+        val historicalProgress = AdapterRoadmapSequence.isHistoricalProgress(
+            input.adapterCompletedItem,
+            input.adapterNextItem,
+            minimumCompletedOrdinal = 6
+        )
+        val terminalOrdinal = requireNotNull(AdapterRoadmapSequence.ordinal(AdapterRoadmapSequence.TERMINAL_ITEM))
+        val completedOrdinal = AdapterRoadmapSequence.ordinal(input.adapterCompletedItem)
         val adapterStateAligned = when (phase) {
-            AdapterArtifactRenderingLifecyclePhase.IMPLEMENTING -> input.a07Status == "planned" && input.adapterCompletedItem == "A0.5" && input.adapterNextItem == "A0.6"
+            AdapterArtifactRenderingLifecyclePhase.IMPLEMENTING ->
+                input.a07Status == "planned" &&
+                    input.adapterCompletedItem == "A0.5" &&
+                    input.adapterNextItem == "A0.6"
             AdapterArtifactRenderingLifecyclePhase.COMPLETED -> when (input.a07Status) {
-                "next" -> historicalProgress && input.adapterCompletedItem == "A0.6" && input.adapterNextItem == "A0.7"
-                "completed" -> historicalProgress && input.adapterCompletedItem == AdapterRoadmapSequence.TERMINAL_ITEM
+                "next" ->
+                    historicalProgress &&
+                        input.adapterCompletedItem == "A0.6" &&
+                        input.adapterNextItem == "A0.7"
+                "completed" ->
+                    historicalProgress && completedOrdinal != null && completedOrdinal >= terminalOrdinal
                 else -> false
             }
             AdapterArtifactRenderingLifecyclePhase.INVALID -> false
         }
-        val indexAligned = AdapterRoadmapSequence.isIndexFocusAligned(input.primaryStream, input.indexNextItem, input.indexNextStream, input.adapterNextItem)
+        val indexAligned = AdapterRoadmapSequence.isIndexFocusAligned(
+            input.primaryStream,
+            input.indexNextItem,
+            input.indexNextStream,
+            input.adapterNextItem
+        )
         val releaseAligned = input.releaseCompletedItem == input.adapterCompletedItem &&
-            AdapterRoadmapSequence.isReleaseFocusAligned(input.releasePrimaryStream, input.releaseNextItem, input.adapterNextItem)
+            AdapterRoadmapSequence.isReleaseFocusAligned(
+                input.releasePrimaryStream,
+                input.releaseNextItem,
+                input.adapterNextItem
+            )
         val evidenceAligned = when (phase) {
             AdapterArtifactRenderingLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
             AdapterArtifactRenderingLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
             AdapterArtifactRenderingLifecyclePhase.INVALID -> false
         }
+
         val checks = listOf(
-            check("adapters.a0.6.lifecycle-phase", phase != AdapterArtifactRenderingLifecyclePhase.INVALID, listOf("workPackage=${input.workPackageStatus}", "a06=${input.a06Status}", "phase=$phase"), "A0.6 lifecycle must be exactly IMPLEMENTING or COMPLETED."),
-            check("adapters.a0.6.track-state", trackAligned, listOf("track=${input.adapterTrackStatus}", "a05=${input.a05Status}", "completed=${input.adapterCompletedItem}", "next=${input.adapterNextItem}"), "A0.6 requires completed A0.5 and either adjacent active progress or terminal A0.7 completion."),
-            check("adapters.a0.6.adapter-roadmap-state", adapterStateAligned, listOf("a06=${input.a06Status}", "a07=${input.a07Status}", "completed=${input.adapterCompletedItem}", "next=${input.adapterNextItem}", "historicalProgress=$historicalProgress"), "A0.6 completion permits the adjacent A0.7 focus or terminal A0.7 completion only."),
-            check("adapters.a0.6.index-state", indexAligned, listOf("primary=${input.primaryStream}", "next=${input.indexNextItem}", "stream=${input.indexNextStream}"), "The roadmap index must mirror active adapter work, terminal adapter focus, or the explicit conformance successor."),
-            check("adapters.a0.6.release-state", releaseAligned, listOf("primary=${input.releasePrimaryStream}", "completed=${input.releaseCompletedItem}", "next=${input.releaseNextItem}"), "Release state must retain terminal adapter completion while exposing the explicit conformance successor."),
-            check("adapters.a0.6.implementation-evidence", evidenceAligned, listOf(input.implementationEvidence.summary()), "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."),
-            check("adapters.a0.6.required-files", input.requiredFilesPresent, listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"), "A0.6 lifecycle requires the complete evidence, production, CLI, test, schema, conformance and documentation boundary.")
+            check(
+                "adapters.a0.6.lifecycle-phase",
+                phase != AdapterArtifactRenderingLifecyclePhase.INVALID,
+                listOf("workPackage=${input.workPackageStatus}", "a06=${input.a06Status}", "phase=$phase"),
+                "A0.6 lifecycle must be exactly IMPLEMENTING or COMPLETED."
+            ),
+            check(
+                "adapters.a0.6.track-state",
+                trackAligned,
+                listOf(
+                    "track=${input.adapterTrackStatus}",
+                    "a05=${input.a05Status}",
+                    "completed=${input.adapterCompletedItem}",
+                    "next=${input.adapterNextItem}"
+                ),
+                "A0.6 requires completed A0.5 and a valid adapter-local historical state."
+            ),
+            check(
+                "adapters.a0.6.adapter-roadmap-state",
+                adapterStateAligned,
+                listOf(
+                    "a06=${input.a06Status}",
+                    "a07=${input.a07Status}",
+                    "completed=${input.adapterCompletedItem}",
+                    "next=${input.adapterNextItem}",
+                    "historicalProgress=$historicalProgress"
+                ),
+                "Completed A0.6 remains valid after adjacent A0.7 progress and later declared adapter completion."
+            ),
+            check(
+                "adapters.a0.6.index-state",
+                indexAligned,
+                listOf("primary=${input.primaryStream}", "next=${input.indexNextItem}", "stream=${input.indexNextStream}"),
+                "A0.6 validates active adapter-local focus only; unrelated global focus is owned elsewhere."
+            ),
+            check(
+                "adapters.a0.6.release-state",
+                releaseAligned,
+                listOf(
+                    "primary=${input.releasePrimaryStream}",
+                    "completed=${input.releaseCompletedItem}",
+                    "next=${input.releaseNextItem}"
+                ),
+                "A0.6 requires release metadata to preserve the same current adapter history without selecting a successor stream."
+            ),
+            check(
+                "adapters.a0.6.implementation-evidence",
+                evidenceAligned,
+                listOf(input.implementationEvidence.summary()),
+                "IMPLEMENTING forbids authored evidence; COMPLETED requires one structurally passing Flow CI boundary."
+            ),
+            check(
+                "adapters.a0.6.required-files",
+                input.requiredFilesPresent,
+                listOf("requiredFilesPresent=${input.requiredFilesPresent}", "requiredFileCount=${REQUIRED_FILES.size}"),
+                "A0.6 lifecycle requires the complete evidence, production, CLI, test, schema, conformance and documentation boundary."
+            )
         )
         val failed = checks.filter { it.status == "FAIL" }.map { it.id }
-        return AdapterArtifactRenderingLifecycleReport(phase = phase, status = if (failed.isEmpty()) "PASS" else "FAIL", checks = checks, failedChecks = failed)
+        return AdapterArtifactRenderingLifecycleReport(
+            phase = phase,
+            status = if (failed.isEmpty()) "PASS" else "FAIL",
+            checks = checks,
+            failedChecks = failed
+        )
     }
 
-    private fun requiredYaml(path: String): Map<String, Any?> { val file = File(rootDir, path); require(file.isFile) { "Required A0.6 lifecycle evidence is missing: ${file.path}" }; return FlowYaml.readMap(file) }
-    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence { val raw = map(key); if (raw.isEmpty()) return AdapterWorkflowEvidence.ABSENT; return AdapterWorkflowEvidence(raw.string("status"), raw.string("workflow"), raw.string("runNumber").toIntOrNull(), raw.string("runId").toLongOrNull(), raw.string("exactHead"), raw.string("mergeCandidate"), (raw.keys - EVIDENCE_FIELDS).sorted(), true) }
-    private fun Map<String, Any?>.itemStatus(version: String): String = mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
-    private fun Map<String, Any?>.string(vararg path: String): String { var current: Any? = this; path.forEach { current = (current as? Map<*, *>)?.get(it) }; return current?.toString().orEmpty() }
-    private fun Map<String, Any?>.map(key: String): Map<String, Any?> = (get(key) as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }.orEmpty()
-    private fun Map<String, Any?>.mapList(key: String): List<Map<String, Any?>> = (get(key) as? Iterable<*>)?.mapNotNull { value -> (value as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value } }.orEmpty()
-    private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) = AdapterArtifactRenderingLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
+    private fun requiredYaml(path: String): Map<String, Any?> {
+        val file = File(rootDir, path)
+        require(file.isFile) { "Required A0.6 lifecycle evidence is missing: ${file.path}" }
+        return FlowYaml.readMap(file)
+    }
+
+    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence {
+        val raw = map(key)
+        if (raw.isEmpty()) return AdapterWorkflowEvidence.ABSENT
+        return AdapterWorkflowEvidence(
+            status = raw.string("status"),
+            workflow = raw.string("workflow"),
+            runNumber = raw.string("runNumber").toIntOrNull(),
+            runId = raw.string("runId").toLongOrNull(),
+            exactHead = raw.string("exactHead"),
+            mergeCandidate = raw.string("mergeCandidate"),
+            unknownFields = (raw.keys - EVIDENCE_FIELDS).sorted(),
+            present = true
+        )
+    }
+
+    private fun Map<String, Any?>.itemStatus(version: String): String =
+        mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
+
+    private fun Map<String, Any?>.string(vararg path: String): String {
+        var current: Any? = this
+        path.forEach { key -> current = (current as? Map<*, *>)?.get(key) }
+        return current?.toString().orEmpty()
+    }
+
+    private fun Map<String, Any?>.map(key: String): Map<String, Any?> =
+        (get(key) as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }.orEmpty()
+
+    private fun Map<String, Any?>.mapList(key: String): List<Map<String, Any?>> =
+        (get(key) as? Iterable<*>)?.mapNotNull { value ->
+            (value as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }
+        }.orEmpty()
+
+    private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) =
+        AdapterArtifactRenderingLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
         const val WORK_PACKAGE = ".flow-agent/work-packages/A0.6-adapter-artifact-rendering.yaml"

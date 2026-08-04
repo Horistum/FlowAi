@@ -1,0 +1,78 @@
+{
+  "intentVersion" : "2.0",
+  "kind" : "FlowIntentDocument",
+  "name" : "checkout-build-image",
+  "description" : "Target-scoped reference intent proving ordered native checkout and image build projection.",
+  "inputs" : [ {
+    "name" : "version",
+    "type" : "text",
+    "required" : true
+  } ],
+  "systems" : [ {
+    "name" : "source",
+    "type" : "git",
+    "purpose" : "Public application source repository",
+    "config" : { }
+  }, {
+    "name" : "registry",
+    "type" : "dockerRegistry",
+    "purpose" : "Local image build target without registry push",
+    "config" : { }
+  } ],
+  "triggers" : [ ],
+  "workflows" : [ {
+    "name" : "build-reference-image",
+    "kind" : "BUILD",
+    "steps" : [ {
+      "id" : "checkout",
+      "capability" : "CHECKOUT",
+      "uses" : "git.checkout",
+      "requires" : [ ],
+      "produces" : [ ],
+      "params" : {
+        "system" : {
+          "value" : "source",
+          "kind" : "string"
+        },
+        "url" : {
+          "value" : "https://github.com/octocat/Hello-World.git",
+          "kind" : "string"
+        },
+        "branch" : {
+          "value" : "main",
+          "kind" : "string"
+        }
+      }
+    }, {
+      "id" : "build-image",
+      "capability" : "BUILD_IMAGE",
+      "uses" : "docker.build",
+      "requires" : [ "checkout" ],
+      "produces" : [ ],
+      "params" : {
+        "system" : {
+          "value" : "registry",
+          "kind" : "string"
+        },
+        "image" : {
+          "value" : "ghcr.io/flowlang/reference:${version}",
+          "kind" : "string"
+        },
+        "path" : {
+          "value" : ".",
+          "kind" : "string"
+        },
+        "push" : {
+          "value" : false,
+          "kind" : "boolean"
+        }
+      }
+    } ]
+  } ],
+  "policies" : [ ],
+  "failure" : {
+    "notify" : false,
+    "rollback" : false,
+    "stopOnError" : true
+  }
+}
