@@ -9,52 +9,52 @@ cases:
   - id: sequential
     fixture: sequential
     requiredKinds:
-      - workflowScope
       - workflowLifetime
+      - workflowScope
   - id: parallel
     fixture: parallel
     requiredKinds:
-      - workflowScope
-      - workflowLifetime
       - branchIsolation
+      - workflowLifetime
+      - workflowScope
   - id: retry
     fixture: retry
     requiredKinds:
-      - workflowScope
-      - workflowLifetime
       - attemptIsolation
+      - workflowLifetime
+      - workflowScope
   - id: approval
     fixture: approval
     requiredKinds:
-      - workflowScope
-      - workflowLifetime
       - suspendResume
+      - workflowLifetime
+      - workflowScope
   - id: failure-handler
     fixture: failure-handler
     requiredKinds:
-      - workflowScope
-      - workflowLifetime
       - failurePropagation
+      - workflowLifetime
+      - workflowScope
   - id: value-continuity
     fixture: value-continuity
     requiredKinds:
-      - workflowScope
-      - workflowLifetime
       - valuePropagation
+      - workflowLifetime
+      - workflowScope
   - id: workspace-continuity
     fixture: workspace-continuity
     requiredKinds:
-      - workflowScope
-      - workflowLifetime
       - ephemeralWorkspace
+      - workflowLifetime
+      - workflowScope
       - workspacePropagation
   - id: state-continuity
     fixture: state-continuity
     requiredKinds:
-      - workflowScope
-      - workflowLifetime
       - durableState
       - statePropagation
+      - workflowLifetime
+      - workflowScope
 concreteReferences:
   - id: jenkins-checkout-build-image
     target: jenkins
