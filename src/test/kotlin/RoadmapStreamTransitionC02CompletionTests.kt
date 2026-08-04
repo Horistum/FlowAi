@@ -63,9 +63,10 @@ class RoadmapStreamTransitionC02CompletionTests {
         STATIC_FILES.forEach { path ->
             File(root, path).apply { parentFile.mkdirs(); writeText("fixture\n") }
         }
-        File(root, RoadmapStreamTransitionAuthority.ADAPTER_SEQUENCE).writeText(
-            "package fixture\nobject AdapterRoadmapSequence\n"
-        )
+        File(root, RoadmapStreamTransitionAuthority.ADAPTER_SEQUENCE).apply {
+            parentFile.mkdirs()
+            writeText("package fixture\nobject AdapterRoadmapSequence\n")
+        }
         write(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX, """
             primaryRoadmapStream: conformance
             currentDecision:
