@@ -26,6 +26,12 @@
     "state" : "SEMANTIC_ONLY",
     "executable" : false
   }, {
+    "file" : "github-actions.executable.yaml",
+    "layer" : "TARGET_PROJECTION",
+    "state" : "EXECUTABLE",
+    "executable" : true,
+    "target" : "github-actions"
+  }, {
     "file" : "jenkins.executable.yaml",
     "layer" : "TARGET_PROJECTION",
     "state" : "EXECUTABLE",
@@ -33,6 +39,17 @@
     "target" : "jenkins"
   } ],
   "targets" : [ {
+    "target" : "github-actions",
+    "capabilityCompatibility" : "SUPPORTED",
+    "effectiveCompatibility" : "SUPPORTED",
+    "materializationReadiness" : "COMPLETE",
+    "projectionReadiness" : "EXECUTABLE",
+    "renderMode" : "EXECUTABLE",
+    "executable" : true,
+    "manifestPresent" : true,
+    "renderedArtifactPresent" : true,
+    "blockers" : [ ]
+  }, {
     "target" : "jenkins",
     "capabilityCompatibility" : "SUPPORTED",
     "effectiveCompatibility" : "SUPPORTED",
