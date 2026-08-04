@@ -32,9 +32,6 @@ class BoundedDomainCorpusRoadmapLifecycleAuthority(private val rootDir: File = F
             if (conformanceRoadmap.itemStatus(NEXT_ITEM) != "planned") {
                 add("C0.2 must remain planned until A1.0 provides a second executable-target proof.")
             }
-            if (phase == "COMPLETED" && conformanceRoadmap.string("currentDecision", "completedItem") != CURRENT_ITEM) {
-                add("Conformance roadmap must retain C0.1 as its completed item.")
-            }
             REQUIRED_FILES.filterNot { File(rootDir, it).isFile }.forEach {
                 add("Required C0.1 file is missing: $it")
             }

@@ -10,10 +10,10 @@ import org.flowlang.roadmap.RoadmapTransitionPhase
 
 class RoadmapStreamTransitionAuthorityTests {
     @Test
-    fun repositorySelectsActiveC011Correction() {
+    fun repositoryActivatesA10AfterCompletedCorrection() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
         assertEquals(
-            expected = RoadmapTransitionPhase.C0_1_1_ACTIVE,
+            expected = RoadmapTransitionPhase.A1_0_ACTIVE,
             actual = report.phase,
             message = report.errors.joinToString(" | ")
         )

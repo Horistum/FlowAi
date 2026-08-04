@@ -171,6 +171,6 @@ lastKnownValidation:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
     - "A0.1 through A0.7 are completed and merged; A0.8 does not exist."
-    - "C0.1.1 is complete on its passed implementation boundary."
+    - "C0.1.1 implementation evidence remains external exact-head CI evidence until PR #105 merges; it does not impersonate merged history."
     - "A1.0 is selected as active work but has no executable support claim until its own evidence passes."
     - "C0.2 remains planned after A1.0."
