@@ -1,0 +1,19 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: A04
+title: Extract transform and load value pipeline
+lifecycle: MUTATION_VALIDATED
+category: advanced
+domain: data-transformation
+sourceRef: airflow-taskflow-etl
+source: {workflow: source/workflow.py, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: extract-output-removed, definition: mutations/extract-output-removed/mutation.yaml}
+invariants:
+- Extracted order data reaches the transform step as a named value.
+- The transformed total reaches the load step as a distinct named value.
+- Extract, transform and load remain canonical data-transformation semantics rather than opaque runtime commands.

@@ -194,6 +194,40 @@ sources:
   - artifact-produce
   - artifact-consume
   - artifact-continuity
+- id: airflow-taskflow-etl
+  platform: airflow
+  sourceKind: official-example
+  admission: admitted
+  repository: apache/airflow
+  revision: 40ced09754fd50556de2a950bdea3a83261b25b0
+  path: airflow-core/src/airflow/example_dags/tutorial_taskflow_api.py
+  license:
+    status: verified
+    spdx: Apache-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - data-pipeline
+  - extract
+  - transform
+  - load
+  - value-continuity
+- id: hashicorp-terraform-apply
+  platform: github-actions
+  sourceKind: official-example
+  admission: admitted
+  repository: hashicorp/setup-terraform
+  revision: 8620a60d7c841f00a53b5dd39f0027c2d042082f
+  path: .github/workflows/setup-terraform.yml
+  license:
+    status: verified
+    spdx: MPL-2.0
+    evidence: LICENSE
+  semanticLoad:
+  - infrastructure-init
+  - infrastructure-apply
+  - infrastructure-output
+  - state-change
+  - value-continuity
 - id: tekton-pipeline-semantics
   platform: tekton
   sourceKind: official-semantic-reference

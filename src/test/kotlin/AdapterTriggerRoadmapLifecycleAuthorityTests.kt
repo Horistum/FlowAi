@@ -56,6 +56,22 @@ class AdapterTriggerRoadmapLifecycleAuthorityTests {
     }
 
     @Test
+    fun completedStateAllowsExplicitConformanceSuccessor() {
+        val report = authority.evaluate(
+            completedInput().copy(
+                primaryStream = "conformance",
+                indexNextItem = "C0.1",
+                indexNextStream = "conformance",
+                releasePrimaryStream = "conformance",
+                releaseNextItem = "C0.1"
+            )
+        )
+
+        assertEquals(AdapterTriggerLifecyclePhase.COMPLETED, report.phase)
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+    }
+
+    @Test
     fun completedStateRejectsFabricatedNextItem() {
         val report = authority.evaluate(
             completedInput().copy(

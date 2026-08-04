@@ -1,0 +1,14 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: n05-runtime-generated-pipeline-missing-branch
+description: Mutation removes the branch input while pipeline generation still consumes it.
+workflows:
+- name: main
+  kind: CUSTOM
+  steps:
+  - id: generate-pipeline
+    capability: CUSTOM
+    params:
+      branch: 'ref:branch'
+      description: Discover test directories at runtime and generate conditional delivery steps
+failure: {notify: false, rollback: false, stopOnError: true}

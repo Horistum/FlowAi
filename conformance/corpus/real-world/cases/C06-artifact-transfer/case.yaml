@@ -4,6 +4,7 @@ id: C06
 title: Named artifact producer-to-consumer transfer
 lifecycle: MUTATION_VALIDATED
 category: common
+domain: software-delivery
 sourceRef: argo-artifact-passing
 source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
 sourceObservations: source-observations.md

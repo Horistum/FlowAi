@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 39
+stateVersion: 41
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,15 +16,15 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 9
-  activeTrack: "adapter-portfolio"
+  roadmapVersion: 11
+  activeTrack: "bounded-conformance"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
-  primaryStream: "adapters"
+  primaryStream: "conformance"
   completedAdapterItem: "A0.7"
   completedAdapterItemName: "Trigger Materialization Coverage"
-  nextItem: ""
-  nextItemName: ""
+  nextItem: "C0.2"
+  nextItemName: "Abstract Topology Matrix"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -147,21 +147,25 @@ qualityPrinciples:
   - "Adapter conformance runs after frozen Core closure and cannot mutate the Core pre-closure inventory."
   - "An adapter item may become completed only after its lifecycle authority records a passed implementation boundary."
   - "Adapter lifecycle completion requires the complete declared production, test, conformance and documentation boundary."
+  - "Bounded conformance domains are a closed vocabulary and every accepted case declares exactly one domain."
+  - "Conformance domain coverage requires negative mutation polarity and cannot be inferred from catalog labels alone."
+  - "The conformance inventory remains independent from the frozen Core and adapter inventories."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-a0.7-implementation-boundary"
-  flowAgentStructure: "passed-on-a0.7-implementation-boundary"
-  flowAgentContextGeneration: "passed-on-a0.7-implementation-boundary"
-  cleanTest: "passed-on-a0.7-implementation-boundary"
-  conformance: "passed-on-a0.7-implementation-boundary"
-  executableReferenceEvidence: "passed-on-a0.7-implementation-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-a0.7-implementation-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-a0.7-implementation-boundary"
-  validationSource: "Flow CI #2526, run 30803256865, passed exact A0.7 implementation head 9528d67cc568af4539015ac583eca500ea3b29bc and synthetic merge candidate 56b664fac9a0c353073d73439487862f658e8a3c."
+  flowAgentTooling: "passed-on-c0.1-implementation-boundary"
+  flowAgentStructure: "passed-on-c0.1-implementation-boundary"
+  flowAgentContextGeneration: "passed-on-c0.1-implementation-boundary"
+  cleanTest: "passed-on-c0.1-implementation-boundary"
+  conformance: "passed-on-c0.1-implementation-boundary"
+  executableReferenceEvidence: "passed-on-c0.1-implementation-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-c0.1-implementation-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-c0.1-implementation-boundary"
+  boundedDomainCorpusEvidence: "passed-on-c0.1-implementation-boundary"
+  validationSource: "Flow CI #2641, run 30817690333, passed exact C0.1 implementation head 2fd59e7fa0ae486cf073453d1b59a3d19ed2b4d4 and synthetic merge candidate cbd8788ccd212e263d80d141ea5f5bf2648073c3 with 808 tests and 120 conformance checks."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
-    - "A0.1 through A0.6 are completed and merged."
-    - "A0.7 implementation evidence is external exact-head CI evidence until PR #103 merges; it does not impersonate merged history."
-    - "A0.7 completion metadata cites the passed implementation boundary; the PR completion head must pass a distinct exact-head and synthetic merge-candidate boundary before readiness."
-    - "A0.7 is the terminal declared adapter item; no A0.8 or undeclared successor is selected."
+    - "A0.1 through A0.7 are completed and merged."
+    - "C0.1 implementation evidence is external exact-head CI evidence until PR #104 merges; it does not impersonate merged history."
+    - "C0.1 completion metadata cites the passed implementation boundary; the PR completion head must pass a distinct exact-head and synthetic merge-candidate boundary before readiness."
+    - "C0.2 is selected as next without adding its work package or implementation scope."

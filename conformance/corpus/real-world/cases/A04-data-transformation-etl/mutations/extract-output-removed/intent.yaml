@@ -1,0 +1,20 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: a04-data-transformation-etl-missing-extract-output
+workflows:
+- name: main
+  kind: DATA_PIPELINE
+  steps:
+  - id: extract
+    capability: DATA_TRANSFORM
+    params: {operation: extract-orders, mapping: orders-json}
+  - id: transform
+    capability: DATA_TRANSFORM
+    requires: [extract]
+    produces: [order_total]
+    params: {operation: sum-order-values, mapping: 'ref:orders'}
+  - id: load
+    capability: DATA_TRANSFORM
+    requires: [transform]
+    params: {operation: publish-order-total, mapping: 'ref:order_total'}
+failure: {notify: false, rollback: false, stopOnError: true}

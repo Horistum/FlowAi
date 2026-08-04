@@ -1,0 +1,4 @@
+assessments:
+- target: jenkins
+  allowedResults: [BLOCKED_BY_TARGET_CAPABILITY]
+  mustNotBeExecutable: true

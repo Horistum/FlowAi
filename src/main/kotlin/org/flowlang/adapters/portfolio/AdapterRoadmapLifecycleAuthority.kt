@@ -67,7 +67,7 @@ data class AdapterRoadmapLifecycleCheck(
 )
 
 data class AdapterRoadmapLifecycleReport(
-    val reportVersion: String = "1.2",
+    val reportVersion: String = "1.3",
     val phase: AdapterRoadmapLifecyclePhase,
     val status: String,
     val checks: List<AdapterRoadmapLifecycleCheck>,
@@ -140,8 +140,11 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
             input.indexNextStream,
             input.adapterNextItem
         )
-        val releaseAligned = input.releasePrimaryStream == "adapters" &&
-            input.releaseNextItem == input.adapterNextItem
+        val releaseAligned = AdapterRoadmapSequence.isReleaseFocusAligned(
+            input.releasePrimaryStream,
+            input.releaseNextItem,
+            input.adapterNextItem
+        )
         val evidenceAligned = when (phase) {
             AdapterRoadmapLifecyclePhase.IMPLEMENTING -> !input.implementationEvidence.present
             AdapterRoadmapLifecyclePhase.COMPLETED -> input.implementationEvidence.structurallyValid
@@ -177,13 +180,13 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
                 "adapters.a0.1.index-state",
                 indexAligned,
                 listOf("primary=${input.primaryStream}", "indexNext=${input.indexNextItem}", "nextStream=${input.indexNextStream}"),
-                "The roadmap index must mirror an active adapter focus or an empty terminal focus."
+                "The roadmap index must mirror active adapter work, terminal adapter focus, or the explicit conformance successor."
             ),
             check(
                 "adapters.a0.1.release-state",
                 releaseAligned,
                 listOf("primary=${input.releasePrimaryStream}", "releaseNext=${input.releaseNextItem}"),
-                "Release state must expose the same current adapter lifecycle focus."
+                "Release state must expose active adapter work, terminal adapter focus, or the explicit conformance successor."
             ),
             check(
                 "adapters.a0.1.implementation-evidence",

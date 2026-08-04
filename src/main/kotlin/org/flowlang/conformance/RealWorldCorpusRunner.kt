@@ -120,8 +120,10 @@ class RealWorldCorpusRunner(
         if ((plan != null) != expected.generated) {
             mismatches += "Expected generated=${expected.generated}, actual=${plan != null}."
         }
-        if (DYNAMIC_MATRIX_SOURCE_SEMANTIC in sourceSemantics && DYNAMIC_MATRIX_FEATURE !in expected.requiredFeatures) {
-            mismatches += "Expected plan omitted source-observed feature '$DYNAMIC_MATRIX_FEATURE'."
+        requiredSourceFeatures(sourceSemantics).forEach { feature ->
+            if (feature !in expected.requiredFeatures) {
+                mismatches += "Expected plan omitted source-observed feature '$feature'."
+            }
         }
         if (plan != null) semanticDiagnostics += comparePlan(plan, expected, sourceSemantics)
 
@@ -154,12 +156,11 @@ class RealWorldCorpusRunner(
         )
     }
 
-    /**
-     * Verifies authored ordering independently from the generated plan.
-     *
-     * Intent lowering currently inserts conservative sequential edges. Those edges
-     * must never be accepted as proof that a source-authored fan-in relation existed.
-     */
+    private fun requiredSourceFeatures(sourceSemantics: Set<String>): Set<String> = buildSet {
+        if (DYNAMIC_MATRIX_SOURCE_SEMANTIC in sourceSemantics) add(DYNAMIC_MATRIX_FEATURE)
+        if (RUNTIME_PLAN_SOURCE_SEMANTIC in sourceSemantics) add(RUNTIME_PLAN_FEATURE)
+    }
+
     private fun compareAuthoredIntent(
         intent: IntentDocument,
         expected: RealWorldExpectedPlan
@@ -231,9 +232,12 @@ class RealWorldCorpusRunner(
         if (DYNAMIC_MATRIX_SOURCE_SEMANTIC in sourceSemantics && !hasExplicitDynamicMatrixRepresentation(plan)) {
             diagnostics += DYNAMIC_MATRIX_NOT_REPRESENTED
         }
+        if (RUNTIME_PLAN_SOURCE_SEMANTIC in sourceSemantics && !hasExplicitRuntimePlanRepresentation(plan)) {
+            diagnostics += RUNTIME_PLAN_NOT_REPRESENTED
+        }
 
         expected.requiredFeatures
-            .filterNot { it == DYNAMIC_MATRIX_FEATURE }
+            .filterNot { it == DYNAMIC_MATRIX_FEATURE || it == RUNTIME_PLAN_FEATURE }
             .forEach { feature ->
                 when (feature) {
                     "typed-human-input" -> {
@@ -254,18 +258,28 @@ class RealWorldCorpusRunner(
                             .eachCount()
                         if (incoming.values.none { it >= 2 }) diagnostics += REQUIRED_RELATION_MISSING
                     }
+                    "data-transform" -> {
+                        val transformTasks = nodes.filterIsInstance<TaskNode>().filter {
+                            it.semanticCapability == "DATA_TRANSFORM" || it.semanticCapability == "TRANSFORM"
+                        }
+                        if (transformTasks.isEmpty()) diagnostics += DATA_TRANSFORM_NOT_REPRESENTED
+                    }
+                    "infrastructure-provision" -> {
+                        val provisionTasks = nodes.filterIsInstance<TaskNode>().filter {
+                            it.semanticCapability == "PROVISION"
+                        }
+                        if (provisionTasks.isEmpty()) diagnostics += INFRASTRUCTURE_PROVISION_NOT_REPRESENTED
+                    }
                 }
             }
         return diagnostics.toList()
     }
 
-    /**
-     * Generic loop or parallel nodes are not matrix evidence: neither carries both
-     * output-derived cardinality and per-item binding. The corpus therefore accepts
-     * the feature only when ExecutionPlan owns an explicit matrix representation.
-     */
     private fun hasExplicitDynamicMatrixRepresentation(plan: ExecutionPlan): Boolean =
         PlanDependencyRelations.flatten(plan.nodes).any { node -> node.kind == DYNAMIC_MATRIX_NODE_KIND }
+
+    private fun hasExplicitRuntimePlanRepresentation(plan: ExecutionPlan): Boolean =
+        PlanDependencyRelations.flatten(plan.nodes).any { node -> node.kind == RUNTIME_PLAN_NODE_KIND }
 
     private fun assessTarget(
         caseId: String,
@@ -280,7 +294,12 @@ class RealWorldCorpusRunner(
             )
         }
         if (target !in targets) {
-            return RealWorldTargetAssessmentActual(target, RealWorldResult.BLOCKED_BY_TARGET_CAPABILITY, false, "Target is absent from the runtime registry.")
+            return RealWorldTargetAssessmentActual(
+                target,
+                RealWorldResult.BLOCKED_BY_TARGET_CAPABILITY,
+                false,
+                "Target is absent from the runtime registry."
+            )
         }
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target, strict = false)
         if (compatibility.hasErrors) {
@@ -299,7 +318,7 @@ class RealWorldCorpusRunner(
         return runCatching {
             val selection = TargetSelectionAuthority.fromReferenceSnapshot(
                 value = target,
-                scenarioId = "real-world-${caseId.replace(':', '-')}",
+                scenarioId = "real-world-${caseId.replace(':', '-')} ".trim(),
                 targets = targets
             )
             val manifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
@@ -321,7 +340,6 @@ class RealWorldCorpusRunner(
         }
     }
 
-    /** Detect references before their producer is authored, not merely anywhere in the file. */
     private fun missingReferenceDiagnostics(intent: IntentDocument): List<String> {
         val known = linkedSetOf<String>()
         known += intent.inputs.map { it.name }
@@ -366,7 +384,8 @@ class RealWorldCorpusRunner(
 
     private fun determineOutcome(diagnostics: Set<String>): RealWorldResult = when {
         MISSING_VALUE_PRODUCER in diagnostics -> RealWorldResult.INVALID_SOURCE_PIPELINE
-        DYNAMIC_MATRIX_NOT_REPRESENTED in diagnostics -> RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION
+        DYNAMIC_MATRIX_NOT_REPRESENTED in diagnostics || RUNTIME_PLAN_NOT_REPRESENTED in diagnostics ->
+            RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION
         diagnostics.isNotEmpty() -> RealWorldResult.SEMANTIC_ONLY
         else -> RealWorldResult.SUPPORTED_WITH_BINDING
     }
@@ -384,17 +403,25 @@ class RealWorldCorpusRunner(
     companion object {
         const val CORPUS_ROOT = "conformance/corpus/real-world"
         const val INTEGRITY_CHECK = "real-world-corpus.integrity"
+        const val DOMAIN_COVERAGE_CHECK = "real-world-corpus.domain-coverage"
         const val MUTATION_CHECK = "real-world-corpus.mutations"
+        const val DOMAIN_MUTATION_CHECK = "real-world-corpus.domain-mutation-polarity"
         const val MISSING_VALUE_PRODUCER = "REAL_WORLD_MISSING_VALUE_PRODUCER"
         const val EXPECTED_TASK_MISSING = "REAL_WORLD_EXPECTED_TASK_MISSING"
         const val EXPECTED_TASK_MISMATCH = "REAL_WORLD_EXPECTED_TASK_MISMATCH"
         const val REQUIRED_RELATION_MISSING = "REAL_WORLD_REQUIRED_RELATION_MISSING"
         const val REQUIRED_PARALLELISM_SERIALIZED = "REAL_WORLD_REQUIRED_PARALLELISM_SERIALIZED"
         const val DYNAMIC_MATRIX_NOT_REPRESENTED = "REAL_WORLD_DYNAMIC_MATRIX_NOT_REPRESENTED"
+        const val RUNTIME_PLAN_NOT_REPRESENTED = "REAL_WORLD_RUNTIME_PLAN_NOT_REPRESENTED"
+        const val DATA_TRANSFORM_NOT_REPRESENTED = "REAL_WORLD_DATA_TRANSFORM_NOT_REPRESENTED"
+        const val INFRASTRUCTURE_PROVISION_NOT_REPRESENTED = "REAL_WORLD_INFRASTRUCTURE_PROVISION_NOT_REPRESENTED"
         const val TYPED_HUMAN_INPUT_NOT_REPRESENTED = "REAL_WORLD_TYPED_HUMAN_INPUT_NOT_REPRESENTED"
         const val ARTIFACT_IDENTITY_NOT_REPRESENTED = "REAL_WORLD_ARTIFACT_IDENTITY_NOT_REPRESENTED"
         private const val DYNAMIC_MATRIX_SOURCE_SEMANTIC = "dynamic-matrix-from-output"
         private const val DYNAMIC_MATRIX_FEATURE = "dynamic-matrix"
         private const val DYNAMIC_MATRIX_NODE_KIND = "DynamicMatrix"
+        private const val RUNTIME_PLAN_SOURCE_SEMANTIC = "runtime-plan-generation"
+        private const val RUNTIME_PLAN_FEATURE = "runtime-generated-plan"
+        private const val RUNTIME_PLAN_NODE_KIND = "DynamicPlan"
     }
 }

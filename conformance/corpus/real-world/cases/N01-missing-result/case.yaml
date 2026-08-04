@@ -4,6 +4,7 @@ id: N01
 title: Consumer references a result with no producer
 lifecycle: MUTATION_VALIDATED
 category: negative
+domain: software-delivery
 sourceRef: argo-artifact-passing
 source: {workflow: source/workflow.yaml, provenance: source/provenance.yaml, license: source/LICENSE}
 sourceObservations: source-observations.md

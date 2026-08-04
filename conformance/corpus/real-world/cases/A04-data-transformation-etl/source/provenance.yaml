@@ -1,0 +1,4 @@
+repository: apache/airflow
+revision: 40ced09754fd50556de2a950bdea3a83261b25b0
+path: airflow-core/src/airflow/example_dags/tutorial_taskflow_api.py
+license: Apache-2.0

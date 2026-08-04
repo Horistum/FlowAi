@@ -33,6 +33,28 @@ scenarios:
   continuityKinds: [artifact, value]
   baselineExpectation: SUPPORTED_WITH_BINDING
   claim: accepted-evidence
+- id: A04
+  title: extract-transform-load-data-pipeline
+  category: advanced
+  admission: admitted
+  lifecycle: ACCEPTED
+  casePath: cases/A04-data-transformation-etl
+  sourceRefs: [airflow-taskflow-etl]
+  dominantSemantics: [data-pipeline, transform, value-continuity]
+  continuityKinds: [value]
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: accepted-evidence
+- id: P13
+  title: terraform-infrastructure-apply-and-verify
+  category: production
+  admission: admitted
+  lifecycle: ACCEPTED
+  casePath: cases/P13-infrastructure-provision
+  sourceRefs: [hashicorp-terraform-apply]
+  dominantSemantics: [infrastructure-provision, state-change, verification]
+  continuityKinds: [value]
+  baselineExpectation: SUPPORTED_WITH_BINDING
+  claim: accepted-evidence
 - id: A06
   title: typed-human-input-form
   category: advanced
@@ -65,6 +87,17 @@ scenarios:
   dominantSemantics: [diagnostic, missing-value, mutation-fixture]
   continuityKinds: [value, artifact]
   baselineExpectation: INVALID_SOURCE_PIPELINE
+  claim: accepted-evidence
+- id: N05
+  title: pipeline-generated-by-arbitrary-code
+  category: negative
+  admission: admitted
+  lifecycle: ACCEPTED
+  casePath: cases/N05-runtime-generated-pipeline
+  sourceRefs: [buildkite-dynamic-pipeline]
+  dominantSemantics: [dynamic-plan, conditional-delivery, opaque-code]
+  continuityKinds: []
+  baselineExpectation: UNSUPPORTED_DYNAMIC_CONSTRUCTION
   claim: accepted-evidence
 - id: N08
   title: parallelism-silently-sequentialized

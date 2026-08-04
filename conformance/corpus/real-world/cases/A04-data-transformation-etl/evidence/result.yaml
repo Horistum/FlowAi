@@ -1,0 +1,8 @@
+kind: FlowRealWorldEvidence
+version: '0.2'
+caseId: A04
+status: ACCEPTED
+outcome: SUPPORTED_WITH_BINDING
+expectedDiagnostics: []
+sourceRevision: 40ced09754fd50556de2a950bdea3a83261b25b0
+validatedBy: [real-world-corpus.case.a04, real-world-corpus.mutations]

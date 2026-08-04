@@ -1,29 +1,50 @@
 project: Flow Conformance
 stream: conformance
-roadmapVersion: 2
-status: gated
+roadmapVersion: 4
+status: active
 
-purpose: "Maintain bounded evidence for universal contracts and topology behavior."
+purpose: "Maintain bounded independent evidence for universal contracts and implementation behavior."
 
 rules:
-  - "The gating domains are software delivery, data transformation, and infrastructure state change."
-  - "Other domains are outside the active completion scope."
+  - "The gating domains are software delivery, data transformation and infrastructure state change."
+  - "Concrete source workflows are evidence inputs, never semantic authorities."
+  - "Every accepted case declares exactly one gating domain and immutable source provenance."
+  - "Every gating domain has accepted behavioral evidence plus a negative mutation."
+  - "Infrastructure state change requires explicit canonical PROVISION semantics; a generic deployment label or command text is insufficient."
+  - "Unsupported runtime-generated delivery structure remains explicit and cannot be approximated as a static plan."
+  - "Corpus evidence runs only after frozen Core closure and adapter certification."
+  - "Conformance work cannot mutate the Core pre-closure or adapter inventories."
+  - "Other domains remain outside the active completion scope."
   - "Concrete artifact checks remain separate from universal contract checks."
+
+currentDecision:
+  completedItem: "C0.1"
+  completedItemName: "Bounded Domain Corpus"
+  nextItem: "C0.2"
+  nextItemName: "Abstract Topology Matrix"
+  decisionBasis: "Flow CI #2641, run 30817690333, passed C0.1 on exact implementation head 2fd59e7fa0ae486cf073453d1b59a3d19ed2b4d4 and synthetic merge candidate cbd8788ccd212e263d80d141ea5f5bf2648073c3 with 808 tests and 120 conformance checks. C0.2 is selected without adding its implementation scope."
 
 items:
   - version: "C0.1"
     name: "Bounded Domain Corpus"
     type: "core-evidence"
-    status: planned
-    purpose: "Exercise shared contracts across the three gating domains."
+    status: completed
+    purpose: "Exercise preserved meaning, dependencies and explicit model gaps across the three gating domains."
     dependsOnCore: "0.9.7.7"
     completionEvidence:
-      - "Meaning, effects, dependencies, policy and controls remain preserved."
+      - "Software delivery, data transformation and infrastructure state change each have accepted behavioral case evidence."
+      - "Data transformation carries explicit DATA_TRANSFORM semantics and named value continuity."
+      - "Infrastructure state change carries explicit PROVISION semantics backed by a pinned apply workflow."
+      - "Runtime-generated delivery remains explicitly unsupported instead of being approximated or relabeled as infrastructure."
+      - "Every accepted case declares one closed domain identity and immutable source provenance."
+      - "Every domain has mutation evidence that proves rejection polarity rather than acceptance-only coverage."
+      - "The corpus executes through the production intent, validation, AST and planning path."
+      - "The conformance inventory is exact and remains separate from frozen Core and adapter inventories."
 
   - version: "C0.2"
     name: "Abstract Topology Matrix"
     type: "topology-evidence"
-    status: planned
+    status: next
     purpose: "Exercise plans against synthetic topology profiles."
     dependsOnCore: "0.9.7.8"
     completionEvidence:

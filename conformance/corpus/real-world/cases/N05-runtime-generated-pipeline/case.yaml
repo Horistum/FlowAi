@@ -1,0 +1,19 @@
+kind: FlowRealWorldCase
+version: '0.2'
+id: N05
+title: Runtime-generated delivery pipeline
+lifecycle: MUTATION_VALIDATED
+category: negative
+domain: software-delivery
+sourceRef: buildkite-dynamic-pipeline
+source: {workflow: source/workflow.sh, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+- {id: branch-input-missing, definition: mutations/branch-input-missing/mutation.yaml}
+invariants:
+- Runtime-discovered pipeline cardinality is not approximated as a fixed static task list.
+- The source remains delivery-pipeline evidence and is not relabeled as infrastructure provisioning.
+- Unsupported dynamic construction blocks executable classification with an exact diagnostic.

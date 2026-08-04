@@ -1,0 +1,26 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: p13-infrastructure-provision-missing-state
+description: Mutation removes the provisioned-state producer while verification still consumes it.
+workflows:
+- name: main
+  kind: PROVISION
+  steps:
+  - id: initialize
+    capability: CUSTOM
+    produces: [initialized_configuration]
+    params: {description: Initialize the pinned infrastructure configuration}
+  - id: apply
+    capability: PROVISION
+    requires: [initialize]
+    params:
+      mode: apply
+      resource: local-test-infrastructure
+      stack: 'ref:initialized_configuration'
+  - id: verify
+    capability: VERIFY
+    requires: [apply]
+    params:
+      subject: provisioned infrastructure
+      criteria: 'ref:provisioned_state'
+failure: {notify: false, rollback: false, stopOnError: true}
