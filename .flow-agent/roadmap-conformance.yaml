@@ -20,9 +20,9 @@ rules:
 currentDecision:
   completedItem: "C0.1"
   completedItemName: "Bounded Domain Corpus"
-  nextItem: ""
-  nextItemName: ""
-  decisionBasis: "C0.1 remains completed historical evidence while C0.1.1 repairs falsified enforcement claims. C0.2 is planned after A1.0 provides real GitHub Actions executable continuity evidence."
+  nextItem: "C0.1.1"
+  nextItemName: "Bounded Domain Integrity Correction"
+  decisionBasis: "C0.1.1 repairs falsified enforcement claims while C0.2 remains planned after A1.0 supplies real GitHub Actions executable continuity evidence."
 
 items:
   - version: "C0.1"
@@ -40,6 +40,19 @@ items:
       - "The domain vocabulary is explicitly scoped to C0.1 evidence and is not an exhaustive taxonomy."
       - "The corpus executes through the production intent, validation, AST and planning path."
       - "The conformance inventory is exact and remains separate from frozen Core and adapter inventories."
+
+  - version: "C0.1.1"
+    name: "Bounded Domain Integrity Correction"
+    type: "bounded-correction"
+    status: next
+    purpose: "Repair C0.1 representability, mutation-polarity and roadmap-ownership enforcement without changing Core meaning."
+    dependsOnCore: "0.9.7.10"
+    completionEvidence:
+      - "Each domain has a positively representable baseline."
+      - "Mutation polarity compares observed baseline and mutation results."
+      - "Dynamic negative evidence is checked independently."
+      - "Cross-stream selection is globally owned."
+      - "Exact-head and merge-candidate validation pass before A1.0 activation."
 
   - version: "C0.2"
     name: "Abstract Topology Matrix"

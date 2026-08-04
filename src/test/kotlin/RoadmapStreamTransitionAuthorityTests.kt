@@ -10,9 +10,9 @@ import org.flowlang.roadmap.RoadmapTransitionPhase
 
 class RoadmapStreamTransitionAuthorityTests {
     @Test
-    fun repositoryDeclaresActiveBoundedCorrection() {
+    fun repositorySelectsActiveC011Correction() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
-        assertEquals(RoadmapTransitionPhase.CORRECTION_REQUIRED, report.phase)
+        assertEquals(RoadmapTransitionPhase.C0_1_1_ACTIVE, report.phase)
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
@@ -40,8 +40,8 @@ class RoadmapStreamTransitionAuthorityTests {
         write(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX, """
             primaryRoadmapStream: adapters
             currentDecision:
-              correctionState: complete
-              activeCorrectionWorkPackage: ""
+              conformanceCorrectionState: complete
+              activeConformanceCorrectionWorkPackage: ""
               closureItem: "0.9.7.10"
               closureItemStatus: completed
               completedAdapterItem: "A0.7"
@@ -55,7 +55,6 @@ class RoadmapStreamTransitionAuthorityTests {
             currentDecision:
               completedItem: "A0.7"
               nextItem: "A1.0"
-              nextItemName: "GitHub Actions Artifact and Workspace Continuity"
             items:
               - version: "A0.7"
                 status: completed
@@ -68,6 +67,8 @@ class RoadmapStreamTransitionAuthorityTests {
               completedItem: "C0.1"
             items:
               - version: "C0.1"
+                status: completed
+              - version: "C0.1.1"
                 status: completed
               - version: "C0.2"
                 status: planned

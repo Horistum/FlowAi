@@ -17,22 +17,20 @@ class BoundedDomainCorpusRoadmapLifecycleAuthorityTests {
 
     @Test
     fun completedBoundaryRequiresDistinctImplementationAndCompletionEvidence() {
-        val root = createBoundary(sameBoundary = false)
-        val report = BoundedDomainCorpusRoadmapLifecycleAuthority(root).analyze()
+        val report = BoundedDomainCorpusRoadmapLifecycleAuthority(createBoundary(false)).analyze()
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
     @Test
     fun completedBoundaryRejectsReusedEvidence() {
-        val root = createBoundary(sameBoundary = true)
-        val report = BoundedDomainCorpusRoadmapLifecycleAuthority(root).analyze()
+        val report = BoundedDomainCorpusRoadmapLifecycleAuthority(createBoundary(true)).analyze()
         assertEquals("FAIL", report.status)
         assertTrue(report.errors.any { "must be distinct" in it })
     }
 
     @Test
     fun completedBoundaryRejectsPrematureC02Selection() {
-        val root = createBoundary(sameBoundary = false)
+        val root = createBoundary(false)
         val roadmap = File(root, BoundedDomainCorpusRoadmapLifecycleAuthority.CONFORMANCE_ROADMAP)
         roadmap.writeText(roadmap.readText().replace("status: planned", "status: next"))
         val report = BoundedDomainCorpusRoadmapLifecycleAuthority(root).analyze()
@@ -52,8 +50,7 @@ class BoundedDomainCorpusRoadmapLifecycleAuthorityTests {
         val completionHead = if (sameBoundary) implementationHead else "3333333333333333333333333333333333333333"
         val implementationRun = 33000000001L
         val completionRun = if (sameBoundary) implementationRun else 33000000002L
-        File(root, BoundedDomainCorpusRoadmapLifecycleAuthority.WORK_PACKAGE).writeText(
-            """
+        write(root, BoundedDomainCorpusRoadmapLifecycleAuthority.WORK_PACKAGE, """
             version: "C0.1"
             status: complete
             implementationEvidence:
@@ -70,24 +67,23 @@ class BoundedDomainCorpusRoadmapLifecycleAuthorityTests {
               runId: $completionRun
               exactHead: "$completionHead"
               mergeCandidate: "4444444444444444444444444444444444444444"
-            """.trimIndent() + "\n"
-        )
-        File(root, BoundedDomainCorpusRoadmapLifecycleAuthority.CONFORMANCE_ROADMAP).writeText(
-            """
+        """)
+        write(root, BoundedDomainCorpusRoadmapLifecycleAuthority.CONFORMANCE_ROADMAP, """
             stream: conformance
             status: active
             currentDecision:
               completedItem: "C0.1"
-              nextItem: ""
-              nextItemName: ""
             items:
               - version: "C0.1"
                 status: completed
               - version: "C0.2"
                 status: planned
-            """.trimIndent() + "\n"
-        )
+        """)
         return root
+    }
+
+    private fun write(root: File, path: String, content: String) {
+        File(root, path).apply { parentFile.mkdirs(); writeText(content.trimIndent() + "\n") }
     }
 
     companion object {

@@ -4,7 +4,7 @@ import java.io.File
 import org.flowlang.serialization.FlowYaml
 
 enum class RoadmapTransitionPhase {
-    CORRECTION_REQUIRED,
+    C0_1_1_ACTIVE,
     A1_0_ACTIVE,
     INVALID
 }
@@ -25,14 +25,14 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         val correction = requiredYaml(CORRECTION_WORK_PACKAGE)
         val a10 = requiredYaml(A10_WORK_PACKAGE)
 
-        val correctionState = roadmap.string("currentDecision", "correctionState")
-        val activeCorrection = roadmap.string("currentDecision", "activeCorrectionWorkPackage")
+        val conformanceCorrectionState = roadmap.string("currentDecision", "conformanceCorrectionState")
+        val activeConformanceCorrection = roadmap.string("currentDecision", "activeConformanceCorrectionWorkPackage")
         val phase = when {
-            correctionState == "required" &&
-                activeCorrection == CORRECTION_WORK_PACKAGE &&
-                correction.string("status") == "active" -> RoadmapTransitionPhase.CORRECTION_REQUIRED
-            correctionState == "complete" &&
-                activeCorrection.isBlank() &&
+            conformanceCorrectionState == "active" &&
+                activeConformanceCorrection == CORRECTION_WORK_PACKAGE &&
+                correction.string("status") == "active" -> RoadmapTransitionPhase.C0_1_1_ACTIVE
+            conformanceCorrectionState == "complete" &&
+                activeConformanceCorrection.isBlank() &&
                 correction.string("status") == "complete" &&
                 a10.string("status") == "active" -> RoadmapTransitionPhase.A1_0_ACTIVE
             else -> RoadmapTransitionPhase.INVALID
@@ -40,15 +40,11 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
 
         val errors = buildList {
             if (phase == RoadmapTransitionPhase.INVALID) {
-                add(
-                    "Roadmap transition must be CORRECTION_REQUIRED or A1_0_ACTIVE, got " +
-                        "correctionState=$correctionState activeCorrection=$activeCorrection " +
-                        "correctionStatus=${correction.string("status")} a10Status=${a10.string("status")}"
-                )
+                add("Roadmap transition must be C0_1_1_ACTIVE or A1_0_ACTIVE.")
             }
             requireRetainedClosure(roadmap, releaseState, this)
             if (conformanceRoadmap.itemStatus("C0.1") != "completed") {
-                add("C0.1 must remain completed while its falsified integrity claim is corrected.")
+                add("C0.1 must remain completed historical evidence while C0.1.1 repairs its gates.")
             }
             if (conformanceRoadmap.itemStatus("C0.2") != "planned") {
                 add("C0.2 must remain planned until A1.0 executable continuity evidence is completed.")
@@ -58,26 +54,23 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             }
 
             when (phase) {
-                RoadmapTransitionPhase.CORRECTION_REQUIRED -> {
-                    if (roadmap.string("primaryRoadmapStream") != "conformance") {
-                        add("The active C0.1 correction retains conformance as the primary stream.")
+                RoadmapTransitionPhase.C0_1_1_ACTIVE -> {
+                    if (roadmap.string("primaryRoadmapStream") != "conformance" ||
+                        roadmap.string("currentDecision", "nextItem") != "C0.1.1" ||
+                        roadmap.string("currentDecision", "nextItemName") != CORRECTION_ITEM_NAME ||
+                        roadmap.string("currentDecision", "nextItemStream") != "conformance"
+                    ) add("Roadmap index must select the active C0.1.1 conformance correction.")
+                    if (roadmap.string("currentDecision", "activeConformanceCorrectionWorkPackageName") != CORRECTION_PACKAGE_NAME) {
+                        add("Roadmap index must identify the active C0.1.1 work package by name.")
                     }
-                    if (roadmap.string("currentDecision", "activeCorrectionWorkPackageName") != CORRECTION_NAME) {
-                        add("Roadmap index must identify the active C0.1 integrity correction by name.")
-                    }
-                    requireBlankNextFocus(roadmap, "currentDecision", this, "Roadmap index")
-                    if (releaseState.string("roadmapState", "primaryStream") != "conformance") {
-                        add("The last passed release snapshot must still identify conformance during correction implementation.")
-                    }
+                    if (conformanceRoadmap.itemStatus("C0.1.1") != "next" ||
+                        conformanceRoadmap.string("currentDecision", "nextItem") != "C0.1.1"
+                    ) add("Conformance roadmap must select C0.1.1 as its next item.")
                     if (adapterRoadmap.string("status") != "completed" ||
                         adapterRoadmap.string("currentDecision", "completedItem") != "A0.7" ||
                         adapterRoadmap.string("currentDecision", "nextItem").isNotBlank()
-                    ) {
-                        add("The adapter roadmap must remain closed at A0.7 while the correction is active.")
-                    }
-                    if (a10.string("status") != "planned") {
-                        add("A1.0 work package must remain planned until correction evidence passes.")
-                    }
+                    ) add("The adapter roadmap must remain closed at A0.7 while C0.1.1 is active.")
+                    if (a10.string("status") != "planned") add("A1.0 must remain planned until correction evidence passes.")
                     if (correction.map("implementationEvidence").isNotEmpty()) {
                         add("An active correction must not contain authored implementation evidence.")
                     }
@@ -87,22 +80,18 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                         roadmap.string("currentDecision", "nextItem") != "A1.0" ||
                         roadmap.string("currentDecision", "nextItemName") != A10_NAME ||
                         roadmap.string("currentDecision", "nextItemStream") != "adapters"
-                    ) {
-                        add("Roadmap index must select A1.0 in the adapter stream after correction completion.")
-                    }
+                    ) add("Roadmap index must select A1.0 after correction completion.")
                     if (releaseState.string("roadmapState", "primaryStream") != "adapters" ||
                         releaseState.string("roadmapState", "nextItem") != "A1.0" ||
                         releaseState.string("roadmapState", "nextItemName") != A10_NAME
-                    ) {
-                        add("Release state must select the same A1.0 adapter focus.")
-                    }
+                    ) add("Release state must select the same A1.0 adapter focus.")
                     if (adapterRoadmap.string("status") != "active" ||
                         adapterRoadmap.string("currentDecision", "completedItem") != "A0.7" ||
                         adapterRoadmap.string("currentDecision", "nextItem") != "A1.0" ||
-                        adapterRoadmap.string("currentDecision", "nextItemName") != A10_NAME ||
                         adapterRoadmap.itemStatus("A1.0") != "next"
-                    ) {
-                        add("Adapter roadmap must retain completed A0.7 and activate A1.0.")
+                    ) add("Adapter roadmap must retain completed A0.7 and activate A1.0.")
+                    if (conformanceRoadmap.itemStatus("C0.1.1") != "completed") {
+                        add("C0.1.1 must be completed before A1.0 activation.")
                     }
                     if (!validEvidence(correction.map("implementationEvidence"))) {
                         add("Completed correction requires strict exact-head and merge-candidate Flow CI evidence.")
@@ -126,28 +115,16 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
     ) {
         if (roadmap.string("currentDecision", "closureItem") != "0.9.7.10" ||
             roadmap.string("currentDecision", "closureItemStatus") != "completed"
-        ) errors += "Roadmap index must retain the completed 0.9.7.10 Core closure identity."
+        ) errors += "Roadmap index must retain completed Core closure identity."
         if (roadmap.string("currentDecision", "completedAdapterItem") != "A0.7") {
             errors += "Roadmap index must retain completed adapter item A0.7."
         }
         if (releaseState.string("roadmapState", "closureItem") != "0.9.7.10" ||
             releaseState.string("roadmapState", "closureItemStatus") != "completed"
-        ) errors += "Release state must retain the completed 0.9.7.10 Core closure identity."
+        ) errors += "Release state must retain completed Core closure identity."
         if (releaseState.string("roadmapState", "completedAdapterItem") != "A0.7") {
             errors += "Release state must retain completed adapter item A0.7."
         }
-    }
-
-    private fun requireBlankNextFocus(
-        document: Map<String, Any?>,
-        section: String,
-        errors: MutableList<String>,
-        label: String
-    ) {
-        val retained = listOf("nextItem", "nextItemName", "nextItemStream")
-            .associateWith { document.string(section, it) }
-            .filterValues { it.isNotBlank() }
-        if (retained.isNotEmpty()) errors += "$label must not select normal work during an active correction: $retained"
     }
 
     private fun validEvidence(evidence: Map<String, Any?>): Boolean =
@@ -191,7 +168,8 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         const val CORRECTION_WORK_PACKAGE = ".flow-agent/work-packages/C0.1.1-bounded-domain-integrity-correction.yaml"
         const val A10_WORK_PACKAGE = ".flow-agent/work-packages/A1.0-github-actions-artifact-workspace-continuity.yaml"
-        private const val CORRECTION_NAME = "C0.1.1 Bounded Domain Integrity Correction"
+        private const val CORRECTION_ITEM_NAME = "Bounded Domain Integrity Correction"
+        private const val CORRECTION_PACKAGE_NAME = "C0.1.1 Bounded Domain Integrity Correction"
         private const val A10_NAME = "GitHub Actions Artifact and Workspace Continuity"
         private val SHA_PATTERN = Regex("[0-9a-f]{40}")
         private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
