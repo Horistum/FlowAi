@@ -177,4 +177,5 @@ lastKnownValidation:
     - "GitHub Actions is executable only for the bounded checkout-build-image workspace path; the generic workspace profile remains unsupported."
     - "The historical Jenkins executable reference remains independently canonical and unchanged."
     - "A1.0 post-A0 promotion evidence is isolated from the frozen A0 portfolio and inventory."
+    - "A1.0 completion evidence remains external exact-head CI evidence until PR #106 merges; it does not impersonate merged history."
     - "C0.2 Abstract Topology Matrix is the active conformance item."

@@ -56,6 +56,23 @@ class AdapterTriggerRoadmapLifecycleAuthorityTests {
     }
 
     @Test
+    fun completedA07RemainsValidAfterA10Completion() {
+        val report = authority.evaluate(
+            completedInput().copy(
+                adapterCompletedItem = "A1.0",
+                primaryStream = "conformance",
+                indexNextItem = "C0.2",
+                indexNextStream = "conformance",
+                releasePrimaryStream = "conformance",
+                releaseCompletedItem = "A1.0",
+                releaseNextItem = "C0.2"
+            )
+        )
+        assertEquals(AdapterTriggerLifecyclePhase.COMPLETED, report.phase)
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+    }
+
+    @Test
     fun completedStateRejectsFabricatedA08() {
         val report = authority.evaluate(
             completedInput().copy(
