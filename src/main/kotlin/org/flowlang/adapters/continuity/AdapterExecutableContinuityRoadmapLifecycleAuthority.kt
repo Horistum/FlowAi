@@ -108,10 +108,10 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthority(
                     input.releaseNextItem == "A1.0"
             AdapterExecutableContinuityLifecyclePhase.COMPLETED ->
                 input.primaryStream == "conformance" &&
-                    input.indexNextItem == "C0.2" &&
                     input.indexNextStream == "conformance" &&
                     input.releasePrimaryStream == "conformance" &&
-                    input.releaseNextItem == "C0.2"
+                    input.indexNextItem.isNotBlank() &&
+                    input.indexNextItem == input.releaseNextItem
             AdapterExecutableContinuityLifecyclePhase.INVALID -> false
         }
         val implementationAligned = when (phase) {
@@ -157,7 +157,7 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthority(
                     "releasePrimary=${input.releasePrimaryStream}",
                     "releaseNext=${input.releaseNextItem}"
                 ),
-                "Active A1.0 owns global focus; completed A1.0 hands focus explicitly to C0.2."
+                "Active A1.0 owns exact global focus; completed A1.0 requires a consistent conformance focus without owning the later item identity."
             ),
             check(
                 "adapters.a1.0.required-files",

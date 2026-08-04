@@ -181,4 +181,5 @@ lastKnownValidation:
     - "A1.0 post-A0 promotion evidence is isolated from the frozen A0 portfolio and inventory."
     - "PR #106 merged as commit 7a63b67690739c63fd529010a7666c936bfcf9b3; A1.0 evidence is part of main history."
     - "C0.2 Abstract Topology Matrix is complete with distinct Flow CI #2674 implementation and #2679 completion boundaries."
+    - "C0.2 completion evidence remains external exact-head CI evidence until PR #107 merges; it does not impersonate merged history."
     - "C0.3 Semantic Equivalence Rules is the active conformance item."

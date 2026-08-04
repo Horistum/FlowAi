@@ -33,7 +33,7 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthorityTests {
     }
 
     @Test
-    fun completedPhaseHandsFocusToC02WithDistinctEvidence() {
+    fun completedPhaseAllowsAdjacentC02FocusWithDistinctEvidence() {
         val report = authority.evaluate(
             completedInput(
                 implementation = evidence(
@@ -50,9 +50,49 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthorityTests {
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
     }
 
+    @Test
+    fun completedPhaseRemainsValidAfterC03Activation() {
+        val report = authority.evaluate(
+            completedInput(
+                implementation = evidence(
+                    exact = "1111111111111111111111111111111111111111",
+                    merge = "2222222222222222222222222222222222222222"
+                ),
+                completion = evidence(
+                    exact = "3333333333333333333333333333333333333333",
+                    merge = "4444444444444444444444444444444444444444"
+                ),
+                conformanceItem = "C0.3"
+            )
+        )
+        assertEquals(AdapterExecutableContinuityLifecyclePhase.COMPLETED, report.phase)
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+    }
+
+    @Test
+    fun completedPhaseRejectsMismatchedGlobalConformanceFocus() {
+        val report = authority.evaluate(
+            completedInput(
+                implementation = evidence(
+                    exact = "1111111111111111111111111111111111111111",
+                    merge = "2222222222222222222222222222222222222222"
+                ),
+                completion = evidence(
+                    exact = "3333333333333333333333333333333333333333",
+                    merge = "4444444444444444444444444444444444444444"
+                ),
+                conformanceItem = "C0.3"
+            ).copy(releaseNextItem = "C0.2")
+        )
+        assertEquals(AdapterExecutableContinuityLifecyclePhase.COMPLETED, report.phase)
+        assertEquals("FAIL", report.status)
+        assertTrue("adapters.a1.0.global-focus" in report.failedChecks)
+    }
+
     private fun completedInput(
         implementation: AdapterWorkflowEvidence,
-        completion: AdapterWorkflowEvidence
+        completion: AdapterWorkflowEvidence,
+        conformanceItem: String = "C0.2"
     ) = AdapterExecutableContinuityLifecycleInput(
         workPackageStatus = "complete",
         adapterTrackStatus = "completed",
@@ -60,10 +100,10 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthorityTests {
         adapterCompletedItem = "A1.0",
         adapterNextItem = "",
         primaryStream = "conformance",
-        indexNextItem = "C0.2",
+        indexNextItem = conformanceItem,
         indexNextStream = "conformance",
         releasePrimaryStream = "conformance",
-        releaseNextItem = "C0.2",
+        releaseNextItem = conformanceItem,
         implementationEvidence = implementation,
         completionBoundary = completion,
         requiredFilesPresent = true
