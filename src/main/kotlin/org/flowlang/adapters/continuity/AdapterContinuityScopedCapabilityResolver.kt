@@ -17,7 +17,7 @@ import org.flowlang.topology.ExecutionTopologySupportStatus
  * declaration backed by the production artifact transfer implementation.
  */
 class AdapterContinuityScopedCapabilityResolver(
-    private val declarations: List<AdapterContinuityScopedSupport> =
+    private val scopedSupports: List<AdapterContinuityScopedSupport> =
         BuiltInAdapterContinuityScopedSupport.declarations
 ) : TargetProjectionCapabilityResolver {
     override fun resolve(
@@ -34,7 +34,7 @@ class AdapterContinuityScopedCapabilityResolver(
                 plan = plan,
                 target = target,
                 requirement = requirement,
-                declarations = declarations
+                declarations = scopedSupports
             ) != null
         }
         if (!allMatched) return declared
@@ -51,25 +51,29 @@ class AdapterContinuityScopedCapabilityResolver(
     }
 
     private fun ExecutionTopologyProfile.promoteWorkspacePropagation(): ExecutionTopologyProfile {
-        val matching = declarations.filter { declaration ->
-            declaration.target == GITHUB_ACTIONS &&
-                declaration.semantic == AdapterContinuitySemanticContract.ARTIFACT_SHARED_WORKSPACE
+        val matchingSupports = scopedSupports.filter { support ->
+            support.target == GITHUB_ACTIONS &&
+                support.semantic == AdapterContinuitySemanticContract.ARTIFACT_SHARED_WORKSPACE
         }
-        require(matching.size == 1) {
+        require(matchingSupports.size == 1) {
             "GitHub Actions scoped workspace promotion requires exactly one bounded declaration."
         }
-        val declaration = matching.single()
-        val updated = declarations.map { topology ->
-            if (topology.kind != ExecutionTopologyKind.WORKSPACE_PROPAGATION) topology else topology.copy(
-                status = ExecutionTopologySupportStatus.SUPPORTED,
-                evidenceReference = declaration.evidenceReferences.first(),
-                detail = "A1.0 bounded artifact transfer supports ${declaration.sourceAction} to ${declaration.targetAction} on channel '${declaration.channel}'; no generic workspace claim is made."
-            )
+        val support = matchingSupports.single()
+        val updatedTopologyDeclarations = declarations.map { topologyDeclaration ->
+            if (topologyDeclaration.kind != ExecutionTopologyKind.WORKSPACE_PROPAGATION) {
+                topologyDeclaration
+            } else {
+                topologyDeclaration.copy(
+                    status = ExecutionTopologySupportStatus.SUPPORTED,
+                    evidenceReference = support.evidenceReferences.first(),
+                    detail = "A1.0 bounded artifact transfer supports ${support.sourceAction} to ${support.targetAction} on channel '${support.channel}'; no generic workspace claim is made."
+                )
+            }
         }
-        require(updated.count { it.kind == ExecutionTopologyKind.WORKSPACE_PROPAGATION } == 1) {
+        require(updatedTopologyDeclarations.count { it.kind == ExecutionTopologyKind.WORKSPACE_PROPAGATION } == 1) {
             "GitHub Actions topology profile must declare workspacePropagation exactly once."
         }
-        return copy(declarations = updated)
+        return copy(declarations = updatedTopologyDeclarations)
     }
 
     companion object {
