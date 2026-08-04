@@ -15,11 +15,12 @@ import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 
 /**
- * Bounded adapter support for one continuity semantic.
+ * Bounded adapter support for one continuity semantic and one complete plan shape.
  *
  * A scoped declaration is deliberately narrower than a target-wide continuity
- * claim. It proves one provider-owned producer/channel/consumer path while the
- * generic semantic remains unsupported for every undeclared plan shape.
+ * claim. It proves one provider-owned producer/channel/consumer path only when
+ * the complete ordered task action sequence matches. A larger workflow cannot
+ * borrow executability from an isolated reference scenario.
  */
 data class AdapterContinuityScopedSupport(
     val target: String,
@@ -28,9 +29,18 @@ data class AdapterContinuityScopedSupport(
     val sourceAction: String,
     val targetAction: String,
     val channel: String,
+    val exactPlanActions: List<String>,
     val evidenceReferences: List<String>
 ) {
-    val identity: String = listOf(target, family.name, semantic, sourceAction, targetAction, channel).joinToString("|")
+    val identity: String = listOf(
+        target,
+        family.name,
+        semantic,
+        sourceAction,
+        targetAction,
+        channel,
+        exactPlanActions.joinToString(",")
+    ).joinToString("|")
 
     init {
         require(target.isNotBlank()) { "Scoped continuity support target must not be blank." }
@@ -44,6 +54,16 @@ data class AdapterContinuityScopedSupport(
             "Scoped continuity target action '$targetAction' must use module.action identity."
         }
         require(channel.isNotBlank()) { "Scoped continuity channel must not be blank." }
+        require(exactPlanActions.isNotEmpty()) { "Scoped continuity support requires an exact plan action sequence." }
+        require(exactPlanActions.all(ACTION_IDENTITY::matches)) {
+            "Scoped continuity plan actions must use module.action identities: ${exactPlanActions.joinToString()}."
+        }
+        require(sourceAction in exactPlanActions) {
+            "Scoped continuity source action '$sourceAction' must be present in the exact plan action sequence."
+        }
+        require(targetAction in exactPlanActions) {
+            "Scoped continuity target action '$targetAction' must be present in the exact plan action sequence."
+        }
         require(evidenceReferences.isNotEmpty()) { "Scoped continuity support requires repository evidence." }
         require(evidenceReferences.none(String::isBlank)) { "Scoped continuity evidence references must not be blank." }
         require(evidenceReferences.size == evidenceReferences.toSet().size) {
@@ -64,6 +84,7 @@ object BuiltInAdapterContinuityScopedSupport {
         sourceAction = "git.checkout",
         targetAction = "docker.build",
         channel = "source",
+        exactPlanActions = listOf("git.checkout", "docker.build"),
         evidenceReferences = listOf(
             "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt",
             "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt",
@@ -85,7 +106,9 @@ object AdapterContinuityScopedSupportAuthority {
     ): AdapterContinuityScopedSupport? {
         if (requirement.completeness != AdapterContinuityRequirementCompleteness.RESOLVED) return null
         val sourceId = requirement.sourceNodeId ?: return null
-        val nodes = plan.nodes.flattenPlanNodes().filterIsInstance<TaskNode>().associateBy(TaskNode::id)
+        val tasks = plan.nodes.flattenPlanNodes().filterIsInstance<TaskNode>()
+        val planActions = tasks.map { task -> "${task.module}.${task.action}" }
+        val nodes = tasks.associateBy(TaskNode::id)
         val source = nodes[sourceId] ?: return null
         val consumer = nodes[requirement.targetNodeId] ?: return null
         val sourceAction = "${source.module}.${source.action}"
@@ -96,7 +119,8 @@ object AdapterContinuityScopedSupportAuthority {
                 declaration.semantic == requirement.semantic &&
                 declaration.sourceAction == sourceAction &&
                 declaration.targetAction == targetAction &&
-                declaration.channel == requirement.channel
+                declaration.channel == requirement.channel &&
+                declaration.exactPlanActions == planActions
         }
     }
 }

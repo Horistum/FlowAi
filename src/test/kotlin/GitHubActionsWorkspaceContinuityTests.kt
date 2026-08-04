@@ -13,6 +13,7 @@ import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanDependencyKind
+import org.flowlang.planner.TaskNode
 import org.flowlang.topology.ExecutionTopologyKind
 import org.flowlang.topology.ExecutionTopologySupportStatus
 
@@ -28,6 +29,7 @@ class GitHubActionsWorkspaceContinuityTests {
         assertEquals("git.checkout", scope.sourceAction)
         assertEquals("docker.build", scope.targetAction)
         assertEquals("source", scope.channel)
+        assertEquals(listOf("git.checkout", "docker.build"), scope.exactPlanActions)
 
         val report = AdapterContinuityScopedSupportIntegrityAuthority(root).analyze()
         assertEquals("PASS", report.status, report.findings.joinToString { "${it.code}:${it.message}" })
@@ -62,13 +64,30 @@ class GitHubActionsWorkspaceContinuityTests {
         )
         assertEquals(SupportLevel.UNSUPPORTED, declared.features.getValue("continuity.workspace"))
 
-        val outsideScope = plan.copy(
+        val wrongChannel = plan.copy(
             dependencyRelations = plan.dependencyRelations.map { relation ->
                 if (relation.kind == PlanDependencyKind.WORKSPACE) relation.copy(channel = "other") else relation
             }
         )
+        assertGenericWorkspaceSupportRemainsRejected(wrongChannel, declared)
+
+        val largerWorkflow = plan.copy(
+            nodes = plan.nodes + TaskNode(
+                id = "standard_execute_1",
+                module = "standard",
+                action = "execute",
+                target = "follow-up"
+            )
+        )
+        assertGenericWorkspaceSupportRemainsRejected(largerWorkflow, declared)
+    }
+
+    private fun assertGenericWorkspaceSupportRemainsRejected(
+        plan: org.flowlang.planner.ExecutionPlan,
+        declared: org.flowlang.capabilities.TargetCapability
+    ) {
         val rejected = AdapterContinuityScopedCapabilityResolver().resolve(
-            plan = outsideScope,
+            plan = plan,
             target = "github-actions",
             declared = declared
         )
