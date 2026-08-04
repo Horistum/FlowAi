@@ -12,7 +12,11 @@ class RoadmapStreamTransitionAuthorityTests {
     @Test
     fun repositorySelectsActiveC011Correction() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
-        assertEquals(RoadmapTransitionPhase.C0_1_1_ACTIVE, report.phase)
+        assertEquals(
+            expected = RoadmapTransitionPhase.C0_1_1_ACTIVE,
+            actual = report.phase,
+            message = report.errors.joinToString(" | ")
+        )
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
@@ -20,7 +24,11 @@ class RoadmapStreamTransitionAuthorityTests {
     fun completedCorrectionActivatesA10AndKeepsC02Planned() {
         val root = createA10Boundary()
         val report = RoadmapStreamTransitionAuthority(root).analyze()
-        assertEquals(RoadmapTransitionPhase.A1_0_ACTIVE, report.phase)
+        assertEquals(
+            expected = RoadmapTransitionPhase.A1_0_ACTIVE,
+            actual = report.phase,
+            message = report.errors.joinToString(" | ")
+        )
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
