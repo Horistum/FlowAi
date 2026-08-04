@@ -232,7 +232,9 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
         private val REQUIRED_FILES = listOf(
             AbstractTopologyMatrixLoader.PATH,
             AbstractTopologyMatrixConformanceInventory.PATH,
-            "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrix.kt",
+            "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixContracts.kt",
+            "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixPlanFactory.kt",
+            "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixRoadmapLifecycleAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixConformanceChecks.kt",
             "src/test/kotlin/AbstractTopologyMatrixAuthorityTests.kt",
