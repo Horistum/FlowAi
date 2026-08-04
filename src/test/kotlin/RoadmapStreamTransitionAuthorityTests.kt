@@ -33,6 +33,38 @@ class RoadmapStreamTransitionAuthorityTests {
     }
 
     @Test
+    fun completedCorrectionRejectsMissingCompletionBoundary() {
+        val root = createA10Boundary()
+        val correction = File(root, RoadmapStreamTransitionAuthority.CORRECTION_WORK_PACKAGE)
+        correction.writeText(correction.readText().substringBefore("completionBoundary:").trimEnd() + "\n")
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "completion boundary" in it })
+    }
+
+    @Test
+    fun completedCorrectionRejectsReusedImplementationBoundary() {
+        val root = createA10Boundary()
+        val correction = File(root, RoadmapStreamTransitionAuthority.CORRECTION_WORK_PACKAGE)
+        correction.writeText(
+            correction.readText()
+                .replace("runNumber: 2801", "runNumber: 2800")
+                .replace("runId: 34000000001", "runId: 34000000000")
+                .replace(
+                    "3333333333333333333333333333333333333333",
+                    "1111111111111111111111111111111111111111"
+                )
+                .replace(
+                    "4444444444444444444444444444444444444444",
+                    "2222222222222222222222222222222222222222"
+                )
+        )
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "distinct runs and revisions" in it })
+    }
+
+    @Test
     fun a10ActivationRejectsPrematureC02() {
         val root = createA10Boundary()
         val conformance = File(root, RoadmapStreamTransitionAuthority.CONFORMANCE_ROADMAP)
@@ -119,6 +151,13 @@ class RoadmapStreamTransitionAuthorityTests {
               runId: 34000000000
               exactHead: "1111111111111111111111111111111111111111"
               mergeCandidate: "2222222222222222222222222222222222222222"
+            completionBoundary:
+              status: passed
+              workflow: Flow CI
+              runNumber: 2801
+              runId: 34000000001
+              exactHead: "3333333333333333333333333333333333333333"
+              mergeCandidate: "4444444444444444444444444444444444444444"
         """)
         write(root, RoadmapStreamTransitionAuthority.A10_WORK_PACKAGE, "status: active\n")
         return root

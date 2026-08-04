@@ -72,8 +72,10 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                         adapterRoadmap.string("currentDecision", "nextItem").isNotBlank()
                     ) add("The adapter roadmap must remain closed at A0.7 while C0.1.1 is active.")
                     if (a10.string("status") != "planned") add("A1.0 must remain planned until correction evidence passes.")
-                    if (correction.map("implementationEvidence").isNotEmpty()) {
-                        add("An active correction must not contain authored implementation evidence.")
+                    if (correction.map("implementationEvidence").isNotEmpty() ||
+                        correction.map("completionBoundary").isNotEmpty()
+                    ) {
+                        add("An active correction must not contain authored implementation or completion evidence.")
                     }
                 }
                 RoadmapTransitionPhase.A1_0_ACTIVE -> {
@@ -94,8 +96,16 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                     if (conformanceRoadmap.itemStatus("C0.1.1") != "completed") {
                         add("C0.1.1 must be completed before A1.0 activation.")
                     }
-                    if (!validEvidence(correction.map("implementationEvidence"))) {
-                        add("Completed correction requires strict exact-head and merge-candidate Flow CI evidence.")
+                    val implementationEvidence = correction.map("implementationEvidence")
+                    val completionBoundary = correction.map("completionBoundary")
+                    if (!validEvidence(implementationEvidence)) {
+                        add("Completed correction requires strict exact-head and merge-candidate implementation evidence.")
+                    }
+                    if (!validEvidence(completionBoundary)) {
+                        add("Completed correction requires a strict exact-head and merge-candidate completion boundary.")
+                    }
+                    if (!distinctEvidenceBoundaries(implementationEvidence, completionBoundary)) {
+                        add("Correction implementation and completion evidence must use distinct runs and revisions.")
                     }
                 }
                 RoadmapTransitionPhase.INVALID -> Unit
@@ -148,6 +158,17 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             evidence.string("exactHead").matches(SHA_PATTERN) &&
             evidence.string("mergeCandidate").matches(SHA_PATTERN) &&
             evidence.string("exactHead") != evidence.string("mergeCandidate")
+
+    private fun distinctEvidenceBoundaries(
+        implementationEvidence: Map<String, Any?>,
+        completionBoundary: Map<String, Any?>
+    ): Boolean =
+        validEvidence(implementationEvidence) &&
+            validEvidence(completionBoundary) &&
+            implementationEvidence.string("runNumber") != completionBoundary.string("runNumber") &&
+            implementationEvidence.string("runId") != completionBoundary.string("runId") &&
+            implementationEvidence.string("exactHead") != completionBoundary.string("exactHead") &&
+            implementationEvidence.string("mergeCandidate") != completionBoundary.string("mergeCandidate")
 
     private fun requiredYaml(path: String): Map<String, Any?> {
         val file = File(rootDir, path)
