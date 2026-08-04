@@ -20,6 +20,7 @@ import org.flowlang.projection.ProjectionBindingKind
 import org.flowlang.projection.ProjectionBindingResolutionStatus
 import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
 import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
+import org.flowlang.targets.builtin.GitHubActionsWorkspaceContinuityPlanner
 import org.flowlang.targets.builtin.JenkinsManifestGenerator
 
 class TargetNativeProjectionArchitectureTests {
@@ -166,7 +167,16 @@ class TargetNativeProjectionArchitectureTests {
     @Test
     fun builtInDistributionDeclaresOnlyActuallyImplementedNativeCoverage() {
         assertEquals(2, BuiltInNativeProjectionCatalogs.jenkins.definitions.size)
-        assertEquals(2, BuiltInNativeProjectionCatalogs.githubActions.definitions.size)
+        assertEquals(4, BuiltInNativeProjectionCatalogs.githubActions.definitions.size)
+        assertEquals(
+            setOf(
+                "actions/checkout@v4",
+                "docker/build-push-action@v7",
+                GitHubActionsWorkspaceContinuityPlanner.UPLOAD_REFERENCE,
+                GitHubActionsWorkspaceContinuityPlanner.DOWNLOAD_REFERENCE
+            ),
+            BuiltInNativeProjectionCatalogs.githubActions.definitions.map { it.reference }.toSet()
+        )
         assertEquals(2, BuiltInNativeProjectionCatalogs.tekton.definitions.size)
 
         val fakeNativeCompatibility = CompatibilityReport(

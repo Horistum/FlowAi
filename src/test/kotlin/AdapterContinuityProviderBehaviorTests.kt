@@ -3,7 +3,6 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -16,6 +15,7 @@ import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
+import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
@@ -25,7 +25,6 @@ import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.projection.ProjectionBindingKind
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 import org.flowlang.targets.builtin.GitHubActionsWorkspaceContinuityPlanner
-import org.flowlang.targets.builtin.UnsupportedGitHubActionsWorkspaceContinuityException
 
 class AdapterContinuityProviderBehaviorTests {
     private val root = File(".")
@@ -168,7 +167,7 @@ class AdapterContinuityProviderBehaviorTests {
     }
 
     @Test
-    fun githubActionsRejectsWorkspaceRelationsOutsideDeclaredScope() {
+    fun githubActionsPreservesUnsupportedWorkspaceRelationsAsReviewOnlyEvidence() {
         val plan = referencePlan()
         val unsupported = plan.copy(
             dependencyRelations = plan.dependencyRelations.map { relation ->
@@ -180,18 +179,22 @@ class AdapterContinuityProviderBehaviorTests {
         assertEquals(AdapterContinuityEvidenceStatus.UNSUPPORTED, assessment.evidence.single().status)
 
         val target = targets.getValue("github-actions")
-        assertFailsWith<UnsupportedGitHubActionsWorkspaceContinuityException> {
-            BuiltInTargetProjections.registry.requireProvider("github-actions").generate(
-                unsupported,
-                CompatibilityReport(
-                    target = target.target,
-                    status = SupportLevel.SUPPORTED,
-                    capabilityStatus = SupportLevel.SUPPORTED,
-                    expressionSupport = target.expressionSupport,
-                    projectionRules = target.projectionRules
-                )
+        val manifest = BuiltInTargetProjections.registry.requireProvider("github-actions").generate(
+            unsupported,
+            CompatibilityReport(
+                target = target.target,
+                status = SupportLevel.SUPPORTED,
+                capabilityStatus = SupportLevel.SUPPORTED,
+                expressionSupport = target.expressionSupport,
+                projectionRules = target.projectionRules
             )
-        }
+        )
+        assertFalse(manifest.compatibility.executable)
+        val steps = manifest.jobs.flatMap { it.steps }
+        assertTrue(steps.any { it.materialization.status == TargetMaterializationStatus.ADAPTER_REQUIRED })
+        assertFalse(steps.mapNotNull { it.rendererPayload?.reference }
+            .any { it == GitHubActionsWorkspaceContinuityPlanner.UPLOAD_REFERENCE ||
+                it == GitHubActionsWorkspaceContinuityPlanner.DOWNLOAD_REFERENCE })
     }
 
     @Test

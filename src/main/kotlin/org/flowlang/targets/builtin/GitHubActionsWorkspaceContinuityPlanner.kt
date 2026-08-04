@@ -1,6 +1,5 @@
 package org.flowlang.targets.builtin
 
-import org.flowlang.adapters.continuity.AdapterContinuityFamily
 import org.flowlang.adapters.continuity.AdapterContinuityRequirement
 import org.flowlang.adapters.continuity.AdapterContinuityRequirementAuthority
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupport
@@ -22,6 +21,10 @@ import org.flowlang.projection.ProjectionBindingResolutionStatus
  * producer upload and one consumer download under a deterministic artifact
  * identity. `needs` remains ordering evidence only and is never accepted as the
  * transfer mechanism.
+ *
+ * Unsupported, unresolved or structurally incomplete continuity is preserved as
+ * adapter-required diagnostic evidence. It never throws away the manifest, but
+ * it also cannot produce executable readiness.
  */
 object GitHubActionsWorkspaceContinuityPlanner {
     const val TARGET = "github-actions"
@@ -35,41 +38,68 @@ object GitHubActionsWorkspaceContinuityPlanner {
 
     fun materialize(plan: ExecutionPlan, jobs: List<TargetJob>): List<TargetJob> {
         val requirements = AdapterContinuityRequirementAuthority.derive(plan)
-            .filter { it.family == AdapterContinuityFamily.ARTIFACT }
         if (requirements.isEmpty()) return jobs
 
         val jobsById = jobs.associateBy(TargetJob::id)
         require(jobsById.size == jobs.size) { "GitHub Actions manifest contains duplicate job ids." }
 
-        val transfers = requirements.map { requirement ->
+        val blockers = mutableListOf<ContinuityBlocker>()
+        val transfers = requirements.mapNotNull { requirement ->
             val matched = AdapterContinuityScopedSupportAuthority.matchingSupport(
                 plan = plan,
                 target = TARGET,
                 requirement = requirement,
                 declarations = listOf(supportedScope)
-            ) ?: throw UnsupportedGitHubActionsWorkspaceContinuityException(requirement)
+            )
+            if (matched == null) {
+                blockers += ContinuityBlocker(
+                    requirement,
+                    "No bounded GitHub Actions continuity implementation matches this producer, channel and consumer path."
+                )
+                return@mapNotNull null
+            }
             require(matched == supportedScope) {
                 "GitHub Actions workspace planner consumed an unexpected scoped support declaration '${matched.identity}'."
             }
-            val sourceJobId = sanitizeId(requireNotNull(requirement.sourceNodeId) {
-                "Resolved GitHub Actions workspace requirement '${requirement.id}' has no producer."
-            })
+
+            val sourceNodeId = requirement.sourceNodeId
+            if (sourceNodeId == null) {
+                blockers += ContinuityBlocker(requirement, "Resolved producer identity is unavailable.")
+                return@mapNotNull null
+            }
+            val sourceJobId = sanitizeId(sourceNodeId)
             val targetJobId = sanitizeId(requirement.targetNodeId)
-            require(sourceJobId in jobsById) {
-                "GitHub Actions workspace producer job '$sourceJobId' is missing for requirement '${requirement.id}'."
+            val sourceJob = jobsById[sourceJobId]
+            val targetJob = jobsById[targetJobId]
+            when {
+                sourceJob == null -> {
+                    blockers += ContinuityBlocker(
+                        requirement,
+                        "Producer job '$sourceJobId' is absent from the generated manifest."
+                    )
+                    null
+                }
+                targetJob == null -> {
+                    blockers += ContinuityBlocker(
+                        requirement,
+                        "Consumer job '$targetJobId' is absent from the generated manifest."
+                    )
+                    null
+                }
+                sourceJobId !in targetJob.dependsOn -> {
+                    blockers += ContinuityBlocker(
+                        requirement,
+                        "Consumer job '$targetJobId' does not retain required ordering dependency '$sourceJobId'; continuity cannot invent ordering."
+                    )
+                    null
+                }
+                else -> WorkspaceTransfer(
+                    requirement = requirement,
+                    sourceJobId = sourceJobId,
+                    targetJobId = targetJobId,
+                    artifactName = artifactIdentity(requirement)
+                )
             }
-            val targetJob = requireNotNull(jobsById[targetJobId]) {
-                "GitHub Actions workspace consumer job '$targetJobId' is missing for requirement '${requirement.id}'."
-            }
-            require(sourceJobId in targetJob.dependsOn) {
-                "GitHub Actions workspace consumer '$targetJobId' must retain ordering dependency '$sourceJobId'; continuity does not create ordering."
-            }
-            WorkspaceTransfer(
-                requirement = requirement,
-                sourceJobId = sourceJobId,
-                targetJobId = targetJobId,
-                artifactName = artifactIdentity(requirement)
-            )
         }
 
         val duplicateConsumers = transfers.groupBy { it.targetJobId to it.artifactName }
@@ -80,9 +110,9 @@ object GitHubActionsWorkspaceContinuityPlanner {
         }
 
         val uploadsBySource = transfers.groupBy(WorkspaceTransfer::sourceJobId).mapValues { (_, sourceTransfers) ->
-            sourceTransfers.groupBy(WorkspaceTransfer::artifactName).map { (artifactName, group) ->
+            sourceTransfers.groupBy(WorkspaceTransfer::artifactName).map { (_, group) ->
                 require(group.map { it.requirement.channel }.distinct().size == 1) {
-                    "GitHub Actions artifact '$artifactName' combines different workspace channels."
+                    "GitHub Actions artifact '${group.first().artifactName}' combines different workspace channels."
                 }
                 uploadStep(group.first())
             }.sortedBy(TargetStep::id)
@@ -90,15 +120,22 @@ object GitHubActionsWorkspaceContinuityPlanner {
         val downloadsByTarget = transfers.groupBy(WorkspaceTransfer::targetJobId).mapValues { (_, targetTransfers) ->
             targetTransfers.map(::downloadStep).sortedBy(TargetStep::id)
         }
+        val blockersByTarget = blockers.groupBy { sanitizeId(it.requirement.targetNodeId) }
+        val orphanBlockers = blockers.filter { sanitizeId(it.requirement.targetNodeId) !in jobsById }
+        val orphanHost = jobs.firstOrNull()?.id
 
         return jobs.map { job ->
             val downloads = downloadsByTarget[job.id].orEmpty()
             val uploads = uploadsBySource[job.id].orEmpty()
+            val jobBlockers = blockersByTarget[job.id].orEmpty() +
+                if (job.id == orphanHost) orphanBlockers else emptyList()
+            val diagnosticSteps = jobBlockers.distinctBy { it.requirement.id }.map(::blockerStep)
             job.copy(
-                steps = downloads + job.steps + uploads,
+                steps = downloads + diagnosticSteps + job.steps + uploads,
                 metadata = job.metadata + mapOf(
                     "githubActionsWorkspaceDownloadCount" to downloads.size.toString(),
-                    "githubActionsWorkspaceUploadCount" to uploads.size.toString()
+                    "githubActionsWorkspaceUploadCount" to uploads.size.toString(),
+                    "githubActionsContinuityBlockerCount" to diagnosticSteps.size.toString()
                 )
             )
         }
@@ -106,14 +143,34 @@ object GitHubActionsWorkspaceContinuityPlanner {
 
     fun transferCount(plan: ExecutionPlan): Int = AdapterContinuityRequirementAuthority.derive(plan)
         .count { requirement ->
-            requirement.family == AdapterContinuityFamily.ARTIFACT &&
-                AdapterContinuityScopedSupportAuthority.matchingSupport(
-                    plan = plan,
-                    target = TARGET,
-                    requirement = requirement,
-                    declarations = listOf(supportedScope)
-                ) != null
+            AdapterContinuityScopedSupportAuthority.matchingSupport(
+                plan = plan,
+                target = TARGET,
+                requirement = requirement,
+                declarations = listOf(supportedScope)
+            ) != null
         }
+
+    private fun blockerStep(blocker: ContinuityBlocker): TargetStep = TargetStep(
+        id = sanitizeId("continuity-blocked-${blocker.requirement.id}"),
+        name = "Blocked Flow continuity ${blocker.requirement.semantic}",
+        type = "adapter-continuity-blocked",
+        materialization = TargetMaterialization.adapterRequired(
+            capability = "continuity.${blocker.requirement.semantic}",
+            reason = blocker.reason,
+            requirements = mapOf(
+                "requirementId" to blocker.requirement.id,
+                "sourceNodeId" to (blocker.requirement.sourceNodeId ?: "unresolved"),
+                "targetNodeId" to blocker.requirement.targetNodeId,
+                "channel" to (blocker.requirement.channel ?: "unspecified")
+            )
+        ),
+        metadata = mapOf(
+            "continuityRequirementId" to blocker.requirement.id,
+            "continuityDecision" to "BLOCKED",
+            "continuitySemantic" to blocker.requirement.semantic
+        )
+    )
 
     private fun uploadStep(transfer: WorkspaceTransfer): TargetStep = TargetStep(
         id = sanitizeId("continuity-upload-${transfer.artifactName}"),
@@ -177,6 +234,11 @@ object GitHubActionsWorkspaceContinuityPlanner {
         resolutionStatus = ProjectionBindingResolutionStatus.RESOLVED
     )
 
+    private data class ContinuityBlocker(
+        val requirement: AdapterContinuityRequirement,
+        val reason: String
+    )
+
     private data class WorkspaceTransfer(
         val requirement: AdapterContinuityRequirement,
         val sourceJobId: String,
@@ -192,11 +254,3 @@ object GitHubActionsWorkspaceContinuityPlanner {
         )
     }
 }
-
-class UnsupportedGitHubActionsWorkspaceContinuityException(
-    val requirement: AdapterContinuityRequirement
-) : IllegalStateException(
-    "GitHub Actions has no bounded workspace transfer implementation for requirement '${requirement.id}' " +
-        "from '${requirement.sourceNodeId ?: "unresolved"}' to '${requirement.targetNodeId}' " +
-        "on channel '${requirement.channel ?: "unspecified"}'."
-)
