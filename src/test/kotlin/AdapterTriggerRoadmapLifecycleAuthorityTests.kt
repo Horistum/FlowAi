@@ -13,86 +13,70 @@ class AdapterTriggerRoadmapLifecycleAuthorityTests {
     @Test
     fun currentRepositoryIsOneValidSupportedLifecycleState() {
         val report = authority.analyze()
-
-        assertTrue(
-            report.phase in setOf(
-                AdapterTriggerLifecyclePhase.IMPLEMENTING,
-                AdapterTriggerLifecyclePhase.COMPLETED
-            )
-        )
+        assertEquals(AdapterTriggerLifecyclePhase.COMPLETED, report.phase)
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
     }
 
     @Test
     fun implementingStateRejectsAuthoredCiEvidence() {
         val report = authority.evaluate(implementingInput().copy(implementationEvidence = passedEvidence()))
-
         assertEquals("FAIL", report.status)
         assertTrue("adapters.a0.7.implementation-evidence" in report.failedChecks)
     }
 
     @Test
-    fun implementingStateCannotInventA08() {
-        val report = authority.evaluate(
-            implementingInput().copy(
-                adapterCompletedItem = "A0.7",
-                adapterNextItem = "A0.8",
-                indexNextItem = "A0.8",
-                releaseCompletedItem = "A0.7",
-                releaseNextItem = "A0.8"
-            )
-        )
-
-        assertEquals("FAIL", report.status)
-        assertTrue("adapters.a0.7.adapter-roadmap-state" in report.failedChecks)
-    }
-
-    @Test
-    fun completedStateIsTerminalAndRequiresDistinctCiHeads() {
-        val report = authority.evaluate(completedInput())
-
-        assertEquals(AdapterTriggerLifecyclePhase.COMPLETED, report.phase)
-        assertEquals("PASS", report.status, report.failedChecks.joinToString())
-    }
-
-    @Test
-    fun completedStateAllowsExplicitConformanceSuccessor() {
+    fun completedA0DoesNotOwnUnrelatedGlobalFocus() {
         val report = authority.evaluate(
             completedInput().copy(
                 primaryStream = "conformance",
-                indexNextItem = "C0.1",
+                indexNextItem = "C0.2",
                 indexNextStream = "conformance",
                 releasePrimaryStream = "conformance",
-                releaseNextItem = "C0.1"
+                releaseNextItem = "C0.2"
             )
         )
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+    }
 
+    @Test
+    fun completedA0RemainsValidWhileA10IsActive() {
+        val report = authority.evaluate(
+            completedInput().copy(
+                adapterTrackStatus = "active",
+                adapterNextItem = "A1.0",
+                primaryStream = "adapters",
+                indexNextItem = "A1.0",
+                indexNextStream = "adapters",
+                releasePrimaryStream = "adapters",
+                releaseNextItem = "A1.0"
+            )
+        )
         assertEquals(AdapterTriggerLifecyclePhase.COMPLETED, report.phase)
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
     }
 
     @Test
-    fun completedStateRejectsFabricatedNextItem() {
+    fun completedStateRejectsFabricatedA08() {
         val report = authority.evaluate(
             completedInput().copy(
+                adapterTrackStatus = "active",
                 adapterNextItem = "A0.8",
+                primaryStream = "adapters",
                 indexNextItem = "A0.8",
                 indexNextStream = "adapters",
+                releasePrimaryStream = "adapters",
                 releaseNextItem = "A0.8"
             )
         )
-
         assertEquals("FAIL", report.status)
+        assertTrue("adapters.a0.7.track-state" in report.failedChecks)
         assertTrue("adapters.a0.7.adapter-roadmap-state" in report.failedChecks)
-        assertTrue("adapters.a0.7.index-state" in report.failedChecks)
-        assertTrue("adapters.a0.7.release-state" in report.failedChecks)
     }
 
     @Test
     fun completedStateRejectsSameExactAndMergeCandidateHead() {
         val evidence = passedEvidence().copy(mergeCandidate = passedEvidence().exactHead)
         val report = authority.evaluate(completedInput().copy(implementationEvidence = evidence))
-
         assertEquals("FAIL", report.status)
         assertTrue("adapters.a0.7.implementation-evidence" in report.failedChecks)
     }

@@ -1,19 +1,19 @@
 package org.flowlang.adapters.portfolio
 
 /**
- * Shared adapter-roadmap ordering and stream-transition contract.
+ * Adapter-local ordering contract.
  *
- * Historical lifecycle authorities accept the initial A0.1 focus, adjacent
- * active progress, the declared terminal A0.7 state, and one explicit
- * successor focus after A0.7. They never infer an imaginary adapter predecessor
- * or successor merely to preserve one metadata shape.
+ * This authority validates A0 history and an explicitly declared adapter-local
+ * A1.0 successor. It deliberately does not decide which unrelated roadmap stream
+ * follows a terminal adapter state; that decision belongs to the global roadmap
+ * transition authority.
  */
 object AdapterRoadmapSequence {
     const val FIRST_ITEM: String = "A0.1"
     const val TERMINAL_ITEM: String = "A0.7"
-    const val SUCCESSOR_STREAM: String = "conformance"
+    const val NEXT_SERIES_FIRST_ITEM: String = "A1.0"
 
-    fun ordinal(item: String): Int? = ITEM.matchEntire(item)?.groupValues?.get(1)?.toIntOrNull()
+    fun ordinal(item: String): Int? = A0_ITEM.matchEntire(item)?.groupValues?.get(1)?.toIntOrNull()
 
     fun isAdjacentProgress(
         completedItem: String,
@@ -22,7 +22,7 @@ object AdapterRoadmapSequence {
     ): Boolean {
         val completed = ordinal(completedItem) ?: return false
         val next = ordinal(nextItem) ?: return false
-        return completed >= minimumCompletedOrdinal && next == completed + 1
+        return completed in minimumCompletedOrdinal until TERMINAL_ORDINAL && next == completed + 1
     }
 
     fun isHistoricalProgress(
@@ -32,11 +32,8 @@ object AdapterRoadmapSequence {
     ): Boolean {
         val completed = ordinal(completedItem) ?: return false
         if (completed < minimumCompletedOrdinal) return false
-        return if (nextItem.isBlank()) {
-            completedItem == TERMINAL_ITEM
-        } else {
-            ordinal(nextItem) == completed + 1
-        }
+        if (completedItem == TERMINAL_ITEM) return isPostTerminalA0Focus(nextItem)
+        return isAdjacentProgress(completedItem, nextItem, minimumCompletedOrdinal)
     }
 
     fun isTrackStatusAligned(
@@ -44,7 +41,8 @@ object AdapterRoadmapSequence {
         completedItem: String,
         nextItem: String
     ): Boolean = when {
-        nextItem.isBlank() -> trackStatus == "completed" && completedItem == TERMINAL_ITEM
+        completedItem == TERMINAL_ITEM && nextItem == NEXT_SERIES_FIRST_ITEM -> trackStatus == "active"
+        completedItem == TERMINAL_ITEM && nextItem.isBlank() -> trackStatus == "completed"
         completedItem.isBlank() -> trackStatus == "active" && nextItem == FIRST_ITEM
         else -> trackStatus == "active" && isAdjacentProgress(completedItem, nextItem, minimumCompletedOrdinal = 1)
     }
@@ -54,35 +52,24 @@ object AdapterRoadmapSequence {
         indexNextItem: String,
         indexNextStream: String,
         adapterNextItem: String
-    ): Boolean = when {
-        adapterNextItem.isNotBlank() ->
-            primaryStream == "adapters" &&
-                indexNextItem == adapterNextItem &&
-                indexNextStream == "adapters"
-        primaryStream == "adapters" ->
-            indexNextItem.isBlank() && indexNextStream.isBlank()
-        else -> isExplicitSuccessorFocus(primaryStream, indexNextItem, indexNextStream)
+    ): Boolean = if (adapterNextItem.isBlank()) {
+        true
+    } else {
+        primaryStream == "adapters" &&
+            indexNextItem == adapterNextItem &&
+            indexNextStream == "adapters"
     }
 
     fun isReleaseFocusAligned(
         primaryStream: String,
         releaseNextItem: String,
         adapterNextItem: String
-    ): Boolean = when {
-        adapterNextItem.isNotBlank() ->
-            primaryStream == "adapters" && releaseNextItem == adapterNextItem
-        primaryStream == "adapters" -> releaseNextItem.isBlank()
-        else -> isExplicitSuccessorFocus(primaryStream, releaseNextItem, primaryStream)
-    }
+    ): Boolean = adapterNextItem.isBlank() ||
+        (primaryStream == "adapters" && releaseNextItem == adapterNextItem)
 
-    private fun isExplicitSuccessorFocus(
-        primaryStream: String,
-        nextItem: String,
-        nextStream: String
-    ): Boolean = primaryStream == SUCCESSOR_STREAM &&
-        nextStream == SUCCESSOR_STREAM &&
-        CONFORMANCE_ITEM.matches(nextItem)
+    fun isPostTerminalA0Focus(nextItem: String): Boolean =
+        nextItem.isBlank() || nextItem == NEXT_SERIES_FIRST_ITEM
 
-    private val ITEM = Regex("A0\\.([1-9][0-9]*)")
-    private val CONFORMANCE_ITEM = Regex("C0\\.([1-9][0-9]*)")
+    private const val TERMINAL_ORDINAL = 7
+    private val A0_ITEM = Regex("A0\\.([1-9][0-9]*)")
 }

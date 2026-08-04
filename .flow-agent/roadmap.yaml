@@ -1,6 +1,6 @@
 project: Flow
-roadmapVersion: 11
-currentTrack: "bounded-conformance"
+roadmapVersion: 12
+currentTrack: "bounded-conformance-correction"
 primaryRoadmapStream: conformance
 
 versionBoundary:
@@ -30,9 +30,10 @@ roadmapIndex:
 
 rules:
   - "The Core, adapter and conformance roadmaps are separate authorities with explicit ownership boundaries."
+  - "Cross-stream focus is owned by a global roadmap transition authority, never by a completed stream lifecycle."
   - "The primary Flow Agent work item is selected from primaryRoadmapStream only after that stream's activation and dependency gates pass."
   - "An active bounded correction overrides every normal roadmap stream and blocks selection of a new item."
-  - "A completed roadmap item remains immutable evidence; later streams consume it rather than reopening it without a falsified invariant."
+  - "A completed roadmap item remains immutable evidence unless a concrete invariant is falsified and reopened as a bounded correction."
   - "closureItem identifies the bounded Core closure identity independently from the active non-Core work item."
   - "Each roadmap stream may advance independently without redefining another stream's contracts."
   - "Core work may not depend on unfinished adapter or conformance work."
@@ -42,7 +43,7 @@ rules:
   - "A previous executable or support label has no grandfathered status."
   - "No roadmap item may introduce runtime execution, an SDK-first architecture or implementation-specific public syntax."
   - "No roadmap item may bend code or weaken validation only to satisfy tests."
-  - "The gating corpus is bounded to software delivery, data transformation and infrastructure state change."
+  - "The three C0.1 domains close only its evidence scope, not the automation taxonomy."
 
 architectureConstitution:
   identity:
@@ -65,15 +66,15 @@ architectureConstitution:
 currentDecision:
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
-  correctionState: "complete"
-  activeCorrectionWorkPackage: ""
-  activeCorrectionWorkPackageName: ""
+  correctionState: "required"
+  activeCorrectionWorkPackage: ".flow-agent/work-packages/C0.1.1-bounded-domain-integrity-correction.yaml"
+  activeCorrectionWorkPackageName: "C0.1.1 Bounded Domain Integrity Correction"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
   completedAdapterItem: "A0.7"
   completedAdapterItemName: "Trigger Materialization Coverage"
-  nextItem: "C0.2"
-  nextItemName: "Abstract Topology Matrix"
-  nextItemStream: "conformance"
-  decisionBasis: "Flow CI #2641, run 30817690333, passed C0.1 on exact implementation head 2fd59e7fa0ae486cf073453d1b59a3d19ed2b4d4 and synthetic merge candidate cbd8788ccd212e263d80d141ea5f5bf2648073c3 with 808 tests and 120 conformance checks. Completion metadata selects C0.2 without adding C0.2 implementation scope or changing the closed Core and adapter tracks."
+  nextItem: ""
+  nextItemName: ""
+  nextItemStream: ""
+  decisionBasis: "PR #104 merged C0.1 as c65b30d493e6348c2b73261c634a7bb35e6cce6a, but post-merge inspection falsified its positive-domain and mutation-polarity gates and found adapter-owned cross-stream coupling. C0.1.1 is the bounded correction; A1.0 remains planned and C0.2 remains deferred."

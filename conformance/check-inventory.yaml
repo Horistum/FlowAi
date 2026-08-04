@@ -1,8 +1,11 @@
-version: '1.0'
+version: '1.1'
 checks:
 - conformance.c0.1.lifecycle-integrity
+- roadmap.stream-transition-integrity
 - real-world-corpus.integrity
 - real-world-corpus.domain-coverage
+- real-world-corpus.domain-representability
+- real-world-corpus.dynamic-boundary-honesty
 - real-world-corpus.case.c02
 - real-world-corpus.case.c06
 - real-world-corpus.case.a04

@@ -1,0 +1,32 @@
+version: "C0.1.1"
+name: "C0.1.1 Bounded Domain Integrity Correction"
+type: "bounded-correction"
+stream: correction
+status: active
+objective: "Repair C0.1 enforcement so every domain has positive representability, mutation polarity compares baseline and mutation behavior, and cross-stream focus is globally owned."
+parentConformanceItem: "C0.1"
+falsifiedInvariants:
+  - "A domain with only accepted negative cases could satisfy domain coverage."
+  - "A negative baseline plus a negative mutation could satisfy the claimed polarity gate."
+  - "Completed A0 lifecycle code encoded the name and item syntax of a future conformance stream."
+  - "Completion metadata did not record the distinct passing completion boundary from PR #104."
+requiredChanges:
+  - "Add a strict positive representability gate for every C0.1 domain."
+  - "Compare baseline and mutation polarity as REPRESENTABLE to REJECTED."
+  - "Keep dynamic construction honesty independent from mutation polarity."
+  - "Move cross-stream selection to RoadmapStreamTransitionAuthority."
+  - "Record C0.1 implementation, completion and merge evidence distinctly."
+  - "Select A1.0 only after this correction passes exact-head and merge-candidate CI."
+forbiddenScope:
+  - "No C0.2 implementation."
+  - "No A1.0 implementation or support promotion in this correction."
+  - "No new Core semantics or dependency kinds."
+  - "No weakening of existing exact diagnostic checks."
+  - "No mutation of frozen Core or adapter conformance inventories."
+completionEvidence:
+  - "Every bounded domain has at least one observed REPRESENTABLE baseline."
+  - "Every domain has an observed REPRESENTABLE to REJECTED mutation transition."
+  - "Dynamic negative baselines do not count as mutation polarity."
+  - "Adapter A0 lifecycle contains no conformance-stream name or C0 item pattern."
+  - "The global transition authority accepts only active correction or A1.0 activation states."
+  - "Exact-head and synthetic merge-candidate Flow CI pass before the correction is completed."
