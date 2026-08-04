@@ -23,7 +23,9 @@ class AdapterContinuitySatisfactionAuthority(
     private val rootDir: File = File("."),
     private val targets: Map<String, TargetCapability>,
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
-    private val documentOverride: AdapterContinuityEvidenceDocument? = null
+    private val documentOverride: AdapterContinuityEvidenceDocument? = null,
+    private val scopedSupports: List<AdapterContinuityScopedSupport> =
+        BuiltInAdapterContinuityScopedSupport.declarations
 ) {
     private val document: AdapterContinuityEvidenceDocument by lazy {
         documentOverride ?: AdapterContinuityEvidenceLoader.load(rootDir)
@@ -36,6 +38,12 @@ class AdapterContinuitySatisfactionAuthority(
         check(report.status == "PASS") {
             "Adapter continuity evidence is invalid: " + report.findings.joinToString(" | ") {
                 "${it.code}:${it.target}:${it.family}:${it.message}"
+            }
+        }
+        val scopedReport = AdapterContinuityScopedSupportIntegrityAuthority(rootDir, scopedSupports).analyze()
+        check(scopedReport.status == "PASS") {
+            "Scoped adapter continuity evidence is invalid: " + scopedReport.findings.joinToString(" | ") {
+                "${it.code}:${it.identity}:${it.message}"
             }
         }
         active
@@ -55,6 +63,12 @@ class AdapterContinuitySatisfactionAuthority(
         val requirements = requirementsFor(plan)
         val evidence = requirements.map { requirement ->
             val claim = claims[requirement.family]
+            val scopedSupport = AdapterContinuityScopedSupportAuthority.matchingSupport(
+                plan = plan,
+                target = target,
+                requirement = requirement,
+                declarations = scopedSupports
+            )
             when {
                 requirement.completeness != AdapterContinuityRequirementCompleteness.RESOLVED ->
                     AdapterContinuityEvidence(
@@ -62,6 +76,11 @@ class AdapterContinuitySatisfactionAuthority(
                         status = AdapterContinuityEvidenceStatus.UNKNOWN,
                         detail = "Planning continuity is ${requirement.completeness.name.lowercase()}; adapter evidence cannot repair an unresolved semantic relation."
                     )
+                scopedSupport != null -> AdapterContinuityEvidence(
+                    requirementId = requirement.id,
+                    status = AdapterContinuityEvidenceStatus.SATISFIED,
+                    detail = "Bounded adapter continuity support '${scopedSupport.identity}' materializes this exact producer, channel and consumer path. Evidence: ${scopedSupport.evidenceReferences.joinToString()}"
+                )
                 claim == null -> AdapterContinuityEvidence(
                     requirementId = requirement.id,
                     status = AdapterContinuityEvidenceStatus.UNKNOWN,

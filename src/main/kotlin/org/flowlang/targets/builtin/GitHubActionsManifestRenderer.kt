@@ -11,6 +11,8 @@ import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
 import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.sanitizeId
 import org.flowlang.projection.ProjectionBinding
+import org.flowlang.projection.ProjectionBindingKind
+import org.flowlang.projection.ProjectionBindingResolutionStatus
 
 class GitHubActionsManifestRenderer(
     private val environmentEvidenceResolver: TargetEnvironmentSafetyEvidenceResolver = TargetEnvironmentSafetyEvidenceResolver()
@@ -89,6 +91,10 @@ class GitHubActionsManifestRenderer(
             when (payload.reference) {
                 "actions/checkout@v4" -> renderCheckoutBindings(step.id, payload, sb)
                 "docker/build-push-action@v7" -> renderImageBuildBindings(step.id, payload, manifest, sb)
+                GitHubActionsWorkspaceContinuityPlanner.UPLOAD_REFERENCE ->
+                    renderWorkspaceUploadBindings(step.id, payload, sb)
+                GitHubActionsWorkspaceContinuityPlanner.DOWNLOAD_REFERENCE ->
+                    renderWorkspaceDownloadBindings(step.id, payload, sb)
                 else -> renderGenericBindings(step.id, payload.bindings, sb)
             }
         }
@@ -142,6 +148,68 @@ class GitHubActionsManifestRenderer(
         }
         sb.appendLine("          tags: ${yamlScalar(image)}")
         sb.appendLine("          push: $push")
+    }
+
+    private fun renderWorkspaceUploadBindings(
+        stepId: String,
+        payload: TargetRendererPayload,
+        sb: StringBuilder
+    ) {
+        val context = "GitHub workspace upload payload for '$stepId'"
+        val name = artifactName(payload, context)
+        val path = literal(payload, "path", context)
+        val ifNoFilesFound = literal(payload, "if-no-files-found", context)
+        val includeHiddenFiles = literal(payload, "include-hidden-files", context)
+        require(path == GitHubActionsWorkspaceContinuityPlanner.WORKSPACE_PATH) {
+            "$context path '$path' does not reconstruct the declared workflow workspace."
+        }
+        require(ifNoFilesFound == "error") { "$context must fail when the producer workspace is empty." }
+        require(includeHiddenFiles == "true") { "$context must preserve hidden workspace files." }
+        sb.appendLine("        with:")
+        sb.appendLine("          name: ${yamlScalar(name)}")
+        sb.appendLine("          path: ${yamlScalar(path)}")
+        sb.appendLine("          if-no-files-found: ${yamlScalar(ifNoFilesFound)}")
+        sb.appendLine("          include-hidden-files: ${yamlScalar(includeHiddenFiles)}")
+    }
+
+    private fun renderWorkspaceDownloadBindings(
+        stepId: String,
+        payload: TargetRendererPayload,
+        sb: StringBuilder
+    ) {
+        val context = "GitHub workspace download payload for '$stepId'"
+        val name = artifactName(payload, context)
+        val path = literal(payload, "path", context)
+        require(path == GitHubActionsWorkspaceContinuityPlanner.WORKSPACE_PATH) {
+            "$context path '$path' does not reconstruct the declared workflow workspace."
+        }
+        sb.appendLine("        with:")
+        sb.appendLine("          name: ${yamlScalar(name)}")
+        sb.appendLine("          path: ${yamlScalar(path)}")
+    }
+
+    private fun artifactName(payload: TargetRendererPayload, context: String): String {
+        val binding = requireNotNull(payload.bindings["name"]) { "$context is missing artifact name." }
+        require(binding.kind == ProjectionBindingKind.ARTIFACT) {
+            "$context name must be an ARTIFACT binding, found ${binding.kind}."
+        }
+        require(binding.resolutionStatus == ProjectionBindingResolutionStatus.SYMBOLIC) {
+            "$context artifact identity must remain symbolic."
+        }
+        return requireNotNull(binding.name).also {
+            require(it.isNotBlank()) { "$context artifact identity must not be blank." }
+        }
+    }
+
+    private fun literal(payload: TargetRendererPayload, name: String, context: String): String {
+        val binding = requireNotNull(payload.bindings[name]) { "$context is missing '$name'." }
+        require(binding.kind == ProjectionBindingKind.LITERAL) {
+            "$context binding '$name' must be LITERAL, found ${binding.kind}."
+        }
+        require(binding.resolutionStatus == ProjectionBindingResolutionStatus.RESOLVED) {
+            "$context binding '$name' must be resolved."
+        }
+        return requireNotNull(binding.value)
     }
 
     private fun renderGenericBindings(
