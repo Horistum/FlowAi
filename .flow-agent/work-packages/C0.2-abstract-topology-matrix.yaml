@@ -14,6 +14,13 @@ activationEvidence:
   runId: 30903883062
   exactHead: "d69d5c68c5b7cc7490dd7723eeb75449a324962a"
   mergeCandidate: "eea1f7047de60dd91f03bbc8d8e184813bb00397"
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2674
+  runId: 30912265199
+  exactHead: "907abdad2b48862b8ed8bd37eece118127298b36"
+  mergeCandidate: "5569196f60e305b8829e0bea6d63ea169fb0d485"
 requiredEvidence:
   - "A topology profile is evaluated independently from target name, renderer layout and action inventory."
   - "The matrix covers workflow scope, branch isolation, attempt isolation, workflow lifetime, suspend/resume, ephemeral workspace, durable state and propagation dimensions."
