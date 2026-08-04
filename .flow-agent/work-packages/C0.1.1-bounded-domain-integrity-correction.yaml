@@ -4,6 +4,7 @@ type: "bounded-correction"
 stream: correction
 status: active
 objective: "Repair C0.1 enforcement so every domain has positive representability, mutation polarity compares baseline and mutation behavior, and cross-stream focus is globally owned."
+parentCoreItem: "0.9.7.10"
 parentConformanceItem: "C0.1"
 falsifiedInvariants:
   - "A domain with only accepted negative cases could satisfy domain coverage."
