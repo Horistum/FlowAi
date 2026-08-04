@@ -2,7 +2,7 @@ version: "C0.2"
 name: "Abstract Topology Matrix"
 type: "topology-evidence"
 stream: conformance
-status: active
+status: complete
 objective: "Exercise canonical plans against synthetic topology profiles after GitHub Actions becomes the second independently certified executable target."
 dependsOnCore: "0.9.7.8"
 dependsOnAdapters: "A1.0"
@@ -21,6 +21,13 @@ implementationEvidence:
   runId: 30912265199
   exactHead: "907abdad2b48862b8ed8bd37eece118127298b36"
   mergeCandidate: "5569196f60e305b8829e0bea6d63ea169fb0d485"
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2679
+  runId: 30913933725
+  exactHead: "4edb2b1440966bdc794d4f001021367654c8b4e7"
+  mergeCandidate: "2ec62d58b5f7e1944e11c8c31354cdf0366770a7"
 requiredEvidence:
   - "A topology profile is evaluated independently from target name, renderer layout and action inventory."
   - "The matrix covers workflow scope, branch isolation, attempt isolation, workflow lifetime, suspend/resume, ephemeral workspace, durable state and propagation dimensions."

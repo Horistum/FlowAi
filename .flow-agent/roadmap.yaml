@@ -1,6 +1,6 @@
 project: Flow
-roadmapVersion: 14
-currentTrack: "conformance-topology-matrix"
+roadmapVersion: 15
+currentTrack: "conformance-semantic-equivalence"
 primaryRoadmapStream: conformance
 
 versionBoundary:
@@ -45,6 +45,7 @@ rules:
   - "No roadmap item may bend code or weaken validation only to satisfy tests."
   - "The three C0.1 domains close only its evidence scope, not the automation taxonomy."
   - "A1.0 precedes C0.2 so topology conformance is exercised against a second real executable target rather than an invented abstraction."
+  - "C0.2 must complete before C0.3 can define observable semantic equivalence."
 
 architectureConstitution:
   identity:
@@ -78,7 +79,7 @@ currentDecision:
   closureItemStatus: "completed"
   completedAdapterItem: "A1.0"
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
-  nextItem: "C0.2"
-  nextItemName: "Abstract Topology Matrix"
+  nextItem: "C0.3"
+  nextItemName: "Semantic Equivalence Rules"
   nextItemStream: "conformance"
-  decisionBasis: "Flow CI #2669, run 30903883062, passed the bounded A1.0 executable promotion on exact head d69d5c68c5b7cc7490dd7723eeb75449a324962a and synthetic merge candidate eea1f7047de60dd91f03bbc8d8e184813bb00397. A1.0 is complete, the adapter stream is closed at A1.0, and C0.2 is selected as the active conformance item."
+  decisionBasis: "Flow CI #2679, run 30913933725, passed the distinct C0.2 completion boundary on exact head 4edb2b1440966bdc794d4f001021367654c8b4e7 and synthetic merge candidate 2ec62d58b5f7e1944e11c8c31354cdf0366770a7. C0.2 is complete and C0.3 is selected as the active conformance item."
