@@ -10,9 +10,9 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthorityTests {
     private val authority = AdapterExecutableContinuityRoadmapLifecycleAuthority()
 
     @Test
-    fun repositoryDeclaresValidA10PromotionPhase() {
+    fun repositoryDeclaresValidCompletedA10Boundary() {
         val report = authority.analyze()
-        assertEquals(AdapterExecutableContinuityLifecyclePhase.PROMOTING, report.phase)
+        assertEquals(AdapterExecutableContinuityLifecyclePhase.COMPLETED, report.phase)
         assertEquals("PASS", report.status, report.failedChecks.joinToString())
     }
 
@@ -26,9 +26,7 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthorityTests {
             exact = implementation.exactHead,
             merge = implementation.mergeCandidate
         )
-        val report = authority.evaluate(
-            completedInput(implementation, sameBoundary)
-        )
+        val report = authority.evaluate(completedInput(implementation, sameBoundary))
         assertEquals(AdapterExecutableContinuityLifecyclePhase.COMPLETED, report.phase)
         assertEquals("FAIL", report.status)
         assertTrue("adapters.a1.0.completion-boundary" in report.failedChecks)

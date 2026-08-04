@@ -3,9 +3,9 @@ package org.flowlang.adapters.portfolio
 /**
  * Adapter-local ordering contract.
  *
- * This authority validates A0 history and an explicitly declared adapter-local
+ * This authority validates A0 history and the explicitly declared adapter-local
  * A1.0 successor. It deliberately does not decide which unrelated roadmap stream
- * follows a terminal adapter state; that decision belongs to the global roadmap
+ * follows completed adapter work; that decision belongs to the global roadmap
  * transition authority.
  */
 object AdapterRoadmapSequence {
@@ -13,7 +13,10 @@ object AdapterRoadmapSequence {
     const val TERMINAL_ITEM: String = "A0.7"
     const val NEXT_SERIES_FIRST_ITEM: String = "A1.0"
 
-    fun ordinal(item: String): Int? = A0_ITEM.matchEntire(item)?.groupValues?.get(1)?.toIntOrNull()
+    fun ordinal(item: String): Int? = when (item) {
+        NEXT_SERIES_FIRST_ITEM -> NEXT_SERIES_ORDINAL
+        else -> A0_ITEM.matchEntire(item)?.groupValues?.get(1)?.toIntOrNull()
+    }
 
     fun isAdjacentProgress(
         completedItem: String,
@@ -33,6 +36,7 @@ object AdapterRoadmapSequence {
         val completed = ordinal(completedItem) ?: return false
         if (completed < minimumCompletedOrdinal) return false
         if (completedItem == TERMINAL_ITEM) return isPostTerminalA0Focus(nextItem)
+        if (completedItem == NEXT_SERIES_FIRST_ITEM) return nextItem.isBlank()
         return isAdjacentProgress(completedItem, nextItem, minimumCompletedOrdinal)
     }
 
@@ -41,6 +45,7 @@ object AdapterRoadmapSequence {
         completedItem: String,
         nextItem: String
     ): Boolean = when {
+        completedItem == NEXT_SERIES_FIRST_ITEM && nextItem.isBlank() -> trackStatus == "completed"
         completedItem == TERMINAL_ITEM && nextItem == NEXT_SERIES_FIRST_ITEM -> trackStatus == "active"
         completedItem == TERMINAL_ITEM && nextItem.isBlank() -> trackStatus == "completed"
         completedItem.isBlank() -> trackStatus == "active" && nextItem == FIRST_ITEM
@@ -71,5 +76,6 @@ object AdapterRoadmapSequence {
         nextItem.isBlank() || nextItem == NEXT_SERIES_FIRST_ITEM
 
     private const val TERMINAL_ORDINAL = 7
+    private const val NEXT_SERIES_ORDINAL = 8
     private val A0_ITEM = Regex("A0\\.([1-9][0-9]*)")
 }

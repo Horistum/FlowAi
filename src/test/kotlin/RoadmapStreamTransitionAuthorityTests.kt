@@ -10,10 +10,10 @@ import org.flowlang.roadmap.RoadmapTransitionPhase
 
 class RoadmapStreamTransitionAuthorityTests {
     @Test
-    fun repositoryActivatesA10AfterCompletedCorrection() {
+    fun repositoryActivatesC02AfterCompletedA10() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
         assertEquals(
-            expected = RoadmapTransitionPhase.A1_0_ACTIVE,
+            expected = RoadmapTransitionPhase.C0_2_ACTIVE,
             actual = report.phase,
             message = report.errors.joinToString(" | ")
         )
@@ -24,11 +24,15 @@ class RoadmapStreamTransitionAuthorityTests {
     fun completedCorrectionActivatesA10AndKeepsC02Planned() {
         val root = createA10Boundary()
         val report = RoadmapStreamTransitionAuthority(root).analyze()
-        assertEquals(
-            expected = RoadmapTransitionPhase.A1_0_ACTIVE,
-            actual = report.phase,
-            message = report.errors.joinToString(" | ")
-        )
+        assertEquals(RoadmapTransitionPhase.A1_0_ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+    }
+
+    @Test
+    fun completedA10ActivatesC02AndClosesAdapterFocus() {
+        val root = createC02Boundary()
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+        assertEquals(RoadmapTransitionPhase.C0_2_ACTIVE, report.phase, report.errors.joinToString(" | "))
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
@@ -43,25 +47,19 @@ class RoadmapStreamTransitionAuthorityTests {
     }
 
     @Test
-    fun completedCorrectionRejectsReusedImplementationBoundary() {
-        val root = createA10Boundary()
-        val correction = File(root, RoadmapStreamTransitionAuthority.CORRECTION_WORK_PACKAGE)
-        correction.writeText(
-            correction.readText()
-                .replace("runNumber: 2801", "runNumber: 2800")
-                .replace("runId: 34000000001", "runId: 34000000000")
-                .replace(
-                    "3333333333333333333333333333333333333333",
-                    "1111111111111111111111111111111111111111"
-                )
-                .replace(
-                    "4444444444444444444444444444444444444444",
-                    "2222222222222222222222222222222222222222"
-                )
+    fun completedA10RejectsReusedImplementationBoundary() {
+        val root = createC02Boundary()
+        val a10 = File(root, RoadmapStreamTransitionAuthority.A10_WORK_PACKAGE)
+        a10.writeText(
+            a10.readText()
+                .replace("runNumber: 2901", "runNumber: 2900")
+                .replace("runId: 35000000001", "runId: 35000000000")
+                .replace("7777777777777777777777777777777777777777", "5555555555555555555555555555555555555555")
+                .replace("8888888888888888888888888888888888888888", "6666666666666666666666666666666666666666")
         )
         val report = RoadmapStreamTransitionAuthority(root).analyze()
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "distinct runs and revisions" in it })
+        assertTrue(report.errors.any { "Completed A1.0 implementation and completion evidence" in it })
     }
 
     @Test
@@ -71,7 +69,7 @@ class RoadmapStreamTransitionAuthorityTests {
         conformance.writeText(conformance.readText().replace("status: planned", "status: next"))
         val report = RoadmapStreamTransitionAuthority(root).analyze()
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "C0.2 must remain planned" in it })
+        assertTrue(report.errors.any { "C0.2 must be 'planned'" in it })
     }
 
     @Test
@@ -124,7 +122,8 @@ class RoadmapStreamTransitionAuthorityTests {
         write(root, RoadmapStreamTransitionAuthority.CONFORMANCE_ROADMAP, """
             stream: conformance
             currentDecision:
-              completedItem: "C0.1"
+              completedItem: "C0.1.1"
+              nextItem: ""
             items:
               - version: "C0.1"
                 status: completed
@@ -142,6 +141,82 @@ class RoadmapStreamTransitionAuthorityTests {
               nextItem: "A1.0"
               nextItemName: "GitHub Actions Artifact and Workspace Continuity"
         """)
+        writePassedCorrection(root)
+        write(root, RoadmapStreamTransitionAuthority.A10_WORK_PACKAGE, "status: active\n")
+        write(root, RoadmapStreamTransitionAuthority.C02_WORK_PACKAGE, "status: planned\n")
+        return root
+    }
+
+    private fun createC02Boundary(): File {
+        val root = createA10Boundary()
+        write(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX, """
+            primaryRoadmapStream: conformance
+            currentDecision:
+              conformanceCorrectionState: complete
+              activeConformanceCorrectionWorkPackage: ""
+              closureItem: "0.9.7.10"
+              closureItemStatus: completed
+              completedAdapterItem: "A1.0"
+              nextItem: "C0.2"
+              nextItemName: "Abstract Topology Matrix"
+              nextItemStream: conformance
+        """)
+        write(root, RoadmapStreamTransitionAuthority.ADAPTER_ROADMAP, """
+            stream: adapters
+            status: completed
+            currentDecision:
+              completedItem: "A1.0"
+              nextItem: ""
+            items:
+              - version: "A0.7"
+                status: completed
+              - version: "A1.0"
+                status: completed
+        """)
+        write(root, RoadmapStreamTransitionAuthority.CONFORMANCE_ROADMAP, """
+            stream: conformance
+            currentDecision:
+              completedItem: "C0.1.1"
+              nextItem: "C0.2"
+            items:
+              - version: "C0.1"
+                status: completed
+              - version: "C0.1.1"
+                status: completed
+              - version: "C0.2"
+                status: next
+        """)
+        write(root, RoadmapStreamTransitionAuthority.RELEASE_STATE, """
+            roadmapState:
+              primaryStream: conformance
+              closureItem: "0.9.7.10"
+              closureItemStatus: completed
+              completedAdapterItem: "A1.0"
+              nextItem: "C0.2"
+              nextItemName: "Abstract Topology Matrix"
+        """)
+        write(root, RoadmapStreamTransitionAuthority.A10_WORK_PACKAGE, """
+            status: complete
+            implementationEvidence:
+              status: passed
+              workflow: Flow CI
+              runNumber: 2900
+              runId: 35000000000
+              exactHead: "5555555555555555555555555555555555555555"
+              mergeCandidate: "6666666666666666666666666666666666666666"
+            completionBoundary:
+              status: passed
+              workflow: Flow CI
+              runNumber: 2901
+              runId: 35000000001
+              exactHead: "7777777777777777777777777777777777777777"
+              mergeCandidate: "8888888888888888888888888888888888888888"
+        """)
+        write(root, RoadmapStreamTransitionAuthority.C02_WORK_PACKAGE, "status: active\n")
+        return root
+    }
+
+    private fun writePassedCorrection(root: File) {
         write(root, RoadmapStreamTransitionAuthority.CORRECTION_WORK_PACKAGE, """
             status: complete
             implementationEvidence:
@@ -159,8 +234,6 @@ class RoadmapStreamTransitionAuthorityTests {
               exactHead: "3333333333333333333333333333333333333333"
               mergeCandidate: "4444444444444444444444444444444444444444"
         """)
-        write(root, RoadmapStreamTransitionAuthority.A10_WORK_PACKAGE, "status: active\n")
-        return root
     }
 
     private fun write(root: File, path: String, content: String) {

@@ -1,13 +1,14 @@
 package org.flowlang.tests
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.adapters.portfolio.AdapterRoadmapSequence
 
 class AdapterRoadmapSequenceTransitionTests {
     @Test
-    fun terminalA0HistoryDoesNotOwnUnrelatedGlobalFocus() {
+    fun completedAdapterHistoryDoesNotOwnUnrelatedGlobalFocus() {
         assertTrue(AdapterRoadmapSequence.isIndexFocusAligned("conformance", "C0.2", "conformance", ""))
         assertTrue(AdapterRoadmapSequence.isReleaseFocusAligned("conformance", "C0.2", ""))
     }
@@ -18,6 +19,14 @@ class AdapterRoadmapSequenceTransitionTests {
         assertTrue(AdapterRoadmapSequence.isIndexFocusAligned("adapters", "A1.0", "adapters", "A1.0"))
         assertTrue(AdapterRoadmapSequence.isReleaseFocusAligned("adapters", "A1.0", "A1.0"))
         assertFalse(AdapterRoadmapSequence.isIndexFocusAligned("conformance", "A1.0", "conformance", "A1.0"))
+    }
+
+    @Test
+    fun completedA10IsTerminalAdapterHistory() {
+        assertEquals(8, AdapterRoadmapSequence.ordinal("A1.0"))
+        assertTrue(AdapterRoadmapSequence.isTrackStatusAligned("completed", "A1.0", ""))
+        assertTrue(AdapterRoadmapSequence.isHistoricalProgress("A1.0", "", 1))
+        assertFalse(AdapterRoadmapSequence.isTrackStatusAligned("active", "A1.0", "A1.1"))
     }
 
     @Test

@@ -1,7 +1,7 @@
 project: Flow
-roadmapVersion: 13
-currentTrack: "adapter-executable-continuity"
-primaryRoadmapStream: adapters
+roadmapVersion: 14
+currentTrack: "conformance-topology-matrix"
+primaryRoadmapStream: conformance
 
 versionBoundary:
   publishedPackageVersion: "0.9.5"
@@ -76,9 +76,9 @@ currentDecision:
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
-  completedAdapterItem: "A0.7"
-  completedAdapterItemName: "Trigger Materialization Coverage"
-  nextItem: "A1.0"
-  nextItemName: "GitHub Actions Artifact and Workspace Continuity"
-  nextItemStream: "adapters"
-  decisionBasis: "Flow CI #2655, run 30887655401, passed C0.1.1 on exact implementation head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e. C0.1.1 is complete, A1.0 is selected as the next adapter item, and C0.2 remains planned until real GitHub Actions executable continuity exists."
+  completedAdapterItem: "A1.0"
+  completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
+  nextItem: "C0.2"
+  nextItemName: "Abstract Topology Matrix"
+  nextItemStream: "conformance"
+  decisionBasis: "Flow CI #2669, run 30903883062, passed the bounded A1.0 executable promotion on exact head d69d5c68c5b7cc7490dd7723eeb75449a324962a and synthetic merge candidate eea1f7047de60dd91f03bbc8d8e184813bb00397. A1.0 is complete, the adapter stream is closed at A1.0, and C0.2 is selected as the active conformance item."

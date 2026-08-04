@@ -2,7 +2,7 @@ version: "A1.0"
 name: "GitHub Actions Artifact and Workspace Continuity"
 type: "adapter-continuity"
 stream: adapters
-status: active
+status: complete
 objective: "Make checkout-build-image executable on GitHub Actions by implementing real cross-job artifact and workspace continuity without changing Core dependency meaning."
 dependsOnAdapters: "A0.7"
 dependsOnConformance: "C0.1.1"
@@ -28,3 +28,10 @@ implementationEvidence:
   runId: 30902558235
   exactHead: "63915678b1f298d8052975d1c61accfe0c362458"
   mergeCandidate: "b9656a35886c4149dcdb7a8d59fa21821a272158"
+completionBoundary:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: 2669
+  runId: 30903883062
+  exactHead: "d69d5c68c5b7cc7490dd7723eeb75449a324962a"
+  mergeCandidate: "eea1f7047de60dd91f03bbc8d8e184813bb00397"

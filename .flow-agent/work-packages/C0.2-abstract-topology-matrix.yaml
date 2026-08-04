@@ -1,0 +1,28 @@
+version: "C0.2"
+name: "Abstract Topology Matrix"
+type: "topology-evidence"
+stream: conformance
+status: active
+objective: "Exercise canonical plans against synthetic topology profiles after GitHub Actions becomes the second independently certified executable target."
+dependsOnCore: "0.9.7.8"
+dependsOnAdapters: "A1.0"
+activationEvidence:
+  adapterItem: "A1.0"
+  adapterStatus: "completed"
+  workflow: "Flow CI"
+  runNumber: 2669
+  runId: 30903883062
+  exactHead: "d69d5c68c5b7cc7490dd7723eeb75449a324962a"
+  mergeCandidate: "eea1f7047de60dd91f03bbc8d8e184813bb00397"
+requiredEvidence:
+  - "A topology profile is evaluated independently from target name, renderer layout and action inventory."
+  - "The matrix covers workflow scope, branch isolation, attempt isolation, workflow lifetime, suspend/resume, ephemeral workspace, durable state and propagation dimensions."
+  - "Executable readiness changes when one required topology dimension is removed, weakened or contradicted."
+  - "Jenkins and GitHub Actions executable references remain live as concrete falsification inputs without defining universal topology meaning."
+  - "Synthetic profiles prove positive and negative matching polarity through the production topology authority."
+forbiddenScope:
+  - "No new Core topology kind without a separately justified universal contract change."
+  - "No inference of topology support from target name, job count, action availability or renderer syntax."
+  - "No adapter support promotion as a side effect of matrix membership."
+  - "No mutation of frozen Core, A0 or A1.0 conformance inventories."
+  - "No equivalence claim reserved for C0.3."
