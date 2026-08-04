@@ -1,6 +1,6 @@
 project: Flow Conformance
 stream: conformance
-roadmapVersion: 5
+roadmapVersion: 6
 status: active
 
 purpose: "Maintain bounded independent evidence for universal contracts and implementation behavior."
@@ -16,13 +16,14 @@ rules:
   - "Corpus evidence runs only after frozen Core closure and adapter certification."
   - "Conformance work cannot mutate the Core pre-closure or adapter inventories."
   - "Concrete artifact checks remain separate from universal contract checks."
+  - "C0.2 remains planned until A1.0 establishes a second executable target with real continuity evidence."
 
 currentDecision:
-  completedItem: "C0.1"
-  completedItemName: "Bounded Domain Corpus"
-  nextItem: "C0.1.1"
-  nextItemName: "Bounded Domain Integrity Correction"
-  decisionBasis: "C0.1.1 repairs falsified enforcement claims while C0.2 remains planned after A1.0 supplies real GitHub Actions executable continuity evidence."
+  completedItem: "C0.1.1"
+  completedItemName: "Bounded Domain Integrity Correction"
+  nextItem: ""
+  nextItemName: ""
+  decisionBasis: "Flow CI #2655, run 30887655401, passed C0.1.1 on exact head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e. A1.0 is selected globally before C0.2."
 
 items:
   - version: "C0.1"
@@ -44,7 +45,7 @@ items:
   - version: "C0.1.1"
     name: "Bounded Domain Integrity Correction"
     type: "bounded-correction"
-    status: next
+    status: completed
     purpose: "Repair C0.1 representability, mutation-polarity and roadmap-ownership enforcement without changing Core meaning."
     dependsOnCore: "0.9.7.10"
     completionEvidence:
@@ -52,7 +53,7 @@ items:
       - "Mutation polarity compares observed baseline and mutation results."
       - "Dynamic negative evidence is checked independently."
       - "Cross-stream selection is globally owned."
-      - "Exact-head and merge-candidate validation pass before A1.0 activation."
+      - "Flow CI #2655 passed exact-head and synthetic merge-candidate validation."
 
   - version: "C0.2"
     name: "Abstract Topology Matrix"

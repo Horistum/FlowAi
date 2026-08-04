@@ -2,10 +2,10 @@ version: "A1.0"
 name: "GitHub Actions Artifact and Workspace Continuity"
 type: "adapter-continuity"
 stream: adapters
-status: planned
+status: active
 objective: "Make checkout-build-image executable on GitHub Actions by implementing real cross-job artifact and workspace continuity without changing Core dependency meaning."
 dependsOnAdapters: "A0.7"
-dependsOnConformance: "C0.1"
+dependsOnConformance: "C0.1.1"
 activationGate:
   correction: "C0.1.1"
   requiredStatus: "complete"

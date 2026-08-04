@@ -2,7 +2,7 @@ version: "C0.1.1"
 name: "C0.1.1 Bounded Domain Integrity Correction"
 type: "bounded-correction"
 stream: conformance
-status: active
+status: complete
 parentConformanceItem: "C0.1"
 dependsOnCore: "0.9.7.10"
 objective: "Repair C0.1 enforcement so every domain has positive representability, mutation polarity compares baseline and mutation behavior, and cross-stream focus is globally owned."
@@ -28,6 +28,13 @@ completionEvidence:
   - "Every bounded domain has at least one observed REPRESENTABLE baseline."
   - "Every domain has an observed REPRESENTABLE to REJECTED mutation transition."
   - "Dynamic negative baselines do not count as mutation polarity."
-  - "Adapter A0 lifecycle contains no conformance-stream name or C0 item pattern."
+  - "Adapter A0 lifecycle contains no globally-owned conformance stream or C0 item-pattern logic."
   - "The global transition authority accepts only active C0.1.1 or A1.0 activation states."
-  - "Exact-head and synthetic merge-candidate Flow CI pass before the correction is completed."
+  - "Flow CI #2655 passed exact-head and synthetic merge-candidate validation."
+implementationEvidence:
+  status: "passed"
+  workflow: "Flow CI"
+  runNumber: 2655
+  runId: 30887655401
+  exactHead: "d8d4b038103391daee2919ce50bd68a18b3bfa38"
+  mergeCandidate: "6e3aaf064781102c0c5c688ddc41007665039e9e"

@@ -1,7 +1,7 @@
 project: Flow
-roadmapVersion: 12
-currentTrack: "bounded-conformance-correction"
-primaryRoadmapStream: conformance
+roadmapVersion: 13
+currentTrack: "adapter-executable-continuity"
+primaryRoadmapStream: adapters
 
 versionBoundary:
   publishedPackageVersion: "0.9.5"
@@ -44,6 +44,7 @@ rules:
   - "No roadmap item may introduce runtime execution, an SDK-first architecture or implementation-specific public syntax."
   - "No roadmap item may bend code or weaken validation only to satisfy tests."
   - "The three C0.1 domains close only its evidence scope, not the automation taxonomy."
+  - "A1.0 precedes C0.2 so topology conformance is exercised against a second real executable target rather than an invented abstraction."
 
 architectureConstitution:
   identity:
@@ -69,15 +70,15 @@ currentDecision:
   correctionState: "complete"
   activeCorrectionWorkPackage: ""
   activeCorrectionWorkPackageName: ""
-  conformanceCorrectionState: "active"
-  activeConformanceCorrectionWorkPackage: ".flow-agent/work-packages/C0.1.1-bounded-domain-integrity-correction.yaml"
-  activeConformanceCorrectionWorkPackageName: "C0.1.1 Bounded Domain Integrity Correction"
+  conformanceCorrectionState: "complete"
+  activeConformanceCorrectionWorkPackage: ""
+  activeConformanceCorrectionWorkPackageName: ""
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
   completedAdapterItem: "A0.7"
   completedAdapterItemName: "Trigger Materialization Coverage"
-  nextItem: "C0.1.1"
-  nextItemName: "Bounded Domain Integrity Correction"
-  nextItemStream: "conformance"
-  decisionBasis: "PR #104 merged C0.1 as c65b30d493e6348c2b73261c634a7bb35e6cce6a, but post-merge inspection falsified its positive-domain and mutation-polarity gates and found adapter-owned cross-stream coupling. C0.1.1 is the selected conformance correction; A1.0 and C0.2 remain planned."
+  nextItem: "A1.0"
+  nextItemName: "GitHub Actions Artifact and Workspace Continuity"
+  nextItemStream: "adapters"
+  decisionBasis: "Flow CI #2655, run 30887655401, passed C0.1.1 on exact implementation head d8d4b038103391daee2919ce50bd68a18b3bfa38 and synthetic merge candidate 6e3aaf064781102c0c5c688ddc41007665039e9e. C0.1.1 is complete, A1.0 is selected as the next adapter item, and C0.2 remains planned until real GitHub Actions executable continuity exists."
