@@ -26,14 +26,14 @@
     "state" : "SEMANTIC_ONLY",
     "executable" : false
   }, {
-    "file" : "jenkins.executable.yaml",
+    "file" : "github-actions.executable.yaml",
     "layer" : "TARGET_PROJECTION",
     "state" : "EXECUTABLE",
     "executable" : true,
-    "target" : "jenkins"
+    "target" : "github-actions"
   } ],
   "targets" : [ {
-    "target" : "jenkins",
+    "target" : "github-actions",
     "capabilityCompatibility" : "SUPPORTED",
     "effectiveCompatibility" : "SUPPORTED",
     "materializationReadiness" : "COMPLETE",

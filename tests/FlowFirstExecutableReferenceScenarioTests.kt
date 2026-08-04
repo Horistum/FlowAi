@@ -31,7 +31,8 @@ import org.flowlang.validator.FlowValidator
 
 class FlowFirstExecutableReferenceScenarioTests {
     private val intentFile = File("examples/intent/checkout-build-image.intent.yaml")
-    private val snapshotRoot = File("conformance/snapshots/checkout-build-image")
+    private val jenkinsSnapshotRoot = File("conformance/snapshots/checkout-build-image")
+    private val githubActionsSnapshotRoot = File("conformance/snapshots/github-actions-checkout-build-image")
     private val modules = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
     private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
 
@@ -108,16 +109,50 @@ class FlowFirstExecutableReferenceScenarioTests {
     }
 
     @Test
-    fun committedSnapshotIsCanonicalTargetScopedExecutableEvidence() {
-        val generated = Files.createTempDirectory("flow-first-executable-reference").toFile()
+    fun historicalJenkinsSnapshotRemainsCanonicalAndTargetScoped() {
+        assertCanonicalTargetSnapshot(
+            snapshotRoot = jenkinsSnapshotRoot,
+            target = "jenkins",
+            preserveAsA1Evidence = false
+        )
+    }
+
+    @Test
+    fun githubActionsSnapshotIsCanonicalAndIndependentlyTargetScoped() {
+        assertCanonicalTargetSnapshot(
+            snapshotRoot = githubActionsSnapshotRoot,
+            target = "github-actions",
+            preserveAsA1Evidence = true
+        )
+    }
+
+    @Test
+    fun executableProofsDoNotRelabelTheMixedDeploymentReference() {
+        val mixed = Json.mapper.readValue(
+            File("conformance/snapshots/build-test-deploy/snapshot-index.json"),
+            ReferenceSnapshotSet::class.java
+        )
+        assertEquals(ReferenceSnapshotSetState.MIXED, mixed.overallState)
+        assertFalse(mixed.executable)
+        assertTrue(mixed.targets.any { it.renderMode != TargetRenderMode.EXECUTABLE })
+        assertNotNull(File(jenkinsSnapshotRoot, "README.md").takeIf { it.isFile })
+        assertNotNull(File(githubActionsSnapshotRoot, "README.md").takeIf { it.isFile })
+    }
+
+    private fun assertCanonicalTargetSnapshot(
+        snapshotRoot: File,
+        target: String,
+        preserveAsA1Evidence: Boolean
+    ) {
+        val generated = Files.createTempDirectory("flow-$target-executable-reference").toFile()
         try {
             val expected = ReferenceSnapshotBundleGenerator().generate(
                 intentFile = intentFile,
                 outputDir = generated,
                 scenarioId = "checkout-build-image",
-                targetIds = setOf("jenkins", "github-actions")
+                targetIds = setOf(target)
             )
-            copySnapshotToCiEvidence(generated)
+            if (preserveAsA1Evidence) copySnapshotToCiEvidence(generated)
             val committed = Json.mapper.readValue(
                 File(snapshotRoot, "snapshot-index.json"),
                 ReferenceSnapshotSet::class.java
@@ -127,15 +162,14 @@ class FlowFirstExecutableReferenceScenarioTests {
             assertTrue(ReferenceSnapshotHonesty.validate(committed).isEmpty())
             assertEquals(ReferenceSnapshotSetState.EXECUTABLE, committed.overallState)
             assertTrue(committed.executable)
-            assertEquals(setOf("github-actions", "jenkins"), committed.targets.map { it.target }.toSet())
-            committed.targets.forEach { target ->
-                assertEquals(MaterializationReadinessStatus.COMPLETE, target.materializationReadiness, target.target)
-                assertEquals(ProjectionReadinessStatus.EXECUTABLE, target.projectionReadiness, target.target)
-                assertEquals(TargetRenderMode.EXECUTABLE, target.renderMode, target.target)
-                assertTrue(target.executable, target.target)
-                assertTrue(target.manifestPresent, target.target)
-                assertTrue(target.renderedArtifactPresent, target.target)
-            }
+            val targetState = committed.targets.single()
+            assertEquals(target, targetState.target)
+            assertEquals(MaterializationReadinessStatus.COMPLETE, targetState.materializationReadiness)
+            assertEquals(ProjectionReadinessStatus.EXECUTABLE, targetState.projectionReadiness)
+            assertEquals(TargetRenderMode.EXECUTABLE, targetState.renderMode)
+            assertTrue(targetState.executable)
+            assertTrue(targetState.manifestPresent)
+            assertTrue(targetState.renderedArtifactPresent)
 
             val generatedNames = generated.listFiles().orEmpty().filter { it.isFile }.map { it.name }.sorted()
             val committedNames = snapshotRoot.listFiles().orEmpty()
@@ -155,18 +189,6 @@ class FlowFirstExecutableReferenceScenarioTests {
         } finally {
             generated.deleteRecursively()
         }
-    }
-
-    @Test
-    fun executableProofDoesNotRelabelTheMixedDeploymentReference() {
-        val mixed = Json.mapper.readValue(
-            File("conformance/snapshots/build-test-deploy/snapshot-index.json"),
-            ReferenceSnapshotSet::class.java
-        )
-        assertEquals(ReferenceSnapshotSetState.MIXED, mixed.overallState)
-        assertFalse(mixed.executable)
-        assertTrue(mixed.targets.any { it.renderMode != TargetRenderMode.EXECUTABLE })
-        assertNotNull(File(snapshotRoot, "README.md").takeIf { it.isFile })
     }
 
     private fun referencePlan(): ExecutionPlan {
