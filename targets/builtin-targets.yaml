@@ -216,7 +216,7 @@ targets:
         ephemeralWorkspace: supported
         durableState: unsupported
         valuePropagation: partial
-        workspacePropagation: unsupported
+        workspacePropagation: supported
         statePropagation: unsupported
         failurePropagation: partial
     capabilities:
@@ -233,7 +233,7 @@ targets:
       nativeRuntime: partial
     features:
       continuity.value: partial
-      continuity.workspace: unsupported
+      continuity.workspace: supported
       continuity.state: unsupported
       approval.inline: partial
       approval.manual: partial
@@ -312,6 +312,7 @@ targets:
         evidenceReference: targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard.rollback
     notes:
       - Approvals are normally modeled through protected environments, not inline workflow syntax.
+      - Workspace propagation is a platform mechanism claim; executable use remains gated by adapter-owned scoped continuity evidence.
 
   - name: tekton
     expressionProfile: equality-membership-condition

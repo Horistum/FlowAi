@@ -1,5 +1,7 @@
 package org.flowlang.targets.builtin
 
+import java.io.File
+import org.flowlang.adapters.continuity.AdapterContinuityProjectionExecutionGate
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetProjectionRule
@@ -35,10 +37,7 @@ import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 
-/**
- * Explicit composition root for projection implementations shipped with this
- * distribution. This is an immutable catalog, not dynamic plugin discovery.
- */
+/** Explicit composition root for projection implementations shipped with this distribution. */
 object BuiltInTargetProjections {
     val registry: TargetProjectionRegistry = TargetProjectionRegistry.of(
         TargetProjectionProvider(JenkinsManifestGenerator(), JenkinsManifestRenderer()),
@@ -46,8 +45,16 @@ object BuiltInTargetProjections {
         TargetProjectionProvider(TektonManifestGenerator(), TektonManifestRenderer())
     )
 
-    fun pipeline(targets: Map<String, TargetCapability>): TargetManifestGenerationPipeline =
-        TargetManifestGenerationPipeline(targets, registry)
+    fun pipeline(
+        targets: Map<String, TargetCapability>,
+        rootDir: File = File(".")
+    ): TargetManifestGenerationPipeline = TargetManifestGenerationPipeline(
+        targets = targets,
+        projections = registry,
+        executionGates = listOf(
+            AdapterContinuityProjectionExecutionGate(rootDir, targets, registry)
+        )
+    )
 }
 
 class JenkinsManifestGenerator(
