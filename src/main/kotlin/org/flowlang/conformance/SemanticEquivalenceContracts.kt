@@ -147,6 +147,7 @@ data class SemanticEquivalenceCase(
 
 data class SemanticEquivalenceConcretePair(
     val id: String,
+    val scenarioId: String,
     val intent: String,
     val leftTarget: String,
     val leftSnapshot: String,
@@ -155,6 +156,7 @@ data class SemanticEquivalenceConcretePair(
 ) {
     init {
         require(id.isNotBlank()) { "Semantic equivalence concrete pair id must not be blank." }
+        require(scenarioId.isNotBlank()) { "Semantic equivalence concrete pair '$id' scenarioId must not be blank." }
         require(intent.isNotBlank()) { "Semantic equivalence concrete pair '$id' intent must not be blank." }
         require(leftTarget.isNotBlank() && rightTarget.isNotBlank()) {
             "Semantic equivalence concrete pair '$id' targets must not be blank."
@@ -231,7 +233,15 @@ object SemanticEquivalenceLoader {
     const val PATH = "conformance/equivalence/semantic-equivalence-rules.yaml"
     private val ROOT_KEYS = setOf("version", "mutations", "cases", "concretePairs")
     private val CASE_KEYS = setOf("id", "fixture", "requiredKinds")
-    private val PAIR_KEYS = setOf("id", "intent", "leftTarget", "leftSnapshot", "rightTarget", "rightSnapshot")
+    private val PAIR_KEYS = setOf(
+        "id",
+        "scenarioId",
+        "intent",
+        "leftTarget",
+        "leftSnapshot",
+        "rightTarget",
+        "rightSnapshot"
+    )
 
     fun load(rootDir: File = File(".")): SemanticEquivalenceDocument {
         val file = File(rootDir, PATH)
@@ -253,6 +263,7 @@ object SemanticEquivalenceLoader {
             requireExactKeys(raw, PAIR_KEYS, path)
             SemanticEquivalenceConcretePair(
                 id = raw.requiredString("id", path),
+                scenarioId = raw.requiredString("scenarioId", path),
                 intent = raw.requiredString("intent", path),
                 leftTarget = raw.requiredString("leftTarget", path),
                 leftSnapshot = raw.requiredString("leftSnapshot", path),
