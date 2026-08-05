@@ -164,6 +164,7 @@ class SemanticEquivalenceAuthority(
     private fun concreteReferenceErrors(document: SemanticEquivalenceDocument): List<String> = buildList {
         val promotions = AdapterExecutableReferencePromotionLoader.load(rootDir).promotions
         val referenceGenerator = ReferenceSnapshotBundleGenerator(rootDir, registry)
+        val implementationEvidenceAuthority = SemanticImplementationObservationAuthority(rootDir)
         document.concretePairs.forEach { pair ->
             val intentFile = File(rootDir, pair.intent)
             if (!intentFile.isFile) {
@@ -238,20 +239,44 @@ class SemanticEquivalenceAuthority(
                 }
             }
 
-            val leftAssessment = SemanticObservationAuthority.assess(
-                requirements,
-                SemanticObservationAuthority.fullyPreserved(requirements, pair.leftSnapshot)
-            )
-            val rightAssessment = SemanticObservationAuthority.assess(
-                requirements,
-                SemanticObservationAuthority.fullyPreserved(requirements, pair.rightSnapshot)
-            )
-            if (leftAssessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT ||
-                rightAssessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT ||
-                leftAssessment.decision != rightAssessment.decision ||
-                leftAssessment.observations.map { it.status } != rightAssessment.observations.map { it.status }
-            ) {
-                add("Concrete pair '${pair.id}' does not preserve equivalent semantic observations across both executable references.")
+            val leftProfileResult = runCatching {
+                implementationEvidenceAuthority.profile(
+                    plan = plan,
+                    target = pair.leftTarget,
+                    scenarioId = pair.id,
+                    requirements = requirements
+                )
+            }
+            val rightProfileResult = runCatching {
+                implementationEvidenceAuthority.profile(
+                    plan = plan,
+                    target = pair.rightTarget,
+                    scenarioId = pair.id,
+                    requirements = requirements
+                )
+            }
+            val leftProfile = leftProfileResult.getOrNull()
+            val rightProfile = rightProfileResult.getOrNull()
+            if (leftProfile == null) {
+                add("Concrete pair '${pair.id}' cannot derive ${pair.leftTarget} observation evidence: ${leftProfileResult.exceptionOrNull()?.message}.")
+            }
+            if (rightProfile == null) {
+                add("Concrete pair '${pair.id}' cannot derive ${pair.rightTarget} observation evidence: ${rightProfileResult.exceptionOrNull()?.message}.")
+            }
+            if (leftProfile != null && rightProfile != null) {
+                val leftAssessment = SemanticObservationAuthority.assess(requirements, leftProfile.evidence)
+                val rightAssessment = SemanticObservationAuthority.assess(requirements, rightProfile.evidence)
+                if (leftAssessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT ||
+                    rightAssessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT ||
+                    leftAssessment.decision != rightAssessment.decision ||
+                    leftAssessment.observations.map { it.status } != rightAssessment.observations.map { it.status }
+                ) {
+                    add(
+                        "Concrete pair '${pair.id}' does not preserve equivalent target-backed observations: " +
+                            "${pair.leftTarget}=${assessmentSummary(leftAssessment)} " +
+                            "${pair.rightTarget}=${assessmentSummary(rightAssessment)}."
+                    )
+                }
             }
         }
     }
@@ -340,6 +365,11 @@ class SemanticEquivalenceAuthority(
         }
         return SnapshotValidation(errors, planFile.takeIf(File::isFile))
     }
+
+    private fun assessmentSummary(assessment: SemanticEquivalenceAssessment): String =
+        assessment.observations.joinToString(prefix = "[", postfix = "]") { observation ->
+            "${observation.requirement?.id ?: "unexpected"}:${observation.status}"
+        }
 
     private fun snapshotForTarget(pair: SemanticEquivalenceConcretePair, target: String): String = when (target) {
         pair.leftTarget -> pair.leftSnapshot
