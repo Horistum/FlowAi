@@ -13,6 +13,7 @@ import org.flowlang.conformance.SemanticObservationAuthority
 import org.flowlang.conformance.SemanticObservationEvidenceStatus
 import org.flowlang.conformance.SemanticObservationKind
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.planner.PlanDependencyResolution
 
 class SemanticEquivalenceAuthorityTests {
     private val modules by lazy { ModuleRegistry.fromDirectory(File("modules")) }
@@ -83,6 +84,22 @@ class SemanticEquivalenceAuthorityTests {
     }
 
     @Test
+    fun unresolvedContinuityCannotBecomeAValidObservationBaseline() {
+        val plan = SemanticEquivalencePlanFactory.plan(SemanticEquivalenceFixture.VALUE_CONTINUITY)
+            .copy(
+                dependencyRelations = planRelations(
+                    SemanticEquivalencePlanFactory.plan(SemanticEquivalenceFixture.VALUE_CONTINUITY)
+                ).map { it.copy(resolution = PlanDependencyResolution.UNRESOLVED) }
+            )
+
+        val failure = assertFailsWith<IllegalArgumentException> {
+            SemanticObservationAuthority.requirementsFor(plan)
+        }
+
+        assertTrue(failure.message.orEmpty().contains("cannot certify"))
+    }
+
+    @Test
     fun emptyObservationSetNeverCertifiesVacuousEquivalence() {
         val assessment = SemanticObservationAuthority.assess(emptyList(), emptyList())
 
@@ -114,4 +131,6 @@ class SemanticEquivalenceAuthorityTests {
             root.deleteRecursively()
         }
     }
+
+    private fun planRelations(plan: org.flowlang.planner.ExecutionPlan) = plan.dependencyRelations
 }
