@@ -59,7 +59,7 @@ object StandardCapabilityContracts {
         StandardCapability.DEPROVISION to contract(StandardCapability.DEPROVISION, required = listOf("target"), optional = listOf("safety", "system")),
         StandardCapability.DATABASE_MIGRATE to contract(StandardCapability.DATABASE_MIGRATE, required = listOf("database"), optional = listOf("migration", "version", "backup", "rollbackPlan", "dryRun", "system", "target")),
         StandardCapability.CERTIFICATE_RENEW to contract(StandardCapability.CERTIFICATE_RENEW, required = listOf("certificate"), optional = listOf("provider", "secret", "service", "namespace", "window", "system", "target")),
-        StandardCapability.KUBERNETES_MAINTENANCE to contract(StandardCapability.KUBERNETES_MAINTENANCE, required = listOf("scope"), optional = listOf("operation", "namespace", "dryRun", "approval", "system", "target")),
+        StandardCapability.CLUSTER_MAINTENANCE to contract(StandardCapability.CLUSTER_MAINTENANCE, required = listOf("scope"), optional = listOf("operation", "namespace", "dryRun", "approval", "window", "system", "target")),
         StandardCapability.RUNBOOK to contract(StandardCapability.RUNBOOK, required = listOf("description"), optional = listOf("service", "severity", "system", "target")),
         StandardCapability.INCIDENT to contract(StandardCapability.INCIDENT, optional = listOf("description", "service", "severity", "system", "target")),
         StandardCapability.SECRET_ROTATE to contract(StandardCapability.SECRET_ROTATE, required = listOf("subject"), optional = listOf("provider", "service", "system", "target")),
