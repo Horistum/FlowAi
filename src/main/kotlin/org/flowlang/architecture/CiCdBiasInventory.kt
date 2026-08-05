@@ -8,8 +8,9 @@ import java.io.File
  *
  * The scanner is intentionally lexical rather than a raw grep. Comments are
  * ignored, Kotlin interpolation bodies are scanned as code, normative structured
- * values are distinguished from prose, and explicit compatibility or descriptive
- * catalog boundaries remain visible without becoming semantic authority.
+ * values are distinguished from prose, and explicit compatibility, build tooling
+ * or descriptive catalog boundaries remain visible without becoming semantic
+ * authority.
  */
 data class CiCdBiasTerm(
     val term: String,
@@ -233,6 +234,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     private fun classify(path: String): String = when {
         path == STANDARD_CAPABILITY_COMPATIBILITY -> COMPATIBILITY_BOUNDARY
         path == STANDARD_INTENT_CATALOG -> DESCRIPTIVE_CATALOG
+        path in BUILD_CONFIGURATION_PATHS -> BUILD_CONFIGURATION
         path in TARGET_NEUTRAL_GENERATOR_AUTHORITIES -> ACTIVE_SEMANTIC_SOURCE
         path.startsWith("docs/") ||
             path.startsWith(".flow-agent/") ||
@@ -295,12 +297,18 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         const val MODULE_OR_TARGET_NOTE = "module-or-target-note"
         const val COMPATIBILITY_BOUNDARY = "compatibility-boundary"
         const val DESCRIPTIVE_CATALOG = "descriptive-catalog"
+        const val BUILD_CONFIGURATION = "build-configuration"
 
         private const val STANDARD_CAPABILITY_COMPATIBILITY =
             "src/main/kotlin/org/flowlang/intent/StandardCapabilityCompatibility.kt"
         private const val STANDARD_INTENT_CATALOG =
             "src/main/kotlin/org/flowlang/standard/StandardIntentCatalog.kt"
 
+        private val BUILD_CONFIGURATION_PATHS = setOf(
+            "build.gradle.kts",
+            "settings.gradle.kts",
+            "gradle.properties"
+        )
         private val TARGET_NEUTRAL_GENERATOR_AUTHORITIES = setOf(
             "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt",
             "src/main/kotlin/org/flowlang/generators/manifest/ExecutionPlanTopologyValidator.kt"
