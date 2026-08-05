@@ -13,7 +13,7 @@ C0.3 uses four closed observation kinds:
 1. `effect` preserves the canonical effect domain, operation, resource, state transition, external boundary and source capability.
 2. `result-identity` preserves the authored result identity associated with the semantic source step.
 3. `result-value` preserves the named plan output, its type and its semantic producer.
-4. `continuity` preserves the declared `VALUE`, `WORKSPACE` or `STATE` relation, channel, resolution and semantic producer-to-consumer identity.
+4. `continuity` preserves the declared `VALUE`, `WORKSPACE` or `STATE` relation, channel and semantic producer-to-consumer identity. Only resolved relations may enter equivalence assessment.
 
 Implementation-owned module, action and target labels are excluded from observation identity and fingerprints. Stable source identities are preferred over lowered node identifiers. Length-prefixed SHA-256 fingerprints prevent component-boundary ambiguity while retaining deterministic identities.
 
@@ -33,7 +33,25 @@ The mutation matrix independently proves rejection polarity for every required o
 - unknown evidence;
 - contradictory evidence.
 
-Evidence for an unknown requirement also blocks certification. C0.3 therefore cannot be expanded silently by implementation-specific claims.
+Evidence for an unknown requirement also blocks certification. `MISSING` is derived from absence and cannot be authored as an evidence record. C0.3 therefore cannot be expanded silently by implementation-specific claims.
+
+## Target-backed implementation evidence
+
+Concrete implementation evidence is derived from the typed production `TargetManifest`, not from string searches over Jenkinsfile or workflow YAML and not from the mere existence of an executable snapshot.
+
+For each target, `SemanticImplementationObservationAuthority` requires:
+
+- a manifest generated through the production target-selection and materialization pipeline;
+- a valid `TargetManifestContractValidator` result;
+- executable `TargetRenderPolicy` readiness;
+- a native source-task step with a target-owned renderer payload for canonical effects;
+- an exactly preserved `resultName` for result identity;
+- an exactly matching `PlanOutput`, semantic producer, task output and projected result identity for result value;
+- a satisfied independent `AdapterContinuitySatisfactionAuthority` assessment for every adapter continuity requirement represented by the semantic relation.
+
+A target step that is missing, non-native, result-renamed or continuity-blocked produces missing, weakened, unknown or contradictory evidence instead of `PRESERVED`. The implementation profile cannot invent requirements because it receives the already-derived closed requirement list as input.
+
+The rendered snapshot remains relevant, but only as separate evidence that the typed manifest reached a non-empty executable artifact. Executability alone never manufactures semantic preservation.
 
 ## Implementation independence
 
@@ -43,17 +61,18 @@ This allows implementations to use different native mechanisms while preserving 
 
 ## Concrete falsification pair
 
-The existing `checkout-build-image` intent is rebuilt through the production path:
+The existing `checkout-build-image` intent is rebuilt through the same validation and planning path used by `ReferenceSnapshotBundleGenerator`:
 
-`IntentYamlLoader -> IntentToAstPlanner -> FlowPlanner -> ExecutionPlan`
+`IntentYamlLoader -> IntentCapabilityValidator -> IntentToAstPlanner -> FlowValidator -> FlowPlanner -> ExecutionPlan`
 
-Its required observations are derived before either target snapshot is read. The committed Jenkins and GitHub Actions executable references then act as independent implementation evidence. C0.3 requires:
+Its required observations are derived before either target snapshot or target manifest is inspected. The committed Jenkins and GitHub Actions executable references then act as independent implementation evidence. C0.3 requires:
 
 - both snapshot indexes to pass `ReferenceSnapshotHonesty`;
-- each snapshot to contain exactly one executable state for its declared target;
+- each snapshot to contain exactly one executable state and exactly one non-empty executable artifact for its declared target;
 - each snapshot to declare a non-executable semantic `execution-plan.json` artifact;
-- both target snapshots to preserve the same target-neutral execution plan;
-- both evidence profiles to preserve the complete derived observation set;
+- both target snapshots to preserve the same canonical target-neutral execution plan produced by the current planning path;
+- the GitHub Actions reference to remain backed by the bounded A1.0 promotion authority;
+- both independently generated target-manifest profiles to preserve the complete derived observation set;
 - no target token to enter an observation identity or value.
 
 The concrete pair does not promote generic target support and does not redefine Core meaning. It may falsify the equivalence rules, but it cannot author them.
