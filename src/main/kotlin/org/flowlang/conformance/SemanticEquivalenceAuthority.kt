@@ -263,6 +263,12 @@ class SemanticEquivalenceAuthority(
             if (rightProfile == null) {
                 add("Concrete pair '${pair.id}' cannot derive ${pair.rightTarget} observation evidence: ${rightProfileResult.exceptionOrNull()?.message}.")
             }
+            if (leftProfile != null) {
+                addAll(renderedArtifactErrors(pair.id, pair.leftTarget, left, leftProfile))
+            }
+            if (rightProfile != null) {
+                addAll(renderedArtifactErrors(pair.id, pair.rightTarget, right, rightProfile))
+            }
             if (leftProfile != null && rightProfile != null) {
                 val leftAssessment = SemanticObservationAuthority.assess(requirements, leftProfile.evidence)
                 val rightAssessment = SemanticObservationAuthority.assess(requirements, rightProfile.evidence)
@@ -327,16 +333,19 @@ class SemanticEquivalenceAuthority(
         val indexFile = File(rootDir, path)
         if (!indexFile.isFile) {
             errors += "Concrete pair '$pairId' snapshot is missing: ${indexFile.path}."
-            return SnapshotValidation(errors, null)
+            return SnapshotValidation(errors, null, null)
         }
         val snapshotResult = runCatching { Json.mapper.readValue(indexFile, ReferenceSnapshotSet::class.java) }
         val snapshot = snapshotResult.getOrNull()
         if (snapshot == null) {
             errors += "Concrete pair '$pairId' snapshot '$path' cannot be parsed: ${snapshotResult.exceptionOrNull()?.message}."
-            return SnapshotValidation(errors, null)
+            return SnapshotValidation(errors, null, null)
         }
         ReferenceSnapshotHonesty.validate(snapshot).forEach {
             errors += "Concrete pair '$pairId' invalid snapshot '$path': $it"
+        }
+        if (snapshot.scenarioId != pairId) {
+            errors += "Concrete pair '$pairId' snapshot '$path' declares scenario '${snapshot.scenarioId}'."
         }
         val state = snapshot.targets.singleOrNull()
         if (state == null || state.target != target || !state.executable) {
@@ -351,19 +360,43 @@ class SemanticEquivalenceAuthority(
         val targetArtifacts = snapshot.artifacts.filter {
             it.layer == ReferenceSnapshotLayer.TARGET_PROJECTION && it.target == target && it.executable
         }
+        var artifactFile: File? = null
         if (targetArtifacts.size != 1) {
             errors += "Concrete pair '$pairId' snapshot '$path' must declare exactly one executable '$target' artifact."
         } else {
-            val artifactFile = File(indexFile.parentFile, targetArtifacts.single().file)
+            artifactFile = File(indexFile.parentFile, targetArtifacts.single().file)
             if (!artifactFile.isFile || artifactFile.length() == 0L) {
                 errors += "Concrete pair '$pairId' executable artifact is missing or empty: ${artifactFile.path}."
+                artifactFile = null
             }
         }
         val planFile = File(indexFile.parentFile, EXECUTION_PLAN_FILE)
         if (!planFile.isFile) {
             errors += "Concrete pair '$pairId' semantic plan is missing: ${planFile.path}."
         }
-        return SnapshotValidation(errors, planFile.takeIf(File::isFile))
+        return SnapshotValidation(errors, planFile.takeIf(File::isFile), artifactFile)
+    }
+
+    private fun renderedArtifactErrors(
+        pairId: String,
+        target: String,
+        snapshot: SnapshotValidation,
+        profile: SemanticImplementationObservationProfile
+    ): List<String> = buildList {
+        val committed = snapshot.artifactFile ?: return@buildList
+        val rendering = profile.rendering
+        if (profile.target != target || profile.manifest.target != target || rendering.artifact.target != target) {
+            add("Concrete pair '$pairId' target-backed rendering identity does not match '$target'.")
+        }
+        val committedContent = runCatching { committed.readText() }
+        if (committedContent.isFailure) {
+            add("Concrete pair '$pairId' cannot read committed '$target' artifact: ${committedContent.exceptionOrNull()?.message}.")
+        } else if (committedContent.getOrNull() != rendering.artifact.content) {
+            add(
+                "Concrete pair '$pairId' committed '$target' artifact is stale relative to the " +
+                    "current production manifest and rendering receipt."
+            )
+        }
     }
 
     private fun assessmentSummary(assessment: SemanticEquivalenceAssessment): String =
@@ -387,7 +420,8 @@ class SemanticEquivalenceAuthority(
 
     private data class SnapshotValidation(
         val errors: List<String>,
-        val planFile: File?
+        val planFile: File?,
+        val artifactFile: File?
     )
 
     companion object {
