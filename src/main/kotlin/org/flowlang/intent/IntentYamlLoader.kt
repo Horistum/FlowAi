@@ -20,9 +20,6 @@ class IntentSourceException(
  */
 object IntentYamlLoader {
     private val rootFields = setOf("intentVersion", "kind", "name", "description", "inputs", "systems", "triggers", "workflows", "policies", "failure")
-    private val capabilityAliases = mapOf(
-        "KUBERNETES_MAINTENANCE" to StandardCapability.CLUSTER_MAINTENANCE
-    )
 
     fun load(file: File): IntentDocument = loadText(file.readText(), file.path)
 
@@ -258,7 +255,7 @@ object IntentYamlLoader {
         if (normalized == "SCHEDULE") {
             fail("REMOVED_SCHEDULE_CAPABILITY", path, source, "Intent step '$stepId' uses removed capability SCHEDULE. Declare a top-level trigger with type: SCHEDULE instead.")
         }
-        capabilityAliases[normalized]?.let { return it }
+        StandardCapabilityCompatibility.resolveSourceName(normalized)?.let { return it }
         return enumValues<StandardCapability>().firstOrNull { it.name == normalized }
             ?: fail("UNKNOWN_STANDARD_CAPABILITY", path, source, "Intent step '$stepId' uses unknown capability '$value'.")
     }
