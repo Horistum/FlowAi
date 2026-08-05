@@ -3,15 +3,13 @@ package org.flowlang.architecture
 import java.io.File
 
 /**
- * Classifies concrete CI/CD and infrastructure vocabulary while separating
- * inventory from actionable semantic coupling.
+ * Classifies concrete delivery and infrastructure vocabulary while separating
+ * inventory presence from actionable semantic coupling.
  *
- * Kotlin source is scanned lexically. Comments are ignored, catalog declarations
- * are self-identifying inventory, ordinary diagnostic strings are non-actionable,
- * and target names become actionable only when they occur in code identifiers or
- * control/default literals in active semantic source. Explicitly retained public
- * compatibility symbols remain visible inventory but do not masquerade as hidden
- * implementation defaults.
+ * The scanner is intentionally lexical rather than a raw grep. Comments are
+ * ignored, Kotlin interpolation bodies are scanned as code, normative structured
+ * values are distinguished from prose, and explicit compatibility or descriptive
+ * catalog boundaries remain visible without becoming semantic authority.
  */
 data class CiCdBiasTerm(
     val term: String,
@@ -22,9 +20,12 @@ data class CiCdBiasTerm(
 enum class CiCdBiasLexicalContext {
     CODE_IDENTIFIER,
     CONTROL_LITERAL,
+    SEMANTIC_LITERAL,
+    DIAGNOSTIC_LITERAL,
     STRING_LITERAL,
     CATALOG_DECLARATION,
     COMPATIBILITY_SYMBOL,
+    STRUCTURED_CONTROL,
     STRUCTURED_TEXT
 }
 
@@ -131,14 +132,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
                     termOccurrences(span.text, term.term).map { offset ->
                         val occurrenceLine = span.line + span.text.take(offset).count { it == '\n' }
                         val lineText = lines.getOrElse(occurrenceLine - 1) { span.text }
-                        val context = when {
-                            lineText.contains("CiCdBiasTerm(") -> CiCdBiasLexicalContext.CATALOG_DECLARATION
-                            span.kind == KotlinSpanKind.CODE && compatibilitySymbolAt(span.text, offset) ->
-                                CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
-                            span.kind == KotlinSpanKind.CODE -> CiCdBiasLexicalContext.CODE_IDENTIFIER
-                            isControlLiteral(lineText, term.term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
-                            else -> CiCdBiasLexicalContext.STRING_LITERAL
-                        }
+                        val context = kotlinContext(classification, lineText, span.kind, term.term)
                         evidence(relative, occurrenceLine, term, classification, lineText, context)
                     }
                 }
@@ -147,32 +141,43 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             lines.flatMapIndexed { index, line ->
                 catalog().filter { term -> line.contains(term.term, ignoreCase = true) }
                     .map { term ->
-                        evidence(
-                            relative,
-                            index + 1,
-                            term,
-                            classification,
-                            line,
-                            CiCdBiasLexicalContext.STRUCTURED_TEXT
-                        )
+                        val context = structuredContext(relative, classification, line)
+                        evidence(relative, index + 1, term, classification, line, context)
                     }
             }
         }
     }
 
-    private fun termOccurrences(text: String, term: String): List<Int> =
-        Regex(Regex.escape(term), RegexOption.IGNORE_CASE).findAll(text).map { it.range.first }.toList()
-
-    private fun compatibilitySymbolAt(text: String, offset: Int): Boolean {
-        var start = offset
-        while (start > 0 && text[start - 1].isIdentifierPart()) start--
-        var end = offset
-        while (end < text.length && text[end].isIdentifierPart()) end++
-        val symbol = text.substring(start, end).substringAfterLast('.')
-        return symbol in retainedCompatibilitySymbols
+    private fun kotlinContext(
+        classification: String,
+        line: String,
+        spanKind: KotlinSpanKind,
+        term: String
+    ): CiCdBiasLexicalContext = when {
+        classification == COMPATIBILITY_BOUNDARY -> CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
+        classification == DESCRIPTIVE_CATALOG || line.contains("CiCdBiasTerm(") ->
+            CiCdBiasLexicalContext.CATALOG_DECLARATION
+        spanKind == KotlinSpanKind.CODE -> CiCdBiasLexicalContext.CODE_IDENTIFIER
+        isControlLiteral(line, term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
+        isDiagnosticLiteral(line) -> CiCdBiasLexicalContext.DIAGNOSTIC_LITERAL
+        isSemanticLiteral(line, term) -> CiCdBiasLexicalContext.SEMANTIC_LITERAL
+        else -> CiCdBiasLexicalContext.STRING_LITERAL
     }
 
-    private fun Char.isIdentifierPart(): Boolean = isLetterOrDigit() || this == '_' || this == '.'
+    private fun structuredContext(
+        path: String,
+        classification: String,
+        line: String
+    ): CiCdBiasLexicalContext = when {
+        classification == COMPATIBILITY_BOUNDARY -> CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
+        classification == DESCRIPTIVE_CATALOG -> CiCdBiasLexicalContext.CATALOG_DECLARATION
+        classification in PRODUCTION_CLASSIFICATIONS && path.startsWith("schemas/") && !isDescriptiveStructuredLine(line) ->
+            CiCdBiasLexicalContext.STRUCTURED_CONTROL
+        else -> CiCdBiasLexicalContext.STRUCTURED_TEXT
+    }
+
+    private fun termOccurrences(text: String, term: String): List<Int> =
+        Regex(Regex.escape(term), RegexOption.IGNORE_CASE).findAll(text).map { it.range.first }.toList()
 
     private fun evidence(
         path: String,
@@ -184,24 +189,20 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     ): CiCdBiasEvidence {
         val actionable = classification in PRODUCTION_CLASSIFICATIONS &&
             term.category in ACTIONABLE_CATEGORIES &&
-            context in setOf(
-                CiCdBiasLexicalContext.CODE_IDENTIFIER,
-                CiCdBiasLexicalContext.CONTROL_LITERAL
-            )
+            context in ACTIONABLE_CONTEXTS
         return CiCdBiasEvidence(
             path = path,
             line = line,
             term = term.term,
             category = term.category,
             classification = classification,
-            snippet = snippet.trim().take(160),
+            snippet = snippet.trim().take(180),
             lexicalContext = context,
             actionable = actionable
         )
     }
 
     private fun isControlLiteral(line: String, term: String): Boolean {
-        val normalized = line.lowercase()
         val escaped = Regex.escape(term.lowercase())
         val quotedTerm = "[\\\"']$escaped[\\\"']"
         val namedAssignment = Regex(
@@ -210,13 +211,41 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         return namedAssignment.containsMatchIn(line) ||
             Regex("(?i)(==|!=)\\s*$quotedTerm").containsMatchIn(line) ||
             Regex("(?i)$quotedTerm\\s*(==|!=|->)").containsMatchIn(line) ||
-            (normalized.contains("setof(") && Regex("(?i)$quotedTerm").containsMatchIn(line))
+            (line.contains("setOf(", ignoreCase = true) && Regex("(?i)$quotedTerm").containsMatchIn(line))
     }
 
+    private fun isSemanticLiteral(line: String, term: String): Boolean {
+        val escaped = Regex.escape(term.lowercase())
+        val quotedTerm = "[\\\"']$escaped[\\\"']"
+        return Regex(
+            "(?i)\\b(semanticCapability|sourceCapability|capability|capabilities|implements|resource|domain|operation|feature|identity)\\b\\s*[:=].*$quotedTerm"
+        ).containsMatchIn(line)
+    }
+
+    private fun isDiagnosticLiteral(line: String): Boolean = Regex(
+        "(?i)\\b(message|reason|description|notes?|diagnostic|warning|error|exception|detail|explanation)\\b\\s*[:=]"
+    ).containsMatchIn(line) || line.contains("require(") || line.contains("error(")
+
+    private fun isDescriptiveStructuredLine(line: String): Boolean = Regex(
+        "(?i)\\\"(description|title|notes?|reason|message|examples?)\\\"\\s*:"
+    ).containsMatchIn(line)
+
     private fun classify(path: String): String = when {
-        path.startsWith("docs/") || path.startsWith(".flow-agent/") || path == "REPORT.md" || path == "CHANGELOG.md" -> DOCUMENTATION
+        path == STANDARD_CAPABILITY_COMPATIBILITY -> COMPATIBILITY_BOUNDARY
+        path == STANDARD_INTENT_CATALOG -> DESCRIPTIVE_CATALOG
+        path in TARGET_NEUTRAL_GENERATOR_AUTHORITIES -> ACTIVE_SEMANTIC_SOURCE
+        path.startsWith("docs/") ||
+            path.startsWith(".flow-agent/") ||
+            path == "REPORT.md" ||
+            path.startsWith("CHANGELOG") -> DOCUMENTATION
         path.startsWith("modules/") || path.startsWith("targets/") -> MODULE_OR_TARGET_NOTE
+        path.startsWith("adapters/") ||
+            path.startsWith("src/main/kotlin/org/flowlang/adapters/") ||
+            path.startsWith("src/main/kotlin/org/flowlang/capabilities/") ||
+            path.startsWith("src/main/kotlin/org/flowlang/targets/") ||
+            path.startsWith("src/main/kotlin/org/flowlang/generators/") -> ADAPTER_BOUNDARY
         path.startsWith("conformance/") ||
+            path.startsWith("verification/") ||
             path.startsWith("standard/") ||
             path.startsWith("examples/") ||
             path.startsWith("tests/") ||
@@ -225,17 +254,13 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             path.startsWith("src/main/kotlin/org/flowlang/scenarios/") -> SCENARIO_OR_CONFORMANCE
         path.startsWith("src/main/kotlin/org/flowlang/cli/") ||
             path.startsWith("src/main/kotlin/org/flowlang/release/") -> APPLICATION_COMPOSITION
-        path.startsWith("src/main/kotlin/org/flowlang/generators/") ||
-            path.startsWith("src/main/kotlin/org/flowlang/adapters/") ||
-            path.startsWith("src/main/kotlin/org/flowlang/capabilities/") ||
-            path.startsWith("src/main/kotlin/org/flowlang/targets/") -> ADAPTER_BOUNDARY
         else -> ACTIVE_SEMANTIC_SOURCE
     }
 
     private fun File.shouldScan(): Boolean {
         val path = relativeTo(rootDir).path.replace(File.separatorChar, '/')
         if (path.contains("/build/") || path.contains("/.gradle") || path.endsWith(".class") || path.endsWith(".jar")) return false
-        return extension in setOf("kt", "kts", "md", "yaml", "yml", "json", "flow", "txt") ||
+        return extension in setOf("kt", "kts", "md", "yaml", "yml", "json", "flow", "txt", "properties", "toml") ||
             name in setOf("README.md", "REPORT.md", "CHANGELOG.md")
     }
 
@@ -246,10 +271,16 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         "docs",
         ".flow-agent",
         "conformance",
+        "verification",
         "standard",
+        "schemas",
+        "adapters",
         "modules",
         "targets",
         "examples",
+        "build.gradle.kts",
+        "settings.gradle.kts",
+        "gradle.properties",
         "README.md",
         "REPORT.md",
         "CHANGELOG.md"
@@ -262,20 +293,48 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         const val SCENARIO_OR_CONFORMANCE = "scenario-or-conformance"
         const val DOCUMENTATION = "documentation"
         const val MODULE_OR_TARGET_NOTE = "module-or-target-note"
+        const val COMPATIBILITY_BOUNDARY = "compatibility-boundary"
+        const val DESCRIPTIVE_CATALOG = "descriptive-catalog"
 
+        private const val STANDARD_CAPABILITY_COMPATIBILITY =
+            "src/main/kotlin/org/flowlang/intent/StandardCapabilityCompatibility.kt"
+        private const val STANDARD_INTENT_CATALOG =
+            "src/main/kotlin/org/flowlang/standard/StandardIntentCatalog.kt"
+
+        private val TARGET_NEUTRAL_GENERATOR_AUTHORITIES = setOf(
+            "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt",
+            "src/main/kotlin/org/flowlang/generators/manifest/ExecutionPlanTopologyValidator.kt"
+        )
         private val ACTIONABLE_CATEGORIES = setOf("target", "infrastructure", "tool", "data-system")
         private val PRODUCTION_CLASSIFICATIONS = setOf(ACTIVE_SEMANTIC_SOURCE, APPLICATION_COMPOSITION)
-        private val retainedCompatibilitySymbols = setOf("KUBERNETES_MAINTENANCE")
+        private val ACTIONABLE_CONTEXTS = setOf(
+            CiCdBiasLexicalContext.CODE_IDENTIFIER,
+            CiCdBiasLexicalContext.CONTROL_LITERAL,
+            CiCdBiasLexicalContext.SEMANTIC_LITERAL,
+            CiCdBiasLexicalContext.STRUCTURED_CONTROL
+        )
 
         fun catalog(): List<CiCdBiasTerm> = listOf(
             CiCdBiasTerm("Jenkins", "target", "Concrete CI target name."),
             CiCdBiasTerm("GitHub Actions", "target", "Concrete CI target name."),
             CiCdBiasTerm("github-actions", "target", "Concrete CI target identifier."),
+            CiCdBiasTerm("GitLab CI", "target", "Concrete CI target name."),
+            CiCdBiasTerm("gitlab-ci", "target", "Concrete CI target identifier."),
+            CiCdBiasTerm("GitLab", "target", "Concrete CI platform name."),
+            CiCdBiasTerm("CircleCI", "target", "Concrete CI target name."),
+            CiCdBiasTerm("circleci", "target", "Concrete CI target identifier."),
+            CiCdBiasTerm("Azure DevOps", "target", "Concrete CI target name."),
+            CiCdBiasTerm("azure-devops", "target", "Concrete CI target identifier."),
+            CiCdBiasTerm("Azure", "infrastructure", "Concrete cloud or delivery platform name."),
             CiCdBiasTerm("Tekton", "target", "Concrete CI target name."),
             CiCdBiasTerm("ArgoCD", "target", "Concrete deployment target name."),
             CiCdBiasTerm("Argo CD", "target", "Concrete deployment target name."),
             CiCdBiasTerm("Kubernetes", "infrastructure", "Concrete infrastructure platform name."),
+            CiCdBiasTerm("k8s", "infrastructure", "Concrete infrastructure platform identifier."),
+            CiCdBiasTerm("kubectl", "tool", "Concrete infrastructure command-line tool."),
             CiCdBiasTerm("Docker", "tool", "Concrete build or container tool name."),
+            CiCdBiasTerm("Helm", "tool", "Concrete package and deployment tool name."),
+            CiCdBiasTerm("Terraform", "tool", "Concrete infrastructure tool name."),
             CiCdBiasTerm("Maven", "tool", "Concrete build tool name."),
             CiCdBiasTerm("PostgreSQL", "data-system", "Concrete database implementation name."),
             CiCdBiasTerm("postgres", "data-system", "Concrete database identifier.")
@@ -291,7 +350,7 @@ private data class KotlinLexicalSpan(
     val text: String
 )
 
-/** Small lexer sufficient to separate executable Kotlin from comments and strings. */
+/** Small lexer sufficient to separate executable Kotlin, comments and strings. */
 private object KotlinLexicalScanner {
     fun scan(text: String): List<KotlinLexicalSpan> {
         val spans = mutableListOf<KotlinLexicalSpan>()
@@ -334,7 +393,7 @@ private object KotlinLexicalScanner {
                 val end = text.indexOf("\"\"\"", index + 3)
                 val finish = if (end < 0) text.length else end + 3
                 val value = text.substring(index + 3, if (end < 0) text.length else end)
-                spans += KotlinLexicalSpan(startLine, KotlinSpanKind.STRING, value)
+                spans += stringSpans(value, startLine)
                 advance(text.substring(index, finish))
                 continue
             }
@@ -350,10 +409,9 @@ private object KotlinLexicalScanner {
                     cursor++
                 }
                 val finish = if (cursor < text.length) cursor + 1 else text.length
-                spans += KotlinLexicalSpan(
-                    startLine,
-                    KotlinSpanKind.STRING,
-                    text.substring(index + 1, cursor.coerceAtMost(text.length))
+                spans += stringSpans(
+                    text.substring(index + 1, cursor.coerceAtMost(text.length)),
+                    startLine
                 )
                 advance(text.substring(index, finish))
                 continue
@@ -388,6 +446,56 @@ private object KotlinLexicalScanner {
                 spans += KotlinLexicalSpan(startLine, KotlinSpanKind.CODE, text.substring(start, index))
             }
         }
+        return spans
+    }
+
+    private fun stringSpans(value: String, startLine: Int): List<KotlinLexicalSpan> {
+        val spans = mutableListOf<KotlinLexicalSpan>()
+        var cursor = 0
+        var stringStart = 0
+
+        fun lineAt(offset: Int): Int = startLine + value.take(offset).count { it == '\n' }
+        fun emitString(end: Int) {
+            if (end > stringStart) {
+                spans += KotlinLexicalSpan(lineAt(stringStart), KotlinSpanKind.STRING, value.substring(stringStart, end))
+            }
+        }
+
+        while (cursor < value.length) {
+            if (value[cursor] != '$' || (cursor > 0 && value[cursor - 1] == '\\')) {
+                cursor++
+                continue
+            }
+            if (cursor + 1 < value.length && value[cursor + 1] == '{') {
+                var depth = 1
+                var end = cursor + 2
+                while (end < value.length && depth > 0) {
+                    when (value[end]) {
+                        '{' -> depth++
+                        '}' -> depth--
+                    }
+                    if (depth > 0) end++
+                }
+                if (depth == 0) {
+                    emitString(cursor)
+                    val codeStart = cursor + 2
+                    spans += KotlinLexicalSpan(lineAt(codeStart), KotlinSpanKind.CODE, value.substring(codeStart, end))
+                    cursor = end + 1
+                    stringStart = cursor
+                    continue
+                }
+            } else if (cursor + 1 < value.length && (value[cursor + 1].isLetter() || value[cursor + 1] == '_')) {
+                var end = cursor + 2
+                while (end < value.length && (value[end].isLetterOrDigit() || value[end] == '_' || value[end] == '.')) end++
+                emitString(cursor)
+                spans += KotlinLexicalSpan(lineAt(cursor + 1), KotlinSpanKind.CODE, value.substring(cursor + 1, end))
+                cursor = end
+                stringStart = cursor
+                continue
+            }
+            cursor++
+        }
+        emitString(value.length)
         return spans
     }
 }
