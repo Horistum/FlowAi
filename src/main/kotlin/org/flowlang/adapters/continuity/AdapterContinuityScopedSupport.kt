@@ -30,7 +30,8 @@ data class AdapterContinuityScopedSupport(
     val targetAction: String,
     val channel: String,
     val exactPlanActions: List<String>,
-    val evidenceReferences: List<String>
+    val evidenceReferences: List<String>,
+    val limitations: List<String>
 ) {
     val identity: String = listOf(
         target,
@@ -69,6 +70,11 @@ data class AdapterContinuityScopedSupport(
         require(evidenceReferences.size == evidenceReferences.toSet().size) {
             "Scoped continuity evidence references must not contain duplicates."
         }
+        require(limitations.isNotEmpty()) { "Scoped continuity support must declare its evidence limitations." }
+        require(limitations.none(String::isBlank)) { "Scoped continuity limitations must not be blank." }
+        require(limitations.size == limitations.toSet().size) {
+            "Scoped continuity limitations must not contain duplicates."
+        }
     }
 
     private companion object {
@@ -88,7 +94,15 @@ object BuiltInAdapterContinuityScopedSupport {
         evidenceReferences = listOf(
             "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt",
             "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt",
-            "src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt"
+            "src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt",
+            "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt",
+            "conformance/snapshots/github-actions-checkout-build-image/github-actions.executable.yaml",
+            "docs/A1_0_GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"
+        ),
+        limitations = listOf(
+            "The proof covers regular-file bytes, relative paths and hidden entries for the exact checkout-build-image source channel only.",
+            "The zipped GitHub Actions artifact transfer does not preserve Unix mode bits, so consumers that require executable permissions are outside the certified scope.",
+            "Symbolic-link identity is not certified by the current repository evidence and must not be inferred from regular-file byte reconstruction."
         )
     )
 

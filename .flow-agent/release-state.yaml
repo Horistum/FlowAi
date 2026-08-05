@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 43
+stateVersion: 44
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,15 +16,15 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 14
-  activeTrack: "conformance-topology-matrix"
+  roadmapVersion: 15
+  activeTrack: "conformance-semantic-equivalence"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "conformance"
   completedAdapterItem: "A1.0"
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
-  nextItem: "C0.2"
-  nextItemName: "Abstract Topology Matrix"
+  nextItem: "C0.3"
+  nextItemName: "Semantic Equivalence Rules"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -157,19 +157,21 @@ qualityPrinciples:
   - "A plan-specific capability view must not mutate the authored target registry or imply generic support."
   - "Post-A0 executable promotions use an independent authority and inventory rather than rewriting historical portfolio evidence."
   - "C0.2 may activate only after A1.0 has distinct implementation and completion evidence."
+  - "C0.2 topology matrix declarations must equal production-derived requirements and cannot promote target support."
+  - "C0.3 semantic equivalence compares explicit observable results and continuity, never target syntax, job layout or action identity."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-a1.0-completion-boundary"
-  flowAgentStructure: "passed-on-a1.0-completion-boundary"
-  flowAgentContextGeneration: "passed-on-a1.0-completion-boundary"
-  cleanTest: "passed-on-a1.0-completion-boundary"
-  conformance: "passed-on-a1.0-completion-boundary"
-  executableReferenceEvidence: "passed-on-a1.0-completion-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-a1.0-completion-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-a1.0-completion-boundary"
-  boundedDomainCorpusEvidence: "passed-on-a1.0-completion-boundary"
-  roadmapTransitionEvidence: "passed-on-a1.0-completion-boundary"
-  validationSource: "Flow CI #2669, run 30903883062, passed exact A1.0 promotion head d69d5c68c5b7cc7490dd7723eeb75449a324962a and synthetic merge candidate eea1f7047de60dd91f03bbc8d8e184813bb00397."
+  flowAgentTooling: "passed-on-c0.2-completion-boundary"
+  flowAgentStructure: "passed-on-c0.2-completion-boundary"
+  flowAgentContextGeneration: "passed-on-c0.2-completion-boundary"
+  cleanTest: "passed-on-c0.2-completion-boundary"
+  conformance: "passed-on-c0.2-completion-boundary"
+  executableReferenceEvidence: "passed-on-c0.2-completion-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-c0.2-completion-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-c0.2-completion-boundary"
+  boundedDomainCorpusEvidence: "passed-on-c0.2-completion-boundary"
+  roadmapTransitionEvidence: "passed-on-c0.2-completion-boundary"
+  validationSource: "Flow CI #2679, run 30913933725, passed exact C0.2 completion head 4edb2b1440966bdc794d4f001021367654c8b4e7 and synthetic merge candidate 2ec62d58b5f7e1944e11c8c31354cdf0366770a7."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
@@ -177,5 +179,7 @@ lastKnownValidation:
     - "GitHub Actions is executable only for the bounded checkout-build-image workspace path; the generic workspace profile remains unsupported."
     - "The historical Jenkins executable reference remains independently canonical and unchanged."
     - "A1.0 post-A0 promotion evidence is isolated from the frozen A0 portfolio and inventory."
-    - "A1.0 completion evidence remains external exact-head CI evidence until PR #106 merges; it does not impersonate merged history."
-    - "C0.2 Abstract Topology Matrix is the active conformance item."
+    - "PR #106 merged as commit 7a63b67690739c63fd529010a7666c936bfcf9b3; A1.0 evidence is part of main history."
+    - "C0.2 Abstract Topology Matrix is complete with distinct Flow CI #2674 implementation and #2679 completion boundaries."
+    - "C0.2 completion evidence remains external exact-head CI evidence until PR #107 merges; it does not impersonate merged history."
+    - "C0.3 Semantic Equivalence Rules is the active conformance item."

@@ -1,0 +1,68 @@
+version: "1.0"
+mutations:
+  - missing
+  - partial
+  - unsupported
+  - unknown
+  - contradictory
+cases:
+  - id: sequential
+    fixture: sequential
+    requiredKinds:
+      - workflowLifetime
+      - workflowScope
+  - id: parallel
+    fixture: parallel
+    requiredKinds:
+      - branchIsolation
+      - workflowLifetime
+      - workflowScope
+  - id: retry
+    fixture: retry
+    requiredKinds:
+      - attemptIsolation
+      - workflowLifetime
+      - workflowScope
+  - id: approval
+    fixture: approval
+    requiredKinds:
+      - suspendResume
+      - workflowLifetime
+      - workflowScope
+  - id: failure-handler
+    fixture: failure-handler
+    requiredKinds:
+      - failurePropagation
+      - workflowLifetime
+      - workflowScope
+  - id: value-continuity
+    fixture: value-continuity
+    requiredKinds:
+      - valuePropagation
+      - workflowLifetime
+      - workflowScope
+  - id: workspace-continuity
+    fixture: workspace-continuity
+    requiredKinds:
+      - ephemeralWorkspace
+      - workflowLifetime
+      - workflowScope
+      - workspacePropagation
+  - id: state-continuity
+    fixture: state-continuity
+    requiredKinds:
+      - durableState
+      - statePropagation
+      - workflowLifetime
+      - workflowScope
+concreteReferences:
+  - id: jenkins-checkout-build-image
+    target: jenkins
+    intent: examples/intent/checkout-build-image.intent.yaml
+    expectedTopologyDecision: MATCHED
+    executableSnapshot: conformance/snapshots/checkout-build-image/snapshot-index.json
+  - id: github-actions-checkout-build-image
+    target: github-actions
+    intent: examples/intent/checkout-build-image.intent.yaml
+    expectedTopologyDecision: BLOCKED
+    executableSnapshot: conformance/snapshots/github-actions-checkout-build-image/snapshot-index.json

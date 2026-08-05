@@ -32,12 +32,34 @@ git.checkout
 
 The upload step:
 
-- uploads the complete workspace from `.`;
+- uploads the complete selected path from `.`;
 - includes hidden files;
 - fails when the producer workspace is empty;
 - uses a deterministic identity derived from producer node and channel.
 
 The download step restores the same artifact into `.` before the consumer action. Renderer payloads are typed and validated by the GitHub Actions native projection catalog before executable rendering.
+
+## Transfer fidelity boundary
+
+The current transfer uses the default archived form of `actions/upload-artifact@v7`. GitHub documents that zipped artifact upload does not preserve Unix file permissions: downloaded directories receive mode `755` and files receive mode `644`. Executable bits are therefore outside the certified continuity boundary.
+
+The repository proof certifies:
+
+- regular-file byte content;
+- relative file paths;
+- hidden entries included by the generated upload binding;
+- one deterministic producer and consumer artifact identity.
+
+The repository proof does not certify:
+
+- Unix mode bits or executable permissions;
+- symbolic-link identity or link-target semantics;
+- a bit-identical POSIX filesystem reconstruction;
+- Docker builds whose correctness depends on metadata not represented by regular-file bytes and paths.
+
+The behavioral reconstruction test intentionally models the generated transfer contract with local file copies. It proves byte preservation for the committed regular-file fixture, but it is not evidence that the real GitHub artifact archive preserves filesystem metadata.
+
+Any future scope expansion to executable scripts, symlink-sensitive build contexts or other metadata-dependent consumers requires a typed metadata-preserving transfer mechanism and new independent behavioral evidence. The existing scoped declaration must not be reused for that expansion.
 
 ## Fail-closed behavior
 
@@ -66,10 +88,12 @@ Tests verify that:
 - upload follows the producer action;
 - download precedes the consumer action;
 - producer and consumer use the same artifact identity;
-- hidden files and binary bytes survive reconstruction;
+- hidden entries are included by the generated binding;
+- regular text and binary file bytes survive the bounded local reconstruction model;
 - an empty producer workspace fails;
 - another channel or an additional task does not receive scoped support;
 - generic `VALUE` and `STATE` continuity are not promoted;
+- Unix mode bits and symbolic-link identity are explicitly outside the certified boundary;
 - Jenkins remains executable and unchanged;
 - Tekton and unsupported GitHub Actions plans remain blocked.
 
@@ -79,6 +103,8 @@ A1.0 does not claim:
 
 - generic GitHub Actions workspace continuity;
 - generic artifact support for arbitrary producer and consumer actions;
+- bit-identical filesystem continuity;
+- Unix permission or symbolic-link preservation;
 - value propagation;
 - mutable or durable state propagation;
 - equivalence between ordering and continuity;

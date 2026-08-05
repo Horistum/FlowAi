@@ -1,6 +1,6 @@
 project: Flow Conformance
 stream: conformance
-roadmapVersion: 7
+roadmapVersion: 8
 status: active
 
 purpose: "Maintain bounded independent evidence for universal contracts and implementation behavior."
@@ -17,13 +17,15 @@ rules:
   - "Conformance work cannot mutate the Core pre-closure or adapter inventories."
   - "Concrete artifact checks remain separate from universal contract checks."
   - "C0.2 activates only after A1.0 establishes a second executable target with real continuity evidence."
+  - "C0.2 matrix declarations must match production-derived topology requirements and cannot promote target support."
+  - "C0.3 defines observable equivalence without using target syntax, job layout or action identity as semantic truth."
 
 currentDecision:
-  completedItem: "C0.1.1"
-  completedItemName: "Bounded Domain Integrity Correction"
-  nextItem: "C0.2"
-  nextItemName: "Abstract Topology Matrix"
-  decisionBasis: "Flow CI #2669, run 30903883062, passed the bounded A1.0 executable promotion on exact head d69d5c68c5b7cc7490dd7723eeb75449a324962a and synthetic merge candidate eea1f7047de60dd91f03bbc8d8e184813bb00397. A1.0 is complete and C0.2 is now the active conformance item."
+  completedItem: "C0.2"
+  completedItemName: "Abstract Topology Matrix"
+  nextItem: "C0.3"
+  nextItemName: "Semantic Equivalence Rules"
+  decisionBasis: "Flow CI #2679, run 30913933725, passed C0.2 validation on exact head 4edb2b1440966bdc794d4f001021367654c8b4e7 and synthetic merge candidate 2ec62d58b5f7e1944e11c8c31354cdf0366770a7. C0.2 is complete and C0.3 is the adjacent active conformance item."
 
 items:
   - version: "C0.1"
@@ -58,22 +60,26 @@ items:
   - version: "C0.2"
     name: "Abstract Topology Matrix"
     type: "topology-evidence"
-    status: next
+    status: completed
     purpose: "Exercise plans against synthetic topology profiles after the second executable target exists."
     dependsOnCore: "0.9.7.8"
     dependsOnAdapters: "A1.0"
     completionEvidence:
-      - "Action coverage alone does not establish scenario readiness."
-      - "Earlier readiness labels change when required evidence is absent."
-      - "Synthetic profile mutations prove positive and negative topology matching polarity."
-      - "Concrete Jenkins and GitHub Actions references remain falsification inputs rather than semantic authorities."
+      - "All eleven existing topology kinds and all four dimensions are covered through production-derived ExecutionPlan requirements."
+      - "Fully supported, missing, partial, unsupported, unknown and contradictory profile polarity is evaluated through ExecutionTopologyMatchingAuthority."
+      - "Topology requirements remain stable when module, action and target labels change."
+      - "Jenkins and bounded GitHub Actions executable references remain concrete falsification inputs without defining universal topology meaning."
+      - "GitHub Actions generic topology remains blocked while bounded A1.0 executable promotion remains valid."
+      - "Frozen Core, A0, A1.0 and C0.1 inventories contain no C0.2 checks."
+      - "Flow CI #2674 passed the implementation boundary and Flow CI #2679 passed the distinct completion boundary."
 
   - version: "C0.3"
     name: "Semantic Equivalence Rules"
     type: "equivalence-evidence"
-    status: planned
+    status: next
     purpose: "Define observable equivalence for results and continuity."
     dependsOnCore: "0.9.7.10"
+    dependsOnConformance: "C0.2"
     completionEvidence:
       - "Required observations remain equivalent across implementations."
 

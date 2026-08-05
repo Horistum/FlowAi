@@ -44,11 +44,11 @@ Supported evidence requires:
 
 Profile-only targets and semantic references remain `UNKNOWN` until a provider exists.
 
-## Current evidence
+## Current evidence at A0.5 closure
 
-The only supported continuity subset is Jenkins shared-workspace artifact continuity for the admitted `checkout-build-image` reference scenario.
+The only supported continuity subset at the A0.5 closure boundary was Jenkins shared-workspace artifact continuity for the admitted `checkout-build-image` reference scenario.
 
-The proof is bounded:
+The proof was bounded:
 
 - the plan contains one resolved `WORKSPACE` relation from checkout to image build;
 - the Jenkins generator emits both native leaves into one target job;
@@ -56,14 +56,22 @@ The proof is bounded:
 - the committed executable snapshot is regenerated through the canonical production planner;
 - unit and conformance tests replay the complete path.
 
-The following remain unsupported:
+The following were unsupported at that historical boundary:
 
 - generic Jenkins value propagation;
 - generic mutable or durable state continuity;
 - GitHub Actions data, workspace and state continuity in the job-per-task projection;
 - Tekton data, workspace and state continuity without complete Pipeline-level bindings.
 
-Argo Workflows, Azure DevOps and the local semantic reference remain unknown because this distribution composes no provider for them.
+Argo Workflows, Azure DevOps and the local semantic reference remained unknown because this distribution composed no provider for them.
+
+## Post-A0 scoped evolution
+
+A1.0 later added one bounded GitHub Actions exception for the exact `git.checkout` to `docker.build` `source` workspace path. That exception emits an explicit `actions/upload-artifact@v7` and `actions/download-artifact@v8` pair through adapter-owned scoped support.
+
+This later evidence does not rewrite the A0.5 closure result and does not promote generic GitHub Actions workspace continuity. The generic claim remains `UNSUPPORTED`; only the exact scoped declaration may produce executable evidence.
+
+The scoped transfer proves regular-file bytes, relative paths and hidden-entry inclusion for the committed reference fixture. Unix mode bits are not preserved by the zipped artifact mechanism, and symbolic-link identity is not certified. Those filesystem metadata properties remain outside the scoped evidence boundary.
 
 ## CLI behavior
 

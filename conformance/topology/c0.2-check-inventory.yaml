@@ -1,0 +1,9 @@
+version: "1.0"
+checks:
+  - "conformance.c0.2.lifecycle-integrity"
+  - "conformance.c0.2.matrix-schema-integrity"
+  - "conformance.c0.2.dimension-coverage"
+  - "conformance.c0.2.synthetic-polarity"
+  - "conformance.c0.2.target-independence"
+  - "conformance.c0.2.concrete-reference-falsification"
+  - "conformance.c0.2.frozen-boundary-preservation"
