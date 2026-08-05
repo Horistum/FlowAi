@@ -10,25 +10,23 @@ import org.flowlang.architecture.CiCdBiasLexicalContext
 
 class FlowCiCdBiasInventoryTests {
     @Test
-    fun repositoryInventorySeparatesPresenceFromSemanticHealth() {
+    fun repositoryInventoryIsPresentAndSemanticHealthIsActuallyClean() {
         val report = CiCdBiasInventoryAnalyzer(File(".")).analyze()
 
         assertTrue(report.scannedFiles > 50)
         assertEquals("PRESENT", report.inventoryStatus)
         assertTrue(report.evidence.isNotEmpty())
-        assertEquals(report.healthStatus, report.status)
-        assertEquals(
-            if (report.actionableEvidence.isEmpty()) "PASS" else "REVIEW_REQUIRED",
-            report.healthStatus
-        )
-        assertTrue(report.actionableEvidence.all {
-            it.classification in setOf(
-                CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE,
-                CiCdBiasInventoryAnalyzer.APPLICATION_COMPOSITION
-            ) && it.actionable
+        assertEquals("PASS", report.healthStatus, report.actionableEvidence.joinToString(" | ") { evidence ->
+            "${evidence.path}:${evidence.line}:${evidence.term}:${evidence.lexicalContext}:${evidence.snippet}"
         })
+        assertEquals("PASS", report.status)
+        assertEquals(emptyList(), report.actionableEvidence)
         assertTrue(report.evidence.none {
-            it.lexicalContext == CiCdBiasLexicalContext.CATALOG_DECLARATION && it.actionable
+            it.lexicalContext in setOf(
+                CiCdBiasLexicalContext.CATALOG_DECLARATION,
+                CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL,
+                CiCdBiasLexicalContext.DIAGNOSTIC_LITERAL
+            ) && it.actionable
         })
     }
 
@@ -51,6 +49,24 @@ class FlowCiCdBiasInventoryTests {
             assertEquals("PASS", report.healthStatus)
             assertTrue(report.actionableEvidence.isEmpty())
             assertEquals(1, report.adapterBoundaryEvidence.size)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun topLevelAdapterEvidenceIsScannedWithoutBecomingCoreMeaning() {
+        val root = Files.createTempDirectory("flow-cicd-top-level-adapter").toFile()
+        try {
+            val adapter = File(root, "adapters/example.yaml")
+            adapter.parentFile.mkdirs()
+            adapter.writeText("target: azure-devops\n")
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertTrue(report.evidence.any { it.path == "adapters/example.yaml" })
+            assertEquals("PASS", report.healthStatus)
+            assertTrue(report.actionableEvidence.isEmpty())
         } finally {
             root.deleteRecursively()
         }
@@ -102,6 +118,23 @@ class FlowCiCdBiasInventoryTests {
     }
 
     @Test
+    fun semanticPlatformLiteralRequiresReviewWithoutCallingItADefault() {
+        val root = Files.createTempDirectory("flow-cicd-semantic-literal").toFile()
+        try {
+            val semantic = File(root, "src/main/kotlin/org/flowlang/intent/SemanticCapability.kt")
+            semantic.parentFile.mkdirs()
+            semantic.writeText("package org.flowlang.intent\nval capability = \"Kubernetes\"\n")
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+            assertEquals(CiCdBiasLexicalContext.SEMANTIC_LITERAL, report.actionableEvidence.single().lexicalContext)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun targetNameInExecutableIdentifierRequiresReview() {
         val root = Files.createTempDirectory("flow-cicd-semantic-identifier").toFile()
         try {
@@ -113,6 +146,31 @@ class FlowCiCdBiasInventoryTests {
 
             assertEquals("REVIEW_REQUIRED", report.healthStatus)
             assertEquals(CiCdBiasLexicalContext.CODE_IDENTIFIER, report.actionableEvidence.single().lexicalContext)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun interpolationBodyIsScannedAsExecutableCode() {
+        val root = Files.createTempDirectory("flow-cicd-interpolation").toFile()
+        try {
+            val semantic = File(root, "src/main/kotlin/org/flowlang/intent/Interpolation.kt")
+            semantic.parentFile.mkdirs()
+            semantic.writeText(
+                """
+                package org.flowlang.intent
+                val message = "${'$'}{KubernetesResolver.resolve()}"
+                """.trimIndent()
+            )
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+            assertTrue(report.actionableEvidence.any {
+                it.term.equals("Kubernetes", ignoreCase = true) &&
+                    it.lexicalContext == CiCdBiasLexicalContext.CODE_IDENTIFIER
+            })
         } finally {
             root.deleteRecursively()
         }
@@ -138,9 +196,95 @@ class FlowCiCdBiasInventoryTests {
 
             assertEquals("PASS", report.healthStatus)
             assertTrue(report.actionableEvidence.isEmpty())
-            assertTrue(report.evidence.any { it.lexicalContext == CiCdBiasLexicalContext.STRING_LITERAL })
+            assertTrue(report.evidence.any { it.lexicalContext == CiCdBiasLexicalContext.DIAGNOSTIC_LITERAL })
             assertTrue(report.evidence.any { it.lexicalContext == CiCdBiasLexicalContext.CATALOG_DECLARATION })
             assertTrue(report.evidence.none { it.snippet.startsWith("//") || it.snippet.startsWith("/*") })
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun explicitCompatibilityBoundaryIsVisibleButNotActionable() {
+        val root = Files.createTempDirectory("flow-cicd-compatibility").toFile()
+        try {
+            val compatibility = File(
+                root,
+                "src/main/kotlin/org/flowlang/intent/StandardCapabilityCompatibility.kt"
+            )
+            compatibility.parentFile.mkdirs()
+            compatibility.writeText(
+                "package org.flowlang.intent\nval KUBERNETES_MAINTENANCE = CLUSTER_MAINTENANCE\n"
+            )
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("PASS", report.healthStatus)
+            assertTrue(report.evidence.isNotEmpty())
+            assertTrue(report.evidence.all {
+                it.classification == CiCdBiasInventoryAnalyzer.COMPATIBILITY_BOUNDARY &&
+                    it.lexicalContext == CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL &&
+                    !it.actionable
+            })
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun normativeSchemaPlatformEnumRequiresReview() {
+        val root = Files.createTempDirectory("flow-cicd-schema").toFile()
+        try {
+            val schema = File(root, "schemas/intent.schema.json")
+            schema.parentFile.mkdirs()
+            schema.writeText("{\"enum\": [\"Kubernetes\"]}\n")
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+            assertEquals(CiCdBiasLexicalContext.STRUCTURED_CONTROL, report.actionableEvidence.single().lexicalContext)
+            assertEquals("schemas/intent.schema.json", report.actionableEvidence.single().path)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun targetNeutralMaterializationAuthorityIsNotHiddenByGeneratorsDirectory() {
+        val root = Files.createTempDirectory("flow-cicd-neutral-generator-authority").toFile()
+        try {
+            val authority = File(
+                root,
+                "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
+            )
+            authority.parentFile.mkdirs()
+            authority.writeText("package org.flowlang.generators.manifest\nclass KubernetesMaterialization\n")
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+            assertEquals(CiCdBiasInventoryAnalyzer.ACTIVE_SEMANTIC_SOURCE, report.actionableEvidence.single().classification)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun targetSpecificGeneratorRemainsAdapterBoundary() {
+        val root = Files.createTempDirectory("flow-cicd-target-generator").toFile()
+        try {
+            val generator = File(
+                root,
+                "src/main/kotlin/org/flowlang/generators/manifest/JenkinsGenerator.kt"
+            )
+            generator.parentFile.mkdirs()
+            generator.writeText("package org.flowlang.generators.manifest\nclass JenkinsGenerator\n")
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+
+            assertEquals("PASS", report.healthStatus)
+            assertEquals(1, report.adapterBoundaryEvidence.size)
+            assertTrue(report.actionableEvidence.isEmpty())
         } finally {
             root.deleteRecursively()
         }
@@ -159,6 +303,13 @@ class FlowCiCdBiasInventoryTests {
         assertFalse("runner" in catalogTerms)
         assertTrue("jenkins" in catalogTerms)
         assertTrue("docker" in catalogTerms)
+        assertTrue("azure devops" in catalogTerms)
+        assertTrue("gitlab" in catalogTerms)
+        assertTrue("circleci" in catalogTerms)
+        assertTrue("helm" in catalogTerms)
+        assertTrue("kubectl" in catalogTerms)
+        assertTrue("terraform" in catalogTerms)
+        assertTrue("k8s" in catalogTerms)
     }
 
     @Test
