@@ -314,6 +314,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
             "src/main/kotlin/org/flowlang/conformance/SemanticEquivalenceContracts.kt",
             "src/main/kotlin/org/flowlang/conformance/SemanticEquivalencePlanFactory.kt",
             "src/main/kotlin/org/flowlang/conformance/SemanticObservationAuthority.kt",
+            "src/main/kotlin/org/flowlang/conformance/SemanticImplementationObservationAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/SemanticEquivalenceAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/SemanticEquivalenceRoadmapLifecycleAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/SemanticEquivalenceConformanceChecks.kt",
