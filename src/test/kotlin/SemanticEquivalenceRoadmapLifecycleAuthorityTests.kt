@@ -10,11 +10,11 @@ import org.flowlang.conformance.SemanticEquivalenceWorkflowEvidence
 
 class SemanticEquivalenceRoadmapLifecycleAuthorityTests {
     @Test
-    fun repositoryIsOneValidImplementingBoundary() {
+    fun repositoryIsOneValidValidatingBoundary() {
         val report = SemanticEquivalenceRoadmapLifecycleAuthority(File(".")).analyze()
 
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
-        assertEquals(SemanticEquivalenceLifecyclePhase.IMPLEMENTING, report.phase)
+        assertEquals(SemanticEquivalenceLifecyclePhase.VALIDATING, report.phase)
     }
 
     @Test
