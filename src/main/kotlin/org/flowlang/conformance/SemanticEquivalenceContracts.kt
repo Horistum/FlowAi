@@ -67,9 +67,18 @@ data class SemanticObservationRequirement(
     val consumerIdentity: String? = null
 ) {
     init {
-        require(id.isNotBlank()) { "Semantic observation requirement id must not be blank." }
-        require(subject.isNotBlank()) { "Semantic observation requirement '$id' subject must not be blank." }
-        require(value.isNotBlank()) { "Semantic observation requirement '$id' value must not be blank." }
+        require(subject.isNotBlank()) { "Semantic observation requirement subject must not be blank." }
+        require(value.isNotBlank()) { "Semantic observation requirement value must not be blank." }
+        val expectedId = SemanticObservationIdentity.requirementId(
+            kind,
+            subject,
+            value,
+            producerIdentity,
+            consumerIdentity
+        )
+        require(id == expectedId) {
+            "Semantic observation requirement id '$id' must equal derived id '$expectedId'."
+        }
     }
 
     val fingerprint: String = SemanticObservationIdentity.fingerprint(
@@ -89,8 +98,17 @@ data class SemanticObservationEvidence(
 ) {
     init {
         require(requirementId.isNotBlank()) { "Semantic observation evidence requirementId must not be blank." }
-        require(fingerprint.isNotBlank()) { "Semantic observation evidence '$requirementId' fingerprint must not be blank." }
+        require(fingerprint.matches(SHA_256_PATTERN)) {
+            "Semantic observation evidence '$requirementId' fingerprint must be a lowercase SHA-256 digest."
+        }
+        require(status != SemanticObservationEvidenceStatus.MISSING) {
+            "MISSING is derived from absent evidence and cannot be authored as an evidence record."
+        }
         require(evidenceReference.isNotBlank()) { "Semantic observation evidence '$requirementId' reference must not be blank." }
+    }
+
+    companion object {
+        private val SHA_256_PATTERN = Regex("[0-9a-f]{64}")
     }
 }
 
