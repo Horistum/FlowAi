@@ -21,11 +21,11 @@ rules:
   - "C0.3 defines observable equivalence without using target syntax, job layout or action identity as semantic truth."
 
 currentDecision:
-  completedItem: "C0.2"
-  completedItemName: "Abstract Topology Matrix"
-  nextItem: "C0.3"
-  nextItemName: "Semantic Equivalence Rules"
-  decisionBasis: "Flow CI #2679, run 30913933725, passed C0.2 validation on exact head 4edb2b1440966bdc794d4f001021367654c8b4e7 and synthetic merge candidate 2ec62d58b5f7e1944e11c8c31354cdf0366770a7. C0.2 is complete and C0.3 is the adjacent active conformance item."
+  completedItem: "C0.3"
+  completedItemName: "Semantic Equivalence Rules"
+  nextItem: "C0.4"
+  nextItemName: "Adapter Profile Evidence"
+  decisionBasis: "Flow CI #2750, run 30992449903, passed the distinct C0.3 completion boundary on exact head dd1b049b0c8e768a43f19da4280fe80f57d7e27f and synthetic merge candidate 08a82daa8d7827216482b40779e183a7a96f0a1a. C0.3 is complete and C0.4 is the adjacent active conformance item."
 
 items:
   - version: "C0.1"
@@ -76,17 +76,20 @@ items:
   - version: "C0.3"
     name: "Semantic Equivalence Rules"
     type: "equivalence-evidence"
-    status: next
+    status: completed
     purpose: "Define observable equivalence for results and continuity."
     dependsOnCore: "0.9.7.10"
     dependsOnConformance: "C0.2"
     completionEvidence:
-      - "Required observations remain equivalent across implementations."
+      - "Required semantic effects, result identities, result values and continuity observations are derived before implementation comparison."
+      - "Missing, weakened, unknown, contradictory, duplicate and undeclared observations fail closed."
+      - "Jenkins and GitHub Actions prove the same observations through production manifests, continuity evidence and rendering receipts without defining universal meaning."
+      - "Flow CI #2743 passed the implementation boundary and Flow CI #2750 passed the distinct completion boundary."
 
   - version: "C0.4"
     name: "Adapter Profile Evidence"
     type: "adapter-evidence"
-    status: planned
+    status: next
     purpose: "Evaluate implementations against frozen profiles."
     dependsOnAdapters: "A0.6"
     completionEvidence:

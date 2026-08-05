@@ -1,6 +1,6 @@
 project: Flow
 roadmapVersion: 15
-currentTrack: "conformance-semantic-equivalence"
+currentTrack: "conformance-adapter-profile-evidence"
 primaryRoadmapStream: conformance
 
 versionBoundary:
@@ -79,7 +79,7 @@ currentDecision:
   closureItemStatus: "completed"
   completedAdapterItem: "A1.0"
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
-  nextItem: "C0.3"
-  nextItemName: "Semantic Equivalence Rules"
+  nextItem: "C0.4"
+  nextItemName: "Adapter Profile Evidence"
   nextItemStream: "conformance"
-  decisionBasis: "Flow CI #2679, run 30913933725, passed the distinct C0.2 completion boundary on exact head 4edb2b1440966bdc794d4f001021367654c8b4e7 and synthetic merge candidate 2ec62d58b5f7e1944e11c8c31354cdf0366770a7. C0.2 is complete and C0.3 is selected as the active conformance item."
+  decisionBasis: "Flow CI #2750, run 30992449903, passed the distinct C0.3 completion boundary on exact head dd1b049b0c8e768a43f19da4280fe80f57d7e27f and synthetic merge candidate 08a82daa8d7827216482b40779e183a7a96f0a1a. C0.3 is complete and C0.4 is selected as the active conformance item."
