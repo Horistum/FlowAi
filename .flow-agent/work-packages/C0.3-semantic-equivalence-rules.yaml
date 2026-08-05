@@ -14,6 +14,14 @@ activationEvidence:
   runId: 30913933725
   exactHead: "4edb2b1440966bdc794d4f001021367654c8b4e7"
   mergeCandidate: "2ec62d58b5f7e1944e11c8c31354cdf0366770a7"
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2743
+  runId: 30988573703
+  exactHead: "2a58553849d27385d3dd8eac3c273e25c22d8b1d"
+  mergeCandidate: "eec110bb77199837727700da41d8fead0c26013d"
+completionBoundary: {}
 requiredEvidence:
   - "Observable result identity, value and continuity requirements are explicit before implementation comparison."
   - "Equivalent implementations preserve required observations without requiring target syntax equality."
