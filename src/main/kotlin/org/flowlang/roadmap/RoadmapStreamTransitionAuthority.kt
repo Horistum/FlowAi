@@ -8,6 +8,7 @@ enum class RoadmapTransitionPhase {
     A1_0_ACTIVE,
     C0_2_ACTIVE,
     C0_3_ACTIVE,
+    C0_4_ACTIVE,
     INVALID
 }
 
@@ -38,7 +39,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         val phase = determinePhase(roadmap, correction, a10, c02, c03)
         val errors = buildList {
             if (phase == RoadmapTransitionPhase.INVALID) {
-                add("Roadmap transition must be C0_1_1_ACTIVE, A1_0_ACTIVE, C0_2_ACTIVE or C0_3_ACTIVE.")
+                add("Roadmap transition must be C0_1_1_ACTIVE, A1_0_ACTIVE, C0_2_ACTIVE, C0_3_ACTIVE or C0_4_ACTIVE.")
             }
             requireRetainedClosure(roadmap, releaseState, phase, this)
             adapterSequenceCouplingErrors().forEach(::add)
@@ -76,6 +77,17 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                     this
                 )
                 RoadmapTransitionPhase.C0_3_ACTIVE -> validateC03Phase(
+                    roadmap,
+                    releaseState,
+                    adapterRoadmap,
+                    conformanceRoadmap,
+                    correction,
+                    a10,
+                    c02,
+                    c03,
+                    this
+                )
+                RoadmapTransitionPhase.C0_4_ACTIVE -> validateC04Phase(
                     roadmap,
                     releaseState,
                     adapterRoadmap,
@@ -125,6 +137,12 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                 a10.string("status") == "complete" &&
                 c02.string("status") == "complete" &&
                 c03.string("status") == "active" -> RoadmapTransitionPhase.C0_3_ACTIVE
+            correctionState == "complete" &&
+                activeCorrection.isBlank() &&
+                correction.string("status") == "complete" &&
+                a10.string("status") == "complete" &&
+                c02.string("status") == "complete" &&
+                c03.string("status") == "complete" -> RoadmapTransitionPhase.C0_4_ACTIVE
             else -> RoadmapTransitionPhase.INVALID
         }
     }
@@ -150,7 +168,8 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.C0_1_1_ACTIVE,
             RoadmapTransitionPhase.A1_0_ACTIVE -> "planned"
             RoadmapTransitionPhase.C0_2_ACTIVE -> "next"
-            RoadmapTransitionPhase.C0_3_ACTIVE -> "completed"
+            RoadmapTransitionPhase.C0_3_ACTIVE,
+            RoadmapTransitionPhase.C0_4_ACTIVE -> "completed"
             RoadmapTransitionPhase.INVALID -> null
         }
         val expectedC03 = when (phase) {
@@ -158,6 +177,15 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.A1_0_ACTIVE,
             RoadmapTransitionPhase.C0_2_ACTIVE -> "planned"
             RoadmapTransitionPhase.C0_3_ACTIVE -> "next"
+            RoadmapTransitionPhase.C0_4_ACTIVE -> "completed"
+            RoadmapTransitionPhase.INVALID -> null
+        }
+        val expectedC04 = when (phase) {
+            RoadmapTransitionPhase.C0_4_ACTIVE -> "next"
+            RoadmapTransitionPhase.C0_1_1_ACTIVE,
+            RoadmapTransitionPhase.A1_0_ACTIVE,
+            RoadmapTransitionPhase.C0_2_ACTIVE,
+            RoadmapTransitionPhase.C0_3_ACTIVE -> null
             RoadmapTransitionPhase.INVALID -> null
         }
         if (expectedC02 != null && conformanceRoadmap.itemStatus("C0.2") != expectedC02) {
@@ -168,6 +196,9 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             conformanceRoadmap.itemStatus("C0.3") != expectedC03
         ) {
             errors += "C0.3 must be '$expectedC03' in phase $phase."
+        }
+        if (expectedC04 != null && conformanceRoadmap.itemStatus("C0.4") != expectedC04) {
+            errors += "C0.4 must be '$expectedC04' in phase $phase."
         }
     }
 
@@ -262,10 +293,37 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         requireDistinctEvidence(correction, "Completed correction", errors)
         requireDistinctEvidence(a10, "Completed A1.0", errors)
         requireDistinctEvidence(c02, "Completed C0.2", errors)
-        if (c03.string("status") != "active") errors += "C0.3 work package must be active at handoff."
-        if (c03.map("implementationEvidence").isNotEmpty() || c03.map("completionBoundary").isNotEmpty()) {
-            errors += "Newly activated C0.3 must not contain authored implementation or completion evidence."
+        if (c03.string("status") != "active") errors += "C0.3 work package must remain active during implementation and validation."
+        if (c03.map("completionBoundary").isNotEmpty() && !validEvidence(c03.map("completionBoundary"))) {
+            errors += "Active C0.3 completion evidence must be absent or structurally valid."
         }
+    }
+
+    private fun validateC04Phase(
+        roadmap: Map<String, Any?>,
+        releaseState: Map<String, Any?>,
+        adapterRoadmap: Map<String, Any?>,
+        conformanceRoadmap: Map<String, Any?>,
+        correction: Map<String, Any?>,
+        a10: Map<String, Any?>,
+        c02: Map<String, Any?>,
+        c03: Map<String, Any?>,
+        errors: MutableList<String>
+    ) {
+        requireSelectedFocus(roadmap, "conformance", "C0.4", C04_NAME, errors)
+        requireReleaseFocus(releaseState, "conformance", "C0.4", C04_NAME, errors)
+        requireClosedAdapterStream(adapterRoadmap, errors)
+        if (conformanceRoadmap.itemStatus("C0.1.1") != "completed" ||
+            conformanceRoadmap.itemStatus("C0.2") != "completed" ||
+            conformanceRoadmap.itemStatus("C0.3") != "completed" ||
+            conformanceRoadmap.itemStatus("C0.4") != "next" ||
+            conformanceRoadmap.string("currentDecision", "completedItem") != "C0.3" ||
+            conformanceRoadmap.string("currentDecision", "nextItem") != "C0.4"
+        ) errors += "Conformance roadmap must complete C0.3 and select adjacent C0.4."
+        requireDistinctEvidence(correction, "Completed correction", errors)
+        requireDistinctEvidence(a10, "Completed A1.0", errors)
+        requireDistinctEvidence(c02, "Completed C0.2", errors)
+        requireDistinctEvidence(c03, "Completed C0.3", errors)
     }
 
     private fun requireSelectedFocus(
@@ -338,7 +396,8 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         ) errors += "Release state must retain completed Core closure identity."
         val expectedAdapter = when (phase) {
             RoadmapTransitionPhase.C0_2_ACTIVE,
-            RoadmapTransitionPhase.C0_3_ACTIVE -> "A1.0"
+            RoadmapTransitionPhase.C0_3_ACTIVE,
+            RoadmapTransitionPhase.C0_4_ACTIVE -> "A1.0"
             RoadmapTransitionPhase.C0_1_1_ACTIVE,
             RoadmapTransitionPhase.A1_0_ACTIVE -> "A0.7"
             RoadmapTransitionPhase.INVALID -> null
@@ -384,7 +443,11 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             implementation.string("mergeCandidate") != completion.string("mergeCandidate")
 
     private fun requiredFiles(phase: RoadmapTransitionPhase): List<String> =
-        BASE_REQUIRED_FILES + if (phase == RoadmapTransitionPhase.C0_3_ACTIVE) listOf(C03_WORK_PACKAGE) else emptyList()
+        BASE_REQUIRED_FILES + if (phase in setOf(RoadmapTransitionPhase.C0_3_ACTIVE, RoadmapTransitionPhase.C0_4_ACTIVE)) {
+            listOf(C03_WORK_PACKAGE)
+        } else {
+            emptyList()
+        }
 
     private fun requiredYaml(path: String): Map<String, Any?> {
         val file = File(rootDir, path)
@@ -431,6 +494,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         private const val A10_NAME = "GitHub Actions Artifact and Workspace Continuity"
         private const val C02_NAME = "Abstract Topology Matrix"
         private const val C03_NAME = "Semantic Equivalence Rules"
+        private const val C04_NAME = "Adapter Profile Evidence"
         private val SHA_PATTERN = Regex("[0-9a-f]{40}")
         private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val FORBIDDEN_ADAPTER_SEQUENCE_PATTERNS = listOf(

@@ -2,7 +2,7 @@ version: "C0.3"
 name: "Semantic Equivalence Rules"
 type: "equivalence-evidence"
 stream: conformance
-status: active
+status: complete
 objective: "Define observable equivalence for results and continuity after C0.2 proves target-independent topology matching polarity."
 dependsOnCore: "0.9.7.10"
 dependsOnConformance: "C0.2"
@@ -14,6 +14,20 @@ activationEvidence:
   runId: 30913933725
   exactHead: "4edb2b1440966bdc794d4f001021367654c8b4e7"
   mergeCandidate: "2ec62d58b5f7e1944e11c8c31354cdf0366770a7"
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2743
+  runId: 30988573703
+  exactHead: "2a58553849d27385d3dd8eac3c273e25c22d8b1d"
+  mergeCandidate: "eec110bb77199837727700da41d8fead0c26013d"
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2750
+  runId: 30992449903
+  exactHead: "dd1b049b0c8e768a43f19da4280fe80f57d7e27f"
+  mergeCandidate: "08a82daa8d7827216482b40779e183a7a96f0a1a"
 requiredEvidence:
   - "Observable result identity, value and continuity requirements are explicit before implementation comparison."
   - "Equivalent implementations preserve required observations without requiring target syntax equality."

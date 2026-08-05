@@ -10,10 +10,10 @@ import org.flowlang.roadmap.RoadmapTransitionPhase
 
 class RoadmapStreamTransitionAuthorityTests {
     @Test
-    fun repositoryActivatesC03AfterCompletedC02() {
+    fun repositoryActivatesC04AfterCompletedC03() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
         assertEquals(
-            expected = RoadmapTransitionPhase.C0_3_ACTIVE,
+            expected = RoadmapTransitionPhase.C0_4_ACTIVE,
             actual = report.phase,
             message = report.errors.joinToString(" | ")
         )
@@ -33,6 +33,22 @@ class RoadmapStreamTransitionAuthorityTests {
         val root = createC02Boundary()
         val report = RoadmapStreamTransitionAuthority(root).analyze()
         assertEquals(RoadmapTransitionPhase.C0_2_ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+    }
+
+    @Test
+    fun completedC02ActivatesC03() {
+        val root = createC03Boundary()
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+        assertEquals(RoadmapTransitionPhase.C0_3_ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+    }
+
+    @Test
+    fun completedC03ActivatesC04() {
+        val root = createC04Boundary()
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+        assertEquals(RoadmapTransitionPhase.C0_4_ACTIVE, report.phase, report.errors.joinToString(" | "))
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
@@ -60,6 +76,18 @@ class RoadmapStreamTransitionAuthorityTests {
         val report = RoadmapStreamTransitionAuthority(root).analyze()
         assertEquals("FAIL", report.status)
         assertTrue(report.errors.any { "Completed A1.0 implementation and completion evidence" in it })
+    }
+
+    @Test
+    fun completedC03RejectsMissingCompletionBoundary() {
+        val root = createC04Boundary()
+        val c03 = File(root, RoadmapStreamTransitionAuthority.C03_WORK_PACKAGE)
+        c03.writeText(c03.readText().substringBefore("completionBoundary:").trimEnd() + "\n")
+
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "Completed C0.3 requires a strict" in it })
     }
 
     @Test
@@ -215,6 +243,140 @@ class RoadmapStreamTransitionAuthorityTests {
         write(root, RoadmapStreamTransitionAuthority.C02_WORK_PACKAGE, "status: active\n")
         return root
     }
+
+    private fun createC03Boundary(): File {
+        val root = createC02Boundary()
+        write(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX, """
+            primaryRoadmapStream: conformance
+            currentDecision:
+              conformanceCorrectionState: complete
+              activeConformanceCorrectionWorkPackage: ""
+              closureItem: "0.9.7.10"
+              closureItemStatus: completed
+              completedAdapterItem: "A1.0"
+              nextItem: "C0.3"
+              nextItemName: "Semantic Equivalence Rules"
+              nextItemStream: conformance
+        """)
+        write(root, RoadmapStreamTransitionAuthority.CONFORMANCE_ROADMAP, """
+            stream: conformance
+            currentDecision:
+              completedItem: "C0.2"
+              nextItem: "C0.3"
+            items:
+              - version: "C0.1"
+                status: completed
+              - version: "C0.1.1"
+                status: completed
+              - version: "C0.2"
+                status: completed
+              - version: "C0.3"
+                status: next
+              - version: "C0.4"
+                status: planned
+        """)
+        write(root, RoadmapStreamTransitionAuthority.RELEASE_STATE, """
+            roadmapState:
+              primaryStream: conformance
+              closureItem: "0.9.7.10"
+              closureItemStatus: completed
+              completedAdapterItem: "A1.0"
+              nextItem: "C0.3"
+              nextItemName: "Semantic Equivalence Rules"
+        """)
+        write(root, RoadmapStreamTransitionAuthority.C02_WORK_PACKAGE, completedEvidence(
+            implementationRun = 3000,
+            implementationRunId = 36000000000,
+            implementationHeadDigit = "1",
+            implementationMergeDigit = "2",
+            completionRun = 3001,
+            completionRunId = 36000000001,
+            completionHeadDigit = "3",
+            completionMergeDigit = "4"
+        ))
+        write(root, RoadmapStreamTransitionAuthority.C03_WORK_PACKAGE, "status: active\n")
+        return root
+    }
+
+    private fun createC04Boundary(): File {
+        val root = createC03Boundary()
+        write(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX, """
+            primaryRoadmapStream: conformance
+            currentDecision:
+              conformanceCorrectionState: complete
+              activeConformanceCorrectionWorkPackage: ""
+              closureItem: "0.9.7.10"
+              closureItemStatus: completed
+              completedAdapterItem: "A1.0"
+              nextItem: "C0.4"
+              nextItemName: "Adapter Profile Evidence"
+              nextItemStream: conformance
+        """)
+        write(root, RoadmapStreamTransitionAuthority.CONFORMANCE_ROADMAP, """
+            stream: conformance
+            currentDecision:
+              completedItem: "C0.3"
+              nextItem: "C0.4"
+            items:
+              - version: "C0.1"
+                status: completed
+              - version: "C0.1.1"
+                status: completed
+              - version: "C0.2"
+                status: completed
+              - version: "C0.3"
+                status: completed
+              - version: "C0.4"
+                status: next
+        """)
+        write(root, RoadmapStreamTransitionAuthority.RELEASE_STATE, """
+            roadmapState:
+              primaryStream: conformance
+              closureItem: "0.9.7.10"
+              closureItemStatus: completed
+              completedAdapterItem: "A1.0"
+              nextItem: "C0.4"
+              nextItemName: "Adapter Profile Evidence"
+        """)
+        write(root, RoadmapStreamTransitionAuthority.C03_WORK_PACKAGE, completedEvidence(
+            implementationRun = 3100,
+            implementationRunId = 37000000000,
+            implementationHeadDigit = "5",
+            implementationMergeDigit = "6",
+            completionRun = 3101,
+            completionRunId = 37000000001,
+            completionHeadDigit = "7",
+            completionMergeDigit = "8"
+        ))
+        return root
+    }
+
+    private fun completedEvidence(
+        implementationRun: Int,
+        implementationRunId: Long,
+        implementationHeadDigit: String,
+        implementationMergeDigit: String,
+        completionRun: Int,
+        completionRunId: Long,
+        completionHeadDigit: String,
+        completionMergeDigit: String
+    ): String = """
+        status: complete
+        implementationEvidence:
+          status: passed
+          workflow: Flow CI
+          runNumber: $implementationRun
+          runId: $implementationRunId
+          exactHead: "${implementationHeadDigit.repeat(40)}"
+          mergeCandidate: "${implementationMergeDigit.repeat(40)}"
+        completionBoundary:
+          status: passed
+          workflow: Flow CI
+          runNumber: $completionRun
+          runId: $completionRunId
+          exactHead: "${completionHeadDigit.repeat(40)}"
+          mergeCandidate: "${completionMergeDigit.repeat(40)}"
+    """
 
     private fun writePassedCorrection(root: File) {
         write(root, RoadmapStreamTransitionAuthority.CORRECTION_WORK_PACKAGE, """
