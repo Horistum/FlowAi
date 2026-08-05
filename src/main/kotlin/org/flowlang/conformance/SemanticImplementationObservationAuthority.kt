@@ -3,12 +3,17 @@ package org.flowlang.conformance
 import java.io.File
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceStatus
 import org.flowlang.adapters.continuity.AdapterContinuitySatisfactionAuthority
+import org.flowlang.adapters.rendering.AdapterArtifactRenderingBundle
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
+import org.flowlang.adapters.trigger.AdapterTriggerAuthorizedRenderingAuthority
+import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestContractValidator
 import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.materialization.TargetMaterializationRequest
@@ -22,6 +27,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 data class SemanticImplementationObservationProfile(
     val target: String,
     val manifest: TargetManifest,
+    val rendering: AdapterArtifactRenderingBundle,
     val evidence: List<SemanticObservationEvidence>
 )
 
@@ -30,8 +36,9 @@ data class SemanticImplementationObservationProfile(
  *
  * Requirements are always derived before this authority is invoked. This class
  * may prove or reject a requirement, but it cannot add meaning to the plan.
- * Provider syntax is intentionally absent: the evidence boundary is the typed
- * production TargetManifest plus the independent adapter continuity authority.
+ * Provider syntax is intentionally absent from requirement identity: the
+ * evidence boundary is the typed production TargetManifest, its integrity-bound
+ * rendering receipt and the independent adapter continuity authority.
  */
 class SemanticImplementationObservationAuthority(
     private val rootDir: File = File("."),
@@ -41,6 +48,8 @@ class SemanticImplementationObservationAuthority(
 ) {
     private val manifestPipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
     private val continuityAuthority = AdapterContinuitySatisfactionAuthority(rootDir, targets, projections)
+    private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
+    private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
 
     fun profile(
         plan: ExecutionPlan,
@@ -58,13 +67,22 @@ class SemanticImplementationObservationAuthority(
             scenarioId = scenarioId,
             targets = targets
         )
-        val manifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
+        val generatedManifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
+        val triggerAssessment = triggerAuthority.assess(plan, target)
+        val manifest = triggerAuthority.reconcileDiagnostic(generatedManifest, triggerAssessment)
         val contract = TargetManifestContractValidator.validate(manifest)
         require(contract.valid) {
             "Target '$target' manifest violates its typed contract: " +
                 contract.issues.joinToString(" | ") { "${it.code}:${it.path}:${it.message}" }
         }
-        TargetRenderPolicy.requireExecutable(manifest)
+        val readiness = TargetRenderPolicy.requireExecutable(manifest)
+        val rendering = renderingAuthority.render(manifest)
+        require(rendering.receipt.renderMode == readiness.mode && readiness.mode == TargetRenderMode.EXECUTABLE) {
+            "Target '$target' rendering receipt does not preserve executable manifest readiness."
+        }
+        require(rendering.artifact.kind == AdapterRenderedArtifactKind.EXECUTABLE_TARGET) {
+            "Target '$target' semantic equivalence evidence requires executable target syntax."
+        }
 
         val tasks = PlanDependencyRelations.flatten(plan.nodes).filterIsInstance<TaskNode>()
         val tasksBySemanticIdentity = tasks.associateBy(::semanticIdentity)
@@ -114,7 +132,7 @@ class SemanticImplementationObservationAuthority(
                 )
             }
         }
-        return SemanticImplementationObservationProfile(target, manifest, evidence)
+        return SemanticImplementationObservationProfile(target, manifest, rendering, evidence)
     }
 
     private fun taskEvidence(
