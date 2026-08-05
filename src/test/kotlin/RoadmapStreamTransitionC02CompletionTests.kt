@@ -38,7 +38,7 @@ class RoadmapStreamTransitionC02CompletionTests {
     }
 
     @Test
-    fun newC03CannotCarryPrematureImplementationEvidence() {
+    fun activeC03MayCarryImplementationEvidenceDuringValidation() {
         val root = createC03Boundary()
         File(root, RoadmapStreamTransitionAuthority.C03_WORK_PACKAGE).appendText(
             """
@@ -54,8 +54,8 @@ class RoadmapStreamTransitionC02CompletionTests {
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
-        assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "Newly activated C0.3" in it })
+        assertEquals(RoadmapTransitionPhase.C0_3_ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
     private fun createC03Boundary(): File {
