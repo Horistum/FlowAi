@@ -2,11 +2,9 @@ package org.flowlang.conformance
 
 import java.io.File
 import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionLoader
-import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.Json
-import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
-import org.flowlang.planner.FlowPlanner
+import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.serialization.FlowYaml
 
 data class SemanticEquivalenceReport(
@@ -165,15 +163,14 @@ class SemanticEquivalenceAuthority(
 
     private fun concreteReferenceErrors(document: SemanticEquivalenceDocument): List<String> = buildList {
         val promotions = AdapterExecutableReferencePromotionLoader.load(rootDir).promotions
+        val referenceGenerator = ReferenceSnapshotBundleGenerator(rootDir, registry)
         document.concretePairs.forEach { pair ->
             val intentFile = File(rootDir, pair.intent)
             if (!intentFile.isFile) {
                 add("Concrete pair '${pair.id}' intent is missing: ${intentFile.path}.")
                 return@forEach
             }
-            val planResult = runCatching {
-                FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(IntentYamlLoader.load(intentFile)))
-            }
+            val planResult = runCatching { referenceGenerator.planFor(intentFile) }
             val plan = planResult.getOrNull()
             if (plan == null) {
                 add("Concrete pair '${pair.id}' cannot produce a plan: ${planResult.exceptionOrNull()?.message}.")
@@ -212,7 +209,9 @@ class SemanticEquivalenceAuthority(
             val right = validateSnapshot(pair.id, pair.rightTarget, pair.rightSnapshot)
             addAll(left.errors)
             addAll(right.errors)
-            val productionTree = runCatching { Json.mapper.readTree(Json.mapper.writeValueAsBytes(plan)) }
+            val productionTree = runCatching {
+                Json.mapper.readTree(Json.mapper.writeValueAsBytes(ExecutionPlanCanonicalizer.canonicalize(plan)))
+            }
             if (productionTree.isFailure) {
                 add("Concrete pair '${pair.id}' production execution plan cannot be serialized: ${productionTree.exceptionOrNull()?.message}.")
             }
