@@ -21,6 +21,8 @@ class FlowPurposeCoverageRatioTests {
         assertEquals(emptyList(), report.missingBlockedRiskCapabilities)
         assertEquals(emptyList(), report.missingPurposeKinds)
         assertEquals(emptyList(), report.missingEvidenceBackedPurposeKinds)
+        assertTrue("CLUSTER_MAINTENANCE" in report.requiredPurposeCapabilities)
+        assertTrue("CLUSTER_MAINTENANCE" in PurposeCoverageAnalyzer.requiredBlockedRiskCapabilities)
         assertTrue("v0.7.5.purpose-coverage-ratio" in StandardModel.releaseProfileCheckIds())
     }
 
@@ -35,13 +37,14 @@ class FlowPurposeCoverageRatioTests {
     }
 
     @Test
-    fun targetSpecificMaintenanceIsNotAMandatoryUniversalPurpose() {
-        val reducedCorpus = StandardSurface.referenceIntentCorpus().withoutCapability("KUBERNETES_MAINTENANCE")
+    fun missingNeutralClusterMaintenancePurposeFails() {
+        val reducedCorpus = StandardSurface.referenceIntentCorpus().withoutCapability("CLUSTER_MAINTENANCE")
         val report = PurposeCoverageAnalyzer(corpus = reducedCorpus).analyze()
 
-        assertEquals("PASS", report.status, report.issues.joinToString { it.code + ":" + it.subject })
-        assertTrue("KUBERNETES_MAINTENANCE" !in report.requiredPurposeCapabilities)
-        assertTrue("KUBERNETES_MAINTENANCE" !in PurposeCoverageAnalyzer.requiredBlockedRiskCapabilities)
+        assertEquals("FAIL", report.status)
+        assertTrue(report.issues.any { it.code == "PURPOSE_COVERAGE_CAPABILITY_MISSING" })
+        assertTrue("CLUSTER_MAINTENANCE" in report.missingCapabilities)
+        assertTrue("CLUSTER_MAINTENANCE" in report.missingBlockedRiskCapabilities)
     }
 
     @Test
