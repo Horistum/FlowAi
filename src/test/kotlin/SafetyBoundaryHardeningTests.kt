@@ -8,6 +8,14 @@ class SafetyBoundaryHardeningTests {
     private val policyNotes = StandardEnvironmentSafetyPolicyNotes.baseline()
 
     @Test
+    fun unknownActionContractFailsClosedInsideSafetyBoundary() {
+        val issues = defaultValidator().validate(parse(unknownActionFlow()))
+
+        assertTrue(issues.any { it.code == "SAFETY_ACTION_CONTRACT_UNKNOWN" }, issues.toString())
+        assertTrue(issues.any { it.level == "error" }, issues.toString())
+    }
+
+    @Test
     fun sensitiveEnvironmentMutationRequiresApprovalWhenPolicyEvidenceMatches() {
         val issues = strictValidator().validate(parse(productionDeployFlow()))
 
@@ -66,6 +74,21 @@ class SafetyBoundaryHardeningTests {
         environmentPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
     )
     private fun parse(source: String) = FlowParser().parse(source.trimIndent())
+
+    private fun unknownActionFlow() = """
+        version "1.0"
+        use module "standard" version "1.0"
+        flow "unknown safety contract" {
+          systems {
+            system "standard" { type: standard }
+          }
+          steps {
+            standard.not-registered standard {
+              operation: "maintenance"
+            }
+          }
+        }
+    """
 
     private fun productionDeployFlow() = """
         version "1.0"
