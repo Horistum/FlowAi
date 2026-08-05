@@ -66,7 +66,14 @@ data class AbstractTopologyMatrixLifecycleReport(
     val errors: List<String>
 )
 
-/** Owns only C0.2 local lifecycle and its explicit C0.3 handoff. */
+/**
+ * Owns C0.2 local lifecycle and proves that its adjacent C0.3 handoff occurred.
+ *
+ * Once C0.3 itself is completed, this authority retains C0.2 as immutable
+ * historical evidence without owning the identity of later global work. The
+ * active global transition remains the responsibility of
+ * RoadmapStreamTransitionAuthority.
+ */
 class AbstractTopologyMatrixRoadmapLifecycleAuthority(
     private val rootDir: File = File(".")
 ) {
@@ -107,7 +114,7 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
                 !input.completionBoundary.present -> AbstractTopologyMatrixLifecyclePhase.VALIDATING
             input.workPackageStatus == "complete" &&
                 input.c02Status == "completed" &&
-                input.c03Status == "next" &&
+                input.c03Status in COMPLETED_HANDOFF_STATES &&
                 input.implementationEvidence.structurallyValid &&
                 input.completionBoundary.structurallyValid -> AbstractTopologyMatrixLifecyclePhase.COMPLETED
             else -> AbstractTopologyMatrixLifecyclePhase.INVALID
@@ -117,8 +124,7 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
             AbstractTopologyMatrixLifecyclePhase.IMPLEMENTING,
             AbstractTopologyMatrixLifecyclePhase.VALIDATING ->
                 input.conformanceCompletedItem == "C0.1.1" && input.conformanceNextItem == "C0.2"
-            AbstractTopologyMatrixLifecyclePhase.COMPLETED ->
-                input.conformanceCompletedItem == "C0.2" && input.conformanceNextItem == "C0.3"
+            AbstractTopologyMatrixLifecyclePhase.COMPLETED -> completedLocalFocus(input)
             AbstractTopologyMatrixLifecyclePhase.INVALID -> false
         }
         val globalFocus = when (phase) {
@@ -129,12 +135,7 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
                     input.indexNextStream == "conformance" &&
                     input.releasePrimaryStream == "conformance" &&
                     input.releaseNextItem == "C0.2"
-            AbstractTopologyMatrixLifecyclePhase.COMPLETED ->
-                input.primaryStream == "conformance" &&
-                    input.indexNextItem == "C0.3" &&
-                    input.indexNextStream == "conformance" &&
-                    input.releasePrimaryStream == "conformance" &&
-                    input.releaseNextItem == "C0.3"
+            AbstractTopologyMatrixLifecyclePhase.COMPLETED -> completedGlobalFocus(input)
             AbstractTopologyMatrixLifecyclePhase.INVALID -> false
         }
         val evidenceAligned = when (phase) {
@@ -149,7 +150,7 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
 
         val errors = buildList {
             if (phase == AbstractTopologyMatrixLifecyclePhase.INVALID) {
-                add("C0.2 must be exactly IMPLEMENTING, VALIDATING or COMPLETED.")
+                add("C0.2 must be exactly IMPLEMENTING, VALIDATING or COMPLETED after reaching its C0.3 handoff.")
             }
             if (!localFocus) {
                 add("C0.2 local conformance focus is inconsistent with lifecycle phase $phase.")
@@ -173,6 +174,40 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
             errors = errors
         )
     }
+
+    private fun completedLocalFocus(input: AbstractTopologyMatrixLifecycleInput): Boolean =
+        when (input.c03Status) {
+            "next" ->
+                input.conformanceCompletedItem == "C0.2" &&
+                    input.conformanceNextItem == "C0.3"
+            "completed" ->
+                input.conformanceCompletedItem.isNotBlank() &&
+                    input.conformanceCompletedItem !in PRE_C03_ITEMS &&
+                    input.conformanceNextItem != "C0.2"
+            else -> false
+        }
+
+    private fun completedGlobalFocus(input: AbstractTopologyMatrixLifecycleInput): Boolean =
+        when (input.c03Status) {
+            "next" ->
+                input.primaryStream == "conformance" &&
+                    input.indexNextItem == "C0.3" &&
+                    input.indexNextStream == "conformance" &&
+                    input.releasePrimaryStream == "conformance" &&
+                    input.releaseNextItem == "C0.3"
+            "completed" -> {
+                val globalMetadataAligned =
+                    input.primaryStream == input.releasePrimaryStream &&
+                        input.indexNextItem == input.releaseNextItem &&
+                        (input.indexNextItem.isBlank() || input.indexNextStream == input.primaryStream)
+                val conformanceFocusAligned =
+                    input.primaryStream != "conformance" || input.indexNextItem == input.conformanceNextItem
+                globalMetadataAligned &&
+                    conformanceFocusAligned &&
+                    input.indexNextItem != "C0.2"
+            }
+            else -> false
+        }
 
     private fun distinctBoundaries(
         implementation: TopologyMatrixWorkflowEvidence,
@@ -228,6 +263,8 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
+        private val COMPLETED_HANDOFF_STATES = setOf("next", "completed")
+        private val PRE_C03_ITEMS = setOf("C0.1", "C0.1.1", "C0.2")
         private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val REQUIRED_FILES = listOf(
             AbstractTopologyMatrixLoader.PATH,
