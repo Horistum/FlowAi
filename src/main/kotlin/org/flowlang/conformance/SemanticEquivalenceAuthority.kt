@@ -1,6 +1,7 @@
 package org.flowlang.conformance
 
 import java.io.File
+import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionLoader
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.Json
 import org.flowlang.intent.IntentToAstPlanner
@@ -163,6 +164,7 @@ class SemanticEquivalenceAuthority(
     }
 
     private fun concreteReferenceErrors(document: SemanticEquivalenceDocument): List<String> = buildList {
+        val promotions = AdapterExecutableReferencePromotionLoader.load(rootDir).promotions
         document.concretePairs.forEach { pair ->
             val intentFile = File(rootDir, pair.intent)
             if (!intentFile.isFile) {
@@ -198,11 +200,22 @@ class SemanticEquivalenceAuthority(
                     add("Concrete pair '${pair.id}' observation '${requirement.id}' depends on target token '$token'.")
                 }
             }
+            if (promotions.none {
+                    it.target == GITHUB_ACTIONS &&
+                        it.snapshotReference == snapshotForTarget(pair, GITHUB_ACTIONS)
+                }
+            ) {
+                add("Concrete pair '${pair.id}' GitHub Actions evidence is not backed by the bounded A1.0 promotion authority.")
+            }
 
             val left = validateSnapshot(pair.id, pair.leftTarget, pair.leftSnapshot)
             val right = validateSnapshot(pair.id, pair.rightTarget, pair.rightSnapshot)
             addAll(left.errors)
             addAll(right.errors)
+            val productionTree = runCatching { Json.mapper.readTree(Json.mapper.writeValueAsBytes(plan)) }
+            if (productionTree.isFailure) {
+                add("Concrete pair '${pair.id}' production execution plan cannot be serialized: ${productionTree.exceptionOrNull()?.message}.")
+            }
             if (left.planFile != null && right.planFile != null) {
                 val leftTree = runCatching { Json.mapper.readTree(left.planFile) }
                 val rightTree = runCatching { Json.mapper.readTree(right.planFile) }
@@ -212,8 +225,17 @@ class SemanticEquivalenceAuthority(
                 if (rightTree.isFailure) {
                     add("Concrete pair '${pair.id}' right execution plan cannot be parsed: ${rightTree.exceptionOrNull()?.message}.")
                 }
-                if (leftTree.getOrNull() != null && rightTree.getOrNull() != null && leftTree.getOrNull() != rightTree.getOrNull()) {
+                val expectedTree = productionTree.getOrNull()
+                val leftPlanTree = leftTree.getOrNull()
+                val rightPlanTree = rightTree.getOrNull()
+                if (leftPlanTree != null && rightPlanTree != null && leftPlanTree != rightPlanTree) {
                     add("Concrete pair '${pair.id}' target snapshots do not preserve the same target-neutral execution plan.")
+                }
+                if (expectedTree != null && leftPlanTree != null && expectedTree != leftPlanTree) {
+                    add("Concrete pair '${pair.id}' Jenkins snapshot plan is stale relative to the production planning path.")
+                }
+                if (expectedTree != null && rightPlanTree != null && expectedTree != rightPlanTree) {
+                    add("Concrete pair '${pair.id}' GitHub Actions snapshot plan is stale relative to the production planning path.")
                 }
             }
 
@@ -302,11 +324,28 @@ class SemanticEquivalenceAuthority(
         ) {
             errors += "Concrete pair '$pairId' snapshot '$path' must declare a non-executable semantic plan artifact."
         }
+        val targetArtifacts = snapshot.artifacts.filter {
+            it.layer == ReferenceSnapshotLayer.TARGET_PROJECTION && it.target == target && it.executable
+        }
+        if (targetArtifacts.size != 1) {
+            errors += "Concrete pair '$pairId' snapshot '$path' must declare exactly one executable '$target' artifact."
+        } else {
+            val artifactFile = File(indexFile.parentFile, targetArtifacts.single().file)
+            if (!artifactFile.isFile || artifactFile.length() == 0L) {
+                errors += "Concrete pair '$pairId' executable artifact is missing or empty: ${artifactFile.path}."
+            }
+        }
         val planFile = File(indexFile.parentFile, EXECUTION_PLAN_FILE)
         if (!planFile.isFile) {
             errors += "Concrete pair '$pairId' semantic plan is missing: ${planFile.path}."
         }
         return SnapshotValidation(errors, planFile.takeIf(File::isFile))
+    }
+
+    private fun snapshotForTarget(pair: SemanticEquivalenceConcretePair, target: String): String = when (target) {
+        pair.leftTarget -> pair.leftSnapshot
+        pair.rightTarget -> pair.rightSnapshot
+        else -> error("Concrete pair '${pair.id}' does not contain target '$target'.")
     }
 
     private fun loadInventory(path: String): List<String> {
@@ -325,5 +364,6 @@ class SemanticEquivalenceAuthority(
     companion object {
         const val CHECK_PREFIX = "conformance.c0.3."
         private const val EXECUTION_PLAN_FILE = "execution-plan.json"
+        private const val GITHUB_ACTIONS = "github-actions"
     }
 }
