@@ -2,7 +2,12 @@ package org.flowlang.conformance
 
 import java.io.File
 import java.nio.file.Files
+import org.flowlang.adapters.continuity.AdapterContinuityClaimStatus
+import org.flowlang.adapters.continuity.AdapterContinuityEvidenceLoader
+import org.flowlang.adapters.continuity.AdapterContinuityFamily
+import org.flowlang.adapters.continuity.AdapterContinuitySemanticContract
 import org.flowlang.adapters.continuity.AdapterExecutableContinuityRoadmapLifecycleAuthority
+import org.flowlang.adapters.continuity.BuiltInAdapterContinuityScopedSupport
 import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionAuthority
 import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionLoader
 import org.flowlang.capabilities.SupportLevel
@@ -126,6 +131,8 @@ class AdapterExecutableContinuityConformanceChecks(
     }
 
     private fun failClosedBoundaryErrors(): List<String> = buildList {
+        genericScopedEvidenceReconciliationErrors().forEach(::add)
+
         val intentFile = File(rootDir, "examples/intent/checkout-build-image.intent.yaml")
         val generator = ReferenceSnapshotBundleGenerator(rootDir, targets = targets, projections = projections)
         val plan = generator.planFor(intentFile)
@@ -163,6 +170,61 @@ class AdapterExecutableContinuityConformanceChecks(
         )
         if (pipeline.effectiveTarget(largerPlan, GITHUB_ACTIONS).features[WORKSPACE_FEATURE] != SupportLevel.UNSUPPORTED) {
             add("A larger workflow must not borrow executability from the bounded reference scenario.")
+        }
+    }
+
+    private fun genericScopedEvidenceReconciliationErrors(): List<String> = buildList {
+        val scope = BuiltInAdapterContinuityScopedSupport.githubActionsCheckoutBuildWorkspace
+        val claim = AdapterContinuityEvidenceLoader.load(rootDir)
+            .targets.singleOrNull { it.target == scope.target }
+            ?.claims
+            ?.singleOrNull { it.family == scope.family }
+        if (claim == null) {
+            add("The generic GitHub Actions ARTIFACT continuity claim is missing while scoped support exists.")
+            return@buildList
+        }
+        if (claim.status != AdapterContinuityClaimStatus.UNSUPPORTED) {
+            add("The generic GitHub Actions ARTIFACT claim must remain UNSUPPORTED while only bounded scoped support exists.")
+        }
+
+        val mechanismFragments = listOf(
+            "Generic GitHub Actions workspace continuity remains unsupported",
+            scope.sourceAction,
+            scope.targetAction,
+            GitHubActionsWorkspaceContinuityPlanner.UPLOAD_REFERENCE,
+            GitHubActionsWorkspaceContinuityPlanner.DOWNLOAD_REFERENCE
+        )
+        mechanismFragments.filterNot(claim.mechanism::contains).forEach { fragment ->
+            add("The generic GitHub Actions ARTIFACT mechanism does not acknowledge scoped evidence fragment '$fragment'.")
+        }
+
+        val unsupportedReason = claim.semantics.unsupported[
+            AdapterContinuitySemanticContract.ARTIFACT_SHARED_WORKSPACE
+        ].orEmpty()
+        if (!unsupportedReason.contains("outside the exact scoped declaration")) {
+            add("The generic workspace reason must distinguish target-wide unsupported behavior from the exact scoped exception.")
+        }
+
+        val requiredEvidence = listOf(
+            SCOPED_SUPPORT_SOURCE,
+            SCOPED_PLANNER_SOURCE,
+            SCOPED_WORKFLOW_SOURCE
+        )
+        requiredEvidence.filterNot(claim.evidenceReferences::contains).forEach { reference ->
+            add("The generic GitHub Actions ARTIFACT claim is missing scoped evidence reference '$reference'.")
+        }
+
+        val genericLimitations = claim.limitations.joinToString(" ")
+        val scopedLimitations = scope.limitations.joinToString(" ")
+        listOf("target-wide support", "Unix mode bits", "symbolic-link identity").forEach { fragment ->
+            if (!genericLimitations.contains(fragment, ignoreCase = true)) {
+                add("The generic GitHub Actions ARTIFACT claim is missing limitation '$fragment'.")
+            }
+        }
+        listOf("regular-file bytes", "Unix mode bits", "Symbolic-link identity").forEach { fragment ->
+            if (!scopedLimitations.contains(fragment, ignoreCase = true)) {
+                add("The scoped GitHub Actions declaration is missing fidelity limitation '$fragment'.")
+            }
         }
     }
 
@@ -245,6 +307,12 @@ class AdapterExecutableContinuityConformanceChecks(
         private const val WORKSPACE_FEATURE = "continuity.workspace"
         private const val VALUE_FEATURE = "continuity.value"
         private const val STATE_FEATURE = "continuity.state"
+        private const val SCOPED_SUPPORT_SOURCE =
+            "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedSupport.kt"
+        private const val SCOPED_PLANNER_SOURCE =
+            "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt"
+        private const val SCOPED_WORKFLOW_SOURCE =
+            "conformance/snapshots/github-actions-checkout-build-image/github-actions.executable.yaml"
         private val REQUIRED_WORKFLOW_FRAGMENTS = listOf(
             "name: \"flow-workspace-git_checkout_1-source\"",
             "needs: [git_checkout_1]",
