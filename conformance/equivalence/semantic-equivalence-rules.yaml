@@ -1,0 +1,38 @@
+version: "1.0"
+mutations:
+  - missing
+  - weakened
+  - unknown
+  - contradictory
+cases:
+  - id: effect
+    fixture: effect
+    requiredKinds:
+      - effect
+  - id: result-identity
+    fixture: result-identity
+    requiredKinds:
+      - result-identity
+  - id: result-value
+    fixture: result-value
+    requiredKinds:
+      - result-value
+  - id: value-continuity
+    fixture: value-continuity
+    requiredKinds:
+      - continuity
+  - id: workspace-continuity
+    fixture: workspace-continuity
+    requiredKinds:
+      - continuity
+  - id: state-continuity
+    fixture: state-continuity
+    requiredKinds:
+      - continuity
+concretePairs:
+  - id: jenkins-github-actions-checkout-build-image
+    intent: examples/intent/checkout-build-image.intent.yaml
+    leftTarget: jenkins
+    leftSnapshot: conformance/snapshots/checkout-build-image/snapshot-index.json
+    rightTarget: github-actions
+    rightSnapshot: conformance/snapshots/github-actions-checkout-build-image/snapshot-index.json
