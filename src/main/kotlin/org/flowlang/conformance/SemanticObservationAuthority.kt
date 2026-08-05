@@ -6,6 +6,7 @@ import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.planner.PlanDependencyRelations
+import org.flowlang.planner.PlanDependencyResolution
 import org.flowlang.planner.PlanNode
 import org.flowlang.planner.TaskNode
 
@@ -45,7 +46,11 @@ object SemanticObservationAuthority {
                 }
             }
             plan.outputs.forEach { output ->
-                val producerIdentity = output.sourceNodeId?.let(semanticIdentityByNode::get)
+                val producerIdentity = output.sourceNodeId?.let { sourceNodeId ->
+                    requireNotNull(semanticIdentityByNode[sourceNodeId]) {
+                        "Plan output '${output.name}' references unknown source node '$sourceNodeId'."
+                    }
+                } ?: FLOW_OUTPUT_PRODUCER
                 add(
                     requirement(
                         kind = SemanticObservationKind.RESULT_VALUE,
@@ -58,13 +63,24 @@ object SemanticObservationAuthority {
             plan.dependencyRelations
                 .filter { it.kind != PlanDependencyKind.ORDERING }
                 .forEach { relation ->
-                    val producerIdentity = relation.sourceNodeId?.let(semanticIdentityByNode::get)
-                    val consumerIdentity = semanticIdentityByNode[relation.targetNodeId]
+                    require(relation.resolution == PlanDependencyResolution.RESOLVED) {
+                        "Semantic equivalence cannot certify ${relation.kind} continuity from '${relation.sourceNodeId}' " +
+                            "to '${relation.targetNodeId}' with resolution ${relation.resolution}."
+                    }
+                    val sourceNodeId = requireNotNull(relation.sourceNodeId) {
+                        "Resolved ${relation.kind} continuity to '${relation.targetNodeId}' has no source node."
+                    }
+                    val producerIdentity = requireNotNull(semanticIdentityByNode[sourceNodeId]) {
+                        "Resolved ${relation.kind} continuity references unknown source node '$sourceNodeId'."
+                    }
+                    val consumerIdentity = requireNotNull(semanticIdentityByNode[relation.targetNodeId]) {
+                        "Resolved ${relation.kind} continuity references unknown target node '${relation.targetNodeId}'."
+                    }
                     add(
                         requirement(
                             kind = SemanticObservationKind.CONTINUITY,
                             subject = relation.kind.name,
-                            value = listOf(relation.channel.orEmpty(), relation.resolution.name).joinToString(":"),
+                            value = relation.channel?.takeIf(String::isNotBlank) ?: DEFAULT_CONTINUITY_CHANNEL,
                             producerIdentity = producerIdentity,
                             consumerIdentity = consumerIdentity
                         )
@@ -197,7 +213,7 @@ object SemanticObservationAuthority {
         producerIdentity: String? = null,
         consumerIdentity: String? = null
     ): SemanticObservationRequirement = SemanticObservationRequirement(
-        id = "semantic.${kind.documentValue}.${SemanticObservationIdentity.fingerprint(kind.name, subject, value, producerIdentity, consumerIdentity).take(20)}",
+        id = SemanticObservationIdentity.requirementId(kind, subject, value, producerIdentity, consumerIdentity),
         kind = kind,
         subject = subject,
         value = value,
@@ -213,4 +229,7 @@ object SemanticObservationAuthority {
 
     private fun transitionValue(transition: ResourceStateTransition?): String =
         transition?.let { "${it.from.name}->${it.to.name}" }.orEmpty()
+
+    private const val FLOW_OUTPUT_PRODUCER = "flow-output"
+    private const val DEFAULT_CONTINUITY_CHANNEL = "default"
 }
