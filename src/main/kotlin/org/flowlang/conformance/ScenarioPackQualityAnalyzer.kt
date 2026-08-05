@@ -27,7 +27,7 @@ class ScenarioPackQualityAnalyzer(
 ) {
     private val blockedCoverageCapabilities = setOf(
         StandardCapability.DATABASE_MIGRATE,
-        StandardCapability.KUBERNETES_MAINTENANCE,
+        StandardCapability.CLUSTER_MAINTENANCE,
         StandardCapability.CLEANUP,
         StandardCapability.DEPLOY,
         StandardCapability.SECRET_ROTATE,

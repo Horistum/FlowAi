@@ -5,8 +5,9 @@ plugins {
 
 group = "org.flowlang"
 
-// Published implementation package line. Historical v0.9.5.x correction
-// identifiers are bounded work items, not additional package versions.
+// Published implementation package line. Historical and unreleased v0.9.5.x
+// through v0.9.7.x correction/work-item identifiers evolve governance and
+// standard evidence without creating additional published package versions.
 version = "0.9.5"
 
 application { mainClass.set("org.flowlang.cli.honest.HonestFlowCliKt") }

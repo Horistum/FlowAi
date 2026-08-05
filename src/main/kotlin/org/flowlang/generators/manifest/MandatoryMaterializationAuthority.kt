@@ -668,6 +668,28 @@ internal object ExecutionPlanMaterializationValidator {
         modules: ModuleRegistry,
         issues: MutableList<PlanningEvidenceIssue>
     ) {
+        val contract = modules.findAction(task.module, task.action)
+        if (contract == null) {
+            issues += issue(
+                "planning.action.contract.missing",
+                "$location.binding",
+                "Action '${task.module}.${task.action}' has no registered module contract. Materialization cannot authorize effects, controls or continuity for an unknown action."
+            )
+            if (task.semanticCapability != null) {
+                validateCanonicalEffects(
+                    semanticCapability = task.semanticCapability,
+                    effectModel = task.effectModel,
+                    legacyEffects = task.effects,
+                    params = task.params.ifEmpty { task.inputs },
+                    location = location,
+                    issues = issues
+                )
+            } else {
+                validateEffectProjection(task.effectModel, task.effects, location, issues)
+            }
+            return
+        }
+
         if (task.semanticCapability != null) {
             validateCanonicalEffects(
                 semanticCapability = task.semanticCapability,
@@ -680,13 +702,8 @@ internal object ExecutionPlanMaterializationValidator {
             return
         }
 
-        val contract = modules.findAction(task.module, task.action)
-        if (contract != null) {
-            val expected = ModuleEffectCanonicalizer.canonicalize(contract.effects)
-            validateEffectList(expected, task.effectModel, task.effects, location, issues, "module contract")
-        } else {
-            validateEffectProjection(task.effectModel, task.effects, location, issues)
-        }
+        val expected = ModuleEffectCanonicalizer.canonicalize(contract.effects)
+        validateEffectList(expected, task.effectModel, task.effects, location, issues, "module contract")
     }
 
     private fun validateCanonicalEffects(
@@ -878,7 +895,6 @@ internal object ExecutionPlanMaterializationValidator {
         PlanningEvidenceIssue(code = code, location = location, message = message)
 }
 
-
 class UnresolvedPlanningContinuityException(
     val relations: List<PlanDependencyRelation>
 ) : IllegalArgumentException(
@@ -902,7 +918,6 @@ private fun ContinuityKind.toPlanKind(): PlanDependencyKind = when (this) {
     ContinuityKind.WORKSPACE -> PlanDependencyKind.WORKSPACE
     ContinuityKind.STATE -> PlanDependencyKind.STATE
 }
-
 
 class UnresolvedPlanningControlException(
     val requirements: List<ControlRequirement>

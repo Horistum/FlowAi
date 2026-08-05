@@ -8,6 +8,7 @@ import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
 import org.flowlang.artifacts.StandardSurface
 import org.flowlang.artifacts.StandardSurfaceStatusAuthority
 import org.flowlang.capabilities.CompatibilityAnalyzer
+import org.flowlang.effects.ModuleEffectCanonicalizer
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.modules.ModuleRegistry
@@ -33,18 +34,21 @@ internal class ProjectionSurfaceChecks(
         val plan = ExecutionPlan(
             flowName = "behavioral",
             nodes = listOf(
-                TaskNode(id = "build", module = "ci", action = "build", target = "all"),
-                TaskNode(id = "test", module = "ci", action = "test", target = "all", dependsOn = listOf("build")),
+                contractBackedTask(id = "build", operation = "build"),
+                contractBackedTask(id = "test", operation = "test", dependsOn = listOf("build")),
                 ConditionNode(
-                    id = "env-gate", condition = "env == 'prod'",
-                    then = listOf(TaskNode(id = "deploy", module = "cd", action = "deploy", target = "all", dependsOn = listOf("test"))),
-                    otherwise = listOf(TaskNode(id = "notify", module = "ops", action = "notify", target = "all", dependsOn = listOf("test")))
+                    id = "env-gate",
+                    condition = "env == 'prod'",
+                    then = listOf(contractBackedTask(id = "deploy", operation = "deploy", dependsOn = listOf("test"))),
+                    otherwise = listOf(contractBackedTask(id = "notify", operation = "notify", dependsOn = listOf("test")))
                 )
             )
         )
         val expectedTasks = setOf("build", "test", "deploy", "notify")
         listOf("jenkins", "github-actions", "tekton").forEach { target ->
-            val manifest = manifestPipeline.generateDiagnosticEvidence(diagnosticMaterializationRequest(plan, target, "conformance:v0.4.4"))
+            val manifest = manifestPipeline.generateDiagnosticEvidence(
+                diagnosticMaterializationRequest(plan, target, "conformance:v0.4.4")
+            )
             val taskNames = mutableSetOf<String>()
             var deployGuard: String? = null
             fun walk(steps: List<TargetStep>, guard: String?) {
@@ -63,6 +67,24 @@ internal class ProjectionSurfaceChecks(
             require(taskNames == expectedTasks) { "Target $target dropped or added tasks: $taskNames" }
             require(!deployGuard.isNullOrBlank()) { "Target $target dropped the guard on the conditional deploy task." }
         }
+    }
+
+    private fun contractBackedTask(
+        id: String,
+        operation: String,
+        dependsOn: List<String> = emptyList()
+    ): TaskNode {
+        val action = registry.requireModule("standard").actions.getValue("execute")
+        return TaskNode(
+            id = id,
+            module = "standard",
+            action = "execute",
+            target = "standard",
+            dependsOn = dependsOn,
+            params = mapOf("operation" to operation),
+            requiredCapabilities = listOf("standard.execute"),
+            effectModel = ModuleEffectCanonicalizer.canonicalize(action.effects)
+        )
     }
 
     private fun checkV045StandardSurfaceFreeze(): ConformanceCheck = runCheck("v0.4.5.standard-surface-freeze") {

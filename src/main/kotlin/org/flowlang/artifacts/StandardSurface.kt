@@ -258,7 +258,7 @@ object StandardSurface {
             accepted("build-and-test", "Build and test", "Check out the repository, build the project and run the tests.", listOf("CHECKOUT", "BUILD", "TEST")),
             accepted("deploy-with-approval-and-rollback", "Deployment with approval, verification and rollback", "Deploy application billing-api to Kubernetes. Require approval in production. Verify health after deploy and rollback on failure.", listOf("DEPLOY", "APPROVE", "VERIFY", "ROLLBACK"), mapOf("application" to "billing-api")),
             accepted("cleanup-with-retention", "Cleanup with retention", "Clean up resources older than 30 days.", listOf("CLEANUP")),
-            accepted("kubernetes-maintenance-dry-run", "Kubernetes maintenance with dry-run", "Perform kubernetes maintenance in namespace payments as a dry run.", listOf("KUBERNETES_MAINTENANCE"), mapOf("scope" to "payments")),
+            accepted("kubernetes-maintenance-dry-run", "Kubernetes maintenance with dry-run", "Perform kubernetes maintenance in namespace payments as a dry run.", listOf("CLUSTER_MAINTENANCE"), mapOf("scope" to "payments")),
             accepted("database-migration-with-backup", "Database migration with backup and rollback", "Create a backup of database orders, run migration v42 on database orders, verify and rollback on failure.", listOf("BACKUP", "DATABASE_MIGRATE", "ROLLBACK"), mapOf("database" to "orders")),
             accepted("certificate-renewal-with-window", "Certificate renewal with maintenance window", "Renew certificate api-tls for api.example.com during the Sunday maintenance window and notify owners.", listOf("CERTIFICATE_RENEW", "NOTIFY"), mapOf("certificate" to "api-tls", "window" to "sunday maintenance")),
             accepted("secret-rotation-with-audit", "Secret rotation with audit notification", "Rotate secret api-token, notify the platform channel and verify rollout.", listOf("SECRET_ROTATE", "APPROVE", "NOTIFY", "VERIFY"), mapOf("secret" to "api-token")),
@@ -270,10 +270,10 @@ object StandardSurface {
             blockedByClarification("cleanup-without-retention", "Cleanup without retention", "Clean up temporary resources.", listOf("CLEANUP"), "safety.cleanup.retention"),
             blockedByClarification("secret-rotation-unnamed-secret", "Secret rotation without a concrete secret name", "Rotate a secret.", listOf("SECRET_ROTATE"), "entities.secret.name"),
             blockedByClarification("certificate-renewal", "Certificate renewal without an identified certificate", "Renew the TLS certificate for the api service.", listOf("CERTIFICATE_RENEW"), "entities.certificate"),
-            blockedByClarification("maintenance-missing-window", "Maintenance without window", "Perform Kubernetes maintenance in production.", listOf("KUBERNETES_MAINTENANCE"), "safety.maintenance.window"),
+            blockedByClarification("maintenance-missing-window", "Maintenance without window", "Perform Kubernetes maintenance in production.", listOf("CLUSTER_MAINTENANCE"), "safety.maintenance.window"),
             blockedByClarification("approval-missing-owner", "Approval without owner", "Deploy payment-api to production after approval.", listOf("DEPLOY", "APPROVE"), "approval.owner"),
             blockedByGate("database-migration-without-backup", "Database migration without backup", "Run a database migration on the orders database.", listOf("DATABASE_MIGRATE"), "SAFETY_REQUIRES_BACKUP"),
-            blockedByGate("kubernetes-maintenance-without-dry-run", "Kubernetes maintenance without dry-run", "Apply cluster maintenance to production now.", listOf("KUBERNETES_MAINTENANCE"), "SAFETY_REQUIRES_DRY_RUN"),
+            blockedByGate("kubernetes-maintenance-without-dry-run", "Kubernetes maintenance without dry-run", "Apply cluster maintenance to production now.", listOf("CLUSTER_MAINTENANCE"), "SAFETY_REQUIRES_DRY_RUN"),
             blockedByGate("prod-deploy-without-approval", "Production deploy without approval", "Deploy billing-api to production without approval.", listOf("DEPLOY"), "SAFETY_REQUIRES_APPROVAL")
         )
         val requiredScenarioIds = scenarios.map { it.id }
@@ -327,7 +327,7 @@ object StandardSurface {
         RequiredClarificationRule("clarify.backup", "DATABASE_MIGRATE", "safety.backup", true, "A database migration must have a backup or restore point."),
         RequiredClarificationRule("clarify.retention", "CLEANUP", "safety.cleanup.retention", true, "A cleanup intent must define retention before lowering."),
         RequiredClarificationRule("clarify.approval-owner", "APPROVE", "approval.owner", true, "A manual approval must identify an owner or approval authority."),
-        RequiredClarificationRule("clarify.maintenance-window", "KUBERNETES_MAINTENANCE", "safety.maintenance.window", true, "Production maintenance must define a safe execution window."),
+        RequiredClarificationRule("clarify.maintenance-window", "CLUSTER_MAINTENANCE", "safety.maintenance.window", true, "Production maintenance must define a safe execution window."),
         RequiredClarificationRule("clarify.secret-name", "SECRET_ROTATE", "entities.secret.name", true, "Secret rotation must identify the concrete secret."),
         RequiredClarificationRule("clarify.certificate", "CERTIFICATE_RENEW", "entities.certificate", true, "Certificate renewal must identify the certificate or DNS name.")
     )
@@ -335,7 +335,7 @@ object StandardSurface {
     fun safetyPolicyMatrix(): List<SafetyPolicyMatrixEntry> = listOf(
         SafetyPolicyMatrixEntry("DATABASE_MIGRATE", "data-loss", listOf("backup", "restore-point", "rollback-plan"), "SAFETY_REQUIRES_BACKUP"),
         SafetyPolicyMatrixEntry("CLEANUP", "destructive-delete", listOf("retention-policy"), "SAFETY_CLEANUP_REQUIRES_RETENTION"),
-        SafetyPolicyMatrixEntry("KUBERNETES_MAINTENANCE", "cluster-outage", listOf("dry-run", "maintenance-window"), "SAFETY_REQUIRES_DRY_RUN"),
+        SafetyPolicyMatrixEntry("CLUSTER_MAINTENANCE", "cluster-outage", listOf("dry-run", "maintenance-window"), "SAFETY_REQUIRES_DRY_RUN"),
         SafetyPolicyMatrixEntry("SECRET_ROTATE", "authentication-breakage", listOf("secret-name", "rollout-verification", "audit-notification"), "SECRET_REQUIRES_SUBJECT"),
         SafetyPolicyMatrixEntry("DEPLOY", "service-outage", listOf("approval", "health-verification", "rollback-plan"), "SAFETY_REQUIRES_APPROVAL"),
         SafetyPolicyMatrixEntry("CERTIFICATE_RENEW", "traffic-interruption", listOf("certificate-identity", "expiry-window", "owner-notification"), "CERTIFICATE_REQUIRES_SUBJECT")

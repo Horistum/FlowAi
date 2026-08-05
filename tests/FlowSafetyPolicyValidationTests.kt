@@ -34,9 +34,9 @@ class FlowSafetyPolicyValidationTests {
     }
 
     @Test
-    fun kubernetesMaintenanceRequiresDryRunWhenPolicySaysSo() {
+    fun clusterMaintenanceRequiresDryRunWhenPolicySaysSo() {
         val report = validate(
-            IntentStep("maintain", StandardCapability.KUBERNETES_MAINTENANCE, params = mapOf("scope" to IntentString("payments"))),
+            IntentStep("maintain", StandardCapability.CLUSTER_MAINTENANCE, params = mapOf("scope" to IntentString("payments"))),
             policies = listOf(IntentPolicy("dry-run-required", IntentPolicyType.SAFETY, "requiresDryRun"))
         )
         assertFalse(report.valid)

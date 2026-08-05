@@ -172,6 +172,7 @@ class PurposeCoverageAnalyzer(
             "CERTIFICATE_RENEW",
             "CHECKOUT",
             "CLEANUP",
+            "CLUSTER_MAINTENANCE",
             "DATABASE_MIGRATE",
             "DEPLOY",
             "NOTIFY",
@@ -185,6 +186,7 @@ class PurposeCoverageAnalyzer(
             "APPROVE",
             "CERTIFICATE_RENEW",
             "CLEANUP",
+            "CLUSTER_MAINTENANCE",
             "DATABASE_MIGRATE",
             "DEPLOY",
             "SECRET_ROTATE"

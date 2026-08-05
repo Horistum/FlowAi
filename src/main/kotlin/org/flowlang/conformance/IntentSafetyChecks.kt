@@ -99,7 +99,7 @@ internal class IntentSafetyChecks(
         require(releaseProfile.requiredConformanceChecks.contains(requiredGate)) {
             "Release profile must require the safety-policy matrix gate."
         }
-        require(matrix.map { it.capability }.toSet().containsAll(setOf("DATABASE_MIGRATE", "CLEANUP", "KUBERNETES_MAINTENANCE", "SECRET_ROTATE", "DEPLOY", "CERTIFICATE_RENEW"))) {
+        require(matrix.map { it.capability }.toSet().containsAll(setOf("DATABASE_MIGRATE", "CLEANUP", "CLUSTER_MAINTENANCE", "SECRET_ROTATE", "DEPLOY", "CERTIFICATE_RENEW"))) {
             "Safety policy matrix must cover destructive and high-risk standard capabilities."
         }
         require(matrix.all { it.requiredMitigations.isNotEmpty() && it.blockingDiagnostic.isNotBlank() }) {

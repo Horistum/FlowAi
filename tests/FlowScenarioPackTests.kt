@@ -126,7 +126,7 @@ class FlowScenarioPackTests {
 
         val k8s = ScenarioPackIntentNormalizer().normalize(AiIntentRequest("Run Kubernetes maintenance in namespace payments, drain nodes with approval, dry-run first and verify pods are healthy."))
         assertTrue(k8s.report.classification.type == "kubernetes-maintenance")
-        assertTrue(k8s.normalizedIntent.workflows.flatMap { it.steps }.any { it.capability == StandardCapability.KUBERNETES_MAINTENANCE })
+        assertTrue(k8s.normalizedIntent.workflows.flatMap { it.steps }.any { it.capability == StandardCapability.CLUSTER_MAINTENANCE })
         assertFullPipeline(k8s)
     }
 
@@ -151,7 +151,6 @@ class FlowScenarioPackTests {
         assertFalse(response.report.classification.type == "deployment")
         assertFalse(response.normalizedIntent.workflows.flatMap { it.steps }.any { it.capability == StandardCapability.DEPLOY })
     }
-
 
     @Test
     fun simpleBackupSubjectBeforeDatabasePassesFullPipeline() {

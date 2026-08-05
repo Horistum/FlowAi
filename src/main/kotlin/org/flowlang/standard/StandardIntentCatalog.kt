@@ -51,7 +51,14 @@ object StandardIntentCatalog {
         def(StandardCapability.DEPROVISION, "infrastructure", "draft", "Remove infrastructure/resources.", listOf("standard", "kubernetes"), listOf("What safety rule is required?")),
         def(StandardCapability.DATABASE_MIGRATE, "data", "draft", "Apply database schema or data migrations with backup, validation and rollback planning.", listOf("database", "standard"), listOf("Which database is targeted?", "Which migration source/version should be applied?", "What backup and rollback plan is required?")),
         def(StandardCapability.CERTIFICATE_RENEW, "security", "draft", "Renew, deploy and verify a certificate without fabricating provider or expiry details.", listOf("standard", "kubernetes", "rest"), listOf("Which certificate should be renewed?", "Which provider or secret store owns it?", "Which service must be verified after renewal?")),
-        def(StandardCapability.KUBERNETES_MAINTENANCE, "operations", "draft", "Run Kubernetes maintenance with explicit scope, dry-run/approval and verification.", listOf("kubernetes", "standard"), listOf("Which cluster/namespace/resource scope is affected?", "Is the operation destructive or production-impacting?", "What verification confirms recovery?")),
+        def(
+            StandardCapability.CLUSTER_MAINTENANCE,
+            "operations",
+            "draft",
+            "Run cluster maintenance with explicit scope, dry-run/approval and verification.",
+            listOf("standard", "kubernetes"),
+            listOf("Which cluster, namespace or resource scope is affected?", "Is the operation destructive or production-impacting?", "What verification confirms recovery?")
+        ),
         def(StandardCapability.RUNBOOK, "operations", "draft", "Execute a guided operational runbook.", listOf("standard", "rest")),
         def(StandardCapability.INCIDENT, "operations", "draft", "Handle an incident workflow.", listOf("standard", "notify", "rest")),
         def(StandardCapability.SECRET_ROTATE, "security", "draft", "Rotate secrets or credentials.", listOf("standard", "rest", "kubernetes"), listOf("Which secret provider owns the credential?")),

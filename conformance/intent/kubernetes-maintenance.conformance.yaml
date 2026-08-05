@@ -9,7 +9,7 @@ expected:
   scenario: kubernetes-maintenance
   capabilities:
     - APPROVE
-    - KUBERNETES_MAINTENANCE
+    - CLUSTER_MAINTENANCE
     - VALIDATE
   safety:
     - requiresApproval

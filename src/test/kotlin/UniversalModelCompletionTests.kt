@@ -98,14 +98,18 @@ class UniversalModelCompletionTests {
     @Test
     fun missingProjectionRuleFailsClosedInsteadOfBecomingExecutable() {
         val plan = ExecutionPlan(
-            flowName = "unknown-action",
-            nodes = listOf(TaskNode(
-                "work",
-                module = "custom",
-                action = "do",
-                target = "custom",
-                requiredCapabilities = listOf("custom.do")
-            ))
+            flowName = "missing-projection-rule",
+            nodes = listOf(
+                TaskNode(
+                    id = "work",
+                    module = "notify",
+                    action = "send",
+                    target = "notify",
+                    params = mapOf("subject" to "projection review"),
+                    requiredCapabilities = listOf("notification.send"),
+                    effectModel = moduleEffects("notify", "send")
+                )
+            )
         )
         val manifest = projectionPipeline.generate(testMaterializationRequest(plan, "jenkins", targets))
         val step = manifest.jobs.single().steps.single()

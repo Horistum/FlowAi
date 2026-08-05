@@ -255,6 +255,7 @@ object IntentYamlLoader {
         if (normalized == "SCHEDULE") {
             fail("REMOVED_SCHEDULE_CAPABILITY", path, source, "Intent step '$stepId' uses removed capability SCHEDULE. Declare a top-level trigger with type: SCHEDULE instead.")
         }
+        StandardCapabilityCompatibility.resolveSourceName(normalized)?.let { return it }
         return enumValues<StandardCapability>().firstOrNull { it.name == normalized }
             ?: fail("UNKNOWN_STANDARD_CAPABILITY", path, source, "Intent step '$stepId' uses unknown capability '$value'.")
     }

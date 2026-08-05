@@ -88,7 +88,7 @@ internal class ScenarioAndPlanChecks(
 
         val k8s = normalizer.normalize(AiIntentRequest("Run Kubernetes maintenance in namespace payments, drain nodes with approval, dry-run first and verify pods are healthy."))
         require(k8s.report.classification.type == "kubernetes-maintenance") { "Kubernetes request must select kubernetes-maintenance pack." }
-        require(k8s.normalizedIntent.workflows.flatMap { it.steps }.any { it.capability.name == "KUBERNETES_MAINTENANCE" }) { "Kubernetes maintenance pack must emit KUBERNETES_MAINTENANCE." }
+        require(k8s.normalizedIntent.workflows.flatMap { it.steps }.any { it.capability.name == "CLUSTER_MAINTENANCE" }) { "Kubernetes maintenance pack must emit target-neutral CLUSTER_MAINTENANCE." }
         IntentCapabilityValidator(registry).validate(k8s.normalizedIntent).assertValid()
 
         val missingDb = normalizer.normalize(AiIntentRequest("Run database migration tomorrow."))

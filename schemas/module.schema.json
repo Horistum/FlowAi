@@ -119,7 +119,7 @@
                 "DEPROVISION",
                 "DATABASE_MIGRATE",
                 "CERTIFICATE_RENEW",
-                "KUBERNETES_MAINTENANCE",
+                "CLUSTER_MAINTENANCE",
                 "RUNBOOK",
                 "INCIDENT",
                 "SECRET_ROTATE",
