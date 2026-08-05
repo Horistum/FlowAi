@@ -14,8 +14,9 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
  * Core pre-closure list is built independently and is the only input accepted
  * by [SemanticClosureChecks]. Frozen A0 adapter certification runs next. New
  * adapter evolution is composed through a separate post-A0 inventory. Bounded
- * C0.1 corpus evidence follows, and C0.2 topology evidence is appended through
- * its own inventory so no later stream can rewrite an earlier boundary.
+ * C0.1 corpus evidence follows, C0.2 topology evidence remains independently
+ * inventoried, and C0.3 semantic equivalence is appended last so it cannot
+ * rewrite any earlier authority or treat implementation output as Core meaning.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
@@ -34,9 +35,11 @@ class ConformanceRunner(
         val adapterEvolutionChecks = AdapterExecutableContinuityConformanceRunner(rootDir, targets, projections).checks()
         val realWorldChecks = RealWorldCorpusConformanceChecks(rootDir, registry, targets, projections).checks()
         val topologyMatrixChecks = AbstractTopologyMatrixConformanceRunner(rootDir, registry, targets).checks()
+        val semanticEquivalenceChecks = SemanticEquivalenceConformanceRunner(rootDir, registry).checks()
 
         return ConformanceSummary(
-            preClosureChecks + closureChecks + adapterChecks + adapterEvolutionChecks + realWorldChecks + topologyMatrixChecks
+            preClosureChecks + closureChecks + adapterChecks + adapterEvolutionChecks +
+                realWorldChecks + topologyMatrixChecks + semanticEquivalenceChecks
         )
     }
 
