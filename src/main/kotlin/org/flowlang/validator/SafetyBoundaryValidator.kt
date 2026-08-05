@@ -1,4 +1,3 @@
-
 package org.flowlang.validator
 
 import org.flowlang.ast.ActionNode
@@ -152,7 +151,16 @@ class SafetyBoundaryValidator(
         approval: ApprovalState,
         environmentDomains: Map<String, Set<String>>
     ) {
-        val contract = registry.findAction(action.module, action.action) ?: return
+        val contract = registry.findAction(action.module, action.action)
+        if (contract == null) {
+            issues += ValidationIssue(
+                level = "error",
+                code = "SAFETY_ACTION_CONTRACT_UNKNOWN",
+                message = "Safety evaluation cannot authorize unknown action '${action.module}.${action.action}'. Register and validate the action contract before planning or target projection.",
+                location = action.sourceLocation
+            )
+            return
+        }
         val actionApproval = action.safety?.let { safety ->
             safety.rule.trim() == "requiresApproval" && safety.condition == null
         } == true
