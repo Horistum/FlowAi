@@ -4,11 +4,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.flowlang.conformance.ReferenceSnapshotBundleGenerator
 import org.flowlang.conformance.SemanticEquivalenceAuthority
 import org.flowlang.conformance.SemanticEquivalenceDecisionStatus
 import org.flowlang.conformance.SemanticEquivalenceFixture
 import org.flowlang.conformance.SemanticEquivalenceLoader
 import org.flowlang.conformance.SemanticEquivalencePlanFactory
+import org.flowlang.conformance.SemanticImplementationObservationAuthority
 import org.flowlang.conformance.SemanticObservationAuthority
 import org.flowlang.conformance.SemanticObservationEvidenceStatus
 import org.flowlang.conformance.SemanticObservationKind
@@ -29,6 +31,30 @@ class SemanticEquivalenceAuthorityTests {
         assertTrue(report.independenceErrors.isEmpty())
         assertTrue(report.concreteReferenceErrors.isEmpty())
         assertTrue(report.boundaryErrors.isEmpty())
+    }
+
+    @Test
+    fun concreteProfilesUseTargetBackedEvidenceForEveryObservation() {
+        val plan = ReferenceSnapshotBundleGenerator(File("."), modules).planFor(
+            File("examples/intent/checkout-build-image.intent.yaml")
+        )
+        val requirements = SemanticObservationAuthority.requirementsFor(plan)
+        val authority = SemanticImplementationObservationAuthority(File("."))
+
+        listOf("jenkins", "github-actions").forEach { target ->
+            val profile = authority.profile(
+                plan = plan,
+                target = target,
+                scenarioId = "jenkins-github-actions-checkout-build-image",
+                requirements = requirements
+            )
+            val assessment = SemanticObservationAuthority.assess(requirements, profile.evidence)
+
+            assertEquals(requirements.size, profile.evidence.size, target)
+            assertEquals(SemanticEquivalenceDecisionStatus.EQUIVALENT, assessment.decision.status, target)
+            assertTrue(profile.evidence.all { it.status == SemanticObservationEvidenceStatus.PRESERVED }, target)
+            assertTrue(profile.evidence.all { it.evidenceReference.startsWith("$target:") }, target)
+        }
     }
 
     @Test
