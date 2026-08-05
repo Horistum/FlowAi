@@ -83,7 +83,7 @@ class SafetyBoundaryHardeningTests {
             system "standard" { type: standard }
           }
           steps {
-            standard.not-registered standard {
+            standard.unknown standard {
               operation: "maintenance"
             }
           }
