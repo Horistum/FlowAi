@@ -19,6 +19,83 @@ jobs:
           ref: agent/c0-3-semantic-equivalence-rules
           fetch-depth: 0
 
+      - name: Narrow repository-state assertions
+        shell: python
+        run: |
+          from pathlib import Path
+
+          script = Path('.github/scripts/c0_3_finalize.py')
+          text = script.read_text(encoding='utf-8')
+
+          old_lifecycle = '''lifecycle_test = "src/test/kotlin/SemanticEquivalenceRoadmapLifecycleAuthorityTests.kt"
+          replace_once(lifecycle_test, "fun repositoryIsOneValidValidatingBoundary()", "fun repositoryIsOneValidCompletedBoundary()")
+          replace_once(
+              lifecycle_test,
+              "assertEquals(SemanticEquivalenceLifecyclePhase.VALIDATING, report.phase)",
+              "assertEquals(SemanticEquivalenceLifecyclePhase.COMPLETED, report.phase)"
+          )'''
+          new_lifecycle = '''lifecycle_test = "src/test/kotlin/SemanticEquivalenceRoadmapLifecycleAuthorityTests.kt"
+          replace_once(
+              lifecycle_test,
+              ''' + "'''" + '''    @Test
+              fun repositoryIsOneValidValidatingBoundary() {
+                  val report = SemanticEquivalenceRoadmapLifecycleAuthority(File(".")).analyze()
+
+                  assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+                  assertEquals(SemanticEquivalenceLifecyclePhase.VALIDATING, report.phase)
+              }''' + "'''" + ''',
+              ''' + "'''" + '''    @Test
+              fun repositoryIsOneValidCompletedBoundary() {
+                  val report = SemanticEquivalenceRoadmapLifecycleAuthority(File(".")).analyze()
+
+                  assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+                  assertEquals(SemanticEquivalenceLifecyclePhase.COMPLETED, report.phase)
+              }''' + "'''" + '''
+          )'''
+
+          old_transition = '''transition_test = "src/test/kotlin/RoadmapStreamTransitionAuthorityTests.kt"
+          replace_once(transition_test, "fun repositoryActivatesC03AfterCompletedC02()", "fun repositoryActivatesC04AfterCompletedC03()")
+          replace_once(
+              transition_test,
+              "expected = RoadmapTransitionPhase.C0_3_ACTIVE,",
+              "expected = RoadmapTransitionPhase.C0_4_ACTIVE,"
+          )'''
+          new_transition = '''transition_test = "src/test/kotlin/RoadmapStreamTransitionAuthorityTests.kt"
+          replace_once(
+              transition_test,
+              ''' + "'''" + '''    @Test
+              fun repositoryActivatesC03AfterCompletedC02() {
+                  val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
+                  assertEquals(
+                      expected = RoadmapTransitionPhase.C0_3_ACTIVE,
+                      actual = report.phase,
+                      message = report.errors.joinToString(" | ")
+                  )
+                  assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+              }''' + "'''" + ''',
+              ''' + "'''" + '''    @Test
+              fun repositoryActivatesC04AfterCompletedC03() {
+                  val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
+                  assertEquals(
+                      expected = RoadmapTransitionPhase.C0_4_ACTIVE,
+                      actual = report.phase,
+                      message = report.errors.joinToString(" | ")
+                  )
+                  assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+              }''' + "'''" + '''
+          )'''
+
+          for old, new, label in (
+              (old_lifecycle, new_lifecycle, 'lifecycle repository block'),
+              (old_transition, new_transition, 'transition repository block'),
+          ):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected one {label}, found {count}')
+              text = text.replace(old, new, 1)
+
+          script.write_text(text, encoding='utf-8')
+
       - name: Finalize C0.3 lifecycle and roadmap atomically
         run: python3 .github/scripts/c0_3_finalize.py
 
