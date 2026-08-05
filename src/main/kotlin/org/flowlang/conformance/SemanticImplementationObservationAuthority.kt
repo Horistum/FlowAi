@@ -223,10 +223,12 @@ class SemanticImplementationObservationAuthority(
         )
     }
 
-    private fun nativeWitness(step: TargetStep, target: String): Boolean =
-        step.materialization.status == TargetMaterializationStatus.NATIVE &&
-            step.rendererPayload?.target == target &&
-            !step.rendererPayload.evidenceReference.isBlank()
+    private fun nativeWitness(step: TargetStep, target: String): Boolean {
+        val payload = step.rendererPayload ?: return false
+        return step.materialization.status == TargetMaterializationStatus.NATIVE &&
+            payload.target == target &&
+            payload.evidenceReference.isNotBlank()
+    }
 
     private fun evidence(
         requirement: SemanticObservationRequirement,
