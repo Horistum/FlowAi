@@ -6,11 +6,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.flowlang.adapters.continuity.AdapterContinuityClaimStatus
 import org.flowlang.adapters.continuity.AdapterContinuityDecision
+import org.flowlang.adapters.continuity.AdapterContinuityEvidenceLoader
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceStatus
 import org.flowlang.adapters.continuity.AdapterContinuityFamily
 import org.flowlang.adapters.continuity.AdapterContinuitySatisfactionAuthority
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupportIntegrityAuthority
+import org.flowlang.adapters.continuity.AdapterContinuitySemanticContract
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityReport
@@ -121,7 +124,31 @@ class AdapterContinuityProviderBehaviorTests {
     }
 
     @Test
-    fun githubActionsTransferContractReconstructsExactProducerBytes() {
+    fun genericGithubActionsArtifactEvidenceAcknowledgesScopedExceptionAndFidelityLimits() {
+        val claim = AdapterContinuityEvidenceLoader.load(root)
+            .targets.single { it.target == "github-actions" }
+            .claims.single { it.family == AdapterContinuityFamily.ARTIFACT }
+
+        assertEquals(AdapterContinuityClaimStatus.UNSUPPORTED, claim.status)
+        assertTrue(claim.mechanism.startsWith("Generic GitHub Actions workspace continuity remains unsupported."))
+        assertTrue(claim.mechanism.contains("actions/upload-artifact@v7"))
+        assertTrue(claim.mechanism.contains("actions/download-artifact@v8"))
+        assertTrue(
+            claim.semantics.unsupported
+                .getValue(AdapterContinuitySemanticContract.ARTIFACT_SHARED_WORKSPACE)
+                .contains("outside the exact scoped declaration")
+        )
+        assertTrue(claim.evidenceReferences.any { it.endsWith("AdapterContinuityScopedSupport.kt") })
+        assertTrue(claim.evidenceReferences.any { it.endsWith("GitHubActionsWorkspaceContinuityPlanner.kt") })
+        assertTrue(claim.evidenceReferences.any { it.endsWith("github-actions.executable.yaml") })
+        assertTrue(claim.prerequisites.any { it.contains("claim generic support") })
+        assertTrue(claim.limitations.any { it.contains("target-wide support") })
+        assertTrue(claim.limitations.any { it.contains("Unix mode bits") })
+        assertTrue(claim.limitations.any { it.contains("symbolic-link identity") })
+    }
+
+    @Test
+    fun githubActionsTransferContractReconstructsRegularFileBytesInTheBoundedLocalModel() {
         val plan = referencePlan()
         val provider = BuiltInTargetProjections.registry.requireProvider("github-actions")
         val target = targets.getValue("github-actions")
