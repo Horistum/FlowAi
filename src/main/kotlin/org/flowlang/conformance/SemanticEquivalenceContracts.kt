@@ -172,11 +172,14 @@ data class SemanticEquivalenceDocument(
         require(cases.map(SemanticEquivalenceCase::id).size == cases.map(SemanticEquivalenceCase::id).toSet().size) {
             "Semantic equivalence case ids must be unique."
         }
+        require(concretePairs.size == 1) {
+            "Semantic equivalence rules must declare exactly one bounded concrete implementation pair."
+        }
         require(concretePairs.map(SemanticEquivalenceConcretePair::id).size == concretePairs.map(SemanticEquivalenceConcretePair::id).toSet().size) {
             "Semantic equivalence concrete pair ids must be unique."
         }
-        require(concretePairs.map { setOf(it.leftTarget, it.rightTarget) }.toSet() == setOf(REQUIRED_REFERENCE_TARGETS)) {
-            "Semantic equivalence concrete pairs must compare exactly ${REQUIRED_REFERENCE_TARGETS.sorted()}."
+        require(setOf(concretePairs.single().leftTarget, concretePairs.single().rightTarget) == REQUIRED_REFERENCE_TARGETS) {
+            "Semantic equivalence concrete pair must compare exactly ${REQUIRED_REFERENCE_TARGETS.sorted()}."
         }
     }
 
@@ -190,9 +193,10 @@ object SemanticObservationIdentity {
     fun requirementId(
         kind: SemanticObservationKind,
         subject: String,
+        value: String,
         producerIdentity: String? = null,
         consumerIdentity: String? = null
-    ): String = "semantic.${kind.documentValue}.${fingerprint(kind.name, subject, producerIdentity, consumerIdentity).take(20)}"
+    ): String = "semantic.${kind.documentValue}.${fingerprint(kind.name, subject, value, producerIdentity, consumerIdentity).take(20)}"
 
     fun fingerprint(vararg parts: String?): String {
         val canonical = parts.joinToString(separator = "|") { part ->
