@@ -1,11 +1,26 @@
 package org.flowlang.intent
 
 /**
- * Source-compatibility alias for callers compiled against the pre-neutrality API.
+ * Explicit source-compatibility boundary for retired capability identifiers.
  *
- * The alias is deliberately not an enum entry, is absent from [enumValues], and
- * always resolves to the target-neutral canonical capability. New code and all
- * serialized standard contracts must use [StandardCapability.CLUSTER_MAINTENANCE].
+ * Legacy names are deliberately absent from [StandardCapability.values] and all
+ * normative schemas. They may be accepted only at source boundaries and always
+ * normalize to a target-neutral canonical capability.
+ */
+object StandardCapabilityCompatibility {
+    private val sourceAliases: Map<String, StandardCapability> = mapOf(
+        "KUBERNETES_MAINTENANCE" to StandardCapability.CLUSTER_MAINTENANCE
+    )
+
+    fun resolveSourceName(normalizedName: String): StandardCapability? =
+        sourceAliases[normalizedName]
+
+    val retiredSourceNames: Set<String> get() = sourceAliases.keys
+}
+
+/**
+ * Source-code compatibility alias for callers compiled against the pre-neutrality
+ * API. The alias is not an enum entry and cannot appear in canonical iteration.
  */
 @Deprecated(
     message = "Use CLUSTER_MAINTENANCE. The legacy platform-specific name is a source-only compatibility alias.",
