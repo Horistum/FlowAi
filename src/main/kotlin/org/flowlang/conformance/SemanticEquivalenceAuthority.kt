@@ -206,8 +206,8 @@ class SemanticEquivalenceAuthority(
                 add("Concrete pair '${pair.id}' GitHub Actions evidence is not backed by the bounded A1.0 promotion authority.")
             }
 
-            val left = validateSnapshot(pair.id, pair.leftTarget, pair.leftSnapshot)
-            val right = validateSnapshot(pair.id, pair.rightTarget, pair.rightSnapshot)
+            val left = validateSnapshot(pair.id, pair.scenarioId, pair.leftTarget, pair.leftSnapshot)
+            val right = validateSnapshot(pair.id, pair.scenarioId, pair.rightTarget, pair.rightSnapshot)
             addAll(left.errors)
             addAll(right.errors)
             val productionTree = runCatching {
@@ -243,7 +243,7 @@ class SemanticEquivalenceAuthority(
                 implementationEvidenceAuthority.profile(
                     plan = plan,
                     target = pair.leftTarget,
-                    scenarioId = pair.id,
+                    scenarioId = pair.scenarioId,
                     requirements = requirements
                 )
             }
@@ -251,7 +251,7 @@ class SemanticEquivalenceAuthority(
                 implementationEvidenceAuthority.profile(
                     plan = plan,
                     target = pair.rightTarget,
-                    scenarioId = pair.id,
+                    scenarioId = pair.scenarioId,
                     requirements = requirements
                 )
             }
@@ -328,7 +328,12 @@ class SemanticEquivalenceAuthority(
         )
     }
 
-    private fun validateSnapshot(pairId: String, target: String, path: String): SnapshotValidation {
+    private fun validateSnapshot(
+        pairId: String,
+        scenarioId: String,
+        target: String,
+        path: String
+    ): SnapshotValidation {
         val errors = mutableListOf<String>()
         val indexFile = File(rootDir, path)
         if (!indexFile.isFile) {
@@ -344,8 +349,8 @@ class SemanticEquivalenceAuthority(
         ReferenceSnapshotHonesty.validate(snapshot).forEach {
             errors += "Concrete pair '$pairId' invalid snapshot '$path': $it"
         }
-        if (snapshot.scenarioId != pairId) {
-            errors += "Concrete pair '$pairId' snapshot '$path' declares scenario '${snapshot.scenarioId}'."
+        if (snapshot.scenarioId != scenarioId) {
+            errors += "Concrete pair '$pairId' snapshot '$path' declares scenario '${snapshot.scenarioId}', expected '$scenarioId'."
         }
         val state = snapshot.targets.singleOrNull()
         if (state == null || state.target != target || !state.executable) {
