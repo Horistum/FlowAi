@@ -152,20 +152,24 @@ targets:
           - "Job ordering does not prove data transfer."
       - family: ARTIFACT
         status: UNSUPPORTED
-        mechanism: "The job-per-task projection does not emit upload/download actions for the resolved Flow workspace path."
+        mechanism: "Generic GitHub Actions workspace continuity remains unsupported. The exact git.checkout to docker.build source-channel reference is a bounded scoped exception that emits actions/upload-artifact@v7 and actions/download-artifact@v8."
         semantics:
           supported: []
           unsupported:
-            artifact.shared-workspace: "Independent jobs do not share a workspace and no transfer pair is generated."
+            artifact.shared-workspace: "Independent jobs do not share a workspace by default; outside the exact scoped declaration no provider-owned transfer pair is generated."
           unknown: {}
         evidenceReferences:
           - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
           - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+          - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedSupport.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt"
           - "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt"
+          - "conformance/snapshots/github-actions-checkout-build-image/github-actions.executable.yaml"
         prerequisites:
-          - "Add explicit artifact upload/download identities derived from the resolved WORKSPACE relation."
+          - "To claim generic support, generalize the scoped transfer contract to arbitrary admitted producer, consumer and channel combinations with independent behavioral evidence."
         limitations:
-          - "Native checkout and image-build leaves alone do not establish cross-job continuity."
+          - "The bounded checkout-build-image exception must not be interpreted as target-wide support."
+          - "The zipped artifact path preserves tested regular-file bytes, relative paths and hidden entries but does not preserve Unix mode bits; symbolic-link identity is not certified."
       - family: MUTABLE_STATE
         status: UNSUPPORTED
         mechanism: "The GitHub Actions provider has no generic mutable-state transfer contract."
@@ -258,7 +262,7 @@ targets:
             state.durable.workflow: "No persistence class, identity and restoration binding is generated for Flow STATE relations."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+          - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
           - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
           - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
         prerequisites:
@@ -388,6 +392,6 @@ targets:
           - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.azure-devops"
           - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
         prerequisites:
-          - "Compose an Azure DevOps provider and behavioral fixtures."
+          - "Compose a concrete Azure DevOps provider and behavioral fixtures."
         limitations:
           - "Profile persistence is not executable evidence."
