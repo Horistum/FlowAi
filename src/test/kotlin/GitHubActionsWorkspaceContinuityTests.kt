@@ -23,19 +23,24 @@ class GitHubActionsWorkspaceContinuityTests {
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
 
     @Test
-    fun boundedScopeIsExactAndRepositoryBacked() {
+    fun boundedScopeIsExactRepositoryBackedAndFidelityLimited() {
         val scope = BuiltInAdapterContinuityScopedSupport.githubActionsCheckoutBuildWorkspace
         assertEquals("github-actions", scope.target)
         assertEquals("git.checkout", scope.sourceAction)
         assertEquals("docker.build", scope.targetAction)
         assertEquals("source", scope.channel)
         assertEquals(listOf("git.checkout", "docker.build"), scope.exactPlanActions)
+        assertTrue(scope.limitations.any { it.contains("regular-file bytes") })
+        assertTrue(scope.limitations.any { it.contains("Unix mode bits") })
+        assertTrue(scope.limitations.any { it.contains("Symbolic-link identity") })
 
         val report = AdapterContinuityScopedSupportIntegrityAuthority(root).analyze()
         assertEquals("PASS", report.status, report.findings.joinToString { "${it.code}:${it.message}" })
         assertEquals(1, report.declarationCount)
         assertTrue(scope.evidenceReferences.any { it.startsWith("src/main/") })
         assertTrue(scope.evidenceReferences.any { it.startsWith("src/test/") })
+        assertTrue(scope.evidenceReferences.any { it.endsWith("github-actions.executable.yaml") })
+        assertTrue(scope.evidenceReferences.any { it.endsWith("A1_0_GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md") })
     }
 
     @Test
