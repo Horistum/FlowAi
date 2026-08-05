@@ -1,0 +1,9 @@
+version: "1.0"
+checks:
+  - "conformance.c0.3.lifecycle-integrity"
+  - "conformance.c0.3.rules-schema-integrity"
+  - "conformance.c0.3.observation-coverage"
+  - "conformance.c0.3.mutation-polarity"
+  - "conformance.c0.3.implementation-independence"
+  - "conformance.c0.3.concrete-reference-equivalence"
+  - "conformance.c0.3.frozen-boundary-preservation"
