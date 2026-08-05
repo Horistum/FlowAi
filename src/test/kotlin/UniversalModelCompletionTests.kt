@@ -102,12 +102,12 @@ class UniversalModelCompletionTests {
             nodes = listOf(
                 TaskNode(
                     id = "work",
-                    module = "standard",
-                    action = "execute",
-                    target = "standard",
-                    params = mapOf("operation" to "custom-review-only-work"),
-                    requiredCapabilities = listOf("standard.execute"),
-                    effectModel = moduleEffects("standard", "execute")
+                    module = "notify",
+                    action = "send",
+                    target = "notify",
+                    params = mapOf("subject" to "projection review"),
+                    requiredCapabilities = listOf("notification.send"),
+                    effectModel = moduleEffects("notify", "send")
                 )
             )
         )
