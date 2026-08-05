@@ -49,6 +49,10 @@ class SemanticImplementationObservationAuthority(
         requirements: List<SemanticObservationRequirement> = SemanticObservationAuthority.requirementsFor(plan)
     ): SemanticImplementationObservationProfile {
         require(target in targets) { "Unknown semantic implementation evidence target '$target'." }
+        val derivedRequirements = SemanticObservationAuthority.requirementsFor(plan)
+        require(requirements == derivedRequirements) {
+            "Target-backed semantic evidence must consume the exact observation set derived from the supplied plan."
+        }
         val selection = TargetSelectionAuthority.fromReferenceSnapshot(
             value = target,
             scenarioId = scenarioId,
@@ -197,7 +201,7 @@ class SemanticImplementationObservationAuthority(
         val matched = adapterRequirements.filter {
             it.sourceNodeId == sourceTask.id &&
                 it.targetNodeId == targetTask.id &&
-                it.channel == requirement.value &&
+                (it.channel ?: DEFAULT_CONTINUITY_CHANNEL) == requirement.value &&
                 it.relationKind == relationKind
         }
         if (matched.isEmpty()) return null
@@ -248,4 +252,8 @@ class SemanticImplementationObservationAuthority(
 
     private fun semanticIdentity(task: TaskNode): String =
         task.sourceId?.takeIf(String::isNotBlank) ?: task.id
+
+    companion object {
+        private const val DEFAULT_CONTINUITY_CHANNEL = "default"
+    }
 }
