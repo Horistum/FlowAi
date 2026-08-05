@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.conformance.ReferenceSnapshotBundleGenerator
 import org.flowlang.conformance.SemanticEquivalenceAuthority
 import org.flowlang.conformance.SemanticEquivalenceDecisionStatus
@@ -14,6 +15,7 @@ import org.flowlang.conformance.SemanticImplementationObservationAuthority
 import org.flowlang.conformance.SemanticObservationAuthority
 import org.flowlang.conformance.SemanticObservationEvidenceStatus
 import org.flowlang.conformance.SemanticObservationKind
+import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.PlanDependencyResolution
 
@@ -40,12 +42,18 @@ class SemanticEquivalenceAuthorityTests {
         )
         val requirements = SemanticObservationAuthority.requirementsFor(plan)
         val authority = SemanticImplementationObservationAuthority(File("."))
+        val committedArtifacts = mapOf(
+            "jenkins" to File("conformance/snapshots/checkout-build-image/jenkins.executable.yaml"),
+            "github-actions" to File(
+                "conformance/snapshots/github-actions-checkout-build-image/github-actions.executable.yaml"
+            )
+        )
 
         listOf("jenkins", "github-actions").forEach { target ->
             val profile = authority.profile(
                 plan = plan,
                 target = target,
-                scenarioId = "jenkins-github-actions-checkout-build-image",
+                scenarioId = "checkout-build-image",
                 requirements = requirements
             )
             val assessment = SemanticObservationAuthority.assess(requirements, profile.evidence)
@@ -54,7 +62,30 @@ class SemanticEquivalenceAuthorityTests {
             assertEquals(SemanticEquivalenceDecisionStatus.EQUIVALENT, assessment.decision.status, target)
             assertTrue(profile.evidence.all { it.status == SemanticObservationEvidenceStatus.PRESERVED }, target)
             assertTrue(profile.evidence.all { it.evidenceReference.startsWith("$target:") }, target)
+            assertEquals(TargetRenderMode.EXECUTABLE, profile.rendering.receipt.renderMode, target)
+            assertEquals(AdapterRenderedArtifactKind.EXECUTABLE_TARGET, profile.rendering.artifact.kind, target)
+            assertEquals(profile.rendering.artifact.sha256, profile.rendering.receipt.artifactSha256, target)
+            assertEquals(committedArtifacts.getValue(target).readText(), profile.rendering.artifact.content, target)
         }
+    }
+
+    @Test
+    fun implementationProfileRejectsCallerSuppliedObservationSubset() {
+        val plan = ReferenceSnapshotBundleGenerator(File("."), modules).planFor(
+            File("examples/intent/checkout-build-image.intent.yaml")
+        )
+        val requirements = SemanticObservationAuthority.requirementsFor(plan)
+
+        val failure = assertFailsWith<IllegalArgumentException> {
+            SemanticImplementationObservationAuthority(File(".")).profile(
+                plan = plan,
+                target = "jenkins",
+                scenarioId = "checkout-build-image",
+                requirements = requirements.dropLast(1)
+            )
+        }
+
+        assertTrue(failure.message.orEmpty().contains("exact observation set"))
     }
 
     @Test
