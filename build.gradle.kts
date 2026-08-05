@@ -28,3 +28,10 @@ sourceSets {
         resources.srcDirs("src/test/resources")
     }
 }
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
