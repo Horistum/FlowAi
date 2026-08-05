@@ -24,7 +24,7 @@ A semantic equivalence decision has only two states:
 - `EQUIVALENT`: the requirement set is non-empty and every required observation has exactly one matching `PRESERVED` evidence record.
 - `NOT_EQUIVALENT`: one or more observations are missing, weakened, unknown, contradictory, duplicated, fingerprint-mismatched or undeclared.
 
-An empty requirement set never certifies equivalence. Vacuous success would prove only that nothing was checked, an achievement already well represented elsewhere in software engineering.
+An empty requirement set never certifies equivalence because it provides no positive observation coverage.
 
 The mutation matrix independently proves rejection polarity for every required observation:
 
