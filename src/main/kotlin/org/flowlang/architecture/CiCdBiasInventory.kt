@@ -142,7 +142,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             lines.flatMapIndexed { index, line ->
                 catalog().filter { term -> line.contains(term.term, ignoreCase = true) }
                     .map { term ->
-                        val context = structuredContext(relative, classification, line)
+                        val context = structuredContext(relative, classification, line, term.term)
                         evidence(relative, index + 1, term, classification, line, context)
                     }
             }
@@ -155,8 +155,8 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         spanKind: KotlinSpanKind,
         term: String
     ): CiCdBiasLexicalContext = when {
-        classification == COMPATIBILITY_BOUNDARY -> CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
-        classification == DESCRIPTIVE_CATALOG || line.contains("CiCdBiasTerm(") ->
+        line.contains("CiCdBiasTerm(") ||
+            (classification == DESCRIPTIVE_CATALOG && line.contains("catalogModules(")) ->
             CiCdBiasLexicalContext.CATALOG_DECLARATION
         spanKind == KotlinSpanKind.CODE -> CiCdBiasLexicalContext.CODE_IDENTIFIER
         isControlLiteral(line, term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
@@ -168,12 +168,15 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     private fun structuredContext(
         path: String,
         classification: String,
-        line: String
+        line: String,
+        term: String
     ): CiCdBiasLexicalContext = when {
-        classification == COMPATIBILITY_BOUNDARY -> CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
-        classification == DESCRIPTIVE_CATALOG -> CiCdBiasLexicalContext.CATALOG_DECLARATION
-        classification in PRODUCTION_CLASSIFICATIONS && path.startsWith("schemas/") && !isDescriptiveStructuredLine(line) ->
-            CiCdBiasLexicalContext.STRUCTURED_CONTROL
+        path == STANDARD_CAPABILITY_ALIAS_MANIFEST && isCompatibilityAliasSource(line, term) ->
+            CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
+        isControlLiteral(line, term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
+        classification in GOVERNED_PRODUCTION_CLASSIFICATIONS &&
+            path.startsWith("schemas/") &&
+            !isDescriptiveStructuredLine(line) -> CiCdBiasLexicalContext.STRUCTURED_CONTROL
         else -> CiCdBiasLexicalContext.STRUCTURED_TEXT
     }
 
@@ -188,7 +191,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         snippet: String,
         context: CiCdBiasLexicalContext
     ): CiCdBiasEvidence {
-        val actionable = classification in PRODUCTION_CLASSIFICATIONS &&
+        val actionable = classification in GOVERNED_PRODUCTION_CLASSIFICATIONS &&
             term.category in ACTIONABLE_CATEGORIES &&
             context in ACTIONABLE_CONTEXTS
         return CiCdBiasEvidence(
@@ -206,13 +209,27 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     private fun isControlLiteral(line: String, term: String): Boolean {
         val escaped = Regex.escape(term.lowercase())
         val quotedTerm = "[\\\"']$escaped[\\\"']"
+        val quotedOrBareTerm = "(?:$quotedTerm|\\b$escaped\\b)"
         val namedAssignment = Regex(
-            "(?i)\\b(default(?:target|provider|platform|tool|engine)?|target|provider|platform|backend|implementation|engine|tool|adapter|runtime)\\b\\s*[:=].*$quotedTerm"
+            "(?i)\\b(default(?:target|provider|platform|tool|engine)?|target|provider|platform|backend|implementation|engine|tool|adapter|runtime)\\b\\s*[:=].*$quotedOrBareTerm"
         )
+        val predicateCall = Regex(
+            "(?i)\\b(contains|containsKey|startsWith|endsWith|matches|find|matchEntire)\\s*\\(\\s*$quotedTerm"
+        )
+        val regexConstruction = Regex("(?i)\\bRegex\\s*\\(\\s*$quotedTerm")
         return namedAssignment.containsMatchIn(line) ||
             Regex("(?i)(==|!=)\\s*$quotedTerm").containsMatchIn(line) ||
             Regex("(?i)$quotedTerm\\s*(==|!=|->)").containsMatchIn(line) ||
-            (line.contains("setOf(", ignoreCase = true) && Regex("(?i)$quotedTerm").containsMatchIn(line))
+            predicateCall.containsMatchIn(line) ||
+            regexConstruction.containsMatchIn(line) ||
+            (Regex("(?i)\\bsetOf\\s*\\(").containsMatchIn(line) &&
+                Regex("(?i)$quotedTerm").containsMatchIn(line))
+    }
+
+    private fun isCompatibilityAliasSource(line: String, term: String): Boolean {
+        val match = Regex("^\\s*-?\\s*source\\s*:\\s*([A-Za-z0-9_-]+)\\s*(?:#.*)?$").matchEntire(line)
+            ?: return false
+        return match.groupValues[1].contains(term, ignoreCase = true)
     }
 
     private fun isSemanticLiteral(line: String, term: String): Boolean {
@@ -232,7 +249,8 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     ).containsMatchIn(line)
 
     private fun classify(path: String): String = when {
-        path == STANDARD_CAPABILITY_COMPATIBILITY -> COMPATIBILITY_BOUNDARY
+        path == STANDARD_CAPABILITY_COMPATIBILITY || path == STANDARD_CAPABILITY_ALIAS_MANIFEST ->
+            COMPATIBILITY_BOUNDARY
         path == STANDARD_INTENT_CATALOG -> DESCRIPTIVE_CATALOG
         path in BUILD_CONFIGURATION_PATHS -> BUILD_CONFIGURATION
         path in TARGET_NEUTRAL_GENERATOR_AUTHORITIES -> ACTIVE_SEMANTIC_SOURCE
@@ -268,6 +286,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
 
     private fun scanRoots(): List<String> = listOf(
         "src/main/kotlin",
+        "src/main/resources",
         "src/test/kotlin",
         "tests",
         "docs",
@@ -303,6 +322,8 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             "src/main/kotlin/org/flowlang/intent/StandardCapabilityCompatibility.kt"
         private const val STANDARD_INTENT_CATALOG =
             "src/main/kotlin/org/flowlang/standard/StandardIntentCatalog.kt"
+        private const val STANDARD_CAPABILITY_ALIAS_MANIFEST =
+            "src/main/resources/standard/compatibility/capability-aliases.yaml"
 
         private val BUILD_CONFIGURATION_PATHS = setOf(
             "build.gradle.kts",
@@ -315,6 +336,10 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         )
         private val ACTIONABLE_CATEGORIES = setOf("target", "infrastructure", "tool", "data-system")
         private val PRODUCTION_CLASSIFICATIONS = setOf(ACTIVE_SEMANTIC_SOURCE, APPLICATION_COMPOSITION)
+        private val GOVERNED_PRODUCTION_CLASSIFICATIONS = PRODUCTION_CLASSIFICATIONS + setOf(
+            COMPATIBILITY_BOUNDARY,
+            DESCRIPTIVE_CATALOG
+        )
         private val ACTIONABLE_CONTEXTS = setOf(
             CiCdBiasLexicalContext.CODE_IDENTIFIER,
             CiCdBiasLexicalContext.CONTROL_LITERAL,
@@ -347,163 +372,5 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             CiCdBiasTerm("PostgreSQL", "data-system", "Concrete database implementation name."),
             CiCdBiasTerm("postgres", "data-system", "Concrete database identifier.")
         )
-    }
-}
-
-private enum class KotlinSpanKind { CODE, STRING }
-
-private data class KotlinLexicalSpan(
-    val line: Int,
-    val kind: KotlinSpanKind,
-    val text: String
-)
-
-/** Small lexer sufficient to separate executable Kotlin, comments and strings. */
-private object KotlinLexicalScanner {
-    fun scan(text: String): List<KotlinLexicalSpan> {
-        val spans = mutableListOf<KotlinLexicalSpan>()
-        var index = 0
-        var line = 1
-        var blockCommentDepth = 0
-
-        fun advance(value: String) {
-            line += value.count { it == '\n' }
-            index += value.length
-        }
-
-        while (index < text.length) {
-            if (blockCommentDepth > 0) {
-                when {
-                    text.startsWith("/*", index) -> {
-                        blockCommentDepth++
-                        advance("/*")
-                    }
-                    text.startsWith("*/", index) -> {
-                        blockCommentDepth--
-                        advance("*/")
-                    }
-                    else -> advance(text[index].toString())
-                }
-                continue
-            }
-            if (text.startsWith("//", index)) {
-                val end = text.indexOf('\n', index).let { if (it < 0) text.length else it }
-                advance(text.substring(index, end))
-                continue
-            }
-            if (text.startsWith("/*", index)) {
-                blockCommentDepth = 1
-                advance("/*")
-                continue
-            }
-            if (text.startsWith("\"\"\"", index)) {
-                val startLine = line
-                val end = text.indexOf("\"\"\"", index + 3)
-                val finish = if (end < 0) text.length else end + 3
-                val value = text.substring(index + 3, if (end < 0) text.length else end)
-                spans += stringSpans(value, startLine)
-                advance(text.substring(index, finish))
-                continue
-            }
-            if (text[index] == '"') {
-                val startLine = line
-                var cursor = index + 1
-                var escaped = false
-                while (cursor < text.length) {
-                    val character = text[cursor]
-                    if (!escaped && character == '"') break
-                    escaped = !escaped && character == '\\'
-                    if (character != '\\') escaped = false
-                    cursor++
-                }
-                val finish = if (cursor < text.length) cursor + 1 else text.length
-                spans += stringSpans(
-                    text.substring(index + 1, cursor.coerceAtMost(text.length)),
-                    startLine
-                )
-                advance(text.substring(index, finish))
-                continue
-            }
-            if (text[index] == '\'') {
-                var cursor = index + 1
-                var escaped = false
-                while (cursor < text.length) {
-                    val character = text[cursor]
-                    if (!escaped && character == '\'') break
-                    escaped = !escaped && character == '\\'
-                    if (character != '\\') escaped = false
-                    cursor++
-                }
-                advance(text.substring(index, if (cursor < text.length) cursor + 1 else text.length))
-                continue
-            }
-
-            val startLine = line
-            val start = index
-            while (
-                index < text.length &&
-                !text.startsWith("//", index) &&
-                !text.startsWith("/*", index) &&
-                !text.startsWith("\"\"\"", index) &&
-                text[index] != '"' &&
-                text[index] != '\''
-            ) {
-                advance(text[index].toString())
-            }
-            if (index > start) {
-                spans += KotlinLexicalSpan(startLine, KotlinSpanKind.CODE, text.substring(start, index))
-            }
-        }
-        return spans
-    }
-
-    private fun stringSpans(value: String, startLine: Int): List<KotlinLexicalSpan> {
-        val spans = mutableListOf<KotlinLexicalSpan>()
-        var cursor = 0
-        var stringStart = 0
-
-        fun lineAt(offset: Int): Int = startLine + value.take(offset).count { it == '\n' }
-        fun emitString(end: Int) {
-            if (end > stringStart) {
-                spans += KotlinLexicalSpan(lineAt(stringStart), KotlinSpanKind.STRING, value.substring(stringStart, end))
-            }
-        }
-
-        while (cursor < value.length) {
-            if (value[cursor] != '$' || (cursor > 0 && value[cursor - 1] == '\\')) {
-                cursor++
-                continue
-            }
-            if (cursor + 1 < value.length && value[cursor + 1] == '{') {
-                var depth = 1
-                var end = cursor + 2
-                while (end < value.length && depth > 0) {
-                    when (value[end]) {
-                        '{' -> depth++
-                        '}' -> depth--
-                    }
-                    if (depth > 0) end++
-                }
-                if (depth == 0) {
-                    emitString(cursor)
-                    val codeStart = cursor + 2
-                    spans += KotlinLexicalSpan(lineAt(codeStart), KotlinSpanKind.CODE, value.substring(codeStart, end))
-                    cursor = end + 1
-                    stringStart = cursor
-                    continue
-                }
-            } else if (cursor + 1 < value.length && (value[cursor + 1].isLetter() || value[cursor + 1] == '_')) {
-                var end = cursor + 2
-                while (end < value.length && (value[end].isLetterOrDigit() || value[end] == '_' || value[end] == '.')) end++
-                emitString(cursor)
-                spans += KotlinLexicalSpan(lineAt(cursor + 1), KotlinSpanKind.CODE, value.substring(cursor + 1, end))
-                cursor = end
-                stringStart = cursor
-                continue
-            }
-            cursor++
-        }
-        emitString(value.length)
-        return spans
     }
 }

@@ -84,3 +84,22 @@ Completion requires:
 4. public corpus and conformance vector consistency;
 5. full exact-head and synthetic merge-candidate Flow CI;
 6. no weakening of frozen Core, adapter or conformance inventories.
+
+## Bounded compatibility and lexical governance hardening
+
+Retired source identifiers are no longer Kotlin symbols in Core. They live in the
+versioned `src/main/resources/standard/compatibility/capability-aliases.yaml`
+manifest and are normalized immediately at the intent-loading boundary. The
+canonical model, internal scenarios and public surfaces use only neutral
+capabilities.
+
+Governance exceptions are lexical rather than file-wide. Only `source:` entries
+in the compatibility manifest and arguments passed directly to
+`catalogModules(...)` are descriptive, non-actionable declarations. A concrete
+control default, comparison, collection membership or predicate in either file
+remains actionable and fails the neutrality gate.
+
+The Kotlin scanner also treats interpolation as Kotlin does: braces inside nested
+string, character and comment tokens do not close `${...}`, and `$name.member`
+interpolates only `name`. Concrete platform terms left in the `.member` suffix
+remain string evidence rather than being misclassified as executable code.
