@@ -255,14 +255,14 @@ targets:
           - "A Kubernetes volume possibility is not a Flow state contract."
       - family: DURABLE_STATE
         status: UNSUPPORTED
-        mechanism: "The Tekton provider has no generic durable-state lifetime contract."
+        mechanism: "The Tekton provider has no generic Flow durable-state lifetime contract."
         semantics:
           supported: []
           unsupported:
             state.durable.workflow: "No persistence class, identity and restoration binding is generated for Flow STATE relations."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
           - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
           - "src/test/kotlin/AdapterContinuitySatisfactionAuthorityTests.kt"
         prerequisites:
@@ -392,6 +392,6 @@ targets:
           - "adapters/portfolio/builtin-adapter-portfolio.yaml#records.azure-devops"
           - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
         prerequisites:
-          - "Compose a concrete Azure DevOps provider and behavioral fixtures."
+          - "Compose an Azure DevOps provider and behavioral fixtures."
         limitations:
           - "Profile persistence is not executable evidence."
