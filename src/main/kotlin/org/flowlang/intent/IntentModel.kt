@@ -163,14 +163,16 @@ enum class StandardCapability {
     DEPROVISION,
     DATABASE_MIGRATE,
     CERTIFICATE_RENEW,
-    KUBERNETES_MAINTENANCE,
+    CLUSTER_MAINTENANCE,
     RUNBOOK,
     INCIDENT,
     SECRET_ROTATE,
     POLICY_CHECK,
     RUN_COMMAND,
     CALL_API,
-    CUSTOM
+    CUSTOM;
+
+    companion object
 }
 
 data class IntentPolicy(
