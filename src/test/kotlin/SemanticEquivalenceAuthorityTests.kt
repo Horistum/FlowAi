@@ -85,15 +85,15 @@ class SemanticEquivalenceAuthorityTests {
 
     @Test
     fun unresolvedContinuityCannotBecomeAValidObservationBaseline() {
-        val plan = SemanticEquivalencePlanFactory.plan(SemanticEquivalenceFixture.VALUE_CONTINUITY)
-            .copy(
-                dependencyRelations = planRelations(
-                    SemanticEquivalencePlanFactory.plan(SemanticEquivalenceFixture.VALUE_CONTINUITY)
-                ).map { it.copy(resolution = PlanDependencyResolution.UNRESOLVED) }
-            )
+        val baseline = SemanticEquivalencePlanFactory.plan(SemanticEquivalenceFixture.VALUE_CONTINUITY)
+        val unresolved = baseline.copy(
+            dependencyRelations = baseline.dependencyRelations.map {
+                it.copy(resolution = PlanDependencyResolution.UNRESOLVED)
+            }
+        )
 
         val failure = assertFailsWith<IllegalArgumentException> {
-            SemanticObservationAuthority.requirementsFor(plan)
+            SemanticObservationAuthority.requirementsFor(unresolved)
         }
 
         assertTrue(failure.message.orEmpty().contains("cannot certify"))
@@ -131,6 +131,4 @@ class SemanticEquivalenceAuthorityTests {
             root.deleteRecursively()
         }
     }
-
-    private fun planRelations(plan: org.flowlang.planner.ExecutionPlan) = plan.dependencyRelations
 }
