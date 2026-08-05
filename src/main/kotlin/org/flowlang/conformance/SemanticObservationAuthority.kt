@@ -6,7 +6,6 @@ import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.planner.PlanDependencyRelations
-import org.flowlang.planner.PlanDependencyResolution
 import org.flowlang.planner.PlanNode
 import org.flowlang.planner.TaskNode
 
@@ -61,12 +60,11 @@ object SemanticObservationAuthority {
                 .forEach { relation ->
                     val producerIdentity = relation.sourceNodeId?.let(semanticIdentityByNode::get)
                     val consumerIdentity = semanticIdentityByNode[relation.targetNodeId]
-                    val resolution = relation.resolution.name
                     add(
                         requirement(
                             kind = SemanticObservationKind.CONTINUITY,
                             subject = relation.kind.name,
-                            value = listOf(relation.channel.orEmpty(), resolution).joinToString(":"),
+                            value = listOf(relation.channel.orEmpty(), relation.resolution.name).joinToString(":"),
                             producerIdentity = producerIdentity,
                             consumerIdentity = consumerIdentity
                         )
@@ -115,8 +113,7 @@ object SemanticObservationAuthority {
                 )
             }
             requirements.forEach { requirement ->
-                val matching = evidenceByRequirement[requirement.id].orEmpty()
-                add(assessmentFor(requirement, matching))
+                add(assessmentFor(requirement, evidenceByRequirement[requirement.id].orEmpty()))
             }
             (evidenceByRequirement.keys - requiredById.keys).sorted().forEach { unknownId ->
                 add(
@@ -200,7 +197,7 @@ object SemanticObservationAuthority {
         producerIdentity: String? = null,
         consumerIdentity: String? = null
     ): SemanticObservationRequirement = SemanticObservationRequirement(
-        id = SemanticObservationIdentity.requirementId(kind, subject, producerIdentity, consumerIdentity),
+        id = "semantic.${kind.documentValue}.${SemanticObservationIdentity.fingerprint(kind.name, subject, value, producerIdentity, consumerIdentity).take(20)}",
         kind = kind,
         subject = subject,
         value = value,
