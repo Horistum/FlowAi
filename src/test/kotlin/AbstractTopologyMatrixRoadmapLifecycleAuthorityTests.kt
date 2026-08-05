@@ -9,7 +9,7 @@ import org.flowlang.conformance.TopologyMatrixWorkflowEvidence
 
 class AbstractTopologyMatrixRoadmapLifecycleAuthorityTests {
     @Test
-    fun repositoryDeclaresCompletedC02BoundaryAndC03Handoff() {
+    fun repositoryRetainsCompletedC02AfterC04Handoff() {
         val report = AbstractTopologyMatrixRoadmapLifecycleAuthority(File(".")).analyze()
 
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
@@ -28,17 +28,21 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthorityTests {
 
     @Test
     fun completedC02RequiresDistinctEvidenceAndAdjacentC03Handoff() {
+        val report = AbstractTopologyMatrixRoadmapLifecycleAuthority().evaluate(adjacentCompletedInput())
+
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+        assertEquals(AbstractTopologyMatrixLifecyclePhase.COMPLETED, report.phase)
+    }
+
+    @Test
+    fun completedC02RemainsValidAfterC03CompletesAndGlobalFocusAdvances() {
         val report = AbstractTopologyMatrixRoadmapLifecycleAuthority().evaluate(
-            activeInput().copy(
-                workPackageStatus = "complete",
-                c02Status = "completed",
-                c03Status = "next",
-                conformanceCompletedItem = "C0.2",
-                conformanceNextItem = "C0.3",
-                indexNextItem = "C0.3",
-                releaseNextItem = "C0.3",
-                implementationEvidence = evidence(2672, 30910000001, '1', '2'),
-                completionBoundary = evidence(2673, 30910000002, '3', '4')
+            adjacentCompletedInput().copy(
+                c03Status = "completed",
+                conformanceCompletedItem = "C0.3",
+                conformanceNextItem = "C0.4",
+                indexNextItem = "C0.4",
+                releaseNextItem = "C0.4"
             )
         )
 
@@ -47,17 +51,43 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthorityTests {
     }
 
     @Test
+    fun completedC02RejectsDivergentLaterGlobalFocus() {
+        val report = AbstractTopologyMatrixRoadmapLifecycleAuthority().evaluate(
+            adjacentCompletedInput().copy(
+                c03Status = "completed",
+                conformanceCompletedItem = "C0.3",
+                conformanceNextItem = "C0.4",
+                indexNextItem = "C0.4",
+                releaseNextItem = "C0.5"
+            )
+        )
+
+        assertEquals("FAIL", report.status)
+        assertEquals(AbstractTopologyMatrixLifecyclePhase.COMPLETED, report.phase)
+        assertTrue(report.errors.any { it.contains("global roadmap and release focus") })
+    }
+
+    @Test
+    fun completedC02RejectsUnprovenC03Handoff() {
+        val report = AbstractTopologyMatrixRoadmapLifecycleAuthority().evaluate(
+            adjacentCompletedInput().copy(
+                c03Status = "planned",
+                conformanceCompletedItem = "C0.2",
+                conformanceNextItem = "C0.4",
+                indexNextItem = "C0.4",
+                releaseNextItem = "C0.4"
+            )
+        )
+
+        assertEquals("FAIL", report.status)
+        assertEquals(AbstractTopologyMatrixLifecyclePhase.INVALID, report.phase)
+    }
+
+    @Test
     fun completedC02RejectsReusedValidationBoundary() {
         val implementation = evidence(2672, 30910000001, '1', '2')
         val report = AbstractTopologyMatrixRoadmapLifecycleAuthority().evaluate(
-            activeInput().copy(
-                workPackageStatus = "complete",
-                c02Status = "completed",
-                c03Status = "next",
-                conformanceCompletedItem = "C0.2",
-                conformanceNextItem = "C0.3",
-                indexNextItem = "C0.3",
-                releaseNextItem = "C0.3",
+            adjacentCompletedInput().copy(
                 implementationEvidence = implementation,
                 completionBoundary = implementation
             )
@@ -77,6 +107,18 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthorityTests {
         assertEquals("FAIL", report.status)
         assertEquals(AbstractTopologyMatrixLifecyclePhase.INVALID, report.phase)
     }
+
+    private fun adjacentCompletedInput() = activeInput().copy(
+        workPackageStatus = "complete",
+        c02Status = "completed",
+        c03Status = "next",
+        conformanceCompletedItem = "C0.2",
+        conformanceNextItem = "C0.3",
+        indexNextItem = "C0.3",
+        releaseNextItem = "C0.3",
+        implementationEvidence = evidence(2672, 30910000001, '1', '2'),
+        completionBoundary = evidence(2673, 30910000002, '3', '4')
+    )
 
     private fun activeInput() = AbstractTopologyMatrixLifecycleInput(
         workPackageStatus = "active",
