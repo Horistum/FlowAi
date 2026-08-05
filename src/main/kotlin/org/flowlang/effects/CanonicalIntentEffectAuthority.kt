@@ -61,7 +61,7 @@ object CanonicalIntentEffectAuthority {
         StandardCapability.DEPROVISION -> listOf(delete(EffectDomain.INFRASTRUCTURE_STATE, "infrastructure.resource", capability))
         StandardCapability.DATABASE_MIGRATE -> listOf(update(EffectDomain.DATA_TRANSFORMATION, "data.schema", capability))
         StandardCapability.CERTIFICATE_RENEW -> listOf(update(EffectDomain.INFRASTRUCTURE_STATE, "infrastructure.certificate", capability))
-        StandardCapability.KUBERNETES_MAINTENANCE -> listOf(update(EffectDomain.INFRASTRUCTURE_STATE, "infrastructure.cluster", capability))
+        StandardCapability.CLUSTER_MAINTENANCE -> listOf(update(EffectDomain.INFRASTRUCTURE_STATE, "infrastructure.cluster", capability))
         StandardCapability.RUNBOOK -> listOf(execute(EffectDomain.INFRASTRUCTURE_STATE, "operations.runbook", capability))
         StandardCapability.INCIDENT -> listOf(create(EffectDomain.COMMUNICATION, "operations.incident", capability))
         StandardCapability.SECRET_ROTATE -> listOf(update(EffectDomain.INFRASTRUCTURE_STATE, "infrastructure.secret", capability))
