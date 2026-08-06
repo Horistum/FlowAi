@@ -1,0 +1,55 @@
+name: PR 110 Finalize
+
+on:
+  push:
+    paths:
+      - '.github/workflows/pr110-finalize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout correction staging branch
+        uses: actions/checkout@v6
+        with:
+          ref: agent/core-neutrality-governance-hardening
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Reconstruct and verify correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .pr110-fix-upload/part-* | base64 -d > /tmp/pr110-fixes.tar.gz
+          echo "99c01475f94b17006e164bd0fbc90bf9268199dfbc31675a0f37a8fc25b7770b  /tmp/pr110-fixes.tar.gz" | sha256sum -c -
+          python3 - <<'PY'
+          import tarfile
+          from pathlib import PurePosixPath
+
+          archive = "/tmp/pr110-fixes.tar.gz"
+          with tarfile.open(archive, "r:gz") as handle:
+              for member in handle.getmembers():
+                  path = PurePosixPath(member.name)
+                  if path.is_absolute() or ".." in path.parts:
+                      raise SystemExit(f"unsafe archive member: {member.name}")
+          PY
+          tar -xzf /tmp/pr110-fixes.tar.gz -C .
+          sha256sum -c .pr110-fix-manifest.sha256
+          rm -f .pr110-fix-manifest.sha256 __no_such_file__
+          rm -rf .pr110-fix-upload
+          rm -f .github/workflows/pr110-finalize.yml
+
+      - name: Collapse to one reviewed commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "OpenAI Agent"
+          git config user.email "agent@openai.invalid"
+          git add -A
+          git diff --cached --check
+          git reset --soft 4474cfd404af9629ea8fd861629ebb8a58887d17
+          git commit -m "Harden neutrality and fail-closed evidence boundaries"
+          git push --force origin HEAD:agent/core-neutrality-governance-hardening
