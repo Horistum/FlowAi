@@ -10,7 +10,12 @@ import org.flowlang.ast.*
  * `not empty` / `not contains` forms, safe navigation, lists, maps, calls,
  * secret(...), and template-string interpolation with ${ ... }.
  */
-class ExpressionParser(private val ts: TokenStream, private val scope: String = "auto") {
+class ExpressionParser(
+    private val ts: TokenStream,
+    private val scope: String = "auto",
+    private val inheritedNestingDepth: Int = 0
+) {
+    private var primaryNestingDepth = 0
 
     companion object {
         private val WORD_COMPARATORS = setOf("in", "contains", "matches", "startsWith", "endsWith")
@@ -22,11 +27,20 @@ class ExpressionParser(private val ts: TokenStream, private val scope: String = 
         private val HTTP_METHODS = setOf("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT")
 
         /** Parse a standalone expression from source text (used for template interpolation). */
-        fun parseSource(source: String, scope: String = "auto"): ExpressionNode {
+        fun parseSource(
+            source: String,
+            scope: String = "auto",
+            inheritedNestingDepth: Int = 0
+        ): ExpressionNode {
+            require(inheritedNestingDepth <= MAX_EXPRESSION_NESTING_DEPTH) {
+                "Expression nesting depth must not exceed $MAX_EXPRESSION_NESTING_DEPTH."
+            }
             val ts = TokenStream(Lexer(source).tokenize())
             ts.skipNewlines()
-            return ExpressionParser(ts, scope).parse()
+            return ExpressionParser(ts, scope, inheritedNestingDepth).parse()
         }
+
+        internal const val MAX_EXPRESSION_NESTING_DEPTH = 128
     }
 
     fun parse(): ExpressionNode = parseOr()
@@ -48,11 +62,23 @@ class ExpressionParser(private val ts: TokenStream, private val scope: String = 
     }
 
     private fun parsePrefixNot(): ExpressionNode {
-        if (ts.checkWord("not")) {
-            ts.next()
-            return UnaryExpressionNode(operator = "not", operand = parsePrefixNot())
+        val operators = mutableListOf<Token>()
+        while (ts.checkWord("not")) {
+            val token = ts.next()
+            if (inheritedNestingDepth + operators.size >= MAX_EXPRESSION_NESTING_DEPTH) {
+                throw ParseException(
+                    "expression nesting exceeds maximum depth $MAX_EXPRESSION_NESTING_DEPTH",
+                    token.line,
+                    token.column
+                )
+            }
+            operators += token
         }
-        return parseComparison()
+        var expression = parseComparison()
+        operators.asReversed().forEach { _ ->
+            expression = UnaryExpressionNode(operator = "not", operand = expression)
+        }
+        return expression
     }
 
     private fun parseComparison(): ExpressionNode {
@@ -99,14 +125,26 @@ class ExpressionParser(private val ts: TokenStream, private val scope: String = 
 
     private fun parsePrimary(): ExpressionNode {
         val t = ts.peek()
-        return when (t.type) {
-            TokenType.NUMBER -> { ts.next(); NumberLiteralNode(value = t.text.toDouble(), isInteger = t.isInteger) }
-            TokenType.STRING -> { ts.next(); parseStringContent(t.rawValue ?: "") }
-            TokenType.LBRACKET -> parseList()
-            TokenType.LBRACE -> parseMap()
-            TokenType.LPAREN -> { ts.next(); val e = parseOr(); ts.expect(TokenType.RPAREN, "')'"); e }
-            TokenType.IDENT -> parseIdentExpression()
-            else -> throw ParseException("unexpected ${t.type} '${t.text}' in expression", t.line, t.column)
+        if (inheritedNestingDepth + primaryNestingDepth >= MAX_EXPRESSION_NESTING_DEPTH) {
+            throw ParseException(
+                "expression nesting exceeds maximum depth $MAX_EXPRESSION_NESTING_DEPTH",
+                t.line,
+                t.column
+            )
+        }
+        primaryNestingDepth++
+        try {
+            return when (t.type) {
+                TokenType.NUMBER -> { ts.next(); NumberLiteralNode(value = t.text.toDouble(), isInteger = t.isInteger) }
+                TokenType.STRING -> { ts.next(); parseStringContent(t.rawValue ?: "") }
+                TokenType.LBRACKET -> parseList()
+                TokenType.LBRACE -> parseMap()
+                TokenType.LPAREN -> { ts.next(); val e = parseOr(); ts.expect(TokenType.RPAREN, "')'"); e }
+                TokenType.IDENT -> parseIdentExpression()
+                else -> throw ParseException("unexpected ${t.type} '${t.text}' in expression", t.line, t.column)
+            }
+        } finally {
+            primaryNestingDepth--
         }
     }
 
@@ -251,7 +289,7 @@ class ExpressionParser(private val ts: TokenStream, private val scope: String = 
                 flush()
                 val end = matchingBrace(raw, i + 1)
                 val inner = raw.substring(i + 2, end)
-                val expr = ExpressionParser.parseSource(inner, scope)
+                val expr = ExpressionParser.parseSource(inner, scope, inheritedNestingDepth + primaryNestingDepth)
                 if (expr is SecretRefNode) sensitive = true
                 parts += expr
                 i = end + 1

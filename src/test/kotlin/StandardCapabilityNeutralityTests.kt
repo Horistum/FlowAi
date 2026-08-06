@@ -19,6 +19,23 @@ class StandardCapabilityNeutralityTests {
     }
 
     @Test
+    fun retiredCapabilityNameExistsOnlyInDeclarativeSourceCompatibilityManifest() {
+        val retiredName = "KUBERNETES_MAINTENANCE"
+        val productionKotlinOccurrences = File("src/main/kotlin")
+            .walkTopDown()
+            .filter(File::isFile)
+            .filter { it.extension == "kt" }
+            .filter { retiredName in it.readText() }
+            .map { it.relativeTo(File(".")).path.replace(File.separatorChar, '/') }
+            .toList()
+        val manifest = File("src/main/resources/standard/compatibility/capability-aliases.yaml").readText()
+
+        assertEquals(emptyList(), productionKotlinOccurrences)
+        assertTrue(manifest.lineSequence().any { it.trim() == "- source: $retiredName" })
+        assertTrue(manifest.lineSequence().any { it.trim() == "canonical: CLUSTER_MAINTENANCE" })
+    }
+
+    @Test
     fun legacyIntentCapabilityNormalizesToCanonicalClusterMaintenance() {
         val document = IntentYamlLoader.loadText(
             """

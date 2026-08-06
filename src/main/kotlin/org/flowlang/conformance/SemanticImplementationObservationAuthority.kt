@@ -9,6 +9,7 @@ import org.flowlang.adapters.trigger.AdapterTriggerAuthorizedRenderingAuthority
 import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.effects.canonicalObservationValue
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestContractValidator
 import org.flowlang.generators.manifest.TargetMaterializationStatus
@@ -30,6 +31,34 @@ data class SemanticImplementationObservationProfile(
     val rendering: AdapterArtifactRenderingBundle,
     val evidence: List<SemanticObservationEvidence>
 )
+internal fun semanticEffectEvidenceStatus(
+    task: TaskNode,
+    step: TargetStep,
+    requiredValue: String,
+    native: Boolean
+): SemanticObservationEvidenceStatus {
+    val plannedEffects = task.effectModel
+        .map { it.canonicalObservationValue() }
+        .distinct()
+        .sorted()
+    val projectedEffects = step.metadata.entries
+        .mapNotNull { (key, value) ->
+            key.removePrefix(SEMANTIC_EFFECT_METADATA_PREFIX)
+                .takeIf { key.startsWith(SEMANTIC_EFFECT_METADATA_PREFIX) && it.toIntOrNull() != null }
+                ?.toInt()
+                ?.let { index -> index to value }
+        }
+        .sortedBy { it.first }
+        .map { it.second }
+    return when {
+        projectedEffects != plannedEffects -> SemanticObservationEvidenceStatus.CONTRADICTORY
+        requiredValue !in projectedEffects -> SemanticObservationEvidenceStatus.CONTRADICTORY
+        native -> SemanticObservationEvidenceStatus.PRESERVED
+        else -> SemanticObservationEvidenceStatus.WEAKENED
+    }
+}
+
+private const val SEMANTIC_EFFECT_METADATA_PREFIX = "semanticEffect."
 
 /**
  * Converts adapter-owned projection evidence into target-neutral C0.3 evidence.
@@ -99,7 +128,7 @@ class SemanticImplementationObservationAuthority(
         val continuity = continuityAuthority.assess(plan, target)
         val continuityEvidenceById = continuity.evidence.associateBy { it.requirementId }
 
-        val evidence = requirements.mapNotNull { requirement ->
+        val evidence = requirements.map { requirement ->
             when (requirement.kind) {
                 SemanticObservationKind.EFFECT -> taskEvidence(
                     requirement,
@@ -141,20 +170,23 @@ class SemanticImplementationObservationAuthority(
         stepsBySourceTask: Map<String, List<TargetStep>>,
         target: String,
         requireResultIdentity: Boolean
-    ): SemanticObservationEvidence? {
-        val producerIdentity = requirement.producerIdentity ?: return null
-        val task = tasksBySemanticIdentity[producerIdentity] ?: return null
-        val step = stepsBySourceTask[task.id]?.singleOrNull() ?: return null
+    ): SemanticObservationEvidence {
+        val producerIdentity = requirement.producerIdentity
+            ?: return contradictory(requirement, target, "missing-producer-identity")
+        val task = tasksBySemanticIdentity[producerIdentity]
+            ?: return contradictory(requirement, target, "unknown-semantic-task:$producerIdentity")
+        val step = stepsBySourceTask[task.id]?.singleOrNull()
+            ?: return contradictory(requirement, target, "missing-manifest-task:${task.id}")
         val native = nativeWitness(step, target)
         val status = if (requireResultIdentity) {
             when {
-                step.metadata["resultName"].isNullOrBlank() -> return null
+                step.metadata["resultName"].isNullOrBlank() -> SemanticObservationEvidenceStatus.CONTRADICTORY
                 step.metadata["resultName"] != requirement.value -> SemanticObservationEvidenceStatus.CONTRADICTORY
                 native -> SemanticObservationEvidenceStatus.PRESERVED
                 else -> SemanticObservationEvidenceStatus.WEAKENED
             }
         } else {
-            if (native) SemanticObservationEvidenceStatus.PRESERVED else SemanticObservationEvidenceStatus.WEAKENED
+            semanticEffectEvidenceStatus(task, step, requirement.value, native)
         }
         return evidence(requirement, status, "$target:manifest:task:${task.id}")
     }
@@ -166,7 +198,7 @@ class SemanticImplementationObservationAuthority(
         taskById: Map<String, TaskNode>,
         stepsBySourceTask: Map<String, List<TargetStep>>,
         target: String
-    ): SemanticObservationEvidence? {
+    ): SemanticObservationEvidence {
         val output = plan.outputs.singleOrNull {
             it.name == requirement.subject && it.type == requirement.value
         } ?: return evidence(
@@ -174,9 +206,12 @@ class SemanticImplementationObservationAuthority(
             SemanticObservationEvidenceStatus.CONTRADICTORY,
             "$target:manifest:output-contract-mismatch:${requirement.subject}"
         )
-        val producerIdentity = requirement.producerIdentity ?: return null
-        val semanticProducer = tasksBySemanticIdentity[producerIdentity] ?: return null
-        val sourceNodeId = output.sourceNodeId ?: return null
+        val producerIdentity = requirement.producerIdentity
+            ?: return contradictory(requirement, target, "missing-output-producer-identity")
+        val semanticProducer = tasksBySemanticIdentity[producerIdentity]
+            ?: return contradictory(requirement, target, "unknown-output-semantic-producer:$producerIdentity")
+        val sourceNodeId = output.sourceNodeId
+            ?: return contradictory(requirement, target, "missing-output-source-node:${output.name}")
         val sourceTask = taskById[sourceNodeId] ?: return evidence(
             requirement,
             SemanticObservationEvidenceStatus.CONTRADICTORY,
@@ -189,8 +224,10 @@ class SemanticImplementationObservationAuthority(
                 "$target:manifest:output-producer-mismatch:${output.name}"
             )
         }
-        val step = stepsBySourceTask[sourceTask.id]?.singleOrNull() ?: return null
-        val projectedResultName = step.metadata["resultName"]?.takeIf(String::isNotBlank) ?: return null
+        val step = stepsBySourceTask[sourceTask.id]?.singleOrNull()
+            ?: return contradictory(requirement, target, "missing-output-manifest-task:${sourceTask.id}")
+        val projectedResultName = step.metadata["resultName"]?.takeIf(String::isNotBlank)
+            ?: return contradictory(requirement, target, "missing-projected-result-name:${sourceTask.id}")
         val status = when {
             sourceTask.resultName != output.name -> SemanticObservationEvidenceStatus.CONTRADICTORY
             projectedResultName != output.name -> SemanticObservationEvidenceStatus.CONTRADICTORY
@@ -207,9 +244,11 @@ class SemanticImplementationObservationAuthority(
         adapterRequirements: List<org.flowlang.adapters.continuity.AdapterContinuityRequirement>,
         adapterEvidenceById: Map<String, org.flowlang.adapters.continuity.AdapterContinuityEvidence>,
         target: String
-    ): SemanticObservationEvidence? {
-        val sourceTask = requirement.producerIdentity?.let(tasksBySemanticIdentity::get) ?: return null
-        val targetTask = requirement.consumerIdentity?.let(tasksBySemanticIdentity::get) ?: return null
+    ): SemanticObservationEvidence {
+        val sourceTask = requirement.producerIdentity?.let(tasksBySemanticIdentity::get)
+            ?: return contradictory(requirement, target, "missing-continuity-producer:${requirement.producerIdentity.orEmpty()}")
+        val targetTask = requirement.consumerIdentity?.let(tasksBySemanticIdentity::get)
+            ?: return contradictory(requirement, target, "missing-continuity-consumer:${requirement.consumerIdentity.orEmpty()}")
         val relationKind = runCatching { PlanDependencyKind.valueOf(requirement.subject) }.getOrNull()
             ?: return evidence(
                 requirement,
@@ -222,7 +261,13 @@ class SemanticImplementationObservationAuthority(
                 (it.channel ?: DEFAULT_CONTINUITY_CHANNEL) == requirement.value &&
                 it.relationKind == relationKind
         }
-        if (matched.isEmpty()) return null
+        if (matched.isEmpty()) {
+            return contradictory(
+                requirement,
+                target,
+                "missing-continuity-requirement:${sourceTask.id}:${targetTask.id}:${requirement.subject}:${requirement.value}"
+            )
+        }
         val statuses = matched.map { adapterRequirement ->
             adapterEvidenceById[adapterRequirement.id]?.status
                 ?: return evidence(
@@ -251,6 +296,16 @@ class SemanticImplementationObservationAuthority(
             payload.target == target &&
             payload.evidenceReference.isNotBlank()
     }
+
+    private fun contradictory(
+        requirement: SemanticObservationRequirement,
+        target: String,
+        detail: String
+    ): SemanticObservationEvidence = evidence(
+        requirement,
+        SemanticObservationEvidenceStatus.CONTRADICTORY,
+        "$target:$detail"
+    )
 
     private fun evidence(
         requirement: SemanticObservationRequirement,

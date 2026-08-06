@@ -2,6 +2,8 @@ package org.flowlang.generators.manifest
 
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.TargetProjectionRule
+import org.flowlang.effects.SemanticEffect
+import org.flowlang.effects.canonicalObservationValue
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ControlNode
@@ -258,7 +260,13 @@ internal fun TaskNode.toTargetStep(
             "resultName" to (resultName ?: ""),
             "destructive" to destructive.toString(),
             "safety" to (safety ?: "")
-        ).filterValues { it.isNotBlank() } + materializationMetadata(resolution)
+        ).filterValues { it.isNotBlank() } +
+            effectModel.map(SemanticEffect::canonicalObservationValue)
+                .distinct()
+                .sorted()
+                .mapIndexed { index, value -> "semanticEffect.$index" to value }
+                .toMap() +
+            materializationMetadata(resolution)
     )
 }
 

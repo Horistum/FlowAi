@@ -1,0 +1,4 @@
+schemaVersion: 1
+aliases:
+  - source: KUBERNETES_MAINTENANCE
+    canonical: CLUSTER_MAINTENANCE

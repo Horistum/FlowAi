@@ -68,3 +68,12 @@ data class SemanticEffect(
 
 fun defaultTransition(operation: EffectOperation): ResourceStateTransition? =
     SemanticEffect.defaultTransition(operation)
+
+fun SemanticEffect.canonicalObservationValue(): String = listOf(
+    domain.name,
+    operation.name,
+    resource,
+    transition?.let { "${it.from.name}->${it.to.name}" }.orEmpty(),
+    external.toString(),
+    sourceCapability.orEmpty()
+).joinToString(":")

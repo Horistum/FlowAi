@@ -238,17 +238,33 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
         reportBudget: ArchitectureReportBudgetStatus
     ): ArchitectureDriftScoreStatus {
         val catalog = File(rootDir, "standard/architecture/drift-score.yaml")
-        val root = if (catalog.isFile) FlowYaml.readMap(catalog) else emptyMap()
-        val minimumScore = (root["minimumScore"] as? Number)?.toInt() ?: 0
-        val scoringMode = root["scoringMode"] as? String ?: "negative-signal-only"
-        val baselineCatalog = root["baselineSignals"] as? List<Any?> ?: emptyList()
-        val negativeCatalog = root["negativeSignals"] as? List<Any?> ?: emptyList()
+        if (!catalog.isFile) return invalidDriftScore("catalog-missing")
+        val root = runCatching { FlowYaml.readMap(catalog) }
+            .getOrElse { return invalidDriftScore("catalog-invalid:${it.message.orEmpty()}") }
+        val minimumNumber = root["minimumScore"] as? Number
+            ?: return invalidDriftScore("minimum-score-missing")
+        val minimumScore = minimumNumber.toInt()
+        if (minimumNumber.toDouble() != minimumScore.toDouble()) {
+            return invalidDriftScore("minimum-score-not-integer")
+        }
+        val scoringMode = (root["scoringMode"] as? String)?.takeIf(String::isNotBlank)
+            ?: return invalidDriftScore("scoring-mode-missing", minimumScore)
+        val baselineCatalog = root["baselineSignals"] as? List<Any?>
+            ?: return invalidDriftScore("baseline-signals-missing", minimumScore, scoringMode)
+        val negativeCatalog = root["negativeSignals"] as? List<Any?>
+            ?: return invalidDriftScore("negative-signals-missing", minimumScore, scoringMode)
+        if (negativeCatalog.isEmpty()) {
+            return invalidDriftScore("negative-signals-empty", minimumScore, scoringMode)
+        }
 
-        val baselineSignals = baselineCatalog.mapNotNull { item ->
-            val map = item as? Map<String, Any?> ?: return@mapNotNull null
-            val id = map["id"] as? String ?: return@mapNotNull null
+        val baselineSignals = mutableListOf<ArchitectureDriftSignalStatus>()
+        baselineCatalog.forEachIndexed { index, item ->
+            val map = item as? Map<String, Any?>
+                ?: return invalidDriftScore("baseline-signals[$index]-not-map", minimumScore, scoringMode)
+            val id = (map["id"] as? String)?.takeIf(String::isNotBlank)
+                ?: return invalidDriftScore("baseline-signals[$index]-id-invalid", minimumScore, scoringMode)
             val evidence = baselineEvidence(id)
-            ArchitectureDriftSignalStatus(
+            baselineSignals += ArchitectureDriftSignalStatus(
                 id = id,
                 score = 0,
                 present = evidence.isNotEmpty(),
@@ -256,19 +272,33 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
                 description = map["description"] as? String ?: ""
             )
         }
+        if (baselineSignals.map { it.id }.size != baselineSignals.map { it.id }.toSet().size) {
+            return invalidDriftScore("baseline-signal-id-duplicate", minimumScore, scoringMode)
+        }
 
-        val negativeSignals = negativeCatalog.mapNotNull { item ->
-            val map = item as? Map<String, Any?> ?: return@mapNotNull null
-            val id = map["id"] as? String ?: return@mapNotNull null
-            val configuredScore = (map["score"] as? Number)?.toInt() ?: 0
+        val negativeSignals = mutableListOf<ArchitectureDriftSignalStatus>()
+        negativeCatalog.forEachIndexed { index, item ->
+            val map = item as? Map<String, Any?>
+                ?: return invalidDriftScore("negative-signals[$index]-not-map", minimumScore, scoringMode)
+            val id = (map["id"] as? String)?.takeIf(String::isNotBlank)
+                ?: return invalidDriftScore("negative-signals[$index]-id-invalid", minimumScore, scoringMode)
+            val scoreNumber = map["score"] as? Number
+                ?: return invalidDriftScore("negative-signals[$index]-score-missing", minimumScore, scoringMode)
+            val configuredScore = scoreNumber.toInt()
+            if (scoreNumber.toDouble() != configuredScore.toDouble() || configuredScore >= 0) {
+                return invalidDriftScore("negative-signals[$index]-score-invalid", minimumScore, scoringMode)
+            }
             val evidence = negativeEvidence(id, forbiddenDirectionTerms, reportBudget)
-            ArchitectureDriftSignalStatus(
+            negativeSignals += ArchitectureDriftSignalStatus(
                 id = id,
                 score = if (evidence.isNotEmpty()) configuredScore else 0,
                 present = evidence.isNotEmpty(),
                 evidence = evidence,
                 description = map["description"] as? String ?: ""
             )
+        }
+        if (negativeSignals.map { it.id }.size != negativeSignals.map { it.id }.toSet().size) {
+            return invalidDriftScore("negative-signal-id-duplicate", minimumScore, scoringMode)
         }
 
         val finalScore = negativeSignals.sumOf { it.score }
@@ -285,6 +315,28 @@ class ArchitectureGovernanceAnalyzer(private val rootDir: File = File(".")) {
             scoringMode = scoringMode
         )
     }
+
+    private fun invalidDriftScore(
+        reason: String,
+        minimumScore: Int = 0,
+        scoringMode: String = "invalid"
+    ): ArchitectureDriftScoreStatus = ArchitectureDriftScoreStatus(
+        minimumScore = minimumScore,
+        finalScore = Int.MIN_VALUE,
+        status = "FAIL",
+        positiveSignals = emptyList(),
+        negativeSignals = listOf(
+            ArchitectureDriftSignalStatus(
+                id = "drift-score-configuration-invalid",
+                score = Int.MIN_VALUE,
+                present = true,
+                evidence = listOf(reason),
+                description = "Architecture drift scoring configuration is invalid and cannot pass by default."
+            )
+        ),
+        exceptionRecorded = false,
+        scoringMode = scoringMode
+    )
 
     private fun analyzeReportBudget(): ArchitectureReportBudgetStatus {
         val entries = StandardSurface.publicSurface().entries

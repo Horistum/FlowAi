@@ -1,4 +1,4 @@
-version: "1.0"
+version: "1.1"
 mutations:
   - missing
   - weakened
@@ -37,3 +37,8 @@ concretePairs:
     leftSnapshot: conformance/snapshots/checkout-build-image/snapshot-index.json
     rightTarget: github-actions
     rightSnapshot: conformance/snapshots/github-actions-checkout-build-image/snapshot-index.json
+    targetBackings:
+      - target: jenkins
+        kind: reference-snapshot
+      - target: github-actions
+        kind: bounded-promotion

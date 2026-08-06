@@ -84,3 +84,15 @@ Completion requires:
 4. public corpus and conformance vector consistency;
 5. full exact-head and synthetic merge-candidate Flow CI;
 6. no weakening of frozen Core, adapter or conformance inventories.
+
+## Source compatibility and evidence parsing hardening
+
+The retired `KUBERNETES_MAINTENANCE` spelling is intentionally removed from the Kotlin API. The project is pre-1.0, and retaining that platform-specific symbol for an additional deprecation cycle would preserve the architectural violation inside Core. Legacy authored intent remains supported through a strict source-boundary manifest and is normalized immediately to `CLUSTER_MAINTENANCE`.
+
+The compatibility manifest is SHA-256 pinned. Only the reviewed manifest bytes and exact retired `source:` entry are descriptive compatibility evidence. A changed manifest or a new platform-specific alias is classified as structured control and fails the neutrality gate until the compatibility contract is explicitly reviewed.
+
+All shared YAML map reads use duplicate-key detection. Governance, roadmap and evidence documents therefore cannot collapse duplicate keys through last-wins parsing before their field validation runs.
+
+The neutrality scanner has no file-wide catalog or compatibility exemptions. It recognizes only direct `catalogModules(...)` declarations and the pinned compatibility source entry. Predicate calls, regular-expression construction, quoted JSON control keys and Kotlin interpolation expressions are actionable when they carry concrete platform meaning.
+
+Parser and validator recursion is bounded. Excessive expression, statement or manually constructed AST nesting produces a typed diagnostic instead of escaping the CLI as `StackOverflowError`. Numeric literals reject a second decimal point lexically, and retry counts require an integer in the supported range.

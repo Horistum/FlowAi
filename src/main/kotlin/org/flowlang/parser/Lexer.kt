@@ -99,10 +99,15 @@ class Lexer(private val src: String) {
         val sb = StringBuilder()
         if (src[pos] == '-') { sb.append('-'); advance() }
         var isInt = true
+        var decimalSeen = false
         while (pos < src.length && (src[pos].isDigit() || src[pos] == '.')) {
             if (src[pos] == '.') {
-                // a dot followed by non-digit is a member access, not a decimal point
+                // A dot followed by non-digit is member access, not a decimal point.
                 if (peek(1)?.isDigit() != true) break
+                if (decimalSeen) {
+                    throw LexException("number literal contains more than one decimal point", line, col)
+                }
+                decimalSeen = true
                 isInt = false
             }
             sb.append(src[pos]); advance()

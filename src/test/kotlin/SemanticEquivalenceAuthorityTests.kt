@@ -12,12 +12,20 @@ import org.flowlang.conformance.SemanticEquivalenceFixture
 import org.flowlang.conformance.SemanticEquivalenceLoader
 import org.flowlang.conformance.SemanticEquivalencePlanFactory
 import org.flowlang.conformance.SemanticImplementationObservationAuthority
+import org.flowlang.conformance.semanticEffectEvidenceStatus
 import org.flowlang.conformance.SemanticObservationAuthority
 import org.flowlang.conformance.SemanticObservationEvidenceStatus
 import org.flowlang.conformance.SemanticObservationKind
+import org.flowlang.effects.EffectDomain
+import org.flowlang.effects.EffectOperation
+import org.flowlang.effects.SemanticEffect
+import org.flowlang.effects.canonicalObservationValue
+import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetRenderMode
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.PlanDependencyResolution
+import org.flowlang.planner.TaskNode
 
 class SemanticEquivalenceAuthorityTests {
     private val modules by lazy { ModuleRegistry.fromDirectory(File("modules")) }
@@ -100,6 +108,55 @@ class SemanticEquivalenceAuthorityTests {
 
             assertEquals(reference, alternate, fixture.name)
         }
+    }
+
+    @Test
+    fun everyIndependenceFixtureAlsoDetectsARealSemanticMutation() {
+        SemanticEquivalenceFixture.entries.forEach { fixture ->
+            val reference = SemanticObservationAuthority.requirementsFor(
+                SemanticEquivalencePlanFactory.plan(fixture)
+            )
+            val semanticAlternate = SemanticObservationAuthority.requirementsFor(
+                SemanticEquivalencePlanFactory.plan(fixture, alternateSemanticMeaning = true)
+            )
+
+            assertTrue(reference != semanticAlternate, fixture.name)
+        }
+    }
+
+    @Test
+    fun effectEvidenceRequiresTheExactManifestEffectTuple() {
+        val effect = SemanticEffect(
+            domain = EffectDomain.INFRASTRUCTURE_STATE,
+            operation = EffectOperation.UPSERT,
+            resource = "deployment.state",
+            sourceCapability = "DEPLOY"
+        )
+        val task = TaskNode(
+            id = "deploy",
+            module = "reference",
+            action = "deploy",
+            target = "system",
+            effectModel = listOf(effect)
+        )
+        val matching = TargetStep(
+            id = "deploy",
+            type = "action",
+            materialization = TargetMaterialization.native("deploy", "test"),
+            metadata = mapOf("semanticEffect.0" to effect.canonicalObservationValue())
+        )
+        val contradictory = matching.copy(
+            metadata = mapOf("semanticEffect.0" to effect.copy(resource = "other.state").canonicalObservationValue())
+        )
+
+        assertEquals(
+            SemanticObservationEvidenceStatus.PRESERVED,
+            semanticEffectEvidenceStatus(task, matching, effect.canonicalObservationValue(), native = true)
+        )
+        assertEquals(
+            SemanticObservationEvidenceStatus.CONTRADICTORY,
+            semanticEffectEvidenceStatus(task, contradictory, effect.canonicalObservationValue(), native = true)
+        )
     }
 
     @Test
