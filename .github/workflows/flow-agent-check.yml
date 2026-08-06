@@ -2,7 +2,7 @@ name: Flow CI
 
 on:
   pull_request:
-    types: [reopened]
+    types: [opened]
 
 permissions:
   contents: write
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   finalize-pr-110:
-    if: github.event.pull_request.number == 110 && github.event.pull_request.head.ref == 'agent/core-neutrality-governance-hardening'
+    if: github.event.pull_request.head.ref == 'agent/core-neutrality-governance-hardening'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -86,9 +86,10 @@ EOF_EXPECTED
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TEMP_PR: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          gh api --method PATCH repos/${GITHUB_REPOSITORY}/pulls/110 -f state=closed >/dev/null
+          gh api --method PATCH repos/${GITHUB_REPOSITORY}/pulls/${TEMP_PR} -f state=closed >/dev/null
           git config user.name "OpenAI Agent"
           git config user.email "agent@openai.invalid"
           git add -A
@@ -97,4 +98,3 @@ EOF_EXPECTED
           git commit -m "Harden neutrality and fail-closed evidence boundaries"
           git push --force origin HEAD:agent/core-neutrality-governance-hardening
           git push origin --delete agent/pr110-finalize-base || true
-          gh api --method PATCH repos/${GITHUB_REPOSITORY}/pulls/110 -f state=open >/dev/null
