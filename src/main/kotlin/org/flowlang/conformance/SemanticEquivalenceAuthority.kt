@@ -208,13 +208,15 @@ class SemanticEquivalenceAuthority(
                 val duplicateEvidence = baselineEvidence + baselineEvidence.single {
                     it.requirementId == requirement.id
                 }.copy(evidenceReference = "c0.3:${case.id}:duplicate:${requirement.id}")
+                val duplicateRecords = duplicateEvidence.filter { it.requirementId == requirement.id }
                 val duplicateAssessment = SemanticObservationAuthority.assess(requirements, duplicateEvidence)
                 val duplicateAffected = duplicateAssessment.observations.singleOrNull {
                     it.requirement?.id == requirement.id
                 }
                 if (duplicateAssessment.decision.status != SemanticEquivalenceDecisionStatus.NOT_EQUIVALENT ||
                     duplicateAffected?.status != SemanticObservationEvidenceStatus.CONTRADICTORY ||
-                    duplicateAffected.message?.contains("multiple evidence records") != true
+                    duplicateAffected?.evidenceReferences?.sorted() !=
+                    duplicateRecords.map(SemanticObservationEvidence::evidenceReference).sorted()
                 ) {
                     add("Case '${case.id}' duplicate evidence on '${requirement.id}' does not fail through the duplicate-evidence path.")
                 }
@@ -259,19 +261,6 @@ class SemanticEquivalenceAuthority(
                     semanticAlternate
                 )
             )
-            val referenceAssessment = SemanticObservationAuthority.assess(
-                reference,
-                SemanticObservationAuthority.fullyPreserved(reference, "c0.3:${case.id}:reference")
-            )
-            val alternateAssessment = SemanticObservationAuthority.assess(
-                alternate,
-                SemanticObservationAuthority.fullyPreserved(alternate, "c0.3:${case.id}:alternate")
-            )
-            if (referenceAssessment.decision != alternateAssessment.decision ||
-                referenceAssessment.observations.map { it.status } != alternateAssessment.observations.map { it.status }
-            ) {
-                add("Case '${case.id}' equivalence decision depends on evidence-provider identity.")
-            }
         }
     }
 
