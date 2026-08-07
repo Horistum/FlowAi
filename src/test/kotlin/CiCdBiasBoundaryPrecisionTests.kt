@@ -98,8 +98,11 @@ class CiCdBiasBoundaryPrecisionTests {
                 package org.flowlang.intent
 
                 val StandardCapability.Companion.JENKINS_PIPELINE: StandardCapability
+                    get() = StandardCapability.CLUSTER_MAINTENANCE
                 val StandardCapability.Companion.DOCKER_BUILD: StandardCapability
+                    get() = StandardCapability.CLUSTER_MAINTENANCE
                 val StandardCapability.Companion.TEKTON_TASK: StandardCapability
+                    get() = StandardCapability.CLUSTER_MAINTENANCE
                 """.trimIndent()
             )
 
