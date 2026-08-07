@@ -150,7 +150,7 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
             val hasProductionUse = codeByPath.any { (path, code) ->
                 when {
                     path != definitionPath -> token.containsMatchIn(code)
-                    else -> hasExecutableUseOutsideOwnDeclaration(code, name)
+                    else -> hasProductionUseOutsideOwnDeclaration(code, name)
                 }
             }
             DiscoveredAuthorityRecord(definitionPath, callers, hasProductionUse)
@@ -162,15 +162,15 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
         )
     }
 
-    private fun hasExecutableUseOutsideOwnDeclaration(code: String, name: String): Boolean {
+    private fun hasProductionUseOutsideOwnDeclaration(code: String, name: String): Boolean {
         val declaration = AUTHORITY_DEFINITION.findAll(code)
             .firstOrNull { it.groupValues[1] == name } ?: return false
         val declarationBody = declarationBodyRange(code, declaration)
-        val executableUse = Regex("\\b${Regex.escape(name)}\\s*(?:\\(|\\.|::)")
-        return executableUse.findAll(code).any { use -> declarationBody == null || use.range.first !in declarationBody }
+        val reference = Regex("\\b${Regex.escape(name)}\\b")
+        return reference.findAll(code).any { use -> use.range.first !in declarationBody }
     }
 
-    private fun declarationBodyRange(code: String, declaration: MatchResult): IntRange? {
+    private fun declarationBodyRange(code: String, declaration: MatchResult): IntRange {
         val bodyStart = code.indexOf('{', startIndex = declaration.range.last + 1)
         if (bodyStart < 0) return declaration.range
         var depth = 0
