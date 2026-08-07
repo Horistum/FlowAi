@@ -12,7 +12,14 @@ activationEvidence:
   runId: 31166600475
   exactHead: "a3f0a062b13f4f167fb9269d166b31dcf73e1ed1"
   mergeCandidate: "646a2517784a82f8799bc8d4a74fa4f592f966ac"
-implementationEvidence: {}
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2807
+  runId: 31196276487
+  exactHead: "5ed97978e8a29e719265af56b95e7c12050e1531"
+  mergeCandidate: "99e07dbce4ad3ad20343d067eb1b559b9210ef30"
+completionBoundary: {}
 responsibilityInventory:
   catalog: "standard/architecture/authority-responsibilities.yaml"
   inventoryRule: "Every production Kotlin type whose name ends in Authority must have exactly one catalog entry with its definition path, role, invariant, inputs, outputs and exact production caller files."
