@@ -1,0 +1,33 @@
+version: "C0.4"
+name: "Adapter Profile Evidence"
+type: "adapter-evidence"
+stream: conformance
+status: active
+objective: "Evaluate the current built-in implementation against the frozen A0.1-A0.6 adapter profiles without hiding unsupported or unknown capabilities."
+dependsOnCore: "0.9.7.10"
+dependsOnAdapters: "A0.6"
+dependsOnConformance: "C0.3"
+activationEvidence:
+  conformanceItem: "C0.3"
+  conformanceStatus: "completed"
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2750
+  runId: 30992449903
+  exactHead: "dd1b049b0c8e768a43f19da4280fe80f57d7e27f"
+  mergeCandidate: "08a82daa8d7827216482b40779e183a7a96f0a1a"
+frozenProfileBoundary:
+  adapterItem: "A0.6"
+  sourceManifest: "conformance/profiles/adapter-profile-sources.yaml"
+requiredEvidence:
+  - "A0.1-A0.6 adapter profile documents are byte-exact frozen inputs rather than copied conformance-owned support declarations."
+  - "Existing adapter authorities re-evaluate the current target registry, providers and module implementations against those frozen inputs."
+  - "Every target profile retains topology, control, continuity and executable-rendering claims including unsupported and unknown states."
+  - "Capability binding reports retain every explicitly unsupported semantic parameter with its reason."
+  - "A truthful unsupported or unknown capability does not fail C0.4; hiding, promoting or contradicting it does."
+  - "A1.0 bounded GitHub Actions continuity evidence does not promote the generic A0.5 GitHub Actions profile."
+forbiddenScope:
+  - "No mutation of frozen Core, A0, A1.0, C0.1, C0.2 or C0.3 inventories."
+  - "No A0.7 trigger evidence in the A0.6 C0.4 profile boundary."
+  - "No target-specific support claim authored by C0.4 as a replacement for adapter-owned evidence."
+  - "No support promotion inferred from renderer presence, target registry flags or a bounded executable scenario."
