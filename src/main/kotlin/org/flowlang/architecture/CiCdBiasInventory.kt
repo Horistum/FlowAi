@@ -182,10 +182,10 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         term: String,
         supportedCompatibilityManifest: Boolean
     ): CiCdBiasLexicalContext = when {
-        path == STANDARD_CAPABILITY_ALIAS_MANIFEST && !supportedCompatibilityManifest ->
-            CiCdBiasLexicalContext.STRUCTURED_CONTROL
         path == STANDARD_CAPABILITY_ALIAS_MANIFEST &&
             isCompatibilityAliasSource(line, term) -> CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
+        path == STANDARD_CAPABILITY_ALIAS_MANIFEST && !supportedCompatibilityManifest ->
+            CiCdBiasLexicalContext.STRUCTURED_CONTROL
         isControlLiteral(line, term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
         classification in GOVERNED_PRODUCTION_CLASSIFICATIONS &&
             path.startsWith("schemas/") &&
@@ -220,6 +220,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     }
 
     private fun isControlLiteral(line: String, term: String): Boolean {
+        val controlSurface = line.replace("\\\"", "\"")
         val escaped = Regex.escape(term.lowercase())
         val quotedTerm = "[\\\"']$escaped[\\\"']"
         val quotedOrBareTerm = "(?:$quotedTerm|\\b$escaped\\b)"
@@ -232,13 +233,13 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             "(?i)\\b(contains|containsKey|startsWith|endsWith|matches|find|matchEntire)\\s*\\(\\s*$quotedTerm"
         )
         val regexConstruction = Regex("(?i)\\bRegex\\s*\\(\\s*$quotedTerm")
-        return namedAssignment.containsMatchIn(line) ||
-            Regex("(?i)(==|!=)\\s*$quotedTerm").containsMatchIn(line) ||
-            Regex("(?i)$quotedTerm\\s*(==|!=|->)").containsMatchIn(line) ||
-            predicateCall.containsMatchIn(line) ||
-            regexConstruction.containsMatchIn(line) ||
-            (Regex("(?i)\\bsetOf\\s*\\(").containsMatchIn(line) &&
-                Regex("(?i)$quotedTerm").containsMatchIn(line))
+        return namedAssignment.containsMatchIn(controlSurface) ||
+            Regex("(?i)(==|!=)\\s*$quotedTerm").containsMatchIn(controlSurface) ||
+            Regex("(?i)$quotedTerm\\s*(==|!=|->)").containsMatchIn(controlSurface) ||
+            predicateCall.containsMatchIn(controlSurface) ||
+            regexConstruction.containsMatchIn(controlSurface) ||
+            (Regex("(?i)\\bsetOf\\s*\\(").containsMatchIn(controlSurface) &&
+                Regex("(?i)$quotedTerm").containsMatchIn(controlSurface))
     }
 
     private fun isCompatibilityAliasSource(line: String, term: String): Boolean {
