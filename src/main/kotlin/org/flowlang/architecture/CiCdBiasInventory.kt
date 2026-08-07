@@ -184,9 +184,9 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
     ): CiCdBiasLexicalContext = when {
         path == STANDARD_CAPABILITY_ALIAS_MANIFEST &&
             isCompatibilityAliasSource(line, term) -> CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
+        isControlLiteral(line, term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
         path == STANDARD_CAPABILITY_ALIAS_MANIFEST && !supportedCompatibilityManifest ->
             CiCdBiasLexicalContext.STRUCTURED_CONTROL
-        isControlLiteral(line, term) -> CiCdBiasLexicalContext.CONTROL_LITERAL
         classification in GOVERNED_PRODUCTION_CLASSIFICATIONS &&
             path.startsWith("schemas/") &&
             !isDescriptiveStructuredLine(line) -> CiCdBiasLexicalContext.STRUCTURED_CONTROL
