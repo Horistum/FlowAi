@@ -1,6 +1,7 @@
 package org.flowlang.roadmap
 
 import java.io.File
+import org.flowlang.architecture.AuthorityResponsibilityCatalog
 import org.flowlang.serialization.FlowYaml
 
 enum class RoadmapTransitionPhase {
@@ -38,6 +39,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         val c03 = optionalYaml(C03_WORK_PACKAGE)
         val c04 = optionalYaml(C04_WORK_PACKAGE)
         val architectureRoadmap = optionalYaml(ARCHITECTURE_ROADMAP)
+        val ar01 = optionalYaml(AR01_WORK_PACKAGE)
 
         val phase = determinePhase(roadmap, correction, a10, c02, c03, c04, architectureRoadmap)
         val errors = buildList {
@@ -112,6 +114,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                     c02,
                     c03,
                     c04,
+                    ar01,
                     this
                 )
                 RoadmapTransitionPhase.INVALID -> Unit
@@ -366,6 +369,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         c02: Map<String, Any?>,
         c03: Map<String, Any?>,
         c04: Map<String, Any?>,
+        ar01: Map<String, Any?>,
         errors: MutableList<String>
     ) {
         requireSelectedFocus(roadmap, "architecture", AR01_ITEM, AR01_NAME, errors)
@@ -393,6 +397,20 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         if (roadmap.string("currentDecision", "completedConformanceItem") != "C0.4" ||
             releaseState.string("roadmapState", "completedConformanceItem") != "C0.4"
         ) errors += "Roadmap index and release state must retain completed conformance item C0.4."
+
+        if (ar01.string("version") != AR01_ITEM ||
+            ar01.string("stream") != "architecture" ||
+            ar01.string("status") != "active"
+        ) errors += "AR0.1 work package must be active and owned by the architecture stream."
+
+        val activation = WorkflowBoundaryEvidence.fromMap(ar01.map("activationEvidence"))
+        val c04Completion = WorkflowBoundaryEvidence.fromMap(c04.map("completionBoundary"))
+        if (!activation.sameBoundary(c04Completion)) {
+            errors += "AR0.1 activation evidence must equal the recorded C0.4 completion boundary."
+        }
+
+        val catalog = AuthorityResponsibilityCatalog(rootDir).analyze()
+        catalog.errors.forEach { error -> errors += "AR0.1 responsibility catalog: $error" }
 
         requireDistinctEvidence(correction, "Completed correction", errors)
         requireDistinctEvidence(a10, "Completed A1.0", errors)
@@ -498,25 +516,13 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
     }
 
     private fun validEvidence(evidence: Map<String, Any?>): Boolean =
-        evidence.keys == EVIDENCE_FIELDS &&
-            evidence.string("status") == "passed" &&
-            evidence.string("workflow") == "Flow CI" &&
-            evidence.string("runNumber").toIntOrNull()?.let { it > 0 } == true &&
-            evidence.string("runId").toLongOrNull()?.let { it > 0 } == true &&
-            evidence.string("exactHead").matches(SHA_PATTERN) &&
-            evidence.string("mergeCandidate").matches(SHA_PATTERN) &&
-            evidence.string("exactHead") != evidence.string("mergeCandidate")
+        WorkflowBoundaryEvidence.fromMap(evidence).structurallyValid
 
     private fun distinctEvidenceBoundaries(
         implementation: Map<String, Any?>,
         completion: Map<String, Any?>
-    ): Boolean =
-        validEvidence(implementation) &&
-            validEvidence(completion) &&
-            implementation.string("runNumber") != completion.string("runNumber") &&
-            implementation.string("runId") != completion.string("runId") &&
-            implementation.string("exactHead") != completion.string("exactHead") &&
-            implementation.string("mergeCandidate") != completion.string("mergeCandidate")
+    ): Boolean = WorkflowBoundaryEvidence.fromMap(completion)
+        .distinctFrom(WorkflowBoundaryEvidence.fromMap(implementation))
 
     private fun requiredFiles(phase: RoadmapTransitionPhase): List<String> = buildList {
         addAll(BASE_REQUIRED_FILES)
@@ -529,6 +535,9 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         if (phase == RoadmapTransitionPhase.AR0_1_ACTIVE) {
             add(C04_WORK_PACKAGE)
             add(ARCHITECTURE_ROADMAP)
+            add(AR01_WORK_PACKAGE)
+            add(AuthorityResponsibilityCatalog.CATALOG_PATH)
+            add(AR01_DOCUMENTATION)
         }
     }
 
@@ -566,6 +575,8 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ARCHITECTURE_ROADMAP = ".flow-agent/roadmap-architecture.yaml"
+        const val AR01_WORK_PACKAGE = ".flow-agent/work-packages/AR0.1-authority-responsibility-consolidation.yaml"
+        const val AR01_DOCUMENTATION = "docs/AR0_1_AUTHORITY_RESPONSIBILITY_CONSOLIDATION.md"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         const val CORRECTION_WORK_PACKAGE = ".flow-agent/work-packages/C0.1.1-bounded-domain-integrity-correction.yaml"
         const val A10_WORK_PACKAGE = ".flow-agent/work-packages/A1.0-github-actions-artifact-workspace-continuity.yaml"
@@ -582,8 +593,6 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         private const val C04_NAME = "Adapter Profile Evidence"
         private const val AR01_ITEM = "AR0.1"
         private const val AR01_NAME = "Authority Responsibility Consolidation"
-        private val SHA_PATTERN = Regex("[0-9a-f]{40}")
-        private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val FORBIDDEN_ADAPTER_SEQUENCE_PATTERNS = listOf(
             Regex("\\bSUCCESSOR_STREAM\\b"),
             Regex("\\bCONFORMANCE_ITEM\\b"),

@@ -117,15 +117,8 @@ class AdapterTopologyRoadmapLifecycleAuthority(private val rootDir: File = File(
         return FlowYaml.readMap(file)
     }
 
-    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence {
-        val raw = map(key)
-        if (raw.isEmpty()) return AdapterWorkflowEvidence.ABSENT
-        return AdapterWorkflowEvidence(
-            raw.string("status"), raw.string("workflow"), raw.string("runNumber").toIntOrNull(),
-            raw.string("runId").toLongOrNull(), raw.string("exactHead"), raw.string("mergeCandidate"),
-            (raw.keys - EVIDENCE_FIELDS).sorted(), true
-        )
-    }
+    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence =
+        AdapterWorkflowEvidence.fromCanonical(org.flowlang.roadmap.WorkflowBoundaryEvidence.fromMap(map(key)))
 
     private fun Map<String, Any?>.itemStatus(version: String): String = mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
     private fun Map<String, Any?>.string(vararg path: String): String { var current: Any? = this; path.forEach { current = (current as? Map<*, *>)?.get(it) }; return current?.toString().orEmpty() }
@@ -138,6 +131,5 @@ class AdapterTopologyRoadmapLifecycleAuthority(private val rootDir: File = File(
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
-        private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
     }
 }

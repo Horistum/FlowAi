@@ -20,16 +20,12 @@ data class SemanticEquivalenceWorkflowEvidence(
     val unknownFields: List<String> = emptyList(),
     val present: Boolean = false
 ) {
+    private fun canonical() = org.flowlang.roadmap.WorkflowBoundaryEvidence(
+        status.orEmpty(), workflow.orEmpty(), runNumber, runId, exactHead.orEmpty(), mergeCandidate.orEmpty(), unknownFields, present
+    )
+
     val structurallyValid: Boolean
-        get() = present &&
-            unknownFields.isEmpty() &&
-            status == "passed" &&
-            workflow == "Flow CI" &&
-            runNumber?.let { it > 0 } == true &&
-            runId?.let { it > 0 } == true &&
-            exactHead?.matches(SHA_PATTERN) == true &&
-            mergeCandidate?.matches(SHA_PATTERN) == true &&
-            exactHead != mergeCandidate
+        get() = canonical().structurallyValid
 
     fun summary(): String = if (!present) {
         "absent"
@@ -39,7 +35,18 @@ data class SemanticEquivalenceWorkflowEvidence(
 
     companion object {
         val ABSENT = SemanticEquivalenceWorkflowEvidence()
-        private val SHA_PATTERN = Regex("[0-9a-f]{40}")
+
+        fun fromCanonical(evidence: org.flowlang.roadmap.WorkflowBoundaryEvidence): SemanticEquivalenceWorkflowEvidence =
+            SemanticEquivalenceWorkflowEvidence(
+                evidence.status,
+                evidence.workflow,
+                evidence.runNumber,
+                evidence.runId,
+                evidence.exactHead,
+                evidence.mergeCandidate,
+                evidence.unknownFields,
+                evidence.present
+            )
     }
 }
 
@@ -288,20 +295,8 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
         )
     }
 
-    private fun Map<String, Any?>.workflowEvidence(key: String): SemanticEquivalenceWorkflowEvidence {
-        val raw = map(key)
-        if (raw.isEmpty()) return SemanticEquivalenceWorkflowEvidence.ABSENT
-        return SemanticEquivalenceWorkflowEvidence(
-            status = raw.string("status"),
-            workflow = raw.string("workflow"),
-            runNumber = raw.string("runNumber").toIntOrNull(),
-            runId = raw.string("runId").toLongOrNull(),
-            exactHead = raw.string("exactHead"),
-            mergeCandidate = raw.string("mergeCandidate"),
-            unknownFields = (raw.keys - WORKFLOW_FIELDS).sorted(),
-            present = true
-        )
-    }
+    private fun Map<String, Any?>.workflowEvidence(key: String): SemanticEquivalenceWorkflowEvidence =
+        SemanticEquivalenceWorkflowEvidence.fromCanonical(org.flowlang.roadmap.WorkflowBoundaryEvidence.fromMap(map(key)))
 
     private fun Map<String, Any?>.itemStatus(version: String): String =
         mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
@@ -326,7 +321,6 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         private val COMPLETED_HANDOFF_STATES = setOf("next", "completed")
-        private val WORKFLOW_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val ACTIVATION_FIELDS = setOf(
             "conformanceItem",
             "conformanceStatus",

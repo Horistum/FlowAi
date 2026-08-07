@@ -13,16 +13,12 @@ data class ClosureWorkflowEvidence(
     val unknownFields: List<String> = emptyList(),
     val present: Boolean = true
 ) {
+    private fun canonical() = org.flowlang.roadmap.WorkflowBoundaryEvidence(
+        status, workflow, runNumber, runId, exactHead, mergeCandidate, unknownFields, present
+    )
+
     val structurallyValid: Boolean
-        get() = present &&
-            unknownFields.isEmpty() &&
-            status == "passed" &&
-            workflow == "Flow CI" &&
-            runNumber?.let { it > 0 } == true &&
-            runId?.let { it > 0 } == true &&
-            SHA.matches(exactHead) &&
-            SHA.matches(mergeCandidate) &&
-            exactHead != mergeCandidate
+        get() = canonical().structurallyValid
 
     fun summary(): String = if (!present) {
         "absent"
@@ -33,8 +29,6 @@ data class ClosureWorkflowEvidence(
     }
 
     companion object {
-        private val SHA = Regex("[0-9a-f]{40}")
-
         val ABSENT = ClosureWorkflowEvidence(
             status = "",
             workflow = "",
@@ -44,6 +38,18 @@ data class ClosureWorkflowEvidence(
             mergeCandidate = "",
             present = false
         )
+
+        fun fromCanonical(evidence: org.flowlang.roadmap.WorkflowBoundaryEvidence): ClosureWorkflowEvidence =
+            ClosureWorkflowEvidence(
+                evidence.status,
+                evidence.workflow,
+                evidence.runNumber,
+                evidence.runId,
+                evidence.exactHead,
+                evidence.mergeCandidate,
+                evidence.unknownFields,
+                evidence.present
+            )
     }
 }
 
@@ -202,19 +208,8 @@ class ClosureEvidenceBoundaryAuthority(private val rootDir: File = File(".")) {
         message = message
     )
 
-    private fun Map<String, Any?>.workflowEvidence(key: String): ClosureWorkflowEvidence {
-        val raw = map(key)
-        if (raw.isEmpty()) return ClosureWorkflowEvidence.ABSENT
-        return ClosureWorkflowEvidence(
-            status = raw.string("status"),
-            workflow = raw.string("workflow"),
-            runNumber = raw.string("runNumber").toIntOrNull(),
-            runId = raw.string("runId").toLongOrNull(),
-            exactHead = raw.string("exactHead"),
-            mergeCandidate = raw.string("mergeCandidate"),
-            unknownFields = (raw.keys - EVIDENCE_FIELDS).sorted()
-        )
-    }
+    private fun Map<String, Any?>.workflowEvidence(key: String): ClosureWorkflowEvidence =
+        ClosureWorkflowEvidence.fromCanonical(org.flowlang.roadmap.WorkflowBoundaryEvidence.fromMap(map(key)))
 
     private fun Map<String, Any?>.string(key: String): String = get(key)?.toString().orEmpty()
 
@@ -228,13 +223,5 @@ class ClosureEvidenceBoundaryAuthority(private val rootDir: File = File(".")) {
         const val CHECK_ID = "governance.closure-evidence-boundary-integrity"
         const val WORK_PACKAGE = ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml"
         private val SUPPORTED_PHASES = setOf("CORRECTION_REQUIRED", "READY", "CLOSED")
-        private val EVIDENCE_FIELDS = setOf(
-            "status",
-            "workflow",
-            "runNumber",
-            "runId",
-            "exactHead",
-            "mergeCandidate"
-        )
     }
 }
