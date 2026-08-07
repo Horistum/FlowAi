@@ -89,6 +89,34 @@ class CiCdBiasBoundaryPrecisionTests {
     }
 
     @Test
+    fun newPlatformKotlinAliasesAreNotCompatibilitySymbols() {
+        withTemporaryRoot("flow-kotlin-rogue-compatibility-aliases") { root ->
+            write(
+                root,
+                "src/main/kotlin/org/flowlang/intent/StandardCapabilityCompatibility.kt",
+                """
+                package org.flowlang.intent
+
+                val StandardCapability.Companion.JENKINS_PIPELINE: StandardCapability
+                val StandardCapability.Companion.DOCKER_BUILD: StandardCapability
+                val StandardCapability.Companion.TEKTON_TASK: StandardCapability
+                """.trimIndent()
+            )
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+            val rogueTerms = setOf("Jenkins", "Docker", "Tekton")
+            val rogueEvidence = report.evidence.filter { evidence ->
+                rogueTerms.any { it.equals(evidence.term, ignoreCase = true) }
+            }
+
+            assertEquals(rogueTerms, rogueEvidence.map { it.term }.toSet())
+            assertTrue(rogueEvidence.all { it.lexicalContext == CiCdBiasLexicalContext.CODE_IDENTIFIER })
+            assertTrue(rogueEvidence.all { it.actionable })
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+        }
+    }
+
+    @Test
     fun concretePredicateLiteralRequiresReview() {
         withTemporaryRoot("flow-predicate-literal") { root ->
             write(
