@@ -70,7 +70,7 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
 
         return AuthorityResponsibilityCatalogReport(
             status = if (errors.isEmpty()) "PASS" else "FAIL",
-            authorityCount = discovery.definitionCount,
+            authorityCount = discovery.authorityCount,
             errors = errors
         )
     }
@@ -103,8 +103,8 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
         if (catalogCallers != expectedCallers) {
             errors += "$label callers drifted: catalog=${catalogCallers.joinToString()} actual=${expectedCallers.joinToString()}."
         }
-        if (expectedCallers.isEmpty()) {
-            errors += "$label has no production caller; remove it or document a real production orchestration boundary before AR0.1 can pass."
+        if (!actual.hasProductionUse) {
+            errors += "$label has no production use outside its own Authority declaration; remove it or add a real production orchestration boundary before AR0.1 can pass."
         }
     }
 
@@ -113,7 +113,7 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
         if (!sourceRoot.isDirectory) {
             return AuthorityDiscovery(
                 authorities = emptyMap(),
-                definitionCount = 0,
+                authorityCount = 0,
                 errors = listOf("Production Kotlin source root is missing: ${sourceRoot.path}")
             )
         }
@@ -147,13 +147,43 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
                 } else 0
                 path.takeIf { occurrences > definitionOccurrences }
             }
-            DiscoveredAuthorityRecord(definitionPath, callers)
+            val hasProductionUse = codeByPath.any { (path, code) ->
+                when {
+                    path != definitionPath -> token.containsMatchIn(code)
+                    else -> hasExecutableUseOutsideOwnDeclaration(code, name)
+                }
+            }
+            DiscoveredAuthorityRecord(definitionPath, callers, hasProductionUse)
         }
         return AuthorityDiscovery(
             authorities = authorities,
-            definitionCount = definitions.values.sumOf { it.size },
+            authorityCount = definitions.keys.size,
             errors = duplicateErrors
         )
+    }
+
+    private fun hasExecutableUseOutsideOwnDeclaration(code: String, name: String): Boolean {
+        val declaration = AUTHORITY_DEFINITION.findAll(code)
+            .firstOrNull { it.groupValues[1] == name } ?: return false
+        val declarationBody = declarationBodyRange(code, declaration)
+        val executableUse = Regex("\\b${Regex.escape(name)}\\s*(?:\\(|\\.|::)")
+        return executableUse.findAll(code).any { use -> declarationBody == null || use.range.first !in declarationBody }
+    }
+
+    private fun declarationBodyRange(code: String, declaration: MatchResult): IntRange? {
+        val bodyStart = code.indexOf('{', startIndex = declaration.range.last + 1)
+        if (bodyStart < 0) return declaration.range
+        var depth = 0
+        for (index in bodyStart until code.length) {
+            when (code[index]) {
+                '{' -> depth++
+                '}' -> {
+                    depth--
+                    if (depth == 0) return declaration.range.first..index
+                }
+            }
+        }
+        return declaration.range.first..code.lastIndex
     }
 
     private fun relative(file: File): String =
@@ -171,11 +201,15 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
 
     private data class AuthorityDiscovery(
         val authorities: Map<String, DiscoveredAuthorityRecord>,
-        val definitionCount: Int,
+        val authorityCount: Int,
         val errors: List<String>
     )
 
-    private data class DiscoveredAuthorityRecord(val path: String, val callers: List<String>)
+    private data class DiscoveredAuthorityRecord(
+        val path: String,
+        val callers: List<String>,
+        val hasProductionUse: Boolean
+    )
 
     companion object {
         const val CATALOG_PATH = "standard/architecture/authority-responsibilities.yaml"
