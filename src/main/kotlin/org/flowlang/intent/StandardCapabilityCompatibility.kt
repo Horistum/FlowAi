@@ -75,6 +75,20 @@ object StandardCapabilityCompatibility {
         .joinToString(separator = "") { byte -> byte.toUByte().toString(16).padStart(2, '0') }
 }
 
+/**
+ * Source-code compatibility bridge for callers that used the retired name.
+ *
+ * This is deliberately not an enum entry and therefore cannot participate in
+ * canonical capability iteration or become target-neutral semantic identity.
+ */
+@Deprecated(
+    message = "Use CLUSTER_MAINTENANCE. The legacy platform-specific name is a source-only compatibility alias.",
+    replaceWith = ReplaceWith("StandardCapability.CLUSTER_MAINTENANCE"),
+    level = DeprecationLevel.WARNING
+)
+val StandardCapability.Companion.KUBERNETES_MAINTENANCE: StandardCapability
+    get() = StandardCapability.CLUSTER_MAINTENANCE
+
 private data class CapabilityAliasManifest(
     val schemaVersion: Int,
     val aliases: List<CapabilityAliasEntry>
