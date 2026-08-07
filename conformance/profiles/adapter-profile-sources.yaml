@@ -1,0 +1,27 @@
+version: "1.0"
+adapterBoundary: "A0.6"
+sources:
+  - id: portfolio
+    path: "adapters/portfolio/builtin-adapter-portfolio.yaml"
+    documentVersion: "1.0"
+    sha256: "67199028f87d93abf9c12facdc70abc795c47cc9e4834d6fe86dbf1fc6ac7595"
+  - id: topology
+    path: "adapters/topology/builtin-adapter-topology.yaml"
+    documentVersion: "1.0"
+    sha256: "1d687e5e441bb25087b795c5985da0f9ee7cae85571cda2677808758028cf6e8"
+  - id: bindings
+    path: "adapters/bindings/builtin-capability-bindings.yaml"
+    documentVersion: "1.0"
+    sha256: "eda2fdec8e6a1b42a969ffa8e68a09567080d56a7e01a2786dccb06ae820f5f2"
+  - id: controls
+    path: "adapters/controls/builtin-control-materialization.yaml"
+    documentVersion: "1.0"
+    sha256: "ae3314dbbba94715afc7d30d162b549918854991b1d3ef1f726f5b95b62b9e3c"
+  - id: continuity
+    path: "adapters/continuity/builtin-continuity-satisfaction.yaml"
+    documentVersion: "1.0"
+    sha256: "553b6de494c5a902b61035563b9d548acdd53ccd7e1bd27fbc0611b8c22056c1"
+  - id: rendering
+    path: "adapters/rendering/builtin-artifact-rendering.yaml"
+    documentVersion: "1.0"
+    sha256: "43a53e6bfb787adcf0ee6e9ce8c0c3f11c40ccbd91bb465767ae968aec576a40"

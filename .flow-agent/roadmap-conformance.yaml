@@ -19,6 +19,7 @@ rules:
   - "C0.2 activates only after A1.0 establishes a second executable target with real continuity evidence."
   - "C0.2 matrix declarations must match production-derived topology requirements and cannot promote target support."
   - "C0.3 defines observable equivalence without using target syntax, job layout or action identity as semantic truth."
+  - "C0.4 evaluates current implementations against byte-frozen A0.1-A0.6 adapter-owned profile evidence and keeps unsupported and unknown claims explicit."
 
 currentDecision:
   completedItem: "C0.3"

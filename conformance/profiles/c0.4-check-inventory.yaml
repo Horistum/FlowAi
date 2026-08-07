@@ -1,0 +1,9 @@
+version: "1.0"
+checks:
+  - "conformance.c0.4.lifecycle-integrity"
+  - "conformance.c0.4.frozen-source-integrity"
+  - "conformance.c0.4.implementation-reassessment"
+  - "conformance.c0.4.profile-coverage"
+  - "conformance.c0.4.unsupported-and-unknown-visibility"
+  - "conformance.c0.4.scope-separation"
+  - "conformance.c0.4.frozen-boundary-preservation"
