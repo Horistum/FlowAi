@@ -165,6 +165,8 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         spanKind: KotlinSpanKind,
         term: String
     ): CiCdBiasLexicalContext = when {
+        classification == COMPATIBILITY_BOUNDARY && isDeprecatedCompatibilityAliasSymbol(line, term) ->
+            CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL
         line.contains("CiCdBiasTerm(") ||
             (classification == DESCRIPTIVE_CATALOG && line.contains("catalogModules(")) ->
             CiCdBiasLexicalContext.CATALOG_DECLARATION
@@ -248,6 +250,14 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         val sourceName = match.groupValues[1]
         return sourceName in StandardCapabilityCompatibility.retiredSourceNames &&
             sourceName.contains(term, ignoreCase = true)
+    }
+
+    private fun isDeprecatedCompatibilityAliasSymbol(line: String, term: String): Boolean {
+        val match = Regex(
+            "^\\s*val\\s+StandardCapability\\.Companion\\.([A-Z0-9_]+)\\s*:\\s*StandardCapability\\s*$"
+        ).matchEntire(line) ?: return false
+        val normalizedTerm = term.replace('-', '_').replace(' ', '_').uppercase()
+        return match.groupValues[1].contains(normalizedTerm)
     }
 
     private fun isSemanticLiteral(line: String, term: String): Boolean {
