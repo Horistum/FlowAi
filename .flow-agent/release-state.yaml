@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 44
+stateVersion: 45
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,15 +16,17 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 15
-  activeTrack: "conformance-adapter-profile-evidence"
+  roadmapVersion: 16
+  activeTrack: "architecture-authority-responsibility-consolidation"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
-  primaryStream: "conformance"
+  primaryStream: "architecture"
   completedAdapterItem: "A1.0"
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
-  nextItem: "C0.4"
-  nextItemName: "Adapter Profile Evidence"
+  completedConformanceItem: "C0.4"
+  completedConformanceItemName: "Adapter Profile Evidence"
+  nextItem: "AR0.1"
+  nextItemName: "Authority Responsibility Consolidation"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -32,6 +34,7 @@ roadmapState:
     core: ".flow-agent/roadmap-core-v0.9.7.9.yaml"
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
+    architecture: ".flow-agent/roadmap-architecture.yaml"
 
 repositoryRules:
   sourceLanguage: "English"
@@ -161,17 +164,17 @@ qualityPrinciples:
   - "C0.3 semantic equivalence compares explicit observable results and continuity, never target syntax, job layout or action identity."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-c0.3-completion-boundary"
-  flowAgentStructure: "passed-on-c0.3-completion-boundary"
-  flowAgentContextGeneration: "passed-on-c0.3-completion-boundary"
-  cleanTest: "passed-on-c0.3-completion-boundary"
-  conformance: "passed-on-c0.3-completion-boundary"
-  executableReferenceEvidence: "passed-on-c0.3-completion-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-c0.3-completion-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-c0.3-completion-boundary"
-  boundedDomainCorpusEvidence: "passed-on-c0.3-completion-boundary"
-  roadmapTransitionEvidence: "passed-on-c0.3-completion-boundary"
-  validationSource: "Flow CI #2750, run 30992449903, passed exact C0.3 completion head dd1b049b0c8e768a43f19da4280fe80f57d7e27f and synthetic merge candidate 08a82daa8d7827216482b40779e183a7a96f0a1a."
+  flowAgentTooling: "passed-on-c0.4-completion-boundary"
+  flowAgentStructure: "passed-on-c0.4-completion-boundary"
+  flowAgentContextGeneration: "passed-on-c0.4-completion-boundary"
+  cleanTest: "passed-on-c0.4-completion-boundary"
+  conformance: "passed-on-c0.4-completion-boundary"
+  executableReferenceEvidence: "passed-on-c0.4-completion-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-c0.4-completion-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-c0.4-completion-boundary"
+  boundedDomainCorpusEvidence: "passed-on-c0.4-completion-boundary"
+  roadmapTransitionEvidence: "passed-on-c0.4-completion-boundary"
+  validationSource: "Flow CI #2798, run 31166600475, passed exact C0.4 completion head a3f0a062b13f4f167fb9269d166b31dcf73e1ed1 and synthetic merge candidate 646a2517784a82f8799bc8d4a74fa4f592f966ac."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
@@ -183,4 +186,5 @@ lastKnownValidation:
     - "C0.2 Abstract Topology Matrix is complete with distinct Flow CI #2674 implementation and #2679 completion boundaries."
     - "C0.2 completion evidence remains external exact-head CI evidence until PR #107 merges; it does not impersonate merged history."
     - "C0.3 Semantic Equivalence Rules is complete with distinct Flow CI #2743 implementation and #2750 completion boundaries."
-    - "C0.4 Adapter Profile Evidence is the active conformance item."
+    - "C0.4 Adapter Profile Evidence is complete with distinct Flow CI #2796 implementation and #2798 completion boundaries."
+    - "The conformance stream is complete at C0.4; AR0.1 Authority Responsibility Consolidation is the active cross-stream architecture item."

@@ -70,6 +70,30 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthorityTests {
     }
 
     @Test
+    fun completedPhaseRemainsValidAfterArchitectureActivation() {
+        val report = authority.evaluate(
+            completedInput(
+                implementation = evidence(
+                    exact = "1111111111111111111111111111111111111111",
+                    merge = "2222222222222222222222222222222222222222"
+                ),
+                completion = evidence(
+                    exact = "3333333333333333333333333333333333333333",
+                    merge = "4444444444444444444444444444444444444444"
+                )
+            ).copy(
+                primaryStream = "architecture",
+                indexNextItem = "AR0.1",
+                indexNextStream = "architecture",
+                releasePrimaryStream = "architecture",
+                releaseNextItem = "AR0.1"
+            )
+        )
+        assertEquals(AdapterExecutableContinuityLifecyclePhase.COMPLETED, report.phase)
+        assertEquals("PASS", report.status, report.failedChecks.joinToString())
+    }
+
+    @Test
     fun completedPhaseRejectsMismatchedGlobalConformanceFocus() {
         val report = authority.evaluate(
             completedInput(

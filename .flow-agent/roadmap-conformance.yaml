@@ -1,7 +1,7 @@
 project: Flow Conformance
 stream: conformance
-roadmapVersion: 8
-status: active
+roadmapVersion: 9
+status: completed
 
 purpose: "Maintain bounded independent evidence for universal contracts and implementation behavior."
 
@@ -22,11 +22,11 @@ rules:
   - "C0.4 evaluates current implementations against byte-frozen A0.1-A0.6 adapter-owned profile evidence and keeps unsupported and unknown claims explicit."
 
 currentDecision:
-  completedItem: "C0.3"
-  completedItemName: "Semantic Equivalence Rules"
-  nextItem: "C0.4"
-  nextItemName: "Adapter Profile Evidence"
-  decisionBasis: "Flow CI #2750, run 30992449903, passed the distinct C0.3 completion boundary on exact head dd1b049b0c8e768a43f19da4280fe80f57d7e27f and synthetic merge candidate 08a82daa8d7827216482b40779e183a7a96f0a1a. C0.3 is complete and C0.4 is the adjacent active conformance item."
+  completedItem: "C0.4"
+  completedItemName: "Adapter Profile Evidence"
+  nextItem: ""
+  nextItemName: ""
+  decisionBasis: "Flow CI #2798, run 31166600475, passed the distinct C0.4 completion boundary on exact head a3f0a062b13f4f167fb9269d166b31dcf73e1ed1 and synthetic merge candidate 646a2517784a82f8799bc8d4a74fa4f592f966ac. The conformance stream is complete at C0.4 and cross-stream focus moves to AR0.1."
 
 items:
   - version: "C0.1"
@@ -90,8 +90,12 @@ items:
   - version: "C0.4"
     name: "Adapter Profile Evidence"
     type: "adapter-evidence"
-    status: next
+    status: completed
     purpose: "Evaluate implementations against frozen profiles."
     dependsOnAdapters: "A0.6"
     completionEvidence:
-      - "Reports keep unsupported capabilities visible."
+      - "Frozen A0.1-A0.6 adapter profile documents remain byte-exact integrity-pinned inputs."
+      - "Current implementations are reassessed through the existing adapter-owned portfolio, topology, binding, control, continuity and rendering authorities."
+      - "Unsupported and unknown capability claims remain explicit consumer-visible evidence rather than disappearing from aggregate reports."
+      - "Bounded A1.0 executable promotion remains separate from the generic A0 profile."
+      - "Flow CI #2796 passed the implementation boundary and Flow CI #2798 passed the distinct completion boundary."

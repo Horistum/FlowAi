@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-REQUIRED_ROADMAP_STREAMS = ("core", "adapters", "conformance")
+REQUIRED_ROADMAP_STREAMS = ("core", "adapters", "conformance", "architecture")
 
 
 @dataclass(frozen=True)
@@ -260,6 +260,7 @@ def _validate_core_item_contract(core_path: Path) -> None:
         forbidden_dependencies = {
             "dependsOnAdapters": _dependency_values(block, "dependsOnAdapters"),
             "dependsOnConformance": _dependency_values(block, "dependsOnConformance"),
+            "dependsOnArchitecture": _dependency_values(block, "dependsOnArchitecture"),
         }
         reversed_dependencies = {
             key: values for key, values in forbidden_dependencies.items() if values
@@ -274,33 +275,48 @@ def _validate_core_item_contract(core_path: Path) -> None:
 
 
 def _validate_cross_stream_references(paths: dict[str, Path]) -> None:
-    core_versions = _roadmap_versions(paths["core"])
-    adapter_versions = _roadmap_versions(paths["adapters"])
+    versions_by_stream = {
+        stream: _roadmap_versions(path)
+        for stream, path in paths.items()
+    }
+    dependency_keys = {
+        "core": "dependsOnCore",
+        "adapters": "dependsOnAdapters",
+        "conformance": "dependsOnConformance",
+        "architecture": "dependsOnArchitecture",
+    }
+    allowed_dependencies = {
+        "core": {"core"},
+        "adapters": {"core", "adapters"},
+        "conformance": {"core", "adapters", "conformance"},
+        "architecture": {"core", "adapters", "conformance", "architecture"},
+    }
+    display_names = {
+        "core": "Core",
+        "adapters": "adapter",
+        "conformance": "conformance",
+        "architecture": "architecture",
+    }
 
-    for stream in ("adapters", "conformance"):
-        for block in roadmap_item_blocks(read_text(paths[stream])):
+    for stream, path in paths.items():
+        for block in roadmap_item_blocks(read_text(path)):
             version = _item_version(block)
-            for dependency in _dependency_values(block, "dependsOnCore"):
-                if dependency not in core_versions:
+            for dependency_stream, key in dependency_keys.items():
+                dependencies = _dependency_values(block, key)
+                if not dependencies:
+                    continue
+                if dependency_stream not in allowed_dependencies[stream]:
                     raise RuntimeError(
-                        f"{stream} roadmap item {version} references unknown Core item: {dependency}"
+                        f"{stream} roadmap item {version} reverses roadmap ownership direction: "
+                        f"{key}={','.join(dependencies)}"
                     )
-
-    for block in roadmap_item_blocks(read_text(paths["adapters"])):
-        version = _item_version(block)
-        for dependency in _dependency_values(block, "dependsOnAdapters"):
-            if dependency not in adapter_versions:
-                raise RuntimeError(
-                    f"adapters roadmap item {version} references unknown adapter item: {dependency}"
-                )
-
-    for block in roadmap_item_blocks(read_text(paths["conformance"])):
-        version = _item_version(block)
-        for dependency in _dependency_values(block, "dependsOnAdapters"):
-            if dependency not in adapter_versions:
-                raise RuntimeError(
-                    f"conformance roadmap item {version} references unknown adapter item: {dependency}"
-                )
+                known_versions = versions_by_stream[dependency_stream]
+                for dependency in dependencies:
+                    if dependency not in known_versions:
+                        raise RuntimeError(
+                            f"{stream} roadmap item {version} references unknown "
+                            f"{display_names[dependency_stream]} item: {dependency}"
+                        )
 
 
 def _validate_active_correction(root: Path, main_roadmap: Path, paths: dict[str, Path]) -> None:

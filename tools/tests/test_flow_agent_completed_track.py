@@ -72,6 +72,7 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
             '    core: ".flow-agent/roadmap-core.yaml"\n'
             '    adapters: ".flow-agent/roadmap-adapters.yaml"\n'
             '    conformance: ".flow-agent/roadmap-conformance.yaml"\n'
+            '    architecture: ".flow-agent/roadmap-architecture.yaml"\n'
             'currentDecision:\n'
             '  completedItem: "0.9.7.10"\n'
             '  completedItemName: "Bounded Semantic Closure Gate"\n'
@@ -95,6 +96,13 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
             '  - version: "C0.1"\n'
             '    status: planned\n'
             '    dependsOnCore: "0.9.7.10"\n',
+            encoding="utf-8",
+        )
+        (agent / "roadmap-architecture.yaml").write_text(
+            'stream: architecture\nitems:\n'
+            '  - version: "AR0.1"\n'
+            '    status: planned\n'
+            '    dependsOnConformance: "C0.1"\n',
             encoding="utf-8",
         )
         return main
@@ -123,6 +131,7 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
             '    core: ".flow-agent/roadmap-core.yaml"\n'
             '    adapters: ".flow-agent/roadmap-adapters.yaml"\n'
             '    conformance: ".flow-agent/roadmap-conformance.yaml"\n'
+            '    architecture: ".flow-agent/roadmap-architecture.yaml"\n'
             'currentDecision:\n'
             '  completedItem: "0.9.7.10"\n'
             '  completedItemName: "Bounded Semantic Closure Gate"\n'
@@ -143,6 +152,69 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
             '    status: planned\n'
             '    dependsOnCore: "0.9.7.10"\n'
             '    dependsOnAdapters: "A0.7"\n',
+            encoding="utf-8",
+        )
+        (agent / "roadmap-architecture.yaml").write_text(
+            'stream: architecture\nitems:\n'
+            '  - version: "AR0.1"\n'
+            '    status: planned\n'
+            '    dependsOnConformance: "C0.1"\n',
+            encoding="utf-8",
+        )
+        return main
+
+
+    def _write_completed_architecture_repository(self, root: Path) -> Path:
+        agent = root / ".flow-agent"
+        agent.mkdir()
+        main = agent / "roadmap.yaml"
+        main.write_text(
+            'primaryRoadmapStream: architecture\n'
+            'roadmapIndex:\n'
+            '  activeRoadmaps:\n'
+            '    core: ".flow-agent/roadmap-core.yaml"\n'
+            '    adapters: ".flow-agent/roadmap-adapters.yaml"\n'
+            '    conformance: ".flow-agent/roadmap-conformance.yaml"\n'
+            '    architecture: ".flow-agent/roadmap-architecture.yaml"\n'
+            'currentDecision:\n'
+            '  completedItem: "0.9.7.10"\n'
+            '  completedItemName: "Bounded Semantic Closure Gate"\n'
+            '  completedAdapterItem: "A0.7"\n'
+            '  completedAdapterItemName: "Trigger Materialization Coverage"\n'
+            '  completedConformanceItem: "C0.4"\n'
+            '  completedConformanceItemName: "Adapter Profile Evidence"\n'
+            '  completedArchitectureItem: "AR0.1"\n'
+            '  completedArchitectureItemName: "Authority Responsibility Consolidation"\n'
+            '  activeCorrectionWorkPackage: ""\n'
+            '  closureItem: "0.9.7.10"\n'
+            '  closureItemName: "Bounded Semantic Closure Gate"\n'
+            '  closureItemStatus: "completed"\n',
+            encoding="utf-8",
+        )
+        (agent / "roadmap-core.yaml").write_text(COMPLETED_CORE_ITEM, encoding="utf-8")
+        (agent / "roadmap-adapters.yaml").write_text(COMPLETED_ADAPTER_ITEMS, encoding="utf-8")
+        (agent / "roadmap-conformance.yaml").write_text(
+            'stream: conformance\n'
+            'status: completed\n'
+            'items:\n'
+            '  - version: "C0.4"\n'
+            '    name: "Adapter Profile Evidence"\n'
+            '    type: "adapter-evidence"\n'
+            '    status: completed\n'
+            '    purpose: "Evaluate implementations against frozen profiles."\n'
+            '    dependsOnAdapters: "A0.6"\n',
+            encoding="utf-8",
+        )
+        (agent / "roadmap-architecture.yaml").write_text(
+            'stream: architecture\n'
+            'status: completed\n'
+            'items:\n'
+            '  - version: "AR0.1"\n'
+            '    name: "Authority Responsibility Consolidation"\n'
+            '    type: "cross-stream-architecture"\n'
+            '    status: completed\n'
+            '    purpose: "Consolidate authority ownership without changing frozen outcomes."\n'
+            '    dependsOnConformance: "C0.4"\n',
             encoding="utf-8",
         )
         return main
@@ -171,6 +243,20 @@ class FlowAgentCompletedTrackTests(unittest.TestCase):
             self.assertEqual("adapters", focus.item.stream)
             self.assertEqual("A0.7", focus.item.version)
             self.assertEqual("Trigger Materialization Coverage", focus.item.name)
+
+
+    def test_accepts_terminal_architecture_primary_track(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            main = self._write_completed_architecture_repository(root)
+
+            validate_roadmap_structure_with_completed_track(root, main)
+            focus = resolve_primary_roadmap_focus(root, main)
+
+            self.assertEqual("completed", focus.lifecycle)
+            self.assertEqual("architecture", focus.item.stream)
+            self.assertEqual("AR0.1", focus.item.version)
+            self.assertEqual("Authority Responsibility Consolidation", focus.item.name)
 
     def test_rejects_missing_next_when_track_is_not_completed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

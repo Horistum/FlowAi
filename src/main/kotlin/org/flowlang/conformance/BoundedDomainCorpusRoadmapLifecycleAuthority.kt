@@ -28,10 +28,15 @@ class BoundedDomainCorpusRoadmapLifecycleAuthority(
             if (phase == "INVALID") {
                 add("C0.1 must be IMPLEMENTING or COMPLETED, got workPackage=$workPackageStatus item=$itemStatus.")
             }
-            if (conformanceRoadmap.string("stream") != "conformance" ||
-                conformanceRoadmap.string("status") != "active"
-            ) {
-                add("C0.1 must remain owned by the active conformance roadmap.")
+            val conformanceStatus = conformanceRoadmap.string("status")
+            val streamOwnershipValid = conformanceRoadmap.string("stream") == "conformance" &&
+                when (phase) {
+                    "IMPLEMENTING" -> conformanceStatus == "active"
+                    "COMPLETED" -> conformanceStatus in setOf("active", "completed")
+                    else -> false
+                }
+            if (!streamOwnershipValid) {
+                add("C0.1 must remain owned by the conformance roadmap throughout active and completed history.")
             }
             REQUIRED_FILES.filterNot { File(rootDir, it).isFile }.forEach {
                 add("Required C0.1 file is missing: $it")
