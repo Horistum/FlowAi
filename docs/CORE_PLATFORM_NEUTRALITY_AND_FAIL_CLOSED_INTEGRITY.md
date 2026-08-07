@@ -18,9 +18,10 @@ The legacy name is:
 
 - absent from the enum values;
 - absent from normative schemas and public reference capability output;
-- accepted as authored source input only by the explicit compatibility boundary;
+- accepted as authored source input by the explicit compatibility boundary;
+- preserved as a deprecated source-code compatibility alias while package version remains `0.9.5`;
 - normalized immediately to `CLUSTER_MAINTENANCE`;
-- retained in the Kotlin API only as the same deprecated, non-enum source compatibility alias already exposed by `main`.
+- prevented from becoming canonical semantic identity or participating in enum iteration.
 
 Concrete Kubernetes maintenance scenarios remain valid evidence inputs. They produce the target-neutral cluster-maintenance capability.
 
@@ -64,7 +65,7 @@ Upstream `ACTION_NOT_FOUND` remains intact. The additional findings prove defens
 
 ### Package and correction-track versions
 
-The published implementation package remains `0.9.5`. Later `v0.9.5.x` through `v0.9.7.x` identifiers are historical or unreleased correction/work-item tracks, not package versions. No package version change is required by this correction because the source compatibility alias present on `main` is preserved with the same Kotlin signature while canonical enum identity remains target-neutral. Removal of that deprecated alias belongs to a separately owned publication boundary and must not silently change an already published `0.9.5` API surface.
+The published implementation package remains `0.9.5`. Later `v0.9.5.x` through `v0.9.7.x` identifiers are historical or unreleased correction/work-item tracks, not package versions. The existing deprecated Kotlin compatibility alias is retained in this correction, so the PR does not introduce a same-version source break. Removal of that alias belongs to a separately owned future publication boundary and must not overwrite an already published `0.9.5` artifact with a different API surface.
 
 ### Generator package ownership
 
@@ -87,12 +88,12 @@ Completion requires:
 
 ## Source compatibility and evidence parsing hardening
 
-The retired `KUBERNETES_MAINTENANCE` spelling is not a canonical enum identity. Legacy authored intent remains supported through a strict source-boundary manifest and is normalized immediately to `CLUSTER_MAINTENANCE`. The existing deprecated Kotlin extension alias is preserved solely for source compatibility; it resolves directly to the neutral capability and cannot participate in enum iteration.
+The retired `KUBERNETES_MAINTENANCE` spelling remains absent from canonical enum identity and normative schemas, but the deprecated Kotlin source alias is preserved while the package stays at `0.9.5`. Legacy authored intent is also supported through a strict source-boundary manifest and normalized immediately to `CLUSTER_MAINTENANCE`.
 
-The compatibility manifest is SHA-256 pinned. Only the reviewed manifest bytes and exact retired `source:` entry are descriptive compatibility evidence. A changed manifest or a new platform-specific alias is classified as structured control and fails the neutrality gate until the compatibility contract is explicitly reviewed.
+The compatibility manifest is SHA-256 pinned. Only the reviewed manifest bytes and exact retired `source:` entry are descriptive compatibility evidence. The Kotlin compatibility-symbol exemption is likewise identity-bound: a declaration is exempt only when its symbol name is present in `StandardCapabilityCompatibility.retiredSourceNames`. A newly invented platform alias such as `JENKINS_PIPELINE`, `DOCKER_BUILD` or `TEKTON_TASK` remains actionable even when it uses the exact compatibility-property declaration shape. A changed manifest or a new platform-specific alias therefore fails the neutrality gate until the compatibility contract is explicitly reviewed.
 
 All shared YAML map reads use duplicate-key detection. Governance, roadmap and evidence documents therefore cannot collapse duplicate keys through last-wins parsing before their field validation runs.
 
-The neutrality scanner has no file-wide catalog or compatibility exemptions. It recognizes only direct `catalogModules(...)` declarations, the pinned compatibility source entry, and the exact deprecated companion-extension alias declaration. Predicate calls, regular-expression construction, quoted JSON control keys, other concrete control uses in the compatibility file and Kotlin interpolation expressions remain actionable when they carry concrete platform meaning.
+The neutrality scanner has no file-wide catalog or compatibility exemptions. It recognizes only direct `catalogModules(...)` declarations, the pinned compatibility source entry and declared retired Kotlin compatibility identities. Predicate calls, regular-expression construction, quoted JSON control keys and Kotlin interpolation expressions are actionable when they carry concrete platform meaning.
 
 Parser and validator recursion is bounded. Excessive expression, statement or manually constructed AST nesting produces a typed diagnostic instead of escaping the CLI as `StackOverflowError`. Numeric literals reject a second decimal point lexically, and retry counts require an integer in the supported range.
