@@ -256,8 +256,10 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
         val match = Regex(
             "^\\s*val\\s+StandardCapability\\.Companion\\.([A-Z0-9_]+)\\s*:\\s*StandardCapability\\s*$"
         ).matchEntire(line) ?: return false
+        val symbolName = match.groupValues[1]
         val normalizedTerm = term.replace('-', '_').replace(' ', '_').uppercase()
-        return match.groupValues[1].contains(normalizedTerm)
+        return symbolName in StandardCapabilityCompatibility.retiredSourceNames &&
+            symbolName.contains(normalizedTerm)
     }
 
     private fun isSemanticLiteral(line: String, term: String): Boolean {
