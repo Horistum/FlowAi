@@ -50,6 +50,28 @@ class AuthorityResponsibilityCatalogCritiqueRegressionTests {
     }
 
     @Test
+    fun injectedSiblingUseOutsideAuthorityBodyCountsAsProductionUse() {
+        val root = fixture(
+            name = "InjectedBoundaryAuthority",
+            source = """
+                package org.flowlang.future
+                class InjectedBoundaryAuthority {
+                    fun validate() = Unit
+                }
+                class ColocatedConsumer(private val authority: InjectedBoundaryAuthority) {
+                    fun analyze() = authority.validate()
+                }
+            """.trimIndent(),
+            callers = listOf("src/main/kotlin/org/flowlang/future/InjectedBoundaryAuthority.kt")
+        )
+
+        val report = AuthorityResponsibilityCatalog(root).analyze()
+
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+        assertEquals(1, report.authorityCount)
+    }
+
+    @Test
     fun duplicateDeclarationDoesNotInflateAuthorityIdentityCount() {
         val root = fixture(
             name = "DuplicateIdentityAuthority",
