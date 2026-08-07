@@ -78,6 +78,71 @@ class SemanticEquivalenceRoadmapLifecycleAuthorityTests {
         assertEquals(SemanticEquivalenceLifecyclePhase.COMPLETED, report.phase)
     }
 
+    @Test
+    fun completedLifecycleRemainsHistoricalAfterC04CompletionAndArchitectureActivation() {
+        val input = completedInput(
+            implementation = workflowEvidence(
+                runNumber = 2680,
+                runId = 30920000005,
+                exactHead = "9".repeat(40),
+                mergeCandidate = "a".repeat(40)
+            ),
+            completion = workflowEvidence(
+                runNumber = 2681,
+                runId = 30920000006,
+                exactHead = "b".repeat(40),
+                mergeCandidate = "c".repeat(40)
+            )
+        ).copy(
+            c04Status = "completed",
+            conformanceCompletedItem = "C0.4",
+            conformanceNextItem = "",
+            primaryStream = "architecture",
+            indexNextItem = "AR0.1",
+            indexNextStream = "architecture",
+            releasePrimaryStream = "architecture",
+            releaseNextItem = "AR0.1"
+        )
+
+        val report = SemanticEquivalenceRoadmapLifecycleAuthority().evaluate(input)
+
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+        assertEquals(SemanticEquivalenceLifecyclePhase.COMPLETED, report.phase)
+    }
+
+    @Test
+    fun completedHistoricalLifecycleRejectsDivergentLaterGlobalMetadata() {
+        val input = completedInput(
+            implementation = workflowEvidence(
+                runNumber = 2680,
+                runId = 30920000007,
+                exactHead = "d".repeat(40),
+                mergeCandidate = "e".repeat(40)
+            ),
+            completion = workflowEvidence(
+                runNumber = 2681,
+                runId = 30920000008,
+                exactHead = "f".repeat(40),
+                mergeCandidate = "1".repeat(40)
+            )
+        ).copy(
+            c04Status = "completed",
+            conformanceCompletedItem = "C0.4",
+            conformanceNextItem = "",
+            primaryStream = "architecture",
+            indexNextItem = "AR0.1",
+            indexNextStream = "architecture",
+            releasePrimaryStream = "architecture",
+            releaseNextItem = "AR0.2"
+        )
+
+        val report = SemanticEquivalenceRoadmapLifecycleAuthority().evaluate(input)
+
+        assertEquals("FAIL", report.status)
+        assertEquals(SemanticEquivalenceLifecyclePhase.COMPLETED, report.phase)
+        assertTrue(report.errors.any { it.contains("global roadmap and release focus") })
+    }
+
     private fun implementingInput(): SemanticEquivalenceLifecycleInput = SemanticEquivalenceLifecycleInput(
         workPackageStatus = "active",
         c02Status = "completed",

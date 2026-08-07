@@ -46,6 +46,7 @@ class FlowAgentActiveCorrectionTests(unittest.TestCase):
             '    core: ".flow-agent/roadmap-core.yaml"\n'
             '    adapters: ".flow-agent/roadmap-adapters.yaml"\n'
             '    conformance: ".flow-agent/roadmap-conformance.yaml"\n'
+            '    architecture: ".flow-agent/roadmap-architecture.yaml"\n'
             'currentDecision:\n'
             '  activeCorrectionWorkPackage: ".flow-agent/work-packages/correction.yaml"\n',
             encoding="utf-8",
@@ -58,6 +59,10 @@ class FlowAgentActiveCorrectionTests(unittest.TestCase):
         )
         (agent / "roadmap-conformance.yaml").write_text(
             'stream: conformance\nitems:\n  - version: "C0.1"\n    status: planned\n    dependsOnCore: "0.9.7.9"\n',
+            encoding="utf-8",
+        )
+        (agent / "roadmap-architecture.yaml").write_text(
+            'stream: architecture\nitems:\n  - version: "AR0.1"\n    status: planned\n    dependsOnConformance: "C0.1"\n',
             encoding="utf-8",
         )
         (packages / "correction.yaml").write_text(

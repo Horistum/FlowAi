@@ -39,6 +39,7 @@ class FlowAgentRoadmapTests(unittest.TestCase):
         core: str = VALID_CORE_ITEM,
         adapters: str | None = None,
         conformance: str | None = None,
+        architecture: str | None = None,
         primary_stream: str = "core",
     ) -> Path:
         agent = root / ".flow-agent"
@@ -50,7 +51,8 @@ class FlowAgentRoadmapTests(unittest.TestCase):
             '  activeRoadmaps:\n'
             '    core: ".flow-agent/roadmap-core.yaml"\n'
             '    adapters: ".flow-agent/roadmap-adapters.yaml"\n'
-            '    conformance: ".flow-agent/roadmap-conformance.yaml"\n',
+            '    conformance: ".flow-agent/roadmap-conformance.yaml"\n'
+            '    architecture: ".flow-agent/roadmap-architecture.yaml"\n',
             encoding="utf-8",
         )
         (agent / "roadmap-core.yaml").write_text("stream: core\n" + core, encoding="utf-8")
@@ -68,6 +70,14 @@ class FlowAgentRoadmapTests(unittest.TestCase):
             '  - version: "C0.1"\n'
             '    status: planned\n'
             '    dependsOnCore: "0.9.7.1"\n',
+            encoding="utf-8",
+        )
+        (agent / "roadmap-architecture.yaml").write_text(
+            architecture
+            or 'stream: architecture\nitems:\n'
+            '  - version: "AR0.1"\n'
+            '    status: planned\n'
+            '    dependsOnConformance: "C0.1"\n',
             encoding="utf-8",
         )
         return main
@@ -123,6 +133,35 @@ class FlowAgentRoadmapTests(unittest.TestCase):
             self.assertEqual({"core", "adapters"}, set(items))
             self.assertEqual("0.9.7.1", find_unique_next_roadmap_item(root, main).version)
 
+    def test_resolves_next_item_from_architecture_after_conformance_completion(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            conformance = (
+                'stream: conformance\nitems:\n  - version: "C0.1"\n'
+                '    status: completed\n    dependsOnCore: "0.9.7.1"\n'
+            )
+            architecture = (
+                'stream: architecture\nitems:\n  - version: "AR0.1"\n'
+                '    name: "Authority Responsibility Consolidation"\n'
+                '    type: "cross-stream-architecture"\n'
+                '    status: next\n'
+                '    purpose: "Consolidate authority ownership without changing frozen contracts."\n'
+                '    dependsOnConformance: "C0.1"\n'
+            )
+            main = self._write_split_roadmaps(
+                root,
+                core=COMPLETED_CORE_ITEM,
+                conformance=conformance,
+                architecture=architecture,
+                primary_stream="architecture",
+            )
+
+            validate_roadmap_structure(root, main)
+            item = find_unique_next_roadmap_item(root, main)
+
+            self.assertEqual("AR0.1", item.version)
+            self.assertEqual("architecture", item.stream)
+
     def test_rejects_multiple_next_items_within_one_stream(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -142,7 +181,8 @@ class FlowAgentRoadmapTests(unittest.TestCase):
                 'primaryRoadmapStream: core\nroadmapIndex:\n  activeRoadmaps:\n'
                 '    core: "../outside.yaml"\n'
                 '    adapters: ".flow-agent/a.yaml"\n'
-                '    conformance: ".flow-agent/c.yaml"\n',
+                '    conformance: ".flow-agent/c.yaml"\n'
+                '    architecture: ".flow-agent/ar.yaml"\n',
                 encoding="utf-8",
             )
 
@@ -169,11 +209,12 @@ class FlowAgentRoadmapTests(unittest.TestCase):
             main.write_text(
                 'primaryRoadmapStream: core\nroadmapIndex:\n  activeRoadmaps:\n'
                 '    core: ".flow-agent/roadmap-core.yaml"\n'
-                '    adapters: ".flow-agent/roadmap-adapters.yaml"\n',
+                '    adapters: ".flow-agent/roadmap-adapters.yaml"\n'
+                '    conformance: ".flow-agent/roadmap-conformance.yaml"\n',
                 encoding="utf-8",
             )
 
-            with self.assertRaisesRegex(RuntimeError, "missing streams: conformance"):
+            with self.assertRaisesRegex(RuntimeError, "missing streams: architecture"):
                 validate_roadmap_structure(root, main)
 
     def test_rejects_core_item_without_required_governance_fields(self) -> None:
@@ -227,6 +268,32 @@ class FlowAgentRoadmapTests(unittest.TestCase):
             main = self._write_split_roadmaps(root, adapters=adapters)
 
             with self.assertRaisesRegex(RuntimeError, "references unknown adapter item"):
+                validate_roadmap_structure(root, main)
+
+    def test_rejects_unknown_conformance_dependency_from_architecture(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            architecture = (
+                'stream: architecture\nitems:\n  - version: "AR0.1"\n'
+                '    status: planned\n    dependsOnConformance: "C0.99"\n'
+            )
+            main = self._write_split_roadmaps(root, architecture=architecture)
+
+            with self.assertRaisesRegex(RuntimeError, "references unknown conformance item"):
+                validate_roadmap_structure(root, main)
+
+    def test_rejects_adapter_dependency_on_later_architecture_stream(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            adapters = (
+                'stream: adapters\nitems:\n  - version: "A0.1"\n'
+                '    status: planned\n'
+                '    dependsOnCore: "0.9.7.1"\n'
+                '    dependsOnArchitecture: "AR0.1"\n'
+            )
+            main = self._write_split_roadmaps(root, adapters=adapters)
+
+            with self.assertRaisesRegex(RuntimeError, "reverses roadmap ownership direction"):
                 validate_roadmap_structure(root, main)
 
     def test_adapter_roadmap_may_contain_concrete_target_names(self) -> None:

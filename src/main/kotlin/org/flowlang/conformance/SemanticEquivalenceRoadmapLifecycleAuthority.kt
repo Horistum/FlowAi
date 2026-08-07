@@ -139,7 +139,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
                 !input.completionBoundary.present -> SemanticEquivalenceLifecyclePhase.VALIDATING
             input.workPackageStatus == "complete" &&
                 input.c03Status == "completed" &&
-                input.c04Status == "next" &&
+                input.c04Status in COMPLETED_HANDOFF_STATES &&
                 input.implementationEvidence.structurallyValid &&
                 input.completionBoundary.structurallyValid -> SemanticEquivalenceLifecyclePhase.COMPLETED
             else -> SemanticEquivalenceLifecyclePhase.INVALID
@@ -150,10 +150,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
                 input.c02Status == "completed" &&
                     input.conformanceCompletedItem == "C0.2" &&
                     input.conformanceNextItem == "C0.3"
-            SemanticEquivalenceLifecyclePhase.COMPLETED ->
-                input.c02Status == "completed" &&
-                    input.conformanceCompletedItem == "C0.3" &&
-                    input.conformanceNextItem == "C0.4"
+            SemanticEquivalenceLifecyclePhase.COMPLETED -> completedLocalFocus(input)
             SemanticEquivalenceLifecyclePhase.INVALID -> false
         }
         val globalFocus = when (phase) {
@@ -164,12 +161,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
                     input.indexNextStream == "conformance" &&
                     input.releasePrimaryStream == "conformance" &&
                     input.releaseNextItem == "C0.3"
-            SemanticEquivalenceLifecyclePhase.COMPLETED ->
-                input.primaryStream == "conformance" &&
-                    input.indexNextItem == "C0.4" &&
-                    input.indexNextStream == "conformance" &&
-                    input.releasePrimaryStream == "conformance" &&
-                    input.releaseNextItem == "C0.4"
+            SemanticEquivalenceLifecyclePhase.COMPLETED -> completedGlobalFocus(input)
             SemanticEquivalenceLifecyclePhase.INVALID -> false
         }
         val evidenceAligned = when (phase) {
@@ -216,6 +208,41 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
             errors = errors
         )
     }
+
+    private fun completedLocalFocus(input: SemanticEquivalenceLifecycleInput): Boolean =
+        when (input.c04Status) {
+            "next" ->
+                input.c02Status == "completed" &&
+                    input.conformanceCompletedItem == "C0.3" &&
+                    input.conformanceNextItem == "C0.4"
+            "completed" ->
+                input.c02Status == "completed" &&
+                    input.conformanceCompletedItem == "C0.4" &&
+                    input.conformanceNextItem.isBlank()
+            else -> false
+        }
+
+    private fun completedGlobalFocus(input: SemanticEquivalenceLifecycleInput): Boolean =
+        when (input.c04Status) {
+            "next" ->
+                input.primaryStream == "conformance" &&
+                    input.indexNextItem == "C0.4" &&
+                    input.indexNextStream == "conformance" &&
+                    input.releasePrimaryStream == "conformance" &&
+                    input.releaseNextItem == "C0.4"
+            "completed" -> {
+                val globalMetadataAligned =
+                    input.primaryStream == input.releasePrimaryStream &&
+                        input.indexNextItem == input.releaseNextItem &&
+                        (input.indexNextItem.isBlank() || input.indexNextStream == input.primaryStream)
+                val conformanceFocusAligned =
+                    input.primaryStream != "conformance" || input.indexNextItem == input.conformanceNextItem
+                globalMetadataAligned &&
+                    conformanceFocusAligned &&
+                    input.indexNextItem !in setOf("C0.3", "C0.4")
+            }
+            else -> false
+        }
 
     private fun followsActivation(
         activation: SemanticEquivalenceActivationEvidence,
@@ -298,6 +325,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
+        private val COMPLETED_HANDOFF_STATES = setOf("next", "completed")
         private val WORKFLOW_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val ACTIVATION_FIELDS = setOf(
             "conformanceItem",

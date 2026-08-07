@@ -47,6 +47,11 @@ COMPLETED_ITEM_PROJECTIONS = {
         name_key="completedConformanceItemName",
         forbidden_next_keys=("nextItem", "nextItemName", "nextItemStream"),
     ),
+    "architecture": CompletedItemProjection(
+        item_key="completedArchitectureItem",
+        name_key="completedArchitectureItemName",
+        forbidden_next_keys=("nextItem", "nextItemName", "nextItemStream"),
+    ),
 }
 
 

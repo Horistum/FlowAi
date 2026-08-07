@@ -10,10 +10,10 @@ import org.flowlang.roadmap.RoadmapTransitionPhase
 
 class RoadmapStreamTransitionAuthorityTests {
     @Test
-    fun repositoryActivatesC04AfterCompletedC03() {
+    fun repositoryActivatesAr01AfterCompletedC04() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
         assertEquals(
-            expected = RoadmapTransitionPhase.C0_4_ACTIVE,
+            expected = RoadmapTransitionPhase.AR0_1_ACTIVE,
             actual = report.phase,
             message = report.errors.joinToString(" | ")
         )
@@ -53,6 +53,14 @@ class RoadmapStreamTransitionAuthorityTests {
     }
 
     @Test
+    fun completedC04ActivatesAr01() {
+        val root = createAr01Boundary()
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+        assertEquals(RoadmapTransitionPhase.AR0_1_ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+    }
+
+    @Test
     fun completedCorrectionRejectsMissingCompletionBoundary() {
         val root = createA10Boundary()
         val correction = File(root, RoadmapStreamTransitionAuthority.CORRECTION_WORK_PACKAGE)
@@ -88,6 +96,18 @@ class RoadmapStreamTransitionAuthorityTests {
 
         assertEquals("FAIL", report.status)
         assertTrue(report.errors.any { "Completed C0.3 requires a strict" in it })
+    }
+
+    @Test
+    fun completedC04RejectsMissingCompletionBoundary() {
+        val root = createAr01Boundary()
+        val c04 = File(root, RoadmapStreamTransitionAuthority.C04_WORK_PACKAGE)
+        c04.writeText(c04.readText().substringBefore("completionBoundary:").trimEnd() + "\n")
+
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "Completed C0.4 requires a strict" in it })
     }
 
     @Test
@@ -347,6 +367,75 @@ class RoadmapStreamTransitionAuthorityTests {
             completionRunId = 37000000001,
             completionHeadDigit = "7",
             completionMergeDigit = "8"
+        ))
+        return root
+    }
+
+    private fun createAr01Boundary(): File {
+        val root = createC04Boundary()
+        write(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX, """
+            primaryRoadmapStream: architecture
+            architectureDebtBacklog:
+              - id: "AR0.1"
+                status: active
+            currentDecision:
+              conformanceCorrectionState: complete
+              activeConformanceCorrectionWorkPackage: ""
+              closureItem: "0.9.7.10"
+              closureItemStatus: completed
+              completedAdapterItem: "A1.0"
+              completedConformanceItem: "C0.4"
+              nextItem: "AR0.1"
+              nextItemName: "Authority Responsibility Consolidation"
+              nextItemStream: architecture
+        """)
+        write(root, RoadmapStreamTransitionAuthority.CONFORMANCE_ROADMAP, """
+            stream: conformance
+            status: completed
+            currentDecision:
+              completedItem: "C0.4"
+              nextItem: ""
+            items:
+              - version: "C0.1"
+                status: completed
+              - version: "C0.1.1"
+                status: completed
+              - version: "C0.2"
+                status: completed
+              - version: "C0.3"
+                status: completed
+              - version: "C0.4"
+                status: completed
+        """)
+        write(root, RoadmapStreamTransitionAuthority.ARCHITECTURE_ROADMAP, """
+            stream: architecture
+            status: active
+            currentDecision:
+              nextItem: "AR0.1"
+              nextItemName: "Authority Responsibility Consolidation"
+            items:
+              - version: "AR0.1"
+                status: next
+        """)
+        write(root, RoadmapStreamTransitionAuthority.RELEASE_STATE, """
+            roadmapState:
+              primaryStream: architecture
+              closureItem: "0.9.7.10"
+              closureItemStatus: completed
+              completedAdapterItem: "A1.0"
+              completedConformanceItem: "C0.4"
+              nextItem: "AR0.1"
+              nextItemName: "Authority Responsibility Consolidation"
+        """)
+        write(root, RoadmapStreamTransitionAuthority.C04_WORK_PACKAGE, completedEvidence(
+            implementationRun = 3200,
+            implementationRunId = 38000000000,
+            implementationHeadDigit = "9",
+            implementationMergeDigit = "a",
+            completionRun = 3201,
+            completionRunId = 38000000001,
+            completionHeadDigit = "b",
+            completionMergeDigit = "c"
         ))
         return root
     }

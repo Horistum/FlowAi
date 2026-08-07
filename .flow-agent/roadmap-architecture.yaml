@@ -1,0 +1,41 @@
+project: Flow Architecture
+stream: architecture
+roadmapVersion: 1
+status: active
+
+purpose: "Own bounded cross-stream architecture maintenance after Core, adapter and conformance contracts have been frozen by their respective streams."
+
+rules:
+  - "Architecture work may consolidate ownership boundaries but cannot redefine frozen Core meaning, adapter support claims or conformance outcomes."
+  - "Class-count reduction is never an acceptance criterion; every surviving authority must own a concrete invariant or orchestration boundary."
+  - "Target-neutral semantic ownership remains separate from target-specific evidence and rendering ownership."
+  - "A cross-stream architecture item may consume completed upstream evidence but cannot retroactively rewrite that evidence."
+  - "Every architecture transition must preserve exact-head and synthetic merge-candidate validation."
+
+currentDecision:
+  completedItem: ""
+  completedItemName: ""
+  nextItem: "AR0.1"
+  nextItemName: "Authority Responsibility Consolidation"
+  decisionBasis: "Flow CI #2798, run 31166600475, passed the distinct C0.4 completion boundary on exact head a3f0a062b13f4f167fb9269d166b31dcf73e1ed1 and synthetic merge candidate 646a2517784a82f8799bc8d4a74fa4f592f966ac. All declared conformance work through C0.4 is complete and AR0.1 is activated without changing frozen stream contracts."
+
+items:
+  - version: "AR0.1"
+    name: "Authority Responsibility Consolidation"
+    type: "cross-stream-architecture"
+    status: next
+    purpose: "Reduce authority ceremony without collapsing independent semantic, adapter or conformance invariants."
+    dependsOnConformance: "C0.4"
+    architecturalInvariant: "Every production authority has one explicit, non-overlapping invariant or orchestration responsibility, and dependency direction remains unchanged."
+    forbiddenScope:
+      - "Do not optimize for a target class count; class-count reduction is evidence of simplification, not the acceptance criterion."
+      - "Do not change public semantic meaning, adapter support claims, target syntax or conformance outcomes."
+      - "Do not collapse target-neutral semantic ownership into target-specific evidence or rendering ownership."
+      - "Do not mutate frozen Core, adapter or conformance inventories without a separately reviewed roadmap transition."
+    completionEvidence:
+      - "Every remaining production *Authority type has a documented invariant, inputs, outputs and callers."
+      - "Forwarding-only authority layers are removed or justified by a concrete boundary requirement."
+      - "Structurally duplicated authorities are consolidated only where one surviving owner remains explicit."
+      - "Dependency direction remains Core -> neutral contracts and adapter/conformance -> frozen Core contracts, never the reverse."
+      - "Frozen inventories and externally visible semantic, adapter and conformance outcomes remain unchanged."
+      - "Exact-head and synthetic merge-candidate compile, test and conformance validation both pass."

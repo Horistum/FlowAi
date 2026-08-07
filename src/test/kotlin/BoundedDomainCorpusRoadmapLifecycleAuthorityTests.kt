@@ -29,6 +29,18 @@ class BoundedDomainCorpusRoadmapLifecycleAuthorityTests {
     }
 
     @Test
+    fun completedBoundaryRemainsValidAfterConformanceStreamCompletion() {
+        val root = createBoundary(false)
+        val roadmap = File(root, BoundedDomainCorpusRoadmapLifecycleAuthority.CONFORMANCE_ROADMAP)
+        roadmap.writeText(roadmap.readText().replace("status: active", "status: completed"))
+
+        val report = BoundedDomainCorpusRoadmapLifecycleAuthority(root).analyze()
+
+        assertEquals("COMPLETED", report.phase)
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+    }
+
+    @Test
     fun completedBoundaryDoesNotOwnLaterC02Selection() {
         val root = createBoundary(false)
         val roadmap = File(root, BoundedDomainCorpusRoadmapLifecycleAuthority.CONFORMANCE_ROADMAP)

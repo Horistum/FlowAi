@@ -107,11 +107,7 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthority(
                     input.releasePrimaryStream == "adapters" &&
                     input.releaseNextItem == "A1.0"
             AdapterExecutableContinuityLifecyclePhase.COMPLETED ->
-                input.primaryStream == "conformance" &&
-                    input.indexNextStream == "conformance" &&
-                    input.releasePrimaryStream == "conformance" &&
-                    input.indexNextItem.isNotBlank() &&
-                    input.indexNextItem == input.releaseNextItem
+                completedGlobalFocus(input)
             AdapterExecutableContinuityLifecyclePhase.INVALID -> false
         }
         val implementationAligned = when (phase) {
@@ -157,7 +153,7 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthority(
                     "releasePrimary=${input.releasePrimaryStream}",
                     "releaseNext=${input.releaseNextItem}"
                 ),
-                "Active A1.0 owns exact global focus; completed A1.0 requires a consistent conformance focus without owning the later item identity."
+                "Active A1.0 owns exact global focus; completed A1.0 requires aligned downstream focus without reclaiming adapter ownership."
             ),
             check(
                 "adapters.a1.0.required-files",
@@ -188,6 +184,16 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthority(
             checks = checks,
             failedChecks = failed
         )
+    }
+
+    private fun completedGlobalFocus(input: AdapterExecutableContinuityLifecycleInput): Boolean {
+        val globalMetadataAligned =
+            input.primaryStream == input.releasePrimaryStream &&
+                input.indexNextItem == input.releaseNextItem &&
+                (input.indexNextItem.isBlank() || input.indexNextStream == input.primaryStream)
+        return globalMetadataAligned &&
+            input.primaryStream != "adapters" &&
+            input.indexNextItem != "A1.0"
     }
 
     private fun requiredYaml(path: String): Map<String, Any?> {
