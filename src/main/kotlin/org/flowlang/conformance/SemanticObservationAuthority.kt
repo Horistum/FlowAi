@@ -1,7 +1,7 @@
 package org.flowlang.conformance
 
-import org.flowlang.effects.ResourceStateTransition
 import org.flowlang.effects.SemanticEffect
+import org.flowlang.effects.canonicalObservationValue
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyKind
@@ -195,14 +195,7 @@ object SemanticObservationAuthority {
         requirement(
             kind = SemanticObservationKind.EFFECT,
             subject = semanticIdentity(task),
-            value = listOf(
-                effect.domain.name,
-                effect.operation.name,
-                effect.resource,
-                transitionValue(effect.transition),
-                effect.external.toString(),
-                effect.sourceCapability.orEmpty()
-            ).joinToString(":"),
+            value = effect.canonicalObservationValue(),
             producerIdentity = semanticIdentity(task)
         )
 
@@ -226,9 +219,6 @@ object SemanticObservationAuthority {
         is ApprovalNode -> node.sourceId?.takeIf(String::isNotBlank) ?: node.id
         else -> node.id
     }
-
-    private fun transitionValue(transition: ResourceStateTransition?): String =
-        transition?.let { "${it.from.name}->${it.to.name}" }.orEmpty()
 
     private const val FLOW_OUTPUT_PRODUCER = "flow-output"
     private const val DEFAULT_CONTINUITY_CHANNEL = "default"

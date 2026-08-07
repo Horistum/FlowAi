@@ -65,6 +65,30 @@ architectureConstitution:
     - "No conformance example as a substitute for a universal invariant."
     - "No governance signal whose status contradicts the property measured."
 
+architectureDebtBacklog:
+  - id: "AR0.1"
+    name: "Authority Responsibility Consolidation"
+    status: planned
+    ownership: "cross-stream-architecture"
+    activation: "After the C0.4 completion boundary unless a higher-priority invariant correction intervenes."
+    purpose: "Reduce authority ceremony without collapsing independent semantic, adapter or conformance invariants."
+    scope:
+      - "Inventory every production *Authority type across Core, adapters and conformance and identify its owned invariant, inputs, outputs and callers."
+      - "Classify authorities as invariant owners, orchestration boundaries, evidence adapters or forwarding-only ceremony."
+      - "Remove or consolidate forwarding-only and structurally duplicated authorities only when the surviving boundary has one explicit owner."
+      - "Prefer cohesive lifecycle components where several authorities split one invariant without independent policy or evidence ownership."
+      - "Keep target-neutral semantic authorities independent from target-specific evidence and rendering authorities."
+    nonGoals:
+      - "Do not optimize for a target class count; class-count reduction is evidence of simplification, not the acceptance criterion."
+      - "Do not change public semantic meaning, adapter support claims, target syntax or conformance outcomes as part of the refactor."
+      - "Do not mix AR0.1 into C0.4 implementation work."
+    completionEvidence:
+      - "Every remaining Authority type has a documented non-overlapping invariant or orchestration responsibility."
+      - "Forwarding-only authority layers are removed or justified by a concrete boundary requirement."
+      - "Dependency direction remains Core -> neutral contracts and adapter/conformance -> frozen Core contracts, never the reverse."
+      - "Frozen inventories remain unchanged unless a separately reviewed roadmap transition explicitly owns the change."
+      - "Exact-head and synthetic merge-candidate compile, test and conformance validation both pass."
+
 currentDecision:
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"

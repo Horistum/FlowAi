@@ -20,7 +20,8 @@ import org.flowlang.planner.TaskNode
 object SemanticEquivalencePlanFactory {
     fun plan(
         fixture: SemanticEquivalenceFixture,
-        alternateImplementationLabels: Boolean = false
+        alternateImplementationLabels: Boolean = false,
+        alternateSemanticMeaning: Boolean = false
     ): ExecutionPlan {
         val labels = if (alternateImplementationLabels) {
             ImplementationLabels("alternate.module", "alternate.action", "alternate-target")
@@ -28,16 +29,16 @@ object SemanticEquivalencePlanFactory {
             ImplementationLabels("reference.module", "reference.action", "reference-target")
         }
         return when (fixture) {
-            SemanticEquivalenceFixture.EFFECT -> effectPlan(labels)
-            SemanticEquivalenceFixture.RESULT_IDENTITY -> resultIdentityPlan(labels)
-            SemanticEquivalenceFixture.RESULT_VALUE -> resultValuePlan(labels)
-            SemanticEquivalenceFixture.VALUE_CONTINUITY -> continuityPlan(labels, PlanDependencyKind.VALUE, "version")
-            SemanticEquivalenceFixture.WORKSPACE_CONTINUITY -> continuityPlan(labels, PlanDependencyKind.WORKSPACE, "source")
-            SemanticEquivalenceFixture.STATE_CONTINUITY -> continuityPlan(labels, PlanDependencyKind.STATE, "deployment-state")
+            SemanticEquivalenceFixture.EFFECT -> effectPlan(labels, alternateSemanticMeaning)
+            SemanticEquivalenceFixture.RESULT_IDENTITY -> resultIdentityPlan(labels, alternateSemanticMeaning)
+            SemanticEquivalenceFixture.RESULT_VALUE -> resultValuePlan(labels, alternateSemanticMeaning)
+            SemanticEquivalenceFixture.VALUE_CONTINUITY -> continuityPlan(labels, PlanDependencyKind.VALUE, if (alternateSemanticMeaning) "alternate-version" else "version")
+            SemanticEquivalenceFixture.WORKSPACE_CONTINUITY -> continuityPlan(labels, PlanDependencyKind.WORKSPACE, if (alternateSemanticMeaning) "alternate-source" else "source")
+            SemanticEquivalenceFixture.STATE_CONTINUITY -> continuityPlan(labels, PlanDependencyKind.STATE, if (alternateSemanticMeaning) "alternate-deployment-state" else "deployment-state")
         }
     }
 
-    private fun effectPlan(labels: ImplementationLabels): ExecutionPlan = ExecutionPlan(
+    private fun effectPlan(labels: ImplementationLabels, alternateSemanticMeaning: Boolean): ExecutionPlan = ExecutionPlan(
         flowName = "semantic-effect",
         nodes = listOf(
             task(
@@ -49,7 +50,7 @@ object SemanticEquivalencePlanFactory {
                     SemanticEffect(
                         domain = EffectDomain.INFRASTRUCTURE_STATE,
                         operation = EffectOperation.UPSERT,
-                        resource = "deployment.state",
+                        resource = if (alternateSemanticMeaning) "alternate.deployment.state" else "deployment.state",
                         sourceCapability = "DEPLOY"
                     )
                 )
@@ -58,7 +59,7 @@ object SemanticEquivalencePlanFactory {
         dependencyRelations = emptyList()
     )
 
-    private fun resultIdentityPlan(labels: ImplementationLabels): ExecutionPlan = ExecutionPlan(
+    private fun resultIdentityPlan(labels: ImplementationLabels, alternateSemanticMeaning: Boolean): ExecutionPlan = ExecutionPlan(
         flowName = "semantic-result-identity",
         nodes = listOf(
             task(
@@ -66,15 +67,15 @@ object SemanticEquivalencePlanFactory {
                 sourceId = "source-producer",
                 labels = labels,
                 semanticCapability = "BUILD",
-                resultName = "build-result"
+                resultName = if (alternateSemanticMeaning) "alternate-build-result" else "build-result"
             )
         ),
         dependencyRelations = emptyList()
     )
 
-    private fun resultValuePlan(labels: ImplementationLabels): ExecutionPlan = ExecutionPlan(
+    private fun resultValuePlan(labels: ImplementationLabels, alternateSemanticMeaning: Boolean): ExecutionPlan = ExecutionPlan(
         flowName = "semantic-result-value",
-        outputs = listOf(PlanOutput(name = "image", type = "container-image", sourceNodeId = "producer")),
+        outputs = listOf(PlanOutput(name = "image", type = if (alternateSemanticMeaning) "alternate-image" else "container-image", sourceNodeId = "producer")),
         nodes = listOf(
             task(
                 id = "producer",

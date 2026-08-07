@@ -41,7 +41,7 @@ object FlowYaml {
 
     fun readMap(text: String, sourceName: String = "<yaml>"): Map<String, Any?> {
         if (text.isBlank()) return emptyMap()
-        return read(text, mapType, sourceName)
+        return readWith(strictMapper, text, mapType, sourceName)
     }
 
     fun <T> read(file: File, type: Class<T>): T = read(file.readText(), type, file.path)
@@ -66,12 +66,16 @@ object FlowYaml {
         throw invalidYaml(sourceName, error)
     }
 
-    private fun <T> read(text: String, type: TypeReference<T>, sourceName: String): T =
-        try {
-            mapper.readValue(text, type)
-        } catch (error: IOException) {
-            throw invalidYaml(sourceName, error)
-        }
+    private fun <T> readWith(
+        owner: ObjectMapper,
+        text: String,
+        type: TypeReference<T>,
+        sourceName: String
+    ): T = try {
+        owner.readValue(text, type)
+    } catch (error: IOException) {
+        throw invalidYaml(sourceName, error)
+    }
 
     private fun invalidYaml(sourceName: String, error: IOException): FlowYamlException {
         val detail = (error as? JsonProcessingException)?.originalMessage

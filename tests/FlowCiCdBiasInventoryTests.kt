@@ -205,7 +205,7 @@ class FlowCiCdBiasInventoryTests {
     }
 
     @Test
-    fun explicitCompatibilityBoundaryIsVisibleButNotActionable() {
+    fun compatibilityKotlinFileDoesNotCreateAFileWideExemption() {
         val root = Files.createTempDirectory("flow-cicd-compatibility").toFile()
         try {
             val compatibility = File(
@@ -219,12 +219,10 @@ class FlowCiCdBiasInventoryTests {
 
             val report = CiCdBiasInventoryAnalyzer(root).analyze()
 
-            assertEquals("PASS", report.healthStatus)
-            assertTrue(report.evidence.isNotEmpty())
-            assertTrue(report.evidence.all {
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+            assertTrue(report.actionableEvidence.any {
                 it.classification == CiCdBiasInventoryAnalyzer.COMPATIBILITY_BOUNDARY &&
-                    it.lexicalContext == CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL &&
-                    !it.actionable
+                    it.lexicalContext == CiCdBiasLexicalContext.CODE_IDENTIFIER
             })
         } finally {
             root.deleteRecursively()

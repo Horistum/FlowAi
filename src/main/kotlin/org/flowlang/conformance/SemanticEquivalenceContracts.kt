@@ -45,6 +45,27 @@ enum class SemanticEquivalenceFixture(val documentValue: String) {
     }
 }
 
+
+enum class SemanticEquivalenceTargetBackingKind(val documentValue: String) {
+    REFERENCE_SNAPSHOT("reference-snapshot"),
+    BOUNDED_PROMOTION("bounded-promotion");
+
+    companion object {
+        fun parse(value: String): SemanticEquivalenceTargetBackingKind =
+            entries.singleOrNull { it.documentValue == value }
+                ?: error("Unknown semantic equivalence target backing kind '$value'.")
+    }
+}
+
+data class SemanticEquivalenceTargetBacking(
+    val target: String,
+    val kind: SemanticEquivalenceTargetBackingKind
+) {
+    init {
+        require(target.isNotBlank()) { "Semantic equivalence target backing target must not be blank." }
+    }
+}
+
 enum class SemanticObservationEvidenceStatus {
     PRESERVED,
     MISSING,
@@ -152,7 +173,8 @@ data class SemanticEquivalenceConcretePair(
     val leftTarget: String,
     val leftSnapshot: String,
     val rightTarget: String,
-    val rightSnapshot: String
+    val rightSnapshot: String,
+    val targetBackings: List<SemanticEquivalenceTargetBacking>
 ) {
     init {
         require(id.isNotBlank()) { "Semantic equivalence concrete pair id must not be blank." }
@@ -166,6 +188,14 @@ data class SemanticEquivalenceConcretePair(
         }
         require(leftSnapshot.isNotBlank() && rightSnapshot.isNotBlank()) {
             "Semantic equivalence concrete pair '$id' snapshots must not be blank."
+        }
+        require(targetBackings.map(SemanticEquivalenceTargetBacking::target).size ==
+            targetBackings.map(SemanticEquivalenceTargetBacking::target).toSet().size
+        ) {
+            "Semantic equivalence concrete pair '$id' target backings must be unique by target."
+        }
+        require(targetBackings.map(SemanticEquivalenceTargetBacking::target).toSet() == setOf(leftTarget, rightTarget)) {
+            "Semantic equivalence concrete pair '$id' must declare exactly one backing for each implementation target."
         }
     }
 }
@@ -204,7 +234,7 @@ data class SemanticEquivalenceDocument(
     }
 
     companion object {
-        const val VERSION = "1.0"
+        const val VERSION = "1.1"
         val REQUIRED_REFERENCE_TARGETS = setOf("jenkins", "github-actions")
     }
 }
@@ -240,8 +270,10 @@ object SemanticEquivalenceLoader {
         "leftTarget",
         "leftSnapshot",
         "rightTarget",
-        "rightSnapshot"
+        "rightSnapshot",
+        "targetBackings"
     )
+    private val TARGET_BACKING_KEYS = setOf("target", "kind")
 
     fun load(rootDir: File = File(".")): SemanticEquivalenceDocument {
         val file = File(rootDir, PATH)
@@ -268,7 +300,17 @@ object SemanticEquivalenceLoader {
                 leftTarget = raw.requiredString("leftTarget", path),
                 leftSnapshot = raw.requiredString("leftSnapshot", path),
                 rightTarget = raw.requiredString("rightTarget", path),
-                rightSnapshot = raw.requiredString("rightSnapshot", path)
+                rightSnapshot = raw.requiredString("rightSnapshot", path),
+                targetBackings = raw.mapList("targetBackings", path).mapIndexed { backingIndex, backing ->
+                    val backingPath = "$path.targetBackings[$backingIndex]"
+                    requireExactKeys(backing, TARGET_BACKING_KEYS, backingPath)
+                    SemanticEquivalenceTargetBacking(
+                        target = backing.requiredString("target", backingPath),
+                        kind = SemanticEquivalenceTargetBackingKind.parse(
+                            backing.requiredString("kind", backingPath)
+                        )
+                    )
+                }
             )
         }
         return SemanticEquivalenceDocument(

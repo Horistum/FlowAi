@@ -116,3 +116,18 @@ C0.3 does not:
 - promote adapter capability, topology, control, continuity or rendering support;
 - mutate completed Core, adapter, C0.1 or C0.2 inventories;
 - treat an executable artifact as proof that every required semantic observation was preserved.
+
+## Fail-closed evidence hardening
+
+The `1.1` rules document makes every target backing explicit. Each concrete pair target is backed by exactly one declared mechanism:
+
+- `reference-snapshot` for the established executable reference;
+- `bounded-promotion` for a later adapter promotion authority.
+
+The authority evaluates both sides through the same target-neutral logic. Platform names are data in the pair, never branches in the authority.
+
+Implementation independence now has both polarities. Renaming module, action and target labels must leave derived observations unchanged, while a separate semantic mutation of the same fixture must change at least one observation. This prevents a test from proving merely that fields ignored by derivation are ignored.
+
+Effect evidence is no longer inferred from native materialization alone. Every target step carries the sorted canonical effect tuple derived from the plan. The implementation observation authority compares that tuple with the plan and with the exact required effect value before it can emit `PRESERVED`.
+
+Missing manifest steps, output producers, projected result names, continuity requirements and continuity assessments are explicit contradictory evidence. Duplicate records, contradictory status and fingerprint mismatch are separate negative paths. Snapshot plans are checked independently for each target, and diagnostics name the target supplied by the pair.

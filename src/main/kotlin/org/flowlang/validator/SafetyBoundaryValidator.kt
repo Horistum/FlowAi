@@ -85,8 +85,19 @@ class SafetyBoundaryValidator(
         issues: MutableList<ValidationIssue>,
         insideErrorHandler: Boolean,
         inheritedApproval: ApprovalState,
-        environmentDomains: Map<String, Set<String>>
+        environmentDomains: Map<String, Set<String>>,
+        depth: Int = 0
     ): ApprovalState {
+        if (depth >= MAX_STATEMENT_NESTING_DEPTH) {
+            issues += ValidationIssue(
+                "error",
+                "SAFETY_NESTING_DEPTH_EXCEEDED",
+                "Statement nesting exceeds maximum safety validation depth $MAX_STATEMENT_NESTING_DEPTH.",
+                null
+            )
+            return inheritedApproval
+        }
+
         var approval = inheritedApproval
         statements.forEach { statement ->
             when (statement) {
@@ -100,42 +111,58 @@ class SafetyBoundaryValidator(
                                 issues,
                                 insideErrorHandler || rule.isError,
                                 approval,
-                                environmentDomains
+                                environmentDomains,
+                                depth + 1
                             )
                         }
                     }
                 }
                 is IfNode -> {
-                    validateStatements(statement.then, issues, insideErrorHandler, approval, environmentDomains)
-                    validateStatements(statement.otherwise, issues, insideErrorHandler, approval, environmentDomains)
+                    validateStatements(statement.then, issues, insideErrorHandler, approval, environmentDomains, depth + 1)
+                    validateStatements(statement.otherwise, issues, insideErrorHandler, approval, environmentDomains, depth + 1)
                     if (isSensitiveEnvironmentApprovalGuard(statement)) {
                         approval = approval.copy(sensitiveEnvironmentGuard = true)
                     }
                 }
-                is ForNode -> validateStatements(statement.body, issues, insideErrorHandler, approval, environmentDomains)
+                is ForNode -> validateStatements(statement.body, issues, insideErrorHandler, approval, environmentDomains, depth + 1)
                 is ParallelNode -> statement.branches.forEach { branch ->
-                    validateStatements(branch.steps, issues, insideErrorHandler, approval, environmentDomains)
+                    validateStatements(branch.steps, issues, insideErrorHandler, approval, environmentDomains, depth + 1)
                 }
                 is MatchNode -> {
                     statement.cases.forEach { case ->
-                        validateStatements(case.steps, issues, insideErrorHandler, approval, environmentDomains)
+                        validateStatements(case.steps, issues, insideErrorHandler, approval, environmentDomains, depth + 1)
                     }
                     statement.errorCase?.let { errorSteps ->
-                        validateStatements(errorSteps, issues, insideErrorHandler = true, approval, environmentDomains)
+                        validateStatements(
+                            errorSteps,
+                            issues,
+                            insideErrorHandler = true,
+                            inheritedApproval = approval,
+                            environmentDomains = environmentDomains,
+                            depth = depth + 1
+                        )
                     }
-                    validateStatements(statement.defaultSteps, issues, insideErrorHandler, approval, environmentDomains)
+                    validateStatements(statement.defaultSteps, issues, insideErrorHandler, approval, environmentDomains, depth + 1)
                 }
-                is RetryNode -> validateStatements(statement.steps, issues, insideErrorHandler, approval, environmentDomains)
+                is RetryNode -> validateStatements(statement.steps, issues, insideErrorHandler, approval, environmentDomains, depth + 1)
                 is TryNode -> {
-                    validateStatements(statement.steps, issues, insideErrorHandler, approval, environmentDomains)
-                    validateStatements(statement.errorHandler.steps, issues, insideErrorHandler = true, approval, environmentDomains)
+                    validateStatements(statement.steps, issues, insideErrorHandler, approval, environmentDomains, depth + 1)
+                    validateStatements(
+                        statement.errorHandler.steps,
+                        issues,
+                        insideErrorHandler = true,
+                        inheritedApproval = approval,
+                        environmentDomains = environmentDomains,
+                        depth = depth + 1
+                    )
                 }
                 is ErrorHandlerNode -> validateStatements(
                     statement.steps,
                     issues,
                     insideErrorHandler = true,
                     inheritedApproval = approval,
-                    environmentDomains = environmentDomains
+                    environmentDomains = environmentDomains,
+                    depth = depth + 1
                 )
                 is TransformNode, is AggregateNode -> Unit
                 else -> Unit
@@ -364,4 +391,8 @@ class SafetyBoundaryValidator(
 
     private fun Effects.mutatesExternalState(): Boolean =
         writes.isNotEmpty() || creates.isNotEmpty() || updates.isNotEmpty() || deletes.isNotEmpty()
+
+    companion object {
+        internal const val MAX_STATEMENT_NESTING_DEPTH = 128
+    }
 }

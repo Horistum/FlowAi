@@ -11,6 +11,11 @@ import java.io.File
  * with a source location — the parser never silently drops a construct.
  */
 class FlowParser {
+    private var statementNestingDepth = 0
+
+    companion object {
+        internal const val MAX_STATEMENT_NESTING_DEPTH = 128
+    }
 
     fun parse(file: File): FlowDocument = parse(file.readText(), file.path)
 
@@ -86,8 +91,6 @@ class FlowParser {
         return FlowNode(name = name, input = inputs, vars = vars, systems = systems, steps = steps, errorHandler = errorHandler)
     }
 
-    // --- input ----------------------------------------------------------------
-
     private fun parseInputBlock(ts: TokenStream): List<InputNode> {
         ts.expect(TokenType.LBRACE, "'{'")
         val out = mutableListOf<InputNode>()
@@ -122,8 +125,6 @@ class FlowParser {
         return out
     }
 
-    // --- vars -----------------------------------------------------------------
-
     private fun parseVarsBlock(ts: TokenStream): List<VariableNode> {
         ts.expect(TokenType.LBRACE, "'{'")
         val out = mutableListOf<VariableNode>()
@@ -137,8 +138,6 @@ class FlowParser {
         ts.expect(TokenType.RBRACE, "'}'")
         return out
     }
-
-    // --- systems --------------------------------------------------------------
 
     private fun parseSystemsBlock(ts: TokenStream): List<SystemNode> {
         ts.expect(TokenType.LBRACE, "'{'")
@@ -177,8 +176,6 @@ class FlowParser {
         return out
     }
 
-    // --- steps / statements ---------------------------------------------------
-
     private fun parseStepsBlock(ts: TokenStream): List<StatementNode> = parseStatementBlock(ts)
 
     private fun parseStatementBlock(ts: TokenStream): List<StatementNode> {
@@ -196,21 +193,33 @@ class FlowParser {
     private fun parseStatement(ts: TokenStream): StatementNode {
         val t = ts.peek()
         if (t.type != TokenType.IDENT) throw ParseException("expected a statement but found ${t.type} '${t.text}'", t.line, t.column)
-        return when (t.text) {
-            "if" -> parseIf(ts)
-            "for" -> parseFor(ts)
-            "parallel" -> parseParallel(ts)
-            "match" -> parseMatch(ts)
-            "retry" -> parseRetry(ts)
-            "try" -> parseTry(ts)
-            "fail" -> { ts.next(); FailNode(message = ExpressionParser(ts).parse()) }
-            "skip" -> { ts.next(); SkipNode(message = ExpressionParser(ts).parse()) }
-            "set" -> parseSet(ts)
-            "approve" -> parseApprove(ts)
-            "transform" -> parseTransform(ts)
-            "validate" -> parseValidate(ts)
-            "aggregate" -> parseAggregate(ts)
-            else -> parseAction(ts)
+        if (statementNestingDepth >= MAX_STATEMENT_NESTING_DEPTH) {
+            throw ParseException(
+                "statement nesting exceeds maximum depth $MAX_STATEMENT_NESTING_DEPTH",
+                t.line,
+                t.column
+            )
+        }
+        statementNestingDepth++
+        try {
+            return when (t.text) {
+                "if" -> parseIf(ts)
+                "for" -> parseFor(ts)
+                "parallel" -> parseParallel(ts)
+                "match" -> parseMatch(ts)
+                "retry" -> parseRetry(ts)
+                "try" -> parseTry(ts)
+                "fail" -> { ts.next(); FailNode(message = ExpressionParser(ts).parse()) }
+                "skip" -> { ts.next(); SkipNode(message = ExpressionParser(ts).parse()) }
+                "set" -> parseSet(ts)
+                "approve" -> parseApprove(ts)
+                "transform" -> parseTransform(ts)
+                "validate" -> parseValidate(ts)
+                "aggregate" -> parseAggregate(ts)
+                else -> parseAction(ts)
+            }
+        } finally {
+            statementNestingDepth--
         }
     }
 
@@ -219,11 +228,10 @@ class FlowParser {
         val condition = ExpressionParser(ts).parse()
         val then = parseStatementBlock(ts)
         var otherwise = emptyList<StatementNode>()
-        // 'else' may be separated by a newline
         val save = ts.index
         ts.skipNewlines()
         if (ts.matchWord("else")) {
-            otherwise = if (ts.checkWord("if")) listOf(parseIf(ts)) else parseStatementBlock(ts)
+            otherwise = if (ts.checkWord("if")) listOf(parseStatement(ts)) else parseStatementBlock(ts)
         } else {
             ts.seek(save)
         }
@@ -255,7 +263,6 @@ class FlowParser {
                 val name = ts.expect(TokenType.STRING, "branch name").rawValue!!
                 branches += ParallelBranchNode(name = name, steps = parseStatementBlock(ts))
             } else {
-                // anonymous branch wrapping a single statement
                 branches += ParallelBranchNode(name = null, steps = listOf(parseStatement(ts)))
             }
             ts.skipSeparators()
@@ -315,7 +322,11 @@ class FlowParser {
                     val number = value as? NumberLiteralNode
                         ?: throw ParseException("$path must be an integer number", valueToken.line, valueToken.column)
                     if (!number.isInteger || number.value < Int.MIN_VALUE || number.value > Int.MAX_VALUE) {
-                        throw ParseException("$path must be an integer number", valueToken.line, valueToken.column)
+                        throw ParseException(
+                            "$path must be an integer representable as a 32-bit value",
+                            valueToken.line,
+                            valueToken.column
+                        )
                     }
                     max = number.value.toInt()
                 }
@@ -454,7 +465,6 @@ class FlowParser {
         )
     }
 
-    /** Parses `{ key: expr ... [safety: ...] }`. Returns params and an optional SafetyNode. */
     private fun parseParamBlock(ts: TokenStream, allowSafety: Boolean?): Pair<Map<String, ExpressionNode>, SafetyNode?> {
         ts.expect(TokenType.LBRACE, "'{'")
         val params = LinkedHashMap<String, ExpressionNode>()
@@ -475,7 +485,6 @@ class FlowParser {
     }
 
     private fun parseSafety(ts: TokenStream): SafetyNode {
-        // forms: requiresApproval | onlyIf <expr> | <expr>
         return when {
             ts.checkWord("requiresApproval") -> { ts.next(); SafetyNode(rule = "requiresApproval") }
             ts.checkWord("onlyIf") -> { ts.next(); SafetyNode(rule = "onlyIf", condition = ExpressionParser(ts).parse()) }
