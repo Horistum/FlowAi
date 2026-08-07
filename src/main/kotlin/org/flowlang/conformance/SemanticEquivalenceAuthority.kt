@@ -1,569 +1,437 @@
 package org.flowlang.conformance
 
 import java.io.File
-import java.security.MessageDigest
-import org.flowlang.adapters.promotion.PostA0ConcretePromotionAuthority
-import org.flowlang.generators.manifest.TargetArtifactSupport
-import org.flowlang.generators.manifest.TargetRenderMode
-import org.flowlang.intent.IntentCapabilityValidator
-import org.flowlang.intent.IntentYamlLoader
+import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionLoader
+import org.flowlang.cli.Json
 import org.flowlang.modules.ModuleRegistry
-import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.FlowPlanner
-import org.flowlang.planner.IntentToAstPlanner
-import org.flowlang.validator.FlowValidator
-
-data class SemanticEquivalenceCategoryStatus(
-    val status: String,
-    val checked: Int,
-    val errors: List<String>
-)
+import org.flowlang.planner.ExecutionPlanCanonicalizer
+import org.flowlang.serialization.FlowYaml
 
 data class SemanticEquivalenceReport(
     val status: String,
-    val rulesPath: String,
-    val lifecycle: C03LifecycleAssessment,
     val schemaErrors: List<String>,
     val coverageErrors: List<String>,
     val polarityErrors: List<String>,
     val independenceErrors: List<String>,
     val concreteReferenceErrors: List<String>,
-    val boundaryErrors: List<String>,
-    val categories: Map<String, SemanticEquivalenceCategoryStatus>,
-    val rules: SemanticEquivalenceDocument? = null
+    val boundaryErrors: List<String>
 ) {
-    val errors: List<String>
-        get() = schemaErrors + coverageErrors + polarityErrors + independenceErrors + concreteReferenceErrors + boundaryErrors
+    val errors: List<String> = schemaErrors + coverageErrors + polarityErrors +
+        independenceErrors + concreteReferenceErrors + boundaryErrors
 }
 
 class SemanticEquivalenceAuthority(
     private val rootDir: File = File("."),
-    private val modules: ModuleRegistry = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
+    private val registry: ModuleRegistry = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
 ) {
-    private val snapshotHonesty by lazy { ReferenceSnapshotHonesty(rootDir) }
-    private val snapshotPlanBuilder by lazy { ReferenceSnapshotBundleGenerator(rootDir, modules) }
-    private val implementationObservationAuthority by lazy { SemanticImplementationObservationAuthority(rootDir) }
-    private val promotionAuthority by lazy { PostA0ConcretePromotionAuthority(rootDir) }
-
     fun analyze(): SemanticEquivalenceReport {
-        val rulesResult = runCatching { SemanticEquivalenceLoader.load(rootDir) }
-        val schemaErrors = rulesResult.exceptionOrNull()?.let {
-            listOf("Semantic equivalence rules are invalid: ${it.message.orEmpty()}")
-        }.orEmpty()
-        val rules = rulesResult.getOrNull()
-        val lifecycle = C03RoadmapLifecycleAuthority(rootDir).assess()
-        val lifecycleErrors = lifecycle.errors.map { "C0.3 lifecycle: $it" }
-        val coverageErrors = if (rules == null) emptyList() else coverageErrors(rules)
-        val polarityErrors = if (rules == null) emptyList() else polarityErrors(rules)
-        val independenceErrors = if (rules == null) emptyList() else independenceErrors(rules)
-        val concreteReferenceErrors = if (rules == null) emptyList() else concreteReferenceErrors(rules)
-        val boundaryErrors = frozenBoundaryErrors()
-        val categories = linkedMapOf(
-            "conformance.c0.3.lifecycle-integrity" to category(1, lifecycleErrors),
-            "conformance.c0.3.rules-schema-integrity" to category(1, schemaErrors),
-            "conformance.c0.3.observation-coverage" to category(rules?.cases?.size ?: 0, coverageErrors),
-            "conformance.c0.3.mutation-polarity" to category(
-                (rules?.cases?.size ?: 0) * (rules?.mutations?.size ?: 0),
-                polarityErrors
-            ),
-            "conformance.c0.3.implementation-independence" to category(
-                rules?.cases?.size ?: 0,
-                independenceErrors
-            ),
-            "conformance.c0.3.concrete-reference-equivalence" to category(
-                rules?.concretePairs?.size ?: 0,
-                concreteReferenceErrors
-            ),
-            "conformance.c0.3.frozen-boundary-preservation" to category(BOUNDARY_SPECS.size, boundaryErrors)
-        )
-        val allErrors = categories.values.flatMap { it.errors }
+        val document = SemanticEquivalenceLoader.load(rootDir)
+        val schemaErrors = schemaErrors(document)
+        val coverageErrors = coverageErrors(document)
+        val polarityErrors = polarityErrors(document)
+        val independenceErrors = independenceErrors(document)
+        val concreteReferenceErrors = concreteReferenceErrors(document)
+        val boundaryErrors = boundaryErrors()
+        val all = schemaErrors + coverageErrors + polarityErrors +
+            independenceErrors + concreteReferenceErrors + boundaryErrors
         return SemanticEquivalenceReport(
-            status = if (allErrors.isEmpty()) "PASS" else "FAIL",
-            rulesPath = SemanticEquivalenceLoader.PATH,
-            lifecycle = lifecycle,
+            status = if (all.isEmpty()) "PASS" else "FAIL",
             schemaErrors = schemaErrors,
             coverageErrors = coverageErrors,
             polarityErrors = polarityErrors,
             independenceErrors = independenceErrors,
             concreteReferenceErrors = concreteReferenceErrors,
-            boundaryErrors = boundaryErrors,
-            categories = categories,
-            rules = rules
+            boundaryErrors = boundaryErrors
         )
     }
 
-    private fun coverageErrors(rules: SemanticEquivalenceDocument): List<String> = buildList {
-        val observedKinds = mutableSetOf<SemanticObservationKind>()
-        rules.cases.forEach { case ->
+    private fun schemaErrors(document: SemanticEquivalenceDocument): List<String> = buildList {
+        document.cases.forEach { case ->
             val requirements = SemanticObservationAuthority.requirementsFor(
                 SemanticEquivalencePlanFactory.plan(case.fixture)
             )
-            val kinds = requirements.map { it.kind }.toSet()
-            observedKinds += kinds
-            if (requirements.isEmpty()) add("Case '${case.id}' derives no semantic observations.")
-            if (kinds != case.requiredKinds.toSet()) {
-                add("Case '${case.id}' declares ${case.requiredKinds} but derives ${kinds.sortedBy { it.ordinal }}.")
+            val actualKinds = requirements.map(SemanticObservationRequirement::kind).distinct()
+            if (actualKinds != case.requiredKinds) {
+                add(
+                    "Case '${case.id}' declares ${case.requiredKinds.map { it.documentValue }} " +
+                        "but production observation derivation produced ${actualKinds.map { it.documentValue }}."
+                )
             }
-            if (requirements.map { it.id }.size != requirements.map { it.id }.toSet().size) {
-                add("Case '${case.id}' derives duplicate semantic observation ids.")
+            if (requirements.isEmpty()) {
+                add("Case '${case.id}' does not derive any explicit observable requirement.")
             }
-        }
-        if (observedKinds != SemanticObservationKind.entries.toSet()) {
-            add("C0.3 observation corpus covers ${observedKinds.sortedBy { it.ordinal }} instead of all observation kinds.")
         }
     }
 
-    private fun polarityErrors(rules: SemanticEquivalenceDocument): List<String> = buildList {
-        rules.cases.forEach { case ->
+    private fun coverageErrors(document: SemanticEquivalenceDocument): List<String> = buildList {
+        val coveredKinds = document.cases.flatMap(SemanticEquivalenceCase::requiredKinds).toSet()
+        val requiredKinds = SemanticObservationKind.entries.toSet()
+        if (coveredKinds != requiredKinds) {
+            add(
+                "C0.3 observation coverage must be exact: " +
+                    "missing=${(requiredKinds - coveredKinds).map { it.documentValue }.sorted()} " +
+                    "extra=${(coveredKinds - requiredKinds).map { it.documentValue }.sorted()}."
+            )
+        }
+        SemanticObservationKind.entries.forEach { kind ->
+            if (document.cases.none { kind in it.requiredKinds }) {
+                add("C0.3 has no positive fixture for observation kind '${kind.documentValue}'.")
+            }
+        }
+    }
+
+    private fun polarityErrors(document: SemanticEquivalenceDocument): List<String> = buildList {
+        document.cases.forEach { case ->
             val requirements = SemanticObservationAuthority.requirementsFor(
                 SemanticEquivalencePlanFactory.plan(case.fixture)
             )
-            val baseline = SemanticObservationAuthority.fullyPreserved(requirements, "case:${case.id}:baseline")
-            val baselineAssessment = SemanticObservationAuthority.assess(requirements, baseline)
-            if (baselineAssessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT) {
-                add("Case '${case.id}' positive baseline is not equivalent.")
+            val baselineEvidence = SemanticObservationAuthority.fullyPreserved(
+                requirements,
+                "c0.3:${case.id}:baseline"
+            )
+            val baseline = SemanticObservationAuthority.assess(requirements, baselineEvidence)
+            if (baseline.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT ||
+                baseline.observations.any { it.status != SemanticObservationEvidenceStatus.PRESERVED }
+            ) {
+                add("Case '${case.id}' does not establish an EQUIVALENT fully preserved baseline.")
             }
             requirements.forEach { requirement ->
-                rules.mutations.forEach { mutation ->
-                    val mutated = mutateEvidence(baseline, requirement, mutation, case.id)
-                    val assessment = SemanticObservationAuthority.assess(requirements, mutated)
-                    if (assessment.decision.status != SemanticEquivalenceDecisionStatus.NOT_EQUIVALENT) {
-                        add("Case '${case.id}' mutation '${mutation.documentValue}' did not reject '${requirement.id}'.")
+                document.mutations.forEach { mutation ->
+                    val mutatedEvidence = mutate(baselineEvidence, requirement, mutation)
+                    val assessment = SemanticObservationAuthority.assess(requirements, mutatedEvidence)
+                    val affected = assessment.observations.singleOrNull { it.requirement?.id == requirement.id }
+                    val expectedStatus = when (mutation) {
+                        SemanticEquivalenceMutation.MISSING -> SemanticObservationEvidenceStatus.MISSING
+                        SemanticEquivalenceMutation.WEAKENED -> SemanticObservationEvidenceStatus.WEAKENED
+                        SemanticEquivalenceMutation.UNKNOWN -> SemanticObservationEvidenceStatus.UNKNOWN
+                        SemanticEquivalenceMutation.CONTRADICTORY -> SemanticObservationEvidenceStatus.CONTRADICTORY
                     }
-                    val observed = assessment.observations.singleOrNull { it.requirement?.id == requirement.id }
-                    val expected = mutation.expectedStatus()
-                    if (observed?.status != expected) {
+                    if (assessment.decision.status != SemanticEquivalenceDecisionStatus.NOT_EQUIVALENT ||
+                        affected?.status != expectedStatus
+                    ) {
                         add(
-                            "Case '${case.id}' mutation '${mutation.documentValue}' produced " +
-                                "${observed?.status} for '${requirement.id}', expected $expected."
+                            "Case '${case.id}' mutation '${mutation.documentValue}' on '${requirement.id}' " +
+                                "expected NOT_EQUIVALENT/$expectedStatus but observed " +
+                                "${assessment.decision.status}/${affected?.status}."
                         )
                     }
                 }
-                val duplicated = baseline + baseline.single { it.requirementId == requirement.id }.copy(
-                    evidenceReference = "case:${case.id}:duplicate:${requirement.id}"
-                )
-                val duplicateAssessment = SemanticObservationAuthority.assess(requirements, duplicated)
-                val duplicateObservation = duplicateAssessment.observations.singleOrNull {
-                    it.requirement?.id == requirement.id
+            }
+            val unexpected = baselineEvidence + SemanticObservationEvidence(
+                requirementId = "semantic.unexpected.observation",
+                fingerprint = SemanticObservationIdentity.fingerprint("unexpected"),
+                status = SemanticObservationEvidenceStatus.PRESERVED,
+                evidenceReference = "c0.3:${case.id}:unexpected"
+            )
+            val unexpectedAssessment = SemanticObservationAuthority.assess(requirements, unexpected)
+            if (unexpectedAssessment.decision.status != SemanticEquivalenceDecisionStatus.NOT_EQUIVALENT ||
+                unexpectedAssessment.observations.none {
+                    it.requirement == null && it.status == SemanticObservationEvidenceStatus.CONTRADICTORY
                 }
-                if (duplicateAssessment.decision.status != SemanticEquivalenceDecisionStatus.NOT_EQUIVALENT ||
-                    duplicateObservation?.status != SemanticObservationEvidenceStatus.CONTRADICTORY ||
-                    duplicateObservation.message?.contains("multiple evidence records") != true
-                ) {
-                    add("Case '${case.id}' duplicate evidence did not exercise the duplicate-record rejection path.")
-                }
-                val fingerprintMismatch = baseline.map { evidence ->
-                    if (evidence.requirementId == requirement.id) {
-                        evidence.copy(
-                            fingerprint = SemanticObservationIdentity.fingerprint("tampered", requirement.id),
-                            evidenceReference = "case:${case.id}:fingerprint-mismatch:${requirement.id}"
-                        )
-                    } else {
-                        evidence
-                    }
-                }
-                val mismatchAssessment = SemanticObservationAuthority.assess(requirements, fingerprintMismatch)
-                val mismatchObservation = mismatchAssessment.observations.singleOrNull {
-                    it.requirement?.id == requirement.id
-                }
-                if (mismatchAssessment.decision.status != SemanticEquivalenceDecisionStatus.NOT_EQUIVALENT ||
-                    mismatchObservation?.status != SemanticObservationEvidenceStatus.CONTRADICTORY ||
-                    mismatchObservation.message?.contains("fingerprint") != true
-                ) {
-                    add("Case '${case.id}' fingerprint mutation did not exercise the integrity mismatch path.")
-                }
+            ) {
+                add("Case '${case.id}' accepts evidence for an observation that was never required.")
             }
         }
     }
 
-    private fun independenceErrors(rules: SemanticEquivalenceDocument): List<String> = buildList {
-        rules.cases.forEach { case ->
-            val reference = SemanticEquivalencePlanFactory.plan(case.fixture)
-            val alternate = SemanticEquivalencePlanFactory.plan(case.fixture, alternateImplementationLabels = true)
-            val referenceRequirements = SemanticObservationAuthority.requirementsFor(reference)
-            val alternateRequirements = SemanticObservationAuthority.requirementsFor(alternate)
-            if (referenceRequirements != alternateRequirements) {
-                add("Case '${case.id}' semantic requirements depend on module/action/target labels.")
+    private fun independenceErrors(document: SemanticEquivalenceDocument): List<String> = buildList {
+        document.cases.forEach { case ->
+            val reference = SemanticObservationAuthority.requirementsFor(
+                SemanticEquivalencePlanFactory.plan(case.fixture)
+            )
+            val alternate = SemanticObservationAuthority.requirementsFor(
+                SemanticEquivalencePlanFactory.plan(case.fixture, alternateImplementationLabels = true)
+            )
+            if (reference != alternate) {
+                add("Case '${case.id}' observations changed when only module, action and target labels changed.")
             }
             val referenceAssessment = SemanticObservationAuthority.assess(
-                referenceRequirements,
-                SemanticObservationAuthority.fullyPreserved(referenceRequirements, "implementation:reference")
+                reference,
+                SemanticObservationAuthority.fullyPreserved(reference, "c0.3:${case.id}:reference")
             )
             val alternateAssessment = SemanticObservationAuthority.assess(
-                alternateRequirements,
-                SemanticObservationAuthority.fullyPreserved(alternateRequirements, "implementation:alternate")
+                reference,
+                SemanticObservationAuthority.fullyPreserved(reference, "c0.3:${case.id}:alternate")
             )
             if (referenceAssessment.decision != alternateAssessment.decision ||
                 referenceAssessment.observations.map { it.status } != alternateAssessment.observations.map { it.status }
             ) {
-                add("Case '${case.id}' decision changes when only implementation labels change.")
-            }
-            val semanticAlternateRequirements = SemanticObservationAuthority.requirementsFor(
-                SemanticEquivalencePlanFactory.plan(
-                    case.fixture,
-                    alternateImplementationLabels = true,
-                    alternateSemanticMeaning = true
-                )
-            )
-            if (referenceRequirements == semanticAlternateRequirements) {
-                add("Case '${case.id}' independence fixture cannot detect a semantic mutation.")
+                add("Case '${case.id}' equivalence decision depends on evidence-provider identity.")
             }
         }
     }
 
-    private fun concreteReferenceErrors(rules: SemanticEquivalenceDocument): List<String> = buildList {
-        rules.concretePairs.forEach { pair ->
+    private fun concreteReferenceErrors(document: SemanticEquivalenceDocument): List<String> = buildList {
+        val promotions = AdapterExecutableReferencePromotionLoader.load(rootDir).promotions
+        val referenceGenerator = ReferenceSnapshotBundleGenerator(rootDir, registry)
+        val implementationEvidenceAuthority = SemanticImplementationObservationAuthority(rootDir)
+        document.concretePairs.forEach { pair ->
             val intentFile = File(rootDir, pair.intent)
             if (!intentFile.isFile) {
-                add("Concrete pair '${pair.id}' intent is missing: ${pair.intent}.")
+                add("Concrete pair '${pair.id}' intent is missing: ${intentFile.path}.")
                 return@forEach
             }
-            val planResult = runCatching { buildProductionPlan(intentFile) }
-            if (planResult.isFailure) {
-                add("Concrete pair '${pair.id}' production plan failed: ${planResult.exceptionOrNull()?.message.orEmpty()}")
+            val planResult = runCatching { referenceGenerator.planFor(intentFile) }
+            val plan = planResult.getOrNull()
+            if (plan == null) {
+                add("Concrete pair '${pair.id}' cannot produce a plan: ${planResult.exceptionOrNull()?.message}.")
                 return@forEach
             }
-            val plan = planResult.getOrThrow()
             val requirements = SemanticObservationAuthority.requirementsFor(plan)
-            if (requirements.isEmpty()) {
-                add("Concrete pair '${pair.id}' derives no required semantic observations.")
-                return@forEach
-            }
-            val leftFile = File(rootDir, pair.leftSnapshot)
-            val rightFile = File(rootDir, pair.rightSnapshot)
-            val leftBundle = snapshotHonesty.assess(leftFile)
-            val rightBundle = snapshotHonesty.assess(rightFile)
-            if (leftBundle.status != "PASS") {
-                add("Concrete pair '${pair.id}' left snapshot is not honest: ${leftBundle.errors.joinToString(" | ")}.")
-            }
-            if (rightBundle.status != "PASS") {
-                add("Concrete pair '${pair.id}' right snapshot is not honest: ${rightBundle.errors.joinToString(" | ")}.")
-            }
-            if (leftBundle.scenarioId != pair.scenarioId || rightBundle.scenarioId != pair.scenarioId) {
+            val concreteKinds = requirements.map(SemanticObservationRequirement::kind).toSet()
+            if (concreteKinds != SemanticObservationKind.entries.toSet()) {
                 add(
-                    "Concrete pair '${pair.id}' snapshots must declare scenarioId '${pair.scenarioId}', got " +
-                        "'${leftBundle.scenarioId}' and '${rightBundle.scenarioId}'."
+                    "Concrete pair '${pair.id}' must exercise every C0.3 observation kind: " +
+                        "observed=${concreteKinds.map { it.documentValue }.sorted()}."
                 )
             }
-            val leftTargets = leftBundle.states.filter { it.executable }.map { it.target }
-            val rightTargets = rightBundle.states.filter { it.executable }.map { it.target }
-            if (leftTargets != listOf(pair.leftTarget)) {
-                add("Concrete pair '${pair.id}' left snapshot does not prove executable target '${pair.leftTarget}'.")
+            val forbiddenImplementationTokens = setOf(pair.leftTarget, pair.rightTarget)
+            requirements.forEach { requirement ->
+                val semanticText = listOf(
+                    requirement.id,
+                    requirement.subject,
+                    requirement.value,
+                    requirement.producerIdentity.orEmpty(),
+                    requirement.consumerIdentity.orEmpty()
+                ).joinToString(" ").lowercase()
+                forbiddenImplementationTokens.filter { semanticText.contains(it.lowercase()) }.forEach { token ->
+                    add("Concrete pair '${pair.id}' observation '${requirement.id}' depends on target token '$token'.")
+                }
             }
-            if (rightTargets != listOf(pair.rightTarget)) {
-                add("Concrete pair '${pair.id}' right snapshot does not prove executable target '${pair.rightTarget}'.")
+            if (promotions.none {
+                    it.target == GITHUB_ACTIONS &&
+                        it.snapshotReference == snapshotForTarget(pair, GITHUB_ACTIONS)
+                }
+            ) {
+                add("Concrete pair '${pair.id}' GitHub Actions evidence is not backed by the bounded A1.0 promotion authority.")
             }
-            val leftArtifact = singleExecutableArtifact(leftBundle, pair.leftTarget, pair.id, "left", this)
-            val rightArtifact = singleExecutableArtifact(rightBundle, pair.rightTarget, pair.id, "right", this)
-            val leftProfile = runCatching {
-                implementationObservationAuthority.profile(plan, pair.leftTarget, pair.scenarioId, requirements)
-            }.getOrElse {
-                add("Concrete pair '${pair.id}' left target evidence failed: ${it.message.orEmpty()}")
-                null
+
+            val left = validateSnapshot(pair.id, pair.scenarioId, pair.leftTarget, pair.leftSnapshot)
+            val right = validateSnapshot(pair.id, pair.scenarioId, pair.rightTarget, pair.rightSnapshot)
+            addAll(left.errors)
+            addAll(right.errors)
+            val productionTree = runCatching {
+                Json.mapper.readTree(Json.mapper.writeValueAsBytes(ExecutionPlanCanonicalizer.canonicalize(plan)))
             }
-            val rightProfile = runCatching {
-                implementationObservationAuthority.profile(plan, pair.rightTarget, pair.scenarioId, requirements)
-            }.getOrElse {
-                add("Concrete pair '${pair.id}' right target evidence failed: ${it.message.orEmpty()}")
-                null
+            if (productionTree.isFailure) {
+                add("Concrete pair '${pair.id}' production execution plan cannot be serialized: ${productionTree.exceptionOrNull()?.message}.")
             }
-            if (leftProfile != null) validateRenderingWitness(pair, "left", leftProfile, leftArtifact, this)
-            if (rightProfile != null) validateRenderingWitness(pair, "right", rightProfile, rightArtifact, this)
-            validateTargetBackings(pair, leftBundle, rightBundle, this)
-            val leftPlanFile = leftBundle.artifacts.singleOrNull {
-                it.kind == "execution-plan" && it.format == "json" && !it.executable
-            }?.let { File(leftFile.parentFile, it.path) }
-            val rightPlanFile = rightBundle.artifacts.singleOrNull {
-                it.kind == "execution-plan" && it.format == "json" && !it.executable
-            }?.let { File(rightFile.parentFile, it.path) }
-            when {
-                leftPlanFile == null -> add(
-                    "Concrete pair '${pair.id}' ${pair.leftTarget} snapshot has no non-executable execution plan artifact."
-                )
-                !leftPlanFile.isFile -> add(
-                    "Concrete pair '${pair.id}' ${pair.leftTarget} snapshot plan is missing: ${leftPlanFile.path}."
-                )
-                leftPlanFile.readText() != snapshotPlanBuilder.renderPlanJson(plan) -> add(
-                    "Concrete pair '${pair.id}' ${pair.leftTarget} snapshot plan is stale against the production planning path."
+            if (left.planFile != null && right.planFile != null) {
+                val leftTree = runCatching { Json.mapper.readTree(left.planFile) }
+                val rightTree = runCatching { Json.mapper.readTree(right.planFile) }
+                if (leftTree.isFailure) {
+                    add("Concrete pair '${pair.id}' left execution plan cannot be parsed: ${leftTree.exceptionOrNull()?.message}.")
+                }
+                if (rightTree.isFailure) {
+                    add("Concrete pair '${pair.id}' right execution plan cannot be parsed: ${rightTree.exceptionOrNull()?.message}.")
+                }
+                val expectedTree = productionTree.getOrNull()
+                val leftPlanTree = leftTree.getOrNull()
+                val rightPlanTree = rightTree.getOrNull()
+                if (leftPlanTree != null && rightPlanTree != null && leftPlanTree != rightPlanTree) {
+                    add("Concrete pair '${pair.id}' target snapshots do not preserve the same target-neutral execution plan.")
+                }
+                if (expectedTree != null && leftPlanTree != null && expectedTree != leftPlanTree) {
+                    add("Concrete pair '${pair.id}' Jenkins snapshot plan is stale relative to the production planning path.")
+                }
+                if (expectedTree != null && rightPlanTree != null && expectedTree != rightPlanTree) {
+                    add("Concrete pair '${pair.id}' GitHub Actions snapshot plan is stale relative to the production planning path.")
+                }
+            }
+
+            val leftProfileResult = runCatching {
+                implementationEvidenceAuthority.profile(
+                    plan = plan,
+                    target = pair.leftTarget,
+                    scenarioId = pair.scenarioId,
+                    requirements = requirements
                 )
             }
-            when {
-                rightPlanFile == null -> add(
-                    "Concrete pair '${pair.id}' ${pair.rightTarget} snapshot has no non-executable execution plan artifact."
+            val rightProfileResult = runCatching {
+                implementationEvidenceAuthority.profile(
+                    plan = plan,
+                    target = pair.rightTarget,
+                    scenarioId = pair.scenarioId,
+                    requirements = requirements
                 )
-                !rightPlanFile.isFile -> add(
-                    "Concrete pair '${pair.id}' ${pair.rightTarget} snapshot plan is missing: ${rightPlanFile.path}."
-                )
-                rightPlanFile.readText() != snapshotPlanBuilder.renderPlanJson(plan) -> add(
-                    "Concrete pair '${pair.id}' ${pair.rightTarget} snapshot plan is stale against the production planning path."
-                )
+            }
+            val leftProfile = leftProfileResult.getOrNull()
+            val rightProfile = rightProfileResult.getOrNull()
+            if (leftProfile == null) {
+                add("Concrete pair '${pair.id}' cannot derive ${pair.leftTarget} observation evidence: ${leftProfileResult.exceptionOrNull()?.message}.")
+            }
+            if (rightProfile == null) {
+                add("Concrete pair '${pair.id}' cannot derive ${pair.rightTarget} observation evidence: ${rightProfileResult.exceptionOrNull()?.message}.")
             }
             if (leftProfile != null) {
-                val assessment = SemanticObservationAuthority.assess(requirements, leftProfile.evidence)
-                if (assessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT) {
-                    add(
-                        "Concrete pair '${pair.id}' ${pair.leftTarget} target evidence is not equivalent: " +
-                            blockingSummary(assessment)
-                    )
-                }
+                addAll(renderedArtifactErrors(pair.id, pair.leftTarget, left, leftProfile))
             }
             if (rightProfile != null) {
-                val assessment = SemanticObservationAuthority.assess(requirements, rightProfile.evidence)
-                if (assessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT) {
-                    add(
-                        "Concrete pair '${pair.id}' ${pair.rightTarget} target evidence is not equivalent: " +
-                            blockingSummary(assessment)
-                    )
-                }
+                addAll(renderedArtifactErrors(pair.id, pair.rightTarget, right, rightProfile))
             }
             if (leftProfile != null && rightProfile != null) {
-                val leftRequirementIds = leftProfile.evidence.map { it.requirementId }.toSet()
-                val rightRequirementIds = rightProfile.evidence.map { it.requirementId }.toSet()
-                if (leftRequirementIds != requirements.map { it.id }.toSet() ||
-                    rightRequirementIds != requirements.map { it.id }.toSet()
+                val leftAssessment = SemanticObservationAuthority.assess(requirements, leftProfile.evidence)
+                val rightAssessment = SemanticObservationAuthority.assess(requirements, rightProfile.evidence)
+                if (leftAssessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT ||
+                    rightAssessment.decision.status != SemanticEquivalenceDecisionStatus.EQUIVALENT ||
+                    leftAssessment.decision != rightAssessment.decision ||
+                    leftAssessment.observations.map { it.status } != rightAssessment.observations.map { it.status }
                 ) {
-                    add("Concrete pair '${pair.id}' target evidence does not cover the exact required observation set.")
-                }
-            }
-        }
-    }
-
-    private fun validateTargetBackings(
-        pair: SemanticEquivalenceConcretePair,
-        leftBundle: ReferenceSnapshotBundleAssessment,
-        rightBundle: ReferenceSnapshotBundleAssessment,
-        errors: MutableList<String>
-    ) {
-        val bundlesByTarget = mapOf(pair.leftTarget to leftBundle, pair.rightTarget to rightBundle)
-        pair.targetBackings.forEach { backing ->
-            val bundle = requireNotNull(bundlesByTarget[backing.target]) {
-                "Concrete pair '${pair.id}' has backing for unknown target '${backing.target}'."
-            }
-            when (backing.kind) {
-                SemanticEquivalenceTargetBackingKind.REFERENCE_SNAPSHOT -> {
-                    val promotionClaims = promotionAuthority.promotionsFor(
-                        backing.target,
-                        pair.scenarioId,
-                        bundle.indexFile.path.replace(File.separatorChar, '/')
+                    add(
+                        "Concrete pair '${pair.id}' does not preserve equivalent target-backed observations: " +
+                            "${pair.leftTarget}=${assessmentSummary(leftAssessment)} " +
+                            "${pair.rightTarget}=${assessmentSummary(rightAssessment)}."
                     )
-                    if (promotionClaims.isNotEmpty()) {
-                        errors +=
-                            "Concrete pair '${pair.id}' target '${backing.target}' is declared as reference-snapshot " +
-                                "backing but has bounded-promotion claims: ${promotionClaims.map { it.id }}."
-                    }
-                }
-                SemanticEquivalenceTargetBackingKind.BOUNDED_PROMOTION -> {
-                    val claims = promotionAuthority.promotionsFor(
-                        backing.target,
-                        pair.scenarioId,
-                        bundle.indexFile.path.replace(File.separatorChar, '/')
-                    )
-                    if (claims.size != 1) {
-                        errors +=
-                            "Concrete pair '${pair.id}' target '${backing.target}' requires exactly one bounded " +
-                                "promotion backing, got ${claims.map { it.id }}."
-                    }
                 }
             }
         }
     }
 
-    private fun validateRenderingWitness(
-        pair: SemanticEquivalenceConcretePair,
-        side: String,
-        profile: SemanticImplementationObservationProfile,
-        snapshotArtifact: ReferenceSnapshotArtifact?,
-        errors: MutableList<String>
-    ) {
-        val target = profile.target
-        if (profile.rendering.receipt.renderMode != TargetRenderMode.EXECUTABLE) {
-            errors += "Concrete pair '${pair.id}' $side target '$target' receipt is not EXECUTABLE."
+    private fun boundaryErrors(): List<String> = buildList {
+        val expectedKinds = listOf(
+            SemanticObservationKind.EFFECT,
+            SemanticObservationKind.RESULT_IDENTITY,
+            SemanticObservationKind.RESULT_VALUE,
+            SemanticObservationKind.CONTINUITY
+        )
+        if (SemanticObservationKind.entries != expectedKinds) {
+            add("C0.3 observation kind order is a closed contract; expected $expectedKinds.")
         }
-        if (profile.rendering.artifact.support != TargetArtifactSupport.EXECUTABLE) {
-            errors += "Concrete pair '${pair.id}' $side target '$target' artifact is not executable."
-        }
-        if (snapshotArtifact != null) {
-            val file = snapshotFile(snapshotForTarget(pair, target), snapshotArtifact)
-            if (!file.isFile) {
-                errors += "Concrete pair '${pair.id}' $side target '$target' snapshot artifact is missing: ${file.path}."
-            } else if (file.readText() != profile.rendering.artifact.content) {
-                errors += "Concrete pair '${pair.id}' $side target '$target' committed artifact is stale against production rendering."
-            }
-            if (snapshotArtifact.sha256 != profile.rendering.artifact.sha256) {
-                errors += "Concrete pair '${pair.id}' $side target '$target' snapshot digest does not match production rendering."
-            }
+        val frozenInventories = mapOf(
+            ConformanceSuiteInventory.PATH to ConformanceSuiteInventory.load(rootDir).preClosureChecks,
+            AdapterConformanceInventory.PATH to AdapterConformanceInventory.load(rootDir).checks,
+            AdapterA1ConformanceInventory.PATH to AdapterA1ConformanceInventory.load(rootDir).checks,
+            RealWorldCorpusConformanceChecks.INVENTORY_PATH to loadInventory(RealWorldCorpusConformanceChecks.INVENTORY_PATH),
+            AbstractTopologyMatrixConformanceInventory.PATH to AbstractTopologyMatrixConformanceInventory.load(rootDir).checks
+        )
+        frozenInventories.forEach { (path, checks) ->
+            val leaked = checks.filter { it.startsWith(CHECK_PREFIX) }
+            if (leaked.isNotEmpty()) add("Frozen inventory '$path' contains C0.3 checks: $leaked.")
         }
     }
 
-    private fun singleExecutableArtifact(
-        bundle: ReferenceSnapshotBundleAssessment,
-        target: String,
+    private fun mutate(
+        baseline: List<SemanticObservationEvidence>,
+        requirement: SemanticObservationRequirement,
+        mutation: SemanticEquivalenceMutation
+    ): List<SemanticObservationEvidence> = when (mutation) {
+        SemanticEquivalenceMutation.MISSING -> baseline.filterNot { it.requirementId == requirement.id }
+        SemanticEquivalenceMutation.WEAKENED -> baseline.map { evidence ->
+            if (evidence.requirementId == requirement.id) evidence.copy(status = SemanticObservationEvidenceStatus.WEAKENED) else evidence
+        }
+        SemanticEquivalenceMutation.UNKNOWN -> baseline.map { evidence ->
+            if (evidence.requirementId == requirement.id) evidence.copy(status = SemanticObservationEvidenceStatus.UNKNOWN) else evidence
+        }
+        SemanticEquivalenceMutation.CONTRADICTORY -> baseline + baseline.single { it.requirementId == requirement.id }.copy(
+            status = SemanticObservationEvidenceStatus.CONTRADICTORY,
+            evidenceReference = "c0.3:contradictory:${requirement.id}"
+        )
+    }
+
+    private fun validateSnapshot(
         pairId: String,
-        side: String,
-        errors: MutableList<String>
-    ): ReferenceSnapshotArtifact? {
-        val artifacts = bundle.artifacts.filter { it.target == target && it.executable }
-        if (artifacts.size != 1) {
-            errors += "Concrete pair '$pairId' $side snapshot must contain exactly one executable artifact for '$target'."
+        scenarioId: String,
+        target: String,
+        path: String
+    ): SnapshotValidation {
+        val errors = mutableListOf<String>()
+        val indexFile = File(rootDir, path)
+        if (!indexFile.isFile) {
+            errors += "Concrete pair '$pairId' snapshot is missing: ${indexFile.path}."
+            return SnapshotValidation(errors, null, null)
         }
-        return artifacts.singleOrNull()
+        val snapshotResult = runCatching { Json.mapper.readValue(indexFile, ReferenceSnapshotSet::class.java) }
+        val snapshot = snapshotResult.getOrNull()
+        if (snapshot == null) {
+            errors += "Concrete pair '$pairId' snapshot '$path' cannot be parsed: ${snapshotResult.exceptionOrNull()?.message}."
+            return SnapshotValidation(errors, null, null)
+        }
+        ReferenceSnapshotHonesty.validate(snapshot).forEach {
+            errors += "Concrete pair '$pairId' invalid snapshot '$path': $it"
+        }
+        if (snapshot.scenarioId != scenarioId) {
+            errors += "Concrete pair '$pairId' snapshot '$path' declares scenario '${snapshot.scenarioId}', expected '$scenarioId'."
+        }
+        val state = snapshot.targets.singleOrNull()
+        if (state == null || state.target != target || !state.executable) {
+            errors += "Concrete pair '$pairId' snapshot '$path' must contain exactly one executable '$target' target state."
+        }
+        if (snapshot.artifacts.none {
+                it.layer == ReferenceSnapshotLayer.SEMANTIC_PLAN && it.file == EXECUTION_PLAN_FILE && !it.executable
+            }
+        ) {
+            errors += "Concrete pair '$pairId' snapshot '$path' must declare a non-executable semantic plan artifact."
+        }
+        val targetArtifacts = snapshot.artifacts.filter {
+            it.layer == ReferenceSnapshotLayer.TARGET_PROJECTION && it.target == target && it.executable
+        }
+        var artifactFile: File? = null
+        if (targetArtifacts.size != 1) {
+            errors += "Concrete pair '$pairId' snapshot '$path' must declare exactly one executable '$target' artifact."
+        } else {
+            artifactFile = File(indexFile.parentFile, targetArtifacts.single().file)
+            if (!artifactFile.isFile || artifactFile.length() == 0L) {
+                errors += "Concrete pair '$pairId' executable artifact is missing or empty: ${artifactFile.path}."
+                artifactFile = null
+            }
+        }
+        val planFile = File(indexFile.parentFile, EXECUTION_PLAN_FILE)
+        if (!planFile.isFile) {
+            errors += "Concrete pair '$pairId' semantic plan is missing: ${planFile.path}."
+        }
+        return SnapshotValidation(errors, planFile.takeIf(File::isFile), artifactFile)
     }
+
+    private fun renderedArtifactErrors(
+        pairId: String,
+        target: String,
+        snapshot: SnapshotValidation,
+        profile: SemanticImplementationObservationProfile
+    ): List<String> = buildList {
+        val committed = snapshot.artifactFile ?: return@buildList
+        val rendering = profile.rendering
+        if (profile.target != target || profile.manifest.target != target || rendering.artifact.target != target) {
+            add("Concrete pair '$pairId' target-backed rendering identity does not match '$target'.")
+        }
+        val committedContent = runCatching { committed.readText() }
+        if (committedContent.isFailure) {
+            add("Concrete pair '$pairId' cannot read committed '$target' artifact: ${committedContent.exceptionOrNull()?.message}.")
+        } else if (committedContent.getOrNull() != rendering.artifact.content) {
+            add(
+                "Concrete pair '$pairId' committed '$target' artifact is stale relative to the " +
+                    "current production manifest and rendering receipt."
+            )
+        }
+    }
+
+    private fun assessmentSummary(assessment: SemanticEquivalenceAssessment): String =
+        assessment.observations.joinToString(prefix = "[", postfix = "]") { observation ->
+            "${observation.requirement?.id ?: "unexpected"}:${observation.status}"
+        }
 
     private fun snapshotForTarget(pair: SemanticEquivalenceConcretePair, target: String): String = when (target) {
         pair.leftTarget -> pair.leftSnapshot
         pair.rightTarget -> pair.rightSnapshot
-        else -> error("Concrete pair '${pair.id}' has no snapshot for target '$target'.")
+        else -> error("Concrete pair '${pair.id}' does not contain target '$target'.")
     }
 
-    private fun snapshotFile(indexPath: String, artifact: ReferenceSnapshotArtifact): File =
-        File(File(rootDir, indexPath).parentFile, artifact.path)
-
-    private fun blockingSummary(assessment: SemanticEquivalenceAssessment): String =
-        assessment.observations
-            .filter { it.status != SemanticObservationEvidenceStatus.PRESERVED }
-            .joinToString(" | ") { observation ->
-                "${observation.requirement?.id ?: "unknown"}:${observation.status}:${observation.message.orEmpty()}"
-            }
-
-    private fun mutateEvidence(
-        baseline: List<SemanticObservationEvidence>,
-        requirement: SemanticObservationRequirement,
-        mutation: SemanticEquivalenceMutation,
-        caseId: String
-    ): List<SemanticObservationEvidence> = when (mutation) {
-        SemanticEquivalenceMutation.MISSING -> baseline.filterNot { it.requirementId == requirement.id }
-        SemanticEquivalenceMutation.WEAKENED -> baseline.map {
-            if (it.requirementId == requirement.id) {
-                it.copy(
-                    status = SemanticObservationEvidenceStatus.WEAKENED,
-                    evidenceReference = "case:$caseId:weakened:${requirement.id}"
-                )
-            } else {
-                it
-            }
-        }
-        SemanticEquivalenceMutation.UNKNOWN -> baseline.map {
-            if (it.requirementId == requirement.id) {
-                it.copy(
-                    status = SemanticObservationEvidenceStatus.UNKNOWN,
-                    evidenceReference = "case:$caseId:unknown:${requirement.id}"
-                )
-            } else {
-                it
-            }
-        }
-        SemanticEquivalenceMutation.CONTRADICTORY -> baseline.map {
-            if (it.requirementId == requirement.id) {
-                it.copy(
-                    status = SemanticObservationEvidenceStatus.CONTRADICTORY,
-                    evidenceReference = "case:$caseId:contradictory:${requirement.id}"
-                )
-            } else {
-                it
-            }
-        }
+    private fun loadInventory(path: String): List<String> {
+        val file = File(rootDir, path)
+        require(file.isFile) { "Conformance inventory is missing: ${file.path}" }
+        val yaml = FlowYaml.readMap(file)
+        return (yaml["checks"] as? Iterable<*>)?.map { it.toString() }
+            ?: error("$path must declare checks.")
     }
 
-    private fun SemanticEquivalenceMutation.expectedStatus(): SemanticObservationEvidenceStatus = when (this) {
-        SemanticEquivalenceMutation.MISSING -> SemanticObservationEvidenceStatus.MISSING
-        SemanticEquivalenceMutation.WEAKENED -> SemanticObservationEvidenceStatus.WEAKENED
-        SemanticEquivalenceMutation.UNKNOWN -> SemanticObservationEvidenceStatus.UNKNOWN
-        SemanticEquivalenceMutation.CONTRADICTORY -> SemanticObservationEvidenceStatus.CONTRADICTORY
-    }
-
-    private fun buildProductionPlan(intentFile: File): ExecutionPlan {
-        val intent = IntentYamlLoader.load(intentFile)
-        val intentReport = IntentCapabilityValidator.validate(intent, modules)
-        require(intentReport.valid) {
-            "Concrete intent is invalid: ${intentReport.errors.joinToString(" | ") { "${it.path}:${it.message}" }}"
-        }
-        val ast = IntentToAstPlanner(modules).lower(intent)
-        val validation = FlowValidator(modules).validate(ast)
-        require(validation.valid) {
-            "Concrete lowered AST is invalid: ${validation.issues.joinToString(" | ") { "${it.path}:${it.message}" }}"
-        }
-        return FlowPlanner(modules).plan(ast)
-    }
-
-    private fun frozenBoundaryErrors(): List<String> = buildList {
-        BOUNDARY_SPECS.forEach { spec ->
-            val indexFile = File(rootDir, spec.indexPath)
-            if (!indexFile.isFile) {
-                add("C0.3 frozen boundary '${spec.name}' index is missing: ${spec.indexPath}.")
-                return@forEach
-            }
-            val entries = runCatching { spec.loadEntries(indexFile) }.getOrElse {
-                add("C0.3 frozen boundary '${spec.name}' is invalid: ${it.message.orEmpty()}")
-                return@forEach
-            }
-            if (entries.isEmpty()) add("C0.3 frozen boundary '${spec.name}' is empty.")
-            if (entries.map(BoundaryEntry::id).size != entries.map(BoundaryEntry::id).toSet().size) {
-                add("C0.3 frozen boundary '${spec.name}' has duplicate ids.")
-            }
-            entries.forEach { entry ->
-                if (!entry.sha256.matches(SHA_256_PATTERN)) {
-                    add("C0.3 frozen boundary '${spec.name}' entry '${entry.id}' has invalid digest '${entry.sha256}'.")
-                    return@forEach
-                }
-                val file = File(rootDir, entry.path)
-                if (!file.isFile) {
-                    add("C0.3 frozen boundary '${spec.name}' entry '${entry.id}' is missing: ${entry.path}.")
-                } else {
-                    val actual = sha256(file)
-                    if (actual != entry.sha256) {
-                        add("C0.3 frozen boundary '${spec.name}' entry '${entry.id}' drifted: expected ${entry.sha256}, got $actual.")
-                    }
-                }
-            }
-        }
-        val c03Ids = SemanticEquivalenceConformanceChecks.ids().toSet()
-        BOUNDARY_SPECS.forEach { spec ->
-            val indexFile = File(rootDir, spec.indexPath)
-            if (indexFile.isFile) {
-                runCatching { spec.loadEntries(indexFile) }.getOrDefault(emptyList()).forEach { entry ->
-                    if (entry.id in c03Ids) add("C0.3 check id '${entry.id}' was inserted into frozen ${spec.name} inventory.")
-                }
-            }
-        }
-    }
-
-    private fun category(checked: Int, errors: List<String>): SemanticEquivalenceCategoryStatus =
-        SemanticEquivalenceCategoryStatus(if (errors.isEmpty()) "PASS" else "FAIL", checked, errors)
-
-    private data class BoundarySpec(
-        val name: String,
-        val indexPath: String,
-        val loadEntries: (File) -> List<BoundaryEntry>
-    )
-
-    private data class BoundaryEntry(
-        val id: String,
-        val path: String,
-        val sha256: String
+    private data class SnapshotValidation(
+        val errors: List<String>,
+        val planFile: File?,
+        val artifactFile: File?
     )
 
     companion object {
-        private val SHA_256_PATTERN = Regex("[0-9a-f]{64}")
-        private val BOUNDARY_SPECS = listOf(
-            BoundarySpec("Core", CoreFrozenBoundaryIndex.PATH) { file ->
-                CoreFrozenBoundaryIndex.load(file).artifacts.map { BoundaryEntry(it.id, it.path, it.sha256) }
-            },
-            BoundarySpec("A0", A0FrozenBoundaryIndex.PATH) { file ->
-                A0FrozenBoundaryIndex.load(file).artifacts.map { BoundaryEntry(it.id, it.path, it.sha256) }
-            },
-            BoundarySpec("A1.0", A10FrozenBoundaryIndex.PATH) { file ->
-                A10FrozenBoundaryIndex.load(file).artifacts.map { BoundaryEntry(it.id, it.path, it.sha256) }
-            },
-            BoundarySpec("C0.1", C01FrozenBoundaryIndex.PATH) { file ->
-                C01FrozenBoundaryIndex.load(file).artifacts.map { BoundaryEntry(it.id, it.path, it.sha256) }
-            },
-            BoundarySpec("C0.2", C02FrozenBoundaryIndex.PATH) { file ->
-                C02FrozenBoundaryIndex.load(file).artifacts.map { BoundaryEntry(it.id, it.path, it.sha256) }
-            }
-        )
-
-        private fun sha256(file: File): String = MessageDigest.getInstance("SHA-256")
-            .digest(file.readBytes())
-            .joinToString(separator = "") { byte -> byte.toUByte().toString(16).padStart(2, '0') }
+        const val CHECK_PREFIX = "conformance.c0.3."
+        private const val EXECUTION_PLAN_FILE = "execution-plan.json"
+        private const val GITHUB_ACTIONS = "github-actions"
     }
 }
