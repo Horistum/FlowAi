@@ -18,9 +18,9 @@ The legacy name is:
 
 - absent from the enum values;
 - absent from normative schemas and public reference capability output;
-- accepted only by the explicit source compatibility boundary;
+- accepted only as authored source input by the explicit compatibility boundary;
 - normalized immediately to `CLUSTER_MAINTENANCE`;
-- available to source callers only as a deprecated non-enum alias.
+- absent from the Kotlin API so platform-specific source-code vocabulary is not retained in Core.
 
 Concrete Kubernetes maintenance scenarios remain valid evidence inputs. They produce the target-neutral cluster-maintenance capability.
 
@@ -64,7 +64,7 @@ Upstream `ACTION_NOT_FOUND` remains intact. The additional findings prove defens
 
 ### Package and correction-track versions
 
-The published implementation package remains `0.9.5`. Later `v0.9.5.x` through `v0.9.7.x` identifiers are historical or unreleased correction/work-item tracks, not package versions. The build comment now states both axes explicitly. No version change is part of this correction.
+The published implementation package remains `0.9.5`. Later `v0.9.5.x` through `v0.9.7.x` identifiers are historical or unreleased correction/work-item tracks, not package versions. The build comment now states both axes explicitly. No package version change is part of this unreleased correction branch. A future published artifact containing the Kotlin API removal must use the declared next package version or a later compatible release boundary; it must not overwrite an already published `0.9.5` artifact with a different API surface.
 
 ### Generator package ownership
 
@@ -72,7 +72,7 @@ The entire `generators/` directory is not Core. It contains target-specific rend
 
 ### Authority class count
 
-The number and structural similarity of `*Authority` classes is a maintainability smell, not a proven behavioral or governance defect. A broad lifecycle-authority refactor is outside this correction because it would mix architectural cleanup with a safety and semantic integrity fix.
+The number and structural similarity of `*Authority` classes is a maintainability smell, not a proven behavioral or governance defect. A broad lifecycle-authority refactor is outside this correction because it would mix architectural cleanup with a safety and semantic integrity fix. The cross-stream architecture backlog records a separate `AR0.1 Authority Responsibility Consolidation` item to inventory authority ownership, remove forwarding-only ceremony and consolidate only where invariant boundaries remain explicit.
 
 ## Completion evidence
 
