@@ -1,12 +1,11 @@
 package org.flowlang.adapters.control
 
 import java.io.File
+import org.flowlang.adapters.AdapterDiagnosticReconciliation
 import org.flowlang.capabilities.CompatibilityIssue
 import org.flowlang.capabilities.CompatibilityLevel
-import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetMappingNote
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.targets.builtin.BuiltInTargetProjections
@@ -156,25 +155,7 @@ class AdapterControlMaterializationAuthority(
                     "${evidence.status.name.lowercase()}: ${evidence.detail}"
             )
         }
-        val notes = issues.map { issue ->
-            TargetMappingNote(
-                level = "error",
-                target = assessment.target,
-                nodeId = issue.nodeId,
-                feature = issue.feature,
-                message = issue.message
-            )
-        }
-        return manifest.copy(
-            compatibility = manifest.compatibility.copy(
-                status = SupportLevel.UNSUPPORTED,
-                issues = (manifest.compatibility.issues + issues).distinct(),
-                executable = false,
-                readinessEvidenceAvailable = true
-            ),
-            mappingNotes = (manifest.mappingNotes + notes).distinct(),
-            metadata = metadata
-        )
+        return AdapterDiagnosticReconciliation.blocked(manifest, metadata, issues)
     }
 
     fun requirementsFor(plan: ExecutionPlan): List<AdapterControlRequirement> =

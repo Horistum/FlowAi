@@ -111,6 +111,18 @@ class RoadmapStreamTransitionAuthorityTests {
     }
 
     @Test
+    fun ar01ActivationRejectsBoundaryDifferentFromCompletedC04() {
+        val root = createAr01Boundary()
+        val ar01 = File(root, RoadmapStreamTransitionAuthority.AR01_WORK_PACKAGE)
+        ar01.writeText(ar01.readText().replace("runId: 38000000001", "runId: 38000000009"))
+
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "AR0.1 activation evidence must equal" in it })
+    }
+
+    @Test
     fun a10ActivationRejectsPrematureC02() {
         val root = createA10Boundary()
         val conformance = File(root, RoadmapStreamTransitionAuthority.CONFORMANCE_ROADMAP)
@@ -437,6 +449,27 @@ class RoadmapStreamTransitionAuthorityTests {
             completionHeadDigit = "b",
             completionMergeDigit = "c"
         ))
+        write(root, RoadmapStreamTransitionAuthority.AR01_WORK_PACKAGE, """
+            version: "AR0.1"
+            stream: architecture
+            status: active
+            activationEvidence:
+              status: passed
+              workflow: Flow CI
+              runNumber: 3201
+              runId: 38000000001
+              exactHead: "${"b".repeat(40)}"
+              mergeCandidate: "${"c".repeat(40)}"
+        """)
+        File("src/main/kotlin").copyRecursively(File(root, "src/main/kotlin"), overwrite = true)
+        File("standard/architecture/authority-responsibilities.yaml").copyTo(
+            File(root, "standard/architecture/authority-responsibilities.yaml").apply { parentFile.mkdirs() },
+            overwrite = true
+        )
+        File("docs/AR0_1_AUTHORITY_RESPONSIBILITY_CONSOLIDATION.md").copyTo(
+            File(root, RoadmapStreamTransitionAuthority.AR01_DOCUMENTATION).apply { parentFile.mkdirs() },
+            overwrite = true
+        )
         return root
     }
 

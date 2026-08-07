@@ -1,6 +1,7 @@
 package org.flowlang.conformance
 
 import java.io.File
+import org.flowlang.roadmap.WorkflowBoundaryEvidence
 import org.flowlang.serialization.FlowYaml
 
 data class BoundedDomainCorpusLifecycleReport(
@@ -72,14 +73,7 @@ class BoundedDomainCorpusRoadmapLifecycleAuthority(
     }
 
     private fun validEvidence(evidence: Map<String, Any?>): Boolean =
-        evidence.keys == EVIDENCE_FIELDS &&
-            evidence.string("status") == "passed" &&
-            evidence.string("workflow") == "Flow CI" &&
-            evidence.string("runNumber").toIntOrNull()?.let { it > 0 } == true &&
-            evidence.string("runId").toLongOrNull()?.let { it > 0 } == true &&
-            evidence.string("exactHead").matches(SHA_PATTERN) &&
-            evidence.string("mergeCandidate").matches(SHA_PATTERN) &&
-            evidence.string("exactHead") != evidence.string("mergeCandidate")
+        WorkflowBoundaryEvidence.fromMap(evidence).structurallyValid
 
     private fun requiredYaml(path: String): Map<String, Any?> {
         val file = File(rootDir, path)
@@ -108,8 +102,6 @@ class BoundedDomainCorpusRoadmapLifecycleAuthority(
         const val WORK_PACKAGE = ".flow-agent/work-packages/C0.1-bounded-domain-corpus.yaml"
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         private const val CURRENT_ITEM = "C0.1"
-        private val SHA_PATTERN = Regex("[0-9a-f]{40}")
-        private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val REQUIRED_FILES = listOf(
             "conformance/check-inventory.yaml",
             "conformance/corpus/real-world/manifest.yaml",

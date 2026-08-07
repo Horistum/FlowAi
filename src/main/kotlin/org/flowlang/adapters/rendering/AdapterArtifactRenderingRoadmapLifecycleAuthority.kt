@@ -199,20 +199,8 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthority(
         return FlowYaml.readMap(file)
     }
 
-    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence {
-        val raw = map(key)
-        if (raw.isEmpty()) return AdapterWorkflowEvidence.ABSENT
-        return AdapterWorkflowEvidence(
-            status = raw.string("status"),
-            workflow = raw.string("workflow"),
-            runNumber = raw.string("runNumber").toIntOrNull(),
-            runId = raw.string("runId").toLongOrNull(),
-            exactHead = raw.string("exactHead"),
-            mergeCandidate = raw.string("mergeCandidate"),
-            unknownFields = (raw.keys - EVIDENCE_FIELDS).sorted(),
-            present = true
-        )
-    }
+    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence =
+        AdapterWorkflowEvidence.fromCanonical(org.flowlang.roadmap.WorkflowBoundaryEvidence.fromMap(map(key)))
 
     private fun Map<String, Any?>.itemStatus(version: String): String =
         mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
@@ -239,7 +227,6 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthority(
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
-        private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val REQUIRED_FILES = listOf(
             "adapters/rendering/builtin-artifact-rendering.yaml",
             "src/main/kotlin/org/flowlang/adapters/rendering/AdapterArtifactRenderingContracts.kt",

@@ -1,0 +1,44 @@
+version: "AR0.1"
+name: "Authority Responsibility Consolidation"
+type: "cross-stream-architecture"
+stream: architecture
+status: active
+objective: "Make authority ownership explicit and remove duplicated cross-cutting mechanism without collapsing independent semantic, adapter, target-edge, lifecycle or conformance policy owners."
+dependsOnConformance: "C0.4"
+activationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2798
+  runId: 31166600475
+  exactHead: "a3f0a062b13f4f167fb9269d166b31dcf73e1ed1"
+  mergeCandidate: "646a2517784a82f8799bc8d4a74fa4f592f966ac"
+implementationEvidence: {}
+responsibilityInventory:
+  catalog: "standard/architecture/authority-responsibilities.yaml"
+  inventoryRule: "Every production Kotlin type whose name ends in Authority must have exactly one catalog entry with its definition path, role, invariant, inputs, outputs and exact production caller files."
+consolidationDecisions:
+  - id: "workflow-boundary-evidence"
+    decision: "consolidate-mechanism"
+    rationale: "Flow CI evidence shape and structural honesty are cross-stream facts; item-specific lifecycle transition policy remains independently owned."
+  - id: "adapter-diagnostic-blocking-projection"
+    decision: "consolidate-mechanism"
+    rationale: "The final blocked-manifest mutation is structurally identical after domain policy has already produced compatibility issues; control, continuity and trigger assessment policy remains separate."
+  - id: "roadmap-lifecycle-state-machines"
+    decision: "retain-independent-owners"
+    rationale: "Lifecycle authorities encode different immutable predecessor evidence and allowed transitions; merging them would hide policy behind parameterization rather than remove duplication."
+  - id: "adapter-control-continuity-trigger-assessment"
+    decision: "retain-independent-owners"
+    rationale: "The domains have different requirements, closed evidence states and preservation semantics even though their diagnostic projection is similar."
+requiredEvidence:
+  - "The machine-verified responsibility catalog exactly covers every production *Authority definition and its current production caller set."
+  - "Every cataloged authority states one responsibility role, invariant, input boundary and output boundary."
+  - "The canonical Flow CI workflow-boundary evidence contract owns structural validity and parsing while existing domain evidence DTOs remain compatibility-preserving wrappers around that policy."
+  - "Control, continuity and trigger authorities retain domain policy while sharing only the mechanical blocked-manifest diagnostic projection."
+  - "No frozen Core meaning, adapter support claim, target syntax, conformance result or frozen check inventory changes."
+  - "Full tests and conformance remain behaviorally unchanged before publishing implementation evidence."
+forbiddenScope:
+  - "No class-count target and no deletion justified only by naming or line-count similarity."
+  - "No generic mega-authority parameterized with item ids, target names or policy lambdas to disguise independent invariants."
+  - "No movement of target-specific evidence ownership into Core or neutral semantic packages."
+  - "No mutation of frozen Core, adapter or conformance inventories."
+  - "No AR0.1 completion claim before a distinct later Flow CI completion boundary exists."

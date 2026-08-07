@@ -91,7 +91,8 @@ class AdapterContinuityRoadmapLifecycleAuthority(private val rootDir: File = Fil
     }
 
     private fun requiredYaml(path: String): Map<String, Any?> { val file = File(rootDir, path); require(file.isFile) { "Required A0.5 lifecycle evidence is missing: ${file.path}" }; return FlowYaml.readMap(file) }
-    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence { val raw = map(key); if (raw.isEmpty()) return AdapterWorkflowEvidence.ABSENT; return AdapterWorkflowEvidence(raw.string("status"), raw.string("workflow"), raw.string("runNumber").toIntOrNull(), raw.string("runId").toLongOrNull(), raw.string("exactHead"), raw.string("mergeCandidate"), (raw.keys - EVIDENCE_FIELDS).sorted(), true) }
+    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterWorkflowEvidence =
+        AdapterWorkflowEvidence.fromCanonical(org.flowlang.roadmap.WorkflowBoundaryEvidence.fromMap(map(key)))
     private fun Map<String, Any?>.itemStatus(version: String): String = mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
     private fun Map<String, Any?>.string(vararg path: String): String { var current: Any? = this; path.forEach { current = (current as? Map<*, *>)?.get(it) }; return current?.toString().orEmpty() }
     private fun Map<String, Any?>.map(key: String): Map<String, Any?> = (get(key) as? Map<*, *>)?.entries?.associate { it.key.toString() to it.value }.orEmpty()
@@ -103,7 +104,6 @@ class AdapterContinuityRoadmapLifecycleAuthority(private val rootDir: File = Fil
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
-        private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val REQUIRED_FILES = listOf(
             "adapters/continuity/builtin-continuity-satisfaction.yaml",
             "adapters/conformance/check-inventory.yaml",

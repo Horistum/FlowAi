@@ -20,24 +20,14 @@ data class AdapterProfileWorkflowEvidence(
     val unknownFields: List<String> = emptyList(),
     val present: Boolean = false
 ) {
-    val structurallyValid: Boolean
-        get() = present &&
-            unknownFields.isEmpty() &&
-            status == "passed" &&
-            workflow == "Flow CI" &&
-            runNumber?.let { it > 0 } == true &&
-            runId?.let { it > 0 } == true &&
-            exactHead?.matches(SHA_PATTERN) == true &&
-            mergeCandidate?.matches(SHA_PATTERN) == true &&
-            exactHead != mergeCandidate
+    private fun canonical() = org.flowlang.roadmap.WorkflowBoundaryEvidence(
+        status.orEmpty(), workflow.orEmpty(), runNumber, runId, exactHead.orEmpty(), mergeCandidate.orEmpty(), unknownFields, present
+    )
 
-    fun sameBoundary(other: AdapterProfileWorkflowEvidence): Boolean =
-        structurallyValid &&
-            other.structurallyValid &&
-            runNumber == other.runNumber &&
-            runId == other.runId &&
-            exactHead == other.exactHead &&
-            mergeCandidate == other.mergeCandidate
+    val structurallyValid: Boolean
+        get() = canonical().structurallyValid
+
+    fun sameBoundary(other: AdapterProfileWorkflowEvidence): Boolean = canonical().sameBoundary(other.canonical())
 
     fun summary(): String = if (!present) {
         "absent"
@@ -47,7 +37,18 @@ data class AdapterProfileWorkflowEvidence(
 
     companion object {
         val ABSENT = AdapterProfileWorkflowEvidence()
-        private val SHA_PATTERN = Regex("[0-9a-f]{40}")
+
+        fun fromCanonical(evidence: org.flowlang.roadmap.WorkflowBoundaryEvidence): AdapterProfileWorkflowEvidence =
+            AdapterProfileWorkflowEvidence(
+                evidence.status,
+                evidence.workflow,
+                evidence.runNumber,
+                evidence.runId,
+                evidence.exactHead,
+                evidence.mergeCandidate,
+                evidence.unknownFields,
+                evidence.present
+            )
     }
 }
 
@@ -231,7 +232,7 @@ class AdapterProfileEvidenceRoadmapLifecycleAuthority(
 
     private fun Map<String, Any?>.activationEvidence(): AdapterProfileActivationEvidence {
         val raw = map("activationEvidence")
-        val evidenceFields = EVIDENCE_FIELDS + setOf("conformanceItem", "conformanceStatus")
+        val evidenceFields = org.flowlang.roadmap.WorkflowBoundaryEvidence.FIELDS + setOf("conformanceItem", "conformanceStatus")
         return AdapterProfileActivationEvidence(
             conformanceItem = raw.string("conformanceItem"),
             conformanceStatus = raw.string("conformanceStatus"),
@@ -249,20 +250,8 @@ class AdapterProfileEvidenceRoadmapLifecycleAuthority(
         )
     }
 
-    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterProfileWorkflowEvidence {
-        val raw = map(key)
-        if (raw.isEmpty()) return AdapterProfileWorkflowEvidence.ABSENT
-        return AdapterProfileWorkflowEvidence(
-            status = raw.string("status"),
-            workflow = raw.string("workflow"),
-            runNumber = raw.string("runNumber").toIntOrNull(),
-            runId = raw.string("runId").toLongOrNull(),
-            exactHead = raw.string("exactHead"),
-            mergeCandidate = raw.string("mergeCandidate"),
-            unknownFields = (raw.keys - EVIDENCE_FIELDS).sorted(),
-            present = true
-        )
-    }
+    private fun Map<String, Any?>.workflowEvidence(key: String): AdapterProfileWorkflowEvidence =
+        AdapterProfileWorkflowEvidence.fromCanonical(org.flowlang.roadmap.WorkflowBoundaryEvidence.fromMap(map(key)))
 
     private fun Map<String, Any?>.itemStatus(version: String): String =
         mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
@@ -288,7 +277,6 @@ class AdapterProfileEvidenceRoadmapLifecycleAuthority(
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
-        private val EVIDENCE_FIELDS = setOf("status", "workflow", "runNumber", "runId", "exactHead", "mergeCandidate")
         private val REQUIRED_FILES = listOf(
             AdapterProfileSourceManifestLoader.PATH,
             AdapterProfileEvidenceConformanceInventory.PATH,
