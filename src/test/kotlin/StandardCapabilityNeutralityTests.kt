@@ -5,6 +5,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.artifacts.StandardSurface
 import org.flowlang.intent.IntentYamlLoader
+import org.flowlang.intent.KUBERNETES_MAINTENANCE
 import org.flowlang.intent.StandardCapability
 import org.flowlang.intent.StandardCapabilityCompatibility
 
@@ -19,8 +20,9 @@ class StandardCapabilityNeutralityTests {
     }
 
     @Test
-    fun retiredCapabilityNameExistsOnlyInDeclarativeSourceCompatibilityManifest() {
+    fun retiredCapabilityNameIsConfinedToExplicitSourceCompatibilityBoundary() {
         val retiredName = "KUBERNETES_MAINTENANCE"
+        val compatibilityPath = "src/main/kotlin/org/flowlang/intent/StandardCapabilityCompatibility.kt"
         val productionKotlinOccurrences = File("src/main/kotlin")
             .walkTopDown()
             .filter(File::isFile)
@@ -28,11 +30,21 @@ class StandardCapabilityNeutralityTests {
             .filter { retiredName in it.readText() }
             .map { it.relativeTo(File(".")).path.replace(File.separatorChar, '/') }
             .toList()
+        val compatibilitySource = File(compatibilityPath).readText()
         val manifest = File("src/main/resources/standard/compatibility/capability-aliases.yaml").readText()
 
-        assertEquals(emptyList(), productionKotlinOccurrences)
+        assertEquals(listOf(compatibilityPath), productionKotlinOccurrences)
+        assertTrue(compatibilitySource.contains("val StandardCapability.Companion.$retiredName: StandardCapability"))
+        assertTrue(compatibilitySource.contains("@Deprecated"))
         assertTrue(manifest.lineSequence().any { it.trim() == "- source: $retiredName" })
         assertTrue(manifest.lineSequence().any { it.trim() == "canonical: CLUSTER_MAINTENANCE" })
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun deprecatedKotlinAliasPreservesSourceCompatibilityWithoutBecomingCanonical() {
+        assertEquals(StandardCapability.CLUSTER_MAINTENANCE, StandardCapability.KUBERNETES_MAINTENANCE)
+        assertFalse("KUBERNETES_MAINTENANCE" in enumValues<StandardCapability>().map { it.name })
     }
 
     @Test
