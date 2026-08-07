@@ -72,6 +72,26 @@ class AuthorityResponsibilityCatalogCritiqueRegressionTests {
     }
 
     @Test
+    fun bodylessAuthorityDoesNotAbsorbFollowingTopLevelDeclarationBody() {
+        val root = fixture(
+            name = "BodylessBoundaryAuthority",
+            source = """
+                package org.flowlang.future
+                object BodylessBoundaryAuthority
+                class ColocatedConsumer {
+                    fun analyze() = BodylessBoundaryAuthority
+                }
+            """.trimIndent(),
+            callers = listOf("src/main/kotlin/org/flowlang/future/BodylessBoundaryAuthority.kt")
+        )
+
+        val report = AuthorityResponsibilityCatalog(root).analyze()
+
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+        assertEquals(1, report.authorityCount)
+    }
+
+    @Test
     fun duplicateDeclarationDoesNotInflateAuthorityIdentityCount() {
         val root = fixture(
             name = "DuplicateIdentityAuthority",
