@@ -171,8 +171,7 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
     }
 
     private fun declarationBodyRange(code: String, declaration: MatchResult): IntRange {
-        val bodyStart = code.indexOf('{', startIndex = declaration.range.last + 1)
-        if (bodyStart < 0) return declaration.range
+        val bodyStart = declarationBodyStart(code, declaration) ?: return declaration.range
         var depth = 0
         for (index in bodyStart until code.length) {
             when (code[index]) {
@@ -184,6 +183,26 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
             }
         }
         return declaration.range.first..code.lastIndex
+    }
+
+    private fun declarationBodyStart(code: String, declaration: MatchResult): Int? {
+        var parentheses = 0
+        var brackets = 0
+        var index = declaration.range.last + 1
+        while (index < code.length) {
+            if (parentheses == 0 && brackets == 0 && NEXT_TOP_LEVEL_DECLARATION.matchAt(code, index) != null) {
+                return null
+            }
+            when (code[index]) {
+                '(' -> parentheses++
+                ')' -> if (parentheses > 0) parentheses--
+                '[' -> brackets++
+                ']' -> if (brackets > 0) brackets--
+                '{' -> if (parentheses == 0 && brackets == 0) return index
+            }
+            index++
+        }
+        return null
     }
 
     private fun relative(file: File): String =
@@ -216,6 +235,9 @@ class AuthorityResponsibilityCatalog(private val rootDir: File = File(".")) {
         private const val SOURCE_ROOT = "src/main/kotlin"
         private const val SUPPORTED_VERSION = "1.0"
         private val AUTHORITY_DEFINITION = Regex("\\b(?:class|object|interface)\\s+([A-Za-z_][A-Za-z0-9_]*Authority)\\b")
+        private val NEXT_TOP_LEVEL_DECLARATION = Regex(
+            "\\b(?:class|interface|fun|typealias|val|var)\\b|\\bobject\\s+[A-Za-z_][A-Za-z0-9_]*\\b"
+        )
         private val TOP_LEVEL_FIELDS = setOf("version", "purpose", "authorities")
         private val ENTRY_FIELDS = setOf("name", "path", "role", "invariant", "inputs", "outputs", "callers")
         private val ROLES = setOf(
