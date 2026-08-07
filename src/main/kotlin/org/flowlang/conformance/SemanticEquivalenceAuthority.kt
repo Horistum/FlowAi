@@ -198,13 +198,20 @@ class SemanticEquivalenceAuthority(
                     add("Concrete pair '${pair.id}' observation '${requirement.id}' depends on target token '$token'.")
                 }
             }
-            if (promotions.none {
-                    it.target == GITHUB_ACTIONS &&
-                        it.snapshotReference == snapshotForTarget(pair, GITHUB_ACTIONS)
+            pair.targetBackings
+                .filter { it.kind == SemanticEquivalenceTargetBackingKind.BOUNDED_PROMOTION }
+                .forEach { backing ->
+                    if (promotions.none {
+                            it.target == backing.target &&
+                                it.snapshotReference == snapshotForTarget(pair, backing.target)
+                        }
+                    ) {
+                        add(
+                            "Concrete pair '${pair.id}' target '${backing.target}' evidence is not backed by " +
+                                "the declared bounded promotion authority."
+                        )
+                    }
                 }
-            ) {
-                add("Concrete pair '${pair.id}' GitHub Actions evidence is not backed by the bounded A1.0 promotion authority.")
-            }
 
             val left = validateSnapshot(pair.id, pair.scenarioId, pair.leftTarget, pair.leftSnapshot)
             val right = validateSnapshot(pair.id, pair.scenarioId, pair.rightTarget, pair.rightSnapshot)
@@ -232,10 +239,16 @@ class SemanticEquivalenceAuthority(
                     add("Concrete pair '${pair.id}' target snapshots do not preserve the same target-neutral execution plan.")
                 }
                 if (expectedTree != null && leftPlanTree != null && expectedTree != leftPlanTree) {
-                    add("Concrete pair '${pair.id}' Jenkins snapshot plan is stale relative to the production planning path.")
+                    add(
+                        "Concrete pair '${pair.id}' ${pair.leftTarget} snapshot plan is stale relative to " +
+                            "the production planning path."
+                    )
                 }
                 if (expectedTree != null && rightPlanTree != null && expectedTree != rightPlanTree) {
-                    add("Concrete pair '${pair.id}' GitHub Actions snapshot plan is stale relative to the production planning path.")
+                    add(
+                        "Concrete pair '${pair.id}' ${pair.rightTarget} snapshot plan is stale relative to " +
+                            "the production planning path."
+                    )
                 }
             }
 
@@ -432,6 +445,5 @@ class SemanticEquivalenceAuthority(
     companion object {
         const val CHECK_PREFIX = "conformance.c0.3."
         private const val EXECUTION_PLAN_FILE = "execution-plan.json"
-        private const val GITHUB_ACTIONS = "github-actions"
     }
 }
