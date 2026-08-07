@@ -10,11 +10,11 @@ import org.flowlang.conformance.AdapterProfileWorkflowEvidence
 
 class AdapterProfileEvidenceRoadmapLifecycleAuthorityTests {
     @Test
-    fun repositoryIsOneValidImplementingBoundary() {
+    fun repositoryIsOneValidatingBoundary() {
         val report = AdapterProfileEvidenceRoadmapLifecycleAuthority(File(".")).analyze()
 
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
-        assertEquals(AdapterProfileEvidenceLifecyclePhase.IMPLEMENTING, report.phase)
+        assertEquals(AdapterProfileEvidenceLifecyclePhase.VALIDATING, report.phase)
     }
 
     @Test

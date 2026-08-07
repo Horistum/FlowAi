@@ -16,6 +16,14 @@ activationEvidence:
   runId: 30992449903
   exactHead: "dd1b049b0c8e768a43f19da4280fe80f57d7e27f"
   mergeCandidate: "08a82daa8d7827216482b40779e183a7a96f0a1a"
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2796
+  runId: 31163987468
+  exactHead: "ae064819790e5b9beae1708912b61f5aa9d0e8ca"
+  mergeCandidate: "b3eb3a9bbddfc200b35acae84f23aae4569d105a"
+completionBoundary: {}
 frozenProfileBoundary:
   adapterItem: "A0.6"
   sourceManifest: "conformance/profiles/adapter-profile-sources.yaml"
