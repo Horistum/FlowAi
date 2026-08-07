@@ -91,8 +91,6 @@ class FlowParser {
         return FlowNode(name = name, input = inputs, vars = vars, systems = systems, steps = steps, errorHandler = errorHandler)
     }
 
-    // --- input ----------------------------------------------------------------
-
     private fun parseInputBlock(ts: TokenStream): List<InputNode> {
         ts.expect(TokenType.LBRACE, "'{'")
         val out = mutableListOf<InputNode>()
@@ -127,8 +125,6 @@ class FlowParser {
         return out
     }
 
-    // --- vars -----------------------------------------------------------------
-
     private fun parseVarsBlock(ts: TokenStream): List<VariableNode> {
         ts.expect(TokenType.LBRACE, "'{'")
         val out = mutableListOf<VariableNode>()
@@ -142,8 +138,6 @@ class FlowParser {
         ts.expect(TokenType.RBRACE, "'}'")
         return out
     }
-
-    // --- systems --------------------------------------------------------------
 
     private fun parseSystemsBlock(ts: TokenStream): List<SystemNode> {
         ts.expect(TokenType.LBRACE, "'{'")
@@ -181,8 +175,6 @@ class FlowParser {
         ts.expect(TokenType.RBRACE, "'}'")
         return out
     }
-
-    // --- steps / statements ---------------------------------------------------
 
     private fun parseStepsBlock(ts: TokenStream): List<StatementNode> = parseStatementBlock(ts)
 
@@ -236,7 +228,6 @@ class FlowParser {
         val condition = ExpressionParser(ts).parse()
         val then = parseStatementBlock(ts)
         var otherwise = emptyList<StatementNode>()
-        // 'else' may be separated by a newline
         val save = ts.index
         ts.skipNewlines()
         if (ts.matchWord("else")) {
@@ -272,7 +263,6 @@ class FlowParser {
                 val name = ts.expect(TokenType.STRING, "branch name").rawValue!!
                 branches += ParallelBranchNode(name = name, steps = parseStatementBlock(ts))
             } else {
-                // anonymous branch wrapping a single statement
                 branches += ParallelBranchNode(name = null, steps = listOf(parseStatement(ts)))
             }
             ts.skipSeparators()
@@ -331,9 +321,9 @@ class FlowParser {
                 "max" -> {
                     val number = value as? NumberLiteralNode
                         ?: throw ParseException("$path must be an integer number", valueToken.line, valueToken.column)
-                    if (!number.isInteger || number.value < 1 || number.value > Int.MAX_VALUE) {
+                    if (!number.isInteger || number.value < Int.MIN_VALUE || number.value > Int.MAX_VALUE) {
                         throw ParseException(
-                            "$path must be an integer between 1 and ${Int.MAX_VALUE}",
+                            "$path must be an integer representable as a 32-bit value",
                             valueToken.line,
                             valueToken.column
                         )
@@ -475,7 +465,6 @@ class FlowParser {
         )
     }
 
-    /** Parses `{ key: expr ... [safety: ...] }`. Returns params and an optional SafetyNode. */
     private fun parseParamBlock(ts: TokenStream, allowSafety: Boolean?): Pair<Map<String, ExpressionNode>, SafetyNode?> {
         ts.expect(TokenType.LBRACE, "'{'")
         val params = LinkedHashMap<String, ExpressionNode>()
@@ -496,7 +485,6 @@ class FlowParser {
     }
 
     private fun parseSafety(ts: TokenStream): SafetyNode {
-        // forms: requiresApproval | onlyIf <expr> | <expr>
         return when {
             ts.checkWord("requiresApproval") -> { ts.next(); SafetyNode(rule = "requiresApproval") }
             ts.checkWord("onlyIf") -> { ts.next(); SafetyNode(rule = "onlyIf", condition = ExpressionParser(ts).parse()) }
