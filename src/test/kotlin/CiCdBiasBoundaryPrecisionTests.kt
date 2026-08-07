@@ -62,6 +62,33 @@ class CiCdBiasBoundaryPrecisionTests {
     }
 
     @Test
+    fun deprecatedKotlinAliasExemptsOnlyCompatibilitySymbolDeclaration() {
+        withTemporaryRoot("flow-kotlin-compatibility-boundary") { root ->
+            write(
+                root,
+                "src/main/kotlin/org/flowlang/intent/StandardCapabilityCompatibility.kt",
+                """
+                package org.flowlang.intent
+
+                val StandardCapability.Companion.KUBERNETES_MAINTENANCE: StandardCapability
+                    get() = StandardCapability.CLUSTER_MAINTENANCE
+                private val defaultTarget = "Jenkins"
+                """.trimIndent()
+            )
+
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+            val kubernetes = report.evidence.single { it.term.equals("Kubernetes", ignoreCase = true) }
+            val jenkins = report.evidence.single { it.term.equals("Jenkins", ignoreCase = true) }
+
+            assertEquals(CiCdBiasLexicalContext.COMPATIBILITY_SYMBOL, kubernetes.lexicalContext)
+            assertFalse(kubernetes.actionable)
+            assertEquals(CiCdBiasLexicalContext.CONTROL_LITERAL, jenkins.lexicalContext)
+            assertTrue(jenkins.actionable)
+            assertEquals("REVIEW_REQUIRED", report.healthStatus)
+        }
+    }
+
+    @Test
     fun concretePredicateLiteralRequiresReview() {
         withTemporaryRoot("flow-predicate-literal") { root ->
             write(
