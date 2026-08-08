@@ -1,0 +1,84 @@
+name: SI-01 Snapshot Sync
+
+on:
+  push:
+    branches:
+      - flow/si-01-control-evidence-scope
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: flow/si-01-control-evidence-scope
+          fetch-depth: 0
+
+      - name: Synchronize bounded 2.1 snapshots
+        shell: python
+        run: |
+          from pathlib import Path
+
+          ast = Path("conformance/snapshots/build-test-deploy/flow-ast.json")
+          text = ast.read_text()
+          text = text.replace('"astVersion" : "2.0"', '"astVersion" : "2.1"', 1)
+          old_requirement = '''    "message" : "Approval is required before deployment in this reference flow."
+            } ],
+            "controlEvidence" : [ {'''
+          new_requirement = '''    "message" : "Approval is required before deployment in this reference flow.",
+              "scope" : {
+                "kind" : "INTENT"
+              }
+            } ],
+            "controlEvidence" : [ {'''
+          if '"scope" : {' not in text.split('"controlEvidence"', 1)[0]:
+              if old_requirement not in text:
+                  raise SystemExit("Expected build-test-deploy control requirement shape was not found")
+              text = text.replace(old_requirement, new_requirement, 1)
+          text = text.replace(
+              '"detail" : "approve-prod"',
+              '"detail" : "Intent-level approval predecessor(s): approve-prod"',
+              1,
+          )
+          ast.write_text(text)
+
+          roots = [
+              Path("conformance/snapshots/checkout-build-image"),
+              Path("conformance/evidence/semantic-equivalence/implementation-pairs"),
+          ]
+          changed = [ast]
+          for root in roots:
+              if not root.is_dir():
+                  continue
+              for path in root.rglob("*.json"):
+                  original = path.read_text()
+                  updated = original.replace('"planVersion" : "2.0"', '"planVersion" : "2.1"', 1)
+                  updated = updated.replace('"planVersion":"2.0"', '"planVersion":"2.1"', 1)
+                  if updated != original:
+                      path.write_text(updated)
+                      changed.append(path)
+
+          print("Synchronized:")
+          for path in changed:
+              print(f"- {path}")
+
+      - name: Commit synchronized snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No snapshot changes were required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add conformance/snapshots/build-test-deploy/flow-ast.json \
+                  conformance/snapshots/checkout-build-image \
+                  conformance/evidence/semantic-equivalence/implementation-pairs
+          git commit -m "SI-01: synchronize 2.1 reference snapshots [skip ci]"
+          git push origin HEAD:flow/si-01-control-evidence-scope
