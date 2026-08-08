@@ -154,6 +154,12 @@ object ControlDecisionAuthority {
         require(requirements.distinctBy(ControlRequirement::id).size == requirements.size) {
             "Control requirements must use unique ids."
         }
+        require(requirements.none { requirement ->
+            requirement.source == ControlRequirementSource.CANONICAL_CAPABILITY &&
+                requirement.scope.kind == ControlRequirementScopeKind.INTENT
+        }) {
+            "Capability-only canonical control descriptors cannot authorize evidence without an authored operation scope."
+        }
         require(evidence.groupBy(ControlEvidence::requirementId).values.none { it.size > 1 }) {
             "Control requirements must have at most one evidence record."
         }
