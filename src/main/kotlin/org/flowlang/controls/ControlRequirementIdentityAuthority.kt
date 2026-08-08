@@ -23,7 +23,10 @@ object ControlRequirementIdentityAuthority {
                         requirement.subject,
                         requirement.source.name,
                         requirement.condition,
-                        requirement.message
+                        requirement.message,
+                        requirement.scope.kind.name,
+                        requirement.scope.workflow,
+                        requirement.scope.subjectId
                     ),
                     value = requirement
                 )
