@@ -90,6 +90,79 @@ architectureDebtBacklog:
       - "Frozen inventories remain unchanged unless a separately reviewed roadmap transition explicitly owns the change."
       - "Exact-head and synthetic merge-candidate compile, test and conformance validation both pass."
 
+strategicDirection:
+  status: "planned-after-c1.0"
+  detailDocument: "docs/PROJECT_DIRECTION_AFTER_C1_0.md"
+  lifecycleRule: "This section records ordered strategic intent only. It does not select a successor work item and cannot bypass the distinct C1.0 completion boundary or the global roadmap transition authority."
+  governingPrinciples:
+    - "Use heterogeneous external automation sources to falsify Flow semantics before adding new governance ceremony."
+    - "Correct semantic integrity defects before expanding the public surface or claiming broader target support."
+    - "Prefer compiler, type-system and module dependency boundaries over lexical source scanning when the same invariant can be enforced structurally."
+    - "Keep semantic maturity, target materialization maturity and executable reference maturity as separate claims."
+    - "Do not infer implementation defaults, target products or communication channels when authored intent is unresolved."
+    - "Every strategic track must delete, consolidate or justify governance it makes obsolete instead of only adding new authorities and inventories."
+  orderedCandidateTracks:
+    - id: "SEMANTIC-INTEGRITY"
+      order: 1
+      activationGate: "C1.0 is completed by a later distinct exact-head and synthetic merge-candidate Flow CI boundary."
+      purpose: "Repair semantic defects exposed by the project-wide architecture audit before broadening the standard."
+      requiredOutcomes:
+        - "Bind backup, rollback, approval, review and change-ticket evidence to the concrete protected operation and relevant graph scope."
+        - "Preserve the authored dependency graph exactly unless an additional technical ordering edge is explicit, typed and separately evidenced."
+        - "Remove Docker and other concrete implementation vocabulary from target-neutral canonical contracts where it currently defines universal meaning."
+        - "Derive canonical execution-plan node semantics from explicit semantic types rather than module names, action strings or resource-name heuristics."
+        - "Re-evaluate BACKUP and RESTORE effect semantics so recovery-point identity, consistency and lifetime are not flattened into generic data transformation."
+        - "Reject malformed authored booleans and other parser values rather than silently coercing them into defaults."
+        - "Align public schema validity with production loader validity or explicitly declare a narrower syntactic-only schema contract."
+        - "Replace string-fragment policy classification and unconditional durable-state assumptions with typed policy and state-lifetime semantics."
+    - id: "EXTERNAL-FALSIFICATION"
+      order: 2
+      activationGate: "SEMANTIC-INTEGRITY acceptance criteria pass without weakening previously frozen invariants."
+      purpose: "Pressure the corrected semantic model with automation domains that are structurally different from software-delivery pipelines."
+      requiredDomains:
+        - "database migration and recovery"
+        - "backup and restore"
+        - "incident remediation"
+        - "certificate lifecycle"
+        - "secret rotation"
+        - "data-pipeline orchestration"
+        - "infrastructure lifecycle"
+        - "human approval and change-control workflows"
+      acceptanceRule: "A source that cannot be represented is allowed to falsify the model; it must never be forced through by weakening validation or inventing implementation meaning."
+    - id: "STRUCTURAL-BOUNDARIES"
+      order: 3
+      activationGate: "External falsification no longer exposes a P0 semantic defect in the current bounded corpus."
+      purpose: "Replace governance that simulates architecture boundaries with architecture boundaries enforced by the build and type system."
+      requiredOutcomes:
+        - "Split the single Gradle module into explicit Core, planner, adapter API, target implementation, conformance/governance and CLI boundaries where dependency direction is compiler-enforced."
+        - "Delete or consolidate lexical governance checks made redundant by module boundaries."
+        - "Introduce a governance budget: a new authority, frozen inventory or report must replace, consolidate or justify an existing mechanism when responsibilities overlap."
+        - "Move superseded architecture documents into explicit history and keep one current architecture narrative."
+        - "Separate roadmap/work-item identifiers from package, public-standard and artifact contract version numbers."
+    - id: "MULTI-TARGET-EXECUTABLE-PROOF"
+      order: 4
+      activationGate: "Structural dependency boundaries and corrected semantic contracts are stable under the expanded falsification corpus."
+      purpose: "Prove practical portability on several real targets rather than treating representability or a bounded checkout/build scenario as executable breadth."
+      requiredOutcomes:
+        - "Maintain at least two independently executable target implementations and add a third only when it contributes a genuinely different execution model."
+        - "Exercise branching, parallelism, artifacts/workspaces, explicit secrets, approvals, rollback/compensation and state continuity where the target claims support."
+        - "Keep generic target support UNKNOWN or UNSUPPORTED when only a bounded executable promotion is proven."
+        - "Promote target support only from exact production artifacts, continuity evidence and behavioral validation."
+    - id: "AI-INTENT-PROVIDER"
+      order: 5
+      activationGate: "The target-neutral model and multi-target proof are stable enough that provider uncertainty cannot redefine canonical meaning."
+      purpose: "Add stronger AI-assisted intent normalization outside Core while keeping deterministic validation authoritative."
+      requiredOutcomes:
+        - "Represent provider uncertainty, unresolved bindings and clarification requirements explicitly."
+        - "Do not invent email, Slack, Docker, Kubernetes, clusters or other implementation choices when the user did not author them."
+        - "Treat heuristic match scores as match strength unless they are actually calibrated probabilities."
+        - "Validate every provider-produced intent through the same production parser, canonicalization, safety and conformance boundaries as authored intent."
+  releaseReadiness:
+    - "No broad portability claim from semantic representability alone."
+    - "No stable capability label without independent semantic, adapter and executable evidence appropriate to that claim."
+    - "No new Core semantic category solely because one target exposes a convenient implementation primitive."
+    - "No roadmap closure while a known P0 semantic integrity defect remains open."
+
 currentDecision:
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
@@ -111,4 +184,4 @@ currentDecision:
   nextItem: "C1.0"
   nextItemName: "Operational Domain Adequacy"
   nextItemStream: conformance
-  decisionBasis: "AR0.1 remains terminally complete at Flow CI #2809 / run 31202921728. The separately reviewed C1.0 transition reactivates conformance to add bounded non-CI/CD operational evidence while preserving the closed C0.1 domain vocabulary and all frozen upstream inventories."
+  decisionBasis: "AR0.1 remains terminally complete at Flow CI #2809 / run 31202921728. The separately reviewed C1.0 transition reactivates conformance to add bounded non-CI/CD operational evidence while preserving the closed C0.1 domain vocabulary and all frozen upstream inventories. The post-C1.0 strategic direction is recorded separately and does not select or fabricate a successor before the distinct C1.0 completion boundary exists."
