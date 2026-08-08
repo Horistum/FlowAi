@@ -6,6 +6,7 @@ import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.PlannerCapabilityConstraintGate
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.controls.ControlDecisionAuthority
 import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.controls.ControlEvidenceStatus
@@ -41,6 +42,12 @@ import org.flowlang.lowering.IntentLoweringReport
 import org.flowlang.materialization.ExplicitTargetSelection
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
+import org.flowlang.intent.IntentDocument
+import org.flowlang.intent.IntentPolicy
+import org.flowlang.intent.IntentPolicyType
+import org.flowlang.intent.IntentStep
+import org.flowlang.intent.IntentWorkflow
+import org.flowlang.intent.IntentWorkflowKind
 import org.flowlang.intent.StandardCapability
 import org.flowlang.topology.ExecutionTopologyAssessment
 import org.flowlang.topology.ExecutionTopologyEvidenceStatus
@@ -778,6 +785,107 @@ internal object ExecutionPlanMaterializationValidator {
         }
     }
 
+    private fun rederiveCanonicalControlRequirements(
+        plan: ExecutionPlan,
+        issues: MutableList<PlanningEvidenceIssue>
+    ): List<ControlRequirement> {
+        val source = plan.sourceIntent
+        val tasks = PlanDependencyRelations.flatten(plan.nodes).filterIsInstance<TaskNode>()
+        if (source == null) {
+            val capabilities = tasks.mapNotNull(::canonicalControlCapability)
+            return CanonicalControlRequirementAuthority.requirementsForCapabilities(capabilities)
+        }
+
+        val duplicateSourceIds = tasks
+            .mapNotNull { task -> task.sourceId?.takeIf(String::isNotBlank) }
+            .groupingBy { it }
+            .eachCount()
+            .filterValues { it > 1 }
+            .keys
+        duplicateSourceIds.forEach { sourceId ->
+            issues += issue(
+                "planning.control.source-step.duplicate",
+                "sourceIntent.workflows.$sourceId",
+                "Authored source step '$sourceId' is represented by more than one plan task; operation-scoped control identity is ambiguous."
+            )
+        }
+
+        val operationsByWorkflow = linkedMapOf<String, MutableList<IntentStep>>()
+        tasks.forEach { task ->
+            val capability = canonicalControlCapability(task) ?: return@forEach
+            if (CanonicalControlRequirementAuthority.requirementsForCapabilities(listOf(capability)).isEmpty()) {
+                return@forEach
+            }
+            val sourceId = task.sourceId?.takeIf(String::isNotBlank)
+            if (sourceId == null) {
+                issues += issue(
+                    "planning.control.source-step.missing",
+                    "nodes.${task.id}.sourceId",
+                    "Canonical control capability '$capability' on node '${task.id}' has no authored source step identity."
+                )
+                return@forEach
+            }
+            if (sourceId in duplicateSourceIds) return@forEach
+
+            val owners = source.workflows.filter { sourceId in it.stepIds }
+            if (owners.size != 1) {
+                issues += issue(
+                    "planning.control.source-workflow.invalid",
+                    "sourceIntent.workflows.$sourceId",
+                    "Canonical control operation '$sourceId' must belong to exactly one preserved source workflow; found ${owners.map { it.name }.sorted()}."
+                )
+                return@forEach
+            }
+            operationsByWorkflow.getOrPut(owners.single().name) { mutableListOf() } +=
+                IntentStep(id = sourceId, capability = capability)
+        }
+
+        val workflows = source.workflows.map { metadata ->
+            val kind = runCatching { IntentWorkflowKind.valueOf(metadata.kind) }.getOrElse {
+                issues += issue(
+                    "planning.control.source-workflow-kind.invalid",
+                    "sourceIntent.workflows.${metadata.name}.kind",
+                    "Preserved source workflow '${metadata.name}' has unknown kind '${metadata.kind}'."
+                )
+                IntentWorkflowKind.CUSTOM
+            }
+            val operations = operationsByWorkflow[metadata.name].orEmpty().associateBy(IntentStep::id)
+            IntentWorkflow(
+                name = metadata.name,
+                kind = kind,
+                steps = metadata.stepIds.mapNotNull(operations::get)
+            )
+        }
+
+        val policies = source.policies.mapNotNull { metadata ->
+            val type = runCatching { IntentPolicyType.valueOf(metadata.type) }.getOrElse {
+                issues += issue(
+                    "planning.control.source-policy-type.invalid",
+                    "sourceIntent.policies.${metadata.name}.type",
+                    "Preserved source policy '${metadata.name}' has unknown type '${metadata.type}'."
+                )
+                return@mapNotNull null
+            }
+            IntentPolicy(
+                name = metadata.name,
+                type = type,
+                condition = metadata.condition,
+                message = metadata.message
+            )
+        }
+
+        return CanonicalControlRequirementAuthority.requirementsFor(
+            IntentDocument(
+                name = plan.flowName,
+                workflows = workflows,
+                policies = policies
+            )
+        )
+    }
+
+    private fun canonicalControlCapability(task: TaskNode): StandardCapability? =
+        task.semanticCapability?.let { runCatching { StandardCapability.valueOf(it) }.getOrNull() }
+
     private fun validateControlEvidence(
         plan: ExecutionPlan,
         modules: ModuleRegistry,
@@ -799,9 +907,7 @@ internal object ExecutionPlanMaterializationValidator {
             issues += issue("planning.control.evidence.missing", "controlRequirements.${requirement.id}", "Every control requirement must have one explicit evidence record, including unknown evidence.")
         }
 
-        val canonicalReconstruction = ExecutionPlanCanonicalControlRequirementAuthority.rederive(plan)
-        issues += canonicalReconstruction.issues
-        val expectedCanonical = canonicalReconstruction.requirements
+        val expectedCanonical = rederiveCanonicalControlRequirements(plan, issues)
         val expectedModule = PlanningControlAuthority.rederivedModuleRequirements(plan.nodes, modules)
         (expectedCanonical + expectedModule).forEach { expected ->
             val actual = plan.controlRequirements.singleOrNull { it.id == expected.id }
