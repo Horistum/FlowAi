@@ -17,8 +17,11 @@ import org.flowlang.intent.asTextOrNull
 object CanonicalControlRequirementAuthority {
     fun requirementsFor(intent: IntentDocument): List<ControlRequirement> {
         val requirements = mutableListOf<ControlRequirement>()
-        val steps = intent.workflows.flatMap { it.steps }
-        requirements += requirementsForCapabilities(steps.map(IntentStep::capability))
+        intent.workflows.forEach { workflow ->
+            workflow.steps.forEach { step ->
+                requirements += requirementsForStep(workflow.name, step)
+            }
+        }
 
         intent.policies.forEach { policy ->
             when (policy.type) {
@@ -38,6 +41,12 @@ object CanonicalControlRequirementAuthority {
             .sortedBy(ControlRequirement::id)
     }
 
+    /**
+     * Capability-only projection retained for inventory and contract checks.
+     * Without an IntentDocument there is no operation identity to bind, so these
+     * requirements intentionally remain intent-scoped and are never used to
+     * authorize concrete authored evidence.
+     */
     fun requirementsForCapabilities(capabilities: Iterable<StandardCapability>): List<ControlRequirement> {
         val values = capabilities.toSet()
         val requirements = buildList {
@@ -57,7 +66,8 @@ object CanonicalControlRequirementAuthority {
 
     fun assess(intent: IntentDocument): ControlAssessment {
         val requirements = requirementsFor(intent)
-        val evidence = requirements.map { evidenceFor(it, intent) }
+        val graph = IntentControlGraph.index(intent)
+        val evidence = requirements.map { evidenceFor(it, intent, graph) }
         return ControlDecisionAuthority.assessment(requirements, evidence)
     }
 
@@ -85,6 +95,37 @@ object CanonicalControlRequirementAuthority {
             }
     }
 
+    private fun requirementsForStep(workflowName: String, step: IntentStep): List<ControlRequirement> {
+        val scope = ControlRequirementScope.operation(workflowName, step.id)
+        return when (step.capability) {
+            StandardCapability.DATABASE_MIGRATE -> listOf(
+                requirement(
+                    ControlRequirementKind.BACKUP,
+                    "DATABASE_MIGRATE",
+                    ControlRequirementSource.CANONICAL_CAPABILITY,
+                    scope = scope
+                )
+            )
+            StandardCapability.DEPROVISION -> listOf(
+                requirement(
+                    ControlRequirementKind.APPROVAL,
+                    "DEPROVISION",
+                    ControlRequirementSource.CANONICAL_CAPABILITY,
+                    scope = scope
+                )
+            )
+            StandardCapability.CLEANUP -> listOf(
+                requirement(
+                    ControlRequirementKind.RETENTION_GUARD,
+                    "CLEANUP",
+                    ControlRequirementSource.CANONICAL_CAPABILITY,
+                    scope = scope
+                )
+            )
+            else -> emptyList()
+        }
+    }
+
     private fun safetyRequirement(policy: IntentPolicy): ControlRequirement {
         val parsed = PolicyCondition.parse(policy.condition)
         val kind = when (parsed) {
@@ -109,41 +150,42 @@ object CanonicalControlRequirementAuthority {
         message = policy.message
     )
 
-    private fun evidenceFor(requirement: ControlRequirement, intent: IntentDocument): ControlEvidence {
-        val steps = intent.workflows.flatMap { it.steps }
-        return when (requirement.kind) {
-            ControlRequirementKind.APPROVAL -> approvalEvidence(requirement, intent, steps)
-            ControlRequirementKind.DRY_RUN -> booleanParameterEvidence(requirement, steps, "dryRun", acceptedModes = setOf("dry-run"))
-            ControlRequirementKind.BACKUP -> backupEvidence(requirement, steps)
-            ControlRequirementKind.ROLLBACK_PLAN -> rollbackEvidence(requirement, intent, steps)
-            ControlRequirementKind.CHANGE_TICKET -> changeTicketEvidence(requirement, intent, steps)
-            ControlRequirementKind.RETENTION_GUARD -> retentionEvidence(requirement, intent, steps)
-            ControlRequirementKind.CLARIFICATION,
-            ControlRequirementKind.RISK_MITIGATION -> missing(requirement, "The authored intent does not contain evidence that this blocking control was resolved.")
-            ControlRequirementKind.SAFETY_GUARD -> genericSafetyEvidence(requirement, steps)
-            ControlRequirementKind.EXTERNAL_EFFECT_REVIEW -> externalReviewEvidence(requirement, steps)
-            ControlRequirementKind.POLICY_EVALUATION -> policyEvaluationEvidence(requirement)
-        }
+    private fun evidenceFor(
+        requirement: ControlRequirement,
+        intent: IntentDocument,
+        graph: IntentControlGraph
+    ): ControlEvidence = when (requirement.kind) {
+        ControlRequirementKind.APPROVAL -> approvalEvidence(requirement, graph)
+        ControlRequirementKind.DRY_RUN -> booleanParameterEvidence(requirement, graph, "dryRun", acceptedModes = setOf("dry-run"))
+        ControlRequirementKind.BACKUP -> backupEvidence(requirement, graph)
+        ControlRequirementKind.ROLLBACK_PLAN -> rollbackEvidence(requirement, intent, graph)
+        ControlRequirementKind.CHANGE_TICKET -> changeTicketEvidence(requirement, graph)
+        ControlRequirementKind.RETENTION_GUARD -> retentionEvidence(requirement, intent, graph)
+        ControlRequirementKind.CLARIFICATION,
+        ControlRequirementKind.RISK_MITIGATION -> missing(requirement, "The authored intent does not contain evidence that this blocking control was resolved.")
+        ControlRequirementKind.SAFETY_GUARD -> genericSafetyEvidence(requirement, graph)
+        ControlRequirementKind.EXTERNAL_EFFECT_REVIEW -> externalReviewEvidence(requirement, graph)
+        ControlRequirementKind.POLICY_EVALUATION -> policyEvaluationEvidence(requirement)
     }
 
     private fun approvalEvidence(
         requirement: ControlRequirement,
-        intent: IntentDocument,
-        steps: List<IntentStep>
+        graph: IntentControlGraph
     ): ControlEvidence {
-        val approvals = steps.filter { it.capability == StandardCapability.APPROVE }
+        val approvals = graph.controlStepsProtecting(requirement, StandardCapability.APPROVE)
         if (approvals.isEmpty()) {
-            return missing(requirement, "An approval policy declares a requirement but is not evidence that an approval mechanism exists.")
+            return missing(
+                requirement,
+                "An approval declaration is not evidence that a reachable approval mechanism protects the required scope."
+            )
         }
-        val conditions = intent.policies
-            .filter { it.type == IntentPolicyType.APPROVAL }
-            .mapNotNull { it.condition?.trim()?.takeIf(String::isNotEmpty) }
-        return if (conditions.isNotEmpty()) {
+        val condition = requirement.condition?.trim()?.takeIf(String::isNotEmpty)
+        return if (condition != null) {
             ControlEvidence(
                 requirementId = requirement.id,
                 status = ControlEvidenceStatus.DYNAMIC,
                 source = ControlEvidenceSource.DYNAMIC_CONDITION,
-                detail = conditions.joinToString(" && "),
+                detail = "Scoped approval step(s) ${approvals.map { it.step.id }.sorted().joinToString()} with condition $condition",
                 enforcementCapabilities = listOf("approval.manual", "condition.evaluate")
             )
         } else {
@@ -151,19 +193,20 @@ object CanonicalControlRequirementAuthority {
                 requirementId = requirement.id,
                 status = ControlEvidenceStatus.SATISFIED,
                 source = ControlEvidenceSource.AUTHORED_STEP,
-                detail = approvals.joinToString { it.id }
+                detail = "Reachable scoped approval step(s): ${approvals.map { it.step.id }.sorted().joinToString()}"
             )
         }
     }
 
     private fun booleanParameterEvidence(
         requirement: ControlRequirement,
-        steps: List<IntentStep>,
+        graph: IntentControlGraph,
         name: String,
         acceptedModes: Set<String> = emptySet()
     ): ControlEvidence {
         var explicitFalse = false
-        steps.forEach { step ->
+        graph.parameterSteps(requirement).forEach { scoped ->
+            val step = scoped.step
             when (step.params[name].asBooleanLike()) {
                 true -> return ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "${step.id}.$name=true")
                 false -> explicitFalse = true
@@ -175,54 +218,89 @@ object CanonicalControlRequirementAuthority {
             }
         }
         return if (explicitFalse) {
-            ControlEvidence(requirement.id, ControlEvidenceStatus.UNSATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "$name=false")
-        } else missing(requirement, "No authored $name evidence was found.")
+            ControlEvidence(requirement.id, ControlEvidenceStatus.UNSATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "$name=false in the protected scope")
+        } else missing(requirement, "No authored $name evidence was found in the protected scope.")
     }
 
-    private fun backupEvidence(requirement: ControlRequirement, steps: List<IntentStep>): ControlEvidence {
-        val backupStep = steps.firstOrNull { it.capability == StandardCapability.BACKUP }
-        if (backupStep != null) return ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_STEP, backupStep.id)
-        return confirmedParameterEvidence(requirement, steps, listOf("backup"))
+    private fun backupEvidence(requirement: ControlRequirement, graph: IntentControlGraph): ControlEvidence {
+        val backupSteps = graph.controlStepsProtecting(requirement, StandardCapability.BACKUP)
+        val parameter = confirmedParameterEvidence(requirement, graph, listOf("backup"))
+        return when {
+            backupSteps.isNotEmpty() && parameter.status == ControlEvidenceStatus.UNSATISFIED -> ControlEvidence(
+                requirement.id,
+                ControlEvidenceStatus.UNSATISFIED,
+                ControlEvidenceSource.AUTHORED_PARAMETER,
+                "Conflicting scoped backup evidence; reachable backup step(s): ${backupSteps.map { it.step.id }.sorted().joinToString()}; ${parameter.detail}"
+            )
+            backupSteps.isNotEmpty() -> ControlEvidence(
+                requirement.id,
+                ControlEvidenceStatus.SATISFIED,
+                ControlEvidenceSource.AUTHORED_STEP,
+                buildString {
+                    append("Reachable scoped backup step(s): ")
+                    append(backupSteps.map { it.step.id }.sorted().joinToString())
+                    if (parameter.status == ControlEvidenceStatus.SATISFIED) append("; ").append(parameter.detail)
+                }
+            )
+            else -> parameter
+        }
     }
 
-    private fun rollbackEvidence(requirement: ControlRequirement, intent: IntentDocument, steps: List<IntentStep>): ControlEvidence {
-        if (intent.failure.rollback) return ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_FAILURE_POLICY, "failure.rollback=true")
-        val rollback = steps.firstOrNull { it.capability == StandardCapability.ROLLBACK }
-        if (rollback != null) return ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_STEP, rollback.id)
-        return confirmedParameterEvidence(requirement, steps, listOf("rollbackPlan"))
+    private fun rollbackEvidence(
+        requirement: ControlRequirement,
+        intent: IntentDocument,
+        graph: IntentControlGraph
+    ): ControlEvidence {
+        if (intent.failure.rollback) {
+            return ControlEvidence(
+                requirement.id,
+                ControlEvidenceStatus.SATISFIED,
+                ControlEvidenceSource.AUTHORED_FAILURE_POLICY,
+                "failure.rollback=true"
+            )
+        }
+        return confirmedParameterEvidence(requirement, graph, listOf("rollbackPlan"))
     }
 
-    private fun changeTicketEvidence(requirement: ControlRequirement, intent: IntentDocument, steps: List<IntentStep>): ControlEvidence {
-        val names = setOf("changeTicket", "changeRequest", "ticket", "changeId")
-        val input = intent.inputs.firstOrNull { it.name in names }
-        if (input != null) return ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "input.${input.name}")
-        return confirmedParameterEvidence(requirement, steps, names.toList())
-    }
+    private fun changeTicketEvidence(requirement: ControlRequirement, graph: IntentControlGraph): ControlEvidence =
+        confirmedParameterEvidence(requirement, graph, listOf("changeTicket", "changeRequest", "ticket", "changeId"))
 
-    private fun retentionEvidence(requirement: ControlRequirement, intent: IntentDocument, steps: List<IntentStep>): ControlEvidence {
-        val parameter = confirmedParameterEvidence(requirement, steps, listOf("retention", "safety"))
+    private fun retentionEvidence(
+        requirement: ControlRequirement,
+        intent: IntentDocument,
+        graph: IntentControlGraph
+    ): ControlEvidence {
+        val parameter = confirmedParameterEvidence(requirement, graph, listOf("retention", "safety"))
         if (parameter.status != ControlEvidenceStatus.UNKNOWN) return parameter
         val policy = intent.policies.firstOrNull { PolicyCondition.parse(it.condition) is PolicyCondition.RetentionRule }
         return if (policy != null) {
             ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_POLICY, policy.condition)
-        } else missing(requirement, "Cleanup requires an explicit retention or safety guard.")
+        } else missing(requirement, "Cleanup requires an explicit retention or safety guard in the protected scope.")
     }
 
-    private fun genericSafetyEvidence(requirement: ControlRequirement, steps: List<IntentStep>): ControlEvidence {
-        val approval = steps.firstOrNull { it.capability == StandardCapability.APPROVE }
-        if (approval != null) return ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_STEP, approval.id)
-        val dryRun = booleanParameterEvidence(requirement, steps, "dryRun", acceptedModes = setOf("dry-run"))
+    private fun genericSafetyEvidence(
+        requirement: ControlRequirement,
+        graph: IntentControlGraph
+    ): ControlEvidence {
+        val approval = approvalEvidence(requirement, graph)
+        if (approval.status != ControlEvidenceStatus.UNKNOWN) return approval
+        val dryRun = booleanParameterEvidence(requirement, graph, "dryRun", acceptedModes = setOf("dry-run"))
         if (dryRun.status != ControlEvidenceStatus.UNKNOWN) return dryRun
-        val backup = backupEvidence(requirement, steps)
+        val backup = backupEvidence(requirement, graph)
         if (backup.status != ControlEvidenceStatus.UNKNOWN) return backup
-        return confirmedParameterEvidence(requirement, steps, listOf("safety", "retention", "rollbackPlan"))
+        return confirmedParameterEvidence(requirement, graph, listOf("safety", "retention", "rollbackPlan"))
     }
 
-    private fun externalReviewEvidence(requirement: ControlRequirement, steps: List<IntentStep>): ControlEvidence {
-        val evidence = steps.firstOrNull { it.capability == StandardCapability.APPROVE || it.capability == StandardCapability.NOTIFY }
-        return if (evidence != null) {
-            ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_STEP, evidence.id)
-        } else missing(requirement, "External side effects require approval or notification evidence.")
+    private fun externalReviewEvidence(
+        requirement: ControlRequirement,
+        graph: IntentControlGraph
+    ): ControlEvidence {
+        val approval = approvalEvidence(requirement, graph)
+        return if (approval.status != ControlEvidenceStatus.UNKNOWN) {
+            approval
+        } else {
+            missing(requirement, "External side effects require scoped approval/review evidence; notification alone is not review evidence.")
+        }
     }
 
     private fun policyEvaluationEvidence(requirement: ControlRequirement): ControlEvidence {
@@ -242,12 +320,13 @@ object CanonicalControlRequirementAuthority {
 
     private fun confirmedParameterEvidence(
         requirement: ControlRequirement,
-        steps: List<IntentStep>,
+        graph: IntentControlGraph,
         names: List<String>
     ): ControlEvidence {
         val confirmations = mutableListOf<String>()
         val denials = mutableListOf<String>()
-        steps.forEach { step ->
+        graph.parameterSteps(requirement).forEach { scoped ->
+            val step = scoped.step
             names.forEach { name ->
                 val assessment = AuthoredControlEvidenceTextAuthority.assess(name, step.params[name])
                 val detail = "${step.id}.$name: ${assessment.reason}"
@@ -263,13 +342,13 @@ object CanonicalControlRequirementAuthority {
                 requirement.id,
                 ControlEvidenceStatus.UNSATISFIED,
                 ControlEvidenceSource.AUTHORED_PARAMETER,
-                "Conflicting authored evidence; confirmed: ${confirmations.joinToString()}; denied: ${denials.joinToString()}"
+                "Conflicting authored evidence in protected scope; confirmed: ${confirmations.joinToString()}; denied: ${denials.joinToString()}"
             )
             denials.isNotEmpty() -> ControlEvidence(
                 requirement.id,
                 ControlEvidenceStatus.UNSATISFIED,
                 ControlEvidenceSource.AUTHORED_PARAMETER,
-                "Explicit negative evidence: ${denials.joinToString()}"
+                "Explicit negative evidence in protected scope: ${denials.joinToString()}"
             )
             confirmations.isNotEmpty() -> ControlEvidence(
                 requirement.id,
@@ -277,7 +356,7 @@ object CanonicalControlRequirementAuthority {
                 ControlEvidenceSource.AUTHORED_PARAMETER,
                 confirmations.joinToString()
             )
-            else -> missing(requirement, "No confirmed authored evidence was found.")
+            else -> missing(requirement, "No confirmed authored evidence was found in the protected scope.")
         }
     }
 
@@ -314,14 +393,16 @@ object CanonicalControlRequirementAuthority {
         subject: String,
         source: ControlRequirementSource,
         condition: String? = null,
-        message: String? = null
+        message: String? = null,
+        scope: ControlRequirementScope = ControlRequirementScope.INTENT
     ) = ControlRequirement(
         id = "control.${kind.name.lowercase()}.${canonicalId(subject)}",
         kind = kind,
         subject = subject,
         source = source,
         condition = condition,
-        message = message
+        message = message,
+        scope = scope
     )
 
     private fun canonicalId(value: String): String = value.trim().lowercase()
@@ -349,5 +430,98 @@ object CanonicalControlRequirementAuthority {
             else -> null
         }
         else -> null
+    }
+
+    private data class ScopedIntentStep(
+        val workflow: String,
+        val step: IntentStep
+    )
+
+    /**
+     * Authored intent graph used only to establish scope and explicit ordering.
+     * It never invents dependencies from source order and never crosses workflow
+     * boundaries. This is intentionally independent from AST lowering, which is
+     * validated separately for exact DAG preservation.
+     */
+    private data class IntentControlGraph(
+        val stepsByWorkflow: Map<String, Map<String, IntentStep>>,
+        val allSteps: List<ScopedIntentStep>
+    ) {
+        fun parameterSteps(requirement: ControlRequirement): List<ScopedIntentStep> {
+            protectedStep(requirement)?.let { return listOf(it) }
+
+            if (requirement.scope.kind != ControlRequirementScopeKind.INTENT) return emptyList()
+            val operations = nonControlOperations()
+            return if (operations.size == 1) operations else emptyList()
+        }
+
+        fun controlStepsProtecting(
+            requirement: ControlRequirement,
+            capability: StandardCapability
+        ): List<ScopedIntentStep> {
+            val protected = protectedStep(requirement)
+            if (protected != null) {
+                val ancestorIds = ancestorsOf(protected.workflow, protected.step.id)
+                val workflowSteps = stepsByWorkflow[protected.workflow].orEmpty()
+                return ancestorIds.mapNotNull { id -> workflowSteps[id]?.let { ScopedIntentStep(protected.workflow, it) } }
+                    .filter { it.step.capability == capability }
+            }
+
+            if (requirement.scope.kind != ControlRequirementScopeKind.INTENT) return emptyList()
+            val operations = nonControlOperations()
+            val controls = allSteps.filter { it.step.capability == capability }
+            if (operations.isEmpty()) return controls
+            return controls.filter { control ->
+                operations.all { operation ->
+                    control.workflow == operation.workflow &&
+                        control.step.id in ancestorsOf(operation.workflow, operation.step.id)
+                }
+            }
+        }
+
+        private fun protectedStep(requirement: ControlRequirement): ScopedIntentStep? {
+            val scope = requirement.scope
+            if (scope.kind != ControlRequirementScopeKind.OPERATION) return null
+            val workflow = scope.workflow ?: return null
+            val stepId = scope.subjectId ?: return null
+            val step = stepsByWorkflow[workflow]?.get(stepId) ?: return null
+            return ScopedIntentStep(workflow, step)
+        }
+
+        private fun ancestorsOf(workflow: String, stepId: String): Set<String> {
+            val byId = stepsByWorkflow[workflow].orEmpty()
+            val result = linkedSetOf<String>()
+            fun visit(current: String) {
+                byId[current]?.requires.orEmpty().forEach { dependency ->
+                    if (dependency in byId && result.add(dependency)) visit(dependency)
+                }
+            }
+            visit(stepId)
+            return result
+        }
+
+        private fun nonControlOperations(): List<ScopedIntentStep> = allSteps.filter {
+            it.step.capability !in CONTROL_EVIDENCE_CAPABILITIES
+        }
+
+        companion object {
+            private val CONTROL_EVIDENCE_CAPABILITIES = setOf(
+                StandardCapability.APPROVE,
+                StandardCapability.BACKUP,
+                StandardCapability.ROLLBACK
+            )
+
+            fun index(intent: IntentDocument): IntentControlGraph {
+                val all = intent.workflows.flatMap { workflow ->
+                    workflow.steps.map { step -> ScopedIntentStep(workflow.name, step) }
+                }
+                return IntentControlGraph(
+                    stepsByWorkflow = intent.workflows.associate { workflow ->
+                        workflow.name to workflow.steps.associateBy(IntentStep::id)
+                    },
+                    allSteps = all
+                )
+            }
+        }
     }
 }
