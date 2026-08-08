@@ -21,42 +21,48 @@ jobs:
       - name: Synchronize bounded 2.1 snapshots
         shell: python
         run: |
+          import json
           from pathlib import Path
 
-          # The public AST contract now carries ControlRequirement.scope, so every
-          # committed AST snapshot must advertise 2.1. Only the build-test-deploy
-          # reference has a control requirement whose shape also changes.
           changed = []
-          for ast in Path("conformance").rglob("flow-ast.json"):
-              original = ast.read_text()
-              text = original.replace('"astVersion" : "2.0"', '"astVersion" : "2.1"', 1)
-              text = text.replace('"astVersion":"2.0"', '"astVersion":"2.1"', 1)
-              if ast.as_posix() == "conformance/snapshots/build-test-deploy/flow-ast.json":
-                  old_requirement = '''    "message" : "Approval is required before deployment in this reference flow."
-            } ],
-            "controlEvidence" : [ {'''
-                  new_requirement = '''    "message" : "Approval is required before deployment in this reference flow.",
-              "scope" : {
-                "kind" : "INTENT"
-              }
-            } ],
-            "controlEvidence" : [ {'''
-                  if '"scope" : {' not in text.split('"controlEvidence"', 1)[0]:
-                      if old_requirement not in text:
-                          raise SystemExit("Expected build-test-deploy control requirement shape was not found")
-                      text = text.replace(old_requirement, new_requirement, 1)
-                  text = text.replace(
-                      '"detail" : "approve-prod"',
-                      '"detail" : "Intent-level approval predecessor(s): approve-prod"',
-                      1,
-                  )
-              if text != original:
-                  ast.write_text(text)
-                  changed.append(ast)
 
-          # ExecutionPlan 2.1 adds the same security-relevant requirement scope.
-          # The affected reference plans either have no control requirements or
-          # are regenerated separately below, so version-only snapshots are exact.
+          def write_if_changed(path: Path, original: object, updated: object) -> None:
+              if updated == original:
+                  return
+              path.write_text(json.dumps(updated, indent=2) + "\n")
+              changed.append(path)
+
+          # ControlRequirement.scope is serialized into Flow AST, so every
+          # committed AST reference produced by the current planner is 2.1.
+          for ast in Path("conformance").rglob("flow-ast.json"):
+              original = json.loads(ast.read_text())
+              updated = json.loads(ast.read_text())
+              if updated.get("astVersion") == "2.0":
+                  updated["astVersion"] = "2.1"
+
+              if ast.as_posix() == "conformance/snapshots/build-test-deploy/flow-ast.json":
+                  requirements = updated.get("flow", {}).get("controlRequirements", [])
+                  requirement = next(
+                      (item for item in requirements if item.get("id") == "control.approval.production-approval"),
+                      None,
+                  )
+                  if requirement is None:
+                      raise SystemExit("Expected build-test-deploy approval requirement was not found")
+                  requirement["scope"] = {"kind": "INTENT"}
+
+                  evidence = updated.get("flow", {}).get("controlEvidence", [])
+                  record = next(
+                      (item for item in evidence if item.get("requirementId") == "control.approval.production-approval"),
+                      None,
+                  )
+                  if record is None:
+                      raise SystemExit("Expected build-test-deploy approval evidence was not found")
+                  record["detail"] = "Intent-level approval predecessor(s): approve-prod"
+
+              write_if_changed(ast, original, updated)
+
+          # These target-scoped plans have no control requirements; the only
+          # generated contract change is planVersion 2.0 -> 2.1.
           for root in [
               Path("conformance/snapshots/checkout-build-image"),
               Path("conformance/snapshots/github-actions-checkout-build-image"),
@@ -65,12 +71,11 @@ jobs:
               if not root.is_dir():
                   continue
               for path in root.rglob("execution-plan.json"):
-                  original = path.read_text()
-                  updated = original.replace('"planVersion" : "2.0"', '"planVersion" : "2.1"', 1)
-                  updated = updated.replace('"planVersion":"2.0"', '"planVersion":"2.1"', 1)
-                  if updated != original:
-                      path.write_text(updated)
-                      changed.append(path)
+                  original = json.loads(path.read_text())
+                  updated = json.loads(path.read_text())
+                  if updated.get("planVersion") == "2.0":
+                      updated["planVersion"] = "2.1"
+                  write_if_changed(path, original, updated)
 
           print("Synchronized:")
           for path in changed:
