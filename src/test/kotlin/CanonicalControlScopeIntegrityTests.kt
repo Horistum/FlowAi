@@ -6,6 +6,7 @@ import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.controls.ControlEvidenceStatus
 import org.flowlang.controls.ControlRequirementScopeKind
+import org.flowlang.intent.IntentBoolean
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentInput
 import org.flowlang.intent.IntentPolicy
@@ -254,6 +255,69 @@ class CanonicalControlScopeIntegrityTests {
                 name = "rollback-required",
                 type = IntentPolicyType.SAFETY,
                 condition = "requiresRollbackPlan"
+            ))
+        )
+
+        val assessment = CanonicalControlRequirementAuthority.assess(document)
+
+        assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status)
+        assertEquals(ControlEvidenceStatus.UNKNOWN, assessment.evidence.single().status)
+    }
+
+    @Test
+    fun intentLevelDryRunPolicyUsesExplicitAuthoredDryRunAcrossMultiOperationWorkflow() {
+        val document = IntentDocument(
+            name = "maintenance",
+            workflows = listOf(IntentWorkflow(
+                name = "maintenance",
+                kind = IntentWorkflowKind.CUSTOM,
+                steps = listOf(
+                    IntentStep(
+                        id = "maintain",
+                        capability = StandardCapability.CLUSTER_MAINTENANCE,
+                        params = mapOf("dryRun" to IntentBoolean(true))
+                    ),
+                    IntentStep(
+                        id = "verify",
+                        capability = StandardCapability.VERIFY,
+                        requires = listOf("maintain")
+                    )
+                )
+            )),
+            policies = listOf(IntentPolicy(
+                name = "maintenance-dry-run",
+                type = IntentPolicyType.SAFETY,
+                condition = "requiresDryRun"
+            ))
+        )
+
+        val assessment = CanonicalControlRequirementAuthority.assess(document)
+
+        assertEquals(ControlDecisionStatus.ALLOWED, assessment.decision.status)
+        assertEquals(ControlEvidenceStatus.SATISFIED, assessment.evidence.single().status)
+        assertTrue(assessment.evidence.single().detail.orEmpty().contains("maintain.dryRun=true"))
+    }
+
+    @Test
+    fun genericSafetyDoesNotBorrowDryRunFromUnrelatedOperation() {
+        val document = IntentDocument(
+            name = "guarded-operation",
+            workflows = listOf(IntentWorkflow(
+                name = "operation",
+                kind = IntentWorkflowKind.CUSTOM,
+                steps = listOf(
+                    IntentStep(
+                        id = "other",
+                        capability = StandardCapability.CUSTOM,
+                        params = mapOf("dryRun" to IntentBoolean(true))
+                    ),
+                    IntentStep(id = "protected", capability = StandardCapability.CUSTOM)
+                )
+            )),
+            policies = listOf(IntentPolicy(
+                name = "safety",
+                type = IntentPolicyType.SAFETY,
+                condition = "destructiveOperation"
             ))
         )
 
