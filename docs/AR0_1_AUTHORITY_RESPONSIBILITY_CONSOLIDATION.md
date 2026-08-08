@@ -2,7 +2,7 @@
 
 ## Purpose
 
-AR0.1 is an ownership audit before it is a refactor. The repository currently contains 74 production Kotlin types whose names end in `Authority`. That number is not itself a defect. The architectural question is whether each type owns a distinct invariant or orchestration boundary, whether its callers reflect that ownership, and whether repeated code is duplicated policy or merely duplicated mechanism.
+AR0.1 is an ownership audit before it is a refactor. Its completion baseline contained 74 production Kotlin types whose names end in `Authority`; that historical count is not a ceiling. The live catalog is intentionally maintained as later work adds, removes or rewires independently justified authorities. The number itself is not a defect. The architectural question is whether each type owns a distinct invariant or orchestration boundary, whether its callers reflect that ownership, and whether repeated code is duplicated policy or merely duplicated mechanism.
 
 The acceptance criterion is therefore not a smaller class count. A smaller count can be a side effect of simplification, but collapsing independent invariants into one configurable authority would make the architecture less explicit while producing an impressive-looking deletion diff. Software has survived enough of those bargains.
 

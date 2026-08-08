@@ -1,7 +1,7 @@
 project: Flow
-roadmapVersion: 17
-currentTrack: "architecture-completed"
-primaryRoadmapStream: architecture
+roadmapVersion: 18
+currentTrack: "operational-domain-adequacy"
+primaryRoadmapStream: conformance
 
 versionBoundary:
   publishedPackageVersion: "0.9.5"
@@ -108,4 +108,7 @@ currentDecision:
   completedConformanceItemName: "Adapter Profile Evidence"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  decisionBasis: "AR0.1 implementation was validated by Flow CI #2807 / run 31196276487, and distinct completion validation Flow CI #2809 / run 31202921728 passed on exact head 9a355c07052ab72885cbd54beafc2919fe9b710f and synthetic merge candidate 6d79960ac580132079a5a2a9cd1428405de8ba6d. No successor architecture item is declared, so the primary architecture stream closes terminally at AR0.1."
+  nextItem: "C1.0"
+  nextItemName: "Operational Domain Adequacy"
+  nextItemStream: conformance
+  decisionBasis: "AR0.1 remains terminally complete at Flow CI #2809 / run 31202921728. The separately reviewed C1.0 transition reactivates conformance to add bounded non-CI/CD operational evidence while preserving the closed C0.1 domain vocabulary and all frozen upstream inventories."

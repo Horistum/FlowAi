@@ -101,7 +101,7 @@ data class SemanticEquivalenceLifecycleReport(
     val errors: List<String>
 )
 
-/** Owns only the C0.3 lifecycle and its adjacent handoff to C0.4. */
+/** Owns the C0.3 lifecycle, its C0.4 handoff and retained downstream closure. */
 class SemanticEquivalenceRoadmapLifecycleAuthority(
     private val rootDir: File = File(".")
 ) {
@@ -225,7 +225,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
             "completed" ->
                 input.c02Status == "completed" &&
                     input.conformanceCompletedItem == "C0.4" &&
-                    input.conformanceNextItem.isBlank()
+                    input.conformanceNextItem !in setOf("C0.3", "C0.4")
             else -> false
         }
 

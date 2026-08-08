@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+velero restore create --help
+Only backups in Completed or PartiallyFailed phase are accepted as restore sources.

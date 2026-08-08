@@ -537,6 +537,14 @@ authorities:
     callers:
       - "src/main/kotlin/org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt"
       - "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
+  - name: "OperationalDomainAdequacyRoadmapLifecycleAuthority"
+    path: "src/main/kotlin/org/flowlang/conformance/OperationalDomainAdequacyRoadmapLifecycleAuthority.kt"
+    role: "lifecycle-boundary"
+    invariant: "Owns the bounded C1.0 lifecycle after completed AR0.1 while preserving architecture closure and the historical C0.1-C0.4 evidence boundaries."
+    inputs: "Roadmap/work-package/release evidence and the completed AR0.1 boundary; production API: analyze, evaluate."
+    outputs: "C1.0 lifecycle phase/report and fail-closed evidence-ordering findings."
+    callers:
+      - "src/main/kotlin/org/flowlang/conformance/OperationalDomainAdequacyConformanceChecks.kt"
   - name: "PlanningControlAuthority"
     path: "src/main/kotlin/org/flowlang/controls/PlanningControlAuthority.kt"
     role: "orchestration-boundary"
@@ -563,6 +571,7 @@ authorities:
     inputs: "Typed repository/runtime evidence being independently checked; production API: classify, compare."
     outputs: "Integrity assessment/report whose failures block unsupported promotion."
     callers:
+      - "src/main/kotlin/org/flowlang/conformance/OperationalDomainAdequacyConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusConformanceChecks.kt"
   - name: "ReleaseMetadataHonestyAuthority"
     path: "src/main/kotlin/org/flowlang/release/ReleaseMetadataHonesty.kt"
@@ -605,7 +614,7 @@ authorities:
   - name: "SemanticEquivalenceRoadmapLifecycleAuthority"
     path: "src/main/kotlin/org/flowlang/conformance/SemanticEquivalenceRoadmapLifecycleAuthority.kt"
     role: "lifecycle-boundary"
-    invariant: "Owns only the C0.3 lifecycle and its adjacent handoff to C0.4."
+    invariant: "Owns the C0.3 lifecycle, its adjacent C0.4 handoff and immutable downstream closure state."
     inputs: "Roadmap/work-package/release evidence and frozen predecessor boundaries; production API: analyze, evaluate."
     outputs: "Lifecycle phase/report and fail-closed transition findings."
     callers:

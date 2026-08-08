@@ -1,0 +1,4 @@
+repository: velero-io/velero
+revision: 7346ec527c99c156bcbbb4a76d83c31b2370f504
+path: site/content/docs/main/restore-reference.md
+license: Apache-2.0

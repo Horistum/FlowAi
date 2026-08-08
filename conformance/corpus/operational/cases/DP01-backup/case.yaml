@@ -1,0 +1,19 @@
+kind: FlowOperationalDomainCase
+version: '1.0'
+id: DP01
+title: Backup state and verify the produced recovery artifact
+lifecycle: MUTATION_VALIDATED
+category: common
+domain: data-protection
+sourceRef: velero-backup-reference
+source: {workflow: source/reference.txt, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+  - {id: backup-artifact-removed, definition: mutations/backup-artifact-removed/mutation.yaml}
+invariants:
+  - Backup remains explicit BACKUP intent rather than a generic runtime command.
+  - The produced backup artifact is a named value consumed by verification.
+  - Removing the backup artifact producer fails before planning.

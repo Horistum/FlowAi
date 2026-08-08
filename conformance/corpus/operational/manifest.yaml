@@ -1,0 +1,55 @@
+kind: FlowOperationalDomainCorpus
+version: '1.0'
+status: executable-baseline
+name: operational-domain-adequacy
+scope:
+  domains: [data-protection]
+  requiredCapabilities: [BACKUP, RESTORE]
+  primaryUse: Independent post-architecture evidence for non-CI/CD operational intent.
+  predecessor: AR0.1
+sources:
+  - id: velero-backup-reference
+    platform: Velero
+    sourceKind: official-semantic-reference
+    admission: admitted
+    repository: velero-io/velero
+    revision: 7346ec527c99c156bcbbb4a76d83c31b2370f504
+    path: site/content/docs/main/backup-reference.md
+    license:
+      status: verified
+      spdx: Apache-2.0
+      evidence: LICENSE at the same immutable revision.
+    semanticLoad: [backup, namespace-selection, completion-wait]
+  - id: velero-restore-reference
+    platform: Velero
+    sourceKind: official-semantic-reference
+    admission: admitted
+    repository: velero-io/velero
+    revision: 7346ec527c99c156bcbbb4a76d83c31b2370f504
+    path: site/content/docs/main/restore-reference.md
+    license:
+      status: verified
+      spdx: Apache-2.0
+      evidence: LICENSE at the same immutable revision.
+    semanticLoad: [restore, recovery-point, restore-validation]
+schemas:
+  manifest: schemas/operational-domain-corpus.schema.json
+  case: schemas/operational-domain-case.schema.json
+  provenance: schemas/real-world-provenance.schema.json
+  expectedPlan: schemas/real-world-expected-plan.schema.json
+  targetAssessments: schemas/real-world-target-assessments.schema.json
+  evidence: schemas/real-world-evidence.schema.json
+  mutation: schemas/real-world-mutation.schema.json
+casePackages:
+  - cases/DP01-backup
+  - cases/DP02-restore
+counts:
+  sources: 2
+  executableCases: 2
+  mutationCases: 2
+invariants:
+  - C1.0 does not add a domain to the closed C0.1 RealWorldDomain vocabulary.
+  - Upstream operational sources are immutable evidence inputs and never define universal Flow meaning.
+  - BACKUP and RESTORE remain target-neutral canonical capabilities and are exercised through the production intent, validation, AST and planning path.
+  - Every positive operational baseline owns an explicit rejected mutation.
+  - No target support or executable rendering claim is inferred from semantic representability.

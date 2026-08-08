@@ -1,0 +1,19 @@
+kind: FlowOperationalDomainCase
+version: '1.0'
+id: DP02
+title: Restore state from an explicit recovery point and verify the result
+lifecycle: MUTATION_VALIDATED
+category: common
+domain: data-protection
+sourceRef: velero-restore-reference
+source: {workflow: source/reference.txt, provenance: source/provenance.yaml, license: source/LICENSE}
+sourceObservations: source-observations.md
+intent: canonical.intent.yaml
+expected: {executionPlan: expected/execution-plan.json, targetAssessments: expected/target-assessments.yaml}
+evidence: evidence/result.yaml
+mutations:
+  - {id: restored-state-removed, definition: mutations/restored-state-removed/mutation.yaml}
+invariants:
+  - Restore remains explicit RESTORE intent with an authored recovery point.
+  - Restored state is a named value consumed by verification.
+  - Removing the restored-state producer fails before planning.

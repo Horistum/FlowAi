@@ -1,0 +1,12 @@
+version: "1.0"
+checks:
+  - "conformance.c1.0.lifecycle-integrity"
+  - "conformance.c1.0.corpus-integrity"
+  - "conformance.c1.0.scope-consistency"
+  - "conformance.c1.0.domain-coverage"
+  - "conformance.c1.0.capability-coverage"
+  - "operational-domain-corpus.case.dp01"
+  - "operational-domain-corpus.case.dp02"
+  - "operational-domain-corpus.mutations"
+  - "operational-domain-corpus.mutation-polarity"
+  - "conformance.c1.0.c0.1-boundary-preservation"

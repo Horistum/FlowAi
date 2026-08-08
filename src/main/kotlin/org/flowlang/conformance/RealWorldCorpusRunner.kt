@@ -45,9 +45,12 @@ class RealWorldCorpusRunner(
     fun load(): LoadedRealWorldCorpus = loader.load()
 
     fun evaluateAll(corpus: LoadedRealWorldCorpus = load()): List<RealWorldEvaluationResult> =
-        corpus.cases.map(::evaluate)
+        corpus.cases.map { evaluate(it) }
 
-    fun evaluate(case: LoadedRealWorldCase): RealWorldEvaluationResult {
+    fun evaluate(
+        case: LoadedRealWorldCase,
+        evidenceCheckPrefix: String = CASE_CHECK_PREFIX
+    ): RealWorldEvaluationResult {
         val intentFile = requiredFile(case.directory, case.definition.intent, "canonical intent")
         val evaluation = evaluateIntent(
             caseId = case.definition.id,
@@ -63,7 +66,7 @@ class RealWorldCorpusRunner(
             if (case.evidence.expectedDiagnostics.sorted() != evaluation.diagnostics.sorted()) {
                 add("Evidence diagnostics ${case.evidence.expectedDiagnostics.sorted()} != actual ${evaluation.diagnostics.sorted()}.")
             }
-            val requiredCheck = "real-world-corpus.case.${case.definition.id.lowercase()}"
+            val requiredCheck = "$evidenceCheckPrefix.${case.definition.id.lowercase()}"
             if (requiredCheck !in case.evidence.validatedBy) {
                 add("Evidence validatedBy must include '$requiredCheck'.")
             }
@@ -406,6 +409,7 @@ class RealWorldCorpusRunner(
         const val DOMAIN_COVERAGE_CHECK = "real-world-corpus.domain-coverage"
         const val MUTATION_CHECK = "real-world-corpus.mutations"
         const val DOMAIN_MUTATION_CHECK = "real-world-corpus.domain-mutation-polarity"
+        const val CASE_CHECK_PREFIX = "real-world-corpus.case"
         const val MISSING_VALUE_PRODUCER = "REAL_WORLD_MISSING_VALUE_PRODUCER"
         const val EXPECTED_TASK_MISSING = "REAL_WORLD_EXPECTED_TASK_MISSING"
         const val EXPECTED_TASK_MISMATCH = "REAL_WORLD_EXPECTED_TASK_MISMATCH"

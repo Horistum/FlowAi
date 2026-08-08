@@ -1,0 +1,20 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: dp01-backup
+workflows:
+  - name: protect-state
+    kind: BACKUP
+    steps:
+      - id: create-backup
+        capability: BACKUP
+        produces: [backup_artifact]
+        params:
+          subject: application-state
+          destination: durable-backup-store
+      - id: verify-backup
+        capability: VERIFY
+        requires: [create-backup]
+        params:
+          resource: 'ref:backup_artifact'
+          criteria: recovery-artifact-readable
+failure: {notify: false, rollback: false, stopOnError: true}

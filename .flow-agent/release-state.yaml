@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 46
+stateVersion: 47
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,17 +16,20 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 17
-  activeTrack: "architecture-completed"
+  roadmapVersion: 18
+  activeTrack: "operational-domain-adequacy"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
-  primaryStream: "architecture"
+  primaryStream: "conformance"
   completedAdapterItem: "A1.0"
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
   completedConformanceItem: "C0.4"
   completedConformanceItemName: "Adapter Profile Evidence"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
+  nextItem: "C1.0"
+  nextItemName: "Operational Domain Adequacy"
+  nextItemStream: "conformance"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -187,6 +190,6 @@ lastKnownValidation:
     - "C0.2 completion evidence remains external exact-head CI evidence until PR #107 merges; it does not impersonate merged history."
     - "C0.3 Semantic Equivalence Rules is complete with distinct Flow CI #2743 implementation and #2750 completion boundaries."
     - "C0.4 Adapter Profile Evidence is complete with distinct Flow CI #2796 implementation and #2798 completion boundaries."
-    - "The conformance stream remains complete at C0.4."
+    - "C1.0 Operational Domain Adequacy reactivates conformance after the completed AR0.1 boundary while C0.4 remains immutable completed history."
     - "AR0.1 Authority Responsibility Consolidation is complete with distinct Flow CI #2807 implementation and #2809 completion boundaries."
     - "The architecture stream is terminally complete at AR0.1; no successor architecture item is declared."

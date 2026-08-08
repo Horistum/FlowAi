@@ -1,0 +1,20 @@
+intentVersion: '2.0'
+kind: FlowIntentDocument
+name: dp02-restore
+workflows:
+  - name: recover-state
+    kind: RESTORE
+    steps:
+      - id: restore-state
+        capability: RESTORE
+        produces: [restored_state]
+        params:
+          subject: application-state
+          recoveryPoint: nightly-recovery-point
+      - id: verify-restored-state
+        capability: VERIFY
+        requires: [restore-state]
+        params:
+          resource: 'ref:restored_state'
+          criteria: application-state-usable
+failure: {notify: false, rollback: false, stopOnError: true}
