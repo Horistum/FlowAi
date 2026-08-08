@@ -84,7 +84,7 @@ data class ControlRequirement(
     val source: ControlRequirementSource,
     val condition: String? = null,
     val message: String? = null,
-    val scope: ControlRequirementScope = ControlRequirementScope.INTENT
+    val scope: ControlRequirementScope
 ) {
     init {
         require(id.isNotBlank()) { "Control requirement id must not be blank." }
