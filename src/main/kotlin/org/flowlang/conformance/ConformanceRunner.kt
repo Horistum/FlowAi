@@ -15,7 +15,8 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
  * by [SemanticClosureChecks]. Frozen A0 adapter certification runs next. New
  * adapter evolution is composed through a separate post-A0 inventory. Bounded
  * C0.1 corpus evidence follows, C0.2 topology and C0.3 semantic equivalence
- * remain independently inventoried, and C0.4 profile evidence is appended last.
+ * remain independently inventoried, C0.4 profile evidence follows, and C1.0
+ * operational-domain adequacy is appended as a separate post-architecture corpus.
  * Later conformance cannot rewrite earlier authorities or treat implementation
  * output as Core meaning.
  */
@@ -43,10 +44,17 @@ class ConformanceRunner(
             targets,
             projections
         ).checks()
+        val operationalDomainAdequacyChecks = OperationalDomainAdequacyConformanceRunner(
+            rootDir,
+            registry,
+            targets,
+            projections
+        ).checks()
 
         return ConformanceSummary(
             preClosureChecks + closureChecks + adapterChecks + adapterEvolutionChecks +
-                realWorldChecks + topologyMatrixChecks + semanticEquivalenceChecks + adapterProfileEvidenceChecks
+                realWorldChecks + topologyMatrixChecks + semanticEquivalenceChecks + adapterProfileEvidenceChecks +
+                operationalDomainAdequacyChecks
         )
     }
 

@@ -1,0 +1,11 @@
+kind: FlowRealWorldMutation
+version: '0.2'
+id: restored-state-removed
+intent: intent.yaml
+expectedGenerated: false
+expectedOutcome: INVALID_SOURCE_PIPELINE
+expectedDiagnostics: [REAL_WORLD_MISSING_VALUE_PRODUCER]
+tasks: []
+requiredRelations: []
+forbiddenOrdering: []
+requiredFeatures: []

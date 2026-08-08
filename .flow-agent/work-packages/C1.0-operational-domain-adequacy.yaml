@@ -1,0 +1,34 @@
+version: "C1.0"
+name: "Operational Domain Adequacy"
+type: "post-architecture-domain-evidence"
+stream: conformance
+status: active
+objective: "Add independent executable evidence for non-CI/CD operational semantics without reopening the closed C0.1 domain vocabulary or redefining frozen Core meaning."
+activationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2809
+  runId: 31202921728
+  exactHead: "9a355c07052ab72885cbd54beafc2919fe9b710f"
+  mergeCandidate: "6d79960ac580132079a5a2a9cd1428405de8ba6d"
+architecturePurpose: "Move the next validation pressure away from CI/CD-heavy evidence and onto target-neutral operational intent after authority ownership has been consolidated."
+universalInvariant: "A real operational source may falsify frozen Flow semantics, but it cannot define, weaken or silently extend them; representability and implementation support remain separate claims."
+scope:
+  domains: [data-protection]
+  requiredCapabilities: [BACKUP, RESTORE]
+  sourceClass: official-semantic-reference
+  evidenceRoot: "conformance/corpus/operational"
+requiredEvidence:
+  - "C1.0 owns a separate operational corpus; the closed C0.1 RealWorldDomain vocabulary, case inventory and conformance inventory remain unchanged."
+  - "BACKUP and RESTORE each have immutable Apache-2.0 source provenance and an accepted canonical Flow baseline."
+  - "Both baselines execute through the production intent validation, AST and planning path rather than a C1.0-only semantic evaluator."
+  - "Each baseline has a negative mutation that changes observed behavior from REPRESENTABLE to REJECTED."
+  - "No target support, executable rendering or platform-specific semantic claim is inferred from operational representability."
+  - "C1.0 lifecycle activation is exactly the completed AR0.1 Flow CI boundary."
+forbiddenScope:
+  - "No mutation of frozen Core, A0, A1.0, C0.1-C0.4 or recorded AR0.1 lifecycle evidence; the live AR0.1 authority-responsibility catalog must still track any justified new production Authority."
+  - "No addition of data-protection to the C0.1 RealWorldDomain enum or manifest."
+  - "No Velero, Kubernetes, storage-provider or CLI identity in Core semantic contracts."
+  - "No new capability added merely because the external operational source exposes a feature."
+  - "No renderer or target-support promotion from a semantically representable operational case."
+  - "No C1.0 completion claim before a later implementation Flow CI boundary and a distinct completion boundary both pass."

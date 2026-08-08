@@ -1,0 +1,8 @@
+kind: FlowRealWorldEvidence
+version: '0.2'
+caseId: DP01
+status: ACCEPTED
+outcome: SUPPORTED_WITH_BINDING
+expectedDiagnostics: []
+sourceRevision: 7346ec527c99c156bcbbb4a76d83c31b2370f504
+validatedBy: [operational-domain-corpus.case.dp01, operational-domain-corpus.mutations]
