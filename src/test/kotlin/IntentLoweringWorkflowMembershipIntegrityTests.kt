@@ -1,7 +1,9 @@
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.flowlang.cli.Json
 import org.flowlang.generators.manifest.ExecutionPlanMaterializationValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentStep
@@ -33,6 +35,13 @@ class IntentLoweringWorkflowMembershipIntegrityTests {
                 evidence.sourceDigest == membership.sourceDigest &&
                 evidence.targetDigest == membership.expectedTargetDigest
         })
+
+        val schema = Json.mapper.readTree(File("schemas/execution-plan.schema.json"))
+        assertEquals(
+            "2.1",
+            schema.path("\$defs").path("intentLoweringReport")
+                .path("properties").path("contractVersion").path("const").asText()
+        )
     }
 
     @Test
