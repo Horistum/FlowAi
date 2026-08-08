@@ -7,7 +7,8 @@ import org.flowlang.standard.FlowStandardVersions
 class VersionConsistencyTests {
     private val packageVersion = "0.9.5"
     private val publicStandardVersion = "0.8.0"
-    private val semanticContractVersion = "2.0"
+    private val intentAstContractVersion = "2.0"
+    private val executionPlanContractVersion = "2.1"
     private val targetManifestContractVersion = "3.0"
     private val targetRegistryContractVersion = "3.1"
 
@@ -27,18 +28,18 @@ class VersionConsistencyTests {
         assertEquals(packageVersion, FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION)
         assertEquals(publicStandardVersion, FlowStandardVersions.FLOW_STANDARD_VERSION)
 
-        assertEquals(semanticContractVersion, FlowStandardVersions.INTENT_VERSION)
-        assertEquals(semanticContractVersion, FlowStandardVersions.AST_VERSION)
-        assertEquals(semanticContractVersion, FlowStandardVersions.EXECUTION_PLAN_VERSION)
+        assertEquals(intentAstContractVersion, FlowStandardVersions.INTENT_VERSION)
+        assertEquals(intentAstContractVersion, FlowStandardVersions.AST_VERSION)
+        assertEquals(executionPlanContractVersion, FlowStandardVersions.EXECUTION_PLAN_VERSION)
         assertEquals(targetManifestContractVersion, FlowStandardVersions.TARGET_MANIFEST_VERSION)
         assertEquals(targetRegistryContractVersion, FlowStandardVersions.TARGET_REGISTRY_VERSION)
 
         listOf(
             "schemas/intent.schema.json",
             "schemas/ast.schema.json",
-            "schemas/execution-plan.schema.json",
             "schemas/target-semantics-matrix.schema.json"
-        ).forEach { path -> assertFileContains(path, semanticContractVersion) }
+        ).forEach { path -> assertFileContains(path, intentAstContractVersion) }
+        assertFileContains("schemas/execution-plan.schema.json", executionPlanContractVersion)
         assertFileContains("schemas/target-manifest.schema.json", targetManifestContractVersion)
         assertFileContains("schemas/target-registry.schema.json", targetRegistryContractVersion)
 
@@ -47,6 +48,8 @@ class VersionConsistencyTests {
             "docs/V0_9_6_TYPED_BINDING_MIGRATION.md",
             "Target Registry and Target Manifest 2.0 to 3.0 Migration"
         )
+        assertFileContains("docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md", "ExecutionPlan 2.0 to 2.1")
+        assertFileContains("docs/versioning-policy.md", "ExecutionPlan contract | `2.1`")
         assertFileContains("docs/versioning-policy.md", "TargetManifest contract | `3.0`")
         assertFileContains("docs/versioning-policy.md", "TargetRegistry contract | `3.1`")
     }
@@ -56,6 +59,7 @@ class VersionConsistencyTests {
         assertTrue(File("docs/V0_9_5_UNIVERSAL_MODEL_COMPLETION.md").isFile)
         assertTrue(File("docs/V0_9_5_CONTRACT_MIGRATION.md").isFile)
         assertTrue(File("docs/V0_9_6_TYPED_BINDING_MIGRATION.md").isFile)
+        assertTrue(File("docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md").isFile)
         assertTrue(File(".flow-agent/reports/v0.9.5-universal-model-completion.md").isFile)
     }
 
