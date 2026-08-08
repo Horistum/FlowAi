@@ -1,15 +1,16 @@
 name: SI-01 Materialization Patch
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - flow/si-01-control-evidence-scope
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.head_ref == 'flow/si-01-control-evidence-scope' && github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
