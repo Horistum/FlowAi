@@ -60,13 +60,16 @@ class ExecutionPlanControlScopeContractTests {
         assertEquals("2.1", FlowStandardVersions.EXECUTION_PLAN_VERSION)
         assertEquals("2.1", schema.path("properties").path("planVersion").path("const").asText())
 
-        val controlRequirement = schema.path("$defs").path("controlRequirement")
+        val controlRequirement = schema.path("\$defs").path("controlRequirement")
         val required = controlRequirement.path("required").map { it.asText() }.toSet()
         assertTrue("scope" in required)
         assertFalse(controlRequirement.path("additionalProperties").asBoolean())
-        assertEquals("#/$defs/controlRequirementScope", controlRequirement.path("properties").path("scope").path("$ref").asText())
+        assertEquals(
+            "#/\$defs/controlRequirementScope",
+            controlRequirement.path("properties").path("scope").path("\$ref").asText()
+        )
 
-        val variants = schema.path("$defs").path("controlRequirementScope").path("oneOf")
+        val variants = schema.path("\$defs").path("controlRequirementScope").path("oneOf")
         assertEquals(3, variants.size())
         val byKind = variants.associateBy { it.path("properties").path("kind").path("const").asText() }
 
