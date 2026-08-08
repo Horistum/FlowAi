@@ -7,7 +7,7 @@ Flow has separate public version axes with distinct purposes. They are intention
 | Implementation package | `0.9.5` | A new implementation release is published. |
 | Public standard | `0.8.0` | Public semantics, schemas, snapshots and conformance advance together. |
 | Intent contract | `2.0` | The serialized Intent contract changes incompatibly. |
-| AST contract | `2.0` | The serialized AST contract changes incompatibly. |
+| AST contract | `2.1` | The serialized AST contract changes incompatibly. |
 | ExecutionPlan contract | `2.1` | The serialized execution-plan contract changes incompatibly. |
 | TargetManifest contract | `3.0` | The serialized target-manifest contract changes incompatibly. |
 | TargetRegistry contract | `3.1` | The serialized target-registry contract changes incompatibly. |
@@ -20,20 +20,21 @@ The Gradle package identifies the implementation release. The current published 
 
 `FlowStandardVersions.FLOW_STANDARD_VERSION` identifies the public semantic standard and exported standard surface. Flow 0.9.5 advanced the standard from `0.7.6` to `0.8.0` because trigger semantics, target semantics and projection evidence changed publicly.
 
-A contract-only migration may advance one serialized artifact version without changing unrelated semantic contracts or prematurely publishing a new package. Such a migration still requires schemas, migration documentation, exact snapshots and conformance evidence.
+A contract-only migration may advance only the serialized artifact versions whose public shape changes without prematurely publishing a new package or changing unrelated contracts. Such a migration still requires schemas, migration documentation, exact snapshots and conformance evidence.
 
 ## Artifact contract versions
 
 Artifact contracts are independently versioned serialized boundaries. They must not be represented by one misleading global number after their versions diverge.
 
-Intent and AST remain at `2.0`, while ExecutionPlan advances independently to `2.1`:
+Intent remains at `2.0`; AST and ExecutionPlan advance to `2.1` because both serialize canonical control requirements:
 
-- Intent 2.0 introduces top-level triggers and removes schedule-as-step.
-- AST 2.0 introduces trigger nodes.
+- Intent 2.0 introduces top-level triggers and removes schedule-as-step. SI-01 does not add an authored Intent field.
+- AST 2.0 introduced trigger nodes.
+- AST 2.1 adds mandatory target-neutral control requirement scope.
 - ExecutionPlan 2.0 introduced the trigger-aware execution contract.
-- ExecutionPlan 2.1 adds mandatory target-neutral control requirement scope so security evidence remains bound to the intent operation or plan node it protects.
+- ExecutionPlan 2.1 preserves canonical control scope through planning and adds plan-node scope for planning-owned obligations.
 
-The ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`.
+The AST and ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`.
 
 Target contracts advance separately:
 
