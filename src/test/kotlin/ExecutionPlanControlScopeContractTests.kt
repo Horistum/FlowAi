@@ -1,3 +1,4 @@
+import com.fasterxml.jackson.databind.JsonMappingException
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -51,6 +52,22 @@ class ExecutionPlanControlScopeContractTests {
         }
         assertFailsWith<IllegalArgumentException> {
             ControlRequirementScope(ControlRequirementScopeKind.PLAN_NODE, workflow = "migration", subjectId = "task")
+        }
+    }
+
+    @Test
+    fun missingScopeCannotSilentlyDeserializeAsIntentScope() {
+        val legacyRequirement = """
+            {
+              "id": "control.backup.database-migrate",
+              "kind": "BACKUP",
+              "subject": "DATABASE_MIGRATE",
+              "source": "CANONICAL_CAPABILITY"
+            }
+        """.trimIndent()
+
+        assertFailsWith<JsonMappingException> {
+            Json.mapper.readValue(legacyRequirement, ControlRequirement::class.java)
         }
     }
 
