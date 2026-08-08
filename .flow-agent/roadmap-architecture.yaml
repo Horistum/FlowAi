@@ -1,7 +1,7 @@
 project: Flow Architecture
 stream: architecture
-roadmapVersion: 1
-status: active
+roadmapVersion: 2
+status: completed
 
 purpose: "Own bounded cross-stream architecture maintenance after Core, adapter and conformance contracts have been frozen by their respective streams."
 
@@ -13,17 +13,17 @@ rules:
   - "Every architecture transition must preserve exact-head and synthetic merge-candidate validation."
 
 currentDecision:
-  completedItem: ""
-  completedItemName: ""
-  nextItem: "AR0.1"
-  nextItemName: "Authority Responsibility Consolidation"
-  decisionBasis: "Flow CI #2798, run 31166600475, passed the distinct C0.4 completion boundary on exact head a3f0a062b13f4f167fb9269d166b31dcf73e1ed1 and synthetic merge candidate 646a2517784a82f8799bc8d4a74fa4f592f966ac. All declared conformance work through C0.4 is complete and AR0.1 is activated without changing frozen stream contracts."
+  completedItem: "AR0.1"
+  completedItemName: "Authority Responsibility Consolidation"
+  nextItem: ""
+  nextItemName: ""
+  decisionBasis: "Flow CI #2809, run 31202921728, passed the distinct AR0.1 completion boundary after implementation validation #2807. Exact head 9a355c07052ab72885cbd54beafc2919fe9b710f and synthetic merge candidate 6d79960ac580132079a5a2a9cd1428405de8ba6d both passed compile, test and conformance. The architecture stream has no declared successor item and therefore closes terminally at AR0.1."
 
 items:
   - version: "AR0.1"
     name: "Authority Responsibility Consolidation"
     type: "cross-stream-architecture"
-    status: next
+    status: completed
     purpose: "Reduce authority ceremony without collapsing independent semantic, adapter or conformance invariants."
     dependsOnConformance: "C0.4"
     architecturalInvariant: "Every production authority has one explicit, non-overlapping invariant or orchestration responsibility, and dependency direction remains unchanged."

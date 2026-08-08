@@ -11,6 +11,7 @@ enum class RoadmapTransitionPhase {
     C0_3_ACTIVE,
     C0_4_ACTIVE,
     AR0_1_ACTIVE,
+    ARCHITECTURE_COMPLETE,
     INVALID
 }
 
@@ -41,10 +42,10 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         val architectureRoadmap = optionalYaml(ARCHITECTURE_ROADMAP)
         val ar01 = optionalYaml(AR01_WORK_PACKAGE)
 
-        val phase = determinePhase(roadmap, correction, a10, c02, c03, c04, architectureRoadmap)
+        val phase = determinePhase(roadmap, correction, a10, c02, c03, c04, architectureRoadmap, ar01)
         val errors = buildList {
             if (phase == RoadmapTransitionPhase.INVALID) {
-                add("Roadmap transition must be C0_1_1_ACTIVE, A1_0_ACTIVE, C0_2_ACTIVE, C0_3_ACTIVE, C0_4_ACTIVE or AR0_1_ACTIVE.")
+                add("Roadmap transition must be C0_1_1_ACTIVE, A1_0_ACTIVE, C0_2_ACTIVE, C0_3_ACTIVE, C0_4_ACTIVE, AR0_1_ACTIVE or ARCHITECTURE_COMPLETE.")
             }
             requireRetainedClosure(roadmap, releaseState, phase, this)
             adapterSequenceCouplingErrors().forEach(::add)
@@ -117,6 +118,20 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                     ar01,
                     this
                 )
+                RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> validateArchitectureCompletePhase(
+                    roadmap,
+                    releaseState,
+                    adapterRoadmap,
+                    conformanceRoadmap,
+                    architectureRoadmap,
+                    correction,
+                    a10,
+                    c02,
+                    c03,
+                    c04,
+                    ar01,
+                    this
+                )
                 RoadmapTransitionPhase.INVALID -> Unit
             }
         }
@@ -135,7 +150,8 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         c02: Map<String, Any?>,
         c03: Map<String, Any?>,
         c04: Map<String, Any?>,
-        architectureRoadmap: Map<String, Any?>
+        architectureRoadmap: Map<String, Any?>,
+        ar01: Map<String, Any?>
     ): RoadmapTransitionPhase {
         val correctionState = roadmap.string("currentDecision", "conformanceCorrectionState")
         val activeCorrection = roadmap.string("currentDecision", "activeConformanceCorrectionWorkPackage")
@@ -165,13 +181,25 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                 c02.string("status") == "complete" &&
                 c03.string("status") == "complete" &&
                 c04.string("status") == "complete" &&
+                ar01.string("status") == "complete" &&
+                architectureRoadmap.string("status") == "completed" &&
+                architectureRoadmap.itemStatus(AR01_ITEM) == "completed" -> RoadmapTransitionPhase.ARCHITECTURE_COMPLETE
+            correctionState == "complete" &&
+                activeCorrection.isBlank() &&
+                correction.string("status") == "complete" &&
+                a10.string("status") == "complete" &&
+                c02.string("status") == "complete" &&
+                c03.string("status") == "complete" &&
+                c04.string("status") == "complete" &&
                 architectureRoadmap.itemStatus(AR01_ITEM) == "next" -> RoadmapTransitionPhase.AR0_1_ACTIVE
             correctionState == "complete" &&
                 activeCorrection.isBlank() &&
                 correction.string("status") == "complete" &&
                 a10.string("status") == "complete" &&
                 c02.string("status") == "complete" &&
-                c03.string("status") == "complete" -> RoadmapTransitionPhase.C0_4_ACTIVE
+                c03.string("status") == "complete" &&
+                c04.string("status") in setOf("", "active") &&
+                architectureRoadmap.itemStatus(AR01_ITEM).isBlank() -> RoadmapTransitionPhase.C0_4_ACTIVE
             else -> RoadmapTransitionPhase.INVALID
         }
     }
@@ -199,7 +227,8 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.C0_2_ACTIVE -> "next"
             RoadmapTransitionPhase.C0_3_ACTIVE,
             RoadmapTransitionPhase.C0_4_ACTIVE,
-            RoadmapTransitionPhase.AR0_1_ACTIVE -> "completed"
+            RoadmapTransitionPhase.AR0_1_ACTIVE,
+            RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> "completed"
             RoadmapTransitionPhase.INVALID -> null
         }
         val expectedC03 = when (phase) {
@@ -208,12 +237,14 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.C0_2_ACTIVE -> "planned"
             RoadmapTransitionPhase.C0_3_ACTIVE -> "next"
             RoadmapTransitionPhase.C0_4_ACTIVE,
-            RoadmapTransitionPhase.AR0_1_ACTIVE -> "completed"
+            RoadmapTransitionPhase.AR0_1_ACTIVE,
+            RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> "completed"
             RoadmapTransitionPhase.INVALID -> null
         }
         val expectedC04 = when (phase) {
             RoadmapTransitionPhase.C0_4_ACTIVE -> "next"
-            RoadmapTransitionPhase.AR0_1_ACTIVE -> "completed"
+            RoadmapTransitionPhase.AR0_1_ACTIVE,
+            RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> "completed"
             RoadmapTransitionPhase.C0_1_1_ACTIVE,
             RoadmapTransitionPhase.A1_0_ACTIVE,
             RoadmapTransitionPhase.C0_2_ACTIVE,
@@ -409,8 +440,99 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             errors += "AR0.1 activation evidence must equal the recorded C0.4 completion boundary."
         }
 
+        val implementation = WorkflowBoundaryEvidence.fromMap(ar01.map("implementationEvidence"))
+        val completion = WorkflowBoundaryEvidence.fromMap(ar01.map("completionBoundary"))
+        when {
+            !implementation.present && !completion.present -> Unit
+            implementation.present && !completion.present -> if (!implementation.follows(activation)) {
+                errors += "Active AR0.1 implementation evidence must be a later distinct Flow CI boundary than activation."
+            }
+            else -> errors += "Active AR0.1 must not retain completion evidence; completion is valid only in the terminal architecture transition."
+        }
+
         val catalog = AuthorityResponsibilityCatalog(rootDir).analyze()
         catalog.errors.forEach { error -> errors += "AR0.1 responsibility catalog: $error" }
+
+        requireDistinctEvidence(correction, "Completed correction", errors)
+        requireDistinctEvidence(a10, "Completed A1.0", errors)
+        requireDistinctEvidence(c02, "Completed C0.2", errors)
+        requireDistinctEvidence(c03, "Completed C0.3", errors)
+        requireDistinctEvidence(c04, "Completed C0.4", errors)
+    }
+
+    private fun validateArchitectureCompletePhase(
+        roadmap: Map<String, Any?>,
+        releaseState: Map<String, Any?>,
+        adapterRoadmap: Map<String, Any?>,
+        conformanceRoadmap: Map<String, Any?>,
+        architectureRoadmap: Map<String, Any?>,
+        correction: Map<String, Any?>,
+        a10: Map<String, Any?>,
+        c02: Map<String, Any?>,
+        c03: Map<String, Any?>,
+        c04: Map<String, Any?>,
+        ar01: Map<String, Any?>,
+        errors: MutableList<String>
+    ) {
+        requireClosedAdapterStream(adapterRoadmap, errors)
+        if (conformanceRoadmap.string("status") != "completed" ||
+            conformanceRoadmap.itemStatus("C0.4") != "completed" ||
+            conformanceRoadmap.string("currentDecision", "completedItem") != "C0.4" ||
+            conformanceRoadmap.string("currentDecision", "nextItem").isNotBlank()
+        ) errors += "Terminal architecture state must retain the conformance roadmap closed at C0.4."
+
+        if (roadmap.string("primaryRoadmapStream") != "architecture" ||
+            roadmap.string("currentDecision", "completedArchitectureItem") != AR01_ITEM ||
+            roadmap.string("currentDecision", "completedArchitectureItemName") != AR01_NAME ||
+            roadmap.string("currentDecision", "nextItem").isNotBlank() ||
+            roadmap.string("currentDecision", "nextItemName").isNotBlank() ||
+            roadmap.string("currentDecision", "nextItemStream").isNotBlank()
+        ) errors += "Terminal roadmap index must retain completed AR0.1 and no fabricated successor focus."
+
+        val backlogItem = roadmap.mapList("architectureDebtBacklog")
+            .firstOrNull { it.string("id") == AR01_ITEM }
+        if (backlogItem?.string("status") != "completed") {
+            errors += "Global architecture debt backlog must mark AR0.1 completed in the terminal architecture state."
+        }
+
+        if (releaseState.string("roadmapState", "primaryStream") != "architecture" ||
+            releaseState.string("roadmapState", "completedArchitectureItem") != AR01_ITEM ||
+            releaseState.string("roadmapState", "completedArchitectureItemName") != AR01_NAME ||
+            releaseState.string("roadmapState", "nextItem").isNotBlank() ||
+            releaseState.string("roadmapState", "nextItemName").isNotBlank() ||
+            releaseState.string("roadmapState", "nextItemStream").isNotBlank()
+        ) errors += "Terminal release state must retain completed AR0.1 and no successor focus."
+
+        if (architectureRoadmap.string("stream") != "architecture" ||
+            architectureRoadmap.string("status") != "completed" ||
+            architectureRoadmap.itemStatus(AR01_ITEM) != "completed" ||
+            architectureRoadmap.string("currentDecision", "completedItem") != AR01_ITEM ||
+            architectureRoadmap.string("currentDecision", "completedItemName") != AR01_NAME ||
+            architectureRoadmap.string("currentDecision", "nextItem").isNotBlank() ||
+            architectureRoadmap.string("currentDecision", "nextItemName").isNotBlank()
+        ) errors += "Architecture roadmap must close at completed AR0.1 with no next item."
+
+        if (ar01.string("version") != AR01_ITEM ||
+            ar01.string("stream") != "architecture" ||
+            ar01.string("status") != "complete"
+        ) errors += "Terminal architecture state requires a completed AR0.1 work package."
+
+        val activation = WorkflowBoundaryEvidence.fromMap(ar01.map("activationEvidence"))
+        val c04Completion = WorkflowBoundaryEvidence.fromMap(c04.map("completionBoundary"))
+        if (!activation.sameBoundary(c04Completion)) {
+            errors += "Completed AR0.1 activation evidence must remain equal to the recorded C0.4 completion boundary."
+        }
+        val implementation = WorkflowBoundaryEvidence.fromMap(ar01.map("implementationEvidence"))
+        val completion = WorkflowBoundaryEvidence.fromMap(ar01.map("completionBoundary"))
+        if (!implementation.follows(activation)) {
+            errors += "Completed AR0.1 implementation evidence must be a later distinct Flow CI boundary than activation."
+        }
+        if (!completion.follows(implementation)) {
+            errors += "Completed AR0.1 completion evidence must be a later distinct Flow CI boundary than implementation."
+        }
+
+        val catalog = AuthorityResponsibilityCatalog(rootDir).analyze()
+        catalog.errors.forEach { error -> errors += "Completed AR0.1 responsibility catalog: $error" }
 
         requireDistinctEvidence(correction, "Completed correction", errors)
         requireDistinctEvidence(a10, "Completed A1.0", errors)
@@ -491,7 +613,8 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.C0_2_ACTIVE,
             RoadmapTransitionPhase.C0_3_ACTIVE,
             RoadmapTransitionPhase.C0_4_ACTIVE,
-            RoadmapTransitionPhase.AR0_1_ACTIVE -> "A1.0"
+            RoadmapTransitionPhase.AR0_1_ACTIVE,
+            RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> "A1.0"
             RoadmapTransitionPhase.C0_1_1_ACTIVE,
             RoadmapTransitionPhase.A1_0_ACTIVE -> "A0.7"
             RoadmapTransitionPhase.INVALID -> null
@@ -529,10 +652,11 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         if (phase in setOf(
                 RoadmapTransitionPhase.C0_3_ACTIVE,
                 RoadmapTransitionPhase.C0_4_ACTIVE,
-                RoadmapTransitionPhase.AR0_1_ACTIVE
+                RoadmapTransitionPhase.AR0_1_ACTIVE,
+                RoadmapTransitionPhase.ARCHITECTURE_COMPLETE
             )
         ) add(C03_WORK_PACKAGE)
-        if (phase == RoadmapTransitionPhase.AR0_1_ACTIVE) {
+        if (phase in setOf(RoadmapTransitionPhase.AR0_1_ACTIVE, RoadmapTransitionPhase.ARCHITECTURE_COMPLETE)) {
             add(C04_WORK_PACKAGE)
             add(ARCHITECTURE_ROADMAP)
             add(AR01_WORK_PACKAGE)

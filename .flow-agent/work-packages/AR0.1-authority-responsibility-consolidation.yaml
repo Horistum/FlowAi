@@ -2,7 +2,7 @@ version: "AR0.1"
 name: "Authority Responsibility Consolidation"
 type: "cross-stream-architecture"
 stream: architecture
-status: active
+status: complete
 objective: "Make authority ownership explicit and remove duplicated cross-cutting mechanism without collapsing independent semantic, adapter, target-edge, lifecycle or conformance policy owners."
 dependsOnConformance: "C0.4"
 activationEvidence:
@@ -19,7 +19,13 @@ implementationEvidence:
   runId: 31196276487
   exactHead: "5ed97978e8a29e719265af56b95e7c12050e1531"
   mergeCandidate: "99e07dbce4ad3ad20343d067eb1b559b9210ef30"
-completionBoundary: {}
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2809
+  runId: 31202921728
+  exactHead: "9a355c07052ab72885cbd54beafc2919fe9b710f"
+  mergeCandidate: "6d79960ac580132079a5a2a9cd1428405de8ba6d"
 responsibilityInventory:
   catalog: "standard/architecture/authority-responsibilities.yaml"
   inventoryRule: "Every production Kotlin type whose name ends in Authority must have exactly one catalog entry with its definition path, role, invariant, inputs, outputs and exact production caller files."

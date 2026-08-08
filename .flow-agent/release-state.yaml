@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 45
+stateVersion: 46
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,8 +16,8 @@ versionBoundary:
   artifactContractVersion: "2.0"
 
 roadmapState:
-  roadmapVersion: 16
-  activeTrack: "architecture-authority-responsibility-consolidation"
+  roadmapVersion: 17
+  activeTrack: "architecture-completed"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "architecture"
@@ -25,8 +25,8 @@ roadmapState:
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
   completedConformanceItem: "C0.4"
   completedConformanceItemName: "Adapter Profile Evidence"
-  nextItem: "AR0.1"
-  nextItemName: "Authority Responsibility Consolidation"
+  completedArchitectureItem: "AR0.1"
+  completedArchitectureItemName: "Authority Responsibility Consolidation"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -164,17 +164,17 @@ qualityPrinciples:
   - "C0.3 semantic equivalence compares explicit observable results and continuity, never target syntax, job layout or action identity."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-c0.4-completion-boundary"
-  flowAgentStructure: "passed-on-c0.4-completion-boundary"
-  flowAgentContextGeneration: "passed-on-c0.4-completion-boundary"
-  cleanTest: "passed-on-c0.4-completion-boundary"
-  conformance: "passed-on-c0.4-completion-boundary"
-  executableReferenceEvidence: "passed-on-c0.4-completion-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-c0.4-completion-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-c0.4-completion-boundary"
-  boundedDomainCorpusEvidence: "passed-on-c0.4-completion-boundary"
-  roadmapTransitionEvidence: "passed-on-c0.4-completion-boundary"
-  validationSource: "Flow CI #2798, run 31166600475, passed exact C0.4 completion head a3f0a062b13f4f167fb9269d166b31dcf73e1ed1 and synthetic merge candidate 646a2517784a82f8799bc8d4a74fa4f592f966ac."
+  flowAgentTooling: "passed-on-ar0.1-completion-boundary"
+  flowAgentStructure: "passed-on-ar0.1-completion-boundary"
+  flowAgentContextGeneration: "passed-on-ar0.1-completion-boundary"
+  cleanTest: "passed-on-ar0.1-completion-boundary"
+  conformance: "passed-on-ar0.1-completion-boundary"
+  executableReferenceEvidence: "passed-on-ar0.1-completion-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-ar0.1-completion-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-ar0.1-completion-boundary"
+  boundedDomainCorpusEvidence: "passed-on-ar0.1-completion-boundary"
+  roadmapTransitionEvidence: "passed-on-ar0.1-completion-boundary"
+  validationSource: "Flow CI #2809, run 31202921728, passed exact AR0.1 completion head 9a355c07052ab72885cbd54beafc2919fe9b710f and synthetic merge candidate 6d79960ac580132079a5a2a9cd1428405de8ba6d after distinct implementation validation Flow CI #2807."
   notes:
     - "Package, public standard and artifact contract versions remain unchanged."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
@@ -187,4 +187,6 @@ lastKnownValidation:
     - "C0.2 completion evidence remains external exact-head CI evidence until PR #107 merges; it does not impersonate merged history."
     - "C0.3 Semantic Equivalence Rules is complete with distinct Flow CI #2743 implementation and #2750 completion boundaries."
     - "C0.4 Adapter Profile Evidence is complete with distinct Flow CI #2796 implementation and #2798 completion boundaries."
-    - "The conformance stream is complete at C0.4; AR0.1 Authority Responsibility Consolidation is the active cross-stream architecture item."
+    - "The conformance stream remains complete at C0.4."
+    - "AR0.1 Authority Responsibility Consolidation is complete with distinct Flow CI #2807 implementation and #2809 completion boundaries."
+    - "The architecture stream is terminally complete at AR0.1; no successor architecture item is declared."
