@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
 
+# Temporary branch-only connector workaround. Removed immediately after the guarded patch lands.
 jobs:
   patch:
     if: github.actor != 'github-actions[bot]'
