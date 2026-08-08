@@ -84,9 +84,9 @@ internal class ClosureBlockingIntegrityChecks(
                 .status == AuthoredControlEvidenceTextStatus.CONFIRMED
         ) { "A concrete backup reference was not recognized as authored evidence." }
 
-        val conflicting = CanonicalControlRequirementAuthority.assess(
+        val scoped = CanonicalControlRequirementAuthority.assess(
             IntentDocument(
-                name = "conflicting-control-evidence",
+                name = "operation-scoped-control-evidence",
                 workflows = listOf(
                     IntentWorkflow(
                         name = "migration",
@@ -107,14 +107,28 @@ internal class ClosureBlockingIntegrityChecks(
                 )
             )
         )
-        require(conflicting.decision.status == ControlDecisionStatus.BLOCKED) {
-            "Contradictory authored control evidence was allowed."
+        require(scoped.decision.status == ControlDecisionStatus.BLOCKED) {
+            "A migration with explicit negative backup evidence was allowed."
         }
-        require(conflicting.evidence.single().status == ControlEvidenceStatus.UNSATISFIED) {
-            "Contradictory authored control evidence was not represented as blocking evidence."
+        require(scoped.requirements.size == 2 && scoped.evidence.size == 2) {
+            "Independent protected migrations were collapsed into one global control obligation."
         }
-        require(conflicting.evidence.single().detail.orEmpty().contains("Conflicting authored evidence")) {
-            "Contradictory authored control evidence lacks an explicit conflict diagnostic."
+        val requirementsByStep = scoped.requirements.associateBy { it.scope.subjectId }
+        val evidenceByRequirement = scoped.evidence.associateBy { it.requirementId }
+        val confirmedRequirement = requireNotNull(requirementsByStep["migrate-confirmed"]) {
+            "Confirmed migration lost its operation-scoped control requirement."
+        }
+        val deniedRequirement = requireNotNull(requirementsByStep["migrate-denied"]) {
+            "Denied migration lost its operation-scoped control requirement."
+        }
+        require(confirmedRequirement.id != deniedRequirement.id) {
+            "Distinct protected operations received the same control requirement identity."
+        }
+        require(evidenceByRequirement.getValue(confirmedRequirement.id).status == ControlEvidenceStatus.SATISFIED) {
+            "Concrete backup evidence did not remain bound to its protected migration."
+        }
+        require(evidenceByRequirement.getValue(deniedRequirement.id).status == ControlEvidenceStatus.UNSATISFIED) {
+            "Explicit backup denial did not remain bound to its protected migration."
         }
     }
 
