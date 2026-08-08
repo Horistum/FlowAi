@@ -123,19 +123,29 @@ class ClosureBlockingSafetyIntegrityTests {
     }
 
     @Test
-    fun contradictoryBackupEvidenceBlocksRegardlessOfStepOrder() {
-        val evidenceOrders = listOf(
-            arrayOf("s3://recovery/db-before-migration-42", "not available"),
-            arrayOf("not available", "s3://recovery/db-before-migration-42")
+    fun scopedBackupStepCannotOverrideExplicitDenialOnProtectedMigration() {
+        val intent = IntentDocument(
+            name = "migration",
+            workflows = listOf(IntentWorkflow(
+                name = "migration",
+                kind = IntentWorkflowKind.CUSTOM,
+                steps = listOf(
+                    IntentStep(id = "backup", capability = StandardCapability.BACKUP),
+                    IntentStep(
+                        id = "migrate",
+                        capability = StandardCapability.DATABASE_MIGRATE,
+                        requires = listOf("backup"),
+                        params = mapOf("backup" to IntentString("not available"))
+                    )
+                )
+            ))
         )
 
-        evidenceOrders.forEach { values ->
-            val assessment = CanonicalControlRequirementAuthority.assess(migrationIntent(*values))
+        val assessment = CanonicalControlRequirementAuthority.assess(intent)
 
-            assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status, values.joinToString())
-            assertEquals(ControlEvidenceStatus.UNSATISFIED, assessment.evidence.single().status)
-            assertTrue(assessment.evidence.single().detail.orEmpty().contains("Conflicting authored evidence"))
-        }
+        assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status)
+        assertEquals(ControlEvidenceStatus.UNSATISFIED, assessment.evidence.single().status)
+        assertTrue(assessment.evidence.single().detail.orEmpty().contains("Conflicting scoped backup evidence"))
     }
 
     @Test
