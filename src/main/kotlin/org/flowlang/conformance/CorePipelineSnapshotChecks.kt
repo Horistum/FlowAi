@@ -181,10 +181,12 @@ internal class CorePipelineSnapshotChecks(
                 }
             }
 
-            val canonicalPlan = File(committed, "execution-plan.json").readText()
-            require(!canonicalPlan.contains("\"module\" : \"shell\""))
-            require(!canonicalPlan.contains("\"action\" : \"run\""))
-            require(canonicalPlan.contains("\"module\" : \"standard\""))
+            val canonicalPlan = Json.mapper.readTree(File(committed, "execution-plan.json"))
+            val canonicalModules = canonicalPlan.findValuesAsText("module")
+            val canonicalActions = canonicalPlan.findValuesAsText("action")
+            require("shell" !in canonicalModules) { "Canonical reference plan must not contain a shell module." }
+            require("run" !in canonicalActions) { "Canonical reference plan must not contain a shell-style run action." }
+            require("standard" in canonicalModules) { "Canonical reference plan must retain target-neutral standard tasks." }
             val readme = File(committed, "README.md").readText()
             require(readme.contains("0.9.5"))
             require(readme.contains("0.8.0"))
