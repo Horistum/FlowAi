@@ -156,7 +156,13 @@ object CanonicalControlRequirementAuthority {
         graph: IntentControlGraph
     ): ControlEvidence = when (requirement.kind) {
         ControlRequirementKind.APPROVAL -> approvalEvidence(requirement, graph, allowIntentWideApproval = true)
-        ControlRequirementKind.DRY_RUN -> booleanParameterEvidence(requirement, graph, "dryRun", acceptedModes = setOf("dry-run"))
+        ControlRequirementKind.DRY_RUN -> booleanParameterEvidence(
+            requirement = requirement,
+            graph = graph,
+            name = "dryRun",
+            acceptedModes = setOf("dry-run"),
+            allowIntentWideParameter = true
+        )
         ControlRequirementKind.BACKUP -> backupEvidence(requirement, graph)
         ControlRequirementKind.ROLLBACK_PLAN -> rollbackEvidence(requirement, intent, graph)
         ControlRequirementKind.CHANGE_TICKET -> changeTicketEvidence(requirement, graph)
@@ -215,10 +221,20 @@ object CanonicalControlRequirementAuthority {
         requirement: ControlRequirement,
         graph: IntentControlGraph,
         name: String,
-        acceptedModes: Set<String> = emptySet()
+        acceptedModes: Set<String> = emptySet(),
+        allowIntentWideParameter: Boolean = false
     ): ControlEvidence {
         var explicitFalse = false
-        graph.parameterSteps(requirement).forEach { scoped ->
+        val candidateSteps = if (
+            allowIntentWideParameter &&
+            requirement.scope.kind == ControlRequirementScopeKind.INTENT &&
+            requirement.source == ControlRequirementSource.INTENT_POLICY
+        ) {
+            graph.steps()
+        } else {
+            graph.parameterSteps(requirement)
+        }
+        candidateSteps.forEach { scoped ->
             val step = scoped.step
             when (step.params[name].asBooleanLike()) {
                 true -> return ControlEvidence(requirement.id, ControlEvidenceStatus.SATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "${step.id}.$name=true")
@@ -231,8 +247,8 @@ object CanonicalControlRequirementAuthority {
             }
         }
         return if (explicitFalse) {
-            ControlEvidence(requirement.id, ControlEvidenceStatus.UNSATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "$name=false in the protected scope")
-        } else missing(requirement, "No authored $name evidence was found in the protected scope.")
+            ControlEvidence(requirement.id, ControlEvidenceStatus.UNSATISFIED, ControlEvidenceSource.AUTHORED_PARAMETER, "$name=false in the required intent scope")
+        } else missing(requirement, "No authored $name evidence was found in the required scope.")
     }
 
     private fun backupEvidence(requirement: ControlRequirement, graph: IntentControlGraph): ControlEvidence {
@@ -460,6 +476,8 @@ object CanonicalControlRequirementAuthority {
         val stepsByWorkflow: Map<String, Map<String, IntentStep>>,
         val allSteps: List<ScopedIntentStep>
     ) {
+        fun steps(): List<ScopedIntentStep> = allSteps
+
         fun parameterSteps(requirement: ControlRequirement): List<ScopedIntentStep> {
             protectedStep(requirement)?.let { return listOf(it) }
 
