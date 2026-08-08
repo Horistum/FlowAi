@@ -240,7 +240,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                 ar01.string("status") == "complete" &&
                 architectureRoadmap.string("status") == "completed" &&
                 architectureRoadmap.itemStatus(AR01_ITEM) == "completed" &&
-                c10.string("status").isBlank() -> RoadmapTransitionPhase.ARCHITECTURE_COMPLETE
+                !File(rootDir, C10_WORK_PACKAGE).isFile -> RoadmapTransitionPhase.ARCHITECTURE_COMPLETE
             correctionState == "complete" &&
                 activeCorrection.isBlank() &&
                 correction.string("status") == "complete" &&
@@ -643,6 +643,12 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             roadmap.string("currentDecision", "nextItemName").isNotBlank() ||
             roadmap.string("currentDecision", "nextItemStream").isNotBlank()
         ) errors += "Completed C1.0 roadmap state must retain C1.0 and AR0.1 as completed identities with no successor focus."
+
+        val backlogItem = roadmap.mapList("architectureDebtBacklog")
+            .firstOrNull { it.string("id") == AR01_ITEM }
+        if (backlogItem?.string("status") != "completed") {
+            errors += "Completed C1.0 must retain AR0.1 as completed in the global architecture debt backlog."
+        }
 
         if (releaseState.string("roadmapState", "primaryStream") != "conformance" ||
             releaseState.string("roadmapState", "completedConformanceItem") != C10_ITEM ||
