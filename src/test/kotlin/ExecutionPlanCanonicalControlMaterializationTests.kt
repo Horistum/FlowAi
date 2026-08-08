@@ -85,6 +85,29 @@ class ExecutionPlanCanonicalControlMaterializationTests {
         )
     }
 
+    @Test
+    fun sourceLessCanonicalOperationCannotFallBackToIntentWideAuthorization() {
+        val capabilityOnly = CanonicalControlRequirementAuthority
+            .requirementsForCapabilities(listOf(StandardCapability.DATABASE_MIGRATE))
+            .single()
+        assertEquals(ControlRequirementScopeKind.INTENT, capabilityOnly.scope.kind)
+
+        val sourceLess = assessedPlan(
+            migrationPlan().copy(sourceIntent = null),
+            capabilityOnly
+        )
+
+        val issues = ExecutionPlanMaterializationValidator.validate(sourceLess, ModuleRegistry())
+
+        assertTrue(
+            issues.any { issue ->
+                issue.code == "planning.control.assessment.invalid" &&
+                    issue.message.contains("cannot authorize evidence without an authored operation scope")
+            },
+            issues.joinToString { "${it.code}:${it.message}" }
+        )
+    }
+
     private fun canonicalMigrationRequirement(): ControlRequirement =
         CanonicalControlRequirementAuthority.requirementsFor(
             IntentDocument(
