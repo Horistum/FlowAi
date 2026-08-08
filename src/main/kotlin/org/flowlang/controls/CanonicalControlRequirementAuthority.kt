@@ -184,7 +184,7 @@ object CanonicalControlRequirementAuthority {
             requirement.scope.kind == ControlRequirementScopeKind.INTENT &&
             requirement.source == ControlRequirementSource.INTENT_POLICY
         ) {
-            graph.controlSteps(StandardCapability.APPROVE)
+            graph.intentControlSteps(StandardCapability.APPROVE)
         } else {
             graph.controlStepsProtecting(requirement, StandardCapability.APPROVE)
         }
@@ -209,7 +209,7 @@ object CanonicalControlRequirementAuthority {
                 status = ControlEvidenceStatus.SATISFIED,
                 source = ControlEvidenceSource.AUTHORED_STEP,
                 detail = if (requirement.scope.kind == ControlRequirementScopeKind.INTENT) {
-                    "Explicit intent-level approval step(s): ${approvals.map { it.step.id }.sorted().joinToString()}"
+                    "Intent-level approval predecessor(s): ${approvals.map { it.step.id }.sorted().joinToString()}"
                 } else {
                     "Reachable scoped approval step(s): ${approvals.map { it.step.id }.sorted().joinToString()}"
                 }
@@ -488,6 +488,18 @@ object CanonicalControlRequirementAuthority {
 
         fun controlSteps(capability: StandardCapability): List<ScopedIntentStep> =
             allSteps.filter { it.step.capability == capability }
+
+        fun intentControlSteps(capability: StandardCapability): List<ScopedIntentStep> {
+            val controls = controlSteps(capability)
+            val operations = nonControlOperations()
+            if (operations.isEmpty()) return controls
+            return controls.filter { control ->
+                operations.any { operation ->
+                    control.workflow == operation.workflow &&
+                        control.step.id in ancestorsOf(operation.workflow, operation.step.id)
+                }
+            }
+        }
 
         fun controlStepsProtecting(
             requirement: ControlRequirement,
