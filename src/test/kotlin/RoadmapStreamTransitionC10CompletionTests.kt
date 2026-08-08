@@ -35,10 +35,10 @@ class RoadmapStreamTransitionC10CompletionTests {
         val root = terminalFixture()
         val roadmap = File(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX)
         roadmap.writeText(
-            roadmap.readText().replace(
-                "completedConformanceItemName: \"Operational Domain Adequacy\"",
-                "completedConformanceItemName: \"Operational Domain Adequacy\"\n  nextItem: \"C1.1\"\n  nextItemName: \"Fabricated successor\"\n  nextItemStream: conformance"
-            )
+            roadmap.readText()
+                .replace("              nextItem: \"\"", "              nextItem: \"C1.1\"", limit = 1)
+                .replace("              nextItemName: \"\"", "              nextItemName: \"Fabricated successor\"", limit = 1)
+                .replace("              nextItemStream: \"\"", "              nextItemStream: conformance", limit = 1)
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
