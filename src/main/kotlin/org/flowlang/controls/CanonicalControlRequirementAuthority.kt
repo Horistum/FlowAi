@@ -155,7 +155,7 @@ object CanonicalControlRequirementAuthority {
         intent: IntentDocument,
         graph: IntentControlGraph
     ): ControlEvidence = when (requirement.kind) {
-        ControlRequirementKind.APPROVAL -> approvalEvidence(requirement, graph)
+        ControlRequirementKind.APPROVAL -> approvalEvidence(requirement, graph, allowIntentWideApproval = true)
         ControlRequirementKind.DRY_RUN -> booleanParameterEvidence(requirement, graph, "dryRun", acceptedModes = setOf("dry-run"))
         ControlRequirementKind.BACKUP -> backupEvidence(requirement, graph)
         ControlRequirementKind.ROLLBACK_PLAN -> rollbackEvidence(requirement, intent, graph)
@@ -170,9 +170,18 @@ object CanonicalControlRequirementAuthority {
 
     private fun approvalEvidence(
         requirement: ControlRequirement,
-        graph: IntentControlGraph
+        graph: IntentControlGraph,
+        allowIntentWideApproval: Boolean
     ): ControlEvidence {
-        val approvals = graph.controlStepsProtecting(requirement, StandardCapability.APPROVE)
+        val approvals = if (
+            allowIntentWideApproval &&
+            requirement.scope.kind == ControlRequirementScopeKind.INTENT &&
+            requirement.source == ControlRequirementSource.INTENT_POLICY
+        ) {
+            graph.controlSteps(StandardCapability.APPROVE)
+        } else {
+            graph.controlStepsProtecting(requirement, StandardCapability.APPROVE)
+        }
         if (approvals.isEmpty()) {
             return missing(
                 requirement,
@@ -185,7 +194,7 @@ object CanonicalControlRequirementAuthority {
                 requirementId = requirement.id,
                 status = ControlEvidenceStatus.DYNAMIC,
                 source = ControlEvidenceSource.DYNAMIC_CONDITION,
-                detail = "Scoped approval step(s) ${approvals.map { it.step.id }.sorted().joinToString()} with condition $condition",
+                detail = "Approval step(s) ${approvals.map { it.step.id }.sorted().joinToString()} with condition $condition",
                 enforcementCapabilities = listOf("approval.manual", "condition.evaluate")
             )
         } else {
@@ -193,7 +202,11 @@ object CanonicalControlRequirementAuthority {
                 requirementId = requirement.id,
                 status = ControlEvidenceStatus.SATISFIED,
                 source = ControlEvidenceSource.AUTHORED_STEP,
-                detail = "Reachable scoped approval step(s): ${approvals.map { it.step.id }.sorted().joinToString()}"
+                detail = if (requirement.scope.kind == ControlRequirementScopeKind.INTENT) {
+                    "Explicit intent-level approval step(s): ${approvals.map { it.step.id }.sorted().joinToString()}"
+                } else {
+                    "Reachable scoped approval step(s): ${approvals.map { it.step.id }.sorted().joinToString()}"
+                }
             )
         }
     }
@@ -282,7 +295,7 @@ object CanonicalControlRequirementAuthority {
         requirement: ControlRequirement,
         graph: IntentControlGraph
     ): ControlEvidence {
-        val approval = approvalEvidence(requirement, graph)
+        val approval = approvalEvidence(requirement, graph, allowIntentWideApproval = false)
         if (approval.status != ControlEvidenceStatus.UNKNOWN) return approval
         val dryRun = booleanParameterEvidence(requirement, graph, "dryRun", acceptedModes = setOf("dry-run"))
         if (dryRun.status != ControlEvidenceStatus.UNKNOWN) return dryRun
@@ -295,7 +308,7 @@ object CanonicalControlRequirementAuthority {
         requirement: ControlRequirement,
         graph: IntentControlGraph
     ): ControlEvidence {
-        val approval = approvalEvidence(requirement, graph)
+        val approval = approvalEvidence(requirement, graph, allowIntentWideApproval = false)
         return if (approval.status != ControlEvidenceStatus.UNKNOWN) {
             approval
         } else {
@@ -455,6 +468,9 @@ object CanonicalControlRequirementAuthority {
             return if (operations.size == 1) operations else emptyList()
         }
 
+        fun controlSteps(capability: StandardCapability): List<ScopedIntentStep> =
+            allSteps.filter { it.step.capability == capability }
+
         fun controlStepsProtecting(
             requirement: ControlRequirement,
             capability: StandardCapability
@@ -469,7 +485,7 @@ object CanonicalControlRequirementAuthority {
 
             if (requirement.scope.kind != ControlRequirementScopeKind.INTENT) return emptyList()
             val operations = nonControlOperations()
-            val controls = allSteps.filter { it.step.capability == capability }
+            val controls = controlSteps(capability)
             if (operations.isEmpty()) return controls
             return controls.filter { control ->
                 operations.all { operation ->
