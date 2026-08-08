@@ -94,7 +94,8 @@ object PlanningControlAuthority {
             id = taskRequirementId(task, kind),
             kind = kind,
             subject = "${task.module}.${task.action}@${task.id}",
-            source = ControlRequirementSource.MODULE_CONTRACT
+            source = ControlRequirementSource.MODULE_CONTRACT,
+            scope = ControlRequirementScope.planNode(task.id)
         ),
         evidence = evidence
     )
