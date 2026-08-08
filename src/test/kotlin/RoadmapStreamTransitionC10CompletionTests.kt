@@ -20,6 +20,19 @@ class RoadmapStreamTransitionC10CompletionTests {
     }
 
     @Test
+    fun existingC10WithoutAValidStatusCannotFallBackToArchitectureComplete() {
+        val root = terminalFixture()
+        val c10 = File(root, RoadmapStreamTransitionAuthority.C10_WORK_PACKAGE)
+        c10.writeText(c10.readText().replaceFirst("status: complete", "status: \"\""))
+
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+
+        assertEquals(RoadmapTransitionPhase.INVALID, report.phase)
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "Roadmap transition must be" in it })
+    }
+
+    @Test
     fun completedC10RejectsCompletionThatDoesNotFollowImplementation() {
         val root = terminalFixture(completionRun = 2812)
 
@@ -64,6 +77,19 @@ class RoadmapStreamTransitionC10CompletionTests {
         assertEquals(RoadmapTransitionPhase.C1_0_COMPLETE, report.phase)
         assertEquals("FAIL", report.status)
         assertTrue(report.errors.any { "Completed C1.0 release state" in it })
+    }
+
+    @Test
+    fun completedC10RejectsArchitectureBacklogDrift() {
+        val root = terminalFixture()
+        val roadmap = File(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX)
+        roadmap.writeText(roadmap.readText().replaceFirst("                status: completed", "                status: active"))
+
+        val report = RoadmapStreamTransitionAuthority(root).analyze()
+
+        assertEquals(RoadmapTransitionPhase.C1_0_COMPLETE, report.phase)
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "architecture debt backlog" in it })
     }
 
     private fun terminalFixture(completionRun: Int = 2814): File {
