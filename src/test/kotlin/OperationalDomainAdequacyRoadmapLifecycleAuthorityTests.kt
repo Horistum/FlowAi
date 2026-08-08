@@ -11,11 +11,11 @@ import org.flowlang.roadmap.WorkflowBoundaryEvidence
 
 class OperationalDomainAdequacyRoadmapLifecycleAuthorityTests {
     @Test
-    fun repositoryIsValidatingFromThePassedImplementationBoundary() {
+    fun repositoryIsCompletedFromTheDistinctCompletionBoundary() {
         val report = OperationalDomainAdequacyRoadmapLifecycleAuthority(File(".")).analyze()
 
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
-        assertEquals(OperationalDomainAdequacyLifecyclePhase.VALIDATING, report.phase)
+        assertEquals(OperationalDomainAdequacyLifecyclePhase.COMPLETED, report.phase)
     }
 
     @Test
