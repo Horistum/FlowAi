@@ -6,7 +6,6 @@ import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.PlannerCapabilityConstraintGate
 import org.flowlang.capabilities.TargetCapability
-import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.controls.ControlDecisionAuthority
 import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.controls.ControlEvidenceStatus
@@ -800,9 +799,9 @@ internal object ExecutionPlanMaterializationValidator {
             issues += issue("planning.control.evidence.missing", "controlRequirements.${requirement.id}", "Every control requirement must have one explicit evidence record, including unknown evidence.")
         }
 
-        val tasks = PlanDependencyRelations.flatten(plan.nodes).filterIsInstance<TaskNode>()
-        val canonicalCapabilities = tasks.mapNotNull { task -> task.semanticCapability?.let { runCatching { StandardCapability.valueOf(it) }.getOrNull() } }
-        val expectedCanonical = CanonicalControlRequirementAuthority.requirementsForCapabilities(canonicalCapabilities)
+        val canonicalReconstruction = ExecutionPlanCanonicalControlRequirementAuthority.rederive(plan)
+        issues += canonicalReconstruction.issues
+        val expectedCanonical = canonicalReconstruction.requirements
         val expectedModule = PlanningControlAuthority.rederivedModuleRequirements(plan.nodes, modules)
         (expectedCanonical + expectedModule).forEach { expected ->
             val actual = plan.controlRequirements.singleOrNull { it.id == expected.id }
