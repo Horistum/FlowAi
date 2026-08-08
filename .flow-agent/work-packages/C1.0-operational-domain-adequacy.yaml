@@ -11,6 +11,13 @@ activationEvidence:
   runId: 31202921728
   exactHead: "9a355c07052ab72885cbd54beafc2919fe9b710f"
   mergeCandidate: "6d79960ac580132079a5a2a9cd1428405de8ba6d"
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2812
+  runId: 31238299719
+  exactHead: "9230a30dd0783bd6932d58c404ef2076a41aee65"
+  mergeCandidate: "f28b45503c29b15070f6c93d7b194df1633eec5d"
 architecturePurpose: "Move the next validation pressure away from CI/CD-heavy evidence and onto target-neutral operational intent after authority ownership has been consolidated."
 universalInvariant: "A real operational source may falsify frozen Flow semantics, but it cannot define, weaken or silently extend them; representability and implementation support remain separate claims."
 scope:
