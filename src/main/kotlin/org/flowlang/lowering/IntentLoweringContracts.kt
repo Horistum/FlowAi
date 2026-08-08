@@ -53,7 +53,7 @@ data class IntentLoweringReport(
     val evidence: List<IntentLoweringEvidence> = emptyList()
 ) {
     companion object {
-        const val CONTRACT_VERSION = "2.0"
+        const val CONTRACT_VERSION = "2.1"
         const val ARTIFACT_KIND = "execution-plan"
     }
 }
@@ -356,6 +356,14 @@ object IntentLoweringAuthority {
             add(preserved("workflow/$workflowId/name", "$workflowSource.name", "plan/source-intent/workflow/$workflowId/name", "string", workflow.name))
             add(preserved("workflow/$workflowId/kind", "$workflowSource.kind", "plan/source-intent/workflow/$workflowId/kind", "enum", workflow.kind.name))
             workflow.steps.forEachIndexed { stepIndex, step ->
+                val stepId = segment(step.id)
+                add(preserved(
+                    "workflow/$workflowId/step/$stepId",
+                    "$workflowSource.steps[$stepIndex].id",
+                    "plan/source-intent/workflow/$workflowId/step/$stepId",
+                    "workflow-step-membership",
+                    step.id
+                ))
                 addStepFields(step, "$workflowSource.steps[$stepIndex]", inputNames)
             }
         }
@@ -525,6 +533,10 @@ object IntentLoweringAuthority {
                 when (parts.getOrNull(4)) {
                     "name" -> workflow.name
                     "kind" -> workflow.kind
+                    "step" -> {
+                        val stepId = parts.getOrNull(5) ?: missing(identity)
+                        stepId.takeIf { it in workflow.stepIds } ?: missing(identity)
+                    }
                     else -> missing(identity)
                 }
             }
