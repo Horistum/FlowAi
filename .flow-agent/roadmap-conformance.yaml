@@ -1,7 +1,7 @@
 project: Flow Conformance
 stream: conformance
 roadmapVersion: 10
-status: active
+status: completed
 
 purpose: "Maintain bounded independent evidence for universal contracts and implementation behavior."
 
@@ -23,11 +23,11 @@ rules:
   - "C1.0 adds post-architecture operational evidence in a separate corpus and must not retroactively widen the closed C0.1 domain vocabulary."
 
 currentDecision:
-  completedItem: "C0.4"
-  completedItemName: "Adapter Profile Evidence"
-  nextItem: "C1.0"
-  nextItemName: "Operational Domain Adequacy"
-  decisionBasis: "Flow CI #2809 / run 31202921728 closed AR0.1 on exact head 9a355c07052ab72885cbd54beafc2919fe9b710f and synthetic merge candidate 6d79960ac580132079a5a2a9cd1428405de8ba6d. C1.0 reactivates conformance to test non-CI/CD operational semantics without reopening C0.1."
+  completedItem: "C1.0"
+  completedItemName: "Operational Domain Adequacy"
+  nextItem: ""
+  nextItemName: ""
+  decisionBasis: "Flow CI #2823 / run 31255449623 passed the distinct C1.0 completion boundary on exact head c22431b1abaf8814b2fe049935fee4c995332122 and synthetic merge candidate 2b0f2e570b91b7c3c25b4b3c671b98d9733b9198 after implementation validation #2812. C1.0 therefore closes terminally with no fabricated conformance successor."
 
 items:
   - version: "C0.1"
@@ -104,7 +104,7 @@ items:
   - version: "C1.0"
     name: "Operational Domain Adequacy"
     type: "post-architecture-domain-evidence"
-    status: next
+    status: completed
     purpose: "Exercise target-neutral operational semantics against independent real sources after AR0.1 without rewriting historical C0.1 evidence."
     completionEvidence:
       - "The C0.1 domain vocabulary and check inventory remain byte-separate from C1.0 operational evidence."
@@ -112,3 +112,4 @@ items:
       - "Observed mutation polarity is REPRESENTABLE -> REJECTED for every admitted C1.0 case."
       - "No target support or executable rendering claim is inferred from semantic representability."
       - "Implementation and completion Flow CI boundaries are later and distinct from AR0.1 activation and from each other."
+      - "Flow CI #2812 passed the implementation boundary and Flow CI #2823 passed the distinct completion boundary."
