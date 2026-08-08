@@ -278,7 +278,11 @@ class UniversalControlPolicyRequirementsTests {
     private fun migrationIntent(includeBackup: Boolean): IntentDocument {
         val steps = buildList {
             if (includeBackup) add(IntentStep(id = "backup", capability = StandardCapability.BACKUP))
-            add(IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE))
+            add(IntentStep(
+                id = "migrate",
+                capability = StandardCapability.DATABASE_MIGRATE,
+                requires = if (includeBackup) listOf("backup") else emptyList()
+            ))
         }
         return IntentDocument(
             name = "migration",
