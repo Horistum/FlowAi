@@ -23,7 +23,7 @@ class RoadmapStreamTransitionC10CompletionTests {
     fun existingC10WithoutAValidStatusCannotFallBackToArchitectureComplete() {
         val root = terminalFixture()
         val c10 = File(root, RoadmapStreamTransitionAuthority.C10_WORK_PACKAGE)
-        c10.writeText(c10.readText().replaceFirst("status: complete", "status: \"\""))
+        replaceRequired(c10, "status: complete", "status: \"\"")
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
@@ -47,12 +47,9 @@ class RoadmapStreamTransitionC10CompletionTests {
     fun completedC10RejectsFabricatedSuccessor() {
         val root = terminalFixture()
         val roadmap = File(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX)
-        roadmap.writeText(
-            roadmap.readText()
-                .replaceFirst("              nextItem: \"\"", "              nextItem: \"C1.1\"")
-                .replaceFirst("              nextItemName: \"\"", "              nextItemName: \"Fabricated successor\"")
-                .replaceFirst("              nextItemStream: \"\"", "              nextItemStream: conformance")
-        )
+        replaceRequired(roadmap, "nextItem: \"\"", "nextItem: \"C1.1\"")
+        replaceRequired(roadmap, "nextItemName: \"\"", "nextItemName: \"Fabricated successor\"")
+        replaceRequired(roadmap, "nextItemStream: \"\"", "nextItemStream: conformance")
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
@@ -65,12 +62,7 @@ class RoadmapStreamTransitionC10CompletionTests {
     fun completedC10RejectsReleaseStateDrift() {
         val root = terminalFixture()
         val release = File(root, RoadmapStreamTransitionAuthority.RELEASE_STATE)
-        release.writeText(
-            release.readText().replace(
-                "completedConformanceItem: \"C1.0\"",
-                "completedConformanceItem: \"C0.4\""
-            )
-        )
+        replaceRequired(release, "completedConformanceItem: \"C1.0\"", "completedConformanceItem: \"C0.4\"")
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
@@ -83,7 +75,7 @@ class RoadmapStreamTransitionC10CompletionTests {
     fun completedC10RejectsArchitectureBacklogDrift() {
         val root = terminalFixture()
         val roadmap = File(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX)
-        roadmap.writeText(roadmap.readText().replaceFirst("                status: completed", "                status: active"))
+        replaceRequired(roadmap, "status: completed", "status: active")
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
@@ -285,6 +277,18 @@ class RoadmapStreamTransitionC10CompletionTests {
           exactHead: "${completionHead.toString().repeat(40)}"
           mergeCandidate: "${completionMerge.toString().repeat(40)}"
     """
+
+    private fun replaceRequired(file: File, oldValue: String, newValue: String) {
+        val original = file.readText()
+        require(oldValue in original) {
+            "Regression fixture mutation source '$oldValue' is missing from ${file.path}."
+        }
+        val mutated = original.replaceFirst(oldValue, newValue)
+        require(mutated != original) {
+            "Regression fixture mutation '$oldValue' -> '$newValue' did not change ${file.path}."
+        }
+        file.writeText(mutated)
+    }
 
     private fun write(root: File, path: String, content: String) {
         File(root, path).apply {
