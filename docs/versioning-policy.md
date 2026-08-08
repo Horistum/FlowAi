@@ -8,7 +8,7 @@ Flow has separate public version axes with distinct purposes. They are intention
 | Public standard | `0.8.0` | Public semantics, schemas, snapshots and conformance advance together. |
 | Intent contract | `2.0` | The serialized Intent contract changes incompatibly. |
 | AST contract | `2.0` | The serialized AST contract changes incompatibly. |
-| ExecutionPlan contract | `2.0` | The serialized execution-plan contract changes incompatibly. |
+| ExecutionPlan contract | `2.1` | The serialized execution-plan contract changes incompatibly. |
 | TargetManifest contract | `3.0` | The serialized target-manifest contract changes incompatibly. |
 | TargetRegistry contract | `3.1` | The serialized target-registry contract changes incompatibly. |
 
@@ -26,19 +26,22 @@ A contract-only migration may advance one serialized artifact version without ch
 
 Artifact contracts are independently versioned serialized boundaries. They must not be represented by one misleading global number after their versions diverge.
 
-Intent, AST and ExecutionPlan remain at `2.0`:
+Intent and AST remain at `2.0`, while ExecutionPlan advances independently to `2.1`:
 
 - Intent 2.0 introduces top-level triggers and removes schedule-as-step.
 - AST 2.0 introduces trigger nodes.
-- ExecutionPlan 2.0 preserves trigger requirements.
+- ExecutionPlan 2.0 introduced the trigger-aware execution contract.
+- ExecutionPlan 2.1 adds mandatory target-neutral control requirement scope so security evidence remains bound to the intent operation or plan node it protects.
 
-Target contracts advance to `3.0` in implementation work item `0.9.6.2`:
+The ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`.
+
+Target contracts advance separately:
 
 - TargetRegistry 3.0 replaced prefix-encoded payload parameter strings with universal typed binding templates.
 - TargetRegistry 3.1 requires complete execution-topology evidence for isolation, lifetime, persistence and propagation.
 - TargetManifest 3.0 preserves binding kind, source provenance, resolved compile-time values and symbolic runtime references.
 
-The migration is documented in `docs/V0_9_6_TYPED_BINDING_MIGRATION.md`.
+The target migration is documented in `docs/V0_9_6_TYPED_BINDING_MIGRATION.md`.
 
 Artifact versions are not cosmetic. A breaking shape or interpretation change requires a migration document, updated schema, exact snapshots and conformance evidence.
 
