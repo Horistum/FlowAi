@@ -1,0 +1,87 @@
+name: SI-01 Plan Format Cleanup
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'flow/si-01-control-evidence-scope' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: flow/si-01-control-evidence-scope
+          fetch-depth: 0
+
+      - name: Restore execution-plan formatting with semantic equality proof
+        shell: python
+        run: |
+          import json
+          import re
+          import subprocess
+          from pathlib import Path
+
+          path = Path("conformance/snapshots/build-test-deploy/execution-plan.json")
+          synchronized = json.loads(path.read_text())
+          base = "25bf5f2354663896c8821051c07c18355b1aa0bf"
+          text = subprocess.check_output(
+              ["git", "show", f"{base}:{path.as_posix()}"],
+              text=True,
+          )
+
+          before = text
+          text = text.replace('"planVersion" : "2.0"', '"planVersion" : "2.1"', 1)
+          text = text.replace('"planVersion":"2.0"', '"planVersion":"2.1"', 1)
+          if text == before:
+              raise SystemExit("build-test-deploy plan version 2.0 marker was not found")
+
+          pattern = re.compile(
+              r'(?m)^(?P<indent>\s*)"message" : "Approval is required before deployment in this reference flow\."(?P<nl>\r?\n)(?P<closing>\s*)\}'
+          )
+
+          def add_scope(match: re.Match[str]) -> str:
+              indent = match.group("indent")
+              nl = match.group("nl")
+              closing = match.group("closing")
+              return (
+                  f'{indent}"message" : "Approval is required before deployment in this reference flow.",{nl}'
+                  f'{indent}"scope" : {{{nl}'
+                  f'{indent}  "kind" : "INTENT"{nl}'
+                  f'{indent}}}{nl}'
+                  f'{closing}}}'
+              )
+
+          text, count = pattern.subn(add_scope, text, count=1)
+          if count != 1:
+              raise SystemExit("build-test-deploy plan approval scope insertion did not match exactly once")
+
+          old_detail = '"detail" : "approve-prod"'
+          new_detail = '"detail" : "Intent-level approval predecessor(s): approve-prod"'
+          if old_detail not in text:
+              raise SystemExit("build-test-deploy plan approval evidence detail was not found")
+          text = text.replace(old_detail, new_detail, 1)
+
+          candidate = json.loads(text)
+          if candidate != synchronized:
+              raise SystemExit("Formatting cleanup changed build-test-deploy execution-plan meaning")
+          path.write_text(text)
+          print("Restored canonical formatting with identical JSON meaning")
+
+      - name: Commit formatting cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No formatting cleanup was required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add conformance/snapshots/build-test-deploy/execution-plan.json
+          git commit -m "SI-01: restore execution-plan snapshot formatting [skip ci]"
+          git push origin HEAD:flow/si-01-control-evidence-scope
