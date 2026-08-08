@@ -978,7 +978,7 @@
       ],
       "properties": {
         "contractVersion": {
-          "const": "2.0"
+          "const": "2.1"
         },
         "artifactKind": {
           "const": "execution-plan"
