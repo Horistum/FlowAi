@@ -18,79 +18,86 @@ jobs:
           ref: flow/si-01-control-evidence-scope
           fetch-depth: 0
 
-      - name: Synchronize bounded 2.1 snapshots
+      - name: Restore canonical formatting without changing synchronized meaning
         shell: python
         run: |
           import json
+          import re
+          import subprocess
           from pathlib import Path
 
-          changed = []
+          base = "483e0b3ec17bf132c3dab8fd1cb0a287d8b64bf8"
+          files = [
+              "conformance/snapshots/build-test-deploy/flow-ast.json",
+              "conformance/snapshots/checkout-build-image/execution-plan.json",
+              "conformance/snapshots/checkout-build-image/flow-ast.json",
+              "conformance/snapshots/github-actions-checkout-build-image/execution-plan.json",
+              "conformance/snapshots/github-actions-checkout-build-image/flow-ast.json",
+          ]
 
-          def write_if_changed(path: Path, original: object, updated: object) -> None:
-              if updated == original:
-                  return
-              path.write_text(json.dumps(updated, indent=2) + "\n")
-              changed.append(path)
+          for name in files:
+              path = Path(name)
+              synchronized = json.loads(path.read_text())
+              text = subprocess.check_output(
+                  ["git", "show", f"{base}:{name}"],
+                  text=True,
+              )
 
-          # ControlRequirement.scope is serialized into Flow AST, so every
-          # committed AST reference produced by the current planner is 2.1.
-          for ast in Path("conformance").rglob("flow-ast.json"):
-              original = json.loads(ast.read_text())
-              updated = json.loads(ast.read_text())
-              if updated.get("astVersion") == "2.0":
-                  updated["astVersion"] = "2.1"
+              if name.endswith("flow-ast.json"):
+                  before = text
+                  text = text.replace('"astVersion" : "2.0"', '"astVersion" : "2.1"', 1)
+                  text = text.replace('"astVersion":"2.0"', '"astVersion":"2.1"', 1)
+                  if text == before:
+                      raise SystemExit(f"{name}: AST version 2.0 marker was not found")
+              else:
+                  before = text
+                  text = text.replace('"planVersion" : "2.0"', '"planVersion" : "2.1"', 1)
+                  text = text.replace('"planVersion":"2.0"', '"planVersion":"2.1"', 1)
+                  if text == before:
+                      raise SystemExit(f"{name}: plan version 2.0 marker was not found")
 
-              if ast.as_posix() == "conformance/snapshots/build-test-deploy/flow-ast.json":
-                  requirements = updated.get("flow", {}).get("controlRequirements", [])
-                  requirement = next(
-                      (item for item in requirements if item.get("id") == "control.approval.production-approval"),
-                      None,
+              if name == "conformance/snapshots/build-test-deploy/flow-ast.json":
+                  pattern = re.compile(
+                      r'(?m)^(?P<indent>\s*)"message" : "Approval is required before deployment in this reference flow\."(?P<nl>\r?\n)(?P<closing>\s*)\}'
                   )
-                  if requirement is None:
-                      raise SystemExit("Expected build-test-deploy approval requirement was not found")
-                  requirement["scope"] = {"kind": "INTENT"}
 
-                  evidence = updated.get("flow", {}).get("controlEvidence", [])
-                  record = next(
-                      (item for item in evidence if item.get("requirementId") == "control.approval.production-approval"),
-                      None,
-                  )
-                  if record is None:
-                      raise SystemExit("Expected build-test-deploy approval evidence was not found")
-                  record["detail"] = "Intent-level approval predecessor(s): approve-prod"
+                  def add_scope(match: re.Match[str]) -> str:
+                      indent = match.group("indent")
+                      nl = match.group("nl")
+                      closing = match.group("closing")
+                      return (
+                          f'{indent}"message" : "Approval is required before deployment in this reference flow.",{nl}'
+                          f'{indent}"scope" : {{{nl}'
+                          f'{indent}  "kind" : "INTENT"{nl}'
+                          f'{indent}}}{nl}'
+                          f'{closing}}}'
+                      )
 
-              write_if_changed(ast, original, updated)
+                  text, count = pattern.subn(add_scope, text, count=1)
+                  if count != 1:
+                      raise SystemExit("build-test-deploy approval scope insertion did not match exactly once")
+                  old_detail = '"detail" : "approve-prod"'
+                  new_detail = '"detail" : "Intent-level approval predecessor(s): approve-prod"'
+                  if old_detail not in text:
+                      raise SystemExit("build-test-deploy approval evidence detail was not found")
+                  text = text.replace(old_detail, new_detail, 1)
 
-          # These target-scoped plans have no control requirements; the only
-          # generated contract change is planVersion 2.0 -> 2.1.
-          for root in [
-              Path("conformance/snapshots/checkout-build-image"),
-              Path("conformance/snapshots/github-actions-checkout-build-image"),
-              Path("conformance/evidence/semantic-equivalence/implementation-pairs"),
-          ]:
-              if not root.is_dir():
-                  continue
-              for path in root.rglob("execution-plan.json"):
-                  original = json.loads(path.read_text())
-                  updated = json.loads(path.read_text())
-                  if updated.get("planVersion") == "2.0":
-                      updated["planVersion"] = "2.1"
-                  write_if_changed(path, original, updated)
+              candidate = json.loads(text)
+              if candidate != synchronized:
+                  raise SystemExit(f"{name}: formatting cleanup changed synchronized JSON meaning")
+              path.write_text(text)
+              print(f"Preserved canonical formatting: {name}")
 
-          print("Synchronized:")
-          for path in changed:
-              print(f"- {path}")
-
-      - name: Commit synchronized snapshots
+      - name: Commit formatting-preserving snapshots
         shell: bash
         run: |
           set -euo pipefail
           if git diff --quiet; then
-            echo "No snapshot changes were required."
+            echo "No formatting cleanup was required."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add conformance
-          git commit -m "SI-01: synchronize 2.1 reference snapshots [skip ci]"
+          git commit -m "SI-01: preserve reference snapshot formatting [skip ci]"
           git push origin HEAD:flow/si-01-control-evidence-scope
