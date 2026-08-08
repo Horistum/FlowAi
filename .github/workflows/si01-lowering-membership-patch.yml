@@ -1,17 +1,15 @@
 name: SI-01 Lowering Membership Patch
 
 on:
-  push:
-    branches:
-      - flow/si-01-control-evidence-scope
+  pull_request:
+    types: [synchronize]
 
 permissions:
   contents: write
 
-# Temporary branch-only connector workaround; removed after the guarded patch lands.
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'flow/si-01-control-evidence-scope' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
