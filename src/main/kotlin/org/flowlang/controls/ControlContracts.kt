@@ -30,13 +30,61 @@ enum class ControlRequirementSource {
     FLOW_SOURCE
 }
 
+/**
+ * Semantic scope of a control obligation.
+ *
+ * Scope is deliberately independent from ordering. An OPERATION scope identifies
+ * what is protected; a dependency edge may separately prove that a precondition
+ * control is ordered before that operation. PLAN_NODE is used only after AST
+ * planning for module-owned obligations and never leaks a provider identity into
+ * canonical intent meaning.
+ */
+enum class ControlRequirementScopeKind {
+    INTENT,
+    OPERATION,
+    PLAN_NODE
+}
+
+data class ControlRequirementScope(
+    val kind: ControlRequirementScopeKind,
+    val workflow: String? = null,
+    val subjectId: String? = null
+) {
+    init {
+        when (kind) {
+            ControlRequirementScopeKind.INTENT -> require(workflow == null && subjectId == null) {
+                "Intent-scoped control requirements cannot name a workflow or subject id."
+            }
+            ControlRequirementScopeKind.OPERATION -> {
+                require(!workflow.isNullOrBlank()) { "Operation-scoped control requirements must name a workflow." }
+                require(!subjectId.isNullOrBlank()) { "Operation-scoped control requirements must name a protected operation." }
+            }
+            ControlRequirementScopeKind.PLAN_NODE -> {
+                require(workflow == null) { "Plan-node control requirements cannot name an intent workflow." }
+                require(!subjectId.isNullOrBlank()) { "Plan-node control requirements must name a plan node." }
+            }
+        }
+    }
+
+    companion object {
+        val INTENT = ControlRequirementScope(ControlRequirementScopeKind.INTENT)
+
+        fun operation(workflow: String, stepId: String): ControlRequirementScope =
+            ControlRequirementScope(ControlRequirementScopeKind.OPERATION, workflow = workflow, subjectId = stepId)
+
+        fun planNode(nodeId: String): ControlRequirementScope =
+            ControlRequirementScope(ControlRequirementScopeKind.PLAN_NODE, subjectId = nodeId)
+    }
+}
+
 data class ControlRequirement(
     val id: String,
     val kind: ControlRequirementKind,
     val subject: String,
     val source: ControlRequirementSource,
     val condition: String? = null,
-    val message: String? = null
+    val message: String? = null,
+    val scope: ControlRequirementScope = ControlRequirementScope.INTENT
 ) {
     init {
         require(id.isNotBlank()) { "Control requirement id must not be blank." }
