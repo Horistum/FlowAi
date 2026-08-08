@@ -9,6 +9,7 @@ Flow has separate public version axes with distinct purposes. They are intention
 | Intent contract | `2.0` | The serialized Intent contract changes incompatibly. |
 | AST contract | `2.1` | The serialized AST contract changes incompatibly. |
 | ExecutionPlan contract | `2.1` | The serialized execution-plan contract changes incompatibly. |
+| ExecutionPlan lowering evidence | `2.1` | The artifact-derived proof needed to authenticate preserved intent meaning changes. |
 | TargetManifest contract | `3.0` | The serialized target-manifest contract changes incompatibly. |
 | TargetRegistry contract | `3.1` | The serialized target-registry contract changes incompatibly. |
 
@@ -33,6 +34,7 @@ Intent remains at `2.0`; AST and ExecutionPlan advance to `2.1` because both ser
 - AST 2.1 adds mandatory target-neutral control requirement scope.
 - ExecutionPlan 2.0 introduced the trigger-aware execution contract.
 - ExecutionPlan 2.1 preserves canonical control scope through planning and adds plan-node scope for planning-owned obligations.
+- ExecutionPlan lowering evidence 2.1 additionally certifies each authored workflow-to-step membership used to authenticate `OPERATION` scope during materialization.
 
 The AST and ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`.
 
