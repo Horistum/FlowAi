@@ -1,827 +1,703 @@
 {
-  "flowName": "checkout-build-image",
-  "planVersion": "2.1",
-  "inputs": [
-    {
-      "name": "version",
-      "type": "text",
-      "required": true,
-      "choices": []
-    }
-  ],
-  "triggers": [],
-  "outputs": [
-    {
-      "name": "checkout",
-      "type": "any",
-      "sourceNodeId": "git_checkout_1"
+  "flowName" : "checkout-build-image",
+  "planVersion" : "2.1",
+  "inputs" : [ {
+    "name" : "version",
+    "type" : "text",
+    "required" : true,
+    "choices" : [ ]
+  } ],
+  "triggers" : [ ],
+  "outputs" : [ {
+    "name" : "checkout",
+    "type" : "any",
+    "sourceNodeId" : "git_checkout_1"
+  }, {
+    "name" : "build_image",
+    "type" : "any",
+    "sourceNodeId" : "docker_build_1"
+  } ],
+  "dependencies" : [ "git_checkout_1" ],
+  "requiredCapabilities" : [ "task.execute", "git.checkout", "docker.build", "container.image", "continuity.workspace" ],
+  "targetHints" : { },
+  "sourceIntent" : {
+    "description" : "Target-scoped reference intent proving ordered native checkout and image build projection.",
+    "workflows" : [ {
+      "name" : "build-reference-image",
+      "kind" : "BUILD",
+      "stepIds" : [ "checkout", "build-image" ]
+    } ],
+    "policies" : [ ],
+    "systems" : [ {
+      "name" : "source",
+      "sourceType" : "git",
+      "canonicalType" : "git",
+      "purpose" : "Public application source repository",
+      "config" : { }
+    }, {
+      "name" : "registry",
+      "sourceType" : "dockerRegistry",
+      "canonicalType" : "docker",
+      "purpose" : "Local image build target without registry push",
+      "config" : { }
+    } ],
+    "systemPurposes" : {
+      "source" : "Public application source repository",
+      "registry" : "Local image build target without registry push"
     },
-    {
-      "name": "build_image",
-      "type": "any",
-      "sourceNodeId": "docker_build_1"
-    }
-  ],
-  "dependencies": [
-    "git_checkout_1"
-  ],
-  "requiredCapabilities": [
-    "task.execute",
-    "git.checkout",
-    "docker.build",
-    "container.image",
-    "continuity.workspace"
-  ],
-  "targetHints": {},
-  "sourceIntent": {
-    "description": "Target-scoped reference intent proving ordered native checkout and image build projection.",
-    "workflows": [
-      {
-        "name": "build-reference-image",
-        "kind": "BUILD",
-        "stepIds": [
-          "checkout",
-          "build-image"
-        ]
-      }
-    ],
-    "policies": [],
-    "systems": [
-      {
-        "name": "source",
-        "sourceType": "git",
-        "canonicalType": "git",
-        "purpose": "Public application source repository",
-        "config": {}
-      },
-      {
-        "name": "registry",
-        "sourceType": "dockerRegistry",
-        "canonicalType": "docker",
-        "purpose": "Local image build target without registry push",
-        "config": {}
-      }
-    ],
-    "systemPurposes": {
-      "source": "Public application source repository",
-      "registry": "Local image build target without registry push"
+    "failure" : {
+      "notify" : false,
+      "rollback" : false,
+      "stopOnError" : true
     },
-    "failure": {
-      "notify": false,
-      "rollback": false,
-      "stopOnError": true
-    },
-    "fields": [
-      {
-        "identity": "failure/notify",
-        "sourcePath": "$.failure.notify",
-        "targetIdentity": "plan/source-intent/failure/notify",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
-        "expectedTargetDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
-      },
-      {
-        "identity": "failure/rollback",
-        "sourcePath": "$.failure.rollback",
-        "targetIdentity": "plan/source-intent/failure/rollback",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
-        "expectedTargetDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
-      },
-      {
-        "identity": "failure/stop-on-error",
-        "sourcePath": "$.failure.stopOnError",
-        "targetIdentity": "plan/source-intent/failure/stop-on-error",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
-        "expectedTargetDigest": "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
-      },
-      {
-        "identity": "input/version/name",
-        "sourcePath": "$.inputs[0].name",
-        "targetIdentity": "plan/input/version/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae",
-        "expectedTargetDigest": "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"
-      },
-      {
-        "identity": "input/version/required",
-        "sourcePath": "$.inputs[0].required",
-        "targetIdentity": "plan/input/version/required",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
-        "expectedTargetDigest": "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
-      },
-      {
-        "identity": "input/version/type",
-        "sourcePath": "$.inputs[0].type",
-        "targetIdentity": "plan/input/version/type",
-        "disposition": "TRANSFORMED",
-        "valueKind": "input-type",
-        "sourceDigest": "b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2",
-        "expectedTargetDigest": "38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723",
-        "transform": "intent-input-type-normalization"
-      },
-      {
-        "identity": "intent/description",
-        "sourcePath": "$.description",
-        "targetIdentity": "plan/source-intent/description",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce",
-        "expectedTargetDigest": "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce"
-      },
-      {
-        "identity": "intent/name",
-        "sourcePath": "$.name",
-        "targetIdentity": "plan/flow/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2",
-        "expectedTargetDigest": "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2"
-      },
-      {
-        "identity": "step/build-image/capability",
-        "sourcePath": "$.workflows[0].steps[1].capability",
-        "targetIdentity": "plan/node/source/build-image/semantic-capability",
-        "disposition": "PRESERVED",
-        "valueKind": "enum",
-        "sourceDigest": "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8",
-        "expectedTargetDigest": "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"
-      },
-      {
-        "identity": "step/build-image/id",
-        "sourcePath": "$.workflows[0].steps[1].id",
-        "targetIdentity": "plan/node/source/build-image/identity",
-        "disposition": "TRANSFORMED",
-        "valueKind": "step-identity",
-        "sourceDigest": "9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa",
-        "expectedTargetDigest": "c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee",
-        "transform": "step-id-to-source-and-result-identity"
-      },
-      {
-        "identity": "step/build-image/param/image",
-        "sourcePath": "$.workflows[0].steps[1].params.image",
-        "targetIdentity": "plan/node/source/build-image/param/image",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b",
-        "expectedTargetDigest": "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b"
-      },
-      {
-        "identity": "step/build-image/param/path",
-        "sourcePath": "$.workflows[0].steps[1].params.path",
-        "targetIdentity": "plan/node/source/build-image/param/path",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1",
-        "expectedTargetDigest": "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"
-      },
-      {
-        "identity": "step/build-image/param/push",
-        "sourcePath": "$.workflows[0].steps[1].params.push",
-        "targetIdentity": "plan/node/source/build-image/param/push",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
-        "expectedTargetDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
-      },
-      {
-        "identity": "step/build-image/param/system",
-        "sourcePath": "$.workflows[0].steps[1].params.system",
-        "targetIdentity": "plan/node/source/build-image/binding-metadata/system",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd",
-        "expectedTargetDigest": "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"
-      },
-      {
-        "identity": "step/build-image/requires/checkout",
-        "sourcePath": "$.workflows[0].steps[1].requires",
-        "targetIdentity": "plan/node/source/build-image/dependency/source/checkout",
-        "disposition": "PRESERVED",
-        "valueKind": "step-reference",
-        "sourceDigest": "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15",
-        "expectedTargetDigest": "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"
-      },
-      {
-        "identity": "step/build-image/uses",
-        "sourcePath": "$.workflows[0].steps[1].uses",
-        "targetIdentity": "plan/node/source/build-image/binding",
-        "disposition": "TRANSFORMED",
-        "valueKind": "binding",
-        "sourceDigest": "4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00",
-        "expectedTargetDigest": "783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3",
-        "transform": "explicit-action-binding-resolution"
-      },
-      {
-        "identity": "step/checkout/capability",
-        "sourcePath": "$.workflows[0].steps[0].capability",
-        "targetIdentity": "plan/node/source/checkout/semantic-capability",
-        "disposition": "PRESERVED",
-        "valueKind": "enum",
-        "sourceDigest": "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2",
-        "expectedTargetDigest": "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"
-      },
-      {
-        "identity": "step/checkout/id",
-        "sourcePath": "$.workflows[0].steps[0].id",
-        "targetIdentity": "plan/node/source/checkout/identity",
-        "disposition": "TRANSFORMED",
-        "valueKind": "step-identity",
-        "sourceDigest": "0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710",
-        "expectedTargetDigest": "2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205",
-        "transform": "step-id-to-source-and-result-identity"
-      },
-      {
-        "identity": "step/checkout/param/branch",
-        "sourcePath": "$.workflows[0].steps[0].params.branch",
-        "targetIdentity": "plan/node/source/checkout/param/branch",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b",
-        "expectedTargetDigest": "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"
-      },
-      {
-        "identity": "step/checkout/param/system",
-        "sourcePath": "$.workflows[0].steps[0].params.system",
-        "targetIdentity": "plan/node/source/checkout/binding-metadata/system",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095",
-        "expectedTargetDigest": "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"
-      },
-      {
-        "identity": "step/checkout/param/url",
-        "sourcePath": "$.workflows[0].steps[0].params.url",
-        "targetIdentity": "plan/node/source/checkout/param/url",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5",
-        "expectedTargetDigest": "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5"
-      },
-      {
-        "identity": "step/checkout/uses",
-        "sourcePath": "$.workflows[0].steps[0].uses",
-        "targetIdentity": "plan/node/source/checkout/binding",
-        "disposition": "TRANSFORMED",
-        "valueKind": "binding",
-        "sourceDigest": "40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476",
-        "expectedTargetDigest": "291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6",
-        "transform": "explicit-action-binding-resolution"
-      },
-      {
-        "identity": "system/registry/name",
-        "sourcePath": "$.systems[1].name",
-        "targetIdentity": "plan/source-intent/system/registry/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf",
-        "expectedTargetDigest": "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"
-      },
-      {
-        "identity": "system/registry/purpose",
-        "sourcePath": "$.systems[1].purpose",
-        "targetIdentity": "plan/source-intent/system/registry/purpose",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19",
-        "expectedTargetDigest": "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19"
-      },
-      {
-        "identity": "system/registry/type",
-        "sourcePath": "$.systems[1].type",
-        "targetIdentity": "plan/source-intent/system/registry/canonical-type",
-        "disposition": "TRANSFORMED",
-        "valueKind": "string",
-        "sourceDigest": "7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e",
-        "expectedTargetDigest": "1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87",
-        "transform": "canonical-system-type-normalization"
-      },
-      {
-        "identity": "system/source/name",
-        "sourcePath": "$.systems[0].name",
-        "targetIdentity": "plan/source-intent/system/source/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b",
-        "expectedTargetDigest": "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"
-      },
-      {
-        "identity": "system/source/purpose",
-        "sourcePath": "$.systems[0].purpose",
-        "targetIdentity": "plan/source-intent/system/source/purpose",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445",
-        "expectedTargetDigest": "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445"
-      },
-      {
-        "identity": "system/source/type",
-        "sourcePath": "$.systems[0].type",
-        "targetIdentity": "plan/source-intent/system/source/canonical-type",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382",
-        "expectedTargetDigest": "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"
-      },
-      {
-        "identity": "workflow/build-reference-image/kind",
-        "sourcePath": "$.workflows[0].kind",
-        "targetIdentity": "plan/source-intent/workflow/build-reference-image/kind",
-        "disposition": "PRESERVED",
-        "valueKind": "enum",
-        "sourceDigest": "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e",
-        "expectedTargetDigest": "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e"
-      },
-      {
-        "identity": "workflow/build-reference-image/name",
-        "sourcePath": "$.workflows[0].name",
-        "targetIdentity": "plan/source-intent/workflow/build-reference-image/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758",
-        "expectedTargetDigest": "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758"
-      }
-    ]
+    "fields" : [ {
+      "identity" : "failure/notify",
+      "sourcePath" : "$.failure.notify",
+      "targetIdentity" : "plan/source-intent/failure/notify",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+      "expectedTargetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+    }, {
+      "identity" : "failure/rollback",
+      "sourcePath" : "$.failure.rollback",
+      "targetIdentity" : "plan/source-intent/failure/rollback",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+      "expectedTargetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+    }, {
+      "identity" : "failure/stop-on-error",
+      "sourcePath" : "$.failure.stopOnError",
+      "targetIdentity" : "plan/source-intent/failure/stop-on-error",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "identity" : "input/version/name",
+      "sourcePath" : "$.inputs[0].name",
+      "targetIdentity" : "plan/input/version/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae",
+      "expectedTargetDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"
+    }, {
+      "identity" : "input/version/required",
+      "sourcePath" : "$.inputs[0].required",
+      "targetIdentity" : "plan/input/version/required",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "identity" : "input/version/type",
+      "sourcePath" : "$.inputs[0].type",
+      "targetIdentity" : "plan/input/version/type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "input-type",
+      "sourceDigest" : "b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2",
+      "expectedTargetDigest" : "38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723",
+      "transform" : "intent-input-type-normalization"
+    }, {
+      "identity" : "intent/description",
+      "sourcePath" : "$.description",
+      "targetIdentity" : "plan/source-intent/description",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce",
+      "expectedTargetDigest" : "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce"
+    }, {
+      "identity" : "intent/name",
+      "sourcePath" : "$.name",
+      "targetIdentity" : "plan/flow/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2",
+      "expectedTargetDigest" : "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2"
+    }, {
+      "identity" : "step/build-image/capability",
+      "sourcePath" : "$.workflows[0].steps[1].capability",
+      "targetIdentity" : "plan/node/source/build-image/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8",
+      "expectedTargetDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"
+    }, {
+      "identity" : "step/build-image/id",
+      "sourcePath" : "$.workflows[0].steps[1].id",
+      "targetIdentity" : "plan/node/source/build-image/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa",
+      "expectedTargetDigest" : "c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "identity" : "step/build-image/param/image",
+      "sourcePath" : "$.workflows[0].steps[1].params.image",
+      "targetIdentity" : "plan/node/source/build-image/param/image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b",
+      "expectedTargetDigest" : "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b"
+    }, {
+      "identity" : "step/build-image/param/path",
+      "sourcePath" : "$.workflows[0].steps[1].params.path",
+      "targetIdentity" : "plan/node/source/build-image/param/path",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1",
+      "expectedTargetDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"
+    }, {
+      "identity" : "step/build-image/param/push",
+      "sourcePath" : "$.workflows[0].steps[1].params.push",
+      "targetIdentity" : "plan/node/source/build-image/param/push",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+      "expectedTargetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+    }, {
+      "identity" : "step/build-image/param/system",
+      "sourcePath" : "$.workflows[0].steps[1].params.system",
+      "targetIdentity" : "plan/node/source/build-image/binding-metadata/system",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd",
+      "expectedTargetDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"
+    }, {
+      "identity" : "step/build-image/requires/checkout",
+      "sourcePath" : "$.workflows[0].steps[1].requires",
+      "targetIdentity" : "plan/node/source/build-image/dependency/source/checkout",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15",
+      "expectedTargetDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"
+    }, {
+      "identity" : "step/build-image/uses",
+      "sourcePath" : "$.workflows[0].steps[1].uses",
+      "targetIdentity" : "plan/node/source/build-image/binding",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "binding",
+      "sourceDigest" : "4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00",
+      "expectedTargetDigest" : "783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3",
+      "transform" : "explicit-action-binding-resolution"
+    }, {
+      "identity" : "step/checkout/capability",
+      "sourcePath" : "$.workflows[0].steps[0].capability",
+      "targetIdentity" : "plan/node/source/checkout/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2",
+      "expectedTargetDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"
+    }, {
+      "identity" : "step/checkout/id",
+      "sourcePath" : "$.workflows[0].steps[0].id",
+      "targetIdentity" : "plan/node/source/checkout/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710",
+      "expectedTargetDigest" : "2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "identity" : "step/checkout/param/branch",
+      "sourcePath" : "$.workflows[0].steps[0].params.branch",
+      "targetIdentity" : "plan/node/source/checkout/param/branch",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b",
+      "expectedTargetDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"
+    }, {
+      "identity" : "step/checkout/param/system",
+      "sourcePath" : "$.workflows[0].steps[0].params.system",
+      "targetIdentity" : "plan/node/source/checkout/binding-metadata/system",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095",
+      "expectedTargetDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"
+    }, {
+      "identity" : "step/checkout/param/url",
+      "sourcePath" : "$.workflows[0].steps[0].params.url",
+      "targetIdentity" : "plan/node/source/checkout/param/url",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5",
+      "expectedTargetDigest" : "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5"
+    }, {
+      "identity" : "step/checkout/uses",
+      "sourcePath" : "$.workflows[0].steps[0].uses",
+      "targetIdentity" : "plan/node/source/checkout/binding",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "binding",
+      "sourceDigest" : "40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476",
+      "expectedTargetDigest" : "291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6",
+      "transform" : "explicit-action-binding-resolution"
+    }, {
+      "identity" : "system/registry/name",
+      "sourcePath" : "$.systems[1].name",
+      "targetIdentity" : "plan/source-intent/system/registry/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf",
+      "expectedTargetDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"
+    }, {
+      "identity" : "system/registry/purpose",
+      "sourcePath" : "$.systems[1].purpose",
+      "targetIdentity" : "plan/source-intent/system/registry/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19",
+      "expectedTargetDigest" : "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19"
+    }, {
+      "identity" : "system/registry/type",
+      "sourcePath" : "$.systems[1].type",
+      "targetIdentity" : "plan/source-intent/system/registry/canonical-type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "string",
+      "sourceDigest" : "7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e",
+      "expectedTargetDigest" : "1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87",
+      "transform" : "canonical-system-type-normalization"
+    }, {
+      "identity" : "system/source/name",
+      "sourcePath" : "$.systems[0].name",
+      "targetIdentity" : "plan/source-intent/system/source/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b",
+      "expectedTargetDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"
+    }, {
+      "identity" : "system/source/purpose",
+      "sourcePath" : "$.systems[0].purpose",
+      "targetIdentity" : "plan/source-intent/system/source/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445",
+      "expectedTargetDigest" : "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445"
+    }, {
+      "identity" : "system/source/type",
+      "sourcePath" : "$.systems[0].type",
+      "targetIdentity" : "plan/source-intent/system/source/canonical-type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382",
+      "expectedTargetDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"
+    }, {
+      "identity" : "workflow/build-reference-image/kind",
+      "sourcePath" : "$.workflows[0].kind",
+      "targetIdentity" : "plan/source-intent/workflow/build-reference-image/kind",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e",
+      "expectedTargetDigest" : "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e"
+    }, {
+      "identity" : "workflow/build-reference-image/name",
+      "sourcePath" : "$.workflows[0].name",
+      "targetIdentity" : "plan/source-intent/workflow/build-reference-image/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758",
+      "expectedTargetDigest" : "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758"
+    } ]
   },
-  "loweringReport": {
-    "contractVersion": "2.0",
-    "artifactKind": "execution-plan",
-    "evidenceDigest": "09bb33d7277b026cf0b678a24a821bbfcbd73bd3494b144f645d3a4779e7234c",
-    "evidence": [
-      {
-        "sourceIdentity": "failure/notify",
-        "sourcePath": "$.failure.notify",
-        "targetIdentity": "plan/source-intent/failure/notify",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
-        "targetDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
-      },
-      {
-        "sourceIdentity": "failure/rollback",
-        "sourcePath": "$.failure.rollback",
-        "targetIdentity": "plan/source-intent/failure/rollback",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
-        "targetDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
-      },
-      {
-        "sourceIdentity": "failure/stop-on-error",
-        "sourcePath": "$.failure.stopOnError",
-        "targetIdentity": "plan/source-intent/failure/stop-on-error",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
-        "targetDigest": "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
-      },
-      {
-        "sourceIdentity": "input/version/name",
-        "sourcePath": "$.inputs[0].name",
-        "targetIdentity": "plan/input/version/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae",
-        "targetDigest": "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"
-      },
-      {
-        "sourceIdentity": "input/version/required",
-        "sourcePath": "$.inputs[0].required",
-        "targetIdentity": "plan/input/version/required",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
-        "targetDigest": "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
-      },
-      {
-        "sourceIdentity": "input/version/type",
-        "sourcePath": "$.inputs[0].type",
-        "targetIdentity": "plan/input/version/type",
-        "disposition": "TRANSFORMED",
-        "valueKind": "input-type",
-        "sourceDigest": "b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2",
-        "targetDigest": "38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723",
-        "transform": "intent-input-type-normalization"
-      },
-      {
-        "sourceIdentity": "intent/description",
-        "sourcePath": "$.description",
-        "targetIdentity": "plan/source-intent/description",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce",
-        "targetDigest": "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce"
-      },
-      {
-        "sourceIdentity": "intent/name",
-        "sourcePath": "$.name",
-        "targetIdentity": "plan/flow/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2",
-        "targetDigest": "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2"
-      },
-      {
-        "sourceIdentity": "step/build-image/capability",
-        "sourcePath": "$.workflows[0].steps[1].capability",
-        "targetIdentity": "plan/node/source/build-image/semantic-capability",
-        "disposition": "PRESERVED",
-        "valueKind": "enum",
-        "sourceDigest": "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8",
-        "targetDigest": "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"
-      },
-      {
-        "sourceIdentity": "step/build-image/id",
-        "sourcePath": "$.workflows[0].steps[1].id",
-        "targetIdentity": "plan/node/source/build-image/identity",
-        "disposition": "TRANSFORMED",
-        "valueKind": "step-identity",
-        "sourceDigest": "9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa",
-        "targetDigest": "c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee",
-        "transform": "step-id-to-source-and-result-identity"
-      },
-      {
-        "sourceIdentity": "step/build-image/param/image",
-        "sourcePath": "$.workflows[0].steps[1].params.image",
-        "targetIdentity": "plan/node/source/build-image/param/image",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b",
-        "targetDigest": "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b"
-      },
-      {
-        "sourceIdentity": "step/build-image/param/path",
-        "sourcePath": "$.workflows[0].steps[1].params.path",
-        "targetIdentity": "plan/node/source/build-image/param/path",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1",
-        "targetDigest": "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"
-      },
-      {
-        "sourceIdentity": "step/build-image/param/push",
-        "sourcePath": "$.workflows[0].steps[1].params.push",
-        "targetIdentity": "plan/node/source/build-image/param/push",
-        "disposition": "PRESERVED",
-        "valueKind": "boolean",
-        "sourceDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
-        "targetDigest": "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
-      },
-      {
-        "sourceIdentity": "step/build-image/param/system",
-        "sourcePath": "$.workflows[0].steps[1].params.system",
-        "targetIdentity": "plan/node/source/build-image/binding-metadata/system",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd",
-        "targetDigest": "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"
-      },
-      {
-        "sourceIdentity": "step/build-image/requires/checkout",
-        "sourcePath": "$.workflows[0].steps[1].requires",
-        "targetIdentity": "plan/node/source/build-image/dependency/source/checkout",
-        "disposition": "PRESERVED",
-        "valueKind": "step-reference",
-        "sourceDigest": "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15",
-        "targetDigest": "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"
-      },
-      {
-        "sourceIdentity": "step/build-image/uses",
-        "sourcePath": "$.workflows[0].steps[1].uses",
-        "targetIdentity": "plan/node/source/build-image/binding",
-        "disposition": "TRANSFORMED",
-        "valueKind": "binding",
-        "sourceDigest": "4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00",
-        "targetDigest": "783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3",
-        "transform": "explicit-action-binding-resolution"
-      },
-      {
-        "sourceIdentity": "step/checkout/capability",
-        "sourcePath": "$.workflows[0].steps[0].capability",
-        "targetIdentity": "plan/node/source/checkout/semantic-capability",
-        "disposition": "PRESERVED",
-        "valueKind": "enum",
-        "sourceDigest": "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2",
-        "targetDigest": "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"
-      },
-      {
-        "sourceIdentity": "step/checkout/id",
-        "sourcePath": "$.workflows[0].steps[0].id",
-        "targetIdentity": "plan/node/source/checkout/identity",
-        "disposition": "TRANSFORMED",
-        "valueKind": "step-identity",
-        "sourceDigest": "0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710",
-        "targetDigest": "2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205",
-        "transform": "step-id-to-source-and-result-identity"
-      },
-      {
-        "sourceIdentity": "step/checkout/param/branch",
-        "sourcePath": "$.workflows[0].steps[0].params.branch",
-        "targetIdentity": "plan/node/source/checkout/param/branch",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b",
-        "targetDigest": "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"
-      },
-      {
-        "sourceIdentity": "step/checkout/param/system",
-        "sourcePath": "$.workflows[0].steps[0].params.system",
-        "targetIdentity": "plan/node/source/checkout/binding-metadata/system",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095",
-        "targetDigest": "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"
-      },
-      {
-        "sourceIdentity": "step/checkout/param/url",
-        "sourcePath": "$.workflows[0].steps[0].params.url",
-        "targetIdentity": "plan/node/source/checkout/param/url",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5",
-        "targetDigest": "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5"
-      },
-      {
-        "sourceIdentity": "step/checkout/uses",
-        "sourcePath": "$.workflows[0].steps[0].uses",
-        "targetIdentity": "plan/node/source/checkout/binding",
-        "disposition": "TRANSFORMED",
-        "valueKind": "binding",
-        "sourceDigest": "40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476",
-        "targetDigest": "291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6",
-        "transform": "explicit-action-binding-resolution"
-      },
-      {
-        "sourceIdentity": "system/registry/name",
-        "sourcePath": "$.systems[1].name",
-        "targetIdentity": "plan/source-intent/system/registry/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf",
-        "targetDigest": "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"
-      },
-      {
-        "sourceIdentity": "system/registry/purpose",
-        "sourcePath": "$.systems[1].purpose",
-        "targetIdentity": "plan/source-intent/system/registry/purpose",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19",
-        "targetDigest": "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19"
-      },
-      {
-        "sourceIdentity": "system/registry/type",
-        "sourcePath": "$.systems[1].type",
-        "targetIdentity": "plan/source-intent/system/registry/canonical-type",
-        "disposition": "TRANSFORMED",
-        "valueKind": "string",
-        "sourceDigest": "7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e",
-        "targetDigest": "1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87",
-        "transform": "canonical-system-type-normalization"
-      },
-      {
-        "sourceIdentity": "system/source/name",
-        "sourcePath": "$.systems[0].name",
-        "targetIdentity": "plan/source-intent/system/source/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b",
-        "targetDigest": "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"
-      },
-      {
-        "sourceIdentity": "system/source/purpose",
-        "sourcePath": "$.systems[0].purpose",
-        "targetIdentity": "plan/source-intent/system/source/purpose",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445",
-        "targetDigest": "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445"
-      },
-      {
-        "sourceIdentity": "system/source/type",
-        "sourcePath": "$.systems[0].type",
-        "targetIdentity": "plan/source-intent/system/source/canonical-type",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382",
-        "targetDigest": "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"
-      },
-      {
-        "sourceIdentity": "workflow/build-reference-image/kind",
-        "sourcePath": "$.workflows[0].kind",
-        "targetIdentity": "plan/source-intent/workflow/build-reference-image/kind",
-        "disposition": "PRESERVED",
-        "valueKind": "enum",
-        "sourceDigest": "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e",
-        "targetDigest": "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e"
-      },
-      {
-        "sourceIdentity": "workflow/build-reference-image/name",
-        "sourcePath": "$.workflows[0].name",
-        "targetIdentity": "plan/source-intent/workflow/build-reference-image/name",
-        "disposition": "PRESERVED",
-        "valueKind": "string",
-        "sourceDigest": "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758",
-        "targetDigest": "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758"
-      }
-    ]
+  "loweringReport" : {
+    "contractVersion" : "2.0",
+    "artifactKind" : "execution-plan",
+    "evidenceDigest" : "09bb33d7277b026cf0b678a24a821bbfcbd73bd3494b144f645d3a4779e7234c",
+    "evidence" : [ {
+      "sourceIdentity" : "failure/notify",
+      "sourcePath" : "$.failure.notify",
+      "targetIdentity" : "plan/source-intent/failure/notify",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+      "targetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+    }, {
+      "sourceIdentity" : "failure/rollback",
+      "sourcePath" : "$.failure.rollback",
+      "targetIdentity" : "plan/source-intent/failure/rollback",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+      "targetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+    }, {
+      "sourceIdentity" : "failure/stop-on-error",
+      "sourcePath" : "$.failure.stopOnError",
+      "targetIdentity" : "plan/source-intent/failure/stop-on-error",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "targetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "sourceIdentity" : "input/version/name",
+      "sourcePath" : "$.inputs[0].name",
+      "targetIdentity" : "plan/input/version/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae",
+      "targetDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"
+    }, {
+      "sourceIdentity" : "input/version/required",
+      "sourcePath" : "$.inputs[0].required",
+      "targetIdentity" : "plan/input/version/required",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "targetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "sourceIdentity" : "input/version/type",
+      "sourcePath" : "$.inputs[0].type",
+      "targetIdentity" : "plan/input/version/type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "input-type",
+      "sourceDigest" : "b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2",
+      "targetDigest" : "38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723",
+      "transform" : "intent-input-type-normalization"
+    }, {
+      "sourceIdentity" : "intent/description",
+      "sourcePath" : "$.description",
+      "targetIdentity" : "plan/source-intent/description",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce",
+      "targetDigest" : "e44ac00aa123376d60db58e1cb35ea36cd67488b11ee0511de51bf0c39f870ce"
+    }, {
+      "sourceIdentity" : "intent/name",
+      "sourcePath" : "$.name",
+      "targetIdentity" : "plan/flow/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2",
+      "targetDigest" : "8cd86fb64b0e5bfd0bf1d3a0c443418627f2b5f934d6e2ef9a85500b280b7cb2"
+    }, {
+      "sourceIdentity" : "step/build-image/capability",
+      "sourcePath" : "$.workflows[0].steps[1].capability",
+      "targetIdentity" : "plan/node/source/build-image/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8",
+      "targetDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"
+    }, {
+      "sourceIdentity" : "step/build-image/id",
+      "sourcePath" : "$.workflows[0].steps[1].id",
+      "targetIdentity" : "plan/node/source/build-image/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa",
+      "targetDigest" : "c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "sourceIdentity" : "step/build-image/param/image",
+      "sourcePath" : "$.workflows[0].steps[1].params.image",
+      "targetIdentity" : "plan/node/source/build-image/param/image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b",
+      "targetDigest" : "4ffc4c6319860bcf2ed42d979e2d150fa8deae865619d6b6a9e7e1929afa547b"
+    }, {
+      "sourceIdentity" : "step/build-image/param/path",
+      "sourcePath" : "$.workflows[0].steps[1].params.path",
+      "targetIdentity" : "plan/node/source/build-image/param/path",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1",
+      "targetDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"
+    }, {
+      "sourceIdentity" : "step/build-image/param/push",
+      "sourcePath" : "$.workflows[0].steps[1].params.push",
+      "targetIdentity" : "plan/node/source/build-image/param/push",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+      "targetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+    }, {
+      "sourceIdentity" : "step/build-image/param/system",
+      "sourcePath" : "$.workflows[0].steps[1].params.system",
+      "targetIdentity" : "plan/node/source/build-image/binding-metadata/system",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd",
+      "targetDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"
+    }, {
+      "sourceIdentity" : "step/build-image/requires/checkout",
+      "sourcePath" : "$.workflows[0].steps[1].requires",
+      "targetIdentity" : "plan/node/source/build-image/dependency/source/checkout",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15",
+      "targetDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"
+    }, {
+      "sourceIdentity" : "step/build-image/uses",
+      "sourcePath" : "$.workflows[0].steps[1].uses",
+      "targetIdentity" : "plan/node/source/build-image/binding",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "binding",
+      "sourceDigest" : "4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00",
+      "targetDigest" : "783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3",
+      "transform" : "explicit-action-binding-resolution"
+    }, {
+      "sourceIdentity" : "step/checkout/capability",
+      "sourcePath" : "$.workflows[0].steps[0].capability",
+      "targetIdentity" : "plan/node/source/checkout/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2",
+      "targetDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"
+    }, {
+      "sourceIdentity" : "step/checkout/id",
+      "sourcePath" : "$.workflows[0].steps[0].id",
+      "targetIdentity" : "plan/node/source/checkout/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710",
+      "targetDigest" : "2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "sourceIdentity" : "step/checkout/param/branch",
+      "sourcePath" : "$.workflows[0].steps[0].params.branch",
+      "targetIdentity" : "plan/node/source/checkout/param/branch",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b",
+      "targetDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"
+    }, {
+      "sourceIdentity" : "step/checkout/param/system",
+      "sourcePath" : "$.workflows[0].steps[0].params.system",
+      "targetIdentity" : "plan/node/source/checkout/binding-metadata/system",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095",
+      "targetDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"
+    }, {
+      "sourceIdentity" : "step/checkout/param/url",
+      "sourcePath" : "$.workflows[0].steps[0].params.url",
+      "targetIdentity" : "plan/node/source/checkout/param/url",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5",
+      "targetDigest" : "4a873a2829b2eec87823f3c7dd6211d13950f79892be05a7fa55cb3ce79555d5"
+    }, {
+      "sourceIdentity" : "step/checkout/uses",
+      "sourcePath" : "$.workflows[0].steps[0].uses",
+      "targetIdentity" : "plan/node/source/checkout/binding",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "binding",
+      "sourceDigest" : "40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476",
+      "targetDigest" : "291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6",
+      "transform" : "explicit-action-binding-resolution"
+    }, {
+      "sourceIdentity" : "system/registry/name",
+      "sourcePath" : "$.systems[1].name",
+      "targetIdentity" : "plan/source-intent/system/registry/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf",
+      "targetDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"
+    }, {
+      "sourceIdentity" : "system/registry/purpose",
+      "sourcePath" : "$.systems[1].purpose",
+      "targetIdentity" : "plan/source-intent/system/registry/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19",
+      "targetDigest" : "f748ccc1660994e3d7136c113beb4622824246d9b2e7bc3cf26cb3bea7085e19"
+    }, {
+      "sourceIdentity" : "system/registry/type",
+      "sourcePath" : "$.systems[1].type",
+      "targetIdentity" : "plan/source-intent/system/registry/canonical-type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "string",
+      "sourceDigest" : "7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e",
+      "targetDigest" : "1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87",
+      "transform" : "canonical-system-type-normalization"
+    }, {
+      "sourceIdentity" : "system/source/name",
+      "sourcePath" : "$.systems[0].name",
+      "targetIdentity" : "plan/source-intent/system/source/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b",
+      "targetDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"
+    }, {
+      "sourceIdentity" : "system/source/purpose",
+      "sourcePath" : "$.systems[0].purpose",
+      "targetIdentity" : "plan/source-intent/system/source/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445",
+      "targetDigest" : "f86b725a9a5185b517a5ac1eebf32ff46317d1677d39f0c181915ca0ae32a445"
+    }, {
+      "sourceIdentity" : "system/source/type",
+      "sourcePath" : "$.systems[0].type",
+      "targetIdentity" : "plan/source-intent/system/source/canonical-type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382",
+      "targetDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"
+    }, {
+      "sourceIdentity" : "workflow/build-reference-image/kind",
+      "sourcePath" : "$.workflows[0].kind",
+      "targetIdentity" : "plan/source-intent/workflow/build-reference-image/kind",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e",
+      "targetDigest" : "117fc9f2193fbee1db4b9ff6a920cdffcfc9ca4db0b91198f7482505fb4bf66e"
+    }, {
+      "sourceIdentity" : "workflow/build-reference-image/name",
+      "sourcePath" : "$.workflows[0].name",
+      "targetIdentity" : "plan/source-intent/workflow/build-reference-image/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758",
+      "targetDigest" : "34e140767bb3d5000fd0a17fffc3f18f07a969b76939911219a8dd5065faf758"
+    } ]
   },
-  "assumptions": [],
-  "controlRequirements": [],
-  "controlEvidence": [],
-  "controlDecision": {
-    "status": "ALLOWED",
-    "blockingRequirementIds": [],
-    "pendingRequirementIds": []
+  "assumptions" : [ ],
+  "controlRequirements" : [ ],
+  "controlEvidence" : [ ],
+  "controlDecision" : {
+    "status" : "ALLOWED",
+    "blockingRequirementIds" : [ ],
+    "pendingRequirementIds" : [ ]
   },
-  "topologyRequirements": [
-    {
-      "id": "topology.ephemeralWorkspace.git-checkout-1-docker-build-1",
-      "kind": "EPHEMERAL_WORKSPACE",
-      "subject": "git_checkout_1->docker_build_1",
-      "source": "PLAN_STRUCTURE",
-      "evidenceReference": "docker.build.continuity.requires.workspace.source"
+  "topologyRequirements" : [ {
+    "id" : "topology.ephemeralWorkspace.git-checkout-1-docker-build-1",
+    "kind" : "EPHEMERAL_WORKSPACE",
+    "subject" : "git_checkout_1->docker_build_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source"
+  }, {
+    "id" : "topology.workflowLifetime.build-reference-image",
+    "kind" : "WORKFLOW_LIFETIME",
+    "subject" : "build-reference-image",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.workflows.build-reference-image"
+  }, {
+    "id" : "topology.workflowLifetime.checkout-build-image",
+    "kind" : "WORKFLOW_LIFETIME",
+    "subject" : "checkout-build-image",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes"
+  }, {
+    "id" : "topology.workflowScope.build-reference-image",
+    "kind" : "WORKFLOW_SCOPE",
+    "subject" : "build-reference-image",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.workflows.build-reference-image"
+  }, {
+    "id" : "topology.workflowScope.checkout-build-image",
+    "kind" : "WORKFLOW_SCOPE",
+    "subject" : "checkout-build-image",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes"
+  }, {
+    "id" : "topology.workspacePropagation.git-checkout-1-docker-build-1",
+    "kind" : "WORKSPACE_PROPAGATION",
+    "subject" : "git_checkout_1->docker_build_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source"
+  } ],
+  "nodes" : [ {
+    "id" : "git_checkout_1",
+    "kind" : "task",
+    "module" : "git",
+    "action" : "checkout",
+    "target" : "source",
+    "resultName" : "checkout",
+    "dependencies" : [ ],
+    "inputs" : {
+      "branch" : "\"main\"",
+      "url" : "\"https://github.com/octocat/Hello-World.git\""
     },
-    {
-      "id": "topology.workflowLifetime.build-reference-image",
-      "kind": "WORKFLOW_LIFETIME",
-      "subject": "build-reference-image",
-      "source": "CANONICAL_WORKFLOW",
-      "evidenceReference": "intent.workflows.build-reference-image"
+    "outputs" : [ "checkout" ],
+    "semanticCapability" : "CHECKOUT",
+    "sourceId" : "checkout",
+    "bindingMetadata" : {
+      "system" : "\"source\""
     },
-    {
-      "id": "topology.workflowLifetime.checkout-build-image",
-      "kind": "WORKFLOW_LIFETIME",
-      "subject": "checkout-build-image",
-      "source": "PLAN_STRUCTURE",
-      "evidenceReference": "plan.nodes"
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "READ",
+      "resource" : "source.repository",
+      "external" : true,
+      "sourceCapability" : "CHECKOUT"
+    } ],
+    "effects" : [ "source.repository" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "git.checkout" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  }, {
+    "id" : "docker_build_1",
+    "kind" : "task",
+    "module" : "docker",
+    "action" : "build",
+    "target" : "registry",
+    "resultName" : "build_image",
+    "dependencies" : [ "git_checkout_1" ],
+    "inputs" : {
+      "image" : "\"ghcr.io/flowlang/reference:${version}\"",
+      "path" : "\".\"",
+      "push" : "false"
     },
-    {
-      "id": "topology.workflowScope.build-reference-image",
-      "kind": "WORKFLOW_SCOPE",
-      "subject": "build-reference-image",
-      "source": "CANONICAL_WORKFLOW",
-      "evidenceReference": "intent.workflows.build-reference-image"
+    "outputs" : [ "build_image" ],
+    "semanticCapability" : "BUILD_IMAGE",
+    "sourceId" : "build-image",
+    "bindingMetadata" : {
+      "system" : "\"registry\""
     },
-    {
-      "id": "topology.workflowScope.checkout-build-image",
-      "kind": "WORKFLOW_SCOPE",
-      "subject": "checkout-build-image",
-      "source": "PLAN_STRUCTURE",
-      "evidenceReference": "plan.nodes"
-    },
-    {
-      "id": "topology.workspacePropagation.git-checkout-1-docker-build-1",
-      "kind": "WORKSPACE_PROPAGATION",
-      "subject": "git_checkout_1->docker_build_1",
-      "source": "PLAN_STRUCTURE",
-      "evidenceReference": "docker.build.continuity.requires.workspace.source"
-    }
-  ],
-  "nodes": [
-    {
-      "id": "git_checkout_1",
-      "kind": "task",
-      "module": "git",
-      "action": "checkout",
-      "target": "source",
-      "resultName": "checkout",
-      "dependencies": [],
-      "inputs": {
-        "branch": "\"main\"",
-        "url": "\"https://github.com/octocat/Hello-World.git\""
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "CREATE",
+      "resource" : "software.image",
+      "transition" : {
+        "from" : "ABSENT",
+        "to" : "PRESENT"
       },
-      "outputs": [
-        "checkout"
-      ],
-      "semanticCapability": "CHECKOUT",
-      "sourceId": "checkout",
-      "bindingMetadata": {
-        "system": "\"source\""
-      },
-      "effectModel": [
-        {
-          "domain": "SOFTWARE_DELIVERY",
-          "operation": "READ",
-          "resource": "source.repository",
-          "external": true,
-          "sourceCapability": "CHECKOUT"
-        }
-      ],
-      "effects": [
-        "source.repository"
-      ],
-      "destructive": false,
-      "requiredCapabilities": [
-        "task.execute",
-        "git.checkout"
-      ],
-      "targetHints": {},
-      "assumptions": [],
-      "then": [],
-      "otherwise": [],
-      "branches": [],
-      "cases": [],
-      "errorCase": [],
-      "defaultSteps": [],
-      "body": [],
-      "errorHandler": []
-    },
-    {
-      "id": "docker_build_1",
-      "kind": "task",
-      "module": "docker",
-      "action": "build",
-      "target": "registry",
-      "resultName": "build_image",
-      "dependencies": [
-        "git_checkout_1"
-      ],
-      "inputs": {
-        "image": "\"ghcr.io/flowlang/reference:${version}\"",
-        "path": "\".\"",
-        "push": "false"
-      },
-      "outputs": [
-        "build_image"
-      ],
-      "semanticCapability": "BUILD_IMAGE",
-      "sourceId": "build-image",
-      "bindingMetadata": {
-        "system": "\"registry\""
-      },
-      "effectModel": [
-        {
-          "domain": "SOFTWARE_DELIVERY",
-          "operation": "CREATE",
-          "resource": "software.image",
-          "transition": {
-            "from": "ABSENT",
-            "to": "PRESENT"
-          },
-          "external": true,
-          "sourceCapability": "BUILD_IMAGE"
-        }
-      ],
-      "effects": [
-        "software.image"
-      ],
-      "destructive": false,
-      "requiredCapabilities": [
-        "task.execute",
-        "docker.build",
-        "container.image",
-        "continuity.workspace"
-      ],
-      "targetHints": {},
-      "assumptions": [],
-      "then": [],
-      "otherwise": [],
-      "branches": [],
-      "cases": [],
-      "errorCase": [],
-      "defaultSteps": [],
-      "body": [],
-      "errorHandler": []
-    }
-  ],
-  "dependencyRelations": [
-    {
-      "sourceNodeId": "git_checkout_1",
-      "targetNodeId": "docker_build_1",
-      "kind": "ORDERING",
-      "evidence": "DECLARED_ORDERING",
-      "resolution": "RESOLVED",
-      "path": [
-        "git_checkout_1",
-        "docker_build_1"
-      ],
-      "candidates": [],
-      "continuity": false,
-      "blocking": false
-    },
-    {
-      "sourceNodeId": "git_checkout_1",
-      "targetNodeId": "docker_build_1",
-      "kind": "WORKSPACE",
-      "channel": "source",
-      "evidence": "MODULE_CONTRACT",
-      "resolution": "RESOLVED",
-      "path": [
-        "git_checkout_1",
-        "docker_build_1"
-      ],
-      "candidates": [],
-      "evidenceReference": "docker.build.continuity.requires.workspace.source",
-      "continuity": true,
-      "blocking": false
-    }
-  ]
+      "external" : true,
+      "sourceCapability" : "BUILD_IMAGE"
+    } ],
+    "effects" : [ "software.image" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "docker.build", "container.image", "continuity.workspace" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  } ],
+  "dependencyRelations" : [ {
+    "sourceNodeId" : "git_checkout_1",
+    "targetNodeId" : "docker_build_1",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "git_checkout_1", "docker_build_1" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "git_checkout_1",
+    "targetNodeId" : "docker_build_1",
+    "kind" : "WORKSPACE",
+    "channel" : "source",
+    "evidence" : "MODULE_CONTRACT",
+    "resolution" : "RESOLVED",
+    "path" : [ "git_checkout_1", "docker_build_1" ],
+    "candidates" : [ ],
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source",
+    "continuity" : true,
+    "blocking" : false
+  } ]
 }
