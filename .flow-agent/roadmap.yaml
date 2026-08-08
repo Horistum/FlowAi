@@ -1,6 +1,6 @@
 project: Flow
-roadmapVersion: 16
-currentTrack: "architecture-authority-responsibility-consolidation"
+roadmapVersion: 17
+currentTrack: "architecture-completed"
 primaryRoadmapStream: architecture
 
 versionBoundary:
@@ -69,7 +69,7 @@ architectureConstitution:
 architectureDebtBacklog:
   - id: "AR0.1"
     name: "Authority Responsibility Consolidation"
-    status: active
+    status: completed
     ownership: "cross-stream-architecture"
     activation: "Activated after Flow CI #2798 passed the distinct C0.4 completion boundary; a higher-priority invariant correction may still interrupt implementation."
     purpose: "Reduce authority ceremony without collapsing independent semantic, adapter or conformance invariants."
@@ -106,7 +106,6 @@ currentDecision:
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
   completedConformanceItem: "C0.4"
   completedConformanceItemName: "Adapter Profile Evidence"
-  nextItem: "AR0.1"
-  nextItemName: "Authority Responsibility Consolidation"
-  nextItemStream: "architecture"
-  decisionBasis: "Flow CI #2798, run 31166600475, passed the distinct C0.4 completion boundary on exact head a3f0a062b13f4f167fb9269d166b31dcf73e1ed1 and synthetic merge candidate 646a2517784a82f8799bc8d4a74fa4f592f966ac. C0.4 is complete and AR0.1 is selected as the active cross-stream architecture item."
+  completedArchitectureItem: "AR0.1"
+  completedArchitectureItemName: "Authority Responsibility Consolidation"
+  decisionBasis: "AR0.1 implementation was validated by Flow CI #2807 / run 31196276487, and distinct completion validation Flow CI #2809 / run 31202921728 passed on exact head 9a355c07052ab72885cbd54beafc2919fe9b710f and synthetic merge candidate 6d79960ac580132079a5a2a9cd1428405de8ba6d. No successor architecture item is declared, so the primary architecture stream closes terminally at AR0.1."
