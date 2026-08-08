@@ -55,11 +55,20 @@ class ExecutionPlanControlScopeContractTests {
     }
 
     @Test
-    fun executionPlan21SchemaRequiresStrictControlScope() {
-        val schema = Json.mapper.readTree(File("schemas/execution-plan.schema.json"))
-        assertEquals("2.1", FlowStandardVersions.EXECUTION_PLAN_VERSION)
-        assertEquals("2.1", schema.path("properties").path("planVersion").path("const").asText())
+    fun astAndExecutionPlan21SchemasRequireStrictControlScope() {
+        val ast = Json.mapper.readTree(File("schemas/ast.schema.json"))
+        val plan = Json.mapper.readTree(File("schemas/execution-plan.schema.json"))
 
+        assertEquals("2.1", FlowStandardVersions.AST_VERSION)
+        assertEquals("2.1", ast.path("properties").path("astVersion").path("const").asText())
+        assertScopeContract(ast)
+
+        assertEquals("2.1", FlowStandardVersions.EXECUTION_PLAN_VERSION)
+        assertEquals("2.1", plan.path("properties").path("planVersion").path("const").asText())
+        assertScopeContract(plan)
+    }
+
+    private fun assertScopeContract(schema: com.fasterxml.jackson.databind.JsonNode) {
         val controlRequirement = schema.path("\$defs").path("controlRequirement")
         val required = controlRequirement.path("required").map { it.asText() }.toSet()
         assertTrue("scope" in required)
