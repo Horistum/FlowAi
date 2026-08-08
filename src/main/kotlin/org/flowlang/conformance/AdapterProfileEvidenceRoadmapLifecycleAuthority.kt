@@ -145,7 +145,8 @@ class AdapterProfileEvidenceRoadmapLifecycleAuthority(
             AdapterProfileEvidenceLifecyclePhase.VALIDATING ->
                 input.conformanceCompletedItem == "C0.3" && input.conformanceNextItem == "C0.4"
             AdapterProfileEvidenceLifecyclePhase.COMPLETED ->
-                input.conformanceCompletedItem == "C0.4" && input.conformanceNextItem != "C0.4"
+                input.conformanceCompletedItem in COMPLETED_OR_LATER_TERMINAL_ITEMS &&
+                    input.conformanceNextItem != "C0.4"
             AdapterProfileEvidenceLifecyclePhase.INVALID -> false
         }
         val globalFocus = when (phase) {
@@ -277,6 +278,7 @@ class AdapterProfileEvidenceRoadmapLifecycleAuthority(
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
+        private val COMPLETED_OR_LATER_TERMINAL_ITEMS = setOf("C0.4", "C1.0")
         private val REQUIRED_FILES = listOf(
             AdapterProfileSourceManifestLoader.PATH,
             AdapterProfileEvidenceConformanceInventory.PATH,
