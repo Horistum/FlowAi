@@ -224,7 +224,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
                     input.conformanceNextItem == "C0.4"
             "completed" ->
                 input.c02Status == "completed" &&
-                    input.conformanceCompletedItem == "C0.4" &&
+                    input.conformanceCompletedItem in COMPLETED_OR_LATER_TERMINAL_ITEMS &&
                     input.conformanceNextItem !in setOf("C0.3", "C0.4")
             else -> false
         }
@@ -321,6 +321,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         private val COMPLETED_HANDOFF_STATES = setOf("next", "completed")
+        private val COMPLETED_OR_LATER_TERMINAL_ITEMS = setOf("C0.4", "C1.0")
         private val ACTIVATION_FIELDS = setOf(
             "conformanceItem",
             "conformanceStatus",

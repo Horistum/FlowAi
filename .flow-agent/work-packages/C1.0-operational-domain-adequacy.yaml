@@ -2,7 +2,7 @@ version: "C1.0"
 name: "Operational Domain Adequacy"
 type: "post-architecture-domain-evidence"
 stream: conformance
-status: active
+status: complete
 objective: "Add independent executable evidence for non-CI/CD operational semantics without reopening the closed C0.1 domain vocabulary or redefining frozen Core meaning."
 activationEvidence:
   status: passed
@@ -18,6 +18,13 @@ implementationEvidence:
   runId: 31238299719
   exactHead: "9230a30dd0783bd6932d58c404ef2076a41aee65"
   mergeCandidate: "f28b45503c29b15070f6c93d7b194df1633eec5d"
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2823
+  runId: 31255449623
+  exactHead: "c22431b1abaf8814b2fe049935fee4c995332122"
+  mergeCandidate: "2b0f2e570b91b7c3c25b4b3c671b98d9733b9198"
 architecturePurpose: "Move the next validation pressure away from CI/CD-heavy evidence and onto target-neutral operational intent after authority ownership has been consolidated."
 universalInvariant: "A real operational source may falsify frozen Flow semantics, but it cannot define, weaken or silently extend them; representability and implementation support remain separate claims."
 scope:
