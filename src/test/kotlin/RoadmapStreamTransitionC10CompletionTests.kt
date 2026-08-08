@@ -36,9 +36,9 @@ class RoadmapStreamTransitionC10CompletionTests {
         val roadmap = File(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX)
         roadmap.writeText(
             roadmap.readText()
-                .replace("              nextItem: \"\"", "              nextItem: \"C1.1\"", limit = 1)
-                .replace("              nextItemName: \"\"", "              nextItemName: \"Fabricated successor\"", limit = 1)
-                .replace("              nextItemStream: \"\"", "              nextItemStream: conformance", limit = 1)
+                .replaceFirst("              nextItem: \"\"", "              nextItem: \"C1.1\"")
+                .replaceFirst("              nextItemName: \"\"", "              nextItemName: \"Fabricated successor\"")
+                .replaceFirst("              nextItemStream: \"\"", "              nextItemStream: conformance")
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
