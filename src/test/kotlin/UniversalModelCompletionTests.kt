@@ -255,8 +255,8 @@ class UniversalModelCompletionTests {
         assertEquals("0.9.5", gradlePackageVersion())
         assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals("2.0", FlowStandardVersions.INTENT_VERSION)
-        assertEquals("2.0", FlowStandardVersions.AST_VERSION)
-        assertEquals("2.0", FlowStandardVersions.EXECUTION_PLAN_VERSION)
+        assertEquals("2.1", FlowStandardVersions.AST_VERSION)
+        assertEquals("2.1", FlowStandardVersions.EXECUTION_PLAN_VERSION)
         assertEquals("3.0", FlowStandardVersions.TARGET_MANIFEST_VERSION)
         assertEquals("3.1", FlowStandardVersions.TARGET_REGISTRY_VERSION)
 

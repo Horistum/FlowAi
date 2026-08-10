@@ -5,6 +5,7 @@ import kotlin.test.assertTrue
 import org.flowlang.controls.ControlRequirement
 import org.flowlang.controls.ControlRequirementIdentityAuthority
 import org.flowlang.controls.ControlRequirementKind
+import org.flowlang.controls.ControlRequirementScope
 import org.flowlang.controls.ControlRequirementSource
 import org.flowlang.identity.CollisionSafeIdentityAuthority
 import org.flowlang.identity.CollisionSafeIdentityCandidate
@@ -96,7 +97,8 @@ class CollisionSafeSemanticIdentityTests {
             subject = "production",
             source = ControlRequirementSource.INTENT_POLICY,
             condition = "environment == 'prod'",
-            message = "Approve production"
+            message = "Approve production",
+            scope = ControlRequirementScope.INTENT
         )
 
         val failure = assertFailsWith<IllegalArgumentException> {
@@ -112,7 +114,8 @@ class CollisionSafeSemanticIdentityTests {
             id = "control.approval.production",
             kind = ControlRequirementKind.APPROVAL,
             subject = "production",
-            source = ControlRequirementSource.INTENT_POLICY
+            source = ControlRequirementSource.INTENT_POLICY,
+            scope = ControlRequirementScope.INTENT
         )
 
         assertEquals(

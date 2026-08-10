@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/ast/2.0/ast.schema.json",
-  "title": "Flow AST v2.0",
+  "$id": "https://flowlang.dev/schemas/ast/2.1/ast.schema.json",
+  "title": "Flow AST v2.1",
   "type": "object",
   "required": [
     "astVersion",
@@ -12,7 +12,7 @@
   ],
   "properties": {
     "astVersion": {
-      "const": "2.0"
+      "const": "2.1"
     },
     "sourceVersion": {
       "type": "string"
@@ -139,7 +139,8 @@
         "id",
         "kind",
         "subject",
-        "source"
+        "source",
+        "scope"
       ],
       "properties": {
         "id": {
@@ -185,9 +186,43 @@
             "string",
             "null"
           ]
+        },
+        "scope": {
+          "$ref": "#/$defs/controlRequirementScope"
         }
       },
       "additionalProperties": false
+    },
+    "controlRequirementScope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "INTENT" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "workflow", "subjectId"],
+          "properties": {
+            "kind": { "const": "OPERATION" },
+            "workflow": { "type": "string", "minLength": 1 },
+            "subjectId": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "subjectId"],
+          "properties": {
+            "kind": { "const": "PLAN_NODE" },
+            "subjectId": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "controlEvidence": {
       "type": "object",

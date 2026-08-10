@@ -1,6 +1,6 @@
 {
   "flowName" : "build-test-deploy",
-  "planVersion" : "2.0",
+  "planVersion" : "2.1",
   "inputs" : [ {
     "name" : "environment",
     "type" : "option",
@@ -528,12 +528,60 @@
       "valueKind" : "string",
       "sourceDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87",
       "expectedTargetDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/approve-prod",
+      "sourcePath" : "$.workflows[0].steps[3].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/approve-prod",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e",
+      "expectedTargetDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/build-image",
+      "sourcePath" : "$.workflows[0].steps[2].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/build-image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c",
+      "expectedTargetDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/checkout",
+      "sourcePath" : "$.workflows[0].steps[0].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/checkout",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e",
+      "expectedTargetDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/deploy",
+      "sourcePath" : "$.workflows[0].steps[4].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/deploy",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451",
+      "expectedTargetDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/test",
+      "sourcePath" : "$.workflows[0].steps[1].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/test",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15",
+      "expectedTargetDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/verify",
+      "sourcePath" : "$.workflows[0].steps[5].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/verify",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7",
+      "expectedTargetDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7"
     } ]
   },
   "loweringReport" : {
-    "contractVersion" : "2.0",
+    "contractVersion" : "2.1",
     "artifactKind" : "execution-plan",
-    "evidenceDigest" : "82f5fabd566dbd50e8a618a8b9312fec941ec3f04837171421caaf661cee240c",
+    "evidenceDigest" : "d7f8ece8e89009e0f8ef75d51a3637be09c586d37e36e864d78c6abb54b36669",
     "evidence" : [ {
       "sourceIdentity" : "failure/notify",
       "sourcePath" : "$.failure.notify",
@@ -969,6 +1017,54 @@
       "valueKind" : "string",
       "sourceDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87",
       "targetDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/approve-prod",
+      "sourcePath" : "$.workflows[0].steps[3].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/approve-prod",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e",
+      "targetDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/build-image",
+      "sourcePath" : "$.workflows[0].steps[2].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/build-image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c",
+      "targetDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/checkout",
+      "sourcePath" : "$.workflows[0].steps[0].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/checkout",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e",
+      "targetDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/deploy",
+      "sourcePath" : "$.workflows[0].steps[4].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/deploy",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451",
+      "targetDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/test",
+      "sourcePath" : "$.workflows[0].steps[1].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/test",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15",
+      "targetDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/verify",
+      "sourcePath" : "$.workflows[0].steps[5].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/verify",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7",
+      "targetDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7"
     } ]
   },
   "assumptions" : [ ],
@@ -977,13 +1073,16 @@
     "kind" : "APPROVAL",
     "subject" : "production-approval",
     "source" : "INTENT_POLICY",
-    "message" : "Approval is required before deployment in this reference flow."
+    "message" : "Approval is required before deployment in this reference flow.",
+    "scope" : {
+      "kind" : "INTENT"
+    }
   } ],
   "controlEvidence" : [ {
     "requirementId" : "control.approval.production-approval",
     "status" : "SATISFIED",
     "source" : "AUTHORED_STEP",
-    "detail" : "approve-prod",
+    "detail" : "Intent-level approval predecessor(s): approve-prod",
     "enforcementCapabilities" : [ ]
   } ],
   "controlDecision" : {

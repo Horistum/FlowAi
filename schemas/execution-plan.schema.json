@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/execution-plan/2.0/execution-plan.schema.json",
-  "title": "Flow Execution Plan v2.0",
+  "$id": "https://flowlang.dev/schemas/execution-plan/2.1/execution-plan.schema.json",
+  "title": "Flow Execution Plan v2.1",
   "description": "Public, target-neutral execution contract produced after intent/AST validation and before target-specific rendering.",
   "type": "object",
   "required": [
@@ -15,7 +15,7 @@
       "minLength": 1
     },
     "planVersion": {
-      "const": "2.0"
+      "const": "2.1"
     },
     "inputs": {
       "type": "array",
@@ -579,7 +579,8 @@
         "id",
         "kind",
         "subject",
-        "source"
+        "source",
+        "scope"
       ],
       "properties": {
         "id": {
@@ -625,9 +626,43 @@
             "string",
             "null"
           ]
+        },
+        "scope": {
+          "$ref": "#/$defs/controlRequirementScope"
         }
       },
       "additionalProperties": false
+    },
+    "controlRequirementScope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "INTENT" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "workflow", "subjectId"],
+          "properties": {
+            "kind": { "const": "OPERATION" },
+            "workflow": { "type": "string", "minLength": 1 },
+            "subjectId": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "subjectId"],
+          "properties": {
+            "kind": { "const": "PLAN_NODE" },
+            "subjectId": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "controlEvidence": {
       "type": "object",
@@ -943,7 +978,7 @@
       ],
       "properties": {
         "contractVersion": {
-          "const": "2.0"
+          "const": "2.1"
         },
         "artifactKind": {
           "const": "execution-plan"

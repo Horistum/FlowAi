@@ -163,13 +163,34 @@ internal class StandardArchitectureNormalizationChecks(
                 kind = IntentWorkflowKind.CUSTOM,
                 steps = listOf(
                     IntentStep(id = "backup", capability = StandardCapability.BACKUP),
-                    IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE)
+                    IntentStep(
+                        id = "migrate",
+                        capability = StandardCapability.DATABASE_MIGRATE,
+                        requires = listOf("backup")
+                    )
                 )
             ))
         )
         val knownAssessment = CanonicalControlRequirementAuthority.assess(known)
         require(knownAssessment.decision.status == ControlDecisionStatus.ALLOWED)
         require(knownAssessment.evidence.all { it.status == ControlEvidenceStatus.SATISFIED })
+
+        val unrelated = known.copy(
+            name = "unrelated-control",
+            workflows = listOf(IntentWorkflow(
+                name = "migration",
+                kind = IntentWorkflowKind.CUSTOM,
+                steps = listOf(
+                    IntentStep(id = "backup", capability = StandardCapability.BACKUP),
+                    IntentStep(id = "migrate", capability = StandardCapability.DATABASE_MIGRATE)
+                )
+            ))
+        )
+        val unrelatedAssessment = CanonicalControlRequirementAuthority.assess(unrelated)
+        require(unrelatedAssessment.decision.status == ControlDecisionStatus.BLOCKED) {
+            "A same-workflow backup without an authored protection edge satisfied the migration control requirement."
+        }
+        require(unrelatedAssessment.evidence.single().status == ControlEvidenceStatus.UNKNOWN)
 
         val unknown = known.copy(
             name = "unknown-control",
