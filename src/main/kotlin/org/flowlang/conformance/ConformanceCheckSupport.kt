@@ -77,7 +77,7 @@ internal abstract class ConformanceCheckSupport(
     protected fun explicitTarget(
         target: String,
         source: String
-    ): ExplicitTargetSelection = TargetSelectionAuthority.fromExplicitConfiguration(target, source, targets)
+    ): ExplicitTargetSelection = TargetSelectionAuthority.fromConformanceCheck(target, source, targets)
 
     protected fun materializationRequest(
         plan: ExecutionPlan,

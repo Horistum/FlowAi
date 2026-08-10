@@ -594,14 +594,26 @@ private fun writeMinimalBundle(
     includeAiNormalization: Boolean
 ) {
     require(directory.mkdirs() || directory.isDirectory) { "Cannot create output directory: ${directory.path}" }
-    val catalog = FlowArtifactBundleAnalyzer().normalizationBundle(
-        flowName = flowName,
-        target = target,
-        strict = strict,
-        lowered = values.containsKey("execution-plan.json"),
-        hasManifest = values.containsKey("target-manifest.json"),
-        renderedArtifact = values.keys.firstOrNull { it !in knownJsonArtifacts && !it.endsWith(".json") }
-    ).artifacts.associateBy { it.name }
+    val bundleAnalyzer = FlowArtifactBundleAnalyzer()
+    val renderedArtifact = values.keys.firstOrNull { it !in knownJsonArtifacts && !it.endsWith(".json") }
+    val catalog = if (includeAiNormalization) {
+        bundleAnalyzer.normalizationBundle(
+            flowName = flowName,
+            target = target,
+            strict = strict,
+            lowered = values.containsKey("execution-plan.json"),
+            hasManifest = values.containsKey("target-manifest.json"),
+            renderedArtifact = renderedArtifact
+        )
+    } else {
+        bundleAnalyzer.intentBundle(
+            flowName = flowName,
+            target = target,
+            strict = strict,
+            hasManifest = values.containsKey("target-manifest.json"),
+            renderedArtifact = renderedArtifact
+        )
+    }.artifacts.associateBy { it.name }
     val names = listOf("standard-version.txt") + values.keys + listOf("artifact-integrity-report.json", "flow-artifact-bundle.json")
     val entries = names.distinct().mapIndexed { index, name ->
         val known = catalog[name]
@@ -761,7 +773,7 @@ private fun runStandardVerifyCommand(
 
 private fun moduleRegistry(): ModuleRegistry {
     val directory = File("modules")
-    return if (directory.isDirectory) ModuleRegistry.fromDirectory(directory, includeDefaults = true) else ModuleRegistry()
+    return if (directory.isDirectory) ModuleRegistry.fromDirectory(directory) else ModuleRegistry()
 }
 
 private fun targetRegistry() = TargetRegistryYamlLoader.loadDirectory(File("targets")).also {

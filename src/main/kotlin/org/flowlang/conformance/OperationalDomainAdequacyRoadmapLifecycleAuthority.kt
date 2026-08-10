@@ -126,12 +126,8 @@ class OperationalDomainAdequacyRoadmapLifecycleAuthority(
                     input.releasePrimaryStream == "conformance" &&
                     input.releaseNextItem == "C1.0"
             OperationalDomainAdequacyLifecyclePhase.COMPLETED ->
-                input.primaryStream == "conformance" &&
-                    input.indexCompletedConformanceItem == "C1.0" &&
-                    input.indexNextItem.isBlank() &&
-                    input.releasePrimaryStream == "conformance" &&
-                    input.releaseCompletedConformanceItem == "C1.0" &&
-                    input.releaseNextItem.isBlank()
+                input.indexCompletedConformanceItem == "C1.0" &&
+                    input.releaseCompletedConformanceItem == "C1.0"
             OperationalDomainAdequacyLifecyclePhase.INVALID -> false
         }
         val evidenceAligned = when (phase) {
@@ -156,7 +152,14 @@ class OperationalDomainAdequacyRoadmapLifecycleAuthority(
                 add("C1.0 activation evidence must equal the recorded AR0.1 completion boundary.")
             }
             if (!localFocus) add("C1.0 local conformance focus is inconsistent with lifecycle phase $phase.")
-            if (!globalFocus) add("C1.0 global roadmap and release focus is inconsistent with lifecycle phase $phase.")
+            if (!globalFocus) {
+                add(
+                    if (phase == OperationalDomainAdequacyLifecyclePhase.COMPLETED)
+                        "Completed C1.0 identity is not retained in global roadmap and release state."
+                    else
+                        "C1.0 global roadmap and release focus is inconsistent with lifecycle phase $phase."
+                )
+            }
             if (!input.requiredFilesPresent) {
                 add("C1.0 lifecycle is missing one or more required corpus, production, test, inventory or documentation files.")
             }

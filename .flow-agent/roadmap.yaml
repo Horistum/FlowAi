@@ -1,7 +1,7 @@
 project: Flow
-roadmapVersion: 19
-currentTrack: "operational-domain-adequacy"
-primaryRoadmapStream: conformance
+roadmapVersion: 20
+currentTrack: "post-c1-semantic-integrity"
+primaryRoadmapStream: semantic-integrity
 
 versionBoundary:
   publishedPackageVersion: "0.9.5"
@@ -23,6 +23,7 @@ roadmapIndex:
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
     architecture: ".flow-agent/roadmap-architecture.yaml"
+    semantic-integrity: ".flow-agent/roadmap-semantic-integrity.yaml"
   historicalRoadmaps:
     - ".flow-agent/roadmap-history-v0.7-v0.9.6.yaml"
     - ".flow-agent/roadmap-v0.9.5.7-repair-track.yaml"
@@ -187,7 +188,7 @@ currentDecision:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  nextItem: ""
-  nextItemName: ""
-  nextItemStream: ""
-  decisionBasis: "Flow CI #2823 / run 31255449623 passed the distinct C1.0 completion boundary on exact head c22431b1abaf8814b2fe049935fee4c995332122 and synthetic merge candidate 2b0f2e570b91b7c3c25b4b3c671b98d9733b9198 after implementation validation #2812. C1.0 is terminally completed; the post-C1.0 strategic direction remains candidate-only until a separate global roadmap transition explicitly activates a bounded successor work package."
+  nextItem: "SI-01.1"
+  nextItemName: "Post-C1 Integrity Reconciliation"
+  nextItemStream: "semantic-integrity"
+  decisionBasis: "C1.0 completed at Flow CI #2823. SI-01 was subsequently implemented and validated by Flow CI #2888 but its promised post-validation roadmap activation was omitted before merge. The global transition therefore records SI-01 authorizationStatus=missing and activates bounded reconciliation SI-01.1; it does not retroactively authorize SI-01."

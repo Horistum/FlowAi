@@ -7,6 +7,8 @@ from pathlib import Path
 
 
 REQUIRED_ROADMAP_STREAMS = ("core", "adapters", "conformance", "architecture")
+OPTIONAL_ROADMAP_STREAMS = ("semantic-integrity",)
+ALLOWED_ROADMAP_STREAMS = REQUIRED_ROADMAP_STREAMS + OPTIONAL_ROADMAP_STREAMS
 
 
 @dataclass(frozen=True)
@@ -92,7 +94,7 @@ def roadmap_paths_by_stream(root: Path, main_roadmap: Path) -> dict[str, Path]:
 
     if declared:
         missing = sorted(set(REQUIRED_ROADMAP_STREAMS) - set(declared))
-        extra = sorted(set(declared) - set(REQUIRED_ROADMAP_STREAMS))
+        extra = sorted(set(declared) - set(ALLOWED_ROADMAP_STREAMS))
         if missing or extra:
             details = []
             if missing:
@@ -290,6 +292,7 @@ def _validate_cross_stream_references(paths: dict[str, Path]) -> None:
         "adapters": {"core", "adapters"},
         "conformance": {"core", "adapters", "conformance"},
         "architecture": {"core", "adapters", "conformance", "architecture"},
+        "semantic-integrity": {"core", "adapters", "conformance", "architecture", "semantic-integrity"},
     }
     display_names = {
         "core": "Core",
@@ -353,7 +356,7 @@ def validate_roadmap_structure(root: Path, main_roadmap: Path) -> None:
         if roadmap_item_blocks(main_text):
             raise RuntimeError("The roadmap index must not contain active version items.")
         primary_stream = find_scalar(main_text, "primaryRoadmapStream")
-        if primary_stream not in REQUIRED_ROADMAP_STREAMS:
+        if primary_stream not in paths:
             raise RuntimeError("primaryRoadmapStream must name one declared active roadmap stream.")
 
         for declared_stream, path in paths.items():

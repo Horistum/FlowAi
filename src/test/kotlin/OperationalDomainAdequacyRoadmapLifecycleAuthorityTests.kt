@@ -70,6 +70,34 @@ class OperationalDomainAdequacyRoadmapLifecycleAuthorityTests {
         assertTrue(report.errors.any { "implementation and completion evidence" in it })
     }
 
+    @Test
+    fun completedC10AllowsGlobalSuccessorWhileRetainingHistoricalIdentity() {
+        val activation = evidence(2809, 31202921728, 'a', 'b')
+        val implementation = evidence(2812, 31210000000, 'c', 'd')
+        val completion = evidence(2823, 31255449623, 'e', 'f')
+        val input = implementingInput(activation).copy(
+            workPackageStatus = "complete",
+            c10Status = "completed",
+            conformanceRoadmapStatus = "completed",
+            conformanceCompletedItem = "C1.0",
+            conformanceNextItem = "",
+            primaryStream = "semantic-integrity",
+            indexCompletedConformanceItem = "C1.0",
+            indexNextItem = "SI-01.1",
+            indexNextStream = "semantic-integrity",
+            releasePrimaryStream = "semantic-integrity",
+            releaseCompletedConformanceItem = "C1.0",
+            releaseNextItem = "SI-01.1",
+            implementationEvidence = implementation,
+            completionBoundary = completion
+        )
+
+        val report = OperationalDomainAdequacyRoadmapLifecycleAuthority().evaluate(input)
+
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+        assertEquals(OperationalDomainAdequacyLifecyclePhase.COMPLETED, report.phase)
+    }
+
     private fun implementingInput(activation: WorkflowBoundaryEvidence) = OperationalDomainAdequacyLifecycleInput(
         workPackageStatus = "active",
         c10Status = "next",

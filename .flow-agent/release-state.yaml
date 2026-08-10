@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 48
+stateVersion: 49
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -22,20 +22,20 @@ versionBoundary:
     targetRegistry: "3.1"
 
 roadmapState:
-  roadmapVersion: 19
-  activeTrack: "operational-domain-adequacy"
+  roadmapVersion: 20
+  activeTrack: "post-c1-semantic-integrity"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
-  primaryStream: "conformance"
+  primaryStream: "semantic-integrity"
   completedAdapterItem: "A1.0"
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
   completedConformanceItem: "C1.0"
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  nextItem: ""
-  nextItemName: ""
-  nextItemStream: ""
+  nextItem: "SI-01.1"
+  nextItemName: "Post-C1 Integrity Reconciliation"
+  nextItemStream: "semantic-integrity"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -44,6 +44,7 @@ roadmapState:
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
     architecture: ".flow-agent/roadmap-architecture.yaml"
+    semantic-integrity: ".flow-agent/roadmap-semantic-integrity.yaml"
 
 repositoryRules:
   sourceLanguage: "English"
@@ -173,19 +174,20 @@ qualityPrinciples:
   - "C0.3 semantic equivalence compares explicit observable results and continuity, never target syntax, job layout or action identity."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-c1.0-completion-boundary"
-  flowAgentStructure: "passed-on-c1.0-completion-boundary"
-  flowAgentContextGeneration: "passed-on-c1.0-completion-boundary"
-  cleanTest: "passed-on-c1.0-completion-boundary"
-  conformance: "passed-on-c1.0-completion-boundary"
-  executableReferenceEvidence: "passed-on-c1.0-completion-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-c1.0-completion-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-c1.0-completion-boundary"
-  boundedDomainCorpusEvidence: "passed-on-c1.0-completion-boundary"
-  roadmapTransitionEvidence: "passed-on-c1.0-completion-boundary"
-  validationSource: "Flow CI #2823, run 31255449623, passed exact C1.0 completion head c22431b1abaf8814b2fe049935fee4c995332122 and synthetic merge candidate 2b0f2e570b91b7c3c25b4b3c671b98d9733b9198 after distinct implementation validation Flow CI #2812."
+  flowAgentTooling: "passed-on-si-01-validation-boundary"
+  flowAgentStructure: "passed-on-si-01-validation-boundary"
+  flowAgentContextGeneration: "passed-on-si-01-validation-boundary"
+  cleanTest: "passed-on-si-01-validation-boundary"
+  conformance: "passed-on-si-01-validation-boundary"
+  executableReferenceEvidence: "passed-on-si-01-validation-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-si-01-validation-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-si-01-validation-boundary"
+  boundedDomainCorpusEvidence: "passed-on-si-01-validation-boundary"
+  roadmapTransitionEvidence: "passed-on-si-01-validation-boundary"
+  validationSource: "Flow CI #2888, run 31352226649, passed pull request #121 exact head a35e6175bdd6500afddedc0bba3ed627cc8500f3 and synthetic merge candidate 8c7c87213e696317327c4947eefb4cddc096fd28 before merge commit 1026c980d19b697f8d53576af1f79df08c49517e."
   notes:
-    - "Package, public standard and artifact contract versions remain unchanged."
+    - "Flow CI #2888 is the latest committed GitHub validation evidence; this SI-01.1 correction records its own validation locally until a later external CI boundary exists."
+    - "SI-01 changed AST and ExecutionPlan-family artifact contracts without changing package or public-standard versions."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
     - "A0.1 through A0.7 and A1.0 are completed; A0.8 does not exist."
     - "GitHub Actions is executable only for the bounded checkout-build-image workspace path; the generic workspace profile remains unsupported."

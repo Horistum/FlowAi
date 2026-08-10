@@ -309,6 +309,56 @@ class FlowAgentRoadmapTests(unittest.TestCase):
 
             validate_roadmap_structure(root, main)
 
+    def test_allows_optional_semantic_integrity_successor_stream(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            main = self._write_split_roadmaps(root, core=COMPLETED_CORE_ITEM)
+            agent = root / ".flow-agent"
+            semantic = agent / "roadmap-semantic-integrity.yaml"
+            semantic.write_text(
+                'stream: semantic-integrity\nitems:\n'
+                '  - version: "SI-01.1"\n'
+                '    name: "Post-C1 Integrity Reconciliation"\n'
+                '    type: "bounded-governance-and-integrity-correction"\n'
+                '    status: next\n'
+                '    purpose: "Reconcile post-C1 integrity."\n'
+                '    dependsOnCore: "0.9.7.1"\n',
+                encoding="utf-8",
+            )
+            text = main.read_text(encoding="utf-8")
+            text = text.replace(
+                'primaryRoadmapStream: core',
+                'primaryRoadmapStream: semantic-integrity',
+            ).replace(
+                '    architecture: ".flow-agent/roadmap-architecture.yaml"\n',
+                '    architecture: ".flow-agent/roadmap-architecture.yaml"\n'
+                '    semantic-integrity: ".flow-agent/roadmap-semantic-integrity.yaml"\n',
+            )
+            main.write_text(text, encoding="utf-8")
+
+            validate_roadmap_structure(root, main)
+            item = find_unique_next_roadmap_item(root, main)
+
+            self.assertEqual("SI-01.1", item.version)
+            self.assertEqual("semantic-integrity", item.stream)
+
+    def test_rejects_unknown_optional_stream_name(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            main = self._write_split_roadmaps(root)
+            text = main.read_text(encoding="utf-8").replace(
+                '    architecture: ".flow-agent/roadmap-architecture.yaml"\n',
+                '    architecture: ".flow-agent/roadmap-architecture.yaml"\n'
+                '    invented: ".flow-agent/roadmap-invented.yaml"\n',
+            )
+            main.write_text(text, encoding="utf-8")
+            (root / ".flow-agent" / "roadmap-invented.yaml").write_text(
+                "stream: invented\nitems: []\n", encoding="utf-8"
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "unknown streams: invented"):
+                validate_roadmap_structure(root, main)
+
 
 if __name__ == "__main__":
     unittest.main()

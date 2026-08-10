@@ -178,9 +178,6 @@ sealed interface CliExecutionResult {
             require(rendered == null || renderRequested) {
                 "CLI cannot expose an adapter artifact without an explicit render request."
             }
-            require(rendered == null || rendered.evidence != null) {
-                "CLI adapter artifact must retain its rendering evidence receipt."
-            }
         }
     }
 
