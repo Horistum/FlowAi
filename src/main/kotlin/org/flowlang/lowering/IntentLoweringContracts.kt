@@ -15,6 +15,7 @@ import org.flowlang.planner.PlanInput
 import org.flowlang.planner.PlanNode
 import org.flowlang.planner.RuntimeParamRenderer
 import org.flowlang.planner.TaskNode
+import org.flowlang.standard.FlowStandardVersions
 
 /** How an accepted intent value is represented in the certified execution artifact. */
 enum class IntentLoweringDisposition { PRESERVED, TRANSFORMED }
@@ -53,7 +54,7 @@ data class IntentLoweringReport(
     val evidence: List<IntentLoweringEvidence> = emptyList()
 ) {
     companion object {
-        const val CONTRACT_VERSION = "2.1"
+        const val CONTRACT_VERSION = FlowStandardVersions.EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION
         const val ARTIFACT_KIND = "execution-plan"
     }
 }

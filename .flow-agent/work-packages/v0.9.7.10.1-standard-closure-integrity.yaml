@@ -10,7 +10,7 @@ scopeBoundary:
   - "Reject missing, unknown and non-terminal bounded-correction statuses."
   - "Use the shared FlowYaml boundary for closure metadata."
   - "Reconcile StandardModel check ownership, purpose coverage and artifact projections before re-closing the track."
-  - "Preserve package 0.9.5, public standard 0.8.0 and artifact contract 2.0."
+  - "Preserve the certified closure boundary: package 0.9.5, public standard 0.8.0, Intent/AST/ExecutionPlan/lowering 2.0, TargetManifest 3.0 and TargetRegistry 3.1."
 universalInvariants:
   - "A green subset cannot certify the presence of the complete conformance suite."
   - "Every bounded-correction status belongs to an explicit closed vocabulary."

@@ -4,7 +4,6 @@ import java.io.File
 import org.flowlang.conformance.ConformanceCheck
 import org.flowlang.conformance.ConformanceSuiteInventory
 import org.flowlang.serialization.FlowYaml
-import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.StandardModel
 
 data class SemanticClosureCheck(
@@ -35,7 +34,6 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
     fun evaluate(completedConformance: List<ConformanceCheck>): SemanticClosureReport {
         val workPackage = requiredYaml(File(rootDir, WORK_PACKAGE))
         val roadmap = requiredYaml(File(rootDir, CORE_ROADMAP))
-        val releaseState = requiredYaml(File(rootDir, RELEASE_STATE))
         val declaredChecklist = workPackage.stringList("closureChecklist")
         val inventory = ConformanceSuiteInventory.load(rootDir)
         val expectedChecks = inventory.preClosureChecks
@@ -153,15 +151,11 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
             ),
             check(
                 id = "closure.version-boundary-unchanged",
-                passed = FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION == "0.9.5" &&
-                    FlowStandardVersions.FLOW_STANDARD_VERSION == "0.8.0" &&
-                    releaseState.string("versionBoundary", "artifactContractVersion") == "2.0",
-                evidence = listOf(
-                    "package=${FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION}",
-                    "standard=${FlowStandardVersions.FLOW_STANDARD_VERSION}",
-                    "artifactContract=${releaseState.string("versionBoundary", "artifactContractVersion")}"
-                ),
-                message = "Closure must not smuggle in a package, public-standard or artifact-contract version change."
+                passed = workPackage.certifiedVersionBoundary() == CERTIFIED_VERSION_BOUNDARY,
+                evidence = workPackage.certifiedVersionBoundary().map { (axis, version) -> "$axis=$version" },
+                message =
+                    "The historical 0.9.7.10 closure boundary must remain the exact package, public-standard and " +
+                        "per-contract set certified at closure; later contract migrations must not rewrite it."
             ),
             check(
                 id = "closure.reference-evidence-live",
@@ -206,6 +200,18 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
         return current?.toString().orEmpty()
     }
 
+    private fun Map<String, Any?>.certifiedVersionBoundary(): Map<String, String> = linkedMapOf(
+        "implementationPackage" to string("certifiedVersionBoundary", "implementationPackage"),
+        "publicStandard" to string("certifiedVersionBoundary", "publicStandard"),
+        "intent" to string("certifiedVersionBoundary", "artifactContracts", "intent"),
+        "ast" to string("certifiedVersionBoundary", "artifactContracts", "ast"),
+        "executionPlan" to string("certifiedVersionBoundary", "artifactContracts", "executionPlan"),
+        "executionPlanLoweringEvidence" to
+            string("certifiedVersionBoundary", "artifactContracts", "executionPlanLoweringEvidence"),
+        "targetManifest" to string("certifiedVersionBoundary", "artifactContracts", "targetManifest"),
+        "targetRegistry" to string("certifiedVersionBoundary", "artifactContracts", "targetRegistry")
+    )
+
     private fun Map<String, Any?>.stringList(key: String): List<String> =
         (this[key] as? Iterable<*>)?.mapNotNull { it as? String }.orEmpty()
 
@@ -230,8 +236,17 @@ class SemanticClosureAuthority(private val rootDir: File = File(".")) {
         const val CHECK_ID = "v0.9.7.10.bounded-semantic-closure"
         const val WORK_PACKAGE = ".flow-agent/work-packages/v0.9.7.10-bounded-semantic-closure-gate.yaml"
         const val CORE_ROADMAP = ".flow-agent/roadmap-core-v0.9.7.9.yaml"
-        const val RELEASE_STATE = ".flow-agent/release-state.yaml"
         private val TERMINAL_OR_ACTIVE_STATUSES = setOf("active", "complete", "completed")
+        private val CERTIFIED_VERSION_BOUNDARY: Map<String, String> = linkedMapOf(
+            "implementationPackage" to "0.9.5",
+            "publicStandard" to "0.8.0",
+            "intent" to "2.0",
+            "ast" to "2.0",
+            "executionPlan" to "2.0",
+            "executionPlanLoweringEvidence" to "2.0",
+            "targetManifest" to "3.0",
+            "targetRegistry" to "3.1"
+        )
         private val BOUNDED_CORRECTION_VERSION = Regex("0\\.9\\.7\\.(?:9|10)\\.\\d+")
 
         val CHECKLIST: List<String> = listOf(

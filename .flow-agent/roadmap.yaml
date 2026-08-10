@@ -1,5 +1,5 @@
 project: Flow
-roadmapVersion: 18
+roadmapVersion: 19
 currentTrack: "operational-domain-adequacy"
 primaryRoadmapStream: conformance
 
@@ -9,7 +9,13 @@ versionBoundary:
   activePublicStandardVersion: "0.8.0"
   completedCorrectionTrack: "v0.9.5.x"
   correctionTrackStatus: "completed"
-  artifactContractVersion: "2.0"
+  artifactContracts:
+    intent: "2.0"
+    ast: "2.1"
+    executionPlan: "2.1"
+    executionPlanLoweringEvidence: "2.1"
+    targetManifest: "3.0"
+    targetRegistry: "3.1"
 
 roadmapIndex:
   activeRoadmaps:
