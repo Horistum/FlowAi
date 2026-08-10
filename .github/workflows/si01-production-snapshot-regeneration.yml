@@ -1,5 +1,6 @@
 name: SI-01 Production Snapshot Regeneration
 
+# Second committed revision intentionally activates this temporary branch-only helper.
 on:
   push:
     branches:
