@@ -11,7 +11,7 @@ scopeBoundary:
   - "Reject reused run ids, exact heads and synthetic merge candidates across the two boundaries."
   - "Record the already-passed PR #94 completion boundary without treating a PR description as repository authority."
   - "Preserve the nine-item closure checklist and the committed pre-closure inventory; their diagnostic and authoring ergonomics remain non-blocking follow-up concerns."
-  - "Preserve package 0.9.5, public standard 0.8.0 and artifact contract 2.0."
+  - "Preserve the certified closure boundary: package 0.9.5, public standard 0.8.0, Intent/AST/ExecutionPlan/lowering 2.0, TargetManifest 3.0 and TargetRegistry 3.1."
 universalInvariants:
   - "Two declared validation boundaries cannot be satisfied by one workflow run."
   - "A later completion boundary must have its own exact-head and merge-candidate evidence."

@@ -56,6 +56,33 @@ class ReleaseMetadataClosedLifecycleTests {
         }
 
     @Test
+    fun staleLiveArtifactContractMetadataFails() = withPhase(ReleaseLifecycleFixture.Phase.CLOSED) { root ->
+        ReleaseLifecycleFixture.setLiveArtifactContractVersion(
+            File(root, ReleaseLifecycleFixture.RELEASE_STATE),
+            "ast",
+            "2.0"
+        )
+
+        val report = ReleaseMetadataHonestyAuthority(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue("release.artifact.state-ast" in report.failedChecks)
+    }
+
+    @Test
+    fun legacyGlobalArtifactContractVersionFails() = withPhase(ReleaseLifecycleFixture.Phase.CLOSED) { root ->
+        ReleaseLifecycleFixture.addLegacyGlobalArtifactContractVersion(
+            File(root, ReleaseLifecycleFixture.RELEASE_STATE),
+            "2.0"
+        )
+
+        val report = ReleaseMetadataHonestyAuthority(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue("release.artifact.state-no-global-version" in report.failedChecks)
+    }
+
+    @Test
     fun completedClosureWithoutStructuredImplementationEvidenceFails() =
         ReleaseLifecycleFixture.withRoot(
             ReleaseLifecycleFixture.Phase.CLOSED,

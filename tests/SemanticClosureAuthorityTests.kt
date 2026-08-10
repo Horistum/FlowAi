@@ -66,6 +66,16 @@ class SemanticClosureAuthorityTests {
     }
 
     @Test
+    fun changedCertifiedClosureContractFailsVersionBoundary() = withReadyEvidenceTree { root ->
+        ReleaseLifecycleFixture.setCertifiedClosureContractVersion(root, "ast", "2.1")
+
+        val report = SemanticClosureAuthority(root).evaluate(passingEvidence(root))
+
+        assertEquals("FAIL", report.status)
+        assertTrue("closure.version-boundary-unchanged" in report.failedChecks)
+    }
+
+    @Test
     fun activeBoundedCorrectionBlocksClosure() = withCorrectionRequiredEvidenceTree { root ->
         val report = SemanticClosureAuthority(root).evaluate(passingEvidence(root))
 

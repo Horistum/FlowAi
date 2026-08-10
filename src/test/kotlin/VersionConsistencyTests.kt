@@ -10,6 +10,7 @@ class VersionConsistencyTests {
     private val intentContractVersion = "2.0"
     private val astContractVersion = "2.1"
     private val executionPlanContractVersion = "2.1"
+    private val executionPlanLoweringEvidenceVersion = "2.1"
     private val targetManifestContractVersion = "3.0"
     private val targetRegistryContractVersion = "3.1"
 
@@ -32,8 +33,16 @@ class VersionConsistencyTests {
         assertEquals(intentContractVersion, FlowStandardVersions.INTENT_VERSION)
         assertEquals(astContractVersion, FlowStandardVersions.AST_VERSION)
         assertEquals(executionPlanContractVersion, FlowStandardVersions.EXECUTION_PLAN_VERSION)
+        assertEquals(
+            executionPlanLoweringEvidenceVersion,
+            FlowStandardVersions.EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION
+        )
         assertEquals(targetManifestContractVersion, FlowStandardVersions.TARGET_MANIFEST_VERSION)
         assertEquals(targetRegistryContractVersion, FlowStandardVersions.TARGET_REGISTRY_VERSION)
+        FlowStandardVersions.ARTIFACT_CONTRACT_VERSIONS.forEach { (contract, version) ->
+            assertFileContains(".flow-agent/release-state.yaml", "$contract: \"$version\"")
+            assertFileContains(".flow-agent/roadmap.yaml", "$contract: \"$version\"")
+        }
 
         assertFileContains("schemas/intent.schema.json", intentContractVersion)
         assertFileContains("schemas/target-semantics-matrix.schema.json", intentContractVersion)

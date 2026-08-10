@@ -14,8 +14,18 @@ object FlowStandardVersions {
     const val INTENT_VERSION = "2.0"
     const val AST_VERSION = "2.1"
     const val EXECUTION_PLAN_VERSION = "2.1"
+    const val EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION = "2.1"
     const val TARGET_MANIFEST_VERSION = "3.0"
     const val TARGET_REGISTRY_VERSION = "3.1"
+
+    val ARTIFACT_CONTRACT_VERSIONS: Map<String, String> = linkedMapOf(
+        "intent" to INTENT_VERSION,
+        "ast" to AST_VERSION,
+        "executionPlan" to EXECUTION_PLAN_VERSION,
+        "executionPlanLoweringEvidence" to EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION,
+        "targetManifest" to TARGET_MANIFEST_VERSION,
+        "targetRegistry" to TARGET_REGISTRY_VERSION
+    )
 
     fun boundary(targetManifestPresent: Boolean): FlowVersionBoundary = FlowVersionBoundary(
         implementationPackageVersion = IMPLEMENTATION_PACKAGE_VERSION,
@@ -28,6 +38,11 @@ object FlowStandardVersions {
 data class FlowVersionBoundary(
     val implementationPackageVersion: String,
     val publicStandardVersion: String,
+    /**
+     * Legacy reference-snapshot compatibility field. Despite its historical name, this value
+     * tracks the TargetManifest contract and is not an aggregate artifact-contract version.
+     * Live governance metadata must use [FlowStandardVersions.ARTIFACT_CONTRACT_VERSIONS].
+     */
     val artifactContractVersion: String,
     val targetManifestVersion: String?
 )

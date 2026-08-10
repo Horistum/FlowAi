@@ -177,6 +177,36 @@ class ReleaseMetadataHonestyAuthority(private val rootDir: File = File(".")) {
         equal("release.standard.state-boundary", standardVersion,
             releaseState.string("versionBoundary", "publicStandardVersion"), releaseStateFile,
             "Release-state public standard boundary must match the typed public standard version.")
+        FlowStandardVersions.ARTIFACT_CONTRACT_VERSIONS.forEach { (contract, version) ->
+            equal(
+                "release.artifact.state-$contract",
+                version,
+                releaseState.string("versionBoundary", "artifactContracts", contract),
+                releaseStateFile,
+                "Release-state $contract contract version must match the typed artifact contract authority."
+            )
+            equal(
+                "release.artifact.roadmap-$contract",
+                version,
+                roadmap.string("versionBoundary", "artifactContracts", contract),
+                roadmapFile,
+                "Roadmap $contract contract version must match the typed artifact contract authority."
+            )
+        }
+        boolean(
+            "release.artifact.state-no-global-version",
+            "artifactContractVersion" !in releaseState.map("versionBoundary"),
+            releaseState.string("versionBoundary", "artifactContractVersion").ifBlank { "absent" },
+            releaseStateFile,
+            "Diverged artifact contracts must not be collapsed into one global release-state version."
+        )
+        boolean(
+            "release.artifact.roadmap-no-global-version",
+            "artifactContractVersion" !in roadmap.map("versionBoundary"),
+            roadmap.string("versionBoundary", "artifactContractVersion").ifBlank { "absent" },
+            roadmapFile,
+            "Diverged artifact contracts must not be collapsed into one global roadmap version."
+        )
         contains("release.report.package", reportText, "Current published package line: `$packageVersion`", reportFile,
             "REPORT.md must state the current package line explicitly.")
         contains("release.report.standard", reportText, "Active public standard version: `$standardVersion`", reportFile,

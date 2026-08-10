@@ -135,6 +135,19 @@ object ReleaseLifecycleFixture {
         )
     }
 
+    fun setCertifiedClosureContractVersion(root: File, contract: String, version: String) =
+        replaceScalar(File(root, SemanticClosureAuthority.WORK_PACKAGE), contract, version)
+
+    fun setLiveArtifactContractVersion(file: File, contract: String, version: String) =
+        replaceScalar(file, contract, version)
+
+    fun addLegacyGlobalArtifactContractVersion(file: File, version: String) {
+        val text = file.readText()
+        val anchor = Regex("(?m)^(\\s*publicStandardVersion:\\s*[^\\n#]+)$")
+            .find(text) ?: error("publicStandardVersion missing in ${file.path}")
+        file.writeText(text.replaceRange(anchor.range, anchor.value + "\n  artifactContractVersion: \"$version\""))
+    }
+
     fun addNextProjection(file: File) {
         if (file.readText().lineSequence().any { it.trimStart().startsWith("nextCoreItem:") }) return
         val text = file.readText()
@@ -186,6 +199,16 @@ object ReleaseLifecycleFixture {
             appendLine("type: \"architecture-closure\"")
             appendLine("stream: \"core\"")
             appendLine("status: \"${phase.closureWorkStatus}\"")
+            appendLine("certifiedVersionBoundary:")
+            appendLine("  implementationPackage: \"0.9.5\"")
+            appendLine("  publicStandard: \"0.8.0\"")
+            appendLine("  artifactContracts:")
+            appendLine("    intent: \"2.0\"")
+            appendLine("    ast: \"2.0\"")
+            appendLine("    executionPlan: \"2.0\"")
+            appendLine("    executionPlanLoweringEvidence: \"2.0\"")
+            appendLine("    targetManifest: \"3.0\"")
+            appendLine("    targetRegistry: \"3.1\"")
             appendLine("closureChecklist:")
             SemanticClosureAuthority.CHECKLIST.forEach { appendLine("  - \"$it\"") }
             when (phase) {
@@ -251,6 +274,10 @@ object ReleaseLifecycleFixture {
         val content = buildString {
             appendLine("project: \"Flow Core\"")
             appendLine("roadmapVersion: 5")
+            appendLine("versionBoundary:")
+            appendLine("  publishedPackageVersion: \"0.9.5\"")
+            appendLine("  publicStandardVersion: \"0.8.0\"")
+            appendLiveArtifactContracts()
             appendLine("currentDecision:")
             appendLine("  completedItem: \"${phase.completedItem}\"")
             appendLine("  completedItemName: \"${phase.completedName}\"")
@@ -278,7 +305,7 @@ object ReleaseLifecycleFixture {
             appendLine("versionBoundary:")
             appendLine("  publishedPackageVersion: \"0.9.5\"")
             appendLine("  publicStandardVersion: \"0.8.0\"")
-            appendLine("  artifactContractVersion: \"2.0\"")
+            appendLiveArtifactContracts()
             appendLine("roadmapState:")
             appendLine("  completedItem: \"${phase.completedItem}\"")
             appendLine("  completedItemName: \"${phase.completedName}\"")
@@ -297,6 +324,16 @@ object ReleaseLifecycleFixture {
             appendLine("    - \"Flow CI #2231 supplied external exact-head CI evidence for the candidate.\"")
         }
         write(root, RELEASE_STATE, content)
+    }
+
+    private fun StringBuilder.appendLiveArtifactContracts() {
+        appendLine("  artifactContracts:")
+        appendLine("    intent: \"2.0\"")
+        appendLine("    ast: \"2.1\"")
+        appendLine("    executionPlan: \"2.1\"")
+        appendLine("    executionPlanLoweringEvidence: \"2.1\"")
+        appendLine("    targetManifest: \"3.0\"")
+        appendLine("    targetRegistry: \"3.1\"")
     }
 
     private fun StringBuilder.appendNextProjection() {
