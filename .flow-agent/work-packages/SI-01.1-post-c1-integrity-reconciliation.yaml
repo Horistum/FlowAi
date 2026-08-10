@@ -43,5 +43,20 @@ deferredWork:
     reason: "Removing that vocabulary changes canonical semantic contracts and requires its own migration, falsification corpus and compatibility analysis; lexical filtering is not an acceptable substitute."
 
 localValidation:
-  status: pending
-  rule: "Record only commands actually executed against the final commit tree. Local evidence does not replace or advance lastKnownValidation GitHub CI metadata."
+  status: passed
+  validatedAt: "2026-08-10"
+  commands:
+    - "python3 -m unittest discover -s tools/tests -p 'test_*.py'"
+    - "python3 tools/flow_agent_validate.py"
+    - "python3 tools/flow_agent_runner.py"
+    - "GRADLE_USER_HOME=$PWD/.gradle-user-home ./gradlew clean compileKotlin --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=$PWD/.gradle-user-home ./gradlew test --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=$PWD/.gradle-user-home ./gradlew run --args='conformance' --offline --no-daemon --console=plain --max-workers=5"
+  results:
+    toolingTests: "31/31 passed"
+    flowAgentStructure: passed
+    flowAgentContextGeneration: passed
+    productionCompile: "passed with zero Kotlin compiler warnings"
+    completeTests: passed
+    standaloneConformance: passed
+  rule: "These results are local evidence for the SI-01.1 branch only. They do not replace or advance lastKnownValidation GitHub CI metadata."

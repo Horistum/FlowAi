@@ -215,7 +215,7 @@ class SemanticEquivalenceAuthority(
                 }
                 if (duplicateAssessment.decision.status != SemanticEquivalenceDecisionStatus.NOT_EQUIVALENT ||
                     duplicateAffected?.status != SemanticObservationEvidenceStatus.CONTRADICTORY ||
-                    duplicateAffected?.evidenceReferences?.sorted() !=
+                    duplicateAffected.evidenceReferences.sorted() !=
                     duplicateRecords.map(SemanticObservationEvidence::evidenceReference).sorted()
                 ) {
                     add("Case '${case.id}' duplicate evidence on '${requirement.id}' does not fail through the duplicate-evidence path.")

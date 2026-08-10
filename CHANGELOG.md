@@ -4,6 +4,22 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### SI-01.1 Post-C1 Integrity Reconciliation
+
+#### Corrected
+
+- Activated an explicit post-C1.0 semantic-integrity roadmap and bounded SI-01.1 work package instead of retroactively claiming SI-01 was authorized.
+- Recorded SI-01 as technically validated by Flow CI #2888 but historically missing the roadmap activation promised by PR #121.
+- Advanced `lastKnownValidation` to the actual SI-01 GitHub validation boundary while keeping the current SI-01.1 validation explicitly local.
+- Replaced the stale aggregate artifact-contract version with independently checked live Intent, AST, ExecutionPlan, lowering-evidence, TargetManifest and TargetRegistry versions while preserving the historical closure boundary.
+- Removed five confirmed production Kotlin compiler warnings by correcting dead nullability logic, bundle provenance selection, deprecated module loading, conformance target-selection provenance and redundant nullable access.
+- Allowed completed C1.0 lifecycle evidence to remain historical while a separately authorized global successor stream owns current roadmap focus.
+
+#### Deferred
+
+- SI-03 remains responsible for removing Docker/Dockerfile-specific vocabulary from canonical BUILD_IMAGE meaning. This correction does not pretend a lexical governance rule is a semantic migration.
+
+
 ### v0.9.7.9.1 Evidence and Control Integrity Repair
 
 #### Added

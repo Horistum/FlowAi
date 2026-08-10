@@ -8,16 +8,18 @@ Completed Core roadmap identity: `0.9.7.10 Bounded Semantic Closure Gate`
 Core roadmap item status: `completed`
 Completed correction item: `0.9.7.10.2 Closure Evidence Boundary Integrity Correction`
 Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`completed`)
-Completed adapter roadmap item: `A0.4 Control Requirement Materialization` (`completed`)
-Next adapter roadmap item: `A0.5 Continuity Satisfaction Proof` (`next`, no work package or implementation included)
+Completed adapter roadmap item: `A1.0 GitHub Actions Artifact and Workspace Continuity` (`completed`)
+Completed conformance roadmap item: `C1.0 Operational Domain Adequacy` (`completed`)
+Completed architecture roadmap item: `AR0.1 Authority Responsibility Consolidation` (`completed`)
+Active semantic-integrity item: `SI-01.1 Post-C1 Integrity Reconciliation` (`next`, active work package)
 
 ## Core boundary
 
 PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0d5b34cf34185b19ed498`. Core v0.9.7 remains CLOSED and its exact 91-check pre-closure inventory remains frozen.
 
-A0.4 consumes existing Core, intent, AST, execution-plan, failure and trigger contracts. It does not extend the frozen `ControlRequirementKind` enum, add target-specific public syntax or make Core depend on adapter evidence.
+The Core closure remains historical and closed. Post-C1.0 SI-01 changed scoped control evidence and advanced the AST, ExecutionPlan and execution-plan lowering-evidence contracts to `2.1`; that later migration does not rewrite the versions certified by the historical `0.9.7.10` closure.
 
-Package `0.9.5`, public standard `0.8.0` and artifact contract `2.0` remain unchanged.
+The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.1`, ExecutionPlan `2.1`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.1`.
 
 ## Completed adapter baseline
 
