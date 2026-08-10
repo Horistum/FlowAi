@@ -134,15 +134,9 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         intent: IntentDocument,
         bindings: Map<String, IntentBindingEvidence>
     ): List<StatementNode> {
-        val ordered = orderedSteps(steps)
-        val out = mutableListOf<StatementNode>()
-        var previousStepId: String? = null
-        ordered.forEach { step ->
-            val dependencies = (step.requires + listOfNotNull(previousStepId)).distinct()
-            out += lowerStep(step, intent, dependencies, bindings.getValue(step.id))
-            previousStepId = step.id
+        return orderedSteps(steps).flatMap { step ->
+            lowerStep(step, intent, step.requires.distinct(), bindings.getValue(step.id))
         }
-        return out
     }
 
     private fun lowerStep(

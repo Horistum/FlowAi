@@ -12,4 +12,4 @@ Use the case as an adversarial guard against lowering or target materialization 
 - Loss of fan-in or sibling parallelism blocks acceptance.
 
 ## Ambiguities
-The current Standard Intent lowering introduces source-order dependencies, which this case must expose rather than bless.
+This case is a permanent regression boundary: canonical lowering must preserve the diamond, while the negative mutation explicitly adds B -> C and must be rejected as serialized parallelism.

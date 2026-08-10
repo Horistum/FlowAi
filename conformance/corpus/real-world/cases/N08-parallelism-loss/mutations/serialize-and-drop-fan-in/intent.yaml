@@ -7,6 +7,6 @@ workflows:
   steps:
   - {id: A, capability: CUSTOM, produces: [a_done], params: {operation: prepare}}
   - {id: B, capability: CUSTOM, requires: [A], produces: [b_done], params: {operation: branch-b}}
-  - {id: C, capability: CUSTOM, requires: [A], produces: [c_done], params: {operation: branch-c}}
+  - {id: C, capability: CUSTOM, requires: [A, B], produces: [c_done], params: {operation: branch-c}}
   - {id: D, capability: CUSTOM, requires: [B], params: {operation: fan-in}}
 failure: {notify: false, rollback: false, stopOnError: true}

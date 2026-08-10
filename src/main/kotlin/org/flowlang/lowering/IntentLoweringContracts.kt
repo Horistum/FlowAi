@@ -10,7 +10,10 @@ import org.flowlang.intent.asTextOrNull
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.ExpressionRenderer
+import org.flowlang.planner.PlanDependencyEvidence
+import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.planner.PlanDependencyRelations
+import org.flowlang.planner.PlanDependencyResolution
 import org.flowlang.planner.PlanInput
 import org.flowlang.planner.PlanNode
 import org.flowlang.planner.RuntimeParamRenderer
@@ -192,6 +195,8 @@ object IntentLoweringAuthority {
                 transform = field.transform
             )
         }
+
+        validateAuthoredOrderingGraph(plan, sourceIntent)
 
         val evidenceDigest = digest(
             "execution-plan-lowering-evidence",
@@ -478,6 +483,61 @@ object IntentLoweringAuthority {
                 }
             }
         }
+    }
+
+    private data class AuthoredOrderingEdge(val sourceStepId: String, val targetStepId: String) {
+        override fun toString(): String = "$sourceStepId->$targetStepId"
+    }
+
+    /**
+     * Proves ordering in both directions. Source field evidence already proves every authored
+     * `requires` target exists in the concrete plan; this set-level check additionally proves
+     * that the planner did not invent another authored ordering edge. Data-flow ordering is a
+     * separate evidence class and therefore never substitutes for DECLARED_ORDERING.
+     */
+    private fun validateAuthoredOrderingGraph(plan: ExecutionPlan, sourceIntent: IntentSourceMetadata) {
+        val expected = sourceIntent.fields.mapNotNull(::authoredOrderingEdge).toSet()
+        val nodesById = PlanDependencyRelations.flatten(plan.nodes).groupBy(PlanNode::id)
+        val declaredRelations = plan.dependencyRelations.filter { relation ->
+            relation.kind == PlanDependencyKind.ORDERING &&
+                relation.evidence == PlanDependencyEvidence.DECLARED_ORDERING
+        }
+        val actual = declaredRelations.map { relation ->
+            require(relation.resolution == PlanDependencyResolution.RESOLVED) {
+                "Authored ordering relation '${relation.targetNodeId}' must be resolved."
+            }
+            val sourceNodeId = requireNotNull(relation.sourceNodeId) {
+                "Authored ordering relation targeting '${relation.targetNodeId}' has no source node."
+            }
+            val sourceNode = unique(nodesById[sourceNodeId].orEmpty(), "declared ordering source '$sourceNodeId'")
+            val targetNode = unique(
+                nodesById[relation.targetNodeId].orEmpty(),
+                "declared ordering target '${relation.targetNodeId}'"
+            )
+            val sourceStepId = requireNotNull(sourceIdOf(sourceNode)) {
+                "Declared ordering source '$sourceNodeId' has no authored source identity."
+            }
+            val targetStepId = requireNotNull(sourceIdOf(targetNode)) {
+                "Declared ordering target '${relation.targetNodeId}' has no authored source identity."
+            }
+            AuthoredOrderingEdge(sourceStepId, targetStepId)
+        }
+        require(actual.size == actual.toSet().size) {
+            "ExecutionPlan contains duplicate DECLARED_ORDERING evidence for the same authored edge."
+        }
+        val actualSet = actual.toSet()
+        val missing = (expected - actualSet).sortedBy(AuthoredOrderingEdge::toString)
+        val extra = (actualSet - expected).sortedBy(AuthoredOrderingEdge::toString)
+        require(missing.isEmpty() && extra.isEmpty()) {
+            "Authored dependency graph changed during lowering: missing=${missing.joinToString()}, " +
+                "extra=${extra.joinToString()}."
+        }
+    }
+
+    private fun authoredOrderingEdge(field: IntentSourceField): AuthoredOrderingEdge? {
+        val parts = field.identity.split('/').map(::unsegment)
+        if (parts.size != 4 || parts[0] != "step" || parts[2] != "requires") return null
+        return AuthoredOrderingEdge(sourceStepId = parts[3], targetStepId = parts[1])
     }
 
     private fun resolveTarget(plan: ExecutionPlan, targetIdentity: String): String {

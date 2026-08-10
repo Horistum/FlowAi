@@ -33,5 +33,20 @@ forbiddenScope:
   - "Do not rewrite historical SI-01, SI-01.1, C1.0, AR0.1 or Core closure evidence."
 
 localValidation:
-  status: pending
-  rule: "Record only commands actually executed against the final SI-02 tree. Local evidence does not replace GitHub CI."
+  status: passed
+  validatedAt: "2026-08-10"
+  commands:
+    - "python3 -m unittest discover -s tools/tests -p 'test_*.py'"
+    - "python3 tools/flow_agent_validate.py"
+    - "python3 tools/flow_agent_runner.py"
+    - "GRADLE_USER_HOME=$PWD/.gradle-user-home ./gradlew clean compileKotlin --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=$PWD/.gradle-user-home ./gradlew test --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=$PWD/.gradle-user-home ./gradlew run --args='conformance' --offline --no-daemon --console=plain --max-workers=5"
+  results:
+    toolingTests: "31/31 passed"
+    flowAgentStructure: passed
+    flowAgentContextGeneration: passed
+    productionCompile: "passed with zero Kotlin compiler warnings"
+    completeTests: "999/999 passed"
+    standaloneConformance: passed
+  rule: "These results are local evidence for the SI-02 branch only. They do not replace or advance lastKnownValidation GitHub CI metadata."
