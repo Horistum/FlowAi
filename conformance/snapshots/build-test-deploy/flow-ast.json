@@ -965,6 +965,54 @@
         "valueKind" : "string",
         "sourceDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87",
         "expectedTargetDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87"
+      }, {
+        "identity" : "workflow/application-lifecycle/step/approve-prod",
+        "sourcePath" : "$.workflows[0].steps[3].id",
+        "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/approve-prod",
+        "disposition" : "PRESERVED",
+        "valueKind" : "workflow-step-membership",
+        "sourceDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e",
+        "expectedTargetDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e"
+      }, {
+        "identity" : "workflow/application-lifecycle/step/build-image",
+        "sourcePath" : "$.workflows[0].steps[2].id",
+        "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/build-image",
+        "disposition" : "PRESERVED",
+        "valueKind" : "workflow-step-membership",
+        "sourceDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c",
+        "expectedTargetDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c"
+      }, {
+        "identity" : "workflow/application-lifecycle/step/checkout",
+        "sourcePath" : "$.workflows[0].steps[0].id",
+        "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/checkout",
+        "disposition" : "PRESERVED",
+        "valueKind" : "workflow-step-membership",
+        "sourceDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e",
+        "expectedTargetDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e"
+      }, {
+        "identity" : "workflow/application-lifecycle/step/deploy",
+        "sourcePath" : "$.workflows[0].steps[4].id",
+        "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/deploy",
+        "disposition" : "PRESERVED",
+        "valueKind" : "workflow-step-membership",
+        "sourceDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451",
+        "expectedTargetDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451"
+      }, {
+        "identity" : "workflow/application-lifecycle/step/test",
+        "sourcePath" : "$.workflows[0].steps[1].id",
+        "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/test",
+        "disposition" : "PRESERVED",
+        "valueKind" : "workflow-step-membership",
+        "sourceDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15",
+        "expectedTargetDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15"
+      }, {
+        "identity" : "workflow/application-lifecycle/step/verify",
+        "sourcePath" : "$.workflows[0].steps[5].id",
+        "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/verify",
+        "disposition" : "PRESERVED",
+        "valueKind" : "workflow-step-membership",
+        "sourceDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7",
+        "expectedTargetDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7"
       } ]
     }
   }

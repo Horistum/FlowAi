@@ -1,1 +1,1548 @@
-{"flowName":"build-test-deploy","planVersion":"2.1","inputs":[{"name":"environment","type":"option","required":true,"choices":["dev","test","prod"]},{"name":"version","type":"text","required":true,"choices":[]}],"triggers":[],"outputs":[{"name":"checkout","type":"any","sourceNodeId":"git_checkout_1"},{"name":"test","type":"any","sourceNodeId":"standard_execute_1"},{"name":"build_image","type":"any","sourceNodeId":"docker_build_1"},{"name":"approve_prod","type":"any","sourceNodeId":"approve_1"},{"name":"deploy","type":"any","sourceNodeId":"standard_execute_2"},{"name":"verify","type":"any","sourceNodeId":"standard_execute_3"},{"name":"rollback_result","type":"any","sourceNodeId":"standard_rollback_1"}],"dependencies":["git_checkout_1","standard_execute_1","docker_build_1","approve_1","standard_execute_2"],"requiredCapabilities":["task.execute","git.checkout","standard.test","docker.build","container.image","continuity.workspace","approval.manual","standard.deploy","standard.verify","errorHandlers.finally","standard.rollback","standard.notify-failure"],"targetHints":{},"sourceIntent":{"description":"High-level deployment intent. AI should produce this layer before low-level Flow.","workflows":[{"name":"application-lifecycle","kind":"DEPLOY","stepIds":["checkout","test","build-image","approve-prod","deploy","verify"]}],"policies":[{"name":"production-approval","type":"APPROVAL","message":"Approval is required before deployment in this reference flow."}],"systems":[{"name":"source","sourceType":"git","canonicalType":"git","purpose":"Application source repository","config":{}},{"name":"registry","sourceType":"dockerRegistry","canonicalType":"docker","purpose":"Image registry","config":{}},{"name":"cluster","sourceType":"kubernetes","canonicalType":"kubernetes","purpose":"Deployment target","config":{}},{"name":"standard","sourceType":"standard","canonicalType":"standard","purpose":"Semantic build and test operations","config":{}}],"systemPurposes":{"source":"Application source repository","registry":"Image registry","cluster":"Deployment target","standard":"Semantic build and test operations"},"failure":{"notify":true,"rollback":true,"stopOnError":true},"fields":[{"identity":"failure/notify","sourcePath":"$.failure.notify","targetIdentity":"plan/source-intent/failure/notify","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","expectedTargetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"identity":"failure/rollback","sourcePath":"$.failure.rollback","targetIdentity":"plan/source-intent/failure/rollback","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","expectedTargetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"identity":"failure/stop-on-error","sourcePath":"$.failure.stopOnError","targetIdentity":"plan/source-intent/failure/stop-on-error","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","expectedTargetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"identity":"input/environment/name","sourcePath":"$.inputs[0].name","targetIdentity":"plan/input/environment/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"1d076f54dea4e8132394aab9e4dcb3b38a5b3c01a5ef20758895601237158d8b","expectedTargetDigest":"1d076f54dea4e8132394aab9e4dcb3b38a5b3c01a5ef20758895601237158d8b"},{"identity":"input/environment/required","sourcePath":"$.inputs[0].required","targetIdentity":"plan/input/environment/required","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","expectedTargetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"identity":"input/environment/type","sourcePath":"$.inputs[0].type","targetIdentity":"plan/input/environment/type","disposition":"TRANSFORMED","valueKind":"input-type","sourceDigest":"2ab6dadc4b6e9c6f9c51eca4da55857d0b5d562d86bd1ef0b69959ba9fb16f1d","expectedTargetDigest":"e3f64b2da48e082b756ce1566c3a765d156c3cf14214fc6e3297cd27b207210e","transform":"intent-input-type-normalization"},{"identity":"input/version/name","sourcePath":"$.inputs[1].name","targetIdentity":"plan/input/version/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae","expectedTargetDigest":"2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"},{"identity":"input/version/required","sourcePath":"$.inputs[1].required","targetIdentity":"plan/input/version/required","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","expectedTargetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"identity":"input/version/type","sourcePath":"$.inputs[1].type","targetIdentity":"plan/input/version/type","disposition":"TRANSFORMED","valueKind":"input-type","sourceDigest":"b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2","expectedTargetDigest":"38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723","transform":"intent-input-type-normalization"},{"identity":"intent/description","sourcePath":"$.description","targetIdentity":"plan/source-intent/description","disposition":"PRESERVED","valueKind":"string","sourceDigest":"1b87ab3e40e942bce91eff847d015095dbdb2d4f0077963948f9deabae10a12e","expectedTargetDigest":"1b87ab3e40e942bce91eff847d015095dbdb2d4f0077963948f9deabae10a12e"},{"identity":"intent/name","sourcePath":"$.name","targetIdentity":"plan/flow/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"71e1bd0c23d926805409ca2e5da2953ae33310406b1675e183a0ee088b5c264a","expectedTargetDigest":"71e1bd0c23d926805409ca2e5da2953ae33310406b1675e183a0ee088b5c264a"},{"identity":"policy/production-approval/message","sourcePath":"$.policies[0].message","targetIdentity":"plan/source-intent/policy/production-approval/message","disposition":"PRESERVED","valueKind":"string","sourceDigest":"d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25","expectedTargetDigest":"d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25"},{"identity":"policy/production-approval/name","sourcePath":"$.policies[0].name","targetIdentity":"plan/source-intent/policy/production-approval/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"6073c70c87799159c56070545b0f9d1268af58a448b3e20cbd58aee50ba95329","expectedTargetDigest":"6073c70c87799159c56070545b0f9d1268af58a448b3e20cbd58aee50ba95329"},{"identity":"policy/production-approval/type","sourcePath":"$.policies[0].type","targetIdentity":"plan/source-intent/policy/production-approval/type","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191","expectedTargetDigest":"92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191"},{"identity":"step/approve-prod/capability","sourcePath":"$.workflows[0].steps[3].capability","targetIdentity":"plan/node/source/approve-prod/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1","expectedTargetDigest":"a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1"},{"identity":"step/approve-prod/id","sourcePath":"$.workflows[0].steps[3].id","targetIdentity":"plan/node/source/approve-prod/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"9481da5d477a17f5910280f2fc9900115a5367b19c1ed556c11c3ea9cc305f6d","expectedTargetDigest":"496cb0f11177d6583c07b17d57d4ed4ab6f5c8c2cd0aec8aaeca4fbbf80de45e","transform":"step-id-to-source-and-result-identity"},{"identity":"step/approve-prod/requires/build-image","sourcePath":"$.workflows[0].steps[3].requires","targetIdentity":"plan/node/source/approve-prod/dependency/source/build-image","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b","expectedTargetDigest":"01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b"},{"identity":"step/build-image/capability","sourcePath":"$.workflows[0].steps[2].capability","targetIdentity":"plan/node/source/build-image/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8","expectedTargetDigest":"cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"},{"identity":"step/build-image/id","sourcePath":"$.workflows[0].steps[2].id","targetIdentity":"plan/node/source/build-image/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa","expectedTargetDigest":"c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee","transform":"step-id-to-source-and-result-identity"},{"identity":"step/build-image/param/image","sourcePath":"$.workflows[0].steps[2].params.image","targetIdentity":"plan/node/source/build-image/param/image","disposition":"PRESERVED","valueKind":"string","sourceDigest":"b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094","expectedTargetDigest":"b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094"},{"identity":"step/build-image/param/path","sourcePath":"$.workflows[0].steps[2].params.path","targetIdentity":"plan/node/source/build-image/param/path","disposition":"PRESERVED","valueKind":"string","sourceDigest":"6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1","expectedTargetDigest":"6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"},{"identity":"step/build-image/param/push","sourcePath":"$.workflows[0].steps[2].params.push","targetIdentity":"plan/node/source/build-image/param/push","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95","expectedTargetDigest":"b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"},{"identity":"step/build-image/param/system","sourcePath":"$.workflows[0].steps[2].params.system","targetIdentity":"plan/node/source/build-image/binding-metadata/system","disposition":"PRESERVED","valueKind":"string","sourceDigest":"46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd","expectedTargetDigest":"46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"},{"identity":"step/build-image/requires/test","sourcePath":"$.workflows[0].steps[2].requires","targetIdentity":"plan/node/source/build-image/dependency/source/test","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083","expectedTargetDigest":"0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083"},{"identity":"step/build-image/uses","sourcePath":"$.workflows[0].steps[2].uses","targetIdentity":"plan/node/source/build-image/binding","disposition":"TRANSFORMED","valueKind":"binding","sourceDigest":"4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00","expectedTargetDigest":"783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3","transform":"explicit-action-binding-resolution"},{"identity":"step/checkout/capability","sourcePath":"$.workflows[0].steps[0].capability","targetIdentity":"plan/node/source/checkout/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2","expectedTargetDigest":"d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"},{"identity":"step/checkout/id","sourcePath":"$.workflows[0].steps[0].id","targetIdentity":"plan/node/source/checkout/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710","expectedTargetDigest":"2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205","transform":"step-id-to-source-and-result-identity"},{"identity":"step/checkout/param/branch","sourcePath":"$.workflows[0].steps[0].params.branch","targetIdentity":"plan/node/source/checkout/param/branch","disposition":"PRESERVED","valueKind":"string","sourceDigest":"afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b","expectedTargetDigest":"afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"},{"identity":"step/checkout/param/system","sourcePath":"$.workflows[0].steps[0].params.system","targetIdentity":"plan/node/source/checkout/binding-metadata/system","disposition":"PRESERVED","valueKind":"string","sourceDigest":"ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095","expectedTargetDigest":"ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"},{"identity":"step/checkout/uses","sourcePath":"$.workflows[0].steps[0].uses","targetIdentity":"plan/node/source/checkout/binding","disposition":"TRANSFORMED","valueKind":"binding","sourceDigest":"40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476","expectedTargetDigest":"291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6","transform":"explicit-action-binding-resolution"},{"identity":"step/deploy/capability","sourcePath":"$.workflows[0].steps[4].capability","targetIdentity":"plan/node/source/deploy/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb","expectedTargetDigest":"f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb"},{"identity":"step/deploy/id","sourcePath":"$.workflows[0].steps[4].id","targetIdentity":"plan/node/source/deploy/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"6e69885dd797dd929b491fb505fdf020654c35ebcea24699b1fef1097d1cf13f","expectedTargetDigest":"792888039a1e603c90cfc443d6e6faa90541b0e8416efb41055b18649905208a","transform":"step-id-to-source-and-result-identity"},{"identity":"step/deploy/requires/approve-prod","sourcePath":"$.workflows[0].steps[4].requires","targetIdentity":"plan/node/source/deploy/dependency/source/approve-prod","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3","expectedTargetDigest":"89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3"},{"identity":"step/test/capability","sourcePath":"$.workflows[0].steps[1].capability","targetIdentity":"plan/node/source/test/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce","expectedTargetDigest":"bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce"},{"identity":"step/test/id","sourcePath":"$.workflows[0].steps[1].id","targetIdentity":"plan/node/source/test/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"ebe74dad29a199288ac47bd098f075511a57a8d76b7acff368d953639b9d004b","expectedTargetDigest":"000eb5a2dfd08792da5ee7934fee74d1e4c6cc26774edd48702753770a7d8428","transform":"step-id-to-source-and-result-identity"},{"identity":"step/test/requires/checkout","sourcePath":"$.workflows[0].steps[1].requires","targetIdentity":"plan/node/source/test/dependency/source/checkout","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15","expectedTargetDigest":"b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"},{"identity":"step/verify/capability","sourcePath":"$.workflows[0].steps[5].capability","targetIdentity":"plan/node/source/verify/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"4eac56a361be0cced03f10be0b42b70a72b07976caacd22341612c7c30b16fe5","expectedTargetDigest":"4eac56a361be0cced03f10be0b42b70a72b07976caacd22341612c7c30b16fe5"},{"identity":"step/verify/id","sourcePath":"$.workflows[0].steps[5].id","targetIdentity":"plan/node/source/verify/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"9eb5443327765f54659ccc4d91c1d2e475d67f2d80f664c6c0c21523cf874f29","expectedTargetDigest":"86b34a9ca94e7b6a46f2ac5d1c38c65cbce8d90e0e644c8ad69e3b8903845433","transform":"step-id-to-source-and-result-identity"},{"identity":"step/verify/requires/deploy","sourcePath":"$.workflows[0].steps[5].requires","targetIdentity":"plan/node/source/verify/dependency/source/deploy","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"3ddbf4d1d22a11342a3543f76038b6392868ac4b211db674cd7b9e01d51ccbaf","expectedTargetDigest":"3ddbf4d1d22a11342a3543f76038b6392868ac4b211db674cd7b9e01d51ccbaf"},{"identity":"system/cluster/name","sourcePath":"$.systems[2].name","targetIdentity":"plan/source-intent/system/cluster/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"708b19dbc0008ee8531a1bd2ffcb4db9d15dd26ec8a513a2b03ead9d04549cf5","expectedTargetDigest":"708b19dbc0008ee8531a1bd2ffcb4db9d15dd26ec8a513a2b03ead9d04549cf5"},{"identity":"system/cluster/purpose","sourcePath":"$.systems[2].purpose","targetIdentity":"plan/source-intent/system/cluster/purpose","disposition":"PRESERVED","valueKind":"string","sourceDigest":"60e2265b219fd6dcbcb78a23913520af4ad65f75fb22c7dce4df19db90e42078","expectedTargetDigest":"60e2265b219fd6dcbcb78a23913520af4ad65f75fb22c7dce4df19db90e42078"},{"identity":"system/cluster/type","sourcePath":"$.systems[2].type","targetIdentity":"plan/source-intent/system/cluster/canonical-type","disposition":"PRESERVED","valueKind":"string","sourceDigest":"fcf13d9e110e3e327de6b0c77eead2c33aafe4f90fce59f120e7b38dfe95264d","expectedTargetDigest":"fcf13d9e110e3e327de6b0c77eead2c33aafe4f90fce59f120e7b38dfe95264d"},{"identity":"system/registry/name","sourcePath":"$.systems[1].name","targetIdentity":"plan/source-intent/system/registry/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf","expectedTargetDigest":"3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"},{"identity":"system/registry/purpose","sourcePath":"$.systems[1].purpose","targetIdentity":"plan/source-intent/system/registry/purpose","disposition":"PRESERVED","valueKind":"string","sourceDigest":"40229da15ceefdd17c6512f2b8bf9b4107dac7eda7225aa834f695f43868c4e9","expectedTargetDigest":"40229da15ceefdd17c6512f2b8bf9b4107dac7eda7225aa834f695f43868c4e9"},{"identity":"system/registry/type","sourcePath":"$.systems[1].type","targetIdentity":"plan/source-intent/system/registry/canonical-type","disposition":"TRANSFORMED","valueKind":"string","sourceDigest":"7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e","expectedTargetDigest":"1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87","transform":"canonical-system-type-normalization"},{"identity":"system/source/name","sourcePath":"$.systems[0].name","targetIdentity":"plan/source-intent/system/source/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b","expectedTargetDigest":"b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"},{"identity":"system/source/purpose","sourcePath":"$.systems[0].purpose","targetIdentity":"plan/source-intent/system/source/purpose","disposition":"PRESERVED","valueKind":"string","sourceDigest":"73fed28645597ef4031ca7c376bad08c88273e3dd80e79f993d3da2db1f37d63","expectedTargetDigest":"73fed28645597ef4031ca7c376bad08c88273e3dd80e79f993d3da2db1f37d63"},{"identity":"system/source/type","sourcePath":"$.systems[0].type","targetIdentity":"plan/source-intent/system/source/canonical-type","disposition":"PRESERVED","valueKind":"string","sourceDigest":"01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382","expectedTargetDigest":"01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"},{"identity":"system/standard/name","sourcePath":"$.systems[3].name","targetIdentity":"plan/source-intent/system/standard/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1","expectedTargetDigest":"a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1"},{"identity":"system/standard/purpose","sourcePath":"$.systems[3].purpose","targetIdentity":"plan/source-intent/system/standard/purpose","disposition":"PRESERVED","valueKind":"string","sourceDigest":"d1d8bfd43480e5008ff91510fd596c32780cbb6f5fac98e0f6f42ba859b042e2","expectedTargetDigest":"d1d8bfd43480e5008ff91510fd596c32780cbb6f5fac98e0f6f42ba859b042e2"},{"identity":"system/standard/type","sourcePath":"$.systems[3].type","targetIdentity":"plan/source-intent/system/standard/canonical-type","disposition":"PRESERVED","valueKind":"string","sourceDigest":"a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1","expectedTargetDigest":"a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1"},{"identity":"workflow/application-lifecycle/kind","sourcePath":"$.workflows[0].kind","targetIdentity":"plan/source-intent/workflow/application-lifecycle/kind","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb","expectedTargetDigest":"f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb"},{"identity":"workflow/application-lifecycle/name","sourcePath":"$.workflows[0].name","targetIdentity":"plan/source-intent/workflow/application-lifecycle/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87","expectedTargetDigest":"c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87"}]},"loweringReport":{"contractVersion":"2.0","artifactKind":"execution-plan","evidenceDigest":"82f5fabd566dbd50e8a618a8b9312fec941ec3f04837171421caaf661cee240c","evidence":[{"sourceIdentity":"failure/notify","sourcePath":"$.failure.notify","targetIdentity":"plan/source-intent/failure/notify","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","targetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"sourceIdentity":"failure/rollback","sourcePath":"$.failure.rollback","targetIdentity":"plan/source-intent/failure/rollback","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","targetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"sourceIdentity":"failure/stop-on-error","sourcePath":"$.failure.stopOnError","targetIdentity":"plan/source-intent/failure/stop-on-error","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","targetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"sourceIdentity":"input/environment/name","sourcePath":"$.inputs[0].name","targetIdentity":"plan/input/environment/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"1d076f54dea4e8132394aab9e4dcb3b38a5b3c01a5ef20758895601237158d8b","targetDigest":"1d076f54dea4e8132394aab9e4dcb3b38a5b3c01a5ef20758895601237158d8b"},{"sourceIdentity":"input/environment/required","sourcePath":"$.inputs[0].required","targetIdentity":"plan/input/environment/required","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","targetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"sourceIdentity":"input/environment/type","sourcePath":"$.inputs[0].type","targetIdentity":"plan/input/environment/type","disposition":"TRANSFORMED","valueKind":"input-type","sourceDigest":"2ab6dadc4b6e9c6f9c51eca4da55857d0b5d562d86bd1ef0b69959ba9fb16f1d","targetDigest":"e3f64b2da48e082b756ce1566c3a765d156c3cf14214fc6e3297cd27b207210e","transform":"intent-input-type-normalization"},{"sourceIdentity":"input/version/name","sourcePath":"$.inputs[1].name","targetIdentity":"plan/input/version/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae","targetDigest":"2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"},{"sourceIdentity":"input/version/required","sourcePath":"$.inputs[1].required","targetIdentity":"plan/input/version/required","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67","targetDigest":"916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"},{"sourceIdentity":"input/version/type","sourcePath":"$.inputs[1].type","targetIdentity":"plan/input/version/type","disposition":"TRANSFORMED","valueKind":"input-type","sourceDigest":"b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2","targetDigest":"38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723","transform":"intent-input-type-normalization"},{"sourceIdentity":"intent/description","sourcePath":"$.description","targetIdentity":"plan/source-intent/description","disposition":"PRESERVED","valueKind":"string","sourceDigest":"1b87ab3e40e942bce91eff847d015095dbdb2d4f0077963948f9deabae10a12e","targetDigest":"1b87ab3e40e942bce91eff847d015095dbdb2d4f0077963948f9deabae10a12e"},{"sourceIdentity":"intent/name","sourcePath":"$.name","targetIdentity":"plan/flow/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"71e1bd0c23d926805409ca2e5da2953ae33310406b1675e183a0ee088b5c264a","targetDigest":"71e1bd0c23d926805409ca2e5da2953ae33310406b1675e183a0ee088b5c264a"},{"sourceIdentity":"policy/production-approval/message","sourcePath":"$.policies[0].message","targetIdentity":"plan/source-intent/policy/production-approval/message","disposition":"PRESERVED","valueKind":"string","sourceDigest":"d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25","targetDigest":"d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25"},{"sourceIdentity":"policy/production-approval/name","sourcePath":"$.policies[0].name","targetIdentity":"plan/source-intent/policy/production-approval/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"6073c70c87799159c56070545b0f9d1268af58a448b3e20cbd58aee50ba95329","targetDigest":"6073c70c87799159c56070545b0f9d1268af58a448b3e20cbd58aee50ba95329"},{"sourceIdentity":"policy/production-approval/type","sourcePath":"$.policies[0].type","targetIdentity":"plan/source-intent/policy/production-approval/type","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191","targetDigest":"92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191"},{"sourceIdentity":"step/approve-prod/capability","sourcePath":"$.workflows[0].steps[3].capability","targetIdentity":"plan/node/source/approve-prod/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1","targetDigest":"a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1"},{"sourceIdentity":"step/approve-prod/id","sourcePath":"$.workflows[0].steps[3].id","targetIdentity":"plan/node/source/approve-prod/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"9481da5d477a17f5910280f2fc9900115a5367b19c1ed556c11c3ea9cc305f6d","targetDigest":"496cb0f11177d6583c07b17d57d4ed4ab6f5c8c2cd0aec8aaeca4fbbf80de45e","transform":"step-id-to-source-and-result-identity"},{"sourceIdentity":"step/approve-prod/requires/build-image","sourcePath":"$.workflows[0].steps[3].requires","targetIdentity":"plan/node/source/approve-prod/dependency/source/build-image","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b","targetDigest":"01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b"},{"sourceIdentity":"step/build-image/capability","sourcePath":"$.workflows[0].steps[2].capability","targetIdentity":"plan/node/source/build-image/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8","targetDigest":"cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"},{"sourceIdentity":"step/build-image/id","sourcePath":"$.workflows[0].steps[2].id","targetIdentity":"plan/node/source/build-image/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa","targetDigest":"c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee","transform":"step-id-to-source-and-result-identity"},{"sourceIdentity":"step/build-image/param/image","sourcePath":"$.workflows[0].steps[2].params.image","targetIdentity":"plan/node/source/build-image/param/image","disposition":"PRESERVED","valueKind":"string","sourceDigest":"b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094","targetDigest":"b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094"},{"sourceIdentity":"step/build-image/param/path","sourcePath":"$.workflows[0].steps[2].params.path","targetIdentity":"plan/node/source/build-image/param/path","disposition":"PRESERVED","valueKind":"string","sourceDigest":"6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1","targetDigest":"6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"},{"sourceIdentity":"step/build-image/param/push","sourcePath":"$.workflows[0].steps[2].params.push","targetIdentity":"plan/node/source/build-image/param/push","disposition":"PRESERVED","valueKind":"boolean","sourceDigest":"b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95","targetDigest":"b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"},{"sourceIdentity":"step/build-image/param/system","sourcePath":"$.workflows[0].steps[2].params.system","targetIdentity":"plan/node/source/build-image/binding-metadata/system","disposition":"PRESERVED","valueKind":"string","sourceDigest":"46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd","targetDigest":"46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"},{"sourceIdentity":"step/build-image/requires/test","sourcePath":"$.workflows[0].steps[2].requires","targetIdentity":"plan/node/source/build-image/dependency/source/test","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083","targetDigest":"0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083"},{"sourceIdentity":"step/build-image/uses","sourcePath":"$.workflows[0].steps[2].uses","targetIdentity":"plan/node/source/build-image/binding","disposition":"TRANSFORMED","valueKind":"binding","sourceDigest":"4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00","targetDigest":"783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3","transform":"explicit-action-binding-resolution"},{"sourceIdentity":"step/checkout/capability","sourcePath":"$.workflows[0].steps[0].capability","targetIdentity":"plan/node/source/checkout/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2","targetDigest":"d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"},{"sourceIdentity":"step/checkout/id","sourcePath":"$.workflows[0].steps[0].id","targetIdentity":"plan/node/source/checkout/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710","targetDigest":"2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205","transform":"step-id-to-source-and-result-identity"},{"sourceIdentity":"step/checkout/param/branch","sourcePath":"$.workflows[0].steps[0].params.branch","targetIdentity":"plan/node/source/checkout/param/branch","disposition":"PRESERVED","valueKind":"string","sourceDigest":"afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b","targetDigest":"afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"},{"sourceIdentity":"step/checkout/param/system","sourcePath":"$.workflows[0].steps[0].params.system","targetIdentity":"plan/node/source/checkout/binding-metadata/system","disposition":"PRESERVED","valueKind":"string","sourceDigest":"ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095","targetDigest":"ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"},{"sourceIdentity":"step/checkout/uses","sourcePath":"$.workflows[0].steps[0].uses","targetIdentity":"plan/node/source/checkout/binding","disposition":"TRANSFORMED","valueKind":"binding","sourceDigest":"40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476","targetDigest":"291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6","transform":"explicit-action-binding-resolution"},{"sourceIdentity":"step/deploy/capability","sourcePath":"$.workflows[0].steps[4].capability","targetIdentity":"plan/node/source/deploy/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb","targetDigest":"f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb"},{"sourceIdentity":"step/deploy/id","sourcePath":"$.workflows[0].steps[4].id","targetIdentity":"plan/node/source/deploy/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"6e69885dd797dd929b491fb505fdf020654c35ebcea24699b1fef1097d1cf13f","targetDigest":"792888039a1e603c90cfc443d6e6faa90541b0e8416efb41055b18649905208a","transform":"step-id-to-source-and-result-identity"},{"sourceIdentity":"step/deploy/requires/approve-prod","sourcePath":"$.workflows[0].steps[4].requires","targetIdentity":"plan/node/source/deploy/dependency/source/approve-prod","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3","targetDigest":"89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3"},{"sourceIdentity":"step/test/capability","sourcePath":"$.workflows[0].steps[1].capability","targetIdentity":"plan/node/source/test/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce","targetDigest":"bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce"},{"sourceIdentity":"step/test/id","sourcePath":"$.workflows[0].steps[1].id","targetIdentity":"plan/node/source/test/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"ebe74dad29a199288ac47bd098f075511a57a8d76b7acff368d953639b9d004b","targetDigest":"000eb5a2dfd08792da5ee7934fee74d1e4c6cc26774edd48702753770a7d8428","transform":"step-id-to-source-and-result-identity"},{"sourceIdentity":"step/test/requires/checkout","sourcePath":"$.workflows[0].steps[1].requires","targetIdentity":"plan/node/source/test/dependency/source/checkout","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15","targetDigest":"b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"},{"sourceIdentity":"step/verify/capability","sourcePath":"$.workflows[0].steps[5].capability","targetIdentity":"plan/node/source/verify/semantic-capability","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"4eac56a361be0cced03f10be0b42b70a72b07976caacd22341612c7c30b16fe5","targetDigest":"4eac56a361be0cced03f10be0b42b70a72b07976caacd22341612c7c30b16fe5"},{"sourceIdentity":"step/verify/id","sourcePath":"$.workflows[0].steps[5].id","targetIdentity":"plan/node/source/verify/identity","disposition":"TRANSFORMED","valueKind":"step-identity","sourceDigest":"9eb5443327765f54659ccc4d91c1d2e475d67f2d80f664c6c0c21523cf874f29","targetDigest":"86b34a9ca94e7b6a46f2ac5d1c38c65cbce8d90e0e644c8ad69e3b8903845433","transform":"step-id-to-source-and-result-identity"},{"sourceIdentity":"step/verify/requires/deploy","sourcePath":"$.workflows[0].steps[5].requires","targetIdentity":"plan/node/source/verify/dependency/source/deploy","disposition":"PRESERVED","valueKind":"step-reference","sourceDigest":"3ddbf4d1d22a11342a3543f76038b6392868ac4b211db674cd7b9e01d51ccbaf","targetDigest":"3ddbf4d1d22a11342a3543f76038b6392868ac4b211db674cd7b9e01d51ccbaf"},{"sourceIdentity":"system/cluster/name","sourcePath":"$.systems[2].name","targetIdentity":"plan/source-intent/system/cluster/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"708b19dbc0008ee8531a1bd2ffcb4db9d15dd26ec8a513a2b03ead9d04549cf5","targetDigest":"708b19dbc0008ee8531a1bd2ffcb4db9d15dd26ec8a513a2b03ead9d04549cf5"},{"sourceIdentity":"system/cluster/purpose","sourcePath":"$.systems[2].purpose","targetIdentity":"plan/source-intent/system/cluster/purpose","disposition":"PRESERVED","valueKind":"string","sourceDigest":"60e2265b219fd6dcbcb78a23913520af4ad65f75fb22c7dce4df19db90e42078","targetDigest":"60e2265b219fd6dcbcb78a23913520af4ad65f75fb22c7dce4df19db90e42078"},{"sourceIdentity":"system/cluster/type","sourcePath":"$.systems[2].type","targetIdentity":"plan/source-intent/system/cluster/canonical-type","disposition":"PRESERVED","valueKind":"string","sourceDigest":"fcf13d9e110e3e327de6b0c77eead2c33aafe4f90fce59f120e7b38dfe95264d","targetDigest":"fcf13d9e110e3e327de6b0c77eead2c33aafe4f90fce59f120e7b38dfe95264d"},{"sourceIdentity":"system/registry/name","sourcePath":"$.systems[1].name","targetIdentity":"plan/source-intent/system/registry/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf","targetDigest":"3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"},{"sourceIdentity":"system/registry/purpose","sourcePath":"$.systems[1].purpose","targetIdentity":"plan/source-intent/system/registry/purpose","disposition":"PRESERVED","valueKind":"string","sourceDigest":"40229da15ceefdd17c6512f2b8bf9b4107dac7eda7225aa834f695f43868c4e9","targetDigest":"40229da15ceefdd17c6512f2b8bf9b4107dac7eda7225aa834f695f43868c4e9"},{"sourceIdentity":"system/registry/type","sourcePath":"$.systems[1].type","targetIdentity":"plan/source-intent/system/registry/canonical-type","disposition":"TRANSFORMED","valueKind":"string","sourceDigest":"7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e","targetDigest":"1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87","transform":"canonical-system-type-normalization"},{"sourceIdentity":"system/source/name","sourcePath":"$.systems[0].name","targetIdentity":"plan/source-intent/system/source/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b","targetDigest":"b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"},{"sourceIdentity":"system/source/purpose","sourcePath":"$.systems[0].purpose","targetIdentity":"plan/source-intent/system/source/purpose","disposition":"PRESERVED","valueKind":"string","sourceDigest":"73fed28645597ef4031ca7c376bad08c88273e3dd80e79f993d3da2db1f37d63","targetDigest":"73fed28645597ef4031ca7c376bad08c88273e3dd80e79f993d3da2db1f37d63"},{"sourceIdentity":"system/source/type","sourcePath":"$.systems[0].type","targetIdentity":"plan/source-intent/system/source/canonical-type","disposition":"PRESERVED","valueKind":"string","sourceDigest":"01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382","targetDigest":"01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"},{"sourceIdentity":"system/standard/name","sourcePath":"$.systems[3].name","targetIdentity":"plan/source-intent/system/standard/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1","targetDigest":"a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1"},{"sourceIdentity":"system/standard/purpose","sourcePath":"$.systems[3].purpose","targetIdentity":"plan/source-intent/system/standard/purpose","disposition":"PRESERVED","valueKind":"string","sourceDigest":"d1d8bfd43480e5008ff91510fd596c32780cbb6f5fac98e0f6f42ba859b042e2","targetDigest":"d1d8bfd43480e5008ff91510fd596c32780cbb6f5fac98e0f6f42ba859b042e2"},{"sourceIdentity":"system/standard/type","sourcePath":"$.systems[3].type","targetIdentity":"plan/source-intent/system/standard/canonical-type","disposition":"PRESERVED","valueKind":"string","sourceDigest":"a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1","targetDigest":"a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1"},{"sourceIdentity":"workflow/application-lifecycle/kind","sourcePath":"$.workflows[0].kind","targetIdentity":"plan/source-intent/workflow/application-lifecycle/kind","disposition":"PRESERVED","valueKind":"enum","sourceDigest":"f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb","targetDigest":"f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb"},{"sourceIdentity":"workflow/application-lifecycle/name","sourcePath":"$.workflows[0].name","targetIdentity":"plan/source-intent/workflow/application-lifecycle/name","disposition":"PRESERVED","valueKind":"string","sourceDigest":"c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87","targetDigest":"c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87"}]},"assumptions":[],"controlRequirements":[{"id":"control.approval.production-approval","kind":"APPROVAL","subject":"production-approval","source":"INTENT_POLICY","message":"Approval is required before deployment in this reference flow.","scope":{"kind":"INTENT"}}],"controlEvidence":[{"requirementId":"control.approval.production-approval","status":"SATISFIED","source":"AUTHORED_STEP","detail":"Intent-level approval predecessor(s): approve-prod","enforcementCapabilities":[]}],"controlDecision":{"status":"ALLOWED","blockingRequirementIds":[],"pendingRequirementIds":[]},"topologyRequirements":[{"id":"topology.ephemeralWorkspace.git-checkout-1-docker-build-1","kind":"EPHEMERAL_WORKSPACE","subject":"git_checkout_1->docker_build_1","source":"PLAN_STRUCTURE","evidenceReference":"docker.build.continuity.requires.workspace.source"},{"id":"topology.failurePropagation.build-test-deploy","kind":"FAILURE_PROPAGATION","subject":"build-test-deploy","source":"CANONICAL_WORKFLOW","evidenceReference":"intent.failure"},{"id":"topology.failurePropagation.onerror-1","kind":"FAILURE_PROPAGATION","subject":"onError_1","source":"PLAN_STRUCTURE","evidenceReference":"plan.nodes.onError_1.errorHandler"},{"id":"topology.suspendResume.approve-1","kind":"SUSPEND_RESUME","subject":"approve_1","source":"PLAN_STRUCTURE","evidenceReference":"plan.nodes.approve_1"},{"id":"topology.suspendResume.approve-prod","kind":"SUSPEND_RESUME","subject":"approve-prod","source":"CANONICAL_CAPABILITY","evidenceReference":"intent.workflows.application-lifecycle.steps.approve-prod"},{"id":"topology.workflowLifetime.application-lifecycle","kind":"WORKFLOW_LIFETIME","subject":"application-lifecycle","source":"CANONICAL_WORKFLOW","evidenceReference":"intent.workflows.application-lifecycle"},{"id":"topology.workflowLifetime.build-test-deploy","kind":"WORKFLOW_LIFETIME","subject":"build-test-deploy","source":"PLAN_STRUCTURE","evidenceReference":"plan.nodes"},{"id":"topology.workflowScope.application-lifecycle","kind":"WORKFLOW_SCOPE","subject":"application-lifecycle","source":"CANONICAL_WORKFLOW","evidenceReference":"intent.workflows.application-lifecycle"},{"id":"topology.workflowScope.build-test-deploy","kind":"WORKFLOW_SCOPE","subject":"build-test-deploy","source":"PLAN_STRUCTURE","evidenceReference":"plan.nodes"},{"id":"topology.workspacePropagation.git-checkout-1-docker-build-1","kind":"WORKSPACE_PROPAGATION","subject":"git_checkout_1->docker_build_1","source":"PLAN_STRUCTURE","evidenceReference":"docker.build.continuity.requires.workspace.source"}],"nodes":[{"id":"git_checkout_1","kind":"task","module":"git","action":"checkout","target":"source","resultName":"checkout","dependencies":[],"inputs":{"branch":"\"main\""},"outputs":["checkout"],"semanticCapability":"CHECKOUT","sourceId":"checkout","bindingMetadata":{"system":"\"source\""},"effectModel":[{"domain":"SOFTWARE_DELIVERY","operation":"READ","resource":"source.repository","external":true,"sourceCapability":"CHECKOUT"}],"effects":["source.repository"],"destructive":false,"requiredCapabilities":["task.execute","git.checkout"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[]},{"id":"standard_execute_1","kind":"task","module":"standard","action":"execute","target":"standard","resultName":"test","dependencies":["git_checkout_1"],"inputs":{"operation":"\"test\"","capability":"\"test\"","description":"\"TEST step test\"","flow":"\"build-test-deploy\""},"outputs":["test"],"semanticCapability":"TEST","sourceId":"test","bindingMetadata":{},"effectModel":[{"domain":"SOFTWARE_DELIVERY","operation":"READ","resource":"software.source","external":true,"sourceCapability":"TEST"},{"domain":"SOFTWARE_DELIVERY","operation":"EXECUTE","resource":"software.test","external":true,"sourceCapability":"TEST"}],"effects":["software.source","software.test"],"destructive":false,"requiredCapabilities":["task.execute","standard.test"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[]},{"id":"docker_build_1","kind":"task","module":"docker","action":"build","target":"registry","resultName":"build_image","dependencies":["standard_execute_1"],"inputs":{"image":"\"build-test-deploy:${version}\"","path":"\".\"","push":"false"},"outputs":["build_image"],"semanticCapability":"BUILD_IMAGE","sourceId":"build-image","bindingMetadata":{"system":"\"registry\""},"effectModel":[{"domain":"SOFTWARE_DELIVERY","operation":"CREATE","resource":"software.image","transition":{"from":"ABSENT","to":"PRESENT"},"external":true,"sourceCapability":"BUILD_IMAGE"}],"effects":["software.image"],"destructive":false,"requiredCapabilities":["task.execute","docker.build","container.image","continuity.workspace"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[]},{"id":"approve_1","kind":"approval","resultName":"approve_prod","dependencies":["docker_build_1"],"inputs":{"message":"Approval is required before deployment in this reference flow.","mode":"manual"},"outputs":["approve_prod"],"sourceId":"approve-prod","bindingMetadata":{},"effectModel":[],"effects":[],"safety":"requiresApproval","destructive":false,"requiredCapabilities":["approval.manual"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[]},{"id":"standard_execute_2","kind":"task","module":"standard","action":"execute","target":"standard","resultName":"deploy","dependencies":["approve_1"],"inputs":{"operation":"\"deploy\"","capability":"\"deploy\"","description":"\"DEPLOY step deploy\"","flow":"\"build-test-deploy\""},"outputs":["deploy"],"semanticCapability":"DEPLOY","sourceId":"deploy","bindingMetadata":{},"effectModel":[{"domain":"INFRASTRUCTURE_STATE","operation":"UPSERT","resource":"deployment.state","transition":{"from":"UNKNOWN","to":"PRESENT"},"external":true,"sourceCapability":"DEPLOY"}],"effects":["deployment.state"],"destructive":false,"requiredCapabilities":["task.execute","standard.deploy"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[]},{"id":"standard_execute_3","kind":"task","module":"standard","action":"execute","target":"standard","resultName":"verify","dependencies":["standard_execute_2"],"inputs":{"operation":"\"verify\"","capability":"\"verify\"","description":"\"VERIFY step verify\"","flow":"\"build-test-deploy\""},"outputs":["verify"],"semanticCapability":"VERIFY","sourceId":"verify","bindingMetadata":{},"effectModel":[{"domain":"INFRASTRUCTURE_STATE","operation":"READ","resource":"deployment.state","external":true,"sourceCapability":"VERIFY"}],"effects":["deployment.state"],"destructive":false,"requiredCapabilities":["task.execute","standard.verify"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[]},{"id":"onError_1","kind":"try","dependencies":[],"inputs":{},"outputs":[],"bindingMetadata":{},"effectModel":[],"effects":[],"destructive":false,"requiredCapabilities":["errorHandlers.finally"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[{"id":"standard_rollback_1","kind":"rollback","module":"standard","action":"rollback","target":"standard","resultName":"rollback_result","dependencies":[],"inputs":{"operation":"\"rollback\"","reason":"error?.message","flow":"\"build-test-deploy\""},"outputs":["rollback_result"],"semanticCapability":"ROLLBACK","bindingMetadata":{},"effectModel":[{"domain":"INFRASTRUCTURE_STATE","operation":"UPDATE","resource":"managed.state","transition":{"from":"PRESENT","to":"PRESENT"},"external":true,"sourceCapability":"ROLLBACK"}],"effects":["managed.state"],"destructive":false,"requiredCapabilities":["task.execute","standard.rollback"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[]},{"id":"standard_execute_4","kind":"task","module":"standard","action":"execute","target":"standard","dependencies":[],"inputs":{"operation":"\"notify-failure\"","capability":"\"notify\"","description":"\"Notify about failure of build-test-deploy\"","flow":"\"build-test-deploy\"","subject":"\"Flow failed: build-test-deploy\"","body":"error?.message"},"outputs":[],"semanticCapability":"NOTIFY","bindingMetadata":{},"effectModel":[{"domain":"COMMUNICATION","operation":"EMIT","resource":"notification","external":true,"sourceCapability":"NOTIFY"}],"effects":["notification"],"destructive":false,"requiredCapabilities":["task.execute","standard.notify-failure"],"targetHints":{},"assumptions":[],"then":[],"otherwise":[],"branches":[],"cases":[],"errorCase":[],"defaultSteps":[],"body":[],"errorHandler":[]}]}],"dependencyRelations":[{"sourceNodeId":"git_checkout_1","targetNodeId":"standard_execute_1","kind":"ORDERING","evidence":"DECLARED_ORDERING","resolution":"RESOLVED","path":["git_checkout_1","standard_execute_1"],"candidates":[],"blocking":false,"continuity":false},{"sourceNodeId":"standard_execute_1","targetNodeId":"docker_build_1","kind":"ORDERING","evidence":"DECLARED_ORDERING","resolution":"RESOLVED","path":["standard_execute_1","docker_build_1"],"candidates":[],"blocking":false,"continuity":false},{"sourceNodeId":"git_checkout_1","targetNodeId":"docker_build_1","kind":"WORKSPACE","channel":"source","evidence":"MODULE_CONTRACT","resolution":"RESOLVED","path":["git_checkout_1","standard_execute_1","docker_build_1"],"candidates":[],"evidenceReference":"docker.build.continuity.requires.workspace.source","blocking":false,"continuity":true},{"sourceNodeId":"docker_build_1","targetNodeId":"approve_1","kind":"ORDERING","evidence":"DECLARED_ORDERING","resolution":"RESOLVED","path":["docker_build_1","approve_1"],"candidates":[],"blocking":false,"continuity":false},{"sourceNodeId":"approve_1","targetNodeId":"standard_execute_2","kind":"ORDERING","evidence":"DECLARED_ORDERING","resolution":"RESOLVED","path":["approve_1","standard_execute_2"],"candidates":[],"blocking":false,"continuity":false},{"sourceNodeId":"standard_execute_2","targetNodeId":"standard_execute_3","kind":"ORDERING","evidence":"DECLARED_ORDERING","resolution":"RESOLVED","path":["standard_execute_2","standard_execute_3"],"candidates":[],"blocking":false,"continuity":false}]}
+{
+  "flowName" : "build-test-deploy",
+  "planVersion" : "2.1",
+  "inputs" : [ {
+    "name" : "environment",
+    "type" : "option",
+    "required" : true,
+    "choices" : [ "dev", "test", "prod" ]
+  }, {
+    "name" : "version",
+    "type" : "text",
+    "required" : true,
+    "choices" : [ ]
+  } ],
+  "triggers" : [ ],
+  "outputs" : [ {
+    "name" : "checkout",
+    "type" : "any",
+    "sourceNodeId" : "git_checkout_1"
+  }, {
+    "name" : "test",
+    "type" : "any",
+    "sourceNodeId" : "standard_execute_1"
+  }, {
+    "name" : "build_image",
+    "type" : "any",
+    "sourceNodeId" : "docker_build_1"
+  }, {
+    "name" : "approve_prod",
+    "type" : "any",
+    "sourceNodeId" : "approve_1"
+  }, {
+    "name" : "deploy",
+    "type" : "any",
+    "sourceNodeId" : "standard_execute_2"
+  }, {
+    "name" : "verify",
+    "type" : "any",
+    "sourceNodeId" : "standard_execute_3"
+  }, {
+    "name" : "rollback_result",
+    "type" : "any",
+    "sourceNodeId" : "standard_rollback_1"
+  } ],
+  "dependencies" : [ "git_checkout_1", "standard_execute_1", "docker_build_1", "approve_1", "standard_execute_2" ],
+  "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "docker.build", "container.image", "continuity.workspace", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "standard.notify-failure" ],
+  "targetHints" : { },
+  "sourceIntent" : {
+    "description" : "High-level deployment intent. AI should produce this layer before low-level Flow.",
+    "workflows" : [ {
+      "name" : "application-lifecycle",
+      "kind" : "DEPLOY",
+      "stepIds" : [ "checkout", "test", "build-image", "approve-prod", "deploy", "verify" ]
+    } ],
+    "policies" : [ {
+      "name" : "production-approval",
+      "type" : "APPROVAL",
+      "message" : "Approval is required before deployment in this reference flow."
+    } ],
+    "systems" : [ {
+      "name" : "source",
+      "sourceType" : "git",
+      "canonicalType" : "git",
+      "purpose" : "Application source repository",
+      "config" : { }
+    }, {
+      "name" : "registry",
+      "sourceType" : "dockerRegistry",
+      "canonicalType" : "docker",
+      "purpose" : "Image registry",
+      "config" : { }
+    }, {
+      "name" : "cluster",
+      "sourceType" : "kubernetes",
+      "canonicalType" : "kubernetes",
+      "purpose" : "Deployment target",
+      "config" : { }
+    }, {
+      "name" : "standard",
+      "sourceType" : "standard",
+      "canonicalType" : "standard",
+      "purpose" : "Semantic build and test operations",
+      "config" : { }
+    } ],
+    "systemPurposes" : {
+      "source" : "Application source repository",
+      "registry" : "Image registry",
+      "cluster" : "Deployment target",
+      "standard" : "Semantic build and test operations"
+    },
+    "failure" : {
+      "notify" : true,
+      "rollback" : true,
+      "stopOnError" : true
+    },
+    "fields" : [ {
+      "identity" : "failure/notify",
+      "sourcePath" : "$.failure.notify",
+      "targetIdentity" : "plan/source-intent/failure/notify",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "identity" : "failure/rollback",
+      "sourcePath" : "$.failure.rollback",
+      "targetIdentity" : "plan/source-intent/failure/rollback",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "identity" : "failure/stop-on-error",
+      "sourcePath" : "$.failure.stopOnError",
+      "targetIdentity" : "plan/source-intent/failure/stop-on-error",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "identity" : "input/environment/name",
+      "sourcePath" : "$.inputs[0].name",
+      "targetIdentity" : "plan/input/environment/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "1d076f54dea4e8132394aab9e4dcb3b38a5b3c01a5ef20758895601237158d8b",
+      "expectedTargetDigest" : "1d076f54dea4e8132394aab9e4dcb3b38a5b3c01a5ef20758895601237158d8b"
+    }, {
+      "identity" : "input/environment/required",
+      "sourcePath" : "$.inputs[0].required",
+      "targetIdentity" : "plan/input/environment/required",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "identity" : "input/environment/type",
+      "sourcePath" : "$.inputs[0].type",
+      "targetIdentity" : "plan/input/environment/type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "input-type",
+      "sourceDigest" : "2ab6dadc4b6e9c6f9c51eca4da55857d0b5d562d86bd1ef0b69959ba9fb16f1d",
+      "expectedTargetDigest" : "e3f64b2da48e082b756ce1566c3a765d156c3cf14214fc6e3297cd27b207210e",
+      "transform" : "intent-input-type-normalization"
+    }, {
+      "identity" : "input/version/name",
+      "sourcePath" : "$.inputs[1].name",
+      "targetIdentity" : "plan/input/version/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae",
+      "expectedTargetDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"
+    }, {
+      "identity" : "input/version/required",
+      "sourcePath" : "$.inputs[1].required",
+      "targetIdentity" : "plan/input/version/required",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "expectedTargetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "identity" : "input/version/type",
+      "sourcePath" : "$.inputs[1].type",
+      "targetIdentity" : "plan/input/version/type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "input-type",
+      "sourceDigest" : "b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2",
+      "expectedTargetDigest" : "38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723",
+      "transform" : "intent-input-type-normalization"
+    }, {
+      "identity" : "intent/description",
+      "sourcePath" : "$.description",
+      "targetIdentity" : "plan/source-intent/description",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "1b87ab3e40e942bce91eff847d015095dbdb2d4f0077963948f9deabae10a12e",
+      "expectedTargetDigest" : "1b87ab3e40e942bce91eff847d015095dbdb2d4f0077963948f9deabae10a12e"
+    }, {
+      "identity" : "intent/name",
+      "sourcePath" : "$.name",
+      "targetIdentity" : "plan/flow/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "71e1bd0c23d926805409ca2e5da2953ae33310406b1675e183a0ee088b5c264a",
+      "expectedTargetDigest" : "71e1bd0c23d926805409ca2e5da2953ae33310406b1675e183a0ee088b5c264a"
+    }, {
+      "identity" : "policy/production-approval/message",
+      "sourcePath" : "$.policies[0].message",
+      "targetIdentity" : "plan/source-intent/policy/production-approval/message",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25",
+      "expectedTargetDigest" : "d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25"
+    }, {
+      "identity" : "policy/production-approval/name",
+      "sourcePath" : "$.policies[0].name",
+      "targetIdentity" : "plan/source-intent/policy/production-approval/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "6073c70c87799159c56070545b0f9d1268af58a448b3e20cbd58aee50ba95329",
+      "expectedTargetDigest" : "6073c70c87799159c56070545b0f9d1268af58a448b3e20cbd58aee50ba95329"
+    }, {
+      "identity" : "policy/production-approval/type",
+      "sourcePath" : "$.policies[0].type",
+      "targetIdentity" : "plan/source-intent/policy/production-approval/type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191",
+      "expectedTargetDigest" : "92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191"
+    }, {
+      "identity" : "step/approve-prod/capability",
+      "sourcePath" : "$.workflows[0].steps[3].capability",
+      "targetIdentity" : "plan/node/source/approve-prod/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1",
+      "expectedTargetDigest" : "a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1"
+    }, {
+      "identity" : "step/approve-prod/id",
+      "sourcePath" : "$.workflows[0].steps[3].id",
+      "targetIdentity" : "plan/node/source/approve-prod/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "9481da5d477a17f5910280f2fc9900115a5367b19c1ed556c11c3ea9cc305f6d",
+      "expectedTargetDigest" : "496cb0f11177d6583c07b17d57d4ed4ab6f5c8c2cd0aec8aaeca4fbbf80de45e",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "identity" : "step/approve-prod/requires/build-image",
+      "sourcePath" : "$.workflows[0].steps[3].requires",
+      "targetIdentity" : "plan/node/source/approve-prod/dependency/source/build-image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b",
+      "expectedTargetDigest" : "01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b"
+    }, {
+      "identity" : "step/build-image/capability",
+      "sourcePath" : "$.workflows[0].steps[2].capability",
+      "targetIdentity" : "plan/node/source/build-image/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8",
+      "expectedTargetDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"
+    }, {
+      "identity" : "step/build-image/id",
+      "sourcePath" : "$.workflows[0].steps[2].id",
+      "targetIdentity" : "plan/node/source/build-image/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa",
+      "expectedTargetDigest" : "c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "identity" : "step/build-image/param/image",
+      "sourcePath" : "$.workflows[0].steps[2].params.image",
+      "targetIdentity" : "plan/node/source/build-image/param/image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094",
+      "expectedTargetDigest" : "b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094"
+    }, {
+      "identity" : "step/build-image/param/path",
+      "sourcePath" : "$.workflows[0].steps[2].params.path",
+      "targetIdentity" : "plan/node/source/build-image/param/path",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1",
+      "expectedTargetDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"
+    }, {
+      "identity" : "step/build-image/param/push",
+      "sourcePath" : "$.workflows[0].steps[2].params.push",
+      "targetIdentity" : "plan/node/source/build-image/param/push",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+      "expectedTargetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+    }, {
+      "identity" : "step/build-image/param/system",
+      "sourcePath" : "$.workflows[0].steps[2].params.system",
+      "targetIdentity" : "plan/node/source/build-image/binding-metadata/system",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd",
+      "expectedTargetDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"
+    }, {
+      "identity" : "step/build-image/requires/test",
+      "sourcePath" : "$.workflows[0].steps[2].requires",
+      "targetIdentity" : "plan/node/source/build-image/dependency/source/test",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083",
+      "expectedTargetDigest" : "0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083"
+    }, {
+      "identity" : "step/build-image/uses",
+      "sourcePath" : "$.workflows[0].steps[2].uses",
+      "targetIdentity" : "plan/node/source/build-image/binding",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "binding",
+      "sourceDigest" : "4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00",
+      "expectedTargetDigest" : "783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3",
+      "transform" : "explicit-action-binding-resolution"
+    }, {
+      "identity" : "step/checkout/capability",
+      "sourcePath" : "$.workflows[0].steps[0].capability",
+      "targetIdentity" : "plan/node/source/checkout/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2",
+      "expectedTargetDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"
+    }, {
+      "identity" : "step/checkout/id",
+      "sourcePath" : "$.workflows[0].steps[0].id",
+      "targetIdentity" : "plan/node/source/checkout/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710",
+      "expectedTargetDigest" : "2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "identity" : "step/checkout/param/branch",
+      "sourcePath" : "$.workflows[0].steps[0].params.branch",
+      "targetIdentity" : "plan/node/source/checkout/param/branch",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b",
+      "expectedTargetDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"
+    }, {
+      "identity" : "step/checkout/param/system",
+      "sourcePath" : "$.workflows[0].steps[0].params.system",
+      "targetIdentity" : "plan/node/source/checkout/binding-metadata/system",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095",
+      "expectedTargetDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"
+    }, {
+      "identity" : "step/checkout/uses",
+      "sourcePath" : "$.workflows[0].steps[0].uses",
+      "targetIdentity" : "plan/node/source/checkout/binding",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "binding",
+      "sourceDigest" : "40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476",
+      "expectedTargetDigest" : "291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6",
+      "transform" : "explicit-action-binding-resolution"
+    }, {
+      "identity" : "step/deploy/capability",
+      "sourcePath" : "$.workflows[0].steps[4].capability",
+      "targetIdentity" : "plan/node/source/deploy/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb",
+      "expectedTargetDigest" : "f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb"
+    }, {
+      "identity" : "step/deploy/id",
+      "sourcePath" : "$.workflows[0].steps[4].id",
+      "targetIdentity" : "plan/node/source/deploy/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "6e69885dd797dd929b491fb505fdf020654c35ebcea24699b1fef1097d1cf13f",
+      "expectedTargetDigest" : "792888039a1e603c90cfc443d6e6faa90541b0e8416efb41055b18649905208a",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "identity" : "step/deploy/requires/approve-prod",
+      "sourcePath" : "$.workflows[0].steps[4].requires",
+      "targetIdentity" : "plan/node/source/deploy/dependency/source/approve-prod",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3",
+      "expectedTargetDigest" : "89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3"
+    }, {
+      "identity" : "step/test/capability",
+      "sourcePath" : "$.workflows[0].steps[1].capability",
+      "targetIdentity" : "plan/node/source/test/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce",
+      "expectedTargetDigest" : "bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce"
+    }, {
+      "identity" : "step/test/id",
+      "sourcePath" : "$.workflows[0].steps[1].id",
+      "targetIdentity" : "plan/node/source/test/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "ebe74dad29a199288ac47bd098f075511a57a8d76b7acff368d953639b9d004b",
+      "expectedTargetDigest" : "000eb5a2dfd08792da5ee7934fee74d1e4c6cc26774edd48702753770a7d8428",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "identity" : "step/test/requires/checkout",
+      "sourcePath" : "$.workflows[0].steps[1].requires",
+      "targetIdentity" : "plan/node/source/test/dependency/source/checkout",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15",
+      "expectedTargetDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"
+    }, {
+      "identity" : "step/verify/capability",
+      "sourcePath" : "$.workflows[0].steps[5].capability",
+      "targetIdentity" : "plan/node/source/verify/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "4eac56a361be0cced03f10be0b42b70a72b07976caacd22341612c7c30b16fe5",
+      "expectedTargetDigest" : "4eac56a361be0cced03f10be0b42b70a72b07976caacd22341612c7c30b16fe5"
+    }, {
+      "identity" : "step/verify/id",
+      "sourcePath" : "$.workflows[0].steps[5].id",
+      "targetIdentity" : "plan/node/source/verify/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "9eb5443327765f54659ccc4d91c1d2e475d67f2d80f664c6c0c21523cf874f29",
+      "expectedTargetDigest" : "86b34a9ca94e7b6a46f2ac5d1c38c65cbce8d90e0e644c8ad69e3b8903845433",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "identity" : "step/verify/requires/deploy",
+      "sourcePath" : "$.workflows[0].steps[5].requires",
+      "targetIdentity" : "plan/node/source/verify/dependency/source/deploy",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "3ddbf4d1d22a11342a3543f76038b6392868ac4b211db674cd7b9e01d51ccbaf",
+      "expectedTargetDigest" : "3ddbf4d1d22a11342a3543f76038b6392868ac4b211db674cd7b9e01d51ccbaf"
+    }, {
+      "identity" : "system/cluster/name",
+      "sourcePath" : "$.systems[2].name",
+      "targetIdentity" : "plan/source-intent/system/cluster/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "708b19dbc0008ee8531a1bd2ffcb4db9d15dd26ec8a513a2b03ead9d04549cf5",
+      "expectedTargetDigest" : "708b19dbc0008ee8531a1bd2ffcb4db9d15dd26ec8a513a2b03ead9d04549cf5"
+    }, {
+      "identity" : "system/cluster/purpose",
+      "sourcePath" : "$.systems[2].purpose",
+      "targetIdentity" : "plan/source-intent/system/cluster/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "60e2265b219fd6dcbcb78a23913520af4ad65f75fb22c7dce4df19db90e42078",
+      "expectedTargetDigest" : "60e2265b219fd6dcbcb78a23913520af4ad65f75fb22c7dce4df19db90e42078"
+    }, {
+      "identity" : "system/cluster/type",
+      "sourcePath" : "$.systems[2].type",
+      "targetIdentity" : "plan/source-intent/system/cluster/canonical-type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "fcf13d9e110e3e327de6b0c77eead2c33aafe4f90fce59f120e7b38dfe95264d",
+      "expectedTargetDigest" : "fcf13d9e110e3e327de6b0c77eead2c33aafe4f90fce59f120e7b38dfe95264d"
+    }, {
+      "identity" : "system/registry/name",
+      "sourcePath" : "$.systems[1].name",
+      "targetIdentity" : "plan/source-intent/system/registry/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf",
+      "expectedTargetDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"
+    }, {
+      "identity" : "system/registry/purpose",
+      "sourcePath" : "$.systems[1].purpose",
+      "targetIdentity" : "plan/source-intent/system/registry/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "40229da15ceefdd17c6512f2b8bf9b4107dac7eda7225aa834f695f43868c4e9",
+      "expectedTargetDigest" : "40229da15ceefdd17c6512f2b8bf9b4107dac7eda7225aa834f695f43868c4e9"
+    }, {
+      "identity" : "system/registry/type",
+      "sourcePath" : "$.systems[1].type",
+      "targetIdentity" : "plan/source-intent/system/registry/canonical-type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "string",
+      "sourceDigest" : "7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e",
+      "expectedTargetDigest" : "1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87",
+      "transform" : "canonical-system-type-normalization"
+    }, {
+      "identity" : "system/source/name",
+      "sourcePath" : "$.systems[0].name",
+      "targetIdentity" : "plan/source-intent/system/source/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b",
+      "expectedTargetDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"
+    }, {
+      "identity" : "system/source/purpose",
+      "sourcePath" : "$.systems[0].purpose",
+      "targetIdentity" : "plan/source-intent/system/source/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "73fed28645597ef4031ca7c376bad08c88273e3dd80e79f993d3da2db1f37d63",
+      "expectedTargetDigest" : "73fed28645597ef4031ca7c376bad08c88273e3dd80e79f993d3da2db1f37d63"
+    }, {
+      "identity" : "system/source/type",
+      "sourcePath" : "$.systems[0].type",
+      "targetIdentity" : "plan/source-intent/system/source/canonical-type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382",
+      "expectedTargetDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"
+    }, {
+      "identity" : "system/standard/name",
+      "sourcePath" : "$.systems[3].name",
+      "targetIdentity" : "plan/source-intent/system/standard/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1",
+      "expectedTargetDigest" : "a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1"
+    }, {
+      "identity" : "system/standard/purpose",
+      "sourcePath" : "$.systems[3].purpose",
+      "targetIdentity" : "plan/source-intent/system/standard/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "d1d8bfd43480e5008ff91510fd596c32780cbb6f5fac98e0f6f42ba859b042e2",
+      "expectedTargetDigest" : "d1d8bfd43480e5008ff91510fd596c32780cbb6f5fac98e0f6f42ba859b042e2"
+    }, {
+      "identity" : "system/standard/type",
+      "sourcePath" : "$.systems[3].type",
+      "targetIdentity" : "plan/source-intent/system/standard/canonical-type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1",
+      "expectedTargetDigest" : "a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1"
+    }, {
+      "identity" : "workflow/application-lifecycle/kind",
+      "sourcePath" : "$.workflows[0].kind",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/kind",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb",
+      "expectedTargetDigest" : "f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb"
+    }, {
+      "identity" : "workflow/application-lifecycle/name",
+      "sourcePath" : "$.workflows[0].name",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87",
+      "expectedTargetDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/approve-prod",
+      "sourcePath" : "$.workflows[0].steps[3].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/approve-prod",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e",
+      "expectedTargetDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/build-image",
+      "sourcePath" : "$.workflows[0].steps[2].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/build-image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c",
+      "expectedTargetDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/checkout",
+      "sourcePath" : "$.workflows[0].steps[0].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/checkout",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e",
+      "expectedTargetDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/deploy",
+      "sourcePath" : "$.workflows[0].steps[4].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/deploy",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451",
+      "expectedTargetDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/test",
+      "sourcePath" : "$.workflows[0].steps[1].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/test",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15",
+      "expectedTargetDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15"
+    }, {
+      "identity" : "workflow/application-lifecycle/step/verify",
+      "sourcePath" : "$.workflows[0].steps[5].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/verify",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7",
+      "expectedTargetDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7"
+    } ]
+  },
+  "loweringReport" : {
+    "contractVersion" : "2.1",
+    "artifactKind" : "execution-plan",
+    "evidenceDigest" : "d7f8ece8e89009e0f8ef75d51a3637be09c586d37e36e864d78c6abb54b36669",
+    "evidence" : [ {
+      "sourceIdentity" : "failure/notify",
+      "sourcePath" : "$.failure.notify",
+      "targetIdentity" : "plan/source-intent/failure/notify",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "targetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "sourceIdentity" : "failure/rollback",
+      "sourcePath" : "$.failure.rollback",
+      "targetIdentity" : "plan/source-intent/failure/rollback",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "targetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "sourceIdentity" : "failure/stop-on-error",
+      "sourcePath" : "$.failure.stopOnError",
+      "targetIdentity" : "plan/source-intent/failure/stop-on-error",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "targetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "sourceIdentity" : "input/environment/name",
+      "sourcePath" : "$.inputs[0].name",
+      "targetIdentity" : "plan/input/environment/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "1d076f54dea4e8132394aab9e4dcb3b38a5b3c01a5ef20758895601237158d8b",
+      "targetDigest" : "1d076f54dea4e8132394aab9e4dcb3b38a5b3c01a5ef20758895601237158d8b"
+    }, {
+      "sourceIdentity" : "input/environment/required",
+      "sourcePath" : "$.inputs[0].required",
+      "targetIdentity" : "plan/input/environment/required",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "targetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "sourceIdentity" : "input/environment/type",
+      "sourcePath" : "$.inputs[0].type",
+      "targetIdentity" : "plan/input/environment/type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "input-type",
+      "sourceDigest" : "2ab6dadc4b6e9c6f9c51eca4da55857d0b5d562d86bd1ef0b69959ba9fb16f1d",
+      "targetDigest" : "e3f64b2da48e082b756ce1566c3a765d156c3cf14214fc6e3297cd27b207210e",
+      "transform" : "intent-input-type-normalization"
+    }, {
+      "sourceIdentity" : "input/version/name",
+      "sourcePath" : "$.inputs[1].name",
+      "targetIdentity" : "plan/input/version/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae",
+      "targetDigest" : "2633508ce86497f6df5f9c7e1bb4e8c80b5149bd4cf2354f5fedbe8566aee4ae"
+    }, {
+      "sourceIdentity" : "input/version/required",
+      "sourcePath" : "$.inputs[1].required",
+      "targetIdentity" : "plan/input/version/required",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67",
+      "targetDigest" : "916aded13399466a7d2c4c534fdd3cc7ed237a46a6524ef4a4dd8ccbef5ced67"
+    }, {
+      "sourceIdentity" : "input/version/type",
+      "sourcePath" : "$.inputs[1].type",
+      "targetIdentity" : "plan/input/version/type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "input-type",
+      "sourceDigest" : "b6739a545c8a404771fae7b9b219e0e6a8b2d4f437f85bcae0e4a4ed5bdc3fa2",
+      "targetDigest" : "38e10496b36f69c2e0a0d4da34d2468a358aa717e05201f5cbc6e8b207011723",
+      "transform" : "intent-input-type-normalization"
+    }, {
+      "sourceIdentity" : "intent/description",
+      "sourcePath" : "$.description",
+      "targetIdentity" : "plan/source-intent/description",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "1b87ab3e40e942bce91eff847d015095dbdb2d4f0077963948f9deabae10a12e",
+      "targetDigest" : "1b87ab3e40e942bce91eff847d015095dbdb2d4f0077963948f9deabae10a12e"
+    }, {
+      "sourceIdentity" : "intent/name",
+      "sourcePath" : "$.name",
+      "targetIdentity" : "plan/flow/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "71e1bd0c23d926805409ca2e5da2953ae33310406b1675e183a0ee088b5c264a",
+      "targetDigest" : "71e1bd0c23d926805409ca2e5da2953ae33310406b1675e183a0ee088b5c264a"
+    }, {
+      "sourceIdentity" : "policy/production-approval/message",
+      "sourcePath" : "$.policies[0].message",
+      "targetIdentity" : "plan/source-intent/policy/production-approval/message",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25",
+      "targetDigest" : "d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25"
+    }, {
+      "sourceIdentity" : "policy/production-approval/name",
+      "sourcePath" : "$.policies[0].name",
+      "targetIdentity" : "plan/source-intent/policy/production-approval/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "6073c70c87799159c56070545b0f9d1268af58a448b3e20cbd58aee50ba95329",
+      "targetDigest" : "6073c70c87799159c56070545b0f9d1268af58a448b3e20cbd58aee50ba95329"
+    }, {
+      "sourceIdentity" : "policy/production-approval/type",
+      "sourcePath" : "$.policies[0].type",
+      "targetIdentity" : "plan/source-intent/policy/production-approval/type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191",
+      "targetDigest" : "92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191"
+    }, {
+      "sourceIdentity" : "step/approve-prod/capability",
+      "sourcePath" : "$.workflows[0].steps[3].capability",
+      "targetIdentity" : "plan/node/source/approve-prod/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1",
+      "targetDigest" : "a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1"
+    }, {
+      "sourceIdentity" : "step/approve-prod/id",
+      "sourcePath" : "$.workflows[0].steps[3].id",
+      "targetIdentity" : "plan/node/source/approve-prod/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "9481da5d477a17f5910280f2fc9900115a5367b19c1ed556c11c3ea9cc305f6d",
+      "targetDigest" : "496cb0f11177d6583c07b17d57d4ed4ab6f5c8c2cd0aec8aaeca4fbbf80de45e",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "sourceIdentity" : "step/approve-prod/requires/build-image",
+      "sourcePath" : "$.workflows[0].steps[3].requires",
+      "targetIdentity" : "plan/node/source/approve-prod/dependency/source/build-image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b",
+      "targetDigest" : "01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b"
+    }, {
+      "sourceIdentity" : "step/build-image/capability",
+      "sourcePath" : "$.workflows[0].steps[2].capability",
+      "targetIdentity" : "plan/node/source/build-image/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8",
+      "targetDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"
+    }, {
+      "sourceIdentity" : "step/build-image/id",
+      "sourcePath" : "$.workflows[0].steps[2].id",
+      "targetIdentity" : "plan/node/source/build-image/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "9f92a98b35161c453015627f6997d413ae801e53a9d11e58776b9216678478fa",
+      "targetDigest" : "c2418c12853c7c650247ee7de7936d4a7736c65e72933d7e47b1bc5a6177c5ee",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "sourceIdentity" : "step/build-image/param/image",
+      "sourcePath" : "$.workflows[0].steps[2].params.image",
+      "targetIdentity" : "plan/node/source/build-image/param/image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094",
+      "targetDigest" : "b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094"
+    }, {
+      "sourceIdentity" : "step/build-image/param/path",
+      "sourcePath" : "$.workflows[0].steps[2].params.path",
+      "targetIdentity" : "plan/node/source/build-image/param/path",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1",
+      "targetDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"
+    }, {
+      "sourceIdentity" : "step/build-image/param/push",
+      "sourcePath" : "$.workflows[0].steps[2].params.push",
+      "targetIdentity" : "plan/node/source/build-image/param/push",
+      "disposition" : "PRESERVED",
+      "valueKind" : "boolean",
+      "sourceDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95",
+      "targetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
+    }, {
+      "sourceIdentity" : "step/build-image/param/system",
+      "sourcePath" : "$.workflows[0].steps[2].params.system",
+      "targetIdentity" : "plan/node/source/build-image/binding-metadata/system",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd",
+      "targetDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"
+    }, {
+      "sourceIdentity" : "step/build-image/requires/test",
+      "sourcePath" : "$.workflows[0].steps[2].requires",
+      "targetIdentity" : "plan/node/source/build-image/dependency/source/test",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083",
+      "targetDigest" : "0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083"
+    }, {
+      "sourceIdentity" : "step/build-image/uses",
+      "sourcePath" : "$.workflows[0].steps[2].uses",
+      "targetIdentity" : "plan/node/source/build-image/binding",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "binding",
+      "sourceDigest" : "4c8fc244ea3263783860b10f12f858001f856d96f7cdbf38c25ab63bdec28f00",
+      "targetDigest" : "783e20939161f4aaaa94825a885f1ff01f2360cc836647da9d1ab555ab748bf3",
+      "transform" : "explicit-action-binding-resolution"
+    }, {
+      "sourceIdentity" : "step/checkout/capability",
+      "sourcePath" : "$.workflows[0].steps[0].capability",
+      "targetIdentity" : "plan/node/source/checkout/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2",
+      "targetDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"
+    }, {
+      "sourceIdentity" : "step/checkout/id",
+      "sourcePath" : "$.workflows[0].steps[0].id",
+      "targetIdentity" : "plan/node/source/checkout/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "0d02fd5ee8eee19a5aa8187e494ead79f975b01d8cec8fe6aab3e360a1d50710",
+      "targetDigest" : "2b2becc09ae93a532766b28b4b8b8c1334b11c57706c725a5d5582d541ee6205",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "sourceIdentity" : "step/checkout/param/branch",
+      "sourcePath" : "$.workflows[0].steps[0].params.branch",
+      "targetIdentity" : "plan/node/source/checkout/param/branch",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b",
+      "targetDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"
+    }, {
+      "sourceIdentity" : "step/checkout/param/system",
+      "sourcePath" : "$.workflows[0].steps[0].params.system",
+      "targetIdentity" : "plan/node/source/checkout/binding-metadata/system",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095",
+      "targetDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"
+    }, {
+      "sourceIdentity" : "step/checkout/uses",
+      "sourcePath" : "$.workflows[0].steps[0].uses",
+      "targetIdentity" : "plan/node/source/checkout/binding",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "binding",
+      "sourceDigest" : "40d58ad8a1d65330d0db3b61c95f9a5757c49838afffac9854e871b0ca304476",
+      "targetDigest" : "291230b1628cbaa187064696c79d921fcd95536e52bf9d5dc41c90b33d2346d6",
+      "transform" : "explicit-action-binding-resolution"
+    }, {
+      "sourceIdentity" : "step/deploy/capability",
+      "sourcePath" : "$.workflows[0].steps[4].capability",
+      "targetIdentity" : "plan/node/source/deploy/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb",
+      "targetDigest" : "f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb"
+    }, {
+      "sourceIdentity" : "step/deploy/id",
+      "sourcePath" : "$.workflows[0].steps[4].id",
+      "targetIdentity" : "plan/node/source/deploy/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "6e69885dd797dd929b491fb505fdf020654c35ebcea24699b1fef1097d1cf13f",
+      "targetDigest" : "792888039a1e603c90cfc443d6e6faa90541b0e8416efb41055b18649905208a",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "sourceIdentity" : "step/deploy/requires/approve-prod",
+      "sourcePath" : "$.workflows[0].steps[4].requires",
+      "targetIdentity" : "plan/node/source/deploy/dependency/source/approve-prod",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3",
+      "targetDigest" : "89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3"
+    }, {
+      "sourceIdentity" : "step/test/capability",
+      "sourcePath" : "$.workflows[0].steps[1].capability",
+      "targetIdentity" : "plan/node/source/test/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce",
+      "targetDigest" : "bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce"
+    }, {
+      "sourceIdentity" : "step/test/id",
+      "sourcePath" : "$.workflows[0].steps[1].id",
+      "targetIdentity" : "plan/node/source/test/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "ebe74dad29a199288ac47bd098f075511a57a8d76b7acff368d953639b9d004b",
+      "targetDigest" : "000eb5a2dfd08792da5ee7934fee74d1e4c6cc26774edd48702753770a7d8428",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "sourceIdentity" : "step/test/requires/checkout",
+      "sourcePath" : "$.workflows[0].steps[1].requires",
+      "targetIdentity" : "plan/node/source/test/dependency/source/checkout",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15",
+      "targetDigest" : "b9330d7099f62bf02701ebe81a050bfe0ab8f7ec3555eaae8b91a160f72d8c15"
+    }, {
+      "sourceIdentity" : "step/verify/capability",
+      "sourcePath" : "$.workflows[0].steps[5].capability",
+      "targetIdentity" : "plan/node/source/verify/semantic-capability",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "4eac56a361be0cced03f10be0b42b70a72b07976caacd22341612c7c30b16fe5",
+      "targetDigest" : "4eac56a361be0cced03f10be0b42b70a72b07976caacd22341612c7c30b16fe5"
+    }, {
+      "sourceIdentity" : "step/verify/id",
+      "sourcePath" : "$.workflows[0].steps[5].id",
+      "targetIdentity" : "plan/node/source/verify/identity",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "step-identity",
+      "sourceDigest" : "9eb5443327765f54659ccc4d91c1d2e475d67f2d80f664c6c0c21523cf874f29",
+      "targetDigest" : "86b34a9ca94e7b6a46f2ac5d1c38c65cbce8d90e0e644c8ad69e3b8903845433",
+      "transform" : "step-id-to-source-and-result-identity"
+    }, {
+      "sourceIdentity" : "step/verify/requires/deploy",
+      "sourcePath" : "$.workflows[0].steps[5].requires",
+      "targetIdentity" : "plan/node/source/verify/dependency/source/deploy",
+      "disposition" : "PRESERVED",
+      "valueKind" : "step-reference",
+      "sourceDigest" : "3ddbf4d1d22a11342a3543f76038b6392868ac4b211db674cd7b9e01d51ccbaf",
+      "targetDigest" : "3ddbf4d1d22a11342a3543f76038b6392868ac4b211db674cd7b9e01d51ccbaf"
+    }, {
+      "sourceIdentity" : "system/cluster/name",
+      "sourcePath" : "$.systems[2].name",
+      "targetIdentity" : "plan/source-intent/system/cluster/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "708b19dbc0008ee8531a1bd2ffcb4db9d15dd26ec8a513a2b03ead9d04549cf5",
+      "targetDigest" : "708b19dbc0008ee8531a1bd2ffcb4db9d15dd26ec8a513a2b03ead9d04549cf5"
+    }, {
+      "sourceIdentity" : "system/cluster/purpose",
+      "sourcePath" : "$.systems[2].purpose",
+      "targetIdentity" : "plan/source-intent/system/cluster/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "60e2265b219fd6dcbcb78a23913520af4ad65f75fb22c7dce4df19db90e42078",
+      "targetDigest" : "60e2265b219fd6dcbcb78a23913520af4ad65f75fb22c7dce4df19db90e42078"
+    }, {
+      "sourceIdentity" : "system/cluster/type",
+      "sourcePath" : "$.systems[2].type",
+      "targetIdentity" : "plan/source-intent/system/cluster/canonical-type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "fcf13d9e110e3e327de6b0c77eead2c33aafe4f90fce59f120e7b38dfe95264d",
+      "targetDigest" : "fcf13d9e110e3e327de6b0c77eead2c33aafe4f90fce59f120e7b38dfe95264d"
+    }, {
+      "sourceIdentity" : "system/registry/name",
+      "sourcePath" : "$.systems[1].name",
+      "targetIdentity" : "plan/source-intent/system/registry/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf",
+      "targetDigest" : "3601c8e93276e91101340eb8dc53e4d9d113777a2da2e025efc97c3056050dcf"
+    }, {
+      "sourceIdentity" : "system/registry/purpose",
+      "sourcePath" : "$.systems[1].purpose",
+      "targetIdentity" : "plan/source-intent/system/registry/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "40229da15ceefdd17c6512f2b8bf9b4107dac7eda7225aa834f695f43868c4e9",
+      "targetDigest" : "40229da15ceefdd17c6512f2b8bf9b4107dac7eda7225aa834f695f43868c4e9"
+    }, {
+      "sourceIdentity" : "system/registry/type",
+      "sourcePath" : "$.systems[1].type",
+      "targetIdentity" : "plan/source-intent/system/registry/canonical-type",
+      "disposition" : "TRANSFORMED",
+      "valueKind" : "string",
+      "sourceDigest" : "7ad720cbf1b39da4578840aafe1d7f5792d13bffc3775f22cfe4293b6b2c161e",
+      "targetDigest" : "1050f1a41f29b86127a110c115a2898e553d83d467ba92a0a1b6e7ce074b5b87",
+      "transform" : "canonical-system-type-normalization"
+    }, {
+      "sourceIdentity" : "system/source/name",
+      "sourcePath" : "$.systems[0].name",
+      "targetIdentity" : "plan/source-intent/system/source/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b",
+      "targetDigest" : "b760631c86e0e4dab87b1cf01604a9ca384f6bd5ae4d8d273afc307905b1919b"
+    }, {
+      "sourceIdentity" : "system/source/purpose",
+      "sourcePath" : "$.systems[0].purpose",
+      "targetIdentity" : "plan/source-intent/system/source/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "73fed28645597ef4031ca7c376bad08c88273e3dd80e79f993d3da2db1f37d63",
+      "targetDigest" : "73fed28645597ef4031ca7c376bad08c88273e3dd80e79f993d3da2db1f37d63"
+    }, {
+      "sourceIdentity" : "system/source/type",
+      "sourcePath" : "$.systems[0].type",
+      "targetIdentity" : "plan/source-intent/system/source/canonical-type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382",
+      "targetDigest" : "01b56467c85a78d89ff8f66c1b7f6f4e5b68c1aae60fc12d787069e836a75382"
+    }, {
+      "sourceIdentity" : "system/standard/name",
+      "sourcePath" : "$.systems[3].name",
+      "targetIdentity" : "plan/source-intent/system/standard/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1",
+      "targetDigest" : "a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1"
+    }, {
+      "sourceIdentity" : "system/standard/purpose",
+      "sourcePath" : "$.systems[3].purpose",
+      "targetIdentity" : "plan/source-intent/system/standard/purpose",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "d1d8bfd43480e5008ff91510fd596c32780cbb6f5fac98e0f6f42ba859b042e2",
+      "targetDigest" : "d1d8bfd43480e5008ff91510fd596c32780cbb6f5fac98e0f6f42ba859b042e2"
+    }, {
+      "sourceIdentity" : "system/standard/type",
+      "sourcePath" : "$.systems[3].type",
+      "targetIdentity" : "plan/source-intent/system/standard/canonical-type",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1",
+      "targetDigest" : "a00782fea5c8f5d8000c28f82e304e03dd9e4a9aa5a0b04b37193520e93fb9f1"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/kind",
+      "sourcePath" : "$.workflows[0].kind",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/kind",
+      "disposition" : "PRESERVED",
+      "valueKind" : "enum",
+      "sourceDigest" : "f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb",
+      "targetDigest" : "f4b979b4ab4f92c77d1c60fd91b5401d30df42c63adfb01fa5e7307b13086dbb"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/name",
+      "sourcePath" : "$.workflows[0].name",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/name",
+      "disposition" : "PRESERVED",
+      "valueKind" : "string",
+      "sourceDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87",
+      "targetDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/approve-prod",
+      "sourcePath" : "$.workflows[0].steps[3].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/approve-prod",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e",
+      "targetDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/build-image",
+      "sourcePath" : "$.workflows[0].steps[2].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/build-image",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c",
+      "targetDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/checkout",
+      "sourcePath" : "$.workflows[0].steps[0].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/checkout",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e",
+      "targetDigest" : "6a28acf1a357cd093d56f2d8fd55e35431a01b6a39e716b5a73ddf3b67aa831e"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/deploy",
+      "sourcePath" : "$.workflows[0].steps[4].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/deploy",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451",
+      "targetDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/test",
+      "sourcePath" : "$.workflows[0].steps[1].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/test",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15",
+      "targetDigest" : "31fcbf415fe338e441787012bd3f1c0b39325e7c74afa3338afdfdb15bd53d15"
+    }, {
+      "sourceIdentity" : "workflow/application-lifecycle/step/verify",
+      "sourcePath" : "$.workflows[0].steps[5].id",
+      "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/verify",
+      "disposition" : "PRESERVED",
+      "valueKind" : "workflow-step-membership",
+      "sourceDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7",
+      "targetDigest" : "1f7ec276733c099a265c4cabe11f57bdf006b9514e41b5d02f7679a65b6727a7"
+    } ]
+  },
+  "assumptions" : [ ],
+  "controlRequirements" : [ {
+    "id" : "control.approval.production-approval",
+    "kind" : "APPROVAL",
+    "subject" : "production-approval",
+    "source" : "INTENT_POLICY",
+    "message" : "Approval is required before deployment in this reference flow.",
+    "scope" : {
+      "kind" : "INTENT"
+    }
+  } ],
+  "controlEvidence" : [ {
+    "requirementId" : "control.approval.production-approval",
+    "status" : "SATISFIED",
+    "source" : "AUTHORED_STEP",
+    "detail" : "Intent-level approval predecessor(s): approve-prod",
+    "enforcementCapabilities" : [ ]
+  } ],
+  "controlDecision" : {
+    "status" : "ALLOWED",
+    "blockingRequirementIds" : [ ],
+    "pendingRequirementIds" : [ ]
+  },
+  "topologyRequirements" : [ {
+    "id" : "topology.ephemeralWorkspace.git-checkout-1-docker-build-1",
+    "kind" : "EPHEMERAL_WORKSPACE",
+    "subject" : "git_checkout_1->docker_build_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source"
+  }, {
+    "id" : "topology.failurePropagation.build-test-deploy",
+    "kind" : "FAILURE_PROPAGATION",
+    "subject" : "build-test-deploy",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.failure"
+  }, {
+    "id" : "topology.failurePropagation.onerror-1",
+    "kind" : "FAILURE_PROPAGATION",
+    "subject" : "onError_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes.onError_1.errorHandler"
+  }, {
+    "id" : "topology.suspendResume.approve-1",
+    "kind" : "SUSPEND_RESUME",
+    "subject" : "approve_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes.approve_1"
+  }, {
+    "id" : "topology.suspendResume.approve-prod",
+    "kind" : "SUSPEND_RESUME",
+    "subject" : "approve-prod",
+    "source" : "CANONICAL_CAPABILITY",
+    "evidenceReference" : "intent.workflows.application-lifecycle.steps.approve-prod"
+  }, {
+    "id" : "topology.workflowLifetime.application-lifecycle",
+    "kind" : "WORKFLOW_LIFETIME",
+    "subject" : "application-lifecycle",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.workflows.application-lifecycle"
+  }, {
+    "id" : "topology.workflowLifetime.build-test-deploy",
+    "kind" : "WORKFLOW_LIFETIME",
+    "subject" : "build-test-deploy",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes"
+  }, {
+    "id" : "topology.workflowScope.application-lifecycle",
+    "kind" : "WORKFLOW_SCOPE",
+    "subject" : "application-lifecycle",
+    "source" : "CANONICAL_WORKFLOW",
+    "evidenceReference" : "intent.workflows.application-lifecycle"
+  }, {
+    "id" : "topology.workflowScope.build-test-deploy",
+    "kind" : "WORKFLOW_SCOPE",
+    "subject" : "build-test-deploy",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "plan.nodes"
+  }, {
+    "id" : "topology.workspacePropagation.git-checkout-1-docker-build-1",
+    "kind" : "WORKSPACE_PROPAGATION",
+    "subject" : "git_checkout_1->docker_build_1",
+    "source" : "PLAN_STRUCTURE",
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source"
+  } ],
+  "nodes" : [ {
+    "id" : "git_checkout_1",
+    "kind" : "task",
+    "module" : "git",
+    "action" : "checkout",
+    "target" : "source",
+    "resultName" : "checkout",
+    "dependencies" : [ ],
+    "inputs" : {
+      "branch" : "\"main\""
+    },
+    "outputs" : [ "checkout" ],
+    "semanticCapability" : "CHECKOUT",
+    "sourceId" : "checkout",
+    "bindingMetadata" : {
+      "system" : "\"source\""
+    },
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "READ",
+      "resource" : "source.repository",
+      "external" : true,
+      "sourceCapability" : "CHECKOUT"
+    } ],
+    "effects" : [ "source.repository" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "git.checkout" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  }, {
+    "id" : "standard_execute_1",
+    "kind" : "task",
+    "module" : "standard",
+    "action" : "execute",
+    "target" : "standard",
+    "resultName" : "test",
+    "dependencies" : [ "git_checkout_1" ],
+    "inputs" : {
+      "operation" : "\"test\"",
+      "capability" : "\"test\"",
+      "description" : "\"TEST step test\"",
+      "flow" : "\"build-test-deploy\""
+    },
+    "outputs" : [ "test" ],
+    "semanticCapability" : "TEST",
+    "sourceId" : "test",
+    "bindingMetadata" : { },
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "READ",
+      "resource" : "software.source",
+      "external" : true,
+      "sourceCapability" : "TEST"
+    }, {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "EXECUTE",
+      "resource" : "software.test",
+      "external" : true,
+      "sourceCapability" : "TEST"
+    } ],
+    "effects" : [ "software.source", "software.test" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "standard.test" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  }, {
+    "id" : "docker_build_1",
+    "kind" : "task",
+    "module" : "docker",
+    "action" : "build",
+    "target" : "registry",
+    "resultName" : "build_image",
+    "dependencies" : [ "standard_execute_1" ],
+    "inputs" : {
+      "image" : "\"build-test-deploy:${version}\"",
+      "path" : "\".\"",
+      "push" : "false"
+    },
+    "outputs" : [ "build_image" ],
+    "semanticCapability" : "BUILD_IMAGE",
+    "sourceId" : "build-image",
+    "bindingMetadata" : {
+      "system" : "\"registry\""
+    },
+    "effectModel" : [ {
+      "domain" : "SOFTWARE_DELIVERY",
+      "operation" : "CREATE",
+      "resource" : "software.image",
+      "transition" : {
+        "from" : "ABSENT",
+        "to" : "PRESENT"
+      },
+      "external" : true,
+      "sourceCapability" : "BUILD_IMAGE"
+    } ],
+    "effects" : [ "software.image" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "docker.build", "container.image", "continuity.workspace" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  }, {
+    "id" : "approve_1",
+    "kind" : "approval",
+    "resultName" : "approve_prod",
+    "dependencies" : [ "docker_build_1" ],
+    "inputs" : {
+      "message" : "Approval is required before deployment in this reference flow.",
+      "mode" : "manual"
+    },
+    "outputs" : [ "approve_prod" ],
+    "sourceId" : "approve-prod",
+    "bindingMetadata" : { },
+    "effectModel" : [ ],
+    "effects" : [ ],
+    "safety" : "requiresApproval",
+    "destructive" : false,
+    "requiredCapabilities" : [ "approval.manual" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  }, {
+    "id" : "standard_execute_2",
+    "kind" : "task",
+    "module" : "standard",
+    "action" : "execute",
+    "target" : "standard",
+    "resultName" : "deploy",
+    "dependencies" : [ "approve_1" ],
+    "inputs" : {
+      "operation" : "\"deploy\"",
+      "capability" : "\"deploy\"",
+      "description" : "\"DEPLOY step deploy\"",
+      "flow" : "\"build-test-deploy\""
+    },
+    "outputs" : [ "deploy" ],
+    "semanticCapability" : "DEPLOY",
+    "sourceId" : "deploy",
+    "bindingMetadata" : { },
+    "effectModel" : [ {
+      "domain" : "INFRASTRUCTURE_STATE",
+      "operation" : "UPSERT",
+      "resource" : "deployment.state",
+      "transition" : {
+        "from" : "UNKNOWN",
+        "to" : "PRESENT"
+      },
+      "external" : true,
+      "sourceCapability" : "DEPLOY"
+    } ],
+    "effects" : [ "deployment.state" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "standard.deploy" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  }, {
+    "id" : "standard_execute_3",
+    "kind" : "task",
+    "module" : "standard",
+    "action" : "execute",
+    "target" : "standard",
+    "resultName" : "verify",
+    "dependencies" : [ "standard_execute_2" ],
+    "inputs" : {
+      "operation" : "\"verify\"",
+      "capability" : "\"verify\"",
+      "description" : "\"VERIFY step verify\"",
+      "flow" : "\"build-test-deploy\""
+    },
+    "outputs" : [ "verify" ],
+    "semanticCapability" : "VERIFY",
+    "sourceId" : "verify",
+    "bindingMetadata" : { },
+    "effectModel" : [ {
+      "domain" : "INFRASTRUCTURE_STATE",
+      "operation" : "READ",
+      "resource" : "deployment.state",
+      "external" : true,
+      "sourceCapability" : "VERIFY"
+    } ],
+    "effects" : [ "deployment.state" ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "task.execute", "standard.verify" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ ]
+  }, {
+    "id" : "onError_1",
+    "kind" : "try",
+    "dependencies" : [ ],
+    "inputs" : { },
+    "outputs" : [ ],
+    "bindingMetadata" : { },
+    "effectModel" : [ ],
+    "effects" : [ ],
+    "destructive" : false,
+    "requiredCapabilities" : [ "errorHandlers.finally" ],
+    "targetHints" : { },
+    "assumptions" : [ ],
+    "then" : [ ],
+    "otherwise" : [ ],
+    "branches" : [ ],
+    "cases" : [ ],
+    "errorCase" : [ ],
+    "defaultSteps" : [ ],
+    "body" : [ ],
+    "errorHandler" : [ {
+      "id" : "standard_rollback_1",
+      "kind" : "rollback",
+      "module" : "standard",
+      "action" : "rollback",
+      "target" : "standard",
+      "resultName" : "rollback_result",
+      "dependencies" : [ ],
+      "inputs" : {
+        "operation" : "\"rollback\"",
+        "reason" : "error?.message",
+        "flow" : "\"build-test-deploy\""
+      },
+      "outputs" : [ "rollback_result" ],
+      "semanticCapability" : "ROLLBACK",
+      "bindingMetadata" : { },
+      "effectModel" : [ {
+        "domain" : "INFRASTRUCTURE_STATE",
+        "operation" : "UPDATE",
+        "resource" : "managed.state",
+        "transition" : {
+          "from" : "PRESENT",
+          "to" : "PRESENT"
+        },
+        "external" : true,
+        "sourceCapability" : "ROLLBACK"
+      } ],
+      "effects" : [ "managed.state" ],
+      "destructive" : false,
+      "requiredCapabilities" : [ "task.execute", "standard.rollback" ],
+      "targetHints" : { },
+      "assumptions" : [ ],
+      "then" : [ ],
+      "otherwise" : [ ],
+      "branches" : [ ],
+      "cases" : [ ],
+      "errorCase" : [ ],
+      "defaultSteps" : [ ],
+      "body" : [ ],
+      "errorHandler" : [ ]
+    }, {
+      "id" : "standard_execute_4",
+      "kind" : "task",
+      "module" : "standard",
+      "action" : "execute",
+      "target" : "standard",
+      "dependencies" : [ ],
+      "inputs" : {
+        "operation" : "\"notify-failure\"",
+        "capability" : "\"notify\"",
+        "description" : "\"Notify about failure of build-test-deploy\"",
+        "flow" : "\"build-test-deploy\"",
+        "subject" : "\"Flow failed: build-test-deploy\"",
+        "body" : "error?.message"
+      },
+      "outputs" : [ ],
+      "semanticCapability" : "NOTIFY",
+      "bindingMetadata" : { },
+      "effectModel" : [ {
+        "domain" : "COMMUNICATION",
+        "operation" : "EMIT",
+        "resource" : "notification",
+        "external" : true,
+        "sourceCapability" : "NOTIFY"
+      } ],
+      "effects" : [ "notification" ],
+      "destructive" : false,
+      "requiredCapabilities" : [ "task.execute", "standard.notify-failure" ],
+      "targetHints" : { },
+      "assumptions" : [ ],
+      "then" : [ ],
+      "otherwise" : [ ],
+      "branches" : [ ],
+      "cases" : [ ],
+      "errorCase" : [ ],
+      "defaultSteps" : [ ],
+      "body" : [ ],
+      "errorHandler" : [ ]
+    } ]
+  } ],
+  "dependencyRelations" : [ {
+    "sourceNodeId" : "git_checkout_1",
+    "targetNodeId" : "standard_execute_1",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "git_checkout_1", "standard_execute_1" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "standard_execute_1",
+    "targetNodeId" : "docker_build_1",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "standard_execute_1", "docker_build_1" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "git_checkout_1",
+    "targetNodeId" : "docker_build_1",
+    "kind" : "WORKSPACE",
+    "channel" : "source",
+    "evidence" : "MODULE_CONTRACT",
+    "resolution" : "RESOLVED",
+    "path" : [ "git_checkout_1", "standard_execute_1", "docker_build_1" ],
+    "candidates" : [ ],
+    "evidenceReference" : "docker.build.continuity.requires.workspace.source",
+    "continuity" : true,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "docker_build_1",
+    "targetNodeId" : "approve_1",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "docker_build_1", "approve_1" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "approve_1",
+    "targetNodeId" : "standard_execute_2",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "approve_1", "standard_execute_2" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  }, {
+    "sourceNodeId" : "standard_execute_2",
+    "targetNodeId" : "standard_execute_3",
+    "kind" : "ORDERING",
+    "evidence" : "DECLARED_ORDERING",
+    "resolution" : "RESOLVED",
+    "path" : [ "standard_execute_2", "standard_execute_3" ],
+    "candidates" : [ ],
+    "continuity" : false,
+    "blocking" : false
+  } ]
+}
