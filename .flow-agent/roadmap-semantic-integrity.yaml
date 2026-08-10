@@ -1,0 +1,51 @@
+project: Flow Semantic Integrity
+stream: semantic-integrity
+roadmapVersion: 1
+status: active
+
+purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
+
+rules:
+  - "A historical production change is never retroactively marked authorized when the required roadmap activation did not exist before that change."
+  - "Every active semantic-integrity item has an explicit work package before further production changes are made under that item."
+  - "Completed C1.0 and AR0.1 evidence remain immutable historical boundaries; successor focus is owned by the global roadmap transition authority."
+  - "GitHub validation evidence names only an actually passed workflow boundary; local validation of the active correction is recorded separately and cannot impersonate Flow CI."
+  - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
+
+currentDecision:
+  completedItem: ""
+  completedItemName: ""
+  nextItem: "SI-01.1"
+  nextItemName: "Post-C1 Integrity Reconciliation"
+  decisionBasis: "SI-01 passed Flow CI #2888 and merged as PR #121, but the PR's promised post-validation roadmap activation was never committed. SI-01.1 is the first authorized post-C1.0 work package and reconciles that governance defect without rewriting SI-01 history."
+
+historicalEvents:
+  - id: "SI-01"
+    title: "Scope control evidence to protected operations"
+    status: merged
+    authorizationStatus: missing
+    pullRequest: 121
+    exactHead: "a35e6175bdd6500afddedc0bba3ed627cc8500f3"
+    mergeCandidate: "8c7c87213e696317327c4947eefb4cddc096fd28"
+    mergeCommit: "1026c980d19b697f8d53576af1f79df08c49517e"
+    validationRun: 2888
+    validationRunId: 31352226649
+    note: "The implementation was independently validated, but the required roadmap activation described by the PR was omitted before merge. This record is evidence of that defect, not retroactive authorization."
+
+items:
+  - version: "SI-01.1"
+    name: "Post-C1 Integrity Reconciliation"
+    type: "bounded-governance-and-integrity-correction"
+    status: next
+    purpose: "Restore honest post-C1.0 lifecycle authority, reconcile live artifact-version and validation evidence, and remove confirmed production compiler warnings without widening semantic scope."
+    dependsOnCore: "0.9.7.10"
+    dependsOnAdapters: "A1.0"
+    dependsOnConformance: "C1.0"
+    dependsOnArchitecture: "AR0.1"
+    completionEvidence:
+      - "The repository records SI-01 as validated but historically unauthorized, never retroactively authorized."
+      - "Global roadmap and release metadata select SI-01.1 through the semantic-integrity stream while completed C1.0 and AR0.1 identities remain unchanged."
+      - "Live artifact contract versions are checked against typed contract authorities instead of one stale aggregate scalar."
+      - "lastKnownValidation points to the actual passed SI-01 Flow CI #2888 boundary and does not claim the current local-only correction passed GitHub CI."
+      - "The five confirmed production compileKotlin warnings are removed at their semantic source without suppression."
+      - "Full local tests, standalone conformance and Flow Agent validation pass before publication of the correction branch."

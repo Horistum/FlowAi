@@ -86,7 +86,7 @@ def _completed_primary_item(root: Path, main_roadmap: Path) -> RoadmapItem:
         raise RuntimeError(f"Completed roadmap has no primary stream file: {primary_stream}")
 
     projection = COMPLETED_ITEM_PROJECTIONS.get(primary_stream)
-    if projection is None or primary_stream not in REQUIRED_ROADMAP_STREAMS:
+    if projection is None:
         raise RuntimeError(
             f"Completed roadmap has no completion metadata contract for primary stream: {primary_stream}"
         )

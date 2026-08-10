@@ -1,0 +1,47 @@
+version: "SI-01.1"
+name: "Post-C1 Integrity Reconciliation"
+type: "bounded-governance-and-integrity-correction"
+stream: semantic-integrity
+status: active
+objective: "Repair the missing post-C1.0 authorization transition and the concrete integrity defects discovered after SI-01 without retroactively authorizing SI-01 or broadening its semantic scope."
+
+authorization:
+  status: active
+  source: "Global roadmap transition after completed C1.0, activated specifically to reconcile the missing SI-01 lifecycle transition and independently confirmed post-SI-01 integrity findings."
+  rule: "This work package authorizes SI-01.1 only. It does not rewrite the authorization state of SI-01."
+
+historicalSi01:
+  authorizationStatus: missing
+  pullRequest: 121
+  validation:
+    workflow: "Flow CI"
+    runNumber: 2888
+    runId: 31352226649
+    exactHead: "a35e6175bdd6500afddedc0bba3ed627cc8500f3"
+    mergeCandidate: "8c7c87213e696317327c4947eefb4cddc096fd28"
+  mergeCommit: "1026c980d19b697f8d53576af1f79df08c49517e"
+  note: "SI-01 was technically validated but merged without the post-validation roadmap activation promised by PR #121. This remains a recorded process defect."
+
+scope:
+  - "Activate and machine-enforce the semantic-integrity successor stream at SI-01.1 while retaining completed C1.0 and AR0.1 evidence."
+  - "Reconcile live artifact contract metadata with typed contract versions and keep the historical 0.9.7.10 closure boundary immutable."
+  - "Advance lastKnownValidation from stale C1.0 evidence to the actual passed SI-01 Flow CI #2888 boundary."
+  - "Remove the five confirmed production Kotlin compiler warnings by correcting dead/nullability logic, source-specific target-selection provenance and deprecated API use."
+  - "Correct C1.0 lifecycle ownership so a completed local lifecycle cannot permanently prohibit a globally authorized successor stream."
+
+forbiddenScope:
+  - "Do not mark SI-01 as authorized after the fact."
+  - "Do not claim this SI-01.1 branch passed GitHub CI when only local validation exists."
+  - "Do not reopen C1.0, AR0.1 or the frozen Core closure."
+  - "Do not suppress compiler warnings instead of fixing their cause."
+  - "Do not remove Docker-specific canonical vocabulary in this correction; that requires the separately scoped SI-03 semantic refactor."
+
+deferredWork:
+  - id: "SI-03"
+    finding: "Canonical BUILD_IMAGE meaning still binds catalog semantics to Docker-specific implementation vocabulary."
+    status: deferred
+    reason: "Removing that vocabulary changes canonical semantic contracts and requires its own migration, falsification corpus and compatibility analysis; lexical filtering is not an acceptable substitute."
+
+localValidation:
+  status: pending
+  rule: "Record only commands actually executed against the final commit tree. Local evidence does not replace or advance lastKnownValidation GitHub CI metadata."
