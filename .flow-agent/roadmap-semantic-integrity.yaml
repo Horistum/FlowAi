@@ -1,6 +1,6 @@
 project: Flow Semantic Integrity
 stream: semantic-integrity
-roadmapVersion: 1
+roadmapVersion: 2
 status: active
 
 purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
@@ -13,11 +13,11 @@ rules:
   - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
 
 currentDecision:
-  completedItem: ""
-  completedItemName: ""
-  nextItem: "SI-01.1"
-  nextItemName: "Post-C1 Integrity Reconciliation"
-  decisionBasis: "SI-01 passed Flow CI #2888 and merged as PR #121, but the PR's promised post-validation roadmap activation was never committed. SI-01.1 is the first authorized post-C1.0 work package and reconciles that governance defect without rewriting SI-01 history."
+  completedItem: "SI-01.1"
+  completedItemName: "Post-C1 Integrity Reconciliation"
+  nextItem: "SI-02"
+  nextItemName: "Authored Dependency Graph Preservation"
+  decisionBasis: "SI-01.1 passed Flow CI #2892 on exact head e94beb34dd6a134bd00d29dfb9416393650cea35 and synthetic merge candidate ee7e32c93ee4a3701b6ee30d97b2a69346a3de52, then merged as 44ac499a466378604ec3823719d15953505fd4f8. The next ordered semantic-integrity outcome is project-direction section 1.2: preserve the authored dependency graph exactly."
 
 historicalEvents:
   - id: "SI-01"
@@ -30,22 +30,43 @@ historicalEvents:
     mergeCommit: "1026c980d19b697f8d53576af1f79df08c49517e"
     validationRun: 2888
     validationRunId: 31352226649
-    note: "The implementation was independently validated, but the required roadmap activation described by the PR was omitted before merge. This record is evidence of that defect, not retroactive authorization."
+    note: "The implementation was independently validated, but the required roadmap activation was omitted before merge. This record remains evidence of that defect, not retroactive authorization."
 
 items:
   - version: "SI-01.1"
     name: "Post-C1 Integrity Reconciliation"
     type: "bounded-governance-and-integrity-correction"
-    status: next
+    status: completed
     purpose: "Restore honest post-C1.0 lifecycle authority, reconcile live artifact-version and validation evidence, and remove confirmed production compiler warnings without widening semantic scope."
     dependsOnCore: "0.9.7.10"
     dependsOnAdapters: "A1.0"
     dependsOnConformance: "C1.0"
     dependsOnArchitecture: "AR0.1"
+    completionBoundary:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2892
+      runId: 31389256988
+      exactHead: "e94beb34dd6a134bd00d29dfb9416393650cea35"
+      mergeCandidate: "ee7e32c93ee4a3701b6ee30d97b2a69346a3de52"
+    completionMergeCommit: "44ac499a466378604ec3823719d15953505fd4f8"
     completionEvidence:
-      - "The repository records SI-01 as validated but historically unauthorized, never retroactively authorized."
-      - "Global roadmap and release metadata select SI-01.1 through the semantic-integrity stream while completed C1.0 and AR0.1 identities remain unchanged."
+      - "SI-01 remains recorded as validated but historically unauthorized, never retroactively authorized."
+      - "Global roadmap and release metadata selected SI-01.1 while completed C1.0 and AR0.1 identities remained unchanged."
       - "Live artifact contract versions are checked against typed contract authorities instead of one stale aggregate scalar."
-      - "lastKnownValidation points to the actual passed SI-01 Flow CI #2888 boundary and does not claim the current local-only correction passed GitHub CI."
-      - "The five confirmed production compileKotlin warnings are removed at their semantic source without suppression."
-      - "Full local tests, standalone conformance and Flow Agent validation pass before publication of the correction branch."
+      - "The five confirmed production compileKotlin warnings were removed at their semantic source without suppression."
+      - "Flow CI #2892 independently passed exact-head and synthetic merge-candidate compile, test and standalone conformance."
+  - version: "SI-02"
+    name: "Authored Dependency Graph Preservation"
+    type: "semantic-integrity-correction"
+    status: next
+    purpose: "Preserve authored semantic ordering exactly: every authored dependency edge survives lowering and no additional semantic ordering edge is invented from source position, planner convenience or data-reference inference."
+    dependsOn: "SI-01.1"
+    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#12-preserve-the-authored-dependency-graph-exactly"
+    completionEvidence:
+      - "Intent-to-AST lowering does not synthesize semantic dependencies from lexical or topological iteration order."
+      - "ExecutionPlan records authored DECLARED_ORDERING and DATA_REFERENCE evidence independently when both justify the same node pair."
+      - "Artifact-derived lowering validation proves exact equality between authored dependency edges and DECLARED_ORDERING plan relations."
+      - "Independent sibling, fan-out, fan-in, extra-edge, missing-edge, data-reference-only and dual-evidence regressions are covered."
+      - "The permanent N08 parallelism-loss boundary remains valid and detects serialization as semantic loss."
+      - "Full local tests, standalone conformance and Flow Agent validation pass before publication."
