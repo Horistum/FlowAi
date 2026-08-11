@@ -1,5 +1,5 @@
 project: Flow
-roadmapVersion: 20
+roadmapVersion: 21
 currentTrack: "post-c1-semantic-integrity"
 primaryRoadmapStream: semantic-integrity
 
@@ -188,7 +188,7 @@ currentDecision:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  nextItem: "SI-01.1"
-  nextItemName: "Post-C1 Integrity Reconciliation"
+  nextItem: "SI-02"
+  nextItemName: "Authored Dependency Graph Preservation"
   nextItemStream: "semantic-integrity"
-  decisionBasis: "C1.0 completed at Flow CI #2823. SI-01 was subsequently implemented and validated by Flow CI #2888 but its promised post-validation roadmap activation was omitted before merge. The global transition therefore records SI-01 authorizationStatus=missing and activates bounded reconciliation SI-01.1; it does not retroactively authorize SI-01."
+  decisionBasis: "SI-01.1 completed through Flow CI #2892 / run 31389256988 on exact head e94beb34dd6a134bd00d29dfb9416393650cea35 and synthetic merge candidate ee7e32c93ee4a3701b6ee30d97b2a69346a3de52, then merged as 44ac499a466378604ec3823719d15953505fd4f8. The ordered semantic-integrity successor is SI-02, project-direction section 1.2."

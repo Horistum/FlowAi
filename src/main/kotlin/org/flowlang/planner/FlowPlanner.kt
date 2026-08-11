@@ -248,20 +248,32 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val continuityRelations = contract.continuity.requires.map { requirement ->
             ctx.resolveContinuityRequirement(id, deps, requirement, action.module, action.action)
         }
-        val orderingRelations = deps.map { sourceNodeId ->
-            val evidence = if (dataDependencies.any { it.sourceNodeId == sourceNodeId }) {
-                PlanDependencyEvidence.DATA_REFERENCE
-            } else {
-                PlanDependencyEvidence.DECLARED_ORDERING
+        val declaredOrderingRelations = explicitDependencies
+            .filter { it != id }
+            .map { sourceNodeId ->
+                PlanDependencyRelation(
+                    sourceNodeId = sourceNodeId,
+                    targetNodeId = id,
+                    kind = PlanDependencyKind.ORDERING,
+                    evidence = PlanDependencyEvidence.DECLARED_ORDERING,
+                    path = listOf(sourceNodeId, id)
+                )
             }
-            PlanDependencyRelation(
-                sourceNodeId = sourceNodeId,
-                targetNodeId = id,
-                kind = PlanDependencyKind.ORDERING,
-                evidence = evidence,
-                path = listOf(sourceNodeId, id)
-            )
-        }
+        val dataOrderingRelations = dataDependencies
+            .map(DataDependency::sourceNodeId)
+            .distinct()
+            .filter { it != id }
+            .map { sourceNodeId ->
+                PlanDependencyRelation(
+                    sourceNodeId = sourceNodeId,
+                    targetNodeId = id,
+                    kind = PlanDependencyKind.ORDERING,
+                    evidence = PlanDependencyEvidence.DATA_REFERENCE,
+                    path = listOf(sourceNodeId, id)
+                )
+            }
+        val orderingRelations = (declaredOrderingRelations + dataOrderingRelations)
+            .distinctBy(PlanDependencyRelations::relationKey)
         val valueRelations = dataDependencies.map { dependency ->
             PlanDependencyRelation(
                 sourceNodeId = dependency.sourceNodeId,

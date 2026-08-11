@@ -12,4 +12,4 @@ Preserve the fan-out/fan-in topology without inventing data continuity.
 - D starts only after both B and C complete.
 
 ## Ambiguities
-The Standard Intent Model has ordering dependencies but no explicit parallel group, so current lowering serializes the sibling branches.
+The Standard Intent Model represents the diamond through explicit ordering edges; sibling independence is the absence of B -> C and C -> B, not an implicit lexical-order contract.

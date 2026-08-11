@@ -4,6 +4,21 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### SI-02 Authored Dependency Graph Preservation
+
+#### Corrected
+
+- Removed intent-to-AST lowering's synthetic previous-step dependency, so lexical or topological traversal order no longer becomes authored semantic ordering.
+- Preserved `DECLARED_ORDERING` and `DATA_REFERENCE` as independent ExecutionPlan provenance when both justify the same node pair.
+- Added fail-closed artifact-derived lowering verification that requires exact set equality between authored `requires` edges and `DECLARED_ORDERING` relations: missing, extra and duplicate authored edges are rejected.
+- Reclassified the C02 ordering diamond and N08 baseline as correctly representable once independent siblings are no longer silently serialized.
+- Strengthened N08 into a permanent negative mutation that explicitly authors an extra B-to-C edge and still detects both parallelism serialization and the dropped fan-in edge.
+
+#### Validation
+
+- SI-02 was authorized only after SI-01.1 independently passed Flow CI #2892 and merged as `44ac499a466378604ec3823719d15953505fd4f8`.
+- Local final-tree validation covers Flow Agent tooling, clean warning-free production compilation, the complete 999-test suite and standalone conformance. GitHub CI remains an external publication boundary and is not pre-claimed by committed metadata.
+
 ### SI-01.1 Post-C1 Integrity Reconciliation
 
 #### Corrected

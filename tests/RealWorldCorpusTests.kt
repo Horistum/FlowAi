@@ -69,7 +69,7 @@ class RealWorldCorpusTests {
         assertTrue(results.all { it.accepted }, results.filterNot { it.accepted }.joinToString("\n") { "${it.caseId}: ${it.mismatches}" })
         assertEquals(
             mapOf(
-                "C02" to RealWorldResult.SEMANTIC_ONLY,
+                "C02" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "C06" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "A04" to RealWorldResult.SUPPORTED_WITH_BINDING,
                 "P13" to RealWorldResult.SUPPORTED_WITH_BINDING,
@@ -77,7 +77,7 @@ class RealWorldCorpusTests {
                 "A11" to RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION,
                 "N01" to RealWorldResult.INVALID_SOURCE_PIPELINE,
                 "N05" to RealWorldResult.UNSUPPORTED_DYNAMIC_CONSTRUCTION,
-                "N08" to RealWorldResult.SEMANTIC_ONLY
+                "N08" to RealWorldResult.SUPPORTED_WITH_BINDING
             ),
             results.associate { it.caseId to it.outcome }
         )

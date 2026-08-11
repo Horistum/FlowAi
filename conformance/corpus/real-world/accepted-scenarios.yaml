@@ -20,7 +20,7 @@ scenarios:
   sourceRefs: [argo-dag-diamond, prometheus-ci]
   dominantSemantics: [parallel, fan-in, ordering]
   continuityKinds: []
-  baselineExpectation: SEMANTIC_ONLY
+  baselineExpectation: SUPPORTED_WITH_BINDING
   claim: accepted-evidence
 - id: C06
   title: artifact-transfer-between-jobs
@@ -100,13 +100,13 @@ scenarios:
   baselineExpectation: UNSUPPORTED_DYNAMIC_CONSTRUCTION
   claim: accepted-evidence
 - id: N08
-  title: parallelism-silently-sequentialized
+  title: parallelism-serialization-regression-boundary
   category: negative
   admission: admitted
   lifecycle: ACCEPTED
   casePath: cases/N08-parallelism-loss
   sourceRefs: [argo-dag-diamond]
-  dominantSemantics: [semantic-loss, parallel]
+  dominantSemantics: [parallel, ordering, regression-boundary]
   continuityKinds: []
-  baselineExpectation: SEMANTIC_ONLY
+  baselineExpectation: SUPPORTED_WITH_BINDING
   claim: accepted-evidence

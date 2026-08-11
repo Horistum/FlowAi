@@ -4,7 +4,7 @@ id: remove-fan-in-edge
 intent: intent.yaml
 expectedGenerated: true
 expectedOutcome: SEMANTIC_ONLY
-expectedDiagnostics: [REAL_WORLD_REQUIRED_RELATION_MISSING, REAL_WORLD_REQUIRED_PARALLELISM_SERIALIZED]
+expectedDiagnostics: [REAL_WORLD_REQUIRED_RELATION_MISSING]
 tasks:
 - {sourceId: A, semanticCapability: CUSTOM, nodeKind: Task}
 - {sourceId: B, semanticCapability: CUSTOM, nodeKind: Task}
