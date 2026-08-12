@@ -11,21 +11,16 @@ Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`complete
 Completed adapter roadmap item: `A1.0 GitHub Actions Artifact and Workspace Continuity` (`completed`)
 Completed conformance roadmap item: `C1.0 Operational Domain Adequacy` (`completed`)
 Completed architecture roadmap item: `AR0.1 Authority Responsibility Consolidation` (`completed`)
-Completed semantic-integrity item: `SI-02 Authored Dependency Graph Preservation` (`completed`, Flow CI #2894)
-Active semantic-integrity item: `SI-03 Canonical Technology Neutrality` (`next`, active work package)
+Completed semantic-integrity item: `SI-03 Canonical Technology Neutrality` (`completed`, Flow CI #2896)
+Active semantic-integrity item: `SI-04 Explicit Canonical Execution-Plan Semantics` (`next`, active work package)
 
 ## Active semantic-integrity correction
 
-SI-03 owns project-direction section 1.3: remove implementation technology from canonical meaning. `BUILD_IMAGE` and `PUSH_IMAGE` remain neutral capability identities, while Docker and Dockerfile concerns are confined to explicit implementation evidence.
+SI-04 owns project-direction section 1.4: make canonical execution-plan semantics explicit. The active defect boundary is narrow and concrete: `ExecutionPlanCanonicalizer.taskKind()` currently recognizes rollback from module/action strings, notification from the `notify` module and artifact work from a resource-name substring. SI-04 must replace those lexical signals with explicit typed canonical meaning without erasing legitimate semantic distinctions.
 
-The corrected image-capability boundary now enforces four distinct claims:
+SI-03 is completed evidence. Flow CI #2896 independently passed the exact implementation head and synthetic merge candidate before PR #125 merged as `398c44d16ed484ab2e08f47036a1a093f8f5050e`. Canonical image meaning no longer requires Docker, `dockerfile` is binding-only under explicit Docker selection, and the frozen C0.4 binding snapshot remains byte-exact while live v1.1 migration evidence is fail-closed.
 
-- canonical image meaning and effects do not depend on Docker module inventory;
-- Docker is not a required canonical system or lowering authority for image capabilities;
-- `dockerfile` is accepted only as binding-only configuration under explicit `docker.build` selection;
-- current v1.1 binding evidence may differ from the frozen C0.4 v1.0 snapshot only by that reviewed reclassification.
-
-SI-02 remains completed evidence: the real-world C02 diamond and N08 baseline preserve authored dependency semantics, and N08 remains the permanent negative parallelism-loss boundary.
+The SI-04 activation does not implement or version the execution-plan change. Its work package requires an explicit contract-version decision after the public `kind` semantic impact is known.
 
 ## Core boundary
 

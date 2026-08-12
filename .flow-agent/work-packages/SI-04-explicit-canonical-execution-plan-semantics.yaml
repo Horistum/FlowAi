@@ -1,0 +1,43 @@
+version: "SI-04"
+name: "Explicit Canonical Execution-Plan Semantics"
+type: "semantic-integrity-correction"
+stream: semantic-integrity
+status: active
+objective: "Replace lexical execution-plan node-kind inference with one explicit typed target-neutral semantic authority while preserving implementation metadata as non-authoritative evidence."
+
+authorization:
+  status: active
+  source: "Semantic-integrity roadmap transition after independently validated and merged SI-03 completion."
+  predecessor: "SI-03"
+  strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#14-make-canonical-execution-plan-semantics-explicit"
+
+invariant:
+  - "CanonicalPlanNode.kind is determined by explicit typed canonical meaning and cannot change merely because module, action or resource labels change."
+  - "Rollback, notification, secret and artifact classifications require semantic evidence appropriate to that concept rather than lexical recognition of implementation identifiers."
+  - "Implementation module/action/target metadata remains independently inspectable but is never the authority for public canonical node kind."
+  - "Existing structured control-flow node kinds remain explicit structural semantics and are not weakened into generic task labels."
+
+scope:
+  - "Inventory every production source and consumer of CanonicalPlanNode.kind and identify which distinctions are public semantics versus projection convenience."
+  - "Replace ExecutionPlanCanonicalizer.taskKind lexical rules for module, action and resource strings with typed canonical semantic evidence."
+  - "Add a closed typed representation or equally explicit existing semantic source for task classification; do not create another free-form string heuristic under a different name."
+  - "Prove implementation-label invariance with positive and negative regression tests across rollback, notification, secret, artifact and ordinary task cases."
+  - "Audit target projection, conformance, lowering evidence and serialization consumers before changing the public node-kind contract."
+  - "Make an explicit ExecutionPlan artifact-version decision from the observed contract impact and document any required migration."
+
+forbiddenScope:
+  - "Do not classify canonical node kind from module name, action text, target identity, resource-name substrings or adapter registry ordering."
+  - "Do not collapse all task kinds to task merely to remove the heuristics; public semantic distinctions must either be typed and justified or explicitly migrated."
+  - "Do not infer target support, renderer behavior or adapter capability from canonical node kind."
+  - "Do not implement the Track 1.5 effect-model redesign, Track 1.6 parser coercion cleanup or unrelated planner refactoring in SI-04."
+  - "Do not rewrite historical SI-01 through SI-03, C1.0, AR0.1 or Core closure evidence."
+  - "Do not declare serialized artifact versions unchanged before the semantic contract impact has been analyzed."
+
+versionDecision:
+  publicStandard: "evaluate-during-implementation"
+  artifactContracts: "evaluate-execution-plan-contract"
+  reason: "SI-04 targets public CanonicalPlanNode.kind semantics. A stable serialized shape does not by itself prove semantic version compatibility, so the version decision must follow the implementation and migration analysis."
+
+localValidation:
+  status: pending
+  rule: "SI-04 is authorized but not implemented by the SI-03 completion transition. Its future implementation requires its own local validation and later external Flow CI boundary."

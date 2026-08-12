@@ -1,5 +1,5 @@
 project: Flow
-roadmapVersion: 22
+roadmapVersion: 23
 currentTrack: "post-c1-semantic-integrity"
 primaryRoadmapStream: semantic-integrity
 
@@ -188,7 +188,7 @@ currentDecision:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  nextItem: "SI-03"
-  nextItemName: "Canonical Technology Neutrality"
+  nextItem: "SI-04"
+  nextItemName: "Explicit Canonical Execution-Plan Semantics"
   nextItemStream: "semantic-integrity"
-  decisionBasis: "SI-02 completed through Flow CI #2894 / run 31403411226 on exact head e57ace821fe24bda03ee2fdb202864351e60f3b4 and synthetic merge candidate e1a055daffc72da1988cd2a500dab038f3b14509, then merged as a63eccbea49885dc1261a91109998e3aeebb1e2c. The ordered semantic-integrity successor is SI-03, project-direction section 1.3."
+  decisionBasis: "SI-03 passed Flow CI #2896 / run 31574835719 on exact head b16ab48aa9a608647b8c16bfb2542034ff3aa34f and synthetic merge candidate 5bf6e07c0e2798772dbc7ede34c15c0bbe63be90, then merged as 398c44d16ed484ab2e08f47036a1a093f8f5050e. The ordered semantic-integrity successor is SI-04, project-direction section 1.4."

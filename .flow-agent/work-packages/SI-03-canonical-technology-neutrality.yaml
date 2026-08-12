@@ -2,11 +2,11 @@ version: "SI-03"
 name: "Canonical Technology Neutrality"
 type: "semantic-integrity-correction"
 stream: semantic-integrity
-status: active
+status: complete
 objective: "Remove concrete implementation technology from target-neutral image capability meaning without deleting useful Docker-specific adapter evidence or inventing a breaking canonical rename where the existing capability identity is already technology-neutral."
 
 authorization:
-  status: active
+  status: completed
   source: "Semantic-integrity roadmap transition after independently validated and merged SI-02 completion."
   predecessor: "SI-02"
   strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#13-remove-implementation-technology-from-canonical-meaning"
@@ -42,6 +42,15 @@ versionDecision:
   artifactContracts: unchanged
   reason: "SI-03 preserves serialized capability identities and artifact shapes while enforcing the already-declared rule that concrete platforms cannot define canonical meaning. Explicit docker.build still accepts Dockerfile selection as binding configuration."
 
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2896
+  runId: 31574835719
+  exactHead: "b16ab48aa9a608647b8c16bfb2542034ff3aa34f"
+  mergeCandidate: "5bf6e07c0e2798772dbc7ede34c15c0bbe63be90"
+completionMergeCommit: "398c44d16ed484ab2e08f47036a1a093f8f5050e"
+
 localValidation:
   status: passed
   validatedAt: "2026-08-12"
@@ -62,4 +71,4 @@ localValidation:
     completeTests: "1007/1007 passed; 0 failures; 0 errors; 0 skipped"
     standaloneConformance: passed
     frozenC04BindingSha256: "eda2fdec8e6a1b42a969ffa8e68a09567080d56a7e01a2786dccb06ae820f5f2"
-  rule: "This is local evidence for the exact SI-03 candidate tree only. It does not advance lastKnownValidation or claim GitHub Flow CI completion."
+  rule: "This remains historical local implementation evidence for the exact SI-03 candidate tree. SI-03 completion is established separately by the recorded external completionBoundary."
