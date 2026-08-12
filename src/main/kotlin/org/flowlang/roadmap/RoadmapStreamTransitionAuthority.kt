@@ -15,6 +15,7 @@ enum class RoadmapTransitionPhase {
     C1_0_COMPLETE,
     SI_01_1_ACTIVE,
     SI_02_ACTIVE,
+    SEMANTIC_INTEGRITY_ACTIVE,
     ARCHITECTURE_COMPLETE,
     INVALID
 }
@@ -49,14 +50,23 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         val semanticIntegrityRoadmap = optionalYaml(SEMANTIC_INTEGRITY_ROADMAP)
         val si011 = optionalYaml(SI_01_1_WORK_PACKAGE)
         val si02 = optionalYaml(SI_02_WORK_PACKAGE)
+        val semanticActiveItem = semanticIntegrityRoadmap.string("currentDecision", "nextItem")
+        val semanticActiveRoadmapItem = semanticIntegrityRoadmap.item(semanticActiveItem)
+        val semanticActiveWorkPackagePath = semanticActiveRoadmapItem.string("workPackage")
+        val semanticActiveWorkPackage = optionalSemanticWorkPackage(semanticActiveWorkPackagePath)
+        val semanticCompletedItem = semanticIntegrityRoadmap.string("currentDecision", "completedItem")
+        val semanticCompletedRoadmapItem = semanticIntegrityRoadmap.item(semanticCompletedItem)
+        val semanticCompletedWorkPackage = optionalSemanticWorkPackage(
+            semanticCompletedRoadmapItem.string("workPackage")
+        )
 
         val phase = determinePhase(
             roadmap, correction, a10, c02, c03, c04, architectureRoadmap, ar01, c10,
-            semanticIntegrityRoadmap, si011, si02
+            semanticIntegrityRoadmap, si011, si02, semanticActiveWorkPackage
         )
         val errors = buildList {
             if (phase == RoadmapTransitionPhase.INVALID) {
-                add("Roadmap transition must be C0_1_1_ACTIVE, A1_0_ACTIVE, C0_2_ACTIVE, C0_3_ACTIVE, C0_4_ACTIVE, AR0_1_ACTIVE, C1_0_ACTIVE, C1_0_COMPLETE, SI_01_1_ACTIVE, SI_02_ACTIVE or ARCHITECTURE_COMPLETE.")
+                add("Roadmap transition must be C0_1_1_ACTIVE, A1_0_ACTIVE, C0_2_ACTIVE, C0_3_ACTIVE, C0_4_ACTIVE, AR0_1_ACTIVE, C1_0_ACTIVE, C1_0_COMPLETE, SI_01_1_ACTIVE, SI_02_ACTIVE, SEMANTIC_INTEGRITY_ACTIVE or ARCHITECTURE_COMPLETE.")
             }
             requireRetainedClosure(roadmap, releaseState, phase, this)
             adapterSequenceCouplingErrors().forEach(::add)
@@ -194,6 +204,27 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                     si02 = si02,
                     errors = this
                 )
+                RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE -> validateSemanticIntegrityPhase(
+                    roadmap = roadmap,
+                    releaseState = releaseState,
+                    adapterRoadmap = adapterRoadmap,
+                    conformanceRoadmap = conformanceRoadmap,
+                    architectureRoadmap = architectureRoadmap,
+                    semanticIntegrityRoadmap = semanticIntegrityRoadmap,
+                    correction = correction,
+                    a10 = a10,
+                    c02 = c02,
+                    c03 = c03,
+                    c04 = c04,
+                    ar01 = ar01,
+                    c10 = c10,
+                    si011 = si011,
+                    completedRoadmapItem = semanticCompletedRoadmapItem,
+                    completedWorkPackage = semanticCompletedWorkPackage,
+                    activeRoadmapItem = semanticActiveRoadmapItem,
+                    activeWorkPackage = semanticActiveWorkPackage,
+                    errors = this
+                )
                 RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> validateArchitectureCompletePhase(
                     roadmap,
                     releaseState,
@@ -231,7 +262,8 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         c10: Map<String, Any?>,
         semanticIntegrityRoadmap: Map<String, Any?>,
         si011: Map<String, Any?>,
-        si02: Map<String, Any?>
+        si02: Map<String, Any?>,
+        semanticActiveWorkPackage: Map<String, Any?>
     ): RoadmapTransitionPhase {
         val correctionState = roadmap.string("currentDecision", "conformanceCorrectionState")
         val activeCorrection = roadmap.string("currentDecision", "activeConformanceCorrectionWorkPackage")
@@ -303,6 +335,20 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                 ar01.string("status") == "complete" &&
                 architectureRoadmap.string("status") == "completed" &&
                 architectureRoadmap.itemStatus(AR01_ITEM) == "completed" &&
+                c10.string("status") == "complete" &&
+                semanticIntegrityRoadmap.string("status") == "active" &&
+                semanticIntegrityRoadmap.string("currentDecision", "nextItem") !in setOf("", SI_01_1_ITEM, SI_02_ITEM) &&
+                semanticActiveWorkPackage.string("status") == "active" -> RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE
+            correctionState == "complete" &&
+                activeCorrection.isBlank() &&
+                correction.string("status") == "complete" &&
+                a10.string("status") == "complete" &&
+                c02.string("status") == "complete" &&
+                c03.string("status") == "complete" &&
+                c04.string("status") == "complete" &&
+                ar01.string("status") == "complete" &&
+                architectureRoadmap.string("status") == "completed" &&
+                architectureRoadmap.itemStatus(AR01_ITEM) == "completed" &&
                 c10.string("status") == "complete" -> RoadmapTransitionPhase.C1_0_COMPLETE
             correctionState == "complete" &&
                 activeCorrection.isBlank() &&
@@ -363,6 +409,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.C1_0_COMPLETE,
             RoadmapTransitionPhase.SI_01_1_ACTIVE,
             RoadmapTransitionPhase.SI_02_ACTIVE,
+            RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE,
             RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> "completed"
             RoadmapTransitionPhase.INVALID -> null
         }
@@ -377,6 +424,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.C1_0_COMPLETE,
             RoadmapTransitionPhase.SI_01_1_ACTIVE,
             RoadmapTransitionPhase.SI_02_ACTIVE,
+            RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE,
             RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> "completed"
             RoadmapTransitionPhase.INVALID -> null
         }
@@ -387,6 +435,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.C1_0_COMPLETE,
             RoadmapTransitionPhase.SI_01_1_ACTIVE,
             RoadmapTransitionPhase.SI_02_ACTIVE,
+            RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE,
             RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> "completed"
             RoadmapTransitionPhase.C0_1_1_ACTIVE,
             RoadmapTransitionPhase.A1_0_ACTIVE,
@@ -1009,6 +1058,122 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         requireDistinctEvidence(c10, "Completed C1.0", errors)
     }
 
+    private fun validateSemanticIntegrityPhase(
+        roadmap: Map<String, Any?>,
+        releaseState: Map<String, Any?>,
+        adapterRoadmap: Map<String, Any?>,
+        conformanceRoadmap: Map<String, Any?>,
+        architectureRoadmap: Map<String, Any?>,
+        semanticIntegrityRoadmap: Map<String, Any?>,
+        correction: Map<String, Any?>,
+        a10: Map<String, Any?>,
+        c02: Map<String, Any?>,
+        c03: Map<String, Any?>,
+        c04: Map<String, Any?>,
+        ar01: Map<String, Any?>,
+        c10: Map<String, Any?>,
+        si011: Map<String, Any?>,
+        completedRoadmapItem: Map<String, Any?>,
+        completedWorkPackage: Map<String, Any?>,
+        activeRoadmapItem: Map<String, Any?>,
+        activeWorkPackage: Map<String, Any?>,
+        errors: MutableList<String>
+    ) {
+        requireClosedAdapterStream(adapterRoadmap, errors)
+
+        if (conformanceRoadmap.string("status") != "completed" ||
+            conformanceRoadmap.itemStatus(C10_ITEM) != "completed" ||
+            conformanceRoadmap.string("currentDecision", "completedItem") != C10_ITEM ||
+            conformanceRoadmap.string("currentDecision", "nextItem").isNotBlank()
+        ) errors += "Semantic-integrity work must retain the conformance stream terminally completed at C1.0."
+
+        if (architectureRoadmap.string("status") != "completed" ||
+            architectureRoadmap.itemStatus(AR01_ITEM) != "completed" ||
+            architectureRoadmap.string("currentDecision", "completedItem") != AR01_ITEM ||
+            architectureRoadmap.string("currentDecision", "nextItem").isNotBlank()
+        ) errors += "Semantic-integrity work must retain the architecture stream terminally completed at AR0.1."
+
+        val completedItem = semanticIntegrityRoadmap.string("currentDecision", "completedItem")
+        val completedName = semanticIntegrityRoadmap.string("currentDecision", "completedItemName")
+        val activeItem = semanticIntegrityRoadmap.string("currentDecision", "nextItem")
+        val activeName = semanticIntegrityRoadmap.string("currentDecision", "nextItemName")
+        if (semanticIntegrityRoadmap.string("stream") != "semantic-integrity" ||
+            semanticIntegrityRoadmap.string("status") != "active" ||
+            completedItem.isBlank() || activeItem.isBlank() ||
+            completedRoadmapItem.string("version") != completedItem ||
+            completedRoadmapItem.string("name") != completedName ||
+            completedRoadmapItem.string("status") != "completed" ||
+            activeRoadmapItem.string("version") != activeItem ||
+            activeRoadmapItem.string("name") != activeName ||
+            activeRoadmapItem.string("status") != "next" ||
+            activeRoadmapItem.string("dependsOn") != completedItem
+        ) errors += "Semantic-integrity roadmap must select exactly one next item after its completed predecessor."
+
+        requireSelectedFocus(roadmap, "semantic-integrity", activeItem, activeName, errors)
+        requireReleaseFocus(releaseState, "semantic-integrity", activeItem, activeName, errors)
+
+        val completedBoundary = WorkflowBoundaryEvidence.fromMap(completedRoadmapItem.map("completionBoundary"))
+        val workPackageBoundary = WorkflowBoundaryEvidence.fromMap(completedWorkPackage.map("completionBoundary"))
+        val completionMergeCommit = completedRoadmapItem.string("completionMergeCommit")
+        if (!completedBoundary.structurallyValid ||
+            !workPackageBoundary.sameBoundary(completedBoundary) ||
+            completedWorkPackage.string("version") != completedItem ||
+            completedWorkPackage.string("status") != "complete" ||
+            completedWorkPackage.string("authorization", "status") != "completed" ||
+            completedWorkPackage.string("completionMergeCommit") != completionMergeCommit ||
+            !completionMergeCommit.matches(SHA_40)
+        ) errors += "Active semantic-integrity work requires an exact completed predecessor CI boundary and merge commit."
+
+        val activePath = activeRoadmapItem.string("workPackage")
+        if (!validSemanticWorkPackagePath(activePath) ||
+            activeWorkPackage.string("version") != activeItem ||
+            activeWorkPackage.string("name") != activeName ||
+            activeWorkPackage.string("stream") != "semantic-integrity" ||
+            activeWorkPackage.string("status") != "active" ||
+            activeWorkPackage.string("authorization", "status") != "active" ||
+            activeWorkPackage.string("authorization", "predecessor") != completedItem ||
+            activeWorkPackage.string("authorization", "strategicSource") != activeRoadmapItem.string("strategicSource")
+        ) errors += "Active semantic-integrity item must have one explicit, matching and fail-closed work package."
+
+        val validationSource = releaseState.string("lastKnownValidation", "validationSource")
+        if (!validationSource.contains("Flow CI #${completedBoundary.runNumber}") ||
+            !validationSource.contains("run ${completedBoundary.runId}") ||
+            !validationSource.contains(completedBoundary.exactHead) ||
+            !validationSource.contains(completedBoundary.mergeCandidate) ||
+            !validationSource.contains(completionMergeCommit)
+        ) errors += "lastKnownValidation must stop at the completed predecessor boundary, never the active semantic-integrity item."
+
+        val historicalEvent = semanticIntegrityRoadmap.mapList("historicalEvents")
+            .singleOrNull { it.string("id") == "SI-01" }
+        if (historicalEvent?.string("authorizationStatus") != "missing" ||
+            si011.string("historicalSi01", "authorizationStatus") != "missing"
+        ) errors += "SI-01 history must remain explicitly unauthorized throughout later semantic-integrity work."
+        if (historicalEvent?.string("pullRequest") != "121" ||
+            historicalEvent.string("validationRun") != "2888" ||
+            historicalEvent.string("validationRunId") != "31352226649" ||
+            historicalEvent.string("exactHead") != SI01_HEAD ||
+            historicalEvent.string("mergeCandidate") != SI01_MERGE_CANDIDATE ||
+            historicalEvent.string("mergeCommit") != SI01_MERGE_COMMIT
+        ) errors += "Later semantic-integrity work must retain the exact historical SI-01 evidence boundary."
+
+        if (activeWorkPackage.string("localValidation", "status") !in setOf("pending", "passed")) {
+            errors += "Active semantic-integrity local validation must be pending or passed and remain distinct from GitHub CI evidence."
+        }
+
+        val c10Completion = WorkflowBoundaryEvidence.fromMap(c10.map("completionBoundary"))
+        if (!completedBoundary.follows(c10Completion)) {
+            errors += "Semantic-integrity predecessor completion must be a later distinct Flow CI boundary than C1.0 completion."
+        }
+
+        requireDistinctEvidence(correction, "Completed correction", errors)
+        requireDistinctEvidence(a10, "Completed A1.0", errors)
+        requireDistinctEvidence(c02, "Completed C0.2", errors)
+        requireDistinctEvidence(c03, "Completed C0.3", errors)
+        requireDistinctEvidence(c04, "Completed C0.4", errors)
+        requireDistinctEvidence(ar01, "Completed AR0.1", errors)
+        requireDistinctEvidence(c10, "Completed C1.0", errors)
+    }
+
     private fun validateArchitectureCompletePhase(
         roadmap: Map<String, Any?>,
         releaseState: Map<String, Any?>,
@@ -1167,6 +1332,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             RoadmapTransitionPhase.C1_0_COMPLETE,
             RoadmapTransitionPhase.SI_01_1_ACTIVE,
             RoadmapTransitionPhase.SI_02_ACTIVE,
+            RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE,
             RoadmapTransitionPhase.ARCHITECTURE_COMPLETE -> "A1.0"
             RoadmapTransitionPhase.C0_1_1_ACTIVE,
             RoadmapTransitionPhase.A1_0_ACTIVE -> "A0.7"
@@ -1210,6 +1376,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                 RoadmapTransitionPhase.C1_0_COMPLETE,
                 RoadmapTransitionPhase.SI_01_1_ACTIVE,
                 RoadmapTransitionPhase.SI_02_ACTIVE,
+                RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE,
                 RoadmapTransitionPhase.ARCHITECTURE_COMPLETE
             )
         ) add(C03_WORK_PACKAGE)
@@ -1219,6 +1386,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
                 RoadmapTransitionPhase.C1_0_COMPLETE,
                 RoadmapTransitionPhase.SI_01_1_ACTIVE,
                 RoadmapTransitionPhase.SI_02_ACTIVE,
+                RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE,
                 RoadmapTransitionPhase.ARCHITECTURE_COMPLETE
             )
         ) {
@@ -1238,13 +1406,30 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             add(C10_WORK_PACKAGE)
             add(C10_DOCUMENTATION)
         }
-        if (phase in setOf(RoadmapTransitionPhase.SI_01_1_ACTIVE, RoadmapTransitionPhase.SI_02_ACTIVE)) {
+        if (phase in setOf(RoadmapTransitionPhase.SI_01_1_ACTIVE, RoadmapTransitionPhase.SI_02_ACTIVE, RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE)) {
             add(SEMANTIC_INTEGRITY_ROADMAP)
             add(SI_01_1_WORK_PACKAGE)
             add(POST_C1_DIRECTION_DOCUMENT)
         }
         if (phase == RoadmapTransitionPhase.SI_02_ACTIVE) add(SI_02_WORK_PACKAGE)
+        if (phase == RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE) {
+            val semantic = optionalYaml(SEMANTIC_INTEGRITY_ROADMAP)
+            val completed = semantic.item(semantic.string("currentDecision", "completedItem"))
+            val active = semantic.item(semantic.string("currentDecision", "nextItem"))
+            listOf(completed.string("workPackage"), active.string("workPackage"))
+                .filter(::validSemanticWorkPackagePath)
+                .forEach(::add)
+        }
     }
+
+    private fun optionalSemanticWorkPackage(path: String): Map<String, Any?> =
+        if (validSemanticWorkPackagePath(path)) optionalYaml(path) else emptyMap()
+
+    private fun validSemanticWorkPackagePath(path: String): Boolean =
+        path.startsWith(".flow-agent/work-packages/SI-") &&
+            path.endsWith(".yaml") &&
+            ".." !in path &&
+            '\\' !in path
 
     private fun requiredYaml(path: String): Map<String, Any?> {
         val file = File(rootDir, path)
@@ -1259,6 +1444,9 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
 
     private fun Map<String, Any?>.itemStatus(version: String): String =
         mapList("items").firstOrNull { it.string("version") == version }?.string("status").orEmpty()
+
+    private fun Map<String, Any?>.item(version: String): Map<String, Any?> =
+        mapList("items").singleOrNull { it.string("version") == version }.orEmpty()
 
     private fun Map<String, Any?>.string(vararg path: String): String {
         var current: Any? = this
@@ -1293,6 +1481,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         const val SEMANTIC_INTEGRITY_ROADMAP = ".flow-agent/roadmap-semantic-integrity.yaml"
         const val SI_01_1_WORK_PACKAGE = ".flow-agent/work-packages/SI-01.1-post-c1-integrity-reconciliation.yaml"
         const val SI_02_WORK_PACKAGE = ".flow-agent/work-packages/SI-02-authored-dependency-graph-preservation.yaml"
+        const val SI_03_WORK_PACKAGE = ".flow-agent/work-packages/SI-03-canonical-technology-neutrality.yaml"
         const val POST_C1_DIRECTION_DOCUMENT = "docs/PROJECT_DIRECTION_AFTER_C1_0.md"
         const val ADAPTER_SEQUENCE = "src/main/kotlin/org/flowlang/adapters/portfolio/AdapterRoadmapSequence.kt"
         private const val CORE_CLOSURE = "0.9.7.10"
@@ -1318,6 +1507,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         private const val SI01_HEAD = "a35e6175bdd6500afddedc0bba3ed627cc8500f3"
         private const val SI01_MERGE_CANDIDATE = "8c7c87213e696317327c4947eefb4cddc096fd28"
         private const val SI01_MERGE_COMMIT = "1026c980d19b697f8d53576af1f79df08c49517e"
+        private val SHA_40 = Regex("^[0-9a-f]{40}$")
         private val FORBIDDEN_ADAPTER_SEQUENCE_PATTERNS = listOf(
             Regex("\\bSUCCESSOR_STREAM\\b"),
             Regex("\\bCONFORMANCE_ITEM\\b"),

@@ -1,6 +1,6 @@
 project: Flow Semantic Integrity
 stream: semantic-integrity
-roadmapVersion: 2
+roadmapVersion: 3
 status: active
 
 purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
@@ -13,11 +13,11 @@ rules:
   - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
 
 currentDecision:
-  completedItem: "SI-01.1"
-  completedItemName: "Post-C1 Integrity Reconciliation"
-  nextItem: "SI-02"
-  nextItemName: "Authored Dependency Graph Preservation"
-  decisionBasis: "SI-01.1 passed Flow CI #2892 on exact head e94beb34dd6a134bd00d29dfb9416393650cea35 and synthetic merge candidate ee7e32c93ee4a3701b6ee30d97b2a69346a3de52, then merged as 44ac499a466378604ec3823719d15953505fd4f8. The next ordered semantic-integrity outcome is project-direction section 1.2: preserve the authored dependency graph exactly."
+  completedItem: "SI-02"
+  completedItemName: "Authored Dependency Graph Preservation"
+  nextItem: "SI-03"
+  nextItemName: "Canonical Technology Neutrality"
+  decisionBasis: "SI-02 passed Flow CI #2894 on exact head e57ace821fe24bda03ee2fdb202864351e60f3b4 and synthetic merge candidate e1a055daffc72da1988cd2a500dab038f3b14509, then merged as a63eccbea49885dc1261a91109998e3aeebb1e2c. The next ordered semantic-integrity outcome is project-direction section 1.3: remove implementation technology from canonical meaning."
 
 historicalEvents:
   - id: "SI-01"
@@ -42,6 +42,7 @@ items:
     dependsOnAdapters: "A1.0"
     dependsOnConformance: "C1.0"
     dependsOnArchitecture: "AR0.1"
+    workPackage: ".flow-agent/work-packages/SI-01.1-post-c1-integrity-reconciliation.yaml"
     completionBoundary:
       status: passed
       workflow: "Flow CI"
@@ -59,14 +60,38 @@ items:
   - version: "SI-02"
     name: "Authored Dependency Graph Preservation"
     type: "semantic-integrity-correction"
-    status: next
+    status: completed
     purpose: "Preserve authored semantic ordering exactly: every authored dependency edge survives lowering and no additional semantic ordering edge is invented from source position, planner convenience or data-reference inference."
     dependsOn: "SI-01.1"
+    workPackage: ".flow-agent/work-packages/SI-02-authored-dependency-graph-preservation.yaml"
     strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#12-preserve-the-authored-dependency-graph-exactly"
+    completionBoundary:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2894
+      runId: 31403411226
+      exactHead: "e57ace821fe24bda03ee2fdb202864351e60f3b4"
+      mergeCandidate: "e1a055daffc72da1988cd2a500dab038f3b14509"
+    completionMergeCommit: "a63eccbea49885dc1261a91109998e3aeebb1e2c"
     completionEvidence:
       - "Intent-to-AST lowering does not synthesize semantic dependencies from lexical or topological iteration order."
       - "ExecutionPlan records authored DECLARED_ORDERING and DATA_REFERENCE evidence independently when both justify the same node pair."
       - "Artifact-derived lowering validation proves exact equality between authored dependency edges and DECLARED_ORDERING plan relations."
       - "Independent sibling, fan-out, fan-in, extra-edge, missing-edge, data-reference-only and dual-evidence regressions are covered."
       - "The permanent N08 parallelism-loss boundary remains valid and detects serialization as semantic loss."
-      - "Full local tests, standalone conformance and Flow Agent validation pass before publication."
+      - "Flow CI #2894 independently passed exact-head and synthetic merge-candidate compile, test and standalone conformance."
+  - version: "SI-03"
+    name: "Canonical Technology Neutrality"
+    type: "semantic-integrity-correction"
+    status: next
+    purpose: "Remove concrete implementation technology from target-neutral image capability meaning while retaining useful implementation detail only as explicit binding or adapter evidence."
+    dependsOn: "SI-02"
+    workPackage: ".flow-agent/work-packages/SI-03-canonical-technology-neutrality.yaml"
+    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#13-remove-implementation-technology-from-canonical-meaning"
+    completionEvidence:
+      - "BUILD_IMAGE and PUSH_IMAGE canonical contracts do not require Docker or any other concrete implementation system."
+      - "Dockerfile and build-time publication controls are binding-only Docker adapter parameters and cannot alter canonical image-build meaning."
+      - "Canonical image capability meaning and effects are identical with and without Docker implementation inventory."
+      - "The standard catalog does not present Docker as the defining implementation for canonical image capabilities."
+      - "Concrete Docker module and binding evidence remain available without becoming target-neutral semantic authority."
+      - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
