@@ -11,22 +11,21 @@ Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`complete
 Completed adapter roadmap item: `A1.0 GitHub Actions Artifact and Workspace Continuity` (`completed`)
 Completed conformance roadmap item: `C1.0 Operational Domain Adequacy` (`completed`)
 Completed architecture roadmap item: `AR0.1 Authority Responsibility Consolidation` (`completed`)
-Completed semantic-integrity item: `SI-01.1 Post-C1 Integrity Reconciliation` (`completed`, Flow CI #2892)
-Active semantic-integrity item: `SI-02 Authored Dependency Graph Preservation` (`next`, active work package)
+Completed semantic-integrity item: `SI-02 Authored Dependency Graph Preservation` (`completed`, Flow CI #2894)
+Active semantic-integrity item: `SI-03 Canonical Technology Neutrality` (`next`, active work package)
 
 ## Active semantic-integrity correction
 
-SI-02 owns project-direction section 1.2: preserve the authored dependency graph exactly. The accepted intent graph is authoritative; source position and planner traversal order are not dependency semantics.
+SI-03 owns project-direction section 1.3: remove implementation technology from canonical meaning. `BUILD_IMAGE` and `PUSH_IMAGE` remain neutral capability identities, while Docker and Dockerfile concerns are confined to explicit implementation evidence.
 
-The corrected lowering boundary now enforces three distinct claims:
+The corrected image-capability boundary now enforces four distinct claims:
 
-- Intent-to-AST lowering carries only explicitly authored `requires` dependencies. Independent siblings stay independent even when a deterministic topological traversal visits one before the other.
-- ExecutionPlan ordering provenance keeps authored `DECLARED_ORDERING` separate from derived `DATA_REFERENCE`. When both justify the same source-target pair, both records remain present rather than one overwriting the other.
-- Artifact-derived lowering evidence compares the complete authored edge set with the complete `DECLARED_ORDERING` edge set and fails closed on missing, extra or duplicate authored ordering. Data-flow ordering cannot substitute for authored ordering.
+- canonical image meaning and effects do not depend on Docker module inventory;
+- Docker is not a required canonical system or lowering authority for image capabilities;
+- `dockerfile` is accepted only as binding-only configuration under explicit `docker.build` selection;
+- current v1.1 binding evidence may differ from the frozen C0.4 v1.0 snapshot only by that reviewed reclassification.
 
-The real-world C02 diamond and N08 baseline therefore move from `SEMANTIC_ONLY` to `SUPPORTED_WITH_BINDING`: the previous negative result was caused by Flow's own invented sibling dependency, not an inherent representability limit. N08 remains a negative regression boundary through an explicit mutation that adds B-to-C serialization and removes one fan-in edge.
-
-This correction does not touch Docker/BUILD_IMAGE canonical vocabulary; project-direction section 1.3 remains separately scoped as SI-03.
+SI-02 remains completed evidence: the real-world C02 diamond and N08 baseline preserve authored dependency semantics, and N08 remains the permanent negative parallelism-loss boundary.
 
 ## Core boundary
 

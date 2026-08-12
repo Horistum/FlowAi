@@ -38,7 +38,9 @@ The reference `checkout-build-image` flow proves that canonical capability, cano
 
 ## Adapter-owned certification manifest
 
-`adapters/bindings/builtin-capability-bindings.yaml` contains exactly one record for every built-in `implements` claim.
+The original A0.3/C0.4 evidence remains frozen at `adapters/bindings/builtin-capability-bindings.yaml` version `1.0`. Post-C1 SI-03 current evidence lives at `adapters/bindings/builtin-capability-bindings-v1.1.yaml`; the exact migration is documented in `docs/SI_03_CANONICAL_TECHNOLOGY_NEUTRALITY.md` and is machine-checked rather than rewriting the historical file.
+
+The current binding document contains exactly one record for every built-in `implements` claim.
 
 Each record declares:
 

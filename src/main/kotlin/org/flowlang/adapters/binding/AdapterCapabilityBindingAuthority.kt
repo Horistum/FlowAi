@@ -58,18 +58,31 @@ data class AdapterCapabilityBindingReport(
 )
 
 object AdapterCapabilityBindingLoader {
-    const val PATH = "adapters/bindings/builtin-capability-bindings.yaml"
+    const val PATH = "adapters/bindings/builtin-capability-bindings-v1.1.yaml"
+    const val C04_FROZEN_PATH = "adapters/bindings/builtin-capability-bindings.yaml"
+    const val SUPPORTED_VERSION = "1.1"
+    const val C04_FROZEN_VERSION = "1.0"
 
     fun load(rootDir: File = File(".")): AdapterCapabilityBindingDocument {
-        val file = File(rootDir, PATH)
+        return loadAt(rootDir, PATH, SUPPORTED_VERSION)
+    }
+
+    fun loadFrozenC04(rootDir: File = File(".")): AdapterCapabilityBindingDocument =
+        loadAt(rootDir, C04_FROZEN_PATH, C04_FROZEN_VERSION)
+
+    private fun loadAt(rootDir: File, relativePath: String, expectedVersion: String): AdapterCapabilityBindingDocument {
+        val file = File(rootDir, relativePath)
         require(file.isFile) { "Adapter capability binding manifest is missing: ${file.path}" }
         val root = FlowYaml.readMap(file)
-        requireExactKeys(root, ROOT_KEYS, PATH)
-        val version = text(root, "version", PATH)
-        val records = objectList(root["bindings"], "$PATH.bindings").mapIndexed { index, raw ->
-            parseRecord(raw, "$PATH.bindings[$index]")
+        requireExactKeys(root, ROOT_KEYS, relativePath)
+        val version = text(root, "version", relativePath)
+        require(version == expectedVersion) {
+            "$relativePath has version '$version'; expected '$expectedVersion'."
         }
-        require(records.isNotEmpty()) { "$PATH.bindings must not be empty." }
+        val records = objectList(root["bindings"], "$relativePath.bindings").mapIndexed { index, raw ->
+            parseRecord(raw, "$relativePath.bindings[$index]")
+        }
+        require(records.isNotEmpty()) { "$relativePath.bindings must not be empty." }
         return AdapterCapabilityBindingDocument(version, records)
     }
 
@@ -243,7 +256,7 @@ class AdapterCapabilityBindingAuthority(
         }
         record.evidenceReferences.forEach { reference ->
             val filePart = reference.substringBefore('#')
-            if (filePart == AdapterCapabilityBindingLoader.PATH || filePart == "targets/builtin-targets.yaml") {
+            if (filePart in setOf(AdapterCapabilityBindingLoader.PATH, AdapterCapabilityBindingLoader.C04_FROZEN_PATH) || filePart == "targets/builtin-targets.yaml") {
                 finding(findings, "BINDING_EVIDENCE_SELF_REFERENTIAL", label, "Evidence cannot cite '$filePart'.")
             } else if (!File(rootDir, filePart).isFile) {
                 finding(findings, "BINDING_EVIDENCE_UNRESOLVED", label, "Evidence file does not exist: $reference")
@@ -262,5 +275,110 @@ class AdapterCapabilityBindingAuthority(
         message: String
     ) {
         findings += AdapterCapabilityBindingFinding(code, binding, message)
+    }
+}
+
+/**
+ * Post-C1 migration proof for the adapter-owned capability-binding manifest.
+ *
+ * C0.4 owns the byte-frozen v1.0 document. Current adapter evidence is v1.1.
+ * The only permitted migration is to move `dockerfile` from canonical semantic
+ * mapping to explicit `docker.build` binding configuration. Any other delta is
+ * rejected, including record reordering, changed limitations, effects, systems
+ * or another parameter reclassification.
+ */
+data class AdapterCapabilityBindingMigrationReport(
+    val status: String,
+    val findings: List<String>,
+    val frozenVersion: String,
+    val liveVersion: String
+)
+
+class AdapterCapabilityBindingMigrationAuthority(
+    private val rootDir: File = File("."),
+    private val registry: ModuleRegistry = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
+) {
+    fun analyze(): AdapterCapabilityBindingMigrationReport {
+        val findings = mutableListOf<String>()
+        val frozen = runCatching { AdapterCapabilityBindingLoader.loadFrozenC04(rootDir) }
+            .getOrElse { error ->
+                return AdapterCapabilityBindingMigrationReport(
+                    status = "FAIL",
+                    findings = listOf(error.message ?: error.javaClass.simpleName),
+                    frozenVersion = "",
+                    liveVersion = ""
+                )
+            }
+        val live = runCatching { AdapterCapabilityBindingLoader.load(rootDir) }
+            .getOrElse { error ->
+                return AdapterCapabilityBindingMigrationReport(
+                    status = "FAIL",
+                    findings = listOf(error.message ?: error.javaClass.simpleName),
+                    frozenVersion = frozen.version,
+                    liveVersion = ""
+                )
+            }
+
+        val frozenFile = File(rootDir, AdapterCapabilityBindingLoader.C04_FROZEN_PATH)
+        val frozenDigest = sha256(frozenFile.readBytes())
+        if (frozenDigest != C04_BINDING_SHA256) {
+            findings += "Frozen C0.4 binding digest changed: observed=$frozenDigest expected=$C04_BINDING_SHA256."
+        }
+
+        val expected = frozen.records.map { record ->
+            if (record.id == DOCKER_BUILD_ID) {
+                record.copy(
+                    mappedSemanticParameters = record.mappedSemanticParameters - DOCKERFILE,
+                    bindingParameters = record.bindingParameters + DOCKERFILE
+                )
+            } else {
+                record
+            }
+        }
+        if (live.records != expected) {
+            val expectedById = expected.associateBy(AdapterCapabilityBindingRecord::id)
+            val liveById = live.records.associateBy(AdapterCapabilityBindingRecord::id)
+            if (live.records.map { it.id } != expected.map { it.id }) {
+                findings += "Binding v1.1 record identity/order differs from frozen v1.0 evidence."
+            }
+            (expectedById.keys + liveById.keys).sorted().forEach { id ->
+                val expectedRecord = expectedById[id]
+                val actualRecord = liveById[id]
+                if (expectedRecord != actualRecord) {
+                    findings += "Binding v1.1 contains an unauthorized migration delta for '$id'."
+                }
+            }
+        }
+
+        val dockerFrozen = frozen.records.singleOrNull { it.id == DOCKER_BUILD_ID }
+        val dockerLive = live.records.singleOrNull { it.id == DOCKER_BUILD_ID }
+        if (dockerFrozen == null || DOCKERFILE !in dockerFrozen.mappedSemanticParameters || DOCKERFILE in dockerFrozen.bindingParameters) {
+            findings += "Frozen v1.0 docker.build evidence no longer proves dockerfile as its historical semantic mapping."
+        }
+        if (dockerLive == null || DOCKERFILE in dockerLive.mappedSemanticParameters || DOCKERFILE !in dockerLive.bindingParameters) {
+            findings += "Live v1.1 docker.build evidence must classify dockerfile only as binding configuration."
+        }
+
+        val liveAssessment = AdapterCapabilityBindingAuthority(rootDir, registry).analyze(live)
+        liveAssessment.findings.forEach { finding ->
+            findings += "Live binding evidence ${finding.code}:${finding.binding}:${finding.message}"
+        }
+
+        return AdapterCapabilityBindingMigrationReport(
+            status = if (findings.isEmpty()) "PASS" else "FAIL",
+            findings = findings,
+            frozenVersion = frozen.version,
+            liveVersion = live.version
+        )
+    }
+
+    private fun sha256(bytes: ByteArray): String = java.security.MessageDigest.getInstance("SHA-256")
+        .digest(bytes)
+        .joinToString("") { byte -> byte.toUByte().toString(16).padStart(2, '0') }
+
+    companion object {
+        const val C04_BINDING_SHA256 = "eda2fdec8e6a1b42a969ffa8e68a09567080d56a7e01a2786dccb06ae820f5f2"
+        private const val DOCKER_BUILD_ID = "docker.build#BUILD_IMAGE"
+        private const val DOCKERFILE = "dockerfile"
     }
 }

@@ -13,7 +13,7 @@ class RoadmapStreamTransitionAuthorityTests {
     fun repositoryAdvancesPostC1IntegrityToSi02AfterReconciliation() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
         assertEquals(
-            expected = RoadmapTransitionPhase.SI_02_ACTIVE,
+            expected = RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE,
             actual = report.phase,
             message = report.errors.joinToString(" | ")
         )

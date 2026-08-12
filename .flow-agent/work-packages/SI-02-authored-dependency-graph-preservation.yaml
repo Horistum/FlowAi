@@ -2,14 +2,23 @@ version: "SI-02"
 name: "Authored Dependency Graph Preservation"
 type: "semantic-integrity-correction"
 stream: semantic-integrity
-status: active
+status: complete
 objective: "Make authored semantic ordering an exact preserved contract: lowering may schedule work topologically and derive data-flow constraints, but it must neither invent authored ordering nor lose its independent provenance."
 
 authorization:
-  status: active
+  status: completed
   source: "Semantic-integrity roadmap transition after independently validated SI-01.1 completion."
   predecessor: "SI-01.1"
   strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#12-preserve-the-authored-dependency-graph-exactly"
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2894
+  runId: 31403411226
+  exactHead: "e57ace821fe24bda03ee2fdb202864351e60f3b4"
+  mergeCandidate: "e1a055daffc72da1988cd2a500dab038f3b14509"
+completionMergeCommit: "a63eccbea49885dc1261a91109998e3aeebb1e2c"
 
 invariant:
   - "For every accepted authored intent, the set of authored requires edges equals the set of ExecutionPlan ORDERING relations evidenced as DECLARED_ORDERING."

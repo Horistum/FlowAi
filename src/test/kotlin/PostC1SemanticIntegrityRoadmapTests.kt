@@ -10,44 +10,41 @@ import org.flowlang.roadmap.RoadmapTransitionPhase
 
 class PostC1SemanticIntegrityRoadmapTests {
     @Test
-    fun repositoryCompletesReconciliationBeforeActivatingSi02() {
+    fun repositoryCompletesSi02BeforeActivatingSi03() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
 
-        assertEquals(RoadmapTransitionPhase.SI_02_ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals(RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE, report.phase, report.errors.joinToString(" | "))
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
     @Test
-    fun si02CannotFabricateSi011CompletionBoundary() = withRepositoryFixture { root ->
+    fun activeSemanticItemRequiresExactPredecessorCompletionBoundary() = withRepositoryFixture { root ->
         replaceRequired(
-            File(root, RoadmapStreamTransitionAuthority.SI_01_1_WORK_PACKAGE),
-            "runNumber: 2892",
+            File(root, RoadmapStreamTransitionAuthority.SI_02_WORK_PACKAGE),
+            "runNumber: 2894",
             "runNumber: 9999"
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
-        assertEquals(RoadmapTransitionPhase.SI_02_ACTIVE, report.phase)
+        assertEquals(RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE, report.phase)
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "exact already-passed SI-01.1" in it })
+        assertTrue(report.errors.any { "completed predecessor CI boundary" in it })
     }
 
     @Test
-    fun si02RequiresMatchingRoadmapAndWorkPackageCompletionEvidence() = withRepositoryFixture { root ->
-        replaceRequired(
-            File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP),
-            "runId: 31389256988",
-            "runId: 31389256989"
-        )
+    fun activeSemanticItemRequiresMatchingRoadmapAndWorkPackageCompletionEvidence() = withRepositoryFixture { root ->
+        val roadmap = File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP)
+        replaceRequired(roadmap, "runId: 31403411226", "runId: 31403411227")
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "must agree on the completed SI-01.1 boundary" in it })
+        assertTrue(report.errors.any { "completed predecessor CI boundary" in it })
     }
 
     @Test
-    fun si02CannotRetroactivelyAuthorizeSi01() = withRepositoryFixture { root ->
+    fun activeSemanticItemCannotRetroactivelyAuthorizeSi01() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP),
             "authorizationStatus: missing",
@@ -56,44 +53,44 @@ class PostC1SemanticIntegrityRoadmapTests {
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
-        assertEquals(RoadmapTransitionPhase.SI_02_ACTIVE, report.phase)
+        assertEquals(RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE, report.phase)
         assertEquals("FAIL", report.status)
         assertTrue(report.errors.any { "must remain explicitly unauthorized" in it })
     }
 
     @Test
-    fun si02RequiresGlobalSemanticIntegrityFocus() = withRepositoryFixture { root ->
+    fun activeSemanticItemRequiresGlobalFocus() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX),
-            "nextItem: \"SI-02\"",
-            "nextItem: \"SI-03\""
+            "nextItem: \"SI-03\"",
+            "nextItem: \"SI-99\""
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "Roadmap index must select SI-02" in it })
+        assertTrue(report.errors.any { "Roadmap index must select SI-03" in it })
     }
 
     @Test
-    fun si02RequiresExplicitAuthorizedWorkPackage() = withRepositoryFixture { root ->
-        File(root, RoadmapStreamTransitionAuthority.SI_02_WORK_PACKAGE).delete()
+    fun activeSemanticItemRequiresExplicitSafeWorkPackagePath() = withRepositoryFixture { root ->
+        replaceRequired(
+            File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP),
+            "workPackage: \".flow-agent/work-packages/SI-03-canonical-technology-neutrality.yaml\"",
+            "workPackage: \"../SI-03.yaml\""
+        )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
+        assertTrue(report.phase == RoadmapTransitionPhase.C1_0_COMPLETE || report.phase == RoadmapTransitionPhase.INVALID)
         assertEquals("FAIL", report.status)
-        assertTrue(
-            report.errors.any { "Required stream-transition file is missing" in it } ||
-                report.phase == RoadmapTransitionPhase.INVALID ||
-                report.phase == RoadmapTransitionPhase.C1_0_COMPLETE
-        )
     }
 
     @Test
-    fun si02CannotImpersonateANewerGithubValidationBoundary() = withRepositoryFixture { root ->
+    fun activeSemanticItemCannotImpersonateItsOwnFutureGithubBoundary() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.RELEASE_STATE),
-            "Flow CI #2892",
+            "Flow CI #2894",
             "Flow CI #9999"
         )
 
@@ -104,21 +101,21 @@ class PostC1SemanticIntegrityRoadmapTests {
     }
 
     @Test
-    fun si02MustOwnProjectDirectionSection12() = withRepositoryFixture { root ->
+    fun activeSemanticItemRequiresDeclaredStrategicSource() = withRepositoryFixture { root ->
         replaceRequired(
-            File(root, RoadmapStreamTransitionAuthority.SI_02_WORK_PACKAGE),
-            "#12-preserve-the-authored-dependency-graph-exactly",
-            "#13-remove-implementation-technology-from-canonical-meaning"
+            File(root, RoadmapStreamTransitionAuthority.SI_03_WORK_PACKAGE),
+            "#13-remove-implementation-technology-from-canonical-meaning",
+            "#12-preserve-the-authored-dependency-graph-exactly"
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "project-direction section 1.2" in it })
+        assertTrue(report.errors.any { "explicit, matching and fail-closed work package" in it })
     }
 
     private fun withRepositoryFixture(block: (File) -> Unit) {
-        val root = createTempDirectory("flow-si02-roadmap").toFile()
+        val root = createTempDirectory("flow-semantic-integrity-roadmap").toFile()
         listOf(".flow-agent", "docs", "standard/architecture", "src/main/kotlin").forEach { path ->
             val source = File(path)
             if (source.exists()) source.copyRecursively(File(root, path), overwrite = true)

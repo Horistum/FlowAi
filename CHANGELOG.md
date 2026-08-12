@@ -4,6 +4,21 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### SI-03 Canonical Technology Neutrality
+
+#### Corrected
+
+- Removed Docker as a required system and lowering authority from canonical `BUILD_IMAGE` and `PUSH_IMAGE` contracts while retaining the neutral capability identities and generic image semantics.
+- Reclassified `dockerfile` as explicit `docker.build` binding-only configuration; unbound Dockerfile input now fails closed instead of entering canonical meaning.
+- Removed Docker from the public image-capability catalog hints without deleting the concrete Docker module, bindings or target projection evidence.
+- Preserved the byte-exact C0.4 binding v1.0 snapshot and introduced live binding evidence v1.1 with a machine-enforced migration that permits only the reviewed Dockerfile reclassification.
+- Generalized post-C1 roadmap transition handling so SI-03 and later semantic-integrity items use an explicit data-driven work-package boundary instead of adding one hard-coded lifecycle enum branch per work item.
+
+#### Compatibility
+
+- Intent, AST and ExecutionPlan serialized versions remain unchanged because SI-03 does not rename capability identities or change artifact shape; it enforces the existing canonical-versus-binding boundary.
+- Docker-specific implementation behavior remains available only below the canonical boundary through explicit binding and adapter evidence.
+
 ### SI-02 Authored Dependency Graph Preservation
 
 #### Corrected
