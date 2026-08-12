@@ -2,7 +2,7 @@ package org.flowlang.conformance
 
 import java.io.File
 import java.security.MessageDigest
-import org.flowlang.adapters.binding.AdapterCapabilityBindingAuthority
+import org.flowlang.adapters.binding.AdapterCapabilityBindingMigrationAuthority
 import org.flowlang.adapters.binding.AdapterCapabilityBindingDocument
 import org.flowlang.adapters.binding.AdapterCapabilityBindingLoader
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceDocument
@@ -156,7 +156,7 @@ class AdapterProfileEvidenceAuthority(
     private fun loadDocuments(): ProfileDocuments = ProfileDocuments(
         portfolio = AdapterPortfolioLoader.load(rootDir),
         topology = AdapterTopologyEvidenceLoader.load(rootDir),
-        bindings = AdapterCapabilityBindingLoader.load(rootDir),
+        bindings = AdapterCapabilityBindingLoader.loadFrozenC04(rootDir),
         controls = AdapterControlMaterializationLoader.load(rootDir),
         continuity = AdapterContinuityEvidenceLoader.load(rootDir),
         rendering = AdapterArtifactRenderingEvidenceLoader.load(rootDir)
@@ -238,8 +238,8 @@ class AdapterProfileEvidenceAuthority(
         ).evaluate(documents.topology)
         topology.findings.forEach { add("topology:${it.code}:${it.target}:${it.claim}:${it.message}") }
 
-        val bindings = AdapterCapabilityBindingAuthority(rootDir, registry).analyze(documents.bindings)
-        bindings.findings.forEach { add("binding:${it.code}:${it.binding}:${it.message}") }
+        val bindings = AdapterCapabilityBindingMigrationAuthority(rootDir, registry).analyze()
+        bindings.findings.forEach { add("binding-migration:$it") }
 
         val controls = AdapterControlEvidenceIntegrityAuthority(rootDir, targets, projections).analyze(documents.controls)
         controls.findings.forEach { add("control:${it.code}:${it.target}:${it.family}:${it.message}") }
@@ -351,7 +351,7 @@ class AdapterProfileEvidenceAuthority(
             target = null,
             capability = capability,
             status = status,
-            sourceReference = AdapterCapabilityBindingLoader.PATH,
+            sourceReference = AdapterCapabilityBindingLoader.C04_FROZEN_PATH,
             detail = detail
         )
     }
@@ -461,7 +461,7 @@ class AdapterProfileEvidenceAuthority(
         private val REQUIRED_SOURCES = listOf(
             "portfolio" to AdapterPortfolioLoader.PATH,
             "topology" to AdapterTopologyEvidenceLoader.PATH,
-            "bindings" to AdapterCapabilityBindingLoader.PATH,
+            "bindings" to AdapterCapabilityBindingLoader.C04_FROZEN_PATH,
             "controls" to AdapterControlMaterializationLoader.PATH,
             "continuity" to AdapterContinuityEvidenceLoader.PATH,
             "rendering" to AdapterArtifactRenderingEvidenceLoader.PATH

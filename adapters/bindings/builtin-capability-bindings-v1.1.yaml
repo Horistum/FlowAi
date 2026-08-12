@@ -1,0 +1,190 @@
+version: "1.1"
+bindings:
+  - id: "git.checkout#CHECKOUT"
+    class: CONCRETE_IMPLEMENTATION
+    capability: CHECKOUT
+    module: git
+    action: checkout
+    systemTypes: [git]
+    semanticParameters:
+      mapped: [branch, url]
+      unsupported:
+        target: "A repository target identity is not equivalent to the selected Git system and is not represented by git.checkout."
+    bindingParameters: [depth]
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/git.yaml#actions.checkout"
+    limitations:
+      - "The explicit binding does not infer a repository from the selected system configuration."
+
+  - id: "docker.build#BUILD_IMAGE"
+    class: CONCRETE_IMPLEMENTATION
+    capability: BUILD_IMAGE
+    module: docker
+    action: build
+    systemTypes: [docker]
+    semanticParameters:
+      mapped: [image, path, push]
+      unsupported:
+        target: "The semantic target parameter is not a Docker image build input and cannot select the binding system."
+    bindingParameters: [dockerfile]
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/docker.yaml#actions.build"
+    limitations:
+      - "Registry publication remains controlled by the explicit push parameter and downstream target projection evidence."
+
+  - id: "docker.push#PUSH_IMAGE"
+    class: CONCRETE_IMPLEMENTATION
+    capability: PUSH_IMAGE
+    module: docker
+    action: push
+    systemTypes: [docker]
+    semanticParameters:
+      mapped: [image]
+      unsupported:
+        target: "The semantic target parameter is not represented by docker.push."
+    bindingParameters: []
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/docker.yaml#actions.push"
+    limitations:
+      - "The action does not infer an image identity from the selected registry system."
+
+  - id: "argocd.sync#DEPLOY"
+    class: CONCRETE_IMPLEMENTATION
+    capability: DEPLOY
+    module: argocd
+    action: sync
+    systemTypes: [argocd]
+    semanticParameters:
+      mapped: []
+      unsupported:
+        artifact: "Argo CD sync does not bind a canonical artifact parameter directly."
+        environment: "Environment identity is not interchangeable with an Argo CD application."
+        image: "Argo CD sync does not directly bind an image parameter."
+        namespace: "Namespace selection is not represented by the current Argo CD action contract."
+        strategy: "Deployment strategy is not represented by the current Argo CD action contract."
+        subject: "Deployment subject is not equivalent to the required binding-only application name."
+        target: "Semantic target cannot select the Argo CD system or application."
+        version: "Version selection is not represented by the current Argo CD action contract."
+    bindingParameters: [app, timeout, wait]
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/argocd.yaml#actions.sync"
+    limitations:
+      - "The author must provide the Argo CD application as binding-only parameter app."
+      - "The action no longer claims SYNC because canonical SYNC requires source and destination semantics that this contract cannot represent."
+
+  - id: "helm.upgrade#DEPLOY"
+    class: CONCRETE_IMPLEMENTATION
+    capability: DEPLOY
+    module: helm
+    action: upgrade
+    systemTypes: [helm]
+    semanticParameters:
+      mapped: [namespace]
+      unsupported:
+        artifact: "The current Helm action uses binding-only chart and values inputs instead of canonical artifact semantics."
+        environment: "Environment identity is not represented by helm.upgrade."
+        image: "Image identity is not a direct Helm upgrade input."
+        strategy: "Deployment strategy is not represented by helm.upgrade."
+        subject: "Canonical subject is not equivalent to a Helm release name."
+        target: "Semantic target cannot select the Helm system or release."
+        version: "Canonical version is not represented by the current Helm action contract."
+    bindingParameters: [chart, release, values]
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/helm.yaml#actions.upgrade"
+    limitations:
+      - "Chart and release remain explicit binding-only parameters."
+
+  - id: "kubernetes.deploy#DEPLOY"
+    class: CONCRETE_IMPLEMENTATION
+    capability: DEPLOY
+    module: kubernetes
+    action: deploy
+    systemTypes: [kubernetes]
+    semanticParameters:
+      mapped: [image, namespace]
+      unsupported:
+        artifact: "Artifact semantics are not represented by the current Kubernetes deploy contract."
+        environment: "Environment identity is not represented by kubernetes.deploy."
+        strategy: "Deployment strategy is not represented by kubernetes.deploy."
+        subject: "Canonical subject is not automatically mapped to app or name."
+        target: "Semantic target cannot select the Kubernetes system or workload."
+        version: "Canonical version is not represented by the current Kubernetes deploy contract."
+    bindingParameters: [app, manifest, name]
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/kubernetes.yaml#actions.deploy"
+    limitations:
+      - "Workload identity must be provided explicitly through app, name or manifest according to the selected binding."
+
+  - id: "notify.send#NOTIFY"
+    class: CONCRETE_IMPLEMENTATION
+    capability: NOTIFY
+    module: notify
+    action: send
+    systemTypes: [email, notify]
+    semanticParameters:
+      mapped: [body, channel, subject, to]
+      unsupported:
+        target: "Semantic target cannot select the notification system."
+    bindingParameters: []
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/notify.yaml#actions.send"
+    limitations:
+      - "The selected implementation requires subject even though the universal capability permits it to be omitted."
+
+  - id: "notify.email#NOTIFY"
+    class: CONCRETE_IMPLEMENTATION
+    capability: NOTIFY
+    module: notify
+    action: email
+    systemTypes: [email, notify]
+    semanticParameters:
+      mapped: [body, subject, to]
+      unsupported:
+        channel: "The email-specific action does not represent a generic notification channel."
+        target: "Semantic target cannot select the notification system."
+    bindingParameters: []
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/notify.yaml#actions.email"
+    limitations:
+      - "The email implementation requires both recipient and subject."
+
+  - id: "rest.call#CALL_API"
+    class: CONCRETE_IMPLEMENTATION
+    capability: CALL_API
+    module: rest
+    action: call
+    systemTypes: [rest]
+    semanticParameters:
+      mapped: [body, method, path]
+      unsupported:
+        target: "Semantic target cannot select the REST system."
+    bindingParameters: [headers, query]
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/rest.yaml#actions.call"
+    limitations:
+      - "The selected implementation requires method in addition to the universally required path."
+
+  - id: "standard.rollback#ROLLBACK"
+    class: SEMANTIC_FALLBACK
+    capability: ROLLBACK
+    module: standard
+    action: rollback
+    systemTypes: [standard]
+    semanticParameters:
+      mapped: [application, flow, reason, target]
+      unsupported: {}
+    bindingParameters: [operation]
+    effectPolicy: PRESERVE_CANONICAL
+    evidenceReferences:
+      - "modules/standard.yaml#actions.rollback"
+    limitations:
+      - "This record preserves a semantic fallback contract and does not certify target-native rollback materialization."

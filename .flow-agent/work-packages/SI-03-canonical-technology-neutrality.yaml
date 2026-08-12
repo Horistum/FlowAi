@@ -43,5 +43,23 @@ versionDecision:
   reason: "SI-03 preserves serialized capability identities and artifact shapes while enforcing the already-declared rule that concrete platforms cannot define canonical meaning. Explicit docker.build still accepts Dockerfile selection as binding configuration."
 
 localValidation:
-  status: pending
-  rule: "Offline exact-main validation is reported in the pull request. Only a later exact branch Flow CI boundary may become SI-03 completion evidence."
+  status: passed
+  validatedAt: "2026-08-12"
+  baseCommit: "a63eccbea49885dc1261a91109998e3aeebb1e2c"
+  baseTree: "c4fe2124e1c402bcd840cfc0865ef22d4e5d6266"
+  commands:
+    - "python3 -m unittest discover -s tools/tests -p 'test_*.py'"
+    - "python3 tools/flow_agent_validate.py"
+    - "python3 tools/flow_agent_runner.py"
+    - "GRADLE_USER_HOME=/mnt/data/si03_full/.gradle-user-home ./gradlew clean compileKotlin --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=/mnt/data/si03_full/.gradle-user-home ./gradlew test --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=/mnt/data/si03_full/.gradle-user-home ./gradlew run --args='conformance' --offline --no-daemon --console=plain --max-workers=5"
+  results:
+    toolingTests: "31/31 passed"
+    flowAgentStructure: passed
+    flowAgentContextGeneration: passed
+    productionCompile: "BUILD SUCCESSFUL with zero Kotlin compiler warnings"
+    completeTests: "1007/1007 passed; 0 failures; 0 errors; 0 skipped"
+    standaloneConformance: passed
+    frozenC04BindingSha256: "eda2fdec8e6a1b42a969ffa8e68a09567080d56a7e01a2786dccb06ae820f5f2"
+  rule: "This is local evidence for the exact SI-03 candidate tree only. It does not advance lastKnownValidation or claim GitHub Flow CI completion."

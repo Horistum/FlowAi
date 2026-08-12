@@ -8,8 +8,26 @@ import org.flowlang.intent.IntentYamlLoader
 import org.flowlang.intent.KUBERNETES_MAINTENANCE
 import org.flowlang.intent.StandardCapability
 import org.flowlang.intent.StandardCapabilityCompatibility
+import org.flowlang.standard.StandardCapabilityContracts
+import org.flowlang.standard.StandardIntentCatalog
 
 class StandardCapabilityNeutralityTests {
+    @Test
+    fun canonicalImageCapabilitiesDoNotRequireDockerImplementationTechnology() {
+        val build = StandardCapabilityContracts.requireContract(StandardCapability.BUILD_IMAGE)
+        val push = StandardCapabilityContracts.requireContract(StandardCapability.PUSH_IMAGE)
+        val buildCatalog = StandardIntentCatalog.byCapability.getValue(StandardCapability.BUILD_IMAGE)
+        val pushCatalog = StandardIntentCatalog.byCapability.getValue(StandardCapability.PUSH_IMAGE)
+
+        assertTrue(build.requiredSystems.isEmpty())
+        assertTrue(push.requiredSystems.isEmpty())
+        assertEquals("semantic-action", build.loweringStrategy)
+        assertEquals("semantic-action", push.loweringStrategy)
+        assertFalse("dockerfile" in build.requiredParams + build.optionalParams)
+        assertFalse(buildCatalog.typicalModules.any { it.equals("docker", ignoreCase = true) })
+        assertFalse(pushCatalog.typicalModules.any { it.equals("docker", ignoreCase = true) })
+    }
+
     @Test
     fun canonicalCapabilityVocabularyContainsOnlyNeutralMaintenanceIdentity() {
         val names = enumValues<StandardCapability>().map { it.name }.toSet()

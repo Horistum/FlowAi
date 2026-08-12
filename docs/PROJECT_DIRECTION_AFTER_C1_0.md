@@ -2,9 +2,9 @@
 
 ## Status and purpose
 
-This document records strategic direction after C1.0 Operational Domain Adequacy. It is deliberately not a lifecycle transition and does not select a successor item before C1.0 has a distinct completion boundary.
+This document records the strategic direction established after C1.0 Operational Domain Adequacy. C1.0 is now completed; actual successor selection is owned by the global roadmap and semantic-integrity lifecycle metadata, not by this document.
 
-The purpose is to prevent Flow from drifting into a system that proves its own governance more convincingly than it proves useful, portable automation semantics. C1.0 remains the active work item. After C1.0 completes, the next transition must be chosen explicitly by the global roadmap authority from the evidence then available.
+The purpose is to prevent Flow from drifting into a system that proves its own governance more convincingly than it proves useful, portable automation semantics. The ordered track remains strategic input; each active item still requires an explicit global roadmap transition and bounded work package.
 
 ## Architectural position
 

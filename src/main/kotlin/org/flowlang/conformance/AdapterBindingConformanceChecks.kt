@@ -3,6 +3,7 @@ package org.flowlang.conformance
 import java.io.File
 import org.flowlang.adapters.binding.AdapterBindingRoadmapLifecycleAuthority
 import org.flowlang.adapters.binding.AdapterCapabilityBindingAuthority
+import org.flowlang.adapters.binding.AdapterCapabilityBindingMigrationAuthority
 import org.flowlang.ast.ActionNode
 import org.flowlang.intent.CanonicalIntentMeaningAuthority
 import org.flowlang.intent.IntentBindingParameterSource
@@ -29,6 +30,8 @@ class AdapterBindingConformanceChecks(private val rootDir: File) {
         val lifecycle = lifecycleResult.getOrNull()
         val authorityResult = runCatching { AdapterCapabilityBindingAuthority(rootDir, registry).analyze() }
         val authority = authorityResult.getOrNull()
+        val migrationResult = runCatching { AdapterCapabilityBindingMigrationAuthority(rootDir, registry).analyze() }
+        val migration = migrationResult.getOrNull()
         val runtimeErrors = resultErrors(runCatching(::runtimeBindingErrors))
         val effectErrors = resultErrors(runCatching(::semanticEffectAndProvenanceErrors))
         val polarityErrors = resultErrors(runCatching(::bindingPolarityErrors))
@@ -43,6 +46,8 @@ class AdapterBindingConformanceChecks(private val rootDir: File) {
         val authorityErrors = buildList {
             authorityResult.exceptionOrNull()?.let { add(it.message ?: it.javaClass.simpleName) }
             authority?.findings?.forEach { add("${it.code}:${it.binding}:${it.message}") }
+            migrationResult.exceptionOrNull()?.let { add("binding-migration:${it.message ?: it.javaClass.simpleName}") }
+            migration?.findings?.forEach { add("binding-migration:$it") }
         }
         return listOf(
             ConformanceCheck(
@@ -52,7 +57,7 @@ class AdapterBindingConformanceChecks(private val rootDir: File) {
             ),
             ConformanceCheck(
                 name = EVIDENCE_CHECK,
-                passed = authority?.status == "PASS",
+                passed = authority?.status == "PASS" && migration?.status == "PASS",
                 message = authorityErrors.takeIf(List<String>::isNotEmpty)?.joinToString(" | ")
             ),
             ConformanceCheck(
