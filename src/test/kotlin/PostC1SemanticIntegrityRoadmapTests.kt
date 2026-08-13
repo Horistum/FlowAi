@@ -10,7 +10,7 @@ import org.flowlang.roadmap.RoadmapTransitionPhase
 
 class PostC1SemanticIntegrityRoadmapTests {
     @Test
-    fun repositoryCompletesSi05BeforeActivatingSi06() {
+    fun repositoryCompletesSi06BeforeActivatingSi07() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
 
         assertEquals(RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE, report.phase, report.errors.joinToString(" | "))
@@ -20,8 +20,8 @@ class PostC1SemanticIntegrityRoadmapTests {
     @Test
     fun activeSemanticItemRequiresExactPredecessorCompletionBoundary() = withRepositoryFixture { root ->
         replaceRequired(
-            File(root, ".flow-agent/work-packages/SI-05-operational-effect-model-re-evaluation.yaml"),
-            "runNumber: 2913",
+            File(root, ".flow-agent/work-packages/SI-06-eliminate-remaining-silent-authored-value-coercion.yaml"),
+            "runNumber: 2919",
             "runNumber: 9999"
         )
 
@@ -35,7 +35,7 @@ class PostC1SemanticIntegrityRoadmapTests {
     @Test
     fun activeSemanticItemRequiresMatchingRoadmapAndWorkPackageCompletionEvidence() = withRepositoryFixture { root ->
         val roadmap = File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP)
-        replaceRequired(roadmap, "runId: 31688348916", "runId: 31688348917")
+        replaceRequired(roadmap, "runId: 31697607328", "runId: 31697607329")
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
@@ -44,11 +44,11 @@ class PostC1SemanticIntegrityRoadmapTests {
     }
 
     @Test
-    fun activeSemanticItemCannotRetroactivelyAuthorizeSi01() = withRepositoryFixture { root ->
+    fun activeSemanticItemCannotRewriteHistoricalSi01AuthorizationState() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP),
             "authorizationStatus: missing",
-            "authorizationStatus: authorized"
+            "authorizationStatus: changed"
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
@@ -62,22 +62,22 @@ class PostC1SemanticIntegrityRoadmapTests {
     fun activeSemanticItemRequiresGlobalFocus() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX),
-            "nextItem: \"SI-06\"",
+            "nextItem: \"SI-07\"",
             "nextItem: \"SI-99\""
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "Roadmap index must select SI-06" in it })
+        assertTrue(report.errors.any { "Roadmap index must select SI-07" in it })
     }
 
     @Test
     fun activeSemanticItemRequiresExplicitSafeWorkPackagePath() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP),
-            "workPackage: \".flow-agent/work-packages/SI-06-eliminate-remaining-silent-authored-value-coercion.yaml\"",
-            "workPackage: \"../SI-06.yaml\""
+            "workPackage: \".flow-agent/work-packages/SI-07-align-public-schemas-with-production-acceptance.yaml\"",
+            "workPackage: \"invalid-work-package.yaml\""
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
@@ -87,10 +87,10 @@ class PostC1SemanticIntegrityRoadmapTests {
     }
 
     @Test
-    fun activeSemanticItemCannotImpersonateItsOwnFutureGithubBoundary() = withRepositoryFixture { root ->
+    fun activeSemanticItemCannotAdvanceValidationToUnvalidatedCurrentItem() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.RELEASE_STATE),
-            "Flow CI #2913",
+            "Flow CI #2919",
             "Flow CI #9999"
         )
 
@@ -103,9 +103,9 @@ class PostC1SemanticIntegrityRoadmapTests {
     @Test
     fun activeSemanticItemRequiresDeclaredStrategicSource() = withRepositoryFixture { root ->
         replaceRequired(
-            File(root, ".flow-agent/work-packages/SI-06-eliminate-remaining-silent-authored-value-coercion.yaml"),
-            "#16-eliminate-remaining-silent-authored-value-coercion",
-            "#15-re-evaluate-the-effect-model-under-operational-evidence"
+            File(root, ".flow-agent/work-packages/SI-07-align-public-schemas-with-production-acceptance.yaml"),
+            "#17-align-public-schemas-with-production-acceptance",
+            "#16-eliminate-remaining-silent-authored-value-coercion"
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
