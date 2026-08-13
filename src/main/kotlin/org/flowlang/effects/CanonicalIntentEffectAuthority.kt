@@ -49,12 +49,24 @@ object CanonicalIntentEffectAuthority {
         )
         StandardCapability.VALIDATE -> listOf(read(EffectDomain.DATA_TRANSFORMATION, "data.input", capability))
         StandardCapability.BACKUP -> listOf(
-            read(EffectDomain.DATA_TRANSFORMATION, "data.source", capability),
-            create(EffectDomain.DATA_TRANSFORMATION, "data.backup", capability)
+            read(EffectDomain.STATE_RECOVERY, "protected.state", capability),
+            effect(
+                domain = EffectDomain.STATE_RECOVERY,
+                operation = EffectOperation.CREATE,
+                resource = "recovery.point",
+                capability = capability,
+                recovery = backupRecovery(params)
+            )
         )
         StandardCapability.RESTORE -> listOf(
-            read(EffectDomain.DATA_TRANSFORMATION, "data.backup", capability),
-            upsert(EffectDomain.DATA_TRANSFORMATION, "data.destination", capability)
+            read(EffectDomain.STATE_RECOVERY, "recovery.point", capability),
+            effect(
+                domain = EffectDomain.STATE_RECOVERY,
+                operation = EffectOperation.UPSERT,
+                resource = "protected.state",
+                capability = capability,
+                recovery = restoreRecovery(params)
+            )
         )
         StandardCapability.CLEANUP -> listOf(delete(EffectDomain.INFRASTRUCTURE_STATE, "managed.resource", capability))
         StandardCapability.PROVISION -> listOf(upsert(EffectDomain.INFRASTRUCTURE_STATE, "infrastructure.resource", capability))
@@ -77,6 +89,31 @@ object CanonicalIntentEffectAuthority {
             )
         )
     }
+
+    private fun backupRecovery(params: Map<String, String?>): RecoverySemantics? {
+        val subject = semanticText(params["subject"]) ?: return null
+        return RecoverySemantics(
+            kind = RecoveryEffectKind.RECOVERY_POINT_CAPTURE,
+            source = RecoveryEndpoint(RecoveryEndpointKind.PROTECTED_STATE, subject),
+            target = semanticText(params["destination"])?.let {
+                RecoveryEndpoint(RecoveryEndpointKind.BACKUP_DESTINATION, it)
+            },
+            retention = semanticText(params["retention"])
+        )
+    }
+
+    private fun restoreRecovery(params: Map<String, String?>): RecoverySemantics? {
+        val subject = semanticText(params["subject"]) ?: return null
+        return RecoverySemantics(
+            kind = RecoveryEffectKind.STATE_RESTORE,
+            source = semanticText(params["recoveryPoint"])?.let {
+                RecoveryEndpoint(RecoveryEndpointKind.RECOVERY_POINT, it)
+            },
+            target = RecoveryEndpoint(RecoveryEndpointKind.PROTECTED_STATE, subject)
+        )
+    }
+
+    private fun semanticText(value: String?): String? = value?.trim()?.takeIf(String::isNotEmpty)
 
     private fun apiEffect(method: String?, capability: StandardCapability): SemanticEffect = when (method?.trim()?.uppercase()) {
         "GET", "HEAD" -> read(EffectDomain.COMMUNICATION, "external.api.resource", capability)
@@ -112,6 +149,13 @@ object CanonicalIntentEffectAuthority {
         domain: EffectDomain,
         operation: EffectOperation,
         resource: String,
-        capability: StandardCapability
-    ) = SemanticEffect(domain, operation, resource, sourceCapability = capability.name)
+        capability: StandardCapability,
+        recovery: RecoverySemantics? = null
+    ) = SemanticEffect(
+        domain = domain,
+        operation = operation,
+        resource = resource,
+        sourceCapability = capability.name,
+        recovery = recovery
+    )
 }

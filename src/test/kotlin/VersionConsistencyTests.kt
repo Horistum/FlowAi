@@ -8,8 +8,8 @@ class VersionConsistencyTests {
     private val packageVersion = "0.9.5"
     private val publicStandardVersion = "0.8.0"
     private val intentContractVersion = "2.0"
-    private val astContractVersion = "2.1"
-    private val executionPlanContractVersion = "2.2"
+    private val astContractVersion = "2.2"
+    private val executionPlanContractVersion = "2.3"
     private val executionPlanLoweringEvidenceVersion = "2.1"
     private val targetManifestContractVersion = "3.0"
     private val targetRegistryContractVersion = "3.1"
@@ -58,8 +58,12 @@ class VersionConsistencyTests {
         )
         assertFileContains("docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md", "AST and ExecutionPlan 2.0 to 2.1")
         assertFileContains("docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md", "ExecutionPlan 2.1 to 2.2")
-        assertFileContains("docs/versioning-policy.md", "AST contract | `2.1`")
-        assertFileContains("docs/versioning-policy.md", "ExecutionPlan contract | `2.2`")
+        assertFileContains(
+            "docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md",
+            "AST 2.1 to 2.2 and ExecutionPlan 2.2 to 2.3"
+        )
+        assertFileContains("docs/versioning-policy.md", "AST contract | `2.2`")
+        assertFileContains("docs/versioning-policy.md", "ExecutionPlan contract | `2.3`")
         assertFileContains("docs/versioning-policy.md", "TargetManifest contract | `3.0`")
         assertFileContains("docs/versioning-policy.md", "TargetRegistry contract | `3.1`")
     }
@@ -71,6 +75,7 @@ class VersionConsistencyTests {
         assertTrue(File("docs/V0_9_6_TYPED_BINDING_MIGRATION.md").isFile)
         assertTrue(File("docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md").isFile)
         assertTrue(File("docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md").isFile)
+        assertTrue(File("docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md").isFile)
         assertTrue(File(".flow-agent/reports/v0.9.5-universal-model-completion.md").isFile)
     }
 

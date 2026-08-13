@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/execution-plan/2.2/execution-plan.schema.json",
-  "title": "Flow Execution Plan v2.2",
+  "$id": "https://flowlang.dev/schemas/execution-plan/2.3/execution-plan.schema.json",
+  "title": "Flow Execution Plan v2.3",
   "description": "Public, target-neutral execution contract produced after intent/AST validation and before target-specific rendering.",
   "type": "object",
   "required": [
@@ -15,7 +15,7 @@
       "minLength": 1
     },
     "planVersion": {
-      "const": "2.2"
+      "const": "2.3"
     },
     "inputs": {
       "type": "array",
@@ -502,6 +502,103 @@
       },
       "additionalProperties": false
     },
+    "protectedStateRecoveryEndpoint": {
+      "type": "object",
+      "required": [
+        "kind",
+        "identity"
+      ],
+      "properties": {
+        "kind": {
+          "const": "PROTECTED_STATE"
+        },
+        "identity": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "backupDestinationRecoveryEndpoint": {
+      "type": "object",
+      "required": [
+        "kind",
+        "identity"
+      ],
+      "properties": {
+        "kind": {
+          "const": "BACKUP_DESTINATION"
+        },
+        "identity": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "recoveryPointEndpoint": {
+      "type": "object",
+      "required": [
+        "kind",
+        "identity"
+      ],
+      "properties": {
+        "kind": {
+          "const": "RECOVERY_POINT"
+        },
+        "identity": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "recoverySemantics": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "source"
+          ],
+          "properties": {
+            "kind": {
+              "const": "RECOVERY_POINT_CAPTURE"
+            },
+            "source": {
+              "$ref": "#/$defs/protectedStateRecoveryEndpoint"
+            },
+            "target": {
+              "$ref": "#/$defs/backupDestinationRecoveryEndpoint"
+            },
+            "retention": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "target"
+          ],
+          "properties": {
+            "kind": {
+              "const": "STATE_RESTORE"
+            },
+            "source": {
+              "$ref": "#/$defs/recoveryPointEndpoint"
+            },
+            "target": {
+              "$ref": "#/$defs/protectedStateRecoveryEndpoint"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "semanticEffect": {
       "type": "object",
       "required": [
@@ -516,6 +613,7 @@
             "SOFTWARE_DELIVERY",
             "DATA_TRANSFORMATION",
             "INFRASTRUCTURE_STATE",
+            "STATE_RECOVERY",
             "COMMUNICATION",
             "UNKNOWN"
           ]
@@ -554,6 +652,9 @@
             "string",
             "null"
           ]
+        },
+        "recovery": {
+          "$ref": "#/$defs/recoverySemantics"
         }
       },
       "additionalProperties": false

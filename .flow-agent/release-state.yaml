@@ -15,8 +15,8 @@ versionBoundary:
   publicStandardVersion: "0.8.0"
   artifactContracts:
     intent: "2.0"
-    ast: "2.1"
-    executionPlan: "2.2"
+    ast: "2.2"
+    executionPlan: "2.3"
     executionPlanLoweringEvidence: "2.1"
     targetManifest: "3.0"
     targetRegistry: "3.1"
