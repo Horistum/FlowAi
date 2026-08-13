@@ -16,11 +16,13 @@ Active semantic-integrity item: `SI-04 Explicit Canonical Execution-Plan Semanti
 
 ## Active semantic-integrity correction
 
-SI-04 owns project-direction section 1.4: make canonical execution-plan semantics explicit. The active defect boundary is narrow and concrete: `ExecutionPlanCanonicalizer.taskKind()` currently recognizes rollback from module/action strings, notification from the `notify` module and artifact work from a resource-name substring. SI-04 must replace those lexical signals with explicit typed canonical meaning without erasing legitimate semantic distinctions.
+SI-04 owns project-direction section 1.4 and is now an implementation candidate rather than an authorization-only placeholder. `CanonicalExecutionPlanSemanticsAuthority` derives public task-node classification from the retained canonical `StandardCapability`; module names, action strings, target identity, adapter-required capabilities and effect-resource text are no longer classification inputs.
 
-SI-03 is completed evidence. Flow CI #2896 independently passed the exact implementation head and synthetic merge candidate before PR #125 merged as `398c44d16ed484ab2e08f47036a1a093f8f5050e`. Canonical image meaning no longer requires Docker, `dockerfile` is binding-only under explicit Docker selection, and the frozen C0.4 binding snapshot remains byte-exact while live v1.1 migration evidence is fail-closed.
+The closed public task specializations are `ROLLBACK -> rollback`, `NOTIFY -> notification`, `PACKAGE -> artifact` and `SECRET_ROTATE -> secret`; other, absent or unknown capabilities remain `task`. Structural planner nodes keep their typed structural kinds, while legacy data/control nodes use closed fail-fast mappings instead of arbitrary `lowercase()` publication. Conformance independently re-derives the expected task kind from canonical capability and rejects drift.
 
-The SI-04 activation does not implement or version the execution-plan change. Its work package requires an explicit contract-version decision after the public `kind` semantic impact is known.
+This changes the interpretation of the public `CanonicalPlanNode.kind` value domain, so ExecutionPlan advances from `2.1` to `2.2` even though the JSON object shape is unchanged. The 2.2 schema exposes exactly the closed lowercase `CanonicalPlanNodeKind` wire vocabulary and no longer accepts historical internal-name aliases. Intent remains `2.0`, AST remains `2.1`, and ExecutionPlan lowering evidence remains `2.1`. The migration is documented in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`.
+
+SI-03 remains completed evidence through Flow CI #2896 and merge `398c44d16ed484ab2e08f47036a1a093f8f5050e`. SI-04 local implementation evidence does not advance `lastKnownValidation` or complete the roadmap item; completion still requires its own external exact-head and synthetic merge-candidate boundary after publication.
 
 ## Core boundary
 
@@ -28,7 +30,7 @@ PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0
 
 The Core closure remains historical and closed. Post-C1.0 SI-01 changed scoped control evidence and advanced the AST, ExecutionPlan and execution-plan lowering-evidence contracts to `2.1`; that later migration does not rewrite the versions certified by the historical `0.9.7.10` closure.
 
-The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.1`, ExecutionPlan `2.1`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.1`.
+The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.1`, ExecutionPlan `2.2`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.1`.
 
 ## Completed adapter baseline
 

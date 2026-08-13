@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/execution-plan/2.1/execution-plan.schema.json",
-  "title": "Flow Execution Plan v2.1",
+  "$id": "https://flowlang.dev/schemas/execution-plan/2.2/execution-plan.schema.json",
+  "title": "Flow Execution Plan v2.2",
   "description": "Public, target-neutral execution contract produced after intent/AST validation and before target-specific rendering.",
   "type": "object",
   "required": [
@@ -15,7 +15,7 @@
       "minLength": 1
     },
     "planVersion": {
-      "const": "2.1"
+      "const": "2.2"
     },
     "inputs": {
       "type": "array",
@@ -223,22 +223,7 @@
             "fail",
             "skip",
             "set",
-            "expect",
-            "Task",
-            "Approval",
-            "Condition",
-            "ParallelGroup",
-            "Retry",
-            "Loop",
-            "Match",
-            "Try",
-            "Transform",
-            "Validate",
-            "Aggregate",
-            "Fail",
-            "Skip",
-            "Set",
-            "Expect"
+            "expect"
           ]
         },
         "module": {

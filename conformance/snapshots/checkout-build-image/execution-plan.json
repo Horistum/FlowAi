@@ -1,6 +1,6 @@
 {
   "flowName" : "checkout-build-image",
-  "planVersion" : "2.1",
+  "planVersion" : "2.2",
   "inputs" : [ {
     "name" : "version",
     "type" : "text",
