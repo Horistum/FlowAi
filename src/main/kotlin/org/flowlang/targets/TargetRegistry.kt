@@ -21,7 +21,7 @@ import org.flowlang.topology.ExecutionTopologyProfile
  * for isolated fixtures but cannot override distribution evidence.
  */
 object TargetRegistryYamlLoader {
-    fun load(file: File): TargetRegistryDocument = FlowYaml.read(file, TargetRegistryDocument::class.java)
+    fun load(file: File): TargetRegistryDocument = FlowYaml.readStrict(file, TargetRegistryDocument::class.java)
 
     fun loadDirectory(dir: File): Map<String, TargetCapability> {
         if (!dir.isDirectory) return emptyMap()
