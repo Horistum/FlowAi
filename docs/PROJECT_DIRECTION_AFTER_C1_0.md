@@ -209,8 +209,8 @@ Development should stop normal roadmap advancement and open a bounded correction
 - target support is promoted from representability, registry presence or renderer existence rather than independent evidence;
 - new governance is added mainly to certify existing governance instead of protecting a product invariant.
 
-## What does not change yet
+## Lifecycle authority
 
-This document does not complete C1.0, reopen the frozen Core closure, activate a new stream or select a successor work item.
+This document remains strategic input and does not itself select or complete roadmap items. C1.0 is already complete; each post-C1 semantic-integrity successor is activated only by the global roadmap and semantic-integrity lifecycle metadata after its predecessor has a distinct passed exact-head and synthetic merge-candidate boundary and a recorded merge commit.
 
-C1.0 must first complete using a later, distinct exact-head and synthetic merge-candidate validation boundary. Only after that evidence exists may the global roadmap transition authority activate the next bounded work package.
+The historical Core closure, completed adapter/conformance/architecture streams and earlier semantic-integrity evidence remain immutable unless a separately authorized correction explicitly proves that historical evidence itself is false.

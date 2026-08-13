@@ -1,6 +1,6 @@
 project: Flow Semantic Integrity
 stream: semantic-integrity
-roadmapVersion: 3
+roadmapVersion: 4
 status: active
 
 purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
@@ -13,11 +13,11 @@ rules:
   - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
 
 currentDecision:
-  completedItem: "SI-02"
-  completedItemName: "Authored Dependency Graph Preservation"
-  nextItem: "SI-03"
-  nextItemName: "Canonical Technology Neutrality"
-  decisionBasis: "SI-02 passed Flow CI #2894 on exact head e57ace821fe24bda03ee2fdb202864351e60f3b4 and synthetic merge candidate e1a055daffc72da1988cd2a500dab038f3b14509, then merged as a63eccbea49885dc1261a91109998e3aeebb1e2c. The next ordered semantic-integrity outcome is project-direction section 1.3: remove implementation technology from canonical meaning."
+  completedItem: "SI-03"
+  completedItemName: "Canonical Technology Neutrality"
+  nextItem: "SI-04"
+  nextItemName: "Explicit Canonical Execution-Plan Semantics"
+  decisionBasis: "SI-03 passed Flow CI #2896 on exact head b16ab48aa9a608647b8c16bfb2542034ff3aa34f and synthetic merge candidate 5bf6e07c0e2798772dbc7ede34c15c0bbe63be90, then merged as 398c44d16ed484ab2e08f47036a1a093f8f5050e. The next ordered semantic-integrity outcome is project-direction section 1.4: make canonical execution-plan semantics explicit."
 
 historicalEvents:
   - id: "SI-01"
@@ -83,15 +83,38 @@ items:
   - version: "SI-03"
     name: "Canonical Technology Neutrality"
     type: "semantic-integrity-correction"
-    status: next
+    status: completed
     purpose: "Remove concrete implementation technology from target-neutral image capability meaning while retaining useful implementation detail only as explicit binding or adapter evidence."
     dependsOn: "SI-02"
     workPackage: ".flow-agent/work-packages/SI-03-canonical-technology-neutrality.yaml"
     strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#13-remove-implementation-technology-from-canonical-meaning"
+    completionBoundary:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2896
+      runId: 31574835719
+      exactHead: "b16ab48aa9a608647b8c16bfb2542034ff3aa34f"
+      mergeCandidate: "5bf6e07c0e2798772dbc7ede34c15c0bbe63be90"
+    completionMergeCommit: "398c44d16ed484ab2e08f47036a1a093f8f5050e"
     completionEvidence:
       - "BUILD_IMAGE and PUSH_IMAGE canonical contracts do not require Docker or any other concrete implementation system."
       - "Dockerfile and build-time publication controls are binding-only Docker adapter parameters and cannot alter canonical image-build meaning."
       - "Canonical image capability meaning and effects are identical with and without Docker implementation inventory."
       - "The standard catalog does not present Docker as the defining implementation for canonical image capabilities."
       - "Concrete Docker module and binding evidence remain available without becoming target-neutral semantic authority."
+      - "Flow CI #2896 independently passed exact-head and synthetic merge-candidate compile, test and standalone conformance."
+  - version: "SI-04"
+    name: "Explicit Canonical Execution-Plan Semantics"
+    type: "semantic-integrity-correction"
+    status: next
+    purpose: "Derive every public canonical execution-plan node kind from explicit typed canonical meaning rather than implementation module/action/resource naming heuristics."
+    dependsOn: "SI-03"
+    workPackage: ".flow-agent/work-packages/SI-04-explicit-canonical-execution-plan-semantics.yaml"
+    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#14-make-canonical-execution-plan-semantics-explicit"
+    completionEvidence:
+      - "Task node kind is derived from explicit typed canonical semantics, never module name, action string or resource-name substring matching."
+      - "Implementation metadata remains available as adapter/binding evidence without becoming the public target-neutral node classification authority."
+      - "Equivalent canonical meaning produces identical node kinds across different implementation labels."
+      - "Node-kind consumers and serialized contract-version impact are audited before completion."
+      - "Negative regressions prove module/action/resource renaming cannot silently change public node kind."
       - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."

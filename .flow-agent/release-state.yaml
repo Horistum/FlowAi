@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 51
+stateVersion: 52
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -22,7 +22,7 @@ versionBoundary:
     targetRegistry: "3.1"
 
 roadmapState:
-  roadmapVersion: 22
+  roadmapVersion: 23
   activeTrack: "post-c1-semantic-integrity"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
@@ -33,8 +33,8 @@ roadmapState:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  nextItem: "SI-03"
-  nextItemName: "Canonical Technology Neutrality"
+  nextItem: "SI-04"
+  nextItemName: "Explicit Canonical Execution-Plan Semantics"
   nextItemStream: "semantic-integrity"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
@@ -175,19 +175,19 @@ qualityPrinciples:
   - "Canonical capability meaning must remain independent from concrete implementation technology; implementation-only parameters belong to explicit binding or adapter evidence."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-si-02-validation-boundary"
-  flowAgentStructure: "passed-on-si-02-validation-boundary"
-  flowAgentContextGeneration: "passed-on-si-02-validation-boundary"
-  cleanTest: "passed-on-si-02-validation-boundary"
-  conformance: "passed-on-si-02-validation-boundary"
-  executableReferenceEvidence: "passed-on-si-02-validation-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-si-02-validation-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-si-02-validation-boundary"
-  boundedDomainCorpusEvidence: "passed-on-si-02-validation-boundary"
-  roadmapTransitionEvidence: "passed-on-si-02-validation-boundary"
-  validationSource: "Flow CI #2894, run 31403411226, passed pull request #124 exact head e57ace821fe24bda03ee2fdb202864351e60f3b4 and synthetic merge candidate e1a055daffc72da1988cd2a500dab038f3b14509 before merge commit a63eccbea49885dc1261a91109998e3aeebb1e2c."
+  flowAgentTooling: "passed-on-si-03-validation-boundary"
+  flowAgentStructure: "passed-on-si-03-validation-boundary"
+  flowAgentContextGeneration: "passed-on-si-03-validation-boundary"
+  cleanTest: "passed-on-si-03-validation-boundary"
+  conformance: "passed-on-si-03-validation-boundary"
+  executableReferenceEvidence: "passed-on-si-03-validation-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-si-03-validation-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-si-03-validation-boundary"
+  boundedDomainCorpusEvidence: "passed-on-si-03-validation-boundary"
+  roadmapTransitionEvidence: "passed-on-si-03-validation-boundary"
+  validationSource: "Flow CI #2896, run 31574835719, passed pull request #125 exact head b16ab48aa9a608647b8c16bfb2542034ff3aa34f and synthetic merge candidate 5bf6e07c0e2798772dbc7ede34c15c0bbe63be90 before merge commit 398c44d16ed484ab2e08f47036a1a093f8f5050e."
   notes:
-    - "Flow CI #2894 is the latest committed GitHub validation evidence and closes SI-02; active SI-03 validation remains local until its own external CI boundary exists."
+    - "Flow CI #2896 is the latest committed GitHub validation evidence and closes SI-03; active SI-04 validation remains local until its own external CI boundary exists."
     - "SI-01 changed AST and ExecutionPlan-family artifact contracts without changing package or public-standard versions."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
     - "A0.1 through A0.7 and A1.0 are completed; A0.8 does not exist."
