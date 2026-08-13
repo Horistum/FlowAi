@@ -2,11 +2,11 @@ version: "SI-05"
 name: "Operational Effect Model Re-evaluation"
 type: "semantic-integrity-correction"
 stream: semantic-integrity
-status: active
+status: complete
 objective: "Determine the minimum target-neutral effect semantics required for backup and restore recovery meaning, using operational evidence to decide whether the SemanticEffect type system must evolve."
 
 authorization:
-  status: active
+  status: completed
   source: "Semantic-integrity roadmap transition after independently validated and merged SI-04 completion."
   predecessor: "SI-04"
   strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#15-re-evaluate-the-effect-model-under-operational-evidence"
@@ -58,6 +58,15 @@ acceptanceEvidence:
   - "Semantic-equivalence behavior changes only where reviewed effect semantics require it."
   - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
 
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2913
+  runId: 31688348916
+  exactHead: "dc7ac98ef3c9d465470bde4f780c1207eb81a351"
+  mergeCandidate: "afcf9a42d257df4be514458947968e11a3b46529"
+completionMergeCommit: "495a51ac21d518d2c03d37fe84bea631ceca7975"
+
 localValidation:
   status: pending
-  rule: "SI-05 implementation is in progress. This work package remains active until the final implementation head receives independent Flow CI exact-head and synthetic merge-candidate validation and is merged; a later completion transition records that boundary."
+  rule: "No full local PASS is claimed for the final SI-05 implementation tree: the available offline sandbox reached Kotlin compilation without a compiler error but exceeded its execution window. SI-05 completion is established separately by the recorded external exact-head and synthetic merge-candidate completionBoundary and merged implementation commit."

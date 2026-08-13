@@ -1,6 +1,6 @@
 project: Flow Semantic Integrity
 stream: semantic-integrity
-roadmapVersion: 5
+roadmapVersion: 6
 status: active
 
 purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
@@ -13,11 +13,11 @@ rules:
   - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
 
 currentDecision:
-  completedItem: "SI-04"
-  completedItemName: "Explicit Canonical Execution-Plan Semantics"
-  nextItem: "SI-05"
-  nextItemName: "Operational Effect Model Re-evaluation"
-  decisionBasis: "SI-04 passed Flow CI #2903 on exact head bc6cccdd64343bc7573a3d6e401765e5e50572c7 and synthetic merge candidate 67ae12c036c6e1acf231bfb75ce76863e30bac48, then merged as e1d1998c643e6c859aaa7f2fb5989610b9641b72. The next ordered semantic-integrity outcome is project-direction section 1.5: re-evaluate the effect model under operational evidence."
+  completedItem: "SI-05"
+  completedItemName: "Operational Effect Model Re-evaluation"
+  nextItem: "SI-06"
+  nextItemName: "Eliminate Remaining Silent Authored-Value Coercion"
+  decisionBasis: "SI-05 passed Flow CI #2913 on exact head dc7ac98ef3c9d465470bde4f780c1207eb81a351 and synthetic merge candidate afcf9a42d257df4be514458947968e11a3b46529, then merged as 495a51ac21d518d2c03d37fe84bea631ceca7975. The next ordered semantic-integrity outcome is project-direction section 1.6: eliminate remaining silent authored-value coercion."
 
 historicalEvents:
   - id: "SI-01"
@@ -129,16 +129,40 @@ items:
   - version: "SI-05"
     name: "Operational Effect Model Re-evaluation"
     type: "semantic-integrity-correction"
-    status: next
+    status: completed
     purpose: "Use backup and restore operational evidence to determine the minimum target-neutral effect semantics needed for recovery meaning without speculative type-system expansion."
     dependsOn: "SI-04"
     workPackage: ".flow-agent/work-packages/SI-05-operational-effect-model-re-evaluation.yaml"
     strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#15-re-evaluate-the-effect-model-under-operational-evidence"
+    completionBoundary:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2913
+      runId: 31688348916
+      exactHead: "dc7ac98ef3c9d465470bde4f780c1207eb81a351"
+      mergeCandidate: "afcf9a42d257df4be514458947968e11a3b46529"
+    completionMergeCommit: "495a51ac21d518d2c03d37fe84bea631ceca7975"
     completionEvidence:
       - "BACKUP and RESTORE representability is audited across Intent, AST, ExecutionPlan, schema, semantic equivalence and conformance."
-      - "Recovery-point identity, source/target relationship, consistency boundary, retention/lifetime, recoverability and create-versus-replace semantics each receive an explicit typed ownership decision."
+      - "Recovery-point identity, source/target relationship, consistency boundary, retention/lifetime, recoverability and create-versus-replace semantics each have an explicit typed ownership decision."
       - "Semantically relevant authored recovery distinctions cannot collapse into the same canonical representation."
       - "Implementation metadata cannot alter canonical recovery effect meaning."
-      - "Effect domains or operations are added only when operational evidence forces the type system rather than to rename existing information loss."
-      - "Public contract-version impact is decided from the implemented semantic and serialized change."
+      - "Operational evidence forced a target-neutral STATE_RECOVERY domain and typed recovery facet without adding superficial BACKUP or RESTORE effect-operation labels."
+      - "Public contract impact was reviewed: AST advanced to 2.2 and ExecutionPlan to 2.3 while Intent, lowering evidence, package and public-standard versions remained unchanged."
+      - "Flow CI #2913 independently passed exact-head and synthetic merge-candidate compile, tests and standalone conformance."
+  - version: "SI-06"
+    name: "Eliminate Remaining Silent Authored-Value Coercion"
+    type: "semantic-integrity-correction"
+    status: next
+    purpose: "Reject explicitly authored malformed or unknown parser values instead of silently converting them into defaults or alternate semantic values."
+    dependsOn: "SI-05"
+    workPackage: ".flow-agent/work-packages/SI-06-eliminate-remaining-silent-authored-value-coercion.yaml"
+    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#16-eliminate-remaining-silent-authored-value-coercion"
+    completionEvidence:
+      - "A production parser/source-loader inventory identifies every evidence-confirmed present-value-to-default or present-value-to-alternate-value coercion in SI-06 scope."
+      - "parallel failFast and every other confirmed corrected boundary distinguish omission, explicit valid values and malformed authored values without silent coercion."
+      - "Defaults are applied only to truly omitted values; malformed booleans, numbers, enums or symbolic scalars fail with explicit diagnostics."
+      - "Systematic or property-style tests prove acceptance and rejection polarity for every corrected coercion boundary."
+      - "Valid existing parser behavior and target-neutral canonical semantics remain stable outside the reviewed corrections."
+      - "Public contract-version impact is decided from the actual accepted-input and serialized change."
       - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."

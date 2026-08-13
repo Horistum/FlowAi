@@ -1,0 +1,57 @@
+version: "SI-06"
+name: "Eliminate Remaining Silent Authored-Value Coercion"
+type: "semantic-integrity-correction"
+stream: semantic-integrity
+status: active
+objective: "Eliminate parser and source-loading paths where an explicitly authored malformed or unknown value is silently converted into a default or different semantic value; defaults remain valid only for genuinely omitted values."
+
+authorization:
+  status: active
+  source: "Semantic-integrity roadmap transition after independently validated and merged SI-05 completion."
+  predecessor: "SI-05"
+  strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#16-eliminate-remaining-silent-authored-value-coercion"
+
+invariant:
+  - "Every explicitly authored value is either preserved with its intended typed meaning or rejected with an explicit diagnostic; it is never silently replaced by a default or alternate value."
+  - "Parser defaults apply only when the corresponding authored value is absent."
+  - "Malformed booleans, numbers, enums and symbolic scalar values cannot become false, zero, empty text, a default enum member or another accepted value merely because conversion failed."
+  - "Diagnostics identify the rejected source location and the semantic field or parser boundary whenever that identity is available."
+  - "Valid previously accepted authored values and intentional omission defaults remain behaviorally stable unless independent evidence proves a separate defect."
+
+scope:
+  - "Inventory production parser and source-loading boundaries that assign defaults, use nullable casts, equality-to-one-valid-literal checks or fallback branches after an authored token or value is already present."
+  - "Begin with the confirmed FlowParser parallel failFast defect where any identifier other than true is currently coerced to false instead of being rejected."
+  - "Fix only evidence-confirmed instances of the same authored-value coercion class across the .flow parser and canonical source-loading boundaries."
+  - "Preserve the already fail-closed retry policy behavior and use it as a quality reference for path-aware diagnostics."
+  - "Add systematic or property-style negative tests that separate omission from explicit valid values and malformed authored values, rather than relying only on hand-picked happy paths."
+  - "Audit each corrected boundary for downstream semantic and serialization impact before deciding artifact-version consequences."
+
+forbiddenScope:
+  - "Do not implement Track 1.7 public-schema validity alignment; schema/loader agreement belongs to SI-07 unless a narrow test fixture must be adjusted to reflect an already-correct parser contract."
+  - "Do not implement Track 1.8 typed policy or state-lifetime redesign."
+  - "Do not broaden accepted syntax by normalizing unknown authored values into known ones."
+  - "Do not change omission defaults merely to make malformed-value tests pass."
+  - "Do not rewrite the parser architecture wholesale when a smaller typed fail-closed boundary owns the invariant."
+  - "Do not introduce target, provider or adapter-specific interpretation into Core parsing."
+  - "Do not rewrite historical SI-01 through SI-05, C1.0, AR0.1 or Core closure evidence."
+
+versionDecision:
+  publicStandard: "evaluate-during-implementation"
+  artifactContracts:
+    intent: "evaluate-if-accepted-public-input-semantics-change"
+    ast: unchanged-unless-serialized-shape-changes
+    executionPlan: unchanged-unless-serialized-shape-changes
+    executionPlanLoweringEvidence: unchanged
+  reason: "Rejecting malformed values that were never intentionally valid should normally tighten validation without changing serialized contracts, but SI-06 records the final version decision only after the coercion inventory proves the actual accepted-input impact."
+
+acceptanceEvidence:
+  - "parallel failFast omission retains its documented default, explicit true remains true, explicit false remains false, and malformed identifiers fail with a source-located parse diagnostic."
+  - "The audited production boundaries contain no evidence-confirmed path where a present malformed authored value is converted into a default or alternate semantic value."
+  - "Systematic negative tests exercise malformed boolean, scalar or enum inputs for every corrected coercion boundary and prove both acceptance and rejection polarity."
+  - "Existing valid parser behavior, retry fail-closed behavior and target-neutral canonical meaning remain stable outside the reviewed corrections."
+  - "Any public contract-version decision is documented from actual accepted-input or serialized impact rather than assumed from roadmap scope."
+  - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
+
+localValidation:
+  status: pending
+  rule: "SI-06 is authorized but not implemented by the SI-05 completion transition. Its implementation requires separate local evidence where available and a later independent Flow CI exact-head and synthetic merge-candidate boundary."
