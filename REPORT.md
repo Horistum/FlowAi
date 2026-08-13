@@ -11,18 +11,16 @@ Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`complete
 Completed adapter roadmap item: `A1.0 GitHub Actions Artifact and Workspace Continuity` (`completed`)
 Completed conformance roadmap item: `C1.0 Operational Domain Adequacy` (`completed`)
 Completed architecture roadmap item: `AR0.1 Authority Responsibility Consolidation` (`completed`)
-Completed semantic-integrity item: `SI-03 Canonical Technology Neutrality` (`completed`, Flow CI #2896)
-Active semantic-integrity item: `SI-04 Explicit Canonical Execution-Plan Semantics` (`next`, active work package)
+Completed semantic-integrity item: `SI-04 Explicit Canonical Execution-Plan Semantics` (`completed`, Flow CI #2903)
+Active semantic-integrity item: `SI-05 Operational Effect Model Re-evaluation` (`next`, active work package)
 
 ## Active semantic-integrity correction
 
-SI-04 owns project-direction section 1.4 and is now an implementation candidate rather than an authorization-only placeholder. `CanonicalExecutionPlanSemanticsAuthority` derives public task-node classification from the retained canonical `StandardCapability`; module names, action strings, target identity, adapter-required capabilities and effect-resource text are no longer classification inputs.
+SI-05 owns project-direction section 1.5: re-evaluate the effect model under operational evidence. The work package deliberately begins with representability and ownership analysis rather than a speculative enum expansion. BACKUP and RESTORE must falsify whether the current implementation-independent effect model can preserve recovery-point identity, source/target state relationships, consistency boundaries, retention/lifetime, recoverability and state replacement versus state creation.
 
-The closed public task specializations are `ROLLBACK -> rollback`, `NOTIFY -> notification`, `PACKAGE -> artifact` and `SECRET_ROTATE -> secret`; other, absent or unknown capabilities remain `task`. Structural planner nodes keep their typed structural kinds, while legacy data/control nodes use closed fail-fast mappings instead of arbitrary `lowercase()` publication. Conformance independently re-derives the expected task kind from canonical capability and rejects drift.
+The current activation does not implement a new effect model. It requires each recovery property to be classified as universal effect semantics, another typed canonical contract, or intentionally unsupported authoring surface. Semantically relevant authored recovery distinctions must not collapse, and implementation labels or adapter inventory remain non-authoritative.
 
-This changes the interpretation of the public `CanonicalPlanNode.kind` value domain, so ExecutionPlan advances from `2.1` to `2.2` even though the JSON object shape is unchanged. The 2.2 schema exposes exactly the closed lowercase `CanonicalPlanNodeKind` wire vocabulary and no longer accepts historical internal-name aliases. Intent remains `2.0`, AST remains `2.1`, and ExecutionPlan lowering evidence remains `2.1`. The migration is documented in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`.
-
-SI-03 remains completed evidence through Flow CI #2896 and merge `398c44d16ed484ab2e08f47036a1a093f8f5050e`. SI-04 local implementation evidence does not advance `lastKnownValidation` or complete the roadmap item; completion still requires its own external exact-head and synthetic merge-candidate boundary after publication.
+SI-04 is now completed evidence. Flow CI #2903 / run `31676804951` passed exact head `bc6cccdd64343bc7573a3d6e401765e5e50572c7` and synthetic merge candidate `67ae12c036c6e1acf231bfb75ce76863e30bac48` before PR #127 merged as `e1d1998c643e6c859aaa7f2fb5989610b9641b72`. ExecutionPlan remains `2.2`; SI-05 will make any further contract-version decision only from implemented semantic and serialized impact.
 
 ## Core boundary
 

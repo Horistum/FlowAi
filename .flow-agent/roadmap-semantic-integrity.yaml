@@ -1,6 +1,6 @@
 project: Flow Semantic Integrity
 stream: semantic-integrity
-roadmapVersion: 4
+roadmapVersion: 5
 status: active
 
 purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
@@ -13,11 +13,11 @@ rules:
   - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
 
 currentDecision:
-  completedItem: "SI-03"
-  completedItemName: "Canonical Technology Neutrality"
-  nextItem: "SI-04"
-  nextItemName: "Explicit Canonical Execution-Plan Semantics"
-  decisionBasis: "SI-03 passed Flow CI #2896 on exact head b16ab48aa9a608647b8c16bfb2542034ff3aa34f and synthetic merge candidate 5bf6e07c0e2798772dbc7ede34c15c0bbe63be90, then merged as 398c44d16ed484ab2e08f47036a1a093f8f5050e. The next ordered semantic-integrity outcome is project-direction section 1.4: make canonical execution-plan semantics explicit."
+  completedItem: "SI-04"
+  completedItemName: "Explicit Canonical Execution-Plan Semantics"
+  nextItem: "SI-05"
+  nextItemName: "Operational Effect Model Re-evaluation"
+  decisionBasis: "SI-04 passed Flow CI #2903 on exact head bc6cccdd64343bc7573a3d6e401765e5e50572c7 and synthetic merge candidate 67ae12c036c6e1acf231bfb75ce76863e30bac48, then merged as e1d1998c643e6c859aaa7f2fb5989610b9641b72. The next ordered semantic-integrity outcome is project-direction section 1.5: re-evaluate the effect model under operational evidence."
 
 historicalEvents:
   - id: "SI-01"
@@ -106,15 +106,39 @@ items:
   - version: "SI-04"
     name: "Explicit Canonical Execution-Plan Semantics"
     type: "semantic-integrity-correction"
-    status: next
+    status: completed
     purpose: "Derive every public canonical execution-plan node kind from explicit typed canonical meaning rather than implementation module/action/resource naming heuristics."
     dependsOn: "SI-03"
     workPackage: ".flow-agent/work-packages/SI-04-explicit-canonical-execution-plan-semantics.yaml"
     strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#14-make-canonical-execution-plan-semantics-explicit"
+    completionBoundary:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2903
+      runId: 31676804951
+      exactHead: "bc6cccdd64343bc7573a3d6e401765e5e50572c7"
+      mergeCandidate: "67ae12c036c6e1acf231bfb75ce76863e30bac48"
+    completionMergeCommit: "e1d1998c643e6c859aaa7f2fb5989610b9641b72"
     completionEvidence:
       - "Task node kind is derived from explicit typed canonical semantics, never module name, action string or resource-name substring matching."
       - "Implementation metadata remains available as adapter/binding evidence without becoming the public target-neutral node classification authority."
       - "Equivalent canonical meaning produces identical node kinds across different implementation labels."
-      - "Node-kind consumers and serialized contract-version impact are audited before completion."
+      - "Node-kind consumers and serialized contract-version impact were audited and ExecutionPlan advanced to 2.2."
       - "Negative regressions prove module/action/resource renaming cannot silently change public node kind."
+      - "Flow CI #2903 independently passed exact-head and synthetic merge-candidate compile, test and standalone conformance."
+  - version: "SI-05"
+    name: "Operational Effect Model Re-evaluation"
+    type: "semantic-integrity-correction"
+    status: next
+    purpose: "Use backup and restore operational evidence to determine the minimum target-neutral effect semantics needed for recovery meaning without speculative type-system expansion."
+    dependsOn: "SI-04"
+    workPackage: ".flow-agent/work-packages/SI-05-operational-effect-model-re-evaluation.yaml"
+    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#15-re-evaluate-the-effect-model-under-operational-evidence"
+    completionEvidence:
+      - "BACKUP and RESTORE representability is audited across Intent, AST, ExecutionPlan, schema, semantic equivalence and conformance."
+      - "Recovery-point identity, source/target relationship, consistency boundary, retention/lifetime, recoverability and create-versus-replace semantics each receive an explicit typed ownership decision."
+      - "Semantically relevant authored recovery distinctions cannot collapse into the same canonical representation."
+      - "Implementation metadata cannot alter canonical recovery effect meaning."
+      - "Effect domains or operations are added only when operational evidence forces the type system rather than to rename existing information loss."
+      - "Public contract-version impact is decided from the implemented semantic and serialized change."
       - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
