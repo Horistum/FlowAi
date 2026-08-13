@@ -7,7 +7,6 @@ import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
-import org.flowlang.planner.CanonicalExecutionPlanSemanticsAuthority
 import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.standard.FlowStandardVersions
@@ -119,9 +118,9 @@ internal class ScenarioAndPlanChecks(
         val tasksById = artifacts.plan.tasks.associateBy { it.id }
         nodes.forEach { node ->
             val task = tasksById[node.id] ?: return@forEach
-            val expectedKind = CanonicalExecutionPlanSemanticsAuthority.kindFor(task).wireValue
+            val expectedKind = CanonicalExecutionPlanKindConformanceOracle.expectedTaskKind(task.semanticCapability)
             require(node.kind == expectedKind) {
-                "Canonical task '${node.id}' kind '${node.kind}' must equal typed semantic classification '$expectedKind'."
+                "Canonical task '${node.id}' kind '${node.kind}' must equal independent semantic conformance classification '$expectedKind'."
             }
         }
         require(canonical.requiredCapabilities.isNotEmpty()) { "Canonical plan must carry required capabilities." }

@@ -1,10 +1,11 @@
 package org.flowlang.tests
 
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import java.io.File
 import kotlin.test.assertFailsWith
 import org.flowlang.cli.Json
+import org.flowlang.conformance.CanonicalExecutionPlanKindConformanceOracle
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
 import org.flowlang.effects.SemanticEffect
@@ -31,47 +32,56 @@ class CanonicalExecutionPlanSemanticsTests {
 
     @Test
     fun semanticCapabilityOwnsTaskKind() {
-        val cases = mapOf(
-            StandardCapability.ROLLBACK to CanonicalPlanNodeKind.ROLLBACK,
-            StandardCapability.NOTIFY to CanonicalPlanNodeKind.NOTIFICATION,
-            StandardCapability.PACKAGE to CanonicalPlanNodeKind.ARTIFACT,
-            StandardCapability.SECRET_ROTATE to CanonicalPlanNodeKind.SECRET,
-            StandardCapability.BUILD to CanonicalPlanNodeKind.TASK,
-            StandardCapability.DEPLOY to CanonicalPlanNodeKind.TASK
-        )
-
-        cases.forEach { (capability, expected) ->
-            assertEquals(expected, CanonicalExecutionPlanSemanticsAuthority.kindForSemanticCapability(capability.name))
+        StandardCapability.entries.forEach { capability ->
+            val expected = CanonicalExecutionPlanKindConformanceOracle.expectedTaskKind(capability.name)
+            val actual = CanonicalExecutionPlanSemanticsAuthority.kindForSemanticCapability(capability.name).wireValue
+            assertEquals(expected, actual, "Unexpected canonical task kind for ${capability.name}")
         }
     }
 
     @Test
-    fun implementationLabelsCannotChangeCanonicalTaskKind() {
-        val semanticCapability = StandardCapability.NOTIFY.name
-        val ordinary = task(
-            id = "ordinary-labels",
-            semanticCapability = semanticCapability,
-            module = "standard",
-            action = "execute",
-            target = "local",
-            requiredCapabilities = emptyList(),
-            effectResource = "communication.message"
-        )
-        val misleading = task(
-            id = "misleading-labels",
-            semanticCapability = semanticCapability,
-            module = "artifact-rollback-secret-provider",
-            action = "rollback",
-            target = "docker",
-            requiredCapabilities = listOf("secret.inject"),
-            effectResource = "artifact.secret.rollback"
+    fun implementationLabelsCannotChangeAnyCanonicalTaskClassification() {
+        val cases = linkedMapOf(
+            StandardCapability.ROLLBACK to "rollback",
+            StandardCapability.NOTIFY to "notification",
+            StandardCapability.PACKAGE to "artifact",
+            StandardCapability.SECRET_ROTATE to "secret",
+            StandardCapability.BUILD to "task"
         )
 
-        val kinds = ExecutionPlanCanonicalizer.canonicalize(
-            ExecutionPlan(flowName = "label-invariance", nodes = listOf(ordinary, misleading))
-        ).nodes.map { it.kind }
+        cases.forEach { (semanticCapability, expectedKind) ->
+            val baseline = task(
+                id = "baseline-${semanticCapability.name.lowercase()}",
+                semanticCapability = semanticCapability.name,
+                module = "standard",
+                action = "execute",
+                target = "local",
+                requiredCapabilities = emptyList(),
+                effectResource = "ordinary.resource"
+            )
+            val misleading = task(
+                id = "misleading-${semanticCapability.name.lowercase()}",
+                semanticCapability = semanticCapability.name,
+                module = "notify-artifact-secret-provider",
+                action = "rollback",
+                target = "artifact-store",
+                requiredCapabilities = listOf("secret.inject", "artifact.publish", "rollback.execute"),
+                effectResource = "artifact.secret.rollback.notification"
+            )
 
-        assertEquals(listOf("notification", "notification"), kinds)
+            val kinds = ExecutionPlanCanonicalizer.canonicalize(
+                ExecutionPlan(
+                    flowName = "label-invariance-${semanticCapability.name.lowercase()}",
+                    nodes = listOf(baseline, misleading)
+                )
+            ).nodes.map { it.kind }
+
+            assertEquals(
+                listOf(expectedKind, expectedKind),
+                kinds,
+                "Implementation metadata changed canonical kind for ${semanticCapability.name}"
+            )
+        }
     }
 
     @Test
@@ -94,9 +104,17 @@ class CanonicalExecutionPlanSemanticsTests {
     }
 
     @Test
-    fun absentOrUnknownSemanticCapabilityRemainsGenericTask() {
-        assertEquals(CanonicalPlanNodeKind.TASK, CanonicalExecutionPlanSemanticsAuthority.kindForSemanticCapability(null))
-        assertEquals(CanonicalPlanNodeKind.TASK, CanonicalExecutionPlanSemanticsAuthority.kindForSemanticCapability("NOT_A_STANDARD_CAPABILITY"))
+    fun absentOrUnknownSemanticCapabilityRemainsGenericTaskInBothIndependentBoundaries() {
+        listOf(null, "NOT_A_STANDARD_CAPABILITY").forEach { capability ->
+            assertEquals(
+                "task",
+                CanonicalExecutionPlanKindConformanceOracle.expectedTaskKind(capability)
+            )
+            assertEquals(
+                CanonicalPlanNodeKind.TASK,
+                CanonicalExecutionPlanSemanticsAuthority.kindForSemanticCapability(capability)
+            )
+        }
     }
 
     @Test
