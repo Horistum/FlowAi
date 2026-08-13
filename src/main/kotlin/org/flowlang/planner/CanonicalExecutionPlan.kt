@@ -110,7 +110,7 @@ object ExecutionPlanCanonicalizer {
     private fun canonicalizeNode(node: PlanNode): CanonicalPlanNode = when (node) {
         is TaskNode -> CanonicalPlanNode(
             id = node.id,
-            kind = taskKind(node),
+            kind = CanonicalExecutionPlanSemanticsAuthority.kindFor(node).wireValue,
             module = node.module,
             action = node.action,
             target = node.target,
@@ -132,7 +132,7 @@ object ExecutionPlanCanonicalizer {
         )
         is ApprovalNode -> CanonicalPlanNode(
             id = node.id,
-            kind = "approval",
+            kind = CanonicalPlanNodeKind.APPROVAL.wireValue,
             resultName = node.resultName,
             sourceId = node.sourceId,
             sourceDescription = node.sourceDescription,
@@ -144,7 +144,7 @@ object ExecutionPlanCanonicalizer {
         )
         is ConditionNode -> CanonicalPlanNode(
             id = node.id,
-            kind = "condition",
+            kind = CanonicalPlanNodeKind.CONDITION.wireValue,
             condition = node.condition,
             then = node.then.map { canonicalizeNode(it) },
             otherwise = node.otherwise.map { canonicalizeNode(it) },
@@ -152,7 +152,7 @@ object ExecutionPlanCanonicalizer {
         )
         is LoopNode -> CanonicalPlanNode(
             id = node.id,
-            kind = "loop",
+            kind = CanonicalPlanNodeKind.LOOP.wireValue,
             item = node.item,
             source = node.source,
             body = node.body.map { canonicalizeNode(it) },
@@ -160,14 +160,14 @@ object ExecutionPlanCanonicalizer {
         )
         is ParallelGroupNode -> CanonicalPlanNode(
             id = node.id,
-            kind = "parallel",
+            kind = CanonicalPlanNodeKind.PARALLEL.wireValue,
             failFast = node.failFast,
             branches = node.branches.map { CanonicalPlanBranch(it.name, it.steps.map { step -> canonicalizeNode(step) }) },
             requiredCapabilities = listOf("parallel.dag")
         )
         is MatchPlanNode -> CanonicalPlanNode(
             id = node.id,
-            kind = "match",
+            kind = CanonicalPlanNodeKind.MATCH.wireValue,
             source = node.source,
             cases = node.cases.map { CanonicalMatchCase(it.condition, it.steps.map { step -> canonicalizeNode(step) }) },
             errorCase = node.errorCase.map { canonicalizeNode(it) },
@@ -176,7 +176,7 @@ object ExecutionPlanCanonicalizer {
         )
         is RetryGroupNode -> CanonicalPlanNode(
             id = node.id,
-            kind = "retry",
+            kind = CanonicalPlanNodeKind.RETRY.wireValue,
             max = node.max,
             delay = node.delay,
             backoff = node.backoff,
@@ -185,14 +185,14 @@ object ExecutionPlanCanonicalizer {
         )
         is TryPlanNode -> CanonicalPlanNode(
             id = node.id,
-            kind = "try",
+            kind = CanonicalPlanNodeKind.TRY.wireValue,
             body = node.body.map { canonicalizeNode(it) },
             errorHandler = node.errorHandler.map { canonicalizeNode(it) },
             requiredCapabilities = listOf("errorHandlers.finally")
         )
         is DataOpNode -> CanonicalPlanNode(
             id = node.id,
-            kind = node.kind.lowercase(),
+            kind = dataOperationKind(node),
             target = node.target,
             detail = node.detail,
             semanticCapability = node.semanticCapability,
@@ -201,17 +201,24 @@ object ExecutionPlanCanonicalizer {
         )
         is ControlNode -> CanonicalPlanNode(
             id = node.id,
-            kind = node.kind.lowercase(),
+            kind = controlKind(node),
             detail = node.detail
         )
     }
 
-    private fun taskKind(node: TaskNode): String = when {
-        node.module == "standard" && node.action == "rollback" -> "rollback"
-        node.module == "notify" -> "notification"
-        node.requiredCapabilities.any { it.startsWith("secret.") } -> "secret"
-        node.effectModel.any { it.resource.contains("artifact", ignoreCase = true) } -> "artifact"
-        else -> "task"
+    private fun dataOperationKind(node: DataOpNode): String = when (node.kind) {
+        "Transform" -> CanonicalPlanNodeKind.TRANSFORM.wireValue
+        "Validate" -> CanonicalPlanNodeKind.VALIDATE.wireValue
+        "Aggregate" -> CanonicalPlanNodeKind.AGGREGATE.wireValue
+        else -> error("Unsupported canonical data-operation node kind '${node.kind}'.")
+    }
+
+    private fun controlKind(node: ControlNode): String = when (node.kind) {
+        "Fail" -> CanonicalPlanNodeKind.FAIL.wireValue
+        "Skip" -> CanonicalPlanNodeKind.SKIP.wireValue
+        "Set" -> CanonicalPlanNodeKind.SET.wireValue
+        "Expect" -> CanonicalPlanNodeKind.EXPECT.wireValue
+        else -> error("Unsupported canonical control node kind '${node.kind}'.")
     }
 
     private fun mapOfNotNull(vararg pairs: Pair<String, String?>): Map<String, String> =

@@ -7,6 +7,7 @@ import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.planner.CanonicalExecutionPlanSemanticsAuthority
 import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.standard.FlowStandardVersions
@@ -115,6 +116,20 @@ internal class ScenarioAndPlanChecks(
         require(nodes.isNotEmpty()) { "Canonical plan must contain nodes." }
         require(nodes.all { it.kind == it.kind.lowercase() }) { "Canonical node kinds must be lowercase: ${nodes.map { it.kind }.distinct().joinToString()}" }
         require(nodes.any { it.kind == "approval" }) { "Canonical plan must expose approval nodes as public lowercase kind." }
+        val tasksById = artifacts.plan.tasks.associateBy { it.id }
+        nodes.forEach { node ->
+            val task = tasksById[node.id] ?: return@forEach
+            val expectedKind = CanonicalExecutionPlanKindConformanceOracle.expectedTaskKind(task.semanticCapability)
+            val authoritativeKind = CanonicalExecutionPlanSemanticsAuthority
+                .kindForSemanticCapability(task.semanticCapability)
+                .wireValue
+            require(authoritativeKind == expectedKind) {
+                "Canonical task '${node.id}' production semantic classification '$authoritativeKind' must equal independent conformance classification '$expectedKind'."
+            }
+            require(node.kind == expectedKind) {
+                "Canonical task '${node.id}' kind '${node.kind}' must equal independent semantic conformance classification '$expectedKind'."
+            }
+        }
         require(canonical.requiredCapabilities.isNotEmpty()) { "Canonical plan must carry required capabilities." }
     }
 

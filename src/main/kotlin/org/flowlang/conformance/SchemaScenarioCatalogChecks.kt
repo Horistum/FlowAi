@@ -41,7 +41,6 @@ internal class SchemaScenarioCatalogChecks(
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(IntentCapabilityValidator(registry).validate(intent)), Json.mapper.readTree(File(schemaDir, "intent-capability-validation-report.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(core.ast), Json.mapper.readTree(File(schemaDir, "ast.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(core.validation), Json.mapper.readTree(File(schemaDir, "validation-report.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(core.plan), Json.mapper.readTree(File(schemaDir, "execution-plan.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ExecutionPlanCanonicalizer.canonicalize(core.plan)), Json.mapper.readTree(File(schemaDir, "execution-plan.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(CompatibilityAnalyzer(targets).negotiate(core.plan)), Json.mapper.readTree(File(schemaDir, "capability-negotiation-report.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(TargetSelectionAnalyzer(targets).analyze(core.plan)), Json.mapper.readTree(File(schemaDir, "target-selection-report.schema.json")))

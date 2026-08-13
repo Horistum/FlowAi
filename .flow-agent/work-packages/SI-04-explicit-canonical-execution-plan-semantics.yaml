@@ -34,10 +34,28 @@ forbiddenScope:
   - "Do not declare serialized artifact versions unchanged before the semantic contract impact has been analyzed."
 
 versionDecision:
-  publicStandard: "evaluate-during-implementation"
-  artifactContracts: "evaluate-execution-plan-contract"
-  reason: "SI-04 targets public CanonicalPlanNode.kind semantics. A stable serialized shape does not by itself prove semantic version compatibility, so the version decision must follow the implementation and migration analysis."
+  publicStandard: unchanged
+  artifactContracts:
+    executionPlan: "2.1 -> 2.2"
+    executionPlanLoweringEvidence: unchanged
+  reason: "SI-04 changes the interpretation of the public CanonicalPlanNode.kind value domain without changing the JSON object shape. ExecutionPlan therefore advances to 2.2; authored lowering evidence remains 2.1 because its proof contract is unchanged."
 
 localValidation:
-  status: pending
-  rule: "SI-04 is authorized but not implemented by the SI-03 completion transition. Its future implementation requires its own local validation and later external Flow CI boundary."
+  status: passed
+  validatedAt: "2026-08-13"
+  authorizedBaseHead: "ad90c7140f30ae785557afddc9506d6e38c15e33"
+  commands:
+    - "python3 -m unittest discover -s tools/tests -p 'test_*.py'"
+    - "python3 tools/flow_agent_validate.py"
+    - "python3 tools/flow_agent_runner.py"
+    - "GRADLE_USER_HOME=/mnt/data/si04_gradle/.gradle-user-home ./gradlew clean compileKotlin --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=/mnt/data/si04_gradle/.gradle-user-home ./gradlew test --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=/mnt/data/si04_gradle/.gradle-user-home ./gradlew run --args='conformance' --offline --no-daemon --console=plain --max-workers=5"
+  results:
+    toolingTests: "31/31 passed"
+    flowAgentStructure: passed
+    flowAgentContextGeneration: passed
+    productionCompile: "BUILD SUCCESSFUL with zero Kotlin compiler warnings"
+    completeTests: "1013/1013 passed; 0 failures; 0 errors; 0 skipped"
+    standaloneConformance: passed
+  rule: "These results are local implementation evidence only. SI-04 remains active until its independently validated implementation boundary is merged and a later completion transition records that evidence."

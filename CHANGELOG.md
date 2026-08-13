@@ -4,6 +4,28 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### SI-04 Explicit Canonical Execution-Plan Semantics
+
+#### Corrected
+
+- Replaced `ExecutionPlanCanonicalizer` module/action/resource-string task classification with `CanonicalExecutionPlanSemanticsAuthority`, which derives public task-node kind only from canonical `StandardCapability`.
+- Added the closed `CanonicalPlanNodeKind` wire vocabulary and fail-fast mappings for legacy data/control planner kinds instead of publishing arbitrary lowercased internal strings.
+- Added invariance regressions proving module name, action text, target identity, adapter-required capabilities and effect-resource vocabulary cannot promote or change an unrelated canonical task kind.
+- Added conformance verification that independently re-derives each task kind from canonical capability and rejects a mismatched public plan.
+- Corrected public-schema validation so the ExecutionPlan schema is applied to the canonical public plan rather than the internal planner representation.
+- Regenerated committed reference snapshots through the production generator; canonical `NOTIFY` now publishes `notification` independently of its implementation binding label.
+
+#### Contract migration
+
+- Advanced ExecutionPlan from `2.1` to `2.2` because SI-04 changes the public interpretation of `CanonicalPlanNode.kind` even though the JSON object shape is unchanged.
+- Kept Intent `2.0`, AST `2.1`, ExecutionPlan lowering evidence `2.1`, package `0.9.5` and public standard `0.8.0` unchanged because their contracts are not modified by SI-04.
+- Tightened the ExecutionPlan 2.2 schema `kind` enum to exactly the closed lowercase `CanonicalPlanNodeKind` vocabulary and documented consumer migration in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`.
+
+#### Validation
+
+- Local candidate validation covers Flow Agent tooling, schema/type parity, negative implementation-label invariance, authority-catalog integrity and the complete 1013-test suite.
+- SI-04 remains active until the published implementation obtains its own external exact-head and synthetic merge-candidate Flow CI boundary; committed `lastKnownValidation` continues to describe completed SI-03.
+
 ### SI-03 Canonical Technology Neutrality
 
 #### Corrected

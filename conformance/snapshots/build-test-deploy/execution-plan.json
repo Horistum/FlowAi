@@ -1,6 +1,6 @@
 {
   "flowName" : "build-test-deploy",
-  "planVersion" : "2.1",
+  "planVersion" : "2.2",
   "inputs" : [ {
     "name" : "environment",
     "type" : "option",
@@ -1444,7 +1444,7 @@
       "errorHandler" : [ ]
     }, {
       "id" : "standard_execute_4",
-      "kind" : "task",
+      "kind" : "notification",
       "module" : "standard",
       "action" : "execute",
       "target" : "standard",
