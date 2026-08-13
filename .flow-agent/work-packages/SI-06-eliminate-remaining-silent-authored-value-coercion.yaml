@@ -2,11 +2,11 @@ version: "SI-06"
 name: "Eliminate Remaining Silent Authored-Value Coercion"
 type: "semantic-integrity-correction"
 stream: semantic-integrity
-status: active
+status: complete
 objective: "Eliminate parser and source-loading paths where an explicitly authored malformed or unknown value is silently converted into a default or different semantic value; defaults remain valid only for genuinely omitted values."
 
 authorization:
-  status: active
+  status: completed
   source: "Semantic-integrity roadmap transition after independently validated and merged SI-05 completion."
   predecessor: "SI-05"
   strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#16-eliminate-remaining-silent-authored-value-coercion"
@@ -68,6 +68,15 @@ acceptanceEvidence:
   - "Any public contract-version decision is documented from actual accepted-input or serialized impact rather than assumed from roadmap scope."
   - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
 
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2919
+  runId: 31697607328
+  exactHead: "0f3de13811c05e5b8a8ba4ef8b1d43ee1fe3422b"
+  mergeCandidate: "d4b670573269bcba8685bbd89552b77b752c6688"
+completionMergeCommit: "526afbff56e32b5ae3fb9755716152bd74a07030"
+
 localValidation:
   status: pending
   evidence:
@@ -75,4 +84,4 @@ localValidation:
     - "A standalone Kotlin harness compiled the modified production FlowYaml.kt against the cached Jackson 2.17.2 runtime and proved omission defaults remain stable while integer/boolean-to-text, integer-to-boolean, quoted-text-to-boolean and float-to-integer coercions fail."
     - "The offline Gradle production compile reached :compileKotlin without reporting a compiler error but exceeded the available execution window, so no full compile PASS is claimed."
     - "The offline Gradle test attempt could not resolve kotlin-test/JUnit artifacts absent from the supplied cache and therefore did not start test compilation; this is an environment limitation, not a test result."
-  rule: "The status remains pending because the lifecycle contract reserves passed for complete local validation; partial attempted evidence is retained above without impersonating a local PASS. SI-06 remains active until the final implementation head receives independent Flow CI exact-head and synthetic merge-candidate validation and is merged; a later completion transition records that boundary."
+  rule: "No full local PASS is claimed for the final SI-06 implementation tree. SI-06 completion is established separately by the recorded external exact-head and synthetic merge-candidate completionBoundary, the merged implementation commit, and successful post-merge main Flow CI #2920."
