@@ -1,0 +1,42 @@
+version: "SI-07"
+name: "Align Public Schemas with Production Acceptance"
+type: "semantic-integrity-correction"
+stream: semantic-integrity
+status: active
+objective: "Classify every published schema as syntactic-only or validity-authoritative and remove false interoperability promises where schema acceptance and production acceptance disagree."
+
+authorization:
+  status: active
+  source: "Semantic-integrity roadmap transition after independently validated and merged SI-06 completion."
+  predecessor: "SI-06"
+  strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#17-align-public-schemas-with-production-acceptance"
+
+invariant:
+  - "Every published schema has an explicit authority classification."
+  - "Validity-authoritative schema acceptance agrees with the corresponding production loader and validator."
+  - "Alignment is proved in both acceptance directions with positive and negative evidence."
+
+scope:
+  - "Inventory published schemas and map each to its production loader, validator and typed contract owner."
+  - "Begin with the confirmed TargetRegistry 3.1 mismatch deferred by SI-06, including expressionProfiles."
+  - "Add bidirectional differential tests for validity-authoritative schemas."
+  - "Correct the owning schema, loader or documentation without weakening strict production validation."
+  - "Decide schema and artifact version consequences from actual public-contract impact."
+
+forbiddenScope:
+  - "Do not implement Track 1.8 typed policy or state-lifetime redesign."
+  - "Do not weaken SI-06 strict loader behavior merely to recover schema agreement."
+  - "Do not call a schema syntactic-only merely to avoid repairing a documented validity contradiction."
+  - "Do not rewrite historical SI-01 through SI-06, C1.0, AR0.1 or Core closure evidence."
+
+acceptanceEvidence:
+  - "A repository-wide schema ownership matrix records authority and production ownership."
+  - "Validity-authoritative schemas have bidirectional schema-versus-production acceptance tests."
+  - "The known TargetRegistry mismatch is resolved without reintroducing coercion or unknown-field dropping."
+  - "Syntactic-only schemas are explicitly documented and are not used as proof of production validity."
+  - "Version and migration decisions follow actual public contract changes."
+  - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
+
+localValidation:
+  status: pending
+  rule: "This transition only activates SI-07. A later dedicated implementation PR must establish SI-07 implementation evidence."
