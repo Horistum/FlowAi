@@ -11,16 +11,18 @@ Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`complete
 Completed adapter roadmap item: `A1.0 GitHub Actions Artifact and Workspace Continuity` (`completed`)
 Completed conformance roadmap item: `C1.0 Operational Domain Adequacy` (`completed`)
 Completed architecture roadmap item: `AR0.1 Authority Responsibility Consolidation` (`completed`)
-Completed semantic-integrity item: `SI-04 Explicit Canonical Execution-Plan Semantics` (`completed`, Flow CI #2903)
-Active semantic-integrity item: `SI-05 Operational Effect Model Re-evaluation` (`next`, active work package)
+Completed semantic-integrity item: `SI-05 Operational Effect Model Re-evaluation` (`completed`, Flow CI #2913)
+Active semantic-integrity item: `SI-06 Eliminate Remaining Silent Authored-Value Coercion` (`next`, active work package)
 
 ## Active semantic-integrity correction
 
-SI-05 owns project-direction section 1.5: re-evaluate the effect model under operational evidence. The work package deliberately begins with representability and ownership analysis rather than a speculative enum expansion. BACKUP and RESTORE must falsify whether the current implementation-independent effect model can preserve recovery-point identity, source/target state relationships, consistency boundaries, retention/lifetime, recoverability and state replacement versus state creation.
+SI-06 owns project-direction section 1.6: parser defaults apply only when the author omitted a value. Explicit malformed or unknown authored values must be rejected with source-aware diagnostics rather than silently becoming a default or a different semantic value.
 
-The current activation does not implement a new effect model. It requires each recovery property to be classified as universal effect semantics, another typed canonical contract, or intentionally unsupported authoring surface. Semantically relevant authored recovery distinctions must not collapse, and implementation labels or adapter inventory remain non-authoritative.
+A concrete production defect already establishes the correction boundary: `FlowParser.parseParallel` defaults omitted `failFast` to `true`, but for an explicitly present identifier currently computes `failFast = text == "true"`. Any non-`true` identifier can therefore become `false` instead of failing. SI-06 begins with that falsification and expands only to evidence-confirmed instances of the same authored-value coercion class.
 
-SI-04 is now completed evidence. Flow CI #2903 / run `31676804951` passed exact head `bc6cccdd64343bc7573a3d6e401765e5e50572c7` and synthetic merge candidate `67ae12c036c6e1acf231bfb75ce76863e30bac48` before PR #127 merged as `e1d1998c643e6c859aaa7f2fb5989610b9641b72`. ExecutionPlan remains `2.2`; SI-05 will make any further contract-version decision only from implemented semantic and serialized impact.
+The work package requires systematic or property-style parser polarity tests separating omission, explicit valid values and malformed authored values. SI-07 schema-validity alignment and SI-08 typed policy/state-lifetime redesign remain explicitly out of scope.
+
+SI-05 is now completed evidence. Flow CI #2913 / run `31688348916` passed exact head `dc7ac98ef3c9d465470bde4f780c1207eb81a351` and synthetic merge candidate `afcf9a42d257df4be514458947968e11a3b46529` before PR #129 merged as `495a51ac21d518d2c03d37fe84bea631ceca7975`. SI-05 advanced AST to `2.2` and ExecutionPlan to `2.3`; Intent remains `2.0`, ExecutionPlan lowering evidence remains `2.1`, package remains `0.9.5` and public standard remains `0.8.0`.
 
 ## Core boundary
 
@@ -28,7 +30,7 @@ PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0
 
 The Core closure remains historical and closed. Post-C1.0 SI-01 changed scoped control evidence and advanced the AST, ExecutionPlan and execution-plan lowering-evidence contracts to `2.1`; that later migration does not rewrite the versions certified by the historical `0.9.7.10` closure.
 
-The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.1`, ExecutionPlan `2.2`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.1`.
+The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.2`, ExecutionPlan `2.3`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.1`.
 
 ## Completed adapter baseline
 
