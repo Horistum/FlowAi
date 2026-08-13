@@ -2,11 +2,11 @@ version: "SI-04"
 name: "Explicit Canonical Execution-Plan Semantics"
 type: "semantic-integrity-correction"
 stream: semantic-integrity
-status: active
+status: complete
 objective: "Replace lexical execution-plan node-kind inference with one explicit typed target-neutral semantic authority while preserving implementation metadata as non-authoritative evidence."
 
 authorization:
-  status: active
+  status: completed
   source: "Semantic-integrity roadmap transition after independently validated and merged SI-03 completion."
   predecessor: "SI-03"
   strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#14-make-canonical-execution-plan-semantics-explicit"
@@ -40,6 +40,15 @@ versionDecision:
     executionPlanLoweringEvidence: unchanged
   reason: "SI-04 changes the interpretation of the public CanonicalPlanNode.kind value domain without changing the JSON object shape. ExecutionPlan therefore advances to 2.2; authored lowering evidence remains 2.1 because its proof contract is unchanged."
 
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2903
+  runId: 31676804951
+  exactHead: "bc6cccdd64343bc7573a3d6e401765e5e50572c7"
+  mergeCandidate: "67ae12c036c6e1acf231bfb75ce76863e30bac48"
+completionMergeCommit: "e1d1998c643e6c859aaa7f2fb5989610b9641b72"
+
 localValidation:
   status: passed
   validatedAt: "2026-08-13"
@@ -58,4 +67,4 @@ localValidation:
     productionCompile: "BUILD SUCCESSFUL with zero Kotlin compiler warnings"
     completeTests: "1013/1013 passed; 0 failures; 0 errors; 0 skipped"
     standaloneConformance: passed
-  rule: "These results are local implementation evidence only. SI-04 remains active until its independently validated implementation boundary is merged and a later completion transition records that evidence."
+  rule: "This remains historical local implementation evidence for the exact SI-04 candidate tree. SI-04 completion is established separately by the recorded external completionBoundary."
