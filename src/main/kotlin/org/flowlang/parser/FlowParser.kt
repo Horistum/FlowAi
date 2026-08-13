@@ -249,10 +249,19 @@ class FlowParser {
 
     private fun parseParallel(ts: TokenStream): ParallelNode {
         ts.expectWord("parallel")
-        var failFast = true
-        if (ts.matchWord("failFast")) {
-            val b = ts.expect(TokenType.IDENT, "true/false")
-            failFast = b.text == "true"
+        val failFast = if (ts.matchWord("failFast")) {
+            val value = ts.expect(TokenType.IDENT, "true/false")
+            when (value.text) {
+                "true" -> true
+                "false" -> false
+                else -> throw ParseException(
+                    "parallel.failFast must be 'true' or 'false' but found '${value.text}'",
+                    value.line,
+                    value.column
+                )
+            }
+        } else {
+            true
         }
         ts.expect(TokenType.LBRACE, "'{'")
         val branches = mutableListOf<ParallelBranchNode>()
