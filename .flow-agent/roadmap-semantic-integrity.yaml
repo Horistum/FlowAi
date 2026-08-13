@@ -1,6 +1,6 @@
 project: Flow Semantic Integrity
 stream: semantic-integrity
-roadmapVersion: 6
+roadmapVersion: 7
 status: active
 
 purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
@@ -13,11 +13,11 @@ rules:
   - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
 
 currentDecision:
-  completedItem: "SI-05"
-  completedItemName: "Operational Effect Model Re-evaluation"
-  nextItem: "SI-06"
-  nextItemName: "Eliminate Remaining Silent Authored-Value Coercion"
-  decisionBasis: "SI-05 passed Flow CI #2913 on exact head dc7ac98ef3c9d465470bde4f780c1207eb81a351 and synthetic merge candidate afcf9a42d257df4be514458947968e11a3b46529, then merged as 495a51ac21d518d2c03d37fe84bea631ceca7975. The next ordered semantic-integrity outcome is project-direction section 1.6: eliminate remaining silent authored-value coercion."
+  completedItem: "SI-06"
+  completedItemName: "Eliminate Remaining Silent Authored-Value Coercion"
+  nextItem: "SI-07"
+  nextItemName: "Align Public Schemas with Production Acceptance"
+  decisionBasis: "SI-06 passed Flow CI #2919 on exact head 0f3de13811c05e5b8a8ba4ef8b1d43ee1fe3422b and synthetic merge candidate d4b670573269bcba8685bbd89552b77b752c6688, then merged as 526afbff56e32b5ae3fb9755716152bd74a07030. Post-merge main Flow CI #2920 also passed. The next ordered semantic-integrity outcome is project-direction section 1.7: align public schemas with production acceptance."
 
 historicalEvents:
   - id: "SI-01"
@@ -153,16 +153,39 @@ items:
   - version: "SI-06"
     name: "Eliminate Remaining Silent Authored-Value Coercion"
     type: "semantic-integrity-correction"
-    status: next
+    status: completed
     purpose: "Reject explicitly authored malformed or unknown parser values instead of silently converting them into defaults or alternate semantic values."
     dependsOn: "SI-05"
     workPackage: ".flow-agent/work-packages/SI-06-eliminate-remaining-silent-authored-value-coercion.yaml"
     strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#16-eliminate-remaining-silent-authored-value-coercion"
+    completionBoundary:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2919
+      runId: 31697607328
+      exactHead: "0f3de13811c05e5b8a8ba4ef8b1d43ee1fe3422b"
+      mergeCandidate: "d4b670573269bcba8685bbd89552b77b752c6688"
+    completionMergeCommit: "526afbff56e32b5ae3fb9755716152bd74a07030"
     completionEvidence:
-      - "A production parser/source-loader inventory identifies every evidence-confirmed present-value-to-default or present-value-to-alternate-value coercion in SI-06 scope."
-      - "parallel failFast and every other confirmed corrected boundary distinguish omission, explicit valid values and malformed authored values without silent coercion."
-      - "Defaults are applied only to truly omitted values; malformed booleans, numbers, enums or symbolic scalars fail with explicit diagnostics."
-      - "Systematic or property-style tests prove acceptance and rejection polarity for every corrected coercion boundary."
-      - "Valid existing parser behavior and target-neutral canonical semantics remain stable outside the reviewed corrections."
-      - "Public contract-version impact is decided from the actual accepted-input and serialized change."
+      - "The production parser/source-loader inventory identified and bounded all evidence-confirmed present-value coercions in SI-06 scope."
+      - "parallel failFast now distinguishes omission, explicit true, explicit false and malformed authored values without silent substitution."
+      - "FlowYaml.readStrict rejects scalar coercion and float-to-integer truncation instead of manufacturing alternate typed values."
+      - "TargetRegistryYamlLoader now uses the strict typed YAML boundary so malformed scalars and unknown authored properties cannot disappear into the contract."
+      - "Systematic negative regressions prove acceptance and rejection polarity while valid existing authored behavior remains stable."
+      - "No public artifact version changed because serialized shape and intended valid vocabulary were unchanged; schema validity alignment remains explicitly deferred to SI-07."
+      - "Flow CI #2919 independently passed exact-head and synthetic merge-candidate compile, tests and standalone conformance; post-merge main Flow CI #2920 also passed."
+  - version: "SI-07"
+    name: "Align Public Schemas with Production Acceptance"
+    type: "semantic-integrity-correction"
+    status: next
+    purpose: "Classify each published schema's authority and eliminate mismatches between schemas that claim public validity and the corresponding production loader or validator acceptance contract."
+    dependsOn: "SI-06"
+    workPackage: ".flow-agent/work-packages/SI-07-align-public-schemas-with-production-acceptance.yaml"
+    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#17-align-public-schemas-with-production-acceptance"
+    completionEvidence:
+      - "Every published schema is mapped to its production loader/validator and explicitly classified as syntactic-only or validity-authoritative."
+      - "Validity-authoritative schemas have bidirectional acceptance evidence against production loading rather than happy-path-only fixtures."
+      - "The known TargetRegistry schema mismatch, including expressionProfiles, is resolved without weakening strict production validation."
+      - "Syntactic-only schemas are documented as such and cannot be consumed as proof of production validity."
+      - "Schema and artifact version consequences are decided from actual public-contract impact, with migration evidence when required."
       - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
