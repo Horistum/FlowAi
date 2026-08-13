@@ -72,16 +72,16 @@ class ExecutionPlanControlScopeContractTests {
     }
 
     @Test
-    fun ast21AndExecutionPlan22SchemasRequireStrictControlScope() {
+    fun ast22AndExecutionPlan23SchemasRetainStrictControlScope() {
         val ast = Json.mapper.readTree(File("schemas/ast.schema.json"))
         val plan = Json.mapper.readTree(File("schemas/execution-plan.schema.json"))
 
-        assertEquals("2.1", FlowStandardVersions.AST_VERSION)
-        assertEquals("2.1", ast.path("properties").path("astVersion").path("const").asText())
+        assertEquals("2.2", FlowStandardVersions.AST_VERSION)
+        assertEquals("2.2", ast.path("properties").path("astVersion").path("const").asText())
         assertScopeContract(ast)
 
-        assertEquals("2.2", FlowStandardVersions.EXECUTION_PLAN_VERSION)
-        assertEquals("2.2", plan.path("properties").path("planVersion").path("const").asText())
+        assertEquals("2.3", FlowStandardVersions.EXECUTION_PLAN_VERSION)
+        assertEquals("2.3", plan.path("properties").path("planVersion").path("const").asText())
         assertScopeContract(plan)
     }
 

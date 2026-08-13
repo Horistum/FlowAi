@@ -4,6 +4,27 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### SI-05 Operational Effect Model Re-evaluation
+
+#### Corrected
+
+- Replaced generic data-transformation BACKUP/RESTORE effects with target-neutral `STATE_RECOVERY` semantics that preserve the authored protected-state relationship.
+- Added a typed recovery facet for recovery-point capture and state restore, including authored backup destination, recovery-point identity and capture retention without encoding those relationships in free-form resource strings.
+- Kept restore state transition as `UPSERT UNKNOWN -> PRESENT` because the current authored contract does not distinguish state creation from replacement; consistency boundaries and recoverability are likewise not invented without authored evidence.
+- Extended canonical observation identity and materialization re-validation so recovery-relevant authored differences remain distinguishable and forged recovery relationships fail closed.
+- Added DP01/DP02, negative-pair, implementation-label invariance, strict schema, JSON round-trip and materialization-forgery regression coverage.
+
+#### Contract migration
+
+- Advanced AST from `2.1` to `2.2` and ExecutionPlan from `2.2` to `2.3` because `SemanticEffect` is serialized through both public artifact boundaries.
+- Kept Intent `2.0`, ExecutionPlan lowering evidence `2.1`, TargetManifest `3.0`, TargetRegistry `3.1`, implementation package `0.9.5` and public standard `0.8.0` unchanged.
+- Regenerated committed AST and ExecutionPlan reference snapshots for the new artifact versions; the existing non-recovery reference scenarios retain all other semantic content.
+- Documented the representability and ownership decisions in `docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`.
+
+#### Validation
+
+- SI-05 remains active until its implementation receives independent exact-head and synthetic merge-candidate Flow CI evidence and is merged; this implementation PR does not self-complete its lifecycle.
+
 ### SI-04 Explicit Canonical Execution-Plan Semantics
 
 #### Corrected

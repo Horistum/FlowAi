@@ -1,6 +1,6 @@
 {
   "flowName" : "build-test-deploy",
-  "planVersion" : "2.2",
+  "planVersion" : "2.3",
   "inputs" : [ {
     "name" : "environment",
     "type" : "option",

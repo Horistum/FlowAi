@@ -329,8 +329,8 @@ object ReleaseLifecycleFixture {
     private fun StringBuilder.appendLiveArtifactContracts() {
         appendLine("  artifactContracts:")
         appendLine("    intent: \"2.0\"")
-        appendLine("    ast: \"2.1\"")
-        appendLine("    executionPlan: \"2.2\"")
+        appendLine("    ast: \"2.2\"")
+        appendLine("    executionPlan: \"2.3\"")
         appendLine("    executionPlanLoweringEvidence: \"2.1\"")
         appendLine("    targetManifest: \"3.0\"")
         appendLine("    targetRegistry: \"3.1\"")
