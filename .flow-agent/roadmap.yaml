@@ -1,5 +1,5 @@
 project: Flow
-roadmapVersion: 26
+roadmapVersion: 27
 currentTrack: "post-c1-semantic-integrity"
 primaryRoadmapStream: semantic-integrity
 
@@ -188,7 +188,7 @@ currentDecision:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  nextItem: "SI-07"
-  nextItemName: "Align Public Schemas with Production Acceptance"
+  nextItem: "SI-08"
+  nextItemName: "Typed Policy and State-Lifetime Semantics"
   nextItemStream: "semantic-integrity"
-  decisionBasis: "SI-06 passed Flow CI #2919 / run 31697607328 on exact head 0f3de13811c05e5b8a8ba4ef8b1d43ee1fe3422b and synthetic merge candidate d4b670573269bcba8685bbd89552b77b752c6688, then merged as 526afbff56e32b5ae3fb9755716152bd74a07030. Post-merge main Flow CI #2920 passed. The ordered semantic-integrity successor is SI-07, project-direction section 1.7."
+  decisionBasis: "SI-07 final repair head f27bf53afffb555fcef99b2db32770d9b241beba passed Flow CI #2928 / run 31773901231 with synthetic merge candidate 303fa34f0e3147a8482acf2c4905fca4cadaa3b0, then merged as fc905efa20c255846c098ccf058f560d61ee7378. Post-merge main Flow CI #2929 passed. The ordered semantic-integrity successor is SI-08, project-direction section 1.8."

@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 55
+stateVersion: 56
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -22,7 +22,7 @@ versionBoundary:
     targetRegistry: "3.2"
 
 roadmapState:
-  roadmapVersion: 26
+  roadmapVersion: 27
   activeTrack: "post-c1-semantic-integrity"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
@@ -33,8 +33,8 @@ roadmapState:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  nextItem: "SI-07"
-  nextItemName: "Align Public Schemas with Production Acceptance"
+  nextItem: "SI-08"
+  nextItemName: "Typed Policy and State-Lifetime Semantics"
   nextItemStream: "semantic-integrity"
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
@@ -175,20 +175,21 @@ qualityPrinciples:
   - "Canonical capability meaning must remain independent from concrete implementation technology; implementation-only parameters belong to explicit binding or adapter evidence."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-si-06-validation-boundary"
-  flowAgentStructure: "passed-on-si-06-validation-boundary"
-  flowAgentContextGeneration: "passed-on-si-06-validation-boundary"
-  cleanTest: "passed-on-si-06-validation-boundary"
-  conformance: "passed-on-si-06-validation-boundary"
-  executableReferenceEvidence: "passed-on-si-06-validation-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-si-06-validation-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-si-06-validation-boundary"
-  boundedDomainCorpusEvidence: "passed-on-si-06-validation-boundary"
-  roadmapTransitionEvidence: "passed-on-si-06-validation-boundary"
-  validationSource: "Flow CI #2919, run 31697607328, passed pull request #131 exact head 0f3de13811c05e5b8a8ba4ef8b1d43ee1fe3422b and synthetic merge candidate d4b670573269bcba8685bbd89552b77b752c6688 before merge commit 526afbff56e32b5ae3fb9755716152bd74a07030."
+  flowAgentTooling: "passed-on-si-07-validation-boundary"
+  flowAgentStructure: "passed-on-si-07-validation-boundary"
+  flowAgentContextGeneration: "passed-on-si-07-validation-boundary"
+  cleanTest: "passed-on-si-07-validation-boundary"
+  conformance: "passed-on-si-07-validation-boundary"
+  executableReferenceEvidence: "passed-on-si-07-validation-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-si-07-validation-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-si-07-validation-boundary"
+  boundedDomainCorpusEvidence: "passed-on-si-07-validation-boundary"
+  roadmapTransitionEvidence: "passed-on-si-07-validation-boundary"
+  validationSource: "Flow CI #2928, run 31773901231, passed pull request #135 exact head f27bf53afffb555fcef99b2db32770d9b241beba and synthetic merge candidate 303fa34f0e3147a8482acf2c4905fca4cadaa3b0 before merge commit fc905efa20c255846c098ccf058f560d61ee7378."
   notes:
-    - "Flow CI #2919 is the latest committed GitHub implementation validation evidence and closes SI-06; post-merge main Flow CI #2920 also passed; active SI-07 has no implementation validation yet."
-    - "SI-06 removed silent authored-value coercion at confirmed parser and strict YAML boundaries without changing live artifact contract versions."
+    - "Flow CI #2928 is the latest committed GitHub validation evidence and closes SI-07; post-merge main Flow CI #2929 also passed; active SI-08 has no implementation validation yet."
+    - "SI-07 aligned public schema acceptance boundaries, advanced TargetRegistry to 3.2 for the authored wire correction, and retained published schemas as syntactic interchange contracts unless bidirectional production-validity proof exists."
+    - "SI-06 removed silent authored-value coercion at confirmed parser and strict YAML boundaries without changing its live artifact contract versions."
     - "SI-05 advanced the live AST contract to 2.2 and ExecutionPlan contract to 2.3 while Intent and ExecutionPlan lowering evidence remain unchanged."
     - "SI-01 changed AST and ExecutionPlan-family artifact contracts without changing package or public-standard versions."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."

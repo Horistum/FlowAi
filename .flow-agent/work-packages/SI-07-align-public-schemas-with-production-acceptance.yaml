@@ -2,11 +2,11 @@ version: "SI-07"
 name: "Align Public Schemas with Production Acceptance"
 type: "semantic-integrity-correction"
 stream: semantic-integrity
-status: active
+status: complete
 objective: "Classify every published schema as syntactic-only or validity-authoritative and remove false interoperability promises where schema acceptance and production acceptance disagree."
 
 authorization:
-  status: active
+  status: completed
   source: "Semantic-integrity roadmap transition after independently validated and merged SI-06 completion."
   predecessor: "SI-06"
   strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#17-align-public-schemas-with-production-acceptance"
@@ -54,6 +54,15 @@ acceptanceEvidence:
   - "Version and migration decisions follow actual public contract changes."
   - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
 
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2928
+  runId: 31773901231
+  exactHead: "f27bf53afffb555fcef99b2db32770d9b241beba"
+  mergeCandidate: "303fa34f0e3147a8482acf2c4905fca4cadaa3b0"
+completionMergeCommit: "fc905efa20c255846c098ccf058f560d61ee7378"
+
 localValidation:
   status: pending
   evidence:
@@ -61,3 +70,4 @@ localValidation:
     - "A targeted runtime harness passed positive TargetRegistry 3.2 loading and negative alias/duplicate-feature polarity through both schema and production boundaries."
     - "All 64 published schemas passed Draft 2020-12 meta-validation and the schema ownership inventory covered all 64 files exactly once."
   limitation: "The supplied offline Gradle build reached Kotlin compilation but did not complete within the available execution window, so no full local Gradle PASS is claimed. Independent Flow CI remains required before SI-07 implementation can be considered validated."
+  rule: "No full local PASS is claimed for the final SI-07 implementation tree. SI-07 completion is established separately by Flow CI #2928 exact-head and synthetic merge-candidate evidence, merge commit fc905efa20c255846c098ccf058f560d61ee7378, and successful post-merge main Flow CI #2929."
