@@ -2,7 +2,7 @@ package org.flowlang.standard
 
 import java.io.File
 
-enum class PublishedSchemaAuthority {
+enum class PublishedSchemaAcceptanceKind {
     /** JSON Schema constrains interchange shape; production owners remain authoritative for semantic validity. */
     SYNTACTIC_INTERCHANGE,
 
@@ -12,7 +12,7 @@ enum class PublishedSchemaAuthority {
 
 data class PublishedSchemaContract(
     val path: String,
-    val authority: PublishedSchemaAuthority,
+    val authority: PublishedSchemaAcceptanceKind,
     val productionOwner: String
 )
 
@@ -22,7 +22,7 @@ data class PublishedSchemaContract(
  * A schema is not silently promoted into a production validator merely because a
  * conformance smoke check happens to consume it. Production validity remains with
  * the named loader, typed contract or report producer unless bidirectional proof
- * justifies [PublishedSchemaAuthority.PRODUCTION_VALIDITY].
+ * justifies [PublishedSchemaAcceptanceKind.PRODUCTION_VALIDITY].
  */
 object PublishedSchemaContracts {
     val contracts: List<PublishedSchemaContract> = listOf(
@@ -117,7 +117,7 @@ object PublishedSchemaContracts {
         productionOwner: String = "org.flowlang.artifacts.ArtifactContractAuthority registered producer/output contract"
     ): PublishedSchemaContract = PublishedSchemaContract(
         path = "schemas/$fileName",
-        authority = PublishedSchemaAuthority.SYNTACTIC_INTERCHANGE,
+        authority = PublishedSchemaAcceptanceKind.SYNTACTIC_INTERCHANGE,
         productionOwner = productionOwner
     )
 }

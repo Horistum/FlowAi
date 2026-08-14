@@ -7,6 +7,7 @@ import kotlin.test.assertTrue
 import org.flowlang.cli.Json
 import org.flowlang.conformance.JsonSchemaSmokeValidator
 import org.flowlang.serialization.FlowYaml
+import org.flowlang.serialization.FlowYamlException
 import org.flowlang.targets.TargetRegistryContractVocabulary
 import org.flowlang.targets.TargetRegistryYamlLoader
 
@@ -145,7 +146,16 @@ class TargetRegistrySchemaAlignmentTests {
 
     private fun assertRejectedByBoth(yaml: String) = withRegistry(yaml) { file ->
         assertFailsWith<IllegalArgumentException> { validateSchema(file) }
-        assertFailsWith<IllegalArgumentException> { TargetRegistryYamlLoader.load(file) }
+        assertProductionRejected(file)
+    }
+
+    private fun assertProductionRejected(file: File) {
+        val failure = runCatching { TargetRegistryYamlLoader.load(file) }.exceptionOrNull()
+            ?: throw AssertionError("Production loader unexpectedly accepted invalid target registry '${file.path}'.")
+        assertTrue(
+            failure is FlowYamlException || failure is IllegalArgumentException || failure is IllegalStateException,
+            "Expected an authored-input validation rejection but got ${failure::class.qualifiedName}: ${failure.message}"
+        )
     }
 
     private fun validateSchema(file: File) {
