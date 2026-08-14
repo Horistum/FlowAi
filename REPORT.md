@@ -11,18 +11,20 @@ Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`complete
 Completed adapter roadmap item: `A1.0 GitHub Actions Artifact and Workspace Continuity` (`completed`)
 Completed conformance roadmap item: `C1.0 Operational Domain Adequacy` (`completed`)
 Completed architecture roadmap item: `AR0.1 Authority Responsibility Consolidation` (`completed`)
-Completed semantic-integrity item: `SI-07 Align Public Schemas with Production Acceptance` (`completed`, Flow CI #2928)
-Active semantic-integrity item: `SI-08 Typed Policy and State-Lifetime Semantics` (`next`, active work package)
+Completed semantic-integrity item: `SI-08 Typed Policy and State-Lifetime Semantics` (`completed`, Flow CI #2943)
+Active semantic-integrity item: none (stream completed; no successor selected)
 
-## Active semantic-integrity correction
+## Completed semantic-integrity stream
 
-SI-08 owns project-direction section 1.8: canonical policy meaning must come from explicit typed standard forms rather than substring folklore, and mutable-state propagation must remain distinct from durable persistence lifetime.
+SI-08 closed project-direction section 1.8 by replacing string-fragment policy classification with explicit typed standard semantics and by separating workflow-local mutable-state propagation from explicit durable persistence lifetime.
 
-The correction has two bounded production targets. First, arbitrary predicates such as `environment != prod` or incidental prose containing `retention` remain non-authoritative custom policy text; only explicit closed safety requirements or `retention:<value>`, `ttl:<value>` and `olderThan:<value>` forms may acquire standard policy meaning, while malformed recognized retention forms fail closed to clarification. Second, STATE continuity now carries explicit target-neutral `WORKFLOW` or `DURABLE` lifetime: workflow-local state requires propagation evidence without inventing durable storage, while durable state additionally requires persistence evidence.
+The implementation retained the existing Intent `2.0` wire shape while advancing ExecutionPlan from `2.3` to `2.4` and the module descriptor schema from `1.2` to `1.3`. AST remains `2.2`, ExecutionPlan lowering evidence `2.1`, TargetManifest `3.0`, TargetRegistry `3.2`, implementation package `0.9.5` and public standard `0.8.0`. No target support class was promoted by SI-08.
 
-SI-08 advances only the public contracts whose wire meaning changed: ExecutionPlan moves from `2.3` to `2.4` and the module descriptor schema moves from `1.2` to `1.3`. Intent remains `2.0`, AST `2.2`, ExecutionPlan lowering evidence `2.1`, TargetManifest `3.0`, TargetRegistry `3.2`, implementation package `0.9.5` and public standard `0.8.0`. This implementation does not promote target support or complete the SI-08 lifecycle.
+Flow CI #2943 / run `31802519219` passed exact implementation head `e5bc5cd82d591a6b744650478070b6c4919d60cf` and synthetic merge candidate `7a9a349c929a9b2fccadd16e5f5411f77156b7c6` before PR #137 merged as `03c3bcb9c8d4f428b4302c2c35d098848793505e`. Post-merge main Flow CI #2944 also passed. The semantic-integrity stream is therefore terminally complete through SI-08.
 
-SI-07 is completed evidence. Flow CI #2928 / run `31773901231` passed exact implementation/repair head `f27bf53afffb555fcef99b2db32770d9b241beba` and synthetic merge candidate `303fa34f0e3147a8482acf2c4905fca4cadaa3b0` before PR #135 merged as `fc905efa20c255846c098ccf058f560d61ee7378`. The distinct SI-07 completion transition passed Flow CI #2930 / run `31775736837` and merged as `9125c327a671c3c4f58cf306103a0fb21fdf3190`, activating SI-08 without borrowing predecessor implementation evidence.
+This completion transition deliberately selects no successor. `EXTERNAL-FALSIFICATION` remains the next ordered strategic candidate in `docs/PROJECT_DIRECTION_AFTER_C1_0.md`, but activating it is a separate cross-stream lifecycle decision rather than an implicit consequence of SI-08 completion.
+
+SI-07 remains completed predecessor evidence: Flow CI #2928 / run `31773901231` passed exact head `f27bf53afffb555fcef99b2db32770d9b241beba` and synthetic merge candidate `303fa34f0e3147a8482acf2c4905fca4cadaa3b0` before merge commit `fc905efa20c255846c098ccf058f560d61ee7378`.
 
 ## Core boundary
 

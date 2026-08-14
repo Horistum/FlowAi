@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 56
+stateVersion: 57
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -22,20 +22,20 @@ versionBoundary:
     targetRegistry: "3.2"
 
 roadmapState:
-  roadmapVersion: 27
-  activeTrack: "post-c1-semantic-integrity"
+  roadmapVersion: 28
+  activeTrack: "operational-domain-adequacy"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
-  primaryStream: "semantic-integrity"
+  primaryStream: "conformance"
   completedAdapterItem: "A1.0"
   completedAdapterItemName: "GitHub Actions Artifact and Workspace Continuity"
   completedConformanceItem: "C1.0"
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  nextItem: "SI-08"
-  nextItemName: "Typed Policy and State-Lifetime Semantics"
-  nextItemStream: "semantic-integrity"
+  nextItem: ""
+  nextItemName: ""
+  nextItemStream: ""
   closureItem: "0.9.7.10"
   closureItemName: "Bounded Semantic Closure Gate"
   closureItemStatus: "completed"
@@ -44,7 +44,6 @@ roadmapState:
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
     architecture: ".flow-agent/roadmap-architecture.yaml"
-    semantic-integrity: ".flow-agent/roadmap-semantic-integrity.yaml"
 
 repositoryRules:
   sourceLanguage: "English"
@@ -175,19 +174,21 @@ qualityPrinciples:
   - "Canonical capability meaning must remain independent from concrete implementation technology; implementation-only parameters belong to explicit binding or adapter evidence."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-si-07-validation-boundary"
-  flowAgentStructure: "passed-on-si-07-validation-boundary"
-  flowAgentContextGeneration: "passed-on-si-07-validation-boundary"
-  cleanTest: "passed-on-si-07-validation-boundary"
-  conformance: "passed-on-si-07-validation-boundary"
-  executableReferenceEvidence: "passed-on-si-07-validation-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-si-07-validation-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-si-07-validation-boundary"
-  boundedDomainCorpusEvidence: "passed-on-si-07-validation-boundary"
-  roadmapTransitionEvidence: "passed-on-si-07-validation-boundary"
-  validationSource: "Flow CI #2928, run 31773901231, passed pull request #135 exact head f27bf53afffb555fcef99b2db32770d9b241beba and synthetic merge candidate 303fa34f0e3147a8482acf2c4905fca4cadaa3b0 before merge commit fc905efa20c255846c098ccf058f560d61ee7378."
+  flowAgentTooling: "passed-on-si-08-validation-boundary"
+  flowAgentStructure: "passed-on-si-08-validation-boundary"
+  flowAgentContextGeneration: "passed-on-si-08-validation-boundary"
+  cleanTest: "passed-on-si-08-validation-boundary"
+  conformance: "passed-on-si-08-validation-boundary"
+  executableReferenceEvidence: "passed-on-si-08-validation-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-si-08-validation-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-si-08-validation-boundary"
+  boundedDomainCorpusEvidence: "passed-on-si-08-validation-boundary"
+  roadmapTransitionEvidence: "passed-on-si-08-validation-boundary"
+  validationSource: "Flow CI #2943, run 31802519219, passed pull request #137 exact head e5bc5cd82d591a6b744650478070b6c4919d60cf and synthetic merge candidate 7a9a349c929a9b2fccadd16e5f5411f77156b7c6 before merge commit 03c3bcb9c8d4f428b4302c2c35d098848793505e."
   notes:
-    - "Flow CI #2928 is the latest committed GitHub validation evidence and closes SI-07; post-merge main Flow CI #2929 also passed; active SI-08 has no implementation validation yet."
+    - "Flow CI #2943 is the latest committed implementation validation evidence and closes SI-08; post-merge main Flow CI #2944 also passed. The bounded semantic-integrity stream is complete and no successor is selected by this transition."
+    - "SI-08 replaced policy substring folklore with typed standard policy semantics, separated workflow-local STATE propagation from explicit durable lifetime, advanced ExecutionPlan to 2.4 and module schema to 1.3, and did not promote target support."
+    - "External Falsification remains the next strategic candidate only; activation requires a separate global roadmap transition and cannot be inferred from SI-08 completion."
     - "SI-07 aligned public schema acceptance boundaries, advanced TargetRegistry to 3.2 for the authored wire correction, and retained published schemas as syntactic interchange contracts unless bidirectional production-validity proof exists."
     - "SI-06 removed silent authored-value coercion at confirmed parser and strict YAML boundaries without changing its live artifact contract versions."
     - "SI-05 advanced the live AST contract to 2.2 and ExecutionPlan contract to 2.3 while Intent and ExecutionPlan lowering evidence remain unchanged."
