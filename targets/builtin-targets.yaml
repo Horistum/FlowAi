@@ -1,5 +1,5 @@
 kind: FlowTargetRegistry
-version: "3.1"
+version: "3.2"
 description: Built-in target capability registry for the current Flow capability-contract line.
 expressionProfiles:
   - id: flow-full

@@ -16,6 +16,7 @@ import org.flowlang.modules.ModuleContractAnalyzer
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.scenarios.ScenarioPackRegistry
+import org.flowlang.standard.PublishedSchemaContracts
 import org.flowlang.standard.StandardDiagnosticCatalog
 import java.io.File
 
@@ -33,6 +34,8 @@ internal class SchemaScenarioCatalogChecks(
     )
 
     private fun checkPublicOutputsMatchSchemas(): ConformanceCheck = runCheck("schemas.public-outputs") {
+        val ownershipIssues = PublishedSchemaContracts.coverageIssues(rootDir)
+        require(ownershipIssues.isEmpty()) { ownershipIssues.joinToString(" | ") }
         val core = neutral.build()
         val schemaDir = File(rootDir, "schemas")
         val intent = core.intent

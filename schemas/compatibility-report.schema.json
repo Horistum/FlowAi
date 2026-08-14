@@ -4,25 +4,106 @@
   "title": "Flow Target Compatibility Report",
   "type": "object",
   "additionalProperties": false,
-  "required": ["target", "status", "issues"],
+  "required": [
+    "target",
+    "status",
+    "issues",
+    "capabilityStatus",
+    "materializationReadiness",
+    "projectionReadiness",
+    "executable",
+    "readinessEvidenceAvailable",
+    "projectionRules"
+  ],
   "properties": {
-    "target": { "type": "string" },
-    "status": { "type": "string" },
-    "hasErrors": { "type": "boolean" },
-    "hasWarnings": { "type": "boolean" },
+    "target": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "SUPPORTED",
+        "PARTIAL",
+        "UNSUPPORTED",
+        "REQUIRES_RUNTIME"
+      ]
+    },
+    "hasErrors": {
+      "type": "boolean"
+    },
+    "hasWarnings": {
+      "type": "boolean"
+    },
     "issues": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["level", "target", "nodeId", "feature", "message"],
+        "required": [
+          "level",
+          "target",
+          "nodeId",
+          "feature",
+          "message"
+        ],
         "properties": {
-          "level": { "type": "string" },
-          "target": { "type": "string" },
-          "nodeId": { "type": "string" },
-          "feature": { "type": "string" },
-          "message": { "type": "string" }
+          "level": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "feature": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
         }
+      }
+    },
+    "capabilityStatus": {
+      "enum": [
+        "SUPPORTED",
+        "PARTIAL",
+        "UNSUPPORTED",
+        "REQUIRES_RUNTIME"
+      ]
+    },
+    "materializationReadiness": {
+      "enum": [
+        "NOT_EVALUATED",
+        "COMPLETE",
+        "REVIEW_REQUIRED",
+        "BLOCKED"
+      ]
+    },
+    "projectionReadiness": {
+      "enum": [
+        "NOT_EVALUATED",
+        "EXECUTABLE",
+        "REVIEW_ONLY",
+        "FAIL_FAST"
+      ]
+    },
+    "executable": {
+      "type": "boolean"
+    },
+    "readinessEvidenceAvailable": {
+      "type": "boolean"
+    },
+    "expressionSupport": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "projectionRules": {
+      "type": "array",
+      "items": {
+        "type": "object"
       }
     }
   }

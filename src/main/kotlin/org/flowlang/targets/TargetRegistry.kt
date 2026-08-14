@@ -21,7 +21,11 @@ import org.flowlang.topology.ExecutionTopologyProfile
  * for isolated fixtures but cannot override distribution evidence.
  */
 object TargetRegistryYamlLoader {
-    fun load(file: File): TargetRegistryDocument = FlowYaml.readStrict(file, TargetRegistryDocument::class.java)
+    fun load(file: File): TargetRegistryDocument {
+        val document = FlowYaml.readStrict(file, TargetRegistryDocument::class.java)
+        validateDocument(document, file)
+        return document
+    }
 
     fun loadDirectory(dir: File): Map<String, TargetCapability> {
         if (!dir.isDirectory) return emptyMap()
@@ -33,18 +37,8 @@ object TargetRegistryYamlLoader {
         val out = linkedMapOf<String, TargetCapability>()
         docs.forEach { file ->
             val document = load(file)
-            require(document.kind == "FlowTargetRegistry") {
-                "Invalid target registry kind '${document.kind}' in ${file.path}."
-            }
-            require(document.version == FlowStandardVersions.TARGET_REGISTRY_VERSION) {
-                "Target registry '${file.path}' declares version '${document.version}', expected '${FlowStandardVersions.TARGET_REGISTRY_VERSION}'."
-            }
             val profiles = expressionProfiles(document, file)
             document.targets.forEach { descriptor ->
-                require(descriptor.name.isNotBlank()) { "Target name must not be blank in ${file.path}." }
-                require(descriptor.expressionProfile?.isNotBlank() == true) {
-                    "Target '${descriptor.name}' must declare expressionProfile in ${file.path}; missing expression evidence fails closed."
-                }
                 require(topologyProfiles.isNotEmpty() || descriptor.topology != null) {
                     "Target '${descriptor.name}' must declare topology evidence in ${file.path}; missing topology evidence fails closed."
                 }
@@ -68,6 +62,42 @@ object TargetRegistryYamlLoader {
         return out
     }
 
+    private fun validateDocument(document: TargetRegistryDocument, file: File) {
+        require(document.kind == "FlowTargetRegistry") {
+            "Invalid target registry kind '${document.kind}' in ${file.path}."
+        }
+        require(document.version == FlowStandardVersions.TARGET_REGISTRY_VERSION) {
+            "Target registry '${file.path}' declares version '${document.version}', expected '${FlowStandardVersions.TARGET_REGISTRY_VERSION}'."
+        }
+        val profiles = expressionProfiles(document, file)
+        document.targets.forEach { descriptor ->
+            require(descriptor.name.isNotBlank()) { "Target name must not be blank in ${file.path}." }
+            require(descriptor.expressionProfile?.isNotBlank() == true) {
+                "Target '${descriptor.name}' must declare expressionProfile in ${file.path}; missing expression evidence fails closed."
+            }
+            require(descriptor.expressionProfile in profiles) {
+                "Unknown expression profile '${descriptor.expressionProfile}' for target '${descriptor.name}' in ${file.path}."
+            }
+            val unknownCapabilities = descriptor.capabilities.keys - TargetRegistryContractVocabulary.capabilityNames
+            require(unknownCapabilities.isEmpty()) {
+                "Target '${descriptor.name}' declares unknown capabilities ${unknownCapabilities.sorted()} in ${file.path}."
+            }
+            descriptor.capabilities.forEach { (name, raw) ->
+                require(raw in TargetRegistryContractVocabulary.supportLevels) {
+                    "Unknown support level '$raw' for capability '$name' on target '${descriptor.name}'."
+                }
+            }
+            descriptor.features.forEach { (name, raw) ->
+                require(name.isNotBlank()) { "Target '${descriptor.name}' contains a blank feature name in ${file.path}." }
+                require(raw in TargetRegistryContractVocabulary.supportLevels) {
+                    "Unknown support level '$raw' for feature '$name' on target '${descriptor.name}'."
+                }
+            }
+            descriptor.projectionRules.forEach { it.toRule(descriptor.name) }
+            descriptor.topology?.toProfile(descriptor.name)
+        }
+    }
+
     private fun adapterTopologyProfiles(dir: File): Map<String, ExecutionTopologyProfile> {
         val root = dir.absoluteFile.parentFile ?: return emptyMap()
         val evidenceFile = File(root, AdapterTopologyEvidenceLoader.PATH)
@@ -84,6 +114,9 @@ object TargetRegistryYamlLoader {
             require(descriptor.id.isNotBlank()) { "Expression profile id must not be blank in ${file.path}." }
             require(descriptor.description.isNotBlank()) {
                 "Expression profile '${descriptor.id}' must declare a description in ${file.path}."
+            }
+            require(descriptor.features.distinct().size == descriptor.features.size) {
+                "Expression profile '${descriptor.id}' contains duplicate features in ${file.path}."
             }
             require(descriptor.id !in profiles) {
                 "Expression profile '${descriptor.id}' is duplicated in ${file.path}."

@@ -19,7 +19,7 @@ versionBoundary:
     executionPlan: "2.3"
     executionPlanLoweringEvidence: "2.1"
     targetManifest: "3.0"
-    targetRegistry: "3.1"
+    targetRegistry: "3.2"
 
 roadmapState:
   roadmapVersion: 26

@@ -16,7 +16,7 @@ object FlowStandardVersions {
     const val EXECUTION_PLAN_VERSION = "2.3"
     const val EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION = "2.1"
     const val TARGET_MANIFEST_VERSION = "3.0"
-    const val TARGET_REGISTRY_VERSION = "3.1"
+    const val TARGET_REGISTRY_VERSION = "3.2"
 
     val ARTIFACT_CONTRACT_VERSIONS: Map<String, String> = linkedMapOf(
         "intent" to INTENT_VERSION,

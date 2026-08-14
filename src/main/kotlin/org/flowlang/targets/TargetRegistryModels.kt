@@ -29,7 +29,7 @@ data class TargetExpressionProfileDescriptor(
     val id: String = "",
     val description: String = "",
     val supportsAll: Boolean = false,
-    val features: Set<String> = emptySet()
+    val features: List<String> = emptyList()
 ) {
     fun toDeclaration(reference: String): TargetExpressionSupportDeclaration =
         TargetExpressionSupportDeclaration(
@@ -37,7 +37,7 @@ data class TargetExpressionProfileDescriptor(
             evidenceKind = TargetExpressionEvidenceKind.TARGET_REGISTRY,
             evidenceReference = reference,
             supportsAll = supportsAll,
-            features = features
+            features = features.toSet()
         )
 }
 
@@ -47,7 +47,7 @@ data class TargetProjectionPayloadDescriptor(
     val bindings: Map<String, ProjectionBinding> = emptyMap()
 ) {
     fun toTemplate(targetName: String): TargetRendererPayloadTemplate {
-        val payloadKind = kind.trim()
+        val payloadKind = kind
         require(payloadKind.isNotBlank()) { "Projection payload kind must not be blank for target '$targetName'." }
         require(PAYLOAD_KIND.matches(payloadKind)) {
             "Projection payload kind '$kind' for target '$targetName' is not a valid opaque projection identifier."
@@ -90,14 +90,8 @@ data class TargetProjectionRuleDescriptor(
         require(evidenceReference.isNotBlank()) {
             "Projection rule '$module.$action' for target '$targetName' must cite evidence."
         }
-        val parsedMode = when (mode.trim().lowercase().replace('-', '_')) {
-            "native" -> TargetProjectionMode.NATIVE
-            "notes_projected" -> TargetProjectionMode.NOTES_PROJECTED
-            "adapter_required" -> TargetProjectionMode.ADAPTER_REQUIRED
-            "unsupported" -> TargetProjectionMode.UNSUPPORTED
-            "blocked" -> TargetProjectionMode.BLOCKED
-            else -> error("Unknown projection mode '$mode' for '$module.$action' on target '$targetName'.")
-        }
+        val parsedMode = TargetRegistryContractVocabulary.projectionModes[mode]
+            ?: error("Unknown projection mode '$mode' for '$module.$action' on target '$targetName'.")
         if (parsedMode == TargetProjectionMode.NATIVE) require(payload != null) {
             "Native projection rule '$module.$action' for target '$targetName' must declare a renderer payload."
         }
@@ -131,13 +125,8 @@ data class TargetTopologyProfileDescriptor(
             val kind = requireNotNull(ExecutionTopologyKind.fromRegistryKey(key))
             ExecutionTopologySupportDeclaration(
                 kind = kind,
-                status = when (raw.trim().lowercase().replace('-', '_')) {
-                    "supported", "full", "yes", "true" -> ExecutionTopologySupportStatus.SUPPORTED
-                    "partial", "limited" -> ExecutionTopologySupportStatus.PARTIAL
-                    "unsupported", "none", "no", "false" -> ExecutionTopologySupportStatus.UNSUPPORTED
-                    "unknown" -> ExecutionTopologySupportStatus.UNKNOWN
-                    else -> error("Unknown topology support '$raw' for '$key' on target '$targetName'.")
-                },
+                status = TargetRegistryContractVocabulary.topologySupportLevels[raw]
+                    ?: error("Unknown topology support '$raw' for '$key' on target '$targetName'."),
                 evidenceReference = "$evidenceReference#$key"
             )
         }
@@ -194,11 +183,6 @@ data class TargetDescriptor(
     }
 
     private fun parseSupport(raw: String, targetName: String, featureName: String = "feature"): SupportLevel =
-        when (raw.trim().lowercase().replace('-', '_')) {
-            "supported", "full", "yes", "true" -> SupportLevel.SUPPORTED
-            "partial", "limited", "supported_with_mapping" -> SupportLevel.PARTIAL
-            "unsupported", "none", "no", "false" -> SupportLevel.UNSUPPORTED
-            "requires_runtime", "requiresruntime", "runtime" -> SupportLevel.REQUIRES_RUNTIME
-            else -> error("Unknown support level '$raw' for capability '$featureName' on target '$targetName'.")
-        }
+        TargetRegistryContractVocabulary.supportLevels[raw]
+            ?: error("Unknown support level '$raw' for capability '$featureName' on target '$targetName'.")
 }
