@@ -12,7 +12,7 @@ versionBoundary:
   artifactContracts:
     intent: "2.0"
     ast: "2.2"
-    executionPlan: "2.3"
+    executionPlan: "2.4"
     executionPlanLoweringEvidence: "2.1"
     targetManifest: "3.0"
     targetRegistry: "3.2"

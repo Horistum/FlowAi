@@ -3,8 +3,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.ast.ActionNode
 import org.flowlang.ast.FlowDocument
 import org.flowlang.ast.FlowNode
@@ -14,6 +14,7 @@ import org.flowlang.ast.StringLiteralNode
 import org.flowlang.ast.SystemNode
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.SupportLevel
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.generators.manifest.InvalidPlanningEvidenceException
 import org.flowlang.generators.manifest.MandatoryMaterializationAuthority
 import org.flowlang.generators.manifest.UnresolvedPlanningContinuityException
@@ -24,10 +25,11 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanDependencyEvidence
 import org.flowlang.planner.PlanDependencyKind
+import org.flowlang.planner.PlanDependencyRelation
 import org.flowlang.planner.PlanDependencyResolution
 import org.flowlang.planner.TaskNode
 import org.flowlang.targets.TargetRegistryYamlLoader
-import org.flowlang.adapters.yaml.IntentYamlLoader
+import org.flowlang.topology.ExecutionTopologyKind
 
 class UniversalDependencyContinuityContractTests {
     private val canonicalModules by lazy { ModuleRegistry.fromDirectory(File("modules")) }
@@ -150,27 +152,130 @@ class UniversalDependencyContinuityContractTests {
         )
 
         val failure = assertFailsWith<InvalidPlanningEvidenceException> {
-            MandatoryMaterializationAuthority(targets, canonicalModules).authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(forged, "jenkins", targets))
+            MandatoryMaterializationAuthority(targets, canonicalModules)
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(forged, "jenkins", targets))
         }
         assertTrue(failure.issues.any { it.code == "planning.continuity.requirement.evidence" })
     }
 
     @Test
-    fun stateContinuityCanPassOnlyThroughDeclaredPreservers() {
+    fun workflowLocalStateRequiresPropagationWithoutInventingDurablePersistence() {
         val registry = ModuleRegistry.fromDescriptors(listOf(stateDescriptor()))
+        val plan = statePlan(registry)
+
+        val state = plan.dependencyRelations.single { it.kind == PlanDependencyKind.STATE }
+        assertEquals(PlanDependencyResolution.RESOLVED, state.resolution)
+        assertEquals(StateLifetime.WORKFLOW, state.stateLifetime)
+        assertEquals(listOf("stateful_open_1", "stateful_inspect_1", "stateful_commit_1"), state.path)
+        assertTrue("continuity.state" in plan.tasks.last().requiredCapabilities)
+        assertTrue(plan.topologyRequirements.any { it.kind == ExecutionTopologyKind.STATE_PROPAGATION })
+        assertTrue(plan.topologyRequirements.none { it.kind == ExecutionTopologyKind.DURABLE_STATE })
+    }
+
+    @Test
+    fun explicitDurableStateRequiresBothPropagationAndDurablePersistence() {
+        val registry = ModuleRegistry.fromDescriptors(listOf(stateDescriptor(StateLifetime.DURABLE)))
+        val plan = statePlan(registry)
+
+        val state = plan.dependencyRelations.single { it.kind == PlanDependencyKind.STATE }
+        assertEquals(StateLifetime.DURABLE, state.stateLifetime)
+        assertTrue(plan.topologyRequirements.any { it.kind == ExecutionTopologyKind.STATE_PROPAGATION })
+        assertTrue(plan.topologyRequirements.any { it.kind == ExecutionTopologyKind.DURABLE_STATE })
+    }
+
+    @Test
+    fun durableRequirementCannotBeSatisfiedByWorkflowLocalProvider() {
+        val descriptor = stateDescriptor().replace(
+            "      requires:\n        - kind: state\n          name: session",
+            "      requires:\n        - kind: state\n          name: session\n          lifetime: durable"
+        )
+        val registry = ModuleRegistry.fromDescriptors(listOf(descriptor))
         val plan = FlowPlanner(registry).plan(
             document(
                 action("stateful", "open", "stateful", "opened"),
-                action("stateful", "inspect", "stateful", "inspected", dependsOn = listOf("opened")),
-                action("stateful", "commit", "stateful", "committed", dependsOn = listOf("inspected")),
+                action("stateful", "commit", "stateful", "committed", dependsOn = listOf("opened")),
+                systems = listOf(SystemNode(name = "stateful", systemType = "stateful"))
+            )
+        )
+
+        val state = plan.dependencyRelations.single { it.kind == PlanDependencyKind.STATE }
+        assertEquals(StateLifetime.DURABLE, state.stateLifetime)
+        assertEquals(PlanDependencyResolution.UNRESOLVED, state.resolution)
+    }
+
+    @Test
+    fun durableProviderMaySatisfyWorkflowLocalRequirementWithoutPromotingRequiredLifetime() {
+        val descriptor = stateDescriptor().replaceFirst(
+            "      provides:\n        - kind: state\n          name: session",
+            "      provides:\n        - kind: state\n          name: session\n          lifetime: durable"
+        )
+        val registry = ModuleRegistry.fromDescriptors(listOf(descriptor))
+        val plan = FlowPlanner(registry).plan(
+            document(
+                action("stateful", "open", "stateful", "opened"),
+                action("stateful", "commit", "stateful", "committed", dependsOn = listOf("opened")),
                 systems = listOf(SystemNode(name = "stateful", systemType = "stateful"))
             )
         )
 
         val state = plan.dependencyRelations.single { it.kind == PlanDependencyKind.STATE }
         assertEquals(PlanDependencyResolution.RESOLVED, state.resolution)
-        assertEquals(listOf("stateful_open_1", "stateful_inspect_1", "stateful_commit_1"), state.path)
-        assertTrue("continuity.state" in plan.tasks.last().requiredCapabilities)
+        assertEquals(StateLifetime.WORKFLOW, state.stateLifetime)
+        assertTrue(plan.topologyRequirements.none { it.kind == ExecutionTopologyKind.DURABLE_STATE })
+    }
+
+    @Test
+    fun materializationRejectsForgedStateLifetimeDowngrade() {
+        val registry = ModuleRegistry.fromDescriptors(listOf(stateDescriptor(StateLifetime.DURABLE)))
+        val valid = statePlan(registry)
+        val forged = valid.copy(
+            dependencyRelations = valid.dependencyRelations.map { relation ->
+                if (relation.kind == PlanDependencyKind.STATE) {
+                    relation.copy(stateLifetime = StateLifetime.WORKFLOW)
+                } else {
+                    relation
+                }
+            }
+        )
+
+        val failure = assertFailsWith<InvalidPlanningEvidenceException> {
+            MandatoryMaterializationAuthority(targets, registry)
+                .authorizeDiagnosticEvidence(testDiagnosticMaterializationRequest(forged, "jenkins", targets))
+        }
+        assertTrue(failure.issues.any { it.code == "planning.continuity.state-lifetime.mismatch" })
+    }
+
+    @Test
+    fun durableLookingChannelNameDoesNotPromoteWorkflowLifetime() {
+        val registry = ModuleRegistry.fromDescriptors(
+            listOf(stateDescriptor().replace("name: session", "name: durable-session"))
+        )
+        val plan = FlowPlanner(registry).plan(
+            document(
+                action("stateful", "open", "stateful", "opened"),
+                action("stateful", "commit", "stateful", "committed", dependsOn = listOf("opened")),
+                systems = listOf(SystemNode(name = "stateful", systemType = "stateful"))
+            )
+        )
+
+        val state = plan.dependencyRelations.single { it.kind == PlanDependencyKind.STATE }
+        assertEquals("durable-session", state.channel)
+        assertEquals(StateLifetime.WORKFLOW, state.stateLifetime)
+        assertTrue(plan.topologyRequirements.none { it.kind == ExecutionTopologyKind.DURABLE_STATE })
+    }
+
+    @Test
+    fun publicStateRelationCannotOmitLifetime() {
+        assertFailsWith<IllegalArgumentException> {
+            PlanDependencyRelation(
+                sourceNodeId = "a",
+                targetNodeId = "b",
+                kind = PlanDependencyKind.STATE,
+                channel = "session",
+                evidence = PlanDependencyEvidence.MODULE_CONTRACT,
+                path = listOf("a", "b")
+            )
+        }
     }
 
     @Test
@@ -186,6 +291,7 @@ class UniversalDependencyContinuityContractTests {
         )
 
         val state = plan.dependencyRelations.single { it.kind == PlanDependencyKind.STATE }
+        assertEquals(StateLifetime.WORKFLOW, state.stateLifetime)
         assertEquals(PlanDependencyResolution.AMBIGUOUS, state.resolution)
         assertEquals(listOf("stateful_open_1", "stateful_open_2"), state.candidates)
         assertFalse(state.path.isNotEmpty())
@@ -205,7 +311,29 @@ class UniversalDependencyContinuityContractTests {
         assertFailsWith<CanonicalModuleLoader.ContractException> {
             CanonicalModuleLoader.loadText(duplicate)
         }
+
+        val unknownLifetime = stateDescriptor().replaceFirst(
+            "          name: session",
+            "          name: session\n          lifetime: forever"
+        )
+        assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(unknownLifetime)
+        }
+
+        val lifetimeOnWorkspace = stateDescriptor(StateLifetime.DURABLE).replaceFirst("kind: state", "kind: workspace")
+        assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(lifetimeOnWorkspace)
+        }
     }
+
+    private fun statePlan(registry: ModuleRegistry): ExecutionPlan = FlowPlanner(registry).plan(
+        document(
+            action("stateful", "open", "stateful", "opened"),
+            action("stateful", "inspect", "stateful", "inspected", dependsOn = listOf("opened")),
+            action("stateful", "commit", "stateful", "committed", dependsOn = listOf("inspected")),
+            systems = listOf(SystemNode(name = "stateful", systemType = "stateful"))
+        )
+    )
 
     private fun document(
         vararg steps: ActionNode,
@@ -263,56 +391,63 @@ class UniversalDependencyContinuityContractTests {
               destructive: false
         """.trimIndent()
 
-    private fun stateDescriptor(): String = """
-        kind: FlowModule
-        name: stateful
-        version: "1.0"
-        description: "Synthetic state continuity module"
-        systemTypes:
-          stateful:
-            input: {}
-        actions:
-          open:
-            kind: action
-            targetTypes: [stateful]
-            input: {}
-            output:
-              ok:
-                type: boolean
-            effects: {}
-            continuity:
-              provides:
-                - kind: state
-                  name: session
-            safety:
-              destructive: false
-          inspect:
-            kind: action
-            targetTypes: [stateful]
-            input: {}
-            output:
-              ok:
-                type: boolean
-            effects: {}
-            continuity:
-              preserves:
-                - kind: state
-                  name: session
-            safety:
-              destructive: false
-          commit:
-            kind: action
-            targetTypes: [stateful]
-            input: {}
-            output:
-              ok:
-                type: boolean
-            effects: {}
-            continuity:
-              requires:
-                - kind: state
-                  name: session
-            safety:
-              destructive: false
-        """.trimIndent()
+    private fun stateDescriptor(lifetime: StateLifetime? = null): String {
+        val descriptor = """
+            kind: FlowModule
+            name: stateful
+            version: "1.0"
+            description: "Synthetic state continuity module"
+            systemTypes:
+              stateful:
+                input: {}
+            actions:
+              open:
+                kind: action
+                targetTypes: [stateful]
+                input: {}
+                output:
+                  ok:
+                    type: boolean
+                effects: {}
+                continuity:
+                  provides:
+                    - kind: state
+                      name: session
+                safety:
+                  destructive: false
+              inspect:
+                kind: action
+                targetTypes: [stateful]
+                input: {}
+                output:
+                  ok:
+                    type: boolean
+                effects: {}
+                continuity:
+                  preserves:
+                    - kind: state
+                      name: session
+                safety:
+                  destructive: false
+              commit:
+                kind: action
+                targetTypes: [stateful]
+                input: {}
+                output:
+                  ok:
+                    type: boolean
+                effects: {}
+                continuity:
+                  requires:
+                    - kind: state
+                      name: session
+                safety:
+                  destructive: false
+            """.trimIndent()
+        if (lifetime == null) return descriptor
+        return descriptor.replace(
+            "name: session",
+            "name: session\n          lifetime: ${lifetime.wireName}"
+        )
+    }
 }

@@ -550,13 +550,25 @@ internal object ExecutionPlanMaterializationValidator {
             val continuity = modules.findAction(task.module, task.action)?.continuity ?: return@forEach
             continuity.requires.forEach { requirement ->
                 val kind = requirement.kind.toPlanKind()
-                val matches = plan.dependencyRelations.filter { relation ->
+                val identityMatches = plan.dependencyRelations.filter { relation ->
                     relation.targetNodeId == task.id &&
                         relation.kind == kind &&
                         relation.channel == requirement.name &&
                         relation.evidence == PlanDependencyEvidence.MODULE_CONTRACT
                 }
-                if (matches.size != 1) {
+                val expectedStateLifetime = requirement.effectiveStateLifetime
+                val matches = identityMatches.filter { relation ->
+                    relation.stateLifetime == expectedStateLifetime
+                }
+                if (identityMatches.size == 1 && matches.isEmpty()) {
+                    val actual = identityMatches.single().stateLifetime?.wireName ?: "none"
+                    val expected = expectedStateLifetime?.wireName ?: "none"
+                    issues += issue(
+                        "planning.continuity.state-lifetime.mismatch",
+                        "nodes.${task.id}",
+                        "Action '${task.module}.${task.action}' requires ${kind.name.lowercase()} channel '${requirement.name}' with state lifetime '$expected', but the execution plan declares '$actual'."
+                    )
+                } else if (matches.size != 1) {
                     issues += issue(
                         "planning.continuity.requirement.evidence",
                         "nodes.${task.id}",
@@ -605,21 +617,21 @@ internal object ExecutionPlanMaterializationValidator {
         val path = relation.path
         val sourceTask = path.firstOrNull()?.let(nodesById::get) as? TaskNode
         val sourceContinuity = sourceTask?.let { modules.findAction(it.module, it.action)?.continuity }
-        if (sourceContinuity == null || requirement !in sourceContinuity.provides) {
+        if (sourceContinuity == null || sourceContinuity.provides.none { it.satisfies(requirement) }) {
             issues += issue(
                 "planning.continuity.provider.invalid",
                 "dependencyRelations.${relation.targetNodeId}.${requirement.name}",
-                "Resolved continuity source '${relation.sourceNodeId}' does not provide ${requirement.kind.name.lowercase()} channel '${requirement.name}'."
+                "Resolved continuity source '${relation.sourceNodeId}' does not provide ${requirement.kind.name.lowercase()} channel '${requirement.name}' with the required state lifetime."
             )
         }
         path.drop(1).dropLast(1).forEach { nodeId ->
             val task = nodesById[nodeId] as? TaskNode
             val continuity = task?.let { modules.findAction(it.module, it.action)?.continuity }
-            if (continuity == null || requirement !in continuity.preserves) {
+            if (continuity == null || continuity.preserves.none { it.satisfies(requirement) }) {
                 issues += issue(
                     "planning.continuity.preservation.invalid",
                     "dependencyRelations.${relation.targetNodeId}.${requirement.name}",
-                    "Intermediate node '$nodeId' does not explicitly preserve ${requirement.kind.name.lowercase()} channel '${requirement.name}'."
+                    "Intermediate node '$nodeId' does not explicitly preserve ${requirement.kind.name.lowercase()} channel '${requirement.name}' with the required state lifetime."
                 )
             }
         }

@@ -132,6 +132,17 @@ object CanonicalModuleLoader {
                 if (!CONTINUITY_CHANNEL.matches(name)) {
                     throw ContractException("$channelPath.name is invalid: $name")
                 }
+                if (channel.containsKey("lifetime")) {
+                    if (kind != "state") {
+                        throw ContractException("$channelPath.lifetime is valid only for state continuity channels.")
+                    }
+                    val lifetime = text(channel, "lifetime", channelPath).lowercase()
+                    if (lifetime !in CONTINUITY_STATE_LIFETIMES) {
+                        throw ContractException(
+                            "$channelPath.lifetime must be one of: ${CONTINUITY_STATE_LIFETIMES.sorted().joinToString()}."
+                        )
+                    }
+                }
                 kind to name
             }
             if (identities.distinct().size != identities.size) {
@@ -241,8 +252,9 @@ object CanonicalModuleLoader {
     private val SCHEMA_FIELD_KEYS = setOf("type", "required", "sensitive", "default")
     private val EFFECT_KEYS = setOf("reads", "writes", "creates", "updates", "deletes", "executes", "network", "filesystem")
     private val CONTINUITY_KEYS = setOf("provides", "requires", "preserves")
-    private val CONTINUITY_CHANNEL_KEYS = setOf("kind", "name")
+    private val CONTINUITY_CHANNEL_KEYS = setOf("kind", "name", "lifetime")
     private val CONTINUITY_KINDS = setOf("value", "workspace", "state")
+    private val CONTINUITY_STATE_LIFETIMES = setOf("workflow", "durable")
     private val CONTINUITY_CHANNEL = Regex("[a-z][A-Za-z0-9._-]*")
     private val SAFETY_KEYS = setOf("destructive", "requires")
     private val SAFETY_REQUIREMENTS = setOf("safety", "approval")

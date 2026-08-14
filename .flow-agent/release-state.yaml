@@ -16,7 +16,7 @@ versionBoundary:
   artifactContracts:
     intent: "2.0"
     ast: "2.2"
-    executionPlan: "2.3"
+    executionPlan: "2.4"
     executionPlanLoweringEvidence: "2.1"
     targetManifest: "3.0"
     targetRegistry: "3.2"
@@ -77,7 +77,7 @@ qualityPrinciples:
   - "Ordering never implies value, workspace or state continuity."
   - "Continuity must be declared by canonical module contracts and supported explicitly by the target."
   - "Adapter continuity evidence consumes existing VALUE, WORKSPACE and STATE relations without redefining Core dependency meaning."
-  - "A STATE relation requires both mutable-state transfer and durable-state lifetime evidence."
+  - "A STATE relation always requires mutable-state transfer; durable-state lifetime evidence is required only when the canonical state lifetime is explicitly durable."
   - "Supported adapter continuity requires a composed provider, production implementation evidence and independent behavioral proof."
   - "Target registry flags, provider identity and platform documentation are not continuity implementation evidence."
   - "Profile-only continuity remains UNKNOWN until a composed provider supplies relation-specific evidence."

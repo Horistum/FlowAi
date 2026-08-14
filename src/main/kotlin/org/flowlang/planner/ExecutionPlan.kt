@@ -42,6 +42,27 @@ data class ExecutionPlan(
         dependencyRelations = dependencyRelations
     )
 ) {
+    init {
+        val duplicateModuleRequirements = dependencyRelations
+            .filter { relation ->
+                relation.kind != PlanDependencyKind.ORDERING &&
+                    relation.evidence == PlanDependencyEvidence.MODULE_CONTRACT
+            }
+            .groupBy { relation ->
+                listOf(
+                    relation.targetNodeId,
+                    relation.kind.name,
+                    relation.channel,
+                    relation.evidence.name
+                )
+            }
+            .filterValues { relations -> relations.size > 1 }
+        require(duplicateModuleRequirements.isEmpty()) {
+            "ExecutionPlan cannot carry multiple MODULE_CONTRACT continuity relations for one required target/kind/channel identity: " +
+                duplicateModuleRequirements.keys.joinToString { key -> key.joinToString(":") }
+        }
+    }
+
     /** Depth-first flattening of all concrete action tasks. */
     val tasks: List<TaskNode> get() = collectTasks(nodes)
 

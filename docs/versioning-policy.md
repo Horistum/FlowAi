@@ -8,7 +8,7 @@ Flow has separate public version axes with distinct purposes. They are intention
 | Public standard | `0.8.0` | Public semantics, schemas, snapshots and conformance advance together. |
 | Intent contract | `2.0` | The serialized Intent contract changes incompatibly. |
 | AST contract | `2.2` | The serialized AST contract changes incompatibly. |
-| ExecutionPlan contract | `2.3` | The serialized execution-plan contract changes incompatibly. |
+| ExecutionPlan contract | `2.4` | The serialized execution-plan contract changes incompatibly. |
 | ExecutionPlan lowering evidence | `2.1` | The artifact-derived proof needed to authenticate preserved intent meaning changes. |
 | TargetManifest contract | `3.0` | The serialized target-manifest contract changes incompatibly. |
 | TargetRegistry contract | `3.2` | The serialized target-registry contract changes incompatibly. |
@@ -27,7 +27,7 @@ A contract-only migration may advance only the serialized artifact versions whos
 
 Artifact contracts are independently versioned serialized boundaries. They must not be represented by one misleading global number after their versions diverge.
 
-Intent remains at `2.0`; AST advances to `2.2`; ExecutionPlan advances to `2.3`. The earlier control-scope and explicit node-kind migrations remain part of the current contract history:
+Intent remains at `2.0`; AST remains at `2.2`; ExecutionPlan advances to `2.4`. The earlier control-scope and explicit node-kind migrations remain part of the current contract history:
 
 - Intent 2.0 introduces top-level triggers and removes schedule-as-step. SI-01 does not add an authored Intent field.
 - AST 2.0 introduced trigger nodes.
@@ -38,8 +38,9 @@ Intent remains at `2.0`; AST advances to `2.2`; ExecutionPlan advances to `2.3`.
 - ExecutionPlan lowering evidence 2.1 additionally certifies each authored workflow-to-step membership used to authenticate `OPERATION` scope during materialization.
 - ExecutionPlan 2.2 makes public node-kind semantics explicit: task specialization is derived from canonical capability rather than implementation module/action labels, adapter capability strings or resource-name substrings, and the JSON Schema accepts only the closed lowercase canonical kind vocabulary.
 - ExecutionPlan 2.3 adds the `STATE_RECOVERY` domain and typed recovery relationship semantics for BACKUP/RESTORE, including protected-state identity, authored backup destination, authored recovery-point identity and narrow backup retention. It deliberately leaves consistency guarantees, recoverability and restore create-versus-replace unresolved where the authored contract does not prove them.
+- ExecutionPlan 2.4 adds explicit `stateLifetime` to every `STATE` dependency relation. `WORKFLOW` means mutable state continuity only within the current workflow execution; `DURABLE` additionally requires persistence evidence. Non-state relations cannot carry this field, and a state relation without it is invalid.
 
-The AST and ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`. The ExecutionPlan 2.2 semantic migration is documented in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`. The AST 2.2 and ExecutionPlan 2.3 recovery-effect migration is documented in `docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`.
+The AST and ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`. The ExecutionPlan 2.2 semantic migration is documented in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`. The AST 2.2 and ExecutionPlan 2.3 recovery-effect migration is documented in `docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`. The ExecutionPlan 2.4 state-lifetime and module-schema 1.3 migration is documented in `docs/SI_08_TYPED_POLICY_STATE_LIFETIME_MIGRATION.md`.
 
 Target contracts advance separately:
 

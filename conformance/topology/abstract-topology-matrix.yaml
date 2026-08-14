@@ -51,6 +51,12 @@ cases:
   - id: state-continuity
     fixture: state-continuity
     requiredKinds:
+      - statePropagation
+      - workflowLifetime
+      - workflowScope
+  - id: durable-state-continuity
+    fixture: durable-state-continuity
+    requiredKinds:
       - durableState
       - statePropagation
       - workflowLifetime

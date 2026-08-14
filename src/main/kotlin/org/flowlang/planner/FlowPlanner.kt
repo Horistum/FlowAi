@@ -442,6 +442,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                     targetNodeId = targetNodeId,
                     kind = requirement.kind.toPlanKind(),
                     channel = requirement.name,
+                    stateLifetime = requirement.effectiveStateLifetime,
                     evidence = PlanDependencyEvidence.MODULE_CONTRACT,
                     resolution = PlanDependencyResolution.RESOLVED,
                     path = matches.single().path + targetNodeId,
@@ -451,6 +452,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                     targetNodeId = targetNodeId,
                     kind = requirement.kind.toPlanKind(),
                     channel = requirement.name,
+                    stateLifetime = requirement.effectiveStateLifetime,
                     evidence = PlanDependencyEvidence.MODULE_CONTRACT,
                     resolution = PlanDependencyResolution.UNRESOLVED,
                     evidenceReference = evidenceReference
@@ -459,6 +461,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                     targetNodeId = targetNodeId,
                     kind = requirement.kind.toPlanKind(),
                     channel = requirement.name,
+                    stateLifetime = requirement.effectiveStateLifetime,
                     evidence = PlanDependencyEvidence.MODULE_CONTRACT,
                     resolution = PlanDependencyResolution.AMBIGUOUS,
                     candidates = matches.map { it.providerNodeId }.sorted(),
@@ -474,8 +477,10 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         ): List<ContinuityPath> {
             if (!visited.add(nodeId)) return emptyList()
             val continuity = taskContinuity[nodeId] ?: return emptyList()
-            if (requirement in continuity.provides) return listOf(ContinuityPath(nodeId, listOf(nodeId)))
-            if (requirement !in continuity.preserves) return emptyList()
+            if (continuity.provides.any { it.satisfies(requirement) }) {
+                return listOf(ContinuityPath(nodeId, listOf(nodeId)))
+            }
+            if (continuity.preserves.none { it.satisfies(requirement) }) return emptyList()
             return taskDependencies[nodeId].orEmpty().flatMap { dependency ->
                 findProviders(dependency, requirement, LinkedHashSet(visited)).map { path ->
                     path.copy(path = path.path + nodeId)

@@ -76,11 +76,20 @@ object SemanticObservationAuthority {
                     val consumerIdentity = requireNotNull(semanticIdentityByNode[relation.targetNodeId]) {
                         "Resolved ${relation.kind} continuity references unknown target node '${relation.targetNodeId}'."
                     }
+                    val channel = relation.channel?.takeIf(String::isNotBlank) ?: DEFAULT_CONTINUITY_CHANNEL
+                    val value = if (relation.kind == PlanDependencyKind.STATE) {
+                        val lifetime = requireNotNull(relation.stateLifetime) {
+                            "Resolved STATE continuity '$channel' has no explicit state lifetime."
+                        }
+                        "$channel|lifetime=${lifetime.wireName}"
+                    } else {
+                        channel
+                    }
                     add(
                         requirement(
                             kind = SemanticObservationKind.CONTINUITY,
                             subject = relation.kind.name,
-                            value = relation.channel?.takeIf(String::isNotBlank) ?: DEFAULT_CONTINUITY_CHANNEL,
+                            value = value,
                             producerIdentity = producerIdentity,
                             consumerIdentity = consumerIdentity
                         )

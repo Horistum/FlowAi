@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
 import org.flowlang.effects.SemanticEffect
@@ -115,6 +116,7 @@ object SemanticEquivalencePlanFactory {
                     targetNodeId = consumer.id,
                     kind = kind,
                     channel = channel,
+                    stateLifetime = if (kind == PlanDependencyKind.STATE) StateLifetime.WORKFLOW else null,
                     evidence = PlanDependencyEvidence.MODULE_CONTRACT,
                     path = listOf(producer.id, consumer.id),
                     evidenceReference = "c0.3:${kind.name.lowercase()}:$channel"

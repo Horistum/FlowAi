@@ -1,5 +1,7 @@
 package org.flowlang.modules
 
+import org.flowlang.continuity.StateLifetime
+
 /**
  * Module + action contracts (docs/06). Modules own meaning; the core owns syntax.
  * Used by the validator and the planner.
@@ -76,10 +78,38 @@ enum class ContinuityKind {
     val capability: String get() = "continuity.${name.lowercase()}"
 }
 
+/**
+ * Named continuity channel owned by a module action contract.
+ *
+ * State lifetime is orthogonal to the channel kind. Omission on the module wire
+ * contract deliberately preserves backward-compatible workflow-local semantics;
+ * the planner materializes that default explicitly into ExecutionPlan 2.4.
+ */
 data class ContinuityChannel(
     val kind: ContinuityKind,
-    val name: String
-)
+    val name: String,
+    val stateLifetime: StateLifetime? = null
+) {
+    init {
+        require(kind == ContinuityKind.STATE || stateLifetime == null) {
+            "Only state continuity channels may declare a state lifetime."
+        }
+    }
+
+    val effectiveStateLifetime: StateLifetime?
+        get() = if (kind == ContinuityKind.STATE) stateLifetime ?: StateLifetime.WORKFLOW else null
+
+    /** A stronger durable provider/preserver may satisfy a workflow-local requirement, never the reverse. */
+    fun satisfies(required: ContinuityChannel): Boolean {
+        if (kind != required.kind || name != required.name) return false
+        if (kind != ContinuityKind.STATE) return true
+        return when (required.effectiveStateLifetime) {
+            StateLifetime.WORKFLOW -> true
+            StateLifetime.DURABLE -> effectiveStateLifetime == StateLifetime.DURABLE
+            null -> false
+        }
+    }
+}
 
 data class ContinuityContract(
     val provides: List<ContinuityChannel> = emptyList(),

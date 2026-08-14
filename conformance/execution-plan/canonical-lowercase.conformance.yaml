@@ -6,7 +6,7 @@ input:
   fixture: examples/intent/build-test-deploy.intent.yaml
 expected:
   requiredCheck: v0.3.2.execution-plan.canonical
-  executionPlanVersion: "2.3"
+  executionPlanVersion: "2.4"
   nodeKinds:
     lowercase: true
     includes:

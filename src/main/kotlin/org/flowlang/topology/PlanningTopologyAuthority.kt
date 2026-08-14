@@ -1,5 +1,6 @@
 package org.flowlang.topology
 
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.planner.*
 
 /** Derives the complete topology needed by a concrete ExecutionPlan. */
@@ -49,11 +50,13 @@ object PlanningTopologyAuthority {
                         ))
                     }
                     PlanDependencyKind.STATE -> {
-                        add(requirement(
-                            ExecutionTopologyKind.DURABLE_STATE,
-                            subject,
-                            relation.evidenceReference ?: "plan.dependencyRelations.${relation.targetNodeId}.state"
-                        ))
+                        if (relation.stateLifetime == StateLifetime.DURABLE) {
+                            add(requirement(
+                                ExecutionTopologyKind.DURABLE_STATE,
+                                subject,
+                                relation.evidenceReference ?: "plan.dependencyRelations.${relation.targetNodeId}.state"
+                            ))
+                        }
                         add(requirement(
                             ExecutionTopologyKind.STATE_PROPAGATION,
                             subject,

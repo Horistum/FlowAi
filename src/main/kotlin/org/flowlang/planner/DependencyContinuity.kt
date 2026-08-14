@@ -1,5 +1,7 @@
 package org.flowlang.planner
 
+import org.flowlang.continuity.StateLifetime
+
 /**
  * Universal dependency semantics carried by the Execution Plan.
  *
@@ -39,12 +41,25 @@ data class PlanDependencyRelation(
     val targetNodeId: String,
     val kind: PlanDependencyKind,
     val channel: String? = null,
+    /** Explicit only for STATE. ExecutionPlan 2.4 never infers persistence from relation kind alone. */
+    val stateLifetime: StateLifetime? = null,
     val evidence: PlanDependencyEvidence,
     val resolution: PlanDependencyResolution = PlanDependencyResolution.RESOLVED,
     val path: List<String> = emptyList(),
     val candidates: List<String> = emptyList(),
     val evidenceReference: String? = null
 ) {
+    init {
+        when (kind) {
+            PlanDependencyKind.STATE -> require(stateLifetime != null) {
+                "State dependency relations must declare an explicit state lifetime."
+            }
+            else -> require(stateLifetime == null) {
+                "Only state dependency relations may declare a state lifetime."
+            }
+        }
+    }
+
     val continuity: Boolean get() = kind != PlanDependencyKind.ORDERING
     val blocking: Boolean get() = continuity && resolution != PlanDependencyResolution.RESOLVED
 }
@@ -72,6 +87,7 @@ object PlanDependencyRelations {
         relation.targetNodeId,
         relation.kind.name,
         relation.channel,
+        relation.stateLifetime?.name,
         relation.evidence.name,
         relation.resolution.name
     )
