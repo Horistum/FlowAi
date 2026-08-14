@@ -1,6 +1,6 @@
 project: Flow Semantic Integrity
 stream: semantic-integrity
-roadmapVersion: 7
+roadmapVersion: 8
 status: active
 
 purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
@@ -13,11 +13,11 @@ rules:
   - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
 
 currentDecision:
-  completedItem: "SI-06"
-  completedItemName: "Eliminate Remaining Silent Authored-Value Coercion"
-  nextItem: "SI-07"
-  nextItemName: "Align Public Schemas with Production Acceptance"
-  decisionBasis: "SI-06 passed Flow CI #2919 on exact head 0f3de13811c05e5b8a8ba4ef8b1d43ee1fe3422b and synthetic merge candidate d4b670573269bcba8685bbd89552b77b752c6688, then merged as 526afbff56e32b5ae3fb9755716152bd74a07030. Post-merge main Flow CI #2920 also passed. The next ordered semantic-integrity outcome is project-direction section 1.7: align public schemas with production acceptance."
+  completedItem: "SI-07"
+  completedItemName: "Align Public Schemas with Production Acceptance"
+  nextItem: "SI-08"
+  nextItemName: "Typed Policy and State-Lifetime Semantics"
+  decisionBasis: "SI-07 final repair head f27bf53afffb555fcef99b2db32770d9b241beba passed Flow CI #2928 / run 31773901231 together with synthetic merge candidate 303fa34f0e3147a8482acf2c4905fca4cadaa3b0, then merged as fc905efa20c255846c098ccf058f560d61ee7378. Post-merge main Flow CI #2929 also passed. The next ordered semantic-integrity outcome is project-direction section 1.8: replace string heuristics with typed policy and lifetime semantics."
 
 historicalEvents:
   - id: "SI-01"
@@ -177,15 +177,39 @@ items:
   - version: "SI-07"
     name: "Align Public Schemas with Production Acceptance"
     type: "semantic-integrity-correction"
-    status: next
+    status: completed
     purpose: "Classify each published schema's authority and eliminate mismatches between schemas that claim public validity and the corresponding production loader or validator acceptance contract."
     dependsOn: "SI-06"
     workPackage: ".flow-agent/work-packages/SI-07-align-public-schemas-with-production-acceptance.yaml"
     strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#17-align-public-schemas-with-production-acceptance"
+    completionBoundary:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2928
+      runId: 31773901231
+      exactHead: "f27bf53afffb555fcef99b2db32770d9b241beba"
+      mergeCandidate: "303fa34f0e3147a8482acf2c4905fca4cadaa3b0"
+    completionMergeCommit: "fc905efa20c255846c098ccf058f560d61ee7378"
     completionEvidence:
       - "Every published schema is mapped to its production loader/validator and explicitly classified as syntactic-only or validity-authoritative."
       - "Validity-authoritative schemas have bidirectional acceptance evidence against production loading rather than happy-path-only fixtures."
       - "The known TargetRegistry schema mismatch, including expressionProfiles, is resolved without weakening strict production validation."
       - "Syntactic-only schemas are documented as such and cannot be consumed as proof of production validity."
       - "Schema and artifact version consequences are decided from actual public-contract impact, with migration evidence when required."
+      - "Flow CI #2928 independently passed exact-head and synthetic merge-candidate compile, tests and standalone conformance; repair PR #135 merged as fc905efa20c255846c098ccf058f560d61ee7378 and post-merge main Flow CI #2929 also passed."
+  - version: "SI-08"
+    name: "Typed Policy and State-Lifetime Semantics"
+    type: "semantic-integrity-correction"
+    status: next
+    purpose: "Replace string-fragment policy classification and unconditional durable-state assumptions with explicit typed policy and state-lifetime semantics."
+    dependsOn: "SI-07"
+    workPackage: ".flow-agent/work-packages/SI-08-typed-policy-state-lifetime-semantics.yaml"
+    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#18-replace-string-heuristics-with-typed-policy-and-lifetime-semantics"
+    completionEvidence:
+      - "Policy controls are derived from explicit typed semantics rather than substring or message-text coincidence."
+      - "Environment guards and unrelated predicates cannot impersonate retention evidence."
+      - "Workflow-local state propagation is distinguished from durable state lifetime across executions or restarts."
+      - "DURABLE_STATE is required only by explicit stronger persistence/lifetime semantics while STATE_PROPAGATION remains required for state flow."
+      - "Negative polarity tests prove incidental text, relation naming and target capabilities cannot promote stronger semantic meaning."
+      - "Public contract and migration consequences are decided from actual accepted-input and serialized impact."
       - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."

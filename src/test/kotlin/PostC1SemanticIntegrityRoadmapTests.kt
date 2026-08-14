@@ -10,7 +10,7 @@ import org.flowlang.roadmap.RoadmapTransitionPhase
 
 class PostC1SemanticIntegrityRoadmapTests {
     @Test
-    fun repositoryCompletesSi06BeforeActivatingSi07() {
+    fun repositoryCompletesSi07BeforeActivatingSi08() {
         val report = RoadmapStreamTransitionAuthority(File(".")).analyze()
 
         assertEquals(RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE, report.phase, report.errors.joinToString(" | "))
@@ -20,8 +20,8 @@ class PostC1SemanticIntegrityRoadmapTests {
     @Test
     fun activeSemanticItemRequiresExactPredecessorCompletionBoundary() = withRepositoryFixture { root ->
         replaceRequired(
-            File(root, ".flow-agent/work-packages/SI-06-eliminate-remaining-silent-authored-value-coercion.yaml"),
-            "runNumber: 2919",
+            File(root, ".flow-agent/work-packages/SI-07-align-public-schemas-with-production-acceptance.yaml"),
+            "runNumber: 2928",
             "runNumber: 9999"
         )
 
@@ -35,7 +35,7 @@ class PostC1SemanticIntegrityRoadmapTests {
     @Test
     fun activeSemanticItemRequiresMatchingRoadmapAndWorkPackageCompletionEvidence() = withRepositoryFixture { root ->
         val roadmap = File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP)
-        replaceRequired(roadmap, "runId: 31697607328", "runId: 31697607329")
+        replaceRequired(roadmap, "runId: 31773901231", "runId: 31773901232")
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
@@ -62,21 +62,21 @@ class PostC1SemanticIntegrityRoadmapTests {
     fun activeSemanticItemRequiresGlobalFocus() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.ROADMAP_INDEX),
-            "nextItem: \"SI-07\"",
+            "nextItem: \"SI-08\"",
             "nextItem: \"SI-99\""
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
 
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "Roadmap index must select SI-07" in it })
+        assertTrue(report.errors.any { "Roadmap index must select SI-08" in it })
     }
 
     @Test
     fun activeSemanticItemRequiresExplicitSafeWorkPackagePath() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.SEMANTIC_INTEGRITY_ROADMAP),
-            "workPackage: \".flow-agent/work-packages/SI-07-align-public-schemas-with-production-acceptance.yaml\"",
+            "workPackage: \".flow-agent/work-packages/SI-08-typed-policy-state-lifetime-semantics.yaml\"",
             "workPackage: \"invalid-work-package.yaml\""
         )
 
@@ -90,7 +90,7 @@ class PostC1SemanticIntegrityRoadmapTests {
     fun activeSemanticItemCannotAdvanceValidationToUnvalidatedCurrentItem() = withRepositoryFixture { root ->
         replaceRequired(
             File(root, RoadmapStreamTransitionAuthority.RELEASE_STATE),
-            "Flow CI #2919",
+            "Flow CI #2928",
             "Flow CI #9999"
         )
 
@@ -103,9 +103,9 @@ class PostC1SemanticIntegrityRoadmapTests {
     @Test
     fun activeSemanticItemRequiresDeclaredStrategicSource() = withRepositoryFixture { root ->
         replaceRequired(
-            File(root, ".flow-agent/work-packages/SI-07-align-public-schemas-with-production-acceptance.yaml"),
-            "#17-align-public-schemas-with-production-acceptance",
-            "#16-eliminate-remaining-silent-authored-value-coercion"
+            File(root, ".flow-agent/work-packages/SI-08-typed-policy-state-lifetime-semantics.yaml"),
+            "#18-replace-string-heuristics-with-typed-policy-and-lifetime-semantics",
+            "#17-align-public-schemas-with-production-acceptance"
         )
 
         val report = RoadmapStreamTransitionAuthority(root).analyze()
