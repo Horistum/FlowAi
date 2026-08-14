@@ -17,16 +17,16 @@
     "candidates"
   ],
   "properties": {
-    "standardVersion": { "type": "string" },
-    "selectionModelVersion": { "type": "string" },
-    "planVersion": { "type": "string" },
-    "flowName": { "type": "string" },
-    "strict": { "type": "boolean" },
-    "recommendedTarget": { "type": "string" },
-    "decision": { "type": "string" },
-    "readyTargets": { "type": "array", "items": { "type": "string" } },
-    "degradedTargets": { "type": "array", "items": { "type": "string" } },
-    "blockedTargets": { "type": "array", "items": { "type": "string" } },
+    "standardVersion": {"type": "string"},
+    "selectionModelVersion": {"type": "string"},
+    "planVersion": {"type": "string"},
+    "flowName": {"type": "string"},
+    "strict": {"type": "boolean"},
+    "recommendedTarget": {"type": "string"},
+    "decision": {"type": "string"},
+    "readyTargets": {"type": "array", "items": {"type": "string"}},
+    "degradedTargets": {"type": "array", "items": {"type": "string"}},
+    "blockedTargets": {"type": "array", "items": {"type": "string"}},
     "candidates": {
       "type": "array",
       "items": {
@@ -41,19 +41,27 @@
           "targetPortabilityScore",
           "blockerCount",
           "warningCount",
-          "recommendation"
+          "recommendation",
+          "materializationReadiness",
+          "projectionReadiness",
+          "executable",
+          "readinessEvidenceAvailable"
         ],
         "properties": {
-          "rank": { "type": "integer" },
-          "target": { "type": "string" },
-          "readiness": { "enum": ["READY", "DEGRADED", "BLOCKED"] },
-          "generationAllowed": { "type": "boolean" },
-          "productionReady": { "type": "boolean" },
-          "compatibilityStatus": { "enum": ["SUPPORTED", "PARTIAL", "UNSUPPORTED", "REQUIRES_RUNTIME"] },
-          "targetPortabilityScore": { "type": "number" },
-          "blockerCount": { "type": "integer" },
-          "warningCount": { "type": "integer" },
-          "recommendation": { "type": "string" }
+          "rank": {"type": "integer"},
+          "target": {"type": "string"},
+          "readiness": {"enum": ["READY", "DEGRADED", "BLOCKED"]},
+          "generationAllowed": {"type": "boolean"},
+          "productionReady": {"type": "boolean"},
+          "compatibilityStatus": {"enum": ["SUPPORTED", "PARTIAL", "UNSUPPORTED", "REQUIRES_RUNTIME"]},
+          "targetPortabilityScore": {"type": "number"},
+          "blockerCount": {"type": "integer"},
+          "warningCount": {"type": "integer"},
+          "recommendation": {"type": "string"},
+          "materializationReadiness": {"enum": ["NOT_EVALUATED", "COMPLETE", "REVIEW_REQUIRED", "BLOCKED"]},
+          "projectionReadiness": {"enum": ["NOT_EVALUATED", "EXECUTABLE", "REVIEW_ONLY", "FAIL_FAST"]},
+          "executable": {"type": "boolean"},
+          "readinessEvidenceAvailable": {"type": "boolean"}
         },
         "additionalProperties": false
       }

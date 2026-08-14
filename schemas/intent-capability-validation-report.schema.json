@@ -8,139 +8,64 @@
     "valid",
     "issues",
     "meaning",
-    "bindings"
+    "bindings",
+    "controlAssessment"
   ],
   "properties": {
-    "valid": {
-      "type": "boolean"
-    },
+    "valid": {"type": "boolean"},
     "issues": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "level",
-          "code",
-          "message"
-        ],
+        "required": ["level", "code", "message"],
         "properties": {
-          "level": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          }
+          "level": {"type": "string"},
+          "code": {"type": "string"},
+          "message": {"type": "string"}
         }
       }
     },
-    "meaning": {
-      "type": "object"
-    },
+    "meaning": {"type": "object"},
     "bindings": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "stepId",
-          "capability",
-          "status",
-          "implementedCapabilities",
-          "semanticParameters",
-          "bindingParameters",
-          "issues",
-          "resolved"
-        ],
+        "required": ["stepId", "capability", "status", "implementedCapabilities", "semanticParameters", "bindingParameters", "issues", "resolved"],
         "properties": {
-          "stepId": {
-            "type": "string"
-          },
-          "capability": {
-            "type": "string"
-          },
-          "status": {
-            "enum": [
-              "UNBOUND",
-              "RESOLVED",
-              "INVALID"
-            ]
-          },
-          "requestedAction": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "module": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "action": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "system": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "systemType": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "implementedCapabilities": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "semanticParameters": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "bindingParameters": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
+          "stepId": {"type": "string"},
+          "capability": {"type": "string"},
+          "status": {"enum": ["UNBOUND", "RESOLVED", "INVALID"]},
+          "requestedAction": {"type": ["string", "null"]},
+          "module": {"type": ["string", "null"]},
+          "action": {"type": ["string", "null"]},
+          "system": {"type": ["string", "null"]},
+          "systemType": {"type": ["string", "null"]},
+          "implementedCapabilities": {"type": "array", "items": {"type": "string"}},
+          "semanticParameters": {"type": "array", "items": {"type": "string"}},
+          "bindingParameters": {"type": "array", "items": {"type": "string"}},
           "issues": {
             "type": "array",
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": [
-                "code",
-                "message"
-              ],
+              "required": ["code", "message"],
               "properties": {
-                "code": {
-                  "type": "string"
-                },
-                "message": {
-                  "type": "string"
-                }
+                "code": {"type": "string"},
+                "message": {"type": "string"}
               }
             }
           },
-          "resolved": {
-            "type": "boolean"
-          }
+          "resolved": {"type": "boolean"},
+          "bindingContractId": {"type": ["string", "null"]},
+          "resolvedParameters": {"type": "object", "additionalProperties": {"type": "object"}},
+          "parameterSources": {"type": "object", "additionalProperties": {"type": "string"}},
+          "effectPolicy": {"type": ["string", "null"]},
+          "evidenceReferences": {"type": "array", "items": {"type": "string"}}
         }
       }
-    }
+    },
+    "controlAssessment": {"type": "object"}
   }
 }

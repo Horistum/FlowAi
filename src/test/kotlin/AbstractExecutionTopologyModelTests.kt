@@ -158,7 +158,7 @@ class AbstractExecutionTopologyModelTests {
             File(root, "target.yaml").writeText(
                 """
                 kind: FlowTargetRegistry
-                version: "3.1"
+                version: "3.2"
                 expressionProfiles:
                   - id: full
                     description: Full expression support

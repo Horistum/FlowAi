@@ -333,7 +333,7 @@ object ReleaseLifecycleFixture {
         appendLine("    executionPlan: \"2.3\"")
         appendLine("    executionPlanLoweringEvidence: \"2.1\"")
         appendLine("    targetManifest: \"3.0\"")
-        appendLine("    targetRegistry: \"3.1\"")
+        appendLine("    targetRegistry: \"3.2\"")
     }
 
     private fun StringBuilder.appendNextProjection() {

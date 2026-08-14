@@ -11,7 +11,7 @@ Flow has separate public version axes with distinct purposes. They are intention
 | ExecutionPlan contract | `2.3` | The serialized execution-plan contract changes incompatibly. |
 | ExecutionPlan lowering evidence | `2.1` | The artifact-derived proof needed to authenticate preserved intent meaning changes. |
 | TargetManifest contract | `3.0` | The serialized target-manifest contract changes incompatibly. |
-| TargetRegistry contract | `3.1` | The serialized target-registry contract changes incompatibly. |
+| TargetRegistry contract | `3.2` | The serialized target-registry contract changes incompatibly. |
 
 ## Package version
 
@@ -45,11 +45,16 @@ Target contracts advance separately:
 
 - TargetRegistry 3.0 replaced prefix-encoded payload parameter strings with universal typed binding templates.
 - TargetRegistry 3.1 requires complete execution-topology evidence for isolation, lifetime, persistence and propagation.
+- TargetRegistry 3.2 aligns the published interchange shape with the production loader for expression profiles, defaults and the closed authored support vocabulary; it also rejects duplicate authored expression features rather than collapsing them into a set.
 - TargetManifest 3.0 preserves binding kind, source provenance, resolved compile-time values and symbolic runtime references.
 
-The target migration is documented in `docs/V0_9_6_TYPED_BINDING_MIGRATION.md`.
+The typed-binding migration is documented in `docs/V0_9_6_TYPED_BINDING_MIGRATION.md`. The TargetRegistry 3.1 to 3.2 acceptance migration is documented in `docs/SI_07_PUBLIC_SCHEMA_ACCEPTANCE_ALIGNMENT_MIGRATION.md`.
 
 Artifact versions are not cosmetic. A breaking shape or interpretation change requires a migration document, updated schema, exact snapshots and conformance evidence.
+
+## Schema authority
+
+Published JSON Schemas are independently classified in `PublishedSchemaContracts`. A `SYNTACTIC_INTERCHANGE` schema constrains serialization but does not replace its named production loader or semantic validator. `PRODUCTION_VALIDITY` is reserved for a schema with explicit bidirectional acceptance proof. The classification prevents a schema-only conformance pass from being presented as stronger production-validity evidence than the implementation actually proves.
 
 ## Historical correction identifiers
 

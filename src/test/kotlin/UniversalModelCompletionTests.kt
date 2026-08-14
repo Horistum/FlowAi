@@ -258,7 +258,7 @@ class UniversalModelCompletionTests {
         assertEquals("2.2", FlowStandardVersions.AST_VERSION)
         assertEquals("2.3", FlowStandardVersions.EXECUTION_PLAN_VERSION)
         assertEquals("3.0", FlowStandardVersions.TARGET_MANIFEST_VERSION)
-        assertEquals("3.1", FlowStandardVersions.TARGET_REGISTRY_VERSION)
+        assertEquals("3.2", FlowStandardVersions.TARGET_REGISTRY_VERSION)
 
         val plan = checkoutPlan()
         val manifest = projectionPipeline.generate(testMaterializationRequest(plan, "jenkins", targets))

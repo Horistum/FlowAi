@@ -98,7 +98,7 @@ class FlowTargetExpressionEvidenceTests {
             File(root, "target.yaml").writeText(
                 """
                 kind: FlowTargetRegistry
-                version: "3.1"
+                version: "3.2"
                 targets:
                   - name: unsafe-target
                     description: Missing expression evidence

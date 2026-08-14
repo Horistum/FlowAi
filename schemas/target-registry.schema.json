@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/target-registry/3.1/target-registry.schema.json",
-  "title": "Flow Target Registry v3.1",
+  "$id": "https://flowlang.dev/schemas/target-registry/3.2/target-registry.schema.json",
+  "title": "Flow Target Registry v3.2",
   "type": "object",
   "required": [
     "kind",
@@ -14,13 +14,16 @@
       "const": "FlowTargetRegistry"
     },
     "version": {
-      "const": "3.1"
+      "const": "3.2"
     },
     "description": {
       "type": "string"
     },
     "expressionProfiles": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/expressionProfile"
+      }
     },
     "targets": {
       "type": "array",
@@ -28,10 +31,7 @@
         "type": "object",
         "required": [
           "name",
-          "capabilities",
-          "expressionProfile",
-          "topology",
-          "projectionRules"
+          "expressionProfile"
         ],
         "properties": {
           "name": {
@@ -46,7 +46,7 @@
             "minLength": 1
           },
           "capabilities": {
-            "$ref": "#/$defs/supportMap"
+            "$ref": "#/$defs/capabilitySupportMap"
           },
           "features": {
             "$ref": "#/$defs/supportMap"
@@ -74,15 +74,11 @@
   "$defs": {
     "supportMap": {
       "type": "object",
+      "propertyNames": {
+        "minLength": 1
+      },
       "additionalProperties": {
-        "enum": [
-          "supported",
-          "full",
-          "partial",
-          "unsupported",
-          "none",
-          "requires_runtime"
-        ]
+        "$ref": "#/$defs/supportLevel"
       }
     },
     "projectionRule": {
@@ -90,7 +86,6 @@
       "required": [
         "module",
         "action",
-        "mode",
         "reason",
         "evidenceReference"
       ],
@@ -127,6 +122,9 @@
       "allOf": [
         {
           "if": {
+            "required": [
+              "mode"
+            ],
             "properties": {
               "mode": {
                 "const": "native"
@@ -137,19 +135,8 @@
             "required": [
               "payload"
             ]
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "mode": {
-                "not": {
-                  "const": "native"
-                }
-              }
-            }
           },
-          "then": {
+          "else": {
             "not": {
               "required": [
                 "payload"
@@ -164,8 +151,7 @@
       "type": "object",
       "required": [
         "kind",
-        "reference",
-        "bindings"
+        "reference"
       ],
       "properties": {
         "kind": {
@@ -474,6 +460,110 @@
           }
         }
       }
+    },
+    "supportLevel": {
+      "enum": [
+        "supported",
+        "full",
+        "partial",
+        "unsupported",
+        "none",
+        "requires_runtime"
+      ]
+    },
+    "capabilitySupportMap": {
+      "type": "object",
+      "properties": {
+        "sequentialTasks": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "parallel": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "conditions": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "dynamicLoops": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "match": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "retry": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "approvals": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "errorHandlers": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "artifacts": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "secrets": {
+          "$ref": "#/$defs/supportLevel"
+        },
+        "nativeRuntime": {
+          "$ref": "#/$defs/supportLevel"
+        }
+      },
+      "additionalProperties": false
+    },
+    "expressionProfile": {
+      "type": "object",
+      "required": [
+        "id",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supportsAll": {
+          "type": "boolean"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "supportsAll"
+            ],
+            "properties": {
+              "supportsAll": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "properties": {
+                "features": {
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "features"
+              ]
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
     }
   },
   "additionalProperties": false
