@@ -38,6 +38,20 @@ forbiddenScope:
   - "Do not mix public-schema realignment, authority-responsibility refactoring or unrelated roadmap work into SI-08."
   - "Do not rewrite historical SI-01 through SI-07, C1.0, AR0.1 or Core closure evidence."
 
+versionDecision:
+  publicStandard: unchanged-0.8.0
+  implementationPackage: unchanged-0.9.5
+  artifactContracts:
+    intent: unchanged-2.0
+    ast: unchanged-2.2
+    executionPlan: "2.3 -> 2.4"
+    executionPlanLoweringEvidence: unchanged-2.1
+    targetManifest: unchanged-3.0
+    targetRegistry: unchanged-3.2
+  publishedSchemas:
+    module: "1.2 -> 1.3"
+  reason: "IntentPolicy.condition retains its existing string wire shape, but standard retention meaning is now parsed deterministically instead of by substring. ExecutionPlan STATE dependency relations gain a required explicit stateLifetime because workflow-local propagation and durable persistence are different public semantics. Module continuity descriptors gain an optional lifetime field whose omission deliberately means workflow-local state for backward compatibility; non-state channels cannot declare it."
+
 acceptanceEvidence:
   - "A condition such as 'environment != prod' remains a generic predicate/custom condition and cannot satisfy RETENTION_GUARD without explicit typed retention semantics."
   - "Recognized retention and standard safety conditions are parsed deterministically into closed typed forms, with malformed standard forms rejected rather than reclassified by substring fallback."
@@ -50,4 +64,9 @@ acceptanceEvidence:
 
 localValidation:
   status: pending
-  rule: "This lifecycle transition only activates SI-08. A dedicated SI-08 implementation PR must establish implementation and local-validation evidence without reusing the SI-07 completion boundary."
+  evidence:
+    - "An isolated Kotlin compilation/run of PolicyCondition, RetentionConstraintKind, SafetyRequirement and StateLifetime passed positive/negative polarity: environment and incidental-retention text remain custom, explicit retention/TTL parse deterministically, malformed retention fails to clarification, and both lifetime wire values decode exactly."
+    - "Draft 2020-12 validation of the changed ExecutionPlan dependency-relation and module continuity-channel schema boundaries passed both polarity directions: STATE requires stateLifetime, non-STATE forbids it, module state may omit lifetime for workflow compatibility, and unknown/non-state lifetimes are rejected."
+    - "The state-continuity test fixture replacement anchors were independently checked after trimIndent so durable/workflow mutation tests modify the intended YAML nodes rather than silently doing nothing."
+    - "The retained offline FlowAi archive was located in the connected file library, but materialization into the execution sandbox failed with HTTP 403; no full local Gradle result is claimed from that unavailable archive."
+  rule: "The status remains pending because complete local Gradle validation was unavailable. The isolated checks above are real but do not impersonate a full local PASS. Full implementation validation remains the distinct exact-head and synthetic merge-candidate Flow CI boundary and must not be inferred from the SI-07 completion evidence."

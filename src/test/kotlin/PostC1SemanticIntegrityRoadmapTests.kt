@@ -7,6 +7,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.flowlang.roadmap.RoadmapStreamTransitionAuthority
 import org.flowlang.roadmap.RoadmapTransitionPhase
+import org.flowlang.serialization.FlowYaml
+import org.flowlang.standard.FlowStandardVersions
 
 class PostC1SemanticIntegrityRoadmapTests {
     @Test
@@ -15,6 +17,32 @@ class PostC1SemanticIntegrityRoadmapTests {
 
         assertEquals(RoadmapTransitionPhase.SEMANTIC_INTEGRITY_ACTIVE, report.phase, report.errors.joinToString(" | "))
         assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+    }
+
+    @Test
+    fun repositoryReportMatchesLiveSemanticFocusAndArtifactContracts() {
+        val releaseState = FlowYaml.readMap(File(RoadmapStreamTransitionAuthority.RELEASE_STATE))
+        val roadmapState = requireNotNull(releaseState["roadmapState"] as? Map<*, *>)
+        val nextItem = requireNotNull(roadmapState["nextItem"]?.toString())
+        val nextItemName = requireNotNull(roadmapState["nextItemName"]?.toString())
+        val portfolio = File("REPORT.md").readText()
+
+        assertTrue(
+            "Active semantic-integrity item: `$nextItem $nextItemName`" in portfolio,
+            "REPORT.md must mirror the active semantic-integrity focus from release-state."
+        )
+        val expectedContracts =
+            "Live artifact contracts are tracked independently: " +
+                "Intent `${FlowStandardVersions.INTENT_VERSION}`, " +
+                "AST `${FlowStandardVersions.AST_VERSION}`, " +
+                "ExecutionPlan `${FlowStandardVersions.EXECUTION_PLAN_VERSION}`, " +
+                "execution-plan lowering evidence `${FlowStandardVersions.EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION}`, " +
+                "TargetManifest `${FlowStandardVersions.TARGET_MANIFEST_VERSION}` and " +
+                "TargetRegistry `${FlowStandardVersions.TARGET_REGISTRY_VERSION}`."
+        assertTrue(
+            expectedContracts in portfolio,
+            "REPORT.md must mirror the typed live artifact-contract versions."
+        )
     }
 
     @Test

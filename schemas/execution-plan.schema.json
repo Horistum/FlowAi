@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/execution-plan/2.3/execution-plan.schema.json",
-  "title": "Flow Execution Plan v2.3",
+  "$id": "https://flowlang.dev/schemas/execution-plan/2.4/execution-plan.schema.json",
+  "title": "Flow Execution Plan v2.4",
   "description": "Public, target-neutral execution contract produced after intent/AST validation and before target-specific rendering.",
   "type": "object",
   "required": [
@@ -15,7 +15,7 @@
       "minLength": 1
     },
     "planVersion": {
-      "const": "2.3"
+      "const": "2.4"
     },
     "inputs": {
       "type": "array",
@@ -437,6 +437,12 @@
             "null"
           ]
         },
+        "stateLifetime": {
+          "enum": [
+            "WORKFLOW",
+            "DURABLE"
+          ]
+        },
         "evidence": {
           "enum": [
             "DECLARED_ORDERING",
@@ -476,6 +482,32 @@
           "type": "boolean"
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "STATE"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "stateLifetime"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "stateLifetime"
+              ]
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "stateTransition": {

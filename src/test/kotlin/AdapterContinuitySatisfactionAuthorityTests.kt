@@ -9,6 +9,7 @@ import org.flowlang.adapters.continuity.AdapterContinuityFamily
 import org.flowlang.adapters.continuity.AdapterContinuitySatisfactionAuthority
 import org.flowlang.adapters.continuity.UnresolvedAdapterContinuitySatisfactionException
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyEvidence
 import org.flowlang.planner.PlanDependencyKind
@@ -67,9 +68,24 @@ class AdapterContinuitySatisfactionAuthorityTests {
     }
 
     @Test
-    fun stateRelationRequiresBothMutableTransferAndDurableLifetime() {
+    fun workflowStateRelationRequiresOnlyMutableTransfer() {
         val assessment = authority.assess(
-            planWith(resolvedRelation(PlanDependencyKind.STATE, "session")),
+            planWith(resolvedRelation(PlanDependencyKind.STATE, "session", StateLifetime.WORKFLOW)),
+            "jenkins"
+        )
+
+        assertEquals(AdapterContinuityDecision.BLOCKED, assessment.decision)
+        assertEquals(
+            setOf(AdapterContinuityFamily.MUTABLE_STATE),
+            assessment.requirements.map { it.family }.toSet()
+        )
+        assertTrue(assessment.evidence.all { it.status == AdapterContinuityEvidenceStatus.UNSUPPORTED })
+    }
+
+    @Test
+    fun durableStateRelationRequiresMutableTransferAndDurableLifetime() {
+        val assessment = authority.assess(
+            planWith(resolvedRelation(PlanDependencyKind.STATE, "session", StateLifetime.DURABLE)),
             "jenkins"
         )
 
@@ -127,19 +143,23 @@ class AdapterContinuitySatisfactionAuthorityTests {
         dependencyRelations = relations.toList()
     )
 
-    private fun resolvedRelation(kind: PlanDependencyKind, channel: String): PlanDependencyRelation =
-        PlanDependencyRelation(
-            sourceNodeId = "producer",
-            targetNodeId = "consumer",
-            kind = kind,
-            channel = channel,
-            evidence = if (kind == PlanDependencyKind.VALUE) {
-                PlanDependencyEvidence.DATA_REFERENCE
-            } else {
-                PlanDependencyEvidence.MODULE_CONTRACT
-            },
-            resolution = PlanDependencyResolution.RESOLVED,
-            path = listOf("producer", "consumer"),
-            evidenceReference = "test.$channel"
-        )
+    private fun resolvedRelation(
+        kind: PlanDependencyKind,
+        channel: String,
+        stateLifetime: StateLifetime? = null
+    ): PlanDependencyRelation = PlanDependencyRelation(
+        sourceNodeId = "producer",
+        targetNodeId = "consumer",
+        kind = kind,
+        channel = channel,
+        stateLifetime = stateLifetime,
+        evidence = if (kind == PlanDependencyKind.VALUE) {
+            PlanDependencyEvidence.DATA_REFERENCE
+        } else {
+            PlanDependencyEvidence.MODULE_CONTRACT
+        },
+        resolution = PlanDependencyResolution.RESOLVED,
+        path = listOf("producer", "consumer"),
+        evidenceReference = "test.$channel"
+    )
 }

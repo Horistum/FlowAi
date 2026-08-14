@@ -1,6 +1,7 @@
 package org.flowlang.modules
 
 import java.io.File
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.parser.ExpressionParser
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.serialization.FlowYamlException
@@ -129,7 +130,11 @@ object ModuleYamlLoader {
         val channel = asMap(raw)
         ContinuityChannel(
             kind = ContinuityKind.valueOf(channel.getValue("kind").toString().uppercase()),
-            name = channel.getValue("name").toString()
+            name = channel.getValue("name").toString(),
+            stateLifetime = channel["lifetime"]?.toString()?.let { value ->
+                StateLifetime.fromWireName(value)
+                    ?: error("Canonical module validation admitted unknown state lifetime '$value'.")
+            }
         )
     }
 

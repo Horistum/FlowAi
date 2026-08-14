@@ -11,18 +11,18 @@ Completed Core closure item: `0.9.7.10 Bounded Semantic Closure Gate` (`complete
 Completed adapter roadmap item: `A1.0 GitHub Actions Artifact and Workspace Continuity` (`completed`)
 Completed conformance roadmap item: `C1.0 Operational Domain Adequacy` (`completed`)
 Completed architecture roadmap item: `AR0.1 Authority Responsibility Consolidation` (`completed`)
-Completed semantic-integrity item: `SI-05 Operational Effect Model Re-evaluation` (`completed`, Flow CI #2913)
-Active semantic-integrity item: `SI-06 Eliminate Remaining Silent Authored-Value Coercion` (`next`, active work package)
+Completed semantic-integrity item: `SI-07 Align Public Schemas with Production Acceptance` (`completed`, Flow CI #2928)
+Active semantic-integrity item: `SI-08 Typed Policy and State-Lifetime Semantics` (`next`, active work package)
 
 ## Active semantic-integrity correction
 
-SI-06 owns project-direction section 1.6: parser defaults apply only when the author omitted a value. Explicit malformed or unknown authored values must be rejected with source-aware diagnostics rather than silently becoming a default or a different semantic value.
+SI-08 owns project-direction section 1.8: canonical policy meaning must come from explicit typed standard forms rather than substring folklore, and mutable-state propagation must remain distinct from durable persistence lifetime.
 
-A concrete production defect already establishes the correction boundary: `FlowParser.parseParallel` defaults omitted `failFast` to `true`, but for an explicitly present identifier currently computes `failFast = text == "true"`. Any non-`true` identifier can therefore become `false` instead of failing. SI-06 begins with that falsification and expands only to evidence-confirmed instances of the same authored-value coercion class.
+The correction has two bounded production targets. First, arbitrary predicates such as `environment != prod` or incidental prose containing `retention` remain non-authoritative custom policy text; only explicit closed safety requirements or `retention:<value>`, `ttl:<value>` and `olderThan:<value>` forms may acquire standard policy meaning, while malformed recognized retention forms fail closed to clarification. Second, STATE continuity now carries explicit target-neutral `WORKFLOW` or `DURABLE` lifetime: workflow-local state requires propagation evidence without inventing durable storage, while durable state additionally requires persistence evidence.
 
-The work package requires systematic or property-style parser polarity tests separating omission, explicit valid values and malformed authored values. SI-07 schema-validity alignment and SI-08 typed policy/state-lifetime redesign remain explicitly out of scope.
+SI-08 advances only the public contracts whose wire meaning changed: ExecutionPlan moves from `2.3` to `2.4` and the module descriptor schema moves from `1.2` to `1.3`. Intent remains `2.0`, AST `2.2`, ExecutionPlan lowering evidence `2.1`, TargetManifest `3.0`, TargetRegistry `3.2`, implementation package `0.9.5` and public standard `0.8.0`. This implementation does not promote target support or complete the SI-08 lifecycle.
 
-SI-05 is now completed evidence. Flow CI #2913 / run `31688348916` passed exact head `dc7ac98ef3c9d465470bde4f780c1207eb81a351` and synthetic merge candidate `afcf9a42d257df4be514458947968e11a3b46529` before PR #129 merged as `495a51ac21d518d2c03d37fe84bea631ceca7975`. SI-05 advanced AST to `2.2` and ExecutionPlan to `2.3`; Intent remains `2.0`, ExecutionPlan lowering evidence remains `2.1`, package remains `0.9.5` and public standard remains `0.8.0`.
+SI-07 is completed evidence. Flow CI #2928 / run `31773901231` passed exact implementation/repair head `f27bf53afffb555fcef99b2db32770d9b241beba` and synthetic merge candidate `303fa34f0e3147a8482acf2c4905fca4cadaa3b0` before PR #135 merged as `fc905efa20c255846c098ccf058f560d61ee7378`. The distinct SI-07 completion transition passed Flow CI #2930 / run `31775736837` and merged as `9125c327a671c3c4f58cf306103a0fb21fdf3190`, activating SI-08 without borrowing predecessor implementation evidence.
 
 ## Core boundary
 
@@ -30,7 +30,7 @@ PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0
 
 The Core closure remains historical and closed. Post-C1.0 SI-01 changed scoped control evidence and advanced the AST, ExecutionPlan and execution-plan lowering-evidence contracts to `2.1`; that later migration does not rewrite the versions certified by the historical `0.9.7.10` closure.
 
-The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.2`, ExecutionPlan `2.3`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.1`.
+The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.2`, ExecutionPlan `2.4`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.2`.
 
 ## Completed adapter baseline
 

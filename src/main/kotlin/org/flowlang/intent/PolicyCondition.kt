@@ -3,42 +3,107 @@ package org.flowlang.intent
 /**
  * Typed view of a safety-policy condition.
  *
- * The serialized/wire form of a policy condition stays a plain string (for example
- * "requiresApproval" or "retention:14d"). This is an additive, in-memory parse so the
- * safety validator can branch on a closed, typed model instead of matching magic
- * strings inline. It introduces no new stored fields and changes no serialization.
+ * The serialized/wire form remains a string. Standard requirements and retention
+ * constraints are recognized only through explicit closed forms. Everything else
+ * remains non-authoritative custom policy text, so incidental words cannot acquire
+ * control meaning.
  */
 sealed interface PolicyCondition {
-    /** A closed standard safety requirement that gates AST lowering. */
+    /** A closed standard safety requirement that gates canonical control handling. */
     data class Requirement(val kind: SafetyRequirement) : PolicyCondition
 
-    /** A retention/guard rule that itself satisfies cleanup safety (e.g. "retention:14d", "olderThan:30d"). */
-    data class RetentionRule(val raw: String) : PolicyCondition
+    /** An explicitly authored retention constraint such as `retention:14d`. */
+    data class RetentionRule(
+        val kind: RetentionConstraintKind,
+        val value: String,
+        val raw: String
+    ) : PolicyCondition
 
-    /** Any other free-form condition the standard does not interpret structurally. */
+    /** Free-form policy text the standard deliberately does not interpret structurally. */
     data class Custom(val raw: String) : PolicyCondition
 
     companion object {
-        // Markers that make a condition an explicit retention/guard rule. Matched on the
-        // original text (operators such as "!=" are significant), never on a policy message.
-        private val RETENTION_MARKERS = listOf("retention", "ttl", "older", "onlyif", "environment !=")
+        /**
+         * Parses the wire string without substring inference.
+         *
+         * A malformed standard retention form is converted into the already closed
+         * REQUIRES_CLARIFICATION requirement so direct programmatic callers fail
+         * closed as well. [analyze] retains the explicit diagnostic for validators
+         * and tests that need to distinguish malformed input from authored
+         * clarification.
+         */
+        fun parse(raw: String?): PolicyCondition = analyze(raw).condition
 
-        fun parse(raw: String?): PolicyCondition {
+        fun analyze(raw: String?): PolicyConditionParseResult {
             val original = raw.orEmpty().trim()
-            val normalized = original.replace("-", "").replace("_", "").replace(" ", "").lowercase()
-            SafetyRequirement.fromNormalized(normalized)?.let { return Requirement(it) }
-            val lower = original.lowercase()
-            if (RETENTION_MARKERS.any { marker -> lower.contains(marker) }) return RetentionRule(original)
-            return Custom(original)
+            val normalized = normalizeStandardToken(original)
+            SafetyRequirement.fromNormalized(normalized)?.let {
+                return PolicyConditionParseResult(Requirement(it))
+            }
+
+            parseRetention(original)?.let { return it }
+            return PolicyConditionParseResult(Custom(original))
         }
+
+        private fun parseRetention(original: String): PolicyConditionParseResult? {
+            val separator = original.indexOf(':')
+            if (separator >= 0) {
+                val prefix = normalizeStandardToken(original.substring(0, separator))
+                val kind = RetentionConstraintKind.fromNormalized(prefix) ?: return null
+                val value = original.substring(separator + 1).trim()
+                if (value.isBlank() || value.startsWith(':')) {
+                    return malformedRetention(original, kind)
+                }
+                return PolicyConditionParseResult(RetentionRule(kind, value, original))
+            }
+
+            val bareKind = RetentionConstraintKind.fromNormalized(normalizeStandardToken(original))
+            return bareKind?.let { malformedRetention(original, it) }
+        }
+
+        private fun malformedRetention(
+            original: String,
+            kind: RetentionConstraintKind
+        ): PolicyConditionParseResult = PolicyConditionParseResult(
+            condition = Requirement(SafetyRequirement.REQUIRES_CLARIFICATION),
+            issue = PolicyConditionParseIssue(
+                code = "MALFORMED_RETENTION_POLICY",
+                message = "Retention condition '${original.ifBlank { kind.wireName }}' must use '${kind.wireName}:<value>'."
+            )
+        )
+
+        private fun normalizeStandardToken(value: String): String =
+            value.replace("-", "").replace("_", "").replace(" ", "").lowercase()
+    }
+}
+
+data class PolicyConditionParseResult(
+    val condition: PolicyCondition,
+    val issue: PolicyConditionParseIssue? = null
+)
+
+data class PolicyConditionParseIssue(
+    val code: String,
+    val message: String
+)
+
+enum class RetentionConstraintKind(
+    val wireName: String,
+    private val normalized: String
+) {
+    RETENTION("retention", "retention"),
+    TTL("ttl", "ttl"),
+    OLDER_THAN("olderThan", "olderthan");
+
+    companion object {
+        private val byNormalized = entries.associateBy { it.normalized }
+        fun fromNormalized(normalized: String): RetentionConstraintKind? = byNormalized[normalized]
     }
 }
 
 /**
- * The closed set of standard safety requirement conditions. [normalized] is the
- * canonical lookup key (lowercase, with '-', '_' and spaces removed) so that
- * "requires-approval", "requires_approval" and "Requires Approval" all map to the
- * same requirement.
+ * Closed standard safety requirement vocabulary. [normalized] is the canonical
+ * lookup key so separator/case spelling differences do not create new meaning.
  */
 enum class SafetyRequirement(val normalized: String) {
     REQUIRES_CLARIFICATION("requiresclarification"),

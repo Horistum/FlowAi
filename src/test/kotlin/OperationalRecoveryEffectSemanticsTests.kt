@@ -243,9 +243,9 @@ class OperationalRecoveryEffectSemanticsTests {
         assertFalse(serialized.contains("recovery\":null"))
 
         val schema = Json.mapper.readTree(File("schemas/execution-plan.schema.json"))
-        assertEquals("2.3", FlowStandardVersions.EXECUTION_PLAN_VERSION)
+        assertEquals("2.4", FlowStandardVersions.EXECUTION_PLAN_VERSION)
         assertEquals(
-            "2.3",
+            "2.4",
             schema.path("properties").path("planVersion").path("const").asText()
         )
         assertTrue(

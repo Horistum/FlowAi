@@ -15,6 +15,7 @@ import org.flowlang.ast.SafetyNode
 import org.flowlang.ast.StringLiteralNode
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.controls.ControlDecisionStatus
+import org.flowlang.controls.ControlEvidenceSource
 import org.flowlang.controls.ControlEvidenceStatus
 import org.flowlang.controls.ControlRequirementKind
 import org.flowlang.effects.CanonicalIntentEffectAuthority
@@ -61,6 +62,54 @@ class UniversalControlPolicyRequirementsTests {
         assertEquals(ControlDecisionStatus.ALLOWED, assessment.decision.status)
         assertEquals(ControlRequirementKind.BACKUP, assessment.requirements.single().kind)
         assertEquals(ControlEvidenceStatus.SATISFIED, assessment.evidence.single().status)
+    }
+
+    @Test
+    fun environmentGuardCannotImpersonateCleanupRetentionEvidence() {
+        val assessment = CanonicalControlRequirementAuthority.assess(
+            cleanupIntent("environment != prod")
+        )
+        val cleanupRequirement = assessment.requirements.single {
+            it.kind == ControlRequirementKind.RETENTION_GUARD && it.subject == "CLEANUP"
+        }
+        val cleanupEvidence = assessment.evidence.single { it.requirementId == cleanupRequirement.id }
+
+        assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status)
+        assertEquals(ControlEvidenceStatus.UNKNOWN, cleanupEvidence.status)
+        assertFalse(
+            assessment.evidence.any {
+                it.requirementId == cleanupRequirement.id &&
+                    it.source == ControlEvidenceSource.AUTHORED_POLICY &&
+                    it.status == ControlEvidenceStatus.SATISFIED
+            }
+        )
+    }
+
+    @Test
+    fun explicitRetentionPolicySatisfiesCleanupRetentionGuard() {
+        val assessment = CanonicalControlRequirementAuthority.assess(
+            cleanupIntent("retention:14d")
+        )
+        val cleanupRequirement = assessment.requirements.single {
+            it.kind == ControlRequirementKind.RETENTION_GUARD && it.subject == "CLEANUP"
+        }
+        val cleanupEvidence = assessment.evidence.single { it.requirementId == cleanupRequirement.id }
+
+        assertEquals(ControlEvidenceStatus.SATISFIED, cleanupEvidence.status)
+        assertEquals(ControlEvidenceSource.AUTHORED_POLICY, cleanupEvidence.source)
+    }
+
+    @Test
+    fun malformedExplicitRetentionFailsClosedInsteadOfBecomingDynamicPolicy() {
+        val assessment = CanonicalControlRequirementAuthority.assess(
+            cleanupIntent("retention:")
+        )
+
+        assertEquals(ControlDecisionStatus.BLOCKED, assessment.decision.status)
+        assertTrue(assessment.requirements.any { it.kind == ControlRequirementKind.CLARIFICATION })
+        assertTrue(assessment.evidence.any {
+            it.status == ControlEvidenceStatus.UNKNOWN && it.requirementId.contains("clarification")
+        })
     }
 
     @Test
@@ -289,6 +338,20 @@ class UniversalControlPolicyRequirementsTests {
             workflows = listOf(IntentWorkflow("migration", IntentWorkflowKind.CUSTOM, steps))
         )
     }
+
+    private fun cleanupIntent(condition: String): IntentDocument = IntentDocument(
+        name = "cleanup",
+        workflows = listOf(IntentWorkflow(
+            name = "maintenance",
+            kind = IntentWorkflowKind.CLEANUP,
+            steps = listOf(IntentStep(id = "cleanup", capability = StandardCapability.CLEANUP))
+        )),
+        policies = listOf(IntentPolicy(
+            name = "cleanup-policy",
+            type = IntentPolicyType.SAFETY,
+            condition = condition
+        ))
+    )
 
     private fun customPolicyIntent(condition: String): IntentDocument = IntentDocument(
         name = "custom-policy",

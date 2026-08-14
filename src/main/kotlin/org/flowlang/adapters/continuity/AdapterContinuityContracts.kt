@@ -1,6 +1,7 @@
 package org.flowlang.adapters.continuity
 
 import java.io.File
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.identity.CollisionSafeIdentityAuthority
 import org.flowlang.identity.CollisionSafeIdentityCandidate
 import org.flowlang.identity.SemanticDuplicatePolicy
@@ -192,16 +193,22 @@ object AdapterContinuityRequirementAuthority {
                     AdapterContinuitySemanticContract.ARTIFACT_SHARED_WORKSPACE
                 )
             )
-            PlanDependencyKind.STATE -> listOf(
-                requirement(
-                    AdapterContinuityFamily.MUTABLE_STATE,
-                    AdapterContinuitySemanticContract.STATE_MUTABLE_WORKFLOW
-                ),
-                requirement(
-                    AdapterContinuityFamily.DURABLE_STATE,
-                    AdapterContinuitySemanticContract.STATE_DURABLE_WORKFLOW
+            PlanDependencyKind.STATE -> buildList {
+                add(
+                    requirement(
+                        AdapterContinuityFamily.MUTABLE_STATE,
+                        AdapterContinuitySemanticContract.STATE_MUTABLE_WORKFLOW
+                    )
                 )
-            )
+                if (relation.stateLifetime == StateLifetime.DURABLE) {
+                    add(
+                        requirement(
+                            AdapterContinuityFamily.DURABLE_STATE,
+                            AdapterContinuitySemanticContract.STATE_DURABLE_WORKFLOW
+                        )
+                    )
+                }
+            }
         }
     }
 

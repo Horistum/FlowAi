@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.ParallelGroupNode
@@ -74,7 +75,16 @@ internal object AbstractTopologyMatrixPlanFactory {
                 primary,
                 consumer,
                 PlanDependencyKind.STATE,
-                "state"
+                "state",
+                StateLifetime.WORKFLOW
+            )
+            AbstractTopologyMatrixFixture.DURABLE_STATE_CONTINUITY -> continuityPlan(
+                fixture,
+                primary,
+                consumer,
+                PlanDependencyKind.STATE,
+                "state",
+                StateLifetime.DURABLE
             )
         }
     }
@@ -84,7 +94,8 @@ internal object AbstractTopologyMatrixPlanFactory {
         producer: TaskNode,
         consumer: TaskNode,
         kind: PlanDependencyKind,
-        channel: String
+        channel: String,
+        stateLifetime: StateLifetime? = null
     ): ExecutionPlan = ExecutionPlan(
         flowName = fixture.documentValue,
         nodes = listOf(producer, consumer),
@@ -100,6 +111,7 @@ internal object AbstractTopologyMatrixPlanFactory {
                 targetNodeId = consumer.id,
                 kind = kind,
                 channel = channel,
+                stateLifetime = stateLifetime,
                 evidence = PlanDependencyEvidence.MODULE_CONTRACT,
                 evidenceReference = "c0.2:${fixture.documentValue}:$channel"
             )

@@ -12,6 +12,7 @@ import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.adapters.portfolio.AdapterSupportClass
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.cli.Json
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyEvidence
@@ -105,14 +106,29 @@ class AdapterContinuityConformanceChecks(
             add("Jenkins generic task result metadata must not be promoted to DATA continuity.")
         }
 
-        val state = authority.assess(planWith(resolvedRelation(PlanDependencyKind.STATE, "session")), "jenkins")
+        val workflowState = authority.assess(
+            planWith(resolvedRelation(PlanDependencyKind.STATE, "session", StateLifetime.WORKFLOW)),
+            "jenkins"
+        )
         if (
-            state.decision != AdapterContinuityDecision.BLOCKED ||
-            state.requirements.map { it.family }.toSet() !=
-            setOf(AdapterContinuityFamily.MUTABLE_STATE, AdapterContinuityFamily.DURABLE_STATE) ||
-            state.evidence.any { it.status != AdapterContinuityEvidenceStatus.UNSUPPORTED }
+            workflowState.decision != AdapterContinuityDecision.BLOCKED ||
+            workflowState.requirements.map { it.family }.toSet() != setOf(AdapterContinuityFamily.MUTABLE_STATE) ||
+            workflowState.evidence.any { it.status != AdapterContinuityEvidenceStatus.UNSUPPORTED }
         ) {
-            add("STATE continuity must require both mutable transfer and durable lifetime evidence.")
+            add("Workflow-local STATE continuity must require mutable transfer without inventing durable persistence.")
+        }
+
+        val durableState = authority.assess(
+            planWith(resolvedRelation(PlanDependencyKind.STATE, "session", StateLifetime.DURABLE)),
+            "jenkins"
+        )
+        if (
+            durableState.decision != AdapterContinuityDecision.BLOCKED ||
+            durableState.requirements.map { it.family }.toSet() !=
+            setOf(AdapterContinuityFamily.MUTABLE_STATE, AdapterContinuityFamily.DURABLE_STATE) ||
+            durableState.evidence.any { it.status != AdapterContinuityEvidenceStatus.UNSUPPORTED }
+        ) {
+            add("Explicit durable STATE continuity must require both mutable transfer and durable persistence evidence.")
         }
 
         val unresolved = resolvedRelation(PlanDependencyKind.WORKSPACE, "source").copy(
@@ -217,11 +233,16 @@ class AdapterContinuityConformanceChecks(
         dependencyRelations = relations.toList()
     )
 
-    private fun resolvedRelation(kind: PlanDependencyKind, channel: String) = PlanDependencyRelation(
+    private fun resolvedRelation(
+        kind: PlanDependencyKind,
+        channel: String,
+        stateLifetime: StateLifetime? = null
+    ) = PlanDependencyRelation(
         sourceNodeId = "producer",
         targetNodeId = "consumer",
         kind = kind,
         channel = channel,
+        stateLifetime = stateLifetime,
         evidence = if (kind == PlanDependencyKind.VALUE) {
             PlanDependencyEvidence.DATA_REFERENCE
         } else {

@@ -13,7 +13,8 @@ enum class AbstractTopologyMatrixFixture(val documentValue: String) {
     FAILURE_HANDLER("failure-handler"),
     VALUE_CONTINUITY("value-continuity"),
     WORKSPACE_CONTINUITY("workspace-continuity"),
-    STATE_CONTINUITY("state-continuity");
+    STATE_CONTINUITY("state-continuity"),
+    DURABLE_STATE_CONTINUITY("durable-state-continuity");
 
     companion object {
         fun parse(value: String): AbstractTopologyMatrixFixture =

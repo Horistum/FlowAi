@@ -16,6 +16,7 @@ import org.flowlang.conformance.semanticEffectEvidenceStatus
 import org.flowlang.conformance.SemanticObservationAuthority
 import org.flowlang.conformance.SemanticObservationEvidenceStatus
 import org.flowlang.conformance.SemanticObservationKind
+import org.flowlang.continuity.StateLifetime
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
 import org.flowlang.effects.SemanticEffect
@@ -24,6 +25,7 @@ import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.planner.PlanDependencyResolution
 import org.flowlang.planner.TaskNode
 
@@ -122,6 +124,30 @@ class SemanticEquivalenceAuthorityTests {
 
             assertTrue(reference != semanticAlternate, fixture.name)
         }
+    }
+
+    @Test
+    fun stateLifetimeIsPartOfObservableContinuityMeaning() {
+        val workflowPlan = SemanticEquivalencePlanFactory.plan(SemanticEquivalenceFixture.STATE_CONTINUITY)
+        val durablePlan = workflowPlan.copy(
+            dependencyRelations = workflowPlan.dependencyRelations.map { relation ->
+                if (relation.kind == PlanDependencyKind.STATE) {
+                    relation.copy(stateLifetime = StateLifetime.DURABLE)
+                } else {
+                    relation
+                }
+            }
+        )
+
+        val workflow = SemanticObservationAuthority.requirementsFor(workflowPlan)
+        val durable = SemanticObservationAuthority.requirementsFor(durablePlan)
+        val workflowState = workflow.single { it.kind == SemanticObservationKind.CONTINUITY }
+        val durableState = durable.single { it.kind == SemanticObservationKind.CONTINUITY }
+
+        assertTrue(workflow != durable)
+        assertTrue(workflowState.value.endsWith("lifetime=workflow"))
+        assertTrue(durableState.value.endsWith("lifetime=durable"))
+        assertTrue(workflowState.fingerprint != durableState.fingerprint)
     }
 
     @Test
