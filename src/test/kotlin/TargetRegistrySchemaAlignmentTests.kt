@@ -2,6 +2,7 @@ import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import org.flowlang.cli.Json
@@ -79,7 +80,7 @@ class TargetRegistrySchemaAlignmentTests {
           - name: broken
             expressionProfile: full
             capabilities:
-              parallel: yes
+              parallel: "yes"
         """.trimIndent()
     )
 
@@ -129,7 +130,7 @@ class TargetRegistrySchemaAlignmentTests {
             topology:
               evidenceReference: test:topology
               capabilities:
-                workflowScope: yes
+                workflowScope: "yes"
                 branchIsolation: supported
                 attemptIsolation: supported
                 workflowLifetime: supported
@@ -145,7 +146,7 @@ class TargetRegistrySchemaAlignmentTests {
 
     private fun assertRejectedByBoth(yaml: String) = withRegistry(yaml) { file ->
         assertFailsWith<IllegalArgumentException> { validateSchema(file) }
-        assertFailsWith<IllegalArgumentException> { TargetRegistryYamlLoader.load(file) }
+        assertFails { TargetRegistryYamlLoader.load(file) }
     }
 
     private fun validateSchema(file: File) {
