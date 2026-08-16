@@ -105,6 +105,44 @@ Policy classification must not infer retention from unrelated fragments such as 
 
 State continuity must distinguish the lifetime actually required by the authored semantics. A workflow-local mutable state transfer is not automatically the same requirement as durable state that must survive executions or restarts.
 
+## Enabling milestone: Kotlin and Gradle toolchain modernization
+
+The compiler and build baseline should be modernized before later architecture work makes that migration unnecessarily broad. This is an enabling maintenance milestone, not a replacement for External Falsification and not an excuse to mix build-system changes with semantic refactors.
+
+The current repository baseline is Kotlin `1.9.24`, Gradle `8.10.2` and JDK `21`. At the time this milestone was recorded, the preferred mutually supported stable target was Kotlin `2.4.10`, Gradle `9.5.0` and JDK `21`.
+
+Those exact future version numbers are not frozen. When the milestone is activated, the project must re-check the current stable Kotlin/Gradle compatibility matrix and choose the newest mutually supported stable pair that does not require an unrelated JDK or semantic migration. RC, beta and unsupported combinations are not acceptable merely because their version numbers are larger.
+
+The preferred timing is deliberately early:
+
+- start after the semantic-integrity correction stream is closed;
+- preferably complete before substantial Track 2 implementation expands the Kotlin and build surface;
+- complete before Track 3 splits the current single Gradle module into multiple compiler-enforced architecture modules.
+
+Doing the toolchain migration after the multi-module split would multiply build scripts, plugin configuration and compilation boundaries that must be migrated at once. The project should avoid creating that work for itself with the kind of determination normally reserved for generating future technical debt.
+
+The migration should be separated into independently diagnosable steps:
+
+1. upgrade Kotlin while retaining the existing Gradle baseline;
+2. run the complete compile, test, standalone conformance and governance boundary and resolve compiler/plugin regressions without changing Flow semantics;
+3. upgrade the Gradle wrapper and build logic to the selected supported Gradle 9.x baseline;
+4. repeat exact-head and synthetic merge-candidate validation;
+5. measure clean and warm/incremental build behavior before and after each step;
+6. refresh the offline/reproducible build inputs so local validation does not require downloading historical compiler or wrapper artifacts.
+
+JDK `21` should remain unchanged unless a separately justified compatibility or support requirement proves that moving it is necessary. Changing Kotlin, Gradle and JDK in one undifferentiated migration would make failures needlessly ambiguous.
+
+Acceptance requires:
+
+- no production semantic behavior change caused merely by the compiler/build migration;
+- no public Flow artifact-contract version or target-support promotion caused merely by the toolchain migration;
+- intentional remediation of removed/deprecated Kotlin or Gradle APIs rather than global warning suppression;
+- successful full compile, tests, standalone conformance and Flow Agent validation on the final baseline;
+- successful exact-head and synthetic merge-candidate CI boundaries;
+- refreshed offline build evidence for the selected final toolchain.
+
+The milestone must not be combined with the future multi-module split, unrelated Authority refactors, public semantic changes or target-support expansion. Keeping those axes separate makes both rollback and root-cause analysis materially cheaper.
+
 ## Track 2: External falsification expansion
 
 After semantic integrity corrections pass, Flow should deliberately seek automation sources least similar to conventional CI/CD pipelines.
