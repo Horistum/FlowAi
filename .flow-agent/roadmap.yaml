@@ -101,6 +101,33 @@ strategicDirection:
   status: "planned-after-c1.0"
   detailDocument: "docs/PROJECT_DIRECTION_AFTER_C1_0.md"
   lifecycleRule: "This section records ordered strategic intent only. It does not select a successor work item and cannot bypass the distinct C1.0 completion boundary or the global roadmap transition authority."
+  enablingMilestones:
+    - id: "TOOLCHAIN-MODERNIZATION"
+      status: "planned"
+      preferredTiming: "As early as practical after semantic-integrity closure; complete before STRUCTURAL-BOUNDARIES and preferably before substantial EXTERNAL-FALSIFICATION code expansion."
+      purpose: "Move Flow to a mutually supported modern Kotlin/Gradle baseline before later multi-module and architecture work multiplies the migration surface."
+      currentBaseline:
+        kotlin: "1.9.24"
+        gradle: "8.10.2"
+        jdk: "21"
+      targetAtPlanningTime:
+        kotlin: "2.4.10"
+        gradle: "9.5.0"
+        jdk: "21"
+      selectionRule: "At activation, re-check the current stable Kotlin/Gradle compatibility matrix and use the newest mutually supported stable pair that does not force an unrelated JDK or semantic migration; planning-time version numbers are not frozen requirements."
+      sequencing:
+        - "Upgrade Kotlin first while retaining the existing Gradle baseline, then run the complete compile, test, standalone conformance and governance boundary."
+        - "After Kotlin migration is independently clean, upgrade the Gradle wrapper and build logic to the selected supported Gradle 9.x baseline."
+        - "Keep JDK 21 unless a separately justified compatibility or support requirement proves a JDK change is necessary."
+        - "Measure clean-build and warm/incremental-build behavior before and after each step; performance regressions are evidence, not something to hide behind a green build."
+      acceptanceEvidence:
+        - "No production semantic behavior, public artifact contract or support claim changes merely because the compiler/build tool changed."
+        - "All deprecations or removed Gradle/Kotlin APIs encountered by the migration are resolved intentionally rather than suppressed globally."
+        - "Exact-head and synthetic merge-candidate compile, test, standalone conformance and Flow Agent validation pass on the final toolchain baseline."
+        - "Offline/reproducible build inputs are refreshed so local validation does not depend on downloading a historical compiler or wrapper during the build."
+      nonGoals:
+        - "Do not combine the toolchain migration with the future multi-module split, semantic refactors or target-support expansion."
+        - "Do not move to RC, beta or otherwise unsupported Kotlin/Gradle combinations merely to maximize version numbers."
   governingPrinciples:
     - "Use heterogeneous external automation sources to falsify Flow semantics before adding new governance ceremony."
     - "Correct semantic integrity defects before expanding the public surface or claiming broader target support."
