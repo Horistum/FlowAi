@@ -2,11 +2,11 @@ version: "SI-08"
 name: "Typed Policy and State-Lifetime Semantics"
 type: "semantic-integrity-correction"
 stream: semantic-integrity
-status: active
+status: complete
 objective: "Replace string-fragment policy classification and unconditional durable-state assumptions with explicit typed policy and state-lifetime semantics so control authorization and topology requirements are derived from authored meaning rather than incidental text or relation kind alone."
 
 authorization:
-  status: active
+  status: completed
   source: "Semantic-integrity roadmap transition after independently validated and merged SI-07 completion."
   predecessor: "SI-07"
   strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#18-replace-string-heuristics-with-typed-policy-and-lifetime-semantics"
@@ -62,6 +62,15 @@ acceptanceEvidence:
   - "Intent, plan/topology and migration/version consequences are documented from actual public-contract impact."
   - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
 
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2943
+  runId: 31802519219
+  exactHead: "e5bc5cd82d591a6b744650478070b6c4919d60cf"
+  mergeCandidate: "7a9a349c929a9b2fccadd16e5f5411f77156b7c6"
+completionMergeCommit: "03c3bcb9c8d4f428b4302c2c35d098848793505e"
+
 localValidation:
   status: pending
   evidence:
@@ -69,4 +78,4 @@ localValidation:
     - "Draft 2020-12 validation of the changed ExecutionPlan dependency-relation and module continuity-channel schema boundaries passed both polarity directions: STATE requires stateLifetime, non-STATE forbids it, module state may omit lifetime for workflow compatibility, and unknown/non-state lifetimes are rejected."
     - "The state-continuity test fixture replacement anchors were independently checked after trimIndent so durable/workflow mutation tests modify the intended YAML nodes rather than silently doing nothing."
     - "The retained offline FlowAi archive was located in the connected file library, but materialization into the execution sandbox failed with HTTP 403; no full local Gradle result is claimed from that unavailable archive."
-  rule: "The status remains pending because complete local Gradle validation was unavailable. The isolated checks above are real but do not impersonate a full local PASS. Full implementation validation remains the distinct exact-head and synthetic merge-candidate Flow CI boundary and must not be inferred from the SI-07 completion evidence."
+  rule: "The status remains pending because complete local Gradle validation was unavailable. The isolated checks above are real but do not impersonate a full local PASS. SI-08 completion is established separately by Flow CI #2943 exact-head and synthetic merge-candidate evidence, merge commit 03c3bcb9c8d4f428b4302c2c35d098848793505e, and successful post-merge main Flow CI #2944."

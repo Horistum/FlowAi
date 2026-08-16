@@ -1,7 +1,7 @@
 project: Flow Semantic Integrity
 stream: semantic-integrity
-roadmapVersion: 8
-status: active
+roadmapVersion: 9
+status: completed
 
 purpose: "Own post-C1.0 semantic-integrity corrections without rewriting completed Core, adapter, conformance or architecture lifecycle evidence."
 
@@ -13,11 +13,11 @@ rules:
   - "Known semantic debt may be deferred only with an explicit follow-up identity and must not be described as fixed."
 
 currentDecision:
-  completedItem: "SI-07"
-  completedItemName: "Align Public Schemas with Production Acceptance"
-  nextItem: "SI-08"
-  nextItemName: "Typed Policy and State-Lifetime Semantics"
-  decisionBasis: "SI-07 final repair head f27bf53afffb555fcef99b2db32770d9b241beba passed Flow CI #2928 / run 31773901231 together with synthetic merge candidate 303fa34f0e3147a8482acf2c4905fca4cadaa3b0, then merged as fc905efa20c255846c098ccf058f560d61ee7378. Post-merge main Flow CI #2929 also passed. The next ordered semantic-integrity outcome is project-direction section 1.8: replace string heuristics with typed policy and lifetime semantics."
+  completedItem: "SI-08"
+  completedItemName: "Typed Policy and State-Lifetime Semantics"
+  nextItem: ""
+  nextItemName: ""
+  decisionBasis: "SI-08 implementation head e5bc5cd82d591a6b744650478070b6c4919d60cf passed Flow CI #2943 / run 31802519219 together with synthetic merge candidate 7a9a349c929a9b2fccadd16e5f5411f77156b7c6, then merged as 03c3bcb9c8d4f428b4302c2c35d098848793505e. Post-merge main Flow CI #2944 also passed. SI-08 is the terminal section 1.8 outcome of the bounded semantic-integrity stream; this stream selects no successor."
 
 historicalEvents:
   - id: "SI-01"
@@ -200,11 +200,19 @@ items:
   - version: "SI-08"
     name: "Typed Policy and State-Lifetime Semantics"
     type: "semantic-integrity-correction"
-    status: next
+    status: completed
     purpose: "Replace string-fragment policy classification and unconditional durable-state assumptions with explicit typed policy and state-lifetime semantics."
     dependsOn: "SI-07"
     workPackage: ".flow-agent/work-packages/SI-08-typed-policy-state-lifetime-semantics.yaml"
     strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#18-replace-string-heuristics-with-typed-policy-and-lifetime-semantics"
+    completionBoundary:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2943
+      runId: 31802519219
+      exactHead: "e5bc5cd82d591a6b744650478070b6c4919d60cf"
+      mergeCandidate: "7a9a349c929a9b2fccadd16e5f5411f77156b7c6"
+    completionMergeCommit: "03c3bcb9c8d4f428b4302c2c35d098848793505e"
     completionEvidence:
       - "Policy controls are derived from explicit typed semantics rather than substring or message-text coincidence."
       - "Environment guards and unrelated predicates cannot impersonate retention evidence."
@@ -212,4 +220,4 @@ items:
       - "DURABLE_STATE is required only by explicit stronger persistence/lifetime semantics while STATE_PROPAGATION remains required for state flow."
       - "Negative polarity tests prove incidental text, relation naming and target capabilities cannot promote stronger semantic meaning."
       - "Public contract and migration consequences are decided from actual accepted-input and serialized impact."
-      - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
+      - "Flow CI #2943 independently passed exact-head and synthetic merge-candidate compile, tests and standalone conformance; PR #137 merged as 03c3bcb9c8d4f428b4302c2c35d098848793505e and post-merge main Flow CI #2944 also passed."
