@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 57
+stateVersion: 58
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -22,8 +22,8 @@ versionBoundary:
     targetRegistry: "3.2"
 
 roadmapState:
-  roadmapVersion: 28
-  activeTrack: "operational-domain-adequacy"
+  roadmapVersion: 29
+  activeTrack: "toolchain-modernization"
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "conformance"
@@ -33,6 +33,8 @@ roadmapState:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
+  activeEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
+  activeEnablingMilestoneName: "Kotlin and Gradle Toolchain Modernization"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -172,6 +174,7 @@ qualityPrinciples:
   - "C0.2 topology matrix declarations must equal production-derived requirements and cannot promote target support."
   - "C0.3 semantic equivalence compares explicit observable results and continuity, never target syntax, job layout or action identity."
   - "Canonical capability meaning must remain independent from concrete implementation technology; implementation-only parameters belong to explicit binding or adapter evidence."
+  - "An orthogonal enabling milestone must not fabricate a product-roadmap successor or reopen a completed roadmap stream."
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-si-08-validation-boundary"
@@ -186,9 +189,10 @@ lastKnownValidation:
   roadmapTransitionEvidence: "passed-on-si-08-validation-boundary"
   validationSource: "Flow CI #2943, run 31802519219, passed pull request #137 exact head e5bc5cd82d591a6b744650478070b6c4919d60cf and synthetic merge candidate 7a9a349c929a9b2fccadd16e5f5411f77156b7c6 before merge commit 03c3bcb9c8d4f428b4302c2c35d098848793505e."
   notes:
-    - "Flow CI #2943 is the latest committed implementation validation evidence and closes SI-08; post-merge main Flow CI #2944 also passed. The bounded semantic-integrity stream is complete and no successor is selected by this transition."
+    - "Flow CI #2943 is the latest committed implementation validation evidence and closes SI-08; post-merge main Flow CI #2944 also passed. The bounded semantic-integrity stream is complete and no product successor is selected by this transition."
+    - "TOOLCHAIN-MODERNIZATION is active as an orthogonal enabling-maintenance milestone; it has no implementation validation yet and does not activate External Falsification."
     - "SI-08 replaced policy substring folklore with typed standard policy semantics, separated workflow-local STATE propagation from explicit durable lifetime, advanced ExecutionPlan to 2.4 and module schema to 1.3, and did not promote target support."
-    - "External Falsification remains the next strategic candidate only; activation requires a separate global roadmap transition and cannot be inferred from SI-08 completion."
+    - "External Falsification remains the next strategic candidate only; activation requires a separate global roadmap transition and cannot be inferred from SI-08 completion or toolchain maintenance."
     - "SI-07 aligned public schema acceptance boundaries, advanced TargetRegistry to 3.2 for the authored wire correction, and retained published schemas as syntactic interchange contracts unless bidirectional production-validity proof exists."
     - "SI-06 removed silent authored-value coercion at confirmed parser and strict YAML boundaries without changing its live artifact contract versions."
     - "SI-05 advanced the live AST contract to 2.2 and ExecutionPlan contract to 2.3 while Intent and ExecutionPlan lowering evidence remain unchanged."

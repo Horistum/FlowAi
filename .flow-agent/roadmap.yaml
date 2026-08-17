@@ -1,6 +1,6 @@
 project: Flow
-roadmapVersion: 28
-currentTrack: "operational-domain-adequacy"
+roadmapVersion: 29
+currentTrack: "toolchain-modernization"
 primaryRoadmapStream: conformance
 
 versionBoundary:
@@ -98,12 +98,13 @@ architectureDebtBacklog:
       - "Exact-head and synthetic merge-candidate compile, test and conformance validation both pass."
 
 strategicDirection:
-  status: "planned-after-c1.0"
+  status: "active-enabling-milestone-before-track-2"
   detailDocument: "docs/PROJECT_DIRECTION_AFTER_C1_0.md"
-  lifecycleRule: "This section records ordered strategic intent only. It does not select a successor work item and cannot bypass the distinct C1.0 completion boundary or the global roadmap transition authority."
+  lifecycleRule: "Strategic tracks remain ordered intent and are activated only by a distinct global transition. Orthogonal enabling milestones may be active without fabricating a product-roadmap successor or reopening a completed stream."
   enablingMilestones:
     - id: "TOOLCHAIN-MODERNIZATION"
-      status: "planned"
+      status: "active"
+      workPackage: ".flow-agent/work-packages/TOOLCHAIN-MODERNIZATION.yaml"
       preferredTiming: "As early as practical after semantic-integrity closure; complete before STRUCTURAL-BOUNDARIES and preferably before substantial EXTERNAL-FALSIFICATION code expansion."
       purpose: "Move Flow to a mutually supported modern Kotlin/Gradle baseline before later multi-module and architecture work multiplies the migration surface."
       currentBaseline:
@@ -111,6 +112,10 @@ strategicDirection:
         gradle: "8.10.2"
         jdk: "21"
       targetAtPlanningTime:
+        kotlin: "2.4.10"
+        gradle: "9.5.0"
+        jdk: "21"
+      selectedAtActivation:
         kotlin: "2.4.10"
         gradle: "9.5.0"
         jdk: "21"
@@ -215,7 +220,9 @@ currentDecision:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
+  activeEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
+  activeEnablingMilestoneName: "Kotlin and Gradle Toolchain Modernization"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
-  decisionBasis: "SI-08 implementation head e5bc5cd82d591a6b744650478070b6c4919d60cf passed Flow CI #2943 / run 31802519219 with synthetic merge candidate 7a9a349c929a9b2fccadd16e5f5411f77156b7c6, then merged as 03c3bcb9c8d4f428b4302c2c35d098848793505e. Post-merge main Flow CI #2944 passed. The bounded semantic-integrity stream is complete through project-direction section 1.8. No successor is selected here; External Falsification remains strategic intent until a distinct global roadmap transition activates it."
+  decisionBasis: "SI-08 is terminally complete and the separately planned TOOLCHAIN-MODERNIZATION enabling milestone is now active before Track 2 implementation expands the codebase. Kotlin 2.4.10 with Gradle 9.5.0 and JDK 21 is the selected fully supported stable pair at activation. External Falsification remains the next strategic product track and is not activated by this maintenance transition."
