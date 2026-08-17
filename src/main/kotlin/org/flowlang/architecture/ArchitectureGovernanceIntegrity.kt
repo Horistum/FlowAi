@@ -116,7 +116,7 @@ object ArchitectureGovernanceIntegrityAuthority {
             return ParsedCatalog()
         }
 
-        val unknownRoot = root.keys.map { it.toString() }.toSet() - rootFields
+        val unknownRoot = root.keys.toSet() - rootFields
         if (unknownRoot.isNotEmpty()) {
             issues += issue(
                 "GOVERNANCE_DRIFT_CATALOG_UNKNOWN_FIELD",
@@ -165,7 +165,7 @@ object ArchitectureGovernanceIntegrityAuthority {
                     issues += issue("GOVERNANCE_BASELINE_SIGNAL_INVALID", path, "Baseline signal must be a map.")
                     return@forEachIndexed
                 }
-                val unknown = map.keys.map { it.toString() }.toSet() - baselineFields
+                val unknown = map.keys.toSet() - baselineFields
                 if (unknown.isNotEmpty()) {
                     issues += issue(
                         "GOVERNANCE_BASELINE_SIGNAL_UNKNOWN_FIELD",
@@ -198,7 +198,7 @@ object ArchitectureGovernanceIntegrityAuthority {
                     issues += issue("GOVERNANCE_NEGATIVE_SIGNAL_INVALID", path, "Negative signal must be a map.")
                     return@forEachIndexed
                 }
-                val unknown = map.keys.map { it.toString() }.toSet() - negativeFields
+                val unknown = map.keys.toSet() - negativeFields
                 if (unknown.isNotEmpty()) {
                     issues += issue(
                         "GOVERNANCE_NEGATIVE_SIGNAL_UNKNOWN_FIELD",

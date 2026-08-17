@@ -41,7 +41,7 @@ selectedTarget:
 
 sequence:
   - id: "KOTLIN"
-    status: planned
+    status: implemented
     from: "1.9.24"
     to: "2.4.10"
     gradleDuringStep: "8.10.2"
@@ -94,5 +94,6 @@ completionEvidence:
 localValidation:
   status: pending
   evidence:
-    - "The current execution environment does not contain the project offline Gradle bundle or an authenticated local GitHub checkout, so no local Gradle PASS is claimed by the activation transition."
-  rule: "Activation changes lifecycle/governance state only. Toolchain implementation requires its own trustworthy local or independent CI validation evidence."
+    - "No trustworthy full local Gradle PASS is claimed for the Kotlin migration because the current execution environment does not contain the project offline Gradle bundle or an authenticated local checkout."
+    - "Isolated Kotlin syntax compilation was used only to reject trivial source/test syntax defects before CI and is not treated as project validation."
+  rule: "Kotlin implementation acceptance requires trustworthy exact-head and synthetic merge-candidate Flow CI; localValidation remains pending until the offline/reproducible inputs are refreshed."
