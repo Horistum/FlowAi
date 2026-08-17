@@ -41,7 +41,14 @@ selectedTarget:
 
 sequence:
   - id: "KOTLIN"
-    status: implemented
+    status: validated
+    validationEvidence:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2958
+      runId: 31985147977
+      exactHead: "e400d08c2ece593d80f2223b9d139a87a8deff0e"
+      mergeCandidate: "8351d3d5462947e9e94c47f11064017891c3e658"
     from: "1.9.24"
     to: "2.4.10"
     gradleDuringStep: "8.10.2"
