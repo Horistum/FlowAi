@@ -40,7 +40,110 @@ class ToolchainModernizationLifecycleTests {
         val report = ToolchainModernizationLifecycle(root).analyze()
 
         assertEquals("FAIL", report.status)
-        assertTrue(report.errors.any { "Repository toolchain must remain" in it })
+        assertTrue(report.errors.any { "must follow the approved sequence" in it })
+    }
+
+    @Test
+    fun kotlinMigrationRequiresImplementedWorkPackageStep() {
+        val root = activeFixture()
+        val build = File(root, ToolchainModernizationLifecycle.BUILD_FILE)
+        replaceRequired(build, "version \"1.9.24\"", "version \"2.4.10\"")
+
+        val report = ToolchainModernizationLifecycle(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "KOTLIN step to be implemented or validated" in it })
+    }
+
+    @Test
+    fun kotlinMigrationWithBaselineGradleIsAccepted() {
+        val root = activeFixture()
+        val build = File(root, ToolchainModernizationLifecycle.BUILD_FILE)
+        replaceRequired(build, "version \"1.9.24\"", "version \"2.4.10\"")
+        setStepStatus(root, "KOTLIN", "planned", "implemented")
+
+        val report = ToolchainModernizationLifecycle(root).analyze()
+
+        assertEquals(ToolchainModernizationPhase.ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+    }
+
+    @Test
+    fun gradleFirstMigrationIsRejectedEvenWhenBothVersionsAreSelectedEndpoints() {
+        val root = activeFixture()
+        val wrapper = File(root, ToolchainModernizationLifecycle.WRAPPER_FILE)
+        replaceRequired(wrapper, "gradle-8.10.2-bin.zip", "gradle-9.5.0-bin.zip")
+
+        val report = ToolchainModernizationLifecycle(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "must follow the approved sequence" in it })
+    }
+
+    @Test
+    fun finalGradleBoundaryRequiresValidatedKotlinEvidence() {
+        val root = activeFixture()
+        val build = File(root, ToolchainModernizationLifecycle.BUILD_FILE)
+        val wrapper = File(root, ToolchainModernizationLifecycle.WRAPPER_FILE)
+        replaceRequired(build, "version \"1.9.24\"", "version \"2.4.10\"")
+        replaceRequired(wrapper, "gradle-8.10.2-bin.zip", "gradle-9.5.0-bin.zip")
+        setStepStatus(root, "KOTLIN", "planned", "implemented")
+        setStepStatus(root, "GRADLE", "planned", "implemented")
+
+        val report = ToolchainModernizationLifecycle(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "must be 'validated' before the next toolchain version boundary is crossed" in it })
+    }
+
+    @Test
+    fun finalGradleBoundaryIsReachableAfterValidatedKotlinEvidence() {
+        val root = activeFixture()
+        val build = File(root, ToolchainModernizationLifecycle.BUILD_FILE)
+        val wrapper = File(root, ToolchainModernizationLifecycle.WRAPPER_FILE)
+        replaceRequired(build, "version \"1.9.24\"", "version \"2.4.10\"")
+        replaceRequired(wrapper, "gradle-8.10.2-bin.zip", "gradle-9.5.0-bin.zip")
+        setStepValidated(root, "KOTLIN", 3000, 40000000000, 'a', 'b')
+        setStepStatus(root, "GRADLE", "planned", "implemented")
+
+        val report = ToolchainModernizationLifecycle(root).analyze()
+
+        assertEquals(ToolchainModernizationPhase.ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
+    }
+
+    @Test
+    fun offlineRefreshCannotAdvanceBeforeGradleValidation() {
+        val root = activeFixture()
+        val build = File(root, ToolchainModernizationLifecycle.BUILD_FILE)
+        val wrapper = File(root, ToolchainModernizationLifecycle.WRAPPER_FILE)
+        replaceRequired(build, "version \"1.9.24\"", "version \"2.4.10\"")
+        replaceRequired(wrapper, "gradle-8.10.2-bin.zip", "gradle-9.5.0-bin.zip")
+        setStepValidated(root, "KOTLIN", 3000, 40000000000, 'a', 'b')
+        setStepStatus(root, "GRADLE", "planned", "implemented")
+        setStepStatus(root, "OFFLINE-REFRESH", "planned", "implemented")
+
+        val report = ToolchainModernizationLifecycle(root).analyze()
+
+        assertEquals("FAIL", report.status)
+        assertTrue(report.errors.any { "OFFLINE-REFRESH step must be 'planned'" in it })
+    }
+
+    @Test
+    fun offlineRefreshCanAdvanceAfterValidatedGradleEvidence() {
+        val root = activeFixture()
+        val build = File(root, ToolchainModernizationLifecycle.BUILD_FILE)
+        val wrapper = File(root, ToolchainModernizationLifecycle.WRAPPER_FILE)
+        replaceRequired(build, "version \"1.9.24\"", "version \"2.4.10\"")
+        replaceRequired(wrapper, "gradle-8.10.2-bin.zip", "gradle-9.5.0-bin.zip")
+        setStepValidated(root, "KOTLIN", 3000, 40000000000, 'a', 'b')
+        setStepValidated(root, "GRADLE", 3001, 40000000001, 'c', 'd')
+        setStepStatus(root, "OFFLINE-REFRESH", "planned", "implemented")
+
+        val report = ToolchainModernizationLifecycle(root).analyze()
+
+        assertEquals(ToolchainModernizationPhase.ACTIVE, report.phase, report.errors.joinToString(" | "))
+        assertEquals("PASS", report.status, report.errors.joinToString(" | "))
     }
 
     @Test
@@ -179,6 +282,13 @@ class ToolchainModernizationLifecycleTests {
               kotlin: "2.4.10"
               gradle: "9.5.0"
               jdk: "21"
+            sequence:
+              - id: "KOTLIN"
+                status: planned
+              - id: "GRADLE"
+                status: planned
+              - id: "OFFLINE-REFRESH"
+                status: planned
             localValidation:
               status: pending
         """)
@@ -194,6 +304,42 @@ class ToolchainModernizationLifecycleTests {
             distributionUrl=https\://services.gradle.org/distributions/gradle-8.10.2-bin.zip
         """)
         return root
+    }
+
+    private fun setStepStatus(root: File, stepId: String, oldStatus: String, newStatus: String) {
+        val workPackage = File(root, ToolchainModernizationLifecycle.WORK_PACKAGE)
+        replaceRequired(
+            workPackage,
+            "  - id: \"$stepId\"\n    status: $oldStatus",
+            "  - id: \"$stepId\"\n    status: $newStatus"
+        )
+    }
+
+    private fun setStepValidated(
+        root: File,
+        stepId: String,
+        runNumber: Int,
+        runId: Long,
+        exactHeadChar: Char,
+        mergeCandidateChar: Char
+    ) {
+        val workPackage = File(root, ToolchainModernizationLifecycle.WORK_PACKAGE)
+        val replacement = listOf(
+            "  - id: \"$stepId\"",
+            "    status: validated",
+            "    validationEvidence:",
+            "      status: passed",
+            "      workflow: \"Flow CI\"",
+            "      runNumber: $runNumber",
+            "      runId: $runId",
+            "      exactHead: \"${exactHeadChar.toString().repeat(40)}\"",
+            "      mergeCandidate: \"${mergeCandidateChar.toString().repeat(40)}\""
+        ).joinToString("\n")
+        replaceRequired(
+            workPackage,
+            "  - id: \"$stepId\"\n    status: planned",
+            replacement
+        )
     }
 
     private fun replaceRequired(file: File, oldValue: String, newValue: String) {

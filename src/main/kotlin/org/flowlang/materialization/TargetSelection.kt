@@ -26,6 +26,7 @@ enum class TargetSelectionOrigin {
 sealed interface ExplicitConfigurationSource {
     val evidenceId: String
 
+    @ConsistentCopyVisibility
     data class ReferenceSnapshot internal constructor(
         val scenarioId: String
     ) : ExplicitConfigurationSource {
@@ -36,6 +37,7 @@ sealed interface ExplicitConfigurationSource {
         override val evidenceId: String = "reference-snapshot:$scenarioId"
     }
 
+    @ConsistentCopyVisibility
     data class ConformanceCheck internal constructor(
         val checkId: String
     ) : ExplicitConfigurationSource {
@@ -46,6 +48,7 @@ sealed interface ExplicitConfigurationSource {
         override val evidenceId: String = "conformance:$checkId"
     }
 
+    @ConsistentCopyVisibility
     data class TestFixture internal constructor(
         val fixtureId: String
     ) : ExplicitConfigurationSource {

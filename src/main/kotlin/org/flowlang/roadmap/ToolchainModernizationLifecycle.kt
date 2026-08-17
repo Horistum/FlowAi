@@ -44,7 +44,7 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
             requireRetainedCompletedStreams(roadmap, releaseState, semanticRoadmap, this)
             requireVersionAlignment(roadmap, releaseState, this)
             requireMilestoneShape(roadmap, releaseState, milestone, workPackage, phase, this)
-            requireRepositoryBaseline(workPackage, this)
+            requireRepositoryMigrationState(workPackage, this)
             requireSelectedTarget(workPackage, this)
             requireLifecycleEvidence(workPackage, phase, this)
         }
@@ -174,7 +174,7 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
         }
     }
 
-    private fun requireRepositoryBaseline(
+    private fun requireRepositoryMigrationState(
         workPackage: Map<String, Any?>,
         errors: MutableList<String>
     ) {
@@ -192,21 +192,136 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
             errors += "Toolchain lifecycle requires the production Gradle build file and wrapper properties."
             return
         }
+
         val build = buildFile.readText()
         val wrapper = wrapperFile.readText()
-        val selectedKotlin = workPackage.string("selectedTarget", "kotlin")
-        val selectedGradle = workPackage.string("selectedTarget", "gradle")
-        val allowedKotlin = setOf(BASE_KOTLIN, selectedKotlin)
-        val allowedGradle = setOf(BASE_GRADLE, selectedGradle)
         val actualKotlin = Regex("kotlin\\(\"jvm\"\\)\\s+version\\s+\"([^\"]+)\"")
             .find(build)?.groupValues?.get(1).orEmpty()
         val actualGradle = Regex("gradle-([0-9.]+)-bin\\.zip")
             .find(wrapper)?.groupValues?.get(1).orEmpty()
         val actualJdk = Regex("jvmToolchain\\((\\d+)\\)")
             .find(build)?.groupValues?.get(1).orEmpty()
-        if (actualKotlin !in allowedKotlin || actualGradle !in allowedGradle || actualJdk != JDK) {
-            errors += "Repository toolchain must remain on the audited baseline or one explicitly selected migration endpoint; got Kotlin=$actualKotlin Gradle=$actualGradle JDK=$actualJdk."
+
+        val repositoryState = when {
+            actualKotlin == BASE_KOTLIN && actualGradle == BASE_GRADLE && actualJdk == JDK ->
+                RepositoryToolchainState.BASELINE
+            actualKotlin == TARGET_KOTLIN && actualGradle == BASE_GRADLE && actualJdk == JDK ->
+                RepositoryToolchainState.KOTLIN_MIGRATED
+            actualKotlin == TARGET_KOTLIN && actualGradle == TARGET_GRADLE && actualJdk == JDK ->
+                RepositoryToolchainState.FINAL
+            else -> RepositoryToolchainState.INVALID
         }
+
+        if (repositoryState == RepositoryToolchainState.INVALID) {
+            errors += "Repository toolchain must follow the approved sequence " +
+                "$BASE_KOTLIN/$BASE_GRADLE -> $TARGET_KOTLIN/$BASE_GRADLE -> " +
+                "$TARGET_KOTLIN/$TARGET_GRADLE on JDK $JDK; got " +
+                "Kotlin=$actualKotlin Gradle=$actualGradle JDK=$actualJdk."
+            return
+        }
+
+        requireSequenceState(workPackage, repositoryState, errors)
+    }
+
+    private fun requireSequenceState(
+        workPackage: Map<String, Any?>,
+        repositoryState: RepositoryToolchainState,
+        errors: MutableList<String>
+    ) {
+        val steps = workPackage.mapList("sequence")
+        val expectedIds = listOf(KOTLIN_STEP, GRADLE_STEP, OFFLINE_STEP)
+        if (steps.map { it.string("id") } != expectedIds) {
+            errors += "Toolchain work package sequence must contain KOTLIN, GRADLE and OFFLINE-REFRESH exactly in that order."
+            return
+        }
+
+        val kotlinStep = steps[0]
+        val gradleStep = steps[1]
+        val offlineStep = steps[2]
+        when (repositoryState) {
+            RepositoryToolchainState.BASELINE -> {
+                requireStepStatus(kotlinStep, "planned", KOTLIN_STEP, errors)
+                requireStepStatus(gradleStep, "planned", GRADLE_STEP, errors)
+                requireStepStatus(offlineStep, "planned", OFFLINE_STEP, errors)
+            }
+            RepositoryToolchainState.KOTLIN_MIGRATED -> {
+                val kotlinStatus = kotlinStep.string("status")
+                if (kotlinStatus !in setOf("implemented", "validated")) {
+                    errors += "Kotlin 2.4.10 with Gradle 8.10.2 requires the KOTLIN step to be implemented or validated."
+                }
+                requireValidationEvidenceIfValidated(kotlinStep, KOTLIN_STEP, errors)
+                requireStepStatus(gradleStep, "planned", GRADLE_STEP, errors)
+                requireStepStatus(offlineStep, "planned", OFFLINE_STEP, errors)
+            }
+            RepositoryToolchainState.FINAL -> {
+                requireValidatedStep(kotlinStep, KOTLIN_STEP, errors)
+                val gradleStatus = gradleStep.string("status")
+                if (gradleStatus !in setOf("implemented", "validated")) {
+                    errors += "Gradle 9.5.0 requires the GRADLE step to be implemented or validated."
+                }
+                requireValidationEvidenceIfValidated(gradleStep, GRADLE_STEP, errors)
+                when (gradleStatus) {
+                    "implemented" -> requireStepStatus(offlineStep, "planned", OFFLINE_STEP, errors)
+                    "validated" -> requireOfflineStepState(offlineStep, errors)
+                }
+            }
+            RepositoryToolchainState.INVALID -> Unit
+        }
+    }
+
+    private fun requireStepStatus(
+        step: Map<String, Any?>,
+        expected: String,
+        stepId: String,
+        errors: MutableList<String>
+    ) {
+        if (step.string("status") != expected) {
+            errors += "$stepId step must be '$expected' for the current repository toolchain state."
+        }
+        if (step.map("validationEvidence").isNotEmpty()) {
+            errors += "$stepId step must not carry validation evidence while its status is '$expected'."
+        }
+    }
+
+    private fun requireValidatedStep(
+        step: Map<String, Any?>,
+        stepId: String,
+        errors: MutableList<String>
+    ) {
+        if (step.string("status") != "validated") {
+            errors += "$stepId step must be 'validated' before the next toolchain version boundary is crossed."
+            return
+        }
+        if (!evidence(step.map("validationEvidence")).valid) {
+            errors += "$stepId validated status requires complete passed exact-head and merge-candidate Flow CI evidence."
+        }
+    }
+
+    private fun requireValidationEvidenceIfValidated(
+        step: Map<String, Any?>,
+        stepId: String,
+        errors: MutableList<String>
+    ) {
+        val status = step.string("status")
+        val validationEvidence = evidence(step.map("validationEvidence"))
+        when {
+            status == "validated" && !validationEvidence.valid ->
+                errors += "$stepId validated status requires complete passed exact-head and merge-candidate Flow CI evidence."
+            status != "validated" && validationEvidence.present ->
+                errors += "$stepId validation evidence may be authored only when the step status is 'validated'."
+        }
+    }
+
+    private fun requireOfflineStepState(
+        step: Map<String, Any?>,
+        errors: MutableList<String>
+    ) {
+        val status = step.string("status")
+        if (status !in setOf("planned", "implemented", "validated")) {
+            errors += "$OFFLINE_STEP step must be planned, implemented or validated after the GRADLE step is validated."
+            return
+        }
+        requireValidationEvidenceIfValidated(step, OFFLINE_STEP, errors)
     }
 
     private fun requireSelectedTarget(
@@ -282,6 +397,13 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
                 exactHead != other.exactHead && mergeCandidate != other.mergeCandidate
     }
 
+    private enum class RepositoryToolchainState {
+        BASELINE,
+        KOTLIN_MIGRATED,
+        FINAL,
+        INVALID
+    }
+
     private fun requiredYaml(path: String): Map<String, Any?> {
         val file = File(rootDir, path)
         require(file.isFile) { "Required toolchain lifecycle file is missing: ${file.path}" }
@@ -318,6 +440,9 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
         private const val TARGET_KOTLIN = "2.4.10"
         private const val TARGET_GRADLE = "9.5.0"
         private const val JDK = "21"
+        private const val KOTLIN_STEP = "KOTLIN"
+        private const val GRADLE_STEP = "GRADLE"
+        private const val OFFLINE_STEP = "OFFLINE-REFRESH"
         private val SHA_40 = Regex("^[0-9a-f]{40}$")
     }
 }
