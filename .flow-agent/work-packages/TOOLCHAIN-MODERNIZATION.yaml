@@ -54,7 +54,7 @@ sequence:
     gradleDuringStep: "8.10.2"
     acceptance: "Complete compile, tests, standalone conformance and governance validation pass without semantic or public-contract drift."
   - id: "GRADLE"
-    status: planned
+    status: implemented
     from: "8.10.2"
     to: "9.5.0"
     kotlinDuringStep: "2.4.10"
