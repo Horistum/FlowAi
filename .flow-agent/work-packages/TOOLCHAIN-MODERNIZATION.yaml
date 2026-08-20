@@ -31,13 +31,13 @@ baseline:
 selectedTarget:
   kotlin: "2.4.10"
   gradle: "9.5.0"
-  jdk: "21"
-  selectionDate: "2026-08-17"
+  jdk: "25"
+  selectionDate: "2026-08-20"
   rationale:
-    - "Kotlin 2.4.10 is the current stable Kotlin bug-fix release at activation."
-    - "The Kotlin Gradle plugin 2.4.10 fully supported Gradle range ends at 9.5.0, so Gradle 9.5.0 is the newest stable Gradle baseline inside the fully supported pair at activation."
-    - "Gradle 9.6.1 is newer but is intentionally not selected because it lies outside the Kotlin 2.4.10 fully supported Gradle range."
-    - "JDK 21 remains unchanged because neither the selected Kotlin nor Gradle migration requires an unrelated JDK transition."
+    - "Kotlin 2.4.10 is the selected stable Kotlin bug-fix release for this modernization milestone."
+    - "Gradle 9.5.0 is retained as the independently validated build baseline before the JDK transition."
+    - "JDK 25 is introduced as a separate evidence-backed boundary only after Kotlin 2.4.10 and Gradle 9.5.0 have each crossed their own validation boundary."
+    - "The JDK transition remains build-tooling maintenance and must not alter Flow semantics, public contracts or target support claims."
 
 sequence:
   - id: "KOTLIN"
@@ -52,29 +52,45 @@ sequence:
     from: "1.9.24"
     to: "2.4.10"
     gradleDuringStep: "8.10.2"
+    jdkDuringStep: "21"
     acceptance: "Complete compile, tests, standalone conformance and governance validation pass without semantic or public-contract drift."
   - id: "GRADLE"
-    status: implemented
+    status: validated
+    validationEvidence:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2962
+      runId: 32090278981
+      exactHead: "a6806899ed1b39b4782fbdcac158c64505b71538"
+      mergeCandidate: "eff997be5a4f84171052444708f0ee521d49f113"
     from: "8.10.2"
     to: "9.5.0"
     kotlinDuringStep: "2.4.10"
-    acceptance: "Complete compile, tests, standalone conformance and governance validation pass on the final supported pair."
+    jdkDuringStep: "21"
+    acceptance: "Complete compile, tests, standalone conformance and governance validation pass on the selected Kotlin/Gradle pair before JDK advancement."
+  - id: "JDK"
+    status: implemented
+    from: "21"
+    to: "25"
+    kotlinDuringStep: "2.4.10"
+    gradleDuringStep: "9.5.0"
+    acceptance: "Complete exact-head and synthetic merge-candidate compile, tests, standalone conformance and governance validation on JDK 25 before offline refresh may advance."
   - id: "OFFLINE-REFRESH"
     status: planned
-    acceptance: "Offline/reproducible build inputs contain the selected compiler, plugins, wrapper and dependencies needed for trustworthy local validation."
+    acceptance: "Offline/reproducible build inputs contain Kotlin 2.4.10, Gradle 9.5.0, a JDK 25-capable runtime/toolchain path, wrapper provenance and dependencies needed for trustworthy local validation."
 
 invariants:
   - "The migration changes build tooling only; canonical Flow meaning is byte-for-byte or structurally equivalent wherever the toolchain does not legitimately alter generated build metadata."
-  - "Published package, public standard and serialized artifact contract versions do not advance merely because Kotlin or Gradle changes."
+  - "Published package, public standard and serialized artifact contract versions do not advance merely because Kotlin, Gradle or JDK changes."
   - "Target support, executable-reference status and adapter evidence are not promoted by a toolchain upgrade."
-  - "Compiler or Gradle diagnostics are resolved at their semantic/configuration source instead of being hidden through global warning suppression."
-  - "Kotlin and Gradle are upgraded as separately diagnosable steps; JDK 21 remains fixed unless a separate evidence-backed decision changes it."
+  - "Compiler, Gradle or JDK diagnostics are resolved at their semantic/configuration source instead of being hidden through global warning suppression."
+  - "Kotlin, Gradle and JDK are upgraded as separately diagnosable boundaries; each predecessor must be validated before the next boundary advances."
 
 forbiddenScope:
   - "Do not combine this milestone with External Falsification domain implementation."
   - "Do not combine this milestone with the future multi-module STRUCTURAL-BOUNDARIES split."
   - "Do not perform unrelated Authority refactors, semantic redesigns or target-support expansion."
-  - "Do not select RC, beta or a Kotlin/Gradle combination outside the official fully supported compatibility range merely to use a larger version number."
+  - "Do not select RC, beta or unsupported toolchain combinations merely to use a larger version number."
   - "Do not weaken tests, conformance, governance or compiler settings to manufacture a green build."
 
 versionDecision:
@@ -90,17 +106,18 @@ versionDecision:
   reason: "Toolchain modernization is an implementation-maintenance axis and does not by itself alter Flow's public semantic or serialized contracts."
 
 completionEvidence:
-  - "Kotlin 2.4.10 migration passes exact-head and synthetic merge-candidate full validation before the Gradle step is treated as clean."
-  - "Gradle 9.5.0 migration passes exact-head and synthetic merge-candidate full validation on the final Kotlin/Gradle pair."
+  - "Kotlin 2.4.10 migration passes exact-head and synthetic merge-candidate full validation before the Gradle boundary advances."
+  - "Gradle 9.5.0 migration passes exact-head and synthetic merge-candidate full validation before the JDK boundary advances."
+  - "JDK 25 migration passes exact-head and synthetic merge-candidate full validation on Kotlin 2.4.10 and Gradle 9.5.0 before offline refresh advances."
   - "No semantic behavior, public artifact contract or target-support claim changed as a side effect of the migration."
-  - "Removed/deprecated Kotlin and Gradle APIs encountered during migration were intentionally remediated without global suppression."
+  - "Removed/deprecated Kotlin, Gradle or JDK-facing APIs encountered during migration were intentionally remediated without global suppression."
   - "Clean and warm/incremental build behavior is recorded before and after each toolchain step."
-  - "Offline/reproducible build inputs are refreshed for the selected final toolchain."
-  - "A later distinct lifecycle transition records implementation validation and closes this milestone before External Falsification implementation expands the codebase."
+  - "Offline/reproducible build inputs are refreshed for the final Kotlin 2.4.10 / Gradle 9.5.0 / JDK 25 toolchain."
+  - "A later distinct lifecycle transition records JDK implementation validation and closes this milestone before External Falsification implementation expands the codebase."
 
 localValidation:
   status: pending
   evidence:
-    - "No trustworthy full local Gradle PASS is claimed for the Kotlin migration because the current execution environment does not contain the project offline Gradle bundle or an authenticated local checkout."
-    - "Isolated Kotlin syntax compilation was used only to reject trivial source/test syntax defects before CI and is not treated as project validation."
-  rule: "Kotlin implementation acceptance requires trustworthy exact-head and synthetic merge-candidate Flow CI; localValidation remains pending until the offline/reproducible inputs are refreshed."
+    - "No trustworthy full local Gradle PASS is claimed because the current execution environment does not contain the project offline Gradle bundle or an authenticated local checkout."
+    - "GitHub Flow CI exact-head and synthetic merge-candidate validation remains the acceptance boundary until offline/reproducible inputs are refreshed."
+  rule: "Toolchain implementation acceptance requires trustworthy exact-head and synthetic merge-candidate Flow CI; localValidation remains pending until the offline/reproducible inputs are refreshed for JDK 25."

@@ -181,7 +181,7 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
         val baseline = workPackage.map("baseline")
         if (baseline.string("kotlin") != BASE_KOTLIN ||
             baseline.string("gradle") != BASE_GRADLE ||
-            baseline.string("jdk") != JDK
+            baseline.string("jdk") != BASE_JDK
         ) {
             errors += "Toolchain work package must retain the audited 1.9.24 / 8.10.2 / JDK 21 baseline."
         }
@@ -203,19 +203,23 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
             .find(build)?.groupValues?.get(1).orEmpty()
 
         val repositoryState = when {
-            actualKotlin == BASE_KOTLIN && actualGradle == BASE_GRADLE && actualJdk == JDK ->
+            actualKotlin == BASE_KOTLIN && actualGradle == BASE_GRADLE && actualJdk == BASE_JDK ->
                 RepositoryToolchainState.BASELINE
-            actualKotlin == TARGET_KOTLIN && actualGradle == BASE_GRADLE && actualJdk == JDK ->
+            actualKotlin == TARGET_KOTLIN && actualGradle == BASE_GRADLE && actualJdk == BASE_JDK ->
                 RepositoryToolchainState.KOTLIN_MIGRATED
-            actualKotlin == TARGET_KOTLIN && actualGradle == TARGET_GRADLE && actualJdk == JDK ->
+            actualKotlin == TARGET_KOTLIN && actualGradle == TARGET_GRADLE && actualJdk == BASE_JDK ->
+                RepositoryToolchainState.GRADLE_MIGRATED
+            actualKotlin == TARGET_KOTLIN && actualGradle == TARGET_GRADLE && actualJdk == TARGET_JDK ->
                 RepositoryToolchainState.FINAL
             else -> RepositoryToolchainState.INVALID
         }
 
         if (repositoryState == RepositoryToolchainState.INVALID) {
             errors += "Repository toolchain must follow the approved sequence " +
-                "$BASE_KOTLIN/$BASE_GRADLE -> $TARGET_KOTLIN/$BASE_GRADLE -> " +
-                "$TARGET_KOTLIN/$TARGET_GRADLE on JDK $JDK; got " +
+                "$BASE_KOTLIN/$BASE_GRADLE/JDK$BASE_JDK -> " +
+                "$TARGET_KOTLIN/$BASE_GRADLE/JDK$BASE_JDK -> " +
+                "$TARGET_KOTLIN/$TARGET_GRADLE/JDK$BASE_JDK -> " +
+                "$TARGET_KOTLIN/$TARGET_GRADLE/JDK$TARGET_JDK; got " +
                 "Kotlin=$actualKotlin Gradle=$actualGradle JDK=$actualJdk."
             return
         }
@@ -229,19 +233,21 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
         errors: MutableList<String>
     ) {
         val steps = workPackage.mapList("sequence")
-        val expectedIds = listOf(KOTLIN_STEP, GRADLE_STEP, OFFLINE_STEP)
+        val expectedIds = listOf(KOTLIN_STEP, GRADLE_STEP, JDK_STEP, OFFLINE_STEP)
         if (steps.map { it.string("id") } != expectedIds) {
-            errors += "Toolchain work package sequence must contain KOTLIN, GRADLE and OFFLINE-REFRESH exactly in that order."
+            errors += "Toolchain work package sequence must contain KOTLIN, GRADLE, JDK and OFFLINE-REFRESH exactly in that order."
             return
         }
 
         val kotlinStep = steps[0]
         val gradleStep = steps[1]
-        val offlineStep = steps[2]
+        val jdkStep = steps[2]
+        val offlineStep = steps[3]
         when (repositoryState) {
             RepositoryToolchainState.BASELINE -> {
                 requireStepStatus(kotlinStep, "planned", KOTLIN_STEP, errors)
                 requireStepStatus(gradleStep, "planned", GRADLE_STEP, errors)
+                requireStepStatus(jdkStep, "planned", JDK_STEP, errors)
                 requireStepStatus(offlineStep, "planned", OFFLINE_STEP, errors)
             }
             RepositoryToolchainState.KOTLIN_MIGRATED -> {
@@ -251,16 +257,28 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
                 }
                 requireValidationEvidenceIfValidated(kotlinStep, KOTLIN_STEP, errors)
                 requireStepStatus(gradleStep, "planned", GRADLE_STEP, errors)
+                requireStepStatus(jdkStep, "planned", JDK_STEP, errors)
+                requireStepStatus(offlineStep, "planned", OFFLINE_STEP, errors)
+            }
+            RepositoryToolchainState.GRADLE_MIGRATED -> {
+                requireValidatedStep(kotlinStep, KOTLIN_STEP, errors)
+                val gradleStatus = gradleStep.string("status")
+                if (gradleStatus !in setOf("implemented", "validated")) {
+                    errors += "Gradle 9.5.0 on JDK 21 requires the GRADLE step to be implemented or validated."
+                }
+                requireValidationEvidenceIfValidated(gradleStep, GRADLE_STEP, errors)
+                requireStepStatus(jdkStep, "planned", JDK_STEP, errors)
                 requireStepStatus(offlineStep, "planned", OFFLINE_STEP, errors)
             }
             RepositoryToolchainState.FINAL -> {
                 requireValidatedStep(kotlinStep, KOTLIN_STEP, errors)
-                val gradleStatus = gradleStep.string("status")
-                if (gradleStatus !in setOf("implemented", "validated")) {
-                    errors += "Gradle 9.5.0 requires the GRADLE step to be implemented or validated."
+                requireValidatedStep(gradleStep, GRADLE_STEP, errors)
+                val jdkStatus = jdkStep.string("status")
+                if (jdkStatus !in setOf("implemented", "validated")) {
+                    errors += "JDK 25 requires the JDK step to be implemented or validated."
                 }
-                requireValidationEvidenceIfValidated(gradleStep, GRADLE_STEP, errors)
-                when (gradleStatus) {
+                requireValidationEvidenceIfValidated(jdkStep, JDK_STEP, errors)
+                when (jdkStatus) {
                     "implemented" -> requireStepStatus(offlineStep, "planned", OFFLINE_STEP, errors)
                     "validated" -> requireOfflineStepState(offlineStep, errors)
                 }
@@ -318,7 +336,7 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
     ) {
         val status = step.string("status")
         if (status !in setOf("planned", "implemented", "validated")) {
-            errors += "$OFFLINE_STEP step must be planned, implemented or validated after the GRADLE step is validated."
+            errors += "$OFFLINE_STEP step must be planned, implemented or validated after the JDK step is validated."
             return
         }
         requireValidationEvidenceIfValidated(step, OFFLINE_STEP, errors)
@@ -331,9 +349,9 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
         val selected = workPackage.map("selectedTarget")
         if (selected.string("kotlin") != TARGET_KOTLIN ||
             selected.string("gradle") != TARGET_GRADLE ||
-            selected.string("jdk") != JDK
+            selected.string("jdk") != TARGET_JDK
         ) {
-            errors += "Activated toolchain target must be Kotlin 2.4.10, Gradle 9.5.0 and JDK 21."
+            errors += "Activated toolchain target must be Kotlin 2.4.10, Gradle 9.5.0 and JDK 25."
         }
         if (workPackage.string("localValidation", "status") !in setOf("pending", "passed")) {
             errors += "Toolchain local validation must be recorded honestly as pending or passed."
@@ -400,6 +418,7 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
     private enum class RepositoryToolchainState {
         BASELINE,
         KOTLIN_MIGRATED,
+        GRADLE_MIGRATED,
         FINAL,
         INVALID
     }
@@ -439,9 +458,11 @@ class ToolchainModernizationLifecycle(private val rootDir: File = File(".")) {
         private const val BASE_GRADLE = "8.10.2"
         private const val TARGET_KOTLIN = "2.4.10"
         private const val TARGET_GRADLE = "9.5.0"
-        private const val JDK = "21"
+        private const val BASE_JDK = "21"
+        private const val TARGET_JDK = "25"
         private const val KOTLIN_STEP = "KOTLIN"
         private const val GRADLE_STEP = "GRADLE"
+        private const val JDK_STEP = "JDK"
         private const val OFFLINE_STEP = "OFFLINE-REFRESH"
         private val SHA_40 = Regex("^[0-9a-f]{40}$")
     }
