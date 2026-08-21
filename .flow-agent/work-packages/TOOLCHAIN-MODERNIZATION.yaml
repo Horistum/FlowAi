@@ -69,7 +69,14 @@ sequence:
     jdkDuringStep: "21"
     acceptance: "Complete compile, tests, standalone conformance and governance validation pass on the selected Kotlin/Gradle pair before JDK advancement."
   - id: "JDK"
-    status: implemented
+    status: validated
+    validationEvidence:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2976
+      runId: 32328116587
+      exactHead: "dc4a6cf6a3a45a58a8d8194702af3084d71a4ed3"
+      mergeCandidate: "659c8d68123487844dcae0d0bfecdb2eb5f540bb"
     from: "21"
     to: "25"
     kotlinDuringStep: "2.4.10"
@@ -113,11 +120,11 @@ completionEvidence:
   - "Removed/deprecated Kotlin, Gradle or JDK-facing APIs encountered during migration were intentionally remediated without global suppression."
   - "Clean and warm/incremental build behavior is recorded before and after each toolchain step."
   - "Offline/reproducible build inputs are refreshed for the final Kotlin 2.4.10 / Gradle 9.5.0 / JDK 25 toolchain."
-  - "A later distinct lifecycle transition records JDK implementation validation and closes this milestone before External Falsification implementation expands the codebase."
+  - "A later distinct lifecycle transition records offline implementation validation and closes this milestone before External Falsification implementation expands the codebase."
 
 localValidation:
   status: pending
   evidence:
-    - "No trustworthy full local Gradle PASS is claimed because the current execution environment does not contain the project offline Gradle bundle or an authenticated local checkout."
-    - "GitHub Flow CI exact-head and synthetic merge-candidate validation remains the acceptance boundary until offline/reproducible inputs are refreshed."
-  rule: "Toolchain implementation acceptance requires trustworthy exact-head and synthetic merge-candidate Flow CI; localValidation remains pending until the offline/reproducible inputs are refreshed for JDK 25."
+    - "JDK 25 is independently validated by Flow CI #2976 exact-head and synthetic merge-candidate boundaries."
+    - "Local offline validation remains pending until the reproducible offline cache preparation and isolated --offline verification boundary is implemented and validated."
+  rule: "Offline refresh acceptance requires a prepared isolated Gradle home plus a second isolated Gradle home that passes clean test and conformance with --offline on JDK 25."
