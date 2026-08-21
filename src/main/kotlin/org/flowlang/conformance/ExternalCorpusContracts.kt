@@ -38,10 +38,15 @@ data class ExternalSourceCapture(
     val sha256: String
 )
 
+data class ExternalSourceEvidence(
+    val startLine: Int,
+    val endLine: Int
+)
+
 data class ExternalAuthoredBehavior(
     val id: String,
     val statement: String,
-    val evidence: List<String>
+    val evidence: List<ExternalSourceEvidence>
 )
 
 data class ExternalSemanticObservation(
@@ -55,7 +60,7 @@ data class ExternalSemanticObservation(
 data class ExternalUnsupportedFact(
     val id: String,
     val statement: String,
-    val evidence: List<String>,
+    val evidence: List<ExternalSourceEvidence>,
     val reason: String
 )
 
