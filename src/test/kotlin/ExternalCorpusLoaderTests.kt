@@ -31,6 +31,7 @@ class ExternalCorpusLoaderTests {
         assertEquals("example-org/example-automation", case.provenance.repository)
         assertEquals(sha256(source), case.sourceCapture.sha256)
         assertEquals("apply-migration", case.authoredBehaviors.single().id)
+        assertEquals(2, case.authoredBehaviors.single().evidence.single().startLine)
         assertEquals(ExternalSemanticExpectation.PRESERVE, case.expectedSemanticObservations.single().expectation)
         assertEquals(listOf("apply-migration"), case.expectedSemanticObservations.single().behaviorRefs)
         assertEquals("target-cli-flag", case.unsupportedFacts.single().id)
@@ -55,6 +56,16 @@ class ExternalCorpusLoaderTests {
 
         val error = assertFailsWith<IllegalArgumentException> { ExternalCorpusLoader(root).load() }
         assertTrue(error.message.orEmpty().contains("references unknown authored behavior ids"))
+    }
+
+    @Test
+    fun evidenceRangeMustExistInCapturedSource() {
+        val root = fixtureRoot()
+        writeManifest(root, status = "EVIDENCE_ACTIVE", casePackages = listOf("cases/db-migration"))
+        writeCase(root, semanticBehaviorRef = "apply-migration", evidenceLine = 9000)
+
+        val error = assertFailsWith<IllegalArgumentException> { ExternalCorpusLoader(root).load() }
+        assertTrue(error.message.orEmpty().contains("invalid source evidence range 9000-9000"))
     }
 
     @Test
@@ -98,7 +109,8 @@ class ExternalCorpusLoaderTests {
     private fun writeCase(
         root: File,
         semanticBehaviorRef: String,
-        revision: String = "0123456789abcdef0123456789abcdef01234567"
+        revision: String = "0123456789abcdef0123456789abcdef01234567",
+        evidenceLine: Int = 2
     ): File {
         val caseDir = File(root, "${ExternalCorpusLoader.CORPUS_ROOT}/cases/db-migration").apply { mkdirs() }
         val source = File(caseDir, "source.yaml").apply {
@@ -124,7 +136,8 @@ class ExternalCorpusLoaderTests {
               - id: apply-migration
                 statement: The authored automation applies a migration.
                 evidence:
-                  - source.yaml:2
+                  - startLine: $evidenceLine
+                    endLine: $evidenceLine
             expectedSemanticObservations:
               - id: preserve-authored-operation
                 expectation: PRESERVE
@@ -136,7 +149,8 @@ class ExternalCorpusLoaderTests {
               - id: target-cli-flag
                 statement: The concrete CLI flag syntax is implementation-specific.
                 evidence:
-                  - source.yaml:2
+                  - startLine: 2
+                    endLine: 2
                 reason: Target CLI spelling is not universal Flow meaning.
             """.trimIndent() + "\n"
         )
