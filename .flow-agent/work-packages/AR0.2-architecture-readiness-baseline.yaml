@@ -1,0 +1,61 @@
+version: "AR0.2"
+name: "Architecture Readiness Baseline"
+type: "post-toolchain-architecture-measurement"
+status: active
+stream: "post-toolchain"
+
+objective: "Measure the live architecture before External Falsification expands the corpus, using code-derived evidence rather than hand-maintained estimates."
+
+authorization:
+  status: active
+  predecessor: "TOOLCHAIN-MODERNIZATION"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#AR0.2"
+  rule: "AR0.2 is observational. It may measure and classify architecture debt but must not change Flow semantics, target support, public artifact contracts or execution evidence."
+
+activationBasis:
+  completedEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
+  mainAfterCiOptimizationMerge: "7ab02ddd295b8bce1a59d13504960510950848ff"
+  retainedValidation:
+    workflow: "Flow CI"
+    runNumber: 2982
+    runId: 32444816500
+    exactHead: "44a506dcab6d9b23f10d0ec70d0a595234e31c82"
+    mergeCandidate: "367200b07d180daf2ecb1e9eef92fb265e7cdf29"
+    status: passed
+
+requiredMeasurements:
+  - "Production Kotlin type count derived from lexical code spans."
+  - "Production Authority count derived from AuthorityResponsibilityCatalog discovery."
+  - "Complete conformance check count derived from ConformanceSuiteInventory, including the closure check."
+  - "Lexical architecture direction and forbidden-term counts derived from ArchitectureGovernanceAnalyzer."
+  - "Core-to-adapter dependency violations across target-neutral semantic package roots."
+  - "Independent public artifact contract version axes from FlowStandardVersions."
+  - "Stringly typed semantic-field candidates in target-neutral semantic packages."
+
+implementation:
+  analyzer: "src/main/kotlin/org/flowlang/architecture/ArchitectureReadinessBaselineAnalyzer.kt"
+  tests: "src/test/kotlin/ArchitectureReadinessBaselineAnalyzerTests.kt"
+  report: ".flow-agent/reports/ar0.2-architecture-readiness-baseline.md"
+
+invariants:
+  - "Measurements come from live repository code or canonical machine-readable inventories."
+  - "AR0.2 does not introduce target-specific meaning into Core."
+  - "AR0.2 does not rename, merge or delete authorities merely to improve a metric."
+  - "A string field is only a candidate for later strengthening; AR0.2 does not change its type."
+  - "No artifact-contract version advances because of this measurement milestone."
+
+forbiddenScope:
+  - "Do not perform the future multi-module STRUCTURAL-BOUNDARIES split."
+  - "Do not implement External Falsification corpus domains in this milestone."
+  - "Do not add new StandardCapability values."
+  - "Do not weaken conformance or governance checks to improve measured counts."
+
+completionEvidence:
+  - "ArchitectureReadinessBaselineAnalyzer passes on the repository and reports no Core-to-adapter dependency violation in its declared target-neutral roots."
+  - "A committed AR0.2 report records the exact measured counts, public artifact contracts and stringly typed semantic candidates from a passed implementation boundary."
+  - "Exact-head and synthetic merge-candidate Flow CI pass without semantic or public-contract changes."
+  - "A distinct later completion boundary closes AR0.2 before EF-01 activation."
+
+localValidation:
+  status: pending
+  rule: "Repository tests and standalone conformance must pass on the implementation head before measured values are committed as evidence."
