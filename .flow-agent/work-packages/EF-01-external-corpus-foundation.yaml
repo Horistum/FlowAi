@@ -1,0 +1,57 @@
+version: "EF-01"
+name: "External Corpus Foundation"
+type: "post-toolchain-external-falsification-foundation"
+status: active
+stream: "post-toolchain"
+
+objective: "Define a provenance-preserving, fail-closed ingestion contract for real external automation evidence before any domain-specific falsification changes Flow semantics."
+
+authorization:
+  status: active
+  predecessor: "AR0.2"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-01"
+  mainAtActivation: "9d6b38a6a9305a9261527f6fcca7b59903ea6af2"
+  rule: "EF-01 may define evidence ingestion and evaluation contracts but must not add domain semantics, target support, StandardCapability values or executable claims."
+
+requiredOutcomes:
+  - "Every external corpus case records immutable repository/revision/path/license provenance."
+  - "Every captured source is bound to the exact admitted bytes by SHA-256."
+  - "Authored behavior observations remain separate from expected Flow semantic observations."
+  - "Every semantic observation references concrete authored-behavior evidence rather than implementation-token heuristics."
+  - "Every case explicitly records unsupported facts, including an empty list when none are identified."
+  - "Path traversal, mutable revisions, digest drift, malformed evidence and invented behavior references fail closed."
+  - "The repository-level external corpus manifest begins in FOUNDATION state with no domain evidence fabricated by EF-01."
+
+implementation:
+  contracts: "src/main/kotlin/org/flowlang/conformance/ExternalCorpusContracts.kt"
+  loader: "src/main/kotlin/org/flowlang/conformance/ExternalCorpusLoader.kt"
+  manifest: "conformance/corpus/external/manifest.yaml"
+  tests: "src/test/kotlin/ExternalCorpusLoaderTests.kt"
+  conformanceCheck: "conformance.ef-01.external-corpus-foundation"
+
+invariants:
+  - "External source syntax is evidence, never semantic authority."
+  - "A pinned upstream revision and captured-byte digest identify what was actually reviewed."
+  - "Open-ended external domain labels remain conformance evidence and do not extend Core taxonomy."
+  - "FOUNDATION is schema/loader readiness, not a representability or target-support claim."
+  - "C0.1 and C1.0 corpora remain immutable historical evidence boundaries."
+  - "No public artifact-contract version advances in EF-01."
+
+forbiddenScope:
+  - "Do not implement EF-02 through EF-09 domain cases in EF-01."
+  - "Do not infer StandardCapability or semantic-effect identity from upstream keywords."
+  - "Do not reuse RealWorldDomain as the External Falsification domain taxonomy."
+  - "Do not modify frozen C0.1 or C1.0 corpus manifests or inventories."
+  - "Do not promote target materialization or executable support."
+  - "Do not add an Authority solely to own this ingestion contract."
+
+completionEvidence:
+  - "Production loader accepts the repository FOUNDATION manifest."
+  - "Tests prove valid ingestion plus digest tampering, path traversal, mutable revision and invented-behavior rejection."
+  - "Standalone conformance contains and passes the EF-01 foundation check."
+  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
+  - "A later distinct completion boundary records EF-01 closed before EF-02 activation."
+
+localValidation:
+  status: pending
+  rule: "Implementation evidence must pass before EF-01 lifecycle closure metadata may be committed."

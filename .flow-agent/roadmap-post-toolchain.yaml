@@ -7,8 +7,8 @@ currentDecision:
   completedItemName: "Architecture Readiness Baseline"
   nextItem: "EF-01"
   nextItemName: "External Corpus Foundation"
-  workPackage: ""
-  decisionBasis: "AR0.2 measured the live architecture from production code and canonical inventories with zero Core-to-adapter dependency violations. EF-01 is the next planned post-toolchain item but requires its own activation transition before implementation begins."
+  workPackage: ".flow-agent/work-packages/EF-01-external-corpus-foundation.yaml"
+  decisionBasis: "AR0.2 completed the measured architecture baseline. EF-01 is now independently activated to define provenance-preserving external evidence ingestion before any domain-specific falsification is allowed to change Flow semantics."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -37,7 +37,8 @@ sequence:
   - id: "EF-01"
     name: "External Corpus Foundation"
     order: 2
-    status: next
+    status: active
+    workPackage: ".flow-agent/work-packages/EF-01-external-corpus-foundation.yaml"
     purpose: "Define provenance-preserving ingestion and evaluation of real external automation sources."
     requiredOutcomes:
       - "Every corpus case records source provenance, authored behavior, expected semantic observations and unsupported facts."

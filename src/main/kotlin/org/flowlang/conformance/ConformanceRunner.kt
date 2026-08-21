@@ -15,12 +15,11 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
  * by [SemanticClosureChecks]. Frozen A0 adapter certification runs next. New
  * adapter evolution is composed through a separate post-A0 inventory. Bounded
  * C0.1 corpus evidence follows, C0.2 topology and C0.3 semantic equivalence
- * remain independently inventoried, C0.4 profile evidence follows, and C1.0
+ * remain independently inventoried, C0.4 profile evidence follows, C1.0
  * operational-domain adequacy is appended as a separate post-architecture corpus.
- * Orthogonal enabling-maintenance lifecycle checks run last and cannot rewrite
- * any earlier semantic, adapter, conformance or architecture evidence boundary.
- * Later conformance cannot rewrite earlier authorities or treat implementation
- * output as Core meaning.
+ * EF-01 external-corpus foundation validation runs after closed historical corpus
+ * evidence and before orthogonal toolchain lifecycle checks. Later conformance
+ * cannot rewrite earlier authorities or treat implementation output as Core meaning.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
@@ -52,12 +51,13 @@ class ConformanceRunner(
             targets,
             projections
         ).checks()
+        val externalCorpusFoundationChecks = ExternalCorpusFoundationConformanceRunner(rootDir).checks()
         val toolchainModernizationChecks = ToolchainModernizationConformanceRunner(rootDir).checks()
 
         return ConformanceSummary(
             preClosureChecks + closureChecks + adapterChecks + adapterEvolutionChecks +
                 realWorldChecks + topologyMatrixChecks + semanticEquivalenceChecks + adapterProfileEvidenceChecks +
-                operationalDomainAdequacyChecks + toolchainModernizationChecks
+                operationalDomainAdequacyChecks + externalCorpusFoundationChecks + toolchainModernizationChecks
         )
     }
 
