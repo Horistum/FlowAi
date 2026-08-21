@@ -1,6 +1,14 @@
 roadmap: "POST-TOOLCHAIN"
-status: planned
+status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION so semantic quality is falsified by real automation before structural expansion and AI-provider growth."
+
+currentDecision:
+  completedItem: "TOOLCHAIN-MODERNIZATION"
+  completedItemName: "Kotlin and Gradle Toolchain Modernization"
+  nextItem: "AR0.2"
+  nextItemName: "Architecture Readiness Baseline"
+  workPackage: ".flow-agent/work-packages/AR0.2-architecture-readiness-baseline.yaml"
+  decisionBasis: "The toolchain milestone is complete. AR0.2 measures the live architecture before External Falsification expands repository surface; it is observational and does not reopen completed semantic, adapter, conformance or architecture streams."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -14,7 +22,8 @@ sequence:
   - id: "AR0.2"
     name: "Architecture Readiness Baseline"
     order: 1
-    status: planned
+    status: next
+    workPackage: ".flow-agent/work-packages/AR0.2-architecture-readiness-baseline.yaml"
     purpose: "Measure architecture complexity before external corpus growth without performing another broad refactor."
     requiredOutcomes:
       - "Record production Kotlin type count, Authority count, conformance check count and lexical architecture-check count."
