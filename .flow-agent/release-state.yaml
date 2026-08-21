@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 58
+stateVersion: 59
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -21,9 +21,17 @@ versionBoundary:
     targetManifest: "3.0"
     targetRegistry: "3.2"
 
+toolchainState:
+  status: completed
+  kotlin: "2.4.10"
+  gradle: "9.5.0"
+  jdk: "25"
+  workPackage: ".flow-agent/work-packages/TOOLCHAIN-MODERNIZATION.yaml"
+  offlineValidation: passed
+
 roadmapState:
-  roadmapVersion: 29
-  activeTrack: "toolchain-modernization"
+  roadmapVersion: 30
+  activeTrack: ""
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
   primaryStream: "conformance"
@@ -33,8 +41,11 @@ roadmapState:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
-  activeEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
-  activeEnablingMilestoneName: "Kotlin and Gradle Toolchain Modernization"
+  activeEnablingMilestone: ""
+  activeEnablingMilestoneName: ""
+  completedEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
+  completedEnablingMilestoneName: "Kotlin and Gradle Toolchain Modernization"
+  postToolchainRoadmap: ".flow-agent/roadmap-post-toolchain.yaml"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -46,6 +57,8 @@ roadmapState:
     adapters: ".flow-agent/roadmap-adapters.yaml"
     conformance: ".flow-agent/roadmap-conformance.yaml"
     architecture: ".flow-agent/roadmap-architecture.yaml"
+  planningRoadmaps:
+    postToolchain: ".flow-agent/roadmap-post-toolchain.yaml"
 
 repositoryRules:
   sourceLanguage: "English"
@@ -177,22 +190,24 @@ qualityPrinciples:
   - "An orthogonal enabling milestone must not fabricate a product-roadmap successor or reopen a completed roadmap stream."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-si-08-validation-boundary"
-  flowAgentStructure: "passed-on-si-08-validation-boundary"
-  flowAgentContextGeneration: "passed-on-si-08-validation-boundary"
-  cleanTest: "passed-on-si-08-validation-boundary"
-  conformance: "passed-on-si-08-validation-boundary"
-  executableReferenceEvidence: "passed-on-si-08-validation-boundary"
-  adapterArtifactRenderingEvidence: "passed-on-si-08-validation-boundary"
-  adapterTriggerMaterializationEvidence: "passed-on-si-08-validation-boundary"
-  boundedDomainCorpusEvidence: "passed-on-si-08-validation-boundary"
-  roadmapTransitionEvidence: "passed-on-si-08-validation-boundary"
-  validationSource: "Flow CI #2943, run 31802519219, passed pull request #137 exact head e5bc5cd82d591a6b744650478070b6c4919d60cf and synthetic merge candidate 7a9a349c929a9b2fccadd16e5f5411f77156b7c6 before merge commit 03c3bcb9c8d4f428b4302c2c35d098848793505e."
+  flowAgentTooling: "passed-on-toolchain-closure-boundary"
+  flowAgentStructure: "passed-on-toolchain-closure-boundary"
+  flowAgentContextGeneration: "passed-on-toolchain-closure-boundary"
+  cleanTest: "passed-on-toolchain-closure-boundary"
+  conformance: "passed-on-toolchain-closure-boundary"
+  executableReferenceEvidence: "unchanged-by-toolchain-modernization"
+  adapterArtifactRenderingEvidence: "unchanged-by-toolchain-modernization"
+  adapterTriggerMaterializationEvidence: "unchanged-by-toolchain-modernization"
+  boundedDomainCorpusEvidence: "unchanged-by-toolchain-modernization"
+  roadmapTransitionEvidence: "passed-on-toolchain-closure-boundary"
+  validationSource: "Flow CI #2968, run 32440920335, passed exact head 60c17379ad56b64f10fecf9d1dcda09a96c3600d and synthetic merge candidate 028231fcb824d25d4f813bfbbc46a963731007e2 after distinct offline implementation boundary Flow CI #2967."
   notes:
-    - "Flow CI #2943 is the latest committed implementation validation evidence and closes SI-08; post-merge main Flow CI #2944 also passed. The bounded semantic-integrity stream is complete and no product successor is selected by this transition."
-    - "TOOLCHAIN-MODERNIZATION is active as an orthogonal enabling-maintenance milestone; it has no implementation validation yet and does not activate External Falsification."
+    - "TOOLCHAIN-MODERNIZATION is complete on Kotlin 2.4.10, Gradle 9.5.0 and JDK 25 with distinct Kotlin, Gradle, JDK, offline implementation and lifecycle completion evidence."
+    - "The offline boundary prepared an isolated Gradle home and verified clean tests plus standalone conformance from a second isolated Gradle home using --offline."
+    - "Candidate validation remains external exact-head CI evidence until the candidate head passes; committed metadata cites only already-passed boundaries."
+    - "The post-toolchain roadmap is recorded as planning authority only; no successor product track is activated by toolchain completion."
+    - "External Falsification remains the next strategic candidate and requires a separate global roadmap activation transition."
     - "SI-08 replaced policy substring folklore with typed standard policy semantics, separated workflow-local STATE propagation from explicit durable lifetime, advanced ExecutionPlan to 2.4 and module schema to 1.3, and did not promote target support."
-    - "External Falsification remains the next strategic candidate only; activation requires a separate global roadmap transition and cannot be inferred from SI-08 completion or toolchain maintenance."
     - "SI-07 aligned public schema acceptance boundaries, advanced TargetRegistry to 3.2 for the authored wire correction, and retained published schemas as syntactic interchange contracts unless bidirectional production-validity proof exists."
     - "SI-06 removed silent authored-value coercion at confirmed parser and strict YAML boundaries without changing its live artifact contract versions."
     - "SI-05 advanced the live AST contract to 2.2 and ExecutionPlan contract to 2.3 while Intent and ExecutionPlan lowering evidence remain unchanged."
@@ -204,7 +219,6 @@ lastKnownValidation:
     - "A1.0 post-A0 promotion evidence is isolated from the frozen A0 portfolio and inventory."
     - "PR #106 merged as commit 7a63b67690739c63fd529010a7666c936bfcf9b3; A1.0 evidence is part of main history."
     - "C0.2 Abstract Topology Matrix is complete with distinct Flow CI #2674 implementation and #2679 completion boundaries."
-    - "C0.2 completion evidence remains external exact-head CI evidence until PR #107 merges; it does not impersonate merged history."
     - "C0.3 Semantic Equivalence Rules is complete with distinct Flow CI #2743 implementation and #2750 completion boundaries."
     - "C0.4 Adapter Profile Evidence is complete with distinct Flow CI #2796 implementation and #2798 completion boundaries."
     - "C1.0 Operational Domain Adequacy is complete with distinct Flow CI #2812 implementation and #2823 completion boundaries; no successor work item is selected by the completion transition."

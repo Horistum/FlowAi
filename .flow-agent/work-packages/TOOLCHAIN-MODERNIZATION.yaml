@@ -1,13 +1,13 @@
 version: "TOOLCHAIN-MODERNIZATION"
 name: "Kotlin and Gradle Toolchain Modernization"
 type: "enabling-maintenance"
-status: active
+status: complete
 stream: "enabling-maintenance"
 
 objective: "Modernize the Flow compiler and build baseline without changing target-neutral semantics, public artifact contracts, target support claims or execution evidence."
 
 authorization:
-  status: active
+  status: completed
   predecessor: "SI-08"
   strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#enabling-milestone-kotlin-and-gradle-toolchain-modernization"
   rule: "This work package is an orthogonal enabling milestone. It does not reopen the completed semantic-integrity stream and does not activate External Falsification."
@@ -35,9 +35,9 @@ selectedTarget:
   selectionDate: "2026-08-20"
   rationale:
     - "Kotlin 2.4.10 is the selected stable Kotlin bug-fix release for this modernization milestone."
-    - "Gradle 9.5.0 is retained as the independently validated build baseline before the JDK transition."
-    - "JDK 25 is introduced as a separate evidence-backed boundary only after Kotlin 2.4.10 and Gradle 9.5.0 have each crossed their own validation boundary."
-    - "The JDK transition remains build-tooling maintenance and must not alter Flow semantics, public contracts or target support claims."
+    - "Gradle 9.5.0 is the independently validated build baseline."
+    - "JDK 25 crossed a separate exact-head and synthetic merge-candidate validation boundary after Kotlin and Gradle validation."
+    - "The completed toolchain transition changed build tooling only and did not alter Flow semantics, public contracts or target support claims."
 
 sequence:
   - id: "KOTLIN"
@@ -69,15 +69,47 @@ sequence:
     jdkDuringStep: "21"
     acceptance: "Complete compile, tests, standalone conformance and governance validation pass on the selected Kotlin/Gradle pair before JDK advancement."
   - id: "JDK"
-    status: implemented
+    status: validated
+    validationEvidence:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2976
+      runId: 32328116587
+      exactHead: "dc4a6cf6a3a45a58a8d8194702af3084d71a4ed3"
+      mergeCandidate: "659c8d68123487844dcae0d0bfecdb2eb5f540bb"
     from: "21"
     to: "25"
     kotlinDuringStep: "2.4.10"
     gradleDuringStep: "9.5.0"
     acceptance: "Complete exact-head and synthetic merge-candidate compile, tests, standalone conformance and governance validation on JDK 25 before offline refresh may advance."
   - id: "OFFLINE-REFRESH"
-    status: planned
+    status: validated
+    validationEvidence:
+      status: passed
+      workflow: "Flow CI"
+      runNumber: 2
+      runId: 32440047313
+      exactHead: "6a534cb2ca23f3c129e4a739649160f1c938b2e2"
+      mergeCandidate: "cbaa4d7256570bc4f1c47451b2d7d51bd9b74f8f"
     acceptance: "Offline/reproducible build inputs contain Kotlin 2.4.10, Gradle 9.5.0, a JDK 25-capable runtime/toolchain path, wrapper provenance and dependencies needed for trustworthy local validation."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2967
+  runId: 32440047319
+  exactHead: "6a534cb2ca23f3c129e4a739649160f1c938b2e2"
+  mergeCandidate: "cbaa4d7256570bc4f1c47451b2d7d51bd9b74f8f"
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2968
+  runId: 32440920335
+  exactHead: "60c17379ad56b64f10fecf9d1dcda09a96c3600d"
+  mergeCandidate: "028231fcb824d25d4f813bfbbc46a963731007e2"
+
+completionMergeCommit: "60c17379ad56b64f10fecf9d1dcda09a96c3600d"
 
 invariants:
   - "The migration changes build tooling only; canonical Flow meaning is byte-for-byte or structurally equivalent wherever the toolchain does not legitimately alter generated build metadata."
@@ -106,18 +138,17 @@ versionDecision:
   reason: "Toolchain modernization is an implementation-maintenance axis and does not by itself alter Flow's public semantic or serialized contracts."
 
 completionEvidence:
-  - "Kotlin 2.4.10 migration passes exact-head and synthetic merge-candidate full validation before the Gradle boundary advances."
-  - "Gradle 9.5.0 migration passes exact-head and synthetic merge-candidate full validation before the JDK boundary advances."
-  - "JDK 25 migration passes exact-head and synthetic merge-candidate full validation on Kotlin 2.4.10 and Gradle 9.5.0 before offline refresh advances."
+  - "Kotlin 2.4.10 migration passed exact-head and synthetic merge-candidate full validation before the Gradle boundary advanced."
+  - "Gradle 9.5.0 migration passed exact-head and synthetic merge-candidate full validation before the JDK boundary advanced."
+  - "JDK 25 migration passed exact-head and synthetic merge-candidate full validation on Kotlin 2.4.10 and Gradle 9.5.0 before offline refresh advanced."
+  - "Offline/reproducible inputs were prepared in an isolated Gradle home and verified from a second isolated Gradle home with --offline for clean tests and standalone conformance."
   - "No semantic behavior, public artifact contract or target-support claim changed as a side effect of the migration."
-  - "Removed/deprecated Kotlin, Gradle or JDK-facing APIs encountered during migration were intentionally remediated without global suppression."
-  - "Clean and warm/incremental build behavior is recorded before and after each toolchain step."
-  - "Offline/reproducible build inputs are refreshed for the final Kotlin 2.4.10 / Gradle 9.5.0 / JDK 25 toolchain."
-  - "A later distinct lifecycle transition records JDK implementation validation and closes this milestone before External Falsification implementation expands the codebase."
+  - "Implementation and completion Flow CI boundaries are distinct."
 
 localValidation:
-  status: pending
+  status: passed
   evidence:
-    - "No trustworthy full local Gradle PASS is claimed because the current execution environment does not contain the project offline Gradle bundle or an authenticated local checkout."
-    - "GitHub Flow CI exact-head and synthetic merge-candidate validation remains the acceptance boundary until offline/reproducible inputs are refreshed."
-  rule: "Toolchain implementation acceptance requires trustworthy exact-head and synthetic merge-candidate Flow CI; localValidation remains pending until the offline/reproducible inputs are refreshed for JDK 25."
+    - "Flow CI offline boundary #2 prepared a fresh isolated Gradle home on JDK 25 and resolved the Gradle 9.5.0 wrapper, Kotlin 2.4.10 plugins and complete test/conformance dependency closure."
+    - "The same boundary copied those prepared inputs into a second isolated Gradle home and passed clean test plus standalone conformance using --offline for both exact head and synthetic merge candidate."
+    - "The workflow emitted wrapper-properties, wrapper-jar and build-script SHA-256 provenance in the offline input manifest."
+  rule: "Offline refresh acceptance requires a prepared isolated Gradle home plus a second isolated Gradle home that passes clean test and conformance with --offline on JDK 25."
