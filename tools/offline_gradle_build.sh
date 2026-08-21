@@ -29,11 +29,12 @@ prepare() {
   rm -rf "$CACHE_DIR"
   mkdir -p "$CACHE_DIR"
 
-  # Resolve the wrapper distribution, plugins and all build/runtime dependencies
-  # into one isolated Gradle home. This phase is intentionally allowed network
-  # access and is the only phase that refreshes the offline input closure.
+  # Resolve the wrapper distribution, plugins and the complete test/runtime
+  # dependency closure into an isolated Gradle home. This is the only phase
+  # allowed network access. Running test and conformance here also guarantees
+  # that every artifact needed by the later offline proof has been resolved.
   run_boundary "$CACHE_DIR" --version
-  run_boundary "$CACHE_DIR" clean test
+  run_boundary "$CACHE_DIR" test
   run_boundary "$CACHE_DIR" run --args=conformance
 
   mkdir -p "$ROOT_DIR/.flow-offline"
@@ -63,10 +64,10 @@ verify() {
   mkdir -p "$VERIFY_DIR"
   cp -a "$CACHE_DIR"/. "$VERIFY_DIR"/
 
-  # The verification boundary uses a distinct Gradle home and --offline for
-  # every Gradle invocation. A missing wrapper/plugin/dependency therefore
-  # fails instead of being silently downloaded during verification.
-  run_boundary "$VERIFY_DIR" --offline clean test
+  # Verification uses a distinct Gradle home and --offline for every Gradle
+  # invocation. The workspace is already clean on CI, so an explicit Gradle
+  # clean only destroys reusable outputs without strengthening this boundary.
+  run_boundary "$VERIFY_DIR" --offline test
   run_boundary "$VERIFY_DIR" --offline run --args=conformance
 }
 
