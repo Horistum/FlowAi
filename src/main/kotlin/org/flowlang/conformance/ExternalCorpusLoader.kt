@@ -2,6 +2,8 @@ package org.flowlang.conformance
 
 import java.io.File
 import java.security.MessageDigest
+import org.flowlang.serialization.FlowYaml
+import org.flowlang.serialization.FlowYamlException
 
 /**
  * Strict EF-01 ingestion boundary for external automation evidence.
@@ -17,7 +19,7 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
 
     fun load(): LoadedExternalCorpus {
         require(manifestFile.isFile) { "Missing EF-01 external corpus manifest: ${manifestFile.path}" }
-        val manifest = RealWorldCorpusSerialization.readYaml(manifestFile, ExternalCorpusManifest::class.java)
+        val manifest = readYaml(manifestFile, ExternalCorpusManifest::class.java)
         validateManifest(manifest)
 
         val cases = manifest.casePackages.map { relativePath ->
@@ -55,7 +57,7 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
         require(caseDir.isDirectory) { "External corpus case package is missing: ${caseDir.path}" }
         val caseFile = File(caseDir, "case.yaml")
         require(caseFile.isFile) { "External corpus case definition is missing: ${caseFile.path}" }
-        val definition = RealWorldCorpusSerialization.readYaml(caseFile, ExternalCorpusCase::class.java)
+        val definition = readYaml(caseFile, ExternalCorpusCase::class.java)
 
         require(definition.kind == CASE_KIND && definition.version == VERSION) {
             "External corpus case '${definition.id}' must use $CASE_KIND version $VERSION."
@@ -77,10 +79,12 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
         require(actualDigest == definition.sourceCapture.sha256) {
             "External corpus case '${definition.id}' captured source digest mismatch: expected=${definition.sourceCapture.sha256} actual=$actualDigest."
         }
+        val sourceLineCount = sourceFile.useLines { lines -> lines.count() }
+        require(sourceLineCount > 0) { "External corpus case '${definition.id}' captured source must not be empty." }
 
-        validateBehaviors(definition)
+        validateBehaviors(definition, sourceLineCount)
         validateSemanticObservations(definition)
-        validateUnsupportedFacts(definition)
+        validateUnsupportedFacts(definition, sourceLineCount)
         return LoadedExternalCorpusCase(definition, caseDir, sourceFile)
     }
 
@@ -102,7 +106,7 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
         }
     }
 
-    private fun validateBehaviors(definition: ExternalCorpusCase) {
+    private fun validateBehaviors(definition: ExternalCorpusCase, sourceLineCount: Int) {
         require(definition.authoredBehaviors.isNotEmpty()) {
             "External corpus case '${definition.id}' must record at least one authored behavior."
         }
@@ -111,9 +115,12 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
             require(behavior.statement.isNotBlank()) {
                 "External corpus case '${definition.id}' authored behavior '${behavior.id}' has a blank statement."
             }
-            require(behavior.evidence.isNotEmpty() && behavior.evidence.none(String::isBlank)) {
-                "External corpus case '${definition.id}' authored behavior '${behavior.id}' requires explicit source evidence."
-            }
+            validateEvidence(
+                definition.id,
+                "authored behavior '${behavior.id}'",
+                behavior.evidence,
+                sourceLineCount
+            )
         }
     }
 
@@ -141,14 +148,34 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
         }
     }
 
-    private fun validateUnsupportedFacts(definition: ExternalCorpusCase) {
+    private fun validateUnsupportedFacts(definition: ExternalCorpusCase, sourceLineCount: Int) {
         requireUniqueIds(definition.id, "unsupported fact", definition.unsupportedFacts.map { it.id })
         definition.unsupportedFacts.forEach { fact ->
             require(fact.statement.isNotBlank() && fact.reason.isNotBlank()) {
                 "External corpus case '${definition.id}' unsupported fact '${fact.id}' requires statement and reason."
             }
-            require(fact.evidence.isNotEmpty() && fact.evidence.none(String::isBlank)) {
-                "External corpus case '${definition.id}' unsupported fact '${fact.id}' requires explicit source evidence."
+            validateEvidence(
+                definition.id,
+                "unsupported fact '${fact.id}'",
+                fact.evidence,
+                sourceLineCount
+            )
+        }
+    }
+
+    private fun validateEvidence(
+        caseId: String,
+        label: String,
+        evidence: List<ExternalSourceEvidence>,
+        sourceLineCount: Int
+    ) {
+        require(evidence.isNotEmpty()) { "External corpus case '$caseId' $label requires explicit source evidence." }
+        require(evidence.distinct().size == evidence.size) {
+            "External corpus case '$caseId' $label contains duplicate source evidence ranges."
+        }
+        evidence.forEach { range ->
+            require(range.startLine >= 1 && range.endLine >= range.startLine && range.endLine <= sourceLineCount) {
+                "External corpus case '$caseId' $label has invalid source evidence range ${range.startLine}-${range.endLine}; captured source has $sourceLineCount lines."
             }
         }
     }
@@ -170,6 +197,15 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
             "External corpus $label escapes its evidence root: $relativePath"
         }
         return resolved
+    }
+
+    private fun <T> readYaml(file: File, type: Class<T>): T = try {
+        FlowYaml.readStrict(file, type)
+    } catch (error: FlowYamlException) {
+        throw IllegalArgumentException(
+            "Invalid external corpus document '${file.path}': ${error.message ?: error.javaClass.simpleName}",
+            error
+        )
     }
 
     private fun sha256(file: File): String {
