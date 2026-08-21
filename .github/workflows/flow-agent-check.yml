@@ -16,25 +16,24 @@ permissions:
 jobs:
   compile-test-conformance:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout Exact Revision
+      - name: Checkout Validated Revision
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Verify Exact Checked-Out Revision
+      - name: Verify Checked-Out Revision
         shell: bash
         env:
-          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           actual_sha="$(git rev-parse HEAD)"
           if [ "$actual_sha" != "$EXPECTED_SHA" ]; then
-            echo "Expected exact revision $EXPECTED_SHA but checked out $actual_sha." >&2
+            echo "Expected revision $EXPECTED_SHA but checked out $actual_sha." >&2
             exit 1
           fi
           echo "FLOW_VALIDATED_SHA=$actual_sha" >> "$GITHUB_ENV"
@@ -66,7 +65,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          ./gradlew --no-daemon test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-test.log
           exit ${PIPESTATUS[0]}
 
       - name: Run Conformance
@@ -80,19 +79,23 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo "# Flow CI Exact-Head Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "# Flow CI Result" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Validated checkout: ${FLOW_VALIDATED_SHA:-unverified}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Event SHA: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Event: $GITHUB_EVENT_NAME" >> "$GITHUB_STEP_SUMMARY"
           echo "Branch/ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
-          echo "Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            echo "PR head: ${{ github.event.pull_request.head.sha }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "PR base: ${{ github.event.pull_request.base.sha }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "Validation target: GitHub merge candidate" >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Exact checked-out revision verification" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Checked-out revision verification" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent tooling unit tests" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Gradle test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if compgen -G "build/test-results/test/*.xml" > /dev/null; then
@@ -134,108 +137,18 @@ jobs:
           done
 
       - name: Upload CI Gradle Logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: flow-ci-exact-head-gradle-logs
+          name: flow-ci-gradle-logs
           path: ci-logs/*.log
           if-no-files-found: warn
 
       - name: Upload CI Test Reports
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: flow-ci-exact-head-test-reports
-          path: |
-            build/test-results/test/*.xml
-            build/reports/tests/test/**
-          if-no-files-found: warn
-
-  merge-candidate-compile-test-conformance:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: Checkout Merge Candidate
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Verify Merge Candidate Revision
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          actual_sha="$(git rev-parse HEAD)"
-          if [ "$actual_sha" != "$EXPECTED_SHA" ]; then
-            echo "Expected merge candidate $EXPECTED_SHA but checked out $actual_sha." >&2
-            exit 1
-          fi
-          echo "FLOW_MERGE_CANDIDATE_SHA=$actual_sha" >> "$GITHUB_ENV"
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Prepare CI Workspace
-        run: |
-          chmod +x ./gradlew
-          mkdir -p ci-logs
-
-      - name: Test Flow Agent Tooling
-        run: python3 -m unittest discover -s tools/tests -p 'test_*.py'
-
-      - name: Validate Flow Agent Structure
-        run: python3 tools/flow_agent_validate.py
-
-      - name: Generate Flow Agent Context
-        run: python3 tools/flow_agent_runner.py
-
-      - name: Compile and Test Merge Candidate
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Run Merge Candidate Conformance
-        shell: bash
-        run: |
-          set -o pipefail
-          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-conformance.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Write Merge Candidate Summary
-        if: always()
-        shell: bash
-        run: |
-          echo "# Flow CI Merge-Candidate Result" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Validated merge candidate: ${FLOW_MERGE_CANDIDATE_SHA:-unverified}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Pull request head: ${{ github.event.pull_request.head.sha }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Pull request base: ${{ github.event.pull_request.base.sha }}" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload Merge Candidate Gradle Logs
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: flow-ci-merge-candidate-gradle-logs
-          path: ci-logs/*.log
-          if-no-files-found: warn
-
-      - name: Upload Merge Candidate Test Reports
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: flow-ci-merge-candidate-test-reports
+          name: flow-ci-test-reports
           path: |
             build/test-results/test/*.xml
             build/reports/tests/test/**
