@@ -12,7 +12,7 @@ version = "0.9.5"
 
 application { mainClass.set("org.flowlang.cli.honest.HonestFlowCliKt") }
 
-kotlin { jvmToolchain(21) }
+kotlin { jvmToolchain(25) }
 
 dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
