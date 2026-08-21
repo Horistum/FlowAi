@@ -1,7 +1,7 @@
 version: "AR0.2"
 name: "Architecture Readiness Baseline"
 type: "post-toolchain-architecture-measurement"
-status: active
+status: validating
 stream: "post-toolchain"
 
 objective: "Measure the live architecture before External Falsification expands the corpus, using code-derived evidence rather than hand-maintained estimates."
@@ -22,6 +22,25 @@ activationBasis:
     exactHead: "44a506dcab6d9b23f10d0ec70d0a595234e31c82"
     mergeCandidate: "367200b07d180daf2ecb1e9eef92fb265e7cdf29"
     status: passed
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2987
+  runId: 32446414154
+  exactHead: "4afb48d46b35342accf499fc01123d4cf7effa9a"
+  mergeCandidate: "4b12b9702a5268dff6baf2faa67124f5ba8ca879"
+  reportArtifact: "flow-ci-exact-head-test-reports"
+
+measuredBaseline:
+  productionKotlinTypeCount: 1130
+  authorityCount: 77
+  conformanceCheckCount: 92
+  lexicalArchitectureCheckCount: 5
+  lexicalArchitectureTermCount: 31
+  coreToAdapterDependencyViolationCount: 0
+  stringlyTypedSemanticCandidateCount: 17
+  report: ".flow-agent/reports/ar0.2-architecture-readiness-baseline.md"
 
 requiredMeasurements:
   - "Production Kotlin type count derived from lexical code spans."
@@ -57,5 +76,9 @@ completionEvidence:
   - "A distinct later completion boundary closes AR0.2 before EF-01 activation."
 
 localValidation:
-  status: pending
-  rule: "Repository tests and standalone conformance must pass on the implementation head before measured values are committed as evidence."
+  status: implementation-passed
+  evidence:
+    - "Flow CI #2987 passed exact-head tests and standalone conformance on 4afb48d46b35342accf499fc01123d4cf7effa9a."
+    - "Flow CI #2987 passed synthetic merge-candidate tests and standalone conformance on 4b12b9702a5268dff6baf2faa67124f5ba8ca879."
+    - "JUnit evidence reported 1130 production Kotlin types, 77 authorities, 92 conformance checks, five documented architecture directions, 31 forbidden terms, zero Core-to-adapter violations and 17 stringly typed semantic candidates."
+  rule: "The committed measurement report must pass a later distinct Flow CI boundary before AR0.2 may close."
