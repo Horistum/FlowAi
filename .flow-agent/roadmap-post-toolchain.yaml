@@ -1,6 +1,14 @@
 roadmap: "POST-TOOLCHAIN"
-status: planned
+status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION so semantic quality is falsified by real automation before structural expansion and AI-provider growth."
+
+currentDecision:
+  completedItem: "AR0.2"
+  completedItemName: "Architecture Readiness Baseline"
+  nextItem: "EF-01"
+  nextItemName: "External Corpus Foundation"
+  workPackage: ""
+  decisionBasis: "AR0.2 measured the live architecture from production code and canonical inventories with zero Core-to-adapter dependency violations. EF-01 is the next planned post-toolchain item but requires its own activation transition before implementation begins."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -14,7 +22,9 @@ sequence:
   - id: "AR0.2"
     name: "Architecture Readiness Baseline"
     order: 1
-    status: planned
+    status: completed
+    workPackage: ".flow-agent/work-packages/AR0.2-architecture-readiness-baseline.yaml"
+    report: ".flow-agent/reports/ar0.2-architecture-readiness-baseline.md"
     purpose: "Measure architecture complexity before external corpus growth without performing another broad refactor."
     requiredOutcomes:
       - "Record production Kotlin type count, Authority count, conformance check count and lexical architecture-check count."
@@ -27,7 +37,7 @@ sequence:
   - id: "EF-01"
     name: "External Corpus Foundation"
     order: 2
-    status: planned
+    status: next
     purpose: "Define provenance-preserving ingestion and evaluation of real external automation sources."
     requiredOutcomes:
       - "Every corpus case records source provenance, authored behavior, expected semantic observations and unsupported facts."
