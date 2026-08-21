@@ -92,18 +92,23 @@ class ExternalCorpusLoaderTests {
     }
 
     private fun writeManifest(root: File, status: String, casePackages: List<String>) {
-        val packages = if (casePackages.isEmpty()) "[]" else casePackages.joinToString(prefix = "\n", separator = "\n") { "  - $it" }
-        File(root, "${ExternalCorpusLoader.CORPUS_ROOT}/manifest.yaml").writeText(
-            """
-            kind: FlowExternalCorpus
-            version: '1.0'
-            status: $status
-            casePackages: $packages
-            invariants:
-              - Source provenance remains immutable evidence and does not define universal Flow meaning.
-              - Semantic expectations remain explicit review claims grounded in authored behavior.
-            """.trimIndent() + "\n"
+        val lines = mutableListOf(
+            "kind: FlowExternalCorpus",
+            "version: '1.0'",
+            "status: $status"
         )
+        if (casePackages.isEmpty()) {
+            lines += "casePackages: []"
+        } else {
+            lines += "casePackages:"
+            casePackages.forEach { lines += "  - $it" }
+        }
+        lines += listOf(
+            "invariants:",
+            "  - Source provenance remains immutable evidence and does not define universal Flow meaning.",
+            "  - Semantic expectations remain explicit review claims grounded in authored behavior."
+        )
+        File(root, "${ExternalCorpusLoader.CORPUS_ROOT}/manifest.yaml").writeText(lines.joinToString("\n", postfix = "\n"))
     }
 
     private fun writeCase(
@@ -124,14 +129,14 @@ class ExternalCorpusLoaderTests {
             domain: database-migration-and-recovery
             provenance:
               repository: example-org/example-automation
-              revision: $revision
+              revision: '$revision'
               path: workflows/migrate.yaml
               license:
                 spdx: Apache-2.0
                 evidence: LICENSE at the pinned revision
             sourceCapture:
               path: source.yaml
-              sha256: ${sha256(source)}
+              sha256: '${sha256(source)}'
             authoredBehaviors:
               - id: apply-migration
                 statement: The authored automation applies a migration.
