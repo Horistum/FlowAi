@@ -1,0 +1,139 @@
+roadmap: "POST-TOOLCHAIN"
+status: planned
+purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION so semantic quality is falsified by real automation before structural expansion and AI-provider growth."
+
+principles:
+  - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
+  - "A new StandardCapability requires stable target-independent intent that cannot be represented more cleanly by existing semantics, effects and controls."
+  - "Internal semantic models should become more strongly typed; string wire representations belong primarily at serialization boundaries."
+  - "Structural boundaries should replace redundant lexical governance rather than merely adding another governance layer."
+  - "Representability, target materialization and executable portability remain separate maturity claims."
+  - "AI is an intent provider outside Core; deterministic parsing, canonicalization, safety and conformance remain authoritative."
+
+sequence:
+  - id: "AR0.2"
+    name: "Architecture Readiness Baseline"
+    order: 1
+    status: planned
+    purpose: "Measure architecture complexity before external corpus growth without performing another broad refactor."
+    requiredOutcomes:
+      - "Record production Kotlin type count, Authority count, conformance check count and lexical architecture-check count."
+      - "Record Core-to-adapter dependency violations and public artifact-contract boundaries."
+      - "Identify stringly typed semantic fields that are candidates for later bounded type strengthening."
+    nonGoals:
+      - "Do not rename or consolidate authorities merely to improve counts."
+      - "Do not change semantics, target support or artifact contracts."
+
+  - id: "EF-01"
+    name: "External Corpus Foundation"
+    order: 2
+    status: planned
+    purpose: "Define provenance-preserving ingestion and evaluation of real external automation sources."
+    requiredOutcomes:
+      - "Every corpus case records source provenance, authored behavior, expected semantic observations and unsupported facts."
+      - "Corpus ingestion does not translate implementation syntax into universal meaning by heuristic default."
+
+  - id: "EF-02"
+    name: "Database Migration and Recovery Falsification"
+    order: 3
+    status: planned
+  - id: "EF-03"
+    name: "Backup and Restore Falsification"
+    order: 4
+    status: planned
+  - id: "EF-04"
+    name: "Incident Remediation Falsification"
+    order: 5
+    status: planned
+  - id: "EF-05"
+    name: "Certificate Lifecycle Falsification"
+    order: 6
+    status: planned
+  - id: "EF-06"
+    name: "Secret Rotation Falsification"
+    order: 7
+    status: planned
+  - id: "EF-07"
+    name: "Data Orchestration Falsification"
+    order: 8
+    status: planned
+  - id: "EF-08"
+    name: "Infrastructure Lifecycle Falsification"
+    order: 9
+    status: planned
+  - id: "EF-09"
+    name: "Human Approval and Change-Control Falsification"
+    order: 10
+    status: planned
+
+  - id: "EF-10"
+    name: "External Falsification Semantic Synthesis"
+    order: 11
+    status: planned
+    purpose: "Classify corpus failures before changing Core."
+    requiredOutcomes:
+      - "Separate true semantic gaps from adapter gaps, unsupported implementation detail and corpus ambiguity."
+      - "Authorize only bounded semantic corrections backed by repeated or fundamental falsification evidence."
+
+  - id: "SI-2"
+    name: "Evidence-Bounded Semantic Correction"
+    order: 12
+    status: conditional
+    activationGate: "EF-10 identifies a genuine target-independent semantic defect."
+    purpose: "Correct only semantic defects demonstrated by External Falsification."
+
+  - id: "SB-01"
+    name: "Compiler-Enforced Structural Boundaries"
+    order: 13
+    status: planned
+    purpose: "Split Core, planner, adapter API, target implementations, conformance/governance and CLI where dependency direction can be compiler-enforced."
+    requiredOutcomes:
+      - "Core cannot compile with dependencies on target implementations."
+      - "Planner consumes target-neutral contracts."
+      - "Conformance may inspect product layers while product layers do not depend on conformance."
+
+  - id: "SB-02"
+    name: "Governance Reduction"
+    order: 14
+    status: planned
+    purpose: "Delete or consolidate lexical governance made redundant by module, visibility and type-system boundaries."
+    acceptanceRule: "Structural Boundaries are not complete merely because new checks exist; redundant governance must decrease where the compiler now owns the invariant."
+
+  - id: "MT-01"
+    name: "Jenkins Executable Proof"
+    order: 15
+    status: planned
+  - id: "MT-02"
+    name: "GitHub Actions Executable Proof"
+    order: 16
+    status: planned
+  - id: "MT-03"
+    name: "Third Execution-Model Proof"
+    order: 17
+    status: conditional
+    activationGate: "A third target contributes a genuinely different execution model rather than another syntax renderer."
+
+  - id: "AI-01"
+    name: "AI Intent Provider Contract"
+    order: 18
+    status: planned
+    purpose: "Represent provider uncertainty, unresolved bindings, provenance and clarification requirements without allowing AI output to redefine canonical meaning."
+
+  - id: "AI-02"
+    name: "AI Intent Provider Implementations"
+    order: 19
+    status: planned
+    activationGate: "AI-01 contract and deterministic validation boundary are stable."
+
+  - id: "V1-READINESS"
+    name: "Flow 1.0 Readiness"
+    order: 20
+    status: planned
+    acceptance:
+      - "Intent can be authored without knowing the target product."
+      - "Malformed authored meaning fails closed rather than being silently coerced."
+      - "Canonical semantics preserve dependencies, effects, controls, topology and continuity relevant to the authored intent."
+      - "At least two materially different targets execute the same canonical intent with independently observed semantic outcomes."
+      - "UNKNOWN and UNSUPPORTED remain legitimate outcomes."
+      - "Target implementations cannot redefine Core meaning."
+      - "AI-produced intent crosses the same deterministic validation boundaries as directly authored intent."
