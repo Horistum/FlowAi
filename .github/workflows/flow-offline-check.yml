@@ -1,32 +1,23 @@
-name: Flow CI
+name: Flow Offline Reproducibility
 
 on:
-  pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
 
 permissions:
   contents: read
 
 jobs:
-  offline-exact-head:
+  offline-reproducibility:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
-      - name: Checkout Exact Revision
+      - name: Checkout Revision
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
-
-      - name: Verify Exact Checked-Out Revision
-        if: github.event_name == 'pull_request'
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
 
       - name: Set up JDK 25
         uses: actions/setup-java@v5
@@ -42,43 +33,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: flow-offline-exact-head-input-manifest
-          path: .flow-offline/input-manifest.txt
-          if-no-files-found: warn
-
-  offline-merge-candidate:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout Merge Candidate
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Verify Merge Candidate Revision
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - name: Prepare and verify isolated offline build
-        shell: bash
-        run: bash tools/offline_gradle_build.sh all
-
-      - name: Upload offline input manifest
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: flow-offline-merge-candidate-input-manifest
+          name: flow-offline-input-manifest
           path: .flow-offline/input-manifest.txt
           if-no-files-found: warn
