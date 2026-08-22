@@ -1,0 +1,45 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: cloudnative-pg-point-in-time-recovery
+domain: database-migration-and-recovery
+provenance:
+  repository: cloudnative-pg/cloudnative-pg
+  revision: 'a95a534dbe0854495b863bbc1b7651f74d310916'
+  path: docs/src/samples/cluster-restore-pitr.yaml
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.yaml
+  sha256: '28084bcafae3a01e159157b02189e87fa1dbfc9ed4956dad9e072a0e7a3ab74e'
+authoredBehaviors:
+  - id: restore-from-named-backup
+    statement: The authored recovery bootstraps database state from the named backup backup-example.
+    evidence:
+      - startLine: 11
+        endLine: 14
+  - id: recover-to-explicit-time
+    statement: The authored recovery targets the explicit point in time 2020-11-26 15:22:00.00000+00.
+    evidence:
+      - startLine: 16
+        endLine: 17
+expectedSemanticObservations:
+  - id: preserve-recovery-point
+    expectation: PRESERVE
+    statement: Flow must preserve the identity of the recovery point used to restore protected database state.
+    behaviorRefs:
+      - restore-from-named-backup
+    rationale: Recovery-point identity is target-neutral recovery semantics already modeled by Flow.
+  - id: preserve-recovery-target-time
+    expectation: PRESERVE
+    statement: Flow must preserve the authored point-in-time recovery target as recovery semantics distinct from recovery-point identity.
+    behaviorRefs:
+      - recover-to-explicit-time
+    rationale: A recovery target time changes which protected state is restored and cannot be reduced to provider syntax.
+unsupportedFacts:
+  - id: cloudnative-pg-resource-shape
+    statement: Kubernetes CRD identity, instance count and storage shape are CloudNativePG deployment details for this evidence case.
+    evidence:
+      - startLine: 1
+        endLine: 9
+    reason: The external resource layout does not define universal database recovery meaning.

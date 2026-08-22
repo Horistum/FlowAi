@@ -1,0 +1,47 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: dbmate-schema-migration-reversal
+domain: database-migration-and-recovery
+provenance:
+  repository: amacneil/dbmate
+  revision: 'f3e08f15e39d5b3f10ba014b470467fb484dfc54'
+  path: testdata/db/migrations/20200227231541_test_posts.sql
+  license:
+    spdx: MIT
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.sql
+  sha256: 'f42c561983eab69a6d69984db98b23b432326acbd938d896687529933e29c54c'
+authoredBehaviors:
+  - id: apply-schema-change
+    statement: The authored up migration creates the posts table.
+    evidence:
+      - startLine: 2
+        endLine: 5
+  - id: reverse-schema-change
+    statement: The authored down migration removes the posts table.
+    evidence:
+      - startLine: 8
+        endLine: 8
+expectedSemanticObservations:
+  - id: preserve-schema-apply
+    expectation: PRESERVE
+    statement: Flow must preserve that the authored operation applies a database schema change.
+    behaviorRefs:
+      - apply-schema-change
+    rationale: Schema mutation is target-neutral database intent; the dbmate up marker is not.
+  - id: preserve-schema-reversal
+    expectation: PRESERVE
+    statement: Flow must preserve that the authored operation reverses a database schema change.
+    behaviorRefs:
+      - reverse-schema-change
+    rationale: Reverse schema mutation is semantic behavior distinct from generic deployment rollback.
+unsupportedFacts:
+  - id: dbmate-direction-markers
+    statement: The migrate:up and migrate:down comment markers are dbmate-specific syntax.
+    evidence:
+      - startLine: 1
+        endLine: 1
+      - startLine: 7
+        endLine: 7
+    reason: Implementation directive spelling is evidence of authored structure, not universal Flow vocabulary.

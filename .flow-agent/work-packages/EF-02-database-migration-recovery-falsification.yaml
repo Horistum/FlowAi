@@ -13,15 +13,23 @@ authorization:
   mainAtActivation: "c4228ce412dcee4ae9e6a605086177ccaf5e6813"
   rule: "EF-02 may classify representability gaps exposed by database migration and recovery evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
 
+activationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3001
+  runId: 32550631794
+  exactHead: "00f78f11e5abd1e682ee5573ecc58bbc36d86c96"
+  mergeCandidate: "70264edd9d6cf123fa4fee4f99d3131ecc88810a"
+
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
     - "Prefer small source artifacts whose authored behavior is directly observable without implementation folklore."
     - "Cover schema-forward migration, schema-reversal and recovery-to-a-point-in-time as distinct semantic shapes."
-  plannedSources:
+  admittedSources:
     - repository: "amacneil/dbmate"
       revision: "f3e08f15e39d5b3f10ba014b470467fb484dfc54"
-      path: "testdata/db/migrations/20151129054053_test_migration.sql"
+      path: "testdata/db/migrations/20200227231541_test_posts.sql"
       license: "MIT"
       role: "paired forward and reverse schema migration"
     - repository: "cloudnative-pg/cloudnative-pg"
@@ -31,7 +39,7 @@ sourceSelection:
       role: "restore from named backup to an explicit point in time"
 
 requiredOutcomes:
-  - "The EF-01 corpus manifest advances from FOUNDATION to EVIDENCE_ACTIVE only after this activation boundary passes and immutable cases are admitted."
+  - "The EF-01 corpus manifest advances from FOUNDATION to EVIDENCE_ACTIVE only after the activation boundary passes and immutable cases are admitted."
   - "Forward schema migration is evaluated against the production DATABASE_MIGRATE semantic effect rather than command spelling."
   - "Reverse schema migration is independently evaluated and may remain a semantic gap when generic ROLLBACK does not preserve database-schema reversal meaning."
   - "Recovery from a named backup is evaluated against typed STATE_RECOVERY / STATE_RESTORE semantics."
@@ -50,10 +58,13 @@ completionEvidence:
   - "Immutable external source bytes and SHA-256 provenance load through the EF-01 contract."
   - "A production EF-02 evaluator classifies each required semantic fact from current Core contracts."
   - "Positive and negative tests prove both representable and falsifying outcomes."
-  - "Standalone conformance reports the EF-02 domain result without converting known gaps into a green representability claim."
+  - "A committed baseline records initial gaps without requiring those gaps to remain forever."
+  - "Standalone conformance enforces evidence integrity and monotonic non-regression after the baseline is recorded."
   - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
   - "A later distinct completion boundary closes EF-02 before EF-03 activation."
 
 localValidation:
-  status: pending-activation
-  rule: "No EF-02 external case is admitted until a distinct activation-only Flow CI boundary passes."
+  status: activation-passed
+  evidence:
+    - "Flow CI #3001 passed the activation-only exact head and synthetic merge candidate before any external EF-02 case was admitted."
+  rule: "The implementation boundary may now admit immutable EF-02 cases; semantic repair remains forbidden in this work item."
