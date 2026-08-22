@@ -1,13 +1,13 @@
 version: "EF-01"
 name: "External Corpus Foundation"
 type: "post-toolchain-external-falsification-foundation"
-status: validating
+status: complete
 stream: "post-toolchain"
 
 objective: "Define a provenance-preserving, fail-closed ingestion contract for real external automation evidence before any domain-specific falsification changes Flow semantics."
 
 authorization:
-  status: active
+  status: completed
   predecessor: "AR0.2"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-01"
   mainAtActivation: "9d6b38a6a9305a9261527f6fcca7b59903ea6af2"
@@ -32,6 +32,33 @@ implementationEvidence:
     status: failed
     reason: "Strict YAML rejected an invalid test-fixture casePackages scalar; the production contract was not weakened and the fixture generator was corrected."
 
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2995
+  runId: 32449796863
+  exactHead: "45c9544a527a4d91b90a5154a5a837b1e3aa22b9"
+  mergeCandidate: "df81a66fa8b1a0b3479c2ef4350a3791410a08b6"
+  purpose: "Validate the implementation-evidence-bearing lifecycle state independently from the implementation boundary."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2997
+  runId: 32549025423
+  exactHead: "fada84fbb9c17c35163f4b10f41b83e236123d3d"
+  mergeCandidate: "faad1f3201b61bfa73e2555b79e3510a6644e3ad"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  hardening:
+    - "FOUNDATION now rejects any domain evidence case instead of permitting evidence before EVIDENCE_ACTIVE."
+    - "Upstream provenance paths now reject traversal, absolute, Windows-drive and backslash forms instead of merely checking host-local absoluteness."
+  rule: "This boundary is later than the implementation and validating boundaries and validates the final hardened EF-01 behavior before lifecycle closure is recorded."
+
 requiredOutcomes:
   - "Every external corpus case records immutable repository/revision/path/license provenance."
   - "Every captured source is bound to the exact admitted bytes by SHA-256."
@@ -39,7 +66,8 @@ requiredOutcomes:
   - "Every semantic observation references concrete authored-behavior evidence rather than implementation-token heuristics."
   - "Every case explicitly records unsupported facts, including an empty list when none are identified."
   - "Path traversal, mutable revisions, digest drift, malformed evidence and invented behavior references fail closed."
-  - "The repository-level external corpus manifest begins in FOUNDATION state with no domain evidence fabricated by EF-01."
+  - "FOUNDATION contains no domain evidence cases; EVIDENCE_ACTIVE requires at least one admitted case."
+  - "The repository-level external corpus manifest remains in FOUNDATION state with no domain evidence fabricated by EF-01."
 
 implementation:
   contracts: "src/main/kotlin/org/flowlang/conformance/ExternalCorpusContracts.kt"
@@ -65,15 +93,17 @@ forbiddenScope:
   - "Do not add an Authority solely to own this ingestion contract."
 
 completionEvidence:
-  - "Production loader accepts the repository FOUNDATION manifest."
-  - "Tests prove valid ingestion plus digest tampering, typed evidence-range validation, path traversal, mutable revision and invented-behavior rejection."
+  - "Production loader accepts the repository FOUNDATION manifest while rejecting FOUNDATION manifests that contain evidence cases."
+  - "Tests prove valid ingestion plus digest tampering, typed evidence-range validation, case-package traversal, provenance traversal, mutable revision and invented-behavior rejection."
   - "Standalone conformance contains and passes the EF-01 foundation check."
-  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
-  - "A later distinct completion boundary records EF-01 closed before EF-02 activation."
+  - "Flow CI #2994 passed the distinct implementation boundary and #2995 passed the later evidence-bearing validation boundary."
+  - "Flow CI #2997 passed exact-head and synthetic merge-candidate test plus standalone conformance after final contract hardening."
+  - "EF-02 remains unactivated and requires its own distinct transition."
 
 localValidation:
-  status: implementation-passed
+  status: passed
   evidence:
-    - "Flow CI #2994 passed exact-head test and standalone conformance on 9c3fb0536fb524bd6658e94f2b212b607eda6670."
-    - "Flow CI #2994 passed synthetic merge-candidate test and standalone conformance on 38033b2d3fed712567d746bcabbc27323c1ed44f."
-  rule: "This validating metadata must pass a later distinct Flow CI boundary before EF-01 may close."
+    - "Flow CI #2994 passed exact-head test and standalone conformance on 9c3fb0536fb524bd6658e94f2b212b607eda6670 and synthetic merge candidate 38033b2d3fed712567d746bcabbc27323c1ed44f."
+    - "Flow CI #2995 independently passed the implementation-evidence-bearing state on exact head 45c9544a527a4d91b90a5154a5a837b1e3aa22b9 and synthetic merge candidate df81a66fa8b1a0b3479c2ef4350a3791410a08b6."
+    - "Flow CI #2997 passed the final hardened implementation on exact head fada84fbb9c17c35163f4b10f41b83e236123d3d and synthetic merge candidate faad1f3201b61bfa73e2555b79e3510a6644e3ad."
+  rule: "EF-01 is complete. Any domain evidence, semantic correction or EF-02 activation is a later independently authorized change."
