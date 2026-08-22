@@ -20,6 +20,16 @@ class ExternalCorpusLoaderTests {
     }
 
     @Test
+    fun foundationCannotCarryDomainEvidenceCases() {
+        val root = fixtureRoot()
+        writeManifest(root, status = "FOUNDATION", casePackages = listOf("cases/db-migration"))
+        writeCase(root, semanticBehaviorRef = "apply-migration")
+
+        val error = assertFailsWith<IllegalArgumentException> { ExternalCorpusLoader(root).load() }
+        assertTrue(error.message.orEmpty().contains("FOUNDATION external corpus must not contain domain evidence cases"))
+    }
+
+    @Test
     fun admittedCasePreservesProvenanceSourceBytesAndExplicitSemanticReview() {
         val root = fixtureRoot()
         writeManifest(root, status = "EVIDENCE_ACTIVE", casePackages = listOf("cases/db-migration"))
@@ -78,6 +88,16 @@ class ExternalCorpusLoaderTests {
     }
 
     @Test
+    fun provenancePathCannotEscapePinnedRepository() {
+        val root = fixtureRoot()
+        writeManifest(root, status = "EVIDENCE_ACTIVE", casePackages = listOf("cases/db-migration"))
+        writeCase(root, semanticBehaviorRef = "apply-migration", provenancePath = "../outside.yaml")
+
+        val error = assertFailsWith<IllegalArgumentException> { ExternalCorpusLoader(root).load() }
+        assertTrue(error.message.orEmpty().contains("normalized repository-relative Git path"))
+    }
+
+    @Test
     fun provenanceRequiresImmutableGitRevision() {
         val root = fixtureRoot()
         writeManifest(root, status = "EVIDENCE_ACTIVE", casePackages = listOf("cases/db-migration"))
@@ -115,7 +135,8 @@ class ExternalCorpusLoaderTests {
         root: File,
         semanticBehaviorRef: String,
         revision: String = "0123456789abcdef0123456789abcdef01234567",
-        evidenceLine: Int = 2
+        evidenceLine: Int = 2,
+        provenancePath: String = "workflows/migrate.yaml"
     ): File {
         val caseDir = File(root, "${ExternalCorpusLoader.CORPUS_ROOT}/cases/db-migration").apply { mkdirs() }
         val source = File(caseDir, "source.yaml").apply {
@@ -130,7 +151,7 @@ class ExternalCorpusLoaderTests {
             provenance:
               repository: example-org/example-automation
               revision: '$revision'
-              path: workflows/migrate.yaml
+              path: '$provenancePath'
               license:
                 spdx: Apache-2.0
                 evidence: LICENSE at the pinned revision
