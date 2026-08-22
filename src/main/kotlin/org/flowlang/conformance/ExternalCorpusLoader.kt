@@ -31,8 +31,13 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
         require(cases.map { it.directory.canonicalPath }.distinct().size == cases.size) {
             "EF-01 external corpus case package paths must resolve uniquely."
         }
-        if (manifest.status == ExternalCorpusStatus.EVIDENCE_ACTIVE) {
-            require(cases.isNotEmpty()) { "An EVIDENCE_ACTIVE external corpus must contain at least one case." }
+        when (manifest.status) {
+            ExternalCorpusStatus.FOUNDATION -> require(cases.isEmpty()) {
+                "A FOUNDATION external corpus must not contain domain evidence cases."
+            }
+            ExternalCorpusStatus.EVIDENCE_ACTIVE -> require(cases.isNotEmpty()) {
+                "An EVIDENCE_ACTIVE external corpus must contain at least one case."
+            }
         }
         return LoadedExternalCorpus(manifest, cases)
     }
@@ -95,8 +100,8 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
         require(REVISION_PATTERN.matches(provenance.revision)) {
             "External corpus case '$caseId' must pin an immutable lowercase 40-character Git revision."
         }
-        require(provenance.path.isNotBlank() && !File(provenance.path).isAbsolute) {
-            "External corpus case '$caseId' provenance path must be non-blank and repository-relative."
+        require(isRepositoryRelativePath(provenance.path)) {
+            "External corpus case '$caseId' provenance path must be a normalized repository-relative Git path."
         }
         require(provenance.license.spdx.isNotBlank()) {
             "External corpus case '$caseId' must declare SPDX license identity."
@@ -189,6 +194,13 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
         }
     }
 
+    private fun isRepositoryRelativePath(path: String): Boolean {
+        if (path.isBlank() || path.startsWith('/') || path.startsWith('\\')) return false
+        if (WINDOWS_DRIVE_PREFIX.containsMatchIn(path) || '\\' in path) return false
+        val segments = path.split('/')
+        return segments.none { it.isBlank() || it == "." || it == ".." }
+    }
+
     private fun resolveWithin(base: File, relativePath: String, label: String): File {
         require(relativePath.isNotBlank()) { "External corpus $label path must not be blank." }
         require(!File(relativePath).isAbsolute) { "External corpus $label path must be relative: $relativePath" }
@@ -230,6 +242,7 @@ class ExternalCorpusLoader(private val rootDir: File = File(".")) {
         private val REPOSITORY_PATTERN = Regex("[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
         private val REVISION_PATTERN = Regex("[0-9a-f]{40}")
         private val SHA256_PATTERN = Regex("[0-9a-f]{64}")
+        private val WINDOWS_DRIVE_PREFIX = Regex("^[A-Za-z]:")
     }
 }
 
