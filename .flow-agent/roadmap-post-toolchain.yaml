@@ -3,12 +3,12 @@ status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION so semantic quality is falsified by real automation before structural expansion and AI-provider growth."
 
 currentDecision:
-  completedItem: "AR0.2"
-  completedItemName: "Architecture Readiness Baseline"
-  nextItem: "EF-01"
-  nextItemName: "External Corpus Foundation"
+  completedItem: "EF-01"
+  completedItemName: "External Corpus Foundation"
+  nextItem: "EF-02"
+  nextItemName: "Database Migration and Recovery Falsification"
   workPackage: ""
-  decisionBasis: "AR0.2 measured the live architecture from production code and canonical inventories with zero Core-to-adapter dependency violations. EF-01 is the next planned post-toolchain item but requires its own activation transition before implementation begins."
+  decisionBasis: "EF-01 completed the provenance-preserving external corpus ingestion boundary with distinct implementation, validation and completion CI evidence. EF-02 is now the next planned post-toolchain item, but it remains unactivated and requires its own transition before real database migration and recovery evidence is admitted."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -37,7 +37,8 @@ sequence:
   - id: "EF-01"
     name: "External Corpus Foundation"
     order: 2
-    status: next
+    status: completed
+    workPackage: ".flow-agent/work-packages/EF-01-external-corpus-foundation.yaml"
     purpose: "Define provenance-preserving ingestion and evaluation of real external automation sources."
     requiredOutcomes:
       - "Every corpus case records source provenance, authored behavior, expected semantic observations and unsupported facts."
@@ -46,7 +47,7 @@ sequence:
   - id: "EF-02"
     name: "Database Migration and Recovery Falsification"
     order: 3
-    status: planned
+    status: next
   - id: "EF-03"
     name: "Backup and Restore Falsification"
     order: 4
