@@ -1,0 +1,59 @@
+version: "EF-02"
+name: "Database Migration and Recovery Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: active
+stream: "post-toolchain"
+
+objective: "Pressure the current Flow semantic model with immutable external evidence for database schema migration, reverse migration and point-in-time recovery without promoting implementation syntax into Core meaning."
+
+authorization:
+  status: active
+  predecessor: "EF-01"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-02"
+  mainAtActivation: "c4228ce412dcee4ae9e6a605086177ccaf5e6813"
+  rule: "EF-02 may classify representability gaps exposed by database migration and recovery evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable license evidence."
+    - "Prefer small source artifacts whose authored behavior is directly observable without implementation folklore."
+    - "Cover schema-forward migration, schema-reversal and recovery-to-a-point-in-time as distinct semantic shapes."
+  plannedSources:
+    - repository: "amacneil/dbmate"
+      revision: "f3e08f15e39d5b3f10ba014b470467fb484dfc54"
+      path: "testdata/db/migrations/20151129054053_test_migration.sql"
+      license: "MIT"
+      role: "paired forward and reverse schema migration"
+    - repository: "cloudnative-pg/cloudnative-pg"
+      revision: "a95a534dbe0854495b863bbc1b7651f74d310916"
+      path: "docs/src/samples/cluster-restore-pitr.yaml"
+      license: "Apache-2.0"
+      role: "restore from named backup to an explicit point in time"
+
+requiredOutcomes:
+  - "The EF-01 corpus manifest advances from FOUNDATION to EVIDENCE_ACTIVE only after this activation boundary passes and immutable cases are admitted."
+  - "Forward schema migration is evaluated against the production DATABASE_MIGRATE semantic effect rather than command spelling."
+  - "Reverse schema migration is independently evaluated and may remain a semantic gap when generic ROLLBACK does not preserve database-schema reversal meaning."
+  - "Recovery from a named backup is evaluated against typed STATE_RECOVERY / STATE_RESTORE semantics."
+  - "Point-in-time recovery target identity is evaluated separately from generic recovery-point identity and may falsify the current model."
+  - "Every gap remains explicit evidence; EF-02 does not add Core semantics merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values."
+  - "Do not change CanonicalIntentEffectAuthority mappings in EF-02."
+  - "Do not reinterpret generic ROLLBACK as database schema reversal by string convention."
+  - "Do not flatten PITR target time into an opaque recoveryPoint string and call that typed semantic preservation."
+  - "Do not promote adapter or executable support from corpus representability."
+  - "Do not modify closed C0.1, C1.0 or EF-01 evidence boundaries."
+
+completionEvidence:
+  - "Immutable external source bytes and SHA-256 provenance load through the EF-01 contract."
+  - "A production EF-02 evaluator classifies each required semantic fact from current Core contracts."
+  - "Positive and negative tests prove both representable and falsifying outcomes."
+  - "Standalone conformance reports the EF-02 domain result without converting known gaps into a green representability claim."
+  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
+  - "A later distinct completion boundary closes EF-02 before EF-03 activation."
+
+localValidation:
+  status: pending-activation
+  rule: "No EF-02 external case is admitted until a distinct activation-only Flow CI boundary passes."
