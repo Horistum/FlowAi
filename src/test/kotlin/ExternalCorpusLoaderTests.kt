@@ -11,12 +11,14 @@ import org.flowlang.conformance.ExternalSemanticExpectation
 
 class ExternalCorpusLoaderTests {
     @Test
-    fun repositoryFoundationLoadsWithoutInventingDomainEvidence() {
+    fun repositoryCorpusRespectsLifecycleCardinalityWithoutFreezingTransitionalStatus() {
         val corpus = ExternalCorpusLoader(File(".")).load()
 
-        assertEquals(ExternalCorpusStatus.FOUNDATION, corpus.manifest.status)
-        assertTrue(corpus.cases.isEmpty())
         assertTrue(corpus.manifest.invariants.isNotEmpty())
+        when (corpus.manifest.status) {
+            ExternalCorpusStatus.FOUNDATION -> assertTrue(corpus.cases.isEmpty())
+            ExternalCorpusStatus.EVIDENCE_ACTIVE -> assertTrue(corpus.cases.isNotEmpty())
+        }
     }
 
     @Test
