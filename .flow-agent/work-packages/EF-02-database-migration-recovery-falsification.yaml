@@ -1,7 +1,7 @@
 version: "EF-02"
 name: "Database Migration and Recovery Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: active
+status: validating
 stream: "post-toolchain"
 
 objective: "Pressure the current Flow semantic model with immutable external evidence for database schema migration, reverse migration and point-in-time recovery without promoting implementation syntax into Core meaning."
@@ -20,6 +20,30 @@ activationEvidence:
   runId: 32550631794
   exactHead: "00f78f11e5abd1e682ee5573ecc58bbc36d86c96"
   mergeCandidate: "70264edd9d6cf123fa4fee4f99d3131ecc88810a"
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3006
+  runId: 32634961022
+  exactHead: "121ecc61492190d16896684ab3ac0d8f202bb710"
+  mergeCandidate: "23dc1cf2e94b54950759d6cf05f5dd3debc437d6"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 2
+    modelGapFacts: 2
+    representable:
+      - "dbmate forward schema migration"
+      - "CloudNativePG restore from a named recovery point"
+    modelGaps:
+      - "dbmate reverse schema migration is not preserved by generic infrastructure ROLLBACK semantics"
+      - "CloudNativePG point-in-time target is not represented by the current typed recovery model"
+  rule: "This boundary validates the external corpus, production evaluator, reviewed live authority edge, immutable initial falsification baseline and lifecycle-aware baseline verifier without changing Core semantics."
 
 sourceSelection:
   criteria:
@@ -59,12 +83,14 @@ completionEvidence:
   - "A production EF-02 evaluator classifies each required semantic fact from current Core contracts."
   - "Positive and negative tests prove both representable and falsifying outcomes."
   - "A committed baseline records initial gaps without requiring those gaps to remain forever."
-  - "Standalone conformance enforces evidence integrity and monotonic non-regression after the baseline is recorded."
-  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
-  - "A later distinct completion boundary closes EF-02 before EF-03 activation."
+  - "While EF-02 is open, the baseline must exactly equal live evaluation; after closure, historical MODEL_GAP facts may improve but REPRESENTABLE facts may not regress."
+  - "Standalone conformance enforces evidence integrity and lifecycle-aware monotonic non-regression."
+  - "Flow CI #3006 passed the distinct implementation boundary on exact head 121ecc61492190d16896684ab3ac0d8f202bb710 and synthetic merge candidate 23dc1cf2e94b54950759d6cf05f5dd3debc437d6."
+  - "A later distinct validation and completion boundary must close EF-02 before EF-03 activation."
 
 localValidation:
-  status: activation-passed
+  status: implementation-passed-validating
   evidence:
     - "Flow CI #3001 passed the activation-only exact head and synthetic merge candidate before any external EF-02 case was admitted."
-  rule: "The implementation boundary may now admit immutable EF-02 cases; semantic repair remains forbidden in this work item."
+    - "Flow CI #3006 passed exact-head test and standalone conformance on 121ecc61492190d16896684ab3ac0d8f202bb710 and synthetic merge candidate 23dc1cf2e94b54950759d6cf05f5dd3debc437d6 after corpus admission, baseline hardening and AR0.1 caller review."
+  rule: "EF-02 is validating. A distinct evidence-bearing Flow CI boundary must pass before lifecycle completion can be recorded; semantic repair remains forbidden in this work item."
