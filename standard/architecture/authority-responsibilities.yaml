@@ -346,6 +346,7 @@ authorities:
     inputs: "Target-neutral authored/planned semantic state; production API: effectsFor, effectsForRendered."
     outputs: "Canonical semantic decision/model consumed by downstream planning, conformance or materialization."
     callers:
+      - "src/main/kotlin/org/flowlang/conformance/DatabaseMigrationRecoveryFalsification.kt"
       - "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
       - "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
       - "src/main/kotlin/org/flowlang/intent/CanonicalIntentMeaning.kt"
