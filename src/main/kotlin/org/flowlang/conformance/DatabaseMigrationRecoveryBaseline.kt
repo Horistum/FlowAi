@@ -26,10 +26,11 @@ data class DatabaseMigrationRecoveryBaselineVerification(
 /**
  * Verifies the immutable EF-02 falsification snapshot against the current semantic model.
  *
- * The baseline records what EF-02 actually observed after externally grounded evaluation.
- * It is intentionally monotonic rather than frozen-output testing: facts that were
- * REPRESENTABLE may never regress to MODEL_GAP, while historical MODEL_GAP findings may
- * improve to REPRESENTABLE in a later, independently authorized semantic correction.
+ * While EF-02 is active or validating, the committed baseline must exactly equal the live
+ * evaluation so the initial snapshot cannot self-certify invented gaps. After EF-02 is
+ * complete the rule becomes monotonic: historical REPRESENTABLE facts may never regress,
+ * while historical MODEL_GAP findings may improve to REPRESENTABLE in a later, independently
+ * authorized semantic-correction track.
  */
 class DatabaseMigrationRecoveryBaselineVerifier(
     private val rootDir: File = File("."),
@@ -40,10 +41,10 @@ class DatabaseMigrationRecoveryBaselineVerifier(
     ): DatabaseMigrationRecoveryBaselineVerification {
         val errors = mutableListOf<String>()
         val baseline = runCatching { loadBaseline() }.getOrElse { error ->
-            return DatabaseMigrationRecoveryBaselineVerification(
-                status = "FAIL",
-                errors = listOf(error.message ?: error.javaClass.simpleName)
-            )
+            return failed(error)
+        }
+        val lifecycleStatus = runCatching { loadLifecycleStatus() }.getOrElse { error ->
+            return failed(error)
         }
 
         if (baseline.kind != KIND || baseline.version != VERSION) {
@@ -82,10 +83,14 @@ class DatabaseMigrationRecoveryBaselineVerifier(
             if (historical.requirement != currentFinding.requirement) {
                 errors += "EF-02 fact '${key(historical)}' typed requirement drifted: baseline=${historical.requirement} current=${currentFinding.requirement}."
             }
-            if (historical.initialOutcome == ExternalFalsificationOutcome.REPRESENTABLE &&
-                currentFinding.outcome != ExternalFalsificationOutcome.REPRESENTABLE
-            ) {
-                errors += "EF-02 representability regression for '${key(historical)}': the historical REPRESENTABLE fact is now ${currentFinding.outcome}."
+
+            when {
+                lifecycleStatus != COMPLETE_STATUS && historical.initialOutcome != currentFinding.outcome ->
+                    errors += "EF-02 initial snapshot mismatch for '${key(historical)}': baseline=${historical.initialOutcome} current=${currentFinding.outcome}; active/validating baseline recording must exactly match live evaluation."
+                lifecycleStatus == COMPLETE_STATUS &&
+                    historical.initialOutcome == ExternalFalsificationOutcome.REPRESENTABLE &&
+                    currentFinding.outcome != ExternalFalsificationOutcome.REPRESENTABLE ->
+                    errors += "EF-02 representability regression for '${key(historical)}': the historical REPRESENTABLE fact is now ${currentFinding.outcome}."
             }
         }
 
@@ -108,13 +113,37 @@ class DatabaseMigrationRecoveryBaselineVerifier(
         }
     }
 
+    private fun loadLifecycleStatus(): String {
+        val file = File(rootDir, WORK_PACKAGE_PATH)
+        require(file.isFile) { "Missing EF-02 work package: ${file.path}" }
+        val document = runCatching { FlowYaml.readMap(file) }.getOrElse { error ->
+            throw IllegalArgumentException(
+                "Invalid EF-02 work package '${file.path}': ${error.message ?: error.javaClass.simpleName}",
+                error
+            )
+        }
+        val status = document["status"]?.toString()?.trim().orEmpty()
+        require(status in LIFECYCLE_STATUSES) {
+            "EF-02 work package status must be one of ${LIFECYCLE_STATUSES.sorted().joinToString()}, got '$status'."
+        }
+        return status
+    }
+
+    private fun failed(error: Throwable) = DatabaseMigrationRecoveryBaselineVerification(
+        status = "FAIL",
+        errors = listOf(error.message ?: error.javaClass.simpleName)
+    )
+
     private fun key(fact: DatabaseMigrationRecoveryBaselineFact): String = "${fact.caseId}::${fact.factId}"
     private fun key(finding: DatabaseMigrationRecoveryFinding): String = "${finding.caseId}::${finding.factId}"
 
     companion object {
         const val BASELINE_PATH = "conformance/corpus/external/baselines/ef-02-database-migration-recovery.yaml"
+        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/EF-02-database-migration-recovery-falsification.yaml"
         const val KIND = "FlowDatabaseMigrationRecoveryFalsificationBaseline"
         const val VERSION = "1.0"
+        private const val COMPLETE_STATUS = "complete"
+        private val LIFECYCLE_STATUSES = setOf("active", "validating", COMPLETE_STATUS)
     }
 }
 
