@@ -1,0 +1,38 @@
+kind: FlowIncidentRemediationFalsificationBaseline
+version: '1.0'
+facts:
+  - caseId: braintree-nginx-remediation
+    factId: targeted-nginx-remediation
+    observationRef: preserve-targeted-nginx-remediation
+    requirement: TARGETED_RUNBOOK_REMEDIATION
+    initialOutcome: REPRESENTABLE
+  - caseId: braintree-nginx-remediation
+    factId: nginx-post-remediation-verification
+    observationRef: preserve-nginx-post-remediation-verification
+    requirement: POST_REMEDIATION_VERIFICATION
+    initialOutcome: REPRESENTABLE
+  - caseId: braintree-nginx-remediation
+    factId: operator-traffic-confirmation
+    observationRef: preserve-operator-traffic-confirmation
+    requirement: OPERATOR_CONFIRMATION
+    initialOutcome: REPRESENTABLE
+  - caseId: stackstorm-auto-remediation
+    factId: hardware-failure-incident-context
+    observationRef: preserve-hardware-failure-incident-context
+    requirement: INCIDENT_CONTEXT
+    initialOutcome: REPRESENTABLE
+  - caseId: stackstorm-auto-remediation
+    factId: compute-node-remediation
+    observationRef: preserve-compute-node-remediation
+    requirement: TARGETED_RUNBOOK_REMEDIATION
+    initialOutcome: REPRESENTABLE
+  - caseId: stackstorm-auto-remediation
+    factId: potential-downtime-notification
+    observationRef: preserve-potential-downtime-notification
+    requirement: INCIDENT_NOTIFICATION
+    initialOutcome: REPRESENTABLE
+  - caseId: stackstorm-auto-remediation
+    factId: failure-conditioned-human-escalation
+    observationRef: preserve-failure-conditioned-human-escalation
+    requirement: FAILURE_CONDITIONED_HUMAN_ESCALATION
+    initialOutcome: MODEL_GAP

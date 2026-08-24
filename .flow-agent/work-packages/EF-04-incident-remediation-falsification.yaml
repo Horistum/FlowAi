@@ -18,17 +18,29 @@ sourceSelection:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
     - "Prefer source artifacts whose incident-remediation behavior is directly observable as ordered action, verification or escalation rather than inferred from marketing vocabulary."
     - "Cover a concrete runbook repair with verification and operator confirmation, then an event-driven auto-remediation flow whose failure path deliberately hands control to a human."
-  plannedSources:
+  admittedSources:
     - repository: "braintree/runbook"
       revision: "24464721765899fb5db9967c5f926739202fc81c"
       path: "README.md"
       license: "MIT"
-      role: "restart a failed service, assert resulting state, confirm traffic recovery and require an operator-facing follow-up notice"
+      role: "restart a failed service, assert resulting state and require explicit operator confirmation"
     - repository: "StackStorm/st2"
       revision: "8c57959f3a23cafc55312e28c5beb7b2dab045a3"
       path: "README.md"
       license: "Apache-2.0"
-      role: "event-driven automated remediation with explicit verification, notification and human escalation when remediation cannot safely continue"
+      role: "event-driven automated remediation with explicit notification and failure-conditioned human escalation"
+
+initialFalsification:
+  expectedShape:
+    representable:
+      - "INCIDENT_CONTEXT"
+      - "TARGETED_RUNBOOK_REMEDIATION"
+      - "POST_REMEDIATION_VERIFICATION"
+      - "OPERATOR_CONFIRMATION"
+      - "INCIDENT_NOTIFICATION"
+    modelGaps:
+      - "FAILURE_CONDITIONED_HUMAN_ESCALATION"
+  rule: "The committed baseline records the live evaluator result; these expectations do not override production semantics."
 
 requiredOutcomes:
   - "Previously admitted EF-02 and EF-03 evidence remains intact while EF-04 appends independently proven incident-remediation cases."
@@ -54,9 +66,21 @@ completionEvidence:
   - "Positive and negative tests prove representable controls and falsifying remediation/control-flow outcomes."
   - "A committed baseline preserves the initial EF-04 result and becomes monotonic after closure."
   - "Standalone conformance enforces EF-04 evidence integrity without converting known gaps into representability claims."
-  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
-  - "A later distinct validation and completion boundary closes EF-04 before EF-05 activation."
+  - "Flow CI #3020 passed the distinct activation-only boundary before any EF-04 external case was admitted."
+  - "Exact-head and synthetic merge-candidate Flow CI must pass on a later distinct implementation boundary."
+  - "A still later distinct validation and completion boundary must close EF-04 before EF-05 activation."
 
 localValidation:
-  status: pending-activation
-  rule: "No EF-04 external case is admitted until a distinct activation-only Flow CI boundary passes."
+  status: activation-passed
+  activationBoundary:
+    commit: "fb0deb5a264073ebcdd21af59c376dc959ed6d0e"
+    workflowRun: 32714011231
+    runNumber: 3020
+    conclusion: success
+    exactHead:
+      commit: "fb0deb5a264073ebcdd21af59c376dc959ed6d0e"
+      conclusion: success
+    mergeCandidate:
+      commit: "bf003a6d5dde04b2a3f1c9d15390910af347dcac"
+      conclusion: success
+  rule: "EF-04 external evidence may be admitted only after the recorded activation-only boundary; semantic repair remains forbidden in this work item."

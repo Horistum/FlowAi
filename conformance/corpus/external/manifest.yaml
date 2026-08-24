@@ -6,6 +6,8 @@ casePackages:
   - cases/cloudnative-pg-pitr
   - cases/restic-backup-restore
   - cases/velero-selective-remap-restore
+  - cases/braintree-nginx-remediation
+  - cases/stackstorm-auto-remediation
 invariants:
   - Every admitted case preserves immutable upstream repository, revision, path and license provenance.
   - Captured source bytes are SHA-256 bound before any semantic evaluation is admitted.

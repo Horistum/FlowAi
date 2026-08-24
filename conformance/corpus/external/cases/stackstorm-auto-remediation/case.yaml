@@ -1,0 +1,73 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: stackstorm-auto-remediation
+domain: incident-remediation
+provenance:
+  repository: StackStorm/st2
+  revision: '8c57959f3a23cafc55312e28c5beb7b2dab045a3'
+  path: README.md
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: '017d5b39f1fc902cbbc946b6ec6fc66eae29ce1959922a33fc44c81925bba32d'
+authoredBehaviors:
+  - id: identify-hardware-failure
+    statement: The automated-remediation example identifies and verifies hardware failure on an OpenStack compute node.
+    evidence:
+      - startLine: 4
+        endLine: 4
+  - id: evacuate-compute-node
+    statement: The remediation evacuates instances from the affected compute node.
+    evidence:
+      - startLine: 4
+        endLine: 4
+  - id: notify-potential-downtime
+    statement: The remediation emails the VM about potential downtime.
+    evidence:
+      - startLine: 4
+        endLine: 4
+  - id: escalate-remediation-failure
+    statement: If anything goes wrong, the workflow freezes and calls PagerDuty to wake a human.
+    evidence:
+      - startLine: 4
+        endLine: 4
+  - id: workflow-transition-conditions
+    statement: StackStorm workflows explicitly define order and transition conditions between actions.
+    evidence:
+      - startLine: 29
+        endLine: 29
+expectedSemanticObservations:
+  - id: preserve-hardware-failure-incident-context
+    expectation: PRESERVE
+    statement: Flow must preserve the hardware-failure incident context and affected compute-node target without making OpenStack a Core capability.
+    behaviorRefs:
+      - identify-hardware-failure
+    rationale: Incident subject and target identity are universal meaning; the platform name is authored data, not vocabulary.
+  - id: preserve-compute-node-remediation
+    expectation: PRESERVE
+    statement: Flow must preserve the targeted remediation action for the affected compute node independently from StackStorm action syntax.
+    behaviorRefs:
+      - evacuate-compute-node
+    rationale: Evacuating work from an affected service target is remediation intent even when execution is product-specific.
+  - id: preserve-potential-downtime-notification
+    expectation: PRESERVE
+    statement: Flow must preserve the authored downtime message and email delivery channel as notification meaning.
+    behaviorRefs:
+      - notify-potential-downtime
+    rationale: Communication content and channel remain meaningful across automation products.
+  - id: preserve-failure-conditioned-human-escalation
+    expectation: PRESERVE
+    statement: Flow must preserve that human escalation occurs only when remediation fails, including the human handoff destination.
+    behaviorRefs:
+      - escalate-remediation-failure
+      - workflow-transition-conditions
+    rationale: Replacing failure-conditioned escalation with an unconditional notification changes control flow and operator ownership.
+unsupportedFacts:
+  - id: stackstorm-plugin-mechanics
+    statement: The source describes StackStorm sensors, triggers, actions, rules and plugin mechanics.
+    evidence:
+      - startLine: 19
+        endLine: 29
+    reason: EF-04 uses those lines only to ground transition-condition behavior and does not promote StackStorm component vocabulary into Core.

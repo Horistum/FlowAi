@@ -45,13 +45,14 @@ class ConformanceRunner(
         val externalCorpusFoundationChecks = ExternalCorpusFoundationConformanceRunner(rootDir).checks()
         val databaseMigrationRecoveryChecks = DatabaseMigrationRecoveryConformanceRunner(rootDir).checks()
         val backupRestoreChecks = BackupRestoreConformanceRunner(rootDir).checks()
+        val incidentRemediationChecks = IncidentRemediationConformanceRunner(rootDir).checks()
         val toolchainModernizationChecks = ToolchainModernizationConformanceRunner(rootDir).checks()
 
         return ConformanceSummary(
             preClosureChecks + closureChecks + adapterChecks + adapterEvolutionChecks +
                 realWorldChecks + topologyMatrixChecks + semanticEquivalenceChecks + adapterProfileEvidenceChecks +
                 operationalDomainAdequacyChecks + externalCorpusFoundationChecks + databaseMigrationRecoveryChecks +
-                backupRestoreChecks + toolchainModernizationChecks
+                backupRestoreChecks + incidentRemediationChecks + toolchainModernizationChecks
         )
     }
 

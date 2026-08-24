@@ -1,0 +1,23 @@
+kind: FlowIncidentRemediationFalsification
+version: '1.0'
+caseId: braintree-nginx-remediation
+facts:
+  - id: targeted-nginx-remediation
+    observationRef: preserve-targeted-nginx-remediation
+    requirement: TARGETED_RUNBOOK_REMEDIATION
+    values:
+      description: restart nginx
+      service: nginx
+      target: app01.prod
+  - id: nginx-post-remediation-verification
+    observationRef: preserve-nginx-post-remediation-verification
+    requirement: POST_REMEDIATION_VERIFICATION
+    values:
+      subject: nginx
+      criteria: service is running
+      target: app01.prod
+  - id: operator-traffic-confirmation
+    observationRef: preserve-operator-traffic-confirmation
+    requirement: OPERATOR_CONFIRMATION
+    values:
+      message: Nginx is taking traffic
