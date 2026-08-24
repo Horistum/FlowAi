@@ -40,6 +40,21 @@ implementationEvidence:
       - "Certificate revocation with an authored reason is not represented distinctly from deletion/deprovisioning"
   rule: "This boundary validates the admitted external corpus, production evaluator through the public intent validation path, mixed falsification baseline, lifecycle-aware monotonic verifier and regression tests without changing Core semantics."
 
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3028
+  runId: 32731010894
+  exactHead: "b8bc0dd390c53877d45cb44c16602221ec7ba7da"
+  mergeCandidate: "617b802f78ae21e44b17f517d261fadf7db0b85d"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  purpose: "Independently validate the implementation-evidence-bearing EF-05 state before completion evidence is admitted."
+
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
@@ -98,10 +113,11 @@ completionEvidence:
   - "Standalone conformance enforces EF-05 evidence integrity without converting known gaps into representability claims."
   - "Flow CI #3026 passed the distinct activation-only boundary before any EF-05 external case was admitted."
   - "Flow CI #3027 passed the distinct implementation boundary on exact head e4c70c834c545e971ad1d637bfe52710b8f06bd3 and synthetic merge candidate 15dc73d01efe98ab3d9f003d577ab287776fa040."
-  - "A later distinct validation and completion boundary must close EF-05 before EF-06 activation."
+  - "Flow CI #3028 passed the distinct validation boundary on exact head b8bc0dd390c53877d45cb44c16602221ec7ba7da and synthetic merge candidate 617b802f78ae21e44b17f517d261fadf7db0b85d."
+  - "A later distinct completion boundary must close EF-05 before EF-06 activation."
 
 localValidation:
-  status: implementation-passed
+  status: validation-passed
   activationBoundary:
     commit: "82c855be090f5cb6ee0781ef5698e206ee287f2d"
     workflowRun: 32726739354
@@ -124,4 +140,15 @@ localValidation:
     mergeCandidate:
       commit: "15dc73d01efe98ab3d9f003d577ab287776fa040"
       conclusion: success
-  rule: "EF-05 implementation evidence is independently green with four representable facts and three explicit model gaps; validation now runs on the evidence-bearing lifecycle state."
+  validationBoundary:
+    commit: "b8bc0dd390c53877d45cb44c16602221ec7ba7da"
+    workflowRun: 32731010894
+    runNumber: 3028
+    conclusion: success
+    exactHead:
+      commit: "b8bc0dd390c53877d45cb44c16602221ec7ba7da"
+      conclusion: success
+    mergeCandidate:
+      commit: "617b802f78ae21e44b17f517d261fadf7db0b85d"
+      conclusion: success
+  rule: "EF-05 validation independently confirms the evidence-bearing mixed falsification state; the next CI run is the completion boundary and still precedes lifecycle closure."
