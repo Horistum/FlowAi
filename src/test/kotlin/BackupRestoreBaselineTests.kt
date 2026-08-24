@@ -109,11 +109,12 @@ class BackupRestoreBaselineTests {
         val workPackageTarget = File(root, BackupRestoreBaselineVerifier.WORK_PACKAGE_PATH)
         workPackageTarget.parentFile.mkdirs()
         workPackageSource.copyTo(workPackageTarget, overwrite = true)
-        if (status != "active") {
-            workPackageTarget.writeText(
-                workPackageTarget.readText().replaceFirst("status: active", "status: $status")
-            )
+        val lifecycleStatus = Regex("^status: (?:active|validating|complete)$", RegexOption.MULTILINE)
+        val current = workPackageTarget.readText()
+        check(lifecycleStatus.containsMatchIn(current)) {
+            "EF-03 fixture work package must expose one supported top-level lifecycle status."
         }
+        workPackageTarget.writeText(lifecycleStatus.replaceFirst(current, "status: $status"))
         return root
     }
 }

@@ -38,6 +38,15 @@ implementationEvidence:
       - "Velero source-to-destination identity remapping is not preserved by current RESTORE semantics"
   rule: "This boundary validates the admitted external corpus, strict production evaluator through the public intent validation path, initial mixed falsification baseline, lifecycle-aware monotonic verifier and regression tests without changing Core semantics."
 
+validationAttempts:
+  - runNumber: 3015
+    runId: 32699326067
+    exactHead: "5c2221e4496f6459716c49bd3aaa739ec1eb636e"
+    mergeCandidate: "d2f69f5e108a2c6a7964a2f49b29ba3daadd4a07"
+    conclusion: failure
+    cause: "The lifecycle test fixture rewrote only a literal top-level 'status: active'; after the legitimate transition to validating, complete-state simulations remained validating and the baseline verifier correctly rejected gap improvement."
+    remediation: "Make the fixture replace exactly one supported top-level EF-03 lifecycle status independent of its starting state; production evaluator and verifier semantics remain unchanged."
+
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
@@ -88,7 +97,8 @@ completionEvidence:
   - "A committed baseline preserves the initial EF-03 result and becomes monotonic after closure."
   - "Standalone conformance enforces EF-03 evidence integrity without converting known gaps into representability claims."
   - "Flow CI #3014 passed the distinct implementation boundary on exact head c6c84b55146223758085f5b162b7efbae55d05ff and synthetic merge candidate 9cf8d043e5d2e2df32ca201e68ebc41690d310ae."
-  - "A later distinct validation and completion boundary closes EF-03 before EF-04 activation."
+  - "Validation attempt #3015 failed only the lifecycle test fixture after entering validating; the failed evidence is retained and the verifier was not weakened."
+  - "A later distinct successful validation and completion boundary closes EF-03 before EF-04 activation."
 
 localValidation:
   status: validating
@@ -106,4 +116,4 @@ localValidation:
     conclusion: success
     exactHead: success
     mergeCandidate: success
-  rule: "EF-03 is validating only after both the pre-evidence activation boundary and the fully integrated implementation boundary passed independently."
+  rule: "EF-03 remains in validation after preserving the failed #3015 attempt and correcting its lifecycle fixture without weakening production semantics or the baseline verifier."
