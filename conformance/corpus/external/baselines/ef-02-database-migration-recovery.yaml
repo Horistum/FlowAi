@@ -1,0 +1,23 @@
+kind: FlowDatabaseMigrationRecoveryFalsificationBaseline
+version: '1.0'
+facts:
+  - caseId: dbmate-schema-migration-reversal
+    factId: schema-apply
+    observationRef: preserve-schema-apply
+    requirement: SCHEMA_CHANGE_APPLY
+    initialOutcome: REPRESENTABLE
+  - caseId: dbmate-schema-migration-reversal
+    factId: schema-reverse
+    observationRef: preserve-schema-reversal
+    requirement: SCHEMA_CHANGE_REVERSE
+    initialOutcome: MODEL_GAP
+  - caseId: cloudnative-pg-point-in-time-recovery
+    factId: restore-recovery-point
+    observationRef: preserve-recovery-point
+    requirement: RESTORE_FROM_RECOVERY_POINT
+    initialOutcome: REPRESENTABLE
+  - caseId: cloudnative-pg-point-in-time-recovery
+    factId: restore-point-in-time
+    observationRef: preserve-recovery-target-time
+    requirement: RESTORE_TO_POINT_IN_TIME
+    initialOutcome: MODEL_GAP

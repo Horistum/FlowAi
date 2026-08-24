@@ -1,11 +1,13 @@
 kind: FlowExternalCorpus
 version: '1.0'
-status: FOUNDATION
-casePackages: []
+status: EVIDENCE_ACTIVE
+casePackages:
+  - cases/dbmate-schema-migration
+  - cases/cloudnative-pg-pitr
 invariants:
   - Every admitted case preserves immutable upstream repository, revision, path and license provenance.
   - Captured source bytes are SHA-256 bound before any semantic evaluation is admitted.
   - Authored behavior is recorded as source-grounded fact and remains distinct from expected Flow semantic observations.
   - Expected semantic observations explicitly reference observed authored behavior and are never inferred from implementation vocabulary.
   - Unsupported implementation facts remain explicit evidence and cannot be silently promoted into universal Flow meaning.
-  - FOUNDATION status defines the ingestion contract only; domain falsification evidence begins in later EF work items.
+  - EVIDENCE_ACTIVE means external evidence is admitted for falsification; it does not claim that every observed semantic fact is representable.

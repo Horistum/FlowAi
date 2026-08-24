@@ -1,0 +1,12 @@
+kind: FlowDatabaseMigrationRecoveryFalsification
+version: '1.0'
+caseId: dbmate-schema-migration-reversal
+facts:
+  - id: schema-apply
+    observationRef: preserve-schema-apply
+    requirement: SCHEMA_CHANGE_APPLY
+    semanticValue: null
+  - id: schema-reverse
+    observationRef: preserve-schema-reversal
+    requirement: SCHEMA_CHANGE_REVERSE
+    semanticValue: null

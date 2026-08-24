@@ -1,0 +1,12 @@
+kind: FlowDatabaseMigrationRecoveryFalsification
+version: '1.0'
+caseId: cloudnative-pg-point-in-time-recovery
+facts:
+  - id: restore-recovery-point
+    observationRef: preserve-recovery-point
+    requirement: RESTORE_FROM_RECOVERY_POINT
+    semanticValue: backup-example
+  - id: restore-point-in-time
+    observationRef: preserve-recovery-target-time
+    requirement: RESTORE_TO_POINT_IN_TIME
+    semanticValue: "2020-11-26 15:22:00.00000+00"

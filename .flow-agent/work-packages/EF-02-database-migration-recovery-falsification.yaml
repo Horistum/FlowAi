@@ -1,0 +1,127 @@
+version: "EF-02"
+name: "Database Migration and Recovery Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: complete
+stream: "post-toolchain"
+
+objective: "Pressure the current Flow semantic model with immutable external evidence for database schema migration, reverse migration and point-in-time recovery without promoting implementation syntax into Core meaning."
+
+authorization:
+  status: completed
+  predecessor: "EF-01"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-02"
+  mainAtActivation: "c4228ce412dcee4ae9e6a605086177ccaf5e6813"
+  rule: "EF-02 may classify representability gaps exposed by database migration and recovery evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+activationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3001
+  runId: 32550631794
+  exactHead: "00f78f11e5abd1e682ee5573ecc58bbc36d86c96"
+  mergeCandidate: "70264edd9d6cf123fa4fee4f99d3131ecc88810a"
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3006
+  runId: 32634961022
+  exactHead: "121ecc61492190d16896684ab3ac0d8f202bb710"
+  mergeCandidate: "23dc1cf2e94b54950759d6cf05f5dd3debc437d6"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 2
+    modelGapFacts: 2
+    representable:
+      - "dbmate forward schema migration"
+      - "CloudNativePG restore from a named recovery point"
+    modelGaps:
+      - "dbmate reverse schema migration is not preserved by generic infrastructure ROLLBACK semantics"
+      - "CloudNativePG point-in-time target is not represented by the current typed recovery model"
+  rule: "This boundary validates the external corpus, production evaluator, reviewed live authority edge, immutable initial falsification baseline and lifecycle-aware baseline verifier without changing Core semantics."
+
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3007
+  runId: 32635403639
+  exactHead: "dafb8a80e5598e086ee58c650e3a2806f76d732c"
+  mergeCandidate: "047470d102ed4eae3cac02e1f9840046ed5e5116"
+  purpose: "Validate the implementation-evidence-bearing EF-02 lifecycle state independently from the implementation boundary before lifecycle completion is recorded."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3008
+  runId: 32694008565
+  exactHead: "284f3c5bf5e2f03e85b8eb5164ca3bffc04172a9"
+  mergeCandidate: "a45497fe8051844b902ff791c287fa1078599510"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 2
+    modelGapFacts: 2
+  rule: "This boundary is later than the implementation and validation boundaries and validates the evidence-bearing EF-02 state before lifecycle closure is recorded."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable license evidence."
+    - "Prefer small source artifacts whose authored behavior is directly observable without implementation folklore."
+    - "Cover schema-forward migration, schema-reversal and recovery-to-a-point-in-time as distinct semantic shapes."
+  admittedSources:
+    - repository: "amacneil/dbmate"
+      revision: "f3e08f15e39d5b3f10ba014b470467fb484dfc54"
+      path: "testdata/db/migrations/20200227231541_test_posts.sql"
+      license: "MIT"
+      role: "paired forward and reverse schema migration"
+    - repository: "cloudnative-pg/cloudnative-pg"
+      revision: "a95a534dbe0854495b863bbc1b7651f74d310916"
+      path: "docs/src/samples/cluster-restore-pitr.yaml"
+      license: "Apache-2.0"
+      role: "restore from named backup to an explicit point in time"
+
+requiredOutcomes:
+  - "The EF-01 corpus manifest advances from FOUNDATION to EVIDENCE_ACTIVE only after the activation boundary passes and immutable cases are admitted."
+  - "Forward schema migration is evaluated against the production DATABASE_MIGRATE semantic effect rather than command spelling."
+  - "Reverse schema migration is independently evaluated and may remain a semantic gap when generic ROLLBACK does not preserve database-schema reversal meaning."
+  - "Recovery from a named backup is evaluated against typed STATE_RECOVERY / STATE_RESTORE semantics."
+  - "Point-in-time recovery target identity is evaluated separately from generic recovery-point identity and may falsify the current model."
+  - "Every gap remains explicit evidence; EF-02 does not add Core semantics merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values."
+  - "Do not change CanonicalIntentEffectAuthority mappings in EF-02."
+  - "Do not reinterpret generic ROLLBACK as database schema reversal by string convention."
+  - "Do not flatten PITR target time into an opaque recoveryPoint string and call that typed semantic preservation."
+  - "Do not promote adapter or executable support from corpus representability."
+  - "Do not modify closed C0.1, C1.0 or EF-01 evidence boundaries."
+
+completionEvidence:
+  - "Immutable external source bytes and SHA-256 provenance load through the EF-01 contract."
+  - "A production EF-02 evaluator classifies each required semantic fact from current Core contracts."
+  - "Positive and negative tests prove both representable and falsifying outcomes."
+  - "A committed baseline records initial gaps without requiring those gaps to remain forever."
+  - "After EF-02 closure, historical MODEL_GAP facts may improve but REPRESENTABLE facts may not regress."
+  - "Standalone conformance enforces evidence integrity and lifecycle-aware monotonic non-regression."
+  - "Flow CI #3006 passed the distinct implementation boundary on exact head 121ecc61492190d16896684ab3ac0d8f202bb710 and synthetic merge candidate 23dc1cf2e94b54950759d6cf05f5dd3debc437d6."
+  - "Flow CI #3007 passed the later validation boundary on exact head dafb8a80e5598e086ee58c650e3a2806f76d732c and synthetic merge candidate 047470d102ed4eae3cac02e1f9840046ed5e5116."
+  - "Flow CI #3008 passed the distinct completion boundary on exact head 284f3c5bf5e2f03e85b8eb5164ca3bffc04172a9 and synthetic merge candidate a45497fe8051844b902ff791c287fa1078599510."
+  - "EF-03 remains unactivated and requires its own distinct transition."
+
+localValidation:
+  status: passed
+  evidence:
+    - "Flow CI #3001 passed the activation-only exact head and synthetic merge candidate before any external EF-02 case was admitted."
+    - "Flow CI #3006 passed exact-head test and standalone conformance on 121ecc61492190d16896684ab3ac0d8f202bb710 and synthetic merge candidate 23dc1cf2e94b54950759d6cf05f5dd3debc437d6 after corpus admission, baseline hardening and AR0.1 caller review."
+    - "Flow CI #3007 independently passed the implementation-evidence-bearing state on exact head dafb8a80e5598e086ee58c650e3a2806f76d732c and synthetic merge candidate 047470d102ed4eae3cac02e1f9840046ed5e5116."
+    - "Flow CI #3008 passed the later completion boundary on exact head 284f3c5bf5e2f03e85b8eb5164ca3bffc04172a9 and synthetic merge candidate a45497fe8051844b902ff791c287fa1078599510."
+  rule: "EF-02 is complete with two representable facts and two explicit semantic model gaps preserved as evidence. EF-03 remains unactivated and semantic repair requires a separately authorized later item."
