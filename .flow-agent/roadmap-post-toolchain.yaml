@@ -7,8 +7,8 @@ currentDecision:
   completedItemName: "Backup and Restore Falsification"
   nextItem: "EF-04"
   nextItemName: "Incident Remediation Falsification"
-  workPackage: ""
-  decisionBasis: "EF-03 completed backup and restore falsification with distinct activation, implementation, validation and completion CI evidence. Three current semantic shapes are representable and two remain explicit model gaps. EF-04 is now the next planned post-toolchain item, but it remains unactivated and requires its own transition before incident-remediation evidence is admitted."
+  workPackage: ".flow-agent/work-packages/EF-04-incident-remediation-falsification.yaml"
+  decisionBasis: "EF-03 completed backup and restore falsification. EF-04 is independently activated to pressure the current incident-remediation model with immutable runbook and event-driven remediation evidence before any semantic repair is authorized."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -57,7 +57,8 @@ sequence:
   - id: "EF-04"
     name: "Incident Remediation Falsification"
     order: 5
-    status: next
+    status: active
+    workPackage: ".flow-agent/work-packages/EF-04-incident-remediation-falsification.yaml"
   - id: "EF-05"
     name: "Certificate Lifecycle Falsification"
     order: 6
