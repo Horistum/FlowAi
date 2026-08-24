@@ -47,6 +47,21 @@ validationAttempts:
     cause: "The lifecycle test fixture rewrote only a literal top-level 'status: active'; after the legitimate transition to validating, complete-state simulations remained validating and the baseline verifier correctly rejected gap improvement."
     remediation: "Make the fixture replace exactly one supported top-level EF-03 lifecycle status independent of its starting state; production evaluator and verifier semantics remain unchanged."
 
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3016
+  runId: 32699911599
+  exactHead: "47262db4be85a18589a8a7a9926b92e61ba284d1"
+  mergeCandidate: "2cec598ca6358c79bffc84efde7270e5d42fe1d5"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  purpose: "Independently validate the implementation-evidence-bearing EF-03 state after lifecycle-fixture remediation before completion evidence is admitted."
+
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
@@ -98,7 +113,8 @@ completionEvidence:
   - "Standalone conformance enforces EF-03 evidence integrity without converting known gaps into representability claims."
   - "Flow CI #3014 passed the distinct implementation boundary on exact head c6c84b55146223758085f5b162b7efbae55d05ff and synthetic merge candidate 9cf8d043e5d2e2df32ca201e68ebc41690d310ae."
   - "Validation attempt #3015 failed only the lifecycle test fixture after entering validating; the failed evidence is retained and the verifier was not weakened."
-  - "A later distinct successful validation and completion boundary closes EF-03 before EF-04 activation."
+  - "Flow CI #3016 passed the corrected distinct validation boundary on exact head 47262db4be85a18589a8a7a9926b92e61ba284d1 and synthetic merge candidate 2cec598ca6358c79bffc84efde7270e5d42fe1d5."
+  - "A later distinct completion boundary must pass before EF-03 lifecycle closure is recorded."
 
 localValidation:
   status: validating
@@ -116,4 +132,11 @@ localValidation:
     conclusion: success
     exactHead: success
     mergeCandidate: success
-  rule: "EF-03 remains in validation after preserving the failed #3015 attempt and correcting its lifecycle fixture without weakening production semantics or the baseline verifier."
+  validationBoundary:
+    commit: "47262db4be85a18589a8a7a9926b92e61ba284d1"
+    workflowRun: 32699911599
+    runNumber: 3016
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  rule: "EF-03 has passed an independent validation boundary and now requires a later distinct completion boundary before status complete is recorded."
