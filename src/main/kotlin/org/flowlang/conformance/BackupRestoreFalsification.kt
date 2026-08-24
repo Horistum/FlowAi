@@ -1,17 +1,21 @@
 package org.flowlang.conformance
 
 import java.io.File
-import org.flowlang.effects.CanonicalIntentEffectAuthority
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
 import org.flowlang.effects.RecoveryEffectKind
 import org.flowlang.effects.RecoveryEndpointKind
 import org.flowlang.effects.SemanticEffect
 import org.flowlang.effects.canonicalObservationValue
+import org.flowlang.intent.IntentCapabilityValidator
+import org.flowlang.intent.IntentDocument
+import org.flowlang.intent.IntentStep
+import org.flowlang.intent.IntentString
+import org.flowlang.intent.IntentWorkflow
+import org.flowlang.intent.IntentWorkflowKind
 import org.flowlang.intent.StandardCapability
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.serialization.FlowYamlException
-import org.flowlang.standard.StandardCapabilityContracts
 
 enum class BackupRestoreRequirement {
     BACKUP_RECOVERY_POINT_CAPTURE,
@@ -56,9 +60,10 @@ data class BackupRestoreFalsificationReport(
  * EF-03 evaluator for externally grounded backup and restore facts.
  *
  * The reviewed case assessment is the only boundary that translates product syntax into
- * typed semantic requirements. This evaluator then asks the current production contracts
- * and canonical effects whether those requirements are preserved. MODEL_GAP is evidence,
- * not a test failure and never authorization to smuggle product vocabulary into Core.
+ * typed semantic requirements. Classification goes through the production intent validator
+ * and its canonical meaning rather than calling an internal effect authority directly.
+ * A MODEL_GAP is evidence, not a test failure and never authorization to smuggle product
+ * vocabulary into Core.
  */
 class BackupRestoreFalsification(private val rootDir: File = File(".")) {
     fun evaluate(): BackupRestoreFalsificationReport {
@@ -179,12 +184,11 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
     }
 
     private fun backupCaptureClassification(subject: String): Pair<ExternalFalsificationOutcome, String> {
-        val contract = StandardCapabilityContracts.requireContract(StandardCapability.BACKUP)
-        val effects = CanonicalIntentEffectAuthority.effectsForRendered(
+        val projection = semanticProjection(
             StandardCapability.BACKUP,
             mapOf(SUBJECT to subject)
         )
-        val preserved = SUBJECT in contract.requiredParams && effects.any { effect ->
+        val preserved = projection.semanticParametersAccepted && projection.effects.any { effect ->
             val recovery = effect.recovery
             effect.domain == EffectDomain.STATE_RECOVERY &&
                 effect.operation == EffectOperation.CREATE &&
@@ -195,24 +199,22 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
         }
         return if (preserved) {
             ExternalFalsificationOutcome.REPRESENTABLE to
-                "BACKUP preserves the protected subject as the typed source of RECOVERY_POINT_CAPTURE."
+                "BACKUP preserves the protected subject as the typed source of RECOVERY_POINT_CAPTURE through canonical intent validation."
         } else {
             ExternalFalsificationOutcome.MODEL_GAP to
-                "BACKUP does not preserve protected-state capture as a typed recovery-point effect."
+                "BACKUP does not preserve protected-state capture through the canonical intent contract and typed recovery effect."
         }
     }
 
     private fun recoveryPointClassification(values: Map<String, String>): Pair<ExternalFalsificationOutcome, String> {
-        val contract = StandardCapabilityContracts.requireContract(StandardCapability.RESTORE)
-        val params = contract.requiredParams.toSet() + contract.optionalParams
         val recoveryPoint = values.getValue(RECOVERY_POINT)
         val authoredSubject = values[SUBJECT]
         val subject = authoredSubject ?: EXTERNAL_PROTECTED_STATE
-        val effects = CanonicalIntentEffectAuthority.effectsForRendered(
+        val projection = semanticProjection(
             StandardCapability.RESTORE,
             mapOf(SUBJECT to subject, RECOVERY_POINT to recoveryPoint)
         )
-        val preserved = SUBJECT in contract.requiredParams && RECOVERY_POINT in params && effects.any { effect ->
+        val preserved = projection.semanticParametersAccepted && projection.effects.any { effect ->
             val recovery = effect.recovery
             effect.domain == EffectDomain.STATE_RECOVERY &&
                 effect.operation == EffectOperation.UPSERT &&
@@ -225,33 +227,34 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
         }
         return if (preserved) {
             ExternalFalsificationOutcome.REPRESENTABLE to
-                "RESTORE preserves the exact recovery-point identity${if (authoredSubject != null) " and authored protected-state target" else ""} in typed STATE_RESTORE semantics."
+                "RESTORE preserves the exact recovery-point identity${if (authoredSubject != null) " and authored protected-state target" else ""} through canonical intent validation and typed STATE_RESTORE semantics."
         } else {
             ExternalFalsificationOutcome.MODEL_GAP to
-                "RESTORE does not preserve the authored recovery-point relationship in typed STATE_RESTORE semantics."
+                "RESTORE does not preserve the authored recovery-point relationship through the canonical intent contract."
         }
     }
 
     private fun selectiveRestoreClassification(values: Map<String, String>): Pair<ExternalFalsificationOutcome, String> {
-        val contract = StandardCapabilityContracts.requireContract(StandardCapability.RESTORE)
-        val params = contract.requiredParams.toSet() + contract.optionalParams
-        if (SELECTION_PARAM !in params) {
-            return ExternalFalsificationOutcome.MODEL_GAP to
-                "RESTORE exposes no typed target-neutral selection parameter; selective recovery scope would be discarded or hidden in another string."
-        }
-
         val common = restoreCommon(values)
-        val observed = CanonicalIntentEffectAuthority.effectsForRendered(
+        val observed = semanticProjection(
             StandardCapability.RESTORE,
             common + (SELECTION_PARAM to values.getValue(SELECTION))
         )
-        val alternate = CanonicalIntentEffectAuthority.effectsForRendered(
+        if (!observed.semanticParametersAccepted) {
+            return ExternalFalsificationOutcome.MODEL_GAP to
+                "RESTORE exposes no typed target-neutral selection parameter; canonical intent validation rejects selective recovery scope rather than silently discarding it."
+        }
+
+        val alternate = semanticProjection(
             StandardCapability.RESTORE,
             common + (SELECTION_PARAM to ALTERNATE_SELECTION)
         )
-        return if (semanticSignature(observed) != semanticSignature(alternate)) {
+        return if (
+            alternate.semanticParametersAccepted &&
+            semanticSignature(observed.effects) != semanticSignature(alternate.effects)
+        ) {
             ExternalFalsificationOutcome.REPRESENTABLE to
-                "RESTORE carries selective recovery scope into semantically observable typed effects."
+                "RESTORE carries selective recovery scope into semantically observable canonical effects."
         } else {
             ExternalFalsificationOutcome.MODEL_GAP to
                 "RESTORE accepts selection data without preserving a semantically observable recovery-scope distinction."
@@ -259,31 +262,68 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
     }
 
     private fun identityMappingClassification(values: Map<String, String>): Pair<ExternalFalsificationOutcome, String> {
-        val contract = StandardCapabilityContracts.requireContract(StandardCapability.RESTORE)
-        val params = contract.requiredParams.toSet() + contract.optionalParams
-        if (IDENTITY_MAPPING_PARAM !in params) {
-            return ExternalFalsificationOutcome.MODEL_GAP to
-                "RESTORE exposes no typed target-neutral identity-mapping parameter; source-to-destination remapping cannot be preserved as a relation."
-        }
-
         val mapping = "${values.getValue(SOURCE_IDENTITY)}->${values.getValue(TARGET_IDENTITY)}"
         val alternateMapping = "${values.getValue(SOURCE_IDENTITY)}->$ALTERNATE_TARGET_IDENTITY"
         val common = restoreCommon(values)
-        val observed = CanonicalIntentEffectAuthority.effectsForRendered(
+        val observed = semanticProjection(
             StandardCapability.RESTORE,
             common + (IDENTITY_MAPPING_PARAM to mapping)
         )
-        val alternate = CanonicalIntentEffectAuthority.effectsForRendered(
+        if (!observed.semanticParametersAccepted) {
+            return ExternalFalsificationOutcome.MODEL_GAP to
+                "RESTORE exposes no typed target-neutral identity-mapping parameter; canonical intent validation rejects source-to-destination remapping rather than hiding the relation in another string."
+        }
+
+        val alternate = semanticProjection(
             StandardCapability.RESTORE,
             common + (IDENTITY_MAPPING_PARAM to alternateMapping)
         )
-        return if (semanticSignature(observed) != semanticSignature(alternate)) {
+        return if (
+            alternate.semanticParametersAccepted &&
+            semanticSignature(observed.effects) != semanticSignature(alternate.effects)
+        ) {
             ExternalFalsificationOutcome.REPRESENTABLE to
-                "RESTORE carries source-to-destination identity remapping into semantically observable typed effects."
+                "RESTORE carries source-to-destination identity remapping into semantically observable canonical effects."
         } else {
             ExternalFalsificationOutcome.MODEL_GAP to
                 "RESTORE accepts identity mapping data without preserving the authored source-to-destination relation."
         }
+    }
+
+    private fun semanticProjection(
+        capability: StandardCapability,
+        values: Map<String, String>
+    ): SemanticProjection {
+        val report = IntentCapabilityValidator().validate(
+            IntentDocument(
+                name = "ef03-${capability.name.lowercase()}",
+                workflows = listOf(
+                    IntentWorkflow(
+                        name = "main",
+                        kind = when (capability) {
+                            StandardCapability.BACKUP -> IntentWorkflowKind.BACKUP
+                            StandardCapability.RESTORE -> IntentWorkflowKind.RESTORE
+                            else -> error("EF-03 semantic projection supports only BACKUP and RESTORE, got $capability.")
+                        },
+                        steps = listOf(
+                            IntentStep(
+                                id = "probe",
+                                capability = capability,
+                                params = values.mapValues { (_, value) -> IntentString(value) }
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        val semanticParameterErrors = report.issues.filter { issue ->
+            issue.level == "error" && issue.code in SEMANTIC_PARAMETER_ERROR_CODES
+        }
+        val effects = report.meaning.workflows.single().steps.single().effects
+        return SemanticProjection(
+            semanticParametersAccepted = semanticParameterErrors.isEmpty(),
+            effects = effects
+        )
     }
 
     private fun restoreCommon(values: Map<String, String>): Map<String, String> = mapOf(
@@ -309,6 +349,11 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
         )
     }
 
+    private data class SemanticProjection(
+        val semanticParametersAccepted: Boolean,
+        val effects: List<SemanticEffect>
+    )
+
     companion object {
         const val DOMAIN = "backup-and-restore"
         const val KIND = "FlowBackupRestoreFalsification"
@@ -327,6 +372,7 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
         private const val EXTERNAL_PROTECTED_STATE = "external.protected-state"
         private const val ALTERNATE_SELECTION = "alternate-selection"
         private const val ALTERNATE_TARGET_IDENTITY = "alternate-target"
+        private val SEMANTIC_PARAMETER_ERROR_CODES = setOf("UNKNOWN_STEP_PARAM", "MISSING_REQUIRED_STEP_PARAM")
         private val ID_PATTERN = Regex("[A-Za-z0-9][A-Za-z0-9._-]*")
     }
 }
