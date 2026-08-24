@@ -1,0 +1,33 @@
+kind: FlowIncidentRemediationFalsification
+version: '1.0'
+caseId: stackstorm-auto-remediation
+facts:
+  - id: hardware-failure-incident-context
+    observationRef: preserve-hardware-failure-incident-context
+    requirement: INCIDENT_CONTEXT
+    values:
+      description: hardware failure
+      service: compute-node
+      target: OpenStack compute node
+  - id: compute-node-remediation
+    observationRef: preserve-compute-node-remediation
+    requirement: TARGETED_RUNBOOK_REMEDIATION
+    values:
+      description: evacuate instances
+      service: compute-node
+      target: OpenStack compute node
+  - id: potential-downtime-notification
+    observationRef: preserve-potential-downtime-notification
+    requirement: INCIDENT_NOTIFICATION
+    values:
+      body: potential downtime
+      channel: email
+      target: VM
+  - id: failure-conditioned-human-escalation
+    observationRef: preserve-failure-conditioned-human-escalation
+    requirement: FAILURE_CONDITIONED_HUMAN_ESCALATION
+    values:
+      condition: remediation failure
+      message: wake up a human
+      channel: PagerDuty
+      handoff: human

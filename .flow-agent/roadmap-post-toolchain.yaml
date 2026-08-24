@@ -3,12 +3,12 @@ status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION so semantic quality is falsified by real automation before structural expansion and AI-provider growth."
 
 currentDecision:
-  completedItem: "EF-03"
-  completedItemName: "Backup and Restore Falsification"
-  nextItem: "EF-04"
-  nextItemName: "Incident Remediation Falsification"
+  completedItem: "EF-04"
+  completedItemName: "Incident Remediation Falsification"
+  nextItem: "EF-05"
+  nextItemName: "Certificate Lifecycle Falsification"
   workPackage: ""
-  decisionBasis: "EF-03 completed backup and restore falsification with distinct activation, implementation, validation and completion CI evidence. Three current semantic shapes are representable and two remain explicit model gaps. EF-04 is now the next planned post-toolchain item, but it remains unactivated and requires its own transition before incident-remediation evidence is admitted."
+  decisionBasis: "EF-04 completed incident-remediation falsification with distinct activation, implementation, validation and completion CI evidence. Six current semantic shapes are representable and failure-conditioned human escalation remains one explicit model gap. EF-05 is now the next planned post-toolchain item, but it remains unactivated and requires its own transition before certificate-lifecycle evidence is admitted."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -57,11 +57,12 @@ sequence:
   - id: "EF-04"
     name: "Incident Remediation Falsification"
     order: 5
-    status: next
+    status: completed
+    workPackage: ".flow-agent/work-packages/EF-04-incident-remediation-falsification.yaml"
   - id: "EF-05"
     name: "Certificate Lifecycle Falsification"
     order: 6
-    status: planned
+    status: next
   - id: "EF-06"
     name: "Secret Rotation Falsification"
     order: 7

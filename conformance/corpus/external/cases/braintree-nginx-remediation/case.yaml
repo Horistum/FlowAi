@@ -1,0 +1,70 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: braintree-nginx-remediation
+domain: incident-remediation
+provenance:
+  repository: braintree/runbook
+  revision: '24464721765899fb5db9967c5f926739202fc81c'
+  path: README.md
+  license:
+    spdx: MIT
+    evidence: Upstream LICENSE.txt at the pinned revision.
+sourceCapture:
+  path: source.rb
+  sha256: 'a7137b11875a405d775a9fa57f35ab0dbcdf8c99812fc105fb0a82fa35d77368'
+authoredBehaviors:
+  - id: targeted-nginx-remediation
+    statement: The runbook targets app01.prod and restarts the nginx service through explicit stop and start steps.
+    evidence:
+      - startLine: 7
+        endLine: 24
+  - id: verify-nginx-running
+    statement: After starting nginx, the runbook asserts that the service reports a running state.
+    evidence:
+      - startLine: 19
+        endLine: 22
+  - id: confirm-traffic-recovery
+    statement: The operator must explicitly confirm that nginx is taking traffic.
+    evidence:
+      - startLine: 23
+        endLine: 23
+expectedSemanticObservations:
+  - id: preserve-targeted-nginx-remediation
+    expectation: PRESERVE
+    statement: Flow must preserve the targeted nginx remediation intent and app01.prod target without depending on shell-command spelling.
+    behaviorRefs:
+      - targeted-nginx-remediation
+    rationale: The remediation subject and target are target-neutral intent even though service commands are implementation syntax.
+  - id: preserve-nginx-post-remediation-verification
+    expectation: PRESERVE
+    statement: Flow must preserve the post-remediation verification subject and the authored running-state criterion independently from the repair action.
+    behaviorRefs:
+      - verify-nginx-running
+    rationale: A repair and the evidence that it succeeded are distinct semantic obligations.
+  - id: preserve-operator-traffic-confirmation
+    expectation: PRESERVE
+    statement: Flow must preserve explicit operator confirmation that traffic has recovered as control meaning distinct from notification.
+    behaviorRefs:
+      - confirm-traffic-recovery
+    rationale: Human confirmation changes whether the runbook may be considered complete and is not merely informational output.
+unsupportedFacts:
+  - id: shell-and-account-vocabulary
+    statement: The runbook uses concrete service shell commands and the root account.
+    evidence:
+      - startLine: 8
+        endLine: 14
+      - startLine: 19
+        endLine: 22
+    reason: EF-04 preserves remediation meaning without promoting shell command or operating-system account syntax into Core.
+  - id: runbook-wait-primitive
+    statement: The runbook uses a product-specific wait primitive with a literal duration.
+    evidence:
+      - startLine: 17
+        endLine: 17
+    reason: One DSL wait primitive is insufficient evidence for a new universal capability; timing semantics remain available for later cross-domain synthesis.
+  - id: follow-up-notice-delivery
+    statement: The runbook emits a local notice asking the operator to report why nginx was restarted.
+    evidence:
+      - startLine: 24
+        endLine: 24
+    reason: This excerpt does not establish an external recipient or delivery contract, so EF-04 does not infer routed notification semantics from the UI primitive.
