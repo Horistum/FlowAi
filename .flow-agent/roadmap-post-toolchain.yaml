@@ -7,8 +7,8 @@ currentDecision:
   completedItemName: "Database Migration and Recovery Falsification"
   nextItem: "EF-03"
   nextItemName: "Backup and Restore Falsification"
-  workPackage: ""
-  decisionBasis: "EF-02 completed database migration and recovery falsification with distinct activation, implementation, validation and completion CI evidence. Two current semantic shapes are representable and two remain explicit model gaps. EF-03 is now the next planned post-toolchain item, but it remains unactivated and requires its own transition before backup and restore evidence is admitted."
+  workPackage: ".flow-agent/work-packages/EF-03-backup-restore-falsification.yaml"
+  decisionBasis: "EF-02 completed database migration and recovery falsification. EF-03 is independently activated to pressure the current backup and restore model with immutable ordinary, selective and remapped-restore evidence before any semantic repair is authorized."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -52,7 +52,8 @@ sequence:
   - id: "EF-03"
     name: "Backup and Restore Falsification"
     order: 4
-    status: next
+    status: active
+    workPackage: ".flow-agent/work-packages/EF-03-backup-restore-falsification.yaml"
   - id: "EF-04"
     name: "Incident Remediation Falsification"
     order: 5
