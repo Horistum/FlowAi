@@ -1,0 +1,51 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: certbot-renew-revoke
+domain: certificate-lifecycle
+provenance:
+  repository: certbot/certbot
+  revision: 'abf9d1b2e143c51fe1a2209a3b8be33e6a24267f'
+  path: certbot/docs/using.rst
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE.txt at the pinned revision.
+sourceCapture:
+  path: source.rst
+  sha256: '3a420f60e59a5a7bbbf28e8d741690e5d44030474e00dce65788d631e32e9e38'
+authoredBehaviors:
+  - id: renew-named-certificate
+    statement: Certbot can force renewal of the named example.com certificate while changing its key type.
+    evidence:
+      - startLine: 1
+        endLine: 13
+  - id: revoke-named-certificate-with-reason
+    statement: Certbot revokes a named certificate and can preserve keycompromise as the explicit revocation reason.
+    evidence:
+      - startLine: 15
+        endLine: 38
+  - id: distinguish-revocation-from-deletion
+    statement: After revocation, deletion is a separate operation and a revoked certificate may otherwise be renewed again.
+    evidence:
+      - startLine: 30
+        endLine: 31
+expectedSemanticObservations:
+  - id: preserve-named-certificate-renewal
+    expectation: PRESERVE
+    statement: Flow must preserve which certificate is being renewed independently from Certbot command flags or key-type syntax.
+    behaviorRefs:
+      - renew-named-certificate
+    rationale: Certificate identity is already part of current CERTIFICATE_RENEW and should remain representable without importing CLI syntax.
+  - id: preserve-certificate-revocation-with-reason
+    expectation: PRESERVE
+    statement: Flow must preserve certificate revocation and its authored key-compromise reason as authority-state meaning distinct from deleting local certificate material.
+    behaviorRefs:
+      - revoke-named-certificate-with-reason
+      - distinguish-revocation-from-deletion
+    rationale: Revocation invalidates trust at the issuing authority while deletion removes local material; collapsing them changes the security outcome.
+unsupportedFacts:
+  - id: certbot-authentication-mechanics
+    statement: Certbot can authenticate revocation with an ACME account key or the certificate private key.
+    evidence:
+      - startLine: 40
+        endLine: 46
+    reason: ACME account-key and key-path mechanics are provider execution details, not universal certificate lifecycle vocabulary.

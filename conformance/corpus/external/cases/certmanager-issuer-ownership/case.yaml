@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: certmanager-issuer-ownership
+domain: certificate-lifecycle
+provenance:
+  repository: cert-manager/cert-manager
+  revision: '2d0d7f7f74241a9cbf79f0e2a7bb247238ee09fd'
+  path: pkg/apis/certmanager/v1/types_certificate.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '0851e1f9ded01794a493576f951f4b26df02ca571ff8082b7dcd7aac79310e11'
+authoredBehaviors:
+  - id: reference-responsible-issuer
+    statement: The certificate specification references the issuer responsible for issuing the certificate and requires its name.
+    evidence:
+      - startLine: 1
+        endLine: 7
+expectedSemanticObservations:
+  - id: preserve-issuer-ownership
+    expectation: PRESERVE
+    statement: Flow must preserve the issuer identity responsible for renewal without treating cert-manager issuer scope or object kind as universal meaning.
+    behaviorRefs:
+      - reference-responsible-issuer
+    rationale: Certificate authority ownership is target-neutral lifecycle context; product scoping mechanics are not.
+unsupportedFacts:
+  - id: certmanager-issuer-scope
+    statement: The source distinguishes namespace-scoped and cluster-scoped issuers.
+    evidence:
+      - startLine: 2
+        endLine: 4
+    reason: Namespace versus cluster scope is cert-manager resource topology and is not evidence for a universal Core capability.

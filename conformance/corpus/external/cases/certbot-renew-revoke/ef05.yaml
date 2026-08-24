@@ -1,0 +1,15 @@
+kind: FlowCertificateLifecycleFalsification
+version: '1.0'
+caseId: certbot-renew-revoke
+facts:
+  - id: named-certificate-renewal
+    observationRef: preserve-named-certificate-renewal
+    requirement: NAMED_CERTIFICATE_RENEWAL
+    values:
+      certificate: example.com
+  - id: certificate-revocation-keycompromise
+    observationRef: preserve-certificate-revocation-with-reason
+    requirement: CERTIFICATE_REVOCATION_WITH_REASON
+    values:
+      certificate: example.com
+      reason: keycompromise

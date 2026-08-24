@@ -1,0 +1,10 @@
+kind: FlowCertificateLifecycleFalsification
+version: '1.0'
+caseId: certmanager-renewal-window
+facts:
+  - id: authored-renewal-window
+    observationRef: preserve-renewal-window
+    requirement: RENEWAL_WINDOW
+    values:
+      certificate: managed X.509 certificate
+      window: 10m

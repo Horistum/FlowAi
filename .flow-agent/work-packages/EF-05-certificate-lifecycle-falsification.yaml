@@ -18,7 +18,7 @@ sourceSelection:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
     - "Prefer source artifacts that expose certificate lifecycle meaning directly: identity, renewal timing, issuer ownership, private-key behavior and revocation."
     - "Use at least two independent repositories so one product's API shape cannot become the semantic standard by accident."
-  plannedSources:
+  admittedSources:
     - repository: "cert-manager/cert-manager"
       revision: "2d0d7f7f74241a9cbf79f0e2a7bb247238ee09fd"
       path: "pkg/apis/certmanager/v1/types_certificate.go"
@@ -28,7 +28,20 @@ sourceSelection:
       revision: "abf9d1b2e143c51fe1a2209a3b8be33e6a24267f"
       path: "certbot/docs/using.rst"
       license: "Apache-2.0"
-      role: "named renewal, expiry-aware automation, key-type change and revocation with an explicit reason"
+      role: "named renewal and revocation with an explicit reason"
+
+initialFalsification:
+  expectedShape:
+    representable:
+      - "NAMED_CERTIFICATE_RENEWAL"
+      - "RENEWAL_WINDOW"
+      - "CERTIFICATE_SECRET_TARGET"
+      - "ISSUER_OWNERSHIP"
+    modelGaps:
+      - "CERTIFICATE_SUBJECT_IDENTITIES"
+      - "PRIVATE_KEY_ROTATION_POLICY"
+      - "CERTIFICATE_REVOCATION_WITH_REASON"
+  rule: "The committed baseline records the live evaluator result; these expectations do not override production semantics."
 
 requiredOutcomes:
   - "Previously admitted EF-02 through EF-04 evidence remains intact while EF-05 appends independently proven certificate-lifecycle cases."
@@ -56,9 +69,21 @@ completionEvidence:
   - "Positive and negative tests prove representable renewal controls and falsifying certificate-lifecycle outcomes."
   - "A committed baseline preserves the initial EF-05 result and becomes monotonic after closure."
   - "Standalone conformance enforces EF-05 evidence integrity without converting known gaps into representability claims."
-  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
-  - "A later distinct validation and completion boundary closes EF-05 before EF-06 activation."
+  - "Flow CI #3026 passed the distinct activation-only boundary before any EF-05 external case was admitted."
+  - "Exact-head and synthetic merge-candidate Flow CI must pass on a later distinct implementation boundary."
+  - "A still later distinct validation and completion boundary must close EF-05 before EF-06 activation."
 
 localValidation:
-  status: pending-activation
-  rule: "No EF-05 external case is admitted until a distinct activation-only Flow CI boundary passes."
+  status: activation-passed
+  activationBoundary:
+    commit: "82c855be090f5cb6ee0781ef5698e206ee287f2d"
+    workflowRun: 32726739354
+    runNumber: 3026
+    conclusion: success
+    exactHead:
+      commit: "82c855be090f5cb6ee0781ef5698e206ee287f2d"
+      conclusion: success
+    mergeCandidate:
+      commit: "8bd93c4b48b5d002bf7442ba6e8ae800cc477ab3"
+      conclusion: success
+  rule: "EF-05 external evidence may be admitted only after the recorded activation-only boundary; semantic repair remains forbidden in this work item."

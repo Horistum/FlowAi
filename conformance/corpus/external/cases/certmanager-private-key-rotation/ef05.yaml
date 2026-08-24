@@ -1,0 +1,10 @@
+kind: FlowCertificateLifecycleFalsification
+version: '1.0'
+caseId: certmanager-private-key-rotation
+facts:
+  - id: certificate-private-key-rotation-policy
+    observationRef: preserve-certificate-private-key-rotation-policy
+    requirement: PRIVATE_KEY_ROTATION_POLICY
+    values:
+      certificate: managed X.509 certificate
+      rotationPolicy: Always on re-issuance

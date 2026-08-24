@@ -1,0 +1,10 @@
+kind: FlowCertificateLifecycleFalsification
+version: '1.0'
+caseId: certmanager-issuer-ownership
+facts:
+  - id: certificate-issuer-ownership
+    observationRef: preserve-issuer-ownership
+    requirement: ISSUER_OWNERSHIP
+    values:
+      certificate: managed X.509 certificate
+      issuer: referenced issuer
