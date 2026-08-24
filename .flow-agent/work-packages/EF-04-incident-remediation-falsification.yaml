@@ -40,6 +40,21 @@ implementationEvidence:
       - "StackStorm failure-conditioned human escalation is not preserved as typed control-flow meaning by current NOTIFY semantics"
   rule: "This boundary validates the admitted external corpus, production evaluator through the public intent validation path, initial mixed falsification baseline, lifecycle-aware monotonic verifier and regression tests without changing Core semantics."
 
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3022
+  runId: 32716628274
+  exactHead: "33cf806bbf999dee721c90a30678aeaac240c9ca"
+  mergeCandidate: "567f798bdceb33d850d44dc2943666b73f569f7d"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  purpose: "Independently validate the implementation-evidence-bearing EF-04 state before completion evidence is admitted."
+
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
@@ -95,7 +110,8 @@ completionEvidence:
   - "Standalone conformance enforces EF-04 evidence integrity without converting known gaps into representability claims."
   - "Flow CI #3020 passed the distinct activation-only boundary before any EF-04 external case was admitted."
   - "Flow CI #3021 passed the distinct implementation boundary on exact head 0737241f7ff705f20153023f13d407c4fba7dad1 and synthetic merge candidate 7df27a07bc43dc6203aba0b6531db68a28cbc32e."
-  - "A later distinct validation and completion boundary must pass before EF-04 lifecycle closure is recorded."
+  - "Flow CI #3022 passed the distinct validation boundary on exact head 33cf806bbf999dee721c90a30678aeaac240c9ca and synthetic merge candidate 567f798bdceb33d850d44dc2943666b73f569f7d."
+  - "A later distinct completion boundary must pass before EF-04 lifecycle closure is recorded."
 
 localValidation:
   status: validating
@@ -113,4 +129,11 @@ localValidation:
     conclusion: success
     exactHead: success
     mergeCandidate: success
-  rule: "EF-04 is validating only after both the pre-evidence activation boundary and the fully integrated implementation boundary passed independently."
+  validationBoundary:
+    commit: "33cf806bbf999dee721c90a30678aeaac240c9ca"
+    workflowRun: 32716628274
+    runNumber: 3022
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  rule: "EF-04 has passed an independent validation boundary and now requires a later distinct completion boundary before status complete is recorded."
