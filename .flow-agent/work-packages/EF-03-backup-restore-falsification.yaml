@@ -1,0 +1,60 @@
+version: "EF-03"
+name: "Backup and Restore Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: active
+stream: "post-toolchain"
+
+objective: "Pressure the current Flow backup and restore semantics with immutable external evidence for ordinary recovery-point capture, restore from an identified recovery point, selective restore and restore-time namespace remapping without promoting product syntax into Core meaning."
+
+authorization:
+  status: active
+  predecessor: "EF-02"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-03"
+  mainAtActivation: "582fcc3c3aa5ec001d98a2549bf1b7ee2d4786c2"
+  rule: "EF-03 may classify representability gaps exposed by backup and restore evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable license evidence."
+    - "Prefer source artifacts whose authored backup/restore behavior is directly observable without implementation folklore."
+    - "Cover ordinary capture and named-point restore as positive controls, then selective restore and source-to-destination remapping as materially different semantic pressure."
+  plannedSources:
+    - repository: "restic/restic"
+      revision: "a80be1478a4c537f8396e0db2b05120aa78f11e0"
+      path: "doc/010_introduction.rst"
+      license: "BSD-2-Clause"
+      role: "ordinary backup of a protected subject and restore from an explicit snapshot into a destination"
+    - repository: "velero-io/velero"
+      revision: "d9c25173f7f9256e3d8f770064e6de8d43736c21"
+      path: "pkg/cmd/cli/restore/create.go"
+      license: "Apache-2.0"
+      role: "restore from a named backup with explicit namespace selection and source-to-destination namespace mapping"
+
+requiredOutcomes:
+  - "Previously admitted EF-02 evidence remains intact while EF-03 appends independently proven backup/restore cases."
+  - "Ordinary backup capture is evaluated against typed STATE_RECOVERY / RECOVERY_POINT_CAPTURE semantics, including protected subject and authored destination where present."
+  - "Restore from an identified snapshot or backup is evaluated against typed STATE_RESTORE semantics without conflating source recovery-point identity with restore target identity."
+  - "Selective restore scope is evaluated independently and may remain a model gap when RESTORE cannot semantically preserve authored inclusion criteria."
+  - "Restore-time source-to-destination namespace remapping is evaluated independently and may remain a model gap when RESTORE cannot preserve the mapping relation."
+  - "Every gap remains explicit evidence; EF-03 does not add Core semantics merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values."
+  - "Do not change CanonicalIntentEffectAuthority mappings in EF-03."
+  - "Do not encode selective restore or namespace mapping inside subject or recoveryPoint strings and call that semantic preservation."
+  - "Do not infer universal semantics from restic or Velero flag spelling."
+  - "Do not promote adapter or executable support from corpus representability."
+  - "Do not modify closed C0.1, C1.0, EF-01 or EF-02 evidence boundaries."
+
+completionEvidence:
+  - "Immutable external source bytes and SHA-256 provenance load through the EF-01 contract."
+  - "A production EF-03 evaluator classifies each required semantic fact from current Core contracts and effects."
+  - "Positive and negative tests prove representable controls and falsifying restore-shape outcomes."
+  - "A committed baseline preserves the initial EF-03 result and becomes monotonic after closure."
+  - "Standalone conformance enforces EF-03 evidence integrity without converting known gaps into representability claims."
+  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
+  - "A later distinct validation and completion boundary closes EF-03 before EF-04 activation."
+
+localValidation:
+  status: pending-activation
+  rule: "No EF-03 external case is admitted until a distinct activation-only Flow CI boundary passes."
