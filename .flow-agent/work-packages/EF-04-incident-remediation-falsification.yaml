@@ -1,17 +1,44 @@
 version: "EF-04"
 name: "Incident Remediation Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: active
+status: validating
 stream: "post-toolchain"
 
 objective: "Pressure the current Flow incident-remediation semantics with immutable external evidence for incident context, targeted runbook execution, post-remediation verification, operator confirmation and failure-conditioned human escalation without promoting product syntax into Core meaning."
 
 authorization:
-  status: active
+  status: validating
   predecessor: "EF-03"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-04"
   mainAtActivation: "0f757d0ad48bddb6674815d335a4d900a2255ca2"
   rule: "EF-04 may classify representability gaps exposed by incident-remediation evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3021
+  runId: 32715452623
+  exactHead: "0737241f7ff705f20153023f13d407c4fba7dad1"
+  mergeCandidate: "7df27a07bc43dc6203aba0b6531db68a28cbc32e"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 6
+    modelGapFacts: 1
+    representable:
+      - "Braintree targeted nginx remediation"
+      - "Braintree post-remediation nginx verification"
+      - "Braintree explicit operator traffic confirmation"
+      - "StackStorm hardware-failure incident context"
+      - "StackStorm targeted compute-node remediation"
+      - "StackStorm potential-downtime notification"
+    modelGaps:
+      - "StackStorm failure-conditioned human escalation is not preserved as typed control-flow meaning by current NOTIFY semantics"
+  rule: "This boundary validates the admitted external corpus, production evaluator through the public intent validation path, initial mixed falsification baseline, lifecycle-aware monotonic verifier and regression tests without changing Core semantics."
 
 sourceSelection:
   criteria:
@@ -67,20 +94,23 @@ completionEvidence:
   - "A committed baseline preserves the initial EF-04 result and becomes monotonic after closure."
   - "Standalone conformance enforces EF-04 evidence integrity without converting known gaps into representability claims."
   - "Flow CI #3020 passed the distinct activation-only boundary before any EF-04 external case was admitted."
-  - "Exact-head and synthetic merge-candidate Flow CI must pass on a later distinct implementation boundary."
-  - "A still later distinct validation and completion boundary must close EF-04 before EF-05 activation."
+  - "Flow CI #3021 passed the distinct implementation boundary on exact head 0737241f7ff705f20153023f13d407c4fba7dad1 and synthetic merge candidate 7df27a07bc43dc6203aba0b6531db68a28cbc32e."
+  - "A later distinct validation and completion boundary must pass before EF-04 lifecycle closure is recorded."
 
 localValidation:
-  status: activation-passed
+  status: validating
   activationBoundary:
     commit: "fb0deb5a264073ebcdd21af59c376dc959ed6d0e"
     workflowRun: 32714011231
     runNumber: 3020
     conclusion: success
-    exactHead:
-      commit: "fb0deb5a264073ebcdd21af59c376dc959ed6d0e"
-      conclusion: success
-    mergeCandidate:
-      commit: "bf003a6d5dde04b2a3f1c9d15390910af347dcac"
-      conclusion: success
-  rule: "EF-04 external evidence may be admitted only after the recorded activation-only boundary; semantic repair remains forbidden in this work item."
+    exactHead: success
+    mergeCandidate: success
+  implementationBoundary:
+    commit: "0737241f7ff705f20153023f13d407c4fba7dad1"
+    workflowRun: 32715452623
+    runNumber: 3021
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  rule: "EF-04 is validating only after both the pre-evidence activation boundary and the fully integrated implementation boundary passed independently."
