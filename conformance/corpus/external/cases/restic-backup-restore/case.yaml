@@ -1,0 +1,47 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: restic-backup-and-restore
+domain: backup-and-restore
+provenance:
+  repository: restic/restic
+  revision: 'a80be1478a4c537f8396e0db2b05120aa78f11e0'
+  path: doc/010_introduction.rst
+  license:
+    spdx: BSD-2-Clause
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.rst
+  sha256: '971e80f9e53491b2a62b9ef5307919d2b0760a7327005ca048e5ed37b477cc8d'
+authoredBehaviors:
+  - id: capture-worktree
+    statement: The authored workflow captures ~/work into a recovery snapshot.
+    evidence:
+      - startLine: 1
+        endLine: 5
+  - id: restore-snapshot-to-target
+    statement: The authored workflow restores an identified snapshot into /tmp/restore-work.
+    evidence:
+      - startLine: 13
+        endLine: 17
+expectedSemanticObservations:
+  - id: preserve-backup-capture
+    expectation: PRESERVE
+    statement: Flow must preserve that backup captures protected state as a recovery point.
+    behaviorRefs:
+      - capture-worktree
+    rationale: Recovery-point capture is target-neutral backup intent; the restic command spelling is not.
+  - id: preserve-restore-source-and-target
+    expectation: PRESERVE
+    statement: Flow must preserve the authored recovery-point identity and restore target as separate semantics.
+    behaviorRefs:
+      - restore-snapshot-to-target
+    rationale: The source recovery point and protected-state destination are distinct recovery roles.
+unsupportedFacts:
+  - id: restic-cli-spelling
+    statement: The backup, restore and --target tokens are restic CLI syntax.
+    evidence:
+      - startLine: 5
+        endLine: 5
+      - startLine: 17
+        endLine: 17
+    reason: Product command and flag spelling cannot become universal Flow vocabulary.

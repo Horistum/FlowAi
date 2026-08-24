@@ -18,7 +18,7 @@ sourceSelection:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
     - "Prefer source artifacts whose authored backup/restore behavior is directly observable without implementation folklore."
     - "Cover ordinary capture and named-point restore as positive controls, then selective restore and source-to-destination remapping as materially different semantic pressure."
-  plannedSources:
+  admittedSources:
     - repository: "restic/restic"
       revision: "a80be1478a4c537f8396e0db2b05120aa78f11e0"
       path: "doc/010_introduction.rst"
@@ -28,20 +28,30 @@ sourceSelection:
       revision: "d9c25173f7f9256e3d8f770064e6de8d43736c21"
       path: "pkg/cmd/cli/restore/create.go"
       license: "Apache-2.0"
-      role: "restore from a named backup with explicit namespace selection and source-to-destination namespace mapping"
+      role: "restore from a named backup with explicit selection and source-to-destination identity mapping"
+
+initialFalsification:
+  expectedShape:
+    representable:
+      - "BACKUP_RECOVERY_POINT_CAPTURE"
+      - "RESTORE_FROM_RECOVERY_POINT"
+    modelGaps:
+      - "RESTORE_WITH_SELECTION"
+      - "RESTORE_WITH_IDENTITY_MAPPING"
+  rule: "The committed baseline records the live evaluator result; these expectations do not override production semantics."
 
 requiredOutcomes:
   - "Previously admitted EF-02 evidence remains intact while EF-03 appends independently proven backup/restore cases."
-  - "Ordinary backup capture is evaluated against typed STATE_RECOVERY / RECOVERY_POINT_CAPTURE semantics, including protected subject and authored destination where present."
+  - "Ordinary backup capture is evaluated against typed STATE_RECOVERY / RECOVERY_POINT_CAPTURE semantics."
   - "Restore from an identified snapshot or backup is evaluated against typed STATE_RESTORE semantics without conflating source recovery-point identity with restore target identity."
-  - "Selective restore scope is evaluated independently and may remain a model gap when RESTORE cannot semantically preserve authored inclusion criteria."
-  - "Restore-time source-to-destination namespace remapping is evaluated independently and may remain a model gap when RESTORE cannot preserve the mapping relation."
+  - "Selective restore scope is evaluated independently and remains a model gap unless Core preserves it as typed semantic meaning."
+  - "Restore-time source-to-destination identity remapping is evaluated independently and remains a model gap unless Core preserves the relation."
   - "Every gap remains explicit evidence; EF-03 does not add Core semantics merely to make the corpus representable."
 
 forbiddenScope:
   - "Do not add or rename StandardCapability values."
   - "Do not change CanonicalIntentEffectAuthority mappings in EF-03."
-  - "Do not encode selective restore or namespace mapping inside subject or recoveryPoint strings and call that semantic preservation."
+  - "Do not encode selective restore or identity mapping inside subject or recoveryPoint strings and call that semantic preservation."
   - "Do not infer universal semantics from restic or Velero flag spelling."
   - "Do not promote adapter or executable support from corpus representability."
   - "Do not modify closed C0.1, C1.0, EF-01 or EF-02 evidence boundaries."
@@ -56,5 +66,12 @@ completionEvidence:
   - "A later distinct validation and completion boundary closes EF-03 before EF-04 activation."
 
 localValidation:
-  status: pending-activation
-  rule: "No EF-03 external case is admitted until a distinct activation-only Flow CI boundary passes."
+  status: implementation
+  activationBoundary:
+    commit: "17a4792df99118650b9542421b9134afce952866"
+    workflowRun: 32696042196
+    runNumber: 3011
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  rule: "External EF-03 evidence is admitted only after the distinct activation boundary passed."

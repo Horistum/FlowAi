@@ -1,0 +1,56 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: velero-selective-remapped-restore
+domain: backup-and-restore
+provenance:
+  repository: velero-io/velero
+  revision: 'd9c25173f7f9256e3d8f770064e6de8d43736c21'
+  path: pkg/cmd/cli/restore/create.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '08753d603b411b0f700074a7c88e2ff217ad59d8373bbec84261e7948b305ce3'
+authoredBehaviors:
+  - id: restore-from-named-backup
+    statement: The restore workflow accepts an explicit backup identity as its source.
+    evidence:
+      - startLine: 44
+        endLine: 46
+  - id: select-restore-namespaces
+    statement: The restore workflow carries an explicit namespace inclusion selection.
+    evidence:
+      - startLine: 47
+        endLine: 48
+  - id: remap-restore-namespace
+    statement: The restore workflow carries an explicit source-to-destination namespace mapping.
+    evidence:
+      - startLine: 49
+        endLine: 49
+expectedSemanticObservations:
+  - id: preserve-named-backup-source
+    expectation: PRESERVE
+    statement: Flow must preserve the explicit backup identity as the recovery source.
+    behaviorRefs:
+      - restore-from-named-backup
+    rationale: Recovery-source identity is target-neutral even though the from-backup flag is product syntax.
+  - id: preserve-selective-restore
+    expectation: PRESERVE
+    statement: Flow must preserve that only an authored subset of protected state is selected for restore.
+    behaviorRefs:
+      - select-restore-namespaces
+    rationale: Selective recovery changes what state is restored and therefore cannot be discarded as rendering detail.
+  - id: preserve-identity-remapping
+    expectation: PRESERVE
+    statement: Flow must preserve the authored source-to-destination identity mapping applied during restore.
+    behaviorRefs:
+      - remap-restore-namespace
+    rationale: A recovery remapping relation changes the destination identity and cannot be collapsed into a generic subject string.
+unsupportedFacts:
+  - id: kubernetes-namespace-vocabulary
+    statement: The concrete namespace resource vocabulary is Kubernetes-specific.
+    evidence:
+      - startLine: 47
+        endLine: 49
+    reason: EF-03 preserves selection and remapping meaning without promoting Kubernetes namespace syntax into Core.

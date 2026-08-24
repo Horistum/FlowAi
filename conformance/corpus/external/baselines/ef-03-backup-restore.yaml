@@ -1,0 +1,28 @@
+kind: FlowBackupRestoreFalsificationBaseline
+version: '1.0'
+facts:
+  - caseId: restic-backup-and-restore
+    factId: backup-capture
+    observationRef: preserve-backup-capture
+    requirement: BACKUP_RECOVERY_POINT_CAPTURE
+    initialOutcome: REPRESENTABLE
+  - caseId: restic-backup-and-restore
+    factId: restore-from-recovery-point
+    observationRef: preserve-restore-source-and-target
+    requirement: RESTORE_FROM_RECOVERY_POINT
+    initialOutcome: REPRESENTABLE
+  - caseId: velero-selective-remapped-restore
+    factId: named-backup-source
+    observationRef: preserve-named-backup-source
+    requirement: RESTORE_FROM_RECOVERY_POINT
+    initialOutcome: REPRESENTABLE
+  - caseId: velero-selective-remapped-restore
+    factId: selective-restore
+    observationRef: preserve-selective-restore
+    requirement: RESTORE_WITH_SELECTION
+    initialOutcome: MODEL_GAP
+  - caseId: velero-selective-remapped-restore
+    factId: identity-remapping
+    observationRef: preserve-identity-remapping
+    requirement: RESTORE_WITH_IDENTITY_MAPPING
+    initialOutcome: MODEL_GAP
