@@ -1,0 +1,22 @@
+kind: FlowBackupRestoreFalsification
+version: '1.0'
+caseId: velero-selective-remapped-restore
+facts:
+  - id: named-backup-source
+    observationRef: preserve-named-backup-source
+    requirement: RESTORE_FROM_RECOVERY_POINT
+    values:
+      recoveryPoint: backup-1
+  - id: selective-restore
+    observationRef: preserve-selective-restore
+    requirement: RESTORE_WITH_SELECTION
+    values:
+      recoveryPoint: backup-1
+      selection: namespace=team-a
+  - id: identity-remapping
+    observationRef: preserve-identity-remapping
+    requirement: RESTORE_WITH_IDENTITY_MAPPING
+    values:
+      recoveryPoint: backup-1
+      sourceIdentity: team-a
+      targetIdentity: team-b

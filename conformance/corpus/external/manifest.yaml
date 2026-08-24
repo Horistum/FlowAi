@@ -4,6 +4,8 @@ status: EVIDENCE_ACTIVE
 casePackages:
   - cases/dbmate-schema-migration
   - cases/cloudnative-pg-pitr
+  - cases/restic-backup-restore
+  - cases/velero-selective-remap-restore
 invariants:
   - Every admitted case preserves immutable upstream repository, revision, path and license provenance.
   - Captured source bytes are SHA-256 bound before any semantic evaluation is admitted.

@@ -1,0 +1,168 @@
+version: "EF-03"
+name: "Backup and Restore Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: complete
+stream: "post-toolchain"
+
+objective: "Pressure the current Flow backup and restore semantics with immutable external evidence for ordinary recovery-point capture, restore from an identified recovery point, selective restore and restore-time namespace remapping without promoting product syntax into Core meaning."
+
+authorization:
+  status: completed
+  predecessor: "EF-02"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-03"
+  mainAtActivation: "582fcc3c3aa5ec001d98a2549bf1b7ee2d4786c2"
+  rule: "EF-03 may classify representability gaps exposed by backup and restore evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3014
+  runId: 32697517299
+  exactHead: "c6c84b55146223758085f5b162b7efbae55d05ff"
+  mergeCandidate: "9cf8d043e5d2e2df32ca201e68ebc41690d310ae"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 2
+    representable:
+      - "restic backup recovery-point capture"
+      - "restic restore from an identified snapshot into an authored target"
+      - "Velero restore from a named backup"
+    modelGaps:
+      - "Velero selective restore scope is not preserved by current RESTORE semantics"
+      - "Velero source-to-destination identity remapping is not preserved by current RESTORE semantics"
+  rule: "This boundary validates the admitted external corpus, strict production evaluator through the public intent validation path, initial mixed falsification baseline, lifecycle-aware monotonic verifier and regression tests without changing Core semantics."
+
+validationAttempts:
+  - runNumber: 3015
+    runId: 32699326067
+    exactHead: "5c2221e4496f6459716c49bd3aaa739ec1eb636e"
+    mergeCandidate: "d2f69f5e108a2c6a7964a2f49b29ba3daadd4a07"
+    conclusion: failure
+    cause: "The lifecycle test fixture rewrote only a literal top-level 'status: active'; after the legitimate transition to validating, complete-state simulations remained validating and the baseline verifier correctly rejected gap improvement."
+    remediation: "Make the fixture replace exactly one supported top-level EF-03 lifecycle status independent of its starting state; production evaluator and verifier semantics remain unchanged."
+
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3016
+  runId: 32699911599
+  exactHead: "47262db4be85a18589a8a7a9926b92e61ba284d1"
+  mergeCandidate: "2cec598ca6358c79bffc84efde7270e5d42fe1d5"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  purpose: "Independently validate the implementation-evidence-bearing EF-03 state after lifecycle-fixture remediation before completion evidence is admitted."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3017
+  runId: 32700491783
+  exactHead: "7fa492a25809d8c486909643c5ba483d584a56bb"
+  mergeCandidate: "082b49691dd995b6a69e8de767905f7d450d7313"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 2
+  rule: "This boundary is later than the implementation and validation boundaries and validates the evidence-bearing EF-03 state before lifecycle closure is recorded."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable license evidence."
+    - "Prefer source artifacts whose authored backup/restore behavior is directly observable without implementation folklore."
+    - "Cover ordinary capture and named-point restore as positive controls, then selective restore and source-to-destination remapping as materially different semantic pressure."
+  admittedSources:
+    - repository: "restic/restic"
+      revision: "a80be1478a4c537f8396e0db2b05120aa78f11e0"
+      path: "doc/010_introduction.rst"
+      license: "BSD-2-Clause"
+      role: "ordinary backup of a protected subject and restore from an explicit snapshot into a destination"
+    - repository: "velero-io/velero"
+      revision: "d9c25173f7f9256e3d8f770064e6de8d43736c21"
+      path: "pkg/cmd/cli/restore/create.go"
+      license: "Apache-2.0"
+      role: "restore from a named backup with explicit selection and source-to-destination identity mapping"
+
+initialFalsification:
+  expectedShape:
+    representable:
+      - "BACKUP_RECOVERY_POINT_CAPTURE"
+      - "RESTORE_FROM_RECOVERY_POINT"
+    modelGaps:
+      - "RESTORE_WITH_SELECTION"
+      - "RESTORE_WITH_IDENTITY_MAPPING"
+  rule: "The committed baseline records the live evaluator result; these expectations do not override production semantics."
+
+requiredOutcomes:
+  - "Previously admitted EF-02 evidence remains intact while EF-03 appends independently proven backup/restore cases."
+  - "Ordinary backup capture is evaluated against typed STATE_RECOVERY / RECOVERY_POINT_CAPTURE semantics."
+  - "Restore from an identified snapshot or backup is evaluated against typed STATE_RESTORE semantics without conflating source recovery-point identity with restore target identity."
+  - "Selective restore scope is evaluated independently and remains a model gap unless Core preserves it as typed semantic meaning."
+  - "Restore-time source-to-destination identity remapping is evaluated independently and remains a model gap unless Core preserves the relation."
+  - "Every gap remains explicit evidence; EF-03 does not add Core semantics merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values."
+  - "Do not change CanonicalIntentEffectAuthority mappings in EF-03."
+  - "Do not encode selective restore or identity mapping inside subject or recoveryPoint strings and call that semantic preservation."
+  - "Do not infer universal semantics from restic or Velero flag spelling."
+  - "Do not promote adapter or executable support from corpus representability."
+  - "Do not modify closed C0.1, C1.0, EF-01 or EF-02 evidence boundaries."
+
+completionEvidence:
+  - "Immutable external source bytes and SHA-256 provenance load through the EF-01 contract."
+  - "A production EF-03 evaluator classifies each required semantic fact from current Core contracts and effects through the public intent validation path."
+  - "Positive and negative tests prove representable controls and falsifying restore-shape outcomes."
+  - "A committed baseline preserves the initial EF-03 result and becomes monotonic after closure."
+  - "Standalone conformance enforces EF-03 evidence integrity without converting known gaps into representability claims."
+  - "Flow CI #3014 passed the distinct implementation boundary on exact head c6c84b55146223758085f5b162b7efbae55d05ff and synthetic merge candidate 9cf8d043e5d2e2df32ca201e68ebc41690d310ae."
+  - "Validation attempt #3015 failed only the lifecycle test fixture after entering validating; the failed evidence is retained and the verifier was not weakened."
+  - "Flow CI #3016 passed the corrected distinct validation boundary on exact head 47262db4be85a18589a8a7a9926b92e61ba284d1 and synthetic merge candidate 2cec598ca6358c79bffc84efde7270e5d42fe1d5."
+  - "Flow CI #3017 passed the distinct completion boundary on exact head 7fa492a25809d8c486909643c5ba483d584a56bb and synthetic merge candidate 082b49691dd995b6a69e8de767905f7d450d7313."
+  - "EF-04 remains unactivated and requires its own distinct transition before incident-remediation evidence is admitted."
+
+localValidation:
+  status: passed
+  activationBoundary:
+    commit: "17a4792df99118650b9542421b9134afce952866"
+    workflowRun: 32696042196
+    runNumber: 3011
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  implementationBoundary:
+    commit: "c6c84b55146223758085f5b162b7efbae55d05ff"
+    workflowRun: 32697517299
+    runNumber: 3014
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  validationBoundary:
+    commit: "47262db4be85a18589a8a7a9926b92e61ba284d1"
+    workflowRun: 32699911599
+    runNumber: 3016
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  completionBoundary:
+    commit: "7fa492a25809d8c486909643c5ba483d584a56bb"
+    workflowRun: 32700491783
+    runNumber: 3017
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  rule: "EF-03 is complete with three representable facts and two explicit semantic model gaps preserved as evidence. EF-04 remains unactivated and semantic repair requires a separately authorized later item."

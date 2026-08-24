@@ -18,9 +18,9 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
  * remain independently inventoried, C0.4 profile evidence follows, C1.0
  * operational-domain adequacy is appended as a separate post-architecture corpus.
  * EF-01 external-corpus validation runs after closed historical corpus evidence,
- * followed by active External Falsification domain checks and orthogonal toolchain
- * lifecycle checks. Later conformance cannot rewrite earlier authorities or treat
- * implementation output as Core meaning.
+ * followed by independently baselined External Falsification domain checks and
+ * orthogonal toolchain lifecycle checks. Later conformance cannot rewrite earlier
+ * authorities or treat implementation output as Core meaning.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
@@ -40,27 +40,18 @@ class ConformanceRunner(
         val realWorldChecks = RealWorldCorpusConformanceChecks(rootDir, registry, targets, projections).checks()
         val topologyMatrixChecks = AbstractTopologyMatrixConformanceRunner(rootDir, registry, targets).checks()
         val semanticEquivalenceChecks = SemanticEquivalenceConformanceRunner(rootDir, registry).checks()
-        val adapterProfileEvidenceChecks = AdapterProfileEvidenceConformanceRunner(
-            rootDir,
-            registry,
-            targets,
-            projections
-        ).checks()
-        val operationalDomainAdequacyChecks = OperationalDomainAdequacyConformanceRunner(
-            rootDir,
-            registry,
-            targets,
-            projections
-        ).checks()
+        val adapterProfileEvidenceChecks = AdapterProfileEvidenceConformanceRunner(rootDir, registry, targets, projections).checks()
+        val operationalDomainAdequacyChecks = OperationalDomainAdequacyConformanceRunner(rootDir, registry, targets, projections).checks()
         val externalCorpusFoundationChecks = ExternalCorpusFoundationConformanceRunner(rootDir).checks()
         val databaseMigrationRecoveryChecks = DatabaseMigrationRecoveryConformanceRunner(rootDir).checks()
+        val backupRestoreChecks = BackupRestoreConformanceRunner(rootDir).checks()
         val toolchainModernizationChecks = ToolchainModernizationConformanceRunner(rootDir).checks()
 
         return ConformanceSummary(
             preClosureChecks + closureChecks + adapterChecks + adapterEvolutionChecks +
                 realWorldChecks + topologyMatrixChecks + semanticEquivalenceChecks + adapterProfileEvidenceChecks +
                 operationalDomainAdequacyChecks + externalCorpusFoundationChecks + databaseMigrationRecoveryChecks +
-                toolchainModernizationChecks
+                backupRestoreChecks + toolchainModernizationChecks
         )
     }
 
