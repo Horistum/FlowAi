@@ -1,0 +1,62 @@
+version: "EF-04"
+name: "Incident Remediation Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: active
+stream: "post-toolchain"
+
+objective: "Pressure the current Flow incident-remediation semantics with immutable external evidence for incident context, targeted runbook execution, post-remediation verification, operator confirmation and failure-conditioned human escalation without promoting product syntax into Core meaning."
+
+authorization:
+  status: active
+  predecessor: "EF-03"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-04"
+  mainAtActivation: "0f757d0ad48bddb6674815d335a4d900a2255ca2"
+  rule: "EF-04 may classify representability gaps exposed by incident-remediation evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable license evidence."
+    - "Prefer source artifacts whose incident-remediation behavior is directly observable as ordered action, verification or escalation rather than inferred from marketing vocabulary."
+    - "Cover a concrete runbook repair with verification and operator confirmation, then an event-driven auto-remediation flow whose failure path deliberately hands control to a human."
+  plannedSources:
+    - repository: "braintree/runbook"
+      revision: "24464721765899fb5db9967c5f926739202fc81c"
+      path: "README.md"
+      license: "MIT"
+      role: "restart a failed service, assert resulting state, confirm traffic recovery and require an operator-facing follow-up notice"
+    - repository: "StackStorm/st2"
+      revision: "8c57959f3a23cafc55312e28c5beb7b2dab045a3"
+      path: "README.md"
+      license: "Apache-2.0"
+      role: "event-driven automated remediation with explicit verification, notification and human escalation when remediation cannot safely continue"
+
+requiredOutcomes:
+  - "Previously admitted EF-02 and EF-03 evidence remains intact while EF-04 appends independently proven incident-remediation cases."
+  - "Incident context is evaluated through the public intent validation path without treating monitoring-product vocabulary as universal semantics."
+  - "A targeted operational runbook is evaluated as remediation intent while preserving the authored service/subject independently from implementation command spelling."
+  - "Post-remediation verification criteria are evaluated independently from the remediation action and remain explicit evidence if current VERIFY semantics cannot preserve the authored criterion."
+  - "Operator confirmation or approval remains semantically distinct from notification."
+  - "Failure-conditioned human escalation is evaluated as control-flow meaning, not reduced to an unconditional notification side effect."
+  - "Every gap remains explicit evidence; EF-04 does not add Core semantics merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values."
+  - "Do not change CanonicalIntentEffectAuthority mappings in EF-04."
+  - "Do not encode remediation branch conditions, verification criteria or escalation conditions inside description strings and call that semantic preservation."
+  - "Do not infer universal semantics from shell commands, StackStorm action names, monitoring products or PagerDuty-specific vocabulary."
+  - "Do not treat NOTIFY as equivalent to APPROVE or human ownership transfer."
+  - "Do not promote adapter or executable support from corpus representability."
+  - "Do not modify closed C0.1, C1.0, EF-01, EF-02 or EF-03 evidence boundaries."
+
+completionEvidence:
+  - "Immutable external source bytes and SHA-256 provenance load through the EF-01 contract."
+  - "A production EF-04 evaluator classifies each required semantic fact from current Core contracts and canonical meaning through the public intent validation path."
+  - "Positive and negative tests prove representable controls and falsifying remediation/control-flow outcomes."
+  - "A committed baseline preserves the initial EF-04 result and becomes monotonic after closure."
+  - "Standalone conformance enforces EF-04 evidence integrity without converting known gaps into representability claims."
+  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
+  - "A later distinct validation and completion boundary closes EF-04 before EF-05 activation."
+
+localValidation:
+  status: pending-activation
+  rule: "No EF-04 external case is admitted until a distinct activation-only Flow CI boundary passes."
