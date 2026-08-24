@@ -1,13 +1,13 @@
 version: "EF-03"
 name: "Backup and Restore Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: validating
+status: complete
 stream: "post-toolchain"
 
 objective: "Pressure the current Flow backup and restore semantics with immutable external evidence for ordinary recovery-point capture, restore from an identified recovery point, selective restore and restore-time namespace remapping without promoting product syntax into Core meaning."
 
 authorization:
-  status: validating
+  status: completed
   predecessor: "EF-02"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-03"
   mainAtActivation: "582fcc3c3aa5ec001d98a2549bf1b7ee2d4786c2"
@@ -62,6 +62,24 @@ validationBoundary:
     standaloneConformance: passed
   purpose: "Independently validate the implementation-evidence-bearing EF-03 state after lifecycle-fixture remediation before completion evidence is admitted."
 
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3017
+  runId: 32700491783
+  exactHead: "7fa492a25809d8c486909643c5ba483d584a56bb"
+  mergeCandidate: "082b49691dd995b6a69e8de767905f7d450d7313"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 2
+  rule: "This boundary is later than the implementation and validation boundaries and validates the evidence-bearing EF-03 state before lifecycle closure is recorded."
+
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
@@ -114,10 +132,11 @@ completionEvidence:
   - "Flow CI #3014 passed the distinct implementation boundary on exact head c6c84b55146223758085f5b162b7efbae55d05ff and synthetic merge candidate 9cf8d043e5d2e2df32ca201e68ebc41690d310ae."
   - "Validation attempt #3015 failed only the lifecycle test fixture after entering validating; the failed evidence is retained and the verifier was not weakened."
   - "Flow CI #3016 passed the corrected distinct validation boundary on exact head 47262db4be85a18589a8a7a9926b92e61ba284d1 and synthetic merge candidate 2cec598ca6358c79bffc84efde7270e5d42fe1d5."
-  - "A later distinct completion boundary must pass before EF-03 lifecycle closure is recorded."
+  - "Flow CI #3017 passed the distinct completion boundary on exact head 7fa492a25809d8c486909643c5ba483d584a56bb and synthetic merge candidate 082b49691dd995b6a69e8de767905f7d450d7313."
+  - "EF-04 remains unactivated and requires its own distinct transition before incident-remediation evidence is admitted."
 
 localValidation:
-  status: validating
+  status: passed
   activationBoundary:
     commit: "17a4792df99118650b9542421b9134afce952866"
     workflowRun: 32696042196
@@ -139,4 +158,11 @@ localValidation:
     conclusion: success
     exactHead: success
     mergeCandidate: success
-  rule: "EF-03 has passed an independent validation boundary and now requires a later distinct completion boundary before status complete is recorded."
+  completionBoundary:
+    commit: "7fa492a25809d8c486909643c5ba483d584a56bb"
+    workflowRun: 32700491783
+    runNumber: 3017
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  rule: "EF-03 is complete with three representable facts and two explicit semantic model gaps preserved as evidence. EF-04 remains unactivated and semantic repair requires a separately authorized later item."
