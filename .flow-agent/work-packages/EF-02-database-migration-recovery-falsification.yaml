@@ -1,13 +1,13 @@
 version: "EF-02"
 name: "Database Migration and Recovery Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: validating
+status: complete
 stream: "post-toolchain"
 
 objective: "Pressure the current Flow semantic model with immutable external evidence for database schema migration, reverse migration and point-in-time recovery without promoting implementation syntax into Core meaning."
 
 authorization:
-  status: active
+  status: completed
   predecessor: "EF-01"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-02"
   mainAtActivation: "c4228ce412dcee4ae9e6a605086177ccaf5e6813"
@@ -54,6 +54,24 @@ validationBoundary:
   mergeCandidate: "047470d102ed4eae3cac02e1f9840046ed5e5116"
   purpose: "Validate the implementation-evidence-bearing EF-02 lifecycle state independently from the implementation boundary before lifecycle completion is recorded."
 
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3008
+  runId: 32694008565
+  exactHead: "284f3c5bf5e2f03e85b8eb5164ca3bffc04172a9"
+  mergeCandidate: "a45497fe8051844b902ff791c287fa1078599510"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 2
+    modelGapFacts: 2
+  rule: "This boundary is later than the implementation and validation boundaries and validates the evidence-bearing EF-02 state before lifecycle closure is recorded."
+
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable license evidence."
@@ -92,16 +110,18 @@ completionEvidence:
   - "A production EF-02 evaluator classifies each required semantic fact from current Core contracts."
   - "Positive and negative tests prove both representable and falsifying outcomes."
   - "A committed baseline records initial gaps without requiring those gaps to remain forever."
-  - "While EF-02 is open, the baseline must exactly equal live evaluation; after closure, historical MODEL_GAP facts may improve but REPRESENTABLE facts may not regress."
+  - "After EF-02 closure, historical MODEL_GAP facts may improve but REPRESENTABLE facts may not regress."
   - "Standalone conformance enforces evidence integrity and lifecycle-aware monotonic non-regression."
   - "Flow CI #3006 passed the distinct implementation boundary on exact head 121ecc61492190d16896684ab3ac0d8f202bb710 and synthetic merge candidate 23dc1cf2e94b54950759d6cf05f5dd3debc437d6."
   - "Flow CI #3007 passed the later validation boundary on exact head dafb8a80e5598e086ee58c650e3a2806f76d732c and synthetic merge candidate 047470d102ed4eae3cac02e1f9840046ed5e5116."
-  - "A later distinct completion boundary must close EF-02 before EF-03 activation."
+  - "Flow CI #3008 passed the distinct completion boundary on exact head 284f3c5bf5e2f03e85b8eb5164ca3bffc04172a9 and synthetic merge candidate a45497fe8051844b902ff791c287fa1078599510."
+  - "EF-03 remains unactivated and requires its own distinct transition."
 
 localValidation:
-  status: validation-passed-awaiting-completion
+  status: passed
   evidence:
     - "Flow CI #3001 passed the activation-only exact head and synthetic merge candidate before any external EF-02 case was admitted."
     - "Flow CI #3006 passed exact-head test and standalone conformance on 121ecc61492190d16896684ab3ac0d8f202bb710 and synthetic merge candidate 23dc1cf2e94b54950759d6cf05f5dd3debc437d6 after corpus admission, baseline hardening and AR0.1 caller review."
     - "Flow CI #3007 independently passed the implementation-evidence-bearing state on exact head dafb8a80e5598e086ee58c650e3a2806f76d732c and synthetic merge candidate 047470d102ed4eae3cac02e1f9840046ed5e5116."
-  rule: "EF-02 has passed its independent validation boundary. Lifecycle completion still requires a later distinct Flow CI boundary; semantic repair remains forbidden in this work item."
+    - "Flow CI #3008 passed the later completion boundary on exact head 284f3c5bf5e2f03e85b8eb5164ca3bffc04172a9 and synthetic merge candidate a45497fe8051844b902ff791c287fa1078599510."
+  rule: "EF-02 is complete with two representable facts and two explicit semantic model gaps preserved as evidence. EF-03 remains unactivated and semantic repair requires a separately authorized later item."
