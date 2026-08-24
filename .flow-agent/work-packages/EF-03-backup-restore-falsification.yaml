@@ -1,17 +1,42 @@
 version: "EF-03"
 name: "Backup and Restore Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: active
+status: validating
 stream: "post-toolchain"
 
 objective: "Pressure the current Flow backup and restore semantics with immutable external evidence for ordinary recovery-point capture, restore from an identified recovery point, selective restore and restore-time namespace remapping without promoting product syntax into Core meaning."
 
 authorization:
-  status: active
+  status: validating
   predecessor: "EF-02"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-03"
   mainAtActivation: "582fcc3c3aa5ec001d98a2549bf1b7ee2d4786c2"
   rule: "EF-03 may classify representability gaps exposed by backup and restore evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3014
+  runId: 32697517299
+  exactHead: "c6c84b55146223758085f5b162b7efbae55d05ff"
+  mergeCandidate: "9cf8d043e5d2e2df32ca201e68ebc41690d310ae"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 2
+    representable:
+      - "restic backup recovery-point capture"
+      - "restic restore from an identified snapshot into an authored target"
+      - "Velero restore from a named backup"
+    modelGaps:
+      - "Velero selective restore scope is not preserved by current RESTORE semantics"
+      - "Velero source-to-destination identity remapping is not preserved by current RESTORE semantics"
+  rule: "This boundary validates the admitted external corpus, strict production evaluator through the public intent validation path, initial mixed falsification baseline, lifecycle-aware monotonic verifier and regression tests without changing Core semantics."
 
 sourceSelection:
   criteria:
@@ -58,15 +83,15 @@ forbiddenScope:
 
 completionEvidence:
   - "Immutable external source bytes and SHA-256 provenance load through the EF-01 contract."
-  - "A production EF-03 evaluator classifies each required semantic fact from current Core contracts and effects."
+  - "A production EF-03 evaluator classifies each required semantic fact from current Core contracts and effects through the public intent validation path."
   - "Positive and negative tests prove representable controls and falsifying restore-shape outcomes."
   - "A committed baseline preserves the initial EF-03 result and becomes monotonic after closure."
   - "Standalone conformance enforces EF-03 evidence integrity without converting known gaps into representability claims."
-  - "Exact-head and synthetic merge-candidate Flow CI pass on a distinct implementation boundary."
+  - "Flow CI #3014 passed the distinct implementation boundary on exact head c6c84b55146223758085f5b162b7efbae55d05ff and synthetic merge candidate 9cf8d043e5d2e2df32ca201e68ebc41690d310ae."
   - "A later distinct validation and completion boundary closes EF-03 before EF-04 activation."
 
 localValidation:
-  status: implementation
+  status: validating
   activationBoundary:
     commit: "17a4792df99118650b9542421b9134afce952866"
     workflowRun: 32696042196
@@ -74,4 +99,11 @@ localValidation:
     conclusion: success
     exactHead: success
     mergeCandidate: success
-  rule: "External EF-03 evidence is admitted only after the distinct activation boundary passed."
+  implementationBoundary:
+    commit: "c6c84b55146223758085f5b162b7efbae55d05ff"
+    workflowRun: 32697517299
+    runNumber: 3014
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  rule: "EF-03 is validating only after both the pre-evidence activation boundary and the fully integrated implementation boundary passed independently."
