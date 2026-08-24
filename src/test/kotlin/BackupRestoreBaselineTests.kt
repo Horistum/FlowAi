@@ -4,7 +4,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.flowlang.conformance.BackupRestoreBaselineVerifier
+import org.flowlang.conformance.BackupRestoreConformanceRunner
+import org.flowlang.conformance.BackupRestoreFalsification
 import org.flowlang.conformance.ExternalCorpusLoader
+import org.flowlang.conformance.ExternalFalsificationOutcome
 
 class BackupRestoreBaselineTests {
     @Test
@@ -45,7 +48,58 @@ class BackupRestoreBaselineTests {
         assertTrue(result.errors.any { it.contains("unbaselined facts") })
     }
 
-    private fun copiedEf03Root(): File {
+    @Test
+    fun completedBaselineAllowsHistoricalModelGapToBecomeRepresentable() {
+        val root = copiedEf03Root(status = "complete")
+        val report = BackupRestoreFalsification(root).evaluate()
+        val improved = report.copy(
+            findings = report.findings.map { finding ->
+                if (finding.outcome == ExternalFalsificationOutcome.MODEL_GAP) {
+                    finding.copy(outcome = ExternalFalsificationOutcome.REPRESENTABLE)
+                } else {
+                    finding
+                }
+            }
+        )
+
+        val result = BackupRestoreBaselineVerifier(root).verify(improved)
+        assertEquals("PASS", result.status, result.errors.joinToString(" | "))
+    }
+
+    @Test
+    fun completedBaselineRejectsRegressionOfHistoricallyRepresentableFact() {
+        val root = copiedEf03Root(status = "complete")
+        val report = BackupRestoreFalsification(root).evaluate()
+        val regressed = report.copy(
+            findings = report.findings.map { finding ->
+                if (finding.caseId == "restic-backup-and-restore" && finding.factId == "backup-capture") {
+                    finding.copy(outcome = ExternalFalsificationOutcome.MODEL_GAP)
+                } else {
+                    finding
+                }
+            }
+        )
+
+        val result = BackupRestoreBaselineVerifier(root).verify(regressed)
+        assertEquals("FAIL", result.status)
+        assertTrue(result.errors.any { it.contains("representability regression") })
+    }
+
+    @Test
+    fun standaloneEf03ConformanceRunsEvaluationAndBaselineChecks() {
+        val checks = BackupRestoreConformanceRunner(File(".")).checks()
+
+        assertEquals(
+            setOf(
+                BackupRestoreConformanceRunner.EVALUATION_CHECK,
+                BackupRestoreConformanceRunner.BASELINE_CHECK
+            ),
+            checks.map { it.name }.toSet()
+        )
+        assertTrue(checks.all { it.passed }, checks.filterNot { it.passed }.joinToString { "${it.name}: ${it.message}" })
+    }
+
+    private fun copiedEf03Root(status: String = "active"): File {
         val root = Files.createTempDirectory("flow-ef03-baseline-").toFile()
         val corpusSource = File(ExternalCorpusLoader.CORPUS_ROOT)
         val corpusTarget = File(root, ExternalCorpusLoader.CORPUS_ROOT)
@@ -55,6 +109,11 @@ class BackupRestoreBaselineTests {
         val workPackageTarget = File(root, BackupRestoreBaselineVerifier.WORK_PACKAGE_PATH)
         workPackageTarget.parentFile.mkdirs()
         workPackageSource.copyTo(workPackageTarget, overwrite = true)
+        if (status != "active") {
+            workPackageTarget.writeText(
+                workPackageTarget.readText().replaceFirst("status: active", "status: $status")
+            )
+        }
         return root
     }
 }
