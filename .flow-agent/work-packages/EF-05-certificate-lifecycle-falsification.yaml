@@ -1,17 +1,44 @@
 version: "EF-05"
 name: "Certificate Lifecycle Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: active
+status: validating
 stream: "post-toolchain"
 
 objective: "Pressure the current Flow certificate semantics with immutable external evidence for named renewal, renewal timing, certificate identity, issuer identity, private-key rotation policy and revocation without turning cert-manager, Certbot, ACME or Kubernetes vocabulary into universal Core meaning."
 
 authorization:
-  status: active
+  status: validating
   predecessor: "EF-04"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-05"
   mainAtActivation: "381bf67be366166be72b732f994b4263d7bf54fc"
   rule: "EF-05 may classify representability gaps exposed by certificate-lifecycle evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3027
+  runId: 32728132782
+  exactHead: "e4c70c834c545e971ad1d637bfe52710b8f06bd3"
+  mergeCandidate: "15dc73d01efe98ab3d9f003d577ab287776fa040"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 4
+    modelGapFacts: 3
+    representable:
+      - "Named certificate renewal"
+      - "Authored renewal window"
+      - "Certificate secret/material target"
+      - "Certificate issuer ownership"
+    modelGaps:
+      - "Certificate subject identities are not preserved by current CERTIFICATE_RENEW semantics"
+      - "Certificate-specific private-key regeneration policy is not preserved by current CERTIFICATE_RENEW or SECRET_ROTATE semantics"
+      - "Certificate revocation with an authored reason is not represented distinctly from deletion/deprovisioning"
+  rule: "This boundary validates the admitted external corpus, production evaluator through the public intent validation path, mixed falsification baseline, lifecycle-aware monotonic verifier and regression tests without changing Core semantics."
 
 sourceSelection:
   criteria:
@@ -70,11 +97,11 @@ completionEvidence:
   - "A committed baseline preserves the initial EF-05 result and becomes monotonic after closure."
   - "Standalone conformance enforces EF-05 evidence integrity without converting known gaps into representability claims."
   - "Flow CI #3026 passed the distinct activation-only boundary before any EF-05 external case was admitted."
-  - "Exact-head and synthetic merge-candidate Flow CI must pass on a later distinct implementation boundary."
-  - "A still later distinct validation and completion boundary must close EF-05 before EF-06 activation."
+  - "Flow CI #3027 passed the distinct implementation boundary on exact head e4c70c834c545e971ad1d637bfe52710b8f06bd3 and synthetic merge candidate 15dc73d01efe98ab3d9f003d577ab287776fa040."
+  - "A later distinct validation and completion boundary must close EF-05 before EF-06 activation."
 
 localValidation:
-  status: activation-passed
+  status: implementation-passed
   activationBoundary:
     commit: "82c855be090f5cb6ee0781ef5698e206ee287f2d"
     workflowRun: 32726739354
@@ -86,4 +113,15 @@ localValidation:
     mergeCandidate:
       commit: "8bd93c4b48b5d002bf7442ba6e8ae800cc477ab3"
       conclusion: success
-  rule: "EF-05 external evidence may be admitted only after the recorded activation-only boundary; semantic repair remains forbidden in this work item."
+  implementationBoundary:
+    commit: "e4c70c834c545e971ad1d637bfe52710b8f06bd3"
+    workflowRun: 32728132782
+    runNumber: 3027
+    conclusion: success
+    exactHead:
+      commit: "e4c70c834c545e971ad1d637bfe52710b8f06bd3"
+      conclusion: success
+    mergeCandidate:
+      commit: "15dc73d01efe98ab3d9f003d577ab287776fa040"
+      conclusion: success
+  rule: "EF-05 implementation evidence is independently green with four representable facts and three explicit model gaps; validation now runs on the evidence-bearing lifecycle state."
