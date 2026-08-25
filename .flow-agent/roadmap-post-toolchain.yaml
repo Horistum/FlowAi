@@ -7,8 +7,8 @@ currentDecision:
   completedItemName: "Certificate Lifecycle Falsification"
   nextItem: "EF-06"
   nextItemName: "Secret Rotation Falsification"
-  workPackage: ""
-  decisionBasis: "EF-05 completed certificate-lifecycle falsification with distinct activation, implementation, validation and completion CI evidence. Four current semantic shapes are representable and three remain explicit model gaps: certificate subject identities, certificate-specific private-key regeneration policy and authority-level revocation with reason. EF-06 is now the next planned post-toolchain item, but remains unactivated and requires its own transition before secret-rotation evidence is admitted."
+  workPackage: ".flow-agent/work-packages/EF-06-secret-rotation-falsification.yaml"
+  decisionBasis: "EF-05 is merged. EF-06 is independently activated to pressure current secret-rotation semantics with immutable external evidence before any semantic repair is authorized."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -67,7 +67,8 @@ sequence:
   - id: "EF-06"
     name: "Secret Rotation Falsification"
     order: 7
-    status: next
+    status: active
+    workPackage: ".flow-agent/work-packages/EF-06-secret-rotation-falsification.yaml"
   - id: "EF-07"
     name: "Data Orchestration Falsification"
     order: 8
