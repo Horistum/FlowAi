@@ -1,0 +1,10 @@
+kind: FlowSecretRotationFalsification
+version: '1.0'
+caseId: openbao-root-secret-retirement
+facts:
+  - id: immediate-prior-credential-retirement
+    observationRef: preserve-immediate-prior-credential-retirement
+    requirement: PRIOR_CREDENTIAL_RETIREMENT_POLICY
+    values:
+      subject: database-root-credential
+      policy: invalidate-immediately

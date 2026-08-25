@@ -1,0 +1,10 @@
+kind: FlowSecretRotationFalsification
+version: '1.0'
+caseId: aws-secret-prior-version
+facts:
+  - id: retained-prior-credential
+    observationRef: preserve-prior-credential-retention
+    requirement: PRIOR_CREDENTIAL_RETIREMENT_POLICY
+    values:
+      subject: payments-api-token
+      policy: retain-previous

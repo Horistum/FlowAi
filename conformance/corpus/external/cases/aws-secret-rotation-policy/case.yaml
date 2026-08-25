@@ -1,0 +1,28 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: aws-secret-rotation-policy
+domain: secret-rotation
+provenance:
+  repository: aws/aws-sdk-go-v2
+  revision: 'c08b7424466a0fefab24ecabfa17effed4f8a885'
+  path: service/secretsmanager/api_op_CancelRotateSecret.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE.txt at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '54dd89ae761755c5470777bbbf04c2cbaf6626e4a93bdcff5a23c17599e6167c'
+authoredBehaviors:
+  - id: disable-and-reenable-automatic-rotation
+    statement: Automatic rotation can be turned off independently and later enabled again.
+    evidence:
+      - startLine: 1
+        endLine: 3
+expectedSemanticObservations:
+  - id: preserve-automatic-rotation-state
+    expectation: PRESERVE
+    statement: Flow must preserve persistent automatic-rotation enablement state separately from performing one rotation action.
+    behaviorRefs:
+      - disable-and-reenable-automatic-rotation
+    rationale: Turning future automation on or off changes lifecycle policy state rather than merely executing SECRET_ROTATE once.
+unsupportedFacts: []

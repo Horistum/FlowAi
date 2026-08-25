@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: aws-secret-prior-version
+domain: secret-rotation
+provenance:
+  repository: aws/aws-sdk-go-v2
+  revision: 'c08b7424466a0fefab24ecabfa17effed4f8a885'
+  path: service/secretsmanager/api_op_DescribeSecret.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE.txt at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: 'db2de7cb238e33adb44541094a84a10e3ae77c080a03f10d9c49585847666ce1'
+authoredBehaviors:
+  - id: retain-previous-version
+    statement: The prior current secret version can remain available as a last-known-good version after rotation.
+    evidence:
+      - startLine: 1
+        endLine: 2
+expectedSemanticObservations:
+  - id: preserve-prior-credential-retention
+    expectation: PRESERVE
+    statement: Flow must preserve whether a previous credential remains intentionally usable rather than assuming rotation always invalidates it immediately.
+    behaviorRefs:
+      - retain-previous-version
+    rationale: Credential overlap and immediate invalidation have materially different rollback and exposure consequences.
+unsupportedFacts:
+  - id: aws-stage-label-vocabulary
+    statement: AWS names the retained version with a provider-specific staging label.
+    evidence:
+      - startLine: 1
+        endLine: 2
+    reason: The provider label itself is implementation vocabulary; only the lifecycle obligation is evaluated.

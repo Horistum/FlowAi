@@ -1,0 +1,28 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: aws-secret-rotation-window
+domain: secret-rotation
+provenance:
+  repository: aws/aws-sdk-go-v2
+  revision: 'c08b7424466a0fefab24ecabfa17effed4f8a885'
+  path: service/secretsmanager/types/types.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE.txt at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '25a1183f65beb6a144bca8e803e3592bbd0833ff437ffe2708fbae49d2c28ddf'
+authoredBehaviors:
+  - id: bounded-rotation-window
+    statement: Rotation can be constrained to an authored three-hour execution window.
+    evidence:
+      - startLine: 1
+        endLine: 2
+expectedSemanticObservations:
+  - id: preserve-bounded-rotation-window
+    expectation: PRESERVE
+    statement: Flow must preserve the bounded execution window independently from cadence, retry timeout or provider scheduling syntax.
+    behaviorRefs:
+      - bounded-rotation-window
+    rationale: A duration in which rotation may occur is a different obligation from how often rotation is requested.
+unsupportedFacts: []

@@ -1,0 +1,10 @@
+kind: FlowSecretRotationFalsification
+version: '1.0'
+caseId: aws-secret-rotation-window
+facts:
+  - id: bounded-rotation-window
+    observationRef: preserve-bounded-rotation-window
+    requirement: ROTATION_WINDOW
+    values:
+      subject: payments-api-token
+      window: PT3H

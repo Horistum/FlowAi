@@ -1,0 +1,45 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: aws-secret-rotation-request
+domain: secret-rotation
+provenance:
+  repository: aws/aws-sdk-go-v2
+  revision: 'c08b7424466a0fefab24ecabfa17effed4f8a885'
+  path: service/secretsmanager/api_op_RotateSecret.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE.txt at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '94295ae8250f6c3b6697347b71da6d6338934b85d277c5334614337a89e14212'
+authoredBehaviors:
+  - id: rotate-named-secret
+    statement: Rotation targets a specifically identified secret.
+    evidence:
+      - startLine: 1
+        endLine: 1
+  - id: immediate-or-next-window
+    statement: Rotation execution distinguishes immediate rotation from waiting until the next scheduled rotation window.
+    evidence:
+      - startLine: 2
+        endLine: 3
+expectedSemanticObservations:
+  - id: preserve-named-secret-rotation
+    expectation: PRESERVE
+    statement: Flow must preserve which secret is rotated independently from provider-specific identifiers.
+    behaviorRefs:
+      - rotate-named-secret
+    rationale: Secret identity is target-neutral lifecycle meaning already required by SECRET_ROTATE.
+  - id: preserve-immediate-vs-scheduled-execution
+    expectation: PRESERVE
+    statement: Flow must preserve the authored distinction between immediate execution and deferral to the next configured rotation window.
+    behaviorRefs:
+      - immediate-or-next-window
+    rationale: Invocation-time deferral is not equivalent to merely scheduling the entire workflow for later execution.
+unsupportedFacts:
+  - id: aws-secret-identifier-shape
+    statement: AWS accepts an ARN or name as SecretId.
+    evidence:
+      - startLine: 1
+        endLine: 1
+    reason: ARN syntax is provider identity syntax and must not become universal Core vocabulary.
