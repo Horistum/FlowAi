@@ -1,0 +1,38 @@
+kind: FlowCertificateLifecycleFalsificationBaseline
+version: '1.0'
+facts:
+  - caseId: certmanager-renewal-window
+    factId: authored-renewal-window
+    observationRef: preserve-renewal-window
+    requirement: RENEWAL_WINDOW
+    initialOutcome: REPRESENTABLE
+  - caseId: certmanager-certificate-identity
+    factId: certificate-subject-identities
+    observationRef: preserve-certificate-subject-identities
+    requirement: CERTIFICATE_SUBJECT_IDENTITIES
+    initialOutcome: MODEL_GAP
+  - caseId: certmanager-certificate-identity
+    factId: certificate-secret-target
+    observationRef: preserve-certificate-secret-target
+    requirement: CERTIFICATE_SECRET_TARGET
+    initialOutcome: REPRESENTABLE
+  - caseId: certmanager-issuer-ownership
+    factId: certificate-issuer-ownership
+    observationRef: preserve-issuer-ownership
+    requirement: ISSUER_OWNERSHIP
+    initialOutcome: REPRESENTABLE
+  - caseId: certmanager-private-key-rotation
+    factId: certificate-private-key-rotation-policy
+    observationRef: preserve-certificate-private-key-rotation-policy
+    requirement: PRIVATE_KEY_ROTATION_POLICY
+    initialOutcome: MODEL_GAP
+  - caseId: certbot-renew-revoke
+    factId: named-certificate-renewal
+    observationRef: preserve-named-certificate-renewal
+    requirement: NAMED_CERTIFICATE_RENEWAL
+    initialOutcome: REPRESENTABLE
+  - caseId: certbot-renew-revoke
+    factId: certificate-revocation-keycompromise
+    observationRef: preserve-certificate-revocation-with-reason
+    requirement: CERTIFICATE_REVOCATION_WITH_REASON
+    initialOutcome: MODEL_GAP

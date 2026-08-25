@@ -1,0 +1,45 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: certmanager-certificate-identity
+domain: certificate-lifecycle
+provenance:
+  repository: cert-manager/cert-manager
+  revision: '2d0d7f7f74241a9cbf79f0e2a7bb247238ee09fd'
+  path: pkg/apis/certmanager/v1/types_certificate.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '59a9a89151e7a7a8fbac93a8e6230efdc00a9d0635e39f5f69e9260f1f649486'
+authoredBehaviors:
+  - id: preserve-certificate-identities
+    statement: The certificate specification carries requested DNS, IP, URI, other-name and email identities.
+    evidence:
+      - startLine: 3
+        endLine: 30
+  - id: store-certificate-in-target-secret
+    statement: The managed certificate and private key are written to a named target Secret.
+    evidence:
+      - startLine: 32
+        endLine: 36
+expectedSemanticObservations:
+  - id: preserve-certificate-subject-identities
+    expectation: PRESERVE
+    statement: Flow must preserve the identities covered by the managed certificate rather than reducing them to an opaque certificate label.
+    behaviorRefs:
+      - preserve-certificate-identities
+    rationale: Subject identities determine what the certificate authenticates and remain meaningful across certificate-management products.
+  - id: preserve-certificate-secret-target
+    expectation: PRESERVE
+    statement: Flow must preserve the authored storage target for the renewed certificate material without making Kubernetes Secret a universal capability.
+    behaviorRefs:
+      - store-certificate-in-target-secret
+    rationale: The destination holding renewed certificate material is lifecycle meaning; the concrete resource type remains authored data.
+unsupportedFacts:
+  - id: san-encoding-details
+    statement: The source exposes multiple product API fields for X.509 SAN variants and other-name OIDs.
+    evidence:
+      - startLine: 3
+        endLine: 30
+    reason: EF-05 evaluates preservation of certificate identities as a semantic set, not cert-manager field names or OID encoding as Core vocabulary.

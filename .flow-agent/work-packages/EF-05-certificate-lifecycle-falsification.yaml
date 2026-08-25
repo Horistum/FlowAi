@@ -1,0 +1,168 @@
+version: "EF-05"
+name: "Certificate Lifecycle Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: complete
+stream: "post-toolchain"
+
+objective: "Pressure the current Flow certificate semantics with immutable external evidence for named renewal, renewal timing, certificate identity, issuer identity, private-key rotation policy and revocation without turning cert-manager, Certbot, ACME or Kubernetes vocabulary into universal Core meaning."
+
+authorization:
+  status: completed
+  predecessor: "EF-04"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-05"
+  mainAtActivation: "381bf67be366166be72b732f994b4263d7bf54fc"
+  rule: "EF-05 may classify representability gaps exposed by certificate-lifecycle evidence. It must not repair Core semantics, add StandardCapability values, weaken validation or promote target support in the same work item."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3027
+  runId: 32728132782
+  exactHead: "e4c70c834c545e971ad1d637bfe52710b8f06bd3"
+  mergeCandidate: "15dc73d01efe98ab3d9f003d577ab287776fa040"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 4
+    modelGapFacts: 3
+    representable:
+      - "Named certificate renewal"
+      - "Authored renewal window"
+      - "Certificate secret/material target"
+      - "Certificate issuer ownership"
+    modelGaps:
+      - "Certificate subject identities are not preserved by current CERTIFICATE_RENEW semantics"
+      - "Certificate-specific private-key regeneration policy is not preserved by current CERTIFICATE_RENEW or SECRET_ROTATE semantics"
+      - "Certificate revocation with an authored reason is not represented distinctly from deletion/deprovisioning"
+  rule: "This boundary validates the admitted external corpus, production evaluator through the public intent validation path, mixed falsification baseline, lifecycle-aware monotonic verifier and regression tests without changing Core semantics."
+
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3028
+  runId: 32731010894
+  exactHead: "b8bc0dd390c53877d45cb44c16602221ec7ba7da"
+  mergeCandidate: "617b802f78ae21e44b17f517d261fadf7db0b85d"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  purpose: "Independently validate the implementation-evidence-bearing EF-05 state before completion evidence is admitted."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3029
+  runId: 32731869799
+  exactHead: "e78e877e5610851e9b1ea9696256b88a1c5890aa"
+  mergeCandidate: "eee7705488d649b4d1393ddd1bd51809715a1c58"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 4
+    modelGapFacts: 3
+  rule: "This boundary is later than the implementation and validation boundaries and validates the evidence-bearing EF-05 state before lifecycle closure is recorded."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable license evidence."
+    - "Prefer source artifacts that expose certificate lifecycle meaning directly: identity, renewal timing, issuer ownership, private-key behavior and revocation."
+    - "Use at least two independent repositories so one product's API shape cannot become the semantic standard by accident."
+  admittedSources:
+    - repository: "cert-manager/cert-manager"
+      revision: "2d0d7f7f74241a9cbf79f0e2a7bb247238ee09fd"
+      path: "pkg/apis/certmanager/v1/types_certificate.go"
+      license: "Apache-2.0"
+      role: "certificate subject identities, renewal threshold, target secret, issuer reference and private-key rotation policy"
+    - repository: "certbot/certbot"
+      revision: "abf9d1b2e143c51fe1a2209a3b8be33e6a24267f"
+      path: "certbot/docs/using.rst"
+      license: "Apache-2.0"
+      role: "named renewal and revocation with an explicit reason"
+
+initialFalsification:
+  expectedShape:
+    representable:
+      - "NAMED_CERTIFICATE_RENEWAL"
+      - "RENEWAL_WINDOW"
+      - "CERTIFICATE_SECRET_TARGET"
+      - "ISSUER_OWNERSHIP"
+    modelGaps:
+      - "CERTIFICATE_SUBJECT_IDENTITIES"
+      - "PRIVATE_KEY_ROTATION_POLICY"
+      - "CERTIFICATE_REVOCATION_WITH_REASON"
+  rule: "The committed baseline records the live evaluator result; these expectations do not override production semantics."
+
+requiredOutcomes:
+  - "Previously admitted EF-02 through EF-04 evidence remains intact while EF-05 appends independently proven certificate-lifecycle cases."
+  - "Existing CERTIFICATE_RENEW is tested through the public intent validation path before any expansion of certificate semantics is considered."
+  - "Named certificate renewal and authored renewal timing are evaluated independently from provider-specific execution syntax."
+  - "Certificate subject identities are not reduced to an opaque certificate label when external evidence requires preservation of the identities covered by the certificate."
+  - "Issuer identity is evaluated as semantic ownership without assuming cert-manager Issuer or ClusterIssuer objects are universal concepts."
+  - "Private-key regeneration policy is kept distinct from generic secret rotation and is not hidden inside provider or description strings."
+  - "Certificate revocation remains distinct from deleting local certificate material or deprovisioning a generic resource."
+  - "Every gap remains explicit evidence; EF-05 does not add Core semantics merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values."
+  - "Do not change CanonicalIntentEffectAuthority mappings in EF-05."
+  - "Do not add certificate subject, issuer, key-rotation or revocation parameters to current contracts in the falsification item."
+  - "Do not treat Kubernetes Secret, cert-manager Issuer, ACME account keys or Certbot command flags as universal Core vocabulary."
+  - "Do not collapse certificate revocation into local deletion or generic DEPROVISION solely to obtain a representable result."
+  - "Do not collapse private-key rotation into SECRET_ROTATE unless current canonical meaning actually preserves the certificate-specific obligation."
+  - "Do not promote adapter or executable support from corpus representability."
+  - "Do not modify closed C0.1, C1.0, EF-01, EF-02, EF-03 or EF-04 evidence boundaries."
+
+completionEvidence:
+  - "Immutable external source bytes and SHA-256 provenance load through the EF-01 contract."
+  - "A production EF-05 evaluator classifies each required semantic fact from current Core contracts and canonical meaning through the public intent validation path."
+  - "Positive and negative tests prove representable renewal controls and falsifying certificate-lifecycle outcomes."
+  - "A committed baseline preserves the initial EF-05 result and becomes monotonic after closure."
+  - "Standalone conformance enforces EF-05 evidence integrity without converting known gaps into representability claims."
+  - "Flow CI #3026 passed the distinct activation-only boundary before any EF-05 external case was admitted."
+  - "Flow CI #3027 passed the distinct implementation boundary on exact head e4c70c834c545e971ad1d637bfe52710b8f06bd3 and synthetic merge candidate 15dc73d01efe98ab3d9f003d577ab287776fa040."
+  - "Flow CI #3028 passed the distinct validation boundary on exact head b8bc0dd390c53877d45cb44c16602221ec7ba7da and synthetic merge candidate 617b802f78ae21e44b17f517d261fadf7db0b85d."
+  - "Flow CI #3029 passed the distinct completion boundary on exact head e78e877e5610851e9b1ea9696256b88a1c5890aa and synthetic merge candidate eee7705488d649b4d1393ddd1bd51809715a1c58."
+  - "EF-06 remains unactivated and requires its own distinct transition before secret-rotation evidence is admitted."
+
+localValidation:
+  status: passed
+  activationBoundary:
+    commit: "82c855be090f5cb6ee0781ef5698e206ee287f2d"
+    workflowRun: 32726739354
+    runNumber: 3026
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  implementationBoundary:
+    commit: "e4c70c834c545e971ad1d637bfe52710b8f06bd3"
+    workflowRun: 32728132782
+    runNumber: 3027
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  validationBoundary:
+    commit: "b8bc0dd390c53877d45cb44c16602221ec7ba7da"
+    workflowRun: 32731010894
+    runNumber: 3028
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  completionBoundary:
+    commit: "e78e877e5610851e9b1ea9696256b88a1c5890aa"
+    workflowRun: 32731869799
+    runNumber: 3029
+    conclusion: success
+    exactHead: success
+    mergeCandidate: success
+  rule: "EF-05 is complete with four representable facts and three explicit semantic model gaps preserved as evidence. EF-06 remains unactivated and semantic repair requires a separately authorized later item."

@@ -8,6 +8,11 @@ casePackages:
   - cases/velero-selective-remap-restore
   - cases/braintree-nginx-remediation
   - cases/stackstorm-auto-remediation
+  - cases/certmanager-renewal-window
+  - cases/certmanager-certificate-identity
+  - cases/certmanager-issuer-ownership
+  - cases/certmanager-private-key-rotation
+  - cases/certbot-renew-revoke
 invariants:
   - Every admitted case preserves immutable upstream repository, revision, path and license provenance.
   - Captured source bytes are SHA-256 bound before any semantic evaluation is admitted.

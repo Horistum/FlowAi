@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: certmanager-renewal-window
+domain: certificate-lifecycle
+provenance:
+  repository: cert-manager/cert-manager
+  revision: '2d0d7f7f74241a9cbf79f0e2a7bb247238ee09fd'
+  path: pkg/apis/certmanager/v1/types_certificate.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '4d6912f8c7c0be6a8cc47e6152c8aee296c0fb8dce5bce0a166306c8769188c9'
+authoredBehaviors:
+  - id: renew-before-expiry
+    statement: The certificate controller can begin renewal a specified duration before the currently issued certificate expires.
+    evidence:
+      - startLine: 2
+        endLine: 17
+expectedSemanticObservations:
+  - id: preserve-renewal-window
+    expectation: PRESERVE
+    statement: Flow must preserve the authored certificate renewal window independently from controller scheduling syntax.
+    behaviorRefs:
+      - renew-before-expiry
+    rationale: Renewal timing is target-neutral lifecycle meaning and current CERTIFICATE_RENEW already exposes a window parameter that must be tested rather than assumed.
+unsupportedFacts:
+  - id: percentage-threshold-shape
+    statement: The source also supports a percentage-based threshold and implementation-specific minimum/default behavior.
+    evidence:
+      - startLine: 19
+        endLine: 24
+    reason: EF-05 tests the directly authored duration window without promoting one controller's alternate threshold API or defaults into Core.

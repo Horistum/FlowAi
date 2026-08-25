@@ -1,0 +1,16 @@
+kind: FlowCertificateLifecycleFalsification
+version: '1.0'
+caseId: certmanager-certificate-identity
+facts:
+  - id: certificate-subject-identities
+    observationRef: preserve-certificate-subject-identities
+    requirement: CERTIFICATE_SUBJECT_IDENTITIES
+    values:
+      certificate: managed X.509 certificate
+      identities: DNS subject alternative names
+  - id: certificate-secret-target
+    observationRef: preserve-certificate-secret-target
+    requirement: CERTIFICATE_SECRET_TARGET
+    values:
+      certificate: managed X.509 certificate
+      secret: target Secret

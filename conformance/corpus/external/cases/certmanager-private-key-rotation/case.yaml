@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: certmanager-private-key-rotation
+domain: certificate-lifecycle
+provenance:
+  repository: cert-manager/cert-manager
+  revision: '2d0d7f7f74241a9cbf79f0e2a7bb247238ee09fd'
+  path: pkg/apis/certmanager/v1/types_certificate.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '9531eec02d471cfa801210d3208b8af66f463f380bff07b63831389e5b42a70d'
+authoredBehaviors:
+  - id: choose-private-key-regeneration-policy
+    statement: Certificate re-issuance explicitly controls whether the private key is reused or regenerated.
+    evidence:
+      - startLine: 2
+        endLine: 19
+expectedSemanticObservations:
+  - id: preserve-certificate-private-key-rotation-policy
+    expectation: PRESERVE
+    statement: Flow must preserve the certificate-specific private-key regeneration policy as meaning distinct from generic secret rotation.
+    behaviorRefs:
+      - choose-private-key-regeneration-policy
+    rationale: Reusing versus regenerating the key during certificate re-issuance materially changes the security lifecycle of the same certificate.
+unsupportedFacts:
+  - id: certmanager-default-version-history
+    statement: The source documents a product-version-specific default change from Never to Always.
+    evidence:
+      - startLine: 16
+        endLine: 17
+    reason: A controller default and its version history are implementation facts, not universal Flow semantics.
