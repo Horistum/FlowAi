@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: airflow-produced-asset
+domain: data-orchestration
+provenance:
+  repository: apache/airflow
+  revision: 'fa00af4d0444315c6b4cc925191b0db90841e1b1'
+  path: airflow-core/docs/authoring-and-scheduling/asset-scheduling.rst
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.rst
+  sha256: '7c43d5e5b197788136119c6c0de580188c939a88669f6b2da1346e30f04fe739'
+authoredBehaviors:
+  - id: produced-asset-identity
+    statement: An Airflow producer task declares a specific asset as its output.
+    evidence:
+      - startLine: 1
+        endLine: 3
+expectedSemanticObservations:
+  - id: preserve-produced-data-identity
+    expectation: PRESERVE
+    statement: Flow must preserve the identity of data produced by an orchestration step without requiring a storage-provider URI.
+    behaviorRefs:
+      - produced-asset-identity
+    rationale: Produced data identity is target-neutral lineage meaning and Flow already has explicit step outputs.
+unsupportedFacts:
+  - id: airflow-asset-uri
+    statement: The example identifies the asset with an s3 URI.
+    evidence:
+      - startLine: 1
+        endLine: 3
+    reason: The URI scheme and storage product are implementation identity syntax and are not universal orchestration semantics.

@@ -1,0 +1,11 @@
+kind: FlowDataOrchestrationFalsification
+version: '1.0'
+caseId: airflow-asset-trigger-condition
+facts:
+  - id: all-assets-ready-trigger
+    observationRef: preserve-asset-trigger-condition
+    requirement: ASSET_TRIGGER_CONDITION
+    values:
+      assetA: orders-ready
+      assetB: customers-ready
+      condition: all

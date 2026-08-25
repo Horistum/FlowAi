@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: airflow-scheduled-cadence
+domain: data-orchestration
+provenance:
+  repository: apache/airflow
+  revision: 'fa00af4d0444315c6b4cc925191b0db90841e1b1'
+  path: airflow-core/docs/core-concepts/dags.rst
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.rst
+  sha256: '30978a2ace0b5e4f0fab53a196e52360eff54b77d118a25ac78da13456a4e3aa'
+authoredBehaviors:
+  - id: scheduled-dag-cadence
+    statement: Airflow can define a DAG to run on a daily schedule.
+    evidence:
+      - startLine: 1
+        endLine: 2
+expectedSemanticObservations:
+  - id: preserve-scheduled-cadence
+    expectation: PRESERVE
+    statement: Flow must preserve the authored recurring cadence independently from Airflow schedule aliases.
+    behaviorRefs:
+      - scheduled-dag-cadence
+    rationale: Recurring cadence is target-neutral trigger meaning already present in the canonical intent model.
+unsupportedFacts:
+  - id: airflow-schedule-alias
+    statement: Airflow uses the @daily schedule alias in the evidence example.
+    evidence:
+      - startLine: 1
+        endLine: 2
+    reason: The @daily token is Airflow authoring syntax; the reviewed semantic value is normalized to an interval.

@@ -1,0 +1,10 @@
+kind: FlowDataOrchestrationFalsification
+version: '1.0'
+caseId: airflow-produced-asset
+facts:
+  - id: produced-data-identity
+    observationRef: preserve-produced-data-identity
+    requirement: PRODUCED_DATA_IDENTITY
+    values:
+      producer: produce-orders
+      data: orders-ready

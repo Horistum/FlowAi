@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: airflow-conditional-branching
+domain: data-orchestration
+provenance:
+  repository: apache/airflow
+  revision: 'fa00af4d0444315c6b4cc925191b0db90841e1b1'
+  path: airflow-core/docs/core-concepts/dags.rst
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.rst
+  sha256: '66987e3049c25a75e66d55854a25f5052dc527df029b61710365dc232696af6a'
+authoredBehaviors:
+  - id: conditional-path-selection
+    statement: Airflow branching chooses one or more downstream paths while non-selected paths are skipped.
+    evidence:
+      - startLine: 1
+        endLine: 2
+expectedSemanticObservations:
+  - id: preserve-conditional-branching
+    expectation: PRESERVE
+    statement: Flow must preserve the authored condition and mutually selective downstream path semantics.
+    behaviorRefs:
+      - conditional-path-selection
+    rationale: Conditional execution is control-flow meaning, not merely a static dependency edge.
+unsupportedFacts:
+  - id: airflow-branch-decorator
+    statement: Airflow exposes branching through task/decorator-specific APIs.
+    evidence:
+      - startLine: 1
+        endLine: 2
+    reason: Decorator and task-id syntax are engine vocabulary and are not admitted as Core semantics.

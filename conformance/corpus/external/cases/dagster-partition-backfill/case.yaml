@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: dagster-partition-backfill
+domain: data-orchestration
+provenance:
+  repository: dagster-io/dagster
+  revision: '8bba6b4a7ad8b5a1ca20c65fc012ae5aa600934b'
+  path: docs/docs/guides/build/partitions-and-backfills/backfilling-data.md
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: 'da9cb3f129e1769cbc7b83ab9ad0a982cc482dbf3cf7711a11af0f1ae28e0736'
+authoredBehaviors:
+  - id: partition-subset-backfill
+    statement: Dagster backfills can run all partitions or a selected subset of historical partitions.
+    evidence:
+      - startLine: 1
+        endLine: 2
+expectedSemanticObservations:
+  - id: preserve-partition-backfill-selection
+    expectation: PRESERVE
+    statement: Flow must preserve which historical partition subset is requested for reprocessing.
+    behaviorRefs:
+      - partition-subset-backfill
+    rationale: Selecting a different historical subset changes the data obligation and is not equivalent to a generic batch count.
+unsupportedFacts:
+  - id: dagster-partition-api
+    statement: Dagster exposes partition and backfill policy APIs for this behavior.
+    evidence:
+      - startLine: 1
+        endLine: 2
+    reason: Partition-definition and policy class names are engine vocabulary; only historical-subset selection is evaluated.

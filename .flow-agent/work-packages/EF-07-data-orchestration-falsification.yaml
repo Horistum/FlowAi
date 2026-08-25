@@ -12,14 +12,14 @@ authorization:
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-07"
   mainAtDefinition: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
   mainAtActivation: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
-  rule: "EF-07 is independently activated after EF-06 merge. It may classify target-independent data-orchestration gaps, but external evidence may be admitted only after this activation state passes exact-head and synthetic merge-candidate CI, and Core repair remains forbidden in the same work item."
+  rule: "EF-07 may classify target-independent data-orchestration gaps after its activation-only boundary. Core repair, StandardCapability changes and canonical-effect changes remain forbidden in this work item."
 
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable source licenses."
     - "Prefer first-party documentation or source that states orchestration behavior directly rather than examples whose semantics must be guessed from implementation syntax."
     - "Use at least two independent orchestration repositories with materially different task-centric and data-asset-centric models so one engine's graph vocabulary cannot become the standard by accident."
-  plannedSources:
+  admittedSources:
     - repository: "apache/airflow"
       revision: "fa00af4d0444315c6b4cc925191b0db90841e1b1"
       paths:
@@ -47,17 +47,20 @@ initialFalsification:
       - "RUN_DATA_INTERVAL"
       - "PARTITION_BACKFILL_SELECTION"
       - "CONDITIONAL_BRANCHING"
-  rule: "This is a pre-evidence hypothesis only. The committed baseline must record the live evaluator result after activation and may not be rewritten merely to manufacture a preferred shape."
+  expectedCounts:
+    representableFacts: 4
+    modelGapFacts: 4
+  rule: "This is a pre-evidence hypothesis only. The committed baseline records the live evaluator result after activation and may not be rewritten merely to manufacture a preferred shape."
 
 requiredOutcomes:
   - "Task dependency order is evaluated through IntentCapabilityValidator and CanonicalIntentMeaning requires edges, including an alternate graph that proves the dependency is semantically distinguishable."
   - "Scheduled cadence is evaluated through canonical IntentSchedule meaning rather than Airflow schedule spelling."
   - "Produced data identity is evaluated through canonical step outputs without treating URI schemes, table names or storage products as universal orchestration semantics."
-  - "Data-asset dependency is evaluated as a relationship between producer, produced identity and dependent consumer rather than by source-code adjacency or engine graph syntax."
-  - "A data-aware trigger must not be called representable merely because arbitrary trigger params or an opaque event string can echo Airflow/Dagster vocabulary; the authored condition and asset identities must remain structurally distinguishable."
-  - "Run data interval semantics must remain distinct from wall-clock start/end timestamps and from the schedule expression that caused the run."
-  - "Partition or backfill selection must preserve which historical subset is requested; generic rerun, schedule or batch-count parameters are not equivalent."
-  - "Conditional branching must preserve the authored condition and alternative path selection; static requires edges or description strings are not equivalent control-flow meaning."
+  - "Data-asset dependency is evaluated as a bounded single-output relationship between producer identity, produced data and dependent consumer rather than by source-code adjacency or engine graph syntax."
+  - "A data-aware trigger is not called representable merely because arbitrary trigger params or an opaque event string can echo Airflow/Dagster vocabulary; the authored condition and asset identities must be structurally distinguishable and unrelated provider keys must fail validation."
+  - "Run data interval semantics remain distinct from wall-clock start/end timestamps and from the schedule expression that caused the run."
+  - "Partition or backfill selection preserves which historical subset is requested; generic rerun, schedule or batch-count parameters are not equivalent."
+  - "Conditional branching preserves authored path-selection control flow; static requires edges or description strings are not equivalent meaning."
   - "Every real gap remains explicit evidence; EF-07 does not add capabilities, trigger schema, parameters or effects merely to make the corpus representable."
 
 forbiddenScope:
@@ -72,14 +75,25 @@ forbiddenScope:
   - "Do not promote adapter or executable target support from corpus representability."
 
 completionEvidence:
-  - "A distinct activation-only CI boundary passes before any EF-07 external case is admitted."
+  - "Flow CI #3038 passed the distinct activation-only boundary before any EF-07 external case was admitted."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-07 evaluator classifies every reviewed PRESERVE observation through public intent validation and canonical meaning."
   - "Positive and negative tests prove graph/timing/data-identity representability where it exists and reject opaque-string, free-form-param or static-graph fake equivalence."
   - "A committed mixed baseline remains exact while EF-07 is active/validating and becomes monotonic after closure."
   - "Standalone conformance integrates EF-07 without converting known model gaps into success."
-  - "Distinct implementation, validation and completion CI boundaries pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "Distinct implementation, validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
 
 localValidation:
-  status: activation-pending
-  rule: "No EF-07 external evidence may be admitted until this activation-only state passes exact-head and synthetic merge-candidate Flow CI."
+  status: activation-passed
+  activationBoundary:
+    commit: "227ca51ce58826c5096e9213de9349d5495fad80"
+    workflowRun: 32851071311
+    runNumber: 3038
+    conclusion: success
+    exactHead:
+      commit: "227ca51ce58826c5096e9213de9349d5495fad80"
+      conclusion: success
+    mergeCandidate:
+      commit: "87c10f9160ccb72bcfb8d0ded7f07d6b0baec0f1"
+      conclusion: success
+  rule: "EF-07 external evidence is admitted only after the recorded activation-only boundary; implementation CI must independently validate the evidence-bearing evaluator and baseline before lifecycle progression."

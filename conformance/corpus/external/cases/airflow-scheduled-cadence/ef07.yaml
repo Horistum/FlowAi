@@ -1,0 +1,9 @@
+kind: FlowDataOrchestrationFalsification
+version: '1.0'
+caseId: airflow-scheduled-cadence
+facts:
+  - id: daily-orchestration-cadence
+    observationRef: preserve-scheduled-cadence
+    requirement: SCHEDULED_CADENCE
+    values:
+      cadence: P1D

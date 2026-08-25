@@ -1,0 +1,43 @@
+kind: FlowDataOrchestrationFalsificationBaseline
+version: '1.0'
+facts:
+  - caseId: airflow-task-dependency
+    factId: task-dependency-order
+    observationRef: preserve-task-dependency-order
+    requirement: TASK_DEPENDENCY_ORDER
+    initialOutcome: REPRESENTABLE
+  - caseId: airflow-conditional-branching
+    factId: conditional-branching
+    observationRef: preserve-conditional-branching
+    requirement: CONDITIONAL_BRANCHING
+    initialOutcome: MODEL_GAP
+  - caseId: airflow-scheduled-cadence
+    factId: daily-orchestration-cadence
+    observationRef: preserve-scheduled-cadence
+    requirement: SCHEDULED_CADENCE
+    initialOutcome: REPRESENTABLE
+  - caseId: airflow-run-data-interval
+    factId: run-data-interval
+    observationRef: preserve-run-data-interval
+    requirement: RUN_DATA_INTERVAL
+    initialOutcome: MODEL_GAP
+  - caseId: airflow-produced-asset
+    factId: produced-data-identity
+    observationRef: preserve-produced-data-identity
+    requirement: PRODUCED_DATA_IDENTITY
+    initialOutcome: REPRESENTABLE
+  - caseId: airflow-asset-trigger-condition
+    factId: all-assets-ready-trigger
+    observationRef: preserve-asset-trigger-condition
+    requirement: ASSET_TRIGGER_CONDITION
+    initialOutcome: MODEL_GAP
+  - caseId: dagster-asset-dependency
+    factId: data-asset-dependency
+    observationRef: preserve-data-asset-dependency
+    requirement: DATA_ASSET_DEPENDENCY
+    initialOutcome: REPRESENTABLE
+  - caseId: dagster-partition-backfill
+    factId: partition-backfill-selection
+    observationRef: preserve-partition-backfill-selection
+    requirement: PARTITION_BACKFILL_SELECTION
+    initialOutcome: MODEL_GAP

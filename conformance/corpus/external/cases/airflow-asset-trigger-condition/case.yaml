@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: airflow-asset-trigger-condition
+domain: data-orchestration
+provenance:
+  repository: apache/airflow
+  revision: 'fa00af4d0444315c6b4cc925191b0db90841e1b1'
+  path: airflow-core/docs/authoring-and-scheduling/asset-scheduling.rst
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.rst
+  sha256: '6f072494708ae4a66c6a0adaf63ba162ee9a09b70c7997cdc8d4e2e64a0457a9'
+authoredBehaviors:
+  - id: all-assets-trigger
+    statement: Airflow can require all consumed assets to update before scheduling the downstream DAG.
+    evidence:
+      - startLine: 1
+        endLine: 2
+expectedSemanticObservations:
+  - id: preserve-asset-trigger-condition
+    expectation: PRESERVE
+    statement: Flow must preserve the involved data identities and the authored ALL condition as validated trigger semantics.
+    behaviorRefs:
+      - all-assets-trigger
+    rationale: ALL versus ANY data readiness produces materially different execution behavior and must not be an opaque event label.
+unsupportedFacts:
+  - id: airflow-asset-schedule-container
+    statement: Airflow expresses the source condition through its asset scheduling API.
+    evidence:
+      - startLine: 1
+        endLine: 2
+    reason: The schedule container and Asset class are engine API shapes; only identities and logical condition are evaluated.
