@@ -1,0 +1,14 @@
+kind: FlowSecretRotationFalsification
+version: '1.0'
+caseId: aws-secret-rotation-request
+facts:
+  - id: named-secret-rotation
+    observationRef: preserve-named-secret-rotation
+    requirement: NAMED_SECRET_ROTATION
+    values:
+      subject: payments-api-token
+  - id: immediate-vs-scheduled-execution
+    observationRef: preserve-immediate-vs-scheduled-execution
+    requirement: IMMEDIATE_VS_SCHEDULED_ROTATION
+    values:
+      subject: payments-api-token

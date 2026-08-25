@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: openbao-root-secret-retirement
+domain: secret-rotation
+provenance:
+  repository: openbao/openbao
+  revision: '8d648cab5992950080a64e9cb3c3516bd56fc897'
+  path: website/content/docs/api/secret/databases/index.mdx
+  license:
+    spdx: MPL-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.mdx
+  sha256: '5424f98cdb10968fd0fb2cd237b21b313fa6fc5916bcadef9b87f834dddd805d'
+authoredBehaviors:
+  - id: prior-root-password-inaccessible
+    statement: Rotating the managed database credential makes the prior root password inaccessible.
+    evidence:
+      - startLine: 1
+        endLine: 1
+expectedSemanticObservations:
+  - id: preserve-immediate-prior-credential-retirement
+    expectation: PRESERVE
+    statement: Flow must preserve immediate retirement of the prior credential rather than collapsing it with retained-overlap rotation semantics.
+    behaviorRefs:
+      - prior-root-password-inaccessible
+    rationale: The source provides an independent counter-shape to retained previous credentials and demonstrates that retirement policy is meaningful across products.
+unsupportedFacts:
+  - id: database-root-role-shape
+    statement: The source describes a database root credential managed by OpenBao.
+    evidence:
+      - startLine: 1
+        endLine: 1
+    reason: Database root naming is implementation context; EF-06 evaluates only the prior-credential lifecycle obligation.

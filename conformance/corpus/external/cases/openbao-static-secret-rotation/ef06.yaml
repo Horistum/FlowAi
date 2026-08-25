@@ -1,0 +1,10 @@
+kind: FlowSecretRotationFalsification
+version: '1.0'
+caseId: openbao-static-secret-rotation
+facts:
+  - id: one-hour-rotation-cadence
+    observationRef: preserve-rotation-cadence
+    requirement: ROTATION_CADENCE
+    values:
+      subject: database-static-credential
+      cadence: PT1H

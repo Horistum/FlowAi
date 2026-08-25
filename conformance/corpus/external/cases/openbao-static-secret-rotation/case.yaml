@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: openbao-static-secret-rotation
+domain: secret-rotation
+provenance:
+  repository: openbao/openbao
+  revision: '8d648cab5992950080a64e9cb3c3516bd56fc897'
+  path: website/content/docs/api/secret/databases/index.mdx
+  license:
+    spdx: MPL-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.mdx
+  sha256: 'ea533b908de9769754f6b6facabc20fb9d8534f23df7232487a14e3dd41b8bdd'
+authoredBehaviors:
+  - id: static-credential-one-hour-cadence
+    statement: A static database credential can be configured to rotate every hour.
+    evidence:
+      - startLine: 1
+        endLine: 3
+expectedSemanticObservations:
+  - id: preserve-rotation-cadence
+    expectation: PRESERVE
+    statement: Flow must preserve the authored one-hour rotation cadence without importing OpenBao role or database-path syntax.
+    behaviorRefs:
+      - static-credential-one-hour-cadence
+    rationale: Recurring cadence is target-neutral automation timing and canonical intent already preserves interval triggers.
+unsupportedFacts:
+  - id: openbao-static-role-shape
+    statement: The upstream rotation period belongs to an OpenBao static database role.
+    evidence:
+      - startLine: 1
+        endLine: 3
+    reason: Static-role and database mount syntax are provider implementation concepts, not universal secret identity.

@@ -13,6 +13,12 @@ casePackages:
   - cases/certmanager-issuer-ownership
   - cases/certmanager-private-key-rotation
   - cases/certbot-renew-revoke
+  - cases/aws-secret-rotation-request
+  - cases/aws-secret-rotation-window
+  - cases/aws-secret-rotation-policy
+  - cases/aws-secret-prior-version
+  - cases/openbao-static-secret-rotation
+  - cases/openbao-root-secret-retirement
 invariants:
   - Every admitted case preserves immutable upstream repository, revision, path and license provenance.
   - Captured source bytes are SHA-256 bound before any semantic evaluation is admitted.

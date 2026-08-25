@@ -1,0 +1,10 @@
+kind: FlowSecretRotationFalsification
+version: '1.0'
+caseId: aws-secret-rotation-policy
+facts:
+  - id: automatic-rotation-disabled
+    observationRef: preserve-automatic-rotation-state
+    requirement: AUTOMATED_ROTATION_ENABLEMENT
+    values:
+      subject: payments-api-token
+      enabled: 'false'
