@@ -1,0 +1,84 @@
+version: "EF-07"
+name: "Data Orchestration Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: planned
+stream: "post-toolchain"
+
+objective: "Pressure current Flow data-orchestration semantics with immutable external evidence for task dependency order, scheduled cadence, produced data identity, data lineage, asset-aware trigger conditions, run data intervals, partition backfills and conditional branching without turning Airflow Dag, Dagster asset, partition, sensor or operator vocabulary into universal Core meaning."
+
+authorization:
+  status: planned
+  predecessor: "EF-06"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-07"
+  mainAtDefinition: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
+  rule: "This file defines EF-07 only. External evidence may be admitted only after an independent activation commit passes exact-head and synthetic merge-candidate CI. EF-07 may classify target-independent orchestration gaps but must not repair Core semantics in the same work item."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable source licenses."
+    - "Prefer first-party documentation or source that states orchestration behavior directly rather than examples whose semantics must be guessed from implementation syntax."
+    - "Use at least two independent orchestration repositories with materially different task-centric and data-asset-centric models so one engine's graph vocabulary cannot become the standard by accident."
+  plannedSources:
+    - repository: "apache/airflow"
+      revision: "fa00af4d0444315c6b4cc925191b0db90841e1b1"
+      paths:
+        - "airflow-core/docs/core-concepts/dags.rst"
+        - "airflow-core/docs/authoring-and-scheduling/asset-scheduling.rst"
+      license: "Apache-2.0"
+      role: "task dependency order, scheduled runs, run data intervals, branching, produced assets and conditional asset-aware scheduling"
+    - repository: "dagster-io/dagster"
+      revision: "8bba6b4a7ad8b5a1ca20c65fc012ae5aa600934b"
+      paths:
+        - "docs/docs/guides/build/assets/defining-assets-with-asset-dependencies.md"
+        - "docs/docs/guides/build/partitions-and-backfills/backfilling-data.md"
+      license: "Apache-2.0"
+      role: "asset dependency lineage and partition-subset backfill semantics"
+
+initialFalsification:
+  hypothesis:
+    representable:
+      - "TASK_DEPENDENCY_ORDER"
+      - "SCHEDULED_CADENCE"
+      - "PRODUCED_DATA_IDENTITY"
+      - "DATA_ASSET_DEPENDENCY"
+    modelGaps:
+      - "ASSET_TRIGGER_CONDITION"
+      - "RUN_DATA_INTERVAL"
+      - "PARTITION_BACKFILL_SELECTION"
+      - "CONDITIONAL_BRANCHING"
+  rule: "This is a pre-evidence hypothesis only. The committed baseline must record the live evaluator result after activation and may not be rewritten merely to manufacture a preferred shape."
+
+requiredOutcomes:
+  - "Task dependency order is evaluated through IntentCapabilityValidator and CanonicalIntentMeaning requires edges, including an alternate graph that proves the dependency is semantically distinguishable."
+  - "Scheduled cadence is evaluated through canonical IntentSchedule meaning rather than Airflow schedule spelling."
+  - "Produced data identity is evaluated through canonical step outputs without treating URI schemes, table names or storage products as universal orchestration semantics."
+  - "Data-asset dependency is evaluated as a relationship between producer, produced identity and dependent consumer rather than by source-code adjacency or engine graph syntax."
+  - "A data-aware trigger must not be called representable merely because arbitrary trigger params or an opaque event string can echo Airflow/Dagster vocabulary; the authored condition and asset identities must remain structurally distinguishable."
+  - "Run data interval semantics must remain distinct from wall-clock start/end timestamps and from the schedule expression that caused the run."
+  - "Partition or backfill selection must preserve which historical subset is requested; generic rerun, schedule or batch-count parameters are not equivalent."
+  - "Conditional branching must preserve the authored condition and alternative path selection; static requires edges or description strings are not equivalent control-flow meaning."
+  - "Every real gap remains explicit evidence; EF-07 does not add capabilities, trigger schema, parameters or effects merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values in EF-07."
+  - "Do not change CanonicalIntentEffectAuthority mappings in EF-07."
+  - "Do not add partition, backfill, data-interval, branch-condition or asset-condition fields to Core in the falsification item."
+  - "Do not treat Airflow Dag/task/operator names, Dagster AssetKey/PartitionsDefinition, storage URI schemes, sensors or code-location concepts as universal Core vocabulary."
+  - "Do not claim conditional asset scheduling through an opaque EVENT string or unvalidated trigger params if the logical condition is not preserved as canonical meaning."
+  - "Do not collapse branch conditions into static dependency edges or description text."
+  - "Do not equate a backfill partition subset with generic batches, retries or repeated scheduled runs."
+  - "Do not modify closed EF-01 through EF-06 evidence boundaries."
+  - "Do not promote adapter or executable target support from corpus representability."
+
+completionEvidence:
+  - "A distinct activation-only CI boundary passes before any EF-07 external case is admitted."
+  - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
+  - "A production EF-07 evaluator classifies every reviewed PRESERVE observation through public intent validation and canonical meaning."
+  - "Positive and negative tests prove graph/timing/data-identity representability where it exists and reject opaque-string, free-form-param or static-graph fake equivalence."
+  - "A committed mixed baseline remains exact while EF-07 is active/validating and becomes monotonic after closure."
+  - "Standalone conformance integrates EF-07 without converting known model gaps into success."
+  - "Distinct implementation, validation and completion CI boundaries pass on exact heads and synthetic merge candidates before lifecycle closure."
+
+localValidation:
+  status: not-started
+  rule: "The work package is intentionally definition-only. EF-07 remains unactivated until the roadmap transition is committed separately and independently validated."
