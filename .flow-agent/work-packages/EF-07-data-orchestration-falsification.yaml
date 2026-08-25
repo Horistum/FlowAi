@@ -1,17 +1,18 @@
 version: "EF-07"
 name: "Data Orchestration Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: planned
+status: active
 stream: "post-toolchain"
 
 objective: "Pressure current Flow data-orchestration semantics with immutable external evidence for task dependency order, scheduled cadence, produced data identity, data lineage, asset-aware trigger conditions, run data intervals, partition backfills and conditional branching without turning Airflow Dag, Dagster asset, partition, sensor or operator vocabulary into universal Core meaning."
 
 authorization:
-  status: planned
+  status: active
   predecessor: "EF-06"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-07"
   mainAtDefinition: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
-  rule: "This file defines EF-07 only. External evidence may be admitted only after an independent activation commit passes exact-head and synthetic merge-candidate CI. EF-07 may classify target-independent orchestration gaps but must not repair Core semantics in the same work item."
+  mainAtActivation: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
+  rule: "EF-07 is independently activated after EF-06 merge. It may classify target-independent data-orchestration gaps, but external evidence may be admitted only after this activation state passes exact-head and synthetic merge-candidate CI, and Core repair remains forbidden in the same work item."
 
 sourceSelection:
   criteria:
@@ -80,5 +81,5 @@ completionEvidence:
   - "Distinct implementation, validation and completion CI boundaries pass on exact heads and synthetic merge candidates before lifecycle closure."
 
 localValidation:
-  status: not-started
-  rule: "The work package is intentionally definition-only. EF-07 remains unactivated until the roadmap transition is committed separately and independently validated."
+  status: activation-pending
+  rule: "No EF-07 external evidence may be admitted until this activation-only state passes exact-head and synthetic merge-candidate Flow CI."
