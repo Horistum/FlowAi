@@ -1,0 +1,19 @@
+kind: FlowHumanApprovalChangeControlFalsification
+version: '1.0'
+caseId: atlantis-approved-apply-gate
+facts:
+  - id: ordered-approval-gate
+    observationRef: preserve-ordered-approval-gate
+    requirement: ORDERED_APPROVAL_GATE
+    values:
+      subject: infrastructure-apply
+      message: Approve infrastructure apply
+      resource: network-stack
+      target: production
+  - id: author-approver-separation
+    observationRef: preserve-author-approver-separation
+    requirement: SEPARATION_OF_DUTIES
+    values:
+      subject: infrastructure-apply
+      requester: pull-request-author
+      prohibitSelfApproval: 'true'

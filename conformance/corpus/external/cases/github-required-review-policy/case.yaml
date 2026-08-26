@@ -1,0 +1,40 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: github-required-review-policy
+domain: human-approval-change-control
+provenance:
+  repository: github/docs
+  revision: 'be8d08aa6e3a95d7f531c6a00cbeff883e4e9814'
+  path: content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md
+  license:
+    spdx: CC-BY-4.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: '141faa4d8a0dfc2efb12c4a53a696bbdd19a6c6f6530ea5f60caa13690a4368c'
+authoredBehaviors:
+  - id: required-review-policy
+    statement: A protected branch can require approval by the configured number of reviewers with write permissions before changes can be pushed through a pull request.
+    evidence:
+      - startLine: 1
+        endLine: 1
+expectedSemanticObservations:
+  - id: preserve-blocking-approval-requirement
+    expectation: PRESERVE
+    statement: Flow must preserve that the protected change is blocked until an approval requirement is satisfied.
+    behaviorRefs:
+      - required-review-policy
+    rationale: A blocking human-authorization obligation is target-neutral control meaning.
+  - id: preserve-required-review-quorum
+    expectation: PRESERVE
+    statement: Flow must preserve the configured required number of approving reviewers rather than reducing the policy to one generic approval gate.
+    behaviorRefs:
+      - required-review-policy
+    rationale: Approval quorum changes the authorization decision and is independent from GitHub terminology.
+unsupportedFacts:
+  - id: github-protected-branch-permission-model
+    statement: The source describes protected branches, pull requests and repository write permissions.
+    evidence:
+      - startLine: 1
+        endLine: 1
+    reason: EF-09 preserves authorization semantics without promoting GitHub repository roles or branch-protection vocabulary into Core.

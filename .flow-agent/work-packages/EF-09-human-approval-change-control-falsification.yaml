@@ -19,22 +19,22 @@ sourceSelection:
     - "Use immutable public Git revisions with explicit redistributable source licenses."
     - "Prefer first-party documentation that states blocking authorization behavior, reviewer constraints and revision freshness directly rather than inferring semantics from UI labels or implementation names."
     - "Use at least two independent repositories with materially different protected-change and infrastructure-apply control models so one product's review vocabulary cannot become the standard by accident."
-  plannedSources:
+  admittedSources:
     - repository: "github/docs"
       revision: "be8d08aa6e3a95d7f531c6a00cbeff883e4e9814"
       paths:
         - "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md"
       license: "CC-BY-4.0"
-      role: "required review gates, blocking decision states, reviewer quorum, code-owner authorization, separation of duties, stale-approval invalidation and whole-diff authorization"
+      role: "required review gates, blocking decision states, reviewer quorum, code-owner authorization, stale-approval invalidation and whole-diff authorization"
     - repository: "runatlantis/atlantis"
       revision: "078d0a82081e8a2b1645268c5f5bfec578246fa9"
       paths:
         - "runatlantis.io/docs/command-requirements.md"
       license: "Apache-2.0"
-      role: "approval-gated infrastructure apply and revision freshness between plan, base branch and execution"
+      role: "approval-gated infrastructure apply, author/approver separation and revision freshness between plan, base branch and execution"
 
 initialFalsification:
-  hypothesis:
+  expectedShape:
     representable:
       - "APPROVAL_REQUIREMENT_DECLARATION"
       - "ORDERED_APPROVAL_GATE"
@@ -49,7 +49,7 @@ initialFalsification:
   expectedCounts:
     representableFacts: 2
     modelGapFacts: 7
-  rule: "This is a pre-evidence hypothesis only. The committed baseline must record the live evaluator result after activation and may not be rewritten merely to manufacture the expected shape."
+  rule: "The committed baseline records the live evaluator result; expectations never override production semantics."
 
 requiredOutcomes:
   - "A blocking approval requirement is evaluated through IntentPolicyType.APPROVAL, typed ControlRequirementKind.APPROVAL and a blocked control decision when no mechanism is authored."
@@ -75,15 +75,26 @@ forbiddenScope:
   - "Do not promote adapter or executable target support from corpus representability."
 
 completionEvidence:
-  - "A distinct activation-only CI boundary passes before any EF-09 external case is admitted."
+  - "Flow CI #3054 passed the distinct activation-only boundary before any EF-09 external case was admitted."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-09 evaluator classifies every reviewed PRESERVE observation through public intent validation, canonical meaning and control assessment."
   - "Positive and negative tests prove current approval requirement/gate representability and reject false decision-state, actor, quorum, separation, revision and partial-coverage equivalence."
   - "A committed mixed baseline remains exact while EF-09 is active/validating and becomes monotonic after closure."
   - "Standalone conformance integrates EF-09 without converting known model gaps into success."
-  - "Distinct implementation, validation and completion CI boundaries pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "Distinct implementation, validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
   - "EF-09 closes atomically with EF-10 advanced to next but left unactivated."
 
 localValidation:
-  status: activation-pending
-  rule: "No EF-09 external evidence may be admitted until this activation-only state passes exact-head and synthetic merge-candidate Flow CI."
+  status: activation-passed
+  activationBoundary:
+    commit: "647d352f83f7bd9bfb34eeac71e59f157cfbb9e7"
+    workflowRun: 32926144869
+    runNumber: 3054
+    conclusion: success
+    exactHead:
+      commit: "647d352f83f7bd9bfb34eeac71e59f157cfbb9e7"
+      conclusion: success
+    mergeCandidate:
+      commit: "1fbd0d015c29a6c361b020d799c1db926159bf0a"
+      conclusion: success
+  rule: "EF-09 external evidence is admitted only after the recorded activation-only boundary; implementation CI must independently validate the evidence-bearing evaluator and baseline before lifecycle progression."

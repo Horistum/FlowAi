@@ -1,0 +1,40 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: atlantis-approved-apply-gate
+domain: human-approval-change-control
+provenance:
+  repository: runatlantis/atlantis
+  revision: '078d0a82081e8a2b1645268c5f5bfec578246fa9'
+  path: runatlantis.io/docs/command-requirements.md
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: '2a58c5d63993b7559d2e00105041afa368684fd51927989f1be041a16033d8aa'
+authoredBehaviors:
+  - id: approved-apply-requirement
+    statement: Atlantis blocks infrastructure apply until the pull request is approved by at least one person other than the author.
+    evidence:
+      - startLine: 1
+        endLine: 7
+expectedSemanticObservations:
+  - id: preserve-ordered-approval-gate
+    expectation: PRESERVE
+    statement: Flow must preserve an approval gate that is ordered before the protected infrastructure change and blocks execution when disconnected.
+    behaviorRefs:
+      - approved-apply-requirement
+    rationale: A reachable authorization mechanism protecting a specific change is target-neutral control-flow meaning.
+  - id: preserve-author-approver-separation
+    expectation: PRESERVE
+    statement: Flow must preserve that the change author cannot satisfy the approval requirement.
+    behaviorRefs:
+      - approved-apply-requirement
+    rationale: Separation of duties changes who may authorize execution and cannot be reduced to a generic approval message.
+unsupportedFacts:
+  - id: atlantis-command-and-vcs-vocabulary
+    statement: The source uses Atlantis apply/import commands and pull-request author terminology.
+    evidence:
+      - startLine: 1
+        endLine: 7
+    reason: EF-09 preserves pre-execution authorization and separation semantics without promoting Atlantis commands or VCS object names into Core.

@@ -1,0 +1,48 @@
+kind: FlowHumanApprovalChangeControlFalsificationBaseline
+version: '1.0'
+facts:
+  - caseId: github-required-review-policy
+    factId: blocking-approval-requirement
+    observationRef: preserve-blocking-approval-requirement
+    requirement: APPROVAL_REQUIREMENT_DECLARATION
+    initialOutcome: REPRESENTABLE
+  - caseId: github-required-review-policy
+    factId: required-review-quorum
+    observationRef: preserve-required-review-quorum
+    requirement: APPROVAL_QUORUM
+    initialOutcome: MODEL_GAP
+  - caseId: atlantis-approved-apply-gate
+    factId: ordered-approval-gate
+    observationRef: preserve-ordered-approval-gate
+    requirement: ORDERED_APPROVAL_GATE
+    initialOutcome: REPRESENTABLE
+  - caseId: atlantis-approved-apply-gate
+    factId: author-approver-separation
+    observationRef: preserve-author-approver-separation
+    requirement: SEPARATION_OF_DUTIES
+    initialOutcome: MODEL_GAP
+  - caseId: github-review-decision-state
+    factId: approval-decision-state
+    observationRef: preserve-approval-decision-state
+    requirement: APPROVAL_DECISION_STATE
+    initialOutcome: MODEL_GAP
+  - caseId: github-codeowner-authorization
+    factId: authorized-approver-set
+    observationRef: preserve-authorized-approver-set
+    requirement: AUTHORIZED_APPROVER_SET
+    initialOutcome: MODEL_GAP
+  - caseId: github-stale-approval-revision
+    factId: revision-bound-approval
+    observationRef: preserve-revision-bound-approval
+    requirement: REVISION_BOUND_APPROVAL
+    initialOutcome: MODEL_GAP
+  - caseId: github-stale-approval-revision
+    factId: whole-changeset-approval-coverage
+    observationRef: preserve-whole-changeset-coverage
+    requirement: WHOLE_CHANGESET_APPROVAL_COVERAGE
+    initialOutcome: MODEL_GAP
+  - caseId: atlantis-undiverged-execution
+    factId: revision-bound-change-execution
+    observationRef: preserve-revision-bound-change-execution
+    requirement: REVISION_BOUND_CHANGE_EXECUTION
+    initialOutcome: MODEL_GAP

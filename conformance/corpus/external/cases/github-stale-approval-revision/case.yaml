@@ -1,0 +1,40 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: github-stale-approval-revision
+domain: human-approval-change-control
+provenance:
+  repository: github/docs
+  revision: 'be8d08aa6e3a95d7f531c6a00cbeff883e4e9814'
+  path: content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md
+  license:
+    spdx: CC-BY-4.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: '727d024fdb2f45d710d0937ecf05a777c55400fbe40a6168ba4756de692c51e9'
+authoredBehaviors:
+  - id: stale-approval-invalidation
+    statement: GitHub records the reviewed diff state and can dismiss approval as stale when that diff changes, requiring the work to be approved again.
+    evidence:
+      - startLine: 1
+        endLine: 1
+expectedSemanticObservations:
+  - id: preserve-revision-bound-approval
+    expectation: PRESERVE
+    statement: Flow must bind authorization to the reviewed change revision and invalidate it when the revision changes.
+    behaviorRefs:
+      - stale-approval-invalidation
+    rationale: Approval freshness is a relation between authorization and change identity, not a comment attached to a workflow.
+  - id: preserve-whole-changeset-coverage
+    expectation: PRESERVE
+    statement: Flow must preserve that approval covers the complete reviewed change set and cannot remain valid when new unreviewed content is introduced.
+    behaviorRefs:
+      - stale-approval-invalidation
+    rationale: Partial protection of one operation is not equivalent to authorization of the whole authored change.
+unsupportedFacts:
+  - id: github-diff-and-update-branch-mechanics
+    statement: The source uses GitHub diff snapshots, pull-request branches and Update branch behavior.
+    evidence:
+      - startLine: 1
+        endLine: 1
+    reason: EF-09 preserves revision identity and complete change coverage without promoting GitHub branch-update mechanics into Core.

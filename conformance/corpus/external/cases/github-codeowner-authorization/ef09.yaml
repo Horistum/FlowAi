@@ -1,0 +1,10 @@
+kind: FlowHumanApprovalChangeControlFalsification
+version: '1.0'
+caseId: github-codeowner-authorization
+facts:
+  - id: authorized-approver-set
+    observationRef: preserve-authorized-approver-set
+    requirement: AUTHORIZED_APPROVER_SET
+    values:
+      subject: owned-code-change
+      approvers: code-owners

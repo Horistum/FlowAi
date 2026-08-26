@@ -1,0 +1,16 @@
+kind: FlowHumanApprovalChangeControlFalsification
+version: '1.0'
+caseId: github-required-review-policy
+facts:
+  - id: blocking-approval-requirement
+    observationRef: preserve-blocking-approval-requirement
+    requirement: APPROVAL_REQUIREMENT_DECLARATION
+    values:
+      subject: production-change
+      message: Approve production change
+  - id: required-review-quorum
+    observationRef: preserve-required-review-quorum
+    requirement: APPROVAL_QUORUM
+    values:
+      subject: production-change
+      quorum: required-number

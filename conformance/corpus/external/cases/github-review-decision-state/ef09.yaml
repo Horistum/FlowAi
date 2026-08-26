@@ -1,0 +1,11 @@
+kind: FlowHumanApprovalChangeControlFalsification
+version: '1.0'
+caseId: github-review-decision-state
+facts:
+  - id: approval-decision-state
+    observationRef: preserve-approval-decision-state
+    requirement: APPROVAL_DECISION_STATE
+    values:
+      subject: protected-branch-change
+      approvedDecision: approved
+      rejectedDecision: changes-requested
