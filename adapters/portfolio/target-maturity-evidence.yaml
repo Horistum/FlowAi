@@ -1,0 +1,39 @@
+kind: FlowAdapterTargetMaturityEvidence
+version: "1.0"
+scopes:
+  - target: jenkins
+    scopeId: checkout-build-image
+    scenarioId: checkout-build-image
+    source: historical_portfolio
+    sourceReference: "adapters/portfolio/builtin-adapter-portfolio.yaml#records.jenkins"
+    snapshotReference: "conformance/snapshots/checkout-build-image/snapshot-index.json"
+    implementationEvidenceReferences:
+      - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+      - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
+      - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+    behavioralEvidenceReferences:
+      - "tests/FlowFirstExecutableReferenceScenarioTests.kt"
+      - "src/test/kotlin/TargetStructuralProjectionHonestyTests.kt"
+    limitations:
+      - "Certification is limited to the exact checkout-build-image scenario and its committed inputs."
+      - "Parallel, loop, match and retry structures remain unsupported and cannot borrow this scenario's executability."
+      - "Generic standard.execute and standard.rollback operations remain review-only without concrete Jenkins bindings."
+
+  - target: github-actions
+    scopeId: checkout-build-image
+    scenarioId: checkout-build-image
+    source: executable_reference_promotion
+    sourceReference: "adapters/portfolio/executable-reference-promotions.yaml#promotions.github-actions"
+    snapshotReference: "conformance/snapshots/github-actions-checkout-build-image/snapshot-index.json"
+    implementationEvidenceReferences:
+      - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt"
+      - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedCapabilityResolver.kt"
+      - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityProjectionExecutionGate.kt"
+      - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
+    behavioralEvidenceReferences:
+      - "src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt"
+      - "tests/FlowFirstExecutableReferenceScenarioTests.kt"
+    limitations:
+      - "Certification is limited to the exact checkout-build-image scenario and scoped artifact-backed workspace transfer."
+      - "Generic GitHub Actions workspace continuity remains unsupported outside the declared scope."
+      - "Conditions, parallelism, loops, match, retry and general failure handling are not promoted by this evidence."

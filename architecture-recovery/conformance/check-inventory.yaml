@@ -1,0 +1,6 @@
+version: "1.0"
+checks:
+  - architecture-recovery.ar-00.target-maturity-publication
+  - architecture-recovery.ar-00.target-wide-scope-separation
+  - architecture-recovery.ar-00.structural-evidence-reconciliation
+  - architecture-recovery.ar-00.bounded-executable-evidence
