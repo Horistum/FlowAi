@@ -1,0 +1,10 @@
+kind: FlowInfrastructureLifecycleFalsification
+version: '1.0'
+caseId: opentofu-prevent-destroy
+facts:
+  - id: destruction-prohibition
+    observationRef: preserve-destruction-prohibition
+    requirement: DESTRUCTION_PROHIBITION
+    values:
+      target: production-database
+      guard: prevent-destroy

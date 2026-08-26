@@ -3,12 +3,12 @@ status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION so semantic quality is falsified by real automation before structural expansion and AI-provider growth."
 
 currentDecision:
-  completedItem: "EF-07"
-  completedItemName: "Data Orchestration Falsification"
-  nextItem: "EF-08"
-  nextItemName: "Infrastructure Lifecycle Falsification"
+  completedItem: "EF-08"
+  completedItemName: "Infrastructure Lifecycle Falsification"
+  nextItem: "EF-09"
+  nextItemName: "Human Approval and Change-Control Falsification"
   workPackage: ""
-  decisionBasis: "EF-07 completed data-orchestration falsification with distinct activation, corrected implementation, validation and completion CI evidence. Three current semantic shapes are representable and five remain explicit model gaps: data-asset lineage to specific produced data, typed asset-aware trigger conditions, run data intervals, partition-subset backfills and conditional branching. EF-08 is now the next post-toolchain item but remains unactivated and requires its own transition before infrastructure-lifecycle evidence is admitted."
+  decisionBasis: "EF-08 completed infrastructure-lifecycle falsification with distinct activation, implementation, validation and completion CI evidence. Three current semantic shapes are representable and five remain explicit model gaps: non-mutating preview, replacement identity/order, destruction prohibition, retain-on-management-removal and persistent management-action policy. EF-09 is now the next post-toolchain item but remains unactivated and requires its own transition before approval/change-control evidence is admitted."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -77,11 +77,12 @@ sequence:
   - id: "EF-08"
     name: "Infrastructure Lifecycle Falsification"
     order: 9
-    status: next
+    status: completed
+    workPackage: ".flow-agent/work-packages/EF-08-infrastructure-lifecycle-falsification.yaml"
   - id: "EF-09"
     name: "Human Approval and Change-Control Falsification"
     order: 10
-    status: planned
+    status: next
 
   - id: "EF-10"
     name: "External Falsification Semantic Synthesis"

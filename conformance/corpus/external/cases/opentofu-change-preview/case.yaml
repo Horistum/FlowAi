@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: opentofu-change-preview
+domain: infrastructure-lifecycle
+provenance:
+  repository: opentofu/opentofu
+  revision: 'fce22f232f309baf7b44dc7cefce30a913f8f313'
+  path: website/docs/cli/commands/plan.mdx
+  license:
+    spdx: MPL-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.mdx
+  sha256: 'de71503c85b82d58f280ebb79c5523ef0044953e01a8ee604f3590c85846b0ad'
+authoredBehaviors:
+  - id: preview-without-applying
+    statement: Planning previews proposed infrastructure changes without carrying them out.
+    evidence:
+      - startLine: 1
+        endLine: 6
+expectedSemanticObservations:
+  - id: preserve-non-mutating-change-preview
+    expectation: PRESERVE
+    statement: Flow must preserve the named resource and target as non-mutating proposed-change preview distinct from apply.
+    behaviorRefs:
+      - preview-without-applying
+    rationale: Read/preview intent and external mutation have different safety and review consequences.
+unsupportedFacts:
+  - id: tofu-plan-command
+    statement: The source exposes preview through the tofu plan CLI command and execution-plan file mechanics.
+    evidence:
+      - startLine: 1
+        endLine: 6
+    reason: Command spelling and plan-file representation are OpenTofu implementation details.

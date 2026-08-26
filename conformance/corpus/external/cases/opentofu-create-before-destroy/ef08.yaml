@@ -1,0 +1,11 @@
+kind: FlowInfrastructureLifecycleFalsification
+version: '1.0'
+caseId: opentofu-create-before-destroy
+facts:
+  - id: create-before-destroy-replacement
+    observationRef: preserve-create-before-destroy-replacement
+    requirement: CREATE_BEFORE_DESTROY_REPLACEMENT
+    values:
+      logicalResource: edge-gateway
+      oldTarget: edge-gateway-v1
+      newTarget: edge-gateway-v2

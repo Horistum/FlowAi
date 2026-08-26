@@ -1,0 +1,10 @@
+kind: FlowInfrastructureLifecycleFalsification
+version: '1.0'
+caseId: opentofu-resource-upsert
+facts:
+  - id: resource-existence-upsert
+    observationRef: preserve-resource-existence-upsert
+    requirement: RESOURCE_EXISTENCE_UPSERT
+    values:
+      resource: payments-network
+      target: production-infrastructure

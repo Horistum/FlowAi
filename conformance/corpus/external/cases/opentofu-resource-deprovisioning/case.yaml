@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: opentofu-resource-deprovisioning
+domain: infrastructure-lifecycle
+provenance:
+  repository: opentofu/opentofu
+  revision: 'fce22f232f309baf7b44dc7cefce30a913f8f313'
+  path: website/docs/language/resources/behavior.mdx
+  license:
+    spdx: MPL-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.mdx
+  sha256: '5b483735728cc13119c218ec1ebb135557fe2af1a36e4e055b80f2d2d4d95eea'
+authoredBehaviors:
+  - id: destroy-removed-resource
+    statement: A managed resource absent from desired configuration is destroyed.
+    evidence:
+      - startLine: 1
+        endLine: 1
+expectedSemanticObservations:
+  - id: preserve-resource-deprovisioning
+    expectation: PRESERVE
+    statement: Flow must preserve explicit removal of the named infrastructure target as destructive lifecycle intent.
+    behaviorRefs:
+      - destroy-removed-resource
+    rationale: Removal of an external infrastructure object is target-neutral and materially distinct from creation or update.
+unsupportedFacts:
+  - id: opentofu-configuration-removal
+    statement: The source identifies deletion through absence from OpenTofu configuration and state membership.
+    evidence:
+      - startLine: 1
+        endLine: 1
+    reason: Configuration diff and state membership are engine mechanics rather than universal intent vocabulary.

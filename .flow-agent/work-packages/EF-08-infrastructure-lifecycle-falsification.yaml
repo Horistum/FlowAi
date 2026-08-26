@@ -1,0 +1,196 @@
+version: "EF-08"
+name: "Infrastructure Lifecycle Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: complete
+stream: "post-toolchain"
+
+objective: "Pressure current Flow infrastructure-lifecycle semantics with immutable external evidence for resource creation/update, explicit removal, desired-state reconciliation, non-mutating change preview, replacement ordering, destruction prohibition, orphan/retain behavior and persistent management-action policy without turning OpenTofu resource addresses, Crossplane managed-resource fields, provider names or controller vocabulary into universal Core meaning."
+
+authorization:
+  status: completed
+  predecessor: "EF-07"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-08"
+  mainAtDefinition: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
+  mainAtActivation: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
+  rule: "EF-08 completed external falsification without repairing Core semantics, adding StandardCapability values, changing capability contracts or canonical effects, or weakening validation. Any semantic correction remains separately authorized by later synthesis and SI-2."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3049
+  runId: 32922597199
+  exactHead: "bc0887ea687e80afda974416fa86882576c485b3"
+  mergeCandidate: "19c87e68a1bf28caf705f85872926a0562511005"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 5
+    representable:
+      - "Named infrastructure resource existence/update through canonical PROVISION UPSERT"
+      - "Approval-protected explicit infrastructure removal through canonical DEPROVISION DELETE"
+      - "Desired-state create-or-update reconciliation through declared PROVISION mode and UPSERT"
+    modelGaps:
+      - "Non-mutating proposed-change preview distinct from apply"
+      - "Create-before-destroy replacement identity and ordering"
+      - "Active destruction prohibition"
+      - "Management removal that retains the external object"
+      - "Persistent Observe/Create/Update/Delete management-action policy"
+  rule: "This boundary validates immutable provenance, public intent validation, canonical effects and controls, exact mixed baseline, anti-smuggling tests and standalone conformance without changing Core semantics."
+
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3050
+  runId: 32923219102
+  exactHead: "f3ec5f32bf115c5bdd8d4fd28120feeca3969e40"
+  mergeCandidate: "be23532031e1d48718b46f62d95d26235dc2b73a"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  purpose: "Independently validate the implementation-evidence-bearing EF-08 state before completion evidence is admitted."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3051
+  runId: 32923779343
+  exactHead: "f452f18cd37285140b6bc2b0527f7ea3806bcd30"
+  mergeCandidate: "f5a4d6d4b13f1735588e736715849eeebd74295d"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 5
+  rule: "This boundary is later than implementation and validation and validates the evidence-bearing EF-08 state before lifecycle closure is recorded."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable source licenses."
+    - "Prefer first-party documentation or source that states lifecycle behavior directly rather than examples whose meaning must be guessed from command or provider syntax."
+    - "Use at least two independent repositories with materially different declarative apply and continuously reconciled controller models so one engine's lifecycle vocabulary cannot become the standard by accident."
+  admittedSources:
+    - repository: "opentofu/opentofu"
+      revision: "fce22f232f309baf7b44dc7cefce30a913f8f313"
+      paths:
+        - "website/docs/language/resources/behavior.mdx"
+        - "website/docs/cli/commands/plan.mdx"
+      license: "MPL-2.0"
+      role: "resource create/update/destroy reconciliation, non-mutating preview, create-before-destroy replacement and prevent-destroy behavior"
+    - repository: "crossplane/crossplane"
+      revision: "0e4f8c1d78ef7a4b1cb2d95d92cafa9a905c2280"
+      paths:
+        - "apis/core/v2/policies.go"
+      license: "Apache-2.0"
+      role: "persistent Observe/Create/Update/Delete management-action policy and Orphan versus Delete behavior"
+
+initialFalsification:
+  expectedShape:
+    representable:
+      - "RESOURCE_EXISTENCE_UPSERT"
+      - "RESOURCE_DEPROVISIONING"
+      - "DESIRED_STATE_RECONCILIATION"
+    modelGaps:
+      - "NON_MUTATING_CHANGE_PREVIEW"
+      - "CREATE_BEFORE_DESTROY_REPLACEMENT"
+      - "DESTRUCTION_PROHIBITION"
+      - "RETAIN_ON_MANAGEMENT_REMOVAL"
+      - "PERSISTENT_MANAGEMENT_ACTION_POLICY"
+  expectedCounts:
+    representableFacts: 3
+    modelGapFacts: 5
+  rule: "The committed baseline records the live evaluator result after activation; expectations never override production semantics."
+
+requiredOutcomes:
+  - "Resource create/update intent is evaluated through IntentCapabilityValidator, canonical parameters and the infrastructure-resource UPSERT effect rather than OpenTofu apply syntax."
+  - "Explicit resource removal is evaluated through a valid approval-protected DEPROVISION path and a canonical DELETE effect rather than a provider destroy command."
+  - "Desired-state reconciliation is distinguishable from create-only intent through the declared target-neutral PROVISION mode and canonical infrastructure UPSERT meaning."
+  - "A preview is not called representable merely because PROVISION accepts mode=preview; the canonical effect must remain non-mutating and the proposed resource/change identity must survive independently from apply."
+  - "Create-before-destroy replacement must preserve that old and new instances implement one logical resource, that the replacement is created first and that the old instance is removed only after replacement availability; two unrelated ordered steps are insufficient."
+  - "Destruction prohibition must prevent or reject destructive lifecycle planning while the guard is active; a safety string, generic approval or delete effect is not equivalent."
+  - "Retain/orphan behavior must remove management ownership without deleting the external object; DEPROVISION or CLEANUP DELETE effects are not equivalent to forget/orphan."
+  - "A persistent management-action policy must preserve the allowed set of Observe/Create/Update/Delete actions across reconciliation loops; a one-shot workflow action or arbitrary mode string is not equivalent."
+  - "Every real gap remains explicit evidence; EF-08 does not add parameters, policies, capabilities or effects merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values in EF-08."
+  - "Do not change StandardCapabilityContracts or CanonicalIntentEffectAuthority mappings in EF-08."
+  - "Do not add preview, replacement, prevent-destroy, orphan, management-policy or reconciliation-loop fields to Core in the falsification item."
+  - "Do not treat OpenTofu resource addresses, state files, CLI flags, Crossplane CRD field names, provider APIs or controller reconcile loops as universal Core vocabulary."
+  - "Do not infer non-mutating preview from a mode string while canonical meaning still carries an UPSERT effect."
+  - "Do not infer replacement identity from two sequential infrastructure steps unless the old/new instances are structurally tied to one logical resource."
+  - "Do not treat approval as destruction prohibition or DELETE as orphan/forget."
+  - "Do not modify closed EF-01 through EF-07 evidence boundaries."
+  - "Do not promote adapter or executable target support from corpus representability."
+
+completionEvidence:
+  - "Flow CI #3048 passed the distinct activation-only boundary before any EF-08 external case was admitted."
+  - "Flow CI #3049 passed the distinct implementation boundary on exact head bc0887ea687e80afda974416fa86882576c485b3 and synthetic merge candidate 19c87e68a1bf28caf705f85872926a0562511005."
+  - "Flow CI #3050 passed the distinct validation boundary on exact head f3ec5f32bf115c5bdd8d4fd28120feeca3969e40 and synthetic merge candidate be23532031e1d48718b46f62d95d26235dc2b73a."
+  - "Flow CI #3051 passed the distinct completion boundary on exact head f452f18cd37285140b6bc2b0527f7ea3806bcd30 and synthetic merge candidate f5a4d6d4b13f1735588e736715849eeebd74295d."
+  - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
+  - "A production EF-08 evaluator classifies every reviewed PRESERVE observation through public intent validation, canonical parameters, control assessment and semantic effects."
+  - "Positive and negative tests prove current infrastructure-action representability and reject false preview, replacement, destruction-guard, orphan and controller-policy equivalence."
+  - "The committed mixed baseline preserves the initial EF-08 result and is monotonic after closure."
+  - "Standalone conformance integrates EF-08 without converting known model gaps into success."
+  - "EF-09 remains unactivated and requires its own independent transition before human-approval/change-control evidence is admitted."
+  - "EF-08 closes atomically with EF-09 advanced to next but left unactivated."
+
+localValidation:
+  status: passed
+  activationBoundary:
+    commit: "39a3654ab6dc92ad219c12a439194daa772fa9d8"
+    workflowRun: 32921423499
+    runNumber: 3048
+    conclusion: success
+    exactHead:
+      commit: "39a3654ab6dc92ad219c12a439194daa772fa9d8"
+      conclusion: success
+    mergeCandidate:
+      commit: "98c2ae4e3087773d91d6f343497f168de6f5bb5c"
+      conclusion: success
+  implementationBoundary:
+    commit: "bc0887ea687e80afda974416fa86882576c485b3"
+    workflowRun: 32922597199
+    runNumber: 3049
+    conclusion: success
+    exactHead:
+      commit: "bc0887ea687e80afda974416fa86882576c485b3"
+      conclusion: success
+    mergeCandidate:
+      commit: "19c87e68a1bf28caf705f85872926a0562511005"
+      conclusion: success
+  validationBoundary:
+    commit: "f3ec5f32bf115c5bdd8d4fd28120feeca3969e40"
+    workflowRun: 32923219102
+    runNumber: 3050
+    conclusion: success
+    exactHead:
+      commit: "f3ec5f32bf115c5bdd8d4fd28120feeca3969e40"
+      conclusion: success
+    mergeCandidate:
+      commit: "be23532031e1d48718b46f62d95d26235dc2b73a"
+      conclusion: success
+  completionBoundary:
+    commit: "f452f18cd37285140b6bc2b0527f7ea3806bcd30"
+    workflowRun: 32923779343
+    runNumber: 3051
+    conclusion: success
+    exactHead:
+      commit: "f452f18cd37285140b6bc2b0527f7ea3806bcd30"
+      conclusion: success
+    mergeCandidate:
+      commit: "f5a4d6d4b13f1735588e736715849eeebd74295d"
+      conclusion: success
+  rule: "EF-08 is complete with three representable facts and five explicit semantic model gaps preserved as evidence. EF-09 remains unactivated and semantic repair requires a separately authorized later item."

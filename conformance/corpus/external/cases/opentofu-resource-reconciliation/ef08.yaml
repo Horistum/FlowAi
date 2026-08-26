@@ -1,0 +1,11 @@
+kind: FlowInfrastructureLifecycleFalsification
+version: '1.0'
+caseId: opentofu-resource-reconciliation
+facts:
+  - id: desired-state-reconciliation
+    observationRef: preserve-desired-state-reconciliation
+    requirement: DESIRED_STATE_RECONCILIATION
+    values:
+      resource: edge-routing
+      target: shared-infrastructure
+      mode: reconcile

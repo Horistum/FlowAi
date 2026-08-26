@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: opentofu-resource-reconciliation
+domain: infrastructure-lifecycle
+provenance:
+  repository: opentofu/opentofu
+  revision: 'fce22f232f309baf7b44dc7cefce30a913f8f313'
+  path: website/docs/language/resources/behavior.mdx
+  license:
+    spdx: MPL-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.mdx
+  sha256: '8fff5522d4bcfb5bbe5f376592d775425a11f0a0e3daf49816b3c3efe9ce394f'
+authoredBehaviors:
+  - id: reconcile-existing-resource
+    statement: Existing infrastructure is compared with desired configuration and updated when necessary to match it.
+    evidence:
+      - startLine: 1
+        endLine: 4
+expectedSemanticObservations:
+  - id: preserve-desired-state-reconciliation
+    expectation: PRESERVE
+    statement: Flow must preserve the named resource and target as desired-state create-or-update reconciliation rather than create-only intent.
+    behaviorRefs:
+      - reconcile-existing-resource
+    rationale: Aligning present or absent actual state with desired resource existence is target-neutral UPSERT meaning.
+unsupportedFacts:
+  - id: opentofu-state-comparison
+    statement: OpenTofu performs comparison through its configuration and state model.
+    evidence:
+      - startLine: 1
+        endLine: 4
+    reason: The evidence grounds reconciliation intent without promoting the state file or provider comparison algorithm into Core.

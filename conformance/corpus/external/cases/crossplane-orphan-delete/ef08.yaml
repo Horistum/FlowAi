@@ -1,0 +1,10 @@
+kind: FlowInfrastructureLifecycleFalsification
+version: '1.0'
+caseId: crossplane-orphan-delete
+facts:
+  - id: retain-on-management-removal
+    observationRef: preserve-retain-on-management-removal
+    requirement: RETAIN_ON_MANAGEMENT_REMOVAL
+    values:
+      target: customer-database
+      policy: orphan

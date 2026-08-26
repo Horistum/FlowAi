@@ -1,0 +1,10 @@
+kind: FlowInfrastructureLifecycleFalsification
+version: '1.0'
+caseId: crossplane-management-actions
+facts:
+  - id: persistent-management-action-policy
+    observationRef: preserve-persistent-management-action-policy
+    requirement: PERSISTENT_MANAGEMENT_ACTION_POLICY
+    values:
+      target: customer-database
+      actions: observe

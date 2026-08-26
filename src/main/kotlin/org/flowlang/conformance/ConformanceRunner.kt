@@ -49,6 +49,7 @@ class ConformanceRunner(
         val certificateLifecycleChecks = CertificateLifecycleConformanceRunner(rootDir).checks()
         val secretRotationChecks = SecretRotationConformanceRunner(rootDir).checks()
         val dataOrchestrationChecks = DataOrchestrationConformanceRunner(rootDir).checks()
+        val infrastructureLifecycleChecks = InfrastructureLifecycleConformanceRunner(rootDir).checks()
         val toolchainModernizationChecks = ToolchainModernizationConformanceRunner(rootDir).checks()
 
         return ConformanceSummary(
@@ -56,7 +57,7 @@ class ConformanceRunner(
                 realWorldChecks + topologyMatrixChecks + semanticEquivalenceChecks + adapterProfileEvidenceChecks +
                 operationalDomainAdequacyChecks + externalCorpusFoundationChecks + databaseMigrationRecoveryChecks +
                 backupRestoreChecks + incidentRemediationChecks + certificateLifecycleChecks + secretRotationChecks +
-                dataOrchestrationChecks + toolchainModernizationChecks
+                dataOrchestrationChecks + infrastructureLifecycleChecks + toolchainModernizationChecks
         )
     }
 

@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: opentofu-prevent-destroy
+domain: infrastructure-lifecycle
+provenance:
+  repository: opentofu/opentofu
+  revision: 'fce22f232f309baf7b44dc7cefce30a913f8f313'
+  path: website/docs/language/resources/behavior.mdx
+  license:
+    spdx: MPL-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.mdx
+  sha256: '3f2f58601b0a74749743cdf3e5f8c05d6be9f796686ff1265578df6d37d6346f'
+authoredBehaviors:
+  - id: reject-destructive-plan
+    statement: While prevent-destroy remains active, any plan that would destroy the protected object is rejected.
+    evidence:
+      - startLine: 1
+        endLine: 4
+expectedSemanticObservations:
+  - id: preserve-destruction-prohibition
+    expectation: PRESERVE
+    statement: Flow must preserve an active guard that blocks destructive lifecycle planning for the named target.
+    behaviorRefs:
+      - reject-destructive-plan
+    rationale: Blocking destruction is materially different from asking for approval or describing a deletion as risky.
+unsupportedFacts:
+  - id: opentofu-plan-validation
+    statement: OpenTofu evaluates the guard while constructing a plan from configuration.
+    evidence:
+      - startLine: 1
+        endLine: 4
+    reason: Plan implementation is product-specific; the universal evidence is that guarded destruction must fail closed.

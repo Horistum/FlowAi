@@ -27,6 +27,14 @@ casePackages:
   - cases/airflow-asset-trigger-condition
   - cases/dagster-asset-dependency
   - cases/dagster-partition-backfill
+  - cases/opentofu-resource-upsert
+  - cases/opentofu-resource-deprovisioning
+  - cases/opentofu-resource-reconciliation
+  - cases/opentofu-change-preview
+  - cases/opentofu-create-before-destroy
+  - cases/opentofu-prevent-destroy
+  - cases/crossplane-orphan-delete
+  - cases/crossplane-management-actions
 invariants:
   - Every admitted case preserves immutable upstream repository, revision, path and license provenance.
   - Captured source bytes are SHA-256 bound before any semantic evaluation is admitted.
