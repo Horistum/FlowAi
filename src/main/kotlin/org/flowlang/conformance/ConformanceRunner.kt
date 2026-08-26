@@ -18,9 +18,10 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
  * remain independently inventoried, C0.4 profile evidence follows, C1.0
  * operational-domain adequacy is appended as a separate post-architecture corpus.
  * EF-01 external-corpus validation runs after closed historical corpus evidence,
- * followed by independently baselined External Falsification domain checks and
- * orthogonal toolchain lifecycle checks. Later conformance cannot rewrite earlier
- * authorities or treat implementation output as Core meaning.
+ * followed by independently baselined External Falsification domains, the
+ * orthogonal toolchain lifecycle and separately inventoried Architecture Recovery
+ * checks. Later conformance cannot rewrite earlier authorities or treat
+ * implementation output as Core meaning.
  */
 class ConformanceRunner(
     private val rootDir: File = File("."),
@@ -53,6 +54,8 @@ class ConformanceRunner(
         val humanApprovalChangeControlChecks =
             HumanApprovalChangeControlConformanceRunner(rootDir).checks()
         val toolchainModernizationChecks = ToolchainModernizationConformanceRunner(rootDir).checks()
+        val architectureRecoveryChecks =
+            ArchitectureRecoveryConformanceRunner(rootDir, targets, projections).checks()
 
         return ConformanceSummary(
             preClosureChecks + closureChecks + adapterChecks + adapterEvolutionChecks +
@@ -60,7 +63,7 @@ class ConformanceRunner(
                 operationalDomainAdequacyChecks + externalCorpusFoundationChecks + databaseMigrationRecoveryChecks +
                 backupRestoreChecks + incidentRemediationChecks + certificateLifecycleChecks + secretRotationChecks +
                 dataOrchestrationChecks + infrastructureLifecycleChecks + humanApprovalChangeControlChecks +
-                toolchainModernizationChecks
+                toolchainModernizationChecks + architectureRecoveryChecks
         )
     }
 
