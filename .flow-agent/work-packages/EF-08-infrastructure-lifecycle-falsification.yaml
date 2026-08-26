@@ -1,18 +1,46 @@
 version: "EF-08"
 name: "Infrastructure Lifecycle Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: active
+status: validating
 stream: "post-toolchain"
 
 objective: "Pressure current Flow infrastructure-lifecycle semantics with immutable external evidence for resource creation/update, explicit removal, desired-state reconciliation, non-mutating change preview, replacement ordering, destruction prohibition, orphan/retain behavior and persistent management-action policy without turning OpenTofu resource addresses, Crossplane managed-resource fields, provider names or controller vocabulary into universal Core meaning."
 
 authorization:
-  status: active
+  status: validating
   predecessor: "EF-07"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-08"
   mainAtDefinition: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
   mainAtActivation: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
   rule: "EF-08 may classify target-independent infrastructure-lifecycle gaps after its activation-only boundary. Core repair, StandardCapability changes, contract changes and canonical-effect changes remain forbidden in this work item."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3049
+  runId: 32922597199
+  exactHead: "bc0887ea687e80afda974416fa86882576c485b3"
+  mergeCandidate: "19c87e68a1bf28caf705f85872926a0562511005"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 5
+    representable:
+      - "Named infrastructure resource existence/update through canonical PROVISION UPSERT"
+      - "Approval-protected explicit infrastructure removal through canonical DEPROVISION DELETE"
+      - "Desired-state create-or-update reconciliation through declared PROVISION mode and UPSERT"
+    modelGaps:
+      - "Non-mutating proposed-change preview distinct from apply"
+      - "Create-before-destroy replacement identity and ordering"
+      - "Active destruction prohibition"
+      - "Management removal that retains the external object"
+      - "Persistent Observe/Create/Update/Delete management-action policy"
+  rule: "This boundary validates immutable provenance, public intent validation, canonical effects and controls, exact mixed baseline, anti-smuggling tests and standalone conformance without changing Core semantics."
 
 sourceSelection:
   criteria:
@@ -75,16 +103,17 @@ forbiddenScope:
 
 completionEvidence:
   - "Flow CI #3048 passed the distinct activation-only boundary before any EF-08 external case was admitted."
+  - "Flow CI #3049 passed the distinct implementation boundary on exact head bc0887ea687e80afda974416fa86882576c485b3 and synthetic merge candidate 19c87e68a1bf28caf705f85872926a0562511005."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-08 evaluator classifies every reviewed PRESERVE observation through public intent validation, canonical parameters, control assessment and semantic effects."
   - "Positive and negative tests prove current infrastructure-action representability and reject false preview, replacement, destruction-guard, orphan and controller-policy equivalence."
   - "A committed mixed baseline remains exact while EF-08 is active/validating and becomes monotonic after closure."
   - "Standalone conformance integrates EF-08 without converting known model gaps into success."
-  - "Distinct implementation, validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "Distinct validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
   - "EF-08 closes atomically with EF-09 advanced to next but left unactivated."
 
 localValidation:
-  status: activation-passed
+  status: implementation-passed
   activationBoundary:
     commit: "39a3654ab6dc92ad219c12a439194daa772fa9d8"
     workflowRun: 32921423499
@@ -96,4 +125,15 @@ localValidation:
     mergeCandidate:
       commit: "98c2ae4e3087773d91d6f343497f168de6f5bb5c"
       conclusion: success
-  rule: "EF-08 external evidence is admitted only after the recorded activation-only boundary; implementation CI must independently validate the evidence-bearing evaluator and baseline before lifecycle progression."
+  implementationBoundary:
+    commit: "bc0887ea687e80afda974416fa86882576c485b3"
+    workflowRun: 32922597199
+    runNumber: 3049
+    conclusion: success
+    exactHead:
+      commit: "bc0887ea687e80afda974416fa86882576c485b3"
+      conclusion: success
+    mergeCandidate:
+      commit: "19c87e68a1bf28caf705f85872926a0562511005"
+      conclusion: success
+  rule: "EF-08 implementation evidence is recorded with three representable facts and five explicit model gaps; validation must pass independently before completion evidence is admitted."
