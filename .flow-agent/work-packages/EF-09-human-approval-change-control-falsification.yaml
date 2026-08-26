@@ -1,0 +1,89 @@
+version: "EF-09"
+name: "Human Approval and Change-Control Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: active
+stream: "post-toolchain"
+
+objective: "Pressure current Flow human-approval and change-control semantics with immutable external evidence for blocking approval requirements, ordered approval gates, approval decision state, authorized approver sets, quorum, separation of duties, revision-bound authorization, whole-change coverage and revision-bound execution without turning GitHub review settings, Atlantis command names, repository roles or provider-specific mergeability vocabulary into universal Core meaning."
+
+authorization:
+  status: active
+  predecessor: "EF-08"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-09"
+  mainAtDefinition: "7648a5916dd60c6cf75313fd22de4eca8d998e99"
+  mainAtActivation: "7648a5916dd60c6cf75313fd22de4eca8d998e99"
+  rule: "EF-09 may classify target-independent approval and change-control gaps after its activation-only boundary. Core repair, StandardCapability changes, control-contract changes and canonical-effect changes remain forbidden in this work item."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable source licenses."
+    - "Prefer first-party documentation that states blocking authorization behavior, reviewer constraints and revision freshness directly rather than inferring semantics from UI labels or implementation names."
+    - "Use at least two independent repositories with materially different protected-change and infrastructure-apply control models so one product's review vocabulary cannot become the standard by accident."
+  plannedSources:
+    - repository: "github/docs"
+      revision: "be8d08aa6e3a95d7f531c6a00cbeff883e4e9814"
+      paths:
+        - "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md"
+      license: "CC-BY-4.0"
+      role: "required review gates, blocking decision states, reviewer quorum, code-owner authorization, separation of duties, stale-approval invalidation and whole-diff authorization"
+    - repository: "runatlantis/atlantis"
+      revision: "078d0a82081e8a2b1645268c5f5bfec578246fa9"
+      paths:
+        - "runatlantis.io/docs/command-requirements.md"
+      license: "Apache-2.0"
+      role: "approval-gated infrastructure apply and revision freshness between plan, base branch and execution"
+
+initialFalsification:
+  hypothesis:
+    representable:
+      - "APPROVAL_REQUIREMENT_DECLARATION"
+      - "ORDERED_APPROVAL_GATE"
+    modelGaps:
+      - "APPROVAL_DECISION_STATE"
+      - "AUTHORIZED_APPROVER_SET"
+      - "APPROVAL_QUORUM"
+      - "SEPARATION_OF_DUTIES"
+      - "REVISION_BOUND_APPROVAL"
+      - "WHOLE_CHANGESET_APPROVAL_COVERAGE"
+      - "REVISION_BOUND_CHANGE_EXECUTION"
+  expectedCounts:
+    representableFacts: 2
+    modelGapFacts: 7
+  rule: "This is a pre-evidence hypothesis only. The committed baseline must record the live evaluator result after activation and may not be rewritten merely to manufacture the expected shape."
+
+requiredOutcomes:
+  - "A blocking approval requirement is evaluated through IntentPolicyType.APPROVAL, typed ControlRequirementKind.APPROVAL and a blocked control decision when no mechanism is authored."
+  - "An ordered approval gate is evaluated through an explicit APPROVE predecessor, canonical requires edges and satisfied control evidence before the protected change operation."
+  - "Approval decision state must distinguish pending, approved and rejected/changes-requested outcomes; an authored APPROVE step is not itself proof that a human approved the change."
+  - "Authorized approver semantics must preserve the allowed user, team, role or ownership set; a generic approval mechanism or message is not equivalent."
+  - "Approval quorum must preserve the required number of independent approvals rather than the mere presence of one gate."
+  - "Separation of duties must prohibit the author or latest change producer from satisfying the approval obligation where required."
+  - "Revision-bound approval must identify the exact reviewed change state and invalidate authorization when that state changes."
+  - "Intent-wide approval must protect the complete authored change set; an approval that is ordered before only one of several change operations cannot satisfy whole-change authorization."
+  - "Revision-bound execution must preserve that the approved or planned source/base state is the one actually executed; generic ordering and approval are insufficient."
+  - "Every real gap remains explicit evidence; EF-09 does not add approval actors, decision states, quorum, revisions or change-set fields merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values in EF-09."
+  - "Do not change StandardCapabilityContracts, CanonicalControlRequirementAuthority or CanonicalIntentEffectAuthority in EF-09."
+  - "Do not add approver, team, quorum, decision, revision, pull-request, branch-protection or plan-artifact fields to Core in the falsification item."
+  - "Do not treat GitHub CODEOWNERS, repository permissions, Atlantis apply requirements, VCS mergeability or command comments as universal Core vocabulary."
+  - "Do not treat a static APPROVE step as proof of an approved runtime decision."
+  - "Do not infer whole-change coverage merely because an approval precedes one operation in a multi-operation intent."
+  - "Do not encode reviewer identity, quorum, self-approval prohibition or revision freshness inside message/condition strings and call that semantic preservation."
+  - "Do not modify closed EF-01 through EF-08 evidence boundaries."
+  - "Do not promote adapter or executable target support from corpus representability."
+
+completionEvidence:
+  - "A distinct activation-only CI boundary passes before any EF-09 external case is admitted."
+  - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
+  - "A production EF-09 evaluator classifies every reviewed PRESERVE observation through public intent validation, canonical meaning and control assessment."
+  - "Positive and negative tests prove current approval requirement/gate representability and reject false decision-state, actor, quorum, separation, revision and partial-coverage equivalence."
+  - "A committed mixed baseline remains exact while EF-09 is active/validating and becomes monotonic after closure."
+  - "Standalone conformance integrates EF-09 without converting known model gaps into success."
+  - "Distinct implementation, validation and completion CI boundaries pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "EF-09 closes atomically with EF-10 advanced to next but left unactivated."
+
+localValidation:
+  status: activation-pending
+  rule: "No EF-09 external evidence may be admitted until this activation-only state passes exact-head and synthetic merge-candidate Flow CI."
