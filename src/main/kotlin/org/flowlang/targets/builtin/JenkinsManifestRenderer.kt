@@ -137,6 +137,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         sb: StringBuilder,
         indent: String
     ) {
+        requireJenkinsStructure(step, "try-catch")
         val body = step.children.firstOrNull { it.type == "try-body" }
         val handler = step.children.firstOrNull { it.type == "error-handler" }
         sb.appendLine("${indent}try {")
@@ -152,6 +153,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         sb: StringBuilder,
         indent: String
     ) {
+        requireJenkinsStructure(step, "if")
         val condition = step.params["condition"] ?: "false"
         val rendered = TargetExpressionTranslator.groovy(
             condition,
@@ -161,6 +163,18 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         sb.appendLine("${indent}if ($rendered) {")
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
         sb.appendLine("${indent}}")
+    }
+
+    private fun requireJenkinsStructure(step: TargetStep, reference: String) {
+        val payload = requireNotNull(step.rendererPayload) {
+            "Executable Jenkins structural step '${step.id}' has no provider renderer payload."
+        }
+        require(
+            payload.kind == BuiltInProjectionPayloadKinds.JENKINS_STRUCTURE &&
+                payload.reference == reference
+        ) {
+            "Jenkins structural step '${step.id}' requires the owned ${BuiltInProjectionPayloadKinds.JENKINS_STRUCTURE}/$reference payload, not '${payload.kind}/${payload.reference}'."
+        }
     }
 
     private fun renderJenkinsLeaf(

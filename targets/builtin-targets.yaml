@@ -96,7 +96,7 @@ targets:
 
   - name: jenkins
     expressionProfile: flow-full
-    description: Jenkins Pipeline generator target. Good scripted support, weaker portability.
+    description: Jenkins Pipeline generator target. Current executable evidence covers sequential native leaves, conditions, manual approval and error boundaries; unimplemented parallel, loop, match and retry structures fail closed.
     topology:
       evidenceReference: targets/builtin-targets.yaml#targets.jenkins.topology
       capabilities:
@@ -113,11 +113,11 @@ targets:
         failurePropagation: supported
     capabilities:
       sequentialTasks: supported
-      parallel: supported
+      parallel: unsupported
       conditions: supported
-      dynamicLoops: supported
-      match: supported
-      retry: supported
+      dynamicLoops: unsupported
+      match: unsupported
+      retry: unsupported
       approvals: supported
       errorHandlers: supported
       artifacts: supported
@@ -129,8 +129,8 @@ targets:
       continuity.state: partial
       approval.inline: supported
       approval.manual: supported
-      parallel.dag: supported
-      retry.task: supported
+      parallel.dag: unsupported
+      retry.task: unsupported
       errorHandlers.finally: supported
       secrets.runtime: supported
       artifacts.uploadDownload: supported
@@ -204,7 +204,7 @@ targets:
 
   - name: github-actions
     expressionProfile: workflow-condition
-    description: GitHub Actions generator target. Good for simple CI/CD, limited dynamic control-flow semantics.
+    description: GitHub Actions generator target. Native action leaves exist, while structural conditions and parallel behavior remain partial until provider-owned certification is complete.
     topology:
       evidenceReference: targets/builtin-targets.yaml#targets.github-actions.topology
       capabilities:
@@ -221,8 +221,8 @@ targets:
         failurePropagation: partial
     capabilities:
       sequentialTasks: supported
-      parallel: supported
-      conditions: supported
+      parallel: partial
+      conditions: partial
       dynamicLoops: partial
       match: partial
       retry: partial
@@ -238,7 +238,7 @@ targets:
       approval.inline: partial
       approval.manual: partial
       approval.environmentGate: supported
-      parallel.dag: supported
+      parallel.dag: partial
       retry.task: partial
       loops.dynamic: partial
       errorHandlers.finally: partial
@@ -315,7 +315,7 @@ targets:
 
   - name: tekton
     expressionProfile: equality-membership-condition
-    description: Tekton Pipelines target. Strong Kubernetes-native task model, limited dynamic loops and manual gates.
+    description: Tekton Pipelines target. Native action leaves exist, while structural conditions and parallel behavior remain partial until provider-owned certification is complete.
     topology:
       evidenceReference: targets/builtin-targets.yaml#targets.tekton.topology
       capabilities:
@@ -332,8 +332,8 @@ targets:
         failurePropagation: partial
     capabilities:
       sequentialTasks: supported
-      parallel: supported
-      conditions: supported
+      parallel: partial
+      conditions: partial
       dynamicLoops: partial
       match: partial
       retry: partial
@@ -349,7 +349,7 @@ targets:
       approval.inline: unsupported
       approval.manual: unsupported
       approval.externalGate: partial
-      parallel.dag: supported
+      parallel.dag: partial
       retry.task: partial
       loops.dynamic: partial
       errorHandlers.finally: partial
@@ -430,7 +430,7 @@ targets:
 
   - name: argo-workflows
     expressionProfile: unavailable
-    description: Argo Workflows target. Strong DAG, artifacts and suspend support.
+    description: Argo Workflows capability profile. This distribution has no composed projection provider, so executable structural claims fail closed.
     topology:
       evidenceReference: targets/builtin-targets.yaml#targets.argo-workflows.topology
       capabilities:
@@ -447,13 +447,13 @@ targets:
         failurePropagation: supported
     capabilities:
       sequentialTasks: supported
-      parallel: supported
-      conditions: supported
-      dynamicLoops: partial
-      match: partial
-      retry: supported
-      approvals: partial
-      errorHandlers: supported
+      parallel: unsupported
+      conditions: unsupported
+      dynamicLoops: unsupported
+      match: unsupported
+      retry: unsupported
+      approvals: unsupported
+      errorHandlers: unsupported
       artifacts: supported
       secrets: supported
       nativeRuntime: partial
@@ -461,13 +461,13 @@ targets:
       continuity.value: partial
       continuity.workspace: partial
       continuity.state: unsupported
-      approval.inline: partial
-      approval.manual: partial
-      approval.suspend: supported
-      parallel.dag: supported
-      retry.task: supported
-      loops.dynamic: partial
-      errorHandlers.finally: supported
+      approval.inline: unsupported
+      approval.manual: unsupported
+      approval.suspend: unsupported
+      parallel.dag: unsupported
+      retry.task: unsupported
+      loops.dynamic: unsupported
+      errorHandlers.finally: unsupported
       secrets.runtime: supported
       artifacts.uploadDownload: supported
       rollback.native: partial
@@ -475,11 +475,11 @@ targets:
       safety.destructiveOperation: partial
       kubernetes.api: supported
     notes:
-      - Manual gates are typically represented with suspend templates.
+      - This is an analyzable profile only; no built-in generator or renderer is composed.
 
   - name: azure-devops
     expressionProfile: unavailable
-    description: Azure DevOps Pipelines target. Strong stage/job model, platform-specific approvals/checks.
+    description: Azure DevOps capability profile. This distribution has no composed projection provider, so executable structural claims fail closed.
     topology:
       evidenceReference: targets/builtin-targets.yaml#targets.azure-devops.topology
       capabilities:
@@ -496,13 +496,13 @@ targets:
         failurePropagation: supported
     capabilities:
       sequentialTasks: supported
-      parallel: supported
-      conditions: supported
-      dynamicLoops: partial
-      match: partial
-      retry: partial
-      approvals: supported
-      errorHandlers: partial
+      parallel: unsupported
+      conditions: unsupported
+      dynamicLoops: unsupported
+      match: unsupported
+      retry: unsupported
+      approvals: unsupported
+      errorHandlers: unsupported
       artifacts: supported
       secrets: supported
       nativeRuntime: partial
@@ -510,13 +510,13 @@ targets:
       continuity.value: partial
       continuity.workspace: partial
       continuity.state: partial
-      approval.inline: partial
-      approval.manual: partial
-      approval.environmentGate: supported
-      parallel.dag: supported
-      retry.task: partial
-      loops.dynamic: partial
-      errorHandlers.finally: partial
+      approval.inline: unsupported
+      approval.manual: unsupported
+      approval.environmentGate: unsupported
+      parallel.dag: unsupported
+      retry.task: unsupported
+      loops.dynamic: unsupported
+      errorHandlers.finally: unsupported
       secrets.runtime: supported
       artifacts.uploadDownload: supported
       rollback.native: partial

@@ -64,8 +64,10 @@ internal fun CompatibilityReport.toMappingNotes(targetName: String): List<Target
 }
 
 /**
- * Target-neutral structural lowering. It preserves plan semantics and delegates
- * materialization evidence to the generic resolver without selecting a platform.
+ * Target-neutral structural lowering. It preserves plan structure and asks the
+ * selected provider catalog for explicit structural evidence. Native child actions
+ * never make an unresolved parent condition, loop, branch, retry or error boundary
+ * executable by accident.
  */
 internal fun PlanNode.toTargetSteps(
     targetName: String = "notes-driven",
@@ -76,69 +78,101 @@ internal fun PlanNode.toTargetSteps(
     is ConditionNode -> {
         val out = mutableListOf<TargetStep>()
         if (then.isNotEmpty()) {
+            val stepId = sanitizeId("${id}_then")
+            val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.CONDITION, stepId)
             out += TargetStep(
-                id = sanitizeId("${id}_then"),
+                id = stepId,
                 name = "$id then",
-                type = "condition",
+                type = TargetStructuralProjectionKind.CONDITION.stepType,
                 params = mapOf("condition" to condition),
                 children = then.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+                materialization = structural.materialization,
+                rendererPayload = structural.rendererPayload,
                 metadata = mapOf("sourceNodeKind" to kind, "branch" to "then")
             )
         }
         if (otherwise.isNotEmpty()) {
+            val stepId = sanitizeId("${id}_else")
+            val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.CONDITION, stepId)
             out += TargetStep(
-                id = sanitizeId("${id}_else"),
+                id = stepId,
                 name = "$id else",
-                type = "condition",
+                type = TargetStructuralProjectionKind.CONDITION.stepType,
                 params = mapOf("condition" to "not ($condition)"),
                 children = otherwise.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+                materialization = structural.materialization,
+                rendererPayload = structural.rendererPayload,
                 metadata = mapOf("sourceNodeKind" to kind, "branch" to "else")
             )
         }
         out
     }
-    is LoopNode -> listOf(TargetStep(
-        id = sanitizeId(id),
-        name = id,
-        type = "loop",
-        params = mapOf("item" to item, "source" to source),
-        children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
-        metadata = mapOf("sourceNodeKind" to kind, "supportLevel" to "partial")
-    ))
-    is ParallelGroupNode -> listOf(TargetStep(
-        id = sanitizeId(id),
-        name = id,
-        type = "parallel",
-        children = branches.mapIndexed { index, branch ->
-            TargetStep(
-                id = sanitizeId(branch.name ?: "branch-${index + 1}"),
-                name = branch.name ?: "branch-${index + 1}",
-                type = "parallel-branch",
-                children = branch.steps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
-                metadata = mapOf("sourceNodeKind" to "ParallelBranch")
-            )
-        },
-        metadata = mapOf("sourceNodeKind" to kind, "failFast" to failFast.toString())
-    ))
-    is MatchPlanNode -> listOf(TargetStep(
-        id = sanitizeId(id),
-        name = id,
-        type = "match",
-        params = mapOf("source" to source),
-        children = cases.flatMap { case ->
-            case.steps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) }
-        } + errorCase.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) } +
-            defaultSteps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
-        metadata = mapOf("sourceNodeKind" to kind, "supportLevel" to "partial")
-    ))
-    is RetryGroupNode -> listOf(TargetStep(
-        id = sanitizeId(id),
-        name = id,
-        type = "retry",
-        params = mapOf("max" to max.toString(), "delay" to delay, "backoff" to backoff),
-        children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
-        metadata = mapOf("sourceNodeKind" to kind)
-    ))
+    is LoopNode -> {
+        val stepId = sanitizeId(id)
+        val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.LOOP, stepId)
+        listOf(TargetStep(
+            id = stepId,
+            name = id,
+            type = TargetStructuralProjectionKind.LOOP.stepType,
+            params = mapOf("item" to item, "source" to source),
+            children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+            materialization = structural.materialization,
+            rendererPayload = structural.rendererPayload,
+            metadata = mapOf("sourceNodeKind" to kind)
+        ))
+    }
+    is ParallelGroupNode -> {
+        val stepId = sanitizeId(id)
+        val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.PARALLEL, stepId)
+        listOf(TargetStep(
+            id = stepId,
+            name = id,
+            type = TargetStructuralProjectionKind.PARALLEL.stepType,
+            children = branches.mapIndexed { index, branch ->
+                TargetStep(
+                    id = sanitizeId(branch.name ?: "branch-${index + 1}"),
+                    name = branch.name ?: "branch-${index + 1}",
+                    type = "parallel-branch",
+                    children = branch.steps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+                    metadata = mapOf("sourceNodeKind" to "ParallelBranch")
+                )
+            },
+            materialization = structural.materialization,
+            rendererPayload = structural.rendererPayload,
+            metadata = mapOf("sourceNodeKind" to kind, "failFast" to failFast.toString())
+        ))
+    }
+    is MatchPlanNode -> {
+        val stepId = sanitizeId(id)
+        val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.MATCH, stepId)
+        listOf(TargetStep(
+            id = stepId,
+            name = id,
+            type = TargetStructuralProjectionKind.MATCH.stepType,
+            params = mapOf("source" to source),
+            children = cases.flatMap { case ->
+                case.steps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) }
+            } + errorCase.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) } +
+                defaultSteps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+            materialization = structural.materialization,
+            rendererPayload = structural.rendererPayload,
+            metadata = mapOf("sourceNodeKind" to kind)
+        ))
+    }
+    is RetryGroupNode -> {
+        val stepId = sanitizeId(id)
+        val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.RETRY, stepId)
+        listOf(TargetStep(
+            id = stepId,
+            name = id,
+            type = TargetStructuralProjectionKind.RETRY.stepType,
+            params = mapOf("max" to max.toString(), "delay" to delay, "backoff" to backoff),
+            children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+            materialization = structural.materialization,
+            rendererPayload = structural.rendererPayload,
+            metadata = mapOf("sourceNodeKind" to kind)
+        ))
+    }
     is TryPlanNode -> {
         val bodyStep = TargetStep(
             id = sanitizeId("${id}_body"),
@@ -154,17 +188,17 @@ internal fun PlanNode.toTargetSteps(
             children = errorHandler.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
             metadata = mapOf("sourceNodeKind" to kind, "tryRole" to "errorHandler")
         )
-        if (body.isEmpty()) {
-            listOf(handlerStep)
-        } else {
-            listOf(TargetStep(
-                id = sanitizeId(id),
-                name = id,
-                type = "try",
-                children = listOf(bodyStep, handlerStep),
-                metadata = mapOf("sourceNodeKind" to kind, "errorHandlerCount" to errorHandler.size.toString())
-            ))
-        }
+        val stepId = sanitizeId(id)
+        val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.ERROR_BOUNDARY, stepId)
+        listOf(TargetStep(
+            id = stepId,
+            name = id,
+            type = TargetStructuralProjectionKind.ERROR_BOUNDARY.stepType,
+            children = listOf(bodyStep, handlerStep),
+            materialization = structural.materialization,
+            rendererPayload = structural.rendererPayload,
+            metadata = mapOf("sourceNodeKind" to kind, "errorHandlerCount" to errorHandler.size.toString())
+        ))
     }
     is ApprovalNode -> {
         val capability = requiredCapabilities.singleOrNull { it.startsWith("approval.") }

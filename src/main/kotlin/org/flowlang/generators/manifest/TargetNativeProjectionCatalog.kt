@@ -96,29 +96,85 @@ data class TargetNativeApprovalProjectionDefinition(
     )
 }
 
+/** Structural semantics that require adapter-owned implementation evidence. */
+enum class TargetStructuralProjectionKind(
+    val stepType: String,
+    val capability: String
+) {
+    CONDITION("condition", "condition.evaluate"),
+    PARALLEL("parallel", "parallel.dag"),
+    LOOP("loop", "loop.dynamic"),
+    MATCH("match", "match.basic"),
+    RETRY("retry", "retry.task"),
+    ERROR_BOUNDARY("try", "errorHandlers.finally");
+
+    companion object {
+        fun fromStepType(stepType: String): TargetStructuralProjectionKind? =
+            entries.firstOrNull { it.stepType == stepType }
+    }
+}
+
+/**
+ * Provider-owned proof that one structural construct has both production behavior
+ * and an independent behavioral test. A platform capability declaration is not
+ * enough, because native child leaves cannot preserve an unimplemented parent.
+ */
+data class TargetNativeStructuralProjectionDefinition(
+    val structure: TargetStructuralProjectionKind,
+    val kind: String,
+    val reference: String,
+    val implementationEvidenceReference: String,
+    val behavioralEvidenceReference: String
+) {
+    init {
+        require(kind.isNotBlank()) { "Native structural projection '${structure.name}' must declare a payload kind." }
+        require(reference.isNotBlank()) { "Native structural projection '${structure.name}' must declare a payload reference." }
+        require(implementationEvidenceReference.isNotBlank()) {
+            "Native structural projection '${structure.name}' must cite production implementation evidence."
+        }
+        require(behavioralEvidenceReference.isNotBlank()) {
+            "Native structural projection '${structure.name}' must cite behavioral evidence."
+        }
+    }
+
+    internal fun payloadDefinition(): TargetNativeProjectionDefinition =
+        TargetNativeProjectionDefinition(kind = kind, reference = reference)
+}
+
+data class TargetNativeStructuralProjectionResolution(
+    val materialization: TargetMaterialization,
+    val rendererPayload: TargetRendererPayload?
+)
+
 /**
  * Immutable, explicitly composed evidence that a target distribution owns and
- * implements selected native projection payloads.
+ * implements selected native action and structural projection payloads.
  */
 class TargetNativeProjectionCatalog private constructor(
     val target: String,
     actionDefinitions: Iterable<TargetNativeProjectionDefinition>,
-    approvalProjectionDefinitions: Iterable<TargetNativeApprovalProjectionDefinition>
+    approvalProjectionDefinitions: Iterable<TargetNativeApprovalProjectionDefinition>,
+    structuralProjectionDefinitions: Iterable<TargetNativeStructuralProjectionDefinition>
 ) {
     private val definitionsByKey: Map<DefinitionKey, TargetNativeProjectionDefinition>
     private val approvalDefinitionsByCapability: Map<String, TargetNativeApprovalProjectionDefinition>
+    private val structuralDefinitionsByKind: Map<TargetStructuralProjectionKind, TargetNativeStructuralProjectionDefinition>
     private val actionDefinitionValues: List<TargetNativeProjectionDefinition>
 
     init {
         require(target.isNotBlank()) { "Native projection catalog must declare a non-blank target id." }
         actionDefinitionValues = actionDefinitions.toList()
         val approvals = approvalProjectionDefinitions.toList()
+        val structures = structuralProjectionDefinitions.toList()
         val indexed = linkedMapOf<DefinitionKey, TargetNativeProjectionDefinition>()
         actionDefinitionValues.forEach { definition ->
             indexDefinition(indexed, definition)
         }
         approvals.forEach { approval ->
             indexDefinition(indexed, approval.payloadDefinition())
+        }
+        structures.forEach { structure ->
+            indexDefinition(indexed, structure.payloadDefinition())
         }
         definitionsByKey = indexed.toMap()
 
@@ -129,13 +185,28 @@ class TargetNativeProjectionCatalog private constructor(
             }
         }
         approvalDefinitionsByCapability = approvalsByCapability.toMap()
+
+        val structuresByKind = linkedMapOf<TargetStructuralProjectionKind, TargetNativeStructuralProjectionDefinition>()
+        structures.forEach { definition ->
+            require(structuresByKind.putIfAbsent(definition.structure, definition) == null) {
+                "Duplicate native structural projection '${definition.structure}' for target '$target'."
+            }
+        }
+        structuralDefinitionsByKind = structuresByKind.toMap()
     }
 
+    /** Native action definitions only; structural and approval contracts have dedicated views. */
     val definitions: List<TargetNativeProjectionDefinition>
         get() = actionDefinitionValues
 
     val approvalDefinitions: List<TargetNativeApprovalProjectionDefinition>
         get() = approvalDefinitionsByCapability.values.toList()
+
+    val structuralDefinitions: List<TargetNativeStructuralProjectionDefinition>
+        get() = structuralDefinitionsByKind.values.toList()
+
+    fun hasStructuralProjection(kind: TargetStructuralProjectionKind): Boolean =
+        kind in structuralDefinitionsByKind
 
     fun requireCompatibleRules(rules: Iterable<TargetProjectionRule>) {
         rules.filter { it.mode == TargetProjectionMode.NATIVE }.forEach { rule ->
@@ -212,6 +283,49 @@ class TargetNativeProjectionCatalog private constructor(
         return payload
     }
 
+    /**
+     * Resolve one structural boundary. Missing evidence is an explicit adapter
+     * requirement, never a semantic-only parent made executable by native children.
+     */
+    fun resolveStructure(
+        kind: TargetStructuralProjectionKind,
+        nodeId: String
+    ): TargetNativeStructuralProjectionResolution {
+        val definition = structuralDefinitionsByKind[kind]
+            ?: return TargetNativeStructuralProjectionResolution(
+                materialization = TargetMaterialization.adapterRequired(
+                    capability = kind.capability,
+                    reason = "Target provider '$target' has no owned ${kind.name.lowercase()} structural projection evidence for '$nodeId'.",
+                    requirements = mapOf(
+                        STRUCTURAL_KIND_METADATA to kind.name,
+                        "target" to target,
+                        "sourceNode" to nodeId
+                    )
+                ),
+                rendererPayload = null
+            )
+
+        val payload = TargetRendererPayload(
+            kind = definition.kind,
+            target = target,
+            reference = definition.reference,
+            evidenceReference = definition.implementationEvidenceReference
+        )
+        requirePayload(payload, definition.payloadDefinition())
+        return TargetNativeStructuralProjectionResolution(
+            materialization = TargetMaterialization.native(
+                capability = kind.capability,
+                reason = "Structural ${kind.name.lowercase()} semantics are backed by provider-owned production and behavioral evidence.",
+                metadata = mapOf(
+                    STRUCTURAL_KIND_METADATA to kind.name,
+                    STRUCTURAL_IMPLEMENTATION_EVIDENCE_METADATA to definition.implementationEvidenceReference,
+                    STRUCTURAL_BEHAVIOR_EVIDENCE_METADATA to definition.behavioralEvidenceReference
+                )
+            ),
+            rendererPayload = payload
+        )
+    }
+
     fun requirePayload(payload: TargetRendererPayload) {
         require(payload.target == target) {
             "Native projection catalog '$target' cannot validate payload target '${payload.target}'."
@@ -227,8 +341,34 @@ class TargetNativeProjectionCatalog private constructor(
         manifest.jobs.asSequence()
             .flatMap { job -> job.steps.asSequence() }
             .flatMap { step -> flatten(step) }
-            .mapNotNull { it.rendererPayload }
-            .forEach(::requirePayload)
+            .forEach { step ->
+                step.rendererPayload?.let(::requirePayload)
+                val structure = TargetStructuralProjectionKind.fromStepType(step.type)
+                if (structure != null && step.materialization.status == TargetMaterializationStatus.NATIVE) {
+                    requireStructuralStep(step, structure)
+                }
+            }
+    }
+
+    private fun requireStructuralStep(step: TargetStep, kind: TargetStructuralProjectionKind) {
+        val definition = structuralDefinitionsByKind[kind]
+            ?: error("Target '$target' has no native structural implementation contract for '${kind.name}'.")
+        val payload = requireNotNull(step.rendererPayload) {
+            "Native structural step '${step.id}' for target '$target' has no renderer payload."
+        }
+        require(payload.kind == definition.kind && payload.reference == definition.reference) {
+            "Native structural step '${step.id}' uses '${payload.kind}/${payload.reference}', expected '${definition.kind}/${definition.reference}'."
+        }
+        val metadata = step.materialization.metadata
+        require(metadata[STRUCTURAL_KIND_METADATA] == kind.name) {
+            "Native structural step '${step.id}' does not preserve structural kind '${kind.name}'."
+        }
+        require(metadata[STRUCTURAL_IMPLEMENTATION_EVIDENCE_METADATA] == definition.implementationEvidenceReference) {
+            "Native structural step '${step.id}' does not preserve exact implementation evidence."
+        }
+        require(metadata[STRUCTURAL_BEHAVIOR_EVIDENCE_METADATA] == definition.behavioralEvidenceReference) {
+            "Native structural step '${step.id}' does not preserve exact behavioral evidence."
+        }
     }
 
     private fun indexDefinition(
@@ -368,11 +508,21 @@ class TargetNativeProjectionCatalog private constructor(
     private data class DefinitionKey(val kind: String, val reference: String)
 
     companion object {
+        const val STRUCTURAL_KIND_METADATA = "structuralProjectionKind"
+        const val STRUCTURAL_IMPLEMENTATION_EVIDENCE_METADATA = "structuralImplementationEvidence"
+        const val STRUCTURAL_BEHAVIOR_EVIDENCE_METADATA = "structuralBehaviorEvidence"
+
         fun of(
             target: String,
             definitions: Iterable<TargetNativeProjectionDefinition>,
-            approvalDefinitions: Iterable<TargetNativeApprovalProjectionDefinition> = emptyList()
-        ): TargetNativeProjectionCatalog = TargetNativeProjectionCatalog(target, definitions, approvalDefinitions)
+            approvalDefinitions: Iterable<TargetNativeApprovalProjectionDefinition> = emptyList(),
+            structuralDefinitions: Iterable<TargetNativeStructuralProjectionDefinition> = emptyList()
+        ): TargetNativeProjectionCatalog = TargetNativeProjectionCatalog(
+            target,
+            definitions,
+            approvalDefinitions,
+            structuralDefinitions
+        )
 
         fun of(
             target: String,

@@ -215,6 +215,10 @@ object TargetManifestContractValidator {
             }
         }
 
+        TargetStructuralProjectionKind.fromStepType(step.type)?.let { structure ->
+            validateStructuralStep(step, structure, path, issues)
+        }
+
         if (step.type == "action") {
             if (step.module.isNullOrBlank()) {
                 error("ACTION_MODULE_BLANK", "$path.module", "Action step must carry the source module.")
@@ -243,6 +247,65 @@ object TargetManifestContractValidator {
 
         step.children.forEachIndexed { index, child ->
             validateStep(child, "$path.children[$index]", stepIds, issues)
+        }
+    }
+
+    private fun validateStructuralStep(
+        step: TargetStep,
+        structure: TargetStructuralProjectionKind,
+        path: String,
+        issues: MutableList<TargetManifestContractIssue>
+    ) {
+        if (step.materialization.status != TargetMaterializationStatus.NATIVE) return
+
+        fun error(code: String, issuePath: String, message: String) {
+            issues += TargetManifestContractIssue("error", code, issuePath, message)
+        }
+        if (step.materialization.capability != structure.capability) {
+            error(
+                "STRUCTURAL_CAPABILITY_MISMATCH",
+                "$path.materialization.capability",
+                "Native '${structure.name}' projection must materialize '${structure.capability}', found '${step.materialization.capability}'."
+            )
+        }
+        val payload = step.rendererPayload
+        if (payload == null) {
+            error(
+                "STRUCTURAL_RENDERER_PAYLOAD_MISSING",
+                "$path.rendererPayload",
+                "Native '${structure.name}' projection must carry a provider-owned renderer payload."
+            )
+        }
+        val metadata = step.materialization.metadata
+        if (metadata[TargetNativeProjectionCatalog.STRUCTURAL_KIND_METADATA] != structure.name) {
+            error(
+                "STRUCTURAL_KIND_EVIDENCE_MISSING",
+                "$path.materialization.metadata.${TargetNativeProjectionCatalog.STRUCTURAL_KIND_METADATA}",
+                "Native structural projection must preserve exact kind '${structure.name}'."
+            )
+        }
+        val implementation = metadata[TargetNativeProjectionCatalog.STRUCTURAL_IMPLEMENTATION_EVIDENCE_METADATA]
+        if (implementation.isNullOrBlank()) {
+            error(
+                "STRUCTURAL_IMPLEMENTATION_EVIDENCE_MISSING",
+                "$path.materialization.metadata.${TargetNativeProjectionCatalog.STRUCTURAL_IMPLEMENTATION_EVIDENCE_METADATA}",
+                "Native structural projection must cite production implementation evidence."
+            )
+        }
+        val behavior = metadata[TargetNativeProjectionCatalog.STRUCTURAL_BEHAVIOR_EVIDENCE_METADATA]
+        if (behavior.isNullOrBlank()) {
+            error(
+                "STRUCTURAL_BEHAVIOR_EVIDENCE_MISSING",
+                "$path.materialization.metadata.${TargetNativeProjectionCatalog.STRUCTURAL_BEHAVIOR_EVIDENCE_METADATA}",
+                "Native structural projection must cite independent behavioral evidence."
+            )
+        }
+        if (payload != null && !implementation.isNullOrBlank() && payload.evidenceReference != implementation) {
+            error(
+                "STRUCTURAL_PAYLOAD_EVIDENCE_MISMATCH",
+                "$path.rendererPayload.evidenceReference",
+                "Structural payload evidence must equal the provider-owned implementation evidence."
+            )
         }
     }
 
