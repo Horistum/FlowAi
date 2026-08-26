@@ -17,15 +17,15 @@ class DataOrchestrationFalsificationTests {
 
         assertEquals(8, report.caseCount)
         assertEquals(2, report.distinctRepositoryCount)
-        assertEquals(4, report.representableCount)
-        assertEquals(4, report.modelGapCount)
+        assertEquals(3, report.representableCount)
+        assertEquals(5, report.modelGapCount)
         assertEquals(ExternalFalsificationOutcome.REPRESENTABLE, outcomes["airflow-task-dependency:task-dependency-order"])
         assertEquals(ExternalFalsificationOutcome.MODEL_GAP, outcomes["airflow-conditional-branching:conditional-branching"])
         assertEquals(ExternalFalsificationOutcome.REPRESENTABLE, outcomes["airflow-scheduled-cadence:daily-orchestration-cadence"])
         assertEquals(ExternalFalsificationOutcome.MODEL_GAP, outcomes["airflow-run-data-interval:run-data-interval"])
         assertEquals(ExternalFalsificationOutcome.REPRESENTABLE, outcomes["airflow-produced-asset:produced-data-identity"])
         assertEquals(ExternalFalsificationOutcome.MODEL_GAP, outcomes["airflow-asset-trigger-condition:all-assets-ready-trigger"])
-        assertEquals(ExternalFalsificationOutcome.REPRESENTABLE, outcomes["dagster-asset-dependency:data-asset-dependency"])
+        assertEquals(ExternalFalsificationOutcome.MODEL_GAP, outcomes["dagster-asset-dependency:data-asset-dependency"])
         assertEquals(ExternalFalsificationOutcome.MODEL_GAP, outcomes["dagster-partition-backfill:partition-backfill-selection"])
     }
 
@@ -44,6 +44,15 @@ class DataOrchestrationFalsificationTests {
         assertEquals(DataOrchestrationRequirement.SCHEDULED_CADENCE, finding.requirement)
         assertEquals(ExternalFalsificationOutcome.REPRESENTABLE, finding.outcome)
         assertTrue(finding.reason.contains("Airflow schedule aliases"))
+    }
+
+    @Test
+    fun stepDependencyDoesNotMasqueradeAsDataLineage() {
+        val finding = finding("dagster-asset-dependency", "data-asset-dependency")
+        assertEquals(DataOrchestrationRequirement.DATA_ASSET_DEPENDENCY, finding.requirement)
+        assertEquals(ExternalFalsificationOutcome.MODEL_GAP, finding.outcome)
+        assertTrue(finding.reason.contains("specific produced data"))
+        assertTrue(finding.reason.contains("control-only dependency"))
     }
 
     @Test

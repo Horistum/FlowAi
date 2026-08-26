@@ -21,10 +21,10 @@ authoredBehaviors:
 expectedSemanticObservations:
   - id: preserve-data-asset-dependency
     expectation: PRESERVE
-    statement: Flow must preserve the produced upstream data identity and which downstream producer depends on it.
+    statement: Flow must preserve the produced upstream data identity and which downstream producer depends on that data identity.
     behaviorRefs:
       - asset-dependency
-    rationale: For the reviewed single-output shape, producer output identity plus the dependency edge is target-neutral lineage meaning.
+    rationale: Data lineage is target-neutral meaning, but a generic step dependency is insufficient unless canonical meaning ties the consumer to the specific produced data.
 unsupportedFacts:
   - id: dagster-deps-decorator
     statement: Dagster authors the dependency through deps on an @asset decorator.

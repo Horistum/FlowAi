@@ -35,7 +35,7 @@ facts:
     factId: data-asset-dependency
     observationRef: preserve-data-asset-dependency
     requirement: DATA_ASSET_DEPENDENCY
-    initialOutcome: REPRESENTABLE
+    initialOutcome: MODEL_GAP
   - caseId: dagster-partition-backfill
     factId: partition-backfill-selection
     observationRef: preserve-partition-backfill-selection

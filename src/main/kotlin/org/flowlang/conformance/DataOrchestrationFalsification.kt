@@ -62,10 +62,10 @@ data class DataOrchestrationFalsificationReport(
 /**
  * EF-07 evaluator for externally grounded data-orchestration facts.
  *
- * Reviewed case assessments translate source evidence into bounded target-neutral requirements.
- * Every representability decision crosses IntentCapabilityValidator and CanonicalIntentMeaning.
- * Opaque trigger strings, free-form trigger params and generic batch parameters are deliberately
- * insufficient proof for richer orchestration semantics.
+ * Reviewed evidence is translated into bounded target-neutral requirements and every
+ * representability decision crosses IntentCapabilityValidator and CanonicalIntentMeaning.
+ * A field surviving serialization is not sufficient: the evaluator also requires semantic
+ * distinguishability and rejects opaque/provider-specific lookalikes where applicable.
  */
 class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
     fun evaluate(): DataOrchestrationFalsificationReport {
@@ -74,17 +74,14 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
             "EF-07 requires an EVIDENCE_ACTIVE external corpus."
         }
         val cases = corpus.cases.filter { it.definition.domain == DOMAIN }
-        require(cases.size >= MIN_CASES) {
-            "EF-07 requires at least $MIN_CASES data-orchestration evidence cases."
-        }
+        require(cases.size >= MIN_CASES) { "EF-07 requires at least $MIN_CASES data-orchestration evidence cases." }
         val repositoryCount = cases.map { it.definition.provenance.repository }.distinct().size
         require(repositoryCount >= MIN_REPOSITORIES) {
             "EF-07 requires evidence from at least $MIN_REPOSITORIES independent repositories."
         }
 
         val findings = cases.flatMap { loadedCase ->
-            val assessment = loadAssessment(loadedCase)
-            assessment.facts.map { fact -> classify(loadedCase.definition.id, fact) }
+            loadAssessment(loadedCase).facts.map { fact -> classify(loadedCase.definition.id, fact) }
         }
         require(findings.isNotEmpty()) { "EF-07 must classify at least one semantic fact." }
         val missing = REQUIRED_REQUIREMENTS - findings.map { it.requirement }.toSet()
@@ -96,9 +93,7 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
 
     private fun loadAssessment(loadedCase: LoadedExternalCorpusCase): DataOrchestrationCaseAssessment {
         val file = File(loadedCase.directory, ASSESSMENT_FILE)
-        require(file.isFile) {
-            "Missing EF-07 assessment for case '${loadedCase.definition.id}': ${file.path}"
-        }
+        require(file.isFile) { "Missing EF-07 assessment for case '${loadedCase.definition.id}': ${file.path}" }
         val assessment = readStrict(file, DataOrchestrationCaseAssessment::class.java)
         require(assessment.kind == KIND && assessment.version == VERSION) {
             "EF-07 assessment for '${loadedCase.definition.id}' must use $KIND version $VERSION."
@@ -106,9 +101,7 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         require(assessment.caseId == loadedCase.definition.id) {
             "EF-07 assessment caseId '${assessment.caseId}' does not match '${loadedCase.definition.id}'."
         }
-        require(assessment.facts.isNotEmpty()) {
-            "EF-07 assessment for '${assessment.caseId}' must declare semantic facts."
-        }
+        require(assessment.facts.isNotEmpty()) { "EF-07 assessment for '${assessment.caseId}' must declare semantic facts." }
         requireUnique(assessment.caseId, "fact", assessment.facts.map { it.id })
         requireUnique(assessment.caseId, "observation reference", assessment.facts.map { it.observationRef })
 
@@ -175,38 +168,27 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
             DataOrchestrationRequirement.CONDITIONAL_BRANCHING -> conditionalBranching(fact.values)
         }
         return DataOrchestrationFinding(
-            caseId,
-            fact.id,
-            fact.observationRef,
-            fact.requirement,
-            classified.first,
-            classified.second
+            caseId = caseId,
+            factId = fact.id,
+            observationRef = fact.observationRef,
+            requirement = fact.requirement,
+            outcome = classified.first,
+            reason = classified.second
         )
     }
 
     private fun taskDependencyOrder(values: Map<String, String>): Pair<ExternalFalsificationOutcome, String> {
         val upstream = values.getValue(UPSTREAM)
         val downstream = values.getValue(DOWNSTREAM)
-        val observed = validate(
-            listOf(
-                transformStep(upstream),
-                transformStep(downstream, requires = listOf(upstream))
-            )
-        )
-        val alternate = validate(
-            listOf(
-                transformStep(upstream),
-                transformStep(downstream)
-            )
-        )
+        val observed = validate(listOf(transformStep(upstream), transformStep(downstream, requires = listOf(upstream))))
+        val alternate = validate(listOf(transformStep(upstream), transformStep(downstream)))
         val observedDownstream = observed.meaning.workflows.single().steps.single { it.id == downstream }
         val alternateDownstream = alternate.meaning.workflows.single().steps.single { it.id == downstream }
-        val preserved = observed.valid && alternate.valid &&
-            observedDownstream.requires == listOf(upstream) &&
-            alternateDownstream.requires.isEmpty() &&
-            observedDownstream.requires != alternateDownstream.requires
         return outcome(
-            preserved,
+            observed.valid && alternate.valid &&
+                observedDownstream.requires == listOf(upstream) &&
+                alternateDownstream.requires.isEmpty() &&
+                observedDownstream.requires != alternateDownstream.requires,
             "Canonical step requirements preserve the authored upstream-to-downstream dependency as a distinguishable graph edge.",
             "The authored task dependency is not preserved as distinguishable canonical graph meaning."
         )
@@ -219,14 +201,11 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         val alternate = validate(listOf(transformStep("scheduled-transform")), listOf(scheduleTrigger(alternateCadence)))
         val observedSchedule = observed.meaning.triggers.singleOrNull()?.schedule
         val alternateSchedule = alternate.meaning.triggers.singleOrNull()?.schedule
-        val preserved = observed.valid && alternate.valid &&
-            observedSchedule?.kind == IntentScheduleKind.INTERVAL &&
-            observedSchedule.expression == cadence &&
-            alternateSchedule?.kind == IntentScheduleKind.INTERVAL &&
-            alternateSchedule.expression == alternateCadence &&
-            observed.meaning.triggers != alternate.meaning.triggers
         return outcome(
-            preserved,
+            observed.valid && alternate.valid &&
+                observedSchedule?.kind == IntentScheduleKind.INTERVAL && observedSchedule.expression == cadence &&
+                alternateSchedule?.kind == IntentScheduleKind.INTERVAL && alternateSchedule.expression == alternateCadence &&
+                observed.meaning.triggers != alternate.meaning.triggers,
             "Canonical interval-trigger meaning preserves the authored cadence independently from Airflow schedule aliases.",
             "The authored orchestration cadence is not preserved as distinguishable canonical schedule meaning."
         )
@@ -240,12 +219,11 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         val alternate = validate(listOf(transformStep(producer, produces = listOf(alternateData))))
         val observedStep = observed.meaning.workflows.single().steps.single()
         val alternateStep = alternate.meaning.workflows.single().steps.single()
-        val preserved = observed.valid && alternate.valid &&
-            observedStep.produces == listOf(data) &&
-            alternateStep.produces == listOf(alternateData) &&
-            observedStep.produces != alternateStep.produces
         return outcome(
-            preserved,
+            observed.valid && alternate.valid &&
+                observedStep.produces == listOf(data) &&
+                alternateStep.produces == listOf(alternateData) &&
+                observedStep.produces != alternateStep.produces,
             "Canonical step outputs preserve the authored produced-data identity without storage URI syntax.",
             "The authored produced-data identity is not preserved as distinguishable canonical output meaning."
         )
@@ -256,30 +234,24 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         val upstreamData = values.getValue(UPSTREAM_DATA)
         val downstreamStep = values.getValue(DOWNSTREAM_STEP)
         val downstreamData = values.getValue(DOWNSTREAM_DATA)
-        val observed = validate(
+        val report = validate(
             listOf(
                 transformStep(upstreamStep, produces = listOf(upstreamData)),
                 transformStep(downstreamStep, requires = listOf(upstreamStep), produces = listOf(downstreamData))
             )
         )
-        val alternate = validate(
-            listOf(
-                transformStep(upstreamStep, produces = listOf(upstreamData)),
-                transformStep(downstreamStep, produces = listOf(downstreamData))
-            )
-        )
-        val observedSteps = observed.meaning.workflows.single().steps.associateBy { it.id }
-        val alternateSteps = alternate.meaning.workflows.single().steps.associateBy { it.id }
-        val preserved = observed.valid && alternate.valid &&
-            observedSteps.getValue(upstreamStep).produces == listOf(upstreamData) &&
-            observedSteps.getValue(downstreamStep).requires == listOf(upstreamStep) &&
-            observedSteps.getValue(downstreamStep).produces == listOf(downstreamData) &&
-            alternateSteps.getValue(downstreamStep).requires.isEmpty()
-        return outcome(
-            preserved,
-            "For a single-output producer, canonical output identity plus the required producer edge preserves the externally authored upstream/downstream data dependency.",
-            "The externally authored data-asset dependency is not preserved by canonical output identity and dependency edges."
-        )
+        val steps = report.meaning.workflows.single().steps.associateBy { it.id }
+        val structuralPiecesPreserved = report.valid &&
+            steps.getValue(upstreamStep).produces == listOf(upstreamData) &&
+            steps.getValue(downstreamStep).requires == listOf(upstreamStep) &&
+            steps.getValue(downstreamStep).produces == listOf(downstreamData)
+        return if (!structuralPiecesPreserved) {
+            ExternalFalsificationOutcome.MODEL_GAP to
+                "The reviewed producer output and dependency edge are not preserved by current canonical meaning."
+        } else {
+            ExternalFalsificationOutcome.MODEL_GAP to
+                "Canonical meaning preserves the producer output identity and a step dependency, but it has no semantic edge tying the downstream step to that specific produced data. A control-only dependency and authored data lineage therefore collapse to the same canonical shape."
+        }
     }
 
     private fun assetTriggerCondition(values: Map<String, String>): Pair<ExternalFalsificationOutcome, String> {
@@ -289,28 +261,18 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
             CONDITION to IntentString(values.getValue(CONDITION))
         )
         val alternateParams = baseParams + (CONDITION to IntentString(alternateCondition(values.getValue(CONDITION))))
-        val observed = validate(
-            listOf(transformStep("asset-consumer")),
-            listOf(eventTrigger("asset-condition", baseParams))
-        )
-        val alternate = validate(
-            listOf(transformStep("asset-consumer")),
-            listOf(eventTrigger("asset-condition", alternateParams))
-        )
+        val observed = validate(listOf(transformStep("asset-consumer")), listOf(eventTrigger("asset-condition", baseParams)))
+        val alternate = validate(listOf(transformStep("asset-consumer")), listOf(eventTrigger("asset-condition", alternateParams)))
         val smuggled = validate(
             listOf(transformStep("asset-consumer")),
             listOf(eventTrigger("asset-condition", baseParams + (PROVIDER_TRIGGER_PARAM to IntentString("provider-expression"))))
         )
         val observedTrigger = observed.meaning.triggers.singleOrNull()
         val alternateTrigger = alternate.meaning.triggers.singleOrNull()
-        val preserved = observed.valid && alternate.valid &&
-            observedTrigger != null && alternateTrigger != null &&
-            observedTrigger.params == baseParams &&
-            alternateTrigger.params == alternateParams &&
-            observedTrigger.params != alternateTrigger.params &&
-            !smuggled.valid
         return outcome(
-            preserved,
+            observed.valid && alternate.valid && observedTrigger != null && alternateTrigger != null &&
+                observedTrigger.params == baseParams && alternateTrigger.params == alternateParams &&
+                observedTrigger.params != alternateTrigger.params && !smuggled.valid,
             "Canonical trigger validation preserves typed asset identities and logical trigger condition while rejecting unrelated provider vocabulary.",
             "Trigger params are currently free-form: asset identities and ALL/ANY semantics can be echoed, but arbitrary provider-specific keys are equally accepted, so this is not typed canonical trigger meaning."
         )
@@ -321,31 +283,21 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         val interval = values.getValue(DATA_INTERVAL)
         val observedParams = mapOf(DATA_INTERVAL to IntentString(interval))
         val alternateParams = mapOf(DATA_INTERVAL to IntentString("$interval-alternate"))
-        val observed = validate(
-            listOf(transformStep("interval-transform")),
-            listOf(scheduleTrigger(cadence, observedParams))
-        )
-        val alternate = validate(
-            listOf(transformStep("interval-transform")),
-            listOf(scheduleTrigger(cadence, alternateParams))
-        )
+        val observed = validate(listOf(transformStep("interval-transform")), listOf(scheduleTrigger(cadence, observedParams)))
+        val alternate = validate(listOf(transformStep("interval-transform")), listOf(scheduleTrigger(cadence, alternateParams)))
         val smuggled = validate(
             listOf(transformStep("interval-transform")),
             listOf(scheduleTrigger(cadence, observedParams + (PROVIDER_TRIGGER_PARAM to IntentString("logical-date"))))
         )
         val observedTrigger = observed.meaning.triggers.singleOrNull()
         val alternateTrigger = alternate.meaning.triggers.singleOrNull()
-        val preserved = observed.valid && alternate.valid &&
-            observedTrigger != null && alternateTrigger != null &&
-            observedTrigger.schedule?.expression == cadence &&
-            observedTrigger.params == observedParams &&
-            alternateTrigger.params == alternateParams &&
-            observedTrigger.params != alternateTrigger.params &&
-            !smuggled.valid
         return outcome(
-            preserved,
+            observed.valid && alternate.valid && observedTrigger != null && alternateTrigger != null &&
+                observedTrigger.schedule?.expression == cadence &&
+                observedTrigger.params == observedParams && alternateTrigger.params == alternateParams &&
+                observedTrigger.params != alternateTrigger.params && !smuggled.valid,
             "Canonical trigger meaning distinguishes a validated per-run data interval from cadence and rejects provider-only trigger metadata.",
-            "The canonical schedule preserves cadence but trigger params are free-form, so a Dag Run's data interval is not preserved as validated meaning distinct from schedule time."
+            "The canonical schedule preserves cadence but trigger params are free-form, so a run data interval is not preserved as validated meaning distinct from schedule time."
         )
     }
 
@@ -358,12 +310,11 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         val alternate = authored + (PARTITION_END_PARAM to "${values.getValue(PARTITION_END)}-alternate")
         val observed = stepParameterProjection("backfill-data", data, authored)
         val alternateProjection = stepParameterProjection("backfill-data", data, alternate)
-        val preserved = observed.valid && alternateProjection.valid &&
-            parametersPreserved(observed, authored) &&
-            parametersPreserved(alternateProjection, alternate) &&
-            observed.params != alternateProjection.params
         return outcome(
-            preserved,
+            observed.valid && alternateProjection.valid &&
+                parametersPreserved(observed, authored) &&
+                parametersPreserved(alternateProjection, alternate) &&
+                observed.params != alternateProjection.params,
             "Canonical data-orchestration meaning preserves the selected historical partition range as typed, distinguishable semantics.",
             "DATA_TRANSFORM has no typed partition-subset/backfill selection; generic batches, reruns or repeated schedules do not preserve which historical partitions were requested."
         )
@@ -395,21 +346,18 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         val staticGraph = probe.meaning.workflows.single().steps.associateBy { it.id }
         val bothPathsStatic = staticGraph[trueStep]?.requires == listOf(decisionStep) &&
             staticGraph[falseStep]?.requires == listOf(decisionStep)
-        val reason = if (parameterErrors.isNotEmpty()) {
-            "Current contracts reject typed branch-condition/path parameters, and static requires edges only state that both downstream paths depend on the decision step."
-        } else if (bothPathsStatic) {
-            "Branch-like parameters are accepted but canonical graph meaning still contains both static downstream edges and does not encode mutually exclusive path selection."
-        } else {
-            "Canonical meaning does not preserve the authored conditional path selection as typed control-flow semantics."
+        val reason = when {
+            parameterErrors.isNotEmpty() ->
+                "Current contracts reject typed branch-condition/path parameters, and static requires edges only state that both downstream paths depend on the decision step."
+            bothPathsStatic ->
+                "Branch-like parameters are accepted but canonical graph meaning still contains both static downstream edges and does not encode mutually exclusive path selection."
+            else ->
+                "Canonical meaning does not preserve the authored conditional path selection as typed control-flow semantics."
         }
         return ExternalFalsificationOutcome.MODEL_GAP to reason
     }
 
-    private fun stepParameterProjection(
-        stepId: String,
-        data: String,
-        values: Map<String, String>
-    ): StepParameterProjection {
+    private fun stepParameterProjection(stepId: String, data: String, values: Map<String, String>): StepParameterProjection {
         val report = validate(
             listOf(
                 IntentStep(
@@ -428,22 +376,20 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         )
     }
 
-    private fun validate(
-        steps: List<IntentStep>,
-        triggers: List<IntentTrigger> = emptyList()
-    ) = IntentCapabilityValidator().validate(
-        IntentDocument(
-            name = "ef07-data-orchestration",
-            triggers = triggers,
-            workflows = listOf(
-                IntentWorkflow(
-                    name = "main",
-                    kind = IntentWorkflowKind.DATA_PIPELINE,
-                    steps = steps
+    private fun validate(steps: List<IntentStep>, triggers: List<IntentTrigger> = emptyList()) =
+        IntentCapabilityValidator().validate(
+            IntentDocument(
+                name = "ef07-data-orchestration",
+                triggers = triggers,
+                workflows = listOf(
+                    IntentWorkflow(
+                        name = "main",
+                        kind = IntentWorkflowKind.DATA_PIPELINE,
+                        steps = steps
+                    )
                 )
             )
         )
-    )
 
     private fun transformStep(
         id: String,
@@ -456,16 +402,14 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         produces = produces
     )
 
-    private fun scheduleTrigger(
-        cadence: String,
-        params: Map<String, IntentValue> = emptyMap()
-    ) = IntentTrigger(
-        id = "schedule",
-        type = IntentTriggerType.SCHEDULE,
-        workflows = listOf("main"),
-        schedule = IntentSchedule(IntentScheduleKind.INTERVAL, cadence),
-        params = params
-    )
+    private fun scheduleTrigger(cadence: String, params: Map<String, IntentValue> = emptyMap()) =
+        IntentTrigger(
+            id = "schedule",
+            type = IntentTriggerType.SCHEDULE,
+            workflows = listOf("main"),
+            schedule = IntentSchedule(IntentScheduleKind.INTERVAL, cadence),
+            params = params
+        )
 
     private fun eventTrigger(id: String, params: Map<String, IntentValue>) = IntentTrigger(
         id = id,
@@ -475,11 +419,9 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         params = params
     )
 
-    private fun parametersPreserved(
-        projection: StepParameterProjection,
-        expected: Map<String, String>
-    ): Boolean = projection.semanticParametersAccepted &&
-        expected.all { (name, value) -> projection.params[name] == IntentString(value) }
+    private fun parametersPreserved(projection: StepParameterProjection, expected: Map<String, String>): Boolean =
+        projection.semanticParametersAccepted &&
+            expected.all { (name, value) -> projection.params[name] == IntentString(value) }
 
     private fun outcome(preserved: Boolean, success: String, gap: String) =
         if (preserved) ExternalFalsificationOutcome.REPRESENTABLE to success
