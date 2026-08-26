@@ -1,18 +1,18 @@
 version: "EF-08"
 name: "Infrastructure Lifecycle Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: validating
+status: complete
 stream: "post-toolchain"
 
 objective: "Pressure current Flow infrastructure-lifecycle semantics with immutable external evidence for resource creation/update, explicit removal, desired-state reconciliation, non-mutating change preview, replacement ordering, destruction prohibition, orphan/retain behavior and persistent management-action policy without turning OpenTofu resource addresses, Crossplane managed-resource fields, provider names or controller vocabulary into universal Core meaning."
 
 authorization:
-  status: validating
+  status: completed
   predecessor: "EF-07"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-08"
   mainAtDefinition: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
   mainAtActivation: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
-  rule: "EF-08 may classify target-independent infrastructure-lifecycle gaps after its activation-only boundary. Core repair, StandardCapability changes, contract changes and canonical-effect changes remain forbidden in this work item."
+  rule: "EF-08 completed external falsification without repairing Core semantics, adding StandardCapability values, changing capability contracts or canonical effects, or weakening validation. Any semantic correction remains separately authorized by later synthesis and SI-2."
 
 implementationEvidence:
   status: passed
@@ -56,6 +56,24 @@ validationBoundary:
     cleanTest: passed
     standaloneConformance: passed
   purpose: "Independently validate the implementation-evidence-bearing EF-08 state before completion evidence is admitted."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3051
+  runId: 32923779343
+  exactHead: "f452f18cd37285140b6bc2b0527f7ea3806bcd30"
+  mergeCandidate: "f5a4d6d4b13f1735588e736715849eeebd74295d"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 5
+  rule: "This boundary is later than implementation and validation and validates the evidence-bearing EF-08 state before lifecycle closure is recorded."
 
 sourceSelection:
   criteria:
@@ -120,16 +138,17 @@ completionEvidence:
   - "Flow CI #3048 passed the distinct activation-only boundary before any EF-08 external case was admitted."
   - "Flow CI #3049 passed the distinct implementation boundary on exact head bc0887ea687e80afda974416fa86882576c485b3 and synthetic merge candidate 19c87e68a1bf28caf705f85872926a0562511005."
   - "Flow CI #3050 passed the distinct validation boundary on exact head f3ec5f32bf115c5bdd8d4fd28120feeca3969e40 and synthetic merge candidate be23532031e1d48718b46f62d95d26235dc2b73a."
+  - "Flow CI #3051 passed the distinct completion boundary on exact head f452f18cd37285140b6bc2b0527f7ea3806bcd30 and synthetic merge candidate f5a4d6d4b13f1735588e736715849eeebd74295d."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-08 evaluator classifies every reviewed PRESERVE observation through public intent validation, canonical parameters, control assessment and semantic effects."
   - "Positive and negative tests prove current infrastructure-action representability and reject false preview, replacement, destruction-guard, orphan and controller-policy equivalence."
-  - "A committed mixed baseline remains exact while EF-08 is active/validating and becomes monotonic after closure."
+  - "The committed mixed baseline preserves the initial EF-08 result and is monotonic after closure."
   - "Standalone conformance integrates EF-08 without converting known model gaps into success."
-  - "A distinct completion CI boundary must pass on exact head and synthetic merge candidate before lifecycle closure."
+  - "EF-09 remains unactivated and requires its own independent transition before human-approval/change-control evidence is admitted."
   - "EF-08 closes atomically with EF-09 advanced to next but left unactivated."
 
 localValidation:
-  status: validation-passed
+  status: passed
   activationBoundary:
     commit: "39a3654ab6dc92ad219c12a439194daa772fa9d8"
     workflowRun: 32921423499
@@ -163,4 +182,15 @@ localValidation:
     mergeCandidate:
       commit: "be23532031e1d48718b46f62d95d26235dc2b73a"
       conclusion: success
-  rule: "EF-08 validation is complete; a later completion boundary must pass before lifecycle closure."
+  completionBoundary:
+    commit: "f452f18cd37285140b6bc2b0527f7ea3806bcd30"
+    workflowRun: 32923779343
+    runNumber: 3051
+    conclusion: success
+    exactHead:
+      commit: "f452f18cd37285140b6bc2b0527f7ea3806bcd30"
+      conclusion: success
+    mergeCandidate:
+      commit: "f5a4d6d4b13f1735588e736715849eeebd74295d"
+      conclusion: success
+  rule: "EF-08 is complete with three representable facts and five explicit semantic model gaps preserved as evidence. EF-09 remains unactivated and semantic repair requires a separately authorized later item."
