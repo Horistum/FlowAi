@@ -49,7 +49,7 @@ implementationStrategy:
 currentDeliverySlice:
   id: "AR-01-IFC-01"
   name: "Intent Frontend Convergence"
-  status: "implementation-awaiting-boundary"
+  status: "validating"
   relationToActivatedSlices: "This reviewable delivery slice establishes the AR-01A compiler-entrypoint inventory and the Flow Source plus Intent YAML portion of AR-01C. It deliberately does not reuse or claim the activated AR-01B Typed Canonical Execution Graph identity; graph authority, semantic digest and authorization cutover remain later boundaries."
   outcomes:
     - "Introduce FlowCompilationService as the sole product orchestration boundary for Flow Source and strict Intent YAML parsing results, Intent validation, lowering, Flow validation, planning and canonical compatibility projection."
@@ -270,12 +270,20 @@ lifecycle:
       - "Exact-head Flow Agent validation, compilation, complete tests and standalone conformance passed."
       - "Synthetic merge-candidate Flow Agent validation, compilation, complete tests and standalone conformance passed."
   implementationBoundary:
-    status: pending
+    status: passed
+    exactHead: "882e306125dbfa8d7a6102629a22111510b05c94"
+    syntheticMergeCandidate: "dcd1c3183e90ded7a543182436e93ee570900c04"
+    workflowRunId: 33007988884
+    workflowRunNumber: 3104
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, compilation, complete tests and standalone conformance passed for the bounded AR-01-IFC-01 implementation."
+      - "Synthetic merge-candidate Flow Agent validation, compilation, complete tests and standalone conformance passed without changing public artifact contracts or target support."
   validationBoundary:
     status: pending
   completionBoundary:
     status: pending
 
 localValidation:
-  status: implementation-authored-ci-pending
-  rule: "The activation boundary remains valid. This head authors the bounded Flow Source and Intent YAML compiler convergence implementation, but implementation, validation and completion evidence remain pending until distinct exact-head and synthetic merge-candidate Flow CI boundaries pass."
+  status: implementation-passed
+  rule: "The activation and bounded implementation boundaries passed independently. AR-01-IFC-01 is now validating; the typed CanonicalExecutionGraph, reviewed AI proposal convergence, digest-bound authorization and the full AR-01 completion boundary remain pending."
