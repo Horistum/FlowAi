@@ -239,7 +239,9 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             capability == "loop.dynamic" -> target.dynamicLoops
             capability == "match.basic" -> target.match
             capability == "retry.task" -> target.retry
-            capability == "trigger.manual" -> target.feature("trigger.manual", SupportLevel.UNSUPPORTED)
+            // Manual invocation is a modeled trigger semantic, not an unknown runtime capability.
+            // Target-specific rendering is still authorized by the adapter trigger evidence gate.
+            capability == "trigger.manual" -> SupportLevel.SUPPORTED
             capability == "trigger.schedule.cron" -> target.feature(
                 "trigger.schedule.cron",
                 target.feature("cron.schedule", SupportLevel.UNSUPPORTED)
