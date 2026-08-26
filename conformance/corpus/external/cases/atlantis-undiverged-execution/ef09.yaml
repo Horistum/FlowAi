@@ -1,0 +1,12 @@
+kind: FlowHumanApprovalChangeControlFalsification
+version: '1.0'
+caseId: atlantis-undiverged-execution
+facts:
+  - id: revision-bound-change-execution
+    observationRef: preserve-revision-bound-change-execution
+    requirement: REVISION_BOUND_CHANGE_EXECUTION
+    values:
+      subject: infrastructure-apply
+      plannedRevision: planned-source
+      plannedBaseRevision: planned-main
+      executionBaseRevision: current-main

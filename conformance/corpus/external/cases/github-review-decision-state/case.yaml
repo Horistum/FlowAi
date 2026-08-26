@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: github-review-decision-state
+domain: human-approval-change-control
+provenance:
+  repository: github/docs
+  revision: 'be8d08aa6e3a95d7f531c6a00cbeff883e4e9814'
+  path: content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md
+  license:
+    spdx: CC-BY-4.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: 'a99d1c14885040d6234e8712232d1371582eb1e40546ad1bd1e8d25490ddcb60'
+authoredBehaviors:
+  - id: review-decision-blocking
+    statement: Pending or rejected reviews prevent a protected-branch pull request from being merged.
+    evidence:
+      - startLine: 1
+        endLine: 1
+expectedSemanticObservations:
+  - id: preserve-approval-decision-state
+    expectation: PRESERVE
+    statement: Flow must distinguish pending, approved and rejected or changes-requested review decisions when determining whether the protected change may proceed.
+    behaviorRefs:
+      - review-decision-blocking
+    rationale: A runtime authorization outcome is different from the existence of an approval mechanism.
+unsupportedFacts:
+  - id: github-review-state-vocabulary
+    statement: The source expresses decisions through GitHub pull-request review states and merge behavior.
+    evidence:
+      - startLine: 1
+        endLine: 1
+    reason: EF-09 preserves the target-neutral authorization outcome without adopting GitHub review-state names as universal syntax.

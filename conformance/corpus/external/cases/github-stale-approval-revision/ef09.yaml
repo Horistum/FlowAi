@@ -1,0 +1,18 @@
+kind: FlowHumanApprovalChangeControlFalsification
+version: '1.0'
+caseId: github-stale-approval-revision
+facts:
+  - id: revision-bound-approval
+    observationRef: preserve-revision-bound-approval
+    requirement: REVISION_BOUND_APPROVAL
+    values:
+      subject: protected-branch-change
+      approvedRevision: reviewed-diff
+      changedRevision: changed-diff
+  - id: whole-changeset-approval-coverage
+    observationRef: preserve-whole-changeset-coverage
+    requirement: WHOLE_CHANGESET_APPROVAL_COVERAGE
+    values:
+      subject: protected-branch-change
+      protectedOperation: reviewed-change
+      unprotectedOperation: new-unreviewed-change

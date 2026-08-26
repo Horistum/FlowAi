@@ -35,6 +35,12 @@ casePackages:
   - cases/opentofu-prevent-destroy
   - cases/crossplane-orphan-delete
   - cases/crossplane-management-actions
+  - cases/github-required-review-policy
+  - cases/atlantis-approved-apply-gate
+  - cases/github-review-decision-state
+  - cases/github-codeowner-authorization
+  - cases/github-stale-approval-revision
+  - cases/atlantis-undiverged-execution
 invariants:
   - Every admitted case preserves immutable upstream repository, revision, path and license provenance.
   - Captured source bytes are SHA-256 bound before any semantic evaluation is admitted.

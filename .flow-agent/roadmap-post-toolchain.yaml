@@ -7,8 +7,8 @@ currentDecision:
   completedItemName: "Infrastructure Lifecycle Falsification"
   nextItem: "EF-09"
   nextItemName: "Human Approval and Change-Control Falsification"
-  workPackage: ""
-  decisionBasis: "EF-08 completed infrastructure-lifecycle falsification with distinct activation, implementation, validation and completion CI evidence. Three current semantic shapes are representable and five remain explicit model gaps: non-mutating preview, replacement identity/order, destruction prohibition, retain-on-management-removal and persistent management-action policy. EF-09 is now the next post-toolchain item but remains unactivated and requires its own transition before approval/change-control evidence is admitted."
+  workPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
+  decisionBasis: "EF-08 is merged. EF-09 is independently activated to pressure current human-approval and change-control semantics with immutable protected-change and infrastructure-apply evidence before any semantic repair is authorized."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -82,7 +82,8 @@ sequence:
   - id: "EF-09"
     name: "Human Approval and Change-Control Falsification"
     order: 10
-    status: next
+    status: active
+    workPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
 
   - id: "EF-10"
     name: "External Falsification Semantic Synthesis"

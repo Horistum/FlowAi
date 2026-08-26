@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: github-codeowner-authorization
+domain: human-approval-change-control
+provenance:
+  repository: github/docs
+  revision: 'be8d08aa6e3a95d7f531c6a00cbeff883e4e9814'
+  path: content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md
+  license:
+    spdx: CC-BY-4.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: '1a178463581552b3ce8894a18d4346a96717d87ecb6faf5a457d4ea7540e7155'
+authoredBehaviors:
+  - id: code-owner-authorization
+    statement: A change affecting code with an owner can be required to receive approval from that code owner before merge.
+    evidence:
+      - startLine: 1
+        endLine: 1
+expectedSemanticObservations:
+  - id: preserve-authorized-approver-set
+    expectation: PRESERVE
+    statement: Flow must preserve which authorized ownership group may satisfy the approval requirement.
+    behaviorRefs:
+      - code-owner-authorization
+    rationale: Approval authority is target-neutral governance meaning even though CODEOWNERS is one product mechanism.
+unsupportedFacts:
+  - id: github-codeowners-mechanism
+    statement: The source uses GitHub code-owner files and pull-request merge vocabulary.
+    evidence:
+      - startLine: 1
+        endLine: 1
+    reason: EF-09 preserves the authorized approver set without promoting CODEOWNERS or repository paths into Core.

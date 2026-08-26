@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: atlantis-undiverged-execution
+domain: human-approval-change-control
+provenance:
+  repository: runatlantis/atlantis
+  revision: '078d0a82081e8a2b1645268c5f5bfec578246fa9'
+  path: runatlantis.io/docs/command-requirements.md
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: 'a2df6f97f1462bc5308401c21f1eb548729a8ec9a0cf088ef047bbe2e8029913'
+authoredBehaviors:
+  - id: undiverged-plan-execution
+    statement: Atlantis blocks apply when the base branch changed since the most recent plan so execution uses the same source/base state that would be merged.
+    evidence:
+      - startLine: 1
+        endLine: 5
+expectedSemanticObservations:
+  - id: preserve-revision-bound-change-execution
+    expectation: PRESERVE
+    statement: Flow must preserve that execution is bound to the planned source and base revisions and fails closed when the base has diverged.
+    behaviorRefs:
+      - undiverged-plan-execution
+    rationale: Executing the reviewed plan against the intended revision is target-neutral change-control meaning.
+unsupportedFacts:
+  - id: atlantis-checkout-and-base-branch-mechanics
+    statement: The source describes Atlantis checkout strategy, local main and VCS base-branch behavior.
+    evidence:
+      - startLine: 1
+        endLine: 5
+    reason: EF-09 preserves execution freshness without promoting Atlantis checkout or branch terminology into Core.
