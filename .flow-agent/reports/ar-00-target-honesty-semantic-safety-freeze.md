@@ -53,12 +53,16 @@ The Jenkins and GitHub Actions scopes preserve their limitations. Neither scope 
 | Activation | `e8f636788c773c639357a2fc7aaabf560442fef4` | `d469c0e9111de76e9ccb990ffe5cbad4fe989e57` | #3060 | PASS |
 | Clean implementation | `5ec3eeeb03d8171456c58d5af4d76259cbdc2e55` | `41013377e1d5008e78b3a543d9757e1bddd265a0` | #3086 | PASS |
 | Validation | `69f290ff924e37a80d0e8589eb057835ed1f4dd3` | `75e80199436fc0b5176cf09890e49ab659f55a4b` | #3087 | PASS |
-| Completion | pending | pending | pending | PENDING |
+| Completion | `9e5959f1fd0abd4e4d134aa50b99810b0e478f35` | `af744d593dc965974a0cdf7392d34dbac2806362` | #3088 | PASS |
 
 The failed pre-cleanup candidate Flow CI #3084 is not accepted as evidence. It failed compilation because of an invalid import and also contained one-off workflows that rewrote production files. The branch was reset to a clean main-based implementation before the accepted implementation boundary.
+
+## Completion decision
+
+AR-00 is complete as containment. It established fail-closed capability defaults, provider-owned structural evidence, current target maturity and negative regression coverage without implementing missing target behavior or redefining target-neutral meaning.
+
+AR-01 is now the next Architecture Recovery item, but it remains unactivated and has no work package in this change.
 
 ## Remaining ownership
 
 AR-00 contains F-01, F-06, F-11 and F-18 but does not close them. Full behaviorally falsifiable adapter certification, including canonical-construct × target × negative-mutant coverage, remains owned by AR-06.
-
-AR-01 is selected next only after the completion boundary passes. It remains unactivated and has no work package in this change.

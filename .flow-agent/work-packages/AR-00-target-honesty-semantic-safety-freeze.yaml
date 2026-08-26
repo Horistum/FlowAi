@@ -158,18 +158,31 @@ lifecycle:
       - "The evidence-bearing validation state passed exact-head Flow Agent validation, complete tests and standalone conformance."
       - "The independently synthesized validation merge candidate passed the same complete boundary."
   completionBoundary:
-    status: pending
+    status: passed
+    exactHead: "9e5959f1fd0abd4e4d134aa50b99810b0e478f35"
+    syntheticMergeCandidate: "af744d593dc965974a0cdf7392d34dbac2806362"
+    workflowRunId: 32969723552
+    workflowRunNumber: 3088
+    conclusion: success
+    evidence:
+      - "The completed AR-00 lifecycle state, recovery roadmaps and AR-01 next-item selection passed exact-head Flow Agent validation, complete tests and standalone conformance."
+      - "The independently synthesized completion merge candidate passed the same complete boundary."
 
 localValidation:
-  status: validation-passed
+  status: passed
+  activationBoundary:
+    commit: "e8f636788c773c639357a2fc7aaabf560442fef4"
+    workflowRun: 32937383376
+    runNumber: 3060
+    conclusion: success
+    mergeCandidate:
+      commit: "d469c0e9111de76e9ccb990ffe5cbad4fe989e57"
+      conclusion: success
   implementationBoundary:
     commit: "5ec3eeeb03d8171456c58d5af4d76259cbdc2e55"
     workflowRun: 32967207744
     runNumber: 3086
     conclusion: success
-    exactHead:
-      commit: "5ec3eeeb03d8171456c58d5af4d76259cbdc2e55"
-      conclusion: success
     mergeCandidate:
       commit: "41013377e1d5008e78b3a543d9757e1bddd265a0"
       conclusion: success
@@ -178,10 +191,15 @@ localValidation:
     workflowRun: 32968364255
     runNumber: 3087
     conclusion: success
-    exactHead:
-      commit: "69f290ff924e37a80d0e8589eb057835ed1f4dd3"
-      conclusion: success
     mergeCandidate:
       commit: "75e80199436fc0b5176cf09890e49ab659f55a4b"
       conclusion: success
-  rule: "AR-00 validation is complete. The completion transition must pass a later exact-head and synthetic merge-candidate boundary before completion evidence is recorded."
+  completionBoundary:
+    commit: "9e5959f1fd0abd4e4d134aa50b99810b0e478f35"
+    workflowRun: 32969723552
+    runNumber: 3088
+    conclusion: success
+    mergeCandidate:
+      commit: "af744d593dc965974a0cdf7392d34dbac2806362"
+      conclusion: success
+  rule: "AR-00 is complete as a containment milestone. F-01, F-06, F-11 and F-18 remain open for AR-06 closure, while AR-01 is selected but not activated."
