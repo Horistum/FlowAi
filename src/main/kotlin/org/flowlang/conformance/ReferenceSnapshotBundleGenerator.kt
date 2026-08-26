@@ -2,24 +2,21 @@ package org.flowlang.conformance
 
 import org.flowlang.adapters.trigger.AdapterTriggerAuthorizedRenderingAuthority
 import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
-import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.cli.Json
+import org.flowlang.compiler.FlowCompilationService
+import org.flowlang.compiler.requireAccepted
+import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
-import org.flowlang.intent.IntentCapabilityValidator
-import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.ExecutionPlanCanonicalizer
-import org.flowlang.planner.FlowPlanner
 import org.flowlang.targets.builtin.BuiltInTargetProjections
-import org.flowlang.validator.FlowValidator
 import java.io.File
 
 /**
@@ -36,16 +33,10 @@ class ReferenceSnapshotBundleGenerator(
     private val manifestPipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
     private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
     private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
+    private val intentFrontend = IntentYamlFrontend(FlowCompilationService(registry))
 
-    internal fun planFor(intentFile: File): ExecutionPlan {
-        require(intentFile.isFile) { "Reference intent does not exist: ${intentFile.path}" }
-        val intent = IntentYamlLoader.load(intentFile)
-        IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val validation = FlowValidator(registry).validate(ast)
-        require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
-        return FlowPlanner(registry).plan(ast)
-    }
+    internal fun planFor(intentFile: File): ExecutionPlan =
+        intentFrontend.compile(intentFile).requireAccepted().executionPlan
 
     fun generate(
         intentFile: File,
@@ -62,12 +53,10 @@ class ReferenceSnapshotBundleGenerator(
             "Missing reference projection providers: ${(targetIds - projections.targetIds).sorted().joinToString()}."
         }
 
-        val intent = IntentYamlLoader.load(intentFile)
-        IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val validation = FlowValidator(registry).validate(ast)
-        require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
-        val plan = FlowPlanner(registry).plan(ast)
+        val compilation = intentFrontend.compile(intentFile).requireAccepted()
+        val intent = compilation.requireIntentEvidence().intent
+        val ast = compilation.ast
+        val plan = compilation.executionPlan
         val evidence = mutableListOf<ReferenceTargetProjectionEvidence>()
         val renderedByTarget = linkedMapOf<String, String>()
 
@@ -108,7 +97,7 @@ class ReferenceSnapshotBundleGenerator(
         prepareOutputDirectory(outputDir)
         writeJson(outputDir, "normalized-intent.json", intent)
         writeJson(outputDir, "flow-ast.json", ast)
-        writeJson(outputDir, "execution-plan.json", ExecutionPlanCanonicalizer.canonicalize(plan))
+        writeJson(outputDir, "execution-plan.json", compilation.canonicalPlan)
         writeJson(outputDir, "snapshot-index.json", snapshot)
 
         snapshot.targets.forEach { targetState ->

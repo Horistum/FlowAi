@@ -10,16 +10,15 @@ import org.flowlang.conformance.ConformanceManifestBuilder
 import org.flowlang.conformance.ConformanceRunner
 import org.flowlang.conformance.ConformanceVectorIndexBuilder
 import org.flowlang.conformance.ReferenceSnapshotBundleGenerator
+import org.flowlang.compiler.FlowCompilationService
+import org.flowlang.compiler.requireAccepted
+import org.flowlang.frontend.source.FlowSourceFrontend
 import org.flowlang.modules.ModuleContractAnalyzer
 import org.flowlang.modules.ModuleRegistry
-import org.flowlang.parser.FlowParser
-import org.flowlang.planner.ExecutionPlanCanonicalizer
-import org.flowlang.planner.FlowPlanner
 import org.flowlang.preview.PlanPreview
 import org.flowlang.scenarios.ScenarioPackRegistry
 import org.flowlang.standard.StandardDiagnosticCatalog
 import org.flowlang.standard.StandardIntentCatalog
-import org.flowlang.validator.FlowValidator
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 /** Explicit non-release CLI commands. There is no legacy fallback entrypoint. */
@@ -55,17 +54,15 @@ internal object StandardCliCommands {
         val file = File(source)
         require(file.isFile) { "Flow file does not exist: $source" }
         val modules = moduleRegistry()
-        val ast = FlowParser().parse(file)
-        val validation = FlowValidator(modules).validate(ast)
-        require(validation.valid) {
-            "Flow validation failed before planning: " + validation.issues.joinToString { it.code + ": " + it.message }
-        }
-        val plan = FlowPlanner(modules).plan(ast)
+        val compilation = FlowSourceFrontend(FlowCompilationService(modules))
+            .compile(file)
+            .requireAccepted()
+        val plan = compilation.executionPlan
         val targets = targetRegistry()
-        output.section("FLOW AST", ast)
-        output.section("VALIDATION REPORT", validation)
+        output.section("FLOW AST", compilation.ast)
+        output.section("VALIDATION REPORT", compilation.validation)
         output.section("EXECUTION PLAN", plan)
-        output.section("CANONICAL EXECUTION PLAN", ExecutionPlanCanonicalizer.canonicalize(plan))
+        output.section("CANONICAL EXECUTION PLAN", compilation.canonicalPlan)
         output.section("PLAN PREVIEW", PlanPreview().render(plan))
         output.section("TARGET-NEUTRAL NEGOTIATION REPORT", CompatibilityAnalyzer(targets).negotiate(plan))
     }

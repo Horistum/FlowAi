@@ -2,35 +2,33 @@ package org.flowlang.conformance
 
 import java.io.File
 import java.util.ArrayDeque
-import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.compiler.CompilationResult
+import org.flowlang.compiler.FlowCompilationService
+import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
-import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentList
 import org.flowlang.intent.IntentObject
 import org.flowlang.intent.IntentRef
-import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.intent.IntentValue
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.planner.PlanDependencyRelation
 import org.flowlang.planner.PlanDependencyRelations
 import org.flowlang.planner.PlanNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.targets.builtin.BuiltInTargetProjections
-import org.flowlang.validator.FlowValidator
 
 class RealWorldCorpusRunner(
     private val rootDir: File = File("."),
@@ -41,6 +39,7 @@ class RealWorldCorpusRunner(
 ) {
     private val loader = RealWorldCorpusLoader(rootDir)
     private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
+    private val intentFrontend = IntentYamlFrontend(FlowCompilationService(registry))
 
     fun load(): LoadedRealWorldCorpus = loader.load()
 
@@ -96,23 +95,18 @@ class RealWorldCorpusRunner(
         val mismatches = mutableListOf<String>()
         var authoredIntent: IntentDocument? = null
         val build = runCatching {
-            val intent = IntentYamlLoader.load(intentFile)
-            authoredIntent = intent
-            semanticDiagnostics += missingReferenceDiagnostics(intent)
+            val loaded = intentFrontend.load(intentFile)
+            authoredIntent = loaded.value
+            semanticDiagnostics += missingReferenceDiagnostics(loaded.value)
             if (semanticDiagnostics.isNotEmpty()) return@runCatching PlanBuild(null)
 
-            val intentValidation = IntentCapabilityValidator(registry).validate(intent)
-            if (!intentValidation.valid) {
-                semanticDiagnostics += intentValidation.issues.map { it.code }
-                return@runCatching PlanBuild(null)
+            when (val compilation = intentFrontend.compile(loaded)) {
+                is CompilationResult.Accepted -> PlanBuild(compilation.unit.executionPlan)
+                is CompilationResult.Rejected -> {
+                    semanticDiagnostics += compilation.rejection.diagnostics.map { diagnostic -> diagnostic.code }
+                    PlanBuild(null)
+                }
             }
-            val ast = IntentToAstPlanner(registry).plan(intent)
-            val flowValidation = FlowValidator(registry).validate(ast)
-            if (!flowValidation.valid) {
-                semanticDiagnostics += flowValidation.issues.map { it.code }
-                return@runCatching PlanBuild(null)
-            }
-            PlanBuild(FlowPlanner(registry).plan(ast))
         }.getOrElse { error ->
             mismatches += "Production pipeline failed for '$caseId': ${error.message ?: error.javaClass.simpleName}."
             null

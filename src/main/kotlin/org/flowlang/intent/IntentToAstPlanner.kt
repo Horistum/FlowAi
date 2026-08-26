@@ -19,10 +19,42 @@ import org.flowlang.lowering.IntentValueExpressionLowering
  * - target-neutral capabilities never invent Kubernetes, namespace or selector semantics,
  * - rollback is represented by an explicit `standard.rollback` action, not SkipNode.
  */
+internal data class ValidatedIntentEvaluation(
+    val report: IntentValidationReport,
+    val accepted: ValidatedIntent?
+)
+
+/**
+ * Unforgeable module-internal proof that one immutable IntentDocument passed the
+ * exact validation report used by lowering. The private constructor prevents a
+ * caller from pairing an intent with stale evidence from another source.
+ */
+internal class ValidatedIntent private constructor(
+    val document: IntentDocument,
+    val report: IntentValidationReport
+) {
+    companion object {
+        fun evaluate(registry: ModuleRegistry, document: IntentDocument): ValidatedIntentEvaluation {
+            val report = IntentCapabilityValidator(registry).validate(document)
+            return ValidatedIntentEvaluation(
+                report = report,
+                accepted = ValidatedIntent(document, report).takeIf { report.valid }
+            )
+        }
+    }
+}
+
 class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     fun plan(intent: IntentDocument): FlowDocument {
-        val validation = IntentCapabilityValidator(registry).validate(intent)
+        val evaluation = ValidatedIntent.evaluate(registry, intent)
+        evaluation.report.assertValid()
+        return plan(requireNotNull(evaluation.accepted))
+    }
+
+    internal fun plan(validated: ValidatedIntent): FlowDocument {
+        val intent = validated.document
+        val validation = validated.report
         validation.assertValid()
         val bindings = validation.bindings.associateBy { it.stepId }
         val systems = LinkedHashMap<String, SystemNode>()

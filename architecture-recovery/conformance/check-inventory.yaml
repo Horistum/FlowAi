@@ -4,3 +4,8 @@ checks:
   - architecture-recovery.ar-00.target-wide-scope-separation
   - architecture-recovery.ar-00.structural-evidence-reconciliation
   - architecture-recovery.ar-00.bounded-executable-evidence
+  - architecture-recovery.ar-01.compiler-entrypoint-inventory
+  - architecture-recovery.ar-01.flow-source-compilation-axis
+  - architecture-recovery.ar-01.intent-frontend-convergence
+  - architecture-recovery.ar-01.compiler-dependency-direction
+  - architecture-recovery.ar-01.public-contract-freeze

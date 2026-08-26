@@ -1,0 +1,37 @@
+version: "1.0"
+compositionRoot: "org.flowlang.compiler.FlowCompilationService"
+currentExecutionAuthority: "ExecutionPlan"
+derivedCanonicalView: "CanonicalExecutionPlan"
+convergedFrontends:
+  - "flow-source"
+  - "intent-yaml"
+deferredFrontends:
+  - "reviewed-ai-proposal"
+productionEntrypoints:
+  - "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt#runFlow"
+  - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt#runIntentCommand"
+  - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt#planFor"
+  - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt#generate"
+  - "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt#buildPipeline"
+  - "src/main/kotlin/org/flowlang/conformance/TargetNeutralConformanceFixture.kt#build"
+  - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt#evaluateIntent"
+deferredProductEntrypoints:
+  - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt#runNormalizeCommand"
+independentConformancePaths:
+  - "src/main/kotlin/org/flowlang/conformance/CorePipelineSnapshotChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/CliReleaseHonestyChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AdapterBindingConformanceChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/ScenarioAndPlanChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/ReferenceCorpusExecutionHarness.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixAuthority.kt"
+  - "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt"
+frozenArtifactContracts:
+  intent: "2.0"
+  ast: "2.2"
+  executionPlan: "2.4"
+  executionPlanLoweringEvidence: "2.1"
+  targetManifest: "3.0"
+  targetRegistry: "3.2"

@@ -13,26 +13,25 @@ import org.flowlang.artifacts.StandardSurface
 import org.flowlang.artifacts.PublicStandardDraft
 import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
-import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.Json
+import org.flowlang.compiler.FlowCompilationService
+import org.flowlang.compiler.requireAccepted
+import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
-import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.materialization.ExplicitTargetSelection
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.CanonicalPlanNode
-import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.DiagnosticCoverageAnalyzer
 import org.flowlang.standard.ObservedDiagnosticCode
-import org.flowlang.validator.FlowValidator
 import java.io.File
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 
@@ -50,22 +49,21 @@ internal abstract class ConformanceCheckSupport(
 ) {
     protected val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
     protected val artifactRendering = AdapterArtifactRenderingAuthority(rootDir, projections)
+    protected val intentFrontend = IntentYamlFrontend(FlowCompilationService(registry))
 
     protected fun buildPipeline(target: String, strict: Boolean = false): PipelineArtifacts {
-        val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
-        val intentReport = IntentCapabilityValidator(registry).validate(intent)
-        intentReport.assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val validation = FlowValidator(registry).validate(ast)
-        require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
-        val plan = FlowPlanner(registry).plan(ast)
+        val compilation = intentFrontend
+            .compile(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
+            .requireAccepted()
+        val intent = compilation.requireIntentEvidence().intent
+        val plan = compilation.executionPlan
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target, strict = strict)
         val manifest = manifestPipeline.generate(materializationRequest(plan, target, strict, "conformance:build-pipeline"))
         val rendering = artifactRendering.render(manifest)
         return PipelineArtifacts(
             intent = intent,
-            ast = ast,
-            validation = validation,
+            ast = compilation.ast,
+            validation = compilation.validation,
             plan = plan,
             compatibility = compatibility,
             manifest = manifest,

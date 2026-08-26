@@ -2,7 +2,6 @@ package org.flowlang.conformance
 
 import java.io.File
 import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
-import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.artifacts.ArtifactEvidenceAnalyzer
 import org.flowlang.artifacts.ArtifactEvidenceReport
 import org.flowlang.artifacts.ArtifactIntegrityAnalyzer
@@ -19,17 +18,17 @@ import org.flowlang.artifacts.StandardContractIndexReport
 import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.ast.FlowDocument
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
+import org.flowlang.compiler.FlowCompilationService
+import org.flowlang.compiler.requireAccepted
+import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
-import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.FlowPlanner
 import org.flowlang.standard.DiagnosticCoverageAnalyzer
 import org.flowlang.standard.DiagnosticCoverageReport
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.ObservedDiagnosticCode
-import org.flowlang.validator.FlowValidator
 import org.flowlang.validator.ValidationReport
 
 /**
@@ -42,13 +41,18 @@ internal class TargetNeutralConformanceFixture(
     private val registry: ModuleRegistry,
     private val targets: Map<String, org.flowlang.capabilities.TargetCapability>
 ) {
+    private val intentFrontend = IntentYamlFrontend(FlowCompilationService(registry))
+
     fun build(): CorePipelineArtifacts {
-        val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
-        IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val validation = FlowValidator(registry).validate(ast)
-        require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
-        return CorePipelineArtifacts(intent, ast, validation, FlowPlanner(registry).plan(ast))
+        val compilation = intentFrontend
+            .compile(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
+            .requireAccepted()
+        return CorePipelineArtifacts(
+            intent = compilation.requireIntentEvidence().intent,
+            ast = compilation.ast,
+            validation = compilation.validation,
+            plan = compilation.executionPlan
+        )
     }
 
     fun diagnosticCoverage(core: CorePipelineArtifacts): DiagnosticCoverageReport =
