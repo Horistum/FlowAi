@@ -1,13 +1,13 @@
 version: "AR-00"
 name: "Target Honesty and Semantic Safety Freeze"
 type: "architecture-recovery-containment"
-status: validating
+status: complete
 stream: "architecture-recovery"
 
 objective: "Contain audited target-rendering and capability-claim defects before deeper compiler and module-boundary recovery. AR-00 makes unsupported structural meaning fail closed, removes optimistic capability fallbacks, publishes explicit target maturity, and adds mutation evidence without implementing new target behavior or redefining canonical semantics."
 
 authorization:
-  status: validating
+  status: completed
   predecessor: "ARCHITECTURE-RECOVERY-ROADMAP"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-00"
   postToolchainSource: ".flow-agent/roadmap-post-toolchain.yaml#ARCHITECTURE-RECOVERY"
@@ -148,12 +148,20 @@ lifecycle:
       - "The independently synthesized merge candidate passed Flow Agent validation, complete tests and standalone conformance."
       - "One-off workflows that rewrote source files or committed back into the branch were removed before this boundary."
   validationBoundary:
-    status: pending
+    status: passed
+    exactHead: "69f290ff924e37a80d0e8589eb057835ed1f4dd3"
+    syntheticMergeCandidate: "75e80199436fc0b5176cf09890e49ab659f55a4b"
+    workflowRunId: 32968364255
+    workflowRunNumber: 3087
+    conclusion: success
+    evidence:
+      - "The evidence-bearing validation state passed exact-head Flow Agent validation, complete tests and standalone conformance."
+      - "The independently synthesized validation merge candidate passed the same complete boundary."
   completionBoundary:
     status: pending
 
 localValidation:
-  status: implementation-passed
+  status: validation-passed
   implementationBoundary:
     commit: "5ec3eeeb03d8171456c58d5af4d76259cbdc2e55"
     workflowRun: 32967207744
@@ -165,4 +173,15 @@ localValidation:
     mergeCandidate:
       commit: "41013377e1d5008e78b3a543d9757e1bddd265a0"
       conclusion: success
-  rule: "AR-00 implementation is admitted only after exact-head and synthetic merge-candidate Flow CI passed the clean production and evidence boundary. Validation and completion remain independent later transitions."
+  validationBoundary:
+    commit: "69f290ff924e37a80d0e8589eb057835ed1f4dd3"
+    workflowRun: 32968364255
+    runNumber: 3087
+    conclusion: success
+    exactHead:
+      commit: "69f290ff924e37a80d0e8589eb057835ed1f4dd3"
+      conclusion: success
+    mergeCandidate:
+      commit: "75e80199436fc0b5176cf09890e49ab659f55a4b"
+      conclusion: success
+  rule: "AR-00 validation is complete. The completion transition must pass a later exact-head and synthetic merge-candidate boundary before completion evidence is recorded."
