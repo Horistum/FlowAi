@@ -4,7 +4,7 @@ type: "architecture-recovery-foundation"
 status: active
 stream: "architecture-recovery"
 
-objective: "Establish one authoritative compiler axis and one typed CanonicalExecutionGraph for accepted Flow meaning. AR-01 converges Intent YAML, Flow Source and AI proposals through FlowCompilationService, makes existing public plans and reports derived compatibility views, and removes SemanticActionGraph's false implication that an architecture-obligation graph is the execution IR."
+objective: "Establish one authoritative compiler axis and one typed CanonicalExecutionGraph for accepted Flow meaning. AR-01 converges Intent YAML, Flow Source and reviewed AI proposals through FlowCompilationService, keeps frontend provenance, diagnostics and authorization in the digest-bound CompilationUnit, makes existing public plans and reports derived compatibility views, and removes SemanticActionGraph's false implication that an architecture-obligation graph is the execution IR."
 
 authorization:
   status: active
@@ -33,12 +33,18 @@ implementationStrategy:
     - "Inventory every producer and consumer of Intent, AST, ExecutionPlan, CanonicalExecutionPlan, SemanticActionGraph and TargetManifest meaning."
     - "Introduce typed CompilationUnit and CanonicalExecutionGraph contracts without changing public artifacts."
     - "Introduce FlowCompilationService as the only production orchestration boundary for parsing, validation, planning and canonical graph construction."
-    - "Migrate Intent YAML, Flow Source and AI proposal frontends one at a time, proving graph equivalence before removing each former orchestration path."
+    - "Migrate Intent YAML, Flow Source and reviewed AI proposal frontends one at a time, proving semantic graph equivalence before removing each former orchestration path."
+    - "Cut authority over atomically only after the shadow graph, current execution plan and independent semantic oracles agree over positive fixtures and negative mutants."
     - "Derive ExecutionPlan, CanonicalExecutionPlan, evidence reports and adapter input from the canonical graph."
     - "Rename, constrain or remove SemanticActionGraph after all callers use its honest architecture-obligation role."
   stranglerRule: "New canonical paths are added first, callers migrate under parity tests, and old paths are removed only after production liveness and artifact compatibility are proven."
   compatibilityRule: "Existing public wire contracts remain stable compatibility projections during AR-01. A version change requires its own bounded slice, migration note and exact negative tests."
   noDualAuthorityRule: "At every intermediate boundary exactly one model is authoritative for newly compiled meaning; compatibility models may project or validate it but may not independently reconstruct semantics."
+  authorityTransition:
+    baselineAuthority: "ExecutionPlan remains the current de facto internal execution authority until the explicit cutover gate passes."
+    shadowPhase: "CanonicalExecutionGraph may be built and validated in shadow mode, but shadow output cannot authorize materialization or repair the current plan."
+    cutoverGate: "The cutover requires complete producer and consumer inventory, frontend equivalence, semantic mutation polarity, graph-to-view parity, authorization digest binding and unchanged public artifact evidence."
+    postCutoverAuthority: "CanonicalExecutionGraph becomes the sole authority; production constructors that independently create ExecutionPlan or canonical semantics are removed or made graph-derived in the same bounded transition."
 
 implementationSlices:
   - id: "AR-01A"
@@ -51,16 +57,17 @@ implementationSlices:
   - id: "AR-01B"
     name: "Typed Canonical Execution Graph"
     outcomes:
-      - "Introduce typed graph, node, edge, workflow, capability, effect, control, continuity, topology and provenance contracts."
+      - "Introduce typed graph, node, edge, workflow, capability, effect, control, continuity and topology contracts."
       - "Use closed internal node and edge kinds while preserving extensible values only where the standard explicitly owns extensibility."
-      - "Define a deterministic canonical graph digest over semantic content, not display order, implementation labels or target metadata."
-      - "Reject duplicate identities, dangling edges, contradictory semantic facets and incomplete provenance before a graph becomes authorized."
+      - "Define a deterministic canonical graph digest over semantic content, excluding frontend provenance, source locations, diagnostics, authorization state, implementation labels and target metadata."
+      - "Reject duplicate identities, dangling edges, contradictory semantic facets and incomplete semantic relationships before a graph becomes valid."
   - id: "AR-01C"
     name: "Unified Flow Compilation Service"
     outcomes:
       - "Introduce FlowCompilationService and CompilationUnit as the single production orchestration boundary."
       - "Route Intent YAML, Flow Source and reviewed AI proposals through shared validation, planning, safety and graph construction."
-      - "Preserve frontend provenance and diagnostics without allowing a frontend to define alternate canonical meaning."
+      - "Preserve frontend provenance, source views, assumptions and diagnostics in CompilationUnit without allowing them to alter semantic graph identity."
+      - "Bind validation and authorization evidence to the exact canonical graph digest before materialization."
       - "Remove direct production composition paths that bypass the compiler service."
   - id: "AR-01D"
     name: "Derived Views and Superseded Authority Retirement"
@@ -74,25 +81,33 @@ canonicalGraphContract:
   authority: "CanonicalExecutionGraph"
   compositionRoot: "FlowCompilationService"
   compilationEnvelope: "CompilationUnit"
-  requiredFacets:
-    - "frontend provenance and source identity"
+  semanticFacets:
     - "workflow identity and membership"
     - "typed nodes and typed dependency edges"
     - "canonical capability identity"
     - "semantic effects and state transitions"
-    - "control requirements, evidence and decisions"
+    - "authored control requirements and evidence relationships"
     - "continuity and topology requirements"
     - "failure semantics already representable by the current model"
-    - "assumptions, diagnostics and authorization state"
+  compilationEnvelopeFacets:
+    - "frontend identity, source provenance and source locations"
+    - "frontend-specific parsed representation"
+    - "assumptions and clarification state"
+    - "validation diagnostics"
+    - "control decisions and authorization evidence bound to the graph digest"
+    - "public compatibility and evidence views"
+  frontendInputs:
+    - "Flow Source AST and source validation result"
+    - "normalized Intent YAML and lowering evidence"
+    - "reviewed AI proposal and proposal-review evidence"
   derivedViews:
-    - "Flow AST and validation reports where still public"
     - "ExecutionPlan"
     - "CanonicalExecutionPlan"
-    - "Intent lowering and planning evidence"
+    - "planning, graph-validation and authorization evidence"
     - "TargetManifest input"
-    - "conformance observations and graph digest"
-  identityRule: "Graph identity and digest are derived from typed semantic content. Target names, renderer payloads, module implementation labels and collection iteration order cannot alter canonical meaning."
-  authorizationRule: "Only a validated and authorized CanonicalExecutionGraph may reach materialization. Derived reports cannot repair, widen or reinterpret the graph."
+    - "conformance observations and semantic graph digest"
+  identityRule: "Graph identity and digest are derived only from typed semantic content. Frontend provenance, source locations, diagnostics, authorization timestamps, target names, renderer payloads, module implementation labels and collection iteration order cannot alter canonical meaning."
+  authorizationRule: "Only a CompilationUnit whose validation and authorization evidence binds the exact CanonicalExecutionGraph digest may reach materialization. Derived reports cannot repair, widen or reinterpret the graph, and evidence for another digest fails closed."
 
 migrationInventory:
   - model: "ExecutionPlan"
@@ -113,17 +128,18 @@ migrationInventory:
     owner: "AR-01D"
   - model: "IntentLoweringReport"
     currentRole: "Frontend lowering and provenance evidence"
-    targetRole: "Compilation evidence derived from CompilationUnit and canonical graph construction"
+    targetRole: "Compilation evidence retained by CompilationUnit and bound to canonical graph construction"
     owner: "AR-01C"
   - model: "Flow AST"
     currentRole: "Flow Source syntax and validation model"
-    targetRole: "Frontend-specific parsed representation inside CompilationUnit, never a competing semantic authority"
+    targetRole: "Frontend-specific parsed representation inside CompilationUnit, never a graph-derived or competing semantic authority"
     owner: "AR-01C"
 
 plannedProductionBoundary:
   compiler:
     - "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
     - "src/main/kotlin/org/flowlang/compiler/CompilationUnit.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt"
     - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraph.kt"
     - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt"
     - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphValidator.kt"
@@ -149,11 +165,12 @@ plannedProductionBoundary:
     - ".flow-agent/reports/ar0.2-architecture-readiness-baseline.md"
 
 requiredTests:
-  - "Equivalent accepted Intent YAML, Flow Source and AI proposal fixtures produce equal CanonicalExecutionGraph values and digests while retaining distinct frontend provenance."
-  - "A mutation in capability, dependency, effect, control, continuity or topology changes the graph digest and the corresponding conformance observation."
-  - "Implementation labels, binding metadata, target selection and renderer payloads cannot change canonical graph meaning."
+  - "Equivalent accepted Intent YAML, Flow Source and reviewed AI proposal fixtures produce semantically equal CanonicalExecutionGraph values and digests while their CompilationUnit values retain distinct frontend provenance."
+  - "A mutation in capability, dependency, effect, authored control requirement, continuity or topology changes the graph digest and the corresponding independent conformance observation."
+  - "Frontend provenance, source locations, diagnostics, implementation labels, binding metadata, target selection and renderer payloads cannot change canonical graph meaning."
+  - "Validation or authorization evidence bound to another graph digest cannot authorize materialization."
   - "Unknown, duplicate, dangling or contradictory graph identities fail before authorization and materialization."
-  - "ExecutionPlan and CanonicalExecutionPlan are reproducible from the graph and cannot drift behind independent constructors."
+  - "ExecutionPlan and CanonicalExecutionPlan are reproducible from the graph and cannot drift behind independent production constructors."
   - "A module.action pair cannot be wrapped in a synthetic one-node graph as a substitute for canonical compilation."
   - "Every production frontend reaches FlowCompilationService; direct parser-to-planner and intent-to-materialization bypasses fail architecture conformance."
   - "Existing target readiness and bounded executable references remain unchanged unless graph-derived evidence explicitly requires a downgrade."
@@ -165,10 +182,11 @@ conformancePlan:
     - "architecture-recovery.ar-01.canonical-graph-integrity"
     - "architecture-recovery.ar-01.frontend-equivalence"
     - "architecture-recovery.ar-01.graph-mutation-polarity"
+    - "architecture-recovery.ar-01.authorization-digest-binding"
     - "architecture-recovery.ar-01.derived-view-consistency"
     - "architecture-recovery.ar-01.no-pseudo-graph-bypass"
     - "architecture-recovery.ar-01.frozen-public-contract-preservation"
-  evidenceRule: "Each check is added only with the production authority and a negative fixture that would fail if the former split compiler axis or redundant semantic authority returned."
+  evidenceRule: "Each check is added only with the production authority and a negative fixture that would fail if the former split compiler axis, digest-unbound authorization or redundant semantic authority returned."
 
 forbiddenScope:
   - "Do not move Jenkins, GitHub Actions, Tekton or any concrete adapter implementation in AR-01; adapter extraction belongs to AR-03."
@@ -176,24 +194,34 @@ forbiddenScope:
   - "Do not silently advance AST, ExecutionPlan, TargetManifest or other public artifact versions."
   - "Do not remove a public field before a versioned migration and compatibility boundary exists."
   - "Do not add target names, renderer primitives or implementation folklore to CanonicalExecutionGraph."
+  - "Do not put frontend provenance, diagnostics or mutable authorization state into the semantic graph digest."
   - "Do not retain two production compiler orchestration paths after their parity boundary passes."
   - "Do not create a compatibility facade without a named owner, consumer inventory and AR-01 removal slice."
   - "Do not manufacture green tests by comparing two views produced by the same unchecked transformation."
   - "Do not activate AR-02, AR-03 or another recovery milestone before AR-01 completes."
 
 completionEvidence:
-  - "All production frontends use FlowCompilationService and produce one validated CompilationUnit and CanonicalExecutionGraph."
+  - "All production frontends use FlowCompilationService and produce one CompilationUnit containing a validated CanonicalExecutionGraph plus digest-bound authorization evidence."
   - "CanonicalExecutionGraph is the sole authority for executable meaning before target materialization."
   - "ExecutionPlan, CanonicalExecutionPlan, TargetManifest inputs and relevant reports are demonstrably graph-derived views."
+  - "Frontend provenance remains available without changing semantic graph equality or digest."
   - "SemanticActionGraph no longer presents architecture obligations as the central execution IR."
   - "F-04, F-09 and F-17 each map to exact production changes, migrated callers, negative tests and conformance checks."
-  - "Semantic mutation polarity proves the graph digest observes capability, dependency, effect, control, continuity and topology changes."
+  - "Semantic mutation polarity proves the graph digest observes capability, dependency, effect, authored control, continuity and topology changes."
   - "Existing public artifact compatibility is preserved or advanced only through an explicit reviewed version boundary."
   - "Activation, implementation, validation and completion boundaries use distinct exact-head and synthetic merge-candidate Flow CI evidence."
 
 lifecycle:
   activationBoundary:
-    status: pending
+    status: passed
+    exactHead: "6131b6e43db54a60f9b132baa0d545f99e1b4498"
+    syntheticMergeCandidate: "9b4d090dfb53b8915fd4bd05504d058da0c4edf9"
+    workflowRunId: 32975476682
+    workflowRunNumber: 3091
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, compilation, complete tests and standalone conformance passed."
+      - "Synthetic merge-candidate Flow Agent validation, compilation, complete tests and standalone conformance passed."
   implementationBoundary:
     status: pending
   validationBoundary:
@@ -202,5 +230,5 @@ lifecycle:
     status: pending
 
 localValidation:
-  status: activation-defined
-  rule: "This transition defines and activates AR-01 only. No production compiler, semantic model, public artifact or adapter behavior changes before the activation boundary passes on exact head and synthetic merge candidate."
+  status: activation-passed
+  rule: "The AR-01 activation transition passed before production compiler implementation. Flow CI exact-head and synthetic merge-candidate evidence are recorded above; implementation, validation and completion remain distinct future boundaries."
