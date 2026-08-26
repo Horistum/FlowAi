@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: crossplane-orphan-delete
+domain: infrastructure-lifecycle
+provenance:
+  repository: crossplane/crossplane
+  revision: '0e4f8c1d78ef7a4b1cb2d95d92cafa9a905c2280'
+  path: apis/core/v2/policies.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE and source header at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '3b2baa074c7b5561561c1aa57aaa12c4e9a853ecede61c6404018e2dfa544b64'
+authoredBehaviors:
+  - id: orphan-versus-delete
+    statement: Removal of a managed resource can either orphan the external resource or delete it.
+    evidence:
+      - startLine: 1
+        endLine: 14
+expectedSemanticObservations:
+  - id: preserve-retain-on-management-removal
+    expectation: PRESERVE
+    statement: Flow must preserve removal of management ownership while retaining the named external resource as distinct from deleting it.
+    behaviorRefs:
+      - orphan-versus-delete
+    rationale: Forget/orphan changes ownership state but not external object existence; a DELETE effect changes existence.
+unsupportedFacts:
+  - id: crossplane-deletion-policy-field
+    statement: Crossplane encodes the distinction through a DeletionPolicy enum on a managed resource.
+    evidence:
+      - startLine: 1
+        endLine: 14
+    reason: CRD field and enum names are target syntax; ownership removal versus external deletion is the reviewed meaning.

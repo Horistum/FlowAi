@@ -1,0 +1,43 @@
+kind: FlowInfrastructureLifecycleFalsificationBaseline
+version: '1.0'
+facts:
+  - caseId: opentofu-resource-upsert
+    factId: resource-existence-upsert
+    observationRef: preserve-resource-existence-upsert
+    requirement: RESOURCE_EXISTENCE_UPSERT
+    initialOutcome: REPRESENTABLE
+  - caseId: opentofu-resource-deprovisioning
+    factId: resource-deprovisioning
+    observationRef: preserve-resource-deprovisioning
+    requirement: RESOURCE_DEPROVISIONING
+    initialOutcome: REPRESENTABLE
+  - caseId: opentofu-resource-reconciliation
+    factId: desired-state-reconciliation
+    observationRef: preserve-desired-state-reconciliation
+    requirement: DESIRED_STATE_RECONCILIATION
+    initialOutcome: REPRESENTABLE
+  - caseId: opentofu-change-preview
+    factId: non-mutating-change-preview
+    observationRef: preserve-non-mutating-change-preview
+    requirement: NON_MUTATING_CHANGE_PREVIEW
+    initialOutcome: MODEL_GAP
+  - caseId: opentofu-create-before-destroy
+    factId: create-before-destroy-replacement
+    observationRef: preserve-create-before-destroy-replacement
+    requirement: CREATE_BEFORE_DESTROY_REPLACEMENT
+    initialOutcome: MODEL_GAP
+  - caseId: opentofu-prevent-destroy
+    factId: destruction-prohibition
+    observationRef: preserve-destruction-prohibition
+    requirement: DESTRUCTION_PROHIBITION
+    initialOutcome: MODEL_GAP
+  - caseId: crossplane-orphan-delete
+    factId: retain-on-management-removal
+    observationRef: preserve-retain-on-management-removal
+    requirement: RETAIN_ON_MANAGEMENT_REMOVAL
+    initialOutcome: MODEL_GAP
+  - caseId: crossplane-management-actions
+    factId: persistent-management-action-policy
+    observationRef: preserve-persistent-management-action-policy
+    requirement: PERSISTENT_MANAGEMENT_ACTION_POLICY
+    initialOutcome: MODEL_GAP

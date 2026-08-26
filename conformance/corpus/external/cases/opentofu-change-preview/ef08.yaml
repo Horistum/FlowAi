@@ -1,0 +1,11 @@
+kind: FlowInfrastructureLifecycleFalsification
+version: '1.0'
+caseId: opentofu-change-preview
+facts:
+  - id: non-mutating-change-preview
+    observationRef: preserve-non-mutating-change-preview
+    requirement: NON_MUTATING_CHANGE_PREVIEW
+    values:
+      resource: payments-network
+      target: production-infrastructure
+      mode: preview

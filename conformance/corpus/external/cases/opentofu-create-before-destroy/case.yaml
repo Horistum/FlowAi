@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: opentofu-create-before-destroy
+domain: infrastructure-lifecycle
+provenance:
+  repository: opentofu/opentofu
+  revision: 'fce22f232f309baf7b44dc7cefce30a913f8f313'
+  path: website/docs/language/resources/behavior.mdx
+  license:
+    spdx: MPL-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.mdx
+  sha256: 'd4f3b8f3fdf2a1a1b9c3e633d43b72255f2b279240ac7603bbe1c21009d015c4'
+authoredBehaviors:
+  - id: replacement-create-before-destroy
+    statement: Replacement creates the new instance first and destroys the prior instance only afterwards.
+    evidence:
+      - startLine: 1
+        endLine: 8
+expectedSemanticObservations:
+  - id: preserve-create-before-destroy-replacement
+    expectation: PRESERVE
+    statement: Flow must preserve old and new instances as one logical resource replacement and preserve create-before-destroy ordering.
+    behaviorRefs:
+      - replacement-create-before-destroy
+    rationale: Replacement continuity and ordering are target-neutral lifecycle obligations, not merely two unrelated actions.
+unsupportedFacts:
+  - id: opentofu-lifecycle-meta-argument
+    statement: The source configures behavior through OpenTofu's create_before_destroy resource meta-argument.
+    evidence:
+      - startLine: 1
+        endLine: 8
+    reason: The HCL field name is implementation vocabulary; logical replacement identity and ordering are the reviewed semantics.

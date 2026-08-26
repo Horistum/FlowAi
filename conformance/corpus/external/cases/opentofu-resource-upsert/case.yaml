@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: opentofu-resource-upsert
+domain: infrastructure-lifecycle
+provenance:
+  repository: opentofu/opentofu
+  revision: 'fce22f232f309baf7b44dc7cefce30a913f8f313'
+  path: website/docs/language/resources/behavior.mdx
+  license:
+    spdx: MPL-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.mdx
+  sha256: '4bd82cf1c666c3943ac6353941b7ccdaf6d53c73af67917922f69ef4dec1c396'
+authoredBehaviors:
+  - id: resource-existence-and-apply
+    statement: A declared infrastructure object is intended to exist and apply creates or updates real infrastructure to match the configuration.
+    evidence:
+      - startLine: 1
+        endLine: 8
+expectedSemanticObservations:
+  - id: preserve-resource-existence-upsert
+    expectation: PRESERVE
+    statement: Flow must preserve the named logical infrastructure resource and target as create-or-update existence intent.
+    behaviorRefs:
+      - resource-existence-and-apply
+    rationale: Object identity plus create-or-update state transition is target-neutral lifecycle meaning.
+unsupportedFacts:
+  - id: opentofu-resource-block-and-state
+    statement: The source uses OpenTofu resource-block, configuration and state vocabulary.
+    evidence:
+      - startLine: 1
+        endLine: 8
+    reason: EF-08 preserves logical resource lifecycle meaning without promoting HCL blocks or OpenTofu state mechanics into Core.

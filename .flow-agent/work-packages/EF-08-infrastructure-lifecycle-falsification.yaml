@@ -19,7 +19,7 @@ sourceSelection:
     - "Use immutable public Git revisions with explicit redistributable source licenses."
     - "Prefer first-party documentation or source that states lifecycle behavior directly rather than examples whose meaning must be guessed from command or provider syntax."
     - "Use at least two independent repositories with materially different declarative apply and continuously reconciled controller models so one engine's lifecycle vocabulary cannot become the standard by accident."
-  plannedSources:
+  admittedSources:
     - repository: "opentofu/opentofu"
       revision: "fce22f232f309baf7b44dc7cefce30a913f8f313"
       paths:
@@ -35,7 +35,7 @@ sourceSelection:
       role: "persistent Observe/Create/Update/Delete management-action policy and Orphan versus Delete behavior"
 
 initialFalsification:
-  hypothesis:
+  expectedShape:
     representable:
       - "RESOURCE_EXISTENCE_UPSERT"
       - "RESOURCE_DEPROVISIONING"
@@ -49,12 +49,12 @@ initialFalsification:
   expectedCounts:
     representableFacts: 3
     modelGapFacts: 5
-  rule: "This is a pre-evidence hypothesis only. The committed baseline must record the live evaluator result after activation and may not be rewritten merely to manufacture the expected shape."
+  rule: "The committed baseline records the live evaluator result after activation; expectations never override production semantics."
 
 requiredOutcomes:
   - "Resource create/update intent is evaluated through IntentCapabilityValidator, canonical parameters and the infrastructure-resource UPSERT effect rather than OpenTofu apply syntax."
   - "Explicit resource removal is evaluated through a valid approval-protected DEPROVISION path and a canonical DELETE effect rather than a provider destroy command."
-  - "Desired-state reconciliation is distinguishable from create-only or update-only intent through declared target-neutral mode evidence and canonical infrastructure mutation meaning."
+  - "Desired-state reconciliation is distinguishable from create-only intent through the declared target-neutral PROVISION mode and canonical infrastructure UPSERT meaning."
   - "A preview is not called representable merely because PROVISION accepts mode=preview; the canonical effect must remain non-mutating and the proposed resource/change identity must survive independently from apply."
   - "Create-before-destroy replacement must preserve that old and new instances implement one logical resource, that the replacement is created first and that the old instance is removed only after replacement availability; two unrelated ordered steps are insufficient."
   - "Destruction prohibition must prevent or reject destructive lifecycle planning while the guard is active; a safety string, generic approval or delete effect is not equivalent."
@@ -74,15 +74,26 @@ forbiddenScope:
   - "Do not promote adapter or executable target support from corpus representability."
 
 completionEvidence:
-  - "A distinct activation-only CI boundary passes before any EF-08 external case is admitted."
+  - "Flow CI #3048 passed the distinct activation-only boundary before any EF-08 external case was admitted."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-08 evaluator classifies every reviewed PRESERVE observation through public intent validation, canonical parameters, control assessment and semantic effects."
   - "Positive and negative tests prove current infrastructure-action representability and reject false preview, replacement, destruction-guard, orphan and controller-policy equivalence."
   - "A committed mixed baseline remains exact while EF-08 is active/validating and becomes monotonic after closure."
   - "Standalone conformance integrates EF-08 without converting known model gaps into success."
-  - "Distinct implementation, validation and completion CI boundaries pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "Distinct implementation, validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
   - "EF-08 closes atomically with EF-09 advanced to next but left unactivated."
 
 localValidation:
-  status: activation-pending
-  rule: "No EF-08 external evidence may be admitted until this activation-only state passes exact-head and synthetic merge-candidate Flow CI."
+  status: activation-passed
+  activationBoundary:
+    commit: "39a3654ab6dc92ad219c12a439194daa772fa9d8"
+    workflowRun: 32921423499
+    runNumber: 3048
+    conclusion: success
+    exactHead:
+      commit: "39a3654ab6dc92ad219c12a439194daa772fa9d8"
+      conclusion: success
+    mergeCandidate:
+      commit: "98c2ae4e3087773d91d6f343497f168de6f5bb5c"
+      conclusion: success
+  rule: "EF-08 external evidence is admitted only after the recorded activation-only boundary; implementation CI must independently validate the evidence-bearing evaluator and baseline before lifecycle progression."

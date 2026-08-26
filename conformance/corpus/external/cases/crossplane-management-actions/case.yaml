@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: crossplane-management-actions
+domain: infrastructure-lifecycle
+provenance:
+  repository: crossplane/crossplane
+  revision: '0e4f8c1d78ef7a4b1cb2d95d92cafa9a905c2280'
+  path: apis/core/v2/policies.go
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE and source header at the pinned revision.
+sourceCapture:
+  path: source.go
+  sha256: '391f9edb2ac39bf5a7ade44cfa9cb0c230417abf0ba6065d42825c94bec4056c'
+authoredBehaviors:
+  - id: persistent-management-action-set
+    statement: A controller policy defines which of Observe, Create, Update and Delete it may repeatedly perform on an external resource.
+    evidence:
+      - startLine: 1
+        endLine: 26
+expectedSemanticObservations:
+  - id: preserve-persistent-management-action-policy
+    expectation: PRESERVE
+    statement: Flow must preserve the allowed management-action set for the named external resource as persistent lifecycle policy rather than one workflow invocation.
+    behaviorRefs:
+      - persistent-management-action-set
+    rationale: Observe-only, create/update and delete permissions change controller authority across reconciliation loops.
+unsupportedFacts:
+  - id: crossplane-controller-enum
+    statement: Crossplane encodes the policy as ManagementPolicies and ManagementAction Go types plus CRD validation tags.
+    evidence:
+      - startLine: 1
+        endLine: 26
+    reason: Type and CRD spelling are target implementation detail; allowed persistent lifecycle authority is the reviewed meaning.

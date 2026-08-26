@@ -1,0 +1,9 @@
+kind: FlowInfrastructureLifecycleFalsification
+version: '1.0'
+caseId: opentofu-resource-deprovisioning
+facts:
+  - id: resource-deprovisioning
+    observationRef: preserve-resource-deprovisioning
+    requirement: RESOURCE_DEPROVISIONING
+    values:
+      target: obsolete-worker-pool
