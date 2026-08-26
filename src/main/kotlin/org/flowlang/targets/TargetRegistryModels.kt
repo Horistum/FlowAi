@@ -157,17 +157,17 @@ data class TargetDescriptor(
         return TargetCapability(
             target = name,
             description = description,
-            sequentialTasks = support("sequentialTasks", SupportLevel.SUPPORTED),
-            parallel = support("parallel", SupportLevel.SUPPORTED),
-            conditions = support("conditions", SupportLevel.SUPPORTED),
-            dynamicLoops = support("dynamicLoops", SupportLevel.PARTIAL),
-            match = support("match", SupportLevel.PARTIAL),
-            retry = support("retry", SupportLevel.PARTIAL),
-            approvals = support("approvals", SupportLevel.PARTIAL),
-            errorHandlers = support("errorHandlers", SupportLevel.PARTIAL),
-            artifacts = support("artifacts", SupportLevel.PARTIAL),
-            secrets = support("secrets", SupportLevel.PARTIAL),
-            nativeRuntime = support("nativeRuntime", SupportLevel.PARTIAL),
+            sequentialTasks = support("sequentialTasks"),
+            parallel = support("parallel"),
+            conditions = support("conditions"),
+            dynamicLoops = support("dynamicLoops"),
+            match = support("match"),
+            retry = support("retry"),
+            approvals = support("approvals"),
+            errorHandlers = support("errorHandlers"),
+            artifacts = support("artifacts"),
+            secrets = support("secrets"),
+            nativeRuntime = support("nativeRuntime"),
             notes = notes,
             features = features.mapValues { (_, raw) -> parseSupport(raw, name) },
             expressionSupport = expressionDeclaration,
@@ -177,8 +177,9 @@ data class TargetDescriptor(
         )
     }
 
-    private fun support(name: String, default: SupportLevel): SupportLevel {
-        val raw = capabilities[name] ?: return default
+    /** Omitted registry fields are unsupported. Support is never inherited by omission. */
+    private fun support(name: String): SupportLevel {
+        val raw = capabilities[name] ?: return SupportLevel.UNSUPPORTED
         return parseSupport(raw, this.name, name)
     }
 

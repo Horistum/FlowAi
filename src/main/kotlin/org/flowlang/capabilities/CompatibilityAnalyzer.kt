@@ -223,6 +223,13 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
         else -> emptyList()
     }
 
+    /**
+     * Resolve only explicitly modeled capability families.
+     *
+     * A generally programmable runtime is not evidence for an unknown semantic
+     * capability. Exact feature declarations win; all omitted or unknown values
+     * fail closed instead of inheriting nativeRuntime by folklore.
+     */
     private fun supportForCapability(target: TargetCapability, capability: String): SupportLevel {
         target.features[capability]?.let { return it }
         return when {
@@ -232,22 +239,29 @@ class CompatibilityAnalyzer(private val targets: Map<String, TargetCapability>) 
             capability == "loop.dynamic" -> target.dynamicLoops
             capability == "match.basic" -> target.match
             capability == "retry.task" -> target.retry
+            // Manual invocation is a modeled trigger semantic, not an unknown runtime capability.
+            // Target-specific rendering is still authorized by the adapter trigger evidence gate.
             capability == "trigger.manual" -> SupportLevel.SUPPORTED
-            capability == "trigger.schedule.cron" -> target.feature("trigger.schedule.cron", target.feature("cron.schedule", SupportLevel.PARTIAL))
-            capability == "trigger.schedule.interval" -> target.feature("trigger.schedule.interval", SupportLevel.PARTIAL)
-            capability == "trigger.schedule.calendar" -> target.feature("trigger.schedule.calendar", SupportLevel.PARTIAL)
-            capability == "trigger.event" -> target.feature("trigger.event", SupportLevel.PARTIAL)
-            capability == "trigger.webhook" -> target.feature("trigger.webhook", SupportLevel.PARTIAL)
+            capability == "trigger.schedule.cron" -> target.feature(
+                "trigger.schedule.cron",
+                target.feature("cron.schedule", SupportLevel.UNSUPPORTED)
+            )
+            capability == "trigger.schedule.interval" -> target.feature("trigger.schedule.interval", SupportLevel.UNSUPPORTED)
+            capability == "trigger.schedule.calendar" -> target.feature("trigger.schedule.calendar", SupportLevel.UNSUPPORTED)
+            capability == "trigger.event" -> target.feature("trigger.event", SupportLevel.UNSUPPORTED)
+            capability == "trigger.webhook" -> target.feature("trigger.webhook", SupportLevel.UNSUPPORTED)
             capability.startsWith("approval.") -> target.approvals
             capability.startsWith("secret.") -> target.secrets
             capability.startsWith("artifact.") -> target.artifacts
-            capability.startsWith("rollback.") || capability == "standard.rollback" -> target.feature("rollback.native", SupportLevel.PARTIAL)
-            capability == "safety.destructiveOperation" -> target.feature("safety.destructiveOperation", SupportLevel.PARTIAL)
+            capability.startsWith("rollback.") || capability == "standard.rollback" ->
+                target.feature("rollback.native", SupportLevel.UNSUPPORTED)
+            capability == "safety.destructiveOperation" ->
+                target.feature("safety.destructiveOperation", SupportLevel.UNSUPPORTED)
             capability.startsWith("standard.") -> target.nativeRuntime
-            capability.startsWith("kubernetes.") -> target.feature("kubernetes.api", target.nativeRuntime)
-            capability.startsWith("container.") -> target.feature("container.image", target.nativeRuntime)
-            capability.startsWith("notification.") -> target.feature("notification.send", target.nativeRuntime)
-            else -> target.nativeRuntime
+            capability.startsWith("kubernetes.") -> target.feature("kubernetes.api", SupportLevel.UNSUPPORTED)
+            capability.startsWith("container.") -> target.feature("container.image", SupportLevel.UNSUPPORTED)
+            capability.startsWith("notification.") -> target.feature("notification.send", SupportLevel.UNSUPPORTED)
+            else -> SupportLevel.UNSUPPORTED
         }
     }
 

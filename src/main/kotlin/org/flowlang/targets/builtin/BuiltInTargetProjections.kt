@@ -14,6 +14,7 @@ import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetProjectionProvider
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetStep
+import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.baseMetadata
 import org.flowlang.generators.manifest.combineConditions
 import org.flowlang.generators.manifest.emptyProjectionStep
@@ -201,11 +202,15 @@ private fun List<PlanNode>.toJenkinsTargetSteps(
                 children = flowHandler.errorHandler.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
                 metadata = mapOf("sourceNodeKind" to flowHandler.kind, "tryRole" to "errorHandler")
             )
+            val stepId = sanitizeId("flow_1")
+            val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.ERROR_BOUNDARY, stepId)
             return listOf(TargetStep(
-                id = sanitizeId("flow_1"),
+                id = stepId,
                 name = "flow_1",
-                type = "try",
+                type = TargetStructuralProjectionKind.ERROR_BOUNDARY.stepType,
                 children = listOf(bodyStep, handlerStep),
+                materialization = structural.materialization,
+                rendererPayload = structural.rendererPayload,
                 metadata = mapOf(
                     "sourceNodeKind" to flowHandler.kind,
                     "flowLevelErrorBoundary" to "true",

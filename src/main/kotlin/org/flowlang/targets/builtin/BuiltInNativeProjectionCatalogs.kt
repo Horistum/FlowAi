@@ -6,6 +6,8 @@ import org.flowlang.generators.manifest.TargetNativeApprovalProjectionDefinition
 import org.flowlang.generators.manifest.TargetNativeProjectionBindingContract
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetNativeProjectionDefinition
+import org.flowlang.generators.manifest.TargetNativeStructuralProjectionDefinition
+import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.projection.ProjectionBindingKind
 
 /**
@@ -49,6 +51,26 @@ object BuiltInNativeProjectionCatalogs {
                     "mode" to TargetNativeApprovalProjectionBindingContract(TargetApprovalProjectionField.MODE),
                     "message" to TargetNativeApprovalProjectionBindingContract(TargetApprovalProjectionField.MESSAGE)
                 )
+            )
+        ),
+        structuralDefinitions = listOf(
+            TargetNativeStructuralProjectionDefinition(
+                structure = TargetStructuralProjectionKind.CONDITION,
+                kind = BuiltInProjectionPayloadKinds.JENKINS_STRUCTURE,
+                reference = "if",
+                implementationEvidenceReference =
+                    "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#condition",
+                behavioralEvidenceReference =
+                    "src/test/kotlin/TargetStructuralProjectionHonestyTests.kt#jenkinsConditionPreservesGuardedExecution"
+            ),
+            TargetNativeStructuralProjectionDefinition(
+                structure = TargetStructuralProjectionKind.ERROR_BOUNDARY,
+                kind = BuiltInProjectionPayloadKinds.JENKINS_STRUCTURE,
+                reference = "try-catch",
+                implementationEvidenceReference =
+                    "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#error-boundary",
+                behavioralEvidenceReference =
+                    "src/test/kotlin/TargetStructuralProjectionHonestyTests.kt#jenkinsErrorBoundaryPreservesHandlerExecution"
             )
         )
     )

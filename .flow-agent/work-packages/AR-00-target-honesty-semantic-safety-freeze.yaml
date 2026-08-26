@@ -1,0 +1,146 @@
+version: "AR-00"
+name: "Target Honesty and Semantic Safety Freeze"
+type: "architecture-recovery-containment"
+status: active
+stream: "architecture-recovery"
+
+objective: "Contain audited target-rendering and capability-claim defects before deeper compiler and module-boundary recovery. AR-00 makes unsupported structural meaning fail closed, removes optimistic capability fallbacks, publishes explicit target maturity, and adds mutation evidence without implementing new target behavior or redefining canonical semantics."
+
+authorization:
+  status: active
+  predecessor: "ARCHITECTURE-RECOVERY-ROADMAP"
+  strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-00"
+  postToolchainSource: ".flow-agent/roadmap-post-toolchain.yaml#ARCHITECTURE-RECOVERY"
+  mainAtDefinition: "55cc409009a137cdf6e1c45697165a72d81818a3"
+  mainAtActivation: "55cc409009a137cdf6e1c45697165a72d81818a3"
+  rule: "AR-00 may reduce target support and executable readiness, introduce fail-closed structural projection evidence, and publish target maturity. It must not implement missing Jenkins, GitHub Actions or Tekton control-flow behavior and must not change target-neutral semantic meaning to preserve an existing executable claim."
+
+auditScope:
+  containedFindings:
+    - id: "F-01"
+      title: "Target rendering can change control-flow meaning"
+      containment: "Every structural node requires provider-owned implementation and behavioral evidence before executable rendering."
+    - id: "F-06"
+      title: "Capability declarations are not behaviorally grounded"
+      containment: "Missing capability evidence becomes unsupported and supported structural claims are reconciled against composed provider evidence."
+    - id: "F-11"
+      title: "Target portfolio overstates executable breadth"
+      containment: "Target maturity distinguishes declaration, analysis, rendering, execution and behavioral certification."
+    - id: "F-18"
+      title: "Governance-heavy tests miss structural behavior mutation"
+      containment: "Negative fixtures remove or falsify structural evidence and must prevent executable readiness."
+  closureMilestone: "AR-06"
+  containmentRule: "AR-00 contains these findings but does not close them. Final closure requires adapter certification over the recovered canonical graph in AR-06."
+
+implementationSlices:
+  - id: "AR-00A"
+    name: "Capability Fail-Closed Defaults"
+    outcomes:
+      - "TargetCapability defaults are UNSUPPORTED rather than optimistic SUPPORTED or PARTIAL values."
+      - "Missing target-registry capability fields resolve to UNSUPPORTED."
+      - "Unknown required capabilities no longer inherit nativeRuntime support."
+      - "Target registry profiles are downgraded where current providers do not own structural behavior."
+  - id: "AR-00B"
+    name: "Structural Projection Evidence Gate"
+    outcomes:
+      - "Condition, parallel, loop, match, retry and error-boundary structures are explicit materialization boundaries."
+      - "Provider-owned structural definitions bind an opaque renderer payload to implementation and behavioral evidence references."
+      - "Native child actions cannot make an unresolved parent structure executable."
+      - "Renderers validate the exact structural payload they implement."
+  - id: "AR-00C"
+    name: "Target Maturity Publication"
+    outcomes:
+      - "The adapter portfolio publishes DECLARED, ANALYZABLE, RENDERABLE, EXECUTABLE and BEHAVIORALLY_CERTIFIED stages."
+      - "Maturity is derived monotonically from registry, provider, executable and behavioral evidence."
+      - "Profile-only targets cannot retain executable or structurally supported claims."
+  - id: "AR-00D"
+    name: "Mutation and Regression Evidence"
+    outcomes:
+      - "A flattened or evidence-free structural node forces REVIEW_ONLY or FAIL_FAST rather than EXECUTABLE."
+      - "A supported structural claim without a matching provider definition fails portfolio validation."
+      - "The bounded checkout-build-image executable references remain executable because they contain no unresolved structural construct."
+
+architecturalDesign:
+  structuralEvidence:
+    contract: "TargetNativeStructuralProjectionDefinition"
+    kinds:
+      - "CONDITION"
+      - "PARALLEL"
+      - "LOOP"
+      - "MATCH"
+      - "RETRY"
+      - "ERROR_BOUNDARY"
+    evidenceRequired:
+      - "provider-owned payload kind and reference"
+      - "production implementation reference"
+      - "behavioral test reference"
+    serializationRule: "AR-00 uses the existing TargetStep materialization, rendererPayload and materialization metadata contracts. It does not introduce a second manifest authority or advance TargetManifest solely for containment."
+  capabilityRule: "A registry declaration is preliminary evidence. SUPPORTED structural status requires a composed provider whose native projection catalog declares the same structural kind with both production and behavioral references."
+  maturityRule: "Stages are cumulative and monotonic. A target cannot be EXECUTABLE without RENDERABLE and cannot be BEHAVIORALLY_CERTIFIED without executable and behavioral evidence."
+
+plannedProductionBoundary:
+  capabilityModel:
+    - "src/main/kotlin/org/flowlang/capabilities/TargetCapabilities.kt"
+    - "src/main/kotlin/org/flowlang/capabilities/CompatibilityAnalyzer.kt"
+    - "src/main/kotlin/org/flowlang/targets/TargetRegistryModels.kt"
+    - "targets/builtin-targets.yaml"
+  structuralProjection:
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetRenderPolicy.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestContractValidator.kt"
+    - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
+    - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  maturity:
+    - "src/main/kotlin/org/flowlang/adapters/portfolio/AdapterPortfolioAuthority.kt"
+    - "adapters/portfolio/builtin-adapter-portfolio.yaml"
+    - "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt"
+
+requiredTests:
+  - "Default and omitted target capabilities are fail-closed."
+  - "Unknown required capabilities are unsupported even when nativeRuntime is supported."
+  - "Jenkins condition and error-boundary projections remain executable only with exact owned evidence."
+  - "Jenkins parallel, loop, match and retry cannot become executable from native child leaves."
+  - "GitHub Actions and Tekton structural claims remain partial or unsupported until owned behavior exists."
+  - "Profile-only Argo Workflows and Azure DevOps targets remain declared/analyzable but not renderable or executable."
+  - "Removing a structural behavioral reference or provider definition is detected by a negative fixture."
+  - "Existing Jenkins and GitHub Actions checkout-build-image reference scenarios remain executable."
+
+forbiddenScope:
+  - "Do not implement Jenkins parallel, loop, match or retry syntax in AR-00."
+  - "Do not implement new GitHub Actions or Tekton structural behavior in AR-00."
+  - "Do not add target syntax, target names or renderer primitives to canonical intent, AST or execution-plan semantics."
+  - "Do not relabel partial, unknown or review-only evidence as executable to preserve snapshots."
+  - "Do not introduce a runtime plugin framework, target SDK or target-template extension lifecycle."
+  - "Do not close F-01, F-06, F-11 or F-18 before AR-06 behavioral certification."
+
+completionEvidence:
+  - "Every structural TargetStep is either backed by exact provider-owned implementation plus behavioral evidence or prevents executable rendering."
+  - "Every SUPPORTED structural target claim has a matching composed provider structural definition."
+  - "No omitted or unknown capability is treated as supported by a default or nativeRuntime fallback."
+  - "Target maturity is visible as cumulative declared, analyzable, renderable, executable and behaviorally-certified stages."
+  - "Mutation tests fail when structural evidence is removed, forged or disconnected from provider implementation."
+  - "Bounded executable reference scenarios remain independently validated; any downgrade is explicit rather than hidden."
+  - "Activation, implementation, validation and completion boundaries use distinct exact-head and synthetic merge-candidate Flow CI evidence."
+
+lifecycle:
+  activationBoundary:
+    status: passed
+    exactHead: "e8f636788c773c639357a2fc7aaabf560442fef4"
+    syntheticMergeCandidate: "d469c0e9111de76e9ccb990ffe5cbad4fe989e57"
+    workflowRunId: 32937383376
+    workflowRunNumber: 3060
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, compilation, complete tests and standalone conformance passed."
+      - "Synthetic merge-candidate Flow Agent validation, compilation, complete tests and standalone conformance passed."
+  implementationBoundary:
+    status: pending
+  validationBoundary:
+    status: pending
+  completionBoundary:
+    status: pending
+
+localValidation:
+  status: activation-passed
+  rule: "The activation transition passed before production implementation. GitHub exact-head and synthetic merge-candidate CI remain authoritative because the current environment has no reusable offline checkout."
