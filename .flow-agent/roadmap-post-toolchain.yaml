@@ -7,8 +7,8 @@ currentDecision:
   completedItemName: "Data Orchestration Falsification"
   nextItem: "EF-08"
   nextItemName: "Infrastructure Lifecycle Falsification"
-  workPackage: ""
-  decisionBasis: "EF-07 completed data-orchestration falsification with distinct activation, corrected implementation, validation and completion CI evidence. Three current semantic shapes are representable and five remain explicit model gaps: data-asset lineage to specific produced data, typed asset-aware trigger conditions, run data intervals, partition-subset backfills and conditional branching. EF-08 is now the next post-toolchain item but remains unactivated and requires its own transition before infrastructure-lifecycle evidence is admitted."
+  workPackage: ".flow-agent/work-packages/EF-08-infrastructure-lifecycle-falsification.yaml"
+  decisionBasis: "EF-07 is merged. EF-08 is independently activated to pressure current infrastructure-lifecycle semantics with immutable declarative-apply and continuously reconciled controller evidence before any semantic repair is authorized."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
@@ -77,7 +77,8 @@ sequence:
   - id: "EF-08"
     name: "Infrastructure Lifecycle Falsification"
     order: 9
-    status: next
+    status: active
+    workPackage: ".flow-agent/work-packages/EF-08-infrastructure-lifecycle-falsification.yaml"
   - id: "EF-09"
     name: "Human Approval and Change-Control Falsification"
     order: 10
