@@ -1,0 +1,88 @@
+version: "EF-08"
+name: "Infrastructure Lifecycle Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: active
+stream: "post-toolchain"
+
+objective: "Pressure current Flow infrastructure-lifecycle semantics with immutable external evidence for resource creation/update, explicit removal, desired-state reconciliation, non-mutating change preview, replacement ordering, destruction prohibition, orphan/retain behavior and persistent management-action policy without turning OpenTofu resource addresses, Crossplane managed-resource fields, provider names or controller vocabulary into universal Core meaning."
+
+authorization:
+  status: active
+  predecessor: "EF-07"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-08"
+  mainAtDefinition: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
+  mainAtActivation: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
+  rule: "EF-08 may classify target-independent infrastructure-lifecycle gaps after its activation-only boundary. Core repair, StandardCapability changes, contract changes and canonical-effect changes remain forbidden in this work item."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable source licenses."
+    - "Prefer first-party documentation or source that states lifecycle behavior directly rather than examples whose meaning must be guessed from command or provider syntax."
+    - "Use at least two independent repositories with materially different declarative apply and continuously reconciled controller models so one engine's lifecycle vocabulary cannot become the standard by accident."
+  plannedSources:
+    - repository: "opentofu/opentofu"
+      revision: "fce22f232f309baf7b44dc7cefce30a913f8f313"
+      paths:
+        - "website/docs/language/resources/behavior.mdx"
+        - "website/docs/cli/commands/plan.mdx"
+      license: "MPL-2.0"
+      role: "resource create/update/destroy reconciliation, non-mutating preview, create-before-destroy replacement and prevent-destroy behavior"
+    - repository: "crossplane/crossplane"
+      revision: "0e4f8c1d78ef7a4b1cb2d95d92cafa9a905c2280"
+      paths:
+        - "apis/core/v2/policies.go"
+      license: "Apache-2.0"
+      role: "persistent Observe/Create/Update/Delete management-action policy and Orphan versus Delete behavior"
+
+initialFalsification:
+  hypothesis:
+    representable:
+      - "RESOURCE_EXISTENCE_UPSERT"
+      - "RESOURCE_DEPROVISIONING"
+      - "DESIRED_STATE_RECONCILIATION"
+    modelGaps:
+      - "NON_MUTATING_CHANGE_PREVIEW"
+      - "CREATE_BEFORE_DESTROY_REPLACEMENT"
+      - "DESTRUCTION_PROHIBITION"
+      - "RETAIN_ON_MANAGEMENT_REMOVAL"
+      - "PERSISTENT_MANAGEMENT_ACTION_POLICY"
+  expectedCounts:
+    representableFacts: 3
+    modelGapFacts: 5
+  rule: "This is a pre-evidence hypothesis only. The committed baseline must record the live evaluator result after activation and may not be rewritten merely to manufacture the expected shape."
+
+requiredOutcomes:
+  - "Resource create/update intent is evaluated through IntentCapabilityValidator, canonical parameters and the infrastructure-resource UPSERT effect rather than OpenTofu apply syntax."
+  - "Explicit resource removal is evaluated through a valid approval-protected DEPROVISION path and a canonical DELETE effect rather than a provider destroy command."
+  - "Desired-state reconciliation is distinguishable from create-only or update-only intent through declared target-neutral mode evidence and canonical infrastructure mutation meaning."
+  - "A preview is not called representable merely because PROVISION accepts mode=preview; the canonical effect must remain non-mutating and the proposed resource/change identity must survive independently from apply."
+  - "Create-before-destroy replacement must preserve that old and new instances implement one logical resource, that the replacement is created first and that the old instance is removed only after replacement availability; two unrelated ordered steps are insufficient."
+  - "Destruction prohibition must prevent or reject destructive lifecycle planning while the guard is active; a safety string, generic approval or delete effect is not equivalent."
+  - "Retain/orphan behavior must remove management ownership without deleting the external object; DEPROVISION or CLEANUP DELETE effects are not equivalent to forget/orphan."
+  - "A persistent management-action policy must preserve the allowed set of Observe/Create/Update/Delete actions across reconciliation loops; a one-shot workflow action or arbitrary mode string is not equivalent."
+  - "Every real gap remains explicit evidence; EF-08 does not add parameters, policies, capabilities or effects merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values in EF-08."
+  - "Do not change StandardCapabilityContracts or CanonicalIntentEffectAuthority mappings in EF-08."
+  - "Do not add preview, replacement, prevent-destroy, orphan, management-policy or reconciliation-loop fields to Core in the falsification item."
+  - "Do not treat OpenTofu resource addresses, state files, CLI flags, Crossplane CRD field names, provider APIs or controller reconcile loops as universal Core vocabulary."
+  - "Do not infer non-mutating preview from a mode string while canonical meaning still carries an UPSERT effect."
+  - "Do not infer replacement identity from two sequential infrastructure steps unless the old/new instances are structurally tied to one logical resource."
+  - "Do not treat approval as destruction prohibition or DELETE as orphan/forget."
+  - "Do not modify closed EF-01 through EF-07 evidence boundaries."
+  - "Do not promote adapter or executable target support from corpus representability."
+
+completionEvidence:
+  - "A distinct activation-only CI boundary passes before any EF-08 external case is admitted."
+  - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
+  - "A production EF-08 evaluator classifies every reviewed PRESERVE observation through public intent validation, canonical parameters, control assessment and semantic effects."
+  - "Positive and negative tests prove current infrastructure-action representability and reject false preview, replacement, destruction-guard, orphan and controller-policy equivalence."
+  - "A committed mixed baseline remains exact while EF-08 is active/validating and becomes monotonic after closure."
+  - "Standalone conformance integrates EF-08 without converting known model gaps into success."
+  - "Distinct implementation, validation and completion CI boundaries pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "EF-08 closes atomically with EF-09 advanced to next but left unactivated."
+
+localValidation:
+  status: activation-pending
+  rule: "No EF-08 external evidence may be admitted until this activation-only state passes exact-head and synthetic merge-candidate Flow CI."
