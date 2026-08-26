@@ -1,0 +1,12 @@
+kind: FlowDataOrchestrationFalsification
+version: '1.0'
+caseId: dagster-asset-dependency
+facts:
+  - id: data-asset-dependency
+    observationRef: preserve-data-asset-dependency
+    requirement: DATA_ASSET_DEPENDENCY
+    values:
+      upstreamStep: materialize-sugary-cereals
+      upstreamData: sugary-cereals
+      downstreamStep: materialize-shopping-list
+      downstreamData: shopping-list

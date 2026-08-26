@@ -1,0 +1,34 @@
+kind: FlowExternalCorpusCase
+version: '1.0'
+id: dagster-asset-dependency
+domain: data-orchestration
+provenance:
+  repository: dagster-io/dagster
+  revision: '8bba6b4a7ad8b5a1ca20c65fc012ae5aa600934b'
+  path: docs/docs/guides/build/assets/defining-assets-with-asset-dependencies.md
+  license:
+    spdx: Apache-2.0
+    evidence: Upstream LICENSE at the pinned revision.
+sourceCapture:
+  path: source.md
+  sha256: '7586ef052ec287e40cedd6041ad2935bb201836476c6e3cf76687eb4fbc9e4b2'
+authoredBehaviors:
+  - id: asset-dependency
+    statement: Dagster defines a downstream asset as depending on an upstream asset.
+    evidence:
+      - startLine: 1
+        endLine: 2
+expectedSemanticObservations:
+  - id: preserve-data-asset-dependency
+    expectation: PRESERVE
+    statement: Flow must preserve the produced upstream data identity and which downstream producer depends on that data identity.
+    behaviorRefs:
+      - asset-dependency
+    rationale: Data lineage is target-neutral meaning, but a generic step dependency is insufficient unless canonical meaning ties the consumer to the specific produced data.
+unsupportedFacts:
+  - id: dagster-deps-decorator
+    statement: Dagster authors the dependency through deps on an @asset decorator.
+    evidence:
+      - startLine: 1
+        endLine: 2
+    reason: Decorator and deps syntax are Dagster implementation vocabulary, not Core semantics.

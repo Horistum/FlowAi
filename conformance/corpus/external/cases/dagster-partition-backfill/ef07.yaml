@@ -1,0 +1,11 @@
+kind: FlowDataOrchestrationFalsification
+version: '1.0'
+caseId: dagster-partition-backfill
+facts:
+  - id: partition-backfill-selection
+    observationRef: preserve-partition-backfill-selection
+    requirement: PARTITION_BACKFILL_SELECTION
+    values:
+      data: historical-orders
+      partitionStart: partition-a
+      partitionEnd: partition-c

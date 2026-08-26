@@ -1,0 +1,216 @@
+version: "EF-07"
+name: "Data Orchestration Falsification"
+type: "post-toolchain-external-falsification-domain"
+status: complete
+stream: "post-toolchain"
+
+objective: "Pressure current Flow data-orchestration semantics with immutable external evidence for task dependency order, scheduled cadence, produced data identity, data lineage, asset-aware trigger conditions, run data intervals, partition backfills and conditional branching without turning Airflow Dag, Dagster asset, partition, sensor or operator vocabulary into universal Core meaning."
+
+authorization:
+  status: completed
+  predecessor: "EF-06"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-07"
+  mainAtDefinition: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
+  mainAtActivation: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
+  rule: "EF-07 completed external falsification without repairing Core semantics, adding StandardCapability values, changing canonical effects or weakening validation. Any semantic correction remains separately authorized by later synthesis and SI-2."
+
+supersededImplementationEvidence:
+  status: superseded
+  workflow: "Flow CI"
+  runNumber: 3039
+  runId: 32852911160
+  exactHead: "135dd0bca140549c50c9fee8cbe4fe2e9cd9dd38"
+  mergeCandidate: "141a203b79786a0e807abde3f687308374c2ccdf"
+  supersededReason: "Senior review found a false-positive DATA_ASSET_DEPENDENCY classification: producer.produces plus consumer.requires(producer) preserves output identity and a control dependency but does not tie the consumer to the specific produced data. The same canonical shape can represent control-only ordering, so data lineage was not semantically distinguishable."
+  rule: "A green CI run is not authoritative when its evaluator encodes a false equivalence; this boundary is retained only as audit history and cannot satisfy EF-07 implementation completion."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3041
+  runId: 32917803258
+  exactHead: "a46a8826dd8989a2087b530919b9004c2abb12ee"
+  mergeCandidate: "c76db8408ba25a4115848ad13b3b8d5f40e1d6b7"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 5
+    representable:
+      - "Task dependency order through canonical requires edges"
+      - "Scheduled cadence through canonical schedule meaning"
+      - "Produced data identity through canonical step outputs"
+    modelGaps:
+      - "Data-asset lineage from consumer to specific produced data"
+      - "Validated asset-aware trigger condition with data identities and ALL/ANY semantics"
+      - "Run data interval identity distinct from wall-clock runtime and schedule expression"
+      - "Partition-subset backfill selection"
+      - "Conditional branching with authored path-selection semantics"
+  rule: "This corrected boundary validates immutable provenance, production evaluation through public intent validation, exact mixed baseline, anti-smuggling and anti-false-lineage regression tests, plus standalone conformance without changing Core semantics."
+
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3042
+  runId: 32918318185
+  exactHead: "1594c5c6675929bb0ff9b8576612eae7518f2731"
+  mergeCandidate: "3791c2bb6a0236ba8c08c49af1a2883b7c00faac"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  purpose: "Independently validate the corrected implementation-evidence-bearing EF-07 state before completion evidence is admitted."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3043
+  runId: 32918836038
+  exactHead: "3ad6ac94551c4caefd94d747e2b13d7fa384a08c"
+  mergeCandidate: "7c961025e78c00efbf353d738090c0b23e8ba5f8"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 5
+  rule: "This boundary is later than the corrected implementation and validation boundaries and validates the evidence-bearing EF-07 state before lifecycle closure is recorded."
+
+sourceSelection:
+  criteria:
+    - "Use immutable public Git revisions with explicit redistributable source licenses."
+    - "Prefer first-party documentation or source that states orchestration behavior directly rather than examples whose semantics must be guessed from implementation syntax."
+    - "Use at least two independent orchestration repositories with materially different task-centric and data-asset-centric models so one engine's graph vocabulary cannot become the standard by accident."
+  admittedSources:
+    - repository: "apache/airflow"
+      revision: "fa00af4d0444315c6b4cc925191b0db90841e1b1"
+      paths:
+        - "airflow-core/docs/core-concepts/dags.rst"
+        - "airflow-core/docs/authoring-and-scheduling/asset-scheduling.rst"
+      license: "Apache-2.0"
+      role: "task dependency order, scheduled runs, run data intervals, branching, produced assets and conditional asset-aware scheduling"
+    - repository: "dagster-io/dagster"
+      revision: "8bba6b4a7ad8b5a1ca20c65fc012ae5aa600934b"
+      paths:
+        - "docs/docs/guides/build/assets/defining-assets-with-asset-dependencies.md"
+        - "docs/docs/guides/build/partitions-and-backfills/backfilling-data.md"
+      license: "Apache-2.0"
+      role: "asset dependency lineage and partition-subset backfill semantics"
+
+initialFalsification:
+  expectedShape:
+    representable:
+      - "TASK_DEPENDENCY_ORDER"
+      - "SCHEDULED_CADENCE"
+      - "PRODUCED_DATA_IDENTITY"
+    modelGaps:
+      - "DATA_ASSET_DEPENDENCY"
+      - "ASSET_TRIGGER_CONDITION"
+      - "RUN_DATA_INTERVAL"
+      - "PARTITION_BACKFILL_SELECTION"
+      - "CONDITIONAL_BRANCHING"
+  expectedCounts:
+    representableFacts: 3
+    modelGapFacts: 5
+  correctionFromImplementationAudit: "The initial 4R/4G hypothesis overclaimed DATA_ASSET_DEPENDENCY. Canonical requires expresses a step dependency, while produces names output identity; there is no canonical relation that identifies which produced data a downstream step consumes. The corrected evaluator therefore preserves the reviewed lineage fact as MODEL_GAP rather than inferring data flow from a single-output producer."
+  rule: "The committed baseline records the corrected live evaluator result; expectations and previous green runs never override semantic distinguishability."
+
+requiredOutcomes:
+  - "Task dependency order is evaluated through IntentCapabilityValidator and CanonicalIntentMeaning requires edges, including an alternate graph that proves the dependency is semantically distinguishable."
+  - "Scheduled cadence is evaluated through canonical IntentSchedule meaning rather than Airflow schedule spelling."
+  - "Produced data identity is evaluated through canonical step outputs without treating URI schemes, table names or storage products as universal orchestration semantics."
+  - "Data-asset dependency must preserve a relation from the downstream consumer to the specific produced upstream data; a generic producer step dependency is insufficient even for a single-output producer."
+  - "A data-aware trigger is not called representable merely because arbitrary trigger params or an opaque event string can echo Airflow/Dagster vocabulary; the authored condition and asset identities must be structurally distinguishable and unrelated provider keys must fail validation."
+  - "Run data interval semantics remain distinct from wall-clock start/end timestamps and from the schedule expression that caused the run."
+  - "Partition or backfill selection preserves which historical subset is requested; generic rerun, schedule or batch-count parameters are not equivalent."
+  - "Conditional branching preserves authored path-selection control flow; static requires edges or description strings are not equivalent meaning."
+  - "Every real gap remains explicit evidence; EF-07 does not add capabilities, trigger schema, parameters or effects merely to make the corpus representable."
+
+forbiddenScope:
+  - "Do not add or rename StandardCapability values in EF-07."
+  - "Do not change CanonicalIntentEffectAuthority mappings in EF-07."
+  - "Do not add partition, backfill, data-interval, branch-condition, asset-condition or data-consumption fields to Core in the falsification item."
+  - "Do not treat Airflow Dag/task/operator names, Dagster AssetKey/PartitionsDefinition, storage URI schemes, sensors or code-location concepts as universal Core vocabulary."
+  - "Do not infer data lineage merely because a downstream step requires a producer that happens to have one output."
+  - "Do not claim conditional asset scheduling through an opaque EVENT string or unvalidated trigger params if the logical condition is not preserved as canonical meaning."
+  - "Do not collapse branch conditions into static dependency edges or description text."
+  - "Do not equate a backfill partition subset with generic batches, retries or repeated scheduled runs."
+  - "Do not modify closed EF-01 through EF-06 evidence boundaries."
+  - "Do not promote adapter or executable target support from corpus representability."
+
+completionEvidence:
+  - "Flow CI #3038 passed the distinct activation-only boundary before any EF-07 external case was admitted."
+  - "Flow CI #3039 is retained as superseded audit evidence because its evaluator falsely treated a control dependency plus output identity as explicit data lineage."
+  - "Flow CI #3041 passed the corrected implementation boundary on exact head a46a8826dd8989a2087b530919b9004c2abb12ee and synthetic merge candidate c76db8408ba25a4115848ad13b3b8d5f40e1d6b7."
+  - "Flow CI #3042 passed the distinct validation boundary on exact head 1594c5c6675929bb0ff9b8576612eae7518f2731 and synthetic merge candidate 3791c2bb6a0236ba8c08c49af1a2883b7c00faac."
+  - "Flow CI #3043 passed the distinct completion boundary on exact head 3ad6ac94551c4caefd94d747e2b13d7fa384a08c and synthetic merge candidate 7c961025e78c00efbf353d738090c0b23e8ba5f8."
+  - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
+  - "A production EF-07 evaluator classifies every reviewed PRESERVE observation through public intent validation and canonical meaning."
+  - "Positive and negative tests prove graph/timing/data-identity representability where it exists and reject inferred lineage, opaque-string, free-form-param or static-graph fake equivalence."
+  - "The corrected mixed baseline preserves the initial EF-07 result and becomes monotonic after closure."
+  - "Standalone conformance integrates EF-07 without converting known model gaps into success."
+  - "EF-08 remains unactivated and requires its own independent transition before infrastructure-lifecycle evidence is admitted."
+
+localValidation:
+  status: passed
+  activationBoundary:
+    commit: "227ca51ce58826c5096e9213de9349d5495fad80"
+    workflowRun: 32851071311
+    runNumber: 3038
+    conclusion: success
+    exactHead:
+      commit: "227ca51ce58826c5096e9213de9349d5495fad80"
+      conclusion: success
+    mergeCandidate:
+      commit: "87c10f9160ccb72bcfb8d0ded7f07d6b0baec0f1"
+      conclusion: success
+  supersededImplementationBoundary:
+    commit: "135dd0bca140549c50c9fee8cbe4fe2e9cd9dd38"
+    workflowRun: 32852911160
+    runNumber: 3039
+    conclusion: success
+    mergeCandidate: "141a203b79786a0e807abde3f687308374c2ccdf"
+    reason: "DATA_ASSET_DEPENDENCY false-positive discovered during post-implementation semantic audit."
+  implementationBoundary:
+    commit: "a46a8826dd8989a2087b530919b9004c2abb12ee"
+    workflowRun: 32917803258
+    runNumber: 3041
+    conclusion: success
+    exactHead:
+      commit: "a46a8826dd8989a2087b530919b9004c2abb12ee"
+      conclusion: success
+    mergeCandidate:
+      commit: "c76db8408ba25a4115848ad13b3b8d5f40e1d6b7"
+      conclusion: success
+  validationBoundary:
+    commit: "1594c5c6675929bb0ff9b8576612eae7518f2731"
+    workflowRun: 32918318185
+    runNumber: 3042
+    conclusion: success
+    exactHead:
+      commit: "1594c5c6675929bb0ff9b8576612eae7518f2731"
+      conclusion: success
+    mergeCandidate:
+      commit: "3791c2bb6a0236ba8c08c49af1a2883b7c00faac"
+      conclusion: success
+  completionBoundary:
+    commit: "3ad6ac94551c4caefd94d747e2b13d7fa384a08c"
+    workflowRun: 32918836038
+    runNumber: 3043
+    conclusion: success
+    exactHead:
+      commit: "3ad6ac94551c4caefd94d747e2b13d7fa384a08c"
+      conclusion: success
+    mergeCandidate:
+      commit: "7c961025e78c00efbf353d738090c0b23e8ba5f8"
+      conclusion: success
+  rule: "EF-07 is complete with three representable facts and five explicit semantic model gaps preserved as evidence. EF-08 remains unactivated and semantic repair requires a separately authorized later item."

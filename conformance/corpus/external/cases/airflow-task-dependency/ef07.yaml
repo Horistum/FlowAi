@@ -1,0 +1,10 @@
+kind: FlowDataOrchestrationFalsification
+version: '1.0'
+caseId: airflow-task-dependency
+facts:
+  - id: task-dependency-order
+    observationRef: preserve-task-dependency-order
+    requirement: TASK_DEPENDENCY_ORDER
+    values:
+      upstream: extract-orders
+      downstream: transform-orders

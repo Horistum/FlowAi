@@ -19,6 +19,14 @@ casePackages:
   - cases/aws-secret-prior-version
   - cases/openbao-static-secret-rotation
   - cases/openbao-root-secret-retirement
+  - cases/airflow-task-dependency
+  - cases/airflow-conditional-branching
+  - cases/airflow-scheduled-cadence
+  - cases/airflow-run-data-interval
+  - cases/airflow-produced-asset
+  - cases/airflow-asset-trigger-condition
+  - cases/dagster-asset-dependency
+  - cases/dagster-partition-backfill
 invariants:
   - Every admitted case preserves immutable upstream repository, revision, path and license provenance.
   - Captured source bytes are SHA-256 bound before any semantic evaluation is admitted.

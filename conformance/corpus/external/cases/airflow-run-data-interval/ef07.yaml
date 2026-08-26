@@ -1,0 +1,10 @@
+kind: FlowDataOrchestrationFalsification
+version: '1.0'
+caseId: airflow-run-data-interval
+facts:
+  - id: run-data-interval
+    observationRef: preserve-run-data-interval
+    requirement: RUN_DATA_INTERVAL
+    values:
+      cadence: P1D
+      dataInterval: scheduled-data-period

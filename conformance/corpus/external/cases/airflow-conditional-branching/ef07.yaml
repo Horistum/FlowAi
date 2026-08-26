@@ -1,0 +1,12 @@
+kind: FlowDataOrchestrationFalsification
+version: '1.0'
+caseId: airflow-conditional-branching
+facts:
+  - id: conditional-branching
+    observationRef: preserve-conditional-branching
+    requirement: CONDITIONAL_BRANCHING
+    values:
+      decisionStep: route-quality
+      condition: quality-passed
+      trueStep: publish-data
+      falseStep: quarantine-data
