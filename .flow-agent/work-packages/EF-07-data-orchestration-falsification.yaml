@@ -1,18 +1,46 @@
 version: "EF-07"
 name: "Data Orchestration Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: active
+status: validating
 stream: "post-toolchain"
 
 objective: "Pressure current Flow data-orchestration semantics with immutable external evidence for task dependency order, scheduled cadence, produced data identity, data lineage, asset-aware trigger conditions, run data intervals, partition backfills and conditional branching without turning Airflow Dag, Dagster asset, partition, sensor or operator vocabulary into universal Core meaning."
 
 authorization:
-  status: active
+  status: validating
   predecessor: "EF-06"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-07"
   mainAtDefinition: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
   mainAtActivation: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
   rule: "EF-07 may classify target-independent data-orchestration gaps after its activation-only boundary. Core repair, StandardCapability changes and canonical-effect changes remain forbidden in this work item."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3039
+  runId: 32852911160
+  exactHead: "135dd0bca140549c50c9fee8cbe4fe2e9cd9dd38"
+  mergeCandidate: "141a203b79786a0e807abde3f687308374c2ccdf"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 4
+    modelGapFacts: 4
+    representable:
+      - "Task dependency order through canonical requires edges"
+      - "Scheduled cadence through canonical schedule meaning"
+      - "Produced data identity through canonical step outputs"
+      - "Bounded single-output data-asset dependency through produced identity plus consumer dependency"
+    modelGaps:
+      - "Validated asset-aware trigger condition with data identities and ALL/ANY semantics"
+      - "Run data interval identity distinct from wall-clock runtime and schedule expression"
+      - "Partition-subset backfill selection"
+      - "Conditional branching with authored path-selection semantics"
+  rule: "This boundary validates immutable provenance, the production evaluator through public intent validation, exact mixed baseline, anti-smuggling regression tests and standalone conformance without changing Core semantics."
 
 sourceSelection:
   criteria:
@@ -50,7 +78,7 @@ initialFalsification:
   expectedCounts:
     representableFacts: 4
     modelGapFacts: 4
-  rule: "This is a pre-evidence hypothesis only. The committed baseline records the live evaluator result after activation and may not be rewritten merely to manufacture a preferred shape."
+  rule: "The committed baseline records the live evaluator result after activation; expectations never override production semantics."
 
 requiredOutcomes:
   - "Task dependency order is evaluated through IntentCapabilityValidator and CanonicalIntentMeaning requires edges, including an alternate graph that proves the dependency is semantically distinguishable."
@@ -76,15 +104,16 @@ forbiddenScope:
 
 completionEvidence:
   - "Flow CI #3038 passed the distinct activation-only boundary before any EF-07 external case was admitted."
+  - "Flow CI #3039 passed the distinct implementation boundary on exact head 135dd0bca140549c50c9fee8cbe4fe2e9cd9dd38 and synthetic merge candidate 141a203b79786a0e807abde3f687308374c2ccdf."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-07 evaluator classifies every reviewed PRESERVE observation through public intent validation and canonical meaning."
   - "Positive and negative tests prove graph/timing/data-identity representability where it exists and reject opaque-string, free-form-param or static-graph fake equivalence."
-  - "A committed mixed baseline remains exact while EF-07 is active/validating and becomes monotonic after closure."
+  - "A committed mixed baseline remains exact while EF-07 is validating and becomes monotonic after closure."
   - "Standalone conformance integrates EF-07 without converting known model gaps into success."
-  - "Distinct implementation, validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "Distinct validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
 
 localValidation:
-  status: activation-passed
+  status: implementation-passed
   activationBoundary:
     commit: "227ca51ce58826c5096e9213de9349d5495fad80"
     workflowRun: 32851071311
@@ -96,4 +125,15 @@ localValidation:
     mergeCandidate:
       commit: "87c10f9160ccb72bcfb8d0ded7f07d6b0baec0f1"
       conclusion: success
-  rule: "EF-07 external evidence is admitted only after the recorded activation-only boundary; implementation CI must independently validate the evidence-bearing evaluator and baseline before lifecycle progression."
+  implementationBoundary:
+    commit: "135dd0bca140549c50c9fee8cbe4fe2e9cd9dd38"
+    workflowRun: 32852911160
+    runNumber: 3039
+    conclusion: success
+    exactHead:
+      commit: "135dd0bca140549c50c9fee8cbe4fe2e9cd9dd38"
+      conclusion: success
+    mergeCandidate:
+      commit: "141a203b79786a0e807abde3f687308374c2ccdf"
+      conclusion: success
+  rule: "EF-07 implementation evidence is recorded with four representable facts and four explicit model gaps; validation must pass independently before completion evidence is admitted."
