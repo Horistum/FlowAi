@@ -2,6 +2,7 @@ version: "EF-09"
 name: "Human Approval and Change-Control Falsification"
 type: "post-toolchain-external-falsification-domain"
 status: active
+roadmapDisposition: paused-by-architecture-recovery
 stream: "post-toolchain"
 
 objective: "Pressure current Flow human-approval and change-control semantics with immutable external evidence for blocking approval requirements, ordered approval gates, approval decision state, authorized approver sets, quorum, separation of duties, revision-bound authorization, whole-change coverage and revision-bound execution without turning GitHub review settings, Atlantis command names, repository roles or provider-specific mergeability vocabulary into universal Core meaning."
@@ -12,7 +13,11 @@ authorization:
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-09"
   mainAtDefinition: "7648a5916dd60c6cf75313fd22de4eca8d998e99"
   mainAtActivation: "7648a5916dd60c6cf75313fd22de4eca8d998e99"
-  rule: "EF-09 may classify target-independent approval and change-control gaps after its activation-only boundary. Core repair, StandardCapability changes, control-contract changes and canonical-effect changes remain forbidden in this work item."
+  schedulingPausedAtMain: "4d67b50819906752f52bf5db3a5d4c9c3809cb8b"
+  schedulingPauseReason: "Architecture Recovery preempts further EF-09 evaluator and corpus growth after evidence admission because a project-wide production-code audit identified one critical and six high-severity defects in the current compiler, target and artifact boundaries."
+  resumeGate: "AR-07 closes the Architecture Recovery roadmap and a later explicit transition replays EF-09 against the recovered canonical compiler and adapter contracts."
+  evidencePreservationRule: "Immutable admitted sources, captures and activation history remain valid inputs. Existing EF-09 representability assessments, evaluator assumptions and baselines receive no grandfathered status after compiler recovery and must be revalidated before lifecycle continuation."
+  rule: "The EF-09 lifecycle remains active because its production baseline contract admits only active, validating or complete. Roadmap scheduling is paused separately; while paused EF-09 may not admit new external cases, change production evaluators, advance validation state or authorize Core repair."
 
 sourceSelection:
   criteria:
@@ -73,6 +78,7 @@ forbiddenScope:
   - "Do not encode reviewer identity, quorum, self-approval prohibition or revision freshness inside message/condition strings and call that semantic preservation."
   - "Do not modify closed EF-01 through EF-08 evidence boundaries."
   - "Do not promote adapter or executable target support from corpus representability."
+  - "Do not change EF-09 evidence or advance its lifecycle while roadmapDisposition is paused-by-architecture-recovery."
 
 completionEvidence:
   - "Flow CI #3054 passed the distinct activation-only boundary before any EF-09 external case was admitted."
@@ -82,10 +88,11 @@ completionEvidence:
   - "A committed mixed baseline remains exact while EF-09 is active/validating and becomes monotonic after closure."
   - "Standalone conformance integrates EF-09 without converting known model gaps into success."
   - "Distinct implementation, validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "After Architecture Recovery, EF-09 replays its evaluator and baseline against the recovered canonical graph before validation can resume."
   - "EF-09 closes atomically with EF-10 advanced to next but left unactivated."
 
 localValidation:
-  status: activation-passed
+  status: activation-passed-roadmap-paused-before-implementation-validation
   activationBoundary:
     commit: "647d352f83f7bd9bfb34eeac71e59f157cfbb9e7"
     workflowRun: 32926144869
@@ -97,4 +104,7 @@ localValidation:
     mergeCandidate:
       commit: "1fbd0d015c29a6c361b020d799c1db926159bf0a"
       conclusion: success
-  rule: "EF-09 external evidence is admitted only after the recorded activation-only boundary; implementation CI must independently validate the evidence-bearing evaluator and baseline before lifecycle progression."
+  schedulingPauseBoundary:
+    mainCommit: "4d67b50819906752f52bf5db3a5d4c9c3809cb8b"
+    reason: "Architecture Recovery roadmap selection; no completion claim and no new EF-09 lifecycle state."
+  rule: "EF-09 retains its valid active lifecycle after the passed activation boundary and admitted evidence, while roadmap scheduling is paused. Resume requires a distinct post-recovery transition and independent implementation validation."

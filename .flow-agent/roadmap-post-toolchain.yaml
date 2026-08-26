@@ -1,22 +1,40 @@
 roadmap: "POST-TOOLCHAIN"
+revision: 2
 status: active
-purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION so semantic quality is falsified by real automation before structural expansion and AI-provider growth."
+purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
 currentDecision:
   completedItem: "EF-08"
   completedItemName: "Infrastructure Lifecycle Falsification"
-  nextItem: "EF-09"
-  nextItemName: "Human Approval and Change-Control Falsification"
-  workPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
-  decisionBasis: "EF-08 is merged. EF-09 is independently activated to pressure current human-approval and change-control semantics with immutable protected-change and infrastructure-apply evidence before any semantic repair is authorized."
+  pausedItem: "EF-09"
+  pausedItemName: "Human Approval and Change-Control Falsification"
+  pausedItemState: "active-after-evidence-admission"
+  pausedWorkPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
+  nextItem: "AR-00"
+  nextItemName: "Target Honesty and Semantic Safety Freeze"
+  nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
+  activationState: "not-activated"
+  workPackage: ""
+  decisionBasis: "EF-08 remains complete and immutable. EF-09 has passed activation and admitted its evidence into main, but its lifecycle is not closed. A project-wide production-code audit identified 22 architecture, semantic-correctness, packaging and operational findings, including one critical target-rendering defect and six high-severity defects. EF-09 changed only conformance and roadmap files, so the audited Core, compiler and adapter defects remain present. Architecture Recovery therefore pauses EF-09 without discarding its admitted corpus. AR-00 is selected as the next item, but requires its own activation transition and work package."
+
+recoveryRoadmap:
+  path: ".flow-agent/roadmap-architecture-recovery.yaml"
+  status: "selected-not-activated"
+  findingCount: 22
+  groupedMilestoneCount: 8
+  firstItem: "AR-00"
+  completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
 principles:
   - "Real external automation is allowed to falsify the model; unsupported meaning must never be forced through by weakening validation."
+  - "A known critical or high semantic-integrity defect interrupts feature expansion until it is contained by an explicitly selected recovery milestone."
+  - "Concrete target implementations belong behind adapter contracts and compiler-enforced module boundaries, not inside Flow Core."
   - "A new StandardCapability requires stable target-independent intent that cannot be represented more cleanly by existing semantics, effects and controls."
   - "Internal semantic models should become more strongly typed; string wire representations belong primarily at serialization boundaries."
   - "Structural boundaries should replace redundant lexical governance rather than merely adding another governance layer."
-  - "Representability, target materialization and executable portability remain separate maturity claims."
+  - "Representability, target materialization, rendered syntax, executable readiness and behavioral certification remain separate maturity claims."
   - "AI is an intent provider outside Core; deterministic parsing, canonicalization, safety and conformance remain authoritative."
+  - "A roadmap correction may group related findings, but every audit finding must retain an explicit closure owner."
 
 sequence:
   - id: "AR0.2"
@@ -79,16 +97,39 @@ sequence:
     order: 9
     status: completed
     workPackage: ".flow-agent/work-packages/EF-08-infrastructure-lifecycle-falsification.yaml"
+
+  - id: "ARCHITECTURE-RECOVERY"
+    name: "Architecture Recovery and Semantic Realignment"
+    order: 10
+    status: next
+    interrupts: "EF-09"
+    roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
+    firstItem: "AR-00"
+    purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
+    requiredOutcomes:
+      - "Every F-01 through F-22 finding has a containment or closure milestone."
+      - "Jenkins, GitHub Actions and Tekton remain reference adapters in the monorepo but no longer compile as part of Flow Core."
+      - "One canonical execution graph becomes the authoritative owner of executable meaning."
+      - "Target support is promoted only from adapter-owned behavioral certification."
+      - "The packaged CLI and artifact pipeline operate independently from the repository checkout."
+    nonGoals:
+      - "This roadmap transition does not itself activate AR-00 or modify production code."
+      - "The recovery must not become a runtime plugin framework or a broad rewrite without staged compatibility boundaries."
+
   - id: "EF-09"
     name: "Human Approval and Change-Control Falsification"
-    order: 10
-    status: active
+    order: 11
+    status: paused
     workPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
+    pauseReason: "Architecture Recovery preempts further corpus and evaluator growth after EF-09 evidence admission but before EF-09 validation and lifecycle closure."
+    resumeGate: "ARCHITECTURE-RECOVERY is completed and a separate transition replays EF-09 against the recovered canonical architecture."
+    resumeRule: "Existing immutable evidence and activation history remain valid inputs, but representability findings, baselines and evaluator assumptions receive no grandfathered status after compiler recovery."
 
   - id: "EF-10"
     name: "External Falsification Semantic Synthesis"
-    order: 11
-    status: planned
+    order: 12
+    status: deferred
+    activationGate: "EF-09 is resumed and completed after Architecture Recovery."
     purpose: "Classify corpus failures before changing Core."
     requiredOutcomes:
       - "Separate true semantic gaps from adapter gaps, unsupported implementation detail and corpus ambiguity."
@@ -96,63 +137,67 @@ sequence:
 
   - id: "SI-2"
     name: "Evidence-Bounded Semantic Correction"
-    order: 12
+    order: 13
     status: conditional
-    activationGate: "EF-10 identifies a genuine target-independent semantic defect."
+    activationGate: "EF-10 identifies a genuine target-independent semantic defect not already closed by Architecture Recovery."
     purpose: "Correct only semantic defects demonstrated by External Falsification."
 
   - id: "SB-01"
     name: "Compiler-Enforced Structural Boundaries"
-    order: 13
-    status: planned
-    purpose: "Split Core, planner, adapter API, target implementations, conformance/governance and CLI where dependency direction can be compiler-enforced."
-    requiredOutcomes:
-      - "Core cannot compile with dependencies on target implementations."
-      - "Planner consumes target-neutral contracts."
-      - "Conformance may inspect product layers while product layers do not depend on conformance."
+    order: 14
+    status: absorbed
+    replacedBy: "AR-03"
+    replacementRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
 
   - id: "SB-02"
     name: "Governance Reduction"
-    order: 14
-    status: planned
-    purpose: "Delete or consolidate lexical governance made redundant by module, visibility and type-system boundaries."
-    acceptanceRule: "Structural Boundaries are not complete merely because new checks exist; redundant governance must decrease where the compiler now owns the invariant."
+    order: 15
+    status: absorbed
+    replacedBy: "AR-07"
+    replacementRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
 
   - id: "MT-01"
     name: "Jenkins Executable Proof"
-    order: 15
-    status: planned
+    order: 16
+    status: absorbed
+    replacedBy: "AR-06"
+    replacementRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   - id: "MT-02"
     name: "GitHub Actions Executable Proof"
-    order: 16
-    status: planned
+    order: 17
+    status: absorbed
+    replacedBy: "AR-06"
+    replacementRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   - id: "MT-03"
     name: "Third Execution-Model Proof"
-    order: 17
+    order: 18
     status: conditional
-    activationGate: "A third target contributes a genuinely different execution model rather than another syntax renderer."
+    activationGate: "AR-06 proves two materially different targets and a third target contributes a genuinely different execution model rather than another syntax renderer."
 
   - id: "AI-01"
     name: "AI Intent Provider Contract"
-    order: 18
-    status: planned
-    purpose: "Represent provider uncertainty, unresolved bindings, provenance and clarification requirements without allowing AI output to redefine canonical meaning."
+    order: 19
+    status: absorbed
+    replacedBy: "AR-07"
+    replacementRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
 
   - id: "AI-02"
     name: "AI Intent Provider Implementations"
-    order: 19
+    order: 20
     status: planned
-    activationGate: "AI-01 contract and deterministic validation boundary are stable."
+    activationGate: "AR-07 closes AI provenance and deterministic provider-boundary contracts."
 
   - id: "V1-READINESS"
     name: "Flow 1.0 Readiness"
-    order: 20
+    order: 21
     status: planned
     acceptance:
       - "Intent can be authored without knowing the target product."
       - "Malformed authored meaning fails closed rather than being silently coerced."
-      - "Canonical semantics preserve dependencies, effects, controls, topology and continuity relevant to the authored intent."
+      - "Equivalent Intent YAML, Flow Source and AI proposals use one canonical compiler boundary."
+      - "Canonical semantics preserve workflow ownership, dependencies, path-sensitive values, effects, controls, topology, continuity and failure behavior."
+      - "Concrete target implementations are separate adapters and cannot redefine Core meaning."
       - "At least two materially different targets execute the same canonical intent with independently observed semantic outcomes."
       - "UNKNOWN and UNSUPPORTED remain legitimate outcomes."
-      - "Target implementations cannot redefine Core meaning."
-      - "AI-produced intent crosses the same deterministic validation boundaries as directly authored intent."
+      - "The packaged CLI, artifacts and integrity evidence are independent from repository-relative runtime state."
+      - "All F-01 through F-22 architecture-recovery findings are closed with exact evidence."

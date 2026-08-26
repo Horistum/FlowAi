@@ -1,0 +1,359 @@
+roadmap: "ARCHITECTURE-RECOVERY"
+revision: 1
+status: "selected-not-activated"
+purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
+
+auditBaseline:
+  originalAuditCommit: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
+  revalidatedMainCommit: "4d67b50819906752f52bf5db3a5d4c9c3809cb8b"
+  findingCount: 22
+  severityCounts:
+    critical: 1
+    high: 6
+    medium: 11
+    low: 4
+  coverageRule: "Every F-01 through F-22 finding has one explicit closure milestone. Findings with immediate safety impact also have a separate containment milestone. A finding may be reclassified only by reviewed production-code evidence; it may not disappear from the roadmap because an implementation is inconvenient."
+
+currentDecision:
+  previousCompletedItem: "EF-08"
+  previousCompletedItemName: "Infrastructure Lifecycle Falsification"
+  preemptedItem: "EF-09"
+  preemptedItemName: "Human Approval and Change-Control Falsification"
+  preemptedItemState: "active-after-evidence-admission"
+  preemptedWorkPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
+  nextItem: "AR-00"
+  nextItemName: "Target Honesty and Semantic Safety Freeze"
+  activationState: "not-activated"
+  workPackage: ""
+  decisionBasis: "The project-wide code audit and the follow-up architecture review established that the product has drifted from its original model-first architecture. EF-09 evidence admission changed only conformance and roadmap files, so the audited Core, compiler and adapter findings remain present on current main. EF-09 is paused without discarding its admitted evidence. Target implementations, compiler contracts, evidence models, CLI distribution and conformance still share one build boundary; several target claims are broader than executable proof; and the compiler has no single authoritative semantic graph. AR-00 is selected as the first recovery item, but implementation still requires its own activation transition and work package."
+
+deliveryModel:
+  roadmapMilestoneCount: 8
+  findingCount: 22
+  milestoneRule: "A milestone is a coherent architecture outcome, not a promise to force all work into one pull request. A milestone may use several bounded work packages and pull requests, but it closes atomically only after all required outcomes and negative evidence pass."
+  pullRequestRule: "Each implementation pull request must own one reviewable invariant slice, preserve a green exact-head baseline, and avoid unrelated cleanup. Broad mechanical moves are allowed only when they establish a compiler-enforced boundary and contain no semantic change."
+  validationRule: "Every milestone requires exact-head and synthetic merge-candidate compilation, tests, standalone conformance and Flow Agent validation. Behavior or public-contract changes also require negative or mutation evidence that would fail if the defect returned."
+  migrationRule: "Use a strangler migration: introduce the new authoritative boundary, migrate all callers, prove parity, then remove the superseded path. Temporary compatibility facades must declare an owner and removal milestone."
+
+architectureTarget:
+  modules:
+    - "flow-semantic-kernel"
+    - "flow-compiler-core"
+    - "flow-frontend-intent"
+    - "flow-frontend-source"
+    - "flow-frontend-ai"
+    - "flow-module-contracts"
+    - "flow-adapter-contract"
+    - "flow-adapter-jenkins"
+    - "flow-adapter-github-actions"
+    - "flow-adapter-tekton"
+    - "flow-conformance-kit"
+    - "flow-reference-distribution"
+    - "flow-cli"
+  dependencyDirection:
+    - "Semantic kernel imports no adapter, target, generator, CLI, serialization implementation or conformance package."
+    - "Compiler Core depends on the semantic kernel and target-neutral contracts only."
+    - "Adapter contracts depend on the canonical execution graph; concrete adapters depend on adapter contracts, never the reverse."
+    - "The reference distribution and CLI are the only production composition roots for concrete adapters."
+    - "Conformance may inspect every product layer; no product layer depends on conformance."
+  canonicalAxis:
+    - "AI proposal, Intent YAML and Flow Source are frontends into one FlowCompilationService."
+    - "One typed CanonicalExecutionGraph owns workflow, control-flow, data-flow, effects, controls, continuity, topology requirements and failure semantics."
+    - "Canonical capability identity remains distinct from implementation binding and orchestration target."
+    - "Target adapters receive an authorized canonical graph and may preserve, explicitly degrade or reject meaning; they may not redefine it."
+    - "Jenkins, GitHub Actions and Tekton remain reference adapters in the monorepo, not members of Flow Core."
+
+recoveryInvariants:
+  - "No concrete target implementation or built-in target registry is a default dependency of a target-neutral authority."
+  - "No target is SUPPORTED by omission, platform folklore or registry text alone. Missing implementation evidence is UNKNOWN or UNSUPPORTED."
+  - "Executable readiness requires both leaf-operation evidence and structural-semantics evidence."
+  - "No frontend bypasses the canonical validation, planning, authorization and materialization pipeline."
+  - "No mutually exclusive branch may leak a maybe-defined value as definitely defined."
+  - "No parser or loader silently discards duplicate authored meaning."
+  - "No integrity report is generated from expected file names before the actual bytes are written and verified."
+  - "No packaged CLI behavior depends on the repository checkout or current working directory."
+  - "No compatibility facade or lexical governance rule survives after a stronger compiler boundary owns the invariant unless an explicit exception remains."
+  - "AI output remains a proposal with provenance and uncertainty; deterministic Flow contracts remain authoritative."
+
+milestones:
+  - id: "AR-00"
+    name: "Target Honesty and Semantic Safety Freeze"
+    order: 1
+    status: "next"
+    containsFindings: ["F-01", "F-06", "F-11", "F-18"]
+    closesFindings: []
+    purpose: "Stop current target and executable-readiness claims from overstating behavior before deeper architecture work begins."
+    requiredOutcomes:
+      - "Downgrade every unproven Jenkins and other target structural capability to UNKNOWN, PARTIAL or UNSUPPORTED; do not implement new target behavior in this containment milestone."
+      - "Require explicit structural projection evidence for condition, parallel, loop, match, retry and error-boundary nodes before executable rendering. Native child leaves cannot make an unimplemented structure executable."
+      - "Remove optimistic support defaults and generic nativeRuntime fallback for unknown capabilities from authorization decisions."
+      - "Publish distinct target maturity states: declared, analyzable, renderable, executable and behaviorally certified."
+      - "Introduce the minimum mutation fixtures needed to prove the containment gate fails when a structural node is flattened or a support claim lacks evidence."
+    nonGoals:
+      - "Do not implement full Jenkins loop, match, parallel or retry semantics here."
+      - "Do not broaden any target support claim."
+      - "Do not change canonical semantic meaning merely to keep an existing renderer executable."
+    completionEvidence:
+      - "A plan containing any unproven structural construct cannot produce an executable target artifact."
+      - "Every remaining SUPPORTED claim cites concrete provider-owned implementation evidence and a behavioral test identity."
+      - "Existing bounded executable references either remain honestly executable or are downgraded with explicit diagnostics."
+
+  - id: "AR-01"
+    name: "Canonical Compiler Axis and Authoritative Execution Graph"
+    order: 2
+    status: "planned"
+    dependsOn: ["AR-00"]
+    closesFindings: ["F-04", "F-09", "F-17"]
+    purpose: "Establish one compiler pipeline and one typed owner of executable meaning before moving implementation boundaries."
+    requiredOutcomes:
+      - "Introduce FlowCompilationService and a typed CompilationUnit used by Intent YAML, Flow Source and AI proposal frontends."
+      - "Define one CanonicalExecutionGraph as the authoritative model of workflow structure, data dependencies, effects, controls, continuity, topology and failure policy."
+      - "Preserve canonical capability identity separately from explicit implementation binding and selected orchestration target; module.action is never reconstructed as universal meaning."
+      - "Separate the current architecture/evidence obligation graph from the execution graph and rename or retire misleading SemanticActionGraph usage."
+      - "Make public AST, execution-plan and evidence serializations derived views of typed internal models rather than parallel semantic authorities."
+      - "Create an explicit migration inventory for ExecutionPlan, CanonicalExecutionPlan, TargetManifest and overlapping report fields."
+    nonGoals:
+      - "Do not move concrete adapters until the adapter-facing canonical contract is stable enough to compile against."
+      - "Do not remove public artifact fields without the required version and migration boundary."
+    completionEvidence:
+      - "All three frontends produce equivalent canonical graphs for equivalent accepted meaning."
+      - "No production materialization path creates a one-node pseudo-semantic graph from module.action as a substitute for canonical meaning."
+      - "A semantic mutation in capability, dependency, effect, control or topology changes the canonical graph digest and its conformance result."
+
+  - id: "AR-02"
+    name: "Flow-Sensitive Workflow, Data and Failure Semantics"
+    order: 3
+    status: "planned"
+    dependsOn: ["AR-01"]
+    closesFindings: ["F-02", "F-08", "F-15"]
+    purpose: "Make control-flow, value availability, workflow ownership and failure behavior explicit instead of relying on mutable global planner state or synthetic node shapes."
+    requiredOutcomes:
+      - "Use branch-local validation and planning contexts with an explicit Undefined, MaybeDefined, DefinitelyDefined and Merged value lattice."
+      - "Require an explicit merge/phi contract when mutually exclusive paths produce one logical value; reject unguarded reads of MaybeDefined values."
+      - "Represent workflow identity and node membership as first-class graph data. Multi-workflow intent remains blocked until the compiler and target contract preserve it completely."
+      - "Represent workflow-level failure policy and error handling as first-class graph contracts rather than a tail Try node recognized by position, empty body or synthetic id."
+      - "Derive dependency and continuity relations from path-aware producer identities, never from whichever branch was planned last."
+    nonGoals:
+      - "Do not claim multi-workflow target support before two adapters preserve workflow membership and trigger routing."
+      - "Do not infer value merges from matching display names alone."
+    completionEvidence:
+      - "Branch, match, loop and error-path fixtures prove both accepted definite values and rejected maybe-defined values."
+      - "Equivalent branch ordering cannot change producer identity or dependency relations."
+      - "Adapters consume explicit workflow and failure contracts without planner-shape heuristics."
+
+  - id: "AR-03"
+    name: "Compiler-Enforced Boundaries and Adapter Extraction"
+    order: 4
+    status: "planned"
+    dependsOn: ["AR-01"]
+    closesFindings: ["F-10"]
+    containsFindings: ["F-20"]
+    purpose: "Turn package conventions into build-enforced architecture and move Jenkins, GitHub Actions and Tekton behind the adapter contract."
+    requiredOutcomes:
+      - "Split the single Gradle project into semantic kernel, compiler, frontends, module contracts, adapter contract, concrete adapters, conformance, reference distribution and CLI modules."
+      - "Move Jenkins generator, renderer, Groovy expression translation, native projection catalog and target evidence into flow-adapter-jenkins. Apply the same ownership rule to GitHub Actions and Tekton."
+      - "Remove BuiltInTargetProjections and concrete target registries as defaults from generic authorities; inject an AdapterCatalog only from the reference distribution or tests."
+      - "Invert target-registry and adapter-evidence dependencies so generic contracts never import adapter implementations."
+      - "Express forbidden dependency directions through Gradle project dependencies, Kotlin visibility and module APIs."
+      - "Inventory every temporary compatibility wrapper introduced by the split with an owner and AR-07 removal target."
+    nonGoals:
+      - "Do not build a runtime plugin lifecycle, hot-loading framework or target-template SDK."
+      - "Do not change semantic behavior in a purely structural move; semantic changes require a separate bounded work package."
+    completionEvidence:
+      - "flow-semantic-kernel and flow-compiler-core compile without concrete target modules on their classpaths."
+      - "Deleting a concrete adapter module cannot break semantic-kernel compilation or target-neutral planning tests."
+      - "Conformance can depend on product modules, while product modules cannot compile with conformance dependencies."
+
+  - id: "AR-04"
+    name: "Language, Contract, Type and Identity Integrity"
+    order: 5
+    status: "planned"
+    dependsOn: ["AR-01"]
+    closesFindings: ["F-07", "F-12", "F-13", "F-14", "F-21"]
+    purpose: "Eliminate silent authored-meaning loss, open type fallbacks and order-dependent identity resolution at every source and contract boundary."
+    requiredOutcomes:
+      - "Reject duplicate action parameters, safety clauses, transform/select fields, aggregate fields, match defaults/error cases and global error handlers with stable path and source-location diagnostics."
+      - "Replace free-form module schema type strings with a closed SchemaType model and validate defaults through the same type checker as authored values."
+      - "Make system-type identity globally unique or explicitly qualified by module and version; registry order must never select a contract."
+      - "Introduce typed, collision-safe SemanticId values with a lossless wire encoding and a separate display name; validate collisions before AST construction and before target-safe id derivation."
+      - "Remove, hide or explicitly quarantine benevolent FlowYaml parsing outside strict contract boundaries."
+      - "Use one strict duplicate, unknown-field and complexity policy across all public YAML/JSON contract loaders."
+    nonGoals:
+      - "Do not preserve malformed input through undocumented aliases."
+      - "Do not use sanitization as identity resolution."
+    completionEvidence:
+      - "Parameterized negative fixtures cover every duplicate-bearing grammar and loader structure."
+      - "Unknown schema types, invalid defaults, duplicate system identities and lossy id collisions fail before planning."
+      - "No production public-contract caller can accidentally select the non-strict YAML path."
+
+  - id: "AR-05"
+    name: "Artifact, Distribution, CLI and I/O Integrity"
+    order: 6
+    status: "planned"
+    dependsOn: ["AR-03", "AR-04"]
+    closesFindings: ["F-03", "F-05", "F-19", "F-22"]
+    purpose: "Make the CLI and exported bundles independently installable, bounded against pathological input and verified from actual written bytes."
+    requiredOutcomes:
+      - "Introduce ContractResourceResolver with classpath-owned built-ins, explicit external overrides and recorded provenance."
+      - "Produce installDist/distZip artifacts whose CLI runs from an empty temporary working directory without a repository checkout."
+      - "Replace ad-hoc CLI positional parsing with a typed parser that consumes option values before resolving source arguments."
+      - "Introduce central InputLimits for source size, YAML aliases/depth/complexity, collection counts and generated artifact size."
+      - "Introduce AtomicArtifactWriter: stage files, fsync where applicable, re-read actual bytes, validate schema/version/hash/size, write the integrity manifest last, then publish atomically."
+      - "Bind artifact receipts and integrity reports to actual bytes and paths rather than planned file names."
+    nonGoals:
+      - "Do not make repository-relative paths part of the public distribution contract."
+      - "Do not claim transactional guarantees stronger than the target filesystem provides."
+    completionEvidence:
+      - "Packaged CLI integration tests pass outside the checkout with only documented external overrides."
+      - "Injected write failures leave no published partial bundle and cannot produce PASS integrity evidence."
+      - "Oversized or pathological inputs fail with stable bounded diagnostics rather than unbounded resource use."
+
+  - id: "AR-06"
+    name: "Behavioral Adapter Certification and Honest Target Portfolio"
+    order: 7
+    status: "planned"
+    dependsOn: ["AR-02", "AR-03", "AR-05"]
+    closesFindings: ["F-01", "F-06", "F-11", "F-18"]
+    purpose: "Replace handwritten support optimism with adapter-owned, behaviorally falsifiable certification over the canonical graph."
+    requiredOutcomes:
+      - "Define one AdapterCertificationBundle containing adapter identity/version, semantic coverage, structural coverage, leaf bindings, runtime prerequisites, limitations, positive fixtures and negative mutants."
+      - "Generate public capability and target-maturity views from certification evidence rather than duplicating support truth across registries, topology files, portfolios and renderers."
+      - "Create the matrix canonical construct × target × expected observable behavior × negative mutant for conditions, parallelism, loops, match, retry, error handling, approvals, artifacts/workspaces, secrets, value/state continuity and failure propagation."
+      - "Re-promote Jenkins capabilities only after its adapter emits the real target structure and independent evidence proves observable equivalence."
+      - "Require at least two materially different adapters to execute the same canonical scenarios before claiming portable execution."
+      - "Keep profile-only, native-leaf-only and bounded executable-reference claims visibly distinct."
+    nonGoals:
+      - "Do not promote a target from syntactic validity, vendor documentation or a single happy-path snapshot."
+      - "Do not add a third adapter merely to increase a count; it must exercise a materially different execution model."
+    completionEvidence:
+      - "Every SUPPORTED target feature has a positive behavior fixture and a mutant that fails when the feature is flattened, omitted or substituted."
+      - "The Jenkins adapter is outside Core and either preserves each claimed structure or reports it honestly as non-executable."
+      - "The certified target portfolio can be regenerated from provider-owned evidence with no target-name-specific folklore."
+
+  - id: "AR-07"
+    name: "AI Boundary, Migration Cleanup and Recovery Closure"
+    order: 8
+    status: "planned"
+    dependsOn: ["AR-06"]
+    closesFindings: ["F-16", "F-20"]
+    purpose: "Restore honest AI provenance, remove temporary migration and governance debt, and prove that all 22 findings are closed on the final architecture."
+    requiredOutcomes:
+      - "Rename uncalibrated confidence to heuristicScore or matchStrength and preserve normalization provenance through canonical compilation."
+      - "Define an AI Intent Provider contract for provider/model/version, prompt and response digests, structured-output schema, assumptions, unresolved bindings, clarification requirements and human review."
+      - "Route every provider-produced proposal through the same deterministic source, semantic, safety and compilation boundaries as authored intent."
+      - "Remove compatibility wrappers, duplicate loader names, ambiguous TargetSelection concepts and superseded IR APIs after their declared migration windows."
+      - "Delete or consolidate lexical governance and evidence registries made redundant by module, type-system and certification boundaries."
+      - "Repeat the project-wide production-code audit against the final main candidate and record explicit closure evidence for F-01 through F-22."
+    nonGoals:
+      - "Do not let an AI provider create canonical meaning, select an implementation silently or bypass deterministic validation."
+      - "Do not require a production LLM integration merely to close provenance and contract honesty; provider implementations remain separately activatable."
+    completionEvidence:
+      - "AI-originated and directly authored equivalent intents compile to equivalent canonical graphs while preserving distinct provenance."
+      - "No temporary recovery facade or redundant lexical architecture check remains without an explicit justified exception."
+      - "The final closure report maps all 22 findings to exact production changes, tests and validation boundaries with no open critical or high finding."
+
+findingRegister:
+  - id: "F-01"
+    severity: "CRITICAL"
+    title: "Jenkins executable rendering can change parallel, loop and match meaning."
+    containmentMilestone: "AR-00"
+    closureMilestone: "AR-06"
+  - id: "F-02"
+    severity: "HIGH"
+    title: "Validation and planning are not flow-sensitive and confuse may-exist with must-exist values."
+    closureMilestone: "AR-02"
+  - id: "F-03"
+    severity: "HIGH"
+    title: "Artifact integrity is self-attested before files are written."
+    closureMilestone: "AR-05"
+  - id: "F-04"
+    severity: "HIGH"
+    title: "Flow Source and executable intent use different compiler axes."
+    closureMilestone: "AR-01"
+  - id: "F-05"
+    severity: "HIGH"
+    title: "CLI and authorities depend on repository-relative working-directory state."
+    closureMilestone: "AR-05"
+  - id: "F-06"
+    severity: "HIGH"
+    title: "Capability registry claims are not behaviorally bound to renderers."
+    containmentMilestone: "AR-00"
+    closureMilestone: "AR-06"
+  - id: "F-07"
+    severity: "HIGH"
+    title: "Flow parsing silently keeps the last value for multiple duplicate declarations."
+    closureMilestone: "AR-04"
+  - id: "F-08"
+    severity: "MEDIUM"
+    title: "The model declares multiple workflows while executable lowering supports one."
+    closureMilestone: "AR-02"
+  - id: "F-09"
+    severity: "MEDIUM"
+    title: "SemanticActionGraph is not the central execution IR it claims to be."
+    closureMilestone: "AR-01"
+  - id: "F-10"
+    severity: "MEDIUM"
+    title: "Architecture boundaries are not enforced by the compiler or build graph."
+    closureMilestone: "AR-03"
+  - id: "F-11"
+    severity: "MEDIUM"
+    title: "Declared target portfolio is much broader than executable certification."
+    containmentMilestone: "AR-00"
+    closureMilestone: "AR-06"
+  - id: "F-12"
+    severity: "MEDIUM"
+    title: "Module schema types are open strings and defaults are not type-checked."
+    closureMilestone: "AR-04"
+  - id: "F-13"
+    severity: "MEDIUM"
+    title: "Duplicate system types across modules are resolved by load order."
+    closureMilestone: "AR-04"
+  - id: "F-14"
+    severity: "MEDIUM"
+    title: "Intent identities use lossy lowering and can collide across boundaries."
+    closureMilestone: "AR-04"
+  - id: "F-15"
+    severity: "MEDIUM"
+    title: "Global error handling is encoded as a synthetic tail Try node."
+    closureMilestone: "AR-02"
+  - id: "F-16"
+    severity: "MEDIUM"
+    title: "AI normalization is heuristic, uncalibrated and loses provider provenance."
+    closureMilestone: "AR-07"
+  - id: "F-17"
+    severity: "MEDIUM"
+    title: "IR and report models are stringly typed and semantically redundant."
+    closureMilestone: "AR-01"
+  - id: "F-18"
+    severity: "MEDIUM"
+    title: "Test volume is high but critical execution behavior is underweighted."
+    containmentMilestone: "AR-00"
+    closureMilestone: "AR-06"
+  - id: "F-19"
+    severity: "LOW"
+    title: "CLI option values can be mistaken for positional source arguments."
+    closureMilestone: "AR-05"
+  - id: "F-20"
+    severity: "LOW"
+    title: "Migration overlaps and compatibility wrappers create API ambiguity."
+    containmentMilestone: "AR-03"
+    closureMilestone: "AR-07"
+  - id: "F-21"
+    severity: "LOW"
+    title: "A benevolent non-strict FlowYaml API remains publicly available."
+    closureMilestone: "AR-04"
+  - id: "F-22"
+    severity: "LOW"
+    title: "Input limits and atomic I/O boundaries are not systematic."
+    closureMilestone: "AR-05"
+
+overallAcceptance:
+  - "F-01 through F-22 each have exact production, test and validation evidence and no finding is closed by prose alone."
+  - "Flow Core compiles without Jenkins, GitHub Actions, Tekton, CLI or conformance implementation modules."
+  - "Equivalent Intent YAML, Flow Source and AI proposals cross one compiler service and produce equivalent canonical meaning."
+  - "The canonical graph preserves path-sensitive data, workflow ownership, effects, controls, continuity, topology and failure semantics."
+  - "Target support is derived from adapter certification; missing evidence remains UNKNOWN or UNSUPPORTED."
+  - "At least two materially different adapters execute the same bounded canonical scenarios with independently observed equivalent outcomes."
+  - "The packaged CLI and artifact writer pass isolated distribution, input-limit, partial-write and tamper tests."
+  - "Architecture simplification is measurable: concrete adapters are extracted, redundant semantic models and wrappers decrease, and lexical governance is removed where compiler boundaries supersede it."
+  - "No open critical or high audit finding remains before post-recovery feature development resumes."
