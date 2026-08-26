@@ -1,18 +1,18 @@
 version: "EF-07"
 name: "Data Orchestration Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: validating
+status: complete
 stream: "post-toolchain"
 
 objective: "Pressure current Flow data-orchestration semantics with immutable external evidence for task dependency order, scheduled cadence, produced data identity, data lineage, asset-aware trigger conditions, run data intervals, partition backfills and conditional branching without turning Airflow Dag, Dagster asset, partition, sensor or operator vocabulary into universal Core meaning."
 
 authorization:
-  status: validating
+  status: completed
   predecessor: "EF-06"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-07"
   mainAtDefinition: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
   mainAtActivation: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
-  rule: "EF-07 may classify target-independent data-orchestration gaps after its activation-only boundary. Core repair, StandardCapability changes and canonical-effect changes remain forbidden in this work item."
+  rule: "EF-07 completed external falsification without repairing Core semantics, adding StandardCapability values, changing canonical effects or weakening validation. Any semantic correction remains separately authorized by later synthesis and SI-2."
 
 supersededImplementationEvidence:
   status: superseded
@@ -66,6 +66,24 @@ validationBoundary:
     cleanTest: passed
     standaloneConformance: passed
   purpose: "Independently validate the corrected implementation-evidence-bearing EF-07 state before completion evidence is admitted."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3043
+  runId: 32918836038
+  exactHead: "3ad6ac94551c4caefd94d747e2b13d7fa384a08c"
+  mergeCandidate: "7c961025e78c00efbf353d738090c0b23e8ba5f8"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 5
+  rule: "This boundary is later than the corrected implementation and validation boundaries and validates the evidence-bearing EF-07 state before lifecycle closure is recorded."
 
 sourceSelection:
   criteria:
@@ -134,15 +152,16 @@ completionEvidence:
   - "Flow CI #3039 is retained as superseded audit evidence because its evaluator falsely treated a control dependency plus output identity as explicit data lineage."
   - "Flow CI #3041 passed the corrected implementation boundary on exact head a46a8826dd8989a2087b530919b9004c2abb12ee and synthetic merge candidate c76db8408ba25a4115848ad13b3b8d5f40e1d6b7."
   - "Flow CI #3042 passed the distinct validation boundary on exact head 1594c5c6675929bb0ff9b8576612eae7518f2731 and synthetic merge candidate 3791c2bb6a0236ba8c08c49af1a2883b7c00faac."
+  - "Flow CI #3043 passed the distinct completion boundary on exact head 3ad6ac94551c4caefd94d747e2b13d7fa384a08c and synthetic merge candidate 7c961025e78c00efbf353d738090c0b23e8ba5f8."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-07 evaluator classifies every reviewed PRESERVE observation through public intent validation and canonical meaning."
   - "Positive and negative tests prove graph/timing/data-identity representability where it exists and reject inferred lineage, opaque-string, free-form-param or static-graph fake equivalence."
-  - "A corrected mixed baseline remains exact while EF-07 is validating and becomes monotonic after closure."
+  - "The corrected mixed baseline preserves the initial EF-07 result and becomes monotonic after closure."
   - "Standalone conformance integrates EF-07 without converting known model gaps into success."
-  - "A distinct completion CI boundary must pass on exact head and synthetic merge candidate before lifecycle closure."
+  - "EF-08 remains unactivated and requires its own independent transition before infrastructure-lifecycle evidence is admitted."
 
 localValidation:
-  status: validation-passed
+  status: passed
   activationBoundary:
     commit: "227ca51ce58826c5096e9213de9349d5495fad80"
     workflowRun: 32851071311
@@ -183,4 +202,15 @@ localValidation:
     mergeCandidate:
       commit: "3791c2bb6a0236ba8c08c49af1a2883b7c00faac"
       conclusion: success
-  rule: "EF-07 corrected validation is complete; a later completion boundary must pass before lifecycle closure."
+  completionBoundary:
+    commit: "3ad6ac94551c4caefd94d747e2b13d7fa384a08c"
+    workflowRun: 32918836038
+    runNumber: 3043
+    conclusion: success
+    exactHead:
+      commit: "3ad6ac94551c4caefd94d747e2b13d7fa384a08c"
+      conclusion: success
+    mergeCandidate:
+      commit: "7c961025e78c00efbf353d738090c0b23e8ba5f8"
+      conclusion: success
+  rule: "EF-07 is complete with three representable facts and five explicit semantic model gaps preserved as evidence. EF-08 remains unactivated and semantic repair requires a separately authorized later item."
