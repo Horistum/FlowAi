@@ -1,5 +1,5 @@
 kind: FlowAdapterPortfolio
-version: "1.0"
+version: "1.1"
 records:
   - target: local
     role: semantic_reference
@@ -9,6 +9,8 @@ records:
       - "targets/builtin-targets.yaml#targets.local"
       - "docs/CORE_ADAPTER_SPLIT.md"
     executableEvidence: []
+    behavioralEvidence: []
+    certificationScope: "semantic-reference-only"
     limitations:
       - id: no-projection-provider
         statement: "The built-in distribution does not compose a local target generator or renderer."
@@ -20,17 +22,23 @@ records:
   - target: jenkins
     role: target_adapter
     supportClass: executable_reference
-    summary: "Composed Jenkins provider with reviewed native checkout and image-build leaves and one committed end-to-end executable reference scenario."
+    summary: "Composed Jenkins provider with reviewed native checkout and image-build leaves and one committed end-to-end executable reference scenario. Structural conditions and error boundaries have provider-owned behavior evidence; parallel, loop, match and retry remain unsupported."
     evidenceReferences:
       - "targets/builtin-targets.yaml#targets.jenkins"
       - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
       - "docs/adr/ADR_0_9_6_7_FIRST_EXECUTABLE_REFERENCE_SCENARIO.md"
     executableEvidence:
       - "conformance/snapshots/checkout-build-image/snapshot-index.json"
+    behavioralEvidence:
+      - "tests/FlowFirstExecutableReferenceScenarioTests.kt"
+    certificationScope: "checkout-build-image"
     limitations:
       - id: standard-actions-review-only
         statement: "Generic standard execute and rollback actions remain notes-projected without concrete Jenkins integration payloads."
         evidenceReference: "targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard"
+      - id: structural-control-flow-bounded
+        statement: "Condition and error-boundary projections are owned; parallel, dynamic loop, match and retry structures remain unsupported until AR-06 certification."
+        evidenceReference: "src/test/kotlin/TargetStructuralProjectionHonestyTests.kt"
       - id: state-continuity-partial
         statement: "Feature-level mutable state continuity remains partial even though the reference checkout-build-image workspace path is proven."
         evidenceReference: "targets/builtin-targets.yaml#targets.jenkins.features.continuity.state"
@@ -41,16 +49,21 @@ records:
   - target: github-actions
     role: target_adapter
     supportClass: native_leaf_only
-    summary: "Composed GitHub Actions provider with reviewed checkout and image-build action contracts, but no current end-to-end executable reference claim."
+    summary: "Composed GitHub Actions provider with reviewed checkout and image-build action contracts, but no current end-to-end executable reference claim. Structural support remains partial pending provider-owned certification."
     evidenceReferences:
       - "targets/builtin-targets.yaml#targets.github-actions"
       - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
       - "docs/TARGET_REGISTRY.md#executable-reference-scope"
     executableEvidence: []
+    behavioralEvidence: []
+    certificationScope: "native-leaf-only"
     limitations:
       - id: workspace-propagation-unsupported
         statement: "The declared topology does not prove workspace propagation across the job-per-task projection."
         evidenceReference: "targets/builtin-targets.yaml#targets.github-actions.topology.workspacePropagation"
+      - id: structural-certification-missing
+        statement: "Conditions, parallelism, retry and error-handler semantics are not yet provider-owned behavioral certification."
+        evidenceReference: "targets/builtin-targets.yaml#targets.github-actions"
       - id: durable-state-unsupported
         statement: "Durable state and state propagation are unsupported in the current profile."
         evidenceReference: "targets/builtin-targets.yaml#targets.github-actions.topology.durableState"
@@ -61,16 +74,21 @@ records:
   - target: tekton
     role: target_adapter
     supportClass: native_leaf_only
-    summary: "Composed Tekton provider with reviewed git-clone and buildah leaf contracts, while Pipeline-level continuity and production readiness remain incomplete."
+    summary: "Composed Tekton provider with reviewed git-clone and buildah leaf contracts, while structural projection, Pipeline-level continuity and production readiness remain incomplete."
     evidenceReferences:
       - "targets/builtin-targets.yaml#targets.tekton"
       - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
       - "docs/TARGET_REGISTRY.md#executable-reference-scope"
     executableEvidence: []
+    behavioralEvidence: []
+    certificationScope: "native-leaf-only"
     limitations:
       - id: pipeline-workspace-proof-incomplete
         statement: "Workspace support is partial and complete PipelineRun workspace binding is not committed as executable reference evidence."
         evidenceReference: "docs/TARGET_REGISTRY.md#executable-reference-scope"
+      - id: structural-certification-missing
+        statement: "Condition, parallel, retry and error-handler semantics are not yet provider-owned behavioral certification."
+        evidenceReference: "targets/builtin-targets.yaml#targets.tekton"
       - id: approvals-unsupported
         statement: "Manual approval is unsupported and external gate evidence is only partial."
         evidenceReference: "targets/builtin-targets.yaml#targets.tekton.features.approval"
@@ -86,6 +104,8 @@ records:
       - "targets/builtin-targets.yaml#targets.argo-workflows"
       - "docs/TARGET_REGISTRY.md#projection-rules"
     executableEvidence: []
+    behavioralEvidence: []
+    certificationScope: "profile-only"
     limitations:
       - id: no-projection-provider
         statement: "No built-in generator, renderer or native projection catalog is composed for Argo Workflows."
@@ -105,6 +125,8 @@ records:
       - "targets/builtin-targets.yaml#targets.azure-devops"
       - "docs/TARGET_REGISTRY.md#projection-rules"
     executableEvidence: []
+    behavioralEvidence: []
+    certificationScope: "profile-only"
     limitations:
       - id: no-projection-provider
         statement: "No built-in generator, renderer or native projection catalog is composed for Azure DevOps."

@@ -1,6 +1,7 @@
 package org.flowlang.cli.honest
 
 import java.io.File
+import org.flowlang.adapters.portfolio.AdapterPortfolioAuthority
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.capabilities.CompatibilityAnalyzer
@@ -123,6 +124,7 @@ internal object StandardCliCommands {
     private fun runTargets(output: CliOutputCollector) {
         val targets = targetRegistry().values.sortedBy { it.target }
         output.section("FLOW TARGET CAPABILITY MATRIX", targets)
+        output.section("FLOW TARGET MATURITY REPORT", AdapterPortfolioAuthority().analyze())
     }
 
     private fun runModules(output: CliOutputCollector) {

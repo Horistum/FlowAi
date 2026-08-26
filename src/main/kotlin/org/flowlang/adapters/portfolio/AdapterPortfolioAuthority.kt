@@ -1,11 +1,15 @@
 package org.flowlang.adapters.portfolio
 
 import java.io.File
+import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetProjectionMode
+import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.targets.TargetRegistryYamlLoader
+import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 enum class AdapterPortfolioRole {
@@ -36,6 +40,15 @@ enum class AdapterSupportClass {
     }
 }
 
+/** Cumulative target maturity. Later stages require every earlier stage. */
+enum class TargetMaturityStage {
+    DECLARED,
+    ANALYZABLE,
+    RENDERABLE,
+    EXECUTABLE,
+    BEHAVIORALLY_CERTIFIED
+}
+
 data class AdapterPortfolioLimitation(
     val id: String,
     val statement: String,
@@ -49,6 +62,8 @@ data class AdapterPortfolioRecord(
     val summary: String,
     val evidenceReferences: List<String>,
     val executableEvidence: List<String>,
+    val behavioralEvidence: List<String>,
+    val certificationScope: String,
     val limitations: List<AdapterPortfolioLimitation>
 )
 
@@ -68,14 +83,18 @@ data class AdapterPortfolioAssessment(
     val target: String,
     val role: AdapterPortfolioRole,
     val supportClass: AdapterSupportClass,
+    val maturityStages: List<TargetMaturityStage>,
+    val certificationScope: String,
     val providerAvailable: Boolean,
     val nativeProjectionRules: List<String>,
+    val nativeStructuralProjections: List<String>,
     val executableEvidence: List<String>,
+    val behavioralEvidence: List<String>,
     val limitations: List<AdapterPortfolioLimitation>
 )
 
 data class AdapterPortfolioReport(
-    val reportVersion: String = "1.0",
+    val reportVersion: String = "1.1",
     val status: String,
     val assessments: List<AdapterPortfolioAssessment>,
     val findings: List<AdapterPortfolioFinding>
@@ -98,6 +117,8 @@ object AdapterPortfolioLoader {
                 summary = record.requiredString("summary"),
                 evidenceReferences = record.stringList("evidenceReferences"),
                 executableEvidence = record.stringList("executableEvidence"),
+                behavioralEvidence = record.stringList("behavioralEvidence"),
+                certificationScope = record.requiredString("certificationScope"),
                 limitations = record.mapList("limitations").mapIndexed { limitationIndex, limitation ->
                     requireExactKeys(
                         limitation,
@@ -150,6 +171,8 @@ object AdapterPortfolioLoader {
         "summary",
         "evidenceReferences",
         "executableEvidence",
+        "behavioralEvidence",
+        "certificationScope",
         "limitations"
     )
     private val LIMITATION_KEYS = setOf("id", "statement", "evidenceReference")
@@ -158,15 +181,18 @@ object AdapterPortfolioLoader {
 /**
  * Distribution-owned reassessment of target adapters against frozen Core contracts.
  *
- * The authority derives provider and native-leaf facts from actual composition and
- * registry evidence. Portfolio prose cannot promote a target. End-to-end executable
- * claims remain separately certified by adapter conformance evidence.
+ * Registry text is preliminary declaration evidence. Renderability is derived from
+ * actual provider composition and native contracts; executable and behavioral
+ * maturity require explicit bounded evidence. Structural SUPPORTED claims must also
+ * have provider-owned implementation plus behavioral evidence.
  */
 class AdapterPortfolioAuthority(
     private val rootDir: File = File("."),
     private val targets: Map<String, TargetCapability> =
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
+    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    private val nativeProjectionCatalogs: Map<String, TargetNativeProjectionCatalog> =
+        BuiltInNativeProjectionCatalogs.byTarget
 ) {
     fun analyze(): AdapterPortfolioReport = evaluate(AdapterPortfolioLoader.load(rootDir))
 
@@ -193,12 +219,19 @@ class AdapterPortfolioAuthority(
                 .filter { it.mode == TargetProjectionMode.NATIVE }
                 .map { "${it.module}.${it.action}" }
                 .sorted()
+            val nativeStructures = nativeProjectionCatalogs[record.target]
+                ?.structuralDefinitions.orEmpty()
+                .map { it.structure.name }
+                .sorted()
 
             if (record.summary.isBlank()) {
                 findings += finding("ADAPTER_PORTFOLIO_SUMMARY_MISSING", record.target, "Portfolio summary must not be blank.")
             }
             if (record.evidenceReferences.isEmpty()) {
                 findings += finding("ADAPTER_PORTFOLIO_EVIDENCE_MISSING", record.target, "At least one support evidence reference is required.")
+            }
+            if (record.certificationScope.isBlank()) {
+                findings += finding("ADAPTER_PORTFOLIO_CERTIFICATION_SCOPE_MISSING", record.target, "Certification scope must be explicit even when it is profile-only or native-leaf-only.")
             }
             if (record.limitations.isEmpty()) {
                 findings += finding("ADAPTER_PORTFOLIO_LIMITATION_MISSING", record.target, "At least one explicit limitation is required.")
@@ -217,46 +250,73 @@ class AdapterPortfolioAuthority(
                             "A semantic reference target must remain PROFILE_ONLY."
                         )
                     }
-                    if (providerAvailable || nativeRules.isNotEmpty() || record.executableEvidence.isNotEmpty()) {
+                    if (
+                        providerAvailable || nativeRules.isNotEmpty() ||
+                        record.executableEvidence.isNotEmpty() || record.behavioralEvidence.isNotEmpty()
+                    ) {
                         findings += finding(
                             "ADAPTER_PORTFOLIO_SEMANTIC_REFERENCE_HAS_ADAPTER_CLAIM",
                             record.target,
-                            "A semantic reference target cannot claim provider, native-leaf or executable adapter evidence."
+                            "A semantic reference target cannot claim provider, native-leaf, executable or behavioral adapter evidence."
                         )
                     }
                 }
                 AdapterPortfolioRole.TARGET_ADAPTER -> when (record.supportClass) {
                     AdapterSupportClass.EXECUTABLE_REFERENCE -> {
-                        if (!providerAvailable || nativeRules.isEmpty() || record.executableEvidence.isEmpty()) {
+                        if (
+                            !providerAvailable || nativeRules.isEmpty() ||
+                            record.executableEvidence.isEmpty() || record.behavioralEvidence.isEmpty()
+                        ) {
                             findings += finding(
                                 "ADAPTER_PORTFOLIO_EXECUTABLE_CLAIM_UNSUPPORTED",
                                 record.target,
-                                "Executable reference requires a provider, native rules and explicit executable evidence."
+                                "Executable reference requires a provider, native rules, exact executable evidence and independent behavioral evidence."
                             )
                         }
                     }
                     AdapterSupportClass.NATIVE_LEAF_ONLY -> {
-                        if (!providerAvailable || nativeRules.isEmpty() || record.executableEvidence.isNotEmpty()) {
+                        if (
+                            !providerAvailable || nativeRules.isEmpty() ||
+                            record.executableEvidence.isNotEmpty() || record.behavioralEvidence.isNotEmpty()
+                        ) {
                             findings += finding(
                                 "ADAPTER_PORTFOLIO_NATIVE_LEAF_CLAIM_INVALID",
                                 record.target,
-                                "Native-leaf-only requires a provider and native rules but no end-to-end executable claim."
+                                "Native-leaf-only requires a provider and native rules but no end-to-end executable or behavioral certification claim."
                             )
                         }
                     }
                     AdapterSupportClass.PROFILE_ONLY -> {
-                        if (providerAvailable || nativeRules.isNotEmpty() || record.executableEvidence.isNotEmpty()) {
+                        if (
+                            providerAvailable || nativeRules.isNotEmpty() ||
+                            record.executableEvidence.isNotEmpty() || record.behavioralEvidence.isNotEmpty()
+                        ) {
                             findings += finding(
                                 "ADAPTER_PORTFOLIO_PROFILE_ONLY_CLAIM_INVALID",
                                 record.target,
-                                "Profile-only targets cannot have a composed provider, native rules or executable evidence."
+                                "Profile-only targets cannot have a composed provider, native rules, executable evidence or behavioral certification."
                             )
                         }
                     }
                 }
             }
 
-            val references = record.evidenceReferences + record.executableEvidence +
+            if (record.role == AdapterPortfolioRole.TARGET_ADAPTER && capability != null) {
+                structuralSupport(capability).forEach { (kind, support) ->
+                    if (
+                        support == SupportLevel.SUPPORTED &&
+                        (!providerAvailable || nativeProjectionCatalogs[record.target]?.hasStructuralProjection(kind) != true)
+                    ) {
+                        findings += finding(
+                            "ADAPTER_PORTFOLIO_STRUCTURAL_SUPPORT_UNPROVEN",
+                            record.target,
+                            "SUPPORTED structural capability '${kind.capability}' has no composed provider-owned production and behavioral projection evidence."
+                        )
+                    }
+                }
+            }
+
+            val references = record.evidenceReferences + record.executableEvidence + record.behavioralEvidence +
                 record.limitations.map { it.evidenceReference }
             references.distinct().forEach { reference ->
                 if (!evidenceFile(reference).isFile) {
@@ -288,9 +348,19 @@ class AdapterPortfolioAuthority(
                 target = record.target,
                 role = record.role,
                 supportClass = record.supportClass,
+                maturityStages = maturityStages(
+                    capability = capability,
+                    providerAvailable = providerAvailable,
+                    nativeRules = nativeRules,
+                    executableEvidence = record.executableEvidence,
+                    behavioralEvidence = record.behavioralEvidence
+                ),
+                certificationScope = record.certificationScope,
                 providerAvailable = providerAvailable,
                 nativeProjectionRules = nativeRules,
+                nativeStructuralProjections = nativeStructures,
                 executableEvidence = record.executableEvidence,
+                behavioralEvidence = record.behavioralEvidence,
                 limitations = record.limitations
             )
         }
@@ -302,6 +372,41 @@ class AdapterPortfolioAuthority(
         )
     }
 
+    private fun maturityStages(
+        capability: TargetCapability?,
+        providerAvailable: Boolean,
+        nativeRules: List<String>,
+        executableEvidence: List<String>,
+        behavioralEvidence: List<String>
+    ): List<TargetMaturityStage> = buildList {
+        if (capability == null) return@buildList
+        add(TargetMaturityStage.DECLARED)
+        if (capability.expressionSupport == null || capability.topologyProfile == null) return@buildList
+        add(TargetMaturityStage.ANALYZABLE)
+        if (!providerAvailable || nativeRules.isEmpty()) return@buildList
+        add(TargetMaturityStage.RENDERABLE)
+        if (executableEvidence.isEmpty()) return@buildList
+        add(TargetMaturityStage.EXECUTABLE)
+        if (behavioralEvidence.isEmpty()) return@buildList
+        add(TargetMaturityStage.BEHAVIORALLY_CERTIFIED)
+    }
+
+    private fun structuralSupport(capability: TargetCapability): Map<TargetStructuralProjectionKind, SupportLevel> =
+        linkedMapOf(
+            TargetStructuralProjectionKind.CONDITION to
+                capability.feature("conditions.inline", capability.conditions),
+            TargetStructuralProjectionKind.PARALLEL to
+                capability.feature("parallel.dag", capability.parallel),
+            TargetStructuralProjectionKind.LOOP to
+                capability.feature("loops.dynamic", capability.dynamicLoops),
+            TargetStructuralProjectionKind.MATCH to
+                capability.feature("match.basic", capability.match),
+            TargetStructuralProjectionKind.RETRY to
+                capability.feature("retry.task", capability.retry),
+            TargetStructuralProjectionKind.ERROR_BOUNDARY to
+                capability.feature("errorHandlers.finally", capability.errorHandlers)
+        )
+
     private fun evidenceFile(reference: String): File = File(rootDir, reference.substringBefore('#'))
 
     private fun finding(code: String, target: String, message: String) =
@@ -309,7 +414,7 @@ class AdapterPortfolioAuthority(
 
     companion object {
         const val KIND = "FlowAdapterPortfolio"
-        const val VERSION = "1.0"
+        const val VERSION = "1.1"
         const val BUILT_IN_PROJECTIONS =
             "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
     }
