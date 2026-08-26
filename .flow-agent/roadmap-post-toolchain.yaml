@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 4
+revision: 5
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -13,9 +13,9 @@ currentDecision:
   nextItem: "AR-01"
   nextItemName: "Canonical Compiler Axis and Authoritative Execution Graph"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-  activationState: "not-activated"
-  workPackage: ""
-  decisionBasis: "EF-08 remains complete and immutable, and EF-09 remains paused after evidence admission. AR-00 completed the first Architecture Recovery containment: target capability defaults fail closed, unresolved structural semantics cannot become executable through native children, and current target maturity is published without rewriting historical portfolio evidence. F-01, F-06, F-11 and F-18 remain open for final AR-06 certification. AR-01 is selected next but requires a separate work package and activation boundary."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
+  decisionBasis: "EF-08 remains complete and EF-09 remains paused after evidence admission. PR #161 merged completed AR-00 containment at main 8cdcb5d0da93b0962c6c8597339c135cfd82bb23. AR-01 is independently activated to converge Intent YAML, Flow Source and reviewed AI proposals through one compiler service and one typed canonical execution graph. The activation owns F-04, F-09 and F-17, preserves current public artifact versions and target behavior, and forbids adapter extraction before the graph contract is stable."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
@@ -24,8 +24,8 @@ recoveryRoadmap:
   groupedMilestoneCount: 8
   completedItem: "AR-00"
   activeItem: "AR-01"
-  activeWorkPackage: ""
-  activationState: "not-activated"
+  activeWorkPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
+  activationState: "active"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
 principles:
@@ -109,8 +109,8 @@ sequence:
     roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
     completedItem: "AR-00"
     activeItem: "AR-01"
-    activationState: "not-activated"
-    workPackage: ""
+    activationState: "active"
+    workPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."
@@ -120,6 +120,7 @@ sequence:
       - "The packaged CLI and artifact pipeline operate independently from the repository checkout."
     nonGoals:
       - "AR-01 must not move concrete adapters before the canonical adapter-facing graph contract is stable."
+      - "AR-01 must not implement flow-sensitive branch, merge or multi-workflow semantics owned by AR-02."
       - "The recovery must not become a runtime plugin framework or a broad rewrite without staged compatibility boundaries."
 
   - id: "EF-09"
