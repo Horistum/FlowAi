@@ -52,6 +52,21 @@ implementationEvidence:
       - "Conditional branching with authored path-selection semantics"
   rule: "This corrected boundary validates immutable provenance, production evaluation through public intent validation, exact mixed baseline, anti-smuggling and anti-false-lineage regression tests, plus standalone conformance without changing Core semantics."
 
+validationBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3042
+  runId: 32918318185
+  exactHead: "1594c5c6675929bb0ff9b8576612eae7518f2731"
+  mergeCandidate: "3791c2bb6a0236ba8c08c49af1a2883b7c00faac"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  purpose: "Independently validate the corrected implementation-evidence-bearing EF-07 state before completion evidence is admitted."
+
 sourceSelection:
   criteria:
     - "Use immutable public Git revisions with explicit redistributable source licenses."
@@ -118,15 +133,16 @@ completionEvidence:
   - "Flow CI #3038 passed the distinct activation-only boundary before any EF-07 external case was admitted."
   - "Flow CI #3039 is retained as superseded audit evidence because its evaluator falsely treated a control dependency plus output identity as explicit data lineage."
   - "Flow CI #3041 passed the corrected implementation boundary on exact head a46a8826dd8989a2087b530919b9004c2abb12ee and synthetic merge candidate c76db8408ba25a4115848ad13b3b8d5f40e1d6b7."
+  - "Flow CI #3042 passed the distinct validation boundary on exact head 1594c5c6675929bb0ff9b8576612eae7518f2731 and synthetic merge candidate 3791c2bb6a0236ba8c08c49af1a2883b7c00faac."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-07 evaluator classifies every reviewed PRESERVE observation through public intent validation and canonical meaning."
   - "Positive and negative tests prove graph/timing/data-identity representability where it exists and reject inferred lineage, opaque-string, free-form-param or static-graph fake equivalence."
   - "A corrected mixed baseline remains exact while EF-07 is validating and becomes monotonic after closure."
   - "Standalone conformance integrates EF-07 without converting known model gaps into success."
-  - "Distinct validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "A distinct completion CI boundary must pass on exact head and synthetic merge candidate before lifecycle closure."
 
 localValidation:
-  status: implementation-passed
+  status: validation-passed
   activationBoundary:
     commit: "227ca51ce58826c5096e9213de9349d5495fad80"
     workflowRun: 32851071311
@@ -156,4 +172,15 @@ localValidation:
     mergeCandidate:
       commit: "c76db8408ba25a4115848ad13b3b8d5f40e1d6b7"
       conclusion: success
-  rule: "EF-07 corrected implementation evidence is recorded with three representable facts and five explicit model gaps; validation must pass independently before completion evidence is admitted."
+  validationBoundary:
+    commit: "1594c5c6675929bb0ff9b8576612eae7518f2731"
+    workflowRun: 32918318185
+    runNumber: 3042
+    conclusion: success
+    exactHead:
+      commit: "1594c5c6675929bb0ff9b8576612eae7518f2731"
+      conclusion: success
+    mergeCandidate:
+      commit: "3791c2bb6a0236ba8c08c49af1a2883b7c00faac"
+      conclusion: success
+  rule: "EF-07 corrected validation is complete; a later completion boundary must pass before lifecycle closure."
