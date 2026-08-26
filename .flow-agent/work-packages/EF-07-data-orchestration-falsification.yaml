@@ -1,13 +1,13 @@
 version: "EF-07"
 name: "Data Orchestration Falsification"
 type: "post-toolchain-external-falsification-domain"
-status: active
+status: validating
 stream: "post-toolchain"
 
 objective: "Pressure current Flow data-orchestration semantics with immutable external evidence for task dependency order, scheduled cadence, produced data identity, data lineage, asset-aware trigger conditions, run data intervals, partition backfills and conditional branching without turning Airflow Dag, Dagster asset, partition, sensor or operator vocabulary into universal Core meaning."
 
 authorization:
-  status: active
+  status: validating
   predecessor: "EF-06"
   strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#EF-07"
   mainAtDefinition: "61cbec1ad2137b59aeb5cdafa3e5c6650fb03124"
@@ -23,6 +23,34 @@ supersededImplementationEvidence:
   mergeCandidate: "141a203b79786a0e807abde3f687308374c2ccdf"
   supersededReason: "Senior review found a false-positive DATA_ASSET_DEPENDENCY classification: producer.produces plus consumer.requires(producer) preserves output identity and a control dependency but does not tie the consumer to the specific produced data. The same canonical shape can represent control-only ordering, so data lineage was not semantically distinguishable."
   rule: "A green CI run is not authoritative when its evaluator encodes a false equivalence; this boundary is retained only as audit history and cannot satisfy EF-07 implementation completion."
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 3041
+  runId: 32917803258
+  exactHead: "a46a8826dd8989a2087b530919b9004c2abb12ee"
+  mergeCandidate: "c76db8408ba25a4115848ad13b3b8d5f40e1d6b7"
+  validation:
+    flowAgentTooling: passed
+    flowAgentStructure: passed
+    contextGeneration: passed
+    cleanTest: passed
+    standaloneConformance: passed
+  result:
+    representableFacts: 3
+    modelGapFacts: 5
+    representable:
+      - "Task dependency order through canonical requires edges"
+      - "Scheduled cadence through canonical schedule meaning"
+      - "Produced data identity through canonical step outputs"
+    modelGaps:
+      - "Data-asset lineage from consumer to specific produced data"
+      - "Validated asset-aware trigger condition with data identities and ALL/ANY semantics"
+      - "Run data interval identity distinct from wall-clock runtime and schedule expression"
+      - "Partition-subset backfill selection"
+      - "Conditional branching with authored path-selection semantics"
+  rule: "This corrected boundary validates immutable provenance, production evaluation through public intent validation, exact mixed baseline, anti-smuggling and anti-false-lineage regression tests, plus standalone conformance without changing Core semantics."
 
 sourceSelection:
   criteria:
@@ -89,15 +117,16 @@ forbiddenScope:
 completionEvidence:
   - "Flow CI #3038 passed the distinct activation-only boundary before any EF-07 external case was admitted."
   - "Flow CI #3039 is retained as superseded audit evidence because its evaluator falsely treated a control dependency plus output identity as explicit data lineage."
+  - "Flow CI #3041 passed the corrected implementation boundary on exact head a46a8826dd8989a2087b530919b9004c2abb12ee and synthetic merge candidate c76db8408ba25a4115848ad13b3b8d5f40e1d6b7."
   - "Immutable source captures and SHA-256 provenance load through the EF-01 external corpus contract."
   - "A production EF-07 evaluator classifies every reviewed PRESERVE observation through public intent validation and canonical meaning."
   - "Positive and negative tests prove graph/timing/data-identity representability where it exists and reject inferred lineage, opaque-string, free-form-param or static-graph fake equivalence."
-  - "A corrected mixed baseline must remain exact while EF-07 is active/validating and becomes monotonic after closure."
-  - "Standalone conformance must integrate EF-07 without converting known model gaps into success."
-  - "A replacement implementation boundary plus distinct validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
+  - "A corrected mixed baseline remains exact while EF-07 is validating and becomes monotonic after closure."
+  - "Standalone conformance integrates EF-07 without converting known model gaps into success."
+  - "Distinct validation and completion CI boundaries must pass on exact heads and synthetic merge candidates before lifecycle closure."
 
 localValidation:
-  status: implementation-correction-pending
+  status: implementation-passed
   activationBoundary:
     commit: "227ca51ce58826c5096e9213de9349d5495fad80"
     workflowRun: 32851071311
@@ -116,4 +145,15 @@ localValidation:
     conclusion: success
     mergeCandidate: "141a203b79786a0e807abde3f687308374c2ccdf"
     reason: "DATA_ASSET_DEPENDENCY false-positive discovered during post-implementation semantic audit."
-  rule: "EF-07 must establish a new implementation boundary for the corrected three-representable/five-gap evaluator before entering validation."
+  implementationBoundary:
+    commit: "a46a8826dd8989a2087b530919b9004c2abb12ee"
+    workflowRun: 32917803258
+    runNumber: 3041
+    conclusion: success
+    exactHead:
+      commit: "a46a8826dd8989a2087b530919b9004c2abb12ee"
+      conclusion: success
+    mergeCandidate:
+      commit: "c76db8408ba25a4115848ad13b3b8d5f40e1d6b7"
+      conclusion: success
+  rule: "EF-07 corrected implementation evidence is recorded with three representable facts and five explicit model gaps; validation must pass independently before completion evidence is admitted."
