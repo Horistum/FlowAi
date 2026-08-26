@@ -125,7 +125,15 @@ completionEvidence:
 
 lifecycle:
   activationBoundary:
-    status: pending
+    status: passed
+    exactHead: "e8f636788c773c639357a2fc7aaabf560442fef4"
+    syntheticMergeCandidate: "d469c0e9111de76e9ccb990ffe5cbad4fe989e57"
+    workflowRunId: 32937383376
+    workflowRunNumber: 3060
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, compilation, complete tests and standalone conformance passed."
+      - "Synthetic merge-candidate Flow Agent validation, compilation, complete tests and standalone conformance passed."
   implementationBoundary:
     status: pending
   validationBoundary:
@@ -134,5 +142,5 @@ lifecycle:
     status: pending
 
 localValidation:
-  status: not-run
-  rule: "The work package definition and activation transition precede production implementation. GitHub exact-head and synthetic merge-candidate CI remain authoritative because the current environment has no reusable offline checkout."
+  status: activation-passed
+  rule: "The activation transition passed before production implementation. GitHub exact-head and synthetic merge-candidate CI remain authoritative because the current environment has no reusable offline checkout."
