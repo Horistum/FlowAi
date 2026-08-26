@@ -1,13 +1,13 @@
 version: "AR-00"
 name: "Target Honesty and Semantic Safety Freeze"
 type: "architecture-recovery-containment"
-status: active
+status: validating
 stream: "architecture-recovery"
 
 objective: "Contain audited target-rendering and capability-claim defects before deeper compiler and module-boundary recovery. AR-00 makes unsupported structural meaning fail closed, removes optimistic capability fallbacks, publishes explicit target maturity, and adds mutation evidence without implementing new target behavior or redefining canonical semantics."
 
 authorization:
-  status: active
+  status: validating
   predecessor: "ARCHITECTURE-RECOVERY-ROADMAP"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-00"
   postToolchainSource: ".flow-agent/roadmap-post-toolchain.yaml#ARCHITECTURE-RECOVERY"
@@ -76,7 +76,7 @@ architecturalDesign:
       - "behavioral test reference"
     serializationRule: "AR-00 uses the existing TargetStep materialization, rendererPayload and materialization metadata contracts. It does not introduce a second manifest authority or advance TargetManifest solely for containment."
   capabilityRule: "A registry declaration is preliminary evidence. SUPPORTED structural status requires a composed provider whose native projection catalog declares the same structural kind with both production and behavioral references."
-  maturityRule: "Stages are cumulative and monotonic. A target cannot be EXECUTABLE without RENDERABLE and cannot be BEHAVIORALLY_CERTIFIED without executable and behavioral evidence."
+  maturityRule: "Stages are cumulative and monotonic. Target-wide maturity remains separate from bounded scenario maturity: one executable scenario does not promote a whole target adapter."
 
 plannedProductionBoundary:
   capabilityModel:
@@ -92,9 +92,10 @@ plannedProductionBoundary:
     - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
     - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
   maturity:
-    - "src/main/kotlin/org/flowlang/adapters/portfolio/AdapterPortfolioAuthority.kt"
-    - "adapters/portfolio/builtin-adapter-portfolio.yaml"
+    - "src/main/kotlin/org/flowlang/adapters/maturity/AdapterTargetMaturity.kt"
+    - "adapters/portfolio/target-maturity-evidence.yaml"
     - "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt"
+    - "src/main/kotlin/org/flowlang/conformance/ArchitectureRecoveryConformanceChecks.kt"
 
 requiredTests:
   - "Default and omitted target capabilities are fail-closed."
@@ -105,6 +106,7 @@ requiredTests:
   - "Profile-only Argo Workflows and Azure DevOps targets remain declared/analyzable but not renderable or executable."
   - "Removing a structural behavioral reference or provider definition is detected by a negative fixture."
   - "Existing Jenkins and GitHub Actions checkout-build-image reference scenarios remain executable."
+  - "Target-wide maturity cannot borrow EXECUTABLE or BEHAVIORALLY_CERTIFIED status from a bounded scenario."
 
 forbiddenScope:
   - "Do not implement Jenkins parallel, loop, match or retry syntax in AR-00."
@@ -118,7 +120,7 @@ completionEvidence:
   - "Every structural TargetStep is either backed by exact provider-owned implementation plus behavioral evidence or prevents executable rendering."
   - "Every SUPPORTED structural target claim has a matching composed provider structural definition."
   - "No omitted or unknown capability is treated as supported by a default or nativeRuntime fallback."
-  - "Target maturity is visible as cumulative declared, analyzable, renderable, executable and behaviorally-certified stages."
+  - "Target maturity is visible as cumulative declared, analyzable and renderable target-wide stages plus explicitly bounded executable and behavioral scope stages."
   - "Mutation tests fail when structural evidence is removed, forged or disconnected from provider implementation."
   - "Bounded executable reference scenarios remain independently validated; any downgrade is explicit rather than hidden."
   - "Activation, implementation, validation and completion boundaries use distinct exact-head and synthetic merge-candidate Flow CI evidence."
@@ -135,12 +137,32 @@ lifecycle:
       - "Exact-head Flow Agent validation, compilation, complete tests and standalone conformance passed."
       - "Synthetic merge-candidate Flow Agent validation, compilation, complete tests and standalone conformance passed."
   implementationBoundary:
-    status: pending
+    status: passed
+    exactHead: "5ec3eeeb03d8171456c58d5af4d76259cbdc2e55"
+    syntheticMergeCandidate: "41013377e1d5008e78b3a543d9757e1bddd265a0"
+    workflowRunId: 32967207744
+    workflowRunNumber: 3086
+    conclusion: success
+    evidence:
+      - "The clean one-commit implementation compiled and passed the complete exact-head test suite plus standalone conformance."
+      - "The independently synthesized merge candidate passed Flow Agent validation, complete tests and standalone conformance."
+      - "One-off workflows that rewrote source files or committed back into the branch were removed before this boundary."
   validationBoundary:
     status: pending
   completionBoundary:
     status: pending
 
 localValidation:
-  status: activation-passed
-  rule: "The activation transition passed before production implementation. GitHub exact-head and synthetic merge-candidate CI remain authoritative because the current environment has no reusable offline checkout."
+  status: implementation-passed
+  implementationBoundary:
+    commit: "5ec3eeeb03d8171456c58d5af4d76259cbdc2e55"
+    workflowRun: 32967207744
+    runNumber: 3086
+    conclusion: success
+    exactHead:
+      commit: "5ec3eeeb03d8171456c58d5af4d76259cbdc2e55"
+      conclusion: success
+    mergeCandidate:
+      commit: "41013377e1d5008e78b3a543d9757e1bddd265a0"
+      conclusion: success
+  rule: "AR-00 implementation is admitted only after exact-head and synthetic merge-candidate Flow CI passed the clean production and evidence boundary. Validation and completion remain independent later transitions."
