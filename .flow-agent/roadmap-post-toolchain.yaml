@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 2
+revision: 3
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -13,16 +13,17 @@ currentDecision:
   nextItem: "AR-00"
   nextItemName: "Target Honesty and Semantic Safety Freeze"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-  activationState: "not-activated"
-  workPackage: ""
-  decisionBasis: "EF-08 remains complete and immutable. EF-09 has passed activation and admitted its evidence into main, but its lifecycle is not closed. A project-wide production-code audit identified 22 architecture, semantic-correctness, packaging and operational findings, including one critical target-rendering defect and six high-severity defects. EF-09 changed only conformance and roadmap files, so the audited Core, compiler and adapter defects remain present. Architecture Recovery therefore pauses EF-09 without discarding its admitted corpus. AR-00 is selected as the next item, but requires its own activation transition and work package."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/AR-00-target-honesty-semantic-safety-freeze.yaml"
+  decisionBasis: "EF-08 remains complete and immutable. EF-09 remains paused after evidence admission. PR #158 merged the 22-finding Architecture Recovery roadmap at main 55cc409009a137cdf6e1c45697165a72d81818a3. AR-00 is independently activated to contain the critical target-rendering drift, ungrounded capability claims, overstated portfolio maturity and missing structural mutation evidence before deeper compiler recovery begins."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
-  status: "selected-not-activated"
+  status: "active"
   findingCount: 22
   groupedMilestoneCount: 8
-  firstItem: "AR-00"
+  activeItem: "AR-00"
+  activeWorkPackage: ".flow-agent/work-packages/AR-00-target-honesty-semantic-safety-freeze.yaml"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
 principles:
@@ -101,10 +102,11 @@ sequence:
   - id: "ARCHITECTURE-RECOVERY"
     name: "Architecture Recovery and Semantic Realignment"
     order: 10
-    status: next
+    status: active
     interrupts: "EF-09"
     roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-    firstItem: "AR-00"
+    activeItem: "AR-00"
+    workPackage: ".flow-agent/work-packages/AR-00-target-honesty-semantic-safety-freeze.yaml"
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."
@@ -113,7 +115,7 @@ sequence:
       - "Target support is promoted only from adapter-owned behavioral certification."
       - "The packaged CLI and artifact pipeline operate independently from the repository checkout."
     nonGoals:
-      - "This roadmap transition does not itself activate AR-00 or modify production code."
+      - "AR-00 must not implement missing target control-flow behavior merely to preserve an existing support label."
       - "The recovery must not become a runtime plugin framework or a broad rewrite without staged compatibility boundaries."
 
   - id: "EF-09"
