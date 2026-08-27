@@ -65,7 +65,7 @@ class CompilationAuthorization internal constructor(
 
     fun requireIntegrity(): CompilationAuthorization {
         CanonicalExecutionGraphValidator.requireValid(CanonicalExecutionGraphBuild(graph, bindings))
-        CanonicalExecutionGraphDigestAuthority.requireMatches(graph, graphDigest)
+        CanonicalExecutionGraphDigestComputer.requireMatches(graph, graphDigest)
         val projected = CanonicalExecutionGraphProjection.toExecutionPlan(graph, bindings)
         require(projected == executionPlan) {
             "Graph-derived ExecutionPlan drifted after authorization."
@@ -80,7 +80,7 @@ class CompilationAuthorization internal constructor(
     }
 }
 
-object CanonicalExecutionGraphAuthority {
+object CanonicalExecutionGraphGate {
     fun authorizeCompilation(
         source: CompilationSource,
         intentValidation: IntentValidationReport?,
@@ -109,10 +109,10 @@ object CanonicalExecutionGraphAuthority {
     }
 
     /**
-     * Compatibility ingress for existing internal conformance and manually
-     * assembled plan fixtures. It still performs the full graph build, validation,
-     * digest and round-trip parity gate before any materialization authority sees
-     * the plan. It does not pretend to provide authored source provenance.
+     * Compatibility ingress for inventoried conformance and manually assembled
+     * plan fixtures. Callers must retain the raw plan until the established
+     * planning-evidence validator has inspected it; this gate is evaluated only
+     * after that boundary or when graph evidence is explicitly requested.
      */
     internal fun authorizeCompatibilityPlan(
         plannerPlan: ExecutionPlan,
@@ -140,7 +140,7 @@ object CanonicalExecutionGraphAuthority {
     ): CompilationAuthorization {
         val build = CanonicalExecutionGraphBuilder.build(plannerPlan)
         CanonicalExecutionGraphValidator.requireValid(build)
-        val digest = CanonicalExecutionGraphDigestAuthority.digest(build.graph)
+        val digest = CanonicalExecutionGraphDigestComputer.digest(build.graph)
         val projected = CanonicalExecutionGraphProjection.toExecutionPlan(build)
         require(projected == plannerPlan) {
             "Canonical graph projection is not exactly equivalent to the planner output. " +
@@ -157,3 +157,7 @@ object CanonicalExecutionGraphAuthority {
         ).requireIntegrity()
     }
 }
+
+/** Temporary source-compatibility alias retained until all AR-01 callers use the gate name. */
+@Deprecated("Use CanonicalExecutionGraphGate")
+internal val CanonicalExecutionGraphAuthority = CanonicalExecutionGraphGate
