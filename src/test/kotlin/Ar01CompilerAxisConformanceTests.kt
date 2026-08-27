@@ -90,24 +90,19 @@ class Ar01CompilerAxisConformanceTests {
         val check = Ar01CompilerAxisConformanceChecks(root).checks()
             .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
         assertEquals(false, check.passed)
-        assertTrue(check.message.orEmpty().contains("forbidden production layer"))
+        assertTrue(check.message.orEmpty().contains("forbidden production layer"), check.message)
     }
 
     @Test
-    fun externallyConstructibleSourceCaptureFailsDirectionCheck() {
+    fun sourceCaptureWithoutStrictUtf8FailsDirectionCheck() {
         val root = copiedFixture()
         val contracts = File(root, COMPILATION_CONTRACTS)
-        contracts.writeText(
-            contracts.readText()
-                .replace("internal class CapturedCompilationSource", "class CapturedCompilationSource")
-                .replace("internal object CompilationSourceCapture", "object CompilationSourceCapture")
-        )
+        contracts.writeText(contracts.readText().replace("CodingErrorAction.REPORT", "CodingErrorAction.REPLACE"))
 
         val check = Ar01CompilerAxisConformanceChecks(root).checks()
             .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
         assertEquals(false, check.passed)
-        assertTrue(check.message.orEmpty().contains("CapturedCompilationSource"))
-        assertTrue(check.message.orEmpty().contains("CompilationSourceCapture"))
+        assertTrue(check.message.orEmpty().contains("CodingErrorAction.REPORT"), check.message)
     }
 
     @Test
@@ -127,20 +122,25 @@ class Ar01CompilerAxisConformanceTests {
         val check = Ar01CompilerAxisConformanceChecks(root).checks()
             .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
         assertEquals(false, check.passed)
-        assertTrue(check.message.orEmpty().contains("IntentCompilationInput("))
-        assertTrue(check.message.orEmpty().contains("unlisted="))
+        assertTrue(check.message.orEmpty().contains("IntentCompilationInput("), check.message)
+        assertTrue(check.message.orEmpty().contains("IntentBypass.kt"), check.message)
     }
 
     @Test
-    fun graphNamedCompatibilityWrapperFailsDirectionCheck() {
+    fun notesSemanticGraphImportFailsDirectionCheck() {
         val root = copiedFixture()
-        val contracts = File(root, COMPILATION_CONTRACTS)
-        contracts.appendText("\ndata class CanonicalExecutionGraph(val plan: Any)\n")
+        val service = File(root, FLOW_COMPILATION_SERVICE)
+        service.writeText(
+            service.readText().replace(
+                "package org.flowlang.compiler\n",
+                "package org.flowlang.compiler\n\nimport org.flowlang.semantic.SemanticActionGraph\n"
+            )
+        )
 
         val check = Ar01CompilerAxisConformanceChecks(root).checks()
             .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
         assertEquals(false, check.passed)
-        assertTrue(check.message.orEmpty().contains("graph-named wrapper"))
+        assertTrue(check.message.orEmpty().contains("notes-backed SemanticActionGraph"), check.message)
     }
 
     private fun copiedFixture(): File {
@@ -167,6 +167,14 @@ class Ar01CompilerAxisConformanceTests {
             INVENTORY,
             COMPILATION_CONTRACTS,
             FLOW_COMPILATION_SERVICE,
+            "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraph.kt",
+            "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuildContracts.kt",
+            "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt",
+            "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphDigest.kt",
+            "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphProjection.kt",
+            "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphTypes.kt",
+            "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphValidator.kt",
+            "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt",
             "src/main/kotlin/org/flowlang/frontend/source/FlowSourceFrontend.kt",
             "src/main/kotlin/org/flowlang/frontend/intent/IntentYamlFrontend.kt",
             STANDARD_CLI,
