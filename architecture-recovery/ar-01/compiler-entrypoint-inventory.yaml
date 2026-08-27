@@ -18,11 +18,16 @@ productionEntrypoints:
 deferredProductEntrypoints:
   - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt#runNormalizeCommand"
 independentConformancePaths:
-  - "src/main/kotlin/org/flowlang/conformance/AdapterBindingConformanceChecks.kt"
-  - "src/main/kotlin/org/flowlang/conformance/ScenarioAndPlanChecks.kt"
   - "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixAuthority.kt"
-  - "src/main/kotlin/org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt"
   - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AdapterBindingConformanceChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/CliReleaseHonestyChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/CorePipelineSnapshotChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/ReferenceCorpusExecutionHarness.kt"
+  - "src/main/kotlin/org/flowlang/conformance/ScenarioAndPlanChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
 frozenArtifactContracts:
   intent: "2.0"
   ast: "2.2"
