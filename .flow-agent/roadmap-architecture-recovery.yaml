@@ -1,11 +1,11 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 3
+revision: 4
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
 auditBaseline:
   originalAuditCommit: "6b7ad6bae914da558740b4ae39c8e3817e09b8eb"
-  revalidatedMainCommit: "531113e71e47f6ba382aa1ae54974494abc99ac4"
+  revalidatedMainCommit: "8cdcb5d0da93b0962c6c8597339c135cfd82bb23"
   findingCount: 22
   severityCounts:
     critical: 1
@@ -23,9 +23,9 @@ currentDecision:
   preemptedWorkPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
   nextItem: "AR-01"
   nextItemName: "Canonical Compiler Axis and Authoritative Execution Graph"
-  activationState: "not-activated"
-  workPackage: ""
-  decisionBasis: "PR #159 contained optimistic target capability and structural-rendering claims. The AR-00C/D closure then published separately versioned current target maturity, preserved immutable historical portfolio evidence, integrated Architecture Recovery conformance and passed independent implementation and validation boundaries. AR-00 is complete as containment only; F-01, F-06, F-11 and F-18 remain owned by AR-06. AR-01 is selected next but requires its own work package and activation transition before production changes."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
+  decisionBasis: "PR #161 merged the completed AR-00 containment at main 8cdcb5d0da93b0962c6c8597339c135cfd82bb23. AR-01 is now independently activated to establish one compiler service and one authoritative typed execution graph before any adapter extraction or deeper flow-sensitive semantic change. This transition defines bounded production, migration, test and conformance ownership but does not yet claim compiler implementation, validation or finding closure."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -104,9 +104,9 @@ milestones:
   - id: "AR-01"
     name: "Canonical Compiler Axis and Authoritative Execution Graph"
     order: 2
-    status: "next"
+    status: "active"
     dependsOn: ["AR-00"]
-    workPackage: ""
+    workPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
     closesFindings: ["F-04", "F-09", "F-17"]
     purpose: "Establish one compiler pipeline and one typed owner of executable meaning before moving implementation boundaries."
     requiredOutcomes:

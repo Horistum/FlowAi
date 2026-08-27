@@ -3,7 +3,6 @@ package org.flowlang.cli.honest
 import java.io.File
 import kotlin.system.exitProcess
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
-import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.ai.normalization.AiIntentContext
 import org.flowlang.ai.normalization.AiIntentRequest
@@ -22,6 +21,9 @@ import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.cli.Json
+import org.flowlang.compiler.FlowCompilationService
+import org.flowlang.compiler.requireAccepted
+import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDecisionAnalyzer
@@ -153,17 +155,17 @@ private fun runIntentCommand(
         TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
     }
 
-    val intent = IntentYamlLoader.load(file)
+    val compilation = IntentYamlFrontend(FlowCompilationService(registry))
+        .compile(file)
+        .requireAccepted()
+    val intentEvidence = compilation.requireIntentEvidence()
+    val intent = intentEvidence.intent
     val design = IntentDesignAnalyzer(registry).analyze(intent)
     val decision = IntentDecisionAnalyzer(registry).analyze(intent)
-    val intentValidation = IntentCapabilityValidator(registry).validate(intent)
-    intentValidation.assertValid()
-    val ast = IntentToAstPlanner(registry).plan(intent)
-    val validation = FlowValidator(registry).validate(ast)
-    require(validation.valid) {
-        "Flow validation failed before planning: " + validation.issues.joinToString { it.code + ": " + it.message }
-    }
-    val plan = FlowPlanner(registry).plan(ast)
+    val intentValidation = intentEvidence.validation
+    val ast = compilation.ast
+    val validation = compilation.validation
+    val plan = compilation.executionPlan
 
     output.section("INTENT DESIGN REPORT", design)
     output.section("INTENT DECISION REPORT", decision)
@@ -172,7 +174,7 @@ private fun runIntentCommand(
     output.section("GENERATED FLOW AST JSON", ast)
     output.section("VALIDATION REPORT", validation)
     output.section("EXECUTION PLAN JSON", plan)
-    output.section("CANONICAL EXECUTION PLAN JSON", ExecutionPlanCanonicalizer.canonicalize(plan))
+    output.section("CANONICAL EXECUTION PLAN JSON", compilation.canonicalPlan)
 
     if (selectionDecision == TargetSelectionDecision.NotSelected) {
         val planning = targetNeutralPlanningEvidence(plan, targets, strict)

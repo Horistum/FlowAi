@@ -1,0 +1,190 @@
+package org.flowlang.tests
+
+import java.io.File
+import kotlin.io.path.createTempDirectory
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import org.flowlang.conformance.Ar01CompilerAxisConformanceChecks
+
+class Ar01CompilerAxisConformanceTests {
+    @Test
+    fun repositoryCompilerAxisPassesEveryBoundedAr01Check() {
+        val checks = Ar01CompilerAxisConformanceChecks(File(".")).checks()
+        assertTrue(
+            checks.all { it.passed },
+            checks.filterNot { it.passed }.joinToString { "${it.name}: ${it.message}" }
+        )
+    }
+
+    @Test
+    fun directIntentPlannerBypassFailsConvergence() {
+        val root = copiedFixture()
+        val cli = File(root, HONEST_CLI)
+        cli.writeText(
+            cli.readText().replace(
+                "IntentYamlFrontend(FlowCompilationService(registry))",
+                "IntentToAstPlanner(registry)"
+            )
+        )
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.INTENT_CONVERGENCE_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(check.message.orEmpty().contains("does not route through") || check.message.orEmpty().contains("direct compiler-stage"))
+    }
+
+    @Test
+    fun missingProductEntrypointFailsInventory() {
+        val root = copiedFixture()
+        val inventory = File(root, INVENTORY)
+        inventory.writeText(
+            inventory.readText().replace(
+                "  - \"src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt#generate\"\n",
+                ""
+            )
+        )
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.INVENTORY_CHECK }
+        assertEquals(false, check.passed)
+    }
+
+    @Test
+    fun unlistedDirectCompilationPathFailsInventory() {
+        val root = copiedFixture()
+        File(root, "src/main/kotlin/org/flowlang/product/Bypass.kt").apply {
+            parentFile.mkdirs()
+            writeText(
+                """
+                package org.flowlang.product
+
+                import org.flowlang.intent.IntentToAstPlanner
+                import org.flowlang.planner.FlowPlanner
+
+                fun bypass() {
+                    IntentToAstPlanner(registry)
+                    FlowPlanner(registry)
+                }
+                """.trimIndent()
+            )
+        }
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.INVENTORY_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(check.message.orEmpty().contains("unlisted="))
+    }
+
+    @Test
+    fun compilerImportingConcreteTargetLayerFailsDirectionCheck() {
+        val root = copiedFixture()
+        val service = File(root, FLOW_COMPILATION_SERVICE)
+        service.writeText(
+            service.readText().replace(
+                "package org.flowlang.compiler\n",
+                "package org.flowlang.compiler\n\nimport org.flowlang.targets.builtin.BuiltInTargetProjections\n"
+            )
+        )
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(check.message.orEmpty().contains("forbidden production layer"))
+    }
+
+    @Test
+    fun externallyConstructibleSourceCaptureFailsDirectionCheck() {
+        val root = copiedFixture()
+        val contracts = File(root, COMPILATION_CONTRACTS)
+        contracts.writeText(
+            contracts.readText()
+                .replace("internal class CapturedCompilationSource", "class CapturedCompilationSource")
+                .replace("internal object CompilationSourceCapture", "object CompilationSourceCapture")
+        )
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(check.message.orEmpty().contains("CapturedCompilationSource"))
+        assertTrue(check.message.orEmpty().contains("CompilationSourceCapture"))
+    }
+
+    @Test
+    fun compilationInputConstructedOutsideItsFrontendFailsDirectionCheck() {
+        val root = copiedFixture()
+        File(root, "src/main/kotlin/org/flowlang/product/IntentBypass.kt").apply {
+            parentFile.mkdirs()
+            writeText(
+                """
+                package org.flowlang.product
+
+                fun bypass() = IntentCompilationInput(source, intent)
+                """.trimIndent()
+            )
+        }
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(check.message.orEmpty().contains("IntentCompilationInput("))
+        assertTrue(check.message.orEmpty().contains("unlisted="))
+    }
+
+    @Test
+    fun graphNamedCompatibilityWrapperFailsDirectionCheck() {
+        val root = copiedFixture()
+        val contracts = File(root, COMPILATION_CONTRACTS)
+        contracts.appendText("\ndata class CanonicalExecutionGraph(val plan: Any)\n")
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(check.message.orEmpty().contains("graph-named wrapper"))
+    }
+
+    private fun copiedFixture(): File {
+        val root = createTempDirectory("flow-ar01-compiler-axis").toFile()
+        REQUIRED_PATHS.forEach { path ->
+            val source = File(path)
+            require(source.isFile) { "Test fixture source is missing: $path" }
+            File(root, path).apply {
+                parentFile.mkdirs()
+                writeBytes(source.readBytes())
+            }
+        }
+        return root
+    }
+
+    companion object {
+        private const val INVENTORY = "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
+        private const val COMPILATION_CONTRACTS = "src/main/kotlin/org/flowlang/compiler/CompilationContracts.kt"
+        private const val FLOW_COMPILATION_SERVICE = "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
+        private const val STANDARD_CLI = "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt"
+        private const val HONEST_CLI = "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
+        private const val REFERENCE_SNAPSHOT = "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
+        private val REQUIRED_PATHS = listOf(
+            INVENTORY,
+            COMPILATION_CONTRACTS,
+            FLOW_COMPILATION_SERVICE,
+            "src/main/kotlin/org/flowlang/frontend/source/FlowSourceFrontend.kt",
+            "src/main/kotlin/org/flowlang/frontend/intent/IntentYamlFrontend.kt",
+            STANDARD_CLI,
+            HONEST_CLI,
+            REFERENCE_SNAPSHOT,
+            "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt",
+            "src/main/kotlin/org/flowlang/conformance/TargetNeutralConformanceFixture.kt",
+            "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt",
+            "src/main/kotlin/org/flowlang/conformance/CorePipelineSnapshotChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/CliReleaseHonestyChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/AdapterBindingConformanceChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/ScenarioAndPlanChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/ReferenceCorpusExecutionHarness.kt",
+            "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixAuthority.kt",
+            "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt"
+        )
+    }
+}

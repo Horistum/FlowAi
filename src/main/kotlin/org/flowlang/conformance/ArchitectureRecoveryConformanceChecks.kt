@@ -264,7 +264,8 @@ class ArchitectureRecoveryConformanceRunner(
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
     fun checks(): List<ConformanceCheck> {
-        val produced = AdapterTargetMaturityConformanceChecks(rootDir, targets, projections).checks()
+        val produced = AdapterTargetMaturityConformanceChecks(rootDir, targets, projections).checks() +
+            Ar01CompilerAxisConformanceChecks(rootDir).checks()
         val inventoryResult = runCatching { ArchitectureRecoveryConformanceInventory.load(rootDir) }
         val inventory = inventoryResult.getOrNull()
         val observed = produced.map { it.name }
