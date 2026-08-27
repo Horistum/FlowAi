@@ -1,0 +1,73 @@
+version: "AR-01B"
+name: "Typed Canonical Execution Graph and Authority Cutover"
+type: "architecture-recovery-delivery"
+status: active
+stream: "architecture-recovery"
+parentWorkPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
+strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-01"
+
+objective: "Make CanonicalExecutionGraph the typed, deterministic and digest-bound authority for accepted execution meaning, while retaining ExecutionPlan and CanonicalExecutionPlan only as exact graph-derived compatibility views."
+
+authorization:
+  predecessor: "AR-01-IFC-01"
+  mainAtStart: "6bab183684c2bade78163731b48ab65ed4d75909"
+  rule: "This slice may introduce the typed graph, semantic digest, graph validation, source-bound compilation authorization and graph-bound materialization requests. It must not change public artifact contract versions, target support or branch/multi-workflow semantics owned by AR-02."
+
+requiredOutcomes:
+  - "CanonicalExecutionGraph uses closed node, dependency and workflow kinds and carries canonical capability, effect, control, continuity and topology meaning."
+  - "Implementation module, action, target, binding metadata, frontend provenance, source locations, diagnostics and target hints remain outside semantic graph identity."
+  - "CanonicalExecutionGraphDigest is deterministic across storage and map iteration order and changes for capability, dependency, effect, control and topology mutations."
+  - "CompilationUnit contains source-bound validation evidence and one CompilationAuthorization for the exact graph digest."
+  - "ExecutionPlan and CanonicalExecutionPlan are reconstructed from the graph plus an explicit compatibility-binding envelope and must equal the planner construction result before authorization is issued."
+  - "TargetMaterializationRequest and diagnostic requests carry CompilationAuthorization and expose only its graph-derived ExecutionPlan compatibility view."
+  - "The notes-backed SemanticActionGraph cannot be imported or treated as compiler or target-materialization authority."
+  - "Intent 2.0, AST 2.2, Execution Plan 2.4, lowering evidence 2.1, Target Manifest 3.0 and Target Registry 3.2 remain frozen."
+
+productionBoundary:
+  graph:
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraph.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBindings.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphProjection.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphPlanMappings.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphValidator.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphDigest.kt"
+  authorization:
+    - "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CompilationContracts.kt"
+    - "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
+    - "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt"
+  evidence:
+    - "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
+    - "architecture-recovery/conformance/check-inventory.yaml"
+    - "src/main/kotlin/org/flowlang/conformance/Ar01CompilerAxisConformanceChecks.kt"
+
+requiredTests:
+  - "Graph round-trip exactly reproduces every ExecutionPlan field and its CanonicalExecutionPlan view."
+  - "Digest ignores implementation binding and storage order but observes all owned semantic facets."
+  - "Duplicate nodes, dangling membership, dangling dependencies, contradictory controls and ordering cycles fail graph validation."
+  - "Evidence bound to one graph digest cannot authorize a mutated graph."
+  - "Compilation-scoped and inventoried compatibility materialization ingress both pass through graph authorization."
+  - "Old notes-backed SemanticActionGraph is absent from compiler and materialization request authority."
+
+conformanceChecks:
+  - "architecture-recovery.ar-01.canonical-graph-integrity"
+  - "architecture-recovery.ar-01.semantic-digest-determinism"
+  - "architecture-recovery.ar-01.graph-mutation-polarity"
+  - "architecture-recovery.ar-01.authorization-digest-binding"
+  - "architecture-recovery.ar-01.derived-view-consistency"
+  - "architecture-recovery.ar-01.no-pseudo-graph-bypass"
+
+nonGoals:
+  - "Reviewed AI proposal provenance convergence remains AR-01C follow-up work."
+  - "Flow-sensitive branch value lattices, phi nodes and multi-workflow execution remain AR-02."
+  - "Concrete adapter extraction remains AR-03."
+  - "Public artifact schemas and target capability maturity are not advanced by this slice."
+
+lifecycle:
+  implementationBoundary:
+    status: pending
+  validationBoundary:
+    status: pending
+  completionBoundary:
+    status: pending

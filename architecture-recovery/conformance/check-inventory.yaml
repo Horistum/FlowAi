@@ -9,3 +9,9 @@ checks:
   - architecture-recovery.ar-01.intent-frontend-convergence
   - architecture-recovery.ar-01.compiler-dependency-direction
   - architecture-recovery.ar-01.public-contract-freeze
+  - architecture-recovery.ar-01.canonical-graph-integrity
+  - architecture-recovery.ar-01.semantic-digest-determinism
+  - architecture-recovery.ar-01.graph-mutation-polarity
+  - architecture-recovery.ar-01.authorization-digest-binding
+  - architecture-recovery.ar-01.derived-view-consistency
+  - architecture-recovery.ar-01.no-pseudo-graph-bypass

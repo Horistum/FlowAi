@@ -1,0 +1,159 @@
+package org.flowlang.compiler
+
+import org.flowlang.intent.IntentValidationReport
+import org.flowlang.planner.CanonicalExecutionPlan
+import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.ExecutionPlanCanonicalizer
+import org.flowlang.validator.ValidationReport
+
+enum class CompilationAuthorizationOrigin {
+    COMPILATION_UNIT,
+    COMPATIBILITY_PLAN
+}
+
+data class CompilationValidationBinding(
+    val origin: CompilationAuthorizationOrigin,
+    val graphDigest: String,
+    val sourceSha256: String? = null,
+    val intentValid: Boolean? = null,
+    val flowValid: Boolean,
+    val graphValid: Boolean
+) {
+    init {
+        require(GRAPH_DIGEST.matches(graphDigest)) {
+            "Compilation validation binding must name a lowercase SHA-256 graph digest."
+        }
+        require(sourceSha256 == null || GRAPH_DIGEST.matches(sourceSha256)) {
+            "Compilation validation binding source digest must be absent or lowercase SHA-256 text."
+        }
+        require(flowValid) { "Compilation authorization cannot bind a failed Flow validation." }
+        require(graphValid) { "Compilation authorization cannot bind an invalid canonical graph." }
+        if (origin == CompilationAuthorizationOrigin.COMPILATION_UNIT) {
+            require(sourceSha256 != null) {
+                "Compilation-unit authorization must bind the exact source digest."
+            }
+        }
+    }
+
+    private companion object {
+        val GRAPH_DIGEST = Regex("[0-9a-f]{64}")
+    }
+}
+
+/**
+ * Unforgeable-in-API authorization for one exact canonical graph.
+ *
+ * The planner may still be used as a construction stage, but the value exposed
+ * to downstream consumers is reconstructed from the validated graph and its
+ * separately typed binding envelope. No caller-supplied plan can repair or widen
+ * graph meaning after this boundary.
+ */
+class CompilationAuthorization internal constructor(
+    val graph: CanonicalExecutionGraph,
+    val graphDigest: CanonicalExecutionGraphDigest,
+    internal val bindings: CanonicalExecutionBindingSet,
+    val validationBinding: CompilationValidationBinding,
+    val executionPlan: ExecutionPlan,
+    val canonicalPlan: CanonicalExecutionPlan
+) {
+    init {
+        require(validationBinding.graphDigest == graphDigest.value) {
+            "Compilation validation evidence is bound to '${validationBinding.graphDigest}', " +
+                "but authorization carries '$graphDigest'."
+        }
+    }
+
+    fun requireIntegrity(): CompilationAuthorization {
+        CanonicalExecutionGraphValidator.requireValid(CanonicalExecutionGraphBuild(graph, bindings))
+        CanonicalExecutionGraphDigestAuthority.requireMatches(graph, graphDigest)
+        val projected = CanonicalExecutionGraphProjection.toExecutionPlan(graph, bindings)
+        require(projected == executionPlan) {
+            "Graph-derived ExecutionPlan drifted after authorization."
+        }
+        require(ExecutionPlanCanonicalizer.canonicalize(projected) == canonicalPlan) {
+            "Graph-derived CanonicalExecutionPlan drifted after authorization."
+        }
+        require(validationBinding.graphDigest == graphDigest.value) {
+            "Compilation authorization evidence no longer matches the canonical graph digest."
+        }
+        return this
+    }
+}
+
+object CanonicalExecutionGraphAuthority {
+    fun authorizeCompilation(
+        source: CompilationSource,
+        intentValidation: IntentValidationReport?,
+        flowValidation: ValidationReport,
+        plannerPlan: ExecutionPlan
+    ): CompilationAuthorization {
+        require(flowValidation.valid) {
+            "Canonical graph authorization requires successful Flow validation."
+        }
+        require(intentValidation == null || intentValidation.valid) {
+            "Canonical graph authorization cannot bind a failed Intent validation."
+        }
+        return authorize(
+            plannerPlan = plannerPlan,
+            binding = { digest ->
+                CompilationValidationBinding(
+                    origin = CompilationAuthorizationOrigin.COMPILATION_UNIT,
+                    graphDigest = digest.value,
+                    sourceSha256 = source.sha256,
+                    intentValid = intentValidation?.valid,
+                    flowValid = flowValidation.valid,
+                    graphValid = true
+                )
+            }
+        )
+    }
+
+    /**
+     * Compatibility ingress for existing internal conformance and manually
+     * assembled plan fixtures. It still performs the full graph build, validation,
+     * digest and round-trip parity gate before any materialization authority sees
+     * the plan. It does not pretend to provide authored source provenance.
+     */
+    internal fun authorizeCompatibilityPlan(
+        plannerPlan: ExecutionPlan,
+        evidenceId: String
+    ): CompilationAuthorization {
+        require(evidenceId.isNotBlank()) { "Compatibility-plan evidence id must not be blank." }
+        return authorize(
+            plannerPlan = plannerPlan,
+            binding = { digest ->
+                CompilationValidationBinding(
+                    origin = CompilationAuthorizationOrigin.COMPATIBILITY_PLAN,
+                    graphDigest = digest.value,
+                    sourceSha256 = null,
+                    intentValid = null,
+                    flowValid = true,
+                    graphValid = true
+                )
+            }
+        )
+    }
+
+    private fun authorize(
+        plannerPlan: ExecutionPlan,
+        binding: (CanonicalExecutionGraphDigest) -> CompilationValidationBinding
+    ): CompilationAuthorization {
+        val build = CanonicalExecutionGraphBuilder.build(plannerPlan)
+        CanonicalExecutionGraphValidator.requireValid(build)
+        val digest = CanonicalExecutionGraphDigestAuthority.digest(build.graph)
+        val projected = CanonicalExecutionGraphProjection.toExecutionPlan(build)
+        require(projected == plannerPlan) {
+            "Canonical graph projection is not exactly equivalent to the planner output. " +
+                "The authority cutover refuses dual semantic truth."
+        }
+        val canonical = ExecutionPlanCanonicalizer.canonicalize(projected)
+        return CompilationAuthorization(
+            graph = build.graph,
+            graphDigest = digest,
+            bindings = build.bindings,
+            validationBinding = binding(digest),
+            executionPlan = projected,
+            canonicalPlan = canonical
+        ).requireIntegrity()
+    }
+}

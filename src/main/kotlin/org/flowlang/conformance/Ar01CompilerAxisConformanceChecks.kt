@@ -1,10 +1,27 @@
 package org.flowlang.conformance
 
 import java.io.File
+import org.flowlang.compiler.CanonicalCapabilityId
+import org.flowlang.compiler.CanonicalDependencyEdge
+import org.flowlang.compiler.CanonicalDependencyEvidence
+import org.flowlang.compiler.CanonicalDependencyKind
+import org.flowlang.compiler.CanonicalDependencyResolution
+import org.flowlang.compiler.CanonicalExecutionGraph
+import org.flowlang.compiler.CanonicalExecutionGraphBuild
+import org.flowlang.compiler.CanonicalExecutionGraphDigestAuthority
+import org.flowlang.compiler.CanonicalExecutionGraphProjection
+import org.flowlang.compiler.CanonicalExecutionGraphValidator
+import org.flowlang.compiler.CanonicalNodeId
+import org.flowlang.compiler.CanonicalTaskNode
+import org.flowlang.compiler.FlowCompilationService
+import org.flowlang.compiler.requireAccepted
+import org.flowlang.frontend.intent.IntentYamlFrontend
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.standard.FlowStandardVersions
 
-/** Separately inventoried Architecture Recovery checks for the bounded AR-01 frontend convergence slice. */
+/** Architecture Recovery checks for the converged compiler and graph-authority cutover. */
 class Ar01CompilerAxisConformanceChecks(
     private val rootDir: File
 ) {
@@ -13,7 +30,13 @@ class Ar01CompilerAxisConformanceChecks(
         resultCheck(FLOW_SOURCE_AXIS_CHECK, runCatching(::flowSourceAxisErrors)),
         resultCheck(INTENT_CONVERGENCE_CHECK, runCatching(::intentConvergenceErrors)),
         resultCheck(DEPENDENCY_DIRECTION_CHECK, runCatching(::dependencyDirectionErrors)),
-        resultCheck(PUBLIC_CONTRACT_FREEZE_CHECK, runCatching(::publicContractFreezeErrors))
+        resultCheck(PUBLIC_CONTRACT_FREEZE_CHECK, runCatching(::publicContractFreezeErrors)),
+        resultCheck(GRAPH_INTEGRITY_CHECK, runCatching(::graphIntegrityErrors)),
+        resultCheck(DIGEST_DETERMINISM_CHECK, runCatching(::digestDeterminismErrors)),
+        resultCheck(MUTATION_POLARITY_CHECK, runCatching(::mutationPolarityErrors)),
+        resultCheck(AUTHORIZATION_BINDING_CHECK, runCatching(::authorizationBindingErrors)),
+        resultCheck(DERIVED_VIEW_CHECK, runCatching(::derivedViewErrors)),
+        resultCheck(NO_PSEUDO_GRAPH_CHECK, runCatching(::noPseudoGraphErrors))
     )
 
     private fun inventoryErrors(): List<String> = buildList {
@@ -21,29 +44,23 @@ class Ar01CompilerAxisConformanceChecks(
         if (inventory.compositionRoot != COMPILATION_SERVICE) {
             add("Compiler composition root must be $COMPILATION_SERVICE, found ${inventory.compositionRoot}.")
         }
-        if (inventory.currentExecutionAuthority != "ExecutionPlan") {
-            add("ExecutionPlan must remain the declared authority until the typed graph cutover.")
+        if (inventory.currentExecutionAuthority != CANONICAL_GRAPH) {
+            add("Current execution authority must be $CANONICAL_GRAPH, found ${inventory.currentExecutionAuthority}.")
         }
-        if (inventory.derivedCanonicalView != "CanonicalExecutionPlan") {
-            add("CanonicalExecutionPlan must remain a derived compatibility view in this slice.")
+        if (inventory.derivedCanonicalView != DERIVED_VIEWS) {
+            add("Derived compatibility views must be '$DERIVED_VIEWS', found '${inventory.derivedCanonicalView}'.")
         }
         if (inventory.convergedFrontends != listOf("flow-source", "intent-yaml")) {
-            add("Converged frontends must be exactly flow-source and intent-yaml.")
+            add("Converged frontend inventory drifted: ${inventory.convergedFrontends}.")
         }
         if (inventory.deferredFrontends != listOf("reviewed-ai-proposal")) {
-            add("Reviewed AI proposal convergence must remain explicitly deferred.")
+            add("Only reviewed AI proposal convergence may remain deferred, found ${inventory.deferredFrontends}.")
         }
         if (inventory.productionEntrypoints != EXPECTED_ENTRYPOINTS) {
-            add(
-                "Compiler entrypoint inventory differs: expected=${EXPECTED_ENTRYPOINTS.joinToString()} " +
-                    "observed=${inventory.productionEntrypoints.joinToString()}."
-            )
+            add("Product compiler entrypoint inventory drifted. expected=$EXPECTED_ENTRYPOINTS observed=${inventory.productionEntrypoints}")
         }
         if (inventory.deferredProductEntrypoints != EXPECTED_DEFERRED_ENTRYPOINTS) {
-            add(
-                "Deferred product entrypoints differ: expected=${EXPECTED_DEFERRED_ENTRYPOINTS.joinToString()} " +
-                    "observed=${inventory.deferredProductEntrypoints.joinToString()}."
-            )
+            add("Deferred product entrypoints drifted: ${inventory.deferredProductEntrypoints}.")
         }
         (inventory.productionEntrypoints + inventory.deferredProductEntrypoints).forEach { entrypoint ->
             val path = entrypoint.substringBefore('#')
@@ -56,7 +73,7 @@ class Ar01CompilerAxisConformanceChecks(
             }
         }
         if (inventory.independentConformancePaths.isEmpty()) {
-            add("Independent conformance paths must be inventoried while legacy oracles remain live.")
+            add("Independent conformance paths must remain inventoried while compatibility oracles are live.")
         }
         inventory.independentConformancePaths.forEach { path ->
             if (!path.startsWith("src/main/kotlin/org/flowlang/conformance/") || !File(rootDir, path).isFile) {
@@ -83,7 +100,7 @@ class Ar01CompilerAxisConformanceChecks(
             )
         }
         if (inventory.frozenArtifactContracts != FROZEN_ARTIFACT_CONTRACTS) {
-            add("The frontend-convergence artifact contract freeze differs from the activated baseline.")
+            add("The graph-authority artifact contract freeze differs from the activated baseline.")
         }
     }
 
@@ -138,17 +155,22 @@ class Ar01CompilerAxisConformanceChecks(
                 .map { it.removePrefix("import ").substringBefore(" as ") }
                 .filter { imported -> FORBIDDEN_COMPILER_IMPORTS.any(imported::startsWith) }
                 .forEach { imported -> add("$path imports forbidden production layer '$imported'.") }
-            if (GRAPH_DECLARATION.containsMatchIn(source)) {
-                add("$path reintroduced a graph-named wrapper around the compatibility plan.")
+            if ("org.flowlang.semantic.SemanticActionGraph" in source) {
+                add("$path imports the notes-backed SemanticActionGraph as compiler meaning.")
             }
         }
 
         val contracts = read(COMPILATION_CONTRACTS)
         requireContains(contracts, "CodingErrorAction.REPORT", COMPILATION_CONTRACTS, this)
         requireContains(contracts, "val sourceName = file.path", COMPILATION_CONTRACTS, this)
-        requireContains(contracts, "internal class CapturedCompilationSource", COMPILATION_CONTRACTS, this)
-        requireContains(contracts, "internal object CompilationSourceCapture", COMPILATION_CONTRACTS, this)
-        requireContains(contracts, "val canonicalPlan: CanonicalExecutionPlan", COMPILATION_CONTRACTS, this)
+        requireContains(contracts, "val authorization: CompilationAuthorization", COMPILATION_CONTRACTS, this)
+        requireContains(contracts, "val graph: CanonicalExecutionGraph", COMPILATION_CONTRACTS, this)
+        requireContains(contracts, "authorization.requireIntegrity()", COMPILATION_CONTRACTS, this)
+
+        val targetSelection = read(TARGET_SELECTION)
+        requireContains(targetSelection, "val authorization: CompilationAuthorization", TARGET_SELECTION, this)
+        requireContains(targetSelection, "authorization.executionPlan", TARGET_SELECTION, this)
+        requireContains(targetSelection, "fun fromCompilation(", TARGET_SELECTION, this)
 
         requireExactProductionCallers(
             symbol = "CompilationSourceCapture.",
@@ -177,9 +199,161 @@ class Ar01CompilerAxisConformanceChecks(
             "targetRegistry" to FlowStandardVersions.TARGET_REGISTRY_VERSION
         )
         if (observed != FROZEN_ARTIFACT_CONTRACTS) {
-            add("Intent convergence changed a frozen public artifact contract: $observed")
+            add("Graph authority cutover changed a frozen public artifact contract: $observed")
         }
     }
+
+    private fun graphIntegrityErrors(): List<String> = buildList {
+        val unit = referenceUnit()
+        val report = CanonicalExecutionGraphValidator.validate(
+            CanonicalExecutionGraphBuild(unit.graph, unit.authorization.bindings)
+        )
+        if (!report.valid) addAll(report.issues.map { "${it.code}:${it.location}:${it.message}" })
+        if (unit.graph.workflows.size != 1 || unit.graph.nodes.isEmpty()) {
+            add("Accepted compilation did not produce one populated canonical workflow graph.")
+        }
+        if (CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.bindings) != unit.executionPlan) {
+            add("Canonical graph does not reproduce its graph-derived ExecutionPlan view.")
+        }
+    }
+
+    private fun digestDeterminismErrors(): List<String> = buildList {
+        val unit = referenceUnit()
+        val graph = unit.graph
+        val reordered = graph.copy(
+            nodes = graph.nodes.reversed(),
+            requiredCapabilities = graph.requiredCapabilities.reversed(),
+            dependencyEdges = graph.dependencyEdges.reversed(),
+            controlRequirements = graph.controlRequirements.reversed(),
+            controlEvidence = graph.controlEvidence.reversed(),
+            topologyRequirements = graph.topologyRequirements.reversed()
+        )
+        if (CanonicalExecutionGraphDigestAuthority.digest(reordered) != unit.graphDigest) {
+            add("Canonical graph digest depends on storage order.")
+        }
+        val first = unit.authorization.bindings.tasks.firstOrNull()
+        if (first == null) {
+            add("Reference compilation contains no task binding for digest independence.")
+        } else {
+            val altered = unit.authorization.bindings.copy(
+                tasks = unit.authorization.bindings.tasks.map { binding ->
+                    if (binding.nodeId == first.nodeId) {
+                        binding.copy(module = "alternate", action = "alternate", target = "alternate")
+                    } else binding
+                }
+            )
+            val report = CanonicalExecutionGraphValidator.validate(CanonicalExecutionGraphBuild(graph, altered))
+            if (!report.valid) add("Alternate implementation binding invalidated graph semantics: ${report.issues}")
+            if (CanonicalExecutionGraphDigestAuthority.digest(graph) != unit.graphDigest) {
+                add("Implementation binding changed canonical semantic identity.")
+            }
+        }
+    }
+
+    private fun mutationPolarityErrors(): List<String> = buildList {
+        val graph = referenceUnit().graph
+        val baseline = CanonicalExecutionGraphDigestAuthority.digest(graph)
+        val task = graph.nodes.filterIsInstance<CanonicalTaskNode>().firstOrNull()
+        if (task == null) {
+            add("Reference graph has no task for mutation polarity.")
+            return@buildList
+        }
+        val mutations = mutableListOf<Pair<String, CanonicalExecutionGraph>>()
+        mutations += "capability" to graph.replace(
+            task.copy(semantics = task.semantics.copy(
+                capability = CanonicalCapabilityId((task.semantics.capability?.value ?: "task") + ".mutation")
+            ))
+        )
+        task.semantics.effects.firstOrNull()?.let { effect ->
+            mutations += "effect" to graph.replace(
+                task.copy(semantics = task.semantics.copy(
+                    effects = listOf(effect.copy(resource = effect.resource + ".mutation")) + task.semantics.effects.drop(1)
+                ))
+            )
+        } ?: add("Reference graph has no semantic effect for mutation polarity.")
+        graph.dependencyEdges.firstOrNull()?.let { edge ->
+            mutations += "dependency" to graph.copy(
+                dependencyEdges = listOf(edge.copy(channel = (edge.channel ?: "ordering") + ".mutation")) +
+                    graph.dependencyEdges.drop(1)
+            )
+        } ?: add("Reference graph has no dependency edge for mutation polarity.")
+        graph.controlRequirements.firstOrNull()?.let { requirement ->
+            mutations += "control" to graph.copy(
+                controlRequirements = listOf(requirement.copy(subject = requirement.subject + ".mutation")) +
+                    graph.controlRequirements.drop(1)
+            )
+        } ?: add("Reference graph has no control requirement for mutation polarity.")
+        graph.topologyRequirements.firstOrNull()?.let { requirement ->
+            mutations += "topology" to graph.copy(
+                topologyRequirements = listOf(requirement.copy(subject = requirement.subject + ".mutation")) +
+                    graph.topologyRequirements.drop(1)
+            )
+        } ?: add("Reference graph has no topology requirement for mutation polarity.")
+        mutations.forEach { (facet, mutation) ->
+            if (CanonicalExecutionGraphDigestAuthority.digest(mutation) == baseline) {
+                add("Canonical semantic digest ignored the $facet mutation.")
+            }
+        }
+    }
+
+    private fun authorizationBindingErrors(): List<String> = buildList {
+        val unit = referenceUnit()
+        if (unit.validationBinding.graphDigest != unit.graphDigest.value) {
+            add("Compilation validation evidence is not bound to the canonical graph digest.")
+        }
+        if (unit.validationBinding.sourceSha256 != unit.source.sha256) {
+            add("Compilation validation evidence is not bound to the exact frontend bytes.")
+        }
+        val task = unit.graph.nodes.filterIsInstance<CanonicalTaskNode>().first()
+        val changed = unit.graph.replace(
+            task.copy(semantics = task.semantics.copy(
+                requiredCapabilities = task.semantics.requiredCapabilities + CanonicalCapabilityId("mutation.authorization")
+            ))
+        )
+        if (runCatching {
+                CanonicalExecutionGraphDigestAuthority.requireMatches(changed, unit.graphDigest)
+            }.isSuccess
+        ) {
+            add("Authorization evidence for one digest accepted changed graph meaning.")
+        }
+        unit.authorization.requireIntegrity()
+    }
+
+    private fun derivedViewErrors(): List<String> = buildList {
+        val unit = referenceUnit()
+        val projected = CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.bindings)
+        if (projected != unit.executionPlan) {
+            add("ExecutionPlan compatibility view is not graph-derived.")
+        }
+        if (ExecutionPlanCanonicalizer.canonicalize(projected) != unit.canonicalPlan) {
+            add("CanonicalExecutionPlan compatibility view is not derived from the graph-derived ExecutionPlan.")
+        }
+    }
+
+    private fun noPseudoGraphErrors(): List<String> = buildList {
+        val compilerSources = File(rootDir, COMPILER_DIR).walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .joinToString("\n") { it.readText() }
+        if ("org.flowlang.semantic.SemanticActionGraph" in compilerSources) {
+            add("Compiler authority imports the old notes-backed SemanticActionGraph.")
+        }
+        val requestSource = read(TARGET_SELECTION)
+        if ("SemanticActionGraph" in requestSource) {
+            add("Target materialization request imports the old notes-backed graph.")
+        }
+        if ("val authorization: CompilationAuthorization" !in requestSource ||
+            "authorization.executionPlan" !in requestSource
+        ) {
+            add("Target materialization request does not derive its plan from canonical graph authorization.")
+        }
+    }
+
+    private fun referenceUnit() = IntentYamlFrontend(
+        FlowCompilationService(ModuleRegistry.fromDirectory(File(rootDir, "modules")))
+    ).compile(File(rootDir, "examples/intent/build-test-deploy.intent.yaml")).requireAccepted()
+
+    private fun CanonicalExecutionGraph.replace(replacement: org.flowlang.compiler.CanonicalExecutionNode): CanonicalExecutionGraph =
+        copy(nodes = nodes.map { current -> if (current.id == replacement.id) replacement else current })
 
     private fun containsDirectCompilationComposition(source: String): Boolean {
         val imports = source.lineSequence()
@@ -225,9 +399,7 @@ class Ar01CompilerAxisConformanceChecks(
         var index = 0
         while (index < source.length) {
             when {
-                source.startsWith("//", index) -> {
-                    while (index < source.length && source[index] != '\n') index++
-                }
+                source.startsWith("//", index) -> while (index < source.length && source[index] != '\n') index++
                 source.startsWith("/*", index) -> {
                     var depth = 1
                     index += 2
@@ -250,13 +422,9 @@ class Ar01CompilerAxisConformanceChecks(
                     var escaped = false
                     while (index < source.length) {
                         val character = source[index++]
-                        if (escaped) {
-                            escaped = false
-                        } else if (character == '\\') {
-                            escaped = true
-                        } else if (character == '"') {
-                            break
-                        }
+                        if (escaped) escaped = false
+                        else if (character == '\\') escaped = true
+                        else if (character == '"') break
                     }
                     output.append(' ')
                 }
@@ -265,13 +433,9 @@ class Ar01CompilerAxisConformanceChecks(
                     var escaped = false
                     while (index < source.length) {
                         val character = source[index++]
-                        if (escaped) {
-                            escaped = false
-                        } else if (character == '\\') {
-                            escaped = true
-                        } else if (character == '\'') {
-                            break
-                        }
+                        if (escaped) escaped = false
+                        else if (character == '\\') escaped = true
+                        else if (character == '\'') break
                     }
                     output.append(' ')
                 }
@@ -310,8 +474,16 @@ class Ar01CompilerAxisConformanceChecks(
         const val INTENT_CONVERGENCE_CHECK = "architecture-recovery.ar-01.intent-frontend-convergence"
         const val DEPENDENCY_DIRECTION_CHECK = "architecture-recovery.ar-01.compiler-dependency-direction"
         const val PUBLIC_CONTRACT_FREEZE_CHECK = "architecture-recovery.ar-01.public-contract-freeze"
+        const val GRAPH_INTEGRITY_CHECK = "architecture-recovery.ar-01.canonical-graph-integrity"
+        const val DIGEST_DETERMINISM_CHECK = "architecture-recovery.ar-01.semantic-digest-determinism"
+        const val MUTATION_POLARITY_CHECK = "architecture-recovery.ar-01.graph-mutation-polarity"
+        const val AUTHORIZATION_BINDING_CHECK = "architecture-recovery.ar-01.authorization-digest-binding"
+        const val DERIVED_VIEW_CHECK = "architecture-recovery.ar-01.derived-view-consistency"
+        const val NO_PSEUDO_GRAPH_CHECK = "architecture-recovery.ar-01.no-pseudo-graph-bypass"
 
         private const val COMPILATION_SERVICE = "org.flowlang.compiler.FlowCompilationService"
+        private const val CANONICAL_GRAPH = "org.flowlang.compiler.CanonicalExecutionGraph"
+        private const val DERIVED_VIEWS = "ExecutionPlan+CanonicalExecutionPlan"
         private const val COMPILER_DIR = "src/main/kotlin/org/flowlang/compiler"
         private const val COMPILATION_CONTRACTS = "$COMPILER_DIR/CompilationContracts.kt"
         private const val FLOW_COMPILATION_SERVICE = "$COMPILER_DIR/FlowCompilationService.kt"
@@ -320,10 +492,19 @@ class Ar01CompilerAxisConformanceChecks(
         private const val STANDARD_CLI = "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt"
         private const val HONEST_CLI = "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
         private const val REFERENCE_SNAPSHOT = "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
+        private const val TARGET_SELECTION = "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt"
 
-        private val EXPECTED_COMPILER_FILES = setOf("CompilationContracts.kt", "FlowCompilationService.kt")
-        private val GRAPH_DECLARATION = Regex(
-            """\b(?:data\s+class|class|object|interface|typealias)\s+CanonicalExecutionGraph\b"""
+        private val EXPECTED_COMPILER_FILES = setOf(
+            "CompilationContracts.kt",
+            "FlowCompilationService.kt",
+            "CanonicalExecutionGraph.kt",
+            "CanonicalExecutionGraphBindings.kt",
+            "CanonicalExecutionGraphBuilder.kt",
+            "CanonicalExecutionGraphProjection.kt",
+            "CanonicalExecutionGraphPlanMappings.kt",
+            "CanonicalExecutionGraphValidator.kt",
+            "CanonicalExecutionGraphDigest.kt",
+            "CompilationAuthorization.kt"
         )
         private val DIRECT_PIPELINE_TERMS = listOf(
             "IntentYamlLoader.load(",
@@ -383,7 +564,7 @@ data class CompilerEntrypointInventory(
 
     companion object {
         const val PATH = "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
-        const val VERSION = "1.0"
+        const val VERSION = "2.0"
         private val KEYS = setOf(
             "version",
             "compositionRoot",
