@@ -31,7 +31,7 @@ value class CanonicalExecutionGraphDigest private constructor(val value: String)
 }
 
 /** Deterministic semantic identity. Projection and frontend evidence are absent by construction. */
-object CanonicalExecutionGraphDigestAuthority {
+object CanonicalExecutionGraphDigestComputer {
     fun digest(graph: CanonicalExecutionGraph): CanonicalExecutionGraphDigest =
         CanonicalExecutionGraphDigest.fromCanonicalBytes(
             canonicalGraph(graph).toByteArray(StandardCharsets.UTF_8)
@@ -113,9 +113,7 @@ object CanonicalExecutionGraphDigestAuthority {
             "semantics" to canonicalSemantics(node.semantics)
         )
         val specific = when (node) {
-            is CanonicalTaskNode -> listOf(
-                "resultName" to optional(node.resultName)
-            )
+            is CanonicalTaskNode -> listOf("resultName" to optional(node.resultName))
             is CanonicalApprovalNode -> listOf(
                 "mode" to atom(node.mode),
                 "message" to optional(node.message),
@@ -247,9 +245,7 @@ object CanonicalExecutionGraphDigestAuthority {
     )
 
     private fun record(type: String, vararg fields: Pair<String, String>): String {
-        val body = fields.joinToString(separator = "") { (name, value) ->
-            atom(name) + atom(value)
-        }
+        val body = fields.joinToString(separator = "") { (name, value) -> atom(name) + atom(value) }
         return atom(type) + atom(body)
     }
 
@@ -258,3 +254,7 @@ object CanonicalExecutionGraphDigestAuthority {
         return "$length:$value"
     }
 }
+
+/** Temporary source-compatibility alias; the production type deliberately does not masquerade as a cataloged Authority. */
+@Deprecated("Use CanonicalExecutionGraphDigestComputer")
+internal val CanonicalExecutionGraphDigestAuthority = CanonicalExecutionGraphDigestComputer
