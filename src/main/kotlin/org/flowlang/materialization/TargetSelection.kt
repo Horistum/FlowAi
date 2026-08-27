@@ -218,7 +218,7 @@ class TargetMaterializationRequest private constructor(
     val authorization: CompilationAuthorization
         get() = compilationAuthorization ?: compatibilityAuthorization.value
     val plan: ExecutionPlan
-        get() = compilationAuthorization?.executionPlan ?: requireNotNull(compatibilityPlan)
+        get() = if (compilationAuthorization != null) authorization.executionPlan else requireNotNull(compatibilityPlan)
     val graphDigest: String
         get() = authorization.graphDigest.value
     val target: String get() = selection.target
@@ -293,7 +293,7 @@ class TargetDiagnosticMaterializationRequest private constructor(
     val authorization: CompilationAuthorization
         get() = compilationAuthorization ?: compatibilityAuthorization.value
     val plan: ExecutionPlan
-        get() = compilationAuthorization?.executionPlan ?: requireNotNull(compatibilityPlan)
+        get() = if (compilationAuthorization != null) authorization.executionPlan else requireNotNull(compatibilityPlan)
     val graphDigest: String
         get() = authorization.graphDigest.value
     val target: String get() = selection.target
