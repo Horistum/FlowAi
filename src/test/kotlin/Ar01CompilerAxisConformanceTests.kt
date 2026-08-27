@@ -177,6 +177,7 @@ class Ar01CompilerAxisConformanceTests {
             "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt",
             "src/main/kotlin/org/flowlang/frontend/source/FlowSourceFrontend.kt",
             "src/main/kotlin/org/flowlang/frontend/intent/IntentYamlFrontend.kt",
+            "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt",
             STANDARD_CLI,
             HONEST_CLI,
             REFERENCE_SNAPSHOT,
