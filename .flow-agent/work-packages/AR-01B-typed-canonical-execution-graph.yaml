@@ -1,7 +1,7 @@
 version: "AR-01B"
 name: "Typed Canonical Execution Graph and Authority Cutover"
 type: "architecture-recovery-delivery"
-status: active
+status: validating
 stream: "architecture-recovery"
 parentWorkPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
 strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-01"
@@ -19,7 +19,7 @@ requiredOutcomes:
   - "CanonicalExecutionGraphDigest is deterministic across storage and map iteration order and changes for capability, dependency, effect, control and topology mutations."
   - "CompilationUnit contains source-bound validation evidence and one CompilationAuthorization for the exact graph digest."
   - "ExecutionPlan and CanonicalExecutionPlan are reconstructed from the graph plus an explicit compatibility-binding envelope and must equal the planner construction result before authorization is issued."
-  - "TargetMaterializationRequest and diagnostic requests carry CompilationAuthorization and expose only its graph-derived ExecutionPlan compatibility view."
+  - "Product TargetMaterializationRequest and diagnostic requests carry CompilationAuthorization and expose its graph-derived ExecutionPlan compatibility view. Inventoried compatibility fixtures retain the raw plan only until the legacy planning-evidence validator runs, then the manifest pipeline requires the same graph build, validation, digest and parity gate before a provider can observe the plan."
   - "The notes-backed SemanticActionGraph cannot be imported or treated as compiler or target-materialization authority."
   - "Intent 2.0, AST 2.2, Execution Plan 2.4, lowering evidence 2.1, Target Manifest 3.0 and Target Registry 3.2 remain frozen."
 
@@ -37,6 +37,7 @@ productionBoundary:
     - "src/main/kotlin/org/flowlang/compiler/CompilationContracts.kt"
     - "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
     - "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
   evidence:
     - "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
     - "architecture-recovery/conformance/check-inventory.yaml"
@@ -47,7 +48,7 @@ requiredTests:
   - "Digest ignores implementation binding and storage order but observes all owned semantic facets."
   - "Duplicate nodes, dangling membership, dangling dependencies, contradictory controls and ordering cycles fail graph validation."
   - "Evidence bound to one graph digest cannot authorize a mutated graph."
-  - "Compilation-scoped and inventoried compatibility materialization ingress both pass through graph authorization."
+  - "Compilation-scoped materialization is source-bound; inventoried compatibility materialization preserves established invalid-plan diagnostics and is graph-authorized after that validation boundary."
   - "Old notes-backed SemanticActionGraph is absent from compiler and materialization request authority."
 
 conformanceChecks:
@@ -66,7 +67,15 @@ nonGoals:
 
 lifecycle:
   implementationBoundary:
-    status: pending
+    status: passed
+    exactHead: "e851feec22164718e618482d57885a0e4b0c8349"
+    syntheticMergeCandidate: "5e558b37e6c67e28e7d825d4083cc8d3a98721c0"
+    workflowRunId: 33107645241
+    workflowRunNumber: 3120
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, complete compilation and tests, and standalone conformance passed after the manifest pipeline was rebound to validated graph authorization."
+      - "Synthetic merge-candidate Flow Agent validation, complete compilation and tests, and standalone conformance passed against main 6bab183684c2bade78163731b48ab65ed4d75909."
   validationBoundary:
     status: pending
   completionBoundary:
