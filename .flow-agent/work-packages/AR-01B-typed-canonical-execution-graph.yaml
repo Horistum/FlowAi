@@ -1,7 +1,7 @@
 version: "AR-01B"
 name: "Typed Canonical Execution Graph and Authority Cutover"
 type: "architecture-recovery-delivery"
-status: validating
+status: complete
 stream: "architecture-recovery"
 parentWorkPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
 strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-01"
@@ -77,6 +77,14 @@ lifecycle:
       - "Exact-head Flow Agent validation, complete compilation and tests, and standalone conformance passed after the manifest pipeline was rebound to validated graph authorization."
       - "Synthetic merge-candidate Flow Agent validation, complete compilation and tests, and standalone conformance passed against main 6bab183684c2bade78163731b48ab65ed4d75909."
   validationBoundary:
-    status: pending
+    status: passed
+    exactHead: "a3ddadf36970f67a6d597b808a2fc2f64f3d4965"
+    syntheticMergeCandidate: "b054003f19df727e231b10e58e470781e6718560"
+    workflowRunId: 33108457513
+    workflowRunNumber: 3121
+    conclusion: success
+    evidence:
+      - "Exact-head complete tests and standalone conformance independently revalidated the implementation-boundary evidence recorded by the preceding commit."
+      - "Synthetic merge-candidate complete tests and standalone conformance independently revalidated the graph-authority cutover against current main."
   completionBoundary:
     status: pending
