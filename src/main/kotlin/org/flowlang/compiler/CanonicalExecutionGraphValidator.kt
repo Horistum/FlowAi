@@ -1,6 +1,10 @@
 package org.flowlang.compiler
 
-import org.flowlang.controls.ControlDecisionAuthority
+import org.flowlang.controls.ControlDecision
+import org.flowlang.controls.ControlDecisionStatus
+import org.flowlang.controls.ControlEvidenceStatus
+import org.flowlang.controls.ControlRequirementScopeKind
+import org.flowlang.controls.ControlRequirementSource
 
 data class CanonicalExecutionGraphIssue(
     val code: String,
@@ -289,28 +293,65 @@ object CanonicalExecutionGraphValidator {
         issues: MutableList<CanonicalExecutionGraphIssue>
     ) {
         val graph = build.graph
-        graph.controlRequirements.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { id ->
+        val duplicateRequirements = graph.controlRequirements.groupBy { it.id }.filterValues { it.size > 1 }.keys
+        duplicateRequirements.forEach { id ->
             issues += issue("graph.control.requirement.duplicate", "controlRequirements.$id", "Control requirement '$id' is declared more than once.")
         }
-        graph.controlEvidence.groupBy { it.requirementId }.filterValues { it.size > 1 }.keys.forEach { id ->
+        val duplicateEvidence = graph.controlEvidence.groupBy { it.requirementId }.filterValues { it.size > 1 }.keys
+        duplicateEvidence.forEach { id ->
             issues += issue("graph.control.evidence.duplicate", "controlEvidence.$id", "Control requirement '$id' has more than one evidence record.")
         }
         val requirements = graph.controlRequirements.map { it.id }.toSet()
-        graph.controlEvidence.filter { it.requirementId !in requirements }.forEach { evidence ->
+        val danglingEvidence = graph.controlEvidence.filter { it.requirementId !in requirements }
+        danglingEvidence.forEach { evidence ->
             issues += issue("graph.control.evidence.dangling", "controlEvidence.${evidence.requirementId}", "Control evidence references unknown requirement '${evidence.requirementId}'.")
         }
-        val expectedDecision = runCatching {
-            ControlDecisionAuthority.evaluate(graph.controlRequirements, graph.controlEvidence)
-        }.getOrElse { failure ->
-            issues += issue("graph.control.contradictory", "controlDecision", failure.message ?: failure.javaClass.simpleName)
-            return
+        graph.controlRequirements.filter { requirement ->
+            requirement.source == ControlRequirementSource.CANONICAL_CAPABILITY &&
+                requirement.scope.kind == ControlRequirementScopeKind.INTENT
+        }.forEach { requirement ->
+            issues += issue(
+                "graph.control.scope.contradictory",
+                "controlRequirements.${requirement.id}.scope",
+                "Capability-only control requirement '${requirement.id}' must retain authored operation scope."
+            )
         }
+        if (duplicateRequirements.isNotEmpty() || duplicateEvidence.isNotEmpty() || danglingEvidence.isNotEmpty()) return
+
+        val expectedDecision = deriveControlDecision(graph)
         if (build.bindings.planMetadata.controlDecision != expectedDecision) {
             issues += issue(
                 "graph.control.decision.drift",
                 "controlDecision",
                 "Control decision must be derived from the exact graph requirements and evidence."
             )
+        }
+    }
+
+    /** Independent consistency oracle; it intentionally does not call the planning Authority. */
+    private fun deriveControlDecision(graph: CanonicalExecutionGraph): ControlDecision {
+        val evidenceById = graph.controlEvidence.associateBy { it.requirementId }
+        val blocking = mutableListOf<String>()
+        val pending = mutableListOf<String>()
+        graph.controlRequirements.forEach { requirement ->
+            when (evidenceById[requirement.id]?.status ?: ControlEvidenceStatus.UNKNOWN) {
+                ControlEvidenceStatus.SATISFIED -> Unit
+                ControlEvidenceStatus.UNSATISFIED,
+                ControlEvidenceStatus.UNKNOWN -> blocking += requirement.id
+                ControlEvidenceStatus.DYNAMIC -> pending += requirement.id
+            }
+        }
+        return when {
+            blocking.isNotEmpty() -> ControlDecision(
+                status = ControlDecisionStatus.BLOCKED,
+                blockingRequirementIds = blocking.sorted(),
+                pendingRequirementIds = pending.sorted()
+            )
+            pending.isNotEmpty() -> ControlDecision(
+                status = ControlDecisionStatus.PENDING,
+                pendingRequirementIds = pending.sorted()
+            )
+            else -> ControlDecision(ControlDecisionStatus.ALLOWED)
         }
     }
 
