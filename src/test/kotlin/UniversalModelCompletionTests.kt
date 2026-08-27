@@ -271,6 +271,7 @@ class UniversalModelCompletionTests {
         val honestCli = File("src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt").readText()
         val authority = File("src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt").readText()
         val pipeline = File("src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt").readText()
+        val requestBoundary = File("src/main/kotlin/org/flowlang/materialization/TargetSelection.kt").readText()
         val loader = Thread.currentThread().contextClassLoader
 
         assertTrue(
@@ -285,7 +286,16 @@ class UniversalModelCompletionTests {
         assertContains(honestCli, "CliTargetEvidenceAuthority")
         assertContains(honestCli, "TargetSelectionAuthority.fromCliOption")
         assertContains(authority, "TargetManifestGenerationPipeline")
-        assertContains(authority, "pipeline.generate(TargetMaterializationRequest")
+        assertContains(authority, "fun evaluate(\n        compilation: CompilationUnit")
+        assertContains(authority, "TargetMaterializationRequest.fromCompilation")
+        assertContains(authority, "TargetMaterializationRequest.fromCompatibilityPlan")
+        assertContains(authority, "TargetDiagnosticMaterializationRequest.fromCompilation")
+        assertContains(authority, "TargetDiagnosticMaterializationRequest.fromCompatibilityPlan")
+        assertContains(authority, "pipeline.generate(materializationRequest())")
+        assertFalse(authority.contains("pipeline.generate(TargetMaterializationRequest("))
+        assertContains(requestBoundary, "fun fromCompilation(")
+        assertContains(requestBoundary, "internal fun fromCompatibilityPlan(")
+        assertContains(requestBoundary, "CanonicalExecutionGraphGate.authorizeCompatibilityPlan")
         assertContains(pipeline, "fun generate(request: TargetMaterializationRequest)")
         assertContains(pipeline, "fun generateDiagnosticEvidence(")
         assertFalse(pipeline.contains("plan: ExecutionPlan,\n        target: String"))
