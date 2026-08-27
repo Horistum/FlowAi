@@ -27,6 +27,7 @@ import org.flowlang.capabilities.TargetDecisionTraceAnalyzer
 import org.flowlang.capabilities.TargetDecisionTraceReport
 import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.capabilities.TargetSelectionReport
+import org.flowlang.compiler.CompilationUnit
 import org.flowlang.generators.manifest.TargetCompatibilityReadinessAnalyzer
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
@@ -84,18 +85,14 @@ data class CliTargetEvidence(
 )
 
 /**
- * Produces one coherent CLI evidence set from one plan and one concrete manifest.
+ * Produces one coherent CLI evidence set from one graph-authorized compilation
+ * or one explicitly inventoried compatibility-plan fixture.
  *
- * Expected target incompatibility is represented as diagnostic manifest evidence,
- * not an exception. Structurally invalid or internally inconsistent plans still
- * fail, because diagnostic fallback must not become a bypass around materialization
- * integrity.
- *
- * Target-neutral planning authorization is necessary but not sufficient. Adapter
- * authorities independently prove concrete control mechanisms, producer-to-
- * consumer continuity, trigger delivery semantics and final artifact rendering.
- * Platform capability folklore, registry summary flags and syntactic validity are
- * never accepted as implementation evidence.
+ * Product callers must use the [CompilationUnit] overload so source-bound graph
+ * authorization survives all the way to manifest projection. The plan overload
+ * remains for conformance and mutation fixtures that have no authored source
+ * envelope; the manifest pipeline still performs its graph validation, digest
+ * and parity gate before a provider sees those plans.
  */
 class CliTargetEvidenceAuthority(
     private val targets: Map<String, TargetCapability>,
@@ -109,10 +106,57 @@ class CliTargetEvidenceAuthority(
     private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
 
     fun evaluate(
+        compilation: CompilationUnit,
+        explicitSelection: ExplicitTargetSelection,
+        strict: Boolean,
+        renderRequested: Boolean
+    ): CliTargetEvidence = evaluate(
+        plan = compilation.executionPlan,
+        explicitSelection = explicitSelection,
+        strict = strict,
+        renderRequested = renderRequested,
+        materializationRequest = {
+            TargetMaterializationRequest.fromCompilation(compilation, explicitSelection, strict)
+        },
+        diagnosticRequest = {
+            TargetDiagnosticMaterializationRequest.fromCompilation(compilation, explicitSelection)
+        }
+    )
+
+    fun evaluate(
         plan: ExecutionPlan,
         explicitSelection: ExplicitTargetSelection,
         strict: Boolean,
         renderRequested: Boolean
+    ): CliTargetEvidence = evaluate(
+        plan = plan,
+        explicitSelection = explicitSelection,
+        strict = strict,
+        renderRequested = renderRequested,
+        materializationRequest = {
+            TargetMaterializationRequest.fromCompatibilityPlan(
+                plan = plan,
+                selection = explicitSelection,
+                strict = strict,
+                evidenceId = explicitSelection.evidence.source
+            )
+        },
+        diagnosticRequest = {
+            TargetDiagnosticMaterializationRequest.fromCompatibilityPlan(
+                plan = plan,
+                selection = explicitSelection,
+                evidenceId = explicitSelection.evidence.source
+            )
+        }
+    )
+
+    private fun evaluate(
+        plan: ExecutionPlan,
+        explicitSelection: ExplicitTargetSelection,
+        strict: Boolean,
+        renderRequested: Boolean,
+        materializationRequest: () -> TargetMaterializationRequest,
+        diagnosticRequest: () -> TargetDiagnosticMaterializationRequest
     ): CliTargetEvidence {
         val target = explicitSelection.target
         require(target in targets) {
@@ -130,7 +174,7 @@ class CliTargetEvidenceAuthority(
             val controlAssessment = controlAuthority.requireMatched(plan, target)
             val continuityAssessment = continuityAuthority.requireMatched(plan, target)
             val triggerAssessment = triggerAuthority.requireMatched(plan, target)
-            val generated = pipeline.generate(TargetMaterializationRequest(plan, explicitSelection, strict))
+            val generated = pipeline.generate(materializationRequest())
             val withControls = controlAuthority.reconcileDiagnostic(generated, controlAssessment)
             val withContinuity = continuityAuthority.reconcileDiagnostic(withControls, continuityAssessment)
             triggerAuthority.reconcileDiagnostic(withContinuity, triggerAssessment)
@@ -143,7 +187,7 @@ class CliTargetEvidenceAuthority(
                 message = failure.message ?: "Target materialization is not executable; diagnostic evidence was generated.",
                 causeType = failure::class.simpleName
             )
-            val diagnostic = pipeline.generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest(plan, explicitSelection))
+            val diagnostic = pipeline.generateDiagnosticEvidence(diagnosticRequest())
             val controlAssessment = when (failure) {
                 is UnresolvedAdapterControlMaterializationException -> failure.assessment
                 else -> controlAuthority.assess(plan, target)
