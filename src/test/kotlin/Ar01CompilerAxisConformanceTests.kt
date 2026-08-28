@@ -77,6 +77,28 @@ class Ar01CompilerAxisConformanceTests {
     }
 
     @Test
+    fun directReviewedProposalReviewBypassFailsConvergence() {
+        val root = copiedFixture()
+        val cli = File(root, HONEST_CLI)
+        cli.writeText(
+            cli.readText().replace(
+                "ReviewedAiProposalFrontend(FlowCompilationService(registry))",
+                "IntentProposalReview(registry)"
+            )
+        )
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.REVIEWED_AI_CONVERGENCE_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(
+            check.message.orEmpty().contains("does not route through") ||
+                check.message.orEmpty().contains("outside FlowCompilationService") ||
+                check.message.orEmpty().contains("direct compiler-stage"),
+            check.message
+        )
+    }
+
+    @Test
     fun compilerImportingConcreteTargetLayerFailsDirectionCheck() {
         val root = copiedFixture()
         val service = File(root, FLOW_COMPILATION_SERVICE)
@@ -124,6 +146,27 @@ class Ar01CompilerAxisConformanceTests {
         assertEquals(false, check.passed)
         assertTrue(check.message.orEmpty().contains("IntentCompilationInput("), check.message)
         assertTrue(check.message.orEmpty().contains("IntentBypass.kt"), check.message)
+    }
+
+    @Test
+    fun reviewedProposalInputConstructedOutsideItsFrontendFailsDirectionCheck() {
+        val root = copiedFixture()
+        File(root, "src/main/kotlin/org/flowlang/product/AiProposalBypass.kt").apply {
+            parentFile.mkdirs()
+            writeText(
+                """
+                package org.flowlang.product
+
+                fun bypass() = ReviewedAiProposalCompilationInput(source, providerId, request, response)
+                """.trimIndent()
+            )
+        }
+
+        val check = Ar01CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == Ar01CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(check.message.orEmpty().contains("ReviewedAiProposalCompilationInput("), check.message)
+        assertTrue(check.message.orEmpty().contains("AiProposalBypass.kt"), check.message)
     }
 
     @Test
@@ -177,6 +220,8 @@ class Ar01CompilerAxisConformanceTests {
             "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt",
             "src/main/kotlin/org/flowlang/frontend/source/FlowSourceFrontend.kt",
             "src/main/kotlin/org/flowlang/frontend/intent/IntentYamlFrontend.kt",
+            "src/main/kotlin/org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt",
+            "src/main/kotlin/org/flowlang/ai/normalization/IntentProposalReview.kt",
             "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt",
             STANDARD_CLI,
             HONEST_CLI,

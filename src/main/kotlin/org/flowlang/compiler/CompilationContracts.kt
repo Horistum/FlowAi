@@ -5,6 +5,10 @@ import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import org.flowlang.ai.normalization.AiIntentRequest
+import org.flowlang.ai.normalization.AiIntentResponse
+import org.flowlang.ai.normalization.IntentProposalDecision
+import org.flowlang.ai.normalization.IntentProposalReviewEvidence
 import org.flowlang.ast.FlowDocument
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentValidationReport
@@ -114,6 +118,23 @@ internal object CompilationSourceCapture {
         )
     }
 
+    /** Captures a frontend-owned immutable value together with its exact serialized source view. */
+    fun <T> captureBytes(
+        bytes: ByteArray,
+        identity: String,
+        sourceName: String,
+        frontend: CompilationFrontend,
+        value: T
+    ): CapturedCompilationSource<T> = CapturedCompilationSource(
+        source = CompilationSource.fromBytes(
+            frontend = frontend,
+            identity = identity,
+            bytes = bytes,
+            sourceName = sourceName
+        ),
+        value = value
+    )
+
     private fun decodeUtf8(bytes: ByteArray, identity: String): String {
         val decoder = StandardCharsets.UTF_8.newDecoder()
             .onMalformedInput(CodingErrorAction.REPORT)
@@ -143,16 +164,24 @@ internal data class IntentCompilationInput(
     val intent: IntentDocument
 ) : CompilationInput {
     init {
-        require(source.frontend in INTENT_FRONTENDS) {
-            "Intent input requires INTENT_YAML or REVIEWED_AI_PROPOSAL provenance, found ${source.frontend}."
+        require(source.frontend == CompilationFrontend.INTENT_YAML) {
+            "Intent YAML input requires INTENT_YAML provenance, found ${source.frontend}."
         }
     }
+}
 
-    private companion object {
-        val INTENT_FRONTENDS = setOf(
-            CompilationFrontend.INTENT_YAML,
-            CompilationFrontend.REVIEWED_AI_PROPOSAL
-        )
+internal data class ReviewedAiProposalCompilationInput(
+    override val source: CompilationSource,
+    val providerId: String,
+    val request: AiIntentRequest,
+    val response: AiIntentResponse
+) : CompilationInput {
+    init {
+        require(source.frontend == CompilationFrontend.REVIEWED_AI_PROPOSAL) {
+            "Reviewed AI proposal input requires REVIEWED_AI_PROPOSAL provenance, found ${source.frontend}."
+        }
+        require(providerId.isNotBlank()) { "Reviewed AI proposal provider id must not be blank." }
+        require(request.userText.isNotBlank()) { "Reviewed AI proposal request text must not be blank." }
     }
 }
 
@@ -170,16 +199,50 @@ data class FlowSourceCompilationEvidence(
     }
 }
 
+sealed interface IntentCompilationEvidence : FrontendCompilationEvidence {
+    val intent: IntentDocument
+    val validation: IntentValidationReport
+}
+
 data class IntentFrontendCompilationEvidence(
     override val source: CompilationSource,
-    val intent: IntentDocument,
-    val validation: IntentValidationReport
-) : FrontendCompilationEvidence {
+    override val intent: IntentDocument,
+    override val validation: IntentValidationReport
+) : IntentCompilationEvidence {
     init {
-        require(source.frontend in setOf(CompilationFrontend.INTENT_YAML, CompilationFrontend.REVIEWED_AI_PROPOSAL)) {
-            "Intent evidence requires Intent frontend provenance."
+        require(source.frontend == CompilationFrontend.INTENT_YAML) {
+            "Intent YAML evidence requires INTENT_YAML provenance."
         }
-        require(validation.valid) { "Accepted Intent frontend evidence must contain a valid Intent report." }
+        require(validation.valid) { "Accepted Intent YAML evidence must contain a valid Intent report." }
+    }
+}
+
+data class ReviewedAiProposalCompilationEvidence(
+    override val source: CompilationSource,
+    val providerId: String,
+    val request: AiIntentRequest,
+    val response: AiIntentResponse,
+    val review: IntentProposalReviewEvidence,
+    override val validation: IntentValidationReport
+) : IntentCompilationEvidence {
+    override val intent: IntentDocument get() = response.normalizedIntent
+
+    init {
+        require(source.frontend == CompilationFrontend.REVIEWED_AI_PROPOSAL) {
+            "Reviewed AI proposal evidence requires REVIEWED_AI_PROPOSAL provenance."
+        }
+        require(providerId.isNotBlank()) { "Reviewed AI proposal evidence must name its provider." }
+        require(request.userText.isNotBlank()) { "Reviewed AI proposal evidence must retain its request text." }
+        require(review.accepted && review.decision is IntentProposalDecision.Accepted) {
+            "Accepted compilation cannot carry rejected AI proposal review evidence."
+        }
+        require(review.intent == intent) {
+            "AI proposal review evidence does not describe the normalized intent being compiled."
+        }
+        require(review.validation == validation) {
+            "AI proposal review and shared compiler validation reports differ."
+        }
+        require(validation.valid) { "Accepted reviewed AI proposal evidence must contain a valid Intent report." }
     }
 }
 
@@ -188,7 +251,8 @@ enum class CompilationStage {
     INTENT_LOWERING,
     FLOW_VALIDATION,
     PLANNING,
-    CANONICALIZATION
+    CANONICALIZATION,
+    PROPOSAL_REVIEW
 }
 
 enum class CompilationDiagnosticSeverity {
@@ -222,12 +286,28 @@ data class CompilationRejection(
     val intent: IntentDocument? = null,
     val intentValidation: IntentValidationReport? = null,
     val ast: FlowDocument? = null,
-    val flowValidation: ValidationReport? = null
+    val flowValidation: ValidationReport? = null,
+    val proposal: AiIntentResponse? = null,
+    val proposalReview: IntentProposalReviewEvidence? = null
 ) {
     init {
         require(diagnostics.isNotEmpty()) { "Rejected compilation must expose at least one diagnostic." }
         require(diagnostics.any { it.severity == CompilationDiagnosticSeverity.ERROR }) {
             "Rejected compilation must expose at least one error diagnostic."
+        }
+        when (source.frontend) {
+            CompilationFrontend.REVIEWED_AI_PROPOSAL -> {
+                require(proposal != null && proposalReview != null && intent != null && intentValidation != null) {
+                    "Reviewed AI proposal rejection must retain proposal, review, Intent and validation evidence."
+                }
+                require(proposal.normalizedIntent == intent && proposalReview.intent == intent) {
+                    "AI proposal rejection evidence must describe the rejected intent exactly."
+                }
+            }
+            CompilationFrontend.FLOW_SOURCE,
+            CompilationFrontend.INTENT_YAML -> require(proposal == null && proposalReview == null) {
+                "Non-AI compilation rejection cannot carry AI proposal-review evidence."
+            }
         }
     }
 }
@@ -260,9 +340,16 @@ class CompilationUnit private constructor(
             CompilationFrontend.FLOW_SOURCE -> require(frontendEvidence is FlowSourceCompilationEvidence) {
                 "FLOW_SOURCE compilation requires Flow Source evidence."
             }
-            CompilationFrontend.INTENT_YAML,
-            CompilationFrontend.REVIEWED_AI_PROPOSAL -> require(frontendEvidence is IntentFrontendCompilationEvidence) {
-                "Intent compilation requires Intent frontend evidence."
+            CompilationFrontend.INTENT_YAML -> require(frontendEvidence is IntentFrontendCompilationEvidence) {
+                "INTENT_YAML compilation requires Intent YAML evidence."
+            }
+            CompilationFrontend.REVIEWED_AI_PROPOSAL -> {
+                require(frontendEvidence is ReviewedAiProposalCompilationEvidence) {
+                    "REVIEWED_AI_PROPOSAL compilation requires reviewed proposal evidence."
+                }
+                require(validationBinding.proposalReviewValid == true) {
+                    "Reviewed AI proposal authorization must bind successful proposal review."
+                }
             }
         }
         require(validation.valid) { "CompilationUnit cannot contain an invalid Flow validation report." }
@@ -278,9 +365,23 @@ class CompilationUnit private constructor(
         authorization.requireIntegrity()
     }
 
+    /**
+     * Source-compatible strict Intent YAML accessor retained for existing product
+     * and conformance consumers. Reviewed AI proposals deliberately use their
+     * own typed accessor so proposal-review evidence cannot be erased by an
+     * overly broad cast at the trust boundary.
+     */
     fun requireIntentEvidence(): IntentFrontendCompilationEvidence =
         frontendEvidence as? IntentFrontendCompilationEvidence
-            ?: error("Compilation source ${source.frontend} does not carry Intent frontend evidence.")
+            ?: error("Compilation source ${source.frontend} does not carry strict Intent YAML evidence.")
+
+    fun requireIntentCompilationEvidence(): IntentCompilationEvidence =
+        frontendEvidence as? IntentCompilationEvidence
+            ?: error("Compilation source ${source.frontend} does not carry Intent compilation evidence.")
+
+    fun requireReviewedAiProposalEvidence(): ReviewedAiProposalCompilationEvidence =
+        frontendEvidence as? ReviewedAiProposalCompilationEvidence
+            ?: error("Compilation source ${source.frontend} does not carry reviewed AI proposal evidence.")
 
     companion object {
         internal fun from(
@@ -290,10 +391,12 @@ class CompilationUnit private constructor(
             validation: ValidationReport,
             plannerPlan: ExecutionPlan
         ): CompilationUnit {
-            val intentValidation = (frontendEvidence as? IntentFrontendCompilationEvidence)?.validation
-            val authorization = CanonicalExecutionGraphAuthority.authorizeCompilation(
+            val intentValidation = (frontendEvidence as? IntentCompilationEvidence)?.validation
+            val proposalReview = (frontendEvidence as? ReviewedAiProposalCompilationEvidence)?.review
+            val authorization = CanonicalExecutionGraphGate.authorizeCompilation(
                 source = source,
                 intentValidation = intentValidation,
+                proposalReview = proposalReview,
                 flowValidation = validation,
                 plannerPlan = plannerPlan
             )
@@ -327,6 +430,7 @@ private fun CompilationRejection.message(): String =
 fun CompilationResult.requireAccepted(): CompilationUnit = when (this) {
     is CompilationResult.Accepted -> unit
     is CompilationResult.Rejected -> when (rejection.stage) {
+        CompilationStage.PROPOSAL_REVIEW,
         CompilationStage.FLOW_VALIDATION -> throw IllegalArgumentException(rejection.message())
         CompilationStage.INTENT_VALIDATION,
         CompilationStage.INTENT_LOWERING,

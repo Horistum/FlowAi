@@ -47,51 +47,48 @@ implementationStrategy:
     postCutoverAuthority: "CanonicalExecutionGraph becomes the sole authority; production constructors that independently create ExecutionPlan or canonical semantics are removed or made graph-derived in the same bounded transition."
 
 currentDeliverySlice:
-  id: "AR-01-IFC-01"
-  name: "Intent Frontend Convergence"
-  status: "validating"
-  relationToActivatedSlices: "This reviewable delivery slice establishes the AR-01A compiler-entrypoint inventory and the Flow Source plus Intent YAML portion of AR-01C. It deliberately does not reuse or claim the activated AR-01B Typed Canonical Execution Graph identity; graph authority, semantic digest and authorization cutover remain later boundaries."
+  id: "AR-01C"
+  name: "Reviewed AI Proposal Frontend Convergence"
+  status: "implementing"
+  workPackage: ".flow-agent/work-packages/AR-01C-reviewed-ai-proposal-frontend-convergence.yaml"
+  relationToCompletedSlices: "AR-01-IFC-01 established the Flow Source and Intent YAML compiler entrypoints, and AR-01B completed typed graph authority plus digest-bound materialization. AR-01C closes the final deferred product frontend without reopening either completed boundary."
   outcomes:
-    - "Introduce FlowCompilationService as the sole product orchestration boundary for Flow Source and strict Intent YAML parsing results, Intent validation, lowering, Flow validation, planning and canonical compatibility projection."
-    - "Introduce CompilationUnit with exact source-byte provenance, typed frontend evidence, Flow AST, validation, current ExecutionPlan authority and its derived CanonicalExecutionPlan view."
-    - "Route the user-facing Flow Source and strict Intent YAML CLI commands plus canonical reference snapshot generation through the same compiler service. Reviewed AI normalization and independent conformance oracles remain explicitly inventoried as deferred."
-    - "Publish a machine-readable entrypoint inventory that separates product composition roots from intentionally independent conformance and mutation oracles."
-    - "Parse and hash one exact source-byte capture, reject invalid UTF-8, frontend/provenance mismatches and invalid Intent or Flow meaning before planning can produce an accepted CompilationUnit."
-    - "Preserve Intent 2.0, AST 2.2, Execution Plan 2.4, lowering evidence 2.1, Target Manifest 3.0 and Target Registry 3.2 without target-support changes."
+    - "Introduce ReviewedAiProposalFrontend as the only product ingress for normalized provider proposals."
+    - "Retain provider identity, exact typed request, complete response and independently re-derived review evidence in CompilationUnit provenance."
+    - "Route proposal review, Intent validation, lowering, Flow validation, planning, canonical graph construction and authorization through FlowCompilationService."
+    - "Remove the normalize command's direct validator-planner composition and use source-bound CompilationUnit materialization."
+    - "Prove equivalent Intent YAML and reviewed AI proposal meaning has one canonical graph and digest while provider metadata changes only provenance."
+    - "Preserve Intent 2.0, AST 2.2, Execution Plan 2.4, lowering evidence 2.1, Target Manifest 3.0 and Target Registry 3.2."
   currentAuthority:
-    execution: "ExecutionPlan"
-    derivedView: "CanonicalExecutionPlan"
-    rule: "CanonicalExecutionPlan is emitted from the accepted CompilationUnit but cannot authorize materialization independently. CanonicalExecutionGraph has not yet taken authority in this delivery slice."
-  independentOracleBoundary:
-    rule: "Conformance-only semantic and mutation oracles may compose current authorities directly while ExecutionPlan remains the baseline. They are explicitly inventoried, cannot become user-facing compiler roots and cannot repair or widen product compiler output."
+    execution: "CanonicalExecutionGraph"
+    derivedViews:
+      - "ExecutionPlan"
+      - "CanonicalExecutionPlan"
+    rule: "Every accepted product frontend must produce source-bound CompilationAuthorization for the exact graph digest before materialization."
+  proposalReviewBoundary:
+    rule: "Provider self-reports are retained as provenance but cannot authorize lowering. FlowCompilationService re-derives proposal review and the shared Intent validation report from the normalized IntentDocument."
     evidence: "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
   productionFiles:
+    - "src/main/kotlin/org/flowlang/ai/normalization/IntentProposalReview.kt"
+    - "src/main/kotlin/org/flowlang/ai/normalization/RuleBasedIntentNormalizer.kt"
+    - "src/main/kotlin/org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt"
     - "src/main/kotlin/org/flowlang/compiler/CompilationContracts.kt"
     - "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
-    - "src/main/kotlin/org/flowlang/frontend/source/FlowSourceFrontend.kt"
-    - "src/main/kotlin/org/flowlang/frontend/intent/IntentYamlFrontend.kt"
-    - "src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt"
-    - "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt"
     - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
-    - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
-    - "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt"
-    - "src/main/kotlin/org/flowlang/conformance/TargetNeutralConformanceFixture.kt"
-    - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt"
     - "src/main/kotlin/org/flowlang/conformance/Ar01CompilerAxisConformanceChecks.kt"
-    - "src/main/kotlin/org/flowlang/conformance/ArchitectureRecoveryConformanceChecks.kt"
     - "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
     - "architecture-recovery/conformance/check-inventory.yaml"
   testFiles:
-    - "src/test/kotlin/FlowCompilationServiceTests.kt"
-    - "src/test/kotlin/IntentFrontendConvergenceTests.kt"
+    - "tests/FlowIntentProposalReviewTests.kt"
+    - "src/test/kotlin/ReviewedAiProposalFrontendConvergenceTests.kt"
+    - "src/test/kotlin/ReviewedAiProposalCliConvergenceTests.kt"
     - "src/test/kotlin/Ar01CompilerAxisConformanceTests.kt"
   deferred:
-    - "Typed CanonicalExecutionGraph construction, validation, digest and semantic mutation polarity."
-    - "Digest-bound validation and materialization authorization."
-    - "Reviewed AI proposal convergence and provider provenance."
-    - "ExecutionPlan authority cutover and graph-derived TargetManifest input."
-    - "Concrete adapter extraction or target-support promotion."
-  completionGate: "A distinct implementation boundary must pass exact-head and synthetic merge-candidate compilation, complete tests and standalone conformance. A later validation boundary must independently prove legacy parity, mutation polarity, bypass rejection and frozen public artifacts before this delivery slice is complete."
+    - "AR-01D derivation cleanup and retirement of remaining superseded compatibility or architecture-obligation authority."
+    - "AR-02 flow-sensitive branch value lattices, phi nodes and multi-workflow execution."
+    - "AR-03 concrete adapter extraction and any target-maturity promotion."
+  completionGate: "Distinct implementation, validation and completion heads must each pass exact-head and synthetic merge-candidate Flow CI, complete tests and standalone conformance. The final evidence-bearing head must contain no temporary workflow or direct reviewed-AI compiler bypass."
 
 implementationSlices:
   - id: "AR-01A"
@@ -285,5 +282,5 @@ lifecycle:
     status: pending
 
 localValidation:
-  status: implementation-passed
-  rule: "The activation and bounded implementation boundaries passed independently. AR-01-IFC-01 is now validating; the typed CanonicalExecutionGraph, reviewed AI proposal convergence, digest-bound authorization and the full AR-01 completion boundary remain pending."
+  status: ar-01c-implementing
+  rule: "AR-01-IFC-01 and AR-01B completed the existing frontend entrypoints and graph-authority cutover. AR-01C now converges the final reviewed AI proposal product path; AR-01D and the full AR-01 completion boundary remain pending."

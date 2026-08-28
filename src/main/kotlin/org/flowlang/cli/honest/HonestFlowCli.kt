@@ -6,8 +6,6 @@ import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.ai.normalization.AiIntentContext
 import org.flowlang.ai.normalization.AiIntentRequest
-import org.flowlang.ai.normalization.IntentProposalDecision
-import org.flowlang.ai.normalization.IntentProposalReview
 import org.flowlang.ai.normalization.NormalizationMode
 import org.flowlang.ai.normalization.ScenarioPackIntentNormalizer
 import org.flowlang.artifacts.ArtifactIntegrityAnalyzer
@@ -23,19 +21,18 @@ import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.cli.Json
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
+import org.flowlang.frontend.ai.ReviewedAiProposal
+import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
 import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.generators.manifest.TargetRenderMode
-import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDecisionAnalyzer
 import org.flowlang.intent.IntentDesignAnalyzer
-import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.materialization.MissingExplicitTargetSelectionException
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.materialization.TargetSelectionDecision
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.ExecutionPlanCanonicalizer
-import org.flowlang.planner.FlowPlanner
 import org.flowlang.release.ReleaseMetadataHonestyAuthority
 import org.flowlang.release.StandardReleaseAssemblyAuthority
 import org.flowlang.standard.DiagnosticCoverageAnalyzer
@@ -43,7 +40,6 @@ import org.flowlang.standard.DiagnosticCoverageReport
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.ObservedDiagnosticCode
 import org.flowlang.standard.StandardDiagnosticCatalog
-import org.flowlang.validator.FlowValidator
 
 data class CliCommandFailureReport(
     val status: String = "FAIL",
@@ -201,7 +197,7 @@ private fun runIntentCommand(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    val evidence = CliTargetEvidenceAuthority(targets).evaluate(plan, selection, strict, renderRequested)
+    val evidence = CliTargetEvidenceAuthority(targets).evaluate(compilation, selection, strict, renderRequested)
     printTargetEvidence(evidence, renderRequested, output)
     outDir?.let {
         writeIntentArtifacts(
@@ -232,7 +228,9 @@ private fun runNormalizeCommand(
     args: List<String>,
     output: CliOutputCollector
 ): CliExecutionResult {
-    val text = parseOption(args, "--file")?.let { File(it).readText() }
+    val sourcePath = parseOption(args, "--file")
+    val sourceFile = sourcePath?.let(::File)
+    val text = sourceFile?.readText()
         ?: args.takeWhile { !it.startsWith("--") }.joinToString(" ").trim()
     require(text.isNotBlank()) { "normalize requires text arguments or --file <path>." }
     val strict = "--strict" in args || "--fail-on-unsupported" in args
@@ -250,19 +248,18 @@ private fun runNormalizeCommand(
         "--repair" in args -> NormalizationMode.REPAIR
         else -> NormalizationMode.DRAFT
     }
-    val response = ScenarioPackIntentNormalizer().normalize(
-        AiIntentRequest(
-            text,
-            AiIntentContext(
-                target = selectedTarget,
-                defaultApplication = parseOption(args, "--app"),
-                defaultEnvironment = parseOption(args, "--environment"),
-                repositoryUrl = parseOption(args, "--repo"),
-                notificationChannel = parseOption(args, "--channel")
-            ),
-            mode
-        )
+    val request = AiIntentRequest(
+        text,
+        AiIntentContext(
+            target = selectedTarget,
+            defaultApplication = parseOption(args, "--app"),
+            defaultEnvironment = parseOption(args, "--environment"),
+            repositoryUrl = parseOption(args, "--repo"),
+            notificationChannel = parseOption(args, "--channel")
+        ),
+        mode
     )
+    val response = ScenarioPackIntentNormalizer().normalize(request)
     output.section("AI INTENT NORMALIZATION REPORT", response.report)
     output.section("NORMALIZED INTENT JSON", response.normalizedIntent)
     val registry = moduleRegistry()
@@ -301,29 +298,31 @@ private fun runNormalizeCommand(
         )
     }
 
-    when (val proposal = IntentProposalReview(registry).review(response)) {
-        is IntentProposalDecision.Rejected -> throw IllegalArgumentException(
-            "AI proposal rejected by the standard before lowering: " +
-                proposal.violations.joinToString { it.code }
+    val compilation = ReviewedAiProposalFrontend(FlowCompilationService(registry))
+        .compile(
+            ReviewedAiProposal(
+                providerId = ScenarioPackIntentNormalizer.PROVIDER_ID,
+                request = request,
+                response = response,
+                sourceIdentity = sourceFile?.absoluteFile?.toPath()?.normalize()?.toString() ?: "cli:normalize",
+                sourceName = sourceFile?.path ?: "<normalize-cli>"
+            )
         )
-        is IntentProposalDecision.Accepted -> Unit
-    }
-    val intentValidation = IntentCapabilityValidator(registry).validate(response.normalizedIntent)
-    intentValidation.assertValid()
-    val design = IntentDesignAnalyzer(registry).analyze(response.normalizedIntent)
-    val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
-    val validation = FlowValidator(registry).validate(ast)
-    require(validation.valid) {
-        "Flow validation failed before planning: " + validation.issues.joinToString { it.code + ": " + it.message }
-    }
-    val plan = FlowPlanner(registry).plan(ast)
+        .requireAccepted()
+    val proposalEvidence = compilation.requireReviewedAiProposalEvidence()
+    val intent = proposalEvidence.intent
+    val intentValidation = proposalEvidence.validation
+    val design = IntentDesignAnalyzer(registry).analyze(intent)
+    val ast = compilation.ast
+    val validation = compilation.validation
+    val plan = compilation.executionPlan
 
     output.section("INTENT CAPABILITY VALIDATION REPORT", intentValidation)
     output.section("INTENT DESIGN REPORT", design)
     output.section("GENERATED FLOW AST JSON", ast)
     output.section("VALIDATION REPORT", validation)
     output.section("EXECUTION PLAN JSON", plan)
-    output.section("CANONICAL EXECUTION PLAN JSON", ExecutionPlanCanonicalizer.canonicalize(plan))
+    output.section("CANONICAL EXECUTION PLAN JSON", compilation.canonicalPlan)
 
     if (selectionDecision == TargetSelectionDecision.NotSelected) {
         val planning = targetNeutralPlanningEvidence(plan, targets, strict)
@@ -331,7 +330,7 @@ private fun runNormalizeCommand(
         outputDir?.let {
             writePlanningArtifacts(
                 directory = it,
-                normalizedIntent = response.normalizedIntent,
+                normalizedIntent = intent,
                 intentDesign = design,
                 intentDecision = decision,
                 intentValidation = intentValidation,
@@ -351,12 +350,12 @@ private fun runNormalizeCommand(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    val evidence = CliTargetEvidenceAuthority(targets).evaluate(plan, selection, strict, renderRequested)
+    val evidence = CliTargetEvidenceAuthority(targets).evaluate(compilation, selection, strict, renderRequested)
     printTargetEvidence(evidence, renderRequested, output)
     outputDir?.let {
         writeIntentArtifacts(
             directory = it,
-            normalizedIntent = response.normalizedIntent,
+            normalizedIntent = intent,
             intentDesign = design,
             intentDecision = decision,
             intentValidation = intentValidation,

@@ -1,6 +1,12 @@
 package org.flowlang.conformance
 
 import java.io.File
+import org.flowlang.ai.normalization.AiIntentRequest
+import org.flowlang.ai.normalization.AiIntentResponse
+import org.flowlang.ai.normalization.ConfidenceScore
+import org.flowlang.ai.normalization.IntentClassification
+import org.flowlang.ai.normalization.NormalizationMode
+import org.flowlang.ai.normalization.NormalizationReport
 import org.flowlang.compiler.CanonicalCapabilityId
 import org.flowlang.compiler.CanonicalDependencyEdge
 import org.flowlang.compiler.CanonicalDependencyEvidence
@@ -8,13 +14,16 @@ import org.flowlang.compiler.CanonicalDependencyKind
 import org.flowlang.compiler.CanonicalDependencyResolution
 import org.flowlang.compiler.CanonicalExecutionGraph
 import org.flowlang.compiler.CanonicalExecutionGraphBuild
-import org.flowlang.compiler.CanonicalExecutionGraphDigestAuthority
+import org.flowlang.compiler.CanonicalExecutionGraphDigestComputer
 import org.flowlang.compiler.CanonicalExecutionGraphProjection
 import org.flowlang.compiler.CanonicalExecutionGraphValidator
 import org.flowlang.compiler.CanonicalNodeId
 import org.flowlang.compiler.CanonicalTaskNode
+import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
+import org.flowlang.frontend.ai.ReviewedAiProposal
+import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
 import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlanCanonicalizer
@@ -29,6 +38,7 @@ class Ar01CompilerAxisConformanceChecks(
         resultCheck(INVENTORY_CHECK, runCatching(::inventoryErrors)),
         resultCheck(FLOW_SOURCE_AXIS_CHECK, runCatching(::flowSourceAxisErrors)),
         resultCheck(INTENT_CONVERGENCE_CHECK, runCatching(::intentConvergenceErrors)),
+        resultCheck(REVIEWED_AI_CONVERGENCE_CHECK, runCatching(::reviewedAiConvergenceErrors)),
         resultCheck(DEPENDENCY_DIRECTION_CHECK, runCatching(::dependencyDirectionErrors)),
         resultCheck(PUBLIC_CONTRACT_FREEZE_CHECK, runCatching(::publicContractFreezeErrors)),
         resultCheck(GRAPH_INTEGRITY_CHECK, runCatching(::graphIntegrityErrors)),
@@ -50,11 +60,11 @@ class Ar01CompilerAxisConformanceChecks(
         if (inventory.derivedCanonicalView != DERIVED_VIEWS) {
             add("Derived compatibility views must be '$DERIVED_VIEWS', found '${inventory.derivedCanonicalView}'.")
         }
-        if (inventory.convergedFrontends != listOf("flow-source", "intent-yaml")) {
+        if (inventory.convergedFrontends != listOf("flow-source", "intent-yaml", "reviewed-ai-proposal")) {
             add("Converged frontend inventory drifted: ${inventory.convergedFrontends}.")
         }
-        if (inventory.deferredFrontends != listOf("reviewed-ai-proposal")) {
-            add("Only reviewed AI proposal convergence may remain deferred, found ${inventory.deferredFrontends}.")
+        if (inventory.deferredFrontends.isNotEmpty()) {
+            add("No product frontend may remain deferred after AR-01C, found ${inventory.deferredFrontends}.")
         }
         if (inventory.productionEntrypoints != EXPECTED_ENTRYPOINTS) {
             add("Product compiler entrypoint inventory drifted. expected=$EXPECTED_ENTRYPOINTS observed=${inventory.productionEntrypoints}")
@@ -119,6 +129,7 @@ class Ar01CompilerAxisConformanceChecks(
         requireContains(runIntent, "IntentYamlFrontend(", HONEST_CLI, this)
         requireContains(runIntent, "FlowCompilationService(", HONEST_CLI, this)
         requireContains(runIntent, ".requireAccepted()", HONEST_CLI, this)
+        requireContains(runIntent, "evaluate(compilation,", HONEST_CLI, this)
         forbidDirectPipeline(runIntent, HONEST_CLI, this)
 
         val snapshotSource = read(REFERENCE_SNAPSHOT)
@@ -127,6 +138,64 @@ class Ar01CompilerAxisConformanceChecks(
         listOf(planFor, generate).forEach { block ->
             requireContains(block, "intentFrontend", REFERENCE_SNAPSHOT, this)
             forbidDirectPipeline(block, REFERENCE_SNAPSHOT, this)
+        }
+    }
+
+    private fun reviewedAiConvergenceErrors(): List<String> = buildList {
+        val cliSource = read(HONEST_CLI)
+        val runNormalize = between(cliSource, "private fun runNormalizeCommand(", "private fun targetNeutralPlanningEvidence(")
+        requireContains(runNormalize, "ReviewedAiProposalFrontend(", HONEST_CLI, this)
+        requireContains(runNormalize, "FlowCompilationService(", HONEST_CLI, this)
+        requireContains(runNormalize, ".requireAccepted()", HONEST_CLI, this)
+        requireContains(runNormalize, "evaluate(compilation,", HONEST_CLI, this)
+        forbidDirectPipeline(runNormalize, HONEST_CLI, this)
+        if ("IntentProposalReview(" in runNormalize) {
+            add("$HONEST_CLI retains proposal review outside FlowCompilationService.")
+        }
+        if (isNotEmpty()) return@buildList
+
+        val registry = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
+        val intentUnit = IntentYamlFrontend(FlowCompilationService(registry))
+            .compile(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
+            .requireAccepted()
+        val intent = intentUnit.requireIntentEvidence().intent
+        val request = AiIntentRequest(
+            userText = "Compile the accepted AR-01C reference intent.",
+            mode = NormalizationMode.DRAFT
+        )
+        val response = AiIntentResponse(
+            normalizedIntent = intent,
+            report = NormalizationReport(
+                mode = NormalizationMode.DRAFT,
+                classification = IntentClassification("reference", 1.0),
+                confidence = ConfidenceScore(1.0, 1.0, 1.0, 1.0, 1.0)
+            )
+        )
+        val aiUnit = ReviewedAiProposalFrontend(FlowCompilationService(registry))
+            .compile(
+                ReviewedAiProposal(
+                    providerId = "ar-01c-conformance",
+                    request = request,
+                    response = response,
+                    sourceIdentity = "conformance:ar-01c-reviewed-ai"
+                )
+            )
+            .requireAccepted()
+
+        if (aiUnit.source.frontend != CompilationFrontend.REVIEWED_AI_PROPOSAL) {
+            add("Reviewed AI proposal frontend did not preserve its typed provenance.")
+        }
+        if (aiUnit.graph != intentUnit.graph || aiUnit.graphDigest != intentUnit.graphDigest) {
+            add("Equivalent Intent YAML and reviewed AI proposal frontends produced different canonical graph meaning.")
+        }
+        if (aiUnit.executionPlan != intentUnit.executionPlan || aiUnit.canonicalPlan != intentUnit.canonicalPlan) {
+            add("Equivalent Intent YAML and reviewed AI proposal frontends produced different compatibility views.")
+        }
+        if (aiUnit.validationBinding.proposalReviewValid != true) {
+            add("Reviewed AI proposal authorization does not bind successful proposal review.")
+        }
+        if (aiUnit.validationBinding.sourceSha256 != aiUnit.source.sha256) {
+            add("Reviewed AI proposal authorization does not bind the exact captured proposal source.")
         }
     }
 
@@ -174,7 +243,7 @@ class Ar01CompilerAxisConformanceChecks(
 
         requireExactProductionCallers(
             symbol = "CompilationSourceCapture.",
-            expectedPaths = setOf(FLOW_SOURCE_FRONTEND, INTENT_YAML_FRONTEND),
+            expectedPaths = setOf(FLOW_SOURCE_FRONTEND, INTENT_YAML_FRONTEND, REVIEWED_AI_FRONTEND),
             errors = this
         )
         requireExactProductionCallers(
@@ -185,6 +254,21 @@ class Ar01CompilerAxisConformanceChecks(
         requireExactProductionCallers(
             symbol = "IntentCompilationInput(",
             expectedPaths = setOf(COMPILATION_CONTRACTS, INTENT_YAML_FRONTEND),
+            errors = this
+        )
+        requireExactProductionCallers(
+            symbol = "ReviewedAiProposalCompilationInput(",
+            expectedPaths = setOf(COMPILATION_CONTRACTS, REVIEWED_AI_FRONTEND),
+            errors = this
+        )
+        requireExactProductionCallers(
+            symbol = "IntentProposalReview(registry)",
+            expectedPaths = setOf(FLOW_COMPILATION_SERVICE),
+            errors = this
+        )
+        requireExactProductionCallers(
+            symbol = "CanonicalExecutionGraphGate.authorizeCompilation(",
+            expectedPaths = setOf(COMPILATION_CONTRACTS),
             errors = this
         )
     }
@@ -228,7 +312,7 @@ class Ar01CompilerAxisConformanceChecks(
             controlEvidence = graph.controlEvidence.reversed(),
             topologyRequirements = graph.topologyRequirements.reversed()
         )
-        if (CanonicalExecutionGraphDigestAuthority.digest(reordered) != unit.graphDigest) {
+        if (CanonicalExecutionGraphDigestComputer.digest(reordered) != unit.graphDigest) {
             add("Canonical graph digest depends on storage order.")
         }
         val first = unit.authorization.bindings.tasks.firstOrNull()
@@ -244,7 +328,7 @@ class Ar01CompilerAxisConformanceChecks(
             )
             val report = CanonicalExecutionGraphValidator.validate(CanonicalExecutionGraphBuild(graph, altered))
             if (!report.valid) add("Alternate implementation binding invalidated graph semantics: ${report.issues}")
-            if (CanonicalExecutionGraphDigestAuthority.digest(graph) != unit.graphDigest) {
+            if (CanonicalExecutionGraphDigestComputer.digest(graph) != unit.graphDigest) {
                 add("Implementation binding changed canonical semantic identity.")
             }
         }
@@ -252,7 +336,7 @@ class Ar01CompilerAxisConformanceChecks(
 
     private fun mutationPolarityErrors(): List<String> = buildList {
         val graph = referenceUnit().graph
-        val baseline = CanonicalExecutionGraphDigestAuthority.digest(graph)
+        val baseline = CanonicalExecutionGraphDigestComputer.digest(graph)
         val task = graph.nodes.filterIsInstance<CanonicalTaskNode>().firstOrNull()
         if (task == null) {
             add("Reference graph has no task for mutation polarity.")
@@ -290,7 +374,7 @@ class Ar01CompilerAxisConformanceChecks(
             )
         } ?: add("Reference graph has no topology requirement for mutation polarity.")
         mutations.forEach { (facet, mutation) ->
-            if (CanonicalExecutionGraphDigestAuthority.digest(mutation) == baseline) {
+            if (CanonicalExecutionGraphDigestComputer.digest(mutation) == baseline) {
                 add("Canonical semantic digest ignored the $facet mutation.")
             }
         }
@@ -311,7 +395,7 @@ class Ar01CompilerAxisConformanceChecks(
             ))
         )
         if (runCatching {
-                CanonicalExecutionGraphDigestAuthority.requireMatches(changed, unit.graphDigest)
+                CanonicalExecutionGraphDigestComputer.requireMatches(changed, unit.graphDigest)
             }.isSuccess
         ) {
             add("Authorization evidence for one digest accepted changed graph meaning.")
@@ -472,6 +556,7 @@ class Ar01CompilerAxisConformanceChecks(
         const val INVENTORY_CHECK = "architecture-recovery.ar-01.compiler-entrypoint-inventory"
         const val FLOW_SOURCE_AXIS_CHECK = "architecture-recovery.ar-01.flow-source-compilation-axis"
         const val INTENT_CONVERGENCE_CHECK = "architecture-recovery.ar-01.intent-frontend-convergence"
+        const val REVIEWED_AI_CONVERGENCE_CHECK = "architecture-recovery.ar-01.reviewed-ai-frontend-convergence"
         const val DEPENDENCY_DIRECTION_CHECK = "architecture-recovery.ar-01.compiler-dependency-direction"
         const val PUBLIC_CONTRACT_FREEZE_CHECK = "architecture-recovery.ar-01.public-contract-freeze"
         const val GRAPH_INTEGRITY_CHECK = "architecture-recovery.ar-01.canonical-graph-integrity"
@@ -489,6 +574,7 @@ class Ar01CompilerAxisConformanceChecks(
         private const val FLOW_COMPILATION_SERVICE = "$COMPILER_DIR/FlowCompilationService.kt"
         private const val FLOW_SOURCE_FRONTEND = "src/main/kotlin/org/flowlang/frontend/source/FlowSourceFrontend.kt"
         private const val INTENT_YAML_FRONTEND = "src/main/kotlin/org/flowlang/frontend/intent/IntentYamlFrontend.kt"
+        private const val REVIEWED_AI_FRONTEND = "src/main/kotlin/org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt"
         private const val STANDARD_CLI = "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt"
         private const val HONEST_CLI = "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
         private const val REFERENCE_SNAPSHOT = "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
@@ -512,7 +598,9 @@ class Ar01CompilerAxisConformanceChecks(
             "FlowParser(",
             "FlowValidator(",
             "FlowPlanner(",
-            "ExecutionPlanCanonicalizer.canonicalize("
+            "ExecutionPlanCanonicalizer.canonicalize(",
+            "IntentCapabilityValidator(",
+            "IntentProposalReview("
         )
         private val FORBIDDEN_COMPILER_IMPORTS = listOf(
             "org.flowlang.adapters.",
@@ -524,13 +612,14 @@ class Ar01CompilerAxisConformanceChecks(
         private val EXPECTED_ENTRYPOINTS = listOf(
             "$STANDARD_CLI#runFlow",
             "$HONEST_CLI#runIntentCommand",
+            "$HONEST_CLI#runNormalizeCommand",
             "$REFERENCE_SNAPSHOT#planFor",
             "$REFERENCE_SNAPSHOT#generate",
             "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt#buildPipeline",
             "src/main/kotlin/org/flowlang/conformance/TargetNeutralConformanceFixture.kt#build",
             "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt#evaluateIntent"
         )
-        private val EXPECTED_DEFERRED_ENTRYPOINTS = listOf("$HONEST_CLI#runNormalizeCommand")
+        private val EXPECTED_DEFERRED_ENTRYPOINTS = emptyList<String>()
         private val FROZEN_ARTIFACT_CONTRACTS = linkedMapOf(
             "intent" to "2.0",
             "ast" to "2.2",
@@ -564,7 +653,7 @@ data class CompilerEntrypointInventory(
 
     companion object {
         const val PATH = "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
-        const val VERSION = "2.0"
+        const val VERSION = "3.0"
         private val KEYS = setOf(
             "version",
             "compositionRoot",
