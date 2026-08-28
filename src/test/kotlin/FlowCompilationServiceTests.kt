@@ -6,6 +6,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.flowlang.compiler.CanonicalExecutionGraph
+import org.flowlang.compiler.CanonicalExecutionGraphDigestComputer
+import org.flowlang.compiler.CanonicalExecutionGraphProjection
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationSource
 import org.flowlang.compiler.CompilationSourceCapture
@@ -41,6 +44,12 @@ class FlowCompilationServiceTests {
         assertEquals(legacyValidation, unit.validation)
         assertEquals(legacyPlan, unit.executionPlan)
         assertEquals(ExecutionPlanCanonicalizer.canonicalize(legacyPlan), unit.canonicalPlan)
+        assertEquals(
+            unit.executionPlan,
+            CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.bindings)
+        )
+        assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestComputer.digest(unit.graph))
+        unit.authorization.requireIntegrity()
     }
 
     @Test
@@ -85,17 +94,17 @@ class FlowCompilationServiceTests {
     }
 
     @Test
-    fun compilerBoundaryDoesNotPretendTheCompatibilityViewIsTheCanonicalGraph() {
+    fun compilerBoundaryOwnsTypedGraphWithoutConcreteTargetDependencies() {
         val compilerDirectory = File("src/main/kotlin/org/flowlang/compiler")
         val sources = compilerDirectory.walkTopDown()
             .filter { it.isFile && it.extension == "kt" }
             .associate { it.name to it.readText() }
 
         assertTrue(sources.isNotEmpty())
-        val graphDeclaration = Regex(
-            """\b(?:data\s+class|class|object|interface|typealias)\s+CanonicalExecutionGraph\b"""
-        )
-        assertTrue(sources.values.none(graphDeclaration::containsMatchIn))
+        assertTrue(sources.values.any { source ->
+            Regex("""\bdata\s+class\s+CanonicalExecutionGraph\b""").containsMatchIn(source)
+        })
+        assertEquals("CanonicalExecutionGraph", CanonicalExecutionGraph::class.simpleName)
         val forbiddenImports = listOf(
             "import org.flowlang.adapters.",
             "import org.flowlang.targets.",

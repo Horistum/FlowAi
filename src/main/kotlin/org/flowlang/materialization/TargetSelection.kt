@@ -1,61 +1,33 @@
 package org.flowlang.materialization
 
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.compiler.CanonicalExecutionGraphGate
+import org.flowlang.compiler.CompilationAuthorization
+import org.flowlang.compiler.CompilationUnit
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.standard.FlowStandardVersions
 
-/**
- * Auditable origin of an explicit target choice.
- *
- * The origin records where the choice entered Flow. It is evidence only; target
- * authorization is represented by [ExplicitTargetSelection] and can be issued
- * only by [TargetSelectionAuthority].
- */
 enum class TargetSelectionOrigin {
     CLI_OPTION,
     INTENT_DECLARATION,
     EXPLICIT_CONFIGURATION
 }
 
-/**
- * Closed vocabulary for explicit configuration sources.
- *
- * A configuration category is selected by type rather than by an arbitrary
- * caller-authored label. The stable [evidenceId] remains serializable evidence.
- */
 sealed interface ExplicitConfigurationSource {
     val evidenceId: String
 
-    @ConsistentCopyVisibility
-    data class ReferenceSnapshot internal constructor(
-        val scenarioId: String
-    ) : ExplicitConfigurationSource {
-        init {
-            requireSourceComponent(scenarioId, "Reference snapshot scenario id")
-        }
-
+    data class ReferenceSnapshot internal constructor(val scenarioId: String) : ExplicitConfigurationSource {
+        init { requireSourceComponent(scenarioId, "Reference snapshot scenario id") }
         override val evidenceId: String = "reference-snapshot:$scenarioId"
     }
 
-    @ConsistentCopyVisibility
-    data class ConformanceCheck internal constructor(
-        val checkId: String
-    ) : ExplicitConfigurationSource {
-        init {
-            requireSourceComponent(checkId, "Conformance check id")
-        }
-
+    data class ConformanceCheck internal constructor(val checkId: String) : ExplicitConfigurationSource {
+        init { requireSourceComponent(checkId, "Conformance check id") }
         override val evidenceId: String = "conformance:$checkId"
     }
 
-    @ConsistentCopyVisibility
-    data class TestFixture internal constructor(
-        val fixtureId: String
-    ) : ExplicitConfigurationSource {
-        init {
-            requireSourceComponent(fixtureId, "Test fixture id")
-        }
-
+    data class TestFixture internal constructor(val fixtureId: String) : ExplicitConfigurationSource {
+        init { requireSourceComponent(fixtureId, "Test fixture id") }
         override val evidenceId: String = "test:$fixtureId"
     }
 
@@ -95,12 +67,6 @@ data class TargetSelectionEvidence(
     }
 }
 
-/**
- * Marker for a target choice validated against the active target registry.
- *
- * The only implementation is private to [TargetSelectionAuthority]. Callers can
- * consume an issued selection but cannot construct one from an arbitrary string.
- */
 sealed interface ExplicitTargetSelection {
     val target: String
     val evidence: TargetSelectionEvidence
@@ -117,10 +83,7 @@ object TargetSelectionAuthority {
         override val evidence: TargetSelectionEvidence
     ) : ExplicitTargetSelection
 
-    fun fromCliOption(
-        value: String?,
-        targets: Map<String, TargetCapability>
-    ): TargetSelectionDecision = value?.let {
+    fun fromCliOption(value: String?, targets: Map<String, TargetCapability>): TargetSelectionDecision = value?.let {
         TargetSelectionDecision.Selected(issue(it, TargetSelectionOrigin.CLI_OPTION, "cli:--target", targets))
     } ?: TargetSelectionDecision.NotSelected
 
@@ -165,17 +128,7 @@ object TargetSelectionAuthority {
         targets
     )
 
-    /**
-     * Transitional adapter for the existing conformance support layer.
-     *
-     * Unlike the former API, this method does not accept an arbitrary source label.
-     * Only the closed configuration-source vocabulary is recognized and every
-     * unknown category fails before selection evidence can be issued.
-     */
-    @Deprecated(
-        message = "Use the typed source-specific target selection factory.",
-        level = DeprecationLevel.WARNING
-    )
+    @Deprecated(message = "Use the typed source-specific target selection factory.")
     internal fun fromExplicitConfiguration(
         value: String,
         source: String,
@@ -186,13 +139,11 @@ object TargetSelectionAuthority {
         targets
     )
 
-    fun requireSelected(
-        decision: TargetSelectionDecision,
-        operation: String
-    ): ExplicitTargetSelection = when (decision) {
-        TargetSelectionDecision.NotSelected -> throw MissingExplicitTargetSelectionException(operation)
-        is TargetSelectionDecision.Selected -> decision.selection
-    }
+    fun requireSelected(decision: TargetSelectionDecision, operation: String): ExplicitTargetSelection =
+        when (decision) {
+            TargetSelectionDecision.NotSelected -> throw MissingExplicitTargetSelectionException(operation)
+            is TargetSelectionDecision.Selected -> decision.selection
+        }
 
     private fun issueExplicitConfiguration(
         value: String,
@@ -241,19 +192,158 @@ class UnsupportedExplicitConfigurationSourceException(source: String) : IllegalA
     "Unsupported explicit target configuration source '$source'. Use a typed reference-snapshot, conformance or test source."
 )
 
-data class TargetMaterializationRequest(
-    val plan: ExecutionPlan,
+/**
+ * A target request whose product form is bound to one exact graph authorization.
+ *
+ * The internal compatibility form deliberately retains the original plan until
+ * the existing planning-evidence validator has examined it. This prevents a graph
+ * projection from normalizing forged retained fields before the established
+ * InvalidPlanningEvidenceException boundary can report them. Accessing
+ * [authorization] after that validation still performs the full graph gate.
+ */
+class TargetMaterializationRequest private constructor(
+    private val compilationAuthorization: CompilationAuthorization?,
+    private val compatibilityPlan: ExecutionPlan?,
+    private val compatibilityEvidenceId: String?,
     val selection: ExplicitTargetSelection,
     val strict: Boolean = false
 ) {
+    private val compatibilityAuthorization: Lazy<CompilationAuthorization> = lazy {
+        CanonicalExecutionGraphGate.authorizeCompatibilityPlan(
+            plannerPlan = requireNotNull(compatibilityPlan),
+            evidenceId = requireNotNull(compatibilityEvidenceId)
+        )
+    }
+
+    val authorization: CompilationAuthorization
+        get() = compilationAuthorization ?: compatibilityAuthorization.value
+    val plan: ExecutionPlan
+        get() = if (compilationAuthorization != null) authorization.executionPlan else requireNotNull(compatibilityPlan)
+    val graphDigest: String
+        get() = authorization.graphDigest.value
     val target: String get() = selection.target
+    val graphAuthorized: Boolean get() = compilationAuthorization != null
+
+    init {
+        require((compilationAuthorization == null) != (compatibilityPlan == null)) {
+            "Materialization request must carry exactly one compilation authorization or compatibility plan."
+        }
+        if (compilationAuthorization != null) compilationAuthorization.requireIntegrity()
+        if (compatibilityPlan != null) {
+            require(!compatibilityEvidenceId.isNullOrBlank()) {
+                "Compatibility materialization request must declare evidence identity."
+            }
+        }
+    }
+
+    companion object {
+        fun fromCompilation(
+            compilation: CompilationUnit,
+            selection: ExplicitTargetSelection,
+            strict: Boolean = false
+        ): TargetMaterializationRequest = TargetMaterializationRequest(
+            compilationAuthorization = compilation.authorization,
+            compatibilityPlan = null,
+            compatibilityEvidenceId = null,
+            selection = selection,
+            strict = strict
+        )
+
+        internal fun fromCompatibilityPlan(
+            plan: ExecutionPlan,
+            selection: ExplicitTargetSelection,
+            strict: Boolean = false,
+            evidenceId: String = selection.evidence.source
+        ): TargetMaterializationRequest = TargetMaterializationRequest(
+            compilationAuthorization = null,
+            compatibilityPlan = plan,
+            compatibilityEvidenceId = requireSourceComponent(evidenceId, "Compatibility-plan evidence id"),
+            selection = selection,
+            strict = strict
+        )
+    }
+
+    @Deprecated(message = "Use the graph-bound factory or inventoried compatibility factory.")
+    internal constructor(
+        plan: ExecutionPlan,
+        selection: ExplicitTargetSelection,
+        strict: Boolean = false
+    ) : this(
+        compilationAuthorization = null,
+        compatibilityPlan = plan,
+        compatibilityEvidenceId = selection.evidence.source,
+        selection = selection,
+        strict = strict
+    )
 }
 
-data class TargetDiagnosticMaterializationRequest(
-    val plan: ExecutionPlan,
+class TargetDiagnosticMaterializationRequest private constructor(
+    private val compilationAuthorization: CompilationAuthorization?,
+    private val compatibilityPlan: ExecutionPlan?,
+    private val compatibilityEvidenceId: String?,
     val selection: ExplicitTargetSelection
 ) {
+    private val compatibilityAuthorization: Lazy<CompilationAuthorization> = lazy {
+        CanonicalExecutionGraphGate.authorizeCompatibilityPlan(
+            plannerPlan = requireNotNull(compatibilityPlan),
+            evidenceId = requireNotNull(compatibilityEvidenceId)
+        )
+    }
+
+    val authorization: CompilationAuthorization
+        get() = compilationAuthorization ?: compatibilityAuthorization.value
+    val plan: ExecutionPlan
+        get() = if (compilationAuthorization != null) authorization.executionPlan else requireNotNull(compatibilityPlan)
+    val graphDigest: String
+        get() = authorization.graphDigest.value
     val target: String get() = selection.target
+    val graphAuthorized: Boolean get() = compilationAuthorization != null
+
+    init {
+        require((compilationAuthorization == null) != (compatibilityPlan == null)) {
+            "Diagnostic request must carry exactly one compilation authorization or compatibility plan."
+        }
+        if (compilationAuthorization != null) compilationAuthorization.requireIntegrity()
+        if (compatibilityPlan != null) {
+            require(!compatibilityEvidenceId.isNullOrBlank()) {
+                "Compatibility diagnostic request must declare evidence identity."
+            }
+        }
+    }
+
+    companion object {
+        fun fromCompilation(
+            compilation: CompilationUnit,
+            selection: ExplicitTargetSelection
+        ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest(
+            compilationAuthorization = compilation.authorization,
+            compatibilityPlan = null,
+            compatibilityEvidenceId = null,
+            selection = selection
+        )
+
+        internal fun fromCompatibilityPlan(
+            plan: ExecutionPlan,
+            selection: ExplicitTargetSelection,
+            evidenceId: String = selection.evidence.source
+        ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest(
+            compilationAuthorization = null,
+            compatibilityPlan = plan,
+            compatibilityEvidenceId = requireSourceComponent(evidenceId, "Compatibility-plan evidence id"),
+            selection = selection
+        )
+    }
+
+    @Deprecated(message = "Use the graph-bound factory or inventoried compatibility factory.")
+    internal constructor(
+        plan: ExecutionPlan,
+        selection: ExplicitTargetSelection
+    ) : this(
+        compilationAuthorization = null,
+        compatibilityPlan = plan,
+        compatibilityEvidenceId = selection.evidence.source,
+        selection = selection
+    )
 }
 
 data class TargetSelectionEvidenceReport(

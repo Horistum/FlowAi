@@ -10,7 +10,6 @@ import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentValidationReport
 import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.validator.ValidationReport
 
 /** Authored representation accepted by the shared compiler boundary. */
@@ -233,14 +232,26 @@ data class CompilationRejection(
     }
 }
 
+/**
+ * Accepted compilation envelope after the graph-authority cutover.
+ *
+ * ExecutionPlan and CanonicalExecutionPlan remain public compatibility views,
+ * but both are reconstructed from the exact validated CanonicalExecutionGraph
+ * and its separate binding envelope. They cannot authorize projection on their own.
+ */
 class CompilationUnit private constructor(
     val source: CompilationSource,
     val frontendEvidence: FrontendCompilationEvidence,
     val ast: FlowDocument,
     val validation: ValidationReport,
-    val executionPlan: ExecutionPlan,
-    val canonicalPlan: CanonicalExecutionPlan
+    val authorization: CompilationAuthorization
 ) {
+    val graph: CanonicalExecutionGraph get() = authorization.graph
+    val graphDigest: CanonicalExecutionGraphDigest get() = authorization.graphDigest
+    val validationBinding: CompilationValidationBinding get() = authorization.validationBinding
+    val executionPlan: ExecutionPlan get() = authorization.executionPlan
+    val canonicalPlan: CanonicalExecutionPlan get() = authorization.canonicalPlan
+
     init {
         require(frontendEvidence.source == source) {
             "Frontend evidence provenance must match the compilation source exactly."
@@ -255,15 +266,16 @@ class CompilationUnit private constructor(
             }
         }
         require(validation.valid) { "CompilationUnit cannot contain an invalid Flow validation report." }
+        require(validationBinding.origin == CompilationAuthorizationOrigin.COMPILATION_UNIT) {
+            "CompilationUnit must carry source-bound graph authorization."
+        }
+        require(validationBinding.sourceSha256 == source.sha256) {
+            "Compilation authorization source digest does not match the captured frontend bytes."
+        }
         require(ast.flow.name == executionPlan.flowName) {
-            "Flow AST name '${ast.flow.name}' does not match execution plan '${executionPlan.flowName}'."
+            "Flow AST name '${ast.flow.name}' does not match graph-derived execution plan '${executionPlan.flowName}'."
         }
-        require(executionPlan.flowName == canonicalPlan.flowName) {
-            "Execution plan and canonical plan flow identities must match."
-        }
-        require(executionPlan.planVersion == canonicalPlan.planVersion) {
-            "Execution plan and canonical plan contract versions must match."
-        }
+        authorization.requireIntegrity()
     }
 
     fun requireIntentEvidence(): IntentFrontendCompilationEvidence =
@@ -276,15 +288,23 @@ class CompilationUnit private constructor(
             frontendEvidence: FrontendCompilationEvidence,
             ast: FlowDocument,
             validation: ValidationReport,
-            executionPlan: ExecutionPlan
-        ): CompilationUnit = CompilationUnit(
-            source = source,
-            frontendEvidence = frontendEvidence,
-            ast = ast,
-            validation = validation,
-            executionPlan = executionPlan,
-            canonicalPlan = ExecutionPlanCanonicalizer.canonicalize(executionPlan)
-        )
+            plannerPlan: ExecutionPlan
+        ): CompilationUnit {
+            val intentValidation = (frontendEvidence as? IntentFrontendCompilationEvidence)?.validation
+            val authorization = CanonicalExecutionGraphAuthority.authorizeCompilation(
+                source = source,
+                intentValidation = intentValidation,
+                flowValidation = validation,
+                plannerPlan = plannerPlan
+            )
+            return CompilationUnit(
+                source = source,
+                frontendEvidence = frontendEvidence,
+                ast = ast,
+                validation = validation,
+                authorization = authorization
+            )
+        }
     }
 }
 

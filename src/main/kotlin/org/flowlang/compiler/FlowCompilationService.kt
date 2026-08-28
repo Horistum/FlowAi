@@ -8,15 +8,12 @@ import org.flowlang.planner.FlowPlanner
 import org.flowlang.validator.FlowValidator
 
 /**
- * Shared target-neutral orchestration boundary for migrated frontend meaning.
+ * Shared target-neutral orchestration boundary for accepted frontend meaning.
  *
- * Flow Source and strict Intent YAML enter here in this bounded slice. Reviewed
- * AI proposals remain an explicit deferred frontend until their provenance and
- * review contract are migrated without creating a second product pipeline.
- *
- * This slice deliberately keeps ExecutionPlan as the current execution authority.
- * CanonicalExecutionPlan remains a derived compatibility view until the later
- * authoritative graph cutover proves parity and removes the superseded path.
+ * The planner is a construction stage. Accepted meaning crosses this service only
+ * after it has been converted into a typed CanonicalExecutionGraph, validated,
+ * digested and projected back without drift. Downstream consumers receive graph
+ * authorization from CompilationUnit rather than an independently trusted plan.
  */
 class FlowCompilationService(
     private val registry: ModuleRegistry
@@ -133,7 +130,7 @@ class FlowCompilationService(
             )
         }
 
-        val plan = try {
+        val plannerPlan = try {
             flowPlanner.plan(ast)
         } catch (failure: Exception) {
             return CompilationResult.Rejected(
@@ -161,7 +158,7 @@ class FlowCompilationService(
                     frontendEvidence = evidence,
                     ast = ast,
                     validation = validation,
-                    executionPlan = plan
+                    plannerPlan = plannerPlan
                 )
             )
         } catch (failure: Exception) {
