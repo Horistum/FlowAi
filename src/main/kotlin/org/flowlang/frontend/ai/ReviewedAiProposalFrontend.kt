@@ -125,6 +125,7 @@ private fun NormalizationReport.snapshot(): NormalizationReport = copy(
     safetyGates = safetyGates.toList(),
     targetPortability = targetPortability.toMap(),
     scenarioSelection = scenarioSelection?.copy(
+        matchedTriggers = scenarioSelection.matchedTriggers.toList(),
         alternativesRejected = scenarioSelection.alternativesRejected.map { it.copy() }
     ),
     confidenceByArea = confidenceByArea.toMap(),

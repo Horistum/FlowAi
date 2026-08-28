@@ -131,9 +131,9 @@ object CanonicalExecutionGraphGate {
                     graphDigest = digest.value,
                     sourceSha256 = source.sha256,
                     intentValid = intentValidation?.valid,
-                    proposalReviewValid = proposalReview?.accepted,
                     flowValid = flowValidation.valid,
-                    graphValid = true
+                    graphValid = true,
+                    proposalReviewValid = proposalReview?.accepted
                 )
             }
         )

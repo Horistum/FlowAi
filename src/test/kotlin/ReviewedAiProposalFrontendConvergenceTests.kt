@@ -15,6 +15,7 @@ import org.flowlang.ai.normalization.ConfidenceScore
 import org.flowlang.ai.normalization.IntentClassification
 import org.flowlang.ai.normalization.NormalizationMode
 import org.flowlang.ai.normalization.NormalizationReport
+import org.flowlang.ai.normalization.ScenarioSelectionReport
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationResult
 import org.flowlang.compiler.CompilationSource
@@ -135,6 +136,7 @@ class ReviewedAiProposalFrontendConvergenceTests {
     fun compilationRetainsADetachedSnapshotOfCallerOwnedProposalCollections() {
         val knownSystems = linkedMapOf("source" to "git")
         val explanation = mutableListOf("captured explanation")
+        val matchedTriggers = mutableListOf("build", "test")
         val firstWorkflowSteps = referenceIntent.workflows.first().steps.toMutableList()
         val workflows = referenceIntent.workflows.toMutableList().also { values ->
             values[0] = values[0].copy(steps = firstWorkflowSteps)
@@ -142,7 +144,15 @@ class ReviewedAiProposalFrontendConvergenceTests {
         val mutableIntent = referenceIntent.copy(workflows = workflows)
         val unit = aiFrontend.compile(
             proposal(
-                response(mutableIntent, explanation = explanation),
+                response(
+                    mutableIntent,
+                    explanation = explanation,
+                    scenarioSelection = ScenarioSelectionReport(
+                        selectedPack = "build-test",
+                        matchedTriggers = matchedTriggers,
+                        reason = "fixture"
+                    )
+                ),
                 request = request(knownSystems = knownSystems),
                 identity = "proposal:detached-snapshot"
             )
@@ -150,12 +160,14 @@ class ReviewedAiProposalFrontendConvergenceTests {
 
         knownSystems["late"] = "mutation"
         explanation += "late mutation"
+        matchedTriggers += "late mutation"
         firstWorkflowSteps.clear()
         workflows.clear()
 
         val evidence = unit.requireReviewedAiProposalEvidence()
         assertEquals(mapOf("source" to "git"), evidence.request.context.knownSystems)
         assertEquals(listOf("captured explanation"), evidence.response.report.explanation)
+        assertEquals(listOf("build", "test"), evidence.response.report.scenarioSelection?.matchedTriggers)
         assertEquals(referenceIntent.workflows, evidence.intent.workflows)
         assertEquals(unit.source.sha256, unit.validationBinding.sourceSha256)
         unit.authorization.requireIntegrity()
@@ -275,7 +287,8 @@ class ReviewedAiProposalFrontendConvergenceTests {
         intent: IntentDocument,
         entities: Map<String, String> = emptyMap(),
         explanation: List<String> = listOf("fixture proposal"),
-        overallConfidence: Double = 0.95
+        overallConfidence: Double = 0.95,
+        scenarioSelection: ScenarioSelectionReport? = null
     ): AiIntentResponse = AiIntentResponse(
         normalizedIntent = intent,
         report = NormalizationReport(
@@ -289,7 +302,8 @@ class ReviewedAiProposalFrontendConvergenceTests {
                 overallConfidence
             ),
             entities = entities,
-            explanation = explanation
+            explanation = explanation,
+            scenarioSelection = scenarioSelection
         )
     )
 
