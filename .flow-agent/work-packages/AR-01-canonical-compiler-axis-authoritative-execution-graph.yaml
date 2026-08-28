@@ -49,7 +49,7 @@ implementationStrategy:
 currentDeliverySlice:
   id: "AR-01C"
   name: "Reviewed AI Proposal Frontend Convergence"
-  status: "implementing"
+  status: "complete"
   workPackage: ".flow-agent/work-packages/AR-01C-reviewed-ai-proposal-frontend-convergence.yaml"
   relationToCompletedSlices: "AR-01-IFC-01 established the Flow Source and Intent YAML compiler entrypoints, and AR-01B completed typed graph authority plus digest-bound materialization. AR-01C closes the final deferred product frontend without reopening either completed boundary."
   outcomes:
@@ -282,5 +282,5 @@ lifecycle:
     status: pending
 
 localValidation:
-  status: ar-01c-implementing
-  rule: "AR-01-IFC-01 and AR-01B completed the existing frontend entrypoints and graph-authority cutover. AR-01C now converges the final reviewed AI proposal product path; AR-01D and the full AR-01 completion boundary remain pending."
+  status: ar-01c-complete
+  rule: "AR-01C completed reviewed AI proposal convergence through the source-bound, graph-authorized compiler axis. AR-01D remains the next bounded slice for derived-view cleanup and retirement of superseded authority; the full AR-01 completion boundary remains pending."
