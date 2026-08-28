@@ -87,4 +87,12 @@ lifecycle:
       - "Exact-head complete tests and standalone conformance independently revalidated the implementation-boundary evidence recorded by the preceding commit."
       - "Synthetic merge-candidate complete tests and standalone conformance independently revalidated the graph-authority cutover against current main."
   completionBoundary:
-    status: pending
+    status: passed
+    exactHead: "b2440ea1d2b7cc143bf1cf753937cd065ab08bfa"
+    syntheticMergeCandidate: "a7015fdef46e21769ba10d4b0ecd323d8b9dc9ee"
+    workflowRunId: 33110805788
+    workflowRunNumber: 3124
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, complete compilation and tests, and standalone conformance passed after the final graph-authority boundary test aligned the CLI and manifest composition checks with digest-bound authorization."
+      - "Synthetic merge-candidate Flow Agent validation, complete compilation and tests, and standalone conformance passed against current main with the complete AR-01B production and negative-evidence surface."
