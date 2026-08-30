@@ -1,7 +1,12 @@
 package org.flowlang.compiler
 
+import org.flowlang.ai.normalization.IntentProposalDecision
+import org.flowlang.ai.normalization.IntentProposalReview
+import org.flowlang.ai.normalization.IntentProposalReviewEvidence
 import org.flowlang.ast.FlowDocument
+import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentToAstPlanner
+import org.flowlang.intent.IntentValidationReport
 import org.flowlang.intent.ValidatedIntent
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
@@ -18,6 +23,7 @@ import org.flowlang.validator.FlowValidator
 class FlowCompilationService(
     private val registry: ModuleRegistry
 ) {
+    private val proposalReview = IntentProposalReview(registry)
     private val intentPlanner = IntentToAstPlanner(registry)
     private val flowValidator = FlowValidator(registry)
     private val flowPlanner = FlowPlanner(registry)
@@ -25,6 +31,7 @@ class FlowCompilationService(
     internal fun compile(input: CompilationInput): CompilationResult = when (input) {
         is FlowSourceCompilationInput -> compileFlowSource(input)
         is IntentCompilationInput -> compileIntent(input)
+        is ReviewedAiProposalCompilationInput -> compileReviewedAiProposal(input)
     }
 
     private fun compileFlowSource(input: FlowSourceCompilationInput): CompilationResult =
@@ -34,13 +41,98 @@ class FlowCompilationService(
             ast = input.ast
         )
 
-    private fun compileIntent(input: IntentCompilationInput): CompilationResult {
-        val intentEvaluation = ValidatedIntent.evaluate(registry, input.intent)
-        val intentValidation = intentEvaluation.report
-        if (!intentValidation.valid) {
+    private fun compileIntent(input: IntentCompilationInput): CompilationResult =
+        compileIntentDocument(
+            source = input.source,
+            intent = input.intent,
+            evidenceFactory = { validation ->
+                IntentFrontendCompilationEvidence(
+                    source = input.source,
+                    intent = input.intent,
+                    validation = validation
+                )
+            }
+        )
+
+    private fun compileReviewedAiProposal(input: ReviewedAiProposalCompilationInput): CompilationResult {
+        val review = proposalReview.reviewWithEvidence(input.response)
+        val rejected = review.decision as? IntentProposalDecision.Rejected
+        if (rejected != null) {
             return CompilationResult.Rejected(
                 CompilationRejection(
                     source = input.source,
+                    stage = CompilationStage.PROPOSAL_REVIEW,
+                    diagnostics = ensureErrorDiagnostic(
+                        diagnostics = review.validation.issues.map { issue ->
+                            CompilationDiagnostic(
+                                issue.code,
+                                issue.message,
+                                CompilationDiagnosticSeverity.fromWire(issue.level)
+                            )
+                        },
+                        fallbackCode = "compiler.ai-proposal.review-failed",
+                        fallbackMessage = "AI proposal review failed without an error diagnostic."
+                    ),
+                    intent = input.response.normalizedIntent,
+                    intentValidation = review.validation,
+                    proposal = input.response,
+                    proposalReview = review
+                )
+            )
+        }
+
+        return compileIntentDocument(
+            source = input.source,
+            intent = input.response.normalizedIntent,
+            expectedReview = review,
+            reviewedInput = input,
+            evidenceFactory = { validation ->
+                ReviewedAiProposalCompilationEvidence(
+                    source = input.source,
+                    providerId = input.providerId,
+                    request = input.request,
+                    response = input.response,
+                    review = review,
+                    validation = validation
+                )
+            }
+        )
+    }
+
+    private fun compileIntentDocument(
+        source: CompilationSource,
+        intent: IntentDocument,
+        expectedReview: IntentProposalReviewEvidence? = null,
+        reviewedInput: ReviewedAiProposalCompilationInput? = null,
+        evidenceFactory: (IntentValidationReport) -> IntentCompilationEvidence
+    ): CompilationResult {
+        require((expectedReview == null) == (reviewedInput == null)) {
+            "Reviewed AI proposal input and review evidence must be supplied together."
+        }
+        val intentEvaluation = ValidatedIntent.evaluate(registry, intent)
+        val intentValidation = intentEvaluation.report
+        if (expectedReview != null && expectedReview.validation != intentValidation) {
+            return CompilationResult.Rejected(
+                CompilationRejection(
+                    source = source,
+                    stage = CompilationStage.PROPOSAL_REVIEW,
+                    diagnostics = listOf(
+                        CompilationDiagnostic(
+                            "compiler.ai-proposal.review-drift",
+                            "AI proposal review and shared compiler Intent validation produced different evidence."
+                        )
+                    ),
+                    intent = intent,
+                    intentValidation = intentValidation,
+                    proposal = reviewedInput?.response,
+                    proposalReview = expectedReview
+                )
+            )
+        }
+        if (!intentValidation.valid) {
+            return CompilationResult.Rejected(
+                CompilationRejection(
+                    source = source,
                     stage = CompilationStage.INTENT_VALIDATION,
                     diagnostics = ensureErrorDiagnostic(
                         diagnostics = intentValidation.issues.map { issue ->
@@ -53,18 +145,21 @@ class FlowCompilationService(
                         fallbackCode = "compiler.intent-validation.failed",
                         fallbackMessage = "Intent validation failed without an error diagnostic."
                     ),
-                    intent = input.intent,
-                    intentValidation = intentValidation
+                    intent = intent,
+                    intentValidation = intentValidation,
+                    proposal = reviewedInput?.response,
+                    proposalReview = expectedReview
                 )
             )
         }
 
+        val evidence = evidenceFactory(intentValidation)
         val ast = try {
             intentPlanner.plan(requireNotNull(intentEvaluation.accepted))
         } catch (failure: Exception) {
             return CompilationResult.Rejected(
-                CompilationRejection(
-                    source = input.source,
+                rejection(
+                    source = source,
                     stage = CompilationStage.INTENT_LOWERING,
                     diagnostics = listOf(
                         CompilationDiagnostic(
@@ -72,19 +167,15 @@ class FlowCompilationService(
                             failure.message ?: failure.javaClass.simpleName
                         )
                     ),
-                    intent = input.intent,
+                    evidence = evidence,
                     intentValidation = intentValidation
                 )
             )
         }
 
         return compileAst(
-            source = input.source,
-            evidence = IntentFrontendCompilationEvidence(
-                source = input.source,
-                intent = input.intent,
-                validation = intentValidation
-            ),
+            source = source,
+            evidence = evidence,
             ast = ast
         )
     }
@@ -108,7 +199,7 @@ class FlowCompilationService(
         val validation = flowValidator.validate(ast)
         if (!validation.valid) {
             return CompilationResult.Rejected(
-                CompilationRejection(
+                rejection(
                     source = source,
                     stage = CompilationStage.FLOW_VALIDATION,
                     diagnostics = ensureErrorDiagnostic(
@@ -122,8 +213,7 @@ class FlowCompilationService(
                         fallbackCode = "compiler.flow-validation.failed",
                         fallbackMessage = "Flow validation failed without an error diagnostic."
                     ),
-                    intent = (evidence as? IntentFrontendCompilationEvidence)?.intent,
-                    intentValidation = (evidence as? IntentFrontendCompilationEvidence)?.validation,
+                    evidence = evidence,
                     ast = ast,
                     flowValidation = validation
                 )
@@ -134,7 +224,7 @@ class FlowCompilationService(
             flowPlanner.plan(ast)
         } catch (failure: Exception) {
             return CompilationResult.Rejected(
-                CompilationRejection(
+                rejection(
                     source = source,
                     stage = CompilationStage.PLANNING,
                     diagnostics = listOf(
@@ -143,8 +233,7 @@ class FlowCompilationService(
                             failure.message ?: failure.javaClass.simpleName
                         )
                     ),
-                    intent = (evidence as? IntentFrontendCompilationEvidence)?.intent,
-                    intentValidation = (evidence as? IntentFrontendCompilationEvidence)?.validation,
+                    evidence = evidence,
                     ast = ast,
                     flowValidation = validation
                 )
@@ -163,7 +252,7 @@ class FlowCompilationService(
             )
         } catch (failure: Exception) {
             CompilationResult.Rejected(
-                CompilationRejection(
+                rejection(
                     source = source,
                     stage = CompilationStage.CANONICALIZATION,
                     diagnostics = listOf(
@@ -172,12 +261,35 @@ class FlowCompilationService(
                             failure.message ?: failure.javaClass.simpleName
                         )
                     ),
-                    intent = (evidence as? IntentFrontendCompilationEvidence)?.intent,
-                    intentValidation = (evidence as? IntentFrontendCompilationEvidence)?.validation,
+                    evidence = evidence,
                     ast = ast,
                     flowValidation = validation
                 )
             )
         }
+    }
+
+    private fun rejection(
+        source: CompilationSource,
+        stage: CompilationStage,
+        diagnostics: List<CompilationDiagnostic>,
+        evidence: FrontendCompilationEvidence,
+        intentValidation: IntentValidationReport? = (evidence as? IntentCompilationEvidence)?.validation,
+        ast: FlowDocument? = null,
+        flowValidation: org.flowlang.validator.ValidationReport? = null
+    ): CompilationRejection {
+        val intentEvidence = evidence as? IntentCompilationEvidence
+        val proposalEvidence = evidence as? ReviewedAiProposalCompilationEvidence
+        return CompilationRejection(
+            source = source,
+            stage = stage,
+            diagnostics = diagnostics,
+            intent = intentEvidence?.intent,
+            intentValidation = intentValidation,
+            proposal = proposalEvidence?.response,
+            proposalReview = proposalEvidence?.review,
+            ast = ast,
+            flowValidation = flowValidation
+        )
     }
 }

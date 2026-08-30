@@ -1,22 +1,22 @@
-version: "2.0"
+version: "3.0"
 compositionRoot: "org.flowlang.compiler.FlowCompilationService"
 currentExecutionAuthority: "org.flowlang.compiler.CanonicalExecutionGraph"
 derivedCanonicalView: "ExecutionPlan+CanonicalExecutionPlan"
 convergedFrontends:
   - "flow-source"
   - "intent-yaml"
-deferredFrontends:
   - "reviewed-ai-proposal"
+deferredFrontends: []
 productionEntrypoints:
   - "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt#runFlow"
   - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt#runIntentCommand"
+  - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt#runNormalizeCommand"
   - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt#planFor"
   - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt#generate"
   - "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt#buildPipeline"
   - "src/main/kotlin/org/flowlang/conformance/TargetNeutralConformanceFixture.kt#build"
   - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt#evaluateIntent"
-deferredProductEntrypoints:
-  - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt#runNormalizeCommand"
+deferredProductEntrypoints: []
 independentConformancePaths:
   - "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixAuthority.kt"
   - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"

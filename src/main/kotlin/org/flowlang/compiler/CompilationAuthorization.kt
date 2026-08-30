@@ -1,5 +1,6 @@
 package org.flowlang.compiler
 
+import org.flowlang.ai.normalization.IntentProposalReviewEvidence
 import org.flowlang.intent.IntentValidationReport
 import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.planner.ExecutionPlan
@@ -17,7 +18,8 @@ data class CompilationValidationBinding(
     val sourceSha256: String? = null,
     val intentValid: Boolean? = null,
     val flowValid: Boolean,
-    val graphValid: Boolean
+    val graphValid: Boolean,
+    val proposalReviewValid: Boolean? = null
 ) {
     init {
         require(GRAPH_DIGEST.matches(graphDigest)) {
@@ -28,9 +30,19 @@ data class CompilationValidationBinding(
         }
         require(flowValid) { "Compilation authorization cannot bind a failed Flow validation." }
         require(graphValid) { "Compilation authorization cannot bind an invalid canonical graph." }
-        if (origin == CompilationAuthorizationOrigin.COMPILATION_UNIT) {
-            require(sourceSha256 != null) {
+        when (origin) {
+            CompilationAuthorizationOrigin.COMPILATION_UNIT -> require(sourceSha256 != null) {
                 "Compilation-unit authorization must bind the exact source digest."
+            }
+            CompilationAuthorizationOrigin.COMPATIBILITY_PLAN -> {
+                require(sourceSha256 == null && intentValid == null && proposalReviewValid == null) {
+                    "Compatibility-plan authorization cannot claim source, Intent or proposal-review evidence."
+                }
+            }
+        }
+        if (proposalReviewValid != null) {
+            require(proposalReviewValid && intentValid == true) {
+                "Proposal-review authorization may only bind a successful reviewed Intent validation."
             }
         }
     }
@@ -84,14 +96,32 @@ object CanonicalExecutionGraphGate {
     fun authorizeCompilation(
         source: CompilationSource,
         intentValidation: IntentValidationReport?,
+        proposalReview: IntentProposalReviewEvidence?,
         flowValidation: ValidationReport,
         plannerPlan: ExecutionPlan
     ): CompilationAuthorization {
         require(flowValidation.valid) {
             "Canonical graph authorization requires successful Flow validation."
         }
-        require(intentValidation == null || intentValidation.valid) {
-            "Canonical graph authorization cannot bind a failed Intent validation."
+        when (source.frontend) {
+            CompilationFrontend.FLOW_SOURCE -> {
+                require(intentValidation == null && proposalReview == null) {
+                    "Flow Source authorization cannot claim Intent or AI proposal-review evidence."
+                }
+            }
+            CompilationFrontend.INTENT_YAML -> {
+                require(intentValidation?.valid == true && proposalReview == null) {
+                    "Intent YAML authorization requires successful Intent validation and no AI review evidence."
+                }
+            }
+            CompilationFrontend.REVIEWED_AI_PROPOSAL -> {
+                require(intentValidation?.valid == true && proposalReview?.accepted == true) {
+                    "Reviewed AI proposal authorization requires successful proposal review and Intent validation."
+                }
+                require(proposalReview.validation == intentValidation) {
+                    "Reviewed AI proposal authorization requires the exact compiler Intent validation report."
+                }
+            }
         }
         return authorize(
             plannerPlan = plannerPlan,
@@ -102,11 +132,29 @@ object CanonicalExecutionGraphGate {
                     sourceSha256 = source.sha256,
                     intentValid = intentValidation?.valid,
                     flowValid = flowValidation.valid,
-                    graphValid = true
+                    graphValid = true,
+                    proposalReviewValid = proposalReview?.accepted
                 )
             }
         )
     }
+
+    /**
+     * Source- and binary-compatible pre-AR-01C entrypoint for non-AI frontends.
+     * Reviewed proposals must use the proposal-aware overload above.
+     */
+    fun authorizeCompilation(
+        source: CompilationSource,
+        intentValidation: IntentValidationReport?,
+        flowValidation: ValidationReport,
+        plannerPlan: ExecutionPlan
+    ): CompilationAuthorization = authorizeCompilation(
+        source = source,
+        intentValidation = intentValidation,
+        proposalReview = null,
+        flowValidation = flowValidation,
+        plannerPlan = plannerPlan
+    )
 
     /**
      * Compatibility ingress for inventoried conformance and manually assembled

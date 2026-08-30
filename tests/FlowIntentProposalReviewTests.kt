@@ -18,6 +18,7 @@ import org.flowlang.intent.IntentWorkflow
 import org.flowlang.intent.IntentWorkflowKind
 import org.flowlang.intent.StandardCapability
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
@@ -50,10 +51,15 @@ class FlowIntentProposalReviewTests {
     fun deterministicProposalIsAccepted() {
         val response = ScenarioPackIntentNormalizer()
             .normalize(AiIntentRequest(userText = "Build and test the orders service."))
+        val evidence = review.reviewWithEvidence(response)
+
         assertTrue(
-            review.review(response) is IntentProposalDecision.Accepted,
+            evidence.decision is IntentProposalDecision.Accepted,
             "A clean deterministic proposal must pass the standard's review."
         )
+        assertTrue(evidence.accepted)
+        assertTrue(evidence.validation.valid)
+        assertEquals(response.normalizedIntent, evidence.intent)
     }
 
     /**

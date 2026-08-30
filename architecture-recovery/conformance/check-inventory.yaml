@@ -7,6 +7,7 @@ checks:
   - architecture-recovery.ar-01.compiler-entrypoint-inventory
   - architecture-recovery.ar-01.flow-source-compilation-axis
   - architecture-recovery.ar-01.intent-frontend-convergence
+  - architecture-recovery.ar-01.reviewed-ai-frontend-convergence
   - architecture-recovery.ar-01.compiler-dependency-direction
   - architecture-recovery.ar-01.public-contract-freeze
   - architecture-recovery.ar-01.canonical-graph-integrity

@@ -10,6 +10,10 @@ import org.flowlang.scenarios.ScenarioPackRegistry
  */
 class ScenarioPackIntentNormalizer : AiIntentProvider {
     override fun normalize(request: AiIntentRequest): AiIntentResponse = ScenarioPackRegistry.normalize(request)
+
+    companion object {
+        const val PROVIDER_ID: String = "scenario-pack"
+    }
 }
 
 /**
