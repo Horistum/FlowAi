@@ -32,7 +32,7 @@ import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.materialization.TargetSelectionDecision
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.ExecutionPlanCanonicalizer
+import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.release.ReleaseMetadataHonestyAuthority
 import org.flowlang.release.StandardReleaseAssemblyAuthority
 import org.flowlang.standard.DiagnosticCoverageAnalyzer
@@ -185,6 +185,7 @@ private fun runIntentCommand(
                 ast = ast,
                 validation = validation,
                 plan = plan,
+                canonicalPlan = compilation.canonicalPlan,
                 planning = planning,
                 strict = strict
             )
@@ -209,6 +210,7 @@ private fun runIntentCommand(
             ast = ast,
             validation = validation,
             plan = plan,
+            canonicalPlan = compilation.canonicalPlan,
             evidence = evidence,
             strict = strict,
             renderRequested = renderRequested
@@ -337,6 +339,7 @@ private fun runNormalizeCommand(
                 ast = ast,
                 validation = validation,
                 plan = plan,
+                canonicalPlan = compilation.canonicalPlan,
                 planning = planning,
                 strict = strict,
                 normalizationReport = response.report
@@ -362,6 +365,7 @@ private fun runNormalizeCommand(
             ast = ast,
             validation = validation,
             plan = plan,
+            canonicalPlan = compilation.canonicalPlan,
             evidence = evidence,
             strict = strict,
             renderRequested = renderRequested,
@@ -475,6 +479,7 @@ private fun writePlanningArtifacts(
     ast: Any,
     validation: Any,
     plan: ExecutionPlan,
+    canonicalPlan: CanonicalExecutionPlan,
     planning: CliTargetNeutralPlanningEvidence,
     strict: Boolean,
     normalizationReport: Any? = null
@@ -491,7 +496,7 @@ private fun writePlanningArtifacts(
         "flow-ast.json" to ast,
         "validation-report.json" to validation,
         "execution-plan.json" to plan,
-        "canonical-execution-plan.json" to ExecutionPlanCanonicalizer.canonicalize(plan),
+        "canonical-execution-plan.json" to canonicalPlan,
         "target-neutral-planning-report.json" to planning
     )
     writeMinimalBundle(directory, plan.flowName, "", strict, values, normalizationReport != null)
@@ -506,6 +511,7 @@ private fun writeIntentArtifacts(
     ast: Any,
     validation: Any,
     plan: ExecutionPlan,
+    canonicalPlan: CanonicalExecutionPlan,
     evidence: CliTargetEvidence,
     strict: Boolean,
     renderRequested: Boolean,
@@ -556,7 +562,7 @@ private fun writeIntentArtifacts(
         "flow-ast.json" to ast,
         "validation-report.json" to validation,
         "execution-plan.json" to plan,
-        "canonical-execution-plan.json" to ExecutionPlanCanonicalizer.canonicalize(plan),
+        "canonical-execution-plan.json" to canonicalPlan,
         "target-selection-evidence.json" to evidence.targetSelection,
         "cli-target-outcome.json" to outcome,
         "compatibility-report.json" to evidence.compatibility,

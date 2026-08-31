@@ -2,12 +2,12 @@ package org.flowlang.materialization
 
 import org.flowlang.notes.NotesPackageContract
 import org.flowlang.notes.NotesPackageKind
-import org.flowlang.semantic.SemanticActionGraph
-import org.flowlang.semantic.SemanticActionGraphValidator
-import org.flowlang.semantic.SemanticActionKind
+import org.flowlang.obligations.ArchitectureObligationGraph
+import org.flowlang.obligations.ArchitectureObligationGraphValidator
+import org.flowlang.obligations.ArchitectureObligationKind
 
 /**
- * Target-neutral materialization negotiation for semantic action graphs.
+ * Target-neutral materialization negotiation for architecture-obligation evidence.
  *
  * This model records whether a semantic action can advance toward projection,
  * needs an adapter boundary, is unsupported, is blocked by policy, or must be
@@ -49,7 +49,7 @@ data class MaterializationDecision(
 
 data class MaterializationNegotiation(
     val negotiationId: String,
-    val graph: SemanticActionGraph,
+    val graph: ArchitectureObligationGraph,
     val decisions: List<MaterializationDecision>
 ) {
     fun decisionsByNode(): Map<String, MaterializationDecision> = decisions.associateBy { it.nodeId }
@@ -88,7 +88,7 @@ class MaterializationNegotiationValidator(
             issues += issue(negotiation, "materialization.negotiation.id.invalid", "Materialization negotiation id must be lowercase dot-separated identifier text.")
         }
 
-        val graphReport = SemanticActionGraphValidator(notesPackages).validate(negotiation.graph)
+        val graphReport = ArchitectureObligationGraphValidator(notesPackages).validate(negotiation.graph)
         if (!graphReport.valid) {
             graphReport.issues.forEach { graphIssue ->
                 issues += issue(negotiation, "materialization.graph.invalid", graphIssue.message)
@@ -174,14 +174,14 @@ class MaterializationNegotiationValidator(
         return issues
     }
 
-    private fun SemanticActionKind.allowedToAdvanceWithoutAdapter(): Boolean = when (this) {
-        SemanticActionKind.DOMAIN,
-        SemanticActionKind.CAPABILITY,
-        SemanticActionKind.SAFETY,
-        SemanticActionKind.CONFORMANCE_REQUIREMENT -> true
-        SemanticActionKind.RUNTIME_REQUIREMENT,
-        SemanticActionKind.TARGET_REQUIREMENT,
-        SemanticActionKind.PROJECTION_REQUIREMENT -> false
+    private fun ArchitectureObligationKind.allowedToAdvanceWithoutAdapter(): Boolean = when (this) {
+        ArchitectureObligationKind.DOMAIN,
+        ArchitectureObligationKind.CAPABILITY,
+        ArchitectureObligationKind.SAFETY,
+        ArchitectureObligationKind.CONFORMANCE_REQUIREMENT -> true
+        ArchitectureObligationKind.RUNTIME_REQUIREMENT,
+        ArchitectureObligationKind.TARGET_REQUIREMENT,
+        ArchitectureObligationKind.PROJECTION_REQUIREMENT -> false
     }
 
     private fun issue(negotiation: MaterializationNegotiation, code: String, message: String) =
@@ -198,7 +198,7 @@ class MaterializationNegotiationValidator(
 }
 
 object StandardMaterializationNegotiations {
-    fun baseline(graph: SemanticActionGraph): MaterializationNegotiation = MaterializationNegotiation(
+    fun baseline(graph: ArchitectureObligationGraph): MaterializationNegotiation = MaterializationNegotiation(
         negotiationId = "flow.materialization.baseline",
         graph = graph,
         decisions = listOf(

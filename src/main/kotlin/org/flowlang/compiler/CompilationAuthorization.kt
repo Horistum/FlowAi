@@ -4,7 +4,8 @@ import org.flowlang.ai.normalization.IntentProposalReviewEvidence
 import org.flowlang.intent.IntentValidationReport
 import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.planner.ExecutionPlanCanonicalizer
+import org.flowlang.planner.PlanDependencyRelations
+import org.flowlang.planner.TaskNode
 import org.flowlang.validator.ValidationReport
 
 enum class CompilationAuthorizationOrigin {
@@ -82,7 +83,8 @@ class CompilationAuthorization internal constructor(
         require(projected == executionPlan) {
             "Graph-derived ExecutionPlan drifted after authorization."
         }
-        require(ExecutionPlanCanonicalizer.canonicalize(projected) == canonicalPlan) {
+        val projectedCanonical = CanonicalExecutionGraphProjection.toCanonicalExecutionPlan(graph, bindings)
+        require(projectedCanonical == canonicalPlan) {
             "Graph-derived CanonicalExecutionPlan drifted after authorization."
         }
         require(validationBinding.graphDigest == graphDigest.value) {
@@ -90,6 +92,41 @@ class CompilationAuthorization internal constructor(
         }
         return this
     }
+}
+
+
+internal data class AuthorizedCanonicalTask(
+    val node: CanonicalTaskNode,
+    val binding: CanonicalTaskBinding,
+    val compatibilityTask: TaskNode
+)
+
+/**
+ * Resolves one compatibility TaskNode back to the exact task owned by this authorization.
+ *
+ * Materialization may inspect implementation binding only after this equality gate. Semantic
+ * capability is read from [AuthorizedCanonicalTask.node], never reconstructed from module/action.
+ */
+internal fun CompilationAuthorization.requireAuthorizedTask(task: TaskNode): AuthorizedCanonicalTask {
+    requireIntegrity()
+    val projectedTask = PlanDependencyRelations.flatten(executionPlan.nodes)
+        .filterIsInstance<TaskNode>()
+        .singleOrNull { candidate -> candidate.id == task.id }
+        ?: error("Task '${task.id}' is not present in the graph-derived ExecutionPlan.")
+    require(projectedTask == task) {
+        "Task '${task.id}' differs from the graph-derived compatibility view."
+    }
+    val metadata = bindings.nodeMetadata.singleOrNull { projection -> projection.planNodeId == task.id }
+        ?: error("Task '${task.id}' has no canonical projection metadata.")
+    val node = graph.nodes.singleOrNull { candidate -> candidate.id == metadata.nodeId }
+        as? CanonicalTaskNode
+        ?: error("Task '${task.id}' does not resolve to one canonical task node.")
+    val binding = bindings.tasks.singleOrNull { candidate -> candidate.nodeId == node.id }
+        ?: error("Canonical task '${node.id}' has no implementation binding.")
+    require(binding.module == task.module && binding.action == task.action && binding.target == task.target) {
+        "Task '${task.id}' implementation binding differs from its authorized graph binding."
+    }
+    return AuthorizedCanonicalTask(node, binding, projectedTask)
 }
 
 object CanonicalExecutionGraphGate {
@@ -194,7 +231,7 @@ object CanonicalExecutionGraphGate {
             "Canonical graph projection is not exactly equivalent to the planner output. " +
                 "The authority cutover refuses dual semantic truth."
         }
-        val canonical = ExecutionPlanCanonicalizer.canonicalize(projected)
+        val canonical = CanonicalExecutionGraphProjection.toCanonicalExecutionPlan(build)
         return CompilationAuthorization(
             graph = build.graph,
             graphDigest = digest,

@@ -371,8 +371,9 @@ authorities:
     role: "semantic-invariant-owner"
     invariant: "Derives public canonical task node kind only from explicit target-neutral semantic capability and never from implementation labels, target identity, adapter requirements or effect-resource text."
     inputs: "TaskNode semanticCapability retained from canonical intent lowering; production API: kindFor, kindForSemanticCapability."
-    outputs: "Closed CanonicalPlanNodeKind classification consumed by ExecutionPlanCanonicalizer."
+    outputs: "Closed CanonicalPlanNodeKind classification consumed by direct CanonicalExecutionGraph projection and the deprecated compatibility parity facade."
     callers:
+      - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphProjection.kt"
       - "src/main/kotlin/org/flowlang/conformance/ScenarioAndPlanChecks.kt"
       - "src/main/kotlin/org/flowlang/planner/CanonicalExecutionPlan.kt"
   - name: "CanonicalTopologyRequirementAuthority"
@@ -550,8 +551,8 @@ authorities:
   - name: "MandatoryMaterializationAuthority"
     path: "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
     role: "target-edge-policy-owner"
-    invariant: "Single authority for the transition from an ExecutionPlan to target projection authorization."
-    inputs: "Neutral plan/manifest state at the target integration edge; production API: authorize, authorizeDiagnosticEvidence, requireValid, validate."
+    invariant: "Single authority for the transition from validated planning evidence plus exact CompilationAuthorization to target projection authorization; a detached ExecutionPlan cannot authorize projection."
+    inputs: "Validated graph-derived compatibility view and exact CompilationAuthorization at the target integration edge; production API: authorize, authorizeDiagnosticEvidence, requireValid, validate."
     outputs: "Target-facing decision, diagnostic, or rendered/materialization evidence."
     callers:
       - "src/main/kotlin/org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt"

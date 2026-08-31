@@ -6,25 +6,25 @@ import org.flowlang.notes.NotesPackageBoundary
 import org.flowlang.notes.NotesPackageContract
 import org.flowlang.notes.NotesPackageKind
 import org.flowlang.notes.StandardNotesPackageContracts
-import org.flowlang.semantic.SemanticActionEdge
-import org.flowlang.semantic.SemanticActionEdgeKind
-import org.flowlang.semantic.SemanticActionGraph
-import org.flowlang.semantic.SemanticActionGraphStatus
-import org.flowlang.semantic.SemanticActionGraphValidator
-import org.flowlang.semantic.SemanticActionKind
-import org.flowlang.semantic.SemanticActionNode
-import org.flowlang.semantic.StandardSemanticActionGraphs
+import org.flowlang.obligations.ArchitectureObligationEdge
+import org.flowlang.obligations.ArchitectureObligationEdgeKind
+import org.flowlang.obligations.ArchitectureObligationGraph
+import org.flowlang.obligations.ArchitectureObligationGraphStatus
+import org.flowlang.obligations.ArchitectureObligationGraphValidator
+import org.flowlang.obligations.ArchitectureObligationKind
+import org.flowlang.obligations.ArchitectureObligationNode
+import org.flowlang.obligations.StandardArchitectureObligationGraphs
 
-class FlowSemanticActionGraphTests {
+class FlowArchitectureObligationGraphTests {
     private val notes = StandardNotesPackageContracts.baseline()
-    private val validator = SemanticActionGraphValidator(notes)
+    private val validator = ArchitectureObligationGraphValidator(notes)
 
     @Test
-    fun baselineSemanticActionGraphIsValidAndNotesBound() {
-        val graph = StandardSemanticActionGraphs.baseline()
+    fun baselineArchitectureObligationGraphIsValidAndNotesBound() {
+        val graph = StandardArchitectureObligationGraphs.baseline()
         val report = validator.validate(graph)
 
-        assertEquals(SemanticActionGraphStatus.PASS, report.status)
+        assertEquals(ArchitectureObligationGraphStatus.PASS, report.status)
         assertTrue(report.valid)
         assertEquals(5, report.nodes)
         assertEquals(4, report.edges)
@@ -32,13 +32,13 @@ class FlowSemanticActionGraphTests {
     }
 
     @Test
-    fun semanticActionNodesMustBindToDeclaredNotesPackageItems() {
-        val graph = SemanticActionGraph(
+    fun architectureObligationNodesMustBindToDeclaredNotesPackageItems() {
+        val graph = ArchitectureObligationGraph(
             graphId = "flow.semantic.bad-declaration",
             nodes = listOf(
-                SemanticActionNode(
+                ArchitectureObligationNode(
                     id = "capability.unknown",
-                    kind = SemanticActionKind.CAPABILITY,
+                    kind = ArchitectureObligationKind.CAPABILITY,
                     declaration = "not.declared",
                     notesPackageId = "flow.capability.core"
                 )
@@ -47,18 +47,18 @@ class FlowSemanticActionGraphTests {
 
         val report = validator.validate(graph)
 
-        assertEquals(SemanticActionGraphStatus.FAIL, report.status)
+        assertEquals(ArchitectureObligationGraphStatus.FAIL, report.status)
         assertTrue(report.issues.any { it.code == "semantic.node.declaration.unbound" })
     }
 
     @Test
-    fun semanticActionNodeKindMustMatchNotesPackageKind() {
-        val graph = SemanticActionGraph(
+    fun architectureObligationNodeKindMustMatchNotesPackageKind() {
+        val graph = ArchitectureObligationGraph(
             graphId = "flow.semantic.kind-mismatch",
             nodes = listOf(
-                SemanticActionNode(
+                ArchitectureObligationNode(
                     id = "runtime.bad",
-                    kind = SemanticActionKind.RUNTIME_REQUIREMENT,
+                    kind = ArchitectureObligationKind.RUNTIME_REQUIREMENT,
                     declaration = "approval.required",
                     notesPackageId = "flow.safety.core"
                 )
@@ -67,12 +67,12 @@ class FlowSemanticActionGraphTests {
 
         val report = validator.validate(graph)
 
-        assertEquals(SemanticActionGraphStatus.FAIL, report.status)
+        assertEquals(ArchitectureObligationGraphStatus.FAIL, report.status)
         assertTrue(report.issues.any { it.code == "semantic.node.package.kind-mismatch" })
     }
 
     @Test
-    fun universalSemanticActionGraphRejectsRawRuntimeMechanismDeclarations() {
+    fun universalArchitectureObligationGraphRejectsRawRuntimeMechanismDeclarations() {
         val rawNotes = NotesPackageContract(
             packageId = "flow.capability.raw-runtime",
             packageVersion = "0.9.5.7.2",
@@ -81,32 +81,32 @@ class FlowSemanticActionGraphTests {
             declaredCapabilities = setOf("shell.run"),
             boundaries = setOf(NotesPackageBoundary("test-only", "Used only to prove semantic mechanism rejection."))
         )
-        val graph = SemanticActionGraph(
+        val graph = ArchitectureObligationGraph(
             graphId = "flow.semantic.raw-runtime-leak",
             nodes = listOf(
-                SemanticActionNode(
+                ArchitectureObligationNode(
                     id = "capability.bad",
-                    kind = SemanticActionKind.CAPABILITY,
+                    kind = ArchitectureObligationKind.CAPABILITY,
                     declaration = "shell.run",
                     notesPackageId = rawNotes.packageId
                 )
             )
         )
 
-        val report = SemanticActionGraphValidator(notes + rawNotes).validate(graph)
+        val report = ArchitectureObligationGraphValidator(notes + rawNotes).validate(graph)
 
-        assertEquals(SemanticActionGraphStatus.FAIL, report.status)
+        assertEquals(ArchitectureObligationGraphStatus.FAIL, report.status)
         assertTrue(report.issues.any { it.code == "semantic.node.forbidden-universal-mechanism" })
     }
 
     @Test
     fun diagnosticDescriptionMayNameRejectedRuntimeMechanisms() {
-        val graph = SemanticActionGraph(
+        val graph = ArchitectureObligationGraph(
             graphId = "flow.semantic.diagnostic-language",
             nodes = listOf(
-                SemanticActionNode(
+                ArchitectureObligationNode(
                     id = "capability.approval",
-                    kind = SemanticActionKind.CAPABILITY,
+                    kind = ArchitectureObligationKind.CAPABILITY,
                     declaration = "approval.require",
                     notesPackageId = "flow.capability.core",
                     description = "A shell command is not accepted as universal approval meaning."
@@ -116,38 +116,38 @@ class FlowSemanticActionGraphTests {
 
         val report = validator.validate(graph)
 
-        assertEquals(SemanticActionGraphStatus.PASS, report.status, report.issues.toString())
+        assertEquals(ArchitectureObligationGraphStatus.PASS, report.status, report.issues.toString())
     }
 
     @Test
-    fun semanticActionGraphRejectsUnknownSelfReferentialAndCyclicEdges() {
-        val graph = SemanticActionGraph(
+    fun architectureObligationGraphRejectsUnknownSelfReferentialAndCyclicEdges() {
+        val graph = ArchitectureObligationGraph(
             graphId = "flow.semantic.edge-errors",
             nodes = listOf(
-                SemanticActionNode(
+                ArchitectureObligationNode(
                     id = "domain.intent",
-                    kind = SemanticActionKind.DOMAIN,
+                    kind = ArchitectureObligationKind.DOMAIN,
                     declaration = "automation.intent",
                     notesPackageId = "flow.domain.core"
                 ),
-                SemanticActionNode(
+                ArchitectureObligationNode(
                     id = "capability.approval",
-                    kind = SemanticActionKind.CAPABILITY,
+                    kind = ArchitectureObligationKind.CAPABILITY,
                     declaration = "approval.require",
                     notesPackageId = "flow.capability.core"
                 )
             ),
             edges = listOf(
-                SemanticActionEdge("domain.intent", "missing.node", SemanticActionEdgeKind.REQUIRES),
-                SemanticActionEdge("domain.intent", "domain.intent", SemanticActionEdgeKind.REQUIRES),
-                SemanticActionEdge("domain.intent", "capability.approval", SemanticActionEdgeKind.REQUIRES),
-                SemanticActionEdge("capability.approval", "domain.intent", SemanticActionEdgeKind.REQUIRES)
+                ArchitectureObligationEdge("domain.intent", "missing.node", ArchitectureObligationEdgeKind.REQUIRES),
+                ArchitectureObligationEdge("domain.intent", "domain.intent", ArchitectureObligationEdgeKind.REQUIRES),
+                ArchitectureObligationEdge("domain.intent", "capability.approval", ArchitectureObligationEdgeKind.REQUIRES),
+                ArchitectureObligationEdge("capability.approval", "domain.intent", ArchitectureObligationEdgeKind.REQUIRES)
             )
         )
 
         val report = validator.validate(graph)
 
-        assertEquals(SemanticActionGraphStatus.FAIL, report.status)
+        assertEquals(ArchitectureObligationGraphStatus.FAIL, report.status)
         assertTrue(report.issues.any { it.code == "semantic.edge.to.unknown" })
         assertTrue(report.issues.any { it.code == "semantic.edge.self" })
         assertTrue(report.issues.any { it.code == "semantic.graph.cycle" })
@@ -155,18 +155,18 @@ class FlowSemanticActionGraphTests {
 
     @Test
     fun duplicateOrInvalidNodeIdsFailValidation() {
-        val graph = SemanticActionGraph(
+        val graph = ArchitectureObligationGraph(
             graphId = "flow.semantic.bad-node-id",
             nodes = listOf(
-                SemanticActionNode(
+                ArchitectureObligationNode(
                     id = "Invalid Node",
-                    kind = SemanticActionKind.DOMAIN,
+                    kind = ArchitectureObligationKind.DOMAIN,
                     declaration = "automation.intent",
                     notesPackageId = "flow.domain.core"
                 ),
-                SemanticActionNode(
+                ArchitectureObligationNode(
                     id = "Invalid Node",
-                    kind = SemanticActionKind.DOMAIN,
+                    kind = ArchitectureObligationKind.DOMAIN,
                     declaration = "automation.intent",
                     notesPackageId = "flow.domain.core"
                 )
@@ -175,7 +175,7 @@ class FlowSemanticActionGraphTests {
 
         val report = validator.validate(graph)
 
-        assertEquals(SemanticActionGraphStatus.FAIL, report.status)
+        assertEquals(ArchitectureObligationGraphStatus.FAIL, report.status)
         assertTrue(report.issues.any { it.code == "semantic.node.id.invalid" })
         assertTrue(report.issues.any { it.code == "semantic.node.id.duplicate" })
         assertFalse(report.valid)

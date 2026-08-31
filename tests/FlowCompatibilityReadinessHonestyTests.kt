@@ -19,6 +19,7 @@ import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetManifestRenderer
 import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetProjectionAuthorization
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
@@ -153,11 +154,11 @@ class FlowCompatibilityReadinessHonestyTests {
         val plan = readinessPlan()
         val generator = object : ReconciledTargetManifestGenerator() {
             override val target: String = "jenkins"
-            override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest =
+            override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest =
                 TargetManifest(
                     target = target,
-                    flowName = plan.flowName,
-                    compatibility = compatibility,
+                    flowName = authorization.plan.flowName,
+                    compatibility = authorization.compatibility,
                     jobs = listOf(TargetJob(id = "job", steps = listOf(notesProjectedStep())))
                 )
         }

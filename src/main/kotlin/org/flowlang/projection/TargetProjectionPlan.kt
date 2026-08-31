@@ -5,7 +5,7 @@ import org.flowlang.materialization.MaterializationNegotiation
 import org.flowlang.materialization.MaterializationNegotiationValidator
 import org.flowlang.materialization.MaterializationStatus
 import org.flowlang.notes.NotesPackageContract
-import org.flowlang.semantic.SemanticActionKind
+import org.flowlang.obligations.ArchitectureObligationKind
 
 /**
  * Target projection plan contract.
@@ -278,7 +278,7 @@ object StandardTargetProjectionPlans {
         val node = negotiation.graph.nodes.single { it.id == decision.nodeId }
         val kind = when (decision.status) {
             MaterializationStatus.MATERIALIZABLE -> when (node.kind) {
-                SemanticActionKind.CONFORMANCE_REQUIREMENT -> TargetProjectionArtifactKind.CONFORMANCE_RECORD
+                ArchitectureObligationKind.CONFORMANCE_REQUIREMENT -> TargetProjectionArtifactKind.CONFORMANCE_RECORD
                 else -> TargetProjectionArtifactKind.NOTES_BACKED
             }
             MaterializationStatus.ADAPTER_REQUIRED -> TargetProjectionArtifactKind.ADAPTER_BOUNDARY

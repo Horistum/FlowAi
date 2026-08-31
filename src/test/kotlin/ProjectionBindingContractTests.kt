@@ -103,8 +103,14 @@ class ProjectionBindingContractTests {
                 module = "git",
                 action = "checkout",
                 target = "source",
-                params = mapOf("url" to "https://example.invalid/repository.git"),
-                inputs = mapOf("workspace" to "source-workspace")
+                params = mapOf(
+                    "url" to "https://example.invalid/repository.git",
+                    "workspace" to "source-workspace"
+                ),
+                inputs = mapOf(
+                    "url" to "https://example.invalid/repository.git",
+                    "workspace" to "source-workspace"
+                )
             ),
             targetName = "jenkins",
             projectionRules = listOf(nativeRule(

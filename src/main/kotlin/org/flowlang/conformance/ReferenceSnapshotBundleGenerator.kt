@@ -61,7 +61,7 @@ class ReferenceSnapshotBundleGenerator(
         val renderedByTarget = linkedMapOf<String, String>()
 
         targetIds.sorted().forEach { target ->
-            val effectiveTargets = manifestPipeline.effectiveTargets(plan, target)
+            val effectiveTargets = manifestPipeline.effectiveTargets(compilation.authorization, target)
             val compatibility = CompatibilityAnalyzer(effectiveTargets).analyze(plan, target, strict = false)
             val readiness = ExecutionReadinessAnalyzer(effectiveTargets).analyze(plan, target, strict = false)
             if (compatibility.hasErrors || !readiness.generationAllowed) {
@@ -72,7 +72,7 @@ class ReferenceSnapshotBundleGenerator(
                     scenarioId = scenarioId,
                     targets = targets
                 )
-                val generated = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
+                val generated = manifestPipeline.generate(TargetMaterializationRequest.fromCompilation(compilation, selection))
                 val triggerAssessment = triggerAuthority.assess(plan, target)
                 val manifest = triggerAuthority.reconcileDiagnostic(generated, triggerAssessment)
                 val renderReadiness = TargetRenderPolicy.evaluate(manifest)

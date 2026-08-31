@@ -11,6 +11,7 @@ import org.flowlang.adapters.continuity.BuiltInAdapterContinuityScopedSupport
 import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionAuthority
 import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionLoader
 import org.flowlang.capabilities.SupportLevel
+import org.flowlang.compiler.CanonicalExecutionGraphGate
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.cli.Json
 import org.flowlang.generators.manifest.TargetProjectionRegistry
@@ -141,7 +142,7 @@ class AdapterExecutableContinuityConformanceChecks(
         if (declared.features[WORKSPACE_FEATURE] != SupportLevel.UNSUPPORTED) {
             add("The general GitHub Actions registry claim must remain workspace-unsupported.")
         }
-        val promoted = pipeline.effectiveTarget(plan, GITHUB_ACTIONS)
+        val promoted = pipeline.effectiveTarget(CanonicalExecutionGraphGate.authorizeCompatibilityPlan(plan, "conformance:a1.reference"), GITHUB_ACTIONS)
         if (promoted.features[WORKSPACE_FEATURE] != SupportLevel.SUPPORTED) {
             add("The exact checkout-build-image plan must receive bounded workspace support.")
         }
@@ -156,7 +157,7 @@ class AdapterExecutableContinuityConformanceChecks(
                 if (relation.kind == PlanDependencyKind.WORKSPACE) relation.copy(channel = "other") else relation
             }
         )
-        if (pipeline.effectiveTarget(wrongChannel, GITHUB_ACTIONS).features[WORKSPACE_FEATURE] != SupportLevel.UNSUPPORTED) {
+        if (pipeline.effectiveTarget(CanonicalExecutionGraphGate.authorizeCompatibilityPlan(wrongChannel, "conformance:a1.wrong-channel"), GITHUB_ACTIONS).features[WORKSPACE_FEATURE] != SupportLevel.UNSUPPORTED) {
             add("A workspace relation on an undeclared channel must remain unsupported.")
         }
 
@@ -168,7 +169,7 @@ class AdapterExecutableContinuityConformanceChecks(
                 target = "follow-up"
             )
         )
-        if (pipeline.effectiveTarget(largerPlan, GITHUB_ACTIONS).features[WORKSPACE_FEATURE] != SupportLevel.UNSUPPORTED) {
+        if (pipeline.effectiveTarget(CanonicalExecutionGraphGate.authorizeCompatibilityPlan(largerPlan, "conformance:a1.larger-plan"), GITHUB_ACTIONS).features[WORKSPACE_FEATURE] != SupportLevel.UNSUPPORTED) {
             add("A larger workflow must not borrow executability from the bounded reference scenario.")
         }
     }

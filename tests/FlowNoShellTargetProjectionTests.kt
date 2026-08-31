@@ -14,11 +14,11 @@ import org.flowlang.projection.TargetProjectionArtifactKind
 import org.flowlang.projection.TargetProjectionPlan
 import org.flowlang.projection.TargetProjectionPlanStatus
 import org.flowlang.projection.TargetProjectionPlanValidator
-import org.flowlang.semantic.StandardSemanticActionGraphs
+import org.flowlang.obligations.StandardArchitectureObligationGraphs
 
 class FlowNoShellTargetProjectionTests {
     private val notes = StandardNotesPackageContracts.baseline()
-    private val graph = StandardSemanticActionGraphs.baseline()
+    private val graph = StandardArchitectureObligationGraphs.baseline()
     private val negotiation = StandardMaterializationNegotiations.baseline(graph)
 
     @Test

@@ -13,6 +13,7 @@ import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetManifestRenderer
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetProjectionAuthorization
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ExecutionPlan
 
@@ -153,8 +154,10 @@ class CoreTargetProjectionBoundaryTests {
         override val target: String,
         override val nativeProjectionCatalog: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.empty(target)
     ) : ReconciledTargetManifestGenerator() {
-        override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest =
-            TargetManifest(
+        override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
+            val plan = authorization.plan
+            val compatibility = authorization.compatibility
+            return TargetManifest(
                 target = target,
                 flowName = plan.flowName,
                 compatibility = compatibility,
@@ -164,6 +167,7 @@ class CoreTargetProjectionBoundaryTests {
                     "standardVersion" to "0.8.0"
                 )
             )
+        }
     }
 
     private class SyntheticRenderer(
