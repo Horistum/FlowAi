@@ -2,7 +2,7 @@
 
 Base revision: `b1edf195cedcabfa03963056d1cda3662f6c9da1`
 
-This report records local verification performed before publishing the AR-01D implementation to the review branch. It is evidence only; GitHub Flow CI remains the authoritative exact-head and merge-candidate validation boundary.
+This report records local verification performed before and during publication of the AR-01D implementation. It is evidence only; GitHub Flow CI remains the authoritative exact-head and merge-candidate validation boundary.
 
 ## Verified implementation scope
 
@@ -11,20 +11,24 @@ This report records local verification performed before publishing the AR-01D im
 - The notes-backed execution-looking `SemanticActionGraph` production type is retired in favor of `ArchitectureObligationGraph`, whose role is explicitly evidence/governance only.
 - Adapter `module.action` binding cannot synthesize canonical semantic capability or a substitute execution graph.
 - Historical public Target Manifest `semanticGraph` metadata and stable `flow.semantic.<task>` evidence identifiers remain preserved for wire compatibility.
+- The serialization-free semantic package inventory was migrated from retired package `semantic` to `obligations` in both its canonical package authority and production conformance copy. This was exposed by a clean synthetic merge-candidate checkout after the local worktree's empty retired directory had masked the missing-package condition.
 
 ## Local JDK 25 verification
 
-The exact published implementation content passed:
+The implementation content passed:
 
 - production Kotlin compilation;
 - test Kotlin compilation;
-- complete Gradle test suite: **1,265 tests, 0 failures, 0 errors, 0 skipped** across 236 test classes;
+- complete Gradle test suite before publication: **1,265 tests, 0 failures, 0 errors, 0 skipped** across 236 test classes;
 - targeted AR-01D authority-retirement and compatibility regressions;
-- standalone `conformance` execution;
+- targeted clean-checkout package-boundary tests after the inventory correction (`PackageLayeringIntegrityTests` and `SemanticCoreSerializationBoundaryTests`);
+- standalone `conformance` execution before publication;
 - 31 Flow Agent Python unit tests;
 - Flow Agent structure validation and context generation;
 - patch whitespace validation / `git diff --check` equivalent;
 - static audits for retired symbols, production canonicalizer callers and raw-plan authority bypasses.
+
+The clean-checkout inventory correction is not considered complete on local evidence alone; the following GitHub Flow CI exact-head and synthetic merge-candidate run is the blocking verification boundary.
 
 ## CI boundary
 
