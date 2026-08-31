@@ -21,8 +21,8 @@ object SemanticCorePackageBoundary {
         "notes",
         "planner",
         "projection",
+        "obligations",
         "safety",
-        "semantic",
         "standard",
         "topology",
         "validator"
