@@ -28,8 +28,14 @@ The implementation content passed:
 - patch whitespace validation / `git diff --check` equivalent;
 - static audits for retired symbols, production canonicalizer callers and raw-plan authority bypasses.
 
-The clean-checkout inventory correction is not considered complete on local evidence alone; the following GitHub Flow CI exact-head and synthetic merge-candidate run is the blocking verification boundary.
+## GitHub Flow CI boundaries
 
-## CI boundary
+| Boundary | Exact head | Synthetic merge candidate | Flow CI | Result |
+|---|---|---|---:|---|
+| Implementation | `bb2a5254cc6e41430e7570e91bc30687521d7e85` | `affca90d9cc3039de59a0d0649814ac5d9d8e4d6` | #3145 | PASS |
+| Validation | `d9e48a5bbdd8e86bf7a804a8c78b02fe1ef8e62c` | `47bdd893afde9df826121ab33fa9659a0d761eb7` | #3146 | PASS |
+| Completion | `4bbd9437c30d1fc44bfe7a1e2ebd2f17f4ab1fcf` | `ecbaf9f71ecaa5fc65d1049751894264a0cba974` | #3147 | PASS |
 
-Implementation, independent validation and completion lifecycle boundaries remain pending until distinct GitHub Flow CI exact-head and synthetic merge-candidate runs succeed. The pull request must remain draft until those boundaries are recorded and a final evidence-bearing head is green.
+Each lifecycle boundary used a distinct exact head and a distinct synthetic merge candidate. Both required Flow CI jobs passed at every accepted boundary. The completion boundary therefore closes AR-01D without reusing implementation or validation evidence.
+
+The final roadmap/evidence closure commit is intentionally later than the lifecycle completion boundary. It contains no new production semantics and must itself pass exact-head and synthetic merge-candidate Flow CI before PR #165 is marked ready for review.

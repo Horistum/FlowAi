@@ -1,13 +1,13 @@
 version: "AR-01"
 name: "Canonical Compiler Axis and Authoritative Execution Graph"
 type: "architecture-recovery-foundation"
-status: active
+status: complete
 stream: "architecture-recovery"
 
 objective: "Establish one authoritative compiler axis and one typed CanonicalExecutionGraph for accepted Flow meaning. AR-01 converges Intent YAML, Flow Source and reviewed AI proposals through FlowCompilationService, keeps frontend provenance, diagnostics and authorization in the digest-bound CompilationUnit, makes existing public plans and reports derived compatibility views, and removes SemanticActionGraph's false implication that an architecture-obligation graph is the execution IR."
 
 authorization:
-  status: active
+  status: completed
   predecessor: "AR-00"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-01"
   postToolchainSource: ".flow-agent/roadmap-post-toolchain.yaml#ARCHITECTURE-RECOVERY"
@@ -49,7 +49,7 @@ implementationStrategy:
 currentDeliverySlice:
   id: "AR-01D"
   name: "Derived Views and Superseded Authority Retirement"
-  status: "validating"
+  status: "complete"
   workPackage: ".flow-agent/work-packages/AR-01D-derived-views-authority-retirement.yaml"
   relationToCompletedSlices: "AR-01B established typed graph authority and digest-bound materialization; AR-01C converged all product frontends. AR-01D removes the remaining compatibility and evidence models that could still look or behave like independent execution authority."
   outcomes:
@@ -214,13 +214,19 @@ requiredTests:
 conformancePlan:
   inventory:
     - "architecture-recovery.ar-01.compiler-entrypoint-inventory"
+    - "architecture-recovery.ar-01.flow-source-compilation-axis"
+    - "architecture-recovery.ar-01.intent-frontend-convergence"
+    - "architecture-recovery.ar-01.reviewed-ai-frontend-convergence"
+    - "architecture-recovery.ar-01.compiler-dependency-direction"
+    - "architecture-recovery.ar-01.public-contract-freeze"
     - "architecture-recovery.ar-01.canonical-graph-integrity"
-    - "architecture-recovery.ar-01.frontend-equivalence"
+    - "architecture-recovery.ar-01.semantic-digest-determinism"
     - "architecture-recovery.ar-01.graph-mutation-polarity"
     - "architecture-recovery.ar-01.authorization-digest-binding"
     - "architecture-recovery.ar-01.derived-view-consistency"
+    - "architecture-recovery.ar-01.graph-bound-target-authorization"
+    - "architecture-recovery.ar-01.obligation-authority-retirement"
     - "architecture-recovery.ar-01.no-pseudo-graph-bypass"
-    - "architecture-recovery.ar-01.frozen-public-contract-preservation"
   evidenceRule: "Each check is added only with the production authority and a negative fixture that would fail if the former split compiler axis, digest-unbound authorization or redundant semantic authority returned."
 
 forbiddenScope:
@@ -268,10 +274,26 @@ lifecycle:
       - "Exact-head Flow Agent validation, compilation, complete tests and standalone conformance passed for the bounded AR-01-IFC-01 implementation."
       - "Synthetic merge-candidate Flow Agent validation, compilation, complete tests and standalone conformance passed without changing public artifact contracts or target support."
   validationBoundary:
-    status: pending
+    status: passed
+    exactHead: "d9e48a5bbdd8e86bf7a804a8c78b02fe1ef8e62c"
+    syntheticMergeCandidate: "47bdd893afde9df826121ab33fa9659a0d761eb7"
+    workflowRunId: 33465849505
+    workflowRunNumber: 3146
+    conclusion: success
+    evidence:
+      - "The final AR-01 authority state passed independent exact-head Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance after AR-01D implementation."
+      - "The independent synthetic merge candidate passed the same full validation boundary against main."
   completionBoundary:
-    status: pending
+    status: passed
+    exactHead: "4bbd9437c30d1fc44bfe7a1e2ebd2f17f4ab1fcf"
+    syntheticMergeCandidate: "ecbaf9f71ecaa5fc65d1049751894264a0cba974"
+    workflowRunId: 33466452681
+    workflowRunNumber: 3147
+    conclusion: success
+    evidence:
+      - "The completed AR-01D lifecycle candidate passed exact-head Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance."
+      - "The independently synthesized completion merge candidate passed the same complete boundary, allowing AR-01 to close without activating AR-02."
 
 localValidation:
-  status: ar-01c-complete
-  rule: "AR-01C completed reviewed AI proposal convergence through the source-bound, graph-authorized compiler axis. AR-01D remains the next bounded slice for derived-view cleanup and retirement of superseded authority; the full AR-01 completion boundary remains pending."
+  status: ar-01-complete
+  rule: "AR-01 is complete: all accepted frontends converge through FlowCompilationService, CanonicalExecutionGraph is the sole executable-meaning authority, public compatibility views are graph-derived, SemanticActionGraph is retired from production, and F-04/F-09/F-17 are closed. AR-02 is selected next but remains unactivated and requires its own work package and activation boundary."

@@ -1,7 +1,7 @@
 version: "AR-01D"
 name: "Derived Views and Superseded Authority Retirement"
 type: "architecture-recovery-delivery"
-status: validating
+status: complete
 stream: "architecture-recovery"
 parentWorkPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
 strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-01"
@@ -99,10 +99,12 @@ lifecycle:
       - "The evidence-bearing validation head passed exact-head Flow Agent validation, JDK 25 compilation, 1,265 tests with zero failures/errors/skips, and standalone conformance."
       - "The independently synthesized merge candidate passed the same complete boundary without changing production semantics or public contract versions."
   completionBoundary:
-    status: pending
-    exactHead: null
-    syntheticMergeCandidate: null
-    workflowRunId: null
-    workflowRunNumber: null
-    conclusion: null
-    evidence: []
+    status: passed
+    exactHead: "4bbd9437c30d1fc44bfe7a1e2ebd2f17f4ab1fcf"
+    syntheticMergeCandidate: "ecbaf9f71ecaa5fc65d1049751894264a0cba974"
+    workflowRunId: 33466452681
+    workflowRunNumber: 3147
+    conclusion: success
+    evidence:
+      - "The completion-candidate exact head passed Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance after the independent validation boundary was recorded."
+      - "The independently synthesized completion merge candidate passed the same complete boundary against main, proving the completed AR-01D state remains merge-compatible."
