@@ -79,13 +79,15 @@ nonGoals:
 
 lifecycle:
   implementationBoundary:
-    status: pending
-    exactHead: null
-    syntheticMergeCandidate: null
-    workflowRunId: null
-    workflowRunNumber: null
-    conclusion: null
-    evidence: []
+    status: passed
+    exactHead: "bb2a5254cc6e41430e7570e91bc30687521d7e85"
+    syntheticMergeCandidate: "affca90d9cc3039de59a0d0649814ac5d9d8e4d6"
+    workflowRunId: 33387433833
+    workflowRunNumber: 3145
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance passed on the clean-checkout-corrected AR-01D implementation."
+      - "Synthetic merge-candidate Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance passed against main b1edf195cedcabfa03963056d1cda3662f6c9da1."
   validationBoundary:
     status: pending
     exactHead: null
