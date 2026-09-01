@@ -25,10 +25,15 @@ class FlowConnectedMaterializationPipelineTests {
             module = "standard",
             action = "execute",
             target = "flow",
+            semanticCapability = "standard.execute",
             params = mapOf("operation" to "test")
         )
 
-        val resolution = TargetMaterializationResolver.resolve(task, "jenkins", rules("jenkins"))
+        val authorization = testCompatibilityAuthorization(
+            ExecutionPlan(flowName = "resolver-fixture", nodes = listOf(task)),
+            "test:resolver:jenkins:${task.id}"
+        )
+        val resolution = TargetMaterializationResolver.resolve(authorization, task, "jenkins", rules("jenkins"))
 
         assertEquals(TargetMaterializationStatus.NOTES_PROJECTED, resolution.materialization.status)
         assertEquals(MaterializationStatus.MATERIALIZABLE, resolution.negotiation.decisions.single().status)
@@ -45,15 +50,20 @@ class FlowConnectedMaterializationPipelineTests {
             module = "git",
             action = "checkout",
             target = "repo",
+            semanticCapability = "git.checkout",
             params = mapOf("branch" to "main")
         )
 
-        val resolution = TargetMaterializationResolver.resolve(task, "local", rules("local"))
+        val authorization = testCompatibilityAuthorization(
+            ExecutionPlan(flowName = "resolver-fixture", nodes = listOf(task)),
+            "test:resolver:local:${task.id}"
+        )
+        val resolution = TargetMaterializationResolver.resolve(authorization, task, "local", rules("local"))
 
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, resolution.materialization.status)
         assertEquals(MaterializationStatus.ADAPTER_REQUIRED, resolution.negotiation.decisions.single().status)
         assertEquals(TargetProjectionArtifactKind.ADAPTER_BOUNDARY, resolution.artifact.kind)
-        assertEquals("git.checkout", resolution.semanticGraph.nodes.single().declaration)
+        assertEquals("git.checkout", resolution.obligationGraph.nodes.single().declaration)
         assertNotNull(resolution.materialization.requirements["projectionPlan"])
         assertTrue(MaterializationNegotiationValidator(resolution.notesPackages).validate(resolution.negotiation).valid)
         assertTrue(TargetProjectionPlanValidator(resolution.notesPackages).validate(resolution.projectionPlan).valid)
@@ -66,15 +76,20 @@ class FlowConnectedMaterializationPipelineTests {
             module = "shell",
             action = "run",
             target = "local",
+            semanticCapability = "manual.runtime.action",
             params = mapOf("command" to "./gradlew clean test")
         )
 
-        val resolution = TargetMaterializationResolver.resolve(task, "jenkins", rules("jenkins"))
+        val authorization = testCompatibilityAuthorization(
+            ExecutionPlan(flowName = "resolver-fixture", nodes = listOf(task)),
+            "test:resolver:jenkins:${task.id}"
+        )
+        val resolution = TargetMaterializationResolver.resolve(authorization, task, "jenkins", rules("jenkins"))
 
         assertEquals(TargetMaterializationStatus.BLOCKED, resolution.materialization.status)
         assertEquals(MaterializationStatus.BLOCKED, resolution.negotiation.decisions.single().status)
         assertEquals(TargetProjectionArtifactKind.REVIEW_RECORD, resolution.artifact.kind)
-        assertEquals("manual.runtime.action", resolution.semanticGraph.nodes.single().declaration)
+        assertEquals("manual.runtime.action", resolution.obligationGraph.nodes.single().declaration)
         assertTrue(MaterializationNegotiationValidator(resolution.notesPackages).validate(resolution.negotiation).valid)
         assertTrue(TargetProjectionPlanValidator(resolution.notesPackages).validate(resolution.projectionPlan).valid)
     }
@@ -89,6 +104,7 @@ class FlowConnectedMaterializationPipelineTests {
                     module = "standard",
                     action = "execute",
                     target = "flow",
+                    semanticCapability = "standard.execute",
                     params = mapOf("operation" to "test")
                 )
             )

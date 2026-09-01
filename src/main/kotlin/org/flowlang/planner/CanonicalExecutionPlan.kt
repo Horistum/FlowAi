@@ -85,6 +85,14 @@ data class CanonicalMatchCase(
     val steps: List<CanonicalPlanNode> = emptyList()
 )
 
+/**
+ * Historical compatibility/parity facade.
+ *
+ * Production compilation authorization projects CanonicalExecutionPlan directly from
+ * CanonicalExecutionGraph. This facade is retained for public/source compatibility and
+ * independent conformance parity only; it is not an execution-meaning authority.
+ */
+@Deprecated("CanonicalExecutionPlan is graph-derived; retain this facade only for compatibility/parity checks.")
 object ExecutionPlanCanonicalizer {
     fun canonicalize(plan: ExecutionPlan): CanonicalExecutionPlan =
         CanonicalExecutionPlan(

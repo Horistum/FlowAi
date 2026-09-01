@@ -1,6 +1,7 @@
 package org.flowlang.generators.manifest
 
 import org.flowlang.capabilities.CompatibilityIssue
+import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.capabilities.CompatibilityLevel
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
@@ -66,16 +67,19 @@ enum class TargetProjectionAuthorizationPurpose {
 }
 
 class TargetProjectionAuthorization internal constructor(
-    val plan: ExecutionPlan,
+    val compilationAuthorization: CompilationAuthorization,
     val selection: ExplicitTargetSelection,
     val compatibility: CompatibilityReport,
     val strict: Boolean,
     val topology: ExecutionTopologyAssessment,
     val purpose: TargetProjectionAuthorizationPurpose = TargetProjectionAuthorizationPurpose.EXECUTION_CANDIDATE
 ) {
+    val plan: ExecutionPlan get() = compilationAuthorization.executionPlan
     val target: String get() = selection.target
+    val graphDigest: String get() = compilationAuthorization.graphDigest.value
 
     init {
+        compilationAuthorization.requireIntegrity()
         require(compatibility.target == target) {
             "Projection authorization target '$target' does not match compatibility target '${compatibility.target}'."
         }
@@ -125,13 +129,17 @@ class MandatoryMaterializationAuthority(
         val plan = request.plan
         val target = request.target
         ExecutionPlanMaterializationValidator.requireValid(plan, modules)
+        val compilationAuthorization = request.authorization.also { it.requireIntegrity() }
+        require(compilationAuthorization.executionPlan == plan) {
+            "Validated planning evidence differs from canonical graph authorization."
+        }
         ExecutionPlanContinuityValidator.requireResolved(plan)
         ExecutionPlanControlValidator.requireAuthorized(plan)
         val targetCapability = requireNotNull(targets[target]) { "Unknown target '$target'." }
         val topology = ExecutionPlanTopologyValidator.requireMatched(plan, targetCapability)
         val report = capabilityGate.requireProjectionAllowed(plan, target, request.strict)
         return TargetProjectionAuthorization(
-            plan = plan,
+            compilationAuthorization = compilationAuthorization,
             selection = request.selection,
             compatibility = report.compatibility,
             strict = request.strict,
@@ -153,6 +161,10 @@ class MandatoryMaterializationAuthority(
         val plan = request.plan
         val target = request.target
         ExecutionPlanMaterializationValidator.requireValid(plan, modules)
+        val compilationAuthorization = request.authorization.also { it.requireIntegrity() }
+        require(compilationAuthorization.executionPlan == plan) {
+            "Validated diagnostic planning evidence differs from canonical graph authorization."
+        }
         val report = capabilityGate.check(plan, target, strict = false)
         val continuityIssues = ExecutionPlanContinuityValidator.blockers(plan).map { relation ->
             CompatibilityIssue(
@@ -189,7 +201,7 @@ class MandatoryMaterializationAuthority(
             capabilityStatus = report.compatibility.capabilityStatus
         )
         return TargetProjectionAuthorization(
-            plan = plan,
+            compilationAuthorization = compilationAuthorization,
             selection = request.selection,
             compatibility = compatibility,
             strict = false,

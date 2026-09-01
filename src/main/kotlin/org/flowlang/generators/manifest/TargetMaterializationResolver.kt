@@ -6,15 +6,15 @@ import org.flowlang.notes.NotesPackageContract
 import org.flowlang.projection.TargetProjectionArtifact
 import org.flowlang.projection.TargetProjectionPlan
 import org.flowlang.projection.TargetProjectionPlanValidator
-import org.flowlang.semantic.SemanticActionGraph
-import org.flowlang.semantic.SemanticActionGraphValidator
+import org.flowlang.obligations.ArchitectureObligationGraph
+import org.flowlang.obligations.ArchitectureObligationGraphValidator
 
 /**
  * Auditable result of resolving one execution-plan task against target
  * projection evidence.
  */
 internal data class TargetMaterializationResolution(
-    val semanticGraph: SemanticActionGraph,
+    val obligationGraph: ArchitectureObligationGraph,
     val notesPackages: List<NotesPackageContract>,
     val negotiation: MaterializationNegotiation,
     val projectionPlan: TargetProjectionPlan,
@@ -51,15 +51,15 @@ internal data class TargetMaterializationResolution(
  */
 internal object TargetMaterializationEvidenceAuthority {
     fun requireValid(resolution: TargetMaterializationResolution): TargetMaterializationResolution {
-        val semantic = SemanticActionGraphValidator(resolution.notesPackages).validate(resolution.semanticGraph)
+        val semantic = ArchitectureObligationGraphValidator(resolution.notesPackages).validate(resolution.obligationGraph)
         val negotiation = MaterializationNegotiationValidator(resolution.notesPackages).validate(resolution.negotiation)
         val projection = TargetProjectionPlanValidator(resolution.notesPackages).validate(resolution.projectionPlan)
         val issues = buildList {
             semantic.issues.forEach { add("${it.code}: ${it.message}") }
             negotiation.issues.forEach { add("${it.code}: ${it.message}") }
             projection.issues.forEach { add("${it.code}: ${it.message}") }
-            if (resolution.negotiation.graph != resolution.semanticGraph) {
-                add("materialization.graph.authority-mismatch: Negotiation graph does not match the validated semantic graph.")
+            if (resolution.negotiation.graph != resolution.obligationGraph) {
+                add("materialization.graph.authority-mismatch: Negotiation graph does not match the validated obligation graph.")
             }
             if (resolution.projectionPlan.negotiation != resolution.negotiation) {
                 add("projection.negotiation.authority-mismatch: Projection plan does not contain the validated negotiation.")

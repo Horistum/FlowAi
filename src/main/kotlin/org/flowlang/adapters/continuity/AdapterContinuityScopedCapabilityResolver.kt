@@ -3,7 +3,7 @@ package org.flowlang.adapters.continuity
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
-import org.flowlang.planner.ExecutionPlan
+import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.topology.ExecutionTopologyKind
 import org.flowlang.topology.ExecutionTopologyProfile
 import org.flowlang.topology.ExecutionTopologySupportStatus
@@ -21,10 +21,12 @@ class AdapterContinuityScopedCapabilityResolver(
         BuiltInAdapterContinuityScopedSupport.declarations
 ) : TargetProjectionCapabilityResolver {
     override fun resolve(
-        plan: ExecutionPlan,
+        authorization: CompilationAuthorization,
         target: String,
         declared: TargetCapability
     ): TargetCapability {
+        authorization.requireIntegrity()
+        val plan = authorization.executionPlan
         if (target != GITHUB_ACTIONS || declared.target != target) return declared
         val workspaceRequirements = AdapterContinuityRequirementAuthority.derive(plan)
             .filter { it.semantic == AdapterContinuitySemanticContract.ARTIFACT_SHARED_WORKSPACE }

@@ -2,6 +2,8 @@ package org.flowlang.generators.manifest
 
 import org.flowlang.capabilities.TargetProjectionMode
 import org.flowlang.capabilities.TargetProjectionRule
+import org.flowlang.compiler.CompilationAuthorization
+import org.flowlang.compiler.requireAuthorizedTask
 import org.flowlang.materialization.MaterializationDecision
 import org.flowlang.materialization.MaterializationEvidence
 import org.flowlang.materialization.MaterializationEvidenceKind
@@ -14,17 +16,20 @@ import org.flowlang.planner.TaskNode
 import org.flowlang.projection.TargetProjectionArtifact
 import org.flowlang.projection.TargetProjectionArtifactKind
 import org.flowlang.projection.TargetProjectionPlan
-import org.flowlang.semantic.SemanticActionGraph
-import org.flowlang.semantic.SemanticActionKind
-import org.flowlang.semantic.SemanticActionNode
+import org.flowlang.obligations.ArchitectureObligationGraph
+import org.flowlang.obligations.ArchitectureObligationKind
+import org.flowlang.obligations.ArchitectureObligationNode
 
 /**
- * Bridges execution-plan tasks into semantic, materialization and projection
- * evidence. Ordinary action decisions are read from target registry evidence;
- * this class contains no positive target/action allow-list.
+ * Derives materialization obligation evidence from an already authorized canonical task.
+ *
+ * Semantic capability comes exclusively from CanonicalExecutionGraph. Module/action remains
+ * implementation binding used only to select target projection rules; it can never substitute
+ * for canonical meaning.
  */
 internal object TargetMaterializationResolver {
     fun resolve(
+        authorization: CompilationAuthorization,
         task: TaskNode,
         targetName: String,
         projectionRules: List<TargetProjectionRule> = emptyList(),
@@ -33,40 +38,51 @@ internal object TargetMaterializationResolver {
         require(nativeProjections.target == targetName) {
             "Materialization target '$targetName' cannot use native projection catalog '${nativeProjections.target}'."
         }
-        val capability = capabilityFor(task)
-        val semanticNode = SemanticActionNode(
-            id = "task.${contractId(task.id)}",
-            kind = SemanticActionKind.CAPABILITY,
-            declaration = capability,
-            notesPackageId = GENERATED_CAPABILITY_PACKAGE,
-            description = "Task capability derived from the execution plan.",
-            attributes = mapOf(
-                "sourceTask" to task.id,
-                "sourceCapability" to capability,
-                "targetBoundary" to targetName
-            )
+        val authorizedTask = authorization.requireAuthorizedTask(task)
+        val canonicalCapability = authorizedTask.node.semantics.capability?.value
+        val implementationBinding = "${authorizedTask.binding.module}.${authorizedTask.binding.action}"
+        val obligation = obligationFor(
+            task = task,
+            canonicalNodeId = authorizedTask.node.id.value,
+            canonicalCapability = canonicalCapability,
+            implementationBinding = implementationBinding,
+            targetName = targetName,
+            graphDigest = authorization.graphDigest.value
         )
-        val graph = SemanticActionGraph(
+        val obligationNode = obligation.node
+        val graph = ArchitectureObligationGraph(
+            // Historical evidence id is part of frozen Target Manifest 3.0 metadata.
             graphId = "flow.semantic.${contractId(task.id)}",
-            nodes = listOf(semanticNode),
+            nodes = listOf(obligationNode),
             edges = emptyList()
         )
-        val notes = listOf(generatedCapabilityNotes(capability))
+        val notes = listOf(obligation.notes)
         val rule = projectionRules.singleOrNull { it.matches(task.module, task.action) }
             ?: projectionRules.firstOrNull { it.module == task.module && it.action == "*" }
-        val decision = decisionFor(task, capability, targetName, rule)
+        // TargetMaterialization.capability is a frozen compatibility field. For historical
+        // Flow Source tasks without canonical capability it retains the implementation label,
+        // but that label is never promoted into canonical or obligation semantic identity.
+        val compatibilityCapability = canonicalCapability ?: implementationBinding
+        val decision = decisionFor(
+            task = task,
+            compatibilityCapability = compatibilityCapability,
+            obligationDeclaration = obligationNode.declaration,
+            hasCanonicalCapability = canonicalCapability != null,
+            targetName = targetName,
+            rule = rule
+        )
         val negotiation = MaterializationNegotiation(
             negotiationId = "flow.materialization.${contractId(task.id)}",
             graph = graph,
             decisions = listOf(decision)
         )
-        val artifact = projectionArtifactFor(task, targetName, semanticNode, decision, rule)
+        val artifact = projectionArtifactFor(task, targetName, obligationNode, decision, rule)
         val projectionPlan = TargetProjectionPlan(
             planId = "flow.projection.${contractId(task.id)}",
             negotiation = negotiation,
             artifacts = listOf(artifact)
         )
-        val materialization = targetMaterializationFor(capability, decision, artifact, projectionPlan)
+        val materialization = targetMaterializationFor(compatibilityCapability, decision, artifact, projectionPlan)
         val payload = if (artifact.kind == TargetProjectionArtifactKind.TARGET_NATIVE) {
             nativeProjections.compile(requireNotNull(rule), task)
         } else null
@@ -83,9 +99,67 @@ internal object TargetMaterializationResolver {
         )
     }
 
+    private data class MaterializationObligation(
+        val node: ArchitectureObligationNode,
+        val notes: NotesPackageContract
+    )
+
+    /**
+     * Builds evidence about the already-authorized task without inventing executable semantics.
+     *
+     * A canonical capability, when present, is legitimate semantic evidence. Older Flow Source
+     * tasks may intentionally have no canonical capability; for those tasks we record only the
+     * target-projection obligation. The implementation binding is evidence for adapter selection,
+     * never a replacement CanonicalExecutionGraph capability.
+     */
+    private fun obligationFor(
+        task: TaskNode,
+        canonicalNodeId: String,
+        canonicalCapability: String?,
+        implementationBinding: String,
+        targetName: String,
+        graphDigest: String
+    ): MaterializationObligation {
+        val commonAttributes = linkedMapOf(
+            "sourceTask" to task.id,
+            "canonicalNode" to canonicalNodeId,
+            "implementationBinding" to implementationBinding,
+            "targetBoundary" to targetName,
+            "graphDigest" to graphDigest
+        )
+        return if (canonicalCapability != null) {
+            commonAttributes["canonicalCapability"] = canonicalCapability
+            MaterializationObligation(
+                node = ArchitectureObligationNode(
+                    id = "task.${contractId(task.id)}",
+                    kind = ArchitectureObligationKind.CAPABILITY,
+                    declaration = canonicalCapability,
+                    notesPackageId = GENERATED_CAPABILITY_PACKAGE,
+                    description = "Architecture obligation derived from the authorized canonical task capability.",
+                    attributes = commonAttributes
+                ),
+                notes = generatedCapabilityNotes(canonicalCapability)
+            )
+        } else {
+            MaterializationObligation(
+                node = ArchitectureObligationNode(
+                    id = "task.${contractId(task.id)}",
+                    kind = ArchitectureObligationKind.CONFORMANCE_REQUIREMENT,
+                    declaration = AUTHORIZED_TASK_DECLARATION,
+                    notesPackageId = GENERATED_AUTHORIZATION_PACKAGE,
+                    description = "Authorization obligation for a canonical task with no declared semantic capability.",
+                    attributes = commonAttributes
+                ),
+                notes = generatedAuthorizationNotes()
+            )
+        }
+    }
+
     private fun decisionFor(
         task: TaskNode,
-        capability: String,
+        compatibilityCapability: String,
+        obligationDeclaration: String,
+        hasCanonicalCapability: Boolean,
         targetName: String,
         rule: TargetProjectionRule?
     ): MaterializationDecision {
@@ -133,11 +207,19 @@ internal object TargetMaterializationResolver {
             )
         )
         if (status == MaterializationStatus.MATERIALIZABLE) {
-            evidence += MaterializationEvidence(
-                capability,
-                MaterializationEvidenceKind.CAPABILITY_DECLARATION,
-                "Semantic capability declaration."
-            )
+            evidence += if (hasCanonicalCapability) {
+                MaterializationEvidence(
+                    compatibilityCapability,
+                    MaterializationEvidenceKind.CAPABILITY_DECLARATION,
+                    "Canonical semantic capability declaration."
+                )
+            } else {
+                MaterializationEvidence(
+                    obligationDeclaration,
+                    MaterializationEvidenceKind.CONFORMANCE_CHECK,
+                    "Canonical task authorization evidence; no semantic capability was inferred from implementation binding."
+                )
+            }
         }
         return MaterializationDecision(nodeId, status, rule.reason, evidence)
     }
@@ -145,7 +227,7 @@ internal object TargetMaterializationResolver {
     private fun projectionArtifactFor(
         task: TaskNode,
         targetName: String,
-        node: SemanticActionNode,
+        node: ArchitectureObligationNode,
         decision: MaterializationDecision,
         rule: TargetProjectionRule?
     ): TargetProjectionArtifact {
@@ -223,20 +305,28 @@ internal object TargetMaterializationResolver {
         }
     }
 
-    private fun capabilityFor(task: TaskNode): String = when (task.module to task.action) {
-        "shell" to "run" -> "manual.runtime.action"
-        else -> listOf(task.module, task.action).joinToString(".").ifBlank { "flow.action" }
-    }
 
     private fun generatedCapabilityNotes(capability: String): NotesPackageContract = NotesPackageContract(
         packageId = GENERATED_CAPABILITY_PACKAGE,
         packageVersion = "0.9.5",
         kind = NotesPackageKind.CAPABILITY,
-        description = "Generated task capability notes used to bind execution-plan actions to materialization negotiation.",
+        description = "Generated capability notes bind authorized canonical task capability to materialization-obligation evidence.",
         declaredCapabilities = setOf(capability),
         boundaries = setOf(NotesPackageBoundary(
             "generated-task-capability",
-            "Generated notes bind existing plan actions to materialization negotiation without claiming target execution."
+            "Generated notes bind canonical capability evidence to materialization negotiation without claiming execution authority."
+        ))
+    )
+
+    private fun generatedAuthorizationNotes(): NotesPackageContract = NotesPackageContract(
+        packageId = GENERATED_AUTHORIZATION_PACKAGE,
+        packageVersion = "0.9.5",
+        kind = NotesPackageKind.CONFORMANCE,
+        description = "Generated notes record canonical task authorization without inventing semantic capability.",
+        conformanceChecks = setOf(AUTHORIZED_TASK_DECLARATION),
+        boundaries = setOf(NotesPackageBoundary(
+            "authorized-canonical-task",
+            "Implementation binding is recorded only after exact canonical graph authorization."
         ))
     )
 
@@ -246,4 +336,6 @@ internal object TargetMaterializationResolver {
         .ifBlank { "flow" }
 
     private const val GENERATED_CAPABILITY_PACKAGE = "flow.capability.generated"
+    private const val GENERATED_AUTHORIZATION_PACKAGE = "flow.conformance.generated"
+    private const val AUTHORIZED_TASK_DECLARATION = "canonical.task.authorized"
 }

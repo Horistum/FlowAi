@@ -1,10 +1,10 @@
 package org.flowlang.generators.manifest
 
-import org.flowlang.capabilities.CompatibilityReport
+import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.capabilities.TargetCapability
-import org.flowlang.planner.ExecutionPlan
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
+import org.flowlang.modules.ModuleRegistry
 
 interface TargetManifestGenerator {
     val target: String
@@ -19,10 +19,9 @@ abstract class ReconciledTargetManifestGenerator : TargetManifestGenerator {
         require(authorization.target == target) {
             "Manifest generator '$target' cannot consume authorization for '${authorization.target}'."
         }
-        val plan = authorization.plan
         val compatibility = authorization.compatibility
         nativeProjectionCatalog.requireCompatibleRules(compatibility.projectionRules)
-        return buildManifest(plan, compatibility)
+        return buildManifest(authorization)
             .reconcileCompatibilityReadiness()
             .also(nativeProjectionCatalog::requireManifest)
             .also { manifest ->
@@ -37,7 +36,7 @@ abstract class ReconciledTargetManifestGenerator : TargetManifestGenerator {
             }
     }
 
-    protected abstract fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest
+    protected abstract fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest
 }
 
 interface TargetManifestRenderer {
@@ -47,11 +46,15 @@ interface TargetManifestRenderer {
 }
 
 fun interface TargetProjectionCapabilityResolver {
-    fun resolve(plan: ExecutionPlan, target: String, declared: TargetCapability): TargetCapability
+    fun resolve(
+        authorization: CompilationAuthorization,
+        target: String,
+        declared: TargetCapability
+    ): TargetCapability
 }
 
 fun interface TargetProjectionExecutionGate {
-    fun requireAuthorized(plan: ExecutionPlan, target: String)
+    fun requireAuthorized(authorization: CompilationAuthorization, target: String)
 }
 
 class TargetProjectionProvider(
@@ -147,10 +150,14 @@ class TargetManifestGenerationPipeline(
     private val composedCapabilityResolvers: List<TargetProjectionCapabilityResolver> =
         capabilityResolvers + executionGates.filterIsInstance<TargetProjectionCapabilityResolver>()
 
-    fun effectiveTarget(plan: ExecutionPlan, target: String): TargetCapability {
+    fun effectiveTarget(
+        authorization: CompilationAuthorization,
+        target: String
+    ): TargetCapability {
+        authorization.requireIntegrity()
         val declared = requireNotNull(targets[target]) { "Unknown target '$target'." }
         return composedCapabilityResolvers.fold(declared) { current, resolver ->
-            resolver.resolve(plan, target, current).also { resolved ->
+            resolver.resolve(authorization, target, current).also { resolved ->
                 require(resolved.target == target) {
                     "Capability resolver for '$target' returned capability '${resolved.target}'."
                 }
@@ -158,41 +165,39 @@ class TargetManifestGenerationPipeline(
         }
     }
 
-    fun effectiveTargets(plan: ExecutionPlan, target: String): Map<String, TargetCapability> =
-        targets + (target to effectiveTarget(plan, target))
+    fun effectiveTargets(
+        authorization: CompilationAuthorization,
+        target: String
+    ): Map<String, TargetCapability> =
+        targets + (target to effectiveTarget(authorization, target))
 
     fun generate(request: TargetMaterializationRequest): TargetManifest {
+        val rawPlan = request.plan
+        ExecutionPlanMaterializationValidator.requireValid(rawPlan, ModuleRegistry())
+        val graphAuthorization = request.authorization.also { it.requireIntegrity() }
+        require(graphAuthorization.executionPlan == rawPlan) {
+            "Planning validation and canonical graph authorization disagree on the execution plan."
+        }
         val provider = projections.requireProvider(request.target)
-        val authority = MandatoryMaterializationAuthority(effectiveTargets(request.plan, request.target))
-        val planningAuthorization = authority.authorize(request)
-        val authorization = planningAuthorization.bindGraphAuthorization(request.authorization)
-        executionGates.forEach { gate -> gate.requireAuthorized(authorization.plan, authorization.target) }
+        val authority = MandatoryMaterializationAuthority(effectiveTargets(graphAuthorization, request.target))
+        val authorization = authority.authorize(request)
+        executionGates.forEach { gate ->
+            gate.requireAuthorized(authorization.compilationAuthorization, authorization.target)
+        }
         return provider.generate(authorization)
     }
 
     fun generateDiagnosticEvidence(
         request: TargetDiagnosticMaterializationRequest
     ): TargetManifest {
-        val provider = projections.requireProvider(request.target)
-        val authority = MandatoryMaterializationAuthority(effectiveTargets(request.plan, request.target))
-        val planningAuthorization = authority.authorizeDiagnosticEvidence(request)
-        return provider.generate(planningAuthorization.bindGraphAuthorization(request.authorization))
-    }
-
-    private fun TargetProjectionAuthorization.bindGraphAuthorization(
-        graphAuthorization: org.flowlang.compiler.CompilationAuthorization
-    ): TargetProjectionAuthorization {
-        graphAuthorization.requireIntegrity()
-        require(graphAuthorization.executionPlan == plan) {
-            "Planning validation and canonical graph authorization disagree on the execution plan."
+        val rawPlan = request.plan
+        ExecutionPlanMaterializationValidator.requireValid(rawPlan, ModuleRegistry())
+        val graphAuthorization = request.authorization.also { it.requireIntegrity() }
+        require(graphAuthorization.executionPlan == rawPlan) {
+            "Diagnostic planning validation and canonical graph authorization disagree on the execution plan."
         }
-        return TargetProjectionAuthorization(
-            plan = graphAuthorization.executionPlan,
-            selection = selection,
-            compatibility = compatibility,
-            strict = strict,
-            topology = topology,
-            purpose = purpose
-        )
+        val provider = projections.requireProvider(request.target)
+        val authority = MandatoryMaterializationAuthority(effectiveTargets(graphAuthorization, request.target))
+        return provider.generate(authority.authorizeDiagnosticEvidence(request))
     }
 }

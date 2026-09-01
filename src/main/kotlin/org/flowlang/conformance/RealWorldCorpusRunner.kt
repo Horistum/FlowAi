@@ -318,7 +318,13 @@ class RealWorldCorpusRunner(
                 scenarioId = "real-world-${caseId.replace(':', '-')} ".trim(),
                 targets = targets
             )
-            val manifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
+            val manifest = manifestPipeline.generate(
+                TargetMaterializationRequest.fromCompatibilityPlan(
+                    plan = plan,
+                    selection = selection,
+                    evidenceId = "conformance:real-world:$caseId:$target"
+                )
+            )
             val render = TargetRenderPolicy.evaluate(manifest)
             when (render.mode) {
                 TargetRenderMode.EXECUTABLE -> RealWorldTargetAssessmentActual(target, RealWorldResult.SUPPORTED, true)

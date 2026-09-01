@@ -26,7 +26,6 @@ import org.flowlang.frontend.ai.ReviewedAiProposal
 import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
 import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.modules.ModuleRegistry
-import org.flowlang.planner.ExecutionPlanCanonicalizer
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.standard.FlowStandardVersions
 
@@ -46,6 +45,8 @@ class Ar01CompilerAxisConformanceChecks(
         resultCheck(MUTATION_POLARITY_CHECK, runCatching(::mutationPolarityErrors)),
         resultCheck(AUTHORIZATION_BINDING_CHECK, runCatching(::authorizationBindingErrors)),
         resultCheck(DERIVED_VIEW_CHECK, runCatching(::derivedViewErrors)),
+        resultCheck(TARGET_AUTHORIZATION_CHECK, runCatching(::targetAuthorizationErrors)),
+        resultCheck(OBLIGATION_RETIREMENT_CHECK, runCatching(::obligationRetirementErrors)),
         resultCheck(NO_PSEUDO_GRAPH_CHECK, runCatching(::noPseudoGraphErrors))
     )
 
@@ -405,12 +406,113 @@ class Ar01CompilerAxisConformanceChecks(
 
     private fun derivedViewErrors(): List<String> = buildList {
         val unit = referenceUnit()
-        val projected = CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.bindings)
-        if (projected != unit.executionPlan) {
+        val executionView = CanonicalExecutionGraphProjection.toExecutionPlan(
+            unit.graph,
+            unit.authorization.bindings
+        )
+        val canonicalView = CanonicalExecutionGraphProjection.toCanonicalExecutionPlan(
+            unit.graph,
+            unit.authorization.bindings
+        )
+        if (executionView != unit.executionPlan) {
             add("ExecutionPlan compatibility view is not graph-derived.")
         }
-        if (ExecutionPlanCanonicalizer.canonicalize(projected) != unit.canonicalPlan) {
-            add("CanonicalExecutionPlan compatibility view is not derived from the graph-derived ExecutionPlan.")
+        if (canonicalView != unit.canonicalPlan) {
+            add("CanonicalExecutionPlan compatibility view is not directly graph-derived.")
+        }
+
+        val authorizationSource = read(COMPILATION_AUTHORIZATION)
+        if ("ExecutionPlanCanonicalizer" in authorizationSource) {
+            add("Compilation authorization retains a plan-to-plan canonicalization authority.")
+        }
+        val productCanonicalizerCallers = productionCallers("ExecutionPlanCanonicalizer.canonicalize(")
+        if (productCanonicalizerCallers.any { !it.startsWith("src/main/kotlin/org/flowlang/conformance/") }) {
+            add("Product sources retain an independent ExecutionPlan canonicalization path: $productCanonicalizerCallers")
+        }
+    }
+
+    private fun targetAuthorizationErrors(): List<String> = buildList {
+        val provider = read(TARGET_PROJECTION_PROVIDER)
+        val materialization = read(MANDATORY_MATERIALIZATION_AUTHORITY)
+        val resolver = read(TARGET_MATERIALIZATION_RESOLVER_ENGINE)
+        val lowering = read(TARGET_MANIFEST_LOWERING)
+
+        requireContains(
+            provider,
+            "fun resolve(\n        authorization: CompilationAuthorization,",
+            TARGET_PROJECTION_PROVIDER,
+            this
+        )
+        requireContains(
+            provider,
+            "fun requireAuthorized(authorization: CompilationAuthorization, target: String)",
+            TARGET_PROJECTION_PROVIDER,
+            this
+        )
+        requireContains(
+            materialization,
+            "val compilationAuthorization: CompilationAuthorization",
+            MANDATORY_MATERIALIZATION_AUTHORITY,
+            this
+        )
+        requireContains(
+            materialization,
+            "compilationAuthorization.executionPlan == plan",
+            MANDATORY_MATERIALIZATION_AUTHORITY,
+            this
+        )
+        requireContains(
+            resolver,
+            "authorization.requireAuthorizedTask(task)",
+            TARGET_MATERIALIZATION_RESOLVER_ENGINE,
+            this
+        )
+        requireContains(
+            resolver,
+            "authorizedTask.node.semantics.capability?.value",
+            TARGET_MATERIALIZATION_RESOLVER_ENGINE,
+            this
+        )
+        if ("private fun capabilityFor(task" in resolver ||
+            Regex("""val\s+capability\s*=\s*["'].*task\.module.*task\.action""").containsMatchIn(resolver)
+        ) {
+            add("Target materialization still derives semantic capability from module/action.")
+        }
+        requireContains(
+            lowering,
+            "TargetMaterializationResolver.resolve(\n        authorization,",
+            TARGET_MANIFEST_LOWERING,
+            this
+        )
+    }
+
+    private fun obligationRetirementErrors(): List<String> = buildList {
+        val oldPath = File(rootDir, OLD_SEMANTIC_ACTION_GRAPH)
+        if (oldPath.exists()) {
+            add("Execution-looking SemanticActionGraph source is still present: $OLD_SEMANTIC_ACTION_GRAPH")
+        }
+        val replacement = File(rootDir, ARCHITECTURE_OBLIGATION_GRAPH)
+        if (!replacement.isFile) {
+            add("Architecture obligation evidence model is missing: $ARCHITECTURE_OBLIGATION_GRAPH")
+        } else {
+            val source = replacement.readText()
+            requireContains(source, "data class ArchitectureObligationGraph(", ARCHITECTURE_OBLIGATION_GRAPH, this)
+            requireContains(source, "not an execution IR", ARCHITECTURE_OBLIGATION_GRAPH, this)
+        }
+
+        val offenders = File(rootDir, "src/main/kotlin")
+            .walkTopDown()
+            .filter { file -> file.isFile && file.extension == "kt" }
+            .filterNot { file -> file.relativeTo(rootDir).invariantSeparatorsPath == AR01_CONFORMANCE }
+            .filter { file ->
+                val source = file.readText()
+                "org.flowlang.semantic.SemanticActionGraph" in source ||
+                    Regex("\\bSemanticActionGraph\\s*[<(]").containsMatchIn(source)
+            }
+            .map { file -> file.relativeTo(rootDir).invariantSeparatorsPath }
+            .toList()
+        if (offenders.isNotEmpty()) {
+            add("Production sources retain retired SemanticActionGraph symbols: $offenders")
         }
     }
 
@@ -461,6 +563,14 @@ class Ar01CompilerAxisConformanceChecks(
     private fun requireContains(source: String, term: String, path: String, errors: MutableList<String>) {
         if (term !in source) errors += "$path does not route through '$term'."
     }
+
+    private fun productionCallers(symbol: String): List<String> =
+        File(rootDir, "src/main/kotlin/org/flowlang")
+            .walkTopDown()
+            .filter { file -> file.isFile && file.extension == "kt" && symbol in file.readText() }
+            .map { file -> file.relativeTo(rootDir).invariantSeparatorsPath }
+            .sorted()
+            .toList()
 
     private fun requireExactProductionCallers(
         symbol: String,
@@ -564,9 +674,13 @@ class Ar01CompilerAxisConformanceChecks(
         const val MUTATION_POLARITY_CHECK = "architecture-recovery.ar-01.graph-mutation-polarity"
         const val AUTHORIZATION_BINDING_CHECK = "architecture-recovery.ar-01.authorization-digest-binding"
         const val DERIVED_VIEW_CHECK = "architecture-recovery.ar-01.derived-view-consistency"
+        const val TARGET_AUTHORIZATION_CHECK = "architecture-recovery.ar-01.graph-bound-target-authorization"
+        const val OBLIGATION_RETIREMENT_CHECK = "architecture-recovery.ar-01.obligation-authority-retirement"
         const val NO_PSEUDO_GRAPH_CHECK = "architecture-recovery.ar-01.no-pseudo-graph-bypass"
 
         private const val COMPILATION_SERVICE = "org.flowlang.compiler.FlowCompilationService"
+        private const val AR01_CONFORMANCE =
+            "src/main/kotlin/org/flowlang/conformance/Ar01CompilerAxisConformanceChecks.kt"
         private const val CANONICAL_GRAPH = "org.flowlang.compiler.CanonicalExecutionGraph"
         private const val DERIVED_VIEWS = "ExecutionPlan+CanonicalExecutionPlan"
         private const val COMPILER_DIR = "src/main/kotlin/org/flowlang/compiler"
@@ -579,6 +693,19 @@ class Ar01CompilerAxisConformanceChecks(
         private const val HONEST_CLI = "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
         private const val REFERENCE_SNAPSHOT = "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
         private const val TARGET_SELECTION = "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt"
+        private const val COMPILATION_AUTHORIZATION = "$COMPILER_DIR/CompilationAuthorization.kt"
+        private const val TARGET_PROJECTION_PROVIDER =
+            "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
+        private const val MANDATORY_MATERIALIZATION_AUTHORITY =
+            "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
+        private const val TARGET_MATERIALIZATION_RESOLVER_ENGINE =
+            "src/main/kotlin/org/flowlang/generators/manifest/TargetMaterializationResolverEngine.kt"
+        private const val TARGET_MANIFEST_LOWERING =
+            "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+        private const val OLD_SEMANTIC_ACTION_GRAPH =
+            "src/main/kotlin/org/flowlang/semantic/SemanticActionGraph.kt"
+        private const val ARCHITECTURE_OBLIGATION_GRAPH =
+            "src/main/kotlin/org/flowlang/obligations/ArchitectureObligationGraph.kt"
 
         private val EXPECTED_COMPILER_FILES = setOf(
             "CompilationContracts.kt",

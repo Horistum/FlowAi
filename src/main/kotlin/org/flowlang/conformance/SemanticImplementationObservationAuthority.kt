@@ -96,7 +96,13 @@ class SemanticImplementationObservationAuthority(
             scenarioId = scenarioId,
             targets = targets
         )
-        val generatedManifest = manifestPipeline.generate(TargetMaterializationRequest(plan, selection))
+        val generatedManifest = manifestPipeline.generate(
+            TargetMaterializationRequest.fromCompatibilityPlan(
+                plan = plan,
+                selection = selection,
+                evidenceId = "conformance:semantic-observation:$scenarioId:$target"
+            )
+        )
         val triggerAssessment = triggerAuthority.assess(plan, target)
         val manifest = triggerAuthority.reconcileDiagnostic(generatedManifest, triggerAssessment)
         val contract = TargetManifestContractValidator.validate(manifest)

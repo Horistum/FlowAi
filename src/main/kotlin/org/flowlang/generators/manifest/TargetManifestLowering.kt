@@ -2,6 +2,7 @@ package org.flowlang.generators.manifest
 
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.TargetProjectionRule
+import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.effects.SemanticEffect
 import org.flowlang.effects.canonicalObservationValue
 import org.flowlang.planner.ApprovalNode
@@ -70,11 +71,12 @@ internal fun CompatibilityReport.toMappingNotes(targetName: String): List<Target
  * executable by accident.
  */
 internal fun PlanNode.toTargetSteps(
+    authorization: CompilationAuthorization,
     targetName: String = "notes-driven",
     projectionRules: List<TargetProjectionRule> = emptyList(),
     nativeProjections: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.empty(targetName)
 ): List<TargetStep> = when (this) {
-    is TaskNode -> listOf(toTargetStep(targetName, projectionRules, nativeProjections))
+    is TaskNode -> listOf(toTargetStep(authorization, targetName, projectionRules, nativeProjections))
     is ConditionNode -> {
         val out = mutableListOf<TargetStep>()
         if (then.isNotEmpty()) {
@@ -85,7 +87,7 @@ internal fun PlanNode.toTargetSteps(
                 name = "$id then",
                 type = TargetStructuralProjectionKind.CONDITION.stepType,
                 params = mapOf("condition" to condition),
-                children = then.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+                children = then.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
                 materialization = structural.materialization,
                 rendererPayload = structural.rendererPayload,
                 metadata = mapOf("sourceNodeKind" to kind, "branch" to "then")
@@ -99,7 +101,7 @@ internal fun PlanNode.toTargetSteps(
                 name = "$id else",
                 type = TargetStructuralProjectionKind.CONDITION.stepType,
                 params = mapOf("condition" to "not ($condition)"),
-                children = otherwise.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+                children = otherwise.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
                 materialization = structural.materialization,
                 rendererPayload = structural.rendererPayload,
                 metadata = mapOf("sourceNodeKind" to kind, "branch" to "else")
@@ -115,7 +117,7 @@ internal fun PlanNode.toTargetSteps(
             name = id,
             type = TargetStructuralProjectionKind.LOOP.stepType,
             params = mapOf("item" to item, "source" to source),
-            children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+            children = body.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
             materialization = structural.materialization,
             rendererPayload = structural.rendererPayload,
             metadata = mapOf("sourceNodeKind" to kind)
@@ -133,7 +135,7 @@ internal fun PlanNode.toTargetSteps(
                     id = sanitizeId(branch.name ?: "branch-${index + 1}"),
                     name = branch.name ?: "branch-${index + 1}",
                     type = "parallel-branch",
-                    children = branch.steps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+                    children = branch.steps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
                     metadata = mapOf("sourceNodeKind" to "ParallelBranch")
                 )
             },
@@ -151,9 +153,9 @@ internal fun PlanNode.toTargetSteps(
             type = TargetStructuralProjectionKind.MATCH.stepType,
             params = mapOf("source" to source),
             children = cases.flatMap { case ->
-                case.steps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) }
-            } + errorCase.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) } +
-                defaultSteps.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+                case.steps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) }
+            } + errorCase.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) } +
+                defaultSteps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
             materialization = structural.materialization,
             rendererPayload = structural.rendererPayload,
             metadata = mapOf("sourceNodeKind" to kind)
@@ -167,7 +169,7 @@ internal fun PlanNode.toTargetSteps(
             name = id,
             type = TargetStructuralProjectionKind.RETRY.stepType,
             params = mapOf("max" to max.toString(), "delay" to delay, "backoff" to backoff),
-            children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+            children = body.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
             materialization = structural.materialization,
             rendererPayload = structural.rendererPayload,
             metadata = mapOf("sourceNodeKind" to kind)
@@ -178,14 +180,14 @@ internal fun PlanNode.toTargetSteps(
             id = sanitizeId("${id}_body"),
             name = "$id body",
             type = "try-body",
-            children = body.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+            children = body.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
             metadata = mapOf("sourceNodeKind" to kind, "tryRole" to "body")
         )
         val handlerStep = TargetStep(
             id = sanitizeId("${id}_handler"),
             name = "$id error handler",
             type = "error-handler",
-            children = errorHandler.flatMap { it.toTargetSteps(targetName, projectionRules, nativeProjections) },
+            children = errorHandler.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
             metadata = mapOf("sourceNodeKind" to kind, "tryRole" to "errorHandler")
         )
         val stepId = sanitizeId(id)
@@ -271,11 +273,18 @@ internal fun PlanNode.toTargetSteps(
 }
 
 internal fun TaskNode.toTargetStep(
+    authorization: CompilationAuthorization,
     targetName: String = "notes-driven",
     projectionRules: List<TargetProjectionRule> = emptyList(),
     nativeProjections: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.empty(targetName)
 ): TargetStep {
-    val resolution = TargetMaterializationResolver.resolve(this, targetName, projectionRules, nativeProjections)
+    val resolution = TargetMaterializationResolver.resolve(
+        authorization,
+        this,
+        targetName,
+        projectionRules,
+        nativeProjections
+    )
     return TargetStep(
         id = sanitizeId(id),
         name = id,
@@ -305,7 +314,8 @@ internal fun TaskNode.toTargetStep(
 }
 
 private fun materializationMetadata(resolution: TargetMaterializationResolution): Map<String, String> = mapOf(
-    "semanticGraph" to resolution.semanticGraph.graphId,
+    // Keep the historical wire key until a versioned Target Manifest migration exists.
+    "semanticGraph" to resolution.obligationGraph.graphId,
     "semanticNode" to resolution.negotiation.decisions.single().nodeId,
     "materializationNegotiation" to resolution.negotiation.negotiationId,
     "projectionPlan" to resolution.projectionPlan.planId,

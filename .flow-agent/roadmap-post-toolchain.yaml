@@ -1,31 +1,31 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 5
+revision: 6
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
 currentDecision:
-  completedItem: "AR-00"
-  completedItemName: "Target Honesty and Semantic Safety Freeze"
+  completedItem: "AR-01"
+  completedItemName: "Canonical Compiler Axis and Authoritative Execution Graph"
   pausedItem: "EF-09"
   pausedItemName: "Human Approval and Change-Control Falsification"
   pausedItemState: "active-after-evidence-admission"
   pausedWorkPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
-  nextItem: "AR-01"
-  nextItemName: "Canonical Compiler Axis and Authoritative Execution Graph"
+  nextItem: "AR-02"
+  nextItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-  activationState: "active"
-  workPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
-  decisionBasis: "EF-08 remains complete and EF-09 remains paused after evidence admission. PR #161 merged completed AR-00 containment at main 8cdcb5d0da93b0962c6c8597339c135cfd82bb23. AR-01 is independently activated to converge Intent YAML, Flow Source and reviewed AI proposals through one compiler service and one typed canonical execution graph. The activation owns F-04, F-09 and F-17, preserves current public artifact versions and target behavior, and forbids adapter extraction before the graph contract is stable."
+  activationState: "not-activated"
+  workPackage: ""
+  decisionBasis: "EF-08 remains complete and EF-09 remains paused after evidence admission. PR #165 completes AR-01 with one FlowCompilationService axis, one typed CanonicalExecutionGraph authority, graph-derived compatibility plans, graph-bound target materialization and retirement of the misleading SemanticActionGraph execution-looking authority. F-04, F-09 and F-17 are closed by distinct implementation, validation and completion boundaries. AR-02 is selected next but remains unactivated until a separate work package and activation boundary authorize flow-sensitive semantic changes."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
   status: "active"
   findingCount: 22
   groupedMilestoneCount: 8
-  completedItem: "AR-00"
-  activeItem: "AR-01"
-  activeWorkPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
-  activationState: "active"
+  completedItem: "AR-01"
+  activeItem: "AR-02"
+  activeWorkPackage: ""
+  activationState: "not-activated"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
 principles:
@@ -107,10 +107,10 @@ sequence:
     status: active
     interrupts: "EF-09"
     roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-    completedItem: "AR-00"
-    activeItem: "AR-01"
-    activationState: "active"
-    workPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
+    completedItem: "AR-01"
+    activeItem: "AR-02"
+    activationState: "not-activated"
+    workPackage: ""
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."
@@ -119,8 +119,8 @@ sequence:
       - "Target support is promoted only from adapter-owned behavioral certification."
       - "The packaged CLI and artifact pipeline operate independently from the repository checkout."
     nonGoals:
-      - "AR-01 must not move concrete adapters before the canonical adapter-facing graph contract is stable."
-      - "AR-01 must not implement flow-sensitive branch, merge or multi-workflow semantics owned by AR-02."
+      - "AR-02 must not move concrete adapters before the compiler-enforced extraction milestone AR-03."
+      - "AR-02 must not claim multi-workflow target support before flow-sensitive workflow ownership and adapter evidence preserve it completely."
       - "The recovery must not become a runtime plugin framework or a broad rewrite without staged compatibility boundaries."
 
   - id: "EF-09"

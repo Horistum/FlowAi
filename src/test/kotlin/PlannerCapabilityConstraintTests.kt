@@ -13,6 +13,7 @@ import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetManifestRenderer
 import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetProjectionAuthorization
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
@@ -58,9 +59,13 @@ class PlannerCapabilityConstraintTests {
         var invoked = false
         val generator = object : ReconciledTargetManifestGenerator() {
             override val target: String = "tekton"
-            override fun buildManifest(plan: ExecutionPlan, compatibility: org.flowlang.capabilities.CompatibilityReport): TargetManifest {
+            override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
                 invoked = true
-                return TargetManifest(target = target, flowName = plan.flowName, compatibility = compatibility)
+                return TargetManifest(
+                    target = target,
+                    flowName = authorization.plan.flowName,
+                    compatibility = authorization.compatibility
+                )
             }
         }
         val renderer = object : TargetManifestRenderer {

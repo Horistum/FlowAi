@@ -11,11 +11,11 @@ import org.flowlang.materialization.MaterializationNegotiationValidator
 import org.flowlang.materialization.MaterializationStatus
 import org.flowlang.materialization.StandardMaterializationNegotiations
 import org.flowlang.notes.StandardNotesPackageContracts
-import org.flowlang.semantic.StandardSemanticActionGraphs
+import org.flowlang.obligations.StandardArchitectureObligationGraphs
 
 class FlowMaterializationNegotiationTests {
     private val notes = StandardNotesPackageContracts.baseline()
-    private val graph = StandardSemanticActionGraphs.baseline()
+    private val graph = StandardArchitectureObligationGraphs.baseline()
 
     @Test
     fun baselineMaterializationNegotiationIsExplicitAndValid() {

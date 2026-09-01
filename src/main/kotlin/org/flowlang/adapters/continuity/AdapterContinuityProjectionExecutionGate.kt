@@ -4,8 +4,8 @@ import java.io.File
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
 import org.flowlang.generators.manifest.TargetProjectionExecutionGate
+import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.generators.manifest.TargetProjectionRegistry
-import org.flowlang.planner.ExecutionPlan
 
 /**
  * Adapter-owned continuity boundary composed at the production projection edge.
@@ -27,12 +27,13 @@ class AdapterContinuityProjectionExecutionGate(
     private val capabilityResolver = AdapterContinuityScopedCapabilityResolver()
 
     override fun resolve(
-        plan: ExecutionPlan,
+        authorization: CompilationAuthorization,
         target: String,
         declared: TargetCapability
-    ): TargetCapability = capabilityResolver.resolve(plan, target, declared)
+    ): TargetCapability = capabilityResolver.resolve(authorization, target, declared)
 
-    override fun requireAuthorized(plan: ExecutionPlan, target: String) {
-        authority.requireMatched(plan, target)
+    override fun requireAuthorized(authorization: CompilationAuthorization, target: String) {
+        authorization.requireIntegrity()
+        authority.requireMatched(authorization.executionPlan, target)
     }
 }

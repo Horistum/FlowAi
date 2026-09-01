@@ -472,8 +472,8 @@ internal class StandardArchitectureNormalizationChecks(
             "notes",
             "planner",
             "projection",
+            "obligations",
             "safety",
-            "semantic",
             "standard",
             "topology",
             "validator"

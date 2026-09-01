@@ -1,0 +1,110 @@
+version: "AR-01D"
+name: "Derived Views and Superseded Authority Retirement"
+type: "architecture-recovery-delivery"
+status: complete
+stream: "architecture-recovery"
+parentWorkPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
+strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-01"
+
+objective: "Finish the AR-01 authority cutover by deriving both public execution-plan compatibility views directly from CanonicalExecutionGraph, carrying exact CompilationAuthorization to every target/materialization edge, and retiring the execution-looking SemanticActionGraph name while preserving its legitimate architecture-obligation evidence and stable public wire contracts."
+
+authorization:
+  predecessor: "AR-01C"
+  mainAtStart: "b1edf195cedcabfa03963056d1cda3662f6c9da1"
+  rule: "AR-01D may retire superseded internal authority and tighten graph-bound adapter input. It must preserve accepted semantics, public artifact schemas and versions, existing target support, stable diagnostic identifiers and compatibility wire bytes unless an explicitly versioned migration says otherwise."
+
+requiredOutcomes:
+  - "ExecutionPlan and CanonicalExecutionPlan are independent projections of one validated CanonicalExecutionGraph plus its explicit non-semantic binding envelope."
+  - "CompilationAuthorization validates both graph-derived views against the same canonical graph digest; production authorization no longer invokes ExecutionPlanCanonicalizer."
+  - "ExecutionPlanCanonicalizer remains only as a deprecated compatibility/parity facade and has no product authority caller."
+  - "TargetProjectionAuthorization carries the exact CompilationAuthorization and derives its ExecutionPlan view from that authorization."
+  - "Target capability resolvers, execution gates and task materialization receive graph authorization rather than a detached raw ExecutionPlan."
+  - "A task must exactly match its graph-derived compatibility view before materialization can observe implementation binding."
+  - "Materialization obligations use canonical semantic capability when the graph declares one; capability-absent tasks record only canonical-authorization conformance evidence, and module.action never synthesizes target-neutral meaning."
+  - "The notes-backed SemanticActionGraph production type is retired and replaced by ArchitectureObligationGraph, explicitly classified as architecture/evidence metadata rather than execution IR."
+  - "Historical target-manifest metadata keys, graph evidence identifiers and diagnostic codes remain stable while internal authority names become honest."
+  - "Intent 2.0, AST 2.2, Execution Plan 2.4, lowering evidence 2.1, Target Manifest 3.0 and Target Registry 3.2 remain frozen."
+
+productionBoundary:
+  graphProjection:
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphProjection.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt"
+    - "src/main/kotlin/org/flowlang/planner/CanonicalExecutionPlan.kt"
+  targetAuthorization:
+    - "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetMaterializationResolverEngine.kt"
+    - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityProjectionExecutionGate.kt"
+    - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedCapabilityResolver.kt"
+  obligationEvidence:
+    - "src/main/kotlin/org/flowlang/obligations/ArchitectureObligationGraph.kt"
+    - "src/main/kotlin/org/flowlang/materialization/MaterializationNegotiation.kt"
+    - "src/main/kotlin/org/flowlang/projection/TargetProjectionPlan.kt"
+  composition:
+    - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
+    - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
+    - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+  evidence:
+    - "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
+    - "architecture-recovery/conformance/check-inventory.yaml"
+    - "src/main/kotlin/org/flowlang/conformance/Ar01CompilerAxisConformanceChecks.kt"
+    - "standard/architecture/authority-responsibilities.yaml"
+
+requiredTests:
+  - "Direct graph projection reproduces the historical CanonicalExecutionPlan compatibility bytes over existing fixtures while production authorization does not call ExecutionPlanCanonicalizer."
+  - "ExecutionPlan and CanonicalExecutionPlan both drift-fail if their graph-derived reconstruction differs from stored authorization views."
+  - "Changing implementation binding cannot change canonical graph digest, and detached or mutated TaskNode values cannot borrow authorization from another graph-derived view."
+  - "A module.action pair with no canonical semantic capability remains capability-absent in CanonicalExecutionGraph and produces only authorization/conformance obligation evidence rather than synthesized target-neutral meaning."
+  - "Capability obligation declarations originate from authorized canonical semantic capability; capability-absent tasks use a fixed authorization declaration while implementation binding remains separately auditable evidence."
+  - "The old SemanticActionGraph production source and type disappear; ArchitectureObligationGraph remains validated notes/obligation evidence."
+  - "Target capability resolvers and execution gates reject raw-plan composition and consume CompilationAuthorization."
+  - "Historical target-manifest metadata and diagnostic identifiers remain compatible."
+  - "Complete tests, standalone conformance and Flow Agent validation pass on exact-head and synthetic merge-candidate revisions."
+
+conformanceChecks:
+  - "architecture-recovery.ar-01.derived-view-consistency"
+  - "architecture-recovery.ar-01.graph-bound-target-authorization"
+  - "architecture-recovery.ar-01.obligation-authority-retirement"
+  - "architecture-recovery.ar-01.no-pseudo-graph-bypass"
+  - "architecture-recovery.ar-01.public-contract-freeze"
+
+nonGoals:
+  - "AR-01D does not remove the public ExecutionPlan or CanonicalExecutionPlan wire contracts."
+  - "AR-01D does not change public Target Manifest metadata keys merely to match internal renamed types."
+  - "AR-01D does not implement AR-02 branch value lattices, phi nodes, multi-workflow execution or failure-path enrichment."
+  - "AR-01D does not implement AR-03 concrete adapter extraction or promote target maturity."
+  - "AR-01D does not widen shell, command or runtime execution semantics."
+
+lifecycle:
+  implementationBoundary:
+    status: passed
+    exactHead: "bb2a5254cc6e41430e7570e91bc30687521d7e85"
+    syntheticMergeCandidate: "affca90d9cc3039de59a0d0649814ac5d9d8e4d6"
+    workflowRunId: 33387433833
+    workflowRunNumber: 3145
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance passed on the clean-checkout-corrected AR-01D implementation."
+      - "Synthetic merge-candidate Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance passed against main b1edf195cedcabfa03963056d1cda3662f6c9da1."
+  validationBoundary:
+    status: passed
+    exactHead: "d9e48a5bbdd8e86bf7a804a8c78b02fe1ef8e62c"
+    syntheticMergeCandidate: "47bdd893afde9df826121ab33fa9659a0d761eb7"
+    workflowRunId: 33465849505
+    workflowRunNumber: 3146
+    conclusion: success
+    evidence:
+      - "The evidence-bearing validation head passed exact-head Flow Agent validation, JDK 25 compilation, 1,265 tests with zero failures/errors/skips, and standalone conformance."
+      - "The independently synthesized merge candidate passed the same complete boundary without changing production semantics or public contract versions."
+  completionBoundary:
+    status: passed
+    exactHead: "4bbd9437c30d1fc44bfe7a1e2ebd2f17f4ab1fcf"
+    syntheticMergeCandidate: "ecbaf9f71ecaa5fc65d1049751894264a0cba974"
+    workflowRunId: 33466452681
+    workflowRunNumber: 3147
+    conclusion: success
+    evidence:
+      - "The completion-candidate exact head passed Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance after the independent validation boundary was recorded."
+      - "The independently synthesized completion merge candidate passed the same complete boundary against main, proving the completed AR-01D state remains merge-compatible."

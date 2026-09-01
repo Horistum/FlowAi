@@ -15,4 +15,6 @@ checks:
   - architecture-recovery.ar-01.graph-mutation-polarity
   - architecture-recovery.ar-01.authorization-digest-binding
   - architecture-recovery.ar-01.derived-view-consistency
+  - architecture-recovery.ar-01.graph-bound-target-authorization
+  - architecture-recovery.ar-01.obligation-authority-retirement
   - architecture-recovery.ar-01.no-pseudo-graph-bypass

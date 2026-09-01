@@ -229,7 +229,13 @@ class AdapterTriggerConformanceChecks(
             targets = targets
         )
         val diagnosticManifest = TargetManifestGenerationPipeline(targets, projections)
-            .generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest(plan, selection))
+            .generateDiagnosticEvidence(
+                TargetDiagnosticMaterializationRequest.fromCompatibilityPlan(
+                    plan = plan,
+                    selection = selection,
+                    evidenceId = "conformance:adapter-trigger:bounded-event"
+                )
+            )
         val assessment = authority.requireMatched(plan, "github-actions")
         val manifest = authority.reconcileDiagnostic(diagnosticManifest, assessment)
         val rendered = GitHubActionsTriggerProjectionPlanner.render(manifest)

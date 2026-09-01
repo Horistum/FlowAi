@@ -82,19 +82,21 @@ internal abstract class ConformanceCheckSupport(
         target: String,
         strict: Boolean = false,
         source: String
-    ): TargetMaterializationRequest = TargetMaterializationRequest(
+    ): TargetMaterializationRequest = TargetMaterializationRequest.fromCompatibilityPlan(
         plan = plan,
         selection = explicitTarget(target, source),
-        strict = strict
+        strict = strict,
+        evidenceId = source
     )
 
     protected fun diagnosticMaterializationRequest(
         plan: ExecutionPlan,
         target: String,
         source: String
-    ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest(
+    ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest.fromCompatibilityPlan(
         plan = plan,
-        selection = explicitTarget(target, source)
+        selection = explicitTarget(target, source),
+        evidenceId = source
     )
 
     protected fun referenceDiagnosticCoverage(artifacts: PipelineArtifacts, target: String) =

@@ -16,6 +16,7 @@ import org.flowlang.generators.manifest.TargetManifestRenderer
 import org.flowlang.generators.manifest.TargetMaterializationEvidenceAuthority
 import org.flowlang.generators.manifest.TargetMaterializationResolver
 import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetProjectionAuthorization
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ExecutionPlan
@@ -102,23 +103,29 @@ class MandatoryMaterializationAuthorityTests {
             module = "git",
             action = "checkout",
             target = "repository",
+            semanticCapability = "git.checkout",
             params = mapOf("url" to "https://example.invalid/repository.git", "branch" to "main")
         )
+        val authorization = testCompatibilityAuthorization(
+            ExecutionPlan(flowName = "materialization-evidence", nodes = listOf(task)),
+            "test:materialization-evidence"
+        )
         val valid = TargetMaterializationResolver.resolve(
+            authorization = authorization,
             task = task,
             targetName = "jenkins",
             projectionRules = jenkins.projectionRules,
             nativeProjections = BuiltInNativeProjectionCatalogs.jenkins
         )
-        val duplicateNode = valid.semanticGraph.nodes.single().copy()
-        val invalidGraph = valid.semanticGraph.copy(nodes = valid.semanticGraph.nodes + duplicateNode)
+        val duplicateNode = valid.obligationGraph.nodes.single().copy()
+        val invalidGraph = valid.obligationGraph.copy(nodes = valid.obligationGraph.nodes + duplicateNode)
         val invalidNegotiation = valid.negotiation.copy(graph = invalidGraph)
         val invalidProjection = valid.projectionPlan.copy(negotiation = invalidNegotiation)
 
         val failure = assertFailsWith<IllegalArgumentException> {
             TargetMaterializationEvidenceAuthority.requireValid(
                 valid.copy(
-                    semanticGraph = invalidGraph,
+                    obligationGraph = invalidGraph,
                     negotiation = invalidNegotiation,
                     projectionPlan = invalidProjection
                 )
@@ -156,8 +163,10 @@ class MandatoryMaterializationAuthorityTests {
         object : ReconciledTargetManifestGenerator() {
             override val target: String = target
 
-            override fun buildManifest(plan: ExecutionPlan, compatibility: CompatibilityReport): TargetManifest {
+            override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
                 invoked()
+                val plan = authorization.plan
+                val compatibility = authorization.compatibility
                 return TargetManifest(
                     target = target,
                     flowName = plan.flowName,
