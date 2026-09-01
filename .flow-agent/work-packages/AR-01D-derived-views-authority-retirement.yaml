@@ -89,13 +89,15 @@ lifecycle:
       - "Exact-head Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance passed on the clean-checkout-corrected AR-01D implementation."
       - "Synthetic merge-candidate Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance passed against main b1edf195cedcabfa03963056d1cda3662f6c9da1."
   validationBoundary:
-    status: pending
-    exactHead: null
-    syntheticMergeCandidate: null
-    workflowRunId: null
-    workflowRunNumber: null
-    conclusion: null
-    evidence: []
+    status: passed
+    exactHead: "d9e48a5bbdd8e86bf7a804a8c78b02fe1ef8e62c"
+    syntheticMergeCandidate: "47bdd893afde9df826121ab33fa9659a0d761eb7"
+    workflowRunId: 33465849505
+    workflowRunNumber: 3146
+    conclusion: success
+    evidence:
+      - "The evidence-bearing validation head passed exact-head Flow Agent validation, JDK 25 compilation, 1,265 tests with zero failures/errors/skips, and standalone conformance."
+      - "The independently synthesized merge candidate passed the same complete boundary without changing production semantics or public contract versions."
   completionBoundary:
     status: pending
     exactHead: null
