@@ -1,0 +1,39 @@
+name: AR-02B Source Bundle
+
+on:
+  push:
+    branches:
+      - agent/ar-02b-explicit-merge-semantics
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ar-02b-source-bundle
+  cancel-in-progress: true
+
+jobs:
+  bundle-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact branch revision
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify and archive source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          tar --exclude=.git --exclude=build --exclude=.gradle -czf /tmp/flowai-source.tgz .
+
+      - name: Upload source bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: ar02b-source-bundle
+          path: /tmp/flowai-source.tgz
+          if-no-files-found: error
+          retention-days: 1
