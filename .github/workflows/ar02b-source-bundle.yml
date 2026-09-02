@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: ./gradlew --no-daemon clean compileKotlin compileTestKotlin --stacktrace --console=plain
 
-      - name: Archive source and offline Gradle state
+      - name: Archive source, Gradle state and JDK
         shell: bash
         run: |
           set -euo pipefail
@@ -52,6 +52,7 @@ jobs:
             --exclude='jdks' \
             -C "$HOME" \
             -czf /tmp/flowai-gradle-home.tgz .gradle
+          tar -C "$JAVA_HOME" -czf /tmp/flowai-jdk25.tgz .
 
       - name: Upload source bundle
         uses: actions/upload-artifact@v7
@@ -66,5 +67,13 @@ jobs:
         with:
           name: ar02b-gradle-home
           path: /tmp/flowai-gradle-home.tgz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload JDK 25 toolchain
+        uses: actions/upload-artifact@v7
+        with:
+          name: ar02b-jdk25
+          path: /tmp/flowai-jdk25.tgz
           if-no-files-found: error
           retention-days: 1
