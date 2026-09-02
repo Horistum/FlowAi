@@ -1,6 +1,10 @@
 package org.flowlang.validator
 
 import org.flowlang.ast.*
+import org.flowlang.core.FlowAvailabilityAnalysis
+import org.flowlang.core.FlowAvailabilityAnalyzer
+import org.flowlang.core.FlowAvailabilityIssueKind
+import org.flowlang.core.FlowValueAvailability
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.safety.EnvironmentSafetyPolicy
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
@@ -13,6 +17,11 @@ import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
  * destructive-action safety, result-binding uniqueness, handler/result coherence,
  * reference resolution against scope, and expression operator validity. Recurses
  * through every control-flow and data statement.
+ *
+ * AR-02A adds one shared path-sensitive availability product. The legacy lexical
+ * walk still owns syntax/module/type diagnostics; the shared product owns whether
+ * a produced value is available on every reachable path and which producer it
+ * resolves to.
  */
 class FlowValidator(
     private val registry: ModuleRegistry = ModuleRegistry(),
@@ -31,7 +40,13 @@ class FlowValidator(
         "number", "alpha", "alphanumeric", "slug", "semver", "hostname"
     )
 
-    fun validate(document: FlowDocument): ValidationReport {
+    fun validate(document: FlowDocument): ValidationReport =
+        validate(document, FlowAvailabilityAnalyzer().analyze(document))
+
+    internal fun validate(
+        document: FlowDocument,
+        availability: FlowAvailabilityAnalysis
+    ): ValidationReport {
         val issues = mutableListOf<ValidationIssue>()
         if (document.kind != "FlowDocument") issues += err("INVALID_KIND", "AST kind must be FlowDocument")
         if (document.flow.name.isBlank()) issues += err("FLOW_NAME_EMPTY", "Flow name must not be empty")
@@ -99,9 +114,11 @@ class FlowValidator(
         // global error handler scope has `error`
         document.flow.errorHandler?.let { eh ->
             val ehScope = scope.child().also { it.declare("error") }
-            eh.steps.forEach { validateStatement(it, imported, document.flow.systems, ehScope, results, issues) }
+            val handlerResults = mutableSetOf<String>()
+            eh.steps.forEach { validateStatement(it, imported, document.flow.systems, ehScope, handlerResults, issues) }
         }
 
+        reconcileAvailabilityIssues(issues, availability)
         issues += SafetyBoundaryValidator(registry, environmentPolicy).validate(document)
         return ValidationReport(valid = issues.none { it.level == "error" }, issues = issues)
     }
@@ -116,7 +133,7 @@ class FlowValidator(
                 checkExpr(stmt.condition, scope, "auto", null, issues)
                 // then/otherwise are mutually exclusive: each validates against its own copy of the
                 // result names, so the same binding name in both branches is not a false
-                // DUPLICATE_RESULT. New names from both branches merge back for later statements.
+                // DUPLICATE_RESULT. Availability after the join comes from FlowAvailabilityAnalysis.
                 val thenScope = scope.child()
                 val thenResults = results.toMutableSet()
                 stmt.then.forEach { validateStatement(it, imported, systems, thenScope, thenResults, issues) }
@@ -138,7 +155,7 @@ class FlowValidator(
             is MatchNode -> {
                 checkExpr(stmt.source, scope, "auto", null, issues)
                 // Cases and the error case are mutually exclusive; each validates against the pre-match
-                // result snapshot so a shared binding name is not a false duplicate. New names merge back.
+                // result snapshot so a shared binding name is not a false duplicate.
                 val baseResults = results.toSet()
                 stmt.cases.forEach { c ->
                     c.condition?.let { checkExpr(it, scope, "implicitResult", null, issues) }
@@ -162,10 +179,15 @@ class FlowValidator(
                 stmt.steps.forEach { validateStatement(it, imported, systems, retryScope, results, issues) }
             }
             is TryNode -> {
+                val baseResults = results.toSet()
                 val tryScope = scope.child()
-                stmt.steps.forEach { validateStatement(it, imported, systems, tryScope, results, issues) }
+                val tryResults = baseResults.toMutableSet()
+                stmt.steps.forEach { validateStatement(it, imported, systems, tryScope, tryResults, issues) }
                 val eh = scope.child().also { it.declare("error") }
-                stmt.errorHandler.steps.forEach { validateStatement(it, imported, systems, eh, results, issues) }
+                val handlerResults = baseResults.toMutableSet()
+                stmt.errorHandler.steps.forEach { validateStatement(it, imported, systems, eh, handlerResults, issues) }
+                results += tryResults
+                results += handlerResults
             }
             is TransformNode -> {
                 checkExpr(stmt.source, scope, "auto", null, issues)
@@ -240,8 +262,7 @@ class FlowValidator(
         // Action parameters are executable expressions. A bareword in an action
         // parameter remains a reference, so typos such as `command: undefinedVar`
         // are still caught. Symbolic lowercase barewords are only tolerated in
-        // schema-bound system config values, where values like `engine: postgres`
-        // and `channel: email` are common configuration literals.
+        // schema-bound system config values.
         action.params.values.forEach { checkExpr(it, scope, "auto", null, issues) }
         action.safety?.condition?.let { checkExpr(it, scope, "auto", null, issues) }
 
@@ -280,7 +301,8 @@ class FlowValidator(
             issues += err("RESULT_NAME_EMPTY", "Result and declared output names must not be empty", location)
             return
         }
-        if (!results.add(name)) {
+        val logicalName = name.replace('-', '_')
+        if (!results.add(logicalName)) {
             issues += err("DUPLICATE_RESULT", "Result '$name' is already defined", location)
         }
         scope.declare(name)
@@ -300,9 +322,6 @@ class FlowValidator(
                 if (effScope == "implicitResult") {
                     val allowed = (resultFields ?: standardResultFields)
                     if (root !in allowed && root != "item" && root != "error" && root !in builtinPatterns && !scope.has(root)) {
-                        // When the module declares a concrete output schema, an unknown field is almost
-                        // certainly a typo (result.statuss vs status) and must fail; modules with an open
-                        // ("any") output stay a warning because the field set cannot be checked.
                         if (strictResultFields)
                             issues += err("UNKNOWN_RESULT_FIELD", "Reference '$root' is not a declared output of this module (possible typo)", expr.location)
                         else
@@ -328,21 +347,17 @@ class FlowValidator(
             is MapLiteralNode -> expr.entries.values.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
             is TemplateStringNode -> expr.parts.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
             is CallExpressionNode -> expr.args.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
-            is IndexExpressionNode -> { checkExpr(expr.target, scope, defaultScope, resultFields, issues, strictResultFields); checkExpr(expr.index, scope, defaultScope, resultFields, issues, strictResultFields) }
+            is IndexExpressionNode -> {
+                checkExpr(expr.target, scope, defaultScope, resultFields, issues, strictResultFields)
+                checkExpr(expr.index, scope, defaultScope, resultFields, issues, strictResultFields)
+            }
             is MemberExpressionNode -> checkExpr(expr.target, scope, defaultScope, resultFields, issues, strictResultFields)
-            else -> Unit  // literals, secret refs, identifier literals
+            else -> Unit
         }
     }
 
     /**
      * Validates expression references for a value that is constrained by a module schema.
-     *
-     * Important design rule:
-     * - In normal expressions, a bareword is a reference.
-     * - In schema-bound text/duration fields, a single unresolved bareword is allowed
-     *   as a symbolic string literal. This keeps user-friendly config like
-     *   `engine: postgres` or `channel: email` without forcing quotes everywhere.
-     * - Dotted/member/index expressions are still treated as references and checked.
      */
     private fun checkSchemaExpression(
         expr: ExpressionNode,
@@ -409,8 +424,49 @@ class FlowValidator(
         }
     }
 
-    private fun err(code: String, message: String, loc: org.flowlang.ast.SourceLocation? = null) = ValidationIssue("error", code, message, loc)
-    private fun warn(code: String, message: String, loc: org.flowlang.ast.SourceLocation? = null) = ValidationIssue("warning", code, message, loc)
+    /**
+     * The lexical validator predates control-flow joins. It can therefore report
+     * UNRESOLVED_REFERENCE for a value that the shared analysis proved safe, or
+     * provide an imprecise unresolved error for a maybe/ambiguous value. Reconcile
+     * those diagnostics by occurrence, then add the authoritative flow issues.
+     */
+    private fun reconcileAvailabilityIssues(
+        issues: MutableList<ValidationIssue>,
+        availability: FlowAvailabilityAnalysis
+    ) {
+        availability.uses
+            .filter { use ->
+                use.accepted || use.state.availability == FlowValueAvailability.MAYBE_DEFINED
+            }
+            .forEach { use -> removeOneLexicalUnresolved(issues, use.binding, use.location) }
+
+        availability.issues.forEach { issue ->
+            if (issue.kind != FlowAvailabilityIssueKind.UNRESOLVED) {
+                removeOneLexicalUnresolved(issues, issue.binding, issue.location)
+            }
+            val validationIssue = err(issue.code, issue.message, issue.location)
+            if (validationIssue !in issues) issues += validationIssue
+        }
+    }
+
+    private fun removeOneLexicalUnresolved(
+        issues: MutableList<ValidationIssue>,
+        binding: String,
+        location: SourceLocation?
+    ) {
+        val index = issues.indexOfFirst { issue ->
+            issue.code == "UNRESOLVED_REFERENCE" &&
+                issue.message.contains("'$binding'") &&
+                (location == null || issue.location == location)
+        }
+        if (index >= 0) issues.removeAt(index)
+    }
+
+    private fun err(code: String, message: String, loc: org.flowlang.ast.SourceLocation? = null) =
+        ValidationIssue("error", code, message, loc)
+
+    private fun warn(code: String, message: String, loc: org.flowlang.ast.SourceLocation? = null) =
+        ValidationIssue("warning", code, message, loc)
 
     /** Lexical scope with parent chaining. */
     private class Scope(private val parent: Scope? = null) {

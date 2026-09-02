@@ -1,18 +1,23 @@
 package org.flowlang.planner
 
 import org.flowlang.ast.*
+import org.flowlang.controls.PlanningControlAuthority
+import org.flowlang.core.FlowAvailabilityAnalysis
+import org.flowlang.core.FlowAvailabilityAnalyzer
+import org.flowlang.core.FlowAvailabilityState
+import org.flowlang.core.FlowProducerIdentity
+import org.flowlang.core.FlowStatementPath
 import org.flowlang.effects.CanonicalIntentEffectAuthority
 import org.flowlang.effects.ModuleEffectCanonicalizer
 import org.flowlang.effects.SemanticEffect
-import org.flowlang.controls.PlanningControlAuthority
 import org.flowlang.intent.StandardCapability
+import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.modules.ContinuityChannel
 import org.flowlang.modules.ContinuityContract
 import org.flowlang.modules.ContinuityKind
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.topology.PlanningTopologyAuthority
-import org.flowlang.lowering.IntentLoweringAuthority
 
 /**
  * Raised when the public planner boundary receives an AST action that has no
@@ -33,21 +38,35 @@ class MissingPlanningActionContractException(
 /**
  * Converts validated Flow AST into a platform-neutral ExecutionPlan.
  *
- * RC4 rule: dependencies are semantic, not textual. The planner no longer adds
- * false sequential dependencies between independent tasks. Edges come from:
- *  - explicit Action/Approval dependsOn names produced by intent lowering,
- *  - data-flow references to previous result bindings.
- *
- * This keeps Flow portable: generators may exploit DAG parallelism instead of
- * serializing work merely because two statements appeared on adjacent lines.
+ * Dependencies are semantic, not textual. AR-02A additionally requires every
+ * value edge to resolve through the shared path-sensitive availability analysis.
+ * Mutually exclusive branches therefore never overwrite a global binding map or
+ * lend their producer identity to a sibling branch.
  */
 class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
-    fun plan(document: FlowDocument): ExecutionPlan {
+    fun plan(document: FlowDocument): ExecutionPlan =
+        plan(document, FlowAvailabilityAnalyzer().analyze(document))
+
+    internal fun plan(
+        document: FlowDocument,
+        availability: FlowAvailabilityAnalysis
+    ): ExecutionPlan {
+        availability.requireDirectPlanningSafe()
         val ctx = Ctx(document.flow.input.map { it.name }.toSet(), document.flow.systems.associateBy { it.name })
-        val nodes = planStatements(document.flow.steps, ctx)
-        val tail = document.flow.errorHandler?.let {
-            listOf(TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(it.steps, ctx)))
+        val nodes = planStatements(document.flow.steps, ctx, availability) { index ->
+            FlowStatementPath.flowStep(index)
+        }
+        val tail = document.flow.errorHandler?.let { handler ->
+            listOf(
+                TryPlanNode(
+                    id = ctx.id("onError"),
+                    body = emptyList(),
+                    errorHandler = planStatements(handler.steps, ctx, availability) { index ->
+                        FlowStatementPath.globalErrorStep(index)
+                    }
+                )
+            )
         } ?: emptyList()
         val allNodes = nodes + tail
         val dependencyRelations = ctx.dependencyRelations.distinctBy(PlanDependencyRelations::relationKey)
@@ -61,7 +80,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             flowName = document.flow.name,
             inputs = document.flow.input.map { it.toPlanInput() },
             triggers = document.flow.triggers.map { it.toPlanTrigger() },
-            outputs = ctx.outputs.toList(),
+            outputs = ctx.visibleOutputs(availability.normalExitState),
             dependencies = collectDependencies(allNodes),
             requiredCapabilities = (
                 collectRequiredCapabilities(allNodes) +
@@ -122,88 +141,99 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         )
     }
 
-    private fun planStatements(stmts: List<StatementNode>, ctx: Ctx): List<PlanNode> = stmts.map { planStatement(it, ctx) }
+    private fun planStatements(
+        statements: List<StatementNode>,
+        ctx: Ctx,
+        availability: FlowAvailabilityAnalysis,
+        path: (Int) -> FlowStatementPath
+    ): List<PlanNode> = statements.mapIndexed { index, statement ->
+        planStatement(statement, ctx, availability, path(index))
+    }
 
-    private fun planStatement(stmt: StatementNode, ctx: Ctx): PlanNode = when (stmt) {
-        is ActionNode -> planAction(stmt, ctx)
+    private fun planStatement(
+        statement: StatementNode,
+        ctx: Ctx,
+        availability: FlowAvailabilityAnalysis,
+        path: FlowStatementPath
+    ): PlanNode = when (statement) {
+        is ActionNode -> planAction(statement, ctx, availability, path)
         is IfNode -> ConditionNode(
             id = ctx.id("if"),
-            condition = ExpressionRenderer.render(stmt.condition),
-            then = planStatements(stmt.then, ctx),
-            otherwise = planStatements(stmt.otherwise, ctx)
+            condition = ExpressionRenderer.render(statement.condition),
+            then = planStatements(statement.then, ctx, availability) { index -> path.child("then", index) },
+            otherwise = planStatements(statement.otherwise, ctx, availability) { index -> path.child("otherwise", index) }
         )
         is ForNode -> LoopNode(
-            id = ctx.id("for"), item = stmt.item,
-            source = ExpressionRenderer.render(stmt.source),
-            body = planStatements(stmt.body, ctx)
+            id = ctx.id("for"),
+            item = statement.item,
+            source = ExpressionRenderer.render(statement.source),
+            body = planStatements(statement.body, ctx, availability) { index -> path.child("body", index) }
         )
         is ParallelNode -> ParallelGroupNode(
-            id = ctx.id("parallel"), failFast = stmt.failFast,
-            branches = stmt.branches.map { PlanBranch(it.name, planStatements(it.steps, ctx)) }
-        )
-        is MatchNode -> MatchPlanNode(
-            id = ctx.id("match"), source = ExpressionRenderer.render(stmt.source),
-            cases = stmt.cases.map { MatchCase(it.condition?.let(ExpressionRenderer::render) ?: "_", planStatements(it.steps, ctx)) },
-            errorCase = stmt.errorCase?.let { planStatements(it, ctx) } ?: emptyList(),
-            defaultSteps = planStatements(stmt.defaultSteps, ctx)
-        )
-        is RetryNode -> RetryGroupNode(
-            id = ctx.id("retry"), max = stmt.policy.max, delay = stmt.policy.delay, backoff = stmt.policy.backoff,
-            body = planStatements(stmt.steps, ctx)
-        )
-        is TryNode -> TryPlanNode(
-            id = ctx.id("try"), body = planStatements(stmt.steps, ctx),
-            errorHandler = planStatements(stmt.errorHandler.steps, ctx)
-        )
-        is ApproveNode -> {
-            val explicitDeps = stmt.dependsOn.mapNotNull { ctx.results[it.replace('-', '_')] ?: ctx.results[it] }.distinct()
-            val id = ctx.id("approve")
-            ctx.dependencyRelations += explicitDeps.map { sourceNodeId ->
-                PlanDependencyRelation(
-                    sourceNodeId = sourceNodeId,
-                    targetNodeId = id,
-                    kind = PlanDependencyKind.ORDERING,
-                    evidence = PlanDependencyEvidence.DECLARED_ORDERING,
-                    path = listOf(sourceNodeId, id)
+            id = ctx.id("parallel"),
+            failFast = statement.failFast,
+            branches = statement.branches.mapIndexed { branchIndex, branch ->
+                PlanBranch(
+                    branch.name,
+                    planStatements(branch.steps, ctx, availability) { index ->
+                        path.child("branches[$branchIndex].steps", index)
+                    }
                 )
             }
-            val outputNames = (listOfNotNull(stmt.result?.name) + stmt.declaredOutputs).distinct()
-            outputNames.forEach { output ->
-                ctx.results[output] = id
-                ctx.results[output.replace('-', '_')] = id
-                ctx.outputs += PlanOutput(output, sourceNodeId = id)
+        )
+        is MatchNode -> MatchPlanNode(
+            id = ctx.id("match"),
+            source = ExpressionRenderer.render(statement.source),
+            cases = statement.cases.mapIndexed { caseIndex, matchCase ->
+                MatchCase(
+                    matchCase.condition?.let(ExpressionRenderer::render) ?: "_",
+                    planStatements(matchCase.steps, ctx, availability) { index ->
+                        path.child("cases[$caseIndex].steps", index)
+                    }
+                )
+            },
+            errorCase = statement.errorCase?.let { errorSteps ->
+                planStatements(errorSteps, ctx, availability) { index -> path.child("errorCase", index) }
+            } ?: emptyList(),
+            defaultSteps = planStatements(statement.defaultSteps, ctx, availability) { index ->
+                path.child("default", index)
             }
-            ApprovalNode(
-                id = id,
-                mode = stmt.mode,
-                message = (stmt.params["message"])?.let(ExpressionRenderer::render)?.trim('"'),
-                resultName = stmt.result?.name,
-                sourceId = stmt.sourceId,
-                sourceDescription = stmt.sourceDescription,
-                outputs = outputNames,
-                dependsOn = explicitDeps
-            )
-        }
+        )
+        is RetryNode -> RetryGroupNode(
+            id = ctx.id("retry"),
+            max = statement.policy.max,
+            delay = statement.policy.delay,
+            backoff = statement.policy.backoff,
+            body = planStatements(statement.steps, ctx, availability) { index -> path.child("body", index) }
+        )
+        is TryNode -> TryPlanNode(
+            id = ctx.id("try"),
+            body = planStatements(statement.steps, ctx, availability) { index -> path.child("body", index) },
+            errorHandler = planStatements(statement.errorHandler.steps, ctx, availability) { index ->
+                path.child("errorHandler", index)
+            }
+        )
+        is ApproveNode -> planApproval(statement, ctx, availability, path)
         is TransformNode -> {
             val id = ctx.id("transform")
-            ctx.results[stmt.target] = id
+            ctx.registerProducer(availability.producerAt(path, statement.target), id)
             DataOpNode(
                 id = id,
                 kind = "Transform",
-                target = stmt.target,
-                detail = ExpressionRenderer.render(stmt.source),
+                target = statement.target,
+                detail = ExpressionRenderer.render(statement.source),
                 semanticCapability = StandardCapability.TRANSFORM.name,
                 effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.TRANSFORM)
             )
         }
         is AggregateNode -> {
             val id = ctx.id("aggregate")
-            ctx.results[stmt.target] = id
+            ctx.registerProducer(availability.producerAt(path, statement.target), id)
             DataOpNode(
                 id = id,
                 kind = "Aggregate",
-                target = stmt.target,
-                detail = ExpressionRenderer.render(stmt.source),
+                target = statement.target,
+                detail = ExpressionRenderer.render(statement.source),
                 semanticCapability = StandardCapability.DATA_TRANSFORM.name,
                 effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DATA_TRANSFORM)
             )
@@ -211,18 +241,72 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         is ValidateNode -> DataOpNode(
             id = ctx.id("validate"),
             kind = "Validate",
-            detail = ExpressionRenderer.render(stmt.target),
+            detail = ExpressionRenderer.render(statement.target),
             semanticCapability = StandardCapability.VALIDATE.name,
             effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.VALIDATE)
         )
-        is SetNode -> { val id = ctx.id("set"); ctx.results[stmt.name] = id; ControlNode(id, "Set", "${stmt.name} = ${ExpressionRenderer.render(stmt.value)}") }
-        is FailNode -> ControlNode(ctx.id("fail"), "Fail", ExpressionRenderer.render(stmt.message))
-        is SkipNode -> ControlNode(ctx.id("skip"), "Skip", ExpressionRenderer.render(stmt.message))
-        is ExpectNode -> ControlNode(ctx.id("expect"), "Expect", stmt.expressions.joinToString("; ") { ExpressionRenderer.render(it) })
-        is ErrorHandlerNode -> TryPlanNode(id = ctx.id("onError"), body = emptyList(), errorHandler = planStatements(stmt.steps, ctx))
+        is SetNode -> {
+            val id = ctx.id("set")
+            ctx.registerProducer(availability.producerAt(path, statement.name), id)
+            ControlNode(id, "Set", "${statement.name} = ${ExpressionRenderer.render(statement.value)}")
+        }
+        is FailNode -> ControlNode(ctx.id("fail"), "Fail", ExpressionRenderer.render(statement.message))
+        is SkipNode -> ControlNode(ctx.id("skip"), "Skip", ExpressionRenderer.render(statement.message))
+        is ExpectNode -> ControlNode(
+            ctx.id("expect"),
+            "Expect",
+            statement.expressions.joinToString("; ") { ExpressionRenderer.render(it) }
+        )
+        is ErrorHandlerNode -> TryPlanNode(
+            id = ctx.id("onError"),
+            body = emptyList(),
+            errorHandler = planStatements(statement.steps, ctx, availability) { index -> path.child("steps", index) }
+        )
     }
 
-    private fun planAction(action: ActionNode, ctx: Ctx): TaskNode {
+    private fun planApproval(
+        approval: ApproveNode,
+        ctx: Ctx,
+        availability: FlowAvailabilityAnalysis,
+        path: FlowStatementPath
+    ): ApprovalNode {
+        val explicitDependencies = approval.dependsOn.mapNotNull { binding ->
+            ctx.resolveOrderingProducer(availability, path, binding)
+        }.distinct()
+        val id = ctx.id("approve")
+        ctx.dependencyRelations += explicitDependencies.map { sourceNodeId ->
+            PlanDependencyRelation(
+                sourceNodeId = sourceNodeId,
+                targetNodeId = id,
+                kind = PlanDependencyKind.ORDERING,
+                evidence = PlanDependencyEvidence.DECLARED_ORDERING,
+                path = listOf(sourceNodeId, id)
+            )
+        }
+        val outputNames = (listOfNotNull(approval.result?.name) + approval.declaredOutputs).distinct()
+        outputNames.forEach { output ->
+            val producer = availability.producerAt(path, output)
+            ctx.registerProducer(producer, id)
+            ctx.registerOutput(output, id, producer)
+        }
+        return ApprovalNode(
+            id = id,
+            mode = approval.mode,
+            message = approval.params["message"]?.let(ExpressionRenderer::render)?.trim('"'),
+            resultName = approval.result?.name,
+            sourceId = approval.sourceId,
+            sourceDescription = approval.sourceDescription,
+            outputs = outputNames,
+            dependsOn = explicitDependencies
+        )
+    }
+
+    private fun planAction(
+        action: ActionNode,
+        ctx: Ctx,
+        availability: FlowAvailabilityAnalysis,
+        path: FlowStatementPath
+    ): TaskNode {
         val id = ctx.id("${action.module}_${action.action}")
         val contract = registry.findAction(action.module, action.action)
             ?: throw MissingPlanningActionContractException(action.module, action.action)
@@ -231,22 +315,23 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         }
         val effects = effectModel.map(SemanticEffect::resource).distinct()
 
-        val referenced = mutableSetOf<String>()
+        val referenced = linkedSetOf<String>()
         action.params.values.forEach { collectRoots(it, referenced) }
         action.target.path.firstOrNull()?.let { referenced += it }
         val dataDependencies = referenced.mapNotNull { binding ->
-            ctx.results[binding]?.let { sourceNodeId -> DataDependency(sourceNodeId, binding) }
+            ctx.resolveProducer(availability, path, binding)?.let { sourceNodeId ->
+                DataDependency(sourceNodeId, binding)
+            }
         }.distinct()
-        val explicitDependencies = action.dependsOn.mapNotNull { raw ->
-            val normalized = raw.replace('-', '_')
-            ctx.results[normalized] ?: ctx.results[raw]
+        val explicitDependencies = action.dependsOn.mapNotNull { binding ->
+            ctx.resolveOrderingProducer(availability, path, binding)
         }.distinct()
-        val deps = (dataDependencies.map { it.sourceNodeId } + explicitDependencies)
+        val dependencies = (dataDependencies.map(DataDependency::sourceNodeId) + explicitDependencies)
             .distinct()
             .filter { it != id }
 
         val continuityRelations = contract.continuity.requires.map { requirement ->
-            ctx.resolveContinuityRequirement(id, deps, requirement, action.module, action.action)
+            ctx.resolveContinuityRequirement(id, dependencies, requirement, action.module, action.action)
         }
         val declaredOrderingRelations = explicitDependencies
             .filter { it != id }
@@ -288,35 +373,37 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         ctx.dependencyRelations += orderingRelations + valueRelations + continuityRelations
 
         val renderedParams = mergeSystemConfig(action, ctx)
-        val continuityCapabilities = (valueRelations + continuityRelations)
-            .mapNotNull { it.kind.capability }
-
+        val continuityCapabilities = (valueRelations + continuityRelations).mapNotNull { it.kind.capability }
         val outputNames = (listOfNotNull(action.result?.name) + action.declaredOutputs).distinct()
         val task = TaskNode(
-            id = id, module = action.module, action = action.action,
+            id = id,
+            module = action.module,
+            action = action.action,
             target = action.target.path.joinToString("."),
             resultName = action.result?.name,
-            dependsOn = deps,
+            dependsOn = dependencies,
             semanticCapability = action.semanticCapability,
             sourceId = action.sourceId,
             sourceDescription = action.sourceDescription,
-            bindingMetadata = action.bindingMetadata.mapValues { (_, value) -> RuntimeParamRenderer.render(value, ctx.inputNames) },
+            bindingMetadata = action.bindingMetadata.mapValues { (_, value) ->
+                RuntimeParamRenderer.render(value, ctx.inputNames)
+            },
             effectModel = effectModel,
             effects = effects,
             inputs = renderedParams,
             outputs = outputNames,
             destructive = contract.safety.destructive,
-            safety = action.safety?.let { it.rule + (it.condition?.let { condition -> " " + ExpressionRenderer.render(condition) } ?: "") },
+            safety = action.safety?.let { safety ->
+                safety.rule + (safety.condition?.let { condition -> " " + ExpressionRenderer.render(condition) } ?: "")
+            },
             params = renderedParams,
-            requiredCapabilities = (
-                inferRequiredCapabilities(action, contract) + continuityCapabilities
-            ).distinct()
+            requiredCapabilities = (inferRequiredCapabilities(action, contract) + continuityCapabilities).distinct()
         )
         ctx.registerTask(task, contract)
         outputNames.forEach { output ->
-            ctx.results[output] = id
-            ctx.results[output.replace('-', '_')] = id
-            ctx.outputs += PlanOutput(output, sourceNodeId = id)
+            val producer = availability.producerAt(path, output)
+            ctx.registerProducer(producer, id)
+            ctx.registerOutput(output, id, producer)
         }
         return task
     }
@@ -326,10 +413,6 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
     /**
      * Renders action parameters and layers in every schema-declared value from the
      * targeted system configuration. Explicit action parameters always win.
-     *
-     * The system-type descriptor is the authority for which configuration belongs
-     * to the system. This removes module-name switches and preserves integrations
-     * such as Argo CD url/token without teaching Core about that product.
      */
     private fun mergeSystemConfig(action: ActionNode, ctx: Ctx): Map<String, String> {
         val rendered = action.params.mapValues { (_, expression) ->
@@ -367,7 +450,8 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             is ConditionNode -> collectDependencies(node.then) + collectDependencies(node.otherwise)
             is LoopNode -> collectDependencies(node.body)
             is ParallelGroupNode -> node.branches.flatMap { collectDependencies(it.steps) }
-            is MatchPlanNode -> node.cases.flatMap { collectDependencies(it.steps) } + collectDependencies(node.errorCase) + collectDependencies(node.defaultSteps)
+            is MatchPlanNode -> node.cases.flatMap { collectDependencies(it.steps) } +
+                collectDependencies(node.errorCase) + collectDependencies(node.defaultSteps)
             is RetryGroupNode -> collectDependencies(node.body)
             is TryPlanNode -> collectDependencies(node.body) + collectDependencies(node.errorHandler)
             else -> emptyList()
@@ -378,46 +462,114 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         when (node) {
             is TaskNode -> node.requiredCapabilities
             is ApprovalNode -> node.requiredCapabilities
-            is ConditionNode -> listOf("condition.evaluate") + collectRequiredCapabilities(node.then) + collectRequiredCapabilities(node.otherwise)
+            is ConditionNode -> listOf("condition.evaluate") +
+                collectRequiredCapabilities(node.then) + collectRequiredCapabilities(node.otherwise)
             is LoopNode -> listOf("loop.dynamic") + collectRequiredCapabilities(node.body)
-            is ParallelGroupNode -> listOf("parallel.dag") + node.branches.flatMap { collectRequiredCapabilities(it.steps) }
-            is MatchPlanNode -> listOf("match.basic") + node.cases.flatMap { collectRequiredCapabilities(it.steps) } + collectRequiredCapabilities(node.errorCase) + collectRequiredCapabilities(node.defaultSteps)
+            is ParallelGroupNode -> listOf("parallel.dag") +
+                node.branches.flatMap { collectRequiredCapabilities(it.steps) }
+            is MatchPlanNode -> listOf("match.basic") +
+                node.cases.flatMap { collectRequiredCapabilities(it.steps) } +
+                collectRequiredCapabilities(node.errorCase) + collectRequiredCapabilities(node.defaultSteps)
             is RetryGroupNode -> listOf("retry.task") + collectRequiredCapabilities(node.body)
-            is TryPlanNode -> listOf("errorHandlers.finally") + collectRequiredCapabilities(node.body) + collectRequiredCapabilities(node.errorHandler)
+            is TryPlanNode -> listOf("errorHandlers.finally") +
+                collectRequiredCapabilities(node.body) + collectRequiredCapabilities(node.errorHandler)
             else -> emptyList()
         }
     }.distinct()
 
-    private fun collectRoots(e: ExpressionNode, into: MutableSet<String>) {
-        when (e) {
-            is ReferenceNode -> e.path.firstOrNull()?.let { into += it }
-            is BinaryExpressionNode -> { collectRoots(e.left, into); collectRoots(e.right, into) }
-            is UnaryExpressionNode -> collectRoots(e.operand, into)
-            is UnaryPostfixExpressionNode -> collectRoots(e.operand, into)
-            is LogicalExpressionNode -> e.operands.forEach { collectRoots(it, into) }
-            is ListLiteralNode -> e.items.forEach { collectRoots(it, into) }
-            is MapLiteralNode -> e.entries.values.forEach { collectRoots(it, into) }
-            is TemplateStringNode -> e.parts.forEach { collectRoots(it, into) }
-            is CallExpressionNode -> e.args.forEach { collectRoots(it, into) }
-            is IndexExpressionNode -> { collectRoots(e.target, into); collectRoots(e.index, into) }
-            is MemberExpressionNode -> collectRoots(e.target, into)
+    private fun collectRoots(expression: ExpressionNode, into: MutableSet<String>) {
+        when (expression) {
+            is ReferenceNode -> expression.path.firstOrNull()?.let { into += it }
+            is BinaryExpressionNode -> {
+                collectRoots(expression.left, into)
+                collectRoots(expression.right, into)
+            }
+            is UnaryExpressionNode -> collectRoots(expression.operand, into)
+            is UnaryPostfixExpressionNode -> collectRoots(expression.operand, into)
+            is LogicalExpressionNode -> expression.operands.forEach { collectRoots(it, into) }
+            is ListLiteralNode -> expression.items.forEach { collectRoots(it, into) }
+            is MapLiteralNode -> expression.entries.values.forEach { collectRoots(it, into) }
+            is TemplateStringNode -> expression.parts.forEach { collectRoots(it, into) }
+            is CallExpressionNode -> expression.args.forEach { collectRoots(it, into) }
+            is IndexExpressionNode -> {
+                collectRoots(expression.target, into)
+                collectRoots(expression.index, into)
+            }
+            is MemberExpressionNode -> collectRoots(expression.target, into)
             else -> Unit
         }
     }
 
-    private class Ctx(val inputNames: Set<String>, val systems: Map<String, SystemNode> = emptyMap()) {
-        val results = mutableMapOf<String, String>()
-        val outputs = mutableListOf<PlanOutput>()
+    private class Ctx(
+        val inputNames: Set<String>,
+        val systems: Map<String, SystemNode> = emptyMap()
+    ) {
+        private val outputCandidates = mutableListOf<OutputCandidate>()
         val assumptions = mutableListOf<PlanAssumption>()
         val dependencyRelations = mutableListOf<PlanDependencyRelation>()
+        private val producerNodeIds = mutableMapOf<FlowProducerIdentity, String>()
         private val taskDependencies = mutableMapOf<String, List<String>>()
         private val taskContinuity = mutableMapOf<String, ContinuityContract>()
         private val counters = mutableMapOf<String, Int>()
 
         fun id(prefix: String): String {
-            val n = (counters[prefix] ?: 0) + 1
-            counters[prefix] = n
-            return "${prefix}_$n"
+            val next = (counters[prefix] ?: 0) + 1
+            counters[prefix] = next
+            return "${prefix}_$next"
+        }
+
+        fun registerProducer(producer: FlowProducerIdentity, nodeId: String) {
+            val previous = producerNodeIds.put(producer, nodeId)
+            check(previous == null || previous == nodeId) {
+                "Flow producer '$producer' was mapped to both '$previous' and '$nodeId'."
+            }
+        }
+
+        fun registerOutput(name: String, nodeId: String, producer: FlowProducerIdentity) {
+            outputCandidates += OutputCandidate(
+                output = PlanOutput(name, sourceNodeId = nodeId),
+                producer = producer
+            )
+        }
+
+        fun visibleOutputs(exitState: FlowAvailabilityState): List<PlanOutput> =
+            outputCandidates
+                .filter { candidate ->
+                    val state = exitState.binding(candidate.output.name)
+                    state.safeToRead && !state.external && state.producers.singleOrNull() == candidate.producer
+                }
+                .distinctBy { candidate -> candidate.output.name.replace('-', '_') }
+                .map(OutputCandidate::output)
+
+        fun resolveProducer(
+            availability: FlowAvailabilityAnalysis,
+            path: FlowStatementPath,
+            binding: String
+        ): String? = resolveRegisteredProducer(
+            producer = availability.producerBefore(path, binding),
+            binding = binding,
+            path = path
+        )
+
+        fun resolveOrderingProducer(
+            availability: FlowAvailabilityAnalysis,
+            path: FlowStatementPath,
+            binding: String
+        ): String? = resolveRegisteredProducer(
+            producer = availability.orderingProducerBefore(path, binding),
+            binding = binding,
+            path = path
+        )
+
+        private fun resolveRegisteredProducer(
+            producer: FlowProducerIdentity?,
+            binding: String,
+            path: FlowStatementPath
+        ): String? {
+            producer ?: return null
+            return checkNotNull(producerNodeIds[producer]) {
+                "Flow producer '$producer' for '$binding' at '$path' has not been planned."
+            }
         }
 
         fun registerTask(task: TaskNode, contract: ModuleActionContract) {
@@ -482,11 +634,13 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             }
             if (continuity.preserves.none { it.satisfies(requirement) }) return emptyList()
             return taskDependencies[nodeId].orEmpty().flatMap { dependency ->
-                findProviders(dependency, requirement, LinkedHashSet(visited)).map { path ->
-                    path.copy(path = path.path + nodeId)
+                findProviders(dependency, requirement, LinkedHashSet(visited)).map { providerPath ->
+                    providerPath.copy(path = providerPath.path + nodeId)
                 }
             }
         }
+
+        private data class OutputCandidate(val output: PlanOutput, val producer: FlowProducerIdentity)
 
         private data class ContinuityPath(val providerNodeId: String, val path: List<String>)
     }

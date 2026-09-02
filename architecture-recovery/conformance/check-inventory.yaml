@@ -18,3 +18,6 @@ checks:
   - architecture-recovery.ar-01.graph-bound-target-authorization
   - architecture-recovery.ar-01.obligation-authority-retirement
   - architecture-recovery.ar-01.no-pseudo-graph-bypass
+  - architecture-recovery.ar-02.flow-analysis-single-owner
+  - architecture-recovery.ar-02.value-availability-lattice
+  - architecture-recovery.ar-02.maybe-defined-read-rejection

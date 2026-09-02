@@ -37,10 +37,6 @@
     "name" : "verify",
     "type" : "any",
     "sourceNodeId" : "standard_execute_3"
-  }, {
-    "name" : "rollback_result",
-    "type" : "any",
-    "sourceNodeId" : "standard_rollback_1"
   } ],
   "dependencies" : [ "git_checkout_1", "standard_execute_1", "docker_build_1", "approve_1", "standard_execute_2" ],
   "requiredCapabilities" : [ "task.execute", "git.checkout", "standard.test", "docker.build", "container.image", "continuity.workspace", "approval.manual", "standard.deploy", "standard.verify", "errorHandlers.finally", "standard.rollback", "standard.notify-failure" ],
