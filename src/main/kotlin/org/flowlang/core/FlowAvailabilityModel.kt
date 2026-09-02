@@ -74,6 +74,14 @@ data class FlowBindingState(
         get() = availability == FlowValueAvailability.DEFINITELY_DEFINED ||
             availability == FlowValueAvailability.MERGED
 
+    /**
+     * A unique internal producer can still be identified when the value itself
+     * is only present on some paths. This distinction is required for declared
+     * ordering edges, which name a predecessor but do not read its result.
+     */
+    val uniqueProducer: FlowProducerIdentity?
+        get() = if (external) null else producers.singleOrNull()
+
     init {
         when (availability) {
             FlowValueAvailability.UNDEFINED -> require(producers.isEmpty() && !external) {
@@ -190,25 +198,48 @@ class FlowAvailabilityAnalysis internal constructor(
     fun bindingBefore(path: FlowStatementPath, binding: String): FlowBindingState =
         stateBefore(path).binding(binding)
 
+    /** Resolves an ordinary value read, which must be available on every reachable path. */
     fun producerBefore(path: FlowStatementPath, binding: String): FlowProducerIdentity? {
         val state = bindingBefore(path, binding)
         return when {
             state.availability == FlowValueAvailability.UNDEFINED -> null
             state.external -> null
-            state.safeToRead && state.producers.size == 1 -> state.producers.single()
-            else -> throw UnsafeFlowAvailabilityException(
-                listOf(
-                    issueForState(
-                        binding = binding,
-                        state = state,
-                        path = path,
-                        location = null,
-                        role = "planner dependency"
-                    )
-                )
-            )
+            state.safeToRead && state.uniqueProducer != null -> state.uniqueProducer
+            else -> throw unsafeProducerLookup(binding, state, path, "planner value dependency")
         }
     }
+
+    /**
+     * Resolves a declared ordering edge. Ordering identifies a predecessor and
+     * does not consume its result, so one producer from a conditional path is
+     * sufficient. Multiple unmerged producers remain ambiguous and fail closed.
+     */
+    fun orderingProducerBefore(path: FlowStatementPath, binding: String): FlowProducerIdentity? {
+        val state = bindingBefore(path, binding)
+        return when {
+            state.availability == FlowValueAvailability.UNDEFINED -> null
+            state.external -> null
+            state.uniqueProducer != null -> state.uniqueProducer
+            else -> throw unsafeProducerLookup(binding, state, path, "planner ordering dependency")
+        }
+    }
+
+    private fun unsafeProducerLookup(
+        binding: String,
+        state: FlowBindingState,
+        path: FlowStatementPath,
+        role: String
+    ): UnsafeFlowAvailabilityException = UnsafeFlowAvailabilityException(
+        listOf(
+            issueForState(
+                binding = binding,
+                state = state,
+                path = path,
+                location = null,
+                role = role
+            )
+        )
+    )
 
     fun producerAt(path: FlowStatementPath, binding: String): FlowProducerIdentity =
         producedBindings[ProducerKey(path, binding)]

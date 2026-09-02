@@ -271,7 +271,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         path: FlowStatementPath
     ): ApprovalNode {
         val explicitDependencies = approval.dependsOn.mapNotNull { binding ->
-            ctx.resolveProducer(availability, path, binding)
+            ctx.resolveOrderingProducer(availability, path, binding)
         }.distinct()
         val id = ctx.id("approve")
         ctx.dependencyRelations += explicitDependencies.map { sourceNodeId ->
@@ -324,7 +324,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             }
         }.distinct()
         val explicitDependencies = action.dependsOn.mapNotNull { binding ->
-            ctx.resolveProducer(availability, path, binding)
+            ctx.resolveOrderingProducer(availability, path, binding)
         }.distinct()
         val dependencies = (dataDependencies.map(DataDependency::sourceNodeId) + explicitDependencies)
             .distinct()
@@ -545,8 +545,28 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             availability: FlowAvailabilityAnalysis,
             path: FlowStatementPath,
             binding: String
+        ): String? = resolveRegisteredProducer(
+            producer = availability.producerBefore(path, binding),
+            binding = binding,
+            path = path
+        )
+
+        fun resolveOrderingProducer(
+            availability: FlowAvailabilityAnalysis,
+            path: FlowStatementPath,
+            binding: String
+        ): String? = resolveRegisteredProducer(
+            producer = availability.orderingProducerBefore(path, binding),
+            binding = binding,
+            path = path
+        )
+
+        private fun resolveRegisteredProducer(
+            producer: FlowProducerIdentity?,
+            binding: String,
+            path: FlowStatementPath
         ): String? {
-            val producer = availability.producerBefore(path, binding) ?: return null
+            producer ?: return null
             return checkNotNull(producerNodeIds[producer]) {
                 "Flow producer '$producer' for '$binding' at '$path' has not been planned."
             }
@@ -614,8 +634,8 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             }
             if (continuity.preserves.none { it.satisfies(requirement) }) return emptyList()
             return taskDependencies[nodeId].orEmpty().flatMap { dependency ->
-                findProviders(dependency, requirement, LinkedHashSet(visited)).map { path ->
-                    path.copy(path = path.path + nodeId)
+                findProviders(dependency, requirement, LinkedHashSet(visited)).map { providerPath ->
+                    providerPath.copy(path = providerPath.path + nodeId)
                 }
             }
         }

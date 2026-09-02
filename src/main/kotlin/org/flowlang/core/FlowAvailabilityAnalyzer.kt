@@ -172,7 +172,16 @@ class FlowAvailabilityAnalyzer {
             inspectExpression(action.target, input, path, "action target")
             action.params.values.forEach { inspectExpression(it, input, path, "action parameter") }
             action.safety?.condition?.let { inspectExpression(it, input, path, "action safety condition") }
-            action.dependsOn.forEach { dependency -> inspectBinding(dependency, input, path, action.sourceLocation, "declared dependency") }
+            action.dependsOn.forEach { dependency ->
+                inspectBinding(
+                    dependency,
+                    input,
+                    path,
+                    action.sourceLocation,
+                    "declared dependency",
+                    allowUniquePartialProducer = true
+                )
+            }
 
             val outputNames = (listOfNotNull(action.result?.name) + action.declaredOutputs).distinct()
             var output = input
@@ -206,7 +215,16 @@ class FlowAvailabilityAnalyzer {
             path: FlowStatementPath
         ): FlowAvailabilityState {
             approve.params.values.forEach { inspectExpression(it, input, path, "approval parameter") }
-            approve.dependsOn.forEach { dependency -> inspectBinding(dependency, input, path, approve.sourceLocation, "declared dependency") }
+            approve.dependsOn.forEach { dependency ->
+                inspectBinding(
+                    dependency,
+                    input,
+                    path,
+                    approve.sourceLocation,
+                    "declared dependency",
+                    allowUniquePartialProducer = true
+                )
+            }
             var output = input
             (listOfNotNull(approve.result?.name) + approve.declaredOutputs)
                 .distinct()
@@ -300,7 +318,14 @@ class FlowAvailabilityAnalyzer {
                     if (binding == null) {
                         ConditionStates(input, input)
                     } else {
-                        inspectBinding(binding, input, path, reference.location, "existence guard", allowPartial = true)
+                        inspectBinding(
+                            binding,
+                            input,
+                            path,
+                            reference.location,
+                            "existence guard",
+                            allowUniquePartialProducer = true
+                        )
                         ConditionStates(
                             whenTrue = refinePresent(input, binding),
                             whenFalse = refineAbsent(input, binding)
@@ -389,16 +414,17 @@ class FlowAvailabilityAnalyzer {
             path: FlowStatementPath,
             location: SourceLocation?,
             role: String,
-            allowPartial: Boolean = false,
+            allowUniquePartialProducer: Boolean = false,
             allowUndefined: Boolean = false
         ) {
             val binding = rawBinding.replace('-', '_')
             val bindingState = state.binding(binding)
             val accepted = !state.reachable || bindingState.safeToRead ||
                 (allowUndefined && bindingState.availability == FlowValueAvailability.UNDEFINED) ||
-                (allowPartial &&
+                (allowUniquePartialProducer &&
                     bindingState.availability == FlowValueAvailability.MAYBE_DEFINED &&
-                    bindingState.reason == FlowAvailabilityReason.PARTIAL_PATHS)
+                    bindingState.reason == FlowAvailabilityReason.PARTIAL_PATHS &&
+                    bindingState.uniqueProducer != null)
             uses += FlowAvailabilityUse(
                 binding = binding,
                 path = path,
