@@ -100,7 +100,7 @@ implementationStrategy:
     - "Migrate validation to consume path-sensitive availability and emit stable definite/maybe/undefined diagnostics."
     - "Migrate planning to immutable branch-local states and typed producer identities while preserving AR-01 graph authorization and existing valid single-path plans."
     - "Introduce explicit merge identities and path-aware dependency/continuity derivation, then remove the mutable last-writer map as semantic authority."
-    - "Lift the compiler's single-workflow restriction only after builder, validator, digest, projections and target-selection gates preserve workflow membership and trigger routing."
+    - "Lift the compiler's single-workflow restriction only after builder, validator, digest, projections and target-selection gates preserve every workflow and trigger route."
     - "Introduce first-class workflow failure policy, migrate consumers, prove compatibility, then retire synthetic tail-Try recognition."
   stranglerRule: "Each superseded state or shape path remains read-only compatibility code until all callers use the typed replacement, after which conformance rejects its use as semantic authority."
   directBoundaryRule: "FlowCompilationService and direct FlowPlanner entrypoints must either consume the same accepted analysis or independently enforce an equivalent fail-closed precondition; no public path may plan a document rejected for uncertain data availability."
@@ -221,7 +221,15 @@ completionEvidence:
 
 lifecycle:
   activationBoundary:
-    status: pending
+    status: passed
+    exactHead: "0ad7157d425ceb2152457fed8d44bb123e4a67fc"
+    syntheticMergeCandidate: "a22ec74c12d75e3862d1796710c7c5bddb2f24b8"
+    workflowRunId: 33584116350
+    workflowRunNumber: 3150
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance passed."
+      - "The independently synthesized merge candidate against main passed the same complete activation boundary."
   implementationBoundary:
     status: pending
   validationBoundary:
@@ -230,5 +238,5 @@ lifecycle:
     status: pending
 
 localValidation:
-  status: activation-defined
-  rule: "This transition defines and activates AR-02 only. It introduces no production semantic, public artifact or target behavior change before the activation boundary passes on exact head and synthetic merge candidate."
+  status: activation-passed
+  rule: "AR-02 activation passed on exact head and synthetic merge candidate. This transition still introduces no production semantic, public artifact or target behavior change; AR-02A implementation begins only after the activation pull request is merged."
