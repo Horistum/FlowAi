@@ -1,0 +1,234 @@
+version: "AR-02"
+name: "Flow-Sensitive Workflow, Data and Failure Semantics"
+type: "architecture-recovery-semantic-foundation"
+status: active
+stream: "architecture-recovery"
+
+objective: "Replace mutable global validation and planning state with one path-sensitive semantic analysis that preserves value availability, producer identity, workflow ownership and failure behavior in CanonicalExecutionGraph. AR-02 must reject uncertain reads, make merges explicit, preserve multiple workflows without flattening and remove synthetic-shape inference for workflow failure handling."
+
+authorization:
+  status: active
+  predecessor: "AR-01"
+  strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-02"
+  postToolchainSource: ".flow-agent/roadmap-post-toolchain.yaml#ARCHITECTURE-RECOVERY"
+  mainAtDefinition: "719795241da65b7668f860a10243e6ccd55bdcff"
+  mainAtActivation: "719795241da65b7668f860a10243e6ccd55bdcff"
+  rule: "AR-02 may introduce typed path, availability, producer, workflow and failure contracts and migrate validation, planning, graph construction and adapter-facing projections through bounded slices. It must preserve the AR-01 compiler axis and graph authorization, fail closed when meaning cannot be preserved, and may advance a public artifact only through an explicit versioned migration boundary."
+
+auditScope:
+  closesFindings:
+    - id: "F-02"
+      title: "Validation and planning are not flow-sensitive and confuse may-exist with must-exist values"
+      closure: "One shared path-sensitive analysis classifies every binding at every program point and both validation and planning reject unguarded reads that are not definitely available."
+    - id: "F-08"
+      title: "The model declares multiple workflows while executable lowering supports one"
+      closure: "Workflow identity, trigger routing and node membership survive canonical compilation without first-workflow selection or flattening; unsupported target materialization remains explicitly blocked."
+    - id: "F-15"
+      title: "Global error handling is encoded as a synthetic tail Try node"
+      closure: "Workflow failure policy and handler membership are typed graph contracts consumed by projections and adapters without recognizing positional, empty-body or synthetic-id shapes."
+  closureRule: "No finding closes from a new type alone. Closure requires every producer and consumer to use the typed contract, negative and permutation evidence to falsify the former behavior, removal of last-writer and shape heuristics, and distinct implementation, validation and completion Flow CI boundaries."
+
+verifiedBaseline:
+  mainCommit: "719795241da65b7668f860a10243e6ccd55bdcff"
+  acceptedPredecessor: "AR-01"
+  observations:
+    - "FlowValidator forks lexical child scopes for selected constructs but merges mutable result-name sets without a value-availability lattice; loop, parallel, retry, try and handler paths can publish names that are not present on every runtime path."
+    - "FlowPlanner passes one mutable Ctx through mutually exclusive and repeated structures. Its result-name map is last-writer-wins, so branch visitation order can select the producer used by later dependency and continuity resolution."
+    - "CanonicalExecutionGraph already carries typed workflow and per-node workflow identities, but current validation deliberately requires exactly one workflow and compatibility projection calls workflows.single()."
+    - "FlowPlanner represents the global error handler as a terminal TryPlanNode with an empty body and a generated onError id rather than a workflow failure contract."
+    - "AR-01 authorization, direct graph-derived compatibility views and exact task matching are sound predecessor boundaries and must remain intact."
+  containment:
+    - "Retain the explicit single-workflow rejection until graph construction, digest, projections and target selection preserve every workflow and trigger route."
+    - "Do not convert a maybe-defined value into a string assumption, null fallback or arbitrary producer choice."
+    - "Do not promote structural or multi-workflow target support while AR-02 changes only canonical representability."
+    - "A direct planner caller must not bypass the same path-sensitive safety invariant enforced by FlowCompilationService."
+
+semanticModel:
+  analysisOwner: "Flow-sensitive analysis is a single typed product contract reused by validation and planning; validation messages and plan construction may project it but must not independently recompute different joins."
+  controlFlowPaths:
+    - "Every producer identity includes its workflow and structural path, not only a display binding name or traversal counter."
+    - "If, match, parallel, loop, retry, try, handler and global-failure regions create explicit child paths with documented join semantics."
+    - "Path identity is deterministic under collection storage order and cannot depend on which branch the implementation visits first."
+  valueAvailability:
+    states:
+      - "Undefined"
+      - "MaybeDefined"
+      - "DefinitelyDefined"
+      - "Merged"
+    rules:
+      - "Undefined means no reachable incoming path provides the logical value."
+      - "MaybeDefined means at least one but not every reachable incoming path provides it; an unguarded read is a stable compilation error."
+      - "DefinitelyDefined means every reachable incoming path resolves to one unambiguous producer identity."
+      - "Merged means every reachable incoming path contributes through an explicit typed merge contract whose sources and join point are part of canonical meaning."
+      - "A pre-existing definitely defined value remains available across a branch unless the language explicitly models shadowing or replacement."
+      - "Loop-produced values are not definitely available after a loop unless the contract proves at least one iteration or supplies an explicit initial or merge value."
+      - "Failure-only and success-only producers never become definitely available on the opposite path."
+  mergeContract:
+    - "Matching output names are insufficient evidence of one logical value."
+    - "A merge identifies its join point, logical result identity, exhaustive incoming paths, source producer identities and value/type compatibility."
+    - "The author-facing merge form must be explicit in an existing typed construct or introduced through a separately reviewed language and artifact version boundary; existing source is never silently reinterpreted."
+    - "Canonical graph digest and dependency edges observe merge source changes, missing arms and branch-path reassignment."
+  producerIdentity:
+    - "Data and continuity edges resolve from typed producer identities or explicit merge identities, never from a mutable name-to-last-node map."
+    - "Ambiguous producer sets fail closed with stable path evidence."
+    - "Equivalent branch ordering and map iteration produce equal canonical graphs and digests."
+
+workflowContract:
+  identity:
+    - "Every canonical node belongs to exactly one workflow and every root, structural child, dependency edge, trigger route and failure handler references an existing workflow identity."
+    - "Workflow identity is preserved from Intent through AST/planning envelopes into CanonicalExecutionGraph; it is not reconstructed from a flow display name."
+    - "Cross-workflow dependency and continuity edges are rejected unless a future explicit inter-workflow contract authorizes them."
+  multiWorkflowGate:
+    - "Compiler representability may advance before target executability, but target materialization must report unsupported or unknown rather than select the first workflow."
+    - "A target may claim multi-workflow execution only after its adapter contract preserves workflow membership and trigger routing and AR-06 supplies behavioral certification."
+    - "Single-workflow compatibility artifacts remain exact projections of the corresponding workflow; multi-workflow public projection requires a versioned contract rather than flattening."
+
+failureContract:
+  requirements:
+    - "CanonicalGraphWorkflow owns an explicit workflow failure policy and optional handler region identity."
+    - "Nested try/error semantics and workflow-level failure handling remain distinct typed contracts."
+    - "Handler entry defines which error value and prior successful values are available; success-only values are not assumed on failure paths."
+    - "Projection and adapter code reads the typed failure contract directly and cannot infer it from terminal position, an empty body, node kind, generated id or display text."
+    - "Removing or mutating a handler, propagation mode or handler membership changes graph validation and semantic digest evidence."
+  compatibility:
+    - "The synthetic tail Try representation may survive only as a temporary graph-derived compatibility projection with a named removal slice and exact equality tests; it is not accepted as source authority."
+    - "Any public Execution Plan or Target Manifest shape change requires an explicit contract version, migration notes and negative compatibility evidence."
+
+implementationStrategy:
+  migrationOrder:
+    - "Publish the verified baseline and a shared typed flow-analysis contract before changing branch behavior."
+    - "Migrate validation to consume path-sensitive availability and emit stable definite/maybe/undefined diagnostics."
+    - "Migrate planning to immutable branch-local states and typed producer identities while preserving AR-01 graph authorization and existing valid single-path plans."
+    - "Introduce explicit merge identities and path-aware dependency/continuity derivation, then remove the mutable last-writer map as semantic authority."
+    - "Lift the compiler's single-workflow restriction only after builder, validator, digest, projections and target-selection gates preserve workflow membership and trigger routing."
+    - "Introduce first-class workflow failure policy, migrate consumers, prove compatibility, then retire synthetic tail-Try recognition."
+  stranglerRule: "Each superseded state or shape path remains read-only compatibility code until all callers use the typed replacement, after which conformance rejects its use as semantic authority."
+  directBoundaryRule: "FlowCompilationService and direct FlowPlanner entrypoints must either consume the same accepted analysis or independently enforce an equivalent fail-closed precondition; no public path may plan a document rejected for uncertain data availability."
+  compatibilityRule: "Previously accepted programs retain meaning only when that meaning was unambiguous. Programs whose success depended on branch visitation order, implicit maybe-defined reads, workflow flattening or synthetic handler shape are corrected by deterministic rejection rather than grandfathered."
+
+implementationSlices:
+  - id: "AR-02A"
+    name: "Path-Sensitive Analysis and Definite-Availability Gate"
+    status: "selected"
+    outcomes:
+      - "Introduce immutable workflow/path state, typed symbol availability and deterministic join algebra shared by validation and planning."
+      - "Cover if, match, loop, parallel, retry, try, nested handlers and global handler entry without changing public artifact versions."
+      - "Reject unguarded reads of MaybeDefined and Undefined values with stable source/path diagnostics."
+      - "Prove existing straight-line and genuinely definite branch programs preserve their canonical graphs."
+    completionGate: "No mutable result-name merge or branch traversal order can make an unavailable value pass validation or select a producer in planning."
+  - id: "AR-02B"
+    name: "Explicit Merge and Path-Aware Producer Semantics"
+    status: "planned"
+    outcomes:
+      - "Introduce the typed merge contract and any required bounded language or artifact migration."
+      - "Derive value, ordering and continuity relations from producer and merge identities."
+      - "Remove last-writer-wins producer selection and prove branch permutation invariance."
+  - id: "AR-02C"
+    name: "First-Class Workflow Ownership and Trigger Routing"
+    status: "planned"
+    outcomes:
+      - "Preserve multiple workflow identities, memberships, roots and trigger routes through canonical graph construction and digest."
+      - "Replace workflows.single() assumptions in compiler projections with explicit single- or multi-workflow contracts."
+      - "Keep target materialization fail-closed where an adapter lacks multi-workflow semantics."
+  - id: "AR-02D"
+    name: "First-Class Workflow Failure Semantics"
+    status: "planned"
+    outcomes:
+      - "Add typed workflow failure policy and handler-region ownership to the canonical graph."
+      - "Migrate plan projections, target contracts and adapter consumers away from terminal empty-body Try recognition."
+      - "Remove or quarantine the synthetic tail-Try compatibility shape after parity and migration evidence."
+  - id: "AR-02E"
+    name: "Integrated Semantic Closure"
+    status: "planned"
+    outcomes:
+      - "Run cross-frontend, graph-digest, target-gating and public-compatibility matrices over path, workflow and failure semantics."
+      - "Close F-02, F-08 and F-15 only after exact production changes, negative mutants and independent validation are recorded."
+      - "Advance AR-03 only as next and leave it unactivated."
+
+plannedProductionBoundary:
+  analysis:
+    - "src/main/kotlin/org/flowlang/validator/FlowValidator.kt"
+    - "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
+    - "new target-neutral flow-analysis contracts under src/main/kotlin/org/flowlang/compiler or org/flowlang/analysis"
+  planning:
+    - "src/main/kotlin/org/flowlang/planner/FlowPlanner.kt"
+    - "src/main/kotlin/org/flowlang/planner/ExecutionPlan.kt"
+    - "src/main/kotlin/org/flowlang/planner/CanonicalExecutionPlan.kt"
+  graph:
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraph.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphValidator.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphDigest.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphProjection.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt"
+  targetBoundary:
+    - "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt"
+    - "src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionProvider.kt"
+    - "concrete target consumers only where required to reject unsupported workflow or failure structure honestly"
+  evidence:
+    - "architecture-recovery/conformance/check-inventory.yaml"
+    - "new AR-02 conformance checks and path/workflow/failure mutation fixtures"
+
+requiredTests:
+  - "A value produced only by an if-then arm, one match case, a possibly empty loop, a parallel branch, a try success path or an error path is rejected when read unguarded after the join."
+  - "A value defined before a branch remains definitely available afterwards when no explicit replacement changes its logical identity."
+  - "Exhaustive paths with an explicit merge produce one Merged value whose incoming producer set and join point are deterministic."
+  - "Matching names without an explicit merge remain ambiguous or maybe-defined and cannot authorize planning."
+  - "Reversing if arms, match case storage, parallel branch storage or map iteration cannot change producer identities, dependency relations, canonical graph equality or digest."
+  - "Nested structures preserve path evidence and do not leak local producers into parent, sibling, success or failure scopes."
+  - "Direct planner invocation rejects the same unsafe maybe-defined read as FlowCompilationService."
+  - "Multiple workflows retain distinct roots, memberships and trigger routes through graph construction; a target without explicit support rejects the graph instead of choosing or flattening a workflow."
+  - "Cross-workflow dangling membership, illegal dependency and trigger-route mismatch fail graph validation."
+  - "Workflow failure policy and handler membership round-trip through the graph and compatibility views without positional or synthetic-id inference."
+  - "Mutating merge inputs, workflow membership, trigger routing, failure propagation or handler identity changes the canonical digest and authorization result."
+  - "Existing accepted single-workflow straight-line fixtures retain their public artifact bytes in slices that claim no wire migration."
+
+conformancePlan:
+  inventory:
+    - "architecture-recovery.ar-02.flow-analysis-single-owner"
+    - "architecture-recovery.ar-02.value-availability-lattice"
+    - "architecture-recovery.ar-02.maybe-defined-read-rejection"
+    - "architecture-recovery.ar-02.explicit-merge-integrity"
+    - "architecture-recovery.ar-02.producer-permutation-invariance"
+    - "architecture-recovery.ar-02.workflow-membership-integrity"
+    - "architecture-recovery.ar-02.multi-workflow-materialization-gate"
+    - "architecture-recovery.ar-02.failure-policy-integrity"
+    - "architecture-recovery.ar-02.no-synthetic-handler-authority"
+    - "architecture-recovery.ar-02.public-contract-migration-integrity"
+  evidenceRule: "Each check lands with a production invariant and at least one negative or permutation fixture that fails under the former mutable-state, first-workflow or synthetic-shape behavior."
+
+forbiddenScope:
+  - "Do not weaken AR-01 graph validation, semantic digest binding, direct compatibility projection or exact task authorization."
+  - "Do not flatten multiple workflows, select the first workflow or duplicate one workflow's nodes under another identity."
+  - "Do not infer a merge from equal display names, equal module actions or traversal position."
+  - "Do not encode path, merge, workflow or failure semantics in free-form diagnostic, metadata or target-hint strings."
+  - "Do not make nullable values, empty strings, assumptions or renderer defaults stand in for MaybeDefined."
+  - "Do not move concrete adapters or perform the Gradle module extraction owned by AR-03."
+  - "Do not promote target support or behavioral certification owned by AR-06."
+  - "Do not change StandardCapability merely to represent control-flow, workflow membership or failure structure."
+  - "Do not silently advance public AST, Execution Plan, Target Manifest or Target Registry versions."
+  - "Do not resume EF-09 or activate AR-03 before AR-02 closes."
+
+completionEvidence:
+  - "One shared typed analysis governs value availability for validation and planning, with no last-writer mutable map acting as producer authority."
+  - "Undefined, MaybeDefined, DefinitelyDefined and Merged behavior is proven across branch, match, loop, parallel, retry, success and failure paths."
+  - "Explicit merges preserve every incoming producer and are invariant to branch visitation order."
+  - "CanonicalExecutionGraph preserves workflow identity, membership and trigger routing without a single-workflow authority shortcut."
+  - "Unsupported multi-workflow materialization fails honestly and no target support is promoted without adapter evidence."
+  - "Workflow-level failure policy is first-class canonical meaning and no production consumer recognizes a synthetic tail Try as authority."
+  - "F-02, F-08 and F-15 map to exact production changes, negative tests, conformance checks and distinct validation boundaries."
+  - "Activation, implementation, validation and completion boundaries use distinct exact-head and synthetic merge-candidate Flow CI evidence."
+
+lifecycle:
+  activationBoundary:
+    status: pending
+  implementationBoundary:
+    status: pending
+  validationBoundary:
+    status: pending
+  completionBoundary:
+    status: pending
+
+localValidation:
+  status: activation-defined
+  rule: "This transition defines and activates AR-02 only. It introduces no production semantic, public artifact or target behavior change before the activation boundary passes on exact head and synthetic merge candidate."
