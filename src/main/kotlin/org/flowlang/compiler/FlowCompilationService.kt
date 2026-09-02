@@ -4,6 +4,7 @@ import org.flowlang.ai.normalization.IntentProposalDecision
 import org.flowlang.ai.normalization.IntentProposalReview
 import org.flowlang.ai.normalization.IntentProposalReviewEvidence
 import org.flowlang.ast.FlowDocument
+import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.intent.IntentValidationReport
@@ -19,12 +20,17 @@ import org.flowlang.validator.FlowValidator
  * after it has been converted into a typed CanonicalExecutionGraph, validated,
  * digested and projected back without drift. Downstream consumers receive graph
  * authorization from CompilationUnit rather than an independently trusted plan.
+ *
+ * AR-02A computes path-sensitive value availability once here and supplies that
+ * exact immutable result to both validation and planning. The compiler therefore
+ * has one control-flow truth rather than two implementations that can drift.
  */
 class FlowCompilationService(
     private val registry: ModuleRegistry
 ) {
     private val proposalReview = IntentProposalReview(registry)
     private val intentPlanner = IntentToAstPlanner(registry)
+    private val flowAvailabilityAnalyzer = FlowAvailabilityAnalyzer()
     private val flowValidator = FlowValidator(registry)
     private val flowPlanner = FlowPlanner(registry)
 
@@ -196,7 +202,8 @@ class FlowCompilationService(
         evidence: FrontendCompilationEvidence,
         ast: FlowDocument
     ): CompilationResult {
-        val validation = flowValidator.validate(ast)
+        val availability = flowAvailabilityAnalyzer.analyze(ast)
+        val validation = flowValidator.validate(ast, availability)
         if (!validation.valid) {
             return CompilationResult.Rejected(
                 rejection(
@@ -221,7 +228,7 @@ class FlowCompilationService(
         }
 
         val plannerPlan = try {
-            flowPlanner.plan(ast)
+            flowPlanner.plan(ast, availability)
         } catch (failure: Exception) {
             return CompilationResult.Rejected(
                 rejection(
