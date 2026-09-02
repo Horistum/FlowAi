@@ -15,7 +15,7 @@ concurrency:
 jobs:
   bundle-source:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout exact branch revision
         uses: actions/checkout@v6
@@ -23,17 +23,48 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Verify and archive source tree
+      - name: Verify exact revision
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Populate verified offline build cache
+        shell: bash
+        run: ./gradlew --no-daemon clean compileKotlin compileTestKotlin --stacktrace --console=plain
+
+      - name: Archive source and offline Gradle state
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           tar --exclude=.git --exclude=build --exclude=.gradle -czf /tmp/flowai-source.tgz .
+          tar \
+            --exclude='daemon' \
+            --exclude='notifications' \
+            --exclude='build-scan-data' \
+            --exclude='jdks' \
+            -C "$HOME" \
+            -czf /tmp/flowai-gradle-home.tgz .gradle
 
       - name: Upload source bundle
         uses: actions/upload-artifact@v7
         with:
           name: ar02b-source-bundle
           path: /tmp/flowai-source.tgz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload offline Gradle cache
+        uses: actions/upload-artifact@v7
+        with:
+          name: ar02b-gradle-home
+          path: /tmp/flowai-gradle-home.tgz
           if-no-files-found: error
           retention-days: 1
