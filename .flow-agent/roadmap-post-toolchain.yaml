@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 6
+revision: 7
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -13,9 +13,9 @@ currentDecision:
   nextItem: "AR-02"
   nextItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-  activationState: "not-activated"
-  workPackage: ""
-  decisionBasis: "EF-08 remains complete and EF-09 remains paused after evidence admission. PR #165 completes AR-01 with one FlowCompilationService axis, one typed CanonicalExecutionGraph authority, graph-derived compatibility plans, graph-bound target materialization and retirement of the misleading SemanticActionGraph execution-looking authority. F-04, F-09 and F-17 are closed by distinct implementation, validation and completion boundaries. AR-02 is selected next but remains unactivated until a separate work package and activation boundary authorize flow-sensitive semantic changes."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
+  decisionBasis: "EF-08 remains complete and EF-09 remains paused after evidence admission. Main 719795241da65b7668f860a10243e6ccd55bdcff was independently reviewed after PR #165 and retains the completed AR-01 compiler and authorization invariants. AR-02 is independently activated to close F-02, F-08 and F-15 through one path-sensitive analysis, explicit merge and producer contracts, preserved workflow ownership and first-class failure policy. This activation changes scheduling and ownership only; production behavior begins in a later bounded implementation slice."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
@@ -24,8 +24,8 @@ recoveryRoadmap:
   groupedMilestoneCount: 8
   completedItem: "AR-01"
   activeItem: "AR-02"
-  activeWorkPackage: ""
-  activationState: "not-activated"
+  activeWorkPackage: ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
+  activationState: "active"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
 principles:
@@ -109,8 +109,8 @@ sequence:
     roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
     completedItem: "AR-01"
     activeItem: "AR-02"
-    activationState: "not-activated"
-    workPackage: ""
+    activationState: "active"
+    workPackage: ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."
