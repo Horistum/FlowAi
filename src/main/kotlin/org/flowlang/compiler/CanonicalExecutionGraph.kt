@@ -200,6 +200,9 @@ data class CanonicalGraphTrigger(
     init {
         requireGraphText(id, "Canonical trigger id")
         require(workflows.isNotEmpty()) { "Canonical trigger '$id' must reference at least one workflow." }
+        require(workflows.toSet().size == workflows.size) {
+            "Canonical trigger '$id' repeats a workflow route."
+        }
         require(event == null || event.isNotBlank()) { "Canonical trigger event must be absent or non-blank." }
         require(params.keys.none(String::isBlank)) { "Canonical trigger parameter names must not be blank." }
         when (kind) {

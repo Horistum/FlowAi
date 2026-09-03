@@ -25,16 +25,58 @@ import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
+import org.flowlang.planner.WorkflowExecutionPlanSet
+import org.flowlang.planner.WorkflowExecutionPlanView
 
 object CanonicalExecutionGraphProjection {
+    fun toWorkflowExecutionPlanSet(build: CanonicalExecutionGraphBuild): WorkflowExecutionPlanSet =
+        toWorkflowExecutionPlanSet(build.graph, build.bindings)
+
+    fun toWorkflowExecutionPlanSet(
+        graph: CanonicalExecutionGraph,
+        bindings: CanonicalExecutionBindingSet
+    ): WorkflowExecutionPlanSet {
+        val namesById = graph.workflows.associate { workflow -> workflow.id to workflow.name }
+        val views = graph.workflows.sortedBy { it.name }.map { workflow ->
+            WorkflowExecutionPlanView(
+                workflowId = workflow.id.value,
+                workflowName = workflow.name,
+                executionPlan = projectExecutionPlan(graph, bindings, workflow),
+                canonicalPlan = projectCanonicalExecutionPlan(graph, bindings, workflow)
+            )
+        }
+        return WorkflowExecutionPlanSet(
+            flowName = graph.flowName,
+            inputs = graph.inputs.map { it.toPlan() },
+            triggers = graph.triggers.sortedBy { it.id }.map { it.toPlan(namesById) },
+            requiredCapabilities = graph.requiredCapabilities.map(CanonicalCapabilityId::value),
+            controlRequirements = graph.controlRequirements,
+            controlEvidence = graph.controlEvidence,
+            controlDecision = bindings.programMetadata.controlDecision,
+            topologyRequirements = graph.topologyRequirements,
+            sourceIntent = bindings.programMetadata.sourceIntent,
+            loweringReport = bindings.programMetadata.loweringReport,
+            workflows = views
+        )
+    }
+
     fun toExecutionPlan(build: CanonicalExecutionGraphBuild): ExecutionPlan =
-        toExecutionPlan(build.graph, build.bindings)
+        toWorkflowExecutionPlanSet(build).requireSingleExecutionPlan()
 
     fun toExecutionPlan(
         graph: CanonicalExecutionGraph,
         bindings: CanonicalExecutionBindingSet
+    ): ExecutionPlan = toWorkflowExecutionPlanSet(graph, bindings).requireSingleExecutionPlan()
+
+    private fun projectExecutionPlan(
+        graph: CanonicalExecutionGraph,
+        bindings: CanonicalExecutionBindingSet,
+        workflow: CanonicalWorkflow
     ): ExecutionPlan {
         val nodeById = graph.nodes.associateBy(CanonicalExecutionNode::id)
+        val workflowNodeIds = graph.nodes.filter { it.workflow == workflow.id }.map { it.id }.toSet()
+        val workflowNamesById = graph.workflows.associate { it.id to it.name }
+        val planMetadata = bindings.requireWorkflowPlan(workflow.id).planMetadata
         val taskBindingById = bindings.tasks.associateBy(CanonicalTaskBinding::nodeId)
         val metadataById = bindings.nodeMetadata.associateBy(CanonicalNodeProjectionMetadata::nodeId)
 
@@ -179,45 +221,57 @@ object CanonicalExecutionGraphProjection {
             }
         }
 
-        val workflow = graph.workflows.single()
         val nodes = workflow.rootNodeIds.map(::project)
         return ExecutionPlan(
-            flowName = graph.flowName,
-            planVersion = bindings.planMetadata.planVersion,
+            flowName = if (graph.workflows.size == 1) graph.flowName else workflow.name,
+            planVersion = planMetadata.planVersion,
             inputs = graph.inputs.map { input -> input.toPlan() },
-            triggers = graph.triggers.map { trigger -> trigger.toPlan(workflow.name) },
-            outputs = graph.outputs.map { output -> output.toPlan(::planId) },
-            dependencies = bindings.planMetadata.dependencies,
-            requiredCapabilities = graph.requiredCapabilities.map(CanonicalCapabilityId::value),
-            targetHints = bindings.planMetadata.targetHints,
-            sourceIntent = bindings.planMetadata.sourceIntent,
-            loweringReport = bindings.planMetadata.loweringReport,
-            assumptions = bindings.planMetadata.assumptions,
-            controlRequirements = graph.controlRequirements,
-            controlEvidence = graph.controlEvidence,
-            controlDecision = bindings.planMetadata.controlDecision,
+            triggers = graph.triggers
+                .filter { trigger -> workflow.id in trigger.workflows }
+                .sortedBy { it.id }
+                .map { trigger -> trigger.toPlan(workflowNamesById).copy(workflows = listOf(workflow.name)) },
+            outputs = graph.outputs
+                .filter { output ->
+                    graph.workflows.size == 1 ||
+                        output.sourceNodeId?.let { it in workflowNodeIds } == true
+                }
+                .map { output -> output.toPlan(::planId) },
+            dependencies = planMetadata.dependencies,
+            requiredCapabilities = planMetadata.requiredCapabilities,
+            targetHints = planMetadata.targetHints,
+            sourceIntent = planMetadata.sourceIntent,
+            loweringReport = planMetadata.loweringReport,
+            assumptions = planMetadata.assumptions,
+            controlRequirements = planMetadata.controlRequirements,
+            controlEvidence = planMetadata.controlEvidence,
+            controlDecision = planMetadata.controlDecision,
             nodes = nodes,
-            dependencyRelations = graph.dependencyEdges.map { edge -> edge.toPlan(::planId) },
-            topologyRequirements = graph.topologyRequirements
+            dependencyRelations = graph.dependencyEdges
+                .filter { edge -> edge.targetNodeId in workflowNodeIds }
+                .map { edge -> edge.toPlan(::planId) },
+            topologyRequirements = planMetadata.topologyRequirements
         )
     }
 
 
     fun toCanonicalExecutionPlan(build: CanonicalExecutionGraphBuild): CanonicalExecutionPlan =
-        toCanonicalExecutionPlan(build.graph, build.bindings)
+        toWorkflowExecutionPlanSet(build).requireSingleCanonicalPlan()
 
-    /**
-     * Projects the stable public canonical view directly from the authoritative graph.
-     *
-     * ExecutionPlan remains a compatibility view, but it is not an input to this projection.
-     * Both public plan representations therefore share one semantic authority and one binding
-     * envelope instead of forming a second plan-to-plan semantic transformation chain.
-     */
     fun toCanonicalExecutionPlan(
         graph: CanonicalExecutionGraph,
         bindings: CanonicalExecutionBindingSet
+    ): CanonicalExecutionPlan = toWorkflowExecutionPlanSet(graph, bindings).requireSingleCanonicalPlan()
+
+    /** Projects one exact workflow view from the authoritative graph. */
+    private fun projectCanonicalExecutionPlan(
+        graph: CanonicalExecutionGraph,
+        bindings: CanonicalExecutionBindingSet,
+        workflow: CanonicalWorkflow
     ): CanonicalExecutionPlan {
         val nodeById = graph.nodes.associateBy(CanonicalExecutionNode::id)
+        val workflowNodeIds = graph.nodes.filter { it.workflow == workflow.id }.map { it.id }.toSet()
+        val workflowNamesById = graph.workflows.associate { it.id to it.name }
+        val planMetadata = bindings.requireWorkflowPlan(workflow.id).planMetadata
         val taskBindingById = bindings.tasks.associateBy(CanonicalTaskBinding::nodeId)
         val metadataById = bindings.nodeMetadata.associateBy(CanonicalNodeProjectionMetadata::nodeId)
 
@@ -368,25 +422,34 @@ object CanonicalExecutionGraphProjection {
             }
         }
 
-        val workflow = graph.workflows.single()
         return CanonicalExecutionPlan(
-            flowName = graph.flowName,
-            planVersion = bindings.planMetadata.planVersion,
+            flowName = if (graph.workflows.size == 1) graph.flowName else workflow.name,
+            planVersion = planMetadata.planVersion,
             inputs = graph.inputs.map { input -> input.toPlan() },
-            triggers = graph.triggers.map { trigger -> trigger.toPlan(workflow.name) },
-            outputs = graph.outputs.map { output -> output.toPlan(::planId) },
-            dependencies = bindings.planMetadata.dependencies,
-            requiredCapabilities = graph.requiredCapabilities.map(CanonicalCapabilityId::value),
-            targetHints = bindings.planMetadata.targetHints,
-            sourceIntent = bindings.planMetadata.sourceIntent,
-            loweringReport = bindings.planMetadata.loweringReport,
-            assumptions = bindings.planMetadata.assumptions,
-            controlRequirements = graph.controlRequirements,
-            controlEvidence = graph.controlEvidence,
-            controlDecision = bindings.planMetadata.controlDecision,
-            topologyRequirements = graph.topologyRequirements,
+            triggers = graph.triggers
+                .filter { trigger -> workflow.id in trigger.workflows }
+                .sortedBy { it.id }
+                .map { trigger -> trigger.toPlan(workflowNamesById).copy(workflows = listOf(workflow.name)) },
+            outputs = graph.outputs
+                .filter { output ->
+                    graph.workflows.size == 1 ||
+                        output.sourceNodeId?.let { it in workflowNodeIds } == true
+                }
+                .map { output -> output.toPlan(::planId) },
+            dependencies = planMetadata.dependencies,
+            requiredCapabilities = planMetadata.requiredCapabilities,
+            targetHints = planMetadata.targetHints,
+            sourceIntent = planMetadata.sourceIntent,
+            loweringReport = planMetadata.loweringReport,
+            assumptions = planMetadata.assumptions,
+            controlRequirements = planMetadata.controlRequirements,
+            controlEvidence = planMetadata.controlEvidence,
+            controlDecision = planMetadata.controlDecision,
+            topologyRequirements = planMetadata.topologyRequirements,
             nodes = workflow.rootNodeIds.map(::project),
-            dependencyRelations = graph.dependencyEdges.map { edge -> edge.toPlan(::planId) }
+            dependencyRelations = graph.dependencyEdges
+                .filter { edge -> edge.targetNodeId in workflowNodeIds }
+                .map { edge -> edge.toPlan(::planId) }
         )
     }
 
@@ -402,10 +465,16 @@ object CanonicalExecutionGraphProjection {
         choices = choices
     )
 
-    private fun CanonicalGraphTrigger.toPlan(workflowName: String): PlanTrigger = PlanTrigger(
+    private fun CanonicalGraphTrigger.toPlan(
+        workflowNamesById: Map<CanonicalWorkflowId, String>
+    ): PlanTrigger = PlanTrigger(
         id = id,
         type = kind.name,
-        workflows = listOf(workflowName),
+        workflows = workflows.map { workflowId ->
+            requireNotNull(workflowNamesById[workflowId]) {
+                "Canonical trigger '$id' references unknown workflow '$workflowId'."
+            }
+        },
         schedule = schedule?.let { PlanSchedule(it.kind.name, it.expression, it.timezone) },
         event = event,
         params = params,

@@ -44,6 +44,7 @@ class PostC1SemanticIntegrityRoadmapTests {
                 "Intent `${FlowStandardVersions.INTENT_VERSION}`, " +
                 "AST `${FlowStandardVersions.AST_VERSION}`, " +
                 "ExecutionPlan `${FlowStandardVersions.EXECUTION_PLAN_VERSION}`, " +
+                "WorkflowExecutionPlanSet `${FlowStandardVersions.WORKFLOW_EXECUTION_PLAN_SET_VERSION}`, " +
                 "execution-plan lowering evidence `${FlowStandardVersions.EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION}`, " +
                 "TargetManifest `${FlowStandardVersions.TARGET_MANIFEST_VERSION}` and " +
                 "TargetRegistry `${FlowStandardVersions.TARGET_REGISTRY_VERSION}`."

@@ -44,12 +44,21 @@ import org.flowlang.ast.WhenNode
  * Joins are deterministic and immutable; no branch mutates sibling state.
  */
 class FlowAvailabilityAnalyzer {
-    fun analyze(document: FlowDocument): FlowAvailabilityAnalysis {
-        val builder = Builder(document)
+    fun analyze(document: FlowDocument): FlowAvailabilityAnalysis =
+        analyze(document, FlowWorkflowIdentity.Main)
+
+    internal fun analyze(
+        document: FlowDocument,
+        workflow: FlowWorkflowIdentity
+    ): FlowAvailabilityAnalysis {
+        val builder = Builder(document, workflow)
         return builder.analyze()
     }
 
-    private class Builder(private val document: FlowDocument) {
+    private class Builder(
+        private val document: FlowDocument,
+        private val workflow: FlowWorkflowIdentity
+    ) {
         private val entries = linkedMapOf<FlowStatementPath, FlowAvailabilityState>()
         private val exits = linkedMapOf<FlowStatementPath, FlowAvailabilityState>()
         private val produced = linkedMapOf<ProducerKey, FlowProducerIdentity>()
@@ -66,7 +75,7 @@ class FlowAvailabilityAnalyzer {
             document.flow.systems.map { it.name }.distinct().forEach { name -> base = base.withExternal(name) }
 
             document.flow.vars.forEachIndexed { index, variable ->
-                val path = FlowStatementPath.variable(index)
+                val path = FlowStatementPath.variable(index, workflow)
                 entries[path] = base
                 inspectExpression(variable.value, base, path, "variable '${variable.name}'")
                 exits[path] = base
@@ -74,12 +83,12 @@ class FlowAvailabilityAnalyzer {
 
             var normal = base
             document.flow.steps.forEachIndexed { index, statement ->
-                normal = analyzeStatement(statement, normal, FlowStatementPath.flowStep(index))
+                normal = analyzeStatement(statement, normal, FlowStatementPath.flowStep(index, workflow))
             }
 
             document.flow.errorHandler?.steps?.let { statements ->
                 analyzeStatements(statements, base.withExternal("error")) { index ->
-                    FlowStatementPath.globalErrorStep(index)
+                    FlowStatementPath.globalErrorStep(index, workflow)
                 }
             }
 

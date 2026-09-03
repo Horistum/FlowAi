@@ -7,9 +7,11 @@ import org.flowlang.core.FlowProducerIdentity
 import org.flowlang.intent.IntentValidationReport
 import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.ExecutionProgramPlanningResult
 import org.flowlang.planner.FlowPlanningResult
 import org.flowlang.planner.PlanDependencyRelations
 import org.flowlang.planner.TaskNode
+import org.flowlang.planner.WorkflowExecutionPlanSet
 import org.flowlang.validator.ValidationReport
 
 enum class CompilationAuthorizationOrigin {
@@ -70,9 +72,14 @@ class CompilationAuthorization internal constructor(
     val graphDigest: CanonicalExecutionGraphDigest,
     internal val bindings: CanonicalExecutionBindingSet,
     val validationBinding: CompilationValidationBinding,
-    val executionPlan: ExecutionPlan,
-    val canonicalPlan: CanonicalExecutionPlan
+    val workflowPlanSet: WorkflowExecutionPlanSet
 ) {
+    val executionPlan: ExecutionPlan
+        get() = workflowPlanSet.requireSingleExecutionPlan("CompilationAuthorization.executionPlan")
+
+    val canonicalPlan: CanonicalExecutionPlan
+        get() = workflowPlanSet.requireSingleCanonicalPlan("CompilationAuthorization.canonicalPlan")
+
     init {
         require(validationBinding.graphDigest == graphDigest.value) {
             "Compilation validation evidence is bound to '${validationBinding.graphDigest}', " +
@@ -83,13 +90,9 @@ class CompilationAuthorization internal constructor(
     fun requireIntegrity(): CompilationAuthorization {
         CanonicalExecutionGraphValidator.requireValid(CanonicalExecutionGraphBuild(graph, bindings))
         CanonicalExecutionGraphDigestComputer.requireMatches(graph, graphDigest)
-        val projected = CanonicalExecutionGraphProjection.toExecutionPlan(graph, bindings)
-        require(projected == executionPlan) {
-            "Graph-derived ExecutionPlan drifted after authorization."
-        }
-        val projectedCanonical = CanonicalExecutionGraphProjection.toCanonicalExecutionPlan(graph, bindings)
-        require(projectedCanonical == canonicalPlan) {
-            "Graph-derived CanonicalExecutionPlan drifted after authorization."
+        val projected = CanonicalExecutionGraphProjection.toWorkflowExecutionPlanSet(graph, bindings)
+        require(projected == workflowPlanSet) {
+            "Graph-derived WorkflowExecutionPlanSet drifted after authorization."
         }
         require(validationBinding.graphDigest == graphDigest.value) {
             "Compilation authorization evidence no longer matches the canonical graph digest."
@@ -113,7 +116,8 @@ internal data class AuthorizedCanonicalTask(
  */
 internal fun CompilationAuthorization.requireAuthorizedTask(task: TaskNode): AuthorizedCanonicalTask {
     requireIntegrity()
-    val projectedTask = PlanDependencyRelations.flatten(executionPlan.nodes)
+    val projectedTask = workflowPlanSet.workflows
+        .flatMap { workflow -> PlanDependencyRelations.flatten(workflow.executionPlan.nodes) }
         .filterIsInstance<TaskNode>()
         .singleOrNull { candidate -> candidate.id == task.id }
         ?: error("Task '${task.id}' is not present in the graph-derived ExecutionPlan.")
@@ -157,6 +161,32 @@ object CanonicalExecutionGraphGate {
                     sourceSha256 = source.sha256,
                     intentValid = intentValidation?.valid,
                     flowValid = flowValidation.valid,
+                    graphValid = true,
+                    proposalReviewValid = proposalReview?.accepted
+                )
+            }
+        )
+    }
+
+    internal fun authorizeCompilation(
+        source: CompilationSource,
+        intentValidation: IntentValidationReport?,
+        proposalReview: IntentProposalReviewEvidence?,
+        planning: ExecutionProgramPlanningResult
+    ): CompilationAuthorization {
+        require(planning.workflows.isNotEmpty()) {
+            "Canonical graph authorization requires at least one validated workflow."
+        }
+        requireCompilationEvidence(source, intentValidation, proposalReview)
+        return authorizeProgram(
+            planning = planning,
+            binding = { digest ->
+                CompilationValidationBinding(
+                    origin = CompilationAuthorizationOrigin.COMPILATION_UNIT,
+                    graphDigest = digest.value,
+                    sourceSha256 = source.sha256,
+                    intentValid = intentValidation?.valid,
+                    flowValid = true,
                     graphValid = true,
                     proposalReviewValid = proposalReview?.accepted
                 )
@@ -266,19 +296,87 @@ object CanonicalExecutionGraphGate {
         val build = CanonicalExecutionGraphBuilder.build(plannerPlan, mergeContracts, producerNodeIds)
         CanonicalExecutionGraphValidator.requireValid(build)
         val digest = CanonicalExecutionGraphDigestComputer.digest(build.graph)
-        val projected = CanonicalExecutionGraphProjection.toExecutionPlan(build)
-        require(projected == plannerPlan) {
+        val projectedSet = CanonicalExecutionGraphProjection.toWorkflowExecutionPlanSet(build)
+        require(projectedSet.requireSingleExecutionPlan() == plannerPlan) {
             "Canonical graph projection is not exactly equivalent to the planner output. " +
                 "The authority cutover refuses dual semantic truth."
         }
-        val canonical = CanonicalExecutionGraphProjection.toCanonicalExecutionPlan(build)
         return CompilationAuthorization(
             graph = build.graph,
             graphDigest = digest,
             bindings = build.bindings,
             validationBinding = binding(digest),
-            executionPlan = projected,
-            canonicalPlan = canonical
+            workflowPlanSet = projectedSet
+        ).requireIntegrity()
+    }
+
+    private fun authorizeProgram(
+        planning: ExecutionProgramPlanningResult,
+        binding: (CanonicalExecutionGraphDigest) -> CompilationValidationBinding
+    ): CompilationAuthorization {
+        val build = CanonicalExecutionGraphBuilder.build(planning)
+        CanonicalExecutionGraphValidator.requireValid(build)
+        val digest = CanonicalExecutionGraphDigestComputer.digest(build.graph)
+        val projectedSet = CanonicalExecutionGraphProjection.toWorkflowExecutionPlanSet(build)
+        val expectedPlans = planning.workflows.sortedBy { it.workflowName }.map { workflow ->
+            workflow.workflowName to workflow.planning.plan
+        }
+        val projectedPlans = projectedSet.workflows.map { workflow ->
+            workflow.workflowName to workflow.executionPlan
+        }
+        if (projectedPlans != expectedPlans) {
+            val differences = expectedPlans.zip(projectedPlans).joinToString(" | ") { (expectedEntry, projectedEntry) ->
+                val (expectedName, expected) = expectedEntry
+                val (projectedName, projected) = projectedEntry
+                buildList {
+                    if (expectedName != projectedName) add("workflowName=$expectedName/$projectedName")
+                    if (expected.flowName != projected.flowName) add("flowName=${expected.flowName}/${projected.flowName}")
+                    if (expected.planVersion != projected.planVersion) add("planVersion=${expected.planVersion}/${projected.planVersion}")
+                    if (expected.inputs != projected.inputs) add("inputs=${expected.inputs}/${projected.inputs}")
+                    if (expected.triggers != projected.triggers) add("triggers=${expected.triggers}/${projected.triggers}")
+                    if (expected.outputs != projected.outputs) add("outputs=${expected.outputs}/${projected.outputs}")
+                    if (expected.dependencies != projected.dependencies) add("dependencies=${expected.dependencies}/${projected.dependencies}")
+                    if (expected.requiredCapabilities != projected.requiredCapabilities) {
+                        add("requiredCapabilities=${expected.requiredCapabilities}/${projected.requiredCapabilities}")
+                    }
+                    if (expected.targetHints != projected.targetHints) add("targetHints=${expected.targetHints}/${projected.targetHints}")
+                    if (expected.sourceIntent != projected.sourceIntent) add("sourceIntent=${expected.sourceIntent}/${projected.sourceIntent}")
+                    if (expected.loweringReport != projected.loweringReport) add("loweringReport differs")
+                    if (expected.assumptions != projected.assumptions) add("assumptions=${expected.assumptions}/${projected.assumptions}")
+                    if (expected.controlRequirements != projected.controlRequirements) add("controlRequirements differ")
+                    if (expected.controlEvidence != projected.controlEvidence) add("controlEvidence differs")
+                    if (expected.controlDecision != projected.controlDecision) {
+                        add("controlDecision=${expected.controlDecision}/${projected.controlDecision}")
+                    }
+                    if (expected.nodes != projected.nodes) add("nodes=${expected.nodes}/${projected.nodes}")
+                    if (expected.dependencyRelations != projected.dependencyRelations) {
+                        add("dependencyRelations=${expected.dependencyRelations}/${projected.dependencyRelations}")
+                    }
+                    if (expected.topologyRequirements != projected.topologyRequirements) {
+                        add("topologyRequirements=${expected.topologyRequirements}/${projected.topologyRequirements}")
+                    }
+                }.joinToString(", ").ifBlank { "no field difference reported" }
+            }
+            error("Canonical graph workflow projection mismatch: $differences")
+        }
+        require(projectedSet.flowName == planning.flowName) {
+            "Canonical graph program name differs from the planner envelope."
+        }
+        require(projectedSet.inputs == planning.inputs && projectedSet.triggers == planning.triggers) {
+            "Canonical graph changed program inputs or trigger routing."
+        }
+        require(
+            projectedSet.sourceIntent == planning.sourceIntent &&
+                projectedSet.loweringReport == planning.loweringReport
+        ) {
+            "Canonical graph projection changed multi-workflow source or lowering evidence."
+        }
+        return CompilationAuthorization(
+            graph = build.graph,
+            graphDigest = digest,
+            bindings = build.bindings,
+            validationBinding = binding(digest),
+            workflowPlanSet = projectedSet
         ).requireIntegrity()
     }
 }

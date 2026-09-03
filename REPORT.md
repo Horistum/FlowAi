@@ -32,7 +32,7 @@ PR #95 merged the final bounded Core closure correction as `e25a81b9c7e7802556a0
 
 The Core closure remains historical and closed. Post-C1.0 SI-01 changed scoped control evidence and advanced the AST, ExecutionPlan and execution-plan lowering-evidence contracts to `2.1`; that later migration does not rewrite the versions certified by the historical `0.9.7.10` closure.
 
-The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.2`, ExecutionPlan `2.4`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.2`.
+The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.2`, ExecutionPlan `2.4`, WorkflowExecutionPlanSet `1.0`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.2`.
 
 ## Completed adapter baseline
 

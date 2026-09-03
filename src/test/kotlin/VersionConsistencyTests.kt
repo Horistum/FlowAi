@@ -10,6 +10,7 @@ class VersionConsistencyTests {
     private val intentContractVersion = "2.0"
     private val astContractVersion = "2.2"
     private val executionPlanContractVersion = "2.4"
+    private val workflowExecutionPlanSetContractVersion = "1.0"
     private val executionPlanLoweringEvidenceVersion = "2.1"
     private val targetManifestContractVersion = "3.0"
     private val targetRegistryContractVersion = "3.2"
@@ -34,6 +35,10 @@ class VersionConsistencyTests {
         assertEquals(astContractVersion, FlowStandardVersions.AST_VERSION)
         assertEquals(executionPlanContractVersion, FlowStandardVersions.EXECUTION_PLAN_VERSION)
         assertEquals(
+            workflowExecutionPlanSetContractVersion,
+            FlowStandardVersions.WORKFLOW_EXECUTION_PLAN_SET_VERSION
+        )
+        assertEquals(
             executionPlanLoweringEvidenceVersion,
             FlowStandardVersions.EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION
         )
@@ -48,6 +53,10 @@ class VersionConsistencyTests {
         assertFileContains("schemas/target-semantics-matrix.schema.json", intentContractVersion)
         assertFileContains("schemas/ast.schema.json", astContractVersion)
         assertFileContains("schemas/execution-plan.schema.json", executionPlanContractVersion)
+        assertFileContains(
+            "schemas/workflow-execution-plan-set.schema.json",
+            workflowExecutionPlanSetContractVersion
+        )
         assertFileContains("schemas/target-manifest.schema.json", targetManifestContractVersion)
         assertFileContains("schemas/target-registry.schema.json", targetRegistryContractVersion)
 
@@ -67,8 +76,13 @@ class VersionConsistencyTests {
             "docs/SI_08_TYPED_POLICY_STATE_LIFETIME_MIGRATION.md",
             "ExecutionPlan 2.3 to 2.4"
         )
+        assertFileContains(
+            "docs/AR_02C_WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md",
+            "WorkflowExecutionPlanSet 1.0 Migration"
+        )
         assertFileContains("docs/versioning-policy.md", "AST contract | `2.2`")
         assertFileContains("docs/versioning-policy.md", "ExecutionPlan contract | `2.4`")
+        assertFileContains("docs/versioning-policy.md", "WorkflowExecutionPlanSet contract | `1.0`")
         assertFileContains("docs/versioning-policy.md", "TargetManifest contract | `3.0`")
         assertFileContains("docs/versioning-policy.md", "TargetRegistry contract | `3.2`")
     }
@@ -83,6 +97,7 @@ class VersionConsistencyTests {
         assertTrue(File("docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md").isFile)
         assertTrue(File("docs/SI_07_PUBLIC_SCHEMA_ACCEPTANCE_ALIGNMENT_MIGRATION.md").isFile)
         assertTrue(File("docs/SI_08_TYPED_POLICY_STATE_LIFETIME_MIGRATION.md").isFile)
+        assertTrue(File("docs/AR_02C_WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md").isFile)
         assertTrue(File(".flow-agent/reports/v0.9.5-universal-model-completion.md").isFile)
     }
 

@@ -423,9 +423,11 @@ authorities:
     inputs: "Target-neutral authored/planned semantic state; production API: evaluate, assessment."
     outputs: "Canonical semantic decision/model consumed by downstream planning, conformance or materialization."
     callers:
+      - "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt"
       - "src/main/kotlin/org/flowlang/controls/CanonicalControlRequirementAuthority.kt"
       - "src/main/kotlin/org/flowlang/controls/PlanningControlAuthority.kt"
       - "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
+      - "src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt"
   - name: "ControlRequirementIdentityAuthority"
     path: "src/main/kotlin/org/flowlang/controls/ControlRequirementIdentityAuthority.kt"
     role: "identity-owner"
@@ -512,6 +514,7 @@ authorities:
     inputs: "Target-neutral authored/planned semantic state; production API: canonicalSystemType, sourceMetadata, report."
     outputs: "Canonical semantic decision/model consumed by downstream planning, conformance or materialization."
     callers:
+      - "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
       - "src/main/kotlin/org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt"
       - "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
       - "src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt"
@@ -702,6 +705,7 @@ authorities:
       - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt"
+      - "src/main/kotlin/org/flowlang/conformance/Ar02WorkflowOwnershipConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt"
       - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt"
       - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"

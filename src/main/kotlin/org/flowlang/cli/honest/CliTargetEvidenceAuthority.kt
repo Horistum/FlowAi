@@ -110,18 +110,25 @@ class CliTargetEvidenceAuthority(
         explicitSelection: ExplicitTargetSelection,
         strict: Boolean,
         renderRequested: Boolean
-    ): CliTargetEvidence = evaluate(
-        plan = compilation.executionPlan,
-        explicitSelection = explicitSelection,
-        strict = strict,
-        renderRequested = renderRequested,
-        materializationRequest = {
-            TargetMaterializationRequest.fromCompilation(compilation, explicitSelection, strict)
-        },
-        diagnosticRequest = {
-            TargetDiagnosticMaterializationRequest.fromCompilation(compilation, explicitSelection)
-        }
-    )
+    ): CliTargetEvidence {
+        val materialization = TargetMaterializationRequest.fromCompilation(
+            compilation,
+            explicitSelection,
+            strict
+        )
+        val diagnostic = TargetDiagnosticMaterializationRequest.fromCompilation(
+            compilation,
+            explicitSelection
+        )
+        return evaluate(
+            plan = compilation.executionPlan,
+            explicitSelection = explicitSelection,
+            strict = strict,
+            renderRequested = renderRequested,
+            materializationRequest = { materialization },
+            diagnosticRequest = { diagnostic }
+        )
+    }
 
     fun evaluate(
         plan: ExecutionPlan,

@@ -72,9 +72,20 @@ data class FlowStatementPath(
     override fun toString(): String = "${workflow.value}:$value"
 
     companion object {
-        fun flowStep(index: Int): FlowStatementPath = FlowStatementPath("flow.steps[$index]")
-        fun globalErrorStep(index: Int): FlowStatementPath = FlowStatementPath("flow.onError.steps[$index]")
-        fun variable(index: Int): FlowStatementPath = FlowStatementPath("flow.vars[$index]")
+        fun flowStep(
+            index: Int,
+            workflow: FlowWorkflowIdentity = FlowWorkflowIdentity.Main
+        ): FlowStatementPath = FlowStatementPath("flow.steps[$index]", workflow)
+
+        fun globalErrorStep(
+            index: Int,
+            workflow: FlowWorkflowIdentity = FlowWorkflowIdentity.Main
+        ): FlowStatementPath = FlowStatementPath("flow.onError.steps[$index]", workflow)
+
+        fun variable(
+            index: Int,
+            workflow: FlowWorkflowIdentity = FlowWorkflowIdentity.Main
+        ): FlowStatementPath = FlowStatementPath("flow.vars[$index]", workflow)
     }
 }
 

@@ -72,6 +72,23 @@ sealed interface ExplicitTargetSelection {
     val evidence: TargetSelectionEvidence
 }
 
+class MultiWorkflowTargetMaterializationUnsupportedException(
+    target: String,
+    workflows: List<String>
+) : IllegalStateException(
+    "Target '$target' cannot materialize a multi-workflow compilation without an explicit adapter contract. " +
+        "Workflows: ${workflows.sorted().joinToString()}."
+)
+
+private fun CompilationUnit.requireSingleTargetWorkflow(target: String) {
+    if (workflowPlanSet.multiWorkflow) {
+        throw MultiWorkflowTargetMaterializationUnsupportedException(
+            target,
+            workflowPlanSet.workflows.map { it.workflowName }
+        )
+    }
+}
+
 sealed interface TargetSelectionDecision {
     data object NotSelected : TargetSelectionDecision
     data class Selected(val selection: ExplicitTargetSelection) : TargetSelectionDecision
@@ -241,13 +258,16 @@ class TargetMaterializationRequest private constructor(
             compilation: CompilationUnit,
             selection: ExplicitTargetSelection,
             strict: Boolean = false
-        ): TargetMaterializationRequest = TargetMaterializationRequest(
-            compilationAuthorization = compilation.authorization,
-            compatibilityPlan = null,
-            compatibilityEvidenceId = null,
-            selection = selection,
-            strict = strict
-        )
+        ): TargetMaterializationRequest {
+            compilation.requireSingleTargetWorkflow(selection.target)
+            return TargetMaterializationRequest(
+                compilationAuthorization = compilation.authorization,
+                compatibilityPlan = null,
+                compatibilityEvidenceId = null,
+                selection = selection,
+                strict = strict
+            )
+        }
 
         internal fun fromCompatibilityPlan(
             plan: ExecutionPlan,
@@ -315,12 +335,15 @@ class TargetDiagnosticMaterializationRequest private constructor(
         fun fromCompilation(
             compilation: CompilationUnit,
             selection: ExplicitTargetSelection
-        ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest(
-            compilationAuthorization = compilation.authorization,
-            compatibilityPlan = null,
-            compatibilityEvidenceId = null,
-            selection = selection
-        )
+        ): TargetDiagnosticMaterializationRequest {
+            compilation.requireSingleTargetWorkflow(selection.target)
+            return TargetDiagnosticMaterializationRequest(
+                compilationAuthorization = compilation.authorization,
+                compatibilityPlan = null,
+                compatibilityEvidenceId = null,
+                selection = selection
+            )
+        }
 
         internal fun fromCompatibilityPlan(
             plan: ExecutionPlan,

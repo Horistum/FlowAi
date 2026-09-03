@@ -38,11 +38,18 @@ object CanonicalExecutionGraphValidator {
         workflowsById.filterValues { it.size > 1 }.keys.forEach { id ->
             issues += issue("graph.workflow.duplicate", "workflows.$id", "Workflow '$id' is declared more than once.")
         }
-        if (graph.workflows.size != 1) {
+        if (graph.workflows.isEmpty()) {
             issues += issue(
-                "graph.workflow.cardinality.unsupported",
+                "graph.workflow.missing",
                 "workflows",
-                "The current execution-plan contract preserves exactly one workflow; found ${graph.workflows.size}."
+                "Canonical execution graph must declare at least one workflow."
+            )
+        }
+        duplicateNames(graph.workflows.map(CanonicalWorkflow::name)).forEach { name ->
+            issues += issue(
+                "graph.workflow.name.duplicate",
+                "workflows.$name",
+                "Workflow name '$name' is declared more than once."
             )
         }
         val workflowIds = workflowsById.keys
@@ -80,11 +87,18 @@ object CanonicalExecutionGraphValidator {
         graph.workflows.forEach { workflow ->
             workflow.rootNodeIds.forEachIndexed { index, id ->
                 placements.getOrPut(id) { mutableListOf() } += "workflows.${workflow.id}.rootNodeIds[$index]"
-                if (id !in nodeById) {
+                val root = nodeById[id]
+                if (root == null) {
                     issues += issue(
                         "graph.workflow.root.dangling",
                         "workflows.${workflow.id}.rootNodeIds[$index]",
                         "Workflow '${workflow.id}' references missing root node '$id'."
+                    )
+                } else if (root.workflow != workflow.id) {
+                    issues += issue(
+                        "graph.workflow.root.crossing",
+                        "workflows.${workflow.id}.rootNodeIds[$index]",
+                        "Workflow '${workflow.id}' cannot own root '$id' from '${root.workflow}'."
                     )
                 }
             }
@@ -131,10 +145,24 @@ object CanonicalExecutionGraphValidator {
         duplicateNames(graph.triggers.map(CanonicalGraphTrigger::id)).forEach { id ->
             issues += issue("graph.trigger.duplicate", "triggers.$id", "Trigger '$id' is declared more than once.")
         }
-        duplicateNames(graph.outputs.map(CanonicalGraphOutput::name)).forEach { name ->
-            issues += issue("graph.output.duplicate", "outputs.$name", "Output '$name' is declared more than once.")
+        graph.outputs.groupBy { output ->
+            val workflow = output.sourceNodeId?.let { source -> nodeById[source]?.workflow }
+            workflow to output.name
+        }.filterValues { it.size > 1 }.keys.forEach { (workflow, name) ->
+            issues += issue(
+                "graph.output.duplicate",
+                "outputs.${workflow?.value.orEmpty()}.$name",
+                "Output '$name' is declared more than once in workflow '$workflow'."
+            )
         }
         graph.triggers.forEach { trigger ->
+            if (trigger.workflows.toSet().size != trigger.workflows.size) {
+                issues += issue(
+                    "graph.trigger.workflow.duplicate",
+                    "triggers.${trigger.id}.workflows",
+                    "Trigger '${trigger.id}' repeats a workflow route."
+                )
+            }
             trigger.workflows.forEach { workflow ->
                 if (workflow !in workflowIds) {
                     issues += issue(
@@ -146,6 +174,13 @@ object CanonicalExecutionGraphValidator {
             }
         }
         graph.outputs.forEach { output ->
+            if (graph.workflows.size > 1 && output.sourceNodeId == null) {
+                issues += issue(
+                    "graph.output.workflow.unresolved",
+                    "outputs.${output.name}.sourceNodeId",
+                    "Multi-workflow output '${output.name}' must identify its owning source node."
+                )
+            }
             if (output.sourceNodeId != null && output.sourceNodeId !in nodeById) {
                 issues += issue(
                     "graph.output.source.dangling",
@@ -224,6 +259,12 @@ object CanonicalExecutionGraphValidator {
             edge.sourceNodeId?.let { source ->
                 if (source !in nodes) {
                     issues += issue("graph.edge.source.dangling", "$location.sourceNodeId", "Dependency edge references missing source '$source'.")
+                } else if (nodes[source]?.workflow != nodes[edge.targetNodeId]?.workflow) {
+                    issues += issue(
+                        "graph.edge.workflow.crossing",
+                        "$location.sourceNodeId",
+                        "Dependency edge cannot cross workflow ownership without an explicit inter-workflow contract."
+                    )
                 }
                 if (source == edge.targetNodeId) {
                     issues += issue("graph.edge.self", location, "Dependency edge '${edge.targetNodeId}' cannot point to itself.")
@@ -232,11 +273,23 @@ object CanonicalExecutionGraphValidator {
             edge.candidates.forEach { candidate ->
                 if (candidate !in nodes) {
                     issues += issue("graph.edge.candidate.dangling", "$location.candidates", "Dependency edge candidate '$candidate' does not exist.")
+                } else if (nodes[candidate]?.workflow != nodes[edge.targetNodeId]?.workflow) {
+                    issues += issue(
+                        "graph.edge.candidate.workflow.crossing",
+                        "$location.candidates",
+                        "Dependency candidate '$candidate' crosses workflow ownership."
+                    )
                 }
             }
             edge.path.forEach { pathNode ->
                 if (pathNode !in nodes) {
                     issues += issue("graph.edge.path.dangling", "$location.path", "Dependency evidence path references missing node '$pathNode'.")
+                } else if (nodes[pathNode]?.workflow != nodes[edge.targetNodeId]?.workflow) {
+                    issues += issue(
+                        "graph.edge.path.workflow.crossing",
+                        "$location.path",
+                        "Dependency evidence path node '$pathNode' crosses workflow ownership."
+                    )
                 }
             }
             val key = listOf(
@@ -415,7 +468,7 @@ object CanonicalExecutionGraphValidator {
         if (duplicateRequirements.isNotEmpty() || duplicateEvidence.isNotEmpty() || danglingEvidence.isNotEmpty()) return
 
         val expectedDecision = deriveControlDecision(graph)
-        if (build.bindings.planMetadata.controlDecision != expectedDecision) {
+        if (build.bindings.programMetadata.controlDecision != expectedDecision) {
             issues += issue(
                 "graph.control.decision.drift",
                 "controlDecision",
@@ -491,15 +544,35 @@ object CanonicalExecutionGraphValidator {
             issues += issue("graph.projection-metadata.missing", "bindings.nodeMetadata.$id", "Canonical node '$id' has no compatibility projection identity.")
         }
         bindings.nodeMetadata.groupBy(CanonicalNodeProjectionMetadata::planNodeId)
-            .filterValues { it.size > 1 }
+            .filterValues { records ->
+                records.mapNotNull { metadata -> nodes[metadata.nodeId]?.workflow }.toSet().size > 1
+            }
             .keys
             .forEach { planNodeId ->
                 issues += issue(
-                    "graph.projection-plan-id.duplicate",
+                    "graph.projection-plan-id.workflow-crossing",
                     "bindings.nodeMetadata.$planNodeId",
-                    "Compatibility plan-node id '$planNodeId' is declared more than once."
+                    "Compatibility plan-node id '$planNodeId' cannot be shared by multiple workflows."
                 )
             }
+        bindings.nodeMetadata.groupBy { metadata ->
+            nodes[metadata.nodeId]?.workflow to metadata.planNodeId
+        }.filterValues { it.size > 1 }.keys.forEach { (workflow, planNodeId) ->
+            issues += issue(
+                "graph.projection-plan-id.duplicate",
+                "bindings.nodeMetadata.${workflow?.value.orEmpty()}.$planNodeId",
+                "Compatibility plan-node id '$planNodeId' is declared more than once in workflow '$workflow'."
+            )
+        }
+        val graphWorkflows = build.graph.workflows.associate { it.id to it.name }
+        val bindingWorkflows = bindings.workflowPlans.associate { it.workflowId to it.workflowName }
+        if (graphWorkflows != bindingWorkflows) {
+            issues += issue(
+                "graph.workflow.projection-metadata.mismatch",
+                "bindings.workflowPlans",
+                "Workflow projection metadata must exactly match canonical graph workflow identity."
+            )
+        }
     }
 
     private fun duplicateNames(values: List<String>): Set<String> =

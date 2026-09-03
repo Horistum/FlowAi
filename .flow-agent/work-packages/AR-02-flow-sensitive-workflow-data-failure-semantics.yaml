@@ -125,14 +125,15 @@ implementationSlices:
       - "Remove last-writer-wins producer selection and prove branch permutation invariance."
   - id: "AR-02C"
     name: "First-Class Workflow Ownership and Trigger Routing"
-    status: "selected"
+    status: "complete"
     outcomes:
       - "Preserve multiple workflow identities, memberships, roots and trigger routes through canonical graph construction and digest."
+      - "Publish WorkflowExecutionPlanSet 1.0 as the only public multi-workflow projection while legacy one-workflow views fail closed."
       - "Replace workflows.single() assumptions in compiler projections with explicit single- or multi-workflow contracts."
       - "Keep target materialization fail-closed where an adapter lacks multi-workflow semantics."
   - id: "AR-02D"
     name: "First-Class Workflow Failure Semantics"
-    status: "planned"
+    status: "selected"
     outcomes:
       - "Add typed workflow failure policy and handler-region ownership to the canonical graph."
       - "Migrate plan projections, target contracts and adapter consumers away from terminal empty-body Try recognition."
