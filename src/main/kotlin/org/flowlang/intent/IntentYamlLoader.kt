@@ -99,7 +99,11 @@ object IntentYamlLoader {
         return IntentTrigger(
             id = id,
             type = type,
-            workflows = stringList("workflows", "$path.workflows", source).ifEmpty { listOf("main") },
+            workflows = if (containsKey("workflows")) {
+                stringList("workflows", "$path.workflows", source)
+            } else {
+                listOf("main")
+            },
             schedule = schedule,
             event = optionalString("event", "$path.event", source),
             params = optionalObject("params", "$path.params", source).orEmpty()

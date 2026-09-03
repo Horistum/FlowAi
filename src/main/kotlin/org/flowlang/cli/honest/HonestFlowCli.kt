@@ -19,6 +19,7 @@ import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.cli.Json
+import org.flowlang.compiler.CompilationUnit
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
 import org.flowlang.frontend.ai.ReviewedAiProposal
@@ -32,6 +33,7 @@ import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.materialization.TargetSelectionDecision
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.WorkflowExecutionPlanSet
 import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.release.ReleaseMetadataHonestyAuthority
 import org.flowlang.release.StandardReleaseAssemblyAuthority
@@ -49,14 +51,51 @@ data class CliCommandFailureReport(
     val causeType: String
 )
 
+sealed interface CliTargetNeutralPlanningReport {
+    val flowName: String
+    val planVersion: String
+    val targetSelected: Boolean
+    val negotiation: Any
+    val selection: Any
+    val message: String
+}
+
 data class CliTargetNeutralPlanningEvidence(
-    val flowName: String,
-    val planVersion: String,
-    val targetSelected: Boolean = false,
-    val negotiation: Any,
-    val selection: Any,
-    val message: String = "No target was selected. Planning evidence is target-neutral and no target manifest or rendered syntax was produced."
+    override val flowName: String,
+    override val planVersion: String,
+    override val targetSelected: Boolean = false,
+    override val negotiation: Any,
+    override val selection: Any,
+    override val message: String =
+        "No target was selected. Planning evidence is target-neutral and no target manifest or rendered syntax was produced."
+) : CliTargetNeutralPlanningReport
+
+data class CliMultiWorkflowNegotiationEvidence(
+    val contractVersion: String,
+    val workflowNames: List<String>,
+    val triggerRoutes: Map<String, List<String>>,
+    val status: String = "NOT_EVALUATED",
+    val reason: String =
+        "Target compatibility is evaluated only after an adapter declares an explicit multi-workflow contract."
 )
+
+data class CliMultiWorkflowSelectionEvidence(
+    val status: String = "NOT_EVALUATED",
+    val targetSelected: Boolean = false,
+    val candidateTargets: List<String> = emptyList(),
+    val reason: String =
+        "No target was selected and current target adapters are not certified for multi-workflow execution."
+)
+
+data class CliMultiWorkflowTargetNeutralPlanningEvidence(
+    override val flowName: String,
+    override val planVersion: String,
+    override val targetSelected: Boolean = false,
+    override val negotiation: CliMultiWorkflowNegotiationEvidence,
+    override val selection: CliMultiWorkflowSelectionEvidence = CliMultiWorkflowSelectionEvidence(),
+    override val message: String =
+        "No target was selected. The complete WorkflowExecutionPlanSet is available without selecting or flattening a workflow."
+) : CliTargetNeutralPlanningReport
 
 data class CliTargetOutcomeReport(
     val target: String,
@@ -159,14 +198,30 @@ private fun runIntentCommand(
     val design = IntentDesignAnalyzer(registry).analyze(intent)
     val decision = IntentDecisionAnalyzer(registry).analyze(intent)
     val intentValidation = intentEvidence.validation
-    val ast = compilation.ast
-    val validation = compilation.validation
-    val plan = compilation.executionPlan
 
     output.section("INTENT DESIGN REPORT", design)
     output.section("INTENT DECISION REPORT", decision)
     output.section("NORMALIZED INTENT JSON", intent)
     output.section("INTENT CAPABILITY VALIDATION REPORT", intentValidation)
+    if (compilation.workflowPlanSet.multiWorkflow) {
+        return runMultiWorkflowIntentCompilation(
+            compilation = compilation,
+            normalizedIntent = intent,
+            intentDesign = design,
+            intentDecision = decision,
+            intentValidation = intentValidation,
+            selectionDecision = selectionDecision,
+            targets = targets,
+            strict = strict,
+            renderRequested = renderRequested,
+            outputDir = outDir,
+            output = output
+        )
+    }
+
+    val ast = compilation.ast
+    val validation = compilation.validation
+    val plan = compilation.executionPlan
     output.section("GENERATED FLOW AST JSON", ast)
     output.section("VALIDATION REPORT", validation)
     output.section("EXECUTION PLAN JSON", plan)
@@ -315,12 +370,29 @@ private fun runNormalizeCommand(
     val intent = proposalEvidence.intent
     val intentValidation = proposalEvidence.validation
     val design = IntentDesignAnalyzer(registry).analyze(intent)
-    val ast = compilation.ast
-    val validation = compilation.validation
-    val plan = compilation.executionPlan
 
     output.section("INTENT CAPABILITY VALIDATION REPORT", intentValidation)
     output.section("INTENT DESIGN REPORT", design)
+    if (compilation.workflowPlanSet.multiWorkflow) {
+        return runMultiWorkflowIntentCompilation(
+            compilation = compilation,
+            normalizedIntent = intent,
+            intentDesign = design,
+            intentDecision = decision,
+            intentValidation = intentValidation,
+            selectionDecision = selectionDecision,
+            targets = targets,
+            strict = strict,
+            renderRequested = renderRequested,
+            outputDir = outputDir,
+            output = output,
+            normalizationReport = response.report
+        )
+    }
+
+    val ast = compilation.ast
+    val validation = compilation.validation
+    val plan = compilation.executionPlan
     output.section("GENERATED FLOW AST JSON", ast)
     output.section("VALIDATION REPORT", validation)
     output.section("EXECUTION PLAN JSON", plan)
@@ -381,6 +453,70 @@ private fun runNormalizeCommand(
         artifacts = targetedArtifacts(evidence, persisted = outputDir != null)
     )
 }
+
+private fun runMultiWorkflowIntentCompilation(
+    compilation: CompilationUnit,
+    normalizedIntent: Any,
+    intentDesign: Any,
+    intentDecision: Any,
+    intentValidation: Any,
+    selectionDecision: TargetSelectionDecision,
+    targets: Map<String, org.flowlang.capabilities.TargetCapability>,
+    strict: Boolean,
+    renderRequested: Boolean,
+    outputDir: File?,
+    output: CliOutputCollector,
+    normalizationReport: Any? = null
+): CliExecutionResult {
+    val planSet = compilation.workflowPlanSet
+    require(planSet.multiWorkflow) {
+        "Multi-workflow CLI projection requires a multi-workflow compilation."
+    }
+    output.section("COMPILED WORKFLOW EVIDENCE", compilation.workflows)
+    output.section("WORKFLOW EXECUTION PLAN SET JSON", planSet)
+
+    if (selectionDecision == TargetSelectionDecision.NotSelected) {
+        val planning = multiWorkflowTargetNeutralPlanningEvidence(planSet)
+        output.section("TARGET-NEUTRAL PLANNING EVIDENCE", planning)
+        outputDir?.let { directory ->
+            writeMultiWorkflowPlanningArtifacts(
+                directory = directory,
+                normalizedIntent = normalizedIntent,
+                intentDesign = intentDesign,
+                intentDecision = intentDecision,
+                intentValidation = intentValidation,
+                compilation = compilation,
+                planning = planning,
+                strict = strict,
+                normalizationReport = normalizationReport
+            )
+        }
+        return CliExecutionResult.TargetNeutral(
+            planning = planning,
+            presentation = output.snapshot(),
+            artifacts = multiWorkflowPlanningArtifacts(persisted = outputDir != null)
+        )
+    }
+
+    val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
+    CliTargetEvidenceAuthority(targets).evaluate(compilation, selection, strict, renderRequested)
+    error(
+        "Target '${selection.target}' unexpectedly accepted a multi-workflow compilation without " +
+            "an explicit adapter contract."
+    )
+}
+
+private fun multiWorkflowTargetNeutralPlanningEvidence(
+    planSet: WorkflowExecutionPlanSet
+): CliMultiWorkflowTargetNeutralPlanningEvidence = CliMultiWorkflowTargetNeutralPlanningEvidence(
+    flowName = planSet.flowName,
+    planVersion = planSet.contractVersion,
+    negotiation = CliMultiWorkflowNegotiationEvidence(
+        contractVersion = planSet.contractVersion,
+        workflowNames = planSet.workflows.map { it.workflowName },
+        triggerRoutes = planSet.triggers.associate { trigger -> trigger.id to trigger.workflows }
+    )
+)
 
 private fun targetNeutralPlanningEvidence(
     plan: ExecutionPlan,
@@ -451,6 +587,13 @@ private fun planningArtifacts(persisted: Boolean): List<CliArtifact> = listOf(
     CliArtifact("canonical-execution-plan.json", CliArtifactRole.REVIEW_DOCUMENT, persisted)
 )
 
+private fun multiWorkflowPlanningArtifacts(persisted: Boolean): List<CliArtifact> = listOf(
+    CliArtifact("target-neutral-planning-report.json", CliArtifactRole.TARGET_NEUTRAL_PLANNING, persisted),
+    CliArtifact("standard-diagnostic-catalog.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted),
+    CliArtifact("workflow-compilation-evidence.json", CliArtifactRole.REVIEW_DOCUMENT, persisted),
+    CliArtifact("workflow-execution-plan-set.json", CliArtifactRole.REVIEW_DOCUMENT, persisted)
+)
+
 private fun targetedArtifacts(
     evidence: CliTargetEvidence,
     persisted: Boolean
@@ -500,6 +643,40 @@ private fun writePlanningArtifacts(
         "target-neutral-planning-report.json" to planning
     )
     writeMinimalBundle(directory, plan.flowName, "", strict, values, normalizationReport != null)
+}
+
+private fun writeMultiWorkflowPlanningArtifacts(
+    directory: File,
+    normalizedIntent: Any,
+    intentDesign: Any,
+    intentDecision: Any,
+    intentValidation: Any,
+    compilation: CompilationUnit,
+    planning: CliMultiWorkflowTargetNeutralPlanningEvidence,
+    strict: Boolean,
+    normalizationReport: Any? = null
+) {
+    val values = linkedMapOf<String, Any>(
+        "standard-diagnostic-catalog.json" to StandardDiagnosticCatalog.report()
+    )
+    normalizationReport?.let { values["ai-normalization-report.json"] = it }
+    values += linkedMapOf(
+        "normalized-intent.json" to normalizedIntent,
+        "intent-design-report.json" to intentDesign,
+        "intent-decision-report.json" to intentDecision,
+        "intent-capability-validation-report.json" to intentValidation,
+        "workflow-compilation-evidence.json" to compilation.workflows,
+        "workflow-execution-plan-set.json" to compilation.workflowPlanSet,
+        "target-neutral-planning-report.json" to planning
+    )
+    writeMinimalBundle(
+        directory = directory,
+        flowName = compilation.workflowPlanSet.flowName,
+        target = "",
+        strict = strict,
+        values = values,
+        includeAiNormalization = normalizationReport != null
+    )
 }
 
 private fun writeIntentArtifacts(
@@ -603,7 +780,13 @@ private fun writeMinimalBundle(
     require(directory.mkdirs() || directory.isDirectory) { "Cannot create output directory: ${directory.path}" }
     val bundleAnalyzer = FlowArtifactBundleAnalyzer()
     val renderedArtifact = values.keys.firstOrNull { it !in knownJsonArtifacts && !it.endsWith(".json") }
-    val catalog = if (includeAiNormalization) {
+    val catalog = (if (values.containsKey("workflow-execution-plan-set.json")) {
+        bundleAnalyzer.workflowPlanSetBundle(
+            flowName = flowName,
+            strict = strict,
+            includeAiNormalization = includeAiNormalization
+        )
+    } else if (includeAiNormalization) {
         bundleAnalyzer.normalizationBundle(
             flowName = flowName,
             target = target,
@@ -620,7 +803,7 @@ private fun writeMinimalBundle(
             hasManifest = values.containsKey("target-manifest.json"),
             renderedArtifact = renderedArtifact
         )
-    }.artifacts.associateBy { it.name }
+    }).artifacts.associateBy { it.name }
     val names = listOf("standard-version.txt") + values.keys + listOf("artifact-integrity-report.json", "flow-artifact-bundle.json")
     val entries = names.distinct().mapIndexed { index, name ->
         val known = catalog[name]

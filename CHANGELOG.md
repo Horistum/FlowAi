@@ -4,6 +4,21 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### AR-02C First-Class Workflow Ownership and Trigger Routing
+
+#### Added
+
+- Added `WorkflowExecutionPlanSet` 1.0 as the public non-flattening envelope for independent workflow views and exact trigger routes.
+- Preserved workflow identity, roots, node membership and trigger routing through Intent lowering, planning, canonical graph authorization and semantic digesting.
+- Added fail-closed legacy compatibility accessors and target materialization gates for multi-workflow compilations.
+- Added cross-workflow dependency, route-integrity, graph-mutation, permutation and single-workflow compatibility regression coverage.
+
+#### Contract migration
+
+- Added a new `workflowExecutionPlanSet` artifact-contract axis at `1.0`; existing Intent, AST, ExecutionPlan, lowering-evidence, TargetManifest and TargetRegistry versions remain unchanged.
+- Published `schemas/workflow-execution-plan-set.schema.json` and `docs/AR_02C_WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md`.
+- Preserved the historical AR-01 and 0.9.7.10 certified contract boundaries without rewriting them to include this later contract.
+
 ### SI-05 Operational Effect Model Re-evaluation
 
 #### Corrected

@@ -16,6 +16,7 @@ import org.flowlang.planner.PlanDependencyRelations
 import org.flowlang.planner.PlanDependencyResolution
 import org.flowlang.planner.PlanInput
 import org.flowlang.planner.PlanNode
+import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.RuntimeParamRenderer
 import org.flowlang.planner.TaskNode
 import org.flowlang.standard.FlowStandardVersions
@@ -158,16 +159,36 @@ object IntentLoweringAuthority {
         )
     }
 
-    fun report(plan: ExecutionPlan): IntentLoweringReport {
-        val sourceIntent = requireNotNull(plan.sourceIntent) {
-            "Artifact-derived lowering evidence requires source intent metadata."
-        }
+    fun report(plan: ExecutionPlan): IntentLoweringReport = report(
+        LoweringPlanView(
+            flowName = plan.flowName,
+            inputs = plan.inputs,
+            triggers = plan.triggers,
+            sourceIntent = requireNotNull(plan.sourceIntent) {
+                "Artifact-derived lowering evidence requires source intent metadata."
+            },
+            workflowPlans = listOf(plan)
+        )
+    )
+
+    internal fun report(
+        flowName: String,
+        inputs: List<PlanInput>,
+        triggers: List<PlanTrigger>,
+        sourceIntent: IntentSourceMetadata,
+        workflowPlans: List<ExecutionPlan>
+    ): IntentLoweringReport = report(
+        LoweringPlanView(flowName, inputs, triggers, sourceIntent, workflowPlans)
+    )
+
+    private fun report(view: LoweringPlanView): IntentLoweringReport {
+        val sourceIntent = view.sourceIntent
         require(sourceIntent.fields.isNotEmpty()) {
             "Artifact-derived lowering evidence requires a non-empty source field catalog."
         }
 
         val evidence = sourceIntent.fields.sortedBy(IntentSourceField::identity).map { field ->
-            val targetValue = resolveTarget(plan, field.targetIdentity)
+            val targetValue = resolveTarget(view, field.targetIdentity)
             val targetDigest = digest(field.valueKind, targetValue)
             require(targetDigest == field.expectedTargetDigest) {
                 "Lowered target '${field.targetIdentity}' for source '${field.identity}' does not match the expected value."
@@ -196,7 +217,7 @@ object IntentLoweringAuthority {
             )
         }
 
-        validateAuthoredOrderingGraph(plan, sourceIntent)
+        validateAuthoredOrderingGraph(view.workflowPlans, sourceIntent)
 
         val evidenceDigest = digest(
             "execution-plan-lowering-evidence",
@@ -485,6 +506,19 @@ object IntentLoweringAuthority {
         }
     }
 
+    private data class LoweringPlanView(
+        val flowName: String,
+        val inputs: List<PlanInput>,
+        val triggers: List<PlanTrigger>,
+        val sourceIntent: IntentSourceMetadata,
+        val workflowPlans: List<ExecutionPlan>
+    ) {
+        init {
+            require(flowName.isNotBlank()) { "Lowering plan view name must not be blank." }
+            require(workflowPlans.isNotEmpty()) { "Lowering plan view must contain workflow plans." }
+        }
+    }
+
     private data class AuthoredOrderingEdge(val sourceStepId: String, val targetStepId: String) {
         override fun toString(): String = "$sourceStepId->$targetStepId"
     }
@@ -495,10 +529,15 @@ object IntentLoweringAuthority {
      * that the planner did not invent another authored ordering edge. Data-flow ordering is a
      * separate evidence class and therefore never substitutes for DECLARED_ORDERING.
      */
-    private fun validateAuthoredOrderingGraph(plan: ExecutionPlan, sourceIntent: IntentSourceMetadata) {
+    private fun validateAuthoredOrderingGraph(
+        workflowPlans: List<ExecutionPlan>,
+        sourceIntent: IntentSourceMetadata
+    ) {
         val expected = sourceIntent.fields.mapNotNull(::authoredOrderingEdge).toSet()
-        val nodesById = PlanDependencyRelations.flatten(plan.nodes).groupBy(PlanNode::id)
-        val declaredRelations = plan.dependencyRelations.filter { relation ->
+        val nodesById = workflowPlans
+            .flatMap { plan -> PlanDependencyRelations.flatten(plan.nodes) }
+            .groupBy(PlanNode::id)
+        val declaredRelations = workflowPlans.flatMap { plan -> plan.dependencyRelations }.filter { relation ->
             relation.kind == PlanDependencyKind.ORDERING &&
                 relation.evidence == PlanDependencyEvidence.DECLARED_ORDERING
         }
@@ -540,24 +579,24 @@ object IntentLoweringAuthority {
         return AuthoredOrderingEdge(sourceStepId = parts[3], targetStepId = parts[1])
     }
 
-    private fun resolveTarget(plan: ExecutionPlan, targetIdentity: String): String {
+    private fun resolveTarget(view: LoweringPlanView, targetIdentity: String): String {
         val parts = targetIdentity.split('/').map(::unsegment)
         require(parts.firstOrNull() == "plan") { "Unknown lowering target identity '$targetIdentity'." }
         return when (parts.getOrNull(1)) {
             "flow" -> when (parts.getOrNull(2)) {
-                "name" -> plan.flowName
+                "name" -> view.flowName
                 else -> missing(targetIdentity)
             }
-            "input" -> resolveInput(plan, parts, targetIdentity)
-            "trigger" -> resolveTrigger(plan, parts, targetIdentity)
-            "source-intent" -> resolveSourceIntent(plan, parts, targetIdentity)
-            "node" -> resolveNode(plan, parts, targetIdentity)
+            "input" -> resolveInput(view.inputs, parts, targetIdentity)
+            "trigger" -> resolveTrigger(view.triggers, parts, targetIdentity)
+            "source-intent" -> resolveSourceIntent(view.sourceIntent, parts, targetIdentity)
+            "node" -> resolveNode(view.workflowPlans, parts, targetIdentity)
             else -> missing(targetIdentity)
         }
     }
 
-    private fun resolveInput(plan: ExecutionPlan, parts: List<String>, identity: String): String {
-        val input = unique(plan.inputs.filter { it.name == parts.getOrNull(2) }, identity)
+    private fun resolveInput(inputs: List<PlanInput>, parts: List<String>, identity: String): String {
+        val input = unique(inputs.filter { it.name == parts.getOrNull(2) }, identity)
         return when (parts.getOrNull(3)) {
             "name" -> input.name
             "type" -> projectedInputType(input)
@@ -567,8 +606,8 @@ object IntentLoweringAuthority {
         }
     }
 
-    private fun resolveTrigger(plan: ExecutionPlan, parts: List<String>, identity: String): String {
-        val trigger = unique(plan.triggers.filter { it.id == parts.getOrNull(2) }, identity)
+    private fun resolveTrigger(triggers: List<PlanTrigger>, parts: List<String>, identity: String): String {
+        val trigger = unique(triggers.filter { it.id == parts.getOrNull(2) }, identity)
         return when (parts.getOrNull(3)) {
             "id" -> trigger.id
             "type" -> trigger.type
@@ -585,57 +624,62 @@ object IntentLoweringAuthority {
         }
     }
 
-    private fun resolveSourceIntent(plan: ExecutionPlan, parts: List<String>, identity: String): String {
-        val source = plan.sourceIntent ?: missing(identity)
-        return when (parts.getOrNull(2)) {
-            "description" -> source.description ?: missing(identity)
-            "workflow" -> {
-                val workflow = unique(source.workflows.filter { it.name == parts.getOrNull(3) }, identity)
-                when (parts.getOrNull(4)) {
-                    "name" -> workflow.name
-                    "kind" -> workflow.kind
-                    "step" -> {
-                        val stepId = parts.getOrNull(5) ?: missing(identity)
-                        stepId.takeIf { it in workflow.stepIds } ?: missing(identity)
-                    }
-                    else -> missing(identity)
+    private fun resolveSourceIntent(
+        source: IntentSourceMetadata,
+        parts: List<String>,
+        identity: String
+    ): String = when (parts.getOrNull(2)) {
+        "description" -> source.description ?: missing(identity)
+        "workflow" -> {
+            val workflow = unique(source.workflows.filter { it.name == parts.getOrNull(3) }, identity)
+            when (parts.getOrNull(4)) {
+                "name" -> workflow.name
+                "kind" -> workflow.kind
+                "step" -> {
+                    val stepId = parts.getOrNull(5) ?: missing(identity)
+                    stepId.takeIf { it in workflow.stepIds } ?: missing(identity)
                 }
-            }
-            "system" -> {
-                val system = unique(source.systems.filter { it.name == parts.getOrNull(3) }, identity)
-                when (parts.getOrNull(4)) {
-                    "name" -> system.name
-                    "source-type" -> system.sourceType
-                    "canonical-type" -> system.canonicalType
-                    "purpose" -> system.purpose ?: missing(identity)
-                    "config" -> system.config[parts.getOrNull(5)] ?: missing(identity)
-                    else -> missing(identity)
-                }
-            }
-            "policy" -> {
-                val policy = unique(source.policies.filter { it.name == parts.getOrNull(3) }, identity)
-                when (parts.getOrNull(4)) {
-                    "name" -> policy.name
-                    "type" -> policy.type
-                    "condition" -> policy.condition ?: missing(identity)
-                    "message" -> policy.message ?: missing(identity)
-                    else -> missing(identity)
-                }
-            }
-            "failure" -> when (parts.getOrNull(3)) {
-                "notify" -> source.failure.notify.toString()
-                "rollback" -> source.failure.rollback.toString()
-                "stop-on-error" -> source.failure.stopOnError.toString()
                 else -> missing(identity)
             }
+        }
+        "system" -> {
+            val system = unique(source.systems.filter { it.name == parts.getOrNull(3) }, identity)
+            when (parts.getOrNull(4)) {
+                "name" -> system.name
+                "source-type" -> system.sourceType
+                "canonical-type" -> system.canonicalType
+                "purpose" -> system.purpose ?: missing(identity)
+                "config" -> system.config[parts.getOrNull(5)] ?: missing(identity)
+                else -> missing(identity)
+            }
+        }
+        "policy" -> {
+            val policy = unique(source.policies.filter { it.name == parts.getOrNull(3) }, identity)
+            when (parts.getOrNull(4)) {
+                "name" -> policy.name
+                "type" -> policy.type
+                "condition" -> policy.condition ?: missing(identity)
+                "message" -> policy.message ?: missing(identity)
+                else -> missing(identity)
+            }
+        }
+        "failure" -> when (parts.getOrNull(3)) {
+            "notify" -> source.failure.notify.toString()
+            "rollback" -> source.failure.rollback.toString()
+            "stop-on-error" -> source.failure.stopOnError.toString()
             else -> missing(identity)
         }
+        else -> missing(identity)
     }
 
-    private fun resolveNode(plan: ExecutionPlan, parts: List<String>, identity: String): String {
+    private fun resolveNode(
+        workflowPlans: List<ExecutionPlan>,
+        parts: List<String>,
+        identity: String
+    ): String {
         require(parts.getOrNull(2) == "source") { "Unknown lowering node identity '$identity'." }
         val sourceId = parts.getOrNull(3) ?: missing(identity)
-        val node = sourceNode(plan, sourceId, identity)
+        val node = sourceNode(workflowPlans, sourceId, identity)
         return when (parts.getOrNull(4)) {
             "identity" -> canonicalRecord(
                 "sourceId" to sourceIdOf(node).orEmpty(),
@@ -654,7 +698,7 @@ object IntentLoweringAuthority {
             "dependency" -> {
                 require(parts.getOrNull(5) == "source") { "Unknown lowering dependency identity '$identity'." }
                 val dependencySourceId = parts.getOrNull(6) ?: missing(identity)
-                val dependency = sourceNode(plan, dependencySourceId, identity)
+                val dependency = sourceNode(workflowPlans, dependencySourceId, identity)
                 val dependencies = dependenciesOf(node)
                 dependency.id.takeIf { it in dependencies }?.let { dependencySourceId } ?: missing(identity)
             }
@@ -678,8 +722,14 @@ object IntentLoweringAuthority {
         }
     }
 
-    private fun sourceNode(plan: ExecutionPlan, sourceId: String, identity: String): PlanNode = unique(
-        PlanDependencyRelations.flatten(plan.nodes).filter { node -> sourceIdOf(node) == sourceId },
+    private fun sourceNode(
+        workflowPlans: List<ExecutionPlan>,
+        sourceId: String,
+        identity: String
+    ): PlanNode = unique(
+        workflowPlans.flatMap { plan ->
+            PlanDependencyRelations.flatten(plan.nodes).filter { node -> sourceIdOf(node) == sourceId }
+        },
         identity
     )
 

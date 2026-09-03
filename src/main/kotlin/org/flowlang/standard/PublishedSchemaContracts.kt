@@ -89,7 +89,11 @@ object PublishedSchemaContracts {
         interchange("target-selection-evidence.schema.json"),
         interchange("target-selection-report.schema.json", "org.flowlang.capabilities.TargetSelectionReport"),
         interchange("target-semantics-matrix.schema.json"),
-        interchange("validation-report.schema.json")
+        interchange("validation-report.schema.json"),
+        interchange(
+            "workflow-execution-plan-set.schema.json",
+            "org.flowlang.planner.WorkflowExecutionPlanSet serialized contract"
+        )
     )
 
     fun coverageIssues(rootDir: File): List<String> {

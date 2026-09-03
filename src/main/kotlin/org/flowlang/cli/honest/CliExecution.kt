@@ -109,7 +109,7 @@ sealed interface CliExecutionResult {
     }
 
     data class TargetNeutral(
-        val planning: CliTargetNeutralPlanningEvidence,
+        val planning: CliTargetNeutralPlanningReport,
         override val presentation: CliPresentation,
         override val artifacts: List<CliArtifact>
     ) : CliExecutionResult {

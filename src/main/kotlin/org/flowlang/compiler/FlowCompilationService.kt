@@ -5,12 +5,20 @@ import org.flowlang.ai.normalization.IntentProposalReview
 import org.flowlang.ai.normalization.IntentProposalReviewEvidence
 import org.flowlang.ast.FlowDocument
 import org.flowlang.core.FlowAvailabilityAnalyzer
+import org.flowlang.core.FlowWorkflowIdentity
 import org.flowlang.intent.IntentDocument
+import org.flowlang.intent.LoweredIntentProgram
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.intent.IntentValidationReport
 import org.flowlang.intent.ValidatedIntent
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.FlowPlanner
+import org.flowlang.planner.ExecutionProgramPlanningResult
+import org.flowlang.planner.PlanSchedule
+import org.flowlang.planner.PlanTrigger
+import org.flowlang.planner.RuntimeParamRenderer
+import org.flowlang.planner.WorkflowPlanningResult
+import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.validator.FlowValidator
 
 /**
@@ -160,8 +168,8 @@ class FlowCompilationService(
         }
 
         val evidence = evidenceFactory(intentValidation)
-        val ast = try {
-            intentPlanner.plan(requireNotNull(intentEvaluation.accepted))
+        val program = try {
+            intentPlanner.planProgram(requireNotNull(intentEvaluation.accepted))
         } catch (failure: Exception) {
             return CompilationResult.Rejected(
                 rejection(
@@ -179,11 +187,158 @@ class FlowCompilationService(
             )
         }
 
-        return compileAst(
+        return compileProgram(
             source = source,
             evidence = evidence,
-            ast = ast
+            program = program
         )
+    }
+
+    private data class WorkflowCompilationDraft(
+        val name: String,
+        val ast: FlowDocument,
+        val availability: org.flowlang.core.FlowAvailabilityAnalysis,
+        val validation: org.flowlang.validator.ValidationReport,
+        val planning: org.flowlang.planner.FlowPlanningResult
+    )
+
+    private fun compileProgram(
+        source: CompilationSource,
+        evidence: IntentCompilationEvidence,
+        program: LoweredIntentProgram
+    ): CompilationResult {
+        val multiple = program.workflows.size > 1
+        val drafts = mutableListOf<WorkflowCompilationDraft>()
+        program.workflows.sortedBy { it.name }.forEach { workflow ->
+            val identity = FlowWorkflowIdentity(workflow.name)
+            val availability = flowAvailabilityAnalyzer.analyze(workflow.document, identity)
+            val validation = flowValidator.validate(workflow.document, availability)
+            if (!validation.valid) {
+                return CompilationResult.Rejected(
+                    rejection(
+                        source = source,
+                        stage = CompilationStage.FLOW_VALIDATION,
+                        diagnostics = ensureErrorDiagnostic(
+                            diagnostics = validation.issues.map { issue ->
+                                CompilationDiagnostic(
+                                    issue.code,
+                                    "[workflow ${workflow.name}] ${issue.message}",
+                                    CompilationDiagnosticSeverity.fromWire(issue.level)
+                                )
+                            },
+                            fallbackCode = "compiler.flow-validation.failed",
+                            fallbackMessage = "Workflow '${workflow.name}' validation failed without an error diagnostic."
+                        ),
+                        evidence = evidence,
+                        ast = workflow.document,
+                        flowValidation = validation
+                    )
+                )
+            }
+            val planning = try {
+                flowPlanner.planWithProvenance(
+                    document = workflow.document,
+                    availability = availability,
+                    workflowIdentity = identity,
+                    nodeIdNamespace = workflow.name.takeIf { multiple }
+                )
+            } catch (failure: Exception) {
+                return CompilationResult.Rejected(
+                    rejection(
+                        source = source,
+                        stage = CompilationStage.PLANNING,
+                        diagnostics = listOf(
+                            CompilationDiagnostic(
+                                "compiler.planning.failed",
+                                "[workflow ${workflow.name}] ${failure.message ?: failure.javaClass.simpleName}"
+                            )
+                        ),
+                        evidence = evidence,
+                        ast = workflow.document,
+                        flowValidation = validation
+                    )
+                )
+            }
+            drafts += WorkflowCompilationDraft(
+                workflow.name,
+                workflow.document,
+                availability,
+                validation,
+                planning
+            )
+        }
+
+        val inputs = drafts.first().planning.plan.inputs
+        require(drafts.all { it.planning.plan.inputs == inputs }) {
+            "Independent workflow plans changed the shared input contract."
+        }
+        val triggers = program.triggers.map { trigger ->
+            PlanTrigger(
+                id = trigger.id,
+                type = trigger.triggerType,
+                workflows = trigger.workflows,
+                schedule = trigger.schedule?.let { PlanSchedule(it.kind, it.expression, it.timezone) },
+                event = trigger.event,
+                params = trigger.params.mapValues { (_, value) -> RuntimeParamRenderer.render(value, emptySet()) },
+                requiredCapabilities = when (trigger.triggerType) {
+                    "SCHEDULE" -> listOf("trigger.schedule.${trigger.schedule?.kind?.lowercase() ?: "unknown"}")
+                    "EVENT" -> listOf("trigger.event")
+                    "WEBHOOK" -> listOf("trigger.webhook")
+                    "MANUAL" -> listOf("trigger.manual")
+                    else -> listOf("trigger.unknown")
+                }
+            )
+        }
+        val loweringReport = if (drafts.size == 1) {
+            drafts.single().planning.plan.loweringReport
+        } else {
+            IntentLoweringAuthority.report(
+                flowName = program.name,
+                inputs = inputs,
+                triggers = triggers,
+                sourceIntent = program.sourceIntent,
+                workflowPlans = drafts.map { it.planning.plan }
+            )
+        }
+        val planning = ExecutionProgramPlanningResult(
+            flowName = program.name,
+            inputs = inputs,
+            triggers = triggers,
+            sourceIntent = program.sourceIntent,
+            loweringReport = loweringReport,
+            workflows = drafts.map { draft ->
+                WorkflowPlanningResult(draft.name, draft.planning, draft.availability)
+            }
+        )
+
+        return try {
+            CompilationResult.Accepted(
+                CompilationUnit.fromProgram(
+                    source = source,
+                    frontendEvidence = evidence,
+                    workflows = drafts.map { draft ->
+                        CompiledWorkflow(draft.name, draft.ast, draft.validation)
+                    },
+                    planning = planning
+                )
+            )
+        } catch (failure: Exception) {
+            CompilationResult.Rejected(
+                rejection(
+                    source = source,
+                    stage = CompilationStage.CANONICALIZATION,
+                    diagnostics = listOf(
+                        CompilationDiagnostic(
+                            "compiler.canonicalization.failed",
+                            failure.message ?: failure.javaClass.simpleName
+                        )
+                    ),
+                    evidence = evidence,
+                    ast = drafts.firstOrNull()?.ast,
+                    flowValidation = drafts.firstOrNull()?.validation
+                )
+            )
+        }
     }
 
     private fun ensureErrorDiagnostic(

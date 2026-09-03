@@ -38,6 +38,7 @@ class ArchitectureReadinessBaselineAnalyzerTests {
         assertEquals("2.0", report.publicArtifactContracts["intent"])
         assertEquals("2.2", report.publicArtifactContracts["ast"])
         assertEquals("2.4", report.publicArtifactContracts["executionPlan"])
+        assertEquals("1.0", report.publicArtifactContracts["workflowExecutionPlanSet"])
         assertEquals("2.1", report.publicArtifactContracts["executionPlanLoweringEvidence"])
         assertEquals("3.0", report.publicArtifactContracts["targetManifest"])
         assertEquals("3.2", report.publicArtifactContracts["targetRegistry"])

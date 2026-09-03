@@ -16,6 +16,9 @@ import org.flowlang.intent.IntentValidationReport
 import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanningResult
+import org.flowlang.planner.ExecutionProgramPlanningResult
+import org.flowlang.planner.MultipleWorkflowCompatibilityViewException
+import org.flowlang.planner.WorkflowExecutionPlanSet
 import org.flowlang.validator.ValidationReport
 
 /** Authored representation accepted by the shared compiler boundary. */
@@ -321,22 +324,46 @@ data class CompilationRejection(
  * but both are reconstructed from the exact validated CanonicalExecutionGraph
  * and its separate binding envelope. They cannot authorize projection on their own.
  */
+data class CompiledWorkflow(
+    val name: String,
+    val ast: FlowDocument,
+    val validation: ValidationReport
+) {
+    init {
+        require(name.isNotBlank()) { "Compiled workflow name must not be blank." }
+        require(validation.valid) { "Compiled workflow '$name' cannot carry failed Flow validation." }
+    }
+}
+
+/**
+ * Accepted compilation envelope after the graph-authority cutover.
+ *
+ * [workflowPlanSet] is the public multi-workflow projection. Legacy [ast],
+ * [validation], [executionPlan] and [canonicalPlan] accessors remain exact
+ * one-workflow compatibility views and refuse to choose or flatten a workflow.
+ */
 class CompilationUnit private constructor(
     val source: CompilationSource,
     val frontendEvidence: FrontendCompilationEvidence,
-    val ast: FlowDocument,
-    val validation: ValidationReport,
+    val workflows: List<CompiledWorkflow>,
     val authorization: CompilationAuthorization
 ) {
     val graph: CanonicalExecutionGraph get() = authorization.graph
     val graphDigest: CanonicalExecutionGraphDigest get() = authorization.graphDigest
     val validationBinding: CompilationValidationBinding get() = authorization.validationBinding
+    val workflowPlanSet: WorkflowExecutionPlanSet get() = authorization.workflowPlanSet
+    val ast: FlowDocument get() = requireSingleWorkflow("CompilationUnit.ast").ast
+    val validation: ValidationReport get() = requireSingleWorkflow("CompilationUnit.validation").validation
     val executionPlan: ExecutionPlan get() = authorization.executionPlan
     val canonicalPlan: CanonicalExecutionPlan get() = authorization.canonicalPlan
 
     init {
         require(frontendEvidence.source == source) {
             "Frontend evidence provenance must match the compilation source exactly."
+        }
+        require(workflows.isNotEmpty()) { "CompilationUnit must contain at least one compiled workflow." }
+        require(workflows.map { it.name }.toSet().size == workflows.size) {
+            "CompilationUnit contains duplicate workflow names."
         }
         when (source.frontend) {
             CompilationFrontend.FLOW_SOURCE -> require(frontendEvidence is FlowSourceCompilationEvidence) {
@@ -354,25 +381,32 @@ class CompilationUnit private constructor(
                 }
             }
         }
-        require(validation.valid) { "CompilationUnit cannot contain an invalid Flow validation report." }
         require(validationBinding.origin == CompilationAuthorizationOrigin.COMPILATION_UNIT) {
             "CompilationUnit must carry source-bound graph authorization."
         }
         require(validationBinding.sourceSha256 == source.sha256) {
             "Compilation authorization source digest does not match the captured frontend bytes."
         }
-        require(ast.flow.name == executionPlan.flowName) {
-            "Flow AST name '${ast.flow.name}' does not match graph-derived execution plan '${executionPlan.flowName}'."
+        val graphWorkflowNames = graph.workflows.map { it.name }.sorted()
+        require(graphWorkflowNames == workflows.map { it.name }.sorted()) {
+            "Compiled workflow evidence and canonical graph workflow ownership differ."
+        }
+        workflows.forEach { workflow ->
+            val expectedFlowName = if (workflows.size == 1) graph.flowName else workflow.name
+            require(workflow.ast.flow.name == expectedFlowName) {
+                "Workflow '${workflow.name}' AST name '${workflow.ast.flow.name}' does not match '$expectedFlowName'."
+            }
         }
         authorization.requireIntegrity()
     }
 
-    /**
-     * Source-compatible strict Intent YAML accessor retained for existing product
-     * and conformance consumers. Reviewed AI proposals deliberately use their
-     * own typed accessor so proposal-review evidence cannot be erased by an
-     * overly broad cast at the trust boundary.
-     */
+    private fun requireSingleWorkflow(operation: String): CompiledWorkflow {
+        if (workflows.size != 1) {
+            throw MultipleWorkflowCompatibilityViewException(operation, workflows.map { it.name })
+        }
+        return workflows.single()
+    }
+
     fun requireIntentEvidence(): IntentFrontendCompilationEvidence =
         frontendEvidence as? IntentFrontendCompilationEvidence
             ?: error("Compilation source ${source.frontend} does not carry strict Intent YAML evidence.")
@@ -404,13 +438,33 @@ class CompilationUnit private constructor(
                 planning = planning,
                 availability = availability
             )
+            val workflowName = authorization.workflowPlanSet.workflows.single().workflowName
             return CompilationUnit(
                 source = source,
                 frontendEvidence = frontendEvidence,
-                ast = ast,
-                validation = validation,
+                workflows = listOf(CompiledWorkflow(workflowName, ast, validation)),
                 authorization = authorization
             )
+        }
+
+        internal fun fromProgram(
+            source: CompilationSource,
+            frontendEvidence: FrontendCompilationEvidence,
+            workflows: List<CompiledWorkflow>,
+            planning: ExecutionProgramPlanningResult
+        ): CompilationUnit {
+            require(workflows.all { it.validation.valid }) {
+                "Program compilation cannot authorize a failed workflow validation."
+            }
+            val intentValidation = (frontendEvidence as? IntentCompilationEvidence)?.validation
+            val proposalReview = (frontendEvidence as? ReviewedAiProposalCompilationEvidence)?.review
+            val authorization = CanonicalExecutionGraphGate.authorizeCompilation(
+                source = source,
+                intentValidation = intentValidation,
+                proposalReview = proposalReview,
+                planning = planning
+            )
+            return CompilationUnit(source, frontendEvidence, workflows, authorization)
         }
     }
 }

@@ -2,6 +2,11 @@ package org.flowlang.intent
 
 import org.flowlang.effects.CanonicalIntentEffectAuthority
 import org.flowlang.effects.SemanticEffect
+import org.flowlang.controls.ControlAssessment
+import org.flowlang.controls.ControlDecisionAuthority
+import org.flowlang.controls.ControlRequirementScopeKind
+import org.flowlang.topology.ExecutionTopologyRequirement
+import org.flowlang.topology.ExecutionTopologyRequirementSource
 import org.flowlang.ast.*
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.ExpressionParser
@@ -52,44 +57,121 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         return plan(requireNotNull(evaluation.accepted))
     }
 
-    internal fun plan(validated: ValidatedIntent): FlowDocument {
+    internal fun plan(validated: ValidatedIntent): FlowDocument =
+        planProgram(validated).requireSingleDocument()
+
+    internal fun planProgram(validated: ValidatedIntent): LoweredIntentProgram {
         val intent = validated.document
         val validation = validated.report
         validation.assertValid()
         val bindings = validation.bindings.associateBy { it.stepId }
+        val declaredWorkflows = intent.workflows.ifEmpty {
+            listOf(IntentWorkflow(name = "main", kind = IntentWorkflowKind.CUSTOM))
+        }
+        val multiple = declaredWorkflows.size > 1
         val systems = LinkedHashMap<String, SystemNode>()
         intent.systems.forEach { systems[it.name] = it.toSystemNode() }
 
-        val allSteps = intent.workflows.flatMap { it.steps }
+        val allSteps = declaredWorkflows.flatMap { it.steps }
         ensureImplicitSystems(intent, allSteps, bindings, systems)
-
-        val statements = lowerOrderedSteps(allSteps, intent, bindings)
         val errorHandler = buildErrorHandler(intent)
-        val imports = collectModules(statements, systems.values).sorted().map { ModuleImportNode(name = it, version = "1.0") }
+        val sourceMetadata = IntentLoweringAuthority.sourceMetadata(intent)
+        val inputNodes = intent.inputs.map { it.toInputNode() }
+        val triggerNodes = intent.triggers
+            .map { trigger ->
+                trigger.toTriggerNode().let { node ->
+                    node.copy(workflows = node.workflows.sorted())
+                }
+            }
+            .sortedBy { it.id }
 
-        return FlowDocument(
-            sourceVersion = intent.intentVersion,
-            imports = imports,
-            flow = FlowNode(
-                name = intent.name,
-                input = intent.inputs.map { it.toInputNode() },
-                vars = emptyList(),
-                systems = systems.values.toList(),
-                triggers = intent.triggers.map { it.toTriggerNode() },
-                controlRequirements = validation.controlAssessment.requirements,
-                controlEvidence = validation.controlAssessment.evidence,
-                controlDecision = validation.controlAssessment.decision,
-                topologyRequirements = validation.meaning.topologyRequirements,
-                steps = statements,
-                errorHandler = errorHandler
-            ),
-            metadata = MetadataNode(
-                createdBy = "intent-to-ast-planner",
-                generatedByAI = false,
-                sourceIntent = IntentLoweringAuthority.sourceMetadata(intent),
-                loweringReport = null
+        val lowered = declaredWorkflows.map { workflow ->
+            val statements = lowerOrderedSteps(workflow.steps, intent, bindings)
+            val imports = collectModules(statements, systems.values).sorted()
+                .map { ModuleImportNode(name = it, version = "1.0") }
+            val control = if (multiple) {
+                workflowControlAssessment(validation.controlAssessment, workflow.name)
+            } else {
+                validation.controlAssessment
+            }
+            val topology = if (multiple) {
+                workflowTopology(validation.meaning.topologyRequirements, workflow)
+            } else {
+                validation.meaning.topologyRequirements
+            }
+            val scopedTriggers = if (multiple) {
+                triggerNodes.filter { workflow.name in it.workflows }
+                    .map { it.copy(workflows = listOf(workflow.name)) }
+            } else {
+                triggerNodes
+            }
+            LoweredIntentWorkflow(
+                name = workflow.name,
+                document = FlowDocument(
+                    sourceVersion = intent.intentVersion,
+                    imports = imports,
+                    flow = FlowNode(
+                        name = if (multiple) workflow.name else intent.name,
+                        input = inputNodes,
+                        vars = emptyList(),
+                        systems = systems.values.toList(),
+                        triggers = scopedTriggers,
+                        controlRequirements = control.requirements,
+                        controlEvidence = control.evidence,
+                        controlDecision = control.decision,
+                        topologyRequirements = topology,
+                        steps = statements,
+                        errorHandler = errorHandler
+                    ),
+                    metadata = MetadataNode(
+                        createdBy = "intent-to-ast-planner",
+                        generatedByAI = false,
+                        sourceIntent = sourceMetadata.takeUnless { multiple },
+                        loweringReport = null
+                    )
+                )
             )
+        }
+
+        return LoweredIntentProgram(
+            name = intent.name,
+            inputs = inputNodes,
+            triggers = triggerNodes,
+            sourceIntent = sourceMetadata,
+            workflows = lowered
         )
+    }
+
+    private fun workflowControlAssessment(
+        assessment: ControlAssessment,
+        workflowName: String
+    ): ControlAssessment {
+        val requirements = assessment.requirements.filter { requirement ->
+            when (requirement.scope.kind) {
+                ControlRequirementScopeKind.INTENT -> true
+                ControlRequirementScopeKind.OPERATION -> requirement.scope.workflow == workflowName
+                ControlRequirementScopeKind.PLAN_NODE -> false
+            }
+        }
+        val ids = requirements.map { it.id }.toSet()
+        val evidence = assessment.evidence.filter { it.requirementId in ids }
+        return ControlDecisionAuthority.assessment(requirements, evidence)
+    }
+
+    private fun workflowTopology(
+        requirements: List<ExecutionTopologyRequirement>,
+        workflow: IntentWorkflow
+    ): List<ExecutionTopologyRequirement> {
+        val stepIds = workflow.steps.map { it.id }.toSet()
+        return requirements.filter { requirement ->
+            when (requirement.source) {
+                ExecutionTopologyRequirementSource.CANONICAL_WORKFLOW ->
+                    requirement.subject == workflow.name || requirement.evidenceReference == "intent.failure"
+                ExecutionTopologyRequirementSource.CANONICAL_CAPABILITY ->
+                    stepIds.any { stepId -> requirement.evidenceReference?.endsWith(".steps.$stepId") == true }
+                else -> true
+            }
+        }
     }
 
     private fun ensureImplicitSystems(

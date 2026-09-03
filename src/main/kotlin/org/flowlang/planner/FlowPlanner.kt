@@ -1,5 +1,7 @@
 package org.flowlang.planner
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import org.flowlang.ast.*
 import org.flowlang.controls.PlanningControlAuthority
 import org.flowlang.core.FlowAvailabilityAnalysis
@@ -8,6 +10,7 @@ import org.flowlang.core.FlowAvailabilityState
 import org.flowlang.core.FlowMergeContract
 import org.flowlang.core.FlowProducerIdentity
 import org.flowlang.core.FlowStatementPath
+import org.flowlang.core.FlowWorkflowIdentity
 import org.flowlang.effects.CanonicalIntentEffectAuthority
 import org.flowlang.effects.ModuleEffectCanonicalizer
 import org.flowlang.effects.SemanticEffect
@@ -61,12 +64,18 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     internal fun planWithProvenance(
         document: FlowDocument,
-        availability: FlowAvailabilityAnalysis
+        availability: FlowAvailabilityAnalysis,
+        workflowIdentity: FlowWorkflowIdentity = FlowWorkflowIdentity.Main,
+        nodeIdNamespace: String? = null
     ): FlowPlanningResult {
         availability.requireDirectPlanningSafe()
-        val ctx = Ctx(document.flow.input.map { it.name }.toSet(), document.flow.systems.associateBy { it.name })
+        val ctx = Ctx(
+            inputNames = document.flow.input.map { it.name }.toSet(),
+            systems = document.flow.systems.associateBy { it.name },
+            nodeIdNamespace = nodeIdNamespace
+        )
         val nodes = planStatements(document.flow.steps, ctx, availability) { index ->
-            FlowStatementPath.flowStep(index)
+            FlowStatementPath.flowStep(index, workflowIdentity)
         }
         val tail = document.flow.errorHandler?.let { handler ->
             listOf(
@@ -74,7 +83,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                     id = ctx.id("onError"),
                     body = emptyList(),
                     errorHandler = planStatements(handler.steps, ctx, availability) { index ->
-                        FlowStatementPath.globalErrorStep(index)
+                        FlowStatementPath.globalErrorStep(index, workflowIdentity)
                     }
                 )
             )
@@ -550,8 +559,13 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     private class Ctx(
         val inputNames: Set<String>,
-        val systems: Map<String, SystemNode> = emptyMap()
+        val systems: Map<String, SystemNode> = emptyMap(),
+        nodeIdNamespace: String? = null
     ) {
+        private val encodedNodeIdNamespace = nodeIdNamespace?.let { value ->
+            Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(value.toByteArray(StandardCharsets.UTF_8))
+        }
         private val outputCandidates = mutableListOf<OutputCandidate>()
         val assumptions = mutableListOf<PlanAssumption>()
         val dependencyRelations = mutableListOf<PlanDependencyRelation>()
@@ -564,7 +578,8 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         fun id(prefix: String): String {
             val next = (counters[prefix] ?: 0) + 1
             counters[prefix] = next
-            return "${prefix}_$next"
+            val localId = "${prefix}_$next"
+            return encodedNodeIdNamespace?.let { namespace -> "wf_${namespace}__$localId" } ?: localId
         }
 
         fun registerProducer(producer: FlowProducerIdentity, nodeId: String) {

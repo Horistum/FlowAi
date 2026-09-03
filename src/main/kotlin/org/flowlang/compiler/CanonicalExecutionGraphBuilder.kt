@@ -2,11 +2,13 @@ package org.flowlang.compiler
 
 import org.flowlang.core.FlowMergeContract
 import org.flowlang.core.FlowProducerIdentity
+import org.flowlang.controls.ControlDecisionAuthority
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ControlNode
 import org.flowlang.planner.DataOpNode
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.ExecutionProgramPlanningResult
 import org.flowlang.planner.LoopNode
 import org.flowlang.planner.MatchPlanNode
 import org.flowlang.planner.ParallelGroupNode
@@ -35,9 +37,104 @@ object CanonicalExecutionGraphBuilder {
         plan: ExecutionPlan,
         mergeContracts: List<FlowMergeContract>,
         producerNodeIds: Map<FlowProducerIdentity, String>
+    ): CanonicalExecutionGraphBuild = buildWorkflow(
+        plan = plan,
+        mergeContracts = mergeContracts,
+        producerNodeIds = producerNodeIds,
+        workflowNameOverride = null,
+        identityNamespace = null
+    )
+
+    internal fun build(program: ExecutionProgramPlanningResult): CanonicalExecutionGraphBuild {
+        val ordered = program.workflows.sortedBy { it.workflowName }
+        if (ordered.size == 1) {
+            val only = ordered.single()
+            val build = buildWorkflow(
+                plan = only.planning.plan,
+                mergeContracts = only.availability.merges,
+                producerNodeIds = only.planning.producerNodeIds,
+                workflowNameOverride = only.workflowName,
+                identityNamespace = null
+            )
+            require(build.graph.flowName == program.flowName) {
+                "Single-workflow program name '${program.flowName}' differs from its graph '${build.graph.flowName}'."
+            }
+            require(build.graph.inputs == program.inputs.map { it.toCanonical() }) {
+                "Single-workflow program inputs differ from its graph projection."
+            }
+            return build
+        }
+
+        val workflowBuilds = ordered.map { workflow ->
+            buildWorkflow(
+                plan = workflow.planning.plan,
+                mergeContracts = workflow.availability.merges,
+                producerNodeIds = workflow.planning.producerNodeIds,
+                workflowNameOverride = workflow.workflowName,
+                identityNamespace = workflow.workflowName
+            )
+        }
+        val workflows = workflowBuilds.map { it.graph.workflows.single() }
+        val workflowIdsByName = workflows.associate { it.name to it.id }
+        val requirements = mergeIdentical(
+            workflowBuilds.flatMap { it.graph.controlRequirements },
+            { it.id },
+            "control requirement"
+        )
+        val evidence = mergeIdentical(
+            workflowBuilds.flatMap { it.graph.controlEvidence },
+            { it.requirementId },
+            "control evidence"
+        )
+        val topology = mergeIdentical(
+            workflowBuilds.flatMap { it.graph.topologyRequirements },
+            { it.id },
+            "topology requirement"
+        )
+        val controlDecision = ControlDecisionAuthority.evaluate(requirements, evidence)
+
+        val graph = CanonicalExecutionGraph(
+            flowName = program.flowName,
+            workflows = workflows,
+            inputs = program.inputs.map { it.toCanonical() },
+            triggers = program.triggers.sortedBy { it.id }.map { it.toCanonical(workflowIdsByName) },
+            outputs = workflowBuilds.flatMap { it.graph.outputs },
+            requiredCapabilities = workflowBuilds.flatMap { it.graph.requiredCapabilities }
+                .distinct()
+                .sortedBy(CanonicalCapabilityId::value),
+            controlRequirements = requirements,
+            controlEvidence = evidence,
+            topologyRequirements = topology,
+            valueMerges = workflowBuilds.flatMap { it.graph.valueMerges }
+                .sortedBy { it.id.value },
+            nodes = workflowBuilds.flatMap { it.graph.nodes }
+                .sortedBy { it.id.value },
+            dependencyEdges = workflowBuilds.flatMap { it.graph.dependencyEdges }
+                .sortedWith(compareBy({ it.targetNodeId.value }, { it.sourceNodeId?.value.orEmpty() }, { it.kind.name }))
+        )
+        val bindings = CanonicalExecutionBindingSet(
+            tasks = workflowBuilds.flatMap { it.bindings.tasks }.sortedBy { it.nodeId.value },
+            nodeMetadata = workflowBuilds.flatMap { it.bindings.nodeMetadata }.sortedBy { it.nodeId.value },
+            workflowPlans = workflowBuilds.flatMap { it.bindings.workflowPlans }
+                .sortedBy { it.workflowName },
+            programMetadata = ExecutionProgramProjectionMetadata(
+                sourceIntent = program.sourceIntent,
+                loweringReport = program.loweringReport,
+                controlDecision = controlDecision
+            )
+        )
+        return CanonicalExecutionGraphBuild(graph, bindings)
+    }
+
+    private fun buildWorkflow(
+        plan: ExecutionPlan,
+        mergeContracts: List<FlowMergeContract>,
+        producerNodeIds: Map<FlowProducerIdentity, String>,
+        workflowNameOverride: String?,
+        identityNamespace: String?
     ): CanonicalExecutionGraphBuild {
         require(plan.flowName.isNotBlank()) { "Cannot build canonical graph from a blank flow name." }
-        val workflowName = workflowName(plan)
+        val workflowName = workflowNameOverride ?: workflowName(plan)
         val workflowId = CanonicalWorkflowId(identity("workflow", workflowName))
         val nodes = mutableListOf<CanonicalExecutionNode>()
         val taskBindings = mutableListOf<CanonicalTaskBinding>()
@@ -60,9 +157,15 @@ object CanonicalExecutionGraphBuilder {
                 is ApprovalNode -> node.sourceId
                 else -> null
             }
+            val authoredIdentity = authored?.takeIf(String::isNotBlank)?.let { value ->
+                identityNamespace?.let { namespace -> "$namespace::$value" } ?: value
+            }
+            val structuralIdentity = path.joinToString("/").let { value ->
+                identityNamespace?.let { namespace -> "$namespace::$value" } ?: value
+            }
             return CanonicalNodeId(
-                authored?.takeIf(String::isNotBlank)?.let { identity("source", it) }
-                    ?: identity("structure", path.joinToString("/"))
+                authoredIdentity?.let { identity("source", it) }
+                    ?: identity("structure", structuralIdentity)
             )
         }
 
@@ -269,16 +372,32 @@ object CanonicalExecutionGraphBuilder {
             nodes = nodes,
             dependencyEdges = plan.dependencyRelations.map { relation -> relation.toCanonical(::canonicalReference) }
         )
+        val planMetadata = ExecutionPlanProjectionMetadata(
+            planVersion = plan.planVersion,
+            dependencies = plan.dependencies,
+            requiredCapabilities = plan.requiredCapabilities,
+            sourceIntent = plan.sourceIntent,
+            loweringReport = plan.loweringReport,
+            assumptions = plan.assumptions,
+            targetHints = plan.targetHints,
+            controlRequirements = plan.controlRequirements,
+            controlEvidence = plan.controlEvidence,
+            controlDecision = plan.controlDecision,
+            topologyRequirements = plan.topologyRequirements
+        )
         val bindings = CanonicalExecutionBindingSet(
             tasks = taskBindings,
             nodeMetadata = nodeMetadata,
-            planMetadata = ExecutionPlanProjectionMetadata(
-                planVersion = plan.planVersion,
-                dependencies = plan.dependencies,
+            workflowPlans = listOf(
+                WorkflowExecutionPlanProjectionMetadata(
+                    workflowId = workflowId,
+                    workflowName = workflowName,
+                    planMetadata = planMetadata
+                )
+            ),
+            programMetadata = ExecutionProgramProjectionMetadata(
                 sourceIntent = plan.sourceIntent,
                 loweringReport = plan.loweringReport,
-                assumptions = plan.assumptions,
-                targetHints = plan.targetHints,
                 controlDecision = plan.controlDecision
             )
         )
@@ -334,6 +453,22 @@ object CanonicalExecutionGraphBuilder {
             requiredCapabilities = requiredCapabilities.map(::CanonicalCapabilityId)
         )
 
+    private fun PlanTrigger.toCanonical(
+        workflowIdsByName: Map<String, CanonicalWorkflowId>
+    ): CanonicalGraphTrigger = CanonicalGraphTrigger(
+        id = id,
+        kind = CanonicalTriggerKind.fromWire(type),
+        workflows = workflows.distinct().sorted().map { workflowName ->
+            requireNotNull(workflowIdsByName[workflowName]) {
+                "Trigger '$id' references unknown workflow '$workflowName'."
+            }
+        },
+        schedule = schedule?.toCanonical(),
+        event = event,
+        params = params,
+        requiredCapabilities = requiredCapabilities.map(::CanonicalCapabilityId)
+    )
+
     private fun PlanSchedule.toCanonical(): CanonicalGraphSchedule = CanonicalGraphSchedule(
         kind = CanonicalScheduleKind.fromWire(kind),
         expression = expression,
@@ -375,6 +510,17 @@ object CanonicalExecutionGraphBuilder {
         "Set" -> CanonicalControlOperationKind.SET
         "Expect" -> CanonicalControlOperationKind.EXPECT
         else -> error("Unsupported control operation kind '$kind'.")
+    }
+
+    private fun <T, K : Comparable<K>> mergeIdentical(
+        values: List<T>,
+        key: (T) -> K,
+        label: String
+    ): List<T> = values.groupBy(key).toSortedMap().map { (identity, grouped) ->
+        require(grouped.distinct().size == 1) {
+            "Multi-workflow $label '$identity' has contradictory definitions."
+        }
+        grouped.first()
     }
 
     private fun identity(kind: String, value: String): String = "$kind:${value.length}:$value"

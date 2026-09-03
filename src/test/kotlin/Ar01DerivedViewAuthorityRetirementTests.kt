@@ -40,7 +40,7 @@ class Ar01DerivedViewAuthorityRetirementTests {
             "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt"
         ).readText()
         assertFalse(authorizationSource.contains("ExecutionPlanCanonicalizer"))
-        assertTrue(authorizationSource.contains("toCanonicalExecutionPlan("))
+        assertTrue(authorizationSource.contains("toWorkflowExecutionPlanSet("))
     }
 
     @Test

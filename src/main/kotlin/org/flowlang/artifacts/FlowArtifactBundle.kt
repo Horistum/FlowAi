@@ -44,6 +44,114 @@ class FlowArtifactBundleAnalyzer {
         renderedArtifact = renderedArtifact
     )
 
+    fun workflowPlanSetBundle(
+        flowName: String,
+        strict: Boolean,
+        includeAiNormalization: Boolean
+    ): FlowArtifactBundleReport {
+        val entries = mutableListOf<FlowArtifactEntry>()
+
+        fun add(
+            name: String,
+            role: FlowArtifactRole,
+            schema: String = "",
+            derived: Boolean = true,
+            derivedFrom: List<String> = emptyList()
+        ) {
+            entries += FlowArtifactEntry(
+                name = name,
+                role = role,
+                schema = schema,
+                required = true,
+                derived = derived,
+                pipelineIndex = entries.size + 1,
+                derivedFrom = derivedFrom
+            )
+        }
+
+        add("standard-version.txt", FlowArtifactRole.METADATA, derived = false)
+        add(
+            "standard-diagnostic-catalog.json",
+            FlowArtifactRole.METADATA,
+            "schemas/standard-diagnostic-catalog.schema.json",
+            derived = false
+        )
+        if (includeAiNormalization) {
+            add(
+                "ai-normalization-report.json",
+                FlowArtifactRole.REPORT,
+                "schemas/ai-normalization-report.schema.json",
+                derivedFrom = listOf("human-ai-intent")
+            )
+        }
+        add(
+            "normalized-intent.json",
+            FlowArtifactRole.MODEL,
+            "schemas/intent.schema.json",
+            derivedFrom = listOf("human-ai-intent")
+        )
+        add(
+            "intent-design-report.json",
+            FlowArtifactRole.REPORT,
+            "schemas/intent-design-report.schema.json",
+            derivedFrom = listOf("normalized-intent.json")
+        )
+        add(
+            "intent-decision-report.json",
+            FlowArtifactRole.REPORT,
+            "schemas/intent-decision-report.schema.json",
+            derivedFrom = listOf("normalized-intent.json")
+        )
+        add(
+            "intent-capability-validation-report.json",
+            FlowArtifactRole.REPORT,
+            "schemas/intent-capability-validation-report.schema.json",
+            derivedFrom = listOf("normalized-intent.json")
+        )
+        add(
+            "workflow-compilation-evidence.json",
+            FlowArtifactRole.REPORT,
+            derivedFrom = listOf("intent-capability-validation-report.json")
+        )
+        add(
+            "workflow-execution-plan-set.json",
+            FlowArtifactRole.PLAN,
+            "schemas/workflow-execution-plan-set.schema.json",
+            derivedFrom = listOf("workflow-compilation-evidence.json")
+        )
+        add(
+            "target-neutral-planning-report.json",
+            FlowArtifactRole.REPORT,
+            "schemas/target-neutral-planning-report.schema.json",
+            derivedFrom = listOf("workflow-execution-plan-set.json")
+        )
+        add(
+            "artifact-integrity-report.json",
+            FlowArtifactRole.REPORT,
+            "schemas/artifact-integrity-report.schema.json",
+            derivedFrom = listOf(
+                "standard-version.txt",
+                "standard-diagnostic-catalog.json",
+                "workflow-execution-plan-set.json"
+            )
+        )
+        add(
+            "flow-artifact-bundle.json",
+            FlowArtifactRole.METADATA,
+            "schemas/flow-artifact-bundle.schema.json",
+            derivedFrom = entries.map { it.name }
+        )
+        return FlowArtifactBundleReport(
+            flowName = flowName,
+            target = "",
+            strict = strict,
+            artifacts = entries,
+            requiredArtifacts = entries.map { it.name },
+            optionalArtifacts = emptyList(),
+            pipeline = entries.map { it.name }
+        )
+    }
+
     fun normalizationBundle(
         flowName: String,
         target: String,

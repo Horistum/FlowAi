@@ -156,7 +156,9 @@ class IntentLoweringDiagnosticHonestyTests {
                 IntentWorkflow("two", IntentWorkflowKind.CUSTOM)
             )
         )
-        assertContains(report(multiple).issues.map { it.code }, "MULTIPLE_WORKFLOWS_LOWERING_UNSUPPORTED")
+        val multipleReport = report(multiple)
+        assertTrue(multipleReport.valid, multipleReport.issues.toString())
+        assertFalse(multipleReport.issues.any { it.code == "MULTIPLE_WORKFLOWS_LOWERING_UNSUPPORTED" })
 
         val continueOnError = singleStep(IntentStep("test", StandardCapability.TEST)).copy(
             failure = IntentFailurePolicy(stopOnError = false)

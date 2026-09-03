@@ -24,11 +24,11 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         val stepIds = steps.map { it.id }
 
         if (intent.name.isBlank()) issues += err("INTENT_NAME_EMPTY", "Intent name must not be empty.")
-        if (intent.workflows.size > 1) {
-            issues += err(
-                "MULTIPLE_WORKFLOWS_LOWERING_UNSUPPORTED",
-                "Intent declares ${intent.workflows.size} workflows, but canonical AST lowering does not yet preserve independent workflow boundaries."
-            )
+        intent.workflows.filter { it.name.isBlank() }.forEach {
+            issues += err("EMPTY_INTENT_WORKFLOW_NAME", "Intent workflow name must not be empty.")
+        }
+        intent.workflows.groupBy { it.name }.filterValues { it.size > 1 }.keys.forEach { name ->
+            issues += err("DUPLICATE_INTENT_WORKFLOW", "Intent workflow '$name' is declared more than once.")
         }
         if (!intent.failure.stopOnError) {
             issues += err(
@@ -42,11 +42,30 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
                 "Policy '${policy.name}' uses type '${policy.type}', which has no canonical lowering contract."
             )
         }
-        val workflowNames = intent.workflows.map { it.name }.toSet()
+        val workflowNames = intent.workflows.map { it.name }.filter(String::isNotBlank).toSet()
+            .ifEmpty { setOf("main") }
         intent.triggers.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { id ->
             issues += err("DUPLICATE_INTENT_TRIGGER", "Intent trigger '$id' is declared more than once.")
         }
         intent.triggers.forEach { trigger ->
+            if (trigger.workflows.isEmpty()) {
+                issues += err(
+                    "EMPTY_TRIGGER_WORKFLOW_ROUTE",
+                    "Trigger '${trigger.id}' must route to at least one workflow."
+                )
+            }
+            trigger.workflows.filter(String::isBlank).forEach {
+                issues += err(
+                    "EMPTY_TRIGGER_WORKFLOW_ROUTE",
+                    "Trigger '${trigger.id}' contains an empty workflow route."
+                )
+            }
+            trigger.workflows.groupBy { it }.filterValues { it.size > 1 }.keys.forEach { workflow ->
+                issues += err(
+                    "DUPLICATE_TRIGGER_WORKFLOW_ROUTE",
+                    "Trigger '${trigger.id}' routes to workflow '$workflow' more than once."
+                )
+            }
             trigger.workflows.filter { it !in workflowNames }.forEach { workflow ->
                 issues += err("UNKNOWN_TRIGGER_WORKFLOW", "Trigger '${trigger.id}' references unknown workflow '$workflow'.")
             }
@@ -72,7 +91,20 @@ class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleReg
         stepIds.groupBy { it }.filterValues { it.size > 1 }.keys.forEach { id ->
             issues += err("DUPLICATE_INTENT_STEP", "Intent step '$id' is declared more than once.")
         }
+        val workflowByStep = intent.workflows.flatMap { workflow ->
+            workflow.steps.map { step -> step.id to workflow.name }
+        }.groupBy({ it.first }, { it.second })
         steps.forEach { step ->
+            val owner = workflowByStep[step.id]?.singleOrNull()
+            step.requires.filter { requirement ->
+                requirement in stepIds && workflowByStep[requirement]?.singleOrNull() != owner
+            }.forEach { dependency ->
+                issues += err(
+                    "CROSS_WORKFLOW_STEP_DEPENDENCY",
+                    "Step '${step.id}' in workflow '$owner' cannot depend on '$dependency' in workflow " +
+                        "'${workflowByStep[dependency]?.singleOrNull()}'. Inter-workflow ordering requires an explicit future contract."
+                )
+            }
             step.requires.filter { it !in stepIds }.forEach { missing ->
                 issues += err("UNKNOWN_STEP_DEPENDENCY", "Unknown intent step dependency '$missing' required by '${step.id}'.")
             }

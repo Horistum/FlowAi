@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/workflow-execution-plan-set/1.0/workflow-execution-plan-set.schema.json",
+  "title": "Flow Workflow Execution Plan Set v1.0",
+  "description": "Public target-neutral envelope for one or more graph-derived workflow plans. ExecutionPlan and CanonicalExecutionPlan remain exact single-workflow compatibility contracts.",
+  "type": "object",
+  "required": [
+    "contractVersion",
+    "flowName",
+    "workflows",
+    "multiWorkflow"
+  ],
+  "properties": {
+    "contractVersion": {
+      "const": "1.0"
+    },
+    "flowName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "triggers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "workflows"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workflows": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "requiredCapabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "controlRequirements": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "controlEvidence": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "controlDecision": {
+      "type": "object"
+    },
+    "topologyRequirements": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "sourceIntent": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "loweringReport": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "workflows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/workflow"
+      }
+    },
+    "multiWorkflow": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "workflow": {
+      "type": "object",
+      "required": [
+        "workflowId",
+        "workflowName",
+        "executionPlan",
+        "canonicalPlan"
+      ],
+      "properties": {
+        "workflowId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "workflowName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executionPlan": {
+          "$ref": "#/$defs/plan"
+        },
+        "canonicalPlan": {
+          "$ref": "#/$defs/plan"
+        }
+      },
+      "additionalProperties": false
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "flowName",
+        "planVersion",
+        "nodes"
+      ],
+      "properties": {
+        "flowName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planVersion": {
+          "const": "2.4"
+        },
+        "inputs": {
+          "type": "array"
+        },
+        "triggers": {
+          "type": "array"
+        },
+        "outputs": {
+          "type": "array"
+        },
+        "nodes": {
+          "type": "array"
+        },
+        "dependencyRelations": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
