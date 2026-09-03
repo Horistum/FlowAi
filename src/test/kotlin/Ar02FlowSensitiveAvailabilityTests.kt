@@ -48,7 +48,7 @@ class Ar02FlowSensitiveAvailabilityTests {
 
         assertEquals(1, Regex(Regex.escape("flowAvailabilityAnalyzer.analyze(ast)")).findAll(compiler).count())
         assertTrue(compiler.contains("flowValidator.validate(ast, availability)"))
-        assertTrue(compiler.contains("flowPlanner.plan(ast, availability)"))
+        assertTrue(compiler.contains("flowPlanner.planWithProvenance(ast, availability)"))
         assertFalse(planner.contains("val results = mutableMapOf<String, String>()"))
         assertTrue(planner.contains("private val producerNodeIds = mutableMapOf<FlowProducerIdentity, String>()"))
     }
@@ -286,6 +286,43 @@ class Ar02FlowSensitiveAvailabilityTests {
         val producer = (plan.nodes[0] as ConditionNode).then.single() as TaskNode
         val consumer = (plan.nodes[1] as ConditionNode).then.single() as TaskNode
         assertEquals(listOf(producer.id), consumer.dependsOn)
+    }
+
+    @Test
+    fun staticallyUnreachableExistenceArmPreservesEmptyPathInvariantsAndDoesNotLeakOutputs() {
+        val document = flow(
+            IfNode(
+                condition = UnaryPostfixExpressionNode(operator = "exists", operand = ref("condition")),
+                then = listOf(shell(result = "reachableValue")),
+                otherwise = listOf(
+                    ForNode(
+                        item = "item",
+                        source = ref("items"),
+                        body = listOf(shell(result = "unreachableValue", command = ref("item")))
+                    )
+                )
+            ),
+            shell(result = "consumer", command = ref("reachableValue"))
+        )
+
+        val analysis = FlowAvailabilityAnalyzer().analyze(document)
+        assertEquals(
+            FlowValueAvailability.DEFINITELY_DEFINED,
+            analysis.bindingBefore(FlowStatementPath.flowStep(1), "reachableValue").availability
+        )
+        assertEquals(
+            FlowValueAvailability.UNDEFINED,
+            analysis.bindingBefore(FlowStatementPath.flowStep(1), "unreachableValue").availability
+        )
+
+        val validation = FlowValidator(modules).validate(document)
+        assertTrue(validation.valid, validation.issues.toString())
+        val plan = FlowPlanner(modules).plan(document)
+        val condition = plan.nodes[0] as ConditionNode
+        val producer = condition.then.single() as TaskNode
+        val consumer = plan.nodes[1] as TaskNode
+        assertEquals(listOf(producer.id), consumer.dependsOn)
+        assertEquals(setOf("reachableValue", "consumer"), plan.outputs.map { it.name }.toSet())
     }
 
     private fun flow(vararg steps: org.flowlang.ast.StatementNode): FlowDocument =

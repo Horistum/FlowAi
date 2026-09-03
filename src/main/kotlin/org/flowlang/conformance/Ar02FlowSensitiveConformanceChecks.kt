@@ -49,13 +49,13 @@ class Ar02FlowSensitiveConformanceChecks(
         if ("flowValidator.validate(ast, availability)" !in compiler) {
             add("FlowCompilationService does not pass the shared availability result to FlowValidator.")
         }
-        if ("flowPlanner.plan(ast, availability)" !in compiler) {
+        if ("flowPlanner.planWithProvenance(ast, availability)" !in compiler) {
             add("FlowCompilationService does not pass the shared availability result to FlowPlanner.")
         }
         if ("validate(document, FlowAvailabilityAnalyzer().analyze(document))" !in validator) {
             add("The direct FlowValidator boundary does not delegate through FlowAvailabilityAnalyzer.")
         }
-        if ("plan(document, FlowAvailabilityAnalyzer().analyze(document))" !in planner) {
+        if ("planWithProvenance(document, FlowAvailabilityAnalyzer().analyze(document)).plan" !in planner) {
             add("The direct FlowPlanner boundary does not enforce the shared availability invariant.")
         }
         if ("val results = mutableMapOf<String, String>()" in planner || "ctx.results" in planner) {

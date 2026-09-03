@@ -163,6 +163,7 @@ object CanonicalExecutionGraphValidator {
         }
 
         validateEdges(graph, nodeById, issues)
+        validateMerges(graph, nodeById, issues)
         validateOrderingAcyclic(graph, issues)
         validateControls(build, issues)
         graph.topologyRequirements.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { id ->
@@ -249,6 +250,101 @@ object CanonicalExecutionGraphValidator {
             )
             if (!seen.add(key)) {
                 issues += issue("graph.edge.duplicate", location, "Canonical dependency relation is declared more than once.")
+            }
+        }
+    }
+
+    private fun validateMerges(
+        graph: CanonicalExecutionGraph,
+        nodes: Map<CanonicalNodeId, CanonicalExecutionNode>,
+        issues: MutableList<CanonicalExecutionGraphIssue>
+    ) {
+        graph.valueMerges.groupBy(CanonicalValueMerge::id).filterValues { it.size > 1 }.keys.forEach { id ->
+            issues += issue("graph.merge.duplicate", "valueMerges.$id", "Merge '$id' is declared more than once.")
+        }
+        graph.valueMerges.groupBy(CanonicalValueMerge::targetNodeId).filterValues { it.size > 1 }.keys.forEach { id ->
+            issues += issue("graph.merge.target.duplicate", "valueMerges.$id", "Node '$id' owns more than one merge contract.")
+        }
+        graph.valueMerges.forEachIndexed { index, merge ->
+            val location = "valueMerges[$index]"
+            val target = nodes[merge.targetNodeId]
+            if (target == null) {
+                issues += issue("graph.merge.target.dangling", "$location.targetNodeId", "Merge target '${merge.targetNodeId}' does not exist.")
+                return@forEachIndexed
+            }
+            if (target.workflow != merge.workflow) {
+                issues += issue("graph.merge.workflow.mismatch", "$location.workflow", "Merge workflow does not match its target node.")
+            }
+            if (target !is CanonicalControlOperationNode || target.operation != CanonicalControlOperationKind.SET) {
+                issues += issue("graph.merge.target.invalid", "$location.targetNodeId", "Merge target must be one canonical SET node.")
+            }
+            if (target is CanonicalControlOperationNode && target.operation == CanonicalControlOperationKind.SET) {
+                val expectedDetail =
+                    "${merge.resultBinding} = merge(${merge.inputs.map { it.binding }.sorted().joinToString(", ")})"
+                if (target.detail != expectedDetail) {
+                    issues += issue(
+                        "graph.merge.target.detail.mismatch",
+                        "$location.targetNodeId",
+                        "Merge target detail must be the canonical projection of its typed merge contract."
+                    )
+                }
+            }
+            val inputTypes = merge.inputs.map(CanonicalValueMergeInput::valueType)
+            val knownInputTypes = inputTypes.filterNotNull().distinct()
+            if (knownInputTypes.size > 1) {
+                issues += issue(
+                    "graph.merge.type.incompatible",
+                    "$location.inputs",
+                    "Merge inputs carry incompatible canonical value types."
+                )
+            }
+            val derivedType = knownInputTypes.singleOrNull()
+                ?.takeIf { candidate -> inputTypes.all { inputType -> inputType == candidate } }
+            if (merge.valueType != derivedType) {
+                issues += issue(
+                    "graph.merge.type.mismatch",
+                    "$location.valueType",
+                    "Merge result type must be derived only when every input has the same known type."
+                )
+            }
+            merge.inputs.forEachIndexed { inputIndex, input ->
+                val producer = nodes[input.producerNodeId]
+                if (producer == null) {
+                    issues += issue("graph.merge.input.dangling", "$location.inputs[$inputIndex].producerNodeId", "Merge input producer '${input.producerNodeId}' does not exist.")
+                } else if (producer.workflow != merge.workflow) {
+                    issues += issue("graph.merge.input.workflow.crossing", "$location.inputs[$inputIndex].producerNodeId", "Merge input crosses workflow ownership.")
+                }
+                val valueEdge = graph.dependencyEdges.any { edge ->
+                    edge.sourceNodeId == input.producerNodeId &&
+                        edge.targetNodeId == merge.targetNodeId &&
+                        edge.kind == CanonicalDependencyKind.VALUE &&
+                        edge.channel == input.binding &&
+                        edge.evidence == CanonicalDependencyEvidence.DATA_REFERENCE &&
+                        edge.resolution == CanonicalDependencyResolution.RESOLVED
+                }
+                if (!valueEdge) {
+                    issues += issue("graph.merge.edge.value.missing", "$location.inputs[$inputIndex]", "Merge input '${input.binding}' has no exact VALUE edge to its merge node.")
+                }
+                val orderingEdge = graph.dependencyEdges.any { edge ->
+                    edge.sourceNodeId == input.producerNodeId &&
+                        edge.targetNodeId == merge.targetNodeId &&
+                        edge.kind == CanonicalDependencyKind.ORDERING &&
+                        edge.evidence == CanonicalDependencyEvidence.DATA_REFERENCE &&
+                        edge.resolution == CanonicalDependencyResolution.RESOLVED
+                }
+                if (!orderingEdge) {
+                    issues += issue("graph.merge.edge.ordering.missing", "$location.inputs[$inputIndex]", "Merge input '${input.binding}' has no ordering edge to its merge node.")
+                }
+            }
+            val allowedValueEdges = merge.inputs.map { it.producerNodeId to it.binding }.toSet()
+            graph.dependencyEdges.filter { edge ->
+                edge.targetNodeId == merge.targetNodeId &&
+                    edge.kind == CanonicalDependencyKind.VALUE &&
+                    edge.evidence == CanonicalDependencyEvidence.DATA_REFERENCE
+            }.forEach { edge ->
+                if ((edge.sourceNodeId to edge.channel) !in allowedValueEdges) {
+                    issues += issue("graph.merge.edge.value.unowned", location, "Merge target carries a VALUE edge not owned by its typed merge contract.")
+                }
             }
         }
     }

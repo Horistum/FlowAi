@@ -109,7 +109,7 @@ implementationStrategy:
 implementationSlices:
   - id: "AR-02A"
     name: "Path-Sensitive Analysis and Definite-Availability Gate"
-    status: "selected"
+    status: "complete"
     outcomes:
       - "Introduce immutable workflow/path state, typed symbol availability and deterministic join algebra shared by validation and planning."
       - "Cover if, match, loop, parallel, retry, try, nested handlers and global handler entry without changing public artifact versions."
@@ -118,14 +118,14 @@ implementationSlices:
     completionGate: "No mutable result-name merge or branch traversal order can make an unavailable value pass validation or select a producer in planning."
   - id: "AR-02B"
     name: "Explicit Merge and Path-Aware Producer Semantics"
-    status: "planned"
+    status: "complete"
     outcomes:
       - "Introduce the typed merge contract and any required bounded language or artifact migration."
       - "Derive value, ordering and continuity relations from producer and merge identities."
       - "Remove last-writer-wins producer selection and prove branch permutation invariance."
   - id: "AR-02C"
     name: "First-Class Workflow Ownership and Trigger Routing"
-    status: "planned"
+    status: "selected"
     outcomes:
       - "Preserve multiple workflow identities, memberships, roots and trigger routes through canonical graph construction and digest."
       - "Replace workflows.single() assumptions in compiler projections with explicit single- or multi-workflow contracts."

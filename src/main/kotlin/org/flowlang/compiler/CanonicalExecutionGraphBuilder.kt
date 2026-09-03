@@ -1,5 +1,7 @@
 package org.flowlang.compiler
 
+import org.flowlang.core.FlowMergeContract
+import org.flowlang.core.FlowProducerIdentity
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ControlNode
@@ -19,7 +21,21 @@ import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 
 object CanonicalExecutionGraphBuilder {
+    private const val MERGE_EVIDENCE_PREFIX = "flow.merge:"
+
     fun build(plan: ExecutionPlan): CanonicalExecutionGraphBuild {
+        require(plan.explicitMergeTargetNodeIds().isEmpty()) {
+            "ExecutionPlan contains explicit merge evidence but no path-aware merge contracts. " +
+                "Use the compiler authorization boundary."
+        }
+        return build(plan, emptyList(), emptyMap())
+    }
+
+    internal fun build(
+        plan: ExecutionPlan,
+        mergeContracts: List<FlowMergeContract>,
+        producerNodeIds: Map<FlowProducerIdentity, String>
+    ): CanonicalExecutionGraphBuild {
         require(plan.flowName.isNotBlank()) { "Cannot build canonical graph from a blank flow name." }
         val workflowName = workflowName(plan)
         val workflowId = CanonicalWorkflowId(identity("workflow", workflowName))
@@ -27,6 +43,16 @@ object CanonicalExecutionGraphBuilder {
         val taskBindings = mutableListOf<CanonicalTaskBinding>()
         val nodeMetadata = mutableListOf<CanonicalNodeProjectionMetadata>()
         val canonicalByPlanId = linkedMapOf<String, CanonicalNodeId>()
+        val mergeByPlanNodeId = mergeContracts.associateBy { merge ->
+            requireNotNull(producerNodeIds[merge.producer]) {
+                "Merge producer '${merge.producer}' has no planner node binding."
+            }
+        }
+        val mergeEvidenceTargets = plan.explicitMergeTargetNodeIds()
+        require(mergeByPlanNodeId.keys == mergeEvidenceTargets) {
+            "ExecutionPlan merge evidence and typed merge contracts differ: " +
+                "evidence=${mergeEvidenceTargets.sorted()} contracts=${mergeByPlanNodeId.keys.sorted()}."
+        }
 
         fun nodeIdentity(node: PlanNode, path: List<String>): CanonicalNodeId {
             val authored = when (node) {
@@ -45,6 +71,7 @@ object CanonicalExecutionGraphBuilder {
             require(canonicalByPlanId.putIfAbsent(node.id, id) == null) {
                 "ExecutionPlan contains duplicate plan node id '${node.id}'."
             }
+            val merge = mergeByPlanNodeId[node.id]
             nodeMetadata += CanonicalNodeProjectionMetadata(
                 nodeId = id,
                 planNodeId = node.id,
@@ -55,7 +82,8 @@ object CanonicalExecutionGraphBuilder {
                     is TaskNode -> node.effects
                     is DataOpNode -> node.effects
                     else -> emptyList()
-                }
+                },
+                projectionDetail = if (merge != null) (node as? ControlNode)?.detail else null
             )
 
             fun children(values: List<PlanNode>, role: String): List<CanonicalNodeId> =
@@ -187,7 +215,7 @@ object CanonicalExecutionGraphBuilder {
                     id = id,
                     workflow = workflowId,
                     operation = node.controlOperationKind(),
-                    detail = node.detail
+                    detail = merge?.canonicalDetail() ?: node.detail
                 )
             }
             nodes += canonical
@@ -201,6 +229,32 @@ object CanonicalExecutionGraphBuilder {
         fun canonicalReference(planNodeId: String): CanonicalNodeId =
             canonicalByPlanId[planNodeId] ?: CanonicalNodeId(identity("missing-plan-node", planNodeId))
 
+        val canonicalMerges = mergeContracts
+            .sortedWith(compareBy({ it.identity.joinPath.workflow.value }, { it.identity.joinPath.value }, { it.identity.resultBinding }))
+            .map { merge ->
+                val targetPlanNodeId = requireNotNull(producerNodeIds[merge.producer])
+                CanonicalValueMerge(
+                    id = CanonicalMergeId(identity("merge", "${merge.identity.joinPath}:${merge.identity.resultBinding}")),
+                    workflow = workflowId,
+                    targetNodeId = canonicalReference(targetPlanNodeId),
+                    joinPath = merge.identity.joinPath.toString(),
+                    resultBinding = merge.identity.resultBinding,
+                    paths = merge.paths.map { it.value }.sorted(),
+                    inputs = merge.incoming.map { input ->
+                        val sourcePlanNodeId = requireNotNull(producerNodeIds[input.producer]) {
+                            "Merge input producer '${input.producer}' has no planner node binding."
+                        }
+                        CanonicalValueMergeInput(
+                            binding = input.binding,
+                            producerNodeId = canonicalReference(sourcePlanNodeId),
+                            paths = input.paths.map { it.value }.sorted(),
+                            valueType = input.valueType?.value?.let(::CanonicalValueTypeId)
+                        )
+                    },
+                    valueType = merge.valueType?.value?.let(::CanonicalValueTypeId)
+                )
+            }
+
         val graph = CanonicalExecutionGraph(
             flowName = plan.flowName,
             workflows = listOf(CanonicalWorkflow(workflowId, workflowName, rootNodeIds)),
@@ -211,6 +265,7 @@ object CanonicalExecutionGraphBuilder {
             controlRequirements = plan.controlRequirements,
             controlEvidence = plan.controlEvidence,
             topologyRequirements = plan.topologyRequirements,
+            valueMerges = canonicalMerges,
             nodes = nodes,
             dependencyEdges = plan.dependencyRelations.map { relation -> relation.toCanonical(::canonicalReference) }
         )
@@ -229,6 +284,15 @@ object CanonicalExecutionGraphBuilder {
         )
         return CanonicalExecutionGraphBuild(graph, bindings)
     }
+
+    private fun ExecutionPlan.explicitMergeTargetNodeIds(): Set<String> =
+        dependencyRelations.asSequence()
+            .filter { relation -> relation.evidenceReference?.startsWith(MERGE_EVIDENCE_PREFIX) == true }
+            .map { relation -> relation.targetNodeId }
+            .toSet()
+
+    private fun FlowMergeContract.canonicalDetail(): String =
+        "${identity.resultBinding} = merge(${incoming.map { it.binding }.sorted().joinToString(", ")})"
 
     private fun workflowName(plan: ExecutionPlan): String {
         val authored = plan.sourceIntent?.workflows.orEmpty().map { it.name }.filter(String::isNotBlank).distinct()

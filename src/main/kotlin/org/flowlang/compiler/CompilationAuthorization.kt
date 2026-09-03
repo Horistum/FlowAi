@@ -1,9 +1,13 @@
 package org.flowlang.compiler
 
 import org.flowlang.ai.normalization.IntentProposalReviewEvidence
+import org.flowlang.core.FlowAvailabilityAnalysis
+import org.flowlang.core.FlowMergeContract
+import org.flowlang.core.FlowProducerIdentity
 import org.flowlang.intent.IntentValidationReport
 import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.FlowPlanningResult
 import org.flowlang.planner.PlanDependencyRelations
 import org.flowlang.planner.TaskNode
 import org.flowlang.validator.ValidationReport
@@ -130,6 +134,36 @@ internal fun CompilationAuthorization.requireAuthorizedTask(task: TaskNode): Aut
 }
 
 object CanonicalExecutionGraphGate {
+    internal fun authorizeCompilation(
+        source: CompilationSource,
+        intentValidation: IntentValidationReport?,
+        proposalReview: IntentProposalReviewEvidence?,
+        flowValidation: ValidationReport,
+        planning: FlowPlanningResult,
+        availability: FlowAvailabilityAnalysis
+    ): CompilationAuthorization {
+        require(flowValidation.valid) {
+            "Canonical graph authorization requires successful Flow validation."
+        }
+        requireCompilationEvidence(source, intentValidation, proposalReview)
+        return authorize(
+            plannerPlan = planning.plan,
+            mergeContracts = availability.merges,
+            producerNodeIds = planning.producerNodeIds,
+            binding = { digest ->
+                CompilationValidationBinding(
+                    origin = CompilationAuthorizationOrigin.COMPILATION_UNIT,
+                    graphDigest = digest.value,
+                    sourceSha256 = source.sha256,
+                    intentValid = intentValidation?.valid,
+                    flowValid = flowValidation.valid,
+                    graphValid = true,
+                    proposalReviewValid = proposalReview?.accepted
+                )
+            }
+        )
+    }
+
     fun authorizeCompilation(
         source: CompilationSource,
         intentValidation: IntentValidationReport?,
@@ -140,26 +174,7 @@ object CanonicalExecutionGraphGate {
         require(flowValidation.valid) {
             "Canonical graph authorization requires successful Flow validation."
         }
-        when (source.frontend) {
-            CompilationFrontend.FLOW_SOURCE -> {
-                require(intentValidation == null && proposalReview == null) {
-                    "Flow Source authorization cannot claim Intent or AI proposal-review evidence."
-                }
-            }
-            CompilationFrontend.INTENT_YAML -> {
-                require(intentValidation?.valid == true && proposalReview == null) {
-                    "Intent YAML authorization requires successful Intent validation and no AI review evidence."
-                }
-            }
-            CompilationFrontend.REVIEWED_AI_PROPOSAL -> {
-                require(intentValidation?.valid == true && proposalReview?.accepted == true) {
-                    "Reviewed AI proposal authorization requires successful proposal review and Intent validation."
-                }
-                require(proposalReview.validation == intentValidation) {
-                    "Reviewed AI proposal authorization requires the exact compiler Intent validation report."
-                }
-            }
-        }
+        requireCompilationEvidence(source, intentValidation, proposalReview)
         return authorize(
             plannerPlan = plannerPlan,
             binding = { digest ->
@@ -174,6 +189,29 @@ object CanonicalExecutionGraphGate {
                 )
             }
         )
+    }
+
+    private fun requireCompilationEvidence(
+        source: CompilationSource,
+        intentValidation: IntentValidationReport?,
+        proposalReview: IntentProposalReviewEvidence?
+    ) {
+        when (source.frontend) {
+            CompilationFrontend.FLOW_SOURCE -> require(intentValidation == null && proposalReview == null) {
+                "Flow Source authorization cannot claim Intent or AI proposal-review evidence."
+            }
+            CompilationFrontend.INTENT_YAML -> require(intentValidation?.valid == true && proposalReview == null) {
+                "Intent YAML authorization requires successful Intent validation and no AI review evidence."
+            }
+            CompilationFrontend.REVIEWED_AI_PROPOSAL -> {
+                require(intentValidation?.valid == true && proposalReview?.accepted == true) {
+                    "Reviewed AI proposal authorization requires successful proposal review and Intent validation."
+                }
+                require(proposalReview.validation == intentValidation) {
+                    "Reviewed AI proposal authorization requires the exact compiler Intent validation report."
+                }
+            }
+        }
     }
 
     /**
@@ -221,9 +259,11 @@ object CanonicalExecutionGraphGate {
 
     private fun authorize(
         plannerPlan: ExecutionPlan,
-        binding: (CanonicalExecutionGraphDigest) -> CompilationValidationBinding
+        binding: (CanonicalExecutionGraphDigest) -> CompilationValidationBinding,
+        mergeContracts: List<FlowMergeContract> = emptyList(),
+        producerNodeIds: Map<FlowProducerIdentity, String> = emptyMap()
     ): CompilationAuthorization {
-        val build = CanonicalExecutionGraphBuilder.build(plannerPlan)
+        val build = CanonicalExecutionGraphBuilder.build(plannerPlan, mergeContracts, producerNodeIds)
         CanonicalExecutionGraphValidator.requireValid(build)
         val digest = CanonicalExecutionGraphDigestComputer.digest(build.graph)
         val projected = CanonicalExecutionGraphProjection.toExecutionPlan(build)

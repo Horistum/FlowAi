@@ -40,7 +40,8 @@ data class CanonicalNodeProjectionMetadata(
     val planNodeKind: String,
     val sourceId: String? = null,
     val sourceDescription: String? = null,
-    val legacyEffects: List<String> = emptyList()
+    val legacyEffects: List<String> = emptyList(),
+    val projectionDetail: String? = null
 ) {
     init {
         require(planNodeId.isNotBlank()) { "Projection plan-node id must not be blank." }
@@ -52,6 +53,9 @@ data class CanonicalNodeProjectionMetadata(
             "Node source description must be absent or non-blank."
         }
         require(legacyEffects.none(String::isBlank)) { "Legacy effect projection values must not be blank." }
+        require(projectionDetail == null || projectionDetail.isNotBlank()) {
+            "Projection detail must be absent or non-blank."
+        }
     }
 }
 

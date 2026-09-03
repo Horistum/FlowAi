@@ -47,21 +47,26 @@ object CanonicalExecutionGraphDigestComputer {
         }
     }
 
-    private fun canonicalGraph(graph: CanonicalExecutionGraph): String = record(
-        "graph",
-        "version" to atom(graph.graphVersion),
-        "flowName" to atom(graph.flowName),
-        "workflows" to unordered(graph.workflows.map(::canonicalWorkflow)),
-        "inputs" to unordered(graph.inputs.map(::canonicalInput)),
-        "triggers" to unordered(graph.triggers.map(::canonicalTrigger)),
-        "outputs" to unordered(graph.outputs.map(::canonicalOutput)),
-        "requiredCapabilities" to unordered(graph.requiredCapabilities.map { atom(it.value) }),
-        "controlRequirements" to unordered(graph.controlRequirements.map(::canonicalControlRequirement)),
-        "controlEvidence" to unordered(graph.controlEvidence.map(::canonicalControlEvidence)),
-        "topologyRequirements" to unordered(graph.topologyRequirements.map(::canonicalTopology)),
-        "nodes" to unordered(graph.nodes.map(::canonicalNode)),
-        "dependencyEdges" to unordered(graph.dependencyEdges.map(::canonicalEdge))
-    )
+    private fun canonicalGraph(graph: CanonicalExecutionGraph): String {
+        val fields = mutableListOf(
+            "version" to atom(graph.graphVersion),
+            "flowName" to atom(graph.flowName),
+            "workflows" to unordered(graph.workflows.map(::canonicalWorkflow)),
+            "inputs" to unordered(graph.inputs.map(::canonicalInput)),
+            "triggers" to unordered(graph.triggers.map(::canonicalTrigger)),
+            "outputs" to unordered(graph.outputs.map(::canonicalOutput)),
+            "requiredCapabilities" to unordered(graph.requiredCapabilities.map { atom(it.value) }),
+            "controlRequirements" to unordered(graph.controlRequirements.map(::canonicalControlRequirement)),
+            "controlEvidence" to unordered(graph.controlEvidence.map(::canonicalControlEvidence)),
+            "topologyRequirements" to unordered(graph.topologyRequirements.map(::canonicalTopology))
+        )
+        if (graph.valueMerges.isNotEmpty()) {
+            fields += "valueMerges" to unordered(graph.valueMerges.map(::canonicalMerge))
+        }
+        fields += "nodes" to unordered(graph.nodes.map(::canonicalNode))
+        fields += "dependencyEdges" to unordered(graph.dependencyEdges.map(::canonicalEdge))
+        return record("graph", *fields.toTypedArray())
+    }
 
     private fun canonicalWorkflow(workflow: CanonicalWorkflow): String = record(
         "workflow",
@@ -103,6 +108,26 @@ object CanonicalExecutionGraphDigestComputer {
         "name" to atom(output.name),
         "type" to atom(output.type.value),
         "sourceNodeId" to optional(output.sourceNodeId?.value)
+    )
+
+    private fun canonicalMerge(merge: CanonicalValueMerge): String = record(
+        "merge",
+        "id" to atom(merge.id.value),
+        "workflow" to atom(merge.workflow.value),
+        "target" to atom(merge.targetNodeId.value),
+        "joinPath" to atom(merge.joinPath),
+        "resultBinding" to atom(merge.resultBinding),
+        "paths" to unordered(merge.paths.map(::atom)),
+        "inputs" to unordered(merge.inputs.map { input ->
+            record(
+                "mergeInput",
+                "binding" to atom(input.binding),
+                "producer" to atom(input.producerNodeId.value),
+                "paths" to unordered(input.paths.map(::atom)),
+                "valueType" to optional(input.valueType?.value)
+            )
+        }),
+        "valueType" to optional(merge.valueType?.value)
     )
 
     private fun canonicalNode(node: CanonicalExecutionNode): String {
