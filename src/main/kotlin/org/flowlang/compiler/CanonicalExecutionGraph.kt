@@ -24,6 +24,7 @@ data class CanonicalExecutionGraph(
     val controlRequirements: List<ControlRequirement> = emptyList(),
     val controlEvidence: List<ControlEvidence> = emptyList(),
     val topologyRequirements: List<ExecutionTopologyRequirement> = emptyList(),
+    val valueMerges: List<CanonicalValueMerge> = emptyList(),
     val nodes: List<CanonicalExecutionNode> = emptyList(),
     val dependencyEdges: List<CanonicalDependencyEdge> = emptyList()
 ) {
@@ -73,6 +74,56 @@ value class CanonicalValueTypeId(val value: String) {
     }
 
     override fun toString(): String = value
+}
+
+@JvmInline
+value class CanonicalMergeId(val value: String) {
+    init {
+        requireGraphText(value, "Canonical merge id")
+    }
+
+    override fun toString(): String = value
+}
+
+data class CanonicalValueMergeInput(
+    val binding: String,
+    val producerNodeId: CanonicalNodeId,
+    val paths: List<String>,
+    val valueType: CanonicalValueTypeId? = null
+) {
+    init {
+        requireGraphText(binding, "Canonical merge input binding")
+        require(paths.isNotEmpty()) { "Canonical merge input '$binding' must cover at least one path." }
+        require(paths.none(String::isBlank)) { "Canonical merge paths must not be blank." }
+        require(paths.size == paths.toSet().size) { "Canonical merge input '$binding' repeats a path." }
+    }
+}
+
+data class CanonicalValueMerge(
+    val id: CanonicalMergeId,
+    val workflow: CanonicalWorkflowId,
+    val targetNodeId: CanonicalNodeId,
+    val joinPath: String,
+    val resultBinding: String,
+    val paths: List<String>,
+    val inputs: List<CanonicalValueMergeInput>,
+    val valueType: CanonicalValueTypeId? = null
+) {
+    init {
+        requireGraphText(joinPath, "Canonical merge join path")
+        requireGraphText(resultBinding, "Canonical merge result binding")
+        require(paths.isNotEmpty()) { "Canonical merge '$id' must declare incoming paths." }
+        require(paths.none(String::isBlank)) { "Canonical merge '$id' contains a blank path." }
+        require(paths.size == paths.toSet().size) { "Canonical merge '$id' contains duplicate paths." }
+        require(inputs.size >= 2) { "Canonical merge '$id' needs at least two inputs." }
+        require(inputs.map { it.binding }.toSet().size == inputs.size) {
+            "Canonical merge '$id' contains duplicate input bindings."
+        }
+        val coverage = inputs.flatMap(CanonicalValueMergeInput::paths)
+        require(coverage.toSet() == paths.toSet() && coverage.size == paths.size) {
+            "Canonical merge '$id' must cover every path exactly once."
+        }
+    }
 }
 
 data class CanonicalWorkflow(

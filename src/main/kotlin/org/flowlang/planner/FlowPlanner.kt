@@ -5,6 +5,7 @@ import org.flowlang.controls.PlanningControlAuthority
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityState
+import org.flowlang.core.FlowMergeContract
 import org.flowlang.core.FlowProducerIdentity
 import org.flowlang.core.FlowStatementPath
 import org.flowlang.effects.CanonicalIntentEffectAuthority
@@ -35,6 +36,11 @@ class MissingPlanningActionContractException(
         "Validate the Flow document and provide its authoritative module registry before planning."
 )
 
+internal data class FlowPlanningResult(
+    val plan: ExecutionPlan,
+    val producerNodeIds: Map<FlowProducerIdentity, String>
+)
+
 /**
  * Converts validated Flow AST into a platform-neutral ExecutionPlan.
  *
@@ -46,12 +52,17 @@ class MissingPlanningActionContractException(
 class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
 
     fun plan(document: FlowDocument): ExecutionPlan =
-        plan(document, FlowAvailabilityAnalyzer().analyze(document))
+        planWithProvenance(document, FlowAvailabilityAnalyzer().analyze(document)).plan
 
     internal fun plan(
         document: FlowDocument,
         availability: FlowAvailabilityAnalysis
-    ): ExecutionPlan {
+    ): ExecutionPlan = planWithProvenance(document, availability).plan
+
+    internal fun planWithProvenance(
+        document: FlowDocument,
+        availability: FlowAvailabilityAnalysis
+    ): FlowPlanningResult {
         availability.requireDirectPlanningSafe()
         val ctx = Ctx(document.flow.input.map { it.name }.toSet(), document.flow.systems.associateBy { it.name })
         val nodes = planStatements(document.flow.steps, ctx, availability) { index ->
@@ -81,7 +92,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             inputs = document.flow.input.map { it.toPlanInput() },
             triggers = document.flow.triggers.map { it.toPlanTrigger() },
             outputs = ctx.visibleOutputs(availability.normalExitState),
-            dependencies = collectDependencies(allNodes),
+            dependencies = (collectDependencies(allNodes) + ctx.mergeDependencyNodeIds()).distinct(),
             requiredCapabilities = (
                 collectRequiredCapabilities(allNodes) +
                     document.flow.triggers.flatMap { it.requiredCapabilities() } +
@@ -102,11 +113,12 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             nodes = allNodes,
             dependencyRelations = dependencyRelations
         )
-        return if (basePlan.sourceIntent == null) {
+        val finalPlan = if (basePlan.sourceIntent == null) {
             basePlan
         } else {
             basePlan.copy(loweringReport = IntentLoweringAuthority.report(basePlan))
         }
+        return FlowPlanningResult(finalPlan, ctx.producerBindings())
     }
 
     private fun TriggerNode.toPlanTrigger(): PlanTrigger = PlanTrigger(
@@ -245,7 +257,9 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             semanticCapability = StandardCapability.VALIDATE.name,
             effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.VALIDATE)
         )
-        is SetNode -> {
+        is SetNode -> availability.mergeAt(path)?.let { merge ->
+            planMerge(statement, merge, ctx, path)
+        } ?: run {
             val id = ctx.id("set")
             ctx.registerProducer(availability.producerAt(path, statement.name), id)
             ControlNode(id, "Set", "${statement.name} = ${ExpressionRenderer.render(statement.value)}")
@@ -262,6 +276,40 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             body = emptyList(),
             errorHandler = planStatements(statement.steps, ctx, availability) { index -> path.child("steps", index) }
         )
+    }
+
+    private fun planMerge(
+        statement: SetNode,
+        merge: FlowMergeContract,
+        ctx: Ctx,
+        path: FlowStatementPath
+    ): ControlNode {
+        val incoming = merge.incoming.map { input ->
+            input to ctx.resolveProducerIdentity(input.producer, input.binding, path)
+        }
+        val id = ctx.id("merge")
+        ctx.registerProducer(merge.producer, id)
+        ctx.registerMerge(id, incoming.map { it.second })
+        incoming.forEach { (input, sourceNodeId) ->
+            ctx.dependencyRelations += PlanDependencyRelation(
+                sourceNodeId = sourceNodeId,
+                targetNodeId = id,
+                kind = PlanDependencyKind.ORDERING,
+                evidence = PlanDependencyEvidence.DATA_REFERENCE,
+                path = listOf(sourceNodeId, id),
+                evidenceReference = "flow.merge:${merge.identity.resultBinding}:${input.binding}"
+            )
+            ctx.dependencyRelations += PlanDependencyRelation(
+                sourceNodeId = sourceNodeId,
+                targetNodeId = id,
+                kind = PlanDependencyKind.VALUE,
+                channel = input.binding,
+                evidence = PlanDependencyEvidence.DATA_REFERENCE,
+                path = listOf(sourceNodeId, id),
+                evidenceReference = "flow.merge:${merge.identity.resultBinding}:${input.binding}"
+            )
+        }
+        return ControlNode(id, "Set", "${statement.name} = ${ExpressionRenderer.render(statement.value)}")
     }
 
     private fun planApproval(
@@ -318,7 +366,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val referenced = linkedSetOf<String>()
         action.params.values.forEach { collectRoots(it, referenced) }
         action.target.path.firstOrNull()?.let { referenced += it }
-        val dataDependencies = referenced.mapNotNull { binding ->
+        val dataDependencies = referenced.toList().sorted().mapNotNull { binding ->
             ctx.resolveProducer(availability, path, binding)?.let { sourceNodeId ->
                 DataDependency(sourceNodeId, binding)
             }
@@ -509,6 +557,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val dependencyRelations = mutableListOf<PlanDependencyRelation>()
         private val producerNodeIds = mutableMapOf<FlowProducerIdentity, String>()
         private val taskDependencies = mutableMapOf<String, List<String>>()
+        private val mergeDependencies = mutableMapOf<String, List<String>>()
         private val taskContinuity = mutableMapOf<String, ContinuityContract>()
         private val counters = mutableMapOf<String, Int>()
 
@@ -524,6 +573,15 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
                 "Flow producer '$producer' was mapped to both '$previous' and '$nodeId'."
             }
         }
+
+        fun producerBindings(): Map<FlowProducerIdentity, String> = producerNodeIds.toMap()
+
+        fun registerMerge(nodeId: String, dependencies: List<String>) {
+            require(dependencies.size >= 2) { "Explicit merge '$nodeId' needs at least two producer nodes." }
+            mergeDependencies[nodeId] = dependencies.distinct()
+        }
+
+        fun mergeDependencyNodeIds(): List<String> = mergeDependencies.values.flatten().distinct()
 
         fun registerOutput(name: String, nodeId: String, producer: FlowProducerIdentity) {
             outputCandidates += OutputCandidate(
@@ -560,6 +618,12 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             binding = binding,
             path = path
         )
+
+        fun resolveProducerIdentity(
+            producer: FlowProducerIdentity,
+            binding: String,
+            path: FlowStatementPath
+        ): String = checkNotNull(resolveRegisteredProducer(producer, binding, path))
 
         private fun resolveRegisteredProducer(
             producer: FlowProducerIdentity?,
@@ -628,6 +692,17 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             visited: LinkedHashSet<String>
         ): List<ContinuityPath> {
             if (!visited.add(nodeId)) return emptyList()
+            mergeDependencies[nodeId]?.let { sources ->
+                if (requirement.kind != ContinuityKind.VALUE) return emptyList()
+                val bySource = sources.map { source ->
+                    findProviders(source, requirement, LinkedHashSet(visited))
+                }
+                if (bySource.any(List<ContinuityPath>::isEmpty)) return emptyList()
+                if (bySource.all { it.size == 1 }) {
+                    return listOf(ContinuityPath(nodeId, listOf(nodeId)))
+                }
+                return bySource.flatten().distinctBy(ContinuityPath::providerNodeId)
+            }
             val continuity = taskContinuity[nodeId] ?: return emptyList()
             if (continuity.provides.any { it.satisfies(requirement) }) {
                 return listOf(ContinuityPath(nodeId, listOf(nodeId)))

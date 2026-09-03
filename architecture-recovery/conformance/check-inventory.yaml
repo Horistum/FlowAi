@@ -21,3 +21,6 @@ checks:
   - architecture-recovery.ar-02.flow-analysis-single-owner
   - architecture-recovery.ar-02.value-availability-lattice
   - architecture-recovery.ar-02.maybe-defined-read-rejection
+  - architecture-recovery.ar-02.explicit-merge-integrity
+  - architecture-recovery.ar-02.producer-permutation-invariance
+  - architecture-recovery.ar-02.public-contract-migration-integrity

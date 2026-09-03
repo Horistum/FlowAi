@@ -10,10 +10,12 @@ import org.flowlang.ai.normalization.AiIntentResponse
 import org.flowlang.ai.normalization.IntentProposalDecision
 import org.flowlang.ai.normalization.IntentProposalReviewEvidence
 import org.flowlang.ast.FlowDocument
+import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentValidationReport
 import org.flowlang.planner.CanonicalExecutionPlan
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.FlowPlanningResult
 import org.flowlang.validator.ValidationReport
 
 /** Authored representation accepted by the shared compiler boundary. */
@@ -389,7 +391,8 @@ class CompilationUnit private constructor(
             frontendEvidence: FrontendCompilationEvidence,
             ast: FlowDocument,
             validation: ValidationReport,
-            plannerPlan: ExecutionPlan
+            planning: FlowPlanningResult,
+            availability: FlowAvailabilityAnalysis
         ): CompilationUnit {
             val intentValidation = (frontendEvidence as? IntentCompilationEvidence)?.validation
             val proposalReview = (frontendEvidence as? ReviewedAiProposalCompilationEvidence)?.review
@@ -398,7 +401,8 @@ class CompilationUnit private constructor(
                 intentValidation = intentValidation,
                 proposalReview = proposalReview,
                 flowValidation = validation,
-                plannerPlan = plannerPlan
+                planning = planning,
+                availability = availability
             )
             return CompilationUnit(
                 source = source,

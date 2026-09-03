@@ -249,7 +249,7 @@ class Ar01CompilerAxisConformanceChecks(
         )
         requireExactProductionCallers(
             symbol = "FlowSourceCompilationInput(",
-            expectedPaths = setOf(COMPILATION_CONTRACTS, FLOW_SOURCE_FRONTEND),
+            expectedPaths = setOf(COMPILATION_CONTRACTS, FLOW_SOURCE_FRONTEND, AR02B_CONFORMANCE),
             errors = this
         )
         requireExactProductionCallers(
@@ -681,6 +681,8 @@ class Ar01CompilerAxisConformanceChecks(
         private const val COMPILATION_SERVICE = "org.flowlang.compiler.FlowCompilationService"
         private const val AR01_CONFORMANCE =
             "src/main/kotlin/org/flowlang/conformance/Ar01CompilerAxisConformanceChecks.kt"
+        private const val AR02B_CONFORMANCE =
+            "src/main/kotlin/org/flowlang/conformance/Ar02ExplicitMergeConformanceChecks.kt"
         private const val CANONICAL_GRAPH = "org.flowlang.compiler.CanonicalExecutionGraph"
         private const val DERIVED_VIEWS = "ExecutionPlan+CanonicalExecutionPlan"
         private const val COMPILER_DIR = "src/main/kotlin/org/flowlang/compiler"

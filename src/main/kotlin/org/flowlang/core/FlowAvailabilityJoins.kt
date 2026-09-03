@@ -57,31 +57,40 @@ internal fun joinAlternatives(states: List<FlowAvailabilityState>): FlowAvailabi
     val reachable = states.filter(FlowAvailabilityState::reachable)
     if (reachable.isEmpty()) {
         return states.firstOrNull()?.unreachable()
-            ?: FlowAvailabilityState(workflow = workflow, reachable = false)
+            ?: FlowAvailabilityState(workflow = workflow, reachable = false, paths = emptySet())
     }
+    val paths = reachable.flatMap(FlowAvailabilityState::paths).toSet()
     val names = reachable.flatMap { it.bindings.keys }.toSortedSet()
     val joined = names.associateWith { name ->
-        joinAlternativeBinding(reachable.map { it.binding(name) })
+        joinAlternativeBinding(reachable.map { it.binding(name) }, paths)
     }.filterValues { it.availability != FlowValueAvailability.UNDEFINED }
-    return FlowAvailabilityState(workflow = workflow, reachable = true, bindings = joined)
+    return FlowAvailabilityState(workflow = workflow, reachable = true, paths = paths, bindings = joined)
 }
 
-internal fun joinAlternativeBinding(states: List<FlowBindingState>): FlowBindingState {
-    val first = states.firstOrNull() ?: return FlowBindingState.Undefined
-    if (states.all { it == first }) return first
-
-    val definedEverywhere = states.all(FlowBindingState::safeToRead)
-    val producers = states.flatMap { it.producers }.toSet()
-    val external = states.any(FlowBindingState::external)
-    return FlowBindingState(
-        availability = FlowValueAvailability.MAYBE_DEFINED,
-        producers = producers,
-        external = external,
-        reason = if (definedEverywhere) {
-            FlowAvailabilityReason.AMBIGUOUS_PRODUCERS
-        } else {
-            FlowAvailabilityReason.PARTIAL_PATHS
+internal fun joinAlternativeBinding(
+    states: List<FlowBindingState>,
+    paths: Set<FlowPathIdentity>
+): FlowBindingState {
+    if (states.isEmpty()) return FlowBindingState.Undefined
+    val producerPaths = linkedMapOf<FlowProducerIdentity, MutableSet<FlowPathIdentity>>()
+    states.forEach { state ->
+        state.producerPaths.forEach { (producer, coverage) ->
+            producerPaths.getOrPut(producer) { linkedSetOf() } += coverage
         }
+    }
+    val externalPaths = states.flatMap(FlowBindingState::externalPaths).toSet()
+    val types = states.mapNotNull(FlowBindingState::valueType).distinct()
+    val explicitMergeProducers = states
+        .filter { it.reason == FlowAvailabilityReason.EXPLICIT_MERGE }
+        .flatMap(FlowBindingState::producers)
+        .toSet()
+    val singleProducer = producerPaths.keys.singleOrNull()
+    return FlowBindingState.fromCoverage(
+        producerPaths = producerPaths.mapValues { (_, coverage) -> coverage.toSet() },
+        externalPaths = externalPaths,
+        allPaths = paths,
+        valueType = types.singleOrNull(),
+        explicitMerge = singleProducer != null && singleProducer in explicitMergeProducers
     )
 }
 
@@ -96,10 +105,9 @@ internal fun joinConcurrent(
     // An unhandled failure in any required parallel branch prevents normal continuation.
     if (branches.any { !it.reachable }) return input.unreachable()
 
-    // Parallel branch-local producers do not leak into the parent merely because
-    // all branches were visited by the compiler. A name is parent-readable only
-    // when every branch preserves exactly the same incoming producer. Explicit
-    // cross-branch merge semantics belong to AR-02B.
+    // Branches carry non-mergeable concurrent path identities. Their local
+    // producers therefore remain visible as unsafe partial/ambiguous evidence,
+    // while an explicit phi merge is reserved for mutually exclusive paths.
     return joinAlternatives(branches)
 }
 

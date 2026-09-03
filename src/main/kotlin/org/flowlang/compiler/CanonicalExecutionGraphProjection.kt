@@ -174,7 +174,7 @@ object CanonicalExecutionGraphProjection {
                 is CanonicalControlOperationNode -> ControlNode(
                     id = projectionId,
                     kind = projection.planNodeKind,
-                    detail = node.detail
+                    detail = projection.projectionDetail ?: node.detail
                 )
             }
         }
@@ -363,7 +363,7 @@ object CanonicalExecutionGraphProjection {
                         CanonicalControlOperationKind.SET -> CanonicalPlanNodeKind.SET
                         CanonicalControlOperationKind.EXPECT -> CanonicalPlanNodeKind.EXPECT
                     }.wireValue,
-                    detail = node.detail
+                    detail = projection.projectionDetail ?: node.detail
                 )
             }
         }

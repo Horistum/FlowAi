@@ -18,7 +18,7 @@ import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
  * reference resolution against scope, and expression operator validity. Recurses
  * through every control-flow and data statement.
  *
- * AR-02A adds one shared path-sensitive availability product. The legacy lexical
+ * AR-02A/B adds one shared path-sensitive availability and merge product. The legacy lexical
  * walk still owns syntax/module/type diagnostics; the shared product owns whether
  * a produced value is available on every reachable path and which producer it
  * resolves to.

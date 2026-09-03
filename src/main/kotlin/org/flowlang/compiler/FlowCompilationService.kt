@@ -227,8 +227,8 @@ class FlowCompilationService(
             )
         }
 
-        val plannerPlan = try {
-            flowPlanner.plan(ast, availability)
+        val planning = try {
+            flowPlanner.planWithProvenance(ast, availability)
         } catch (failure: Exception) {
             return CompilationResult.Rejected(
                 rejection(
@@ -254,7 +254,8 @@ class FlowCompilationService(
                     frontendEvidence = evidence,
                     ast = ast,
                     validation = validation,
-                    plannerPlan = plannerPlan
+                    planning = planning,
+                    availability = availability
                 )
             )
         } catch (failure: Exception) {
