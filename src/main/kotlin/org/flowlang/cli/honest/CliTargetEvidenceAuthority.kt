@@ -169,6 +169,7 @@ class CliTargetEvidenceAuthority(
         require(target in targets) {
             "Selected target '$target' is no longer present in the active target registry."
         }
+        val materialization = lazy(LazyThreadSafetyMode.NONE) { materializationRequest() }
 
         val compatibilityAnalyzer = CompatibilityAnalyzer(targets)
         val preliminaryNegotiation = compatibilityAnalyzer.negotiate(plan, strict = strict)
@@ -178,10 +179,13 @@ class CliTargetEvidenceAuthority(
         val diagnostics = mutableListOf<CliTargetDiagnostic>()
         var fallbackUsed = false
         val manifest = try {
-            val controlAssessment = controlAuthority.requireMatched(plan, target)
+            val controlAssessment = controlAuthority.requireMatched(
+                materialization.value.authorization,
+                target
+            )
             val continuityAssessment = continuityAuthority.requireMatched(plan, target)
             val triggerAssessment = triggerAuthority.requireMatched(plan, target)
-            val generated = pipeline.generate(materializationRequest())
+            val generated = pipeline.generate(materialization.value)
             val withControls = controlAuthority.reconcileDiagnostic(generated, controlAssessment)
             val withContinuity = continuityAuthority.reconcileDiagnostic(withControls, continuityAssessment)
             triggerAuthority.reconcileDiagnostic(withContinuity, triggerAssessment)
@@ -197,8 +201,8 @@ class CliTargetEvidenceAuthority(
             val diagnostic = pipeline.generateDiagnosticEvidence(diagnosticRequest())
             val controlAssessment = when (failure) {
                 is UnresolvedAdapterControlMaterializationException -> failure.assessment
-                else -> controlAuthority.assess(plan, target)
-            }
+                    else -> controlAuthority.assess(materialization.value.authorization, target)
+                }
             val continuityAssessment = when (failure) {
                 is UnresolvedAdapterContinuitySatisfactionException -> failure.assessment
                 else -> continuityAuthority.assess(plan, target)

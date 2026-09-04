@@ -41,7 +41,8 @@ class MissingPlanningActionContractException(
 
 internal data class FlowPlanningResult(
     val plan: ExecutionPlan,
-    val producerNodeIds: Map<FlowProducerIdentity, String>
+    val producerNodeIds: Map<FlowProducerIdentity, String>,
+    val failurePolicy: PlannedWorkflowFailurePolicy = PlannedWorkflowFailurePolicy.none()
 )
 
 /**
@@ -77,25 +78,35 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         val nodes = planStatements(document.flow.steps, ctx, availability) { index ->
             FlowStatementPath.flowStep(index, workflowIdentity)
         }
-        val tail = document.flow.errorHandler?.let { handler ->
-            listOf(
-                TryPlanNode(
-                    id = ctx.id("onError"),
-                    body = emptyList(),
-                    errorHandler = planStatements(handler.steps, ctx, availability) { index ->
-                        FlowStatementPath.globalErrorStep(index, workflowIdentity)
-                    }
-                )
+        val failurePolicy = document.flow.errorHandler?.let { handler ->
+            val handlerNodes = planStatements(handler.steps, ctx, availability) { index ->
+                FlowStatementPath.globalErrorStep(index, workflowIdentity)
+            }
+            PlannedWorkflowFailurePolicy(
+                policy = WorkflowFailurePolicy(
+                    disposition = WorkflowFailureDisposition.PROPAGATE,
+                    handler = WorkflowFailureHandlerRegion(
+                        id = "workflow-failure:${workflowIdentity.value}",
+                        nodeIds = handlerNodes.map(PlanNode::id),
+                        entry = WorkflowFailureHandlerEntry(
+                            errorBinding = "error",
+                            priorSuccessfulValuesAvailable = false
+                        )
+                    )
+                ),
+                handlerNodes = handlerNodes,
+                compatibilityBoundaryNodeId = ctx.id("onError")
             )
-        } ?: emptyList()
-        val allNodes = nodes + tail
+        } ?: PlannedWorkflowFailurePolicy.none()
+        val allNodes = nodes + failurePolicy.compatibilityMirror()
         val dependencyRelations = ctx.dependencyRelations.distinctBy(PlanDependencyRelations::relationKey)
         val controlAssessment = PlanningControlAuthority.assess(
-            canonicalRequirements = document.flow.controlRequirements,
-            canonicalEvidence = document.flow.controlEvidence,
-            nodes = allNodes,
-            modules = registry
-        )
+    canonicalRequirements = document.flow.controlRequirements,
+    canonicalEvidence = document.flow.controlEvidence,
+    nodes = nodes,
+    modules = registry,
+    workflowFailureHandlerNodes = failurePolicy.handlerNodes
+)
         val basePlan = ExecutionPlan(
             flowName = document.flow.name,
             inputs = document.flow.input.map { it.toPlanInput() },
@@ -103,10 +114,10 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
             outputs = ctx.visibleOutputs(availability.normalExitState),
             dependencies = (collectDependencies(allNodes) + ctx.mergeDependencyNodeIds()).distinct(),
             requiredCapabilities = (
-                collectRequiredCapabilities(allNodes) +
-                    document.flow.triggers.flatMap { it.requiredCapabilities() } +
-                    PlanningControlAuthority.requiredEnforcementCapabilities(controlAssessment)
-                ).distinct(),
+    collectRequiredCapabilities(allNodes) +
+        document.flow.triggers.flatMap { it.requiredCapabilities() } +
+        PlanningControlAuthority.requiredEnforcementCapabilities(controlAssessment)
+).distinct(),
             sourceIntent = document.metadata.sourceIntent,
             loweringReport = null,
             assumptions = ctx.assumptions.toList(),
@@ -127,7 +138,7 @@ class FlowPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
         } else {
             basePlan.copy(loweringReport = IntentLoweringAuthority.report(basePlan))
         }
-        return FlowPlanningResult(finalPlan, ctx.producerBindings())
+        return FlowPlanningResult(finalPlan, ctx.producerBindings(), failurePolicy)
     }
 
     private fun TriggerNode.toPlanTrigger(): PlanTrigger = PlanTrigger(

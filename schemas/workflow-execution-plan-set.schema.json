@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/workflow-execution-plan-set/1.0/workflow-execution-plan-set.schema.json",
-  "title": "Flow Workflow Execution Plan Set v1.0",
-  "description": "Public target-neutral envelope for one or more graph-derived workflow plans. ExecutionPlan and CanonicalExecutionPlan remain exact single-workflow compatibility contracts.",
+  "$id": "https://flowlang.dev/schemas/workflow-execution-plan-set/1.1/workflow-execution-plan-set.schema.json",
+  "title": "Flow Workflow Execution Plan Set v1.1",
+  "description": "Public target-neutral envelope for one or more graph-derived workflow plans, including first-class workflow failure policy. ExecutionPlan and CanonicalExecutionPlan remain exact single-workflow compatibility contracts.",
   "type": "object",
   "required": [
     "contractVersion",
@@ -12,7 +12,7 @@
   ],
   "properties": {
     "contractVersion": {
-      "const": "1.0"
+      "const": "1.1"
     },
     "flowName": {
       "type": "string",
@@ -113,6 +113,7 @@
       "required": [
         "workflowId",
         "workflowName",
+        "failurePolicy",
         "executionPlan",
         "canonicalPlan"
       ],
@@ -130,6 +131,9 @@
         },
         "canonicalPlan": {
           "$ref": "#/$defs/plan"
+        },
+        "failurePolicy": {
+          "$ref": "#/$defs/failurePolicy"
         }
       },
       "additionalProperties": false
@@ -166,6 +170,68 @@
         }
       },
       "additionalProperties": true
+    },
+    "failurePolicy": {
+      "type": "object",
+      "required": [
+        "disposition"
+      ],
+      "properties": {
+        "disposition": {
+          "enum": [
+            "PROPAGATE",
+            "RECOVER"
+          ]
+        },
+        "handler": {
+          "$ref": "#/$defs/failureHandler"
+        }
+      },
+      "additionalProperties": false
+    },
+    "failureHandler": {
+      "type": "object",
+      "required": [
+        "id",
+        "nodeIds",
+        "entry"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nodeIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "entry": {
+          "$ref": "#/$defs/failureHandlerEntry"
+        }
+      },
+      "additionalProperties": false
+    },
+    "failureHandlerEntry": {
+      "type": "object",
+      "required": [
+        "errorBinding",
+        "priorSuccessfulValuesAvailable"
+      ],
+      "properties": {
+        "errorBinding": {
+          "type": "string",
+          "minLength": 1
+        },
+        "priorSuccessfulValuesAvailable": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

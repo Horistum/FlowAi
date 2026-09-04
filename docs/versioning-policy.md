@@ -9,7 +9,7 @@ Flow has separate public version axes with distinct purposes. They are intention
 | Intent contract | `2.0` | The serialized Intent contract changes incompatibly. |
 | AST contract | `2.2` | The serialized AST contract changes incompatibly. |
 | ExecutionPlan contract | `2.4` | The serialized execution-plan contract changes incompatibly. |
-| WorkflowExecutionPlanSet contract | `1.0` | The public multi-workflow envelope, ownership or trigger-routing shape changes incompatibly. |
+| WorkflowExecutionPlanSet contract | `1.1` | The public multi-workflow envelope, ownership or trigger-routing shape changes incompatibly. |
 | ExecutionPlan lowering evidence | `2.1` | The artifact-derived proof needed to authenticate preserved intent meaning changes. |
 | TargetManifest contract | `3.0` | The serialized target-manifest contract changes incompatibly. |
 | TargetRegistry contract | `3.2` | The serialized target-registry contract changes incompatibly. |
@@ -28,7 +28,7 @@ A contract-only migration may advance only the serialized artifact versions whos
 
 Artifact contracts are independently versioned serialized boundaries. They must not be represented by one misleading global number after their versions diverge.
 
-Intent remains at `2.0`; AST remains at `2.2`; ExecutionPlan remains at `2.4`; WorkflowExecutionPlanSet starts at `1.0`. The earlier control-scope and explicit node-kind migrations remain part of the current contract history:
+Intent remains at `2.0`; AST remains at `2.2`; ExecutionPlan remains at `2.4`; WorkflowExecutionPlanSet is at `1.1`. The earlier control-scope and explicit node-kind migrations remain part of the current contract history:
 
 - Intent 2.0 introduces top-level triggers and removes schedule-as-step. SI-01 does not add an authored Intent field.
 - AST 2.0 introduced trigger nodes.
@@ -41,8 +41,9 @@ Intent remains at `2.0`; AST remains at `2.2`; ExecutionPlan remains at `2.4`; W
 - ExecutionPlan 2.3 adds the `STATE_RECOVERY` domain and typed recovery relationship semantics for BACKUP/RESTORE, including protected-state identity, authored backup destination, authored recovery-point identity and narrow backup retention. It deliberately leaves consistency guarantees, recoverability and restore create-versus-replace unresolved where the authored contract does not prove them.
 - ExecutionPlan 2.4 adds explicit `stateLifetime` to every `STATE` dependency relation. `WORKFLOW` means mutable state continuity only within the current workflow execution; `DURABLE` additionally requires persistence evidence. Non-state relations cannot carry this field, and a state relation without it is invalid.
 - WorkflowExecutionPlanSet 1.0 introduces the non-flattening public envelope for independent workflow views and exact trigger routes. Existing ExecutionPlan 2.4 remains the exact single-workflow compatibility contract.
+- WorkflowExecutionPlanSet 1.1 adds first-class workflow failure policy, handler-region identity and handler-entry availability to each workflow view. The synthetic tail `TryPlanNode` remains a checked compatibility mirror, not semantic authority.
 
-The AST and ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`. The ExecutionPlan 2.2 semantic migration is documented in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`. The AST 2.2 and ExecutionPlan 2.3 recovery-effect migration is documented in `docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`. The ExecutionPlan 2.4 state-lifetime and module-schema 1.3 migration is documented in `docs/SI_08_TYPED_POLICY_STATE_LIFETIME_MIGRATION.md`. The WorkflowExecutionPlanSet 1.0 migration is documented in `docs/AR_02C_WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md`.
+The AST and ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`. The ExecutionPlan 2.2 semantic migration is documented in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`. The AST 2.2 and ExecutionPlan 2.3 recovery-effect migration is documented in `docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`. The ExecutionPlan 2.4 state-lifetime and module-schema 1.3 migration is documented in `docs/SI_08_TYPED_POLICY_STATE_LIFETIME_MIGRATION.md`. The WorkflowExecutionPlanSet 1.0 migration is documented in `docs/AR_02C_WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md`; the 1.1 failure-policy migration is documented in `docs/AR_02D_WORKFLOW_FAILURE_POLICY_MIGRATION.md`.
 
 Target contracts advance separately:
 

@@ -9,6 +9,12 @@ import org.flowlang.ast.TriggerNode
 import org.flowlang.cli.honest.CliTargetEvidence
 import org.flowlang.cli.honest.CliTargetEvidenceAuthority
 import org.flowlang.cli.honest.CliTargetEvidenceOutcome
+import org.flowlang.compiler.CompilationFrontend
+import org.flowlang.compiler.CompilationSource
+import org.flowlang.compiler.CompilationUnit
+import org.flowlang.compiler.FlowCompilationService
+import org.flowlang.compiler.FlowSourceCompilationInput
+import org.flowlang.compiler.requireAccepted
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
@@ -26,38 +32,40 @@ class AdapterControlProviderBehaviorTests {
 
     @Test
     fun jenkinsFlowLevelErrorHandlerRendersProtectedTryCatchBoundary() {
-        val plan = FlowPlanner(modules).plan(
-            FlowParser().parse(
-                """
-                version "1.0"
-                flow "jenkins-flow-error-boundary" {
-                  steps {
-                    approve manual {
-                      message: "protected work"
-                    }
-                  }
-                  on error {
-                    approve manual {
-                      message: "failure handler"
-                    }
-                  }
+        val source = """
+            version "1.0"
+            flow "jenkins-flow-error-boundary" {
+              steps {
+                approve manual {
+                  message: "protected work"
                 }
-                """.trimIndent()
-            )
-        )
-        assertTrue(plan.nodes.last() is TryPlanNode)
-        assertTrue(plan.nodes.last().id.startsWith("onError_"))
-        assertTrue("errorHandlers.finally" in plan.requiredCapabilities)
+              }
+              on error {
+                approve manual {
+                  message: "failure handler"
+                }
+              }
+            }
+        """.trimIndent()
+        val compilation = compile(source, "jenkins-flow-error-boundary")
+        val policy = compilation.workflowPlanSet.workflows.single().failurePolicy
+        assertNotNull(policy.handler)
 
         val result = evaluate(
             target = "jenkins",
             fixtureId = "a0.4-jenkins-flow-error-boundary",
-            plan = plan
+            compilation = compilation
         )
 
         assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome, result.failureSummary())
         val rendered = assertNotNull(result.renderedArtifact).content
         assertTryCatchOrder(rendered, "protected work", "failure handler")
+        val catchIndex = rendered.indexOf("catch (flowError)")
+        val bindingIndex = rendered.indexOf("def error = flowError")
+        val handlerIndex = rendered.indexOf("input message: 'failure handler'")
+        val throwIndex = rendered.indexOf("throw flowError")
+        assertTrue(bindingIndex > catchIndex && bindingIndex < handlerIndex, rendered)
+        assertTrue(throwIndex > handlerIndex, rendered)
     }
 
     @Test
@@ -80,6 +88,7 @@ class AdapterControlProviderBehaviorTests {
         assertEquals(CliTargetEvidenceOutcome.EXECUTABLE, result.outcome, result.failureSummary())
         val rendered = assertNotNull(result.renderedArtifact).content
         assertTryCatchOrder(rendered, "nested work", "nested failure")
+        assertFalse(rendered.contains("throw flowError"), rendered)
     }
 
     @Test
@@ -116,9 +125,28 @@ class AdapterControlProviderBehaviorTests {
         assertTrue(rendered.contains("uses: \"actions/checkout@v4\""), rendered)
     }
 
+    private fun evaluate(
+        target: String,
+        fixtureId: String,
+        compilation: CompilationUnit
+    ): CliTargetEvidence = CliTargetEvidenceAuthority(
+        targets = targets,
+        projections = BuiltInTargetProjections.registry,
+        rootDir = rootDir
+    ).evaluate(
+        compilation = compilation,
+        explicitSelection = TargetSelectionAuthority.fromTestFixture(
+            value = target,
+            fixtureId = fixtureId,
+            targets = targets
+        ),
+        strict = false,
+        renderRequested = true
+    )
+
     private fun evaluate(target: String, fixtureId: String, plan: ExecutionPlan): CliTargetEvidence =
         CliTargetEvidenceAuthority(
-            targets = targets,
+        targets = targets,
             projections = BuiltInTargetProjections.registry,
             rootDir = rootDir
         ).evaluate(
@@ -131,6 +159,18 @@ class AdapterControlProviderBehaviorTests {
             strict = false,
             renderRequested = true
         )
+
+    private fun compile(source: String, identity: String): CompilationUnit =
+        FlowCompilationService(modules).compile(
+            FlowSourceCompilationInput(
+                source = CompilationSource.fromBytes(
+                    frontend = CompilationFrontend.FLOW_SOURCE,
+                    identity = identity,
+                    bytes = source.toByteArray()
+                ),
+                ast = FlowParser().parse(source, "$identity.flow")
+            )
+        ).requireAccepted()
 
     private fun schedulePlan(flowName: String): ExecutionPlan {
         val document = FlowParser().parse(

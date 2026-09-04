@@ -27,6 +27,10 @@ import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 import org.flowlang.planner.WorkflowExecutionPlanSet
 import org.flowlang.planner.WorkflowExecutionPlanView
+import org.flowlang.planner.WorkflowFailureDisposition
+import org.flowlang.planner.WorkflowFailureHandlerEntry
+import org.flowlang.planner.WorkflowFailureHandlerRegion
+import org.flowlang.planner.WorkflowFailurePolicy
 
 object CanonicalExecutionGraphProjection {
     fun toWorkflowExecutionPlanSet(build: CanonicalExecutionGraphBuild): WorkflowExecutionPlanSet =
@@ -41,6 +45,7 @@ object CanonicalExecutionGraphProjection {
             WorkflowExecutionPlanView(
                 workflowId = workflow.id.value,
                 workflowName = workflow.name,
+                failurePolicy = projectFailurePolicy(bindings, workflow),
                 executionPlan = projectExecutionPlan(graph, bindings, workflow),
                 canonicalPlan = projectCanonicalExecutionPlan(graph, bindings, workflow)
             )
@@ -76,7 +81,8 @@ object CanonicalExecutionGraphProjection {
         val nodeById = graph.nodes.associateBy(CanonicalExecutionNode::id)
         val workflowNodeIds = graph.nodes.filter { it.workflow == workflow.id }.map { it.id }.toSet()
         val workflowNamesById = graph.workflows.associate { it.id to it.name }
-        val planMetadata = bindings.requireWorkflowPlan(workflow.id).planMetadata
+        val workflowMetadata = bindings.requireWorkflowPlan(workflow.id)
+        val planMetadata = workflowMetadata.planMetadata
         val taskBindingById = bindings.tasks.associateBy(CanonicalTaskBinding::nodeId)
         val metadataById = bindings.nodeMetadata.associateBy(CanonicalNodeProjectionMetadata::nodeId)
 
@@ -221,7 +227,14 @@ object CanonicalExecutionGraphProjection {
             }
         }
 
-        val nodes = workflow.rootNodeIds.map(::project)
+        val executionNodes = workflow.rootNodeIds.map(::project)
+        val nodes = workflow.failurePolicy.handler?.let { handler ->
+            executionNodes + TryPlanNode(
+                id = requireNotNull(workflowMetadata.failureCompatibility).boundaryNodeId,
+                body = emptyList(),
+                errorHandler = handler.nodeIds.map(::project)
+            )
+        } ?: executionNodes
         return ExecutionPlan(
             flowName = if (graph.workflows.size == 1) graph.flowName else workflow.name,
             planVersion = planMetadata.planVersion,
@@ -271,7 +284,8 @@ object CanonicalExecutionGraphProjection {
         val nodeById = graph.nodes.associateBy(CanonicalExecutionNode::id)
         val workflowNodeIds = graph.nodes.filter { it.workflow == workflow.id }.map { it.id }.toSet()
         val workflowNamesById = graph.workflows.associate { it.id to it.name }
-        val planMetadata = bindings.requireWorkflowPlan(workflow.id).planMetadata
+        val workflowMetadata = bindings.requireWorkflowPlan(workflow.id)
+        val planMetadata = workflowMetadata.planMetadata
         val taskBindingById = bindings.tasks.associateBy(CanonicalTaskBinding::nodeId)
         val metadataById = bindings.nodeMetadata.associateBy(CanonicalNodeProjectionMetadata::nodeId)
 
@@ -446,10 +460,46 @@ object CanonicalExecutionGraphProjection {
             controlEvidence = planMetadata.controlEvidence,
             controlDecision = planMetadata.controlDecision,
             topologyRequirements = planMetadata.topologyRequirements,
-            nodes = workflow.rootNodeIds.map(::project),
+            nodes = workflow.failurePolicy.handler?.let { handler ->
+                workflow.rootNodeIds.map(::project) + CanonicalPlanNode(
+                    id = requireNotNull(workflowMetadata.failureCompatibility).boundaryNodeId,
+                    kind = CanonicalPlanNodeKind.TRY.wireValue,
+                    body = emptyList(),
+                    errorHandler = handler.nodeIds.map(::project),
+                    requiredCapabilities = listOf("errorHandlers.finally")
+                )
+            } ?: workflow.rootNodeIds.map(::project),
             dependencyRelations = graph.dependencyEdges
                 .filter { edge -> edge.targetNodeId in workflowNodeIds }
                 .map { edge -> edge.toPlan(::planId) }
+        )
+    }
+
+
+    private fun projectFailurePolicy(
+        bindings: CanonicalExecutionBindingSet,
+        workflow: CanonicalWorkflow
+    ): WorkflowFailurePolicy {
+        val metadataById = bindings.nodeMetadata.associateBy(CanonicalNodeProjectionMetadata::nodeId)
+        fun planId(id: CanonicalNodeId): String = requireNotNull(metadataById[id]) {
+            "Canonical workflow failure node '$id' has no compatibility identity."
+        }.planNodeId
+        return WorkflowFailurePolicy(
+            disposition = when (workflow.failurePolicy.disposition) {
+                CanonicalWorkflowFailureDisposition.PROPAGATE -> WorkflowFailureDisposition.PROPAGATE
+                CanonicalWorkflowFailureDisposition.RECOVER -> WorkflowFailureDisposition.RECOVER
+            },
+            handler = workflow.failurePolicy.handler?.let { handler ->
+                WorkflowFailureHandlerRegion(
+                    id = handler.id,
+                    nodeIds = handler.nodeIds.map(::planId),
+                    entry = WorkflowFailureHandlerEntry(
+                        errorBinding = handler.entry.errorBinding,
+                        priorSuccessfulValuesAvailable =
+                            handler.entry.priorSuccessfulValuesAvailable
+                    )
+                )
+            }
         )
     }
 

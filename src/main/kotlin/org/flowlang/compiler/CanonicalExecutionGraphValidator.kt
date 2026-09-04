@@ -84,7 +84,42 @@ object CanonicalExecutionGraphValidator {
         }
 
         val placements = linkedMapOf<CanonicalNodeId, MutableList<String>>()
+        val failureRegionIds = mutableSetOf<String>()
         graph.workflows.forEach { workflow ->
+            workflow.failurePolicy.handler?.let { handler ->
+                if (!failureRegionIds.add(handler.id)) {
+                    issues += issue(
+                        "graph.workflow.failure-handler.duplicate",
+                        "workflows.${workflow.id}.failurePolicy.handler.id",
+                        "Workflow failure-handler region '${handler.id}' is declared more than once."
+                    )
+                }
+                handler.nodeIds.forEachIndexed { index, id ->
+                    placements.getOrPut(id) { mutableListOf() } +=
+                        "workflows.${workflow.id}.failurePolicy.handler.nodeIds[$index]"
+                    val handlerNode = nodeById[id]
+                    if (handlerNode == null) {
+                        issues += issue(
+                            "graph.workflow.failure-handler.dangling",
+                            "workflows.${workflow.id}.failurePolicy.handler.nodeIds[$index]",
+                            "Workflow '${workflow.id}' references missing failure-handler node '$id'."
+                        )
+                    } else if (handlerNode.workflow != workflow.id) {
+                        issues += issue(
+                            "graph.workflow.failure-handler.crossing",
+                            "workflows.${workflow.id}.failurePolicy.handler.nodeIds[$index]",
+                            "Workflow '${workflow.id}' cannot own failure-handler node '$id' from '${handlerNode.workflow}'."
+                        )
+                    }
+                    if (id in workflow.rootNodeIds) {
+                        issues += issue(
+                            "graph.workflow.failure-handler.root-overlap",
+                            "workflows.${workflow.id}.failurePolicy.handler.nodeIds[$index]",
+                            "Workflow failure-handler node '$id' cannot also be a normal workflow root."
+                        )
+                    }
+                }
+            }
             workflow.rootNodeIds.forEachIndexed { index, id ->
                 placements.getOrPut(id) { mutableListOf() } += "workflows.${workflow.id}.rootNodeIds[$index]"
                 val root = nodeById[id]
@@ -138,6 +173,7 @@ object CanonicalExecutionGraphValidator {
             }
         }
         validateStructuralAcyclic(graph, nodeById, issues)
+        validateWorkflowFailureRegions(graph, nodeById, issues)
 
         duplicateNames(graph.inputs.map(CanonicalGraphInput::name)).forEach { name ->
             issues += issue("graph.input.duplicate", "inputs.$name", "Input '$name' is declared more than once.")
@@ -233,7 +269,9 @@ object CanonicalExecutionGraphValidator {
             visited += id
             return true
         }
-        graph.workflows.flatMap(CanonicalWorkflow::rootNodeIds).forEach { root ->
+        graph.workflows.flatMap { workflow ->
+            workflow.rootNodeIds + workflow.failurePolicy.handler?.nodeIds.orEmpty()
+        }.forEach { root ->
             if (!visit(root)) {
                 issues += issue(
                     "graph.structure.cycle",
@@ -241,6 +279,72 @@ object CanonicalExecutionGraphValidator {
                     "Canonical execution graph contains a structural cycle involving '$root'."
                 )
                 return
+            }
+        }
+    }
+
+    private fun validateWorkflowFailureRegions(
+        graph: CanonicalExecutionGraph,
+        nodes: Map<CanonicalNodeId, CanonicalExecutionNode>,
+        issues: MutableList<CanonicalExecutionGraphIssue>
+    ) {
+        fun closure(roots: List<CanonicalNodeId>): Set<CanonicalNodeId> {
+            val result = linkedSetOf<CanonicalNodeId>()
+            fun visit(id: CanonicalNodeId) {
+                if (!result.add(id)) return
+                nodes[id]?.structuralChildren().orEmpty().forEach(::visit)
+            }
+            roots.forEach(::visit)
+            return result
+        }
+
+        graph.workflows.forEach { workflow ->
+            val normalRegion = closure(workflow.rootNodeIds)
+            val failureRegion = closure(workflow.failurePolicy.handler?.nodeIds.orEmpty())
+            (normalRegion intersect failureRegion).forEach { nodeId ->
+                issues += issue(
+                    "graph.workflow.failure-handler.region-overlap",
+                    "workflows.${workflow.id}.failurePolicy.handler",
+                    "Node '$nodeId' cannot belong to both normal and workflow-failure regions."
+                )
+            }
+            if (failureRegion.isEmpty()) return@forEach
+
+            graph.dependencyEdges.forEachIndexed { index, edge ->
+                val source = edge.sourceNodeId
+                val target = edge.targetNodeId
+                if (
+                    source != null &&
+                    ((source in normalRegion && target in failureRegion) ||
+                        (source in failureRegion && target in normalRegion))
+                ) {
+                    issues += issue(
+                        "graph.workflow.failure-handler.edge-crossing",
+                        "dependencyEdges[$index]",
+                        "Dependency edge cannot cross between normal and workflow-failure regions."
+                    )
+                }
+                edge.candidates.forEach { candidate ->
+                    if (
+                        (candidate in normalRegion && target in failureRegion) ||
+                        (candidate in failureRegion && target in normalRegion)
+                    ) {
+                        issues += issue(
+                            "graph.workflow.failure-handler.candidate-crossing",
+                            "dependencyEdges[$index].candidates",
+                            "Dependency candidate cannot cross between normal and workflow-failure regions."
+                        )
+                    }
+                }
+            }
+            graph.outputs.forEach { output ->
+                if (output.sourceNodeId in failureRegion) {
+                    issues += issue(
+                        "graph.workflow.failure-handler.output",
+                        "outputs.${output.name}.sourceNodeId",
+                        "Workflow failure-handler values cannot be published as normal workflow outputs."
+                    )
+                }
             }
         }
     }
@@ -563,6 +667,26 @@ object CanonicalExecutionGraphValidator {
                 "bindings.nodeMetadata.${workflow?.value.orEmpty()}.$planNodeId",
                 "Compatibility plan-node id '$planNodeId' is declared more than once in workflow '$workflow'."
             )
+        }
+        build.graph.workflows.forEach { workflow ->
+            val projection = bindings.workflowPlans.singleOrNull { it.workflowId == workflow.id }
+            val handler = workflow.failurePolicy.handler
+            if ((handler == null) != (projection?.failureCompatibility == null)) {
+                issues += issue(
+                    "graph.workflow.failure-compatibility.mismatch",
+                    "bindings.workflowPlans.${workflow.id}.failureCompatibility",
+                    "Workflow failure policy and compatibility boundary metadata must be present together."
+                )
+            }
+            projection?.failureCompatibility?.let { compatibility ->
+                if (compatibility.boundaryNodeId in bindings.nodeMetadata.map { it.planNodeId }) {
+                    issues += issue(
+                        "graph.workflow.failure-compatibility.node-collision",
+                        "bindings.workflowPlans.${workflow.id}.failureCompatibility.boundaryNodeId",
+                        "Workflow failure compatibility boundary id collides with a canonical graph node projection."
+                    )
+                }
+            }
         }
         val graphWorkflows = build.graph.workflows.associate { it.id to it.name }
         val bindingWorkflows = bindings.workflowPlans.associate { it.workflowId to it.workflowName }

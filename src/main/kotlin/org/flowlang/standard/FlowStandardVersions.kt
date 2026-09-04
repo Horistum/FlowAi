@@ -14,7 +14,7 @@ object FlowStandardVersions {
     const val INTENT_VERSION = "2.0"
     const val AST_VERSION = "2.2"
     const val EXECUTION_PLAN_VERSION = "2.4"
-    const val WORKFLOW_EXECUTION_PLAN_SET_VERSION = "1.0"
+    const val WORKFLOW_EXECUTION_PLAN_SET_VERSION = "1.1"
     const val EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION = "2.1"
     const val TARGET_MANIFEST_VERSION = "3.0"
     const val TARGET_REGISTRY_VERSION = "3.2"

@@ -4,7 +4,9 @@ import java.io.File
 import org.flowlang.adapters.continuity.AdapterContinuityProjectionExecutionGate
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetProjectionRule
+import org.flowlang.compiler.AuthorizedWorkflowFailureProjection
 import org.flowlang.compiler.CompilationAuthorization
+import org.flowlang.compiler.requireSingleWorkflowFailureProjection
 import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
@@ -66,7 +68,14 @@ class JenkinsManifestGenerator(
     override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
         val plan = authorization.plan
         val compatibility = authorization.compatibility
-        val steps = plan.nodes.toJenkinsTargetSteps(authorization.compilationAuthorization, target, compatibility.projectionRules, nativeProjectionCatalog)
+        val failureProjection = authorization.compilationAuthorization
+            .requireSingleWorkflowFailureProjection()
+        val steps = failureProjection.toJenkinsTargetSteps(
+            authorization.compilationAuthorization,
+            target,
+            compatibility.projectionRules,
+            nativeProjectionCatalog
+        )
         return TargetManifest(
             target = target,
             flowName = plan.flowName,
@@ -89,16 +98,14 @@ class GitHubActionsManifestGenerator(
         val plan = authorization.plan
         val compatibility = authorization.compatibility
         val jobs = mutableListOf<TargetJob>()
-        plan.nodes.forEach {
-            it.toTargetJobs(
+        authorization.compilationAuthorization.requireSingleWorkflowFailureProjection()
+            .toTargetJobs(
                 authorization.compilationAuthorization,
                 jobs,
-                condition = null,
                 targetName = target,
                 projectionRules = compatibility.projectionRules,
                 nativeProjections = nativeProjectionCatalog
             )
-        }
         val baseJobs = jobs.ifEmpty {
             listOf(
                 TargetJob(
@@ -136,9 +143,14 @@ class TektonManifestGenerator(
         val plan = authorization.plan
         val compatibility = authorization.compatibility
         val jobs = mutableListOf<TargetJob>()
-        plan.nodes.forEach {
-            it.toTargetJobs(authorization.compilationAuthorization, jobs, condition = null, targetName = target, projectionRules = compatibility.projectionRules, nativeProjections = nativeProjectionCatalog)
-        }
+        authorization.compilationAuthorization.requireSingleWorkflowFailureProjection()
+            .toTargetJobs(
+                authorization.compilationAuthorization,
+                jobs,
+                targetName = target,
+                projectionRules = compatibility.projectionRules,
+                nativeProjections = nativeProjectionCatalog
+            )
         val resolvedJobs = jobs.ifEmpty {
             listOf(TargetJob(
                 id = sanitizeId(plan.flowName),
@@ -186,48 +198,109 @@ class TektonManifestGenerator(
     }
 }
 
-private fun List<PlanNode>.toJenkinsTargetSteps(
+private fun AuthorizedWorkflowFailureProjection.toJenkinsTargetSteps(
     authorization: CompilationAuthorization,
     targetName: String,
     projectionRules: List<TargetProjectionRule>,
     nativeProjections: TargetNativeProjectionCatalog
 ): List<TargetStep> {
-    val flowHandler = lastOrNull() as? TryPlanNode
-    if (flowHandler != null && flowHandler.body.isEmpty() && flowHandler.errorHandler.isNotEmpty()) {
-        val bodyNodes = dropLast(1)
-        if (bodyNodes.isNotEmpty()) {
-            val bodyStep = TargetStep(
-                id = sanitizeId("flow_1_body"),
-                name = "flow_1 body",
-                type = "try-body",
-                children = bodyNodes.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
-                metadata = mapOf("sourceNodeKind" to flowHandler.kind, "tryRole" to "body")
-            )
-            val handlerStep = TargetStep(
-                id = sanitizeId("flow_1_handler"),
-                name = "flow_1 error handler",
-                type = "error-handler",
-                children = flowHandler.errorHandler.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
-                metadata = mapOf("sourceNodeKind" to flowHandler.kind, "tryRole" to "errorHandler")
-            )
-            val stepId = sanitizeId("flow_1")
-            val structural = nativeProjections.resolveStructure(TargetStructuralProjectionKind.ERROR_BOUNDARY, stepId)
-            return listOf(TargetStep(
-                id = stepId,
-                name = "flow_1",
-                type = TargetStructuralProjectionKind.ERROR_BOUNDARY.stepType,
-                children = listOf(bodyStep, handlerStep),
-                materialization = structural.materialization,
-                rendererPayload = structural.rendererPayload,
-                metadata = mapOf(
-                    "sourceNodeKind" to flowHandler.kind,
-                    "flowLevelErrorBoundary" to "true",
-                    "errorHandlerCount" to flowHandler.errorHandler.size.toString()
-                )
-            ))
-        }
+    val handler = policy.handler ?: return normalNodes.flatMap {
+        it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections)
     }
-    return flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) }
+    val bodyStep = TargetStep(
+        id = sanitizeId("${handler.id}_body"),
+        name = "${handler.id} body",
+        type = "try-body",
+        children = normalNodes.flatMap {
+            it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections)
+        },
+        metadata = mapOf(
+            "sourceNodeKind" to "WorkflowFailurePolicy",
+            "tryRole" to "body"
+        )
+    )
+    val handlerStep = TargetStep(
+        id = sanitizeId("${handler.id}_handler"),
+        name = "${handler.id} error handler",
+        type = "error-handler",
+        children = handlerNodes.flatMap {
+            it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections)
+        },
+        metadata = mapOf(
+            "sourceNodeKind" to "WorkflowFailurePolicy",
+            "tryRole" to "errorHandler"
+        )
+    )
+    val stepId = sanitizeId(handler.id)
+    val structural = nativeProjections.resolveStructure(
+        TargetStructuralProjectionKind.ERROR_BOUNDARY,
+        stepId
+    )
+    return listOf(
+        TargetStep(
+            id = stepId,
+            name = handler.id,
+            type = TargetStructuralProjectionKind.ERROR_BOUNDARY.stepType,
+            children = listOf(bodyStep, handlerStep),
+            materialization = structural.materialization,
+            rendererPayload = structural.rendererPayload,
+            metadata = mapOf(
+                "sourceNodeKind" to "WorkflowFailurePolicy",
+                "flowLevelErrorBoundary" to "true",
+                "workflowFailurePolicy" to "true",
+                "workflowFailureDisposition" to policy.disposition.name,
+                "workflowFailureErrorBinding" to handler.entry.errorBinding,
+                "workflowFailurePriorSuccessfulValuesAvailable" to
+                    handler.entry.priorSuccessfulValuesAvailable.toString(),
+                "errorHandlerCount" to handlerNodes.size.toString()
+            )
+        )
+    )
+}
+
+private fun AuthorizedWorkflowFailureProjection.toTargetJobs(
+    authorization: CompilationAuthorization,
+    out: MutableList<TargetJob>,
+    targetName: String,
+    projectionRules: List<TargetProjectionRule>,
+    nativeProjections: TargetNativeProjectionCatalog
+) {
+    normalNodes.forEach { node ->
+        node.toTargetJobs(
+            authorization,
+            out,
+            condition = null,
+            targetName = targetName,
+            projectionRules = projectionRules,
+            nativeProjections = nativeProjections
+        )
+    }
+    val handler = policy.handler ?: return
+    val guardDependencies = out.map(TargetJob::id)
+    val handlerJobs = mutableListOf<TargetJob>()
+    handlerNodes.forEach { node ->
+        node.toTargetJobs(
+            authorization,
+            handlerJobs,
+            condition = null,
+            targetName = targetName,
+            projectionRules = projectionRules,
+            nativeProjections = nativeProjections
+        )
+    }
+    out += handlerJobs.map { job ->
+        job.copy(
+            dependsOn = (job.dependsOn + guardDependencies).distinct(),
+            metadata = job.metadata + mapOf(
+                "errorHandler" to "true",
+                "workflowFailurePolicy" to "true",
+                "workflowFailureDisposition" to policy.disposition.name,
+                "workflowFailureErrorBinding" to handler.entry.errorBinding,
+                "workflowFailurePriorSuccessfulValuesAvailable" to
+                    handler.entry.priorSuccessfulValuesAvailable.toString()
+            )
+        )
+    }
 }
 
 private fun PlanNode.toTargetJobs(

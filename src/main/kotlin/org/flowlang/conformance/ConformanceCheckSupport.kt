@@ -58,7 +58,13 @@ internal abstract class ConformanceCheckSupport(
         val intent = compilation.requireIntentEvidence().intent
         val plan = compilation.executionPlan
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target, strict = strict)
-        val manifest = manifestPipeline.generate(materializationRequest(plan, target, strict, "conformance:build-pipeline"))
+        val manifest = manifestPipeline.generate(
+            TargetMaterializationRequest.fromCompilation(
+                compilation = compilation,
+                selection = explicitTarget(target, "conformance:build-pipeline"),
+                strict = strict
+            )
+        )
         val rendering = artifactRendering.render(manifest)
         return PipelineArtifacts(
             intent = intent,

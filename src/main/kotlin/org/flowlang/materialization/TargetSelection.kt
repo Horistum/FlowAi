@@ -5,6 +5,7 @@ import org.flowlang.compiler.CanonicalExecutionGraphGate
 import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.compiler.CompilationUnit
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.PlannedWorkflowFailurePolicy
 import org.flowlang.standard.FlowStandardVersions
 
 enum class TargetSelectionOrigin {
@@ -222,13 +223,15 @@ class TargetMaterializationRequest private constructor(
     private val compilationAuthorization: CompilationAuthorization?,
     private val compatibilityPlan: ExecutionPlan?,
     private val compatibilityEvidenceId: String?,
+    private val compatibilityFailurePolicy: PlannedWorkflowFailurePolicy,
     val selection: ExplicitTargetSelection,
     val strict: Boolean = false
 ) {
     private val compatibilityAuthorization: Lazy<CompilationAuthorization> = lazy {
         CanonicalExecutionGraphGate.authorizeCompatibilityPlan(
             plannerPlan = requireNotNull(compatibilityPlan),
-            evidenceId = requireNotNull(compatibilityEvidenceId)
+            evidenceId = requireNotNull(compatibilityEvidenceId),
+            failurePolicy = compatibilityFailurePolicy
         )
     }
 
@@ -264,6 +267,7 @@ class TargetMaterializationRequest private constructor(
                 compilationAuthorization = compilation.authorization,
                 compatibilityPlan = null,
                 compatibilityEvidenceId = null,
+                compatibilityFailurePolicy = PlannedWorkflowFailurePolicy.none(),
                 selection = selection,
                 strict = strict
             )
@@ -273,11 +277,13 @@ class TargetMaterializationRequest private constructor(
             plan: ExecutionPlan,
             selection: ExplicitTargetSelection,
             strict: Boolean = false,
-            evidenceId: String = selection.evidence.source
+            evidenceId: String = selection.evidence.source,
+            failurePolicy: PlannedWorkflowFailurePolicy = PlannedWorkflowFailurePolicy.none()
         ): TargetMaterializationRequest = TargetMaterializationRequest(
             compilationAuthorization = null,
             compatibilityPlan = plan,
             compatibilityEvidenceId = requireSourceComponent(evidenceId, "Compatibility-plan evidence id"),
+            compatibilityFailurePolicy = failurePolicy,
             selection = selection,
             strict = strict
         )
@@ -292,6 +298,7 @@ class TargetMaterializationRequest private constructor(
         compilationAuthorization = null,
         compatibilityPlan = plan,
         compatibilityEvidenceId = selection.evidence.source,
+        compatibilityFailurePolicy = PlannedWorkflowFailurePolicy.none(),
         selection = selection,
         strict = strict
     )
@@ -301,12 +308,14 @@ class TargetDiagnosticMaterializationRequest private constructor(
     private val compilationAuthorization: CompilationAuthorization?,
     private val compatibilityPlan: ExecutionPlan?,
     private val compatibilityEvidenceId: String?,
+    private val compatibilityFailurePolicy: PlannedWorkflowFailurePolicy,
     val selection: ExplicitTargetSelection
 ) {
     private val compatibilityAuthorization: Lazy<CompilationAuthorization> = lazy {
         CanonicalExecutionGraphGate.authorizeCompatibilityPlan(
             plannerPlan = requireNotNull(compatibilityPlan),
-            evidenceId = requireNotNull(compatibilityEvidenceId)
+            evidenceId = requireNotNull(compatibilityEvidenceId),
+            failurePolicy = compatibilityFailurePolicy
         )
     }
 
@@ -341,6 +350,7 @@ class TargetDiagnosticMaterializationRequest private constructor(
                 compilationAuthorization = compilation.authorization,
                 compatibilityPlan = null,
                 compatibilityEvidenceId = null,
+                compatibilityFailurePolicy = PlannedWorkflowFailurePolicy.none(),
                 selection = selection
             )
         }
@@ -348,11 +358,13 @@ class TargetDiagnosticMaterializationRequest private constructor(
         internal fun fromCompatibilityPlan(
             plan: ExecutionPlan,
             selection: ExplicitTargetSelection,
-            evidenceId: String = selection.evidence.source
+            evidenceId: String = selection.evidence.source,
+            failurePolicy: PlannedWorkflowFailurePolicy = PlannedWorkflowFailurePolicy.none()
         ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest(
             compilationAuthorization = null,
             compatibilityPlan = plan,
             compatibilityEvidenceId = requireSourceComponent(evidenceId, "Compatibility-plan evidence id"),
+            compatibilityFailurePolicy = failurePolicy,
             selection = selection
         )
     }
@@ -365,6 +377,7 @@ class TargetDiagnosticMaterializationRequest private constructor(
         compilationAuthorization = null,
         compatibilityPlan = plan,
         compatibilityEvidenceId = selection.evidence.source,
+        compatibilityFailurePolicy = PlannedWorkflowFailurePolicy.none(),
         selection = selection
     )
 }

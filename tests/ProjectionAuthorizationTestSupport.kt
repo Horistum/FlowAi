@@ -19,15 +19,68 @@ import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.planner.ExecutionPlan
+import org.flowlang.planner.PlanNode
+import org.flowlang.planner.PlanTrigger
+import org.flowlang.planner.PlannedWorkflowFailurePolicy
+import org.flowlang.planner.TryPlanNode
+import org.flowlang.planner.WorkflowFailureDisposition
+import org.flowlang.planner.WorkflowFailureHandlerEntry
+import org.flowlang.planner.WorkflowFailureHandlerRegion
+import org.flowlang.planner.WorkflowFailurePolicy
 import org.flowlang.topology.ExecutionTopologyMatchingAuthority
 import org.flowlang.topology.ExecutionTopologyProfile
+
+/**
+ * Test-fixture migration helper. It may recognize the exact legacy mirror only
+ * because tests deliberately start from an already projected ExecutionPlan.
+ * Production code must enter through CompilationAuthorization and never infer
+ * workflow failure meaning from node position, id or capability text.
+ */
+internal fun testWorkflowFailurePolicy(plan: ExecutionPlan): PlannedWorkflowFailurePolicy {
+    val boundary = plan.nodes.lastOrNull() as? TryPlanNode
+        ?: return PlannedWorkflowFailurePolicy.none()
+    if (
+        boundary.body.isNotEmpty() ||
+        boundary.errorHandler.isEmpty() ||
+        "errorHandlers.finally" !in plan.requiredCapabilities
+    ) {
+        return PlannedWorkflowFailurePolicy.none()
+    }
+    val authored = plan.sourceIntent?.workflows.orEmpty()
+        .map { it.name }
+        .filter(String::isNotBlank)
+        .distinct()
+    val triggered = plan.triggers.flatMap(PlanTrigger::workflows)
+        .filter(String::isNotBlank)
+        .filterNot { it == "main" && authored.isNotEmpty() }
+        .distinct()
+    val referenced = (authored + triggered).distinct()
+    require(referenced.size <= 1) {
+        "Test compatibility plan cannot reconstruct multiple workflow identities: ${referenced.joinToString()}."
+    }
+    val workflowName = referenced.singleOrNull() ?: "main"
+    val handler = WorkflowFailureHandlerRegion(
+        id = "workflow-failure:$workflowName",
+        nodeIds = boundary.errorHandler.map(PlanNode::id),
+        entry = WorkflowFailureHandlerEntry(
+            errorBinding = "error",
+            priorSuccessfulValuesAvailable = false
+        )
+    )
+    return PlannedWorkflowFailurePolicy(
+        policy = WorkflowFailurePolicy(WorkflowFailureDisposition.PROPAGATE, handler),
+        handlerNodes = boundary.errorHandler,
+        compatibilityBoundaryNodeId = boundary.id
+    )
+}
 
 internal fun testCompatibilityAuthorization(
     plan: ExecutionPlan,
     evidenceId: String = "test:compatibility-plan"
 ) = CanonicalExecutionGraphGate.authorizeCompatibilityPlan(
     plannerPlan = plan,
-    evidenceId = evidenceId
+    evidenceId = evidenceId,
+    failurePolicy = testWorkflowFailurePolicy(plan)
 )
 
 internal fun TargetMaterializationResolver.resolve(
@@ -98,7 +151,8 @@ internal fun testMaterializationRequest(
     plan = plan,
     selection = testTargetSelection(target, targets, source),
     strict = strict,
-    evidenceId = source
+    evidenceId = source,
+    failurePolicy = testWorkflowFailurePolicy(plan)
 )
 
 internal fun testDiagnosticMaterializationRequest(
@@ -109,7 +163,8 @@ internal fun testDiagnosticMaterializationRequest(
 ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest.fromCompatibilityPlan(
     plan = plan,
     selection = testTargetSelection(target, targets, source),
-    evidenceId = source
+    evidenceId = source,
+    failurePolicy = testWorkflowFailurePolicy(plan)
 )
 
 /** Low-level projection fixture support. Production callers cannot construct authorization. */
@@ -122,16 +177,21 @@ internal fun TargetManifestGenerator.generate(
         plan,
         "test:projection-generator:${compatibility.target}"
     )
-    return generate(TargetProjectionAuthorization(
-    compilationAuthorization = authorization,
-    selection = testTargetSelection(compatibility.target),
-    compatibility = compatibility,
-    strict = strict,
-    topology = ExecutionTopologyMatchingAuthority.assess(
-        plan.topologyRequirements,
-        ExecutionTopologyProfile.fullySupported(compatibility.target, "test:${compatibility.target}:topology")
+    return generate(
+        TargetProjectionAuthorization(
+            compilationAuthorization = authorization,
+            selection = testTargetSelection(compatibility.target),
+            compatibility = compatibility,
+            strict = strict,
+            topology = ExecutionTopologyMatchingAuthority.assess(
+                plan.topologyRequirements,
+                ExecutionTopologyProfile.fullySupported(
+                    compatibility.target,
+                    "test:${compatibility.target}:topology"
+                )
+            )
+        )
     )
-    ))
 }
 
 /** Low-level provider fixture support. Production callers use TargetManifestGenerationPipeline. */
@@ -144,14 +204,19 @@ internal fun TargetProjectionProvider.generate(
         plan,
         "test:projection-provider:${compatibility.target}"
     )
-    return generate(TargetProjectionAuthorization(
-    compilationAuthorization = authorization,
-    selection = testTargetSelection(compatibility.target),
-    compatibility = compatibility,
-    strict = strict,
-    topology = ExecutionTopologyMatchingAuthority.assess(
-        plan.topologyRequirements,
-        ExecutionTopologyProfile.fullySupported(compatibility.target, "test:${compatibility.target}:topology")
+    return generate(
+        TargetProjectionAuthorization(
+            compilationAuthorization = authorization,
+            selection = testTargetSelection(compatibility.target),
+            compatibility = compatibility,
+            strict = strict,
+            topology = ExecutionTopologyMatchingAuthority.assess(
+                plan.topologyRequirements,
+                ExecutionTopologyProfile.fullySupported(
+                    compatibility.target,
+                    "test:${compatibility.target}:topology"
+                )
+            )
+        )
     )
-    ))
 }

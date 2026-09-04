@@ -153,6 +153,7 @@ authorities:
     callers:
       - "src/main/kotlin/org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterControlConformanceChecks.kt"
+      - "src/main/kotlin/org/flowlang/conformance/Ar02WorkflowFailureConformanceChecks.kt"
   - name: "AdapterControlRequirementAuthority"
     path: "src/main/kotlin/org/flowlang/adapters/control/AdapterControlRequirementAuthority.kt"
     role: "adapter-policy-owner"

@@ -27,6 +27,7 @@ class MultipleWorkflowCompatibilityViewException(
 data class WorkflowExecutionPlanView(
     val workflowId: String,
     val workflowName: String,
+    val failurePolicy: WorkflowFailurePolicy = WorkflowFailurePolicy(),
     val executionPlan: ExecutionPlan,
     val canonicalPlan: CanonicalExecutionPlan
 ) {

@@ -126,10 +126,53 @@ data class CanonicalValueMerge(
     }
 }
 
+enum class CanonicalWorkflowFailureDisposition {
+    PROPAGATE,
+    RECOVER
+}
+
+data class CanonicalWorkflowFailureHandlerEntry(
+    val errorBinding: String = "error",
+    val priorSuccessfulValuesAvailable: Boolean = false
+) {
+    init {
+        requireGraphText(errorBinding, "Canonical workflow failure error binding")
+    }
+}
+
+data class CanonicalWorkflowFailureHandlerRegion(
+    val id: String,
+    val nodeIds: List<CanonicalNodeId>,
+    val entry: CanonicalWorkflowFailureHandlerEntry = CanonicalWorkflowFailureHandlerEntry()
+) {
+    init {
+        requireGraphText(id, "Canonical workflow failure-handler region id")
+        require(nodeIds.isNotEmpty()) {
+            "Canonical workflow failure-handler region must own at least one node."
+        }
+        require(nodeIds.toSet().size == nodeIds.size) {
+            "Canonical workflow failure-handler region cannot repeat node ids."
+        }
+    }
+}
+
+data class CanonicalWorkflowFailurePolicy(
+    val disposition: CanonicalWorkflowFailureDisposition =
+        CanonicalWorkflowFailureDisposition.PROPAGATE,
+    val handler: CanonicalWorkflowFailureHandlerRegion? = null
+) {
+    init {
+        require(disposition != CanonicalWorkflowFailureDisposition.RECOVER || handler != null) {
+            "Canonical workflow recovery requires an explicit handler region."
+        }
+    }
+}
+
 data class CanonicalWorkflow(
     val id: CanonicalWorkflowId,
     val name: String,
-    val rootNodeIds: List<CanonicalNodeId>
+    val rootNodeIds: List<CanonicalNodeId>,
+    val failurePolicy: CanonicalWorkflowFailurePolicy = CanonicalWorkflowFailurePolicy()
 ) {
     init {
         requireGraphText(name, "Canonical workflow name")

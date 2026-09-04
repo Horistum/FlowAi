@@ -140,10 +140,27 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         requireJenkinsStructure(step, "try-catch")
         val body = step.children.firstOrNull { it.type == "try-body" }
         val handler = step.children.firstOrNull { it.type == "error-handler" }
+        val workflowFailure = step.metadata["workflowFailurePolicy"] == "true"
+        val disposition = step.metadata["workflowFailureDisposition"]
+        val errorBinding = step.metadata["workflowFailureErrorBinding"]
+        if (workflowFailure) {
+            require(disposition in setOf("PROPAGATE", "RECOVER")) {
+                "Jenkins workflow failure boundary '${step.id}' has invalid disposition '$disposition'."
+            }
+            require(errorBinding != null && JENKINS_IDENTIFIER.matches(errorBinding)) {
+                "Jenkins workflow failure boundary '${step.id}' has invalid error binding '$errorBinding'."
+            }
+        }
         sb.appendLine("${indent}try {")
         body?.children.orEmpty().forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
         sb.appendLine("${indent}} catch (flowError) {")
+        if (workflowFailure) {
+            sb.appendLine("${indent}  def $errorBinding = flowError")
+        }
         handler?.children.orEmpty().forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+        if (workflowFailure && disposition == "PROPAGATE") {
+            sb.appendLine("${indent}  throw flowError")
+        }
         sb.appendLine("${indent}}")
     }
 
@@ -164,6 +181,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
         sb.appendLine("${indent}}")
     }
+
+    private val JENKINS_IDENTIFIER = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
     private fun requireJenkinsStructure(step: TargetStep, reference: String) {
         val payload = requireNotNull(step.rendererPayload) {

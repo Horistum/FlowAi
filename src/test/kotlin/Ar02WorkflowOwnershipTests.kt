@@ -273,7 +273,7 @@ class Ar02WorkflowOwnershipTests {
         val unit = compile(MULTI_WORKFLOW_INTENT, "ar02c-public-contract")
         val serialized = Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(unit.workflowPlanSet)
         assertEquals(true, serialized.path("multiWorkflow").asBoolean())
-        assertEquals("1.0", serialized.path("contractVersion").asText())
+        assertEquals("1.1", serialized.path("contractVersion").asText())
         assertTrue(
             File("schemas/workflow-execution-plan-set.schema.json")
                 .readText()

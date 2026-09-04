@@ -1,5 +1,7 @@
 package org.flowlang.adapters.control
 
+import org.flowlang.compiler.CompilationAuthorization
+import org.flowlang.compiler.requireSingleWorkflowFailureProjection
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ExecutionPlan
@@ -10,34 +12,52 @@ import org.flowlang.planner.PlanNode
 import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
+import org.flowlang.planner.WorkflowFailurePolicy
 
 /**
- * Derives exact target-neutral adapter control requirements from an already
- * certified ExecutionPlan. It does not inspect targets, providers or evidence.
+ * Derives target-neutral adapter control requirements.
+ *
+ * Product callers enter through canonical compilation authorization so a
+ * workflow failure handler is identified by its typed policy. The plan-only
+ * overload remains for isolated compatibility fixtures and deliberately treats
+ * every empty-body Try as detached; it never guesses workflow meaning from an
+ * id, position or capability string.
  */
 internal object AdapterControlRequirementAuthority {
-    fun derive(plan: ExecutionPlan): List<AdapterControlRequirement> {
+    fun derive(authorization: CompilationAuthorization): List<AdapterControlRequirement> {
+        val failure = authorization.requireSingleWorkflowFailureProjection()
+        return derive(
+            plan = authorization.executionPlan,
+            normalNodes = failure.normalNodes,
+            handlerNodes = failure.handlerNodes,
+            workflowFailurePolicy = failure.policy
+        )
+    }
+
+    fun derive(plan: ExecutionPlan): List<AdapterControlRequirement> = derive(
+        plan = plan,
+        normalNodes = plan.nodes,
+        handlerNodes = emptyList(),
+        workflowFailurePolicy = null
+    )
+
+    private fun derive(
+        plan: ExecutionPlan,
+        normalNodes: List<PlanNode>,
+        handlerNodes: List<PlanNode>,
+        workflowFailurePolicy: WorkflowFailurePolicy?
+    ): List<AdapterControlRequirement> {
         val requirements = mutableListOf<AdapterControlRequirement>()
-        val canonicalFlowHandler = plan.nodes.lastOrNull()
-            ?.takeIf { node ->
-                node is TryPlanNode &&
-                    node.body.isEmpty() &&
-                    node.errorHandler.isNotEmpty() &&
-                    plan.nodes.size > 1 &&
-                    FLOW_ERROR_HANDLER_ID.matches(node.id) &&
-                    "errorHandlers.finally" in plan.requiredCapabilities
-            }
-        flatten(plan.nodes).forEach { node ->
+        flatten(normalNodes + handlerNodes).forEach { node ->
             when (node) {
                 is ApprovalNode -> requirements += approvalRequirement(node)
                 is RetryGroupNode -> addRetryRequirements(node, requirements)
-                is TryPlanNode -> addCompensationRequirements(
-                    node = node,
-                    canonicalFlowHandler = node === canonicalFlowHandler,
-                    requirements = requirements
-                )
+                is TryPlanNode -> addCompensationRequirements(node, requirements)
                 else -> Unit
             }
+        }
+        workflowFailurePolicy?.let { policy ->
+            addWorkflowFailureRequirements(policy, handlerNodes, requirements)
         }
         addScheduleRequirements(plan, requirements)
         addPreservedSourceRequirements(plan, requirements)
@@ -45,7 +65,8 @@ internal object AdapterControlRequirementAuthority {
         val byId = requirements.groupBy(AdapterControlRequirement::id)
         val conflicting = byId.filterValues { group -> group.distinct().size > 1 }
         require(conflicting.isEmpty()) {
-            "Adapter control requirement identity collision: " + conflicting.keys.sorted().joinToString()
+            "Adapter control requirement identity collision: " +
+                conflicting.keys.sorted().joinToString()
         }
         return byId.values.map { it.first() }.sortedBy(AdapterControlRequirement::id)
     }
@@ -114,32 +135,65 @@ internal object AdapterControlRequirementAuthority {
 
     private fun addCompensationRequirements(
         node: TryPlanNode,
-        canonicalFlowHandler: Boolean,
         requirements: MutableList<AdapterControlRequirement>
     ) {
         if (node.errorHandler.isEmpty()) return
-        val detached = node.body.isEmpty() && !canonicalFlowHandler
+        val detached = node.body.isEmpty()
         requirements += requirement(
             family = AdapterControlFamily.COMPENSATION,
-            semantic = if (detached) "compensation.detached-error-handler" else "compensation.error-handler",
+            semantic = if (detached) {
+                "compensation.detached-error-handler"
+            } else {
+                "compensation.error-handler"
+            },
             subject = node.id,
             scope = AdapterControlScope.WORKFLOW,
             detail = if (detached) {
-                "TryPlanNode has an error handler but no protected body or certified planner flow-level boundary"
+                "TryPlanNode has an error handler but no protected body."
             } else {
                 "TryPlanNode(errorHandler=${node.errorHandler.size})"
             }
         )
-        val containsRollback = flatten(node.errorHandler)
+        addRollbackRequirement(node.id, node.errorHandler, requirements)
+    }
+
+    private fun addWorkflowFailureRequirements(
+        policy: WorkflowFailurePolicy,
+        handlerNodes: List<PlanNode>,
+        requirements: MutableList<AdapterControlRequirement>
+    ) {
+        val handler = policy.handler ?: return
+        require(handler.nodeIds == handlerNodes.map(PlanNode::id)) {
+            "Workflow failure policy and authorized handler nodes differ."
+        }
+        requirements += requirement(
+            family = AdapterControlFamily.COMPENSATION,
+            semantic = "compensation.error-handler",
+            subject = handler.id,
+            scope = AdapterControlScope.WORKFLOW,
+            detail = "WorkflowFailurePolicy(disposition=${policy.disposition}, " +
+                "errorBinding=${handler.entry.errorBinding}, " +
+                "priorSuccessfulValuesAvailable=${handler.entry.priorSuccessfulValuesAvailable}, " +
+                "handlerNodes=${handler.nodeIds.size})"
+        )
+        addRollbackRequirement(handler.id, handlerNodes, requirements)
+    }
+
+    private fun addRollbackRequirement(
+        subject: String,
+        handlerNodes: List<PlanNode>,
+        requirements: MutableList<AdapterControlRequirement>
+    ) {
+        val containsRollback = flatten(handlerNodes)
             .filterIsInstance<TaskNode>()
             .any { it.semanticCapability == "ROLLBACK" }
         if (containsRollback) {
             requirements += requirement(
                 family = AdapterControlFamily.COMPENSATION,
                 semantic = "compensation.rollback",
-                subject = node.id,
+                subject = subject,
                 scope = AdapterControlScope.WORKFLOW,
-                detail = "TryPlanNode contains canonical rollback work"
+                detail = "Failure handler contains canonical rollback work"
             )
         }
     }
@@ -234,7 +288,8 @@ internal object AdapterControlRequirementAuthority {
         subject: String,
         scope: AdapterControlScope,
         detail: String,
-        completeness: AdapterControlRequirementCompleteness = AdapterControlRequirementCompleteness.COMPLETE
+        completeness: AdapterControlRequirementCompleteness =
+            AdapterControlRequirementCompleteness.COMPLETE
     ): AdapterControlRequirement = AdapterControlRequirement(
         id = "adapter-control.$semantic.${canonicalId(subject)}",
         family = family,
@@ -266,7 +321,6 @@ internal object AdapterControlRequirementAuthority {
         .trim('-')
         .ifBlank { "control" }
 
-    private val FLOW_ERROR_HANDLER_ID = Regex("^onError_[0-9]+$")
     private val SCHEDULER_CONCURRENCY_KEYS = setOf("concurrency", "concurrencyPolicy")
     private val SCHEDULER_CATCH_UP_KEYS = setOf("catchUp", "startingDeadlineSeconds")
 }

@@ -72,8 +72,24 @@ object CanonicalExecutionGraphDigestComputer {
         "workflow",
         "id" to atom(workflow.id.value),
         "name" to atom(workflow.name),
-        "roots" to ordered(workflow.rootNodeIds.map { atom(it.value) })
-    )
+            "roots" to ordered(workflow.rootNodeIds.map { atom(it.value) }),
+            "failurePolicy" to canonicalFailurePolicy(workflow.failurePolicy)
+        )
+
+        private fun canonicalFailurePolicy(policy: CanonicalWorkflowFailurePolicy): String = record(
+            "workflowFailurePolicy",
+            "disposition" to atom(policy.disposition.name),
+            "handler" to optional(policy.handler?.let { handler ->
+                record(
+                    "workflowFailureHandler",
+                    "id" to atom(handler.id),
+                    "nodes" to ordered(handler.nodeIds.map { atom(it.value) }),
+                    "errorBinding" to atom(handler.entry.errorBinding),
+                    "priorSuccessfulValuesAvailable" to
+                        atom(handler.entry.priorSuccessfulValuesAvailable.toString())
+                )
+            })
+        )
 
     private fun canonicalInput(input: CanonicalGraphInput): String = record(
         "input",
