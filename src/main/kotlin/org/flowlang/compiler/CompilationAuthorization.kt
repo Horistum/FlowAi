@@ -10,6 +10,8 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.ExecutionProgramPlanningResult
 import org.flowlang.planner.FlowPlanningResult
 import org.flowlang.planner.PlanDependencyRelations
+import org.flowlang.planner.PlanNode
+import org.flowlang.planner.PlannedWorkflowFailurePolicy
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.WorkflowExecutionPlanSet
 import org.flowlang.validator.ValidationReport
@@ -154,6 +156,7 @@ object CanonicalExecutionGraphGate {
             plannerPlan = planning.plan,
             mergeContracts = availability.merges,
             producerNodeIds = planning.producerNodeIds,
+            failurePolicy = planning.failurePolicy,
             binding = { digest ->
                 CompilationValidationBinding(
                     origin = CompilationAuthorizationOrigin.COMPILATION_UNIT,
@@ -269,7 +272,8 @@ object CanonicalExecutionGraphGate {
      */
     internal fun authorizeCompatibilityPlan(
         plannerPlan: ExecutionPlan,
-        evidenceId: String
+        evidenceId: String,
+        failurePolicy: PlannedWorkflowFailurePolicy = PlannedWorkflowFailurePolicy.none()
     ): CompilationAuthorization {
         require(evidenceId.isNotBlank()) { "Compatibility-plan evidence id must not be blank." }
         return authorize(
@@ -283,7 +287,8 @@ object CanonicalExecutionGraphGate {
                     flowValid = true,
                     graphValid = true
                 )
-            }
+            },
+            failurePolicy = failurePolicy
         )
     }
 
@@ -291,9 +296,15 @@ object CanonicalExecutionGraphGate {
         plannerPlan: ExecutionPlan,
         binding: (CanonicalExecutionGraphDigest) -> CompilationValidationBinding,
         mergeContracts: List<FlowMergeContract> = emptyList(),
-        producerNodeIds: Map<FlowProducerIdentity, String> = emptyMap()
+        producerNodeIds: Map<FlowProducerIdentity, String> = emptyMap(),
+        failurePolicy: PlannedWorkflowFailurePolicy = PlannedWorkflowFailurePolicy.none()
     ): CompilationAuthorization {
-        val build = CanonicalExecutionGraphBuilder.build(plannerPlan, mergeContracts, producerNodeIds)
+        val build = CanonicalExecutionGraphBuilder.build(
+            plannerPlan,
+            mergeContracts,
+            producerNodeIds,
+            failurePolicy
+        )
         CanonicalExecutionGraphValidator.requireValid(build)
         val digest = CanonicalExecutionGraphDigestComputer.digest(build.graph)
         val projectedSet = CanonicalExecutionGraphProjection.toWorkflowExecutionPlanSet(build)

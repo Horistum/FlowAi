@@ -331,7 +331,7 @@ object ReleaseLifecycleFixture {
         appendLine("    intent: \"2.0\"")
         appendLine("    ast: \"2.2\"")
         appendLine("    executionPlan: \"2.4\"")
-        appendLine("    workflowExecutionPlanSet: \"1.0\"")
+        appendLine("    workflowExecutionPlanSet: \"1.1\"")
         appendLine("    executionPlanLoweringEvidence: \"2.1\"")
         appendLine("    targetManifest: \"3.0\"")
         appendLine("    targetRegistry: \"3.2\"")

@@ -18,7 +18,9 @@ import org.flowlang.planner.PlanNode
 import org.flowlang.planner.PlanOutput
 import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
+import org.flowlang.planner.PlannedWorkflowFailurePolicy
 import org.flowlang.planner.RetryGroupNode
+import org.flowlang.planner.WorkflowFailureDisposition
 import org.flowlang.planner.TaskNode
 import org.flowlang.planner.TryPlanNode
 
@@ -30,17 +32,19 @@ object CanonicalExecutionGraphBuilder {
             "ExecutionPlan contains explicit merge evidence but no path-aware merge contracts. " +
                 "Use the compiler authorization boundary."
         }
-        return build(plan, emptyList(), emptyMap())
+        return build(plan, emptyList(), emptyMap(), PlannedWorkflowFailurePolicy.none())
     }
 
     internal fun build(
         plan: ExecutionPlan,
         mergeContracts: List<FlowMergeContract>,
-        producerNodeIds: Map<FlowProducerIdentity, String>
+        producerNodeIds: Map<FlowProducerIdentity, String>,
+        failurePolicy: PlannedWorkflowFailurePolicy
     ): CanonicalExecutionGraphBuild = buildWorkflow(
         plan = plan,
         mergeContracts = mergeContracts,
         producerNodeIds = producerNodeIds,
+        failurePolicy = failurePolicy,
         workflowNameOverride = null,
         identityNamespace = null
     )
@@ -53,6 +57,7 @@ object CanonicalExecutionGraphBuilder {
                 plan = only.planning.plan,
                 mergeContracts = only.availability.merges,
                 producerNodeIds = only.planning.producerNodeIds,
+                failurePolicy = only.planning.failurePolicy,
                 workflowNameOverride = only.workflowName,
                 identityNamespace = null
             )
@@ -70,6 +75,7 @@ object CanonicalExecutionGraphBuilder {
                 plan = workflow.planning.plan,
                 mergeContracts = workflow.availability.merges,
                 producerNodeIds = workflow.planning.producerNodeIds,
+                failurePolicy = workflow.planning.failurePolicy,
                 workflowNameOverride = workflow.workflowName,
                 identityNamespace = workflow.workflowName
             )
@@ -127,10 +133,11 @@ object CanonicalExecutionGraphBuilder {
     }
 
     private fun buildWorkflow(
-        plan: ExecutionPlan,
-        mergeContracts: List<FlowMergeContract>,
-        producerNodeIds: Map<FlowProducerIdentity, String>,
-        workflowNameOverride: String?,
+    plan: ExecutionPlan,
+    mergeContracts: List<FlowMergeContract>,
+    producerNodeIds: Map<FlowProducerIdentity, String>,
+    failurePolicy: PlannedWorkflowFailurePolicy,
+    workflowNameOverride: String?,
         identityNamespace: String?
     ): CanonicalExecutionGraphBuild {
         require(plan.flowName.isNotBlank()) { "Cannot build canonical graph from a blank flow name." }
@@ -150,6 +157,7 @@ object CanonicalExecutionGraphBuilder {
             "ExecutionPlan merge evidence and typed merge contracts differ: " +
                 "evidence=${mergeEvidenceTargets.sorted()} contracts=${mergeByPlanNodeId.keys.sorted()}."
         }
+        val failureProjection = requireFailureProjection(plan, failurePolicy)
 
         fun nodeIdentity(node: PlanNode, path: List<String>): CanonicalNodeId {
             val authored = when (node) {
@@ -325,9 +333,28 @@ object CanonicalExecutionGraphBuilder {
             return id
         }
 
-        val rootNodeIds = plan.nodes.mapIndexed { index, node ->
+        val rootNodeIds = failureProjection.rootNodes.mapIndexed { index, node ->
             visit(node, listOf("root", (index + 1).toString()))
         }
+        val failureHandlerNodeIds = failureProjection.handlerNodes.mapIndexed { index, node ->
+            visit(node, listOf("workflow-failure", "handler", (index + 1).toString()))
+        }
+        val canonicalFailurePolicy = CanonicalWorkflowFailurePolicy(
+            disposition = when (failurePolicy.policy.disposition) {
+                WorkflowFailureDisposition.PROPAGATE -> CanonicalWorkflowFailureDisposition.PROPAGATE
+                WorkflowFailureDisposition.RECOVER -> CanonicalWorkflowFailureDisposition.RECOVER
+            },
+            handler = failurePolicy.policy.handler?.let { handler ->
+                CanonicalWorkflowFailureHandlerRegion(
+                    id = handler.id,
+                    nodeIds = failureHandlerNodeIds,
+                    entry = CanonicalWorkflowFailureHandlerEntry(
+                        errorBinding = handler.entry.errorBinding,
+                        priorSuccessfulValuesAvailable = handler.entry.priorSuccessfulValuesAvailable
+                    )
+                )
+            }
+        )
 
         fun canonicalReference(planNodeId: String): CanonicalNodeId =
             canonicalByPlanId[planNodeId] ?: CanonicalNodeId(identity("missing-plan-node", planNodeId))
@@ -360,7 +387,14 @@ object CanonicalExecutionGraphBuilder {
 
         val graph = CanonicalExecutionGraph(
             flowName = plan.flowName,
-            workflows = listOf(CanonicalWorkflow(workflowId, workflowName, rootNodeIds)),
+            workflows = listOf(
+                CanonicalWorkflow(
+                    id = workflowId,
+                    name = workflowName,
+                    rootNodeIds = rootNodeIds,
+                    failurePolicy = canonicalFailurePolicy
+                )
+            ),
             inputs = plan.inputs.map { input -> input.toCanonical() },
             triggers = plan.triggers.map { trigger -> trigger.toCanonical(workflowId) },
             outputs = plan.outputs.map { output -> output.toCanonical(::canonicalReference) },
@@ -389,12 +423,15 @@ object CanonicalExecutionGraphBuilder {
             tasks = taskBindings,
             nodeMetadata = nodeMetadata,
             workflowPlans = listOf(
-                WorkflowExecutionPlanProjectionMetadata(
-                    workflowId = workflowId,
-                    workflowName = workflowName,
-                    planMetadata = planMetadata
-                )
-            ),
+    WorkflowExecutionPlanProjectionMetadata(
+        workflowId = workflowId,
+        workflowName = workflowName,
+        planMetadata = planMetadata,
+        failureCompatibility = failureProjection.compatibilityBoundaryNodeId?.let {
+            WorkflowFailureCompatibilityProjectionMetadata(it)
+        }
+    )
+),
             programMetadata = ExecutionProgramProjectionMetadata(
                 sourceIntent = plan.sourceIntent,
                 loweringReport = plan.loweringReport,
@@ -402,6 +439,45 @@ object CanonicalExecutionGraphBuilder {
             )
         )
         return CanonicalExecutionGraphBuild(graph, bindings)
+    }
+
+
+    private data class WorkflowFailureBuildProjection(
+        val rootNodes: List<PlanNode>,
+        val handlerNodes: List<PlanNode>,
+        val compatibilityBoundaryNodeId: String?
+    )
+
+    private fun requireFailureProjection(
+        plan: ExecutionPlan,
+        failurePolicy: PlannedWorkflowFailurePolicy
+    ): WorkflowFailureBuildProjection {
+        val handler = failurePolicy.policy.handler
+        if (handler == null) {
+            // A raw compatibility plan has no authority to promote a terminal
+            // empty-body Try into workflow-failure meaning. Preserve it as an
+            // ordinary Try node; only the typed policy below may detach a handler
+            // region from normal roots.
+            return WorkflowFailureBuildProjection(plan.nodes, emptyList(), null)
+        }
+
+        val boundaryId = requireNotNull(failurePolicy.compatibilityBoundaryNodeId)
+        val boundary = plan.nodes.singleOrNull { it.id == boundaryId } as? TryPlanNode
+            ?: error("Workflow failure compatibility boundary '$boundaryId' is missing or not a TryPlanNode.")
+        require(plan.nodes.lastOrNull() == boundary) {
+            "Workflow failure compatibility boundary must be the final compatibility root."
+        }
+        require(boundary.body.isEmpty() && boundary.errorHandler == failurePolicy.handlerNodes) {
+            "Workflow failure compatibility boundary differs from the typed handler region."
+        }
+        require(handler.nodeIds == failurePolicy.handlerNodes.map(PlanNode::id)) {
+            "Workflow failure policy does not name its exact handler nodes."
+        }
+        return WorkflowFailureBuildProjection(
+            rootNodes = plan.nodes.dropLast(1),
+            handlerNodes = failurePolicy.handlerNodes,
+            compatibilityBoundaryNodeId = boundaryId
+        )
     }
 
     private fun ExecutionPlan.explicitMergeTargetNodeIds(): Set<String> =

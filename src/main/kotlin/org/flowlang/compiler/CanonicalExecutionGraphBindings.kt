@@ -85,10 +85,21 @@ data class ExecutionPlanProjectionMetadata(
     }
 }
 
+data class WorkflowFailureCompatibilityProjectionMetadata(
+    val boundaryNodeId: String
+) {
+    init {
+        require(boundaryNodeId.isNotBlank()) {
+            "Workflow failure compatibility boundary id must not be blank."
+        }
+    }
+}
+
 data class WorkflowExecutionPlanProjectionMetadata(
     val workflowId: CanonicalWorkflowId,
     val workflowName: String,
-    val planMetadata: ExecutionPlanProjectionMetadata
+    val planMetadata: ExecutionPlanProjectionMetadata,
+    val failureCompatibility: WorkflowFailureCompatibilityProjectionMetadata? = null
 ) {
     init {
         require(workflowName.isNotBlank()) { "Workflow projection name must not be blank." }

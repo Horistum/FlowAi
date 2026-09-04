@@ -75,7 +75,12 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         val alternatePlan = unit.executionPlan.copy(
             nodes = unit.executionPlan.nodes.map(::replaceImplementationLabels)
         )
-        val alternateBuild = CanonicalExecutionGraphBuilder.build(alternatePlan)
+        val alternateBuild = CanonicalExecutionGraphBuilder.build(
+            plan = alternatePlan,
+            mergeContracts = emptyList(),
+            producerNodeIds = emptyMap(),
+            failurePolicy = testWorkflowFailurePolicy(alternatePlan)
+        )
         assertEquals(graph, alternateBuild.graph)
         assertNotEquals(unit.authorization.bindings.tasks, alternateBuild.bindings.tasks)
         assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestAuthority.digest(alternateBuild.graph))
@@ -228,7 +233,8 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         val compatibilityRequest = TargetMaterializationRequest.fromCompatibilityPlan(
             unit.executionPlan,
             selection,
-            evidenceId = "test:canonical-graph-compatibility-ingress"
+            evidenceId = "test:canonical-graph-compatibility-ingress",
+            failurePolicy = testWorkflowFailurePolicy(unit.executionPlan)
         )
         assertEquals(
             CompilationAuthorizationOrigin.COMPATIBILITY_PLAN,

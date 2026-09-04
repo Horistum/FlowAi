@@ -719,7 +719,8 @@ class Ar01CompilerAxisConformanceChecks(
             "CanonicalExecutionGraphPlanMappings.kt",
             "CanonicalExecutionGraphValidator.kt",
             "CanonicalExecutionGraphDigest.kt",
-            "CompilationAuthorization.kt"
+            "CompilationAuthorization.kt",
+            "WorkflowFailureAuthorization.kt"
         )
         private val DIRECT_PIPELINE_TERMS = listOf(
             "IntentYamlLoader.load(",

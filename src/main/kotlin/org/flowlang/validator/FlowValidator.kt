@@ -113,7 +113,13 @@ class FlowValidator(
 
         // global error handler scope has `error`
         document.flow.errorHandler?.let { eh ->
-            val ehScope = scope.child().also { it.declare("error") }
+        if (eh.steps.isEmpty()) {
+            issues += err(
+                "FLOW_ERROR_HANDLER_EMPTY",
+                "Workflow error handler must contain at least one statement."
+            )
+        }
+        val ehScope = scope.child().also { it.declare("error") }
             val handlerResults = mutableSetOf<String>()
             eh.steps.forEach { validateStatement(it, imported, document.flow.systems, ehScope, handlerResults, issues) }
         }

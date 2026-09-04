@@ -32,12 +32,14 @@ object PlanningControlAuthority {
         canonicalRequirements: List<ControlRequirement>,
         canonicalEvidence: List<ControlEvidence>,
         nodes: List<PlanNode>,
-        modules: ModuleRegistry
+        modules: ModuleRegistry,
+        workflowFailureHandlerNodes: List<PlanNode> = emptyList()
     ): ControlAssessment {
-        val graph = ControlGraph.index(nodes)
+        val semanticNodes = nodes + workflowFailureHandlerNodes
+        val graph = ControlGraph.index(nodes, workflowFailureHandlerNodes)
         val taskDrafts = mutableListOf<TaskRequirementDraft>()
 
-        flatten(nodes).filterIsInstance<TaskNode>().forEach { task ->
+        flatten(semanticNodes).filterIsInstance<TaskNode>().forEach { task ->
             val contract = modules.findAction(task.module, task.action)?.safety ?: return@forEach
             if (contract.requiresApproval || contract.destructive) {
                 taskDrafts += draft(task, ControlRequirementKind.APPROVAL, approvalEvidence(task, graph))
@@ -69,8 +71,17 @@ object PlanningControlAuthority {
             .flatMap(ControlEvidence::enforcementCapabilities)
             .distinct()
 
-    fun rederivedModuleRequirements(nodes: List<PlanNode>, modules: ModuleRegistry): List<ControlRequirement> =
-        assess(emptyList(), emptyList(), nodes, modules).requirements
+    fun rederivedModuleRequirements(
+        nodes: List<PlanNode>,
+        modules: ModuleRegistry,
+        workflowFailureHandlerNodes: List<PlanNode> = emptyList()
+    ): List<ControlRequirement> = assess(
+        canonicalRequirements = emptyList(),
+        canonicalEvidence = emptyList(),
+        nodes = nodes,
+        modules = modules,
+        workflowFailureHandlerNodes = workflowFailureHandlerNodes
+    ).requirements
 
     private fun ControlEvidence.failClosedForExecutionPlanning(): ControlEvidence =
         if (status != ControlEvidenceStatus.DYNAMIC) {
@@ -193,7 +204,10 @@ object PlanningControlAuthority {
         }
 
         companion object {
-            fun index(nodes: List<PlanNode>): ControlGraph {
+            fun index(
+                nodes: List<PlanNode>,
+                workflowFailureHandlerNodes: List<PlanNode> = emptyList()
+            ): ControlGraph {
                 val dependencies = linkedMapOf<String, List<String>>()
                 val unconditional = linkedSetOf<String>()
                 val dynamic = linkedSetOf<String>()
@@ -228,6 +242,7 @@ object PlanningControlAuthority {
                 }
 
                 visit(nodes, false)
+                visit(workflowFailureHandlerNodes, true)
                 return ControlGraph(dependencies, unconditional, dynamic)
             }
         }

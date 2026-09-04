@@ -4,6 +4,26 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### AR-02D First-Class Workflow Failure Semantics
+
+#### Added
+
+- Added first-class workflow failure policy with disposition, handler-region identity, exact handler membership and handler-entry availability.
+- Migrated adapter control derivation and built-in target projections to canonical compilation authorization rather than positional `TryPlanNode` inference.
+- Added Jenkins error binding and propagation behavior for workflow-level handlers while preserving nested `try/on error` as a separate construct.
+- Added fail-closed graph validation for normal/failure region overlap, cross-region dependencies and failure-only outputs, plus executable AR-02D conformance.
+
+#### Contract migration
+
+- Advanced `WorkflowExecutionPlanSet` from 1.0 to 1.1 so every workflow view publishes its typed `failurePolicy`.
+- Kept `ExecutionPlan` 2.4 unchanged as the single-workflow compatibility view; its synthetic terminal `TryPlanNode` is a verified graph-derived mirror and no longer establishes workflow-failure authority.
+- Published `docs/AR_02D_WORKFLOW_FAILURE_POLICY_MIGRATION.md` and updated the strict public schema.
+
+#### Validation
+
+- Added mutation tests for handler ownership, region crossings, failure-only output leakage, digest sensitivity and synthetic-tail forgery.
+- Added `architecture-recovery.ar-02.failure-policy-integrity` and `architecture-recovery.ar-02.no-synthetic-handler-authority` to the normal conformance inventory.
+
 ### AR-02C First-Class Workflow Ownership and Trigger Routing
 
 #### Added

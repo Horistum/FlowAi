@@ -26,3 +26,5 @@ checks:
   - architecture-recovery.ar-02.public-contract-migration-integrity
   - architecture-recovery.ar-02.workflow-membership-integrity
   - architecture-recovery.ar-02.multi-workflow-materialization-gate
+  - architecture-recovery.ar-02.failure-policy-integrity
+  - architecture-recovery.ar-02.no-synthetic-handler-authority

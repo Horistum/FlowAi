@@ -5,6 +5,7 @@ import org.flowlang.adapters.AdapterDiagnosticReconciliation
 import org.flowlang.capabilities.CompatibilityIssue
 import org.flowlang.capabilities.CompatibilityLevel
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.planner.ExecutionPlan
@@ -49,11 +50,21 @@ class AdapterControlMaterializationAuthority(
         input: AdapterControlMaterializationDocument = document
     ): AdapterControlMaterializationReport = evidenceIntegrity.analyze(input)
 
-    fun assess(plan: ExecutionPlan, target: String): AdapterControlAssessment {
+    fun assess(
+        authorization: CompilationAuthorization,
+        target: String
+    ): AdapterControlAssessment = assess(requirementsFor(authorization), target)
+
+    fun assess(plan: ExecutionPlan, target: String): AdapterControlAssessment =
+        assess(requirementsFor(plan), target)
+
+    private fun assess(
+        requirements: List<AdapterControlRequirement>,
+        target: String
+    ): AdapterControlAssessment {
         require(target in targets) { "Unknown target '$target'." }
         val record = certifiedDocument.targets.single { it.target == target }
         val claims = record.claims.associateBy(AdapterControlClaim::family)
-        val requirements = requirementsFor(plan)
         val evidence = requirements.map { requirement ->
             val claim = claims[requirement.family]
             val semanticScopes = AdapterControlSemanticContract.scopesFor(requirement.semantic)
@@ -119,12 +130,19 @@ class AdapterControlMaterializationAuthority(
         )
     }
 
+    fun requireMatched(
+        authorization: CompilationAuthorization,
+        target: String
+    ): AdapterControlAssessment = assess(authorization, target).requireMatched()
+
     fun requireMatched(plan: ExecutionPlan, target: String): AdapterControlAssessment =
-        assess(plan, target).also { assessment ->
-            if (assessment.decision != AdapterControlDecision.MATCHED) {
-                throw UnresolvedAdapterControlMaterializationException(assessment)
-            }
+        assess(plan, target).requireMatched()
+
+    private fun AdapterControlAssessment.requireMatched(): AdapterControlAssessment = also { assessment ->
+        if (assessment.decision != AdapterControlDecision.MATCHED) {
+            throw UnresolvedAdapterControlMaterializationException(assessment)
         }
+    }
 
     fun reconcileDiagnostic(
         manifest: TargetManifest,
@@ -157,6 +175,10 @@ class AdapterControlMaterializationAuthority(
         }
         return AdapterDiagnosticReconciliation.blocked(manifest, metadata, issues)
     }
+
+    fun requirementsFor(
+        authorization: CompilationAuthorization
+    ): List<AdapterControlRequirement> = AdapterControlRequirementAuthority.derive(authorization)
 
     fun requirementsFor(plan: ExecutionPlan): List<AdapterControlRequirement> =
         AdapterControlRequirementAuthority.derive(plan)

@@ -291,7 +291,7 @@ class UniversalModelCompletionTests {
         assertContains(authority, "TargetMaterializationRequest.fromCompatibilityPlan")
         assertContains(authority, "TargetDiagnosticMaterializationRequest.fromCompilation")
         assertContains(authority, "TargetDiagnosticMaterializationRequest.fromCompatibilityPlan")
-        assertContains(authority, "pipeline.generate(materializationRequest())")
+        assertContains(authority, "pipeline.generate(materialization.value)")
         assertFalse(authority.contains("pipeline.generate(TargetMaterializationRequest("))
         assertContains(requestBoundary, "fun fromCompilation(")
         assertContains(requestBoundary, "internal fun fromCompatibilityPlan(")

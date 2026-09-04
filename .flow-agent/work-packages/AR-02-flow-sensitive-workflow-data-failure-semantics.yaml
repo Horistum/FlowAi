@@ -128,19 +128,19 @@ implementationSlices:
     status: "complete"
     outcomes:
       - "Preserve multiple workflow identities, memberships, roots and trigger routes through canonical graph construction and digest."
-      - "Publish WorkflowExecutionPlanSet 1.0 as the only public multi-workflow projection while legacy one-workflow views fail closed."
+      - "Publish WorkflowExecutionPlanSet 1.0 as the non-flattening multi-workflow projection; AR-02D advances it to 1.1 with first-class failure policy."
       - "Replace workflows.single() assumptions in compiler projections with explicit single- or multi-workflow contracts."
       - "Keep target materialization fail-closed where an adapter lacks multi-workflow semantics."
   - id: "AR-02D"
     name: "First-Class Workflow Failure Semantics"
-    status: "selected"
+    status: "complete"
     outcomes:
       - "Add typed workflow failure policy and handler-region ownership to the canonical graph."
       - "Migrate plan projections, target contracts and adapter consumers away from terminal empty-body Try recognition."
       - "Remove or quarantine the synthetic tail-Try compatibility shape after parity and migration evidence."
   - id: "AR-02E"
     name: "Integrated Semantic Closure"
-    status: "planned"
+    status: "selected"
     outcomes:
       - "Run cross-frontend, graph-digest, target-gating and public-compatibility matrices over path, workflow and failure semantics."
       - "Close F-02, F-08 and F-15 only after exact production changes, negative mutants and independent validation are recorded."

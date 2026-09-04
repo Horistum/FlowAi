@@ -68,6 +68,7 @@ object StandardDiagnosticCatalog {
         code("SAFETY_REQUIRED", "flow-validation", "error", "validation-report.json", "Destructive Flow AST action lacks a safety rule."),
         code("APPROVAL_REQUIRED", "flow-validation", "error", "validation-report.json", "An action contract requires unconditional approval before planning."),
         code("ROLLBACK_APPROVAL_REQUIRED", "flow-validation", "error", "validation-report.json", "Rollback-sensitive work outside an error handler requires unconditional approval."),
+        code("FLOW_ERROR_HANDLER_EMPTY", "flow-validation", "error", "validation-report.json", "Workflow-level error handler must contain at least one statement."),
         code("ENVIRONMENT_APPROVAL_REQUIRED", "flow-validation", "error", "validation-report.json", "A policy-classified sensitive environment requires unconditional approval."),
         code("ENVIRONMENT_CLASSIFICATION_UNKNOWN", "flow-validation", "error", "validation-report.json", "Environment evidence is dynamic or unclassified and cannot proceed to planning."),
         code("SAFETY_REQUIRES_CLARIFICATION", "safety", "error", "intent-decision-report.json", "Safety policy requires clarification before lowering."),
