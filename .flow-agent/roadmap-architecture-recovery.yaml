@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 6
+revision: 7
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -15,17 +15,17 @@ auditBaseline:
   coverageRule: "Every F-01 through F-22 finding has one explicit closure milestone. Findings with immediate safety impact also have a separate containment milestone. A finding may be reclassified only by reviewed production-code evidence; it may not disappear from the roadmap because an implementation is inconvenient."
 
 currentDecision:
-  previousCompletedItem: "AR-01"
-  previousCompletedItemName: "Canonical Compiler Axis and Authoritative Execution Graph"
+  previousCompletedItem: "AR-02"
+  previousCompletedItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
   preemptedItem: "EF-09"
   preemptedItemName: "Human Approval and Change-Control Falsification"
   preemptedItemState: "active-after-evidence-admission"
   preemptedWorkPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
-  nextItem: "AR-02"
-  nextItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
-  activationState: "active"
+  nextItem: "AR-03"
+  nextItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  activationState: "not-activated"
   workPackage: ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
-  decisionBasis: "Merged main 719795241da65b7668f860a10243e6ccd55bdcff was independently revalidated after PR #165: AR-01 retains one graph-authorized compiler axis, direct graph-derived compatibility views, exact task authorization and fail-closed single-workflow validation. The remaining mutable branch state, single-workflow boundary and synthetic global-handler shape are the already registered F-02, F-08 and F-15 scope. AR-02 is now activated through a separate work package; this transition defines path-sensitive, workflow and failure ownership but makes no production semantic, artifact or target-support change."
+  decisionBasis: "AR-02 closes F-02, F-08 and F-15 after the integrated AR-02E frontend, authorization-mutation, target, public-contract and lifecycle matrices passed distinct exact-head and synthetic merge-candidate Flow CI boundaries. Implementation baseline PR #171, validation run 34113587213 and independent closure run 34116599418 are recorded in the completed work package. AR-03 is selected only as the next ordered milestone and requires a separate activation transition; EF-09 remains paused."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -128,9 +128,10 @@ milestones:
   - id: "AR-02"
     name: "Flow-Sensitive Workflow, Data and Failure Semantics"
     order: 3
-    status: "active"
+    status: "completed"
     dependsOn: ["AR-01"]
     workPackage: ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
+    report: ".flow-agent/reports/ar-02-flow-sensitive-workflow-data-failure-semantics.md"
     closesFindings: ["F-02", "F-08", "F-15"]
     purpose: "Make control-flow, value availability, workflow ownership and failure behavior explicit instead of relying on mutable global planner state or synthetic node shapes."
     requiredOutcomes:
