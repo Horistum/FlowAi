@@ -130,8 +130,10 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
                             val manifest = pipeline.generate(TargetMaterializationRequest.fromCompilation(compilation, selection))
                             val text = provider.render(manifest)
                             Ar02TargetObservation(
-                                target, scenario, digest, Ar02TargetOutcome.EXECUTABLE,
-                                renderedText = text, failurePolicyPreserved = preservesFailurePolicy(manifest)
+                                target, scenario, digest,
+                                if (manifest.compatibility.executable) Ar02TargetOutcome.EXECUTABLE else Ar02TargetOutcome.NON_EXECUTABLE,
+                                renderedText = text,
+                                failurePolicyPreserved = preservesFailurePolicy(manifest, compilation)
                             )
                         } else {
                             val candidate = runCatching {
@@ -141,28 +143,34 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
                             require(candidateFailure == null || isExpectedTargetBlocker(candidateFailure)) {
                                 "Unexpected execution failure: ${candidateFailure?.javaClass?.simpleName}: ${candidateFailure?.message}"
                             }
+                            var candidateText: String? = null
                             val candidateRenderBlocked = candidate.getOrNull()?.let { manifest ->
                                 val result = runCatching { provider.render(manifest) }
                                 require(result.exceptionOrNull() == null || result.exceptionOrNull() is TargetRenderBlockedException) {
                                     "Unexpected provider rendering failure: ${result.exceptionOrNull()}"
                                 }
+                                candidateText = result.getOrNull()
                                 result.exceptionOrNull() is TargetRenderBlockedException
                             } ?: (candidateFailure != null)
                             val diagnostic = pipeline.generateDiagnosticEvidence(
                                 TargetDiagnosticMaterializationRequest.fromCompilation(compilation, selection)
                             )
-                            val renderFailure = runCatching { provider.render(diagnostic) }.exceptionOrNull()
+                            val diagnosticRendering = runCatching { provider.render(diagnostic) }
+                            val renderFailure = diagnosticRendering.exceptionOrNull()
                             require(renderFailure == null || renderFailure is TargetRenderBlockedException) {
                                 "Unexpected diagnostic rendering failure: $renderFailure"
                             }
+                            val renderedText = candidateText ?: diagnosticRendering.getOrNull()
                             val mergeSteps = flatten(diagnostic).filter { it.id == mergeId }
                             Ar02TargetObservation(
-                                target, scenario, digest, Ar02TargetOutcome.NON_EXECUTABLE,
+                                target, scenario, digest,
+                                if (renderedText == null) Ar02TargetOutcome.NON_EXECUTABLE else Ar02TargetOutcome.EXECUTABLE,
                                 executableBlocked = candidateRenderBlocked,
                                 mergePreserved = mergeSteps.size == 1 &&
                                     mergeSteps.single().materialization.status == TargetMaterializationStatus.SEMANTIC_ONLY,
                                 renderBlocked = renderFailure is TargetRenderBlockedException,
-                                failurePolicyPreserved = preservesFailurePolicy(diagnostic)
+                                renderedText = renderedText,
+                                failurePolicyPreserved = preservesFailurePolicy(diagnostic, compilation)
                             )
                         }
                     }
@@ -183,11 +191,10 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
             failure is UnresolvedPlanningControlException ||
             failure is UnresolvedAdapterContinuitySatisfactionException
 
-    private fun preservesFailurePolicy(manifest: TargetManifest): Boolean = flatten(manifest).any { step ->
-        step.metadata["workflowFailurePolicy"] == "true" &&
-            step.metadata["workflowFailureDisposition"] == "PROPAGATE" &&
-            step.metadata["workflowFailureErrorBinding"] == "error"
-    }
+    private fun preservesFailurePolicy(manifest: TargetManifest, compilation: CompilationUnit): Boolean =
+        Ar02FailureProjectionEvidence.errors(
+            manifest, compilation.workflowPlanSet.workflows.single().failurePolicy
+        ).isEmpty()
 
     private fun flatten(manifest: TargetManifest): List<TargetStep> {
         fun visit(steps: List<TargetStep>): List<TargetStep> = steps.flatMap { listOf(it) + visit(it.children) }
