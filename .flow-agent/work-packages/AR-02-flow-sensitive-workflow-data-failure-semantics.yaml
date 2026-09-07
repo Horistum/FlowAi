@@ -1,13 +1,13 @@
 version: "AR-02"
 name: "Flow-Sensitive Workflow, Data and Failure Semantics"
 type: "architecture-recovery-semantic-foundation"
-status: active
+status: complete
 stream: "architecture-recovery"
 
 objective: "Replace mutable global validation and planning state with one path-sensitive semantic analysis that preserves value availability, producer identity, workflow ownership and failure behavior in CanonicalExecutionGraph. AR-02 must reject uncertain reads, make merges explicit, preserve multiple workflows without flattening and remove synthetic-shape inference for workflow failure handling."
 
 authorization:
-  status: active
+  status: completed
   predecessor: "AR-01"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-02"
   postToolchainSource: ".flow-agent/roadmap-post-toolchain.yaml#ARCHITECTURE-RECOVERY"
@@ -140,7 +140,7 @@ implementationSlices:
       - "Remove or quarantine the synthetic tail-Try compatibility shape after parity and migration evidence."
   - id: "AR-02E"
     name: "Integrated Semantic Closure"
-    status: "selected"
+    status: "complete"
     outcomes:
       - "Run cross-frontend, graph-digest, target-gating and public-compatibility matrices over path, workflow and failure semantics."
       - "Close F-02, F-08 and F-15 only after exact production changes, negative mutants and independent validation are recorded."
@@ -196,6 +196,11 @@ conformancePlan:
     - "architecture-recovery.ar-02.failure-policy-integrity"
     - "architecture-recovery.ar-02.no-synthetic-handler-authority"
     - "architecture-recovery.ar-02.public-contract-migration-integrity"
+    - "architecture-recovery.ar-02.integrated-frontend-matrix"
+    - "architecture-recovery.ar-02.integrated-mutation-matrix"
+    - "architecture-recovery.ar-02.integrated-target-gating-matrix"
+    - "architecture-recovery.ar-02.integrated-public-compatibility-matrix"
+    - "architecture-recovery.ar-02.finding-closure-evidence"
   evidenceRule: "Each check lands with a production invariant and at least one negative or permutation fixture that fails under the former mutable-state, first-workflow or synthetic-shape behavior."
 
 forbiddenScope:
@@ -232,12 +237,38 @@ lifecycle:
       - "Exact-head Flow Agent validation, JDK 25 compilation, complete tests and standalone conformance passed."
       - "The independently synthesized merge candidate against main passed the same complete activation boundary."
   implementationBoundary:
-    status: pending
+    status: candidate
+    workflowRunId: 34080790610
+    workflowRunNumber: 1
+    rule: "AR-02E is built from the exact merged AR-02D main and must pass complete isolated validation before publication."
   validationBoundary:
-    status: pending
+    status: candidate
+    workflowRunId: 34080790610
+    workflowRunNumber: 1
+    requiredChecks:
+      - "changed YAML parses"
+      - "Flow Agent tooling and structure"
+      - "Kotlin production and test compilation"
+      - "focused AR-02A through AR-02E tests"
+      - "former regression boundaries"
+      - "complete exact-head test suite and conformance"
+      - "official pull-request exact-head and merge-candidate Flow CI"
   completionBoundary:
     status: pending
+    rule: "Completion requires official pull-request exact-head and synthetic merge-candidate Flow CI on the final feature head."
 
 localValidation:
-  status: activation-passed
-  rule: "AR-02 activation passed on exact head and synthetic merge candidate. This transition still introduces no production semantic, public artifact or target behavior change; AR-02A implementation begins only after the activation pull request is merged."
+  status: candidate
+  workflowRunId: 34080790610
+  workflowRunNumber: 1
+  rule: "The isolated validation branch publishes only a clean commit whose parent is exact merged AR-02D main."
+
+completionDecision:
+  status: implementation-complete
+  closesFindings: ["F-02", "F-08", "F-15"]
+  report: ".flow-agent/reports/ar-02-flow-sensitive-workflow-data-failure-semantics.md"
+  completedSlice: "AR-02E"
+  nextItem: "AR-03"
+  nextItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  nextItemActivationState: "not-activated"
+  rule: "AR-02 closes semantically through the integrated matrices; AR-03 remains a separately activated milestone."

@@ -269,7 +269,8 @@ class ArchitectureRecoveryConformanceRunner(
             Ar02FlowSensitiveConformanceChecks(rootDir).checks() +
             Ar02ExplicitMergeConformanceChecks(rootDir).checks() +
             Ar02WorkflowOwnershipConformanceChecks(rootDir).checks() +
-            Ar02WorkflowFailureConformanceChecks(rootDir).checks()
+            Ar02WorkflowFailureConformanceChecks(rootDir).checks() +
+            Ar02IntegratedSemanticClosureChecks(rootDir).checks()
         val inventoryResult = runCatching { ArchitectureRecoveryConformanceInventory.load(rootDir) }
         val inventory = inventoryResult.getOrNull()
         val observed = produced.map { it.name }

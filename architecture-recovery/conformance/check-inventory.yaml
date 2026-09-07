@@ -28,3 +28,8 @@ checks:
   - architecture-recovery.ar-02.multi-workflow-materialization-gate
   - architecture-recovery.ar-02.failure-policy-integrity
   - architecture-recovery.ar-02.no-synthetic-handler-authority
+  - architecture-recovery.ar-02.integrated-frontend-matrix
+  - architecture-recovery.ar-02.integrated-mutation-matrix
+  - architecture-recovery.ar-02.integrated-target-gating-matrix
+  - architecture-recovery.ar-02.integrated-public-compatibility-matrix
+  - architecture-recovery.ar-02.finding-closure-evidence

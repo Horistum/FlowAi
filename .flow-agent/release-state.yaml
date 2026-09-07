@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 59
+stateVersion: 60
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -42,6 +42,11 @@ roadmapState:
   completedConformanceItemName: "Operational Domain Adequacy"
   completedArchitectureItem: "AR0.1"
   completedArchitectureItemName: "Authority Responsibility Consolidation"
+  completedRecoveryItem: "AR-02"
+  completedRecoveryItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
+  nextRecoveryItem: "AR-03"
+  nextRecoveryItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  nextRecoveryActivationState: "not-activated"
   activeEnablingMilestone: ""
   activeEnablingMilestoneName: ""
   completedEnablingMilestone: "TOOLCHAIN-MODERNIZATION"

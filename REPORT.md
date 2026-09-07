@@ -36,6 +36,13 @@ The live package remains `0.9.5` and the public standard remains `0.8.0`. Live a
 
 WorkflowExecutionPlanSet 1.1 now carries first-class workflow failure policy, exact handler-region membership and handler-entry availability. ExecutionPlan 2.4 remains the graph-derived single-workflow compatibility shape and cannot establish failure meaning by itself.
 
+
+## Completed AR-02 semantic recovery
+
+AR-02 is completed through the integrated AR-02E closure gate. One shared flow-sensitive analysis, explicit producer and merge identities, first-class workflow ownership, trigger routing and typed workflow failure policy now survive canonical graph construction, digesting, authorization and graph-derived public views.
+
+The integrated closure matrix binds F-02, F-08 and F-15 to exact production files, positive conformance and independent negative or mutation evidence. Current adapters remain fail closed for multi-workflow and explicit-merge execution unless provider-owned certification exists. AR-03 is next in Architecture Recovery order and is not activated by AR-02 completion.
+
 ## Completed adapter baseline
 
 PR #96 merged A0.1 as `dbd1529cd9da1b21d13bd45d3af1a84361b9abf1`. PR #97 merged A0.2 as `964a9c4f8bf9ce9dc8771c99a68393c9edc35807`. PR #98 merged A0.3 as `9c09a03b3fa6a5b7b2114ff1d7aa7f533bacf930`.
@@ -106,7 +113,7 @@ Requirement derivation preserves exact semantic, subject, completeness and scope
 - external and unknown modes cannot impersonate manual approval;
 - retry requirements remain at `TASK` scope;
 - timeout variants retain step, task, workflow, per-attempt or cumulative scope;
-- canonical flow-level error handling is recognized only from planner provenance (`onError_<n>` plus `errorHandlers.finally` capability) and actual preceding protected work;
+- workflow-level error handling is derived from `CompilationAuthorization` and typed `WorkflowFailurePolicy`; the synthetic tail `TryPlanNode` is only a checked compatibility mirror;
 - detached empty-body handlers remain blocking;
 - scheduling derives CRON, interval, calendar, timezone, concurrency and catch-up requirements at `TRIGGER` scope;
 - incomplete preserved RETRY/TIMEOUT metadata remains `PRESERVED_UNSPECIFIED` and blocking.

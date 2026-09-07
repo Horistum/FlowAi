@@ -91,7 +91,7 @@ Completed scope:
 - return fail-closed reports for unknown future semantics instead of throwing lookup exceptions;
 - derive exact requirements from `ApprovalNode`, `RetryGroupNode`, protected `TryPlanNode`, failure rollback and schedule triggers;
 - retain preserved RETRY/TIMEOUT metadata as `PRESERVED_UNSPECIFIED` UNKNOWN blockers until exact scope and value survive lowering;
-- recognize the canonical flow-level handler only from planner provenance (`onError_<n>`, `errorHandlers.finally` and preceding protected work);
+- historical A0.4 flow-level handler recognition used planner provenance; AR-02D supersedes it with authorization-owned typed `WorkflowFailurePolicy`, while detached compatibility-shaped handlers remain blocking;
 - reject detached error handlers that do not protect work;
 - certify only Jenkins inline manual approval, protected Jenkins error handlers and Jenkins/GitHub CRON subsets currently implemented by composed providers;
 - prove CRON behavior through canonical AST, parser, planner, explicit selection, control assessment, manifest generation, readiness reconciliation and concrete rendering;

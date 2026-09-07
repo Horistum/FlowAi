@@ -176,17 +176,11 @@ Requirement identity contains full semantic and canonical subject identity. Conf
 
 ## Error-handler provenance
 
-A normal nested `TryPlanNode` protects its own body.
+A0.4 originally certified the then-current planner compatibility shape. AR-02D has superseded that production authority.
 
-The canonical flow-level error handler is recognized only when all of these hold:
+Workflow-level failure meaning now comes from the authorization-owned typed `WorkflowFailurePolicy`, including disposition, handler-region identity, exact membership and entry availability. The terminal empty-body `TryPlanNode` remains only a graph-derived compatibility mirror whose parity is checked against canonical policy. Its position, generated identifier and `errorHandlers.finally` capability text cannot establish workflow failure meaning.
 
-- the node is the final plan node;
-- its body is empty and its handler is non-empty;
-- preceding flow nodes exist and are therefore protected;
-- the planner-generated identifier matches `onError_<n>`;
-- plan capability evidence includes `errorHandlers.finally`.
-
-A manually constructed final empty-body handler is not accepted merely because it resembles the shape. Detached handlers remain unknown and blocking.
+A normal nested `TryPlanNode` still protects its own body. A detached compatibility-shaped handler remains unknown and blocking rather than being promoted to workflow failure handling.
 
 ## Scheduling provenance
 
