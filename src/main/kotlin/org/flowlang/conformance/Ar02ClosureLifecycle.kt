@@ -15,6 +15,10 @@ internal data class Ar02ClosureLifecycleSnapshot(
 internal object Ar02ClosureLifecycle {
     const val WORK_PACKAGE = ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
     val boundaryNames = listOf("activationBoundary", "implementationBoundary", "validationBoundary", "completionBoundary")
+    private val receiptFields = listOf(
+        "status", "conclusion", "workflowRunId", "workflowRunNumber",
+        "exactHead", "syntheticMergeCandidate", "exactHeadJobId", "mergeCandidateJobId"
+    )
 
     fun load(root: File): Ar02ClosureLifecycleSnapshot = Ar02ClosureLifecycleSnapshot(
         FlowYaml.readMap(File(root, WORK_PACKAGE)),
@@ -80,9 +84,7 @@ internal object Ar02ClosureLifecycle {
             val local = map(work["localValidation"])
             addAll(boundaryErrors("localValidation", local))
             val validation = map(lifecycle["validationBoundary"])
-            if (local["workflowRunId"] != validation["workflowRunId"] || local["exactHead"] != validation["exactHead"]) {
-                add("localValidation must cite the recorded validation boundary, not unrelated green evidence.")
-            }
+            addAll(validationAliasErrors(local, validation))
             val completion = map(work["completionDecision"])
             if (completion["status"] != "complete" || completion["completedSlice"] != "AR-02E" ||
                 completion["nextItem"] != "AR-03" || completion["nextItemActivationState"] != "not-activated" ||
@@ -105,6 +107,24 @@ internal object Ar02ClosureLifecycle {
             globalDecision.containsKey("completedRecoveryItem") || globalDecision.containsKey("nextRecoveryItem") ||
             release["nextItem"] != "" || release["completedItem"] != "0.9.7.10"
         ) add("Recovery lifecycle changed the terminal global roadmap focus.")
+    }
+
+    /** localValidation is an alias of one receipt, not an independently editable success claim. */
+    fun validationAliasErrors(local: Map<*, *>, validation: Map<*, *>): List<String> = buildList {
+        receiptFields.forEach { field ->
+            val localValue = local[field]
+            val recordedValue = validation[field]
+            val equal = if ((localValue is Int || localValue is Long) &&
+                (recordedValue is Int || recordedValue is Long)
+            ) {
+                (localValue as Number).toLong() == (recordedValue as Number).toLong()
+            } else {
+                localValue == recordedValue
+            }
+            if (localValue == null || recordedValue == null || !equal) {
+                add("localValidation.$field must match the recorded validation boundary, not unrelated green evidence.")
+            }
+        }
     }
 
     fun boundaryErrors(name: String, boundary: Map<*, *>): List<String> = buildList {
