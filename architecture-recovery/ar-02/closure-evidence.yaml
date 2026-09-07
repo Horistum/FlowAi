@@ -25,7 +25,7 @@ findings:
       - path: "src/test/kotlin/Ar02ExplicitMergeSemanticsTests.kt"
         symbol: "mergeRejectsIncompleteOverlapExternalAmbiguityAndKnownTypeConflict"
         formerBehavior: "A display-name or last-visited producer cannot supply exhaustive, unambiguous merge evidence."
-      - path: "src/test/kotlin/Ar02MergeMaterializationRegressionTests.kt"
+      - path: "src/test/kotlin/ExplicitMergeMaterializationRegressionTests.kt"
         symbol: "realParsedMergePassesPlanningEvidenceBeforeTargetSupportIsConsidered"
         formerBehavior: "A valid typed merge was rejected before target support because ControlNode had no legacy dependsOn field."
   - findingId: "F-08"
@@ -44,7 +44,7 @@ findings:
     negativeChecks:
       - "architecture-recovery.ar-02.multi-workflow-materialization-gate"
     regressionWitnesses:
-      - path: "src/test/kotlin/Ar02IntegratedSemanticClosureTests.kt"
+      - path: "src/test/kotlin/WorkflowSemanticsIntegrationTests.kt"
         symbol: "staleAuthorizationRejectsWorkflowMembershipAndRoutingChanges"
         formerBehavior: "A first-workflow or flattened program could silently discard ownership and trigger routing."
   - findingId: "F-15"
@@ -65,9 +65,9 @@ findings:
     negativeChecks:
       - "architecture-recovery.ar-02.no-synthetic-handler-authority"
     regressionWitnesses:
-      - path: "src/test/kotlin/Ar02IntegratedSemanticClosureTests.kt"
+      - path: "src/test/kotlin/WorkflowSemanticsIntegrationTests.kt"
         symbol: "staleAuthorizationRejectsFailureAndHandlerChanges"
         formerBehavior: "A terminal Try shape, generated identifier or unchanged legacy view could impersonate workflow failure authority."
-      - path: "src/test/kotlin/Ar02IntegratedSemanticClosureTests.kt"
+      - path: "src/test/kotlin/WorkflowSemanticsIntegrationTests.kt"
         symbol: "targetMatrixRejectsRenderingWithoutPropagateRethrow"
         formerBehavior: "A rendered handler without the required rethrow would swallow workflow failure."

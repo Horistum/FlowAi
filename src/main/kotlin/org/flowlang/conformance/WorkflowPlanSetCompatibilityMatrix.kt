@@ -10,7 +10,7 @@ import org.flowlang.planner.TryPlanNode
 import org.flowlang.standard.FlowStandardVersions
 
 /** Executable checks for the existing 1.1 contract, not a new wire contract or schema library. */
-internal object Ar02PublicCompatibilityMatrix {
+internal object WorkflowPlanSetCompatibilityMatrix {
     fun errors(
         single: CompilationUnit,
         multi: CompilationUnit,

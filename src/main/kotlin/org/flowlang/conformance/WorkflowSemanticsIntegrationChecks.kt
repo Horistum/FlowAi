@@ -27,14 +27,14 @@ import org.flowlang.modules.ModuleRegistry
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 /** Execute each slice once; the integrated closure consumes these exact observations. */
-internal fun ar02PredecessorChecks(rootDir: File): List<ConformanceCheck> =
+internal fun workflowSemanticsPrerequisiteChecks(rootDir: File): List<ConformanceCheck> =
     Ar02FlowSensitiveConformanceChecks(rootDir).checks() +
         Ar02ExplicitMergeConformanceChecks(rootDir).checks() +
-        Ar02WorkflowOwnershipConformanceChecks(rootDir).checks() +
+        WorkflowOwnershipConformanceChecks(rootDir).checks() +
         Ar02WorkflowFailureConformanceChecks(rootDir).checks()
 
 /** Cross-layer evidence using public frontends and the existing target-boundary owner. */
-class Ar02IntegratedSemanticClosureChecks(private val rootDir: File) {
+class WorkflowSemanticsIntegrationChecks(private val rootDir: File) {
     private val modules by lazy { ModuleRegistry.fromDirectory(File(rootDir, "modules")) }
     private val compiler by lazy { FlowCompilationService(modules) }
     private val commonIntent by lazy { compileIntent(COMMON_INTENT, "ar02e-common.intent.yaml") }
@@ -45,11 +45,11 @@ class Ar02IntegratedSemanticClosureChecks(private val rootDir: File) {
     internal val multiUnit by lazy { compileIntent(MULTI_INTENT, "ar02e-multi.intent.yaml") }
     private val multiAi by lazy { compileAi(MULTI_INTENT, "ar02e-multi-ai") }
     internal val targetObservations by lazy {
-        Ar02WorkflowOwnershipConformanceChecks(rootDir).observeTargets(mergeUnit, multiUnit, failureUnit)
+        WorkflowOwnershipConformanceChecks(rootDir).observeTargets(mergeUnit, multiUnit, failureUnit)
     }
     internal val mutationObservations by lazy { observeMutations() }
 
-    fun checks(predecessorChecks: List<ConformanceCheck> = ar02PredecessorChecks(rootDir)): List<ConformanceCheck> {
+    fun checks(predecessorChecks: List<ConformanceCheck> = workflowSemanticsPrerequisiteChecks(rootDir)): List<ConformanceCheck> {
         val matrices = listOf(
             resultCheck(FRONTEND_MATRIX, ::frontendMatrixErrors),
             resultCheck(MUTATION_MATRIX, ::mutationMatrixErrors),
@@ -64,9 +64,9 @@ class Ar02IntegratedSemanticClosureChecks(private val rootDir: File) {
     internal fun commonUnits(): List<CompilationUnit> = listOf(commonFlow, commonIntent, commonAi)
 
     private fun frontendMatrixErrors(): List<String> = buildList {
-        addAll(Ar02ClosureSemanticEvidence.frontendErrors(commonUnits()))
+        addAll(WorkflowSemanticEvidence.frontendErrors(commonUnits()))
         if (multiUnit.graph != multiAi.graph || multiUnit.graphDigest != multiAi.graphDigest ||
-            Ar02ClosureSemanticEvidence.semanticPlanSet(multiUnit) != Ar02ClosureSemanticEvidence.semanticPlanSet(multiAi)
+            WorkflowSemanticEvidence.semanticPlanSet(multiUnit) != WorkflowSemanticEvidence.semanticPlanSet(multiAi)
         ) add("Multi-workflow Intent and reviewed AI disagree on canonical ownership or public views.")
         if (multiUnit.graph.workflows.map { it.name } != listOf("build", "report") ||
             multiUnit.graph.workflows.any { it.failurePolicy.handler == null }
@@ -82,7 +82,7 @@ class Ar02IntegratedSemanticClosureChecks(private val rootDir: File) {
     }
 
     private fun mutationMatrixErrors(): List<String> = buildList {
-        addAll(Ar02ClosureSemanticEvidence.mutationErrors(mutationObservations))
+        addAll(WorkflowSemanticEvidence.mutationErrors(mutationObservations))
         val reordered = compileFlowSource(MERGE_SOURCE.replace("merge(left, right)", "merge(right, left)"), "ar02e-permutation")
         if (mergeUnit.graph != reordered.graph || mergeUnit.graphDigest != reordered.graphDigest) {
             add("Merge input storage order changed canonical meaning.")
@@ -96,7 +96,7 @@ class Ar02IntegratedSemanticClosureChecks(private val rootDir: File) {
         }
     }
 
-    private fun observeMutations(): List<Ar02MutationObservation> {
+    private fun observeMutations(): List<WorkflowSemanticMutationObservation> {
         val baseline = mergeUnit
         val graph = baseline.graph
         val workflow = graph.workflows.single()
@@ -121,43 +121,43 @@ class Ar02IntegratedSemanticClosureChecks(private val rootDir: File) {
             if (it.id == "build-manual") it.copy(workflows = listOf(otherWorkflow.id)) else it
         })
         return listOf(
-            Ar02ClosureSemanticEvidence.observeMutation("path-value", baseline, changedValue.graph),
-            Ar02ClosureSemanticEvidence.observeMutation("merge-producer", baseline, wrongProducer, true),
-            Ar02ClosureSemanticEvidence.observeMutation("merge-edge", baseline, missingEdge, true),
-            Ar02ClosureSemanticEvidence.observeMutation("workflow-membership", multiUnit, changedMembership, true),
-            Ar02ClosureSemanticEvidence.observeMutation("trigger-routing", multiUnit, changedRouting),
-            Ar02ClosureSemanticEvidence.observeMutation("failure-disposition", baseline,
+            WorkflowSemanticEvidence.observeMutation("path-value", baseline, changedValue.graph),
+            WorkflowSemanticEvidence.observeMutation("merge-producer", baseline, wrongProducer, true),
+            WorkflowSemanticEvidence.observeMutation("merge-edge", baseline, missingEdge, true),
+            WorkflowSemanticEvidence.observeMutation("workflow-membership", multiUnit, changedMembership, true),
+            WorkflowSemanticEvidence.observeMutation("trigger-routing", multiUnit, changedRouting),
+            WorkflowSemanticEvidence.observeMutation("failure-disposition", baseline,
                 policy(workflow.failurePolicy.copy(disposition = CanonicalWorkflowFailureDisposition.RECOVER))),
-            Ar02ClosureSemanticEvidence.observeMutation("handler-identity", baseline,
+            WorkflowSemanticEvidence.observeMutation("handler-identity", baseline,
                 policy(workflow.failurePolicy.copy(handler = handler.copy(id = "${handler.id}:changed")))),
-            Ar02ClosureSemanticEvidence.observeMutation("handler-membership", baseline,
+            WorkflowSemanticEvidence.observeMutation("handler-membership", baseline,
                 policy(workflow.failurePolicy.copy(handler = handler.copy(nodeIds = handler.nodeIds + merge.targetNodeId))), true),
-            Ar02ClosureSemanticEvidence.observeMutation("error-binding", baseline,
+            WorkflowSemanticEvidence.observeMutation("error-binding", baseline,
                 policy(workflow.failurePolicy.copy(handler = handler.copy(entry = handler.entry.copy(errorBinding = "changedError"))))),
-            Ar02ClosureSemanticEvidence.observeMutation("entry-availability", baseline,
+            WorkflowSemanticEvidence.observeMutation("entry-availability", baseline,
                 policy(workflow.failurePolicy.copy(handler = handler.copy(entry = handler.entry.copy(priorSuccessfulValuesAvailable = true)))))
         )
     }
 
-    internal fun targetMatrixErrors(): List<String> = Ar02TargetMatrix.errors(
+    internal fun targetMatrixErrors(): List<String> = WorkflowTargetGatingMatrix.errors(
         targetObservations,
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")).keys,
         BuiltInTargetProjections.registry.targetIds
     )
 
-    private fun publicCompatibilityErrors(): List<String> = Ar02PublicCompatibilityMatrix.errors(
+    private fun publicCompatibilityErrors(): List<String> = WorkflowPlanSetCompatibilityMatrix.errors(
         failureUnit, multiUnit, Json.mapper.readTree(File(rootDir, "schemas/workflow-execution-plan-set.schema.json"))
     )
 
     private fun findingClosureErrors(predecessors: List<ConformanceCheck>, matrices: List<ConformanceCheck>): List<String> = buildList {
         val inventory = ArchitectureRecoveryConformanceInventory.load(rootDir)
-        addAll(Ar02FindingClosureEvidenceValidator.errors(
-            Ar02FindingClosureCatalog.load(rootDir), inventory.checks.toSet(), predecessors, rootDir
+        addAll(WorkflowSemanticsFindingEvidenceValidator.errors(
+            WorkflowSemanticsFindingCatalog.load(rootDir), inventory.checks.toSet(), predecessors, rootDir
         ))
         (predecessors + matrices).filterNot { it.passed }.forEach {
             add("AR-02 cannot close while '${it.name}' fails: ${it.message.orEmpty()}")
         }
-        addAll(Ar02ClosureLifecycle.errors(Ar02ClosureLifecycle.load(rootDir)))
+        addAll(WorkflowSemanticsRecoveryLifecycle.errors(WorkflowSemanticsRecoveryLifecycle.load(rootDir)))
         val report = File(rootDir, REPORT_PATH)
         if (!report.isFile) add("AR-02 closure report is missing.")
         val forbidden = listOf("FLOW_ERROR_HANDLER_ID", "canonicalFlowHandler", "lastOrNull() as? TryPlanNode")

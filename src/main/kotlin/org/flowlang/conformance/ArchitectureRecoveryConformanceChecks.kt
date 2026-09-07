@@ -266,8 +266,8 @@ class ArchitectureRecoveryConformanceRunner(
     fun checks(): List<ConformanceCheck> {
         val foundation = AdapterTargetMaturityConformanceChecks(rootDir, targets, projections).checks() +
             Ar01CompilerAxisConformanceChecks(rootDir).checks()
-        val predecessors = ar02PredecessorChecks(rootDir)
-        val produced = foundation + predecessors + Ar02IntegratedSemanticClosureChecks(rootDir).checks(predecessors)
+        val predecessors = workflowSemanticsPrerequisiteChecks(rootDir)
+        val produced = foundation + predecessors + WorkflowSemanticsIntegrationChecks(rootDir).checks(predecessors)
         val inventoryResult = runCatching { ArchitectureRecoveryConformanceInventory.load(rootDir) }
         val inventory = inventoryResult.getOrNull()
         val observed = produced.map { it.name }

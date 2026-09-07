@@ -3,20 +3,20 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
-import org.flowlang.conformance.Ar02FailureProjectionEvidence
-import org.flowlang.conformance.Ar02IntegratedSemanticClosureChecks
-import org.flowlang.conformance.Ar02TargetMatrix
-import org.flowlang.conformance.Ar02TargetScenario
+import org.flowlang.conformance.WorkflowFailureProjectionEvidence
+import org.flowlang.conformance.WorkflowSemanticsIntegrationChecks
+import org.flowlang.conformance.WorkflowTargetGatingMatrix
+import org.flowlang.conformance.WorkflowTargetScenario
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
-class Ar02TargetFailureEvidenceTests {
+class WorkflowFailureProjectionEvidenceTests {
     @Test
     fun realProvidersPreserveThePolicyAtTheirOwnStructuralLevel() {
         manifests.forEach { (target, manifest) ->
-            val errors = Ar02FailureProjectionEvidence.errors(manifest, policy)
+            val errors = WorkflowFailureProjectionEvidence.errors(manifest, policy)
             assertTrue(errors.isEmpty(), "$target: ${errors.joinToString()}")
             if (target == "jenkins") {
                 assertTrue(manifest.jobs.none { it.metadata["workflowFailurePolicy"] == "true" })
@@ -37,7 +37,7 @@ class Ar02TargetFailureEvidenceTests {
         manifests.forEach { (target, manifest) ->
             mutations.forEach { (field, value) ->
                 val changed = rewritePolicy(manifest) { it + (field to value) }
-                val errors = Ar02FailureProjectionEvidence.errors(changed, policy)
+                val errors = WorkflowFailureProjectionEvidence.errors(changed, policy)
                 assertTrue(errors.isNotEmpty(), "$target silently accepted mutated $field.")
             }
         }
@@ -55,7 +55,7 @@ class Ar02TargetFailureEvidenceTests {
                 else -> job
             }
         })
-        val errors = Ar02FailureProjectionEvidence.errors(changed, policy)
+        val errors = WorkflowFailureProjectionEvidence.errors(changed, policy)
         assertTrue(errors.any { "exactly the authorized handler jobs" in it }, errors.joinToString())
     }
 
@@ -77,14 +77,14 @@ class Ar02TargetFailureEvidenceTests {
             val manifest = pipeline.generateDiagnosticEvidence(
                 TargetDiagnosticMaterializationRequest.fromCompilation(unit, testTargetSelection(target, targets))
             )
-            assertTrue(Ar02FailureProjectionEvidence.errors(manifest, expected).isEmpty())
+            assertTrue(WorkflowFailureProjectionEvidence.errors(manifest, expected).isEmpty())
             val handlers = manifest.jobs.filter { it.metadata["workflowFailurePolicy"] == "true" }
             assertEquals(2, handlers.size)
             handlers.forEach { missing ->
                 val changed = manifest.copy(jobs = manifest.jobs.map { job ->
                     if (job.id == missing.id) job.copy(metadata = job.metadata - "workflowFailurePolicy") else job
                 })
-                assertTrue(Ar02FailureProjectionEvidence.errors(changed, expected).isNotEmpty(), "$target: ${missing.id}")
+                assertTrue(WorkflowFailureProjectionEvidence.errors(changed, expected).isNotEmpty(), "$target: ${missing.id}")
             }
         }
     }
@@ -96,7 +96,7 @@ class Ar02TargetFailureEvidenceTests {
             val changed = manifest.copy(jobs = manifest.jobs.map { job ->
                 if (job.metadata["workflowFailurePolicy"] == "true") job.copy(dependsOn = emptyList()) else job
             })
-            val errors = Ar02FailureProjectionEvidence.errors(changed, policy)
+            val errors = WorkflowFailureProjectionEvidence.errors(changed, policy)
             assertTrue(errors.any { "not guarded" in it }, "$target: ${errors.joinToString()}")
         }
     }
@@ -110,7 +110,7 @@ class Ar02TargetFailureEvidenceTests {
             } else step.copy(children = removeHandler(step.children))
         }
         val changed = manifest.copy(jobs = manifest.jobs.map { it.copy(steps = removeHandler(it.steps)) })
-        val errors = Ar02FailureProjectionEvidence.errors(changed, policy)
+        val errors = WorkflowFailureProjectionEvidence.errors(changed, policy)
         assertTrue(errors.any { "handler" in it }, errors.joinToString())
     }
 
@@ -119,11 +119,11 @@ class Ar02TargetFailureEvidenceTests {
         val observations = closure.targetObservations
         listOf("github-actions", "tekton").forEach { target ->
             val changed = observations.map { row ->
-                if (row.target == target && row.scenario == Ar02TargetScenario.WORKFLOW_FAILURE) {
+                if (row.target == target && row.scenario == WorkflowTargetScenario.WORKFLOW_FAILURE) {
                     row.copy(executableBlocked = false, renderBlocked = true)
                 } else row
             }
-            val errors = Ar02TargetMatrix.errors(changed, targets.keys, BuiltInTargetProjections.registry.targetIds)
+            val errors = WorkflowTargetGatingMatrix.errors(changed, targets.keys, BuiltInTargetProjections.registry.targetIds)
             assertTrue(errors.any { "$target/WORKFLOW_FAILURE" in it }, errors.joinToString())
         }
     }
@@ -131,11 +131,11 @@ class Ar02TargetFailureEvidenceTests {
     @Test
     fun mergeClosureMustPreserveItsWorkflowFailurePolicyAsWell() {
         val changed = closure.targetObservations.map { row ->
-            if (row.target == "jenkins" && row.scenario == Ar02TargetScenario.EXPLICIT_MERGE) {
+            if (row.target == "jenkins" && row.scenario == WorkflowTargetScenario.EXPLICIT_MERGE) {
                 row.copy(failurePolicyPreserved = false)
             } else row
         }
-        val errors = Ar02TargetMatrix.errors(changed, targets.keys, BuiltInTargetProjections.registry.targetIds)
+        val errors = WorkflowTargetGatingMatrix.errors(changed, targets.keys, BuiltInTargetProjections.registry.targetIds)
         assertTrue(errors.any { "jenkins/EXPLICIT_MERGE" in it }, errors.joinToString())
     }
 
@@ -151,7 +151,7 @@ class Ar02TargetFailureEvidenceTests {
     }
 
     companion object {
-        private val closure by lazy { Ar02IntegratedSemanticClosureChecks(File(".")) }
+        private val closure by lazy { WorkflowSemanticsIntegrationChecks(File(".")) }
         private val targets by lazy { TargetRegistryYamlLoader.loadDirectory(File("targets")) }
         private val pipeline by lazy { BuiltInTargetProjections.pipeline(targets) }
         private val policy by lazy { closure.failureUnit.workflowPlanSet.workflows.single().failurePolicy }

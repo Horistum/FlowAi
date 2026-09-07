@@ -12,7 +12,7 @@ import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationUnit
 import org.flowlang.planner.WorkflowExecutionPlanSet
 
-internal data class Ar02MutationObservation(
+internal data class WorkflowSemanticMutationObservation(
     val id: String,
     val originalDigest: String,
     val mutatedDigest: String,
@@ -24,7 +24,7 @@ internal data class Ar02MutationObservation(
 )
 
 /** Bounded conformance observations. These values are never product authorization. */
-internal object Ar02ClosureSemanticEvidence {
+internal object WorkflowSemanticEvidence {
     val mutationIds: Set<String> = setOf(
         "path-value", "merge-producer", "merge-edge", "workflow-membership", "trigger-routing",
         "failure-disposition", "handler-identity", "handler-membership", "error-binding", "entry-availability"
@@ -35,7 +35,7 @@ internal object Ar02ClosureSemanticEvidence {
         original: CompilationUnit,
         changed: CanonicalExecutionGraph,
         mustRejectGraph: Boolean = false
-    ): Ar02MutationObservation {
+    ): WorkflowSemanticMutationObservation {
         original.authorization.requireIntegrity()
         val digest = CanonicalExecutionGraphDigestComputer.digest(changed)
         val staleDigest = runCatching {
@@ -64,7 +64,7 @@ internal object Ar02ClosureSemanticEvidence {
         val validation = CanonicalExecutionGraphValidator.validate(
             CanonicalExecutionGraphBuild(changed, original.authorization.bindings)
         )
-        return Ar02MutationObservation(
+        return WorkflowSemanticMutationObservation(
             id, original.graphDigest.value, digest.value, changed != original.graph,
             isIntegrityRejection(stale) && isIntegrityRejection(rebound),
             isIntegrityRejection(staleDigest), !validation.valid, mustRejectGraph
@@ -74,7 +74,7 @@ internal object Ar02ClosureSemanticEvidence {
     private fun isIntegrityRejection(failure: Throwable?): Boolean =
         failure is IllegalArgumentException || failure is IllegalStateException
 
-    fun mutationErrors(observations: List<Ar02MutationObservation>): List<String> = buildList {
+    fun mutationErrors(observations: List<WorkflowSemanticMutationObservation>): List<String> = buildList {
         val ids = observations.map { it.id }
         if (ids.toSet() != mutationIds || ids.size != mutationIds.size) {
             add("Mutation matrix must contain every required mutation exactly once: $ids")

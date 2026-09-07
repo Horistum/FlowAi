@@ -13,7 +13,7 @@ import org.flowlang.planner.WorkflowFailurePolicy
  * handler job. Neither representation may be replaced by a matching marker on an
  * unrelated node. This observer does not grant target execution authorization.
  */
-internal object Ar02FailureProjectionEvidence {
+internal object WorkflowFailureProjectionEvidence {
     fun errors(manifest: TargetManifest, expected: WorkflowFailurePolicy): List<String> = buildList {
         val handler = expected.handler
         if (handler == null) {

@@ -4,15 +4,15 @@ import java.io.File
 import java.security.MessageDigest
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import org.flowlang.conformance.Ar02ClosureLifecycle
-import org.flowlang.conformance.Ar02ClosureLifecycleSnapshot
+import org.flowlang.conformance.WorkflowSemanticsRecoveryLifecycle
+import org.flowlang.conformance.WorkflowSemanticsRecoveryLifecycleSnapshot
 
-class Ar02LifecycleReceiptBindingTests {
+class WorkflowSemanticsRecoveryReceiptTests {
     @Test
     fun localValidationAcceptsOneCompleteReceipt() {
         val receipt = validReceipt()
-        assertTrue(Ar02ClosureLifecycle.boundaryErrors("validationBoundary", receipt).isEmpty())
-        assertTrue(Ar02ClosureLifecycle.validationAliasErrors(receipt, receipt).isEmpty())
+        assertTrue(WorkflowSemanticsRecoveryLifecycle.boundaryErrors("validationBoundary", receipt).isEmpty())
+        assertTrue(WorkflowSemanticsRecoveryLifecycle.validationAliasErrors(receipt, receipt).isEmpty())
     }
 
     @Test
@@ -26,9 +26,9 @@ class Ar02LifecycleReceiptBindingTests {
         )
         mutations.forEach { (field, value) ->
             val local = receipt + (field to value)
-            val shapeErrors = Ar02ClosureLifecycle.boundaryErrors("localValidation", local)
+            val shapeErrors = WorkflowSemanticsRecoveryLifecycle.boundaryErrors("localValidation", local)
             assertTrue(shapeErrors.isEmpty(), "$field must be a valid but unrelated receipt: ${shapeErrors.joinToString()}")
-            val errors = Ar02ClosureLifecycle.validationAliasErrors(local, receipt)
+            val errors = WorkflowSemanticsRecoveryLifecycle.validationAliasErrors(local, receipt)
             assertTrue(errors.any { "localValidation.$field" in it }, "$field: ${errors.joinToString()}")
         }
     }
@@ -37,7 +37,7 @@ class Ar02LifecycleReceiptBindingTests {
     fun everyReceiptFieldIsRequiredOnBothSides() {
         val receipt = validReceipt()
         receipt.keys.forEach { field ->
-            val errors = Ar02ClosureLifecycle.validationAliasErrors(receipt - field, receipt - field)
+            val errors = WorkflowSemanticsRecoveryLifecycle.validationAliasErrors(receipt - field, receipt - field)
             assertTrue(errors.any { "localValidation.$field" in it }, "Missing $field was accepted.")
         }
     }
@@ -51,7 +51,7 @@ class Ar02LifecycleReceiptBindingTests {
             "exactHead" to fixtureHash("unrelated-head"),
             "workflowRunId" to 999994L
         ).forEach { (field, value) ->
-            val errors = Ar02ClosureLifecycle.validationAliasErrors(receipt + (field to value), receipt)
+            val errors = WorkflowSemanticsRecoveryLifecycle.validationAliasErrors(receipt + (field to value), receipt)
             assertTrue(errors.any { "localValidation.$field" in it }, errors.joinToString())
         }
     }
@@ -60,23 +60,23 @@ class Ar02LifecycleReceiptBindingTests {
     fun yamlIntegerWidthsDoNotChangeReceiptIdentityButStringsDo() {
         val receipt = validReceipt()
         val longNumber = receipt + ("workflowRunNumber" to 17L)
-        assertTrue(Ar02ClosureLifecycle.validationAliasErrors(longNumber, receipt).isEmpty())
+        assertTrue(WorkflowSemanticsRecoveryLifecycle.validationAliasErrors(longNumber, receipt).isEmpty())
         val stringNumber = receipt + ("workflowRunNumber" to "17")
-        assertTrue(Ar02ClosureLifecycle.validationAliasErrors(stringNumber, receipt).isNotEmpty())
+        assertTrue(WorkflowSemanticsRecoveryLifecycle.validationAliasErrors(stringNumber, receipt).isNotEmpty())
     }
 
     @Test
     fun coherentCompletedLifecyclePassesAsAWhole() {
-        val errors = Ar02ClosureLifecycle.errors(completedSnapshot())
+        val errors = WorkflowSemanticsRecoveryLifecycle.errors(completedSnapshot())
         assertTrue(errors.isEmpty(), errors.joinToString(" | "))
     }
 
     @Test
     fun eachIncompleteBoundaryRejectsAnOtherwiseCompletedLifecycle() {
         val complete = completedSnapshot()
-        Ar02ClosureLifecycle.boundaryNames.forEach { name ->
+        WorkflowSemanticsRecoveryLifecycle.boundaryNames.forEach { name ->
             listOf("pending", "candidate").forEach { state ->
-                val errors = Ar02ClosureLifecycle.errors(changeBoundary(complete, name) { it + ("status" to state) })
+                val errors = WorkflowSemanticsRecoveryLifecycle.errors(changeBoundary(complete, name) { it + ("status" to state) })
                 assertTrue(errors.any { "$name is not a passed" in it }, "$name/$state: ${errors.joinToString()}")
             }
         }
@@ -91,7 +91,7 @@ class Ar02LifecycleReceiptBindingTests {
             "lifecycle" to (lifecycle + ("validationBoundary" to implementation)),
             "localValidation" to implementation
         ))
-        val errors = Ar02ClosureLifecycle.errors(changed)
+        val errors = WorkflowSemanticsRecoveryLifecycle.errors(changed)
         assertTrue(errors.any { "distinct workflowRunId" in it }, errors.joinToString())
         assertTrue(errors.any { "distinct exactHead" in it }, errors.joinToString())
         assertTrue(errors.any { "distinct syntheticMergeCandidate" in it }, errors.joinToString())
@@ -103,7 +103,7 @@ class Ar02LifecycleReceiptBindingTests {
         val local = section(complete.workPackage["localValidation"])
         val changed = complete.copy(workPackage = complete.workPackage +
             ("localValidation" to (local + ("mergeCandidateJobId" to 998877L))))
-        val errors = Ar02ClosureLifecycle.errors(changed)
+        val errors = WorkflowSemanticsRecoveryLifecycle.errors(changed)
         assertTrue(errors.any { "localValidation.mergeCandidateJobId" in it }, errors.joinToString())
     }
 
@@ -115,24 +115,24 @@ class Ar02LifecycleReceiptBindingTests {
             if (milestone["id"] == "AR-03") milestone + ("status" to "active") else milestone
         }
         val changed = complete.copy(recovery = complete.recovery + ("milestones" to milestones))
-        val errors = Ar02ClosureLifecycle.errors(changed)
+        val errors = WorkflowSemanticsRecoveryLifecycle.errors(changed)
         assertTrue(errors.any { "AR-03 must remain planned" in it }, errors.joinToString())
     }
 
     private fun changeBoundary(
-        snapshot: Ar02ClosureLifecycleSnapshot,
+        snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot,
         name: String,
         change: (Map<String, Any?>) -> Map<String, Any?>
-    ): Ar02ClosureLifecycleSnapshot {
+    ): WorkflowSemanticsRecoveryLifecycleSnapshot {
         val lifecycle = section(snapshot.workPackage["lifecycle"])
         return snapshot.copy(workPackage = snapshot.workPackage +
             ("lifecycle" to (lifecycle + (name to change(section(lifecycle[name]))))))
     }
 
     /** Builds a coherent completed fixture without changing repository lifecycle files. */
-    private fun completedSnapshot(): Ar02ClosureLifecycleSnapshot {
-        val snapshot = Ar02ClosureLifecycle.load(File("."))
-        val boundaries = Ar02ClosureLifecycle.boundaryNames.mapIndexed { index, name ->
+    private fun completedSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        val snapshot = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+        val boundaries = WorkflowSemanticsRecoveryLifecycle.boundaryNames.mapIndexed { index, name ->
             name to (validReceipt() + mapOf(
                 "workflowRunId" to (100000L + index),
                 "workflowRunNumber" to (10 + index),
@@ -156,7 +156,7 @@ class Ar02LifecycleReceiptBindingTests {
         val successor = mapOf(
             "nextItem" to "AR-03",
             "activationState" to "not-activated",
-            "workPackage" to Ar02ClosureLifecycle.WORK_PACKAGE
+            "workPackage" to WorkflowSemanticsRecoveryLifecycle.WORK_PACKAGE
         )
         return snapshot.copy(
             workPackage = snapshot.workPackage + mapOf(

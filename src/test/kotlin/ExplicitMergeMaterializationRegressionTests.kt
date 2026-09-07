@@ -17,7 +17,7 @@ import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.planner.PlanDependencyRelation
 import org.flowlang.planner.PlanDependencyResolution
 
-class Ar02MergeMaterializationRegressionTests {
+class ExplicitMergeMaterializationRegressionTests {
     private val modules = ModuleRegistry.fromDirectory(File("modules"))
 
     @Test

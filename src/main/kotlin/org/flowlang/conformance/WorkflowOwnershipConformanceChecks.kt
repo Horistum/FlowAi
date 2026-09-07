@@ -26,7 +26,7 @@ import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 /** Executable workflow ownership evidence and its approved target-selection boundary. */
-class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
+class WorkflowOwnershipConformanceChecks(private val rootDir: File) {
     fun checks(): List<ConformanceCheck> {
         val result = runCatching(::compile)
         val unit = result.getOrNull()
@@ -90,7 +90,7 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
         merge: CompilationUnit,
         multi: CompilationUnit,
         failure: CompilationUnit
-    ): List<Ar02TargetObservation> {
+    ): List<WorkflowTargetObservation> {
         val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
         val projections = BuiltInTargetProjections.registry
         val pipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
@@ -99,39 +99,39 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
         }.planNodeId.let(::sanitizeId)
         return targets.keys.sorted().flatMap { target ->
             val selection = TargetSelectionAuthority.fromConformanceCheck(
-                target, Ar02IntegratedSemanticClosureChecks.TARGET_MATRIX, targets
+                target, WorkflowSemanticsIntegrationChecks.TARGET_MATRIX, targets
             )
-            Ar02TargetScenario.entries.map { scenario ->
+            WorkflowTargetScenario.entries.map { scenario ->
                 val compilation = when (scenario) {
-                    Ar02TargetScenario.EXPLICIT_MERGE -> merge
-                    Ar02TargetScenario.MULTI_WORKFLOW -> multi
-                    Ar02TargetScenario.WORKFLOW_FAILURE -> failure
+                    WorkflowTargetScenario.EXPLICIT_MERGE -> merge
+                    WorkflowTargetScenario.MULTI_WORKFLOW -> multi
+                    WorkflowTargetScenario.WORKFLOW_FAILURE -> failure
                 }
                 val digest = compilation.graphDigest.value
                 try {
                     compilation.authorization.requireIntegrity()
-                    if (scenario == Ar02TargetScenario.MULTI_WORKFLOW) {
+                    if (scenario == WorkflowTargetScenario.MULTI_WORKFLOW) {
                         val executableFailure = runCatching {
                             TargetMaterializationRequest.fromCompilation(compilation, selection)
                         }.exceptionOrNull()
                         val diagnosticFailure = runCatching {
                             TargetDiagnosticMaterializationRequest.fromCompilation(compilation, selection)
                         }.exceptionOrNull()
-                        Ar02TargetObservation(
-                            target, scenario, digest, Ar02TargetOutcome.BLOCKED,
+                        WorkflowTargetObservation(
+                            target, scenario, digest, WorkflowTargetOutcome.BLOCKED,
                             executableBlocked = executableFailure is MultiWorkflowTargetMaterializationUnsupportedException,
                             diagnosticBlocked = diagnosticFailure is MultiWorkflowTargetMaterializationUnsupportedException
                         )
                     } else {
                         val provider = projections.providerFor(target)
                         if (provider == null) {
-                            Ar02TargetObservation(target, scenario, digest, Ar02TargetOutcome.NO_PROVIDER)
-                        } else if (scenario == Ar02TargetScenario.WORKFLOW_FAILURE && target == "jenkins") {
+                            WorkflowTargetObservation(target, scenario, digest, WorkflowTargetOutcome.NO_PROVIDER)
+                        } else if (scenario == WorkflowTargetScenario.WORKFLOW_FAILURE && target == "jenkins") {
                             val manifest = pipeline.generate(TargetMaterializationRequest.fromCompilation(compilation, selection))
                             val text = provider.render(manifest)
-                            Ar02TargetObservation(
+                            WorkflowTargetObservation(
                                 target, scenario, digest,
-                                if (manifest.compatibility.executable) Ar02TargetOutcome.EXECUTABLE else Ar02TargetOutcome.NON_EXECUTABLE,
+                                if (manifest.compatibility.executable) WorkflowTargetOutcome.EXECUTABLE else WorkflowTargetOutcome.NON_EXECUTABLE,
                                 renderedText = text,
                                 failurePolicyPreserved = preservesFailurePolicy(manifest, compilation)
                             )
@@ -162,9 +162,9 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
                             }
                             val renderedText = candidateText ?: diagnosticRendering.getOrNull()
                             val mergeSteps = flatten(diagnostic).filter { it.id == mergeId }
-                            Ar02TargetObservation(
+                            WorkflowTargetObservation(
                                 target, scenario, digest,
-                                if (renderedText == null) Ar02TargetOutcome.NON_EXECUTABLE else Ar02TargetOutcome.EXECUTABLE,
+                                if (renderedText == null) WorkflowTargetOutcome.NON_EXECUTABLE else WorkflowTargetOutcome.EXECUTABLE,
                                 executableBlocked = candidateRenderBlocked,
                                 mergePreserved = mergeSteps.size == 1 &&
                                     mergeSteps.single().materialization.status == TargetMaterializationStatus.SEMANTIC_ONLY,
@@ -175,8 +175,8 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
                         }
                     }
                 } catch (exception: Exception) {
-                    Ar02TargetObservation(
-                        target, scenario, digest, Ar02TargetOutcome.BLOCKED,
+                    WorkflowTargetObservation(
+                        target, scenario, digest, WorkflowTargetOutcome.BLOCKED,
                         error = "${exception.javaClass.simpleName}: ${exception.message}"
                     )
                 }
@@ -192,7 +192,7 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
             failure is UnresolvedAdapterContinuitySatisfactionException
 
     private fun preservesFailurePolicy(manifest: TargetManifest, compilation: CompilationUnit): Boolean =
-        Ar02FailureProjectionEvidence.errors(
+        WorkflowFailureProjectionEvidence.errors(
             manifest, compilation.workflowPlanSet.workflows.single().failurePolicy
         ).isEmpty()
 

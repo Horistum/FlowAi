@@ -3,7 +3,7 @@ package org.flowlang.conformance
 import java.io.File
 import org.flowlang.serialization.FlowYaml
 
-internal data class Ar02ClosureLifecycleSnapshot(
+internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val workPackage: Map<String, Any?>,
     val recovery: Map<String, Any?>,
     val postToolchain: Map<String, Any?>,
@@ -12,7 +12,7 @@ internal data class Ar02ClosureLifecycleSnapshot(
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
-internal object Ar02ClosureLifecycle {
+internal object WorkflowSemanticsRecoveryLifecycle {
     const val WORK_PACKAGE = ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
     val boundaryNames = listOf("activationBoundary", "implementationBoundary", "validationBoundary", "completionBoundary")
     private val receiptFields = listOf(
@@ -20,7 +20,7 @@ internal object Ar02ClosureLifecycle {
         "exactHead", "syntheticMergeCandidate", "exactHeadJobId", "mergeCandidateJobId"
     )
 
-    fun load(root: File): Ar02ClosureLifecycleSnapshot = Ar02ClosureLifecycleSnapshot(
+    fun load(root: File): WorkflowSemanticsRecoveryLifecycleSnapshot = WorkflowSemanticsRecoveryLifecycleSnapshot(
         FlowYaml.readMap(File(root, WORK_PACKAGE)),
         FlowYaml.readMap(File(root, ".flow-agent/roadmap-architecture-recovery.yaml")),
         FlowYaml.readMap(File(root, ".flow-agent/roadmap-post-toolchain.yaml")),
@@ -28,7 +28,7 @@ internal object Ar02ClosureLifecycle {
         FlowYaml.readMap(File(root, ".flow-agent/roadmap.yaml"))
     )
 
-    fun errors(snapshot: Ar02ClosureLifecycleSnapshot): List<String> = buildList {
+    fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
         val work = snapshot.workPackage
         val complete = work["status"] == "complete"
         if (work["version"] != "AR-02" || work["status"] !in setOf("active", "complete")) {

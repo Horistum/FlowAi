@@ -4,24 +4,24 @@ import java.io.File
 import org.flowlang.architecture.KotlinSourceBoundaryScanner
 import org.flowlang.serialization.FlowYaml
 
-internal data class Ar02ImplementationRevision(val pullRequest: Int, val commit: String)
-internal data class Ar02ProductionContract(val path: String, val symbol: String)
-internal data class Ar02RegressionWitness(val path: String, val symbol: String, val formerBehavior: String)
-internal data class Ar02FindingClosureEvidence(
+internal data class FindingImplementationRevision(val pullRequest: Int, val commit: String)
+internal data class FindingProductionContract(val path: String, val symbol: String)
+internal data class FindingRegressionWitness(val path: String, val symbol: String, val formerBehavior: String)
+internal data class WorkflowSemanticsFindingEvidence(
     val findingId: String,
-    val implementations: List<Ar02ImplementationRevision>,
-    val productionContracts: List<Ar02ProductionContract>,
+    val implementations: List<FindingImplementationRevision>,
+    val productionContracts: List<FindingProductionContract>,
     val positiveChecks: List<String>,
     val negativeChecks: List<String>,
-    val regressionWitnesses: List<Ar02RegressionWitness>
+    val regressionWitnesses: List<FindingRegressionWitness>
 )
-internal data class Ar02FindingClosureDocument(val version: String, val findings: List<Ar02FindingClosureEvidence>)
+internal data class WorkflowSemanticsFindingDocument(val version: String, val findings: List<WorkflowSemanticsFindingEvidence>)
 
-internal object Ar02FindingClosureCatalog {
+internal object WorkflowSemanticsFindingCatalog {
     const val PATH = "architecture-recovery/ar-02/closure-evidence.yaml"
 
-    fun load(rootDir: File): Ar02FindingClosureDocument =
-        FlowYaml.readStrict(File(rootDir, PATH), Ar02FindingClosureDocument::class.java)
+    fun load(rootDir: File): WorkflowSemanticsFindingDocument =
+        FlowYaml.readStrict(File(rootDir, PATH), WorkflowSemanticsFindingDocument::class.java)
 }
 
 /**
@@ -30,19 +30,19 @@ internal object Ar02FindingClosureCatalog {
  * GitHub revision ancestry and CI receipts are independently checked at review.
  * File existence is not accepted as a substitute for successful behavior checks.
  */
-internal object Ar02FindingClosureEvidenceValidator {
+internal object WorkflowSemanticsFindingEvidenceValidator {
     private val expectedChecks = mapOf(
         "F-02" to (
             setOf(Ar02FlowSensitiveConformanceChecks.LATTICE_CHECK, Ar02ExplicitMergeConformanceChecks.MERGE_CHECK) to
                 setOf(Ar02FlowSensitiveConformanceChecks.REJECTION_CHECK, Ar02ExplicitMergeConformanceChecks.PERMUTATION_CHECK)
         ),
-        "F-08" to (setOf(Ar02WorkflowOwnershipConformanceChecks.MEMBERSHIP) to setOf(Ar02WorkflowOwnershipConformanceChecks.TARGET_GATE)),
+        "F-08" to (setOf(WorkflowOwnershipConformanceChecks.MEMBERSHIP) to setOf(WorkflowOwnershipConformanceChecks.TARGET_GATE)),
         "F-15" to (setOf(Ar02WorkflowFailureConformanceChecks.FAILURE_POLICY_INTEGRITY) to
             setOf(Ar02WorkflowFailureConformanceChecks.NO_SYNTHETIC_HANDLER_AUTHORITY))
     )
 
     fun errors(
-        document: Ar02FindingClosureDocument,
+        document: WorkflowSemanticsFindingDocument,
         declaredChecks: Set<String>,
         executedChecks: List<ConformanceCheck>,
         rootDir: File
