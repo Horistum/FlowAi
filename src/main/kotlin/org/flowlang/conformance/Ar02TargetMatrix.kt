@@ -1,0 +1,87 @@
+package org.flowlang.conformance
+
+internal enum class Ar02TargetScenario { EXPLICIT_MERGE, MULTI_WORKFLOW, WORKFLOW_FAILURE }
+internal enum class Ar02TargetOutcome { EXECUTABLE, NON_EXECUTABLE, BLOCKED, NO_PROVIDER }
+
+/** Observations of real compilation/projection calls, not executable authorization. */
+internal data class Ar02TargetObservation(
+    val target: String,
+    val scenario: Ar02TargetScenario,
+    val graphDigest: String,
+    val outcome: Ar02TargetOutcome,
+    val executableBlocked: Boolean = false,
+    val diagnosticBlocked: Boolean = false,
+    val mergePreserved: Boolean = false,
+    val renderBlocked: Boolean = false,
+    val renderedText: String? = null,
+    val failurePolicyPreserved: Boolean = false,
+    val error: String? = null
+)
+
+internal object Ar02TargetMatrix {
+    fun errors(
+        observations: List<Ar02TargetObservation>,
+        targets: Set<String>,
+        providers: Set<String>
+    ): List<String> = buildList {
+        val expected = targets.flatMap { target -> Ar02TargetScenario.entries.map { target to it } }.toSet()
+        val actual = observations.map { it.target to it.scenario }
+        if (actual.size != expected.size || actual.toSet() != expected) {
+            add("Target matrix must observe every registered target and scenario exactly once.")
+        }
+        if (targets.isEmpty() || "jenkins" !in providers || !targets.containsAll(providers)) {
+            add("Target matrix registry/provider boundary is incomplete.")
+        }
+        observations.forEach { row ->
+            val context = "${row.target}/${row.scenario}"
+            if (!row.graphDigest.matches(Regex("[0-9a-f]{64}"))) add("$context lacks a graph digest.")
+            if (row.error != null) add("$context failed unexpectedly: ${row.error}")
+            when {
+                row.scenario == Ar02TargetScenario.MULTI_WORKFLOW -> {
+                    if (row.outcome != Ar02TargetOutcome.BLOCKED ||
+                        !row.executableBlocked || !row.diagnosticBlocked || row.renderedText != null
+                    ) add("$context did not reject both non-flattening request boundaries.")
+                }
+                row.target !in providers -> {
+                    if (row.outcome != Ar02TargetOutcome.NO_PROVIDER || row.renderedText != null) {
+                        add("$context invented a projection provider.")
+                    }
+                }
+                row.scenario == Ar02TargetScenario.EXPLICIT_MERGE -> {
+                    if (row.outcome != Ar02TargetOutcome.NON_EXECUTABLE ||
+                        !row.mergePreserved || !row.executableBlocked || !row.renderBlocked || row.renderedText != null
+                    ) add("$context lost merge meaning or authorized unsupported executable syntax.")
+                }
+                row.target == "jenkins" -> {
+                    if (row.outcome != Ar02TargetOutcome.EXECUTABLE || !row.failurePolicyPreserved) {
+                        add("$context lost its typed native failure projection.")
+                    }
+                    addAll(jenkinsPropagationErrors(row.renderedText).map { "$context: $it" })
+                }
+                else -> {
+                    if (row.outcome == Ar02TargetOutcome.EXECUTABLE ||
+                        !row.failurePolicyPreserved || !row.renderBlocked || row.renderedText != null
+                    ) add("$context promoted unsupported failure execution or lost diagnostic policy evidence.")
+                }
+            }
+        }
+    }
+
+    fun jenkinsPropagationErrors(text: String?): List<String> = buildList {
+        if (text == null) {
+            add("No native Jenkins rendering was produced.")
+            return@buildList
+        }
+        val body = text.indexOf("Proceed with work")
+        val caught = text.indexOf("catch (flowError)")
+        val binding = text.indexOf("def error = flowError")
+        val handler = text.indexOf("Handle workflow failure")
+        val rethrow = text.indexOf("throw flowError")
+        if (!(body >= 0 && body < caught && caught < binding && binding < handler && handler < rethrow)) {
+            add("Rendering must retain body, catch, error binding, handler and PROPAGATE rethrow in order.")
+        }
+        if (Regex("\\bthrow flowError\\b").findAll(text).count() != 1) {
+            add("The workflow must propagate the caught error exactly once.")
+        }
+    }
+}

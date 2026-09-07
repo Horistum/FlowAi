@@ -2,6 +2,7 @@ package org.flowlang.conformance
 
 import java.io.File
 import org.flowlang.adapters.yaml.IntentYamlLoader
+import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.AiIntentResponse
 import org.flowlang.ai.normalization.ConfidenceScore
@@ -9,12 +10,12 @@ import org.flowlang.ai.normalization.IntentClassification
 import org.flowlang.ai.normalization.NormalizationMode
 import org.flowlang.ai.normalization.NormalizationReport
 import org.flowlang.cli.Json
+import org.flowlang.compiler.CanonicalDependencyKind
+import org.flowlang.compiler.CanonicalExecutionGraph
 import org.flowlang.compiler.CanonicalExecutionGraphBuild
-import org.flowlang.compiler.CanonicalExecutionGraphDigestComputer
 import org.flowlang.compiler.CanonicalExecutionGraphValidator
-import org.flowlang.compiler.CanonicalTryNode
+import org.flowlang.compiler.CanonicalTaskNode
 import org.flowlang.compiler.CanonicalWorkflowFailureDisposition
-import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationUnit
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
@@ -23,478 +24,160 @@ import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
 import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.frontend.source.FlowSourceFrontend
 import org.flowlang.modules.ModuleRegistry
-import org.flowlang.parser.FlowParser
-import org.flowlang.planner.MultipleWorkflowCompatibilityViewException
-import org.flowlang.planner.TryPlanNode
-import org.flowlang.planner.WorkflowExecutionPlanSet
-import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 
-internal data class Ar02FindingClosureEvidence(
-    val findingId: String,
-    val productionPaths: List<String>,
-    val positiveChecks: List<String>,
-    val negativeChecks: List<String>
-)
+/** Execute each slice once; the integrated closure consumes these exact observations. */
+internal fun ar02PredecessorChecks(rootDir: File): List<ConformanceCheck> =
+    Ar02FlowSensitiveConformanceChecks(rootDir).checks() +
+        Ar02ExplicitMergeConformanceChecks(rootDir).checks() +
+        Ar02WorkflowOwnershipConformanceChecks(rootDir).checks() +
+        Ar02WorkflowFailureConformanceChecks(rootDir).checks()
 
-internal object Ar02FindingClosureCatalog {
-    val entries: List<Ar02FindingClosureEvidence> = listOf(
-        Ar02FindingClosureEvidence(
-            findingId = "F-02",
-            productionPaths = listOf(
-                "src/main/kotlin/org/flowlang/core/FlowAvailabilityModel.kt",
-                "src/main/kotlin/org/flowlang/core/FlowAvailabilityAnalyzer.kt",
-                "src/main/kotlin/org/flowlang/validator/FlowValidator.kt",
-                "src/main/kotlin/org/flowlang/planner/FlowPlanner.kt"
-            ),
-            positiveChecks = listOf(
-                Ar02FlowSensitiveConformanceChecks.LATTICE_CHECK,
-                Ar02ExplicitMergeConformanceChecks.MERGE_CHECK
-            ),
-            negativeChecks = listOf(
-                Ar02FlowSensitiveConformanceChecks.REJECTION_CHECK,
-                Ar02ExplicitMergeConformanceChecks.PERMUTATION_CHECK
-            )
-        ),
-        Ar02FindingClosureEvidence(
-            findingId = "F-08",
-            productionPaths = listOf(
-                "src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt",
-                "src/main/kotlin/org/flowlang/compiler/CompilationContracts.kt",
-                "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt",
-                "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphProjection.kt",
-                "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt"
-            ),
-            positiveChecks = listOf(Ar02WorkflowOwnershipConformanceChecks.MEMBERSHIP),
-            negativeChecks = listOf(Ar02WorkflowOwnershipConformanceChecks.TARGET_GATE)
-        ),
-        Ar02FindingClosureEvidence(
-            findingId = "F-15",
-            productionPaths = listOf(
-                "src/main/kotlin/org/flowlang/planner/WorkflowFailurePolicy.kt",
-                "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraph.kt",
-                "src/main/kotlin/org/flowlang/compiler/WorkflowFailureAuthorization.kt",
-                "src/main/kotlin/org/flowlang/adapters/control/AdapterControlRequirementAuthority.kt",
-                "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
-            ),
-            positiveChecks = listOf(
-                Ar02WorkflowFailureConformanceChecks.FAILURE_POLICY_INTEGRITY
-            ),
-            negativeChecks = listOf(
-                Ar02WorkflowFailureConformanceChecks.NO_SYNTHETIC_HANDLER_AUTHORITY
-            )
-        )
-    )
-}
-
-internal object Ar02FindingClosureEvidenceValidator {
-    private val expectedFindings = setOf("F-02", "F-08", "F-15")
-
-    fun errors(
-        entries: List<Ar02FindingClosureEvidence>,
-        declaredChecks: Set<String>,
-        rootDir: File
-    ): List<String> = buildList {
-        val ids = entries.map(Ar02FindingClosureEvidence::findingId)
-        if (ids.toSet() != expectedFindings || ids.size != expectedFindings.size) {
-            add("AR-02 closure catalog must map exactly F-02, F-08 and F-15; found $ids.")
-        }
-        entries.forEach { evidence ->
-            if (evidence.productionPaths.size < 3) {
-                add("${evidence.findingId} has fewer than three independent production evidence paths.")
-            }
-            evidence.productionPaths.forEach { path ->
-                if (!File(rootDir, path).isFile) {
-                    add("${evidence.findingId} production evidence path is missing: $path")
-                }
-            }
-            if (evidence.positiveChecks.isEmpty()) {
-                add("${evidence.findingId} has no positive conformance evidence.")
-            }
-            if (evidence.negativeChecks.isEmpty()) {
-                add("${evidence.findingId} has no negative or mutation evidence.")
-            }
-            (evidence.positiveChecks + evidence.negativeChecks).forEach { check ->
-                if (check !in declaredChecks) {
-                    add("${evidence.findingId} references undeclared conformance check '$check'.")
-                }
-            }
-        }
-    }
-}
-
-/**
- * AR-02E closure gate across the independently delivered AR-02A through AR-02D contracts.
- *
- * This class composes existing authorized conformance gates instead of becoming a new direct caller
- * of frozen product authorities. Frontend convergence is checked through the three public frontends;
- * target behavior is checked through the target-owning AR-02B, AR-02C and AR-02D conformance gates.
- */
+/** Cross-layer evidence using public frontends and the existing target-boundary owner. */
 class Ar02IntegratedSemanticClosureChecks(private val rootDir: File) {
     private val modules by lazy { ModuleRegistry.fromDirectory(File(rootDir, "modules")) }
     private val compiler by lazy { FlowCompilationService(modules) }
+    private val commonIntent by lazy { compileIntent(COMMON_INTENT, "ar02e-common.intent.yaml") }
+    private val commonAi by lazy { compileAi(COMMON_INTENT, "ar02e-common-ai") }
+    private val commonFlow by lazy { compileFlowSource(COMMON_SOURCE, "ar02e-common-source") }
+    internal val mergeUnit by lazy { compileFlowSource(MERGE_SOURCE, "ar02e-merge") }
+    internal val failureUnit by lazy { compileFlowSource(FAILURE_SOURCE, "ar02e-failure") }
+    internal val multiUnit by lazy { compileIntent(MULTI_INTENT, "ar02e-multi.intent.yaml") }
+    private val multiAi by lazy { compileAi(MULTI_INTENT, "ar02e-multi-ai") }
+    internal val targetObservations by lazy {
+        Ar02WorkflowOwnershipConformanceChecks(rootDir).observeTargets(mergeUnit, multiUnit, failureUnit)
+    }
+    internal val mutationObservations by lazy { observeMutations() }
 
-    fun checks(): List<ConformanceCheck> = listOf(
-        resultCheck(FRONTEND_MATRIX, ::frontendMatrixErrors),
-        resultCheck(MUTATION_MATRIX, ::mutationMatrixErrors),
-        resultCheck(TARGET_MATRIX, ::targetMatrixErrors),
-        resultCheck(PUBLIC_COMPATIBILITY_MATRIX, ::publicCompatibilityErrors),
-        resultCheck(FINDING_CLOSURE, ::findingClosureErrors)
-    )
+    fun checks(predecessorChecks: List<ConformanceCheck> = ar02PredecessorChecks(rootDir)): List<ConformanceCheck> {
+        val matrices = listOf(
+            resultCheck(FRONTEND_MATRIX, ::frontendMatrixErrors),
+            resultCheck(MUTATION_MATRIX, ::mutationMatrixErrors),
+            resultCheck(TARGET_MATRIX, ::targetMatrixErrors),
+            resultCheck(PUBLIC_COMPATIBILITY_MATRIX, ::publicCompatibilityErrors)
+        )
+        return matrices + resultCheck(FINDING_CLOSURE) {
+            findingClosureErrors(predecessorChecks, matrices)
+        }
+    }
+
+    internal fun commonUnits(): List<CompilationUnit> = listOf(commonFlow, commonIntent, commonAi)
 
     private fun frontendMatrixErrors(): List<String> = buildList {
-        val intent = IntentYamlLoader.loadText(SINGLE_WORKFLOW_INTENT, "ar02e-single.intent.yaml")
-        val intentUnit = compileIntent(SINGLE_WORKFLOW_INTENT, "ar02e-single.intent.yaml")
-        val aiUnit = compileAi(intent, "ar02e-single-ai")
-
-        if (intentUnit.graph != aiUnit.graph || intentUnit.graphDigest != aiUnit.graphDigest) {
-            add("Equivalent Intent YAML and reviewed-AI inputs produced different canonical meaning.")
+        addAll(Ar02ClosureSemanticEvidence.frontendErrors(commonUnits()))
+        if (multiUnit.graph != multiAi.graph || multiUnit.graphDigest != multiAi.graphDigest ||
+            Ar02ClosureSemanticEvidence.semanticPlanSet(multiUnit) != Ar02ClosureSemanticEvidence.semanticPlanSet(multiAi)
+        ) add("Multi-workflow Intent and reviewed AI disagree on canonical ownership or public views.")
+        if (multiUnit.graph.workflows.map { it.name } != listOf("build", "report") ||
+            multiUnit.graph.workflows.any { it.failurePolicy.handler == null }
+        ) add("Multi-workflow frontend lost deterministic ownership or a typed failure region.")
+        if (mergeUnit.graph.valueMerges.size != 1 || mergeUnit.graph.workflows.single().failurePolicy.handler == null) {
+            add("Parsed Flow Source lost explicit merge or first-class failure semantics.")
         }
-        if (semanticPlanSet(intentUnit) != semanticPlanSet(aiUnit)) {
-            add("Equivalent Intent YAML and reviewed-AI inputs produced different graph-derived public meaning.")
-        }
-        if (intentUnit.graph.workflows.single().failurePolicy.handler == null) {
-            add("Single-workflow frontend convergence fixture lost its first-class failure policy.")
-        }
-
-        val multiIntent = IntentYamlLoader.loadText(MULTI_WORKFLOW_INTENT, "ar02e-multi.intent.yaml")
-        val multiIntentUnit = compileIntent(MULTI_WORKFLOW_INTENT, "ar02e-multi.intent.yaml")
-        val multiAiUnit = compileAi(multiIntent, "ar02e-multi-ai")
-        if (
-            multiIntentUnit.graph != multiAiUnit.graph ||
-            multiIntentUnit.graphDigest != multiAiUnit.graphDigest
-        ) {
-            add("Equivalent multi-workflow Intent and reviewed-AI inputs produced different canonical meaning.")
-        }
-        if (semanticPlanSet(multiIntentUnit) != semanticPlanSet(multiAiUnit)) {
-            add("Equivalent multi-workflow frontends produced different workflow-owned public meaning.")
-        }
-        if (multiIntentUnit.graph.workflows.map { it.name } != listOf("build", "report")) {
-            add("Multi-workflow frontend convergence did not preserve deterministic workflow ownership.")
-        }
-        if (multiIntentUnit.graph.workflows.any { it.failurePolicy.handler == null }) {
-            add("Multi-workflow frontend convergence lost workflow-owned failure handling.")
-        }
-
-        val flowUnit = compileFlowSource(INTEGRATED_FLOW_SOURCE, "ar02e-integrated-source")
-        if (flowUnit.graph.valueMerges.size != 1) {
-            add("Flow Source frontend did not preserve the explicit merge contract.")
-        }
-        if (flowUnit.graph.workflows.single().failurePolicy.handler == null) {
-            add("Flow Source frontend did not preserve the workflow failure region.")
-        }
-
-        val units = listOf(intentUnit, aiUnit, flowUnit)
-        if (units.map { it.source.frontend }.toSet() != CompilationFrontend.entries.toSet()) {
-            add("Integrated frontend matrix did not exercise every registered compiler frontend.")
-        }
-        if (units.map { it.source.sha256 }.toSet().size != units.size) {
-            add("Distinct frontend source evidence unexpectedly collapsed to one source digest.")
-        }
-        units.forEach { unit ->
-            val report = CanonicalExecutionGraphValidator.validate(
-                CanonicalExecutionGraphBuild(unit.graph, unit.authorization.bindings)
-            )
-            if (!report.valid) {
-                add("${unit.source.frontend} produced an invalid canonical graph: ${report.issues}.")
-            }
+        (commonUnits() + listOf(mergeUnit, failureUnit, multiUnit, multiAi)).forEach { unit ->
             unit.authorization.requireIntegrity()
+            val validation = CanonicalExecutionGraphValidator.validate(CanonicalExecutionGraphBuild(unit.graph, unit.authorization.bindings))
+            if (!validation.valid) add("${unit.source.identity} produced invalid graph evidence: ${validation.issues}")
         }
     }
 
     private fun mutationMatrixErrors(): List<String> = buildList {
-        val baseline = compileFlowSource(INTEGRATED_FLOW_SOURCE, "ar02e-mutation-base")
-        val reordered = compileFlowSource(
-            INTEGRATED_FLOW_SOURCE.replace("merge(left, right)", "merge(right, left)"),
-            "ar02e-mutation-reordered"
-        )
-        if (baseline.graph != reordered.graph || baseline.graphDigest != reordered.graphDigest) {
-            add("Semantically irrelevant explicit-merge input order changed canonical meaning.")
+        addAll(Ar02ClosureSemanticEvidence.mutationErrors(mutationObservations))
+        val reordered = compileFlowSource(MERGE_SOURCE.replace("merge(left, right)", "merge(right, left)"), "ar02e-permutation")
+        if (mergeUnit.graph != reordered.graph || mergeUnit.graphDigest != reordered.graphDigest) {
+            add("Merge input storage order changed canonical meaning.")
         }
-
-        val changedValue = compileFlowSource(
-            INTEGRATED_FLOW_SOURCE.replace("set right = \"right\"", "set right = \"changed\""),
-            "ar02e-mutation-value"
-        )
-        if (baseline.graphDigest == changedValue.graphDigest) {
-            add("Changing one path-local value did not change the canonical graph digest.")
-        }
-
-        val workflow = baseline.graph.workflows.single()
-        val changedFailure = baseline.graph.copy(
-            workflows = listOf(
-                workflow.copy(
-                    failurePolicy = workflow.failurePolicy.copy(
-                        disposition = CanonicalWorkflowFailureDisposition.RECOVER
-                    )
-                )
-            )
-        )
-        if (CanonicalExecutionGraphDigestComputer.digest(changedFailure) == baseline.graphDigest) {
-            add("Changing workflow failure disposition did not change the canonical digest.")
-        }
-
-        val handler = workflow.failurePolicy.handler
-        val mergeTarget = baseline.graph.valueMerges.single().targetNodeId
-        if (handler == null) {
-            add("Integrated mutation fixture has no workflow failure handler.")
-        } else {
-            val crossed = baseline.graph.copy(
-                workflows = listOf(
-                    workflow.copy(
-                        failurePolicy = workflow.failurePolicy.copy(
-                            handler = handler.copy(nodeIds = handler.nodeIds + mergeTarget)
-                        )
-                    )
-                )
-            )
-            val report = CanonicalExecutionGraphValidator.validate(
-                CanonicalExecutionGraphBuild(crossed, baseline.authorization.bindings)
-            )
-            if (report.valid) {
-                add("Canonical validation accepted a normal merge node inside the failure-handler region.")
-            }
-        }
-
-        val multi = compileIntent(MULTI_WORKFLOW_INTENT, "ar02e-mutation-multi.intent.yaml")
-        val reportWorkflow = multi.graph.workflows.single { it.name == "report" }
-        val routeMutation = multi.graph.copy(
-            triggers = multi.graph.triggers.map { trigger ->
-                if (trigger.id == "build-manual") {
-                    trigger.copy(workflows = listOf(reportWorkflow.id))
-                } else {
-                    trigger
-                }
-            }
-        )
-        if (CanonicalExecutionGraphDigestComputer.digest(routeMutation) == multi.graphDigest) {
-            add("Changing trigger workflow routing did not change the canonical digest.")
+        mergeUnit.authorization.requireIntegrity()
+        reordered.authorization.requireIntegrity()
+        val merge = mergeUnit.graph.valueMerges.single()
+        val missingArm = runCatching { merge.copy(inputs = merge.inputs.dropLast(1)) }.exceptionOrNull()
+        if (missingArm !is IllegalArgumentException) {
+            add("The typed merge constructor accepted a non-exhaustive single-arm contract.")
         }
     }
 
-    private fun targetMatrixErrors(): List<String> = buildList {
-        val selectedChecks = listOf(
-            requireCheck(
-                Ar02ExplicitMergeConformanceChecks(rootDir).checks(),
-                Ar02ExplicitMergeConformanceChecks.CONTRACT_CHECK
-            ),
-            requireCheck(
-                Ar02WorkflowOwnershipConformanceChecks(rootDir).checks(),
-                Ar02WorkflowOwnershipConformanceChecks.TARGET_GATE
-            ),
-            requireCheck(
-                Ar02WorkflowFailureConformanceChecks(rootDir).checks(),
-                Ar02WorkflowFailureConformanceChecks.FAILURE_POLICY_INTEGRITY
-            )
+    private fun observeMutations(): List<Ar02MutationObservation> {
+        val baseline = mergeUnit
+        val graph = baseline.graph
+        val workflow = graph.workflows.single()
+        val handler = requireNotNull(workflow.failurePolicy.handler)
+        val merge = graph.valueMerges.single()
+        fun policy(change: org.flowlang.compiler.CanonicalWorkflowFailurePolicy): CanonicalExecutionGraph =
+            graph.copy(workflows = listOf(workflow.copy(failurePolicy = change)))
+        val changedValue = compileFlowSource(MERGE_SOURCE.replace("set right = \"right\"", "set right = \"changed\""), "ar02e-changed-value")
+        val wrongProducer = graph.copy(valueMerges = listOf(merge.copy(inputs = merge.inputs.mapIndexed { index, input ->
+            if (index == 0) input.copy(producerNodeId = merge.inputs[1].producerNodeId) else input
+        })))
+        val missingEdge = graph.copy(dependencyEdges = graph.dependencyEdges.filterNot {
+            it.kind == CanonicalDependencyKind.VALUE && it.targetNodeId == merge.targetNodeId
+        })
+        val firstWorkflow = multiUnit.graph.workflows.first()
+        val otherWorkflow = multiUnit.graph.workflows.last()
+        val movedNode = multiUnit.graph.nodes.filterIsInstance<CanonicalTaskNode>().first { it.workflow == firstWorkflow.id }
+        val changedMembership = multiUnit.graph.copy(nodes = multiUnit.graph.nodes.map {
+            if (it.id == movedNode.id) movedNode.copy(workflow = otherWorkflow.id) else it
+        })
+        val changedRouting = multiUnit.graph.copy(triggers = multiUnit.graph.triggers.map {
+            if (it.id == "build-manual") it.copy(workflows = listOf(otherWorkflow.id)) else it
+        })
+        return listOf(
+            Ar02ClosureSemanticEvidence.observeMutation("path-value", baseline, changedValue.graph),
+            Ar02ClosureSemanticEvidence.observeMutation("merge-producer", baseline, wrongProducer, true),
+            Ar02ClosureSemanticEvidence.observeMutation("merge-edge", baseline, missingEdge, true),
+            Ar02ClosureSemanticEvidence.observeMutation("workflow-membership", multiUnit, changedMembership, true),
+            Ar02ClosureSemanticEvidence.observeMutation("trigger-routing", multiUnit, changedRouting),
+            Ar02ClosureSemanticEvidence.observeMutation("failure-disposition", baseline,
+                policy(workflow.failurePolicy.copy(disposition = CanonicalWorkflowFailureDisposition.RECOVER))),
+            Ar02ClosureSemanticEvidence.observeMutation("handler-identity", baseline,
+                policy(workflow.failurePolicy.copy(handler = handler.copy(id = "${handler.id}:changed")))),
+            Ar02ClosureSemanticEvidence.observeMutation("handler-membership", baseline,
+                policy(workflow.failurePolicy.copy(handler = handler.copy(nodeIds = handler.nodeIds + merge.targetNodeId))), true),
+            Ar02ClosureSemanticEvidence.observeMutation("error-binding", baseline,
+                policy(workflow.failurePolicy.copy(handler = handler.copy(entry = handler.entry.copy(errorBinding = "changedError"))))),
+            Ar02ClosureSemanticEvidence.observeMutation("entry-availability", baseline,
+                policy(workflow.failurePolicy.copy(handler = handler.copy(entry = handler.entry.copy(priorSuccessfulValuesAvailable = true)))))
         )
-        selectedChecks.filterNot { it.passed }.forEach { check ->
-            add("Integrated target boundary '${check.name}' failed: ${check.message.orEmpty()}")
-        }
     }
 
-    private fun publicCompatibilityErrors(): List<String> = buildList {
-        val single = compileIntent(SINGLE_WORKFLOW_INTENT, "ar02e-public-single.intent.yaml")
-        val view = single.workflowPlanSet.workflows.single()
-        if (single.executionPlan != view.executionPlan || single.canonicalPlan != view.canonicalPlan) {
-            add("Single-workflow legacy views are not exact projections of WorkflowExecutionPlanSet.")
-        }
-        if (single.workflowPlanSet.contractVersion != FlowStandardVersions.WORKFLOW_EXECUTION_PLAN_SET_VERSION) {
-            add("WorkflowExecutionPlanSet does not publish the active contract version.")
-        }
-        if (view.failurePolicy.handler == null) {
-            add("Public workflow view lost the first-class failure policy.")
-        }
+    internal fun targetMatrixErrors(): List<String> = Ar02TargetMatrix.errors(
+        targetObservations,
+        TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")).keys,
+        BuiltInTargetProjections.registry.targetIds
+    )
 
-        val publicTree = Json.mapper.readTree(Json.mapper.writeValueAsBytes(single.workflowPlanSet))
-        if (publicTree.path("contractVersion").asText() != "1.1") {
-            add("Serialized WorkflowExecutionPlanSet does not identify contract 1.1.")
-        }
-        if (publicTree.path("workflows").path(0).path("failurePolicy").isMissingNode) {
-            add("Serialized workflow view omits failurePolicy.")
-        }
+    private fun publicCompatibilityErrors(): List<String> = Ar02PublicCompatibilityMatrix.errors(
+        failureUnit, multiUnit, Json.mapper.readTree(File(rootDir, "schemas/workflow-execution-plan-set.schema.json"))
+    )
 
-        val schemaFile = File(rootDir, "schemas/workflow-execution-plan-set.schema.json")
-        if (!schemaFile.isFile) {
-            add("WorkflowExecutionPlanSet schema is missing.")
-        } else {
-            val schema = Json.mapper.readTree(schemaFile)
-            if (
-                schema.path("properties").path("contractVersion").path("const").asText() != "1.1" ||
-                schema.path("\$defs").path("failurePolicy").isMissingNode
-            ) {
-                add("WorkflowExecutionPlanSet schema and live typed failure contract differ.")
-            }
-        }
-
-        val multi = compileIntent(MULTI_WORKFLOW_INTENT, "ar02e-public-multi.intent.yaml")
-        val legacyFailures = listOf(
-            runCatching { multi.ast }.exceptionOrNull(),
-            runCatching { multi.validation }.exceptionOrNull(),
-            runCatching { multi.executionPlan }.exceptionOrNull(),
-            runCatching { multi.canonicalPlan }.exceptionOrNull()
-        )
-        if (legacyFailures.any { it !is MultipleWorkflowCompatibilityViewException }) {
-            add("A legacy single-workflow accessor selected or flattened a multi-workflow compilation.")
-        }
-
-        val flow = compileFlowSource(INTEGRATED_FLOW_SOURCE, "ar02e-public-flow")
-        val policy = flow.workflowPlanSet.workflows.single().failurePolicy
-        val legacyTail = flow.executionPlan.nodes.lastOrNull() as? TryPlanNode
-        if (
-            policy.handler == null ||
-            legacyTail == null ||
-            legacyTail.body.isNotEmpty() ||
-            legacyTail.errorHandler.map { it.id } != policy.handler.nodeIds ||
-            flow.graph.nodes.any { it is CanonicalTryNode }
-        ) {
-            add("Legacy failure tail is not an exact compatibility mirror of typed graph meaning.")
-        }
-    }
-
-    private fun findingClosureErrors(): List<String> = buildList {
+    private fun findingClosureErrors(predecessors: List<ConformanceCheck>, matrices: List<ConformanceCheck>): List<String> = buildList {
         val inventory = ArchitectureRecoveryConformanceInventory.load(rootDir)
-        addAll(
-            Ar02FindingClosureEvidenceValidator.errors(
-                entries = Ar02FindingClosureCatalog.entries,
-                declaredChecks = inventory.checks.toSet(),
-                rootDir = rootDir
-            )
-        )
-
+        addAll(Ar02FindingClosureEvidenceValidator.errors(
+            Ar02FindingClosureCatalog.load(rootDir), inventory.checks.toSet(), predecessors, rootDir
+        ))
+        (predecessors + matrices).filterNot { it.passed }.forEach {
+            add("AR-02 cannot close while '${it.name}' fails: ${it.message.orEmpty()}")
+        }
+        addAll(Ar02ClosureLifecycle.errors(Ar02ClosureLifecycle.load(rootDir)))
         val report = File(rootDir, REPORT_PATH)
-        if (!report.isFile) {
-            add("AR-02 completion report is missing: $REPORT_PATH")
-        } else {
-            val text = report.readText()
-            listOf("F-02", "F-08", "F-15", "AR-03", "not activated").forEach { evidence ->
-                if (evidence !in text) add("AR-02 completion report omits '$evidence'.")
-            }
-        }
-
-        val workPackage = read(WORK_PACKAGE_PATH)
-        if (
-            !workPackage.contains("\nstatus: complete\n") ||
-            !workPackage.contains(
-                "  - id: \"AR-02E\"\n    name: \"Integrated Semantic Closure\"\n    status: \"complete\""
-            )
-        ) {
-            add("AR-02 work package is not closed through AR-02E.")
-        }
-
-        val roadmap = read(RECOVERY_ROADMAP_PATH)
-        if (
-            !roadmap.contains(
-                "  - id: \"AR-02\"\n    name: \"Flow-Sensitive Workflow, Data and Failure Semantics\"\n    order: 3\n    status: \"completed\""
-            ) ||
-            !roadmap.contains("nextItem: \"AR-03\"") ||
-            !roadmap.contains("activationState: \"not-activated\"")
-        ) {
-            add("Architecture Recovery roadmap does not close AR-02 and select unactivated AR-03.")
-        }
-
-        val globalRoadmap = read(GLOBAL_ROADMAP_PATH)
-val yamlScalars: (String) -> Map<String, String> = { content ->
-    content.lineSequence()
-        .map(String::trim)
-        .filter { line -> ':' in line }
-        .associate { line ->
-            line.substringBefore(':').trim() to
-                line.substringAfter(':').trim().trim('"')
-        }
-}
-val globalHeaderFields = yamlScalars(globalRoadmap.substringBefore("currentDecision:"))
-val globalDecisionFields = yamlScalars(globalRoadmap.substringAfterLast("currentDecision:"))
-if (
-    globalHeaderFields["currentTrack"] != "" ||
-    globalDecisionFields["completedItem"] != "0.9.7.10" ||
-    globalDecisionFields["completedItemName"] != "Bounded Semantic Closure Gate" ||
-    globalDecisionFields["nextItem"] != "" ||
-    globalDecisionFields["nextItemName"] != "" ||
-    globalDecisionFields["nextItemStream"] != "" ||
-    "completedRecoveryItem" in globalDecisionFields ||
-    "nextRecoveryItem" in globalDecisionFields ||
-    "AR-02" in globalDecisionFields.values ||
-    "AR-03" in globalDecisionFields.values
-) {
-    add("AR-02 closure altered the terminal global roadmap focus.")
-}
-
-        val postToolchain = read(POST_TOOLCHAIN_ROADMAP_PATH)
-        if (
-            !postToolchain.contains("completedItem: \"AR-02\"") ||
-            !postToolchain.contains("nextItem: \"AR-03\"") ||
-            !postToolchain.contains("activationState: \"not-activated\"")
-        ) {
-            add("Post-toolchain recovery state does not retain AR-03 as an unactivated successor.")
-        }
-
-        val releaseState = read(RELEASE_STATE_PATH)
-        if (
-            !releaseState.contains("completedRecoveryItem: \"AR-02\"") ||
-            !releaseState.contains("nextRecoveryItem: \"AR-03\"") ||
-            !releaseState.contains("nextRecoveryActivationState: \"not-activated\"") ||
-            !releaseState.contains("nextItem: \"\"")
-        ) {
-            add("Release state does not separate recovery succession from terminal global focus.")
-        }
-
-        val staleClaims = mapOf(
-            "REPORT.md" to
-                "canonical flow-level error handling is recognized only from planner provenance",
-            "CHANGELOG-ADAPTERS.md" to
-                "recognize the canonical flow-level handler only from planner provenance",
-            "docs/A0_4_CONTROL_REQUIREMENT_MATERIALIZATION.md" to
-                "the planner-generated identifier matches `onError_<n>`"
-        )
-        staleClaims.forEach { (path, claim) ->
-            if (claim in read(path)) {
-                add("$path still presents retired synthetic-handler authority as current behavior.")
-            }
-        }
-
-        val productRoots = listOf(
-            "src/main/kotlin/org/flowlang/adapters",
-            "src/main/kotlin/org/flowlang/targets",
-            "src/main/kotlin/org/flowlang/generators",
-            "src/main/kotlin/org/flowlang/cli"
-        )
-        val forbiddenShapeAuthority = listOf(
-            "FLOW_ERROR_HANDLER_ID",
-            "canonicalFlowHandler",
-            "lastOrNull() as? TryPlanNode"
-        )
-        productRoots.flatMap { path ->
-            File(rootDir, path).walkTopDown()
-                .filter { it.isFile && it.extension == "kt" }
-                .toList()
-        }.forEach { file ->
-            val source = file.readText()
-            forbiddenShapeAuthority.filter(source::contains).forEach { term ->
-                add(
-                    "${file.relativeTo(rootDir).invariantSeparatorsPath} retains " +
-                        "synthetic handler authority '$term'."
-                )
-            }
-        }
-
-        val closureSource = read(CLOSURE_SOURCE_PATH)
-        val frozenBoundaryCalls = listOf(
-            "CliTargetEvidence" + "Authority(",
-            "TargetSelection" + "Authority.",
-            "FlowSourceCompilation" + "Input("
-        )
-        frozenBoundaryCalls.filter(closureSource::contains).forEach { call ->
-            add("AR-02E introduced a direct frozen-authority call instead of composing existing gates: $call")
+        if (!report.isFile) add("AR-02 closure report is missing.")
+        val forbidden = listOf("FLOW_ERROR_HANDLER_ID", "canonicalFlowHandler", "lastOrNull() as? TryPlanNode")
+        listOf("adapters", "targets", "generators", "cli").forEach { packageName ->
+            File(rootDir, "src/main/kotlin/org/flowlang/$packageName").walkTopDown()
+                .filter { it.isFile && it.extension == "kt" }.forEach { file ->
+                    val source = file.readText()
+                    forbidden.filter(source::contains).forEach { term ->
+                        add("${file.relativeTo(rootDir)} retains retired synthetic-handler inference '$term'.")
+                    }
+                }
         }
     }
 
     private fun compileIntent(text: String, identity: String): CompilationUnit =
         IntentYamlFrontend(compiler).compileText(text, identity).requireAccepted()
 
-    private fun compileAi(intent: org.flowlang.intent.IntentDocument, identity: String): CompilationUnit {
-        val request = AiIntentRequest(
-            userText = "Compile the AR-02E semantic closure fixture.",
-            mode = NormalizationMode.DRAFT
-        )
+    private fun compileAi(text: String, identity: String): CompilationUnit {
+        val intent = IntentYamlLoader.loadText(text, "$identity.intent.yaml")
+        val request = AiIntentRequest(userText = "Compile the AR-02E semantic closure fixture.", mode = NormalizationMode.DRAFT)
         val response = AiIntentResponse(
             normalizedIntent = intent,
             report = NormalizationReport(
@@ -503,106 +186,94 @@ if (
                 confidence = ConfidenceScore(1.0, 1.0, 1.0, 1.0, 1.0)
             )
         )
-        return ReviewedAiProposalFrontend(compiler).compile(
-            ReviewedAiProposal(
-                providerId = "ar-02e-conformance",
-                request = request,
-                response = response,
-                sourceIdentity = identity,
-                sourceName = "$identity.json"
-            )
-        ).requireAccepted()
+        return ReviewedAiProposalFrontend(compiler).compile(ReviewedAiProposal(
+            providerId = "ar-02e-conformance", request = request, response = response,
+            sourceIdentity = identity, sourceName = "$identity.json"
+        )).requireAccepted()
     }
 
-    private fun compileFlowSource(source: String, identity: String): CompilationUnit {
+    internal fun compileFlowSource(source: String, identity: String): CompilationUnit {
         val file = File.createTempFile("$identity-", ".flow")
         return try {
-            file.writeText(source)
-            FlowSourceFrontend(compiler, FlowParser()).compile(file).requireAccepted()
+            file.writeText(source, Charsets.UTF_8)
+            FlowSourceFrontend(compiler).compile(file).requireAccepted()
         } finally {
-            file.delete()
+            check(file.delete()) { "Cannot remove temporary conformance source '${file.name}'." }
         }
     }
 
-    private fun semanticPlanSet(unit: CompilationUnit): WorkflowExecutionPlanSet {
-        val planSet = unit.workflowPlanSet
-        return planSet.copy(
-            sourceIntent = null,
-            loweringReport = null,
-            workflows = planSet.workflows.map { view ->
-                view.copy(
-                    executionPlan = view.executionPlan.copy(sourceIntent = null, loweringReport = null),
-                    canonicalPlan = view.canonicalPlan.copy(sourceIntent = null, loweringReport = null)
-                )
-            }
-        )
-    }
-
-    private fun requireCheck(checks: List<ConformanceCheck>, name: String): ConformanceCheck =
-        checks.singleOrNull { it.name == name }
-            ?: ConformanceCheck(name, false, "Required predecessor conformance check is missing or duplicated.")
-
-    private fun read(path: String): String {
-        val file = File(rootDir, path)
-        require(file.isFile) { "AR-02E evidence source is missing: $path" }
-        return file.readText()
-    }
-
     private fun resultCheck(name: String, block: () -> List<String>): ConformanceCheck {
-        val result = runCatching(block)
-        val errors = result.getOrNull().orEmpty() + listOfNotNull(
-            result.exceptionOrNull()?.let { it.message ?: it.javaClass.simpleName }
-        )
-        return ConformanceCheck(
-            name = name,
-            passed = errors.isEmpty(),
-            message = errors.takeIf(List<String>::isNotEmpty)?.joinToString(" | ")
-        )
+        val errors = try { block() } catch (failure: Exception) {
+            listOf("${failure.javaClass.simpleName}: ${failure.message}")
+        }
+        return ConformanceCheck(name, errors.isEmpty(), errors.takeIf { it.isNotEmpty() }?.joinToString(" | "))
     }
 
     companion object {
         const val FRONTEND_MATRIX = "architecture-recovery.ar-02.integrated-frontend-matrix"
         const val MUTATION_MATRIX = "architecture-recovery.ar-02.integrated-mutation-matrix"
         const val TARGET_MATRIX = "architecture-recovery.ar-02.integrated-target-gating-matrix"
-        const val PUBLIC_COMPATIBILITY_MATRIX =
-            "architecture-recovery.ar-02.integrated-public-compatibility-matrix"
+        const val PUBLIC_COMPATIBILITY_MATRIX = "architecture-recovery.ar-02.integrated-public-compatibility-matrix"
         const val FINDING_CLOSURE = "architecture-recovery.ar-02.finding-closure-evidence"
+        const val REPORT_PATH = ".flow-agent/reports/ar-02-flow-sensitive-workflow-data-failure-semantics.md"
 
-        private const val REPORT_PATH =
-            ".flow-agent/reports/ar-02-flow-sensitive-workflow-data-failure-semantics.md"
-        private const val WORK_PACKAGE_PATH =
-            ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
-        private const val RECOVERY_ROADMAP_PATH = ".flow-agent/roadmap-architecture-recovery.yaml"
-        private const val GLOBAL_ROADMAP_PATH = ".flow-agent/roadmap.yaml"
-        private const val POST_TOOLCHAIN_ROADMAP_PATH = ".flow-agent/roadmap-post-toolchain.yaml"
-        private const val RELEASE_STATE_PATH = ".flow-agent/release-state.yaml"
-        private const val CLOSURE_SOURCE_PATH =
-            "src/main/kotlin/org/flowlang/conformance/Ar02IntegratedSemanticClosureChecks.kt"
-
-        private val SINGLE_WORKFLOW_INTENT = """
+        internal val COMMON_INTENT = """
             intentVersion: "2.0"
             kind: FlowIntentDocument
-            name: ar02e-single
+            name: ar02e-common
             inputs:
               - name: environment
-                type: option[dev,prod]
+                type: text
                 required: true
             workflows:
               - name: main
                 kind: CUSTOM
                 steps:
-                  - id: work
-                    capability: CUSTOM
-                  - id: approve-prod
+                  - id: approved
                     capability: APPROVE
-                    requires: [work]
             failure:
-              notify: true
-              rollback: true
+              notify: false
+              rollback: false
               stopOnError: true
         """.trimIndent()
 
-        private val MULTI_WORKFLOW_INTENT = """
+        internal val COMMON_SOURCE = """
+            flow "ar02e-common" {
+              input { environment: text required }
+              steps {
+                approve manual { message: "Approval required for ar02e-common" } -> approved
+              }
+            }
+        """.trimIndent()
+
+        internal val FAILURE_SOURCE = """
+            flow "ar02e-failure" {
+              steps {
+                approve manual { message: "Proceed with work" } -> approved
+              }
+              on error {
+                approve manual { message: "Handle workflow failure" } -> handled
+              }
+            }
+        """.trimIndent()
+
+        internal val MERGE_SOURCE = """
+            use module "shell" version "1.0"
+            flow "ar02e-merge" {
+              input { condition: boolean required }
+              systems { system "local" { type: shell } }
+              steps {
+                if condition { set left = "left" } else { set right = "right" }
+                set joined = merge(left, right)
+                shell.run local { command: joined } -> consumed
+              }
+              on error {
+                approve manual { message: "Handle workflow failure" } -> handled
+              }
+            }
+        """.trimIndent()
+
+        internal val MULTI_INTENT = """
             intentVersion: "2.0"
             kind: FlowIntentDocument
             name: ar02e-multi
@@ -628,30 +299,6 @@ if (
               notify: true
               rollback: true
               stopOnError: true
-        """.trimIndent()
-
-        private val INTEGRATED_FLOW_SOURCE = """
-            flow "ar02e-integrated" {
-              input {
-                condition: boolean required
-              }
-              steps {
-                if condition {
-                  set left = "left"
-                } else {
-                  set right = "right"
-                }
-                set joined = merge(left, right)
-                approve manual {
-                  message: joined
-                } -> approved
-              }
-              on error {
-                approve manual {
-                  message: error.message
-                } -> handlerApproval
-              }
-            }
         """.trimIndent()
     }
 }

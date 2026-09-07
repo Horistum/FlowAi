@@ -1,10 +1,21 @@
 package org.flowlang.conformance
 
 import java.io.File
+import org.flowlang.adapters.continuity.UnresolvedAdapterContinuitySatisfactionException
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+import org.flowlang.capabilities.PlannerCapabilityConstraintViolation
 import org.flowlang.compiler.CompilationResult
+import org.flowlang.compiler.CompilationUnit
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.frontend.intent.IntentYamlFrontend
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetMaterializationStatus
+import org.flowlang.generators.manifest.TargetRenderBlockedException
+import org.flowlang.generators.manifest.TargetStep
+import org.flowlang.generators.manifest.UnresolvedExecutionTopologyException
+import org.flowlang.generators.manifest.UnresolvedPlanningContinuityException
+import org.flowlang.generators.manifest.UnresolvedPlanningControlException
+import org.flowlang.generators.manifest.sanitizeId
 import org.flowlang.materialization.MultiWorkflowTargetMaterializationUnsupportedException
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
@@ -12,8 +23,9 @@ import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.MultipleWorkflowCompatibilityViewException
 import org.flowlang.standard.FlowStandardVersions
+import org.flowlang.targets.builtin.BuiltInTargetProjections
 
-/** Executable AR-02C evidence for workflow ownership and target containment. */
+/** Executable workflow ownership evidence and its approved target-selection boundary. */
 class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
     fun checks(): List<ConformanceCheck> {
         val result = runCatching(::compile)
@@ -54,36 +66,135 @@ class Ar02WorkflowOwnershipConformanceChecks(private val rootDir: File) {
             result.exceptionOrNull()?.let { add(it.message ?: it.javaClass.simpleName) }
             if (unit != null) {
                 val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
-                val selection = TargetSelectionAuthority.fromConformanceCheck(
-                    value = "jenkins",
-                    checkId = TARGET_GATE,
-                    targets = targets
-                )
-                if (runCatching { TargetMaterializationRequest.fromCompilation(unit, selection) }
-                        .exceptionOrNull() !is MultiWorkflowTargetMaterializationUnsupportedException) {
-                    add("Executable target materialization did not fail closed for multiple workflows.")
-                }
-                if (runCatching { TargetDiagnosticMaterializationRequest.fromCompilation(unit, selection) }
-                        .exceptionOrNull() !is MultiWorkflowTargetMaterializationUnsupportedException) {
-                    add("Diagnostic target materialization selected or flattened a workflow.")
+                targets.keys.sorted().forEach { target ->
+                    val selection = TargetSelectionAuthority.fromConformanceCheck(target, TARGET_GATE, targets)
+                    if (runCatching { TargetMaterializationRequest.fromCompilation(unit, selection) }
+                            .exceptionOrNull() !is MultiWorkflowTargetMaterializationUnsupportedException) {
+                        add("$target executable target materialization did not fail closed for multiple workflows.")
+                    }
+                    if (runCatching { TargetDiagnosticMaterializationRequest.fromCompilation(unit, selection) }
+                            .exceptionOrNull() !is MultiWorkflowTargetMaterializationUnsupportedException) {
+                        add("$target diagnostic target materialization selected or flattened a workflow.")
+                    }
                 }
             }
         }
         return listOf(
-            ConformanceCheck(
-                name = MEMBERSHIP,
-                passed = membershipErrors.isEmpty(),
-                message = membershipErrors.takeIf(List<String>::isNotEmpty)?.joinToString(" | ")
-            ),
-            ConformanceCheck(
-                name = TARGET_GATE,
-                passed = targetErrors.isEmpty(),
-                message = targetErrors.takeIf(List<String>::isNotEmpty)?.joinToString(" | ")
-            )
+            ConformanceCheck(MEMBERSHIP, membershipErrors.isEmpty(), membershipErrors.takeIf { it.isNotEmpty() }?.joinToString(" | ")),
+            ConformanceCheck(TARGET_GATE, targetErrors.isEmpty(), targetErrors.takeIf { it.isNotEmpty() }?.joinToString(" | "))
         )
     }
 
-    private fun compile(): org.flowlang.compiler.CompilationUnit {
+    /** Uses compiled integration fixtures through the production request/pipeline/provider path. */
+    internal fun observeTargets(
+        merge: CompilationUnit,
+        multi: CompilationUnit,
+        failure: CompilationUnit
+    ): List<Ar02TargetObservation> {
+        val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
+        val projections = BuiltInTargetProjections.registry
+        val pipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
+        val mergeId = merge.authorization.bindings.nodeMetadata.single {
+            it.nodeId == merge.graph.valueMerges.single().targetNodeId
+        }.planNodeId.let(::sanitizeId)
+        return targets.keys.sorted().flatMap { target ->
+            val selection = TargetSelectionAuthority.fromConformanceCheck(
+                target, Ar02IntegratedSemanticClosureChecks.TARGET_MATRIX, targets
+            )
+            Ar02TargetScenario.entries.map { scenario ->
+                val compilation = when (scenario) {
+                    Ar02TargetScenario.EXPLICIT_MERGE -> merge
+                    Ar02TargetScenario.MULTI_WORKFLOW -> multi
+                    Ar02TargetScenario.WORKFLOW_FAILURE -> failure
+                }
+                val digest = compilation.graphDigest.value
+                try {
+                    compilation.authorization.requireIntegrity()
+                    if (scenario == Ar02TargetScenario.MULTI_WORKFLOW) {
+                        val executableFailure = runCatching {
+                            TargetMaterializationRequest.fromCompilation(compilation, selection)
+                        }.exceptionOrNull()
+                        val diagnosticFailure = runCatching {
+                            TargetDiagnosticMaterializationRequest.fromCompilation(compilation, selection)
+                        }.exceptionOrNull()
+                        Ar02TargetObservation(
+                            target, scenario, digest, Ar02TargetOutcome.BLOCKED,
+                            executableBlocked = executableFailure is MultiWorkflowTargetMaterializationUnsupportedException,
+                            diagnosticBlocked = diagnosticFailure is MultiWorkflowTargetMaterializationUnsupportedException
+                        )
+                    } else {
+                        val provider = projections.providerFor(target)
+                        if (provider == null) {
+                            Ar02TargetObservation(target, scenario, digest, Ar02TargetOutcome.NO_PROVIDER)
+                        } else if (scenario == Ar02TargetScenario.WORKFLOW_FAILURE && target == "jenkins") {
+                            val manifest = pipeline.generate(TargetMaterializationRequest.fromCompilation(compilation, selection))
+                            val text = provider.render(manifest)
+                            Ar02TargetObservation(
+                                target, scenario, digest, Ar02TargetOutcome.EXECUTABLE,
+                                renderedText = text, failurePolicyPreserved = preservesFailurePolicy(manifest)
+                            )
+                        } else {
+                            val candidate = runCatching {
+                                pipeline.generate(TargetMaterializationRequest.fromCompilation(compilation, selection))
+                            }
+                            val candidateFailure = candidate.exceptionOrNull()
+                            require(candidateFailure == null || isExpectedTargetBlocker(candidateFailure)) {
+                                "Unexpected execution failure: ${candidateFailure?.javaClass?.simpleName}: ${candidateFailure?.message}"
+                            }
+                            val candidateRenderBlocked = candidate.getOrNull()?.let { manifest ->
+                                val result = runCatching { provider.render(manifest) }
+                                require(result.exceptionOrNull() == null || result.exceptionOrNull() is TargetRenderBlockedException) {
+                                    "Unexpected provider rendering failure: ${result.exceptionOrNull()}"
+                                }
+                                result.exceptionOrNull() is TargetRenderBlockedException
+                            } ?: (candidateFailure != null)
+                            val diagnostic = pipeline.generateDiagnosticEvidence(
+                                TargetDiagnosticMaterializationRequest.fromCompilation(compilation, selection)
+                            )
+                            val renderFailure = runCatching { provider.render(diagnostic) }.exceptionOrNull()
+                            require(renderFailure == null || renderFailure is TargetRenderBlockedException) {
+                                "Unexpected diagnostic rendering failure: $renderFailure"
+                            }
+                            val mergeSteps = flatten(diagnostic).filter { it.id == mergeId }
+                            Ar02TargetObservation(
+                                target, scenario, digest, Ar02TargetOutcome.NON_EXECUTABLE,
+                                executableBlocked = candidateRenderBlocked,
+                                mergePreserved = mergeSteps.size == 1 &&
+                                    mergeSteps.single().materialization.status == TargetMaterializationStatus.SEMANTIC_ONLY,
+                                renderBlocked = renderFailure is TargetRenderBlockedException,
+                                failurePolicyPreserved = preservesFailurePolicy(diagnostic)
+                            )
+                        }
+                    }
+                } catch (exception: Exception) {
+                    Ar02TargetObservation(
+                        target, scenario, digest, Ar02TargetOutcome.BLOCKED,
+                        error = "${exception.javaClass.simpleName}: ${exception.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun isExpectedTargetBlocker(failure: Throwable): Boolean =
+        failure is PlannerCapabilityConstraintViolation ||
+            failure is UnresolvedExecutionTopologyException ||
+            failure is UnresolvedPlanningContinuityException ||
+            failure is UnresolvedPlanningControlException ||
+            failure is UnresolvedAdapterContinuitySatisfactionException
+
+    private fun preservesFailurePolicy(manifest: TargetManifest): Boolean = flatten(manifest).any { step ->
+        step.metadata["workflowFailurePolicy"] == "true" &&
+            step.metadata["workflowFailureDisposition"] == "PROPAGATE" &&
+            step.metadata["workflowFailureErrorBinding"] == "error"
+    }
+
+    private fun flatten(manifest: TargetManifest): List<TargetStep> {
+        fun visit(steps: List<TargetStep>): List<TargetStep> = steps.flatMap { listOf(it) + visit(it.children) }
+        return manifest.jobs.flatMap { visit(it.steps) }
+    }
+
+    private fun compile(): CompilationUnit {
         val modules = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
         val result = IntentYamlFrontend(FlowCompilationService(modules)).compileText(FIXTURE, "ar02c-conformance.intent.yaml")
         return (result as? CompilationResult.Accepted)?.unit

@@ -1,109 +1,41 @@
-# AR-02 Flow-Sensitive Workflow, Data and Failure Semantics
+# AR-02 semantic closure evidence
 
-## Completion decision
+## Validation candidate
 
-AR-02 is complete through AR-02E once this candidate passes the required exact-head and synthetic merge-candidate validation boundaries. The recovered compiler now preserves path-sensitive value availability, explicit merge identity, workflow ownership, trigger routing and workflow failure policy as one authorized canonical meaning.
+AR-02E is undergoing integrated validation in PR #172. This candidate does not claim completion: the work package and recovery roadmaps retain AR-02 as active. AR-03 remains planned and not activated. A completion transition may cite only already-successful exact-head and synthetic merge-candidate boundaries.
 
-This milestone closes audit findings **F-02**, **F-08** and **F-15**. AR-03, **Compiler-Enforced Boundaries and Adapter Extraction**, is selected as the next Architecture Recovery milestone but remains **not activated**. This change does not begin module extraction or move concrete adapters.
+## Scope and historical implementation
 
-## Integrated authority outcome
+The reviewed implementation revisions are recorded in `architecture-recovery/ar-02/closure-evidence.yaml`.
 
-### Flow-sensitive value availability
+- F-02: PR #167 and #169 introduced shared path-sensitive availability, explicit merge contracts and exact producer provenance.
+- F-08: PR #170 introduced workflow-owned compilation, trigger routing and non-flattening public plan sets.
+- F-15: PR #171 introduced typed workflow failure policy, handler ownership and authorized target projections.
 
-`FlowAvailabilityAnalyzer` computes one immutable path-aware analysis consumed by both validation and planning. Undefined, maybe-defined, definitely-defined and explicitly merged values remain distinct. Unguarded uncertain reads fail closed, while branch-local reads resolve only to producers available on that path.
+The closure now also repairs a production integration defect: typed merge ControlNode paths were rejected by a materialization validator that looked only at legacy task/approval dependsOn fields. Direct, well-formed typed ordering relations now back ControlNode paths. Independent task/approval dependency mirror checks remain mandatory. Negative tests prove that missing, malformed or unresolved ordering cannot authorize a value path.
 
-### Explicit merge and producer identity
+## Executable matrices
 
-Mutually exclusive producers never become one value because their display names happen to match. The authored `merge(...)` contract identifies the join, incoming producer identities and exhaustive path ownership. Ordering, value and continuity relations are derived from producer and merge identities rather than traversal order.
+### Frontends
 
-### Workflow ownership and trigger routing
+A common single-approval program is compiled through Flow Source, Intent YAML and reviewed AI. The complete approval operation, inputs, output ownership, failure disposition and required topology kinds are compared. This bounded observation explicitly abstracts authored versus structural node identity and rejects additional structures; it does not assert equal raw hashes for different source identities. Intent and reviewed AI must retain exact canonical graph, digest and graph-derived public-view equality. Multi-workflow Intent/AI convergence and Source-specific merge/failure scenarios are checked separately.
 
-Multi-workflow Intent lowers into independent workflow plans and one `WorkflowExecutionPlanSet`. Canonical workflows retain distinct roots, node membership, outputs and trigger routes. Legacy single-workflow accessors refuse to choose or flatten a multi-workflow compilation. Current target adapters remain fail closed because none owns a certified multi-workflow execution contract.
+### Mutation and authorization
 
-### First-class workflow failure policy
+Ten independently observed mutations cover path value, merge producer, required merge edge, workflow membership, trigger routing, failure disposition, handler identity/membership, error binding and handler-entry availability. Each must change the graph digest and reject stale authorization with both the old and recomputed digest. Invalid ownership/edge mutations must fail graph validation. Removing a merge arm must fail the typed constructor. Reordering merge input storage must preserve canonical meaning.
 
-Each canonical workflow owns a typed failure disposition and optional handler region. Handler membership, entry availability and propagation behavior participate in graph validation, digesting and authorization. Adapter and target consumers use the authorization-owned policy. The synthetic terminal `TryPlanNode` survives only as an exact graph-derived compatibility mirror and cannot create failure meaning.
+### Targets
 
-## Integrated semantic closure matrix
+Every registered target is observed for merge, multi-workflow and workflow failure. Missing providers remain explicitly unavailable. Existing providers must preserve diagnostic merge structure without rendering executable syntax. Both multi-workflow request factories must reject without flattening. Native Jenkins rendering must preserve body, catch, error binding, handler and PROPAGATE rethrow. These are projection/rendering checks, not new runtime behavioral certification or target-wide support claims.
 
-AR-02E adds one executable matrix that combines the four earlier slices rather than merely re-running them in isolation:
+### Public compatibility
 
-1. **Frontend matrix** verifies Intent YAML, reviewed AI proposal and Flow compilation inputs converge through `FlowCompilationService`, while actual parsed Flow Source preserves explicit merge and failure contracts. It also verifies multi-workflow Intent and reviewed AI proposal equivalence.
-2. **Mutation matrix** proves semantic digest sensitivity to branch values, workflow routing and failure disposition while preserving merge input-order invariance and rejecting normal/failure region overlap.
-3. **Target-gating matrix** preserves the certified Jenkins workflow-failure path, rejects unsupported explicit-merge execution and rejects executable or diagnostic multi-workflow flattening for every registered target.
-4. **Public-compatibility matrix** verifies exact single-workflow compatibility views, `WorkflowExecutionPlanSet` 1.1 serialization and schema evidence, multi-workflow legacy-accessor rejection and exact failure-tail parity.
-5. **Finding-closure matrix** binds F-02, F-08 and F-15 to existing production files, positive checks and independent negative or mutation checks.
+Live single- and multi-workflow plan sets are validated against the checked-in 1.1 schema. A bounded fail-closed evaluator supports exactly the schema keywords used by that contract and refuses unknown constraints. Negative payloads prove that missing failure policy, wrong versions/disposition, missing handler entry and invalid entry types are rejected. Exact single-workflow compatibility views and multi-workflow accessor rejection remain required.
 
-## Findings closed
+### Finding and lifecycle evidence
 
-### F-02: validation and planning confused may-exist with must-exist values
+Finding entries bind historical PR/commit references, production declarations, regression functions and correctly polarized conformance checks. Every referenced check must have exactly one successful result from the current execution. The main runner executes predecessor suites once and passes their observations into closure. Strict YAML parsing preserves hierarchy and rejects duplicate keys. Completed lifecycle claims require passed, distinct exact-head/merge-candidate receipts; a coherent active candidate is not reported as a completion receipt.
 
-Production evidence:
+## Boundaries
 
-- `FlowAvailabilityModel.kt`
-- `FlowAvailabilityAnalyzer.kt`
-- `FlowValidator.kt`
-- `FlowPlanner.kt`
-
-Positive evidence includes the availability-lattice and explicit-merge checks. Negative evidence includes uncertain-read rejection and producer-permutation invariance. Direct planner invocation cannot bypass the same path-sensitive gate used by `FlowCompilationService`.
-
-### F-08: the model declared multiple workflows while executable lowering supported one
-
-Production evidence:
-
-- `IntentToAstPlanner.kt`
-- `CompilationContracts.kt`
-- `CanonicalExecutionGraphBuilder.kt`
-- `CanonicalExecutionGraphProjection.kt`
-- `TargetSelection.kt`
-
-Positive evidence preserves workflow identities, roots, memberships and trigger routes. Negative evidence proves all current target materialization paths reject multi-workflow execution instead of selecting the first workflow or flattening nodes.
-
-### F-15: global error handling was encoded as a synthetic tail Try node
-
-Production evidence:
-
-- `WorkflowFailurePolicy.kt`
-- `CanonicalExecutionGraph.kt`
-- `WorkflowFailureAuthorization.kt`
-- `AdapterControlRequirementAuthority.kt`
-- `BuiltInTargetProjections.kt`
-
-Positive evidence verifies typed policy round-trip, handler ownership and Jenkins propagation behavior. Negative evidence proves a terminal empty-body `TryPlanNode`, generated identifier or capability string cannot forge workflow-level failure authority.
-
-## Public contracts
-
-AR-02 introduced two deliberate public boundaries:
-
-- `WorkflowExecutionPlanSet` 1.0 for non-flattened multi-workflow projection in AR-02C;
-- `WorkflowExecutionPlanSet` 1.1 for required typed workflow failure policy in AR-02D.
-
-Intent remains 2.0, AST 2.2, Execution Plan 2.4, Intent lowering evidence 2.1, Target Manifest 3.0 and Target Registry 3.2. AR-02E adds no public wire migration and changes no target support class.
-
-## Conformance inventory
-
-The completed AR-02 milestone is covered by the ten slice checks plus five integrated closure checks:
-
-- `architecture-recovery.ar-02.flow-analysis-single-owner`
-- `architecture-recovery.ar-02.value-availability-lattice`
-- `architecture-recovery.ar-02.maybe-defined-read-rejection`
-- `architecture-recovery.ar-02.explicit-merge-integrity`
-- `architecture-recovery.ar-02.producer-permutation-invariance`
-- `architecture-recovery.ar-02.public-contract-migration-integrity`
-- `architecture-recovery.ar-02.workflow-membership-integrity`
-- `architecture-recovery.ar-02.multi-workflow-materialization-gate`
-- `architecture-recovery.ar-02.failure-policy-integrity`
-- `architecture-recovery.ar-02.no-synthetic-handler-authority`
-- `architecture-recovery.ar-02.integrated-frontend-matrix`
-- `architecture-recovery.ar-02.integrated-mutation-matrix`
-- `architecture-recovery.ar-02.integrated-target-gating-matrix`
-- `architecture-recovery.ar-02.integrated-public-compatibility-matrix`
-- `architecture-recovery.ar-02.finding-closure-evidence`
-
-## Validation boundary
-
-The implementation candidate must pass Flow Agent tooling, Flow Agent structure validation, Kotlin compilation, the focused AR-02 matrix, the complete Gradle test suite and standalone conformance. The final PR head must then pass both official Flow CI jobs on the exact head and the synthetic merge candidate. Exact validation identifiers are recorded in the PR after those runs complete; this report does not invent future green evidence, because humanity has already tried that strategy.
-
-## Successor boundary
-
-AR-03 is the next ordered milestone and remains **not activated**. Its Gradle module extraction, compiler-enforced dependency directions and concrete adapter moves require a separate work package and activation transition. AR-02E closes semantic ownership only and deliberately performs no AR-03 implementation.
+No public artifact version is advanced, no adapter is extracted, no target support is promoted and AR-03 is not activated. Final PR readiness requires complete official Flow CI on the final published head and its synthetic merge candidate, independently of historical receipts committed by the lifecycle transition.
