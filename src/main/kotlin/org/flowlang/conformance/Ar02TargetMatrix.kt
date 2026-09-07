@@ -49,17 +49,20 @@ internal object Ar02TargetMatrix {
                 }
                 row.scenario == Ar02TargetScenario.EXPLICIT_MERGE -> {
                     if (row.outcome != Ar02TargetOutcome.NON_EXECUTABLE ||
-                        !row.mergePreserved || !row.executableBlocked || !row.renderBlocked || row.renderedText != null
-                    ) add("$context lost merge meaning or authorized unsupported executable syntax.")
+                        !row.mergePreserved || !row.failurePolicyPreserved ||
+                        !row.executableBlocked || row.diagnosticBlocked ||
+                        !row.renderBlocked || row.renderedText != null
+                    ) add("$context lost merge/failure meaning or authorized unsupported executable syntax.")
                 }
                 row.target == "jenkins" -> {
-                    if (row.outcome != Ar02TargetOutcome.EXECUTABLE || !row.failurePolicyPreserved) {
-                        add("$context lost its typed native failure projection.")
-                    }
+                    if (row.outcome != Ar02TargetOutcome.EXECUTABLE || !row.failurePolicyPreserved ||
+                        row.executableBlocked || row.renderBlocked
+                    ) add("$context lost its typed native failure projection.")
                     addAll(jenkinsPropagationErrors(row.renderedText).map { "$context: $it" })
                 }
                 else -> {
-                    if (row.outcome == Ar02TargetOutcome.EXECUTABLE ||
+                    if (row.outcome != Ar02TargetOutcome.NON_EXECUTABLE ||
+                        !row.executableBlocked || row.diagnosticBlocked ||
                         !row.failurePolicyPreserved || !row.renderBlocked || row.renderedText != null
                     ) add("$context promoted unsupported failure execution or lost diagnostic policy evidence.")
                 }
