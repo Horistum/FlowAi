@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,8 +27,8 @@ class ReferenceScenarioMatrixTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
     private val parser = FlowParser()
     private val planner = FlowPlanner(registry)
-    private val validator = FlowValidator(registry)
-    private val safety = SafetyBoundaryValidator(
+    private val validator = FrontendCompilerComposition.flowValidator(registry)
+    private val safety = FrontendCompilerComposition.safetyValidator(
         registry = registry,
         environmentPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
     )
@@ -132,7 +133,7 @@ class ReferenceScenarioMatrixTests {
         val scenario = ReferenceScenarioMatrix.positiveScenarios().single { it.id == "build-test-deploy" }
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
         IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
         val validation = validator.validate(ast)
         assertTrue(validation.valid, validation.issues.toString())
         val safetyIssues = safety.validate(ast)

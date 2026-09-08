@@ -4,12 +4,12 @@ import java.io.File
 
 class ModuleRegistry(
     private val modules: Map<String, FlowModule> = loadCanonical().associateBy { it.name }
-) {
-    fun findModule(name: String): FlowModule? = modules[name]
-    fun allModules(): Collection<FlowModule> = modules.values
-    fun requireModule(name: String): FlowModule = modules[name] ?: error("Module not registered: $name")
-    fun findAction(moduleName: String, actionName: String): ModuleActionContract? = modules[moduleName]?.actions?.get(actionName)
-    fun findSystemType(typeName: String): Pair<FlowModule, SystemTypeContract>? =
+) : ModuleCatalog {
+    override fun findModule(name: String): FlowModule? = modules[name]
+    override fun allModules(): Collection<FlowModule> = modules.values
+    override fun requireModule(name: String): FlowModule = modules[name] ?: error("Module not registered: $name")
+    override fun findAction(moduleName: String, actionName: String): ModuleActionContract? = modules[moduleName]?.actions?.get(actionName)
+    override fun findSystemType(typeName: String): Pair<FlowModule, SystemTypeContract>? =
         modules.values.firstNotNullOfOrNull { module -> module.systemTypes[typeName]?.let { module to it } }
 
     companion object {

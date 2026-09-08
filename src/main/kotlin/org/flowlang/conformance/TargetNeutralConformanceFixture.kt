@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.contract.TargetAdapterContractAnalyzer
 import org.flowlang.artifacts.ArtifactEvidenceAnalyzer
@@ -41,7 +43,7 @@ internal class TargetNeutralConformanceFixture(
     private val registry: ModuleRegistry,
     private val targets: Map<String, org.flowlang.capabilities.TargetCapability>
 ) {
-    private val intentFrontend = IntentYamlFrontend(FlowCompilationService(registry))
+    private val intentFrontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
 
     fun build(): CorePipelineArtifacts {
         val compilation = intentFrontend

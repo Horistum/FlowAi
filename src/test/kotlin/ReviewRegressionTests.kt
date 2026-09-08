@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,7 +25,7 @@ class ReviewRegressionTests {
     @Test
     fun deployWithApprovalExampleGeneratesThroughManifestPath() {
         val ast = FlowParser().parse(File("examples/deploy-with-approval.flow"))
-        val validation = FlowValidator(registry).validate(ast)
+        val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         assertTrue(validation.valid, validation.issues.toString())
 
         val plan = FlowPlanner(registry).plan(ast)

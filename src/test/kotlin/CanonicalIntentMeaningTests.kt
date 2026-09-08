@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -70,7 +71,7 @@ class CanonicalIntentMeaningTests {
             ))
         )
 
-        val ast = IntentToAstPlanner().plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner().plan(intent)
         val action = ast.flow.steps.single() as ActionNode
 
         assertEquals("standard", action.module)
@@ -141,7 +142,7 @@ class CanonicalIntentMeaningTests {
             ))
         )
 
-        val action = IntentToAstPlanner(registry).plan(intent).flow.steps.single() as ActionNode
+        val action = FrontendCompilerComposition.intentPlanner(registry).plan(intent).flow.steps.single() as ActionNode
 
         assertEquals("release-api", action.target.path.single())
         assertEquals("previous-version", (action.params.getValue("target") as StringLiteralNode).value)
@@ -162,7 +163,7 @@ class CanonicalIntentMeaningTests {
             ))
         )
 
-        val report = IntentCapabilityValidator().validate(intent)
+        val report = IntentCapabilityValidator(ModuleRegistry()).validate(intent)
         assertFalse(report.valid)
         assertTrue(report.issues.any { it.code == "BINDING_HINT_REQUIRES_USES" })
     }

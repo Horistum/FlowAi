@@ -1,3 +1,4 @@
+import org.flowlang.modules.ModuleRegistry
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertFalse
@@ -20,7 +21,7 @@ class RuntimeCommandSemanticBoundaryTests {
         )
 
         capabilities.forEach { capability ->
-            val report = IntentCapabilityValidator().validate(
+            val report = IntentCapabilityValidator(ModuleRegistry()).validate(
                 singleStep(
                     IntentStep(
                         id = capability.name.lowercase(),
@@ -40,7 +41,7 @@ class RuntimeCommandSemanticBoundaryTests {
 
     @Test
     fun runCommandRequiresSemanticDescriptionInsteadOfRuntimeText() {
-        val report = IntentCapabilityValidator().validate(
+        val report = IntentCapabilityValidator(ModuleRegistry()).validate(
             singleStep(IntentStep("run", StandardCapability.RUN_COMMAND))
         )
 

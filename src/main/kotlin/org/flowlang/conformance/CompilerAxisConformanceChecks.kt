@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.AiIntentResponse
@@ -119,7 +121,7 @@ class CompilerAxisConformanceChecks(
         val source = read(STANDARD_CLI)
         val runFlow = between(source, "private fun runFlow(", "private fun runConformance(")
         requireContains(runFlow, "FlowSourceFrontend(", STANDARD_CLI, this)
-        requireContains(runFlow, "FlowCompilationService(", STANDARD_CLI, this)
+        requireContains(runFlow, "FrontendCompilerComposition.compiler(", STANDARD_CLI, this)
         requireContains(runFlow, ".requireAccepted()", STANDARD_CLI, this)
         forbidDirectPipeline(runFlow, STANDARD_CLI, this)
     }
@@ -128,7 +130,7 @@ class CompilerAxisConformanceChecks(
         val cliSource = read(HONEST_CLI)
         val runIntent = between(cliSource, "private fun runIntentCommand(", "private fun runNormalizeCommand(")
         requireContains(runIntent, "IntentYamlFrontend(", HONEST_CLI, this)
-        requireContains(runIntent, "FlowCompilationService(", HONEST_CLI, this)
+        requireContains(runIntent, "FrontendCompilerComposition.compiler(", HONEST_CLI, this)
         requireContains(runIntent, ".requireAccepted()", HONEST_CLI, this)
         requireContains(runIntent, "evaluate(compilation,", HONEST_CLI, this)
         forbidDirectPipeline(runIntent, HONEST_CLI, this)
@@ -146,7 +148,7 @@ class CompilerAxisConformanceChecks(
         val cliSource = read(HONEST_CLI)
         val runNormalize = between(cliSource, "private fun runNormalizeCommand(", "private fun targetNeutralPlanningEvidence(")
         requireContains(runNormalize, "ReviewedAiProposalFrontend(", HONEST_CLI, this)
-        requireContains(runNormalize, "FlowCompilationService(", HONEST_CLI, this)
+        requireContains(runNormalize, "FrontendCompilerComposition.compiler(", HONEST_CLI, this)
         requireContains(runNormalize, ".requireAccepted()", HONEST_CLI, this)
         requireContains(runNormalize, "evaluate(compilation,", HONEST_CLI, this)
         forbidDirectPipeline(runNormalize, HONEST_CLI, this)
@@ -156,7 +158,7 @@ class CompilerAxisConformanceChecks(
         if (isNotEmpty()) return@buildList
 
         val registry = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
-        val intentUnit = IntentYamlFrontend(FlowCompilationService(registry))
+        val intentUnit = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
             .compile(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
             .requireAccepted()
         val intent = intentUnit.requireIntentEvidence().intent
@@ -172,7 +174,7 @@ class CompilerAxisConformanceChecks(
                 confidence = ConfidenceScore(1.0, 1.0, 1.0, 1.0, 1.0)
             )
         )
-        val aiUnit = ReviewedAiProposalFrontend(FlowCompilationService(registry))
+        val aiUnit = ReviewedAiProposalFrontend(FrontendCompilerComposition.compiler(registry))
             .compile(
                 ReviewedAiProposal(
                     providerId = "ar-01c-conformance",
@@ -231,8 +233,9 @@ class CompilerAxisConformanceChecks(
         }
 
         val contracts = read(COMPILATION_CONTRACTS)
-        requireContains(contracts, "CodingErrorAction.REPORT", COMPILATION_CONTRACTS, this)
-        requireContains(contracts, "val sourceName = file.path", COMPILATION_CONTRACTS, this)
+        val capture = read(FRONTEND_SOURCE_CAPTURE)
+        requireContains(capture, "CodingErrorAction.REPORT", FRONTEND_SOURCE_CAPTURE, this)
+        requireContains(capture, "val sourceName = file.path", FRONTEND_SOURCE_CAPTURE, this)
         requireContains(contracts, "val authorization: CompilationAuthorization", COMPILATION_CONTRACTS, this)
         requireContains(contracts, "val graph: CanonicalExecutionGraph", COMPILATION_CONTRACTS, this)
         requireContains(contracts, "authorization.requireIntegrity()", COMPILATION_CONTRACTS, this)
@@ -291,13 +294,13 @@ class CompilerAxisConformanceChecks(
     private fun graphIntegrityErrors(): List<String> = buildList {
         val unit = referenceUnit()
         val report = CanonicalExecutionGraphValidator.validate(
-            CanonicalExecutionGraphBuild(unit.graph, unit.authorization.bindings)
+            CanonicalExecutionGraphBuild(unit.graph, unit.authorization.inspectionView().bindings)
         )
         if (!report.valid) addAll(report.issues.map { "${it.code}:${it.location}:${it.message}" })
         if (unit.graph.workflows.size != 1 || unit.graph.nodes.isEmpty()) {
             add("Accepted compilation did not produce one populated canonical workflow graph.")
         }
-        if (CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.bindings) != unit.executionPlan) {
+        if (CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.inspectionView().bindings) != unit.executionPlan) {
             add("Canonical graph does not reproduce its graph-derived ExecutionPlan view.")
         }
     }
@@ -316,12 +319,12 @@ class CompilerAxisConformanceChecks(
         if (CanonicalExecutionGraphDigestComputer.digest(reordered) != unit.graphDigest) {
             add("Canonical graph digest depends on storage order.")
         }
-        val first = unit.authorization.bindings.tasks.firstOrNull()
+        val first = unit.authorization.inspectionView().bindings.tasks.firstOrNull()
         if (first == null) {
             add("Reference compilation contains no task binding for digest independence.")
         } else {
-            val altered = unit.authorization.bindings.copy(
-                tasks = unit.authorization.bindings.tasks.map { binding ->
+            val altered = unit.authorization.inspectionView().bindings.copy(
+                tasks = unit.authorization.inspectionView().bindings.tasks.map { binding ->
                     if (binding.nodeId == first.nodeId) {
                         binding.copy(module = "alternate", action = "alternate", target = "alternate")
                     } else binding
@@ -408,11 +411,11 @@ class CompilerAxisConformanceChecks(
         val unit = referenceUnit()
         val executionView = CanonicalExecutionGraphProjection.toExecutionPlan(
             unit.graph,
-            unit.authorization.bindings
+            unit.authorization.inspectionView().bindings
         )
         val canonicalView = CanonicalExecutionGraphProjection.toCanonicalExecutionPlan(
             unit.graph,
-            unit.authorization.bindings
+            unit.authorization.inspectionView().bindings
         )
         if (executionView != unit.executionPlan) {
             add("ExecutionPlan compatibility view is not graph-derived.")
@@ -535,7 +538,7 @@ class CompilerAxisConformanceChecks(
     }
 
     private fun referenceUnit() = IntentYamlFrontend(
-        FlowCompilationService(ModuleRegistry.fromDirectory(File(rootDir, "modules")))
+        FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File(rootDir, "modules")))
     ).compile(File(rootDir, "examples/intent/build-test-deploy.intent.yaml")).requireAccepted()
 
     private fun CanonicalExecutionGraph.replace(replacement: org.flowlang.compiler.CanonicalExecutionNode): CanonicalExecutionGraph =
@@ -547,10 +550,21 @@ class CompilerAxisConformanceChecks(
             .filter { line -> line.startsWith("import ") }
             .map { line -> line.removePrefix("import ").substringBefore(" as ") }
             .toSet()
-        val flowPlanner = "org.flowlang.planner.FlowPlanner" in imports
+        val code = codeWithoutCommentsAndStrings(source)
+        val flowPlanner = "org.flowlang.planner.FlowPlanner" in imports ||
+            "org.flowlang.planner.FlowPlanner(" in code
+        // Explicit input factories must not hide a newly composed product pipeline.
+        // Preserve the old constructor/import inventory and also recognize aliased factories.
+        val factoryImports = Regex("""(?m)^\s*import\s+org\.flowlang\.frontend\.FrontendCompilerComposition(?:\s+as\s+(\w+))?\s*$""")
+            .findAll(code).map { it.groupValues[1].ifBlank { "FrontendCompilerComposition" } }.toList()
+        val factoryLowering = (factoryImports + "org.flowlang.frontend.FrontendCompilerComposition").any { name ->
+            Regex("""${Regex.escape(name)}\s*\.\s*intentPlanner\s*\(""").containsMatchIn(code)
+        }
         return flowPlanner && (
             "org.flowlang.intent.IntentToAstPlanner" in imports ||
-                "org.flowlang.parser.FlowParser" in imports
+                "org.flowlang.parser.FlowParser" in imports ||
+                "org.flowlang.intent.IntentToAstPlanner(" in code ||
+                "org.flowlang.parser.FlowParser(" in code || factoryLowering
             )
     }
 
@@ -686,6 +700,7 @@ class CompilerAxisConformanceChecks(
         private const val CANONICAL_GRAPH = "org.flowlang.compiler.CanonicalExecutionGraph"
         private const val DERIVED_VIEWS = "ExecutionPlan+CanonicalExecutionPlan"
         private const val COMPILER_DIR = "src/main/kotlin/org/flowlang/compiler"
+        private const val FRONTEND_SOURCE_CAPTURE = "src/main/kotlin/org/flowlang/frontend/CompilationSourceCapture.kt"
         private const val COMPILATION_CONTRACTS = "$COMPILER_DIR/CompilationContracts.kt"
         private const val FLOW_COMPILATION_SERVICE = "$COMPILER_DIR/FlowCompilationService.kt"
         private const val FLOW_SOURCE_FRONTEND = "src/main/kotlin/org/flowlang/frontend/source/FlowSourceFrontend.kt"
@@ -725,8 +740,10 @@ class CompilerAxisConformanceChecks(
         private val DIRECT_PIPELINE_TERMS = listOf(
             "IntentYamlLoader.load(",
             "IntentToAstPlanner(",
+            "FrontendCompilerComposition.intentPlanner(",
             "FlowParser(",
             "FlowValidator(",
+            "FrontendCompilerComposition.flowValidator(",
             "FlowPlanner(",
             "ExecutionPlanCanonicalizer.canonicalize(",
             "IntentCapabilityValidator(",
@@ -737,7 +754,12 @@ class CompilerAxisConformanceChecks(
             "org.flowlang.targets.",
             "org.flowlang.generators.",
             "org.flowlang.cli.",
-            "org.flowlang.conformance."
+            "org.flowlang.conformance.",
+            "org.flowlang.frontend.",
+            "org.flowlang.parser.",
+            "org.flowlang.serialization.",
+            "org.flowlang.modules.ModuleRegistry",
+            "com.fasterxml.jackson."
         )
         private val EXPECTED_ENTRYPOINTS = listOf(
             "$STANDARD_CLI#runFlow",

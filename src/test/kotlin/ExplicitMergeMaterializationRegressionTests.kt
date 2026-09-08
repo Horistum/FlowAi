@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +38,7 @@ class ExplicitMergeMaterializationRegressionTests {
         val file = File.createTempFile("ar02e-merge-materialization-", ".flow")
         try {
             file.writeText(source)
-            val unit = FlowSourceFrontend(FlowCompilationService(modules)).compile(file).requireAccepted()
+            val unit = FlowSourceFrontend(FrontendCompilerComposition.compiler(modules)).compile(file).requireAccepted()
             assertEquals(1, unit.graph.valueMerges.size)
             val issues = ExecutionPlanMaterializationValidator.validate(unit.executionPlan, modules)
             assertTrue(issues.isEmpty(), issues.joinToString { "${it.code}: ${it.message}" })

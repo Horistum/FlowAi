@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,8 +40,8 @@ class DeclaredIntentOutputValidationTests {
             "declared-output-reference.intent.yaml"
         )
 
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val validation = FlowValidator(registry).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
+        val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         assertTrue(validation.valid, validation.issues.joinToString { "${it.code}: ${it.message}" })
 
         val plan = FlowPlanner(registry).plan(ast)
@@ -73,8 +75,8 @@ class DeclaredIntentOutputValidationTests {
             "duplicate-declared-output.intent.yaml"
         )
 
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val validation = FlowValidator(registry).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
+        val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         assertEquals(false, validation.valid)
         assertTrue(validation.issues.any { it.code == "DUPLICATE_RESULT" })
     }

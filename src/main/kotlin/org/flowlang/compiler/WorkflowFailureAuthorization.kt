@@ -11,14 +11,15 @@ import org.flowlang.planner.WorkflowFailurePolicy
  * whether a workflow owns a failure policy. That meaning comes solely from
  * CanonicalWorkflow.failurePolicy and its binding metadata.
  */
-internal data class AuthorizedWorkflowFailureProjection(
+@ConsistentCopyVisibility
+data class AuthorizedWorkflowFailureProjection internal constructor(
     val policy: WorkflowFailurePolicy,
     val normalNodes: List<PlanNode>,
     val handlerNodes: List<PlanNode>,
     val compatibilityBoundaryNodeId: String?
 )
 
-internal fun CompilationAuthorization.requireSingleWorkflowFailureProjection():
+fun CompilationAuthorization.requireSingleWorkflowFailureProjection():
     AuthorizedWorkflowFailureProjection {
     requireIntegrity()
     require(graph.workflows.size == 1) {

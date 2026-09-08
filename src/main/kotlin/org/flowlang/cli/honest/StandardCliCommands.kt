@@ -1,5 +1,7 @@
 package org.flowlang.cli.honest
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.maturity.AdapterTargetMaturityPublisher
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -54,7 +56,7 @@ internal object StandardCliCommands {
         val file = File(source)
         require(file.isFile) { "Flow file does not exist: $source" }
         val modules = moduleRegistry()
-        val compilation = FlowSourceFrontend(FlowCompilationService(modules))
+        val compilation = FlowSourceFrontend(FrontendCompilerComposition.compiler(modules))
             .compile(file)
             .requireAccepted()
         val plan = compilation.executionPlan

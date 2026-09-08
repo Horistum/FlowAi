@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -216,8 +218,8 @@ class FlowScenarioPackTests {
 
     private fun assertFullPipeline(response: org.flowlang.ai.normalization.AiIntentResponse) {
         IntentCapabilityValidator(registry).validate(response.normalizedIntent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
-        val validation = FlowValidator(registry).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(response.normalizedIntent)
+        val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         assertTrue(validation.valid, validation.issues.joinToString { it.code + ": " + it.message })
         val plan = FlowPlanner(registry).plan(ast)
         assertTrue(plan.nodes.isNotEmpty())

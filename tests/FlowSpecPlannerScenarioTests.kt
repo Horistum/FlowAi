@@ -1,3 +1,5 @@
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.ast.*
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
@@ -78,10 +80,10 @@ fun endToEndTests() {
             H.ok("e2e/$file/parse", true)
             H.eq("e2e/$file/steps", d.flow.steps.size, steps)
             H.eq("e2e/$file/systems", d.flow.systems.size, systems)
-            val rep = FlowValidator().validate(d)
+            val rep = FrontendCompilerComposition.flowValidator().validate(d)
             H.ok("e2e/$file/valid", rep.valid)
             H.ok("e2e/$file/no-errors", rep.issues.none { it.level == "error" })
-            val plan = FlowPlanner().plan(d)
+            val plan = FlowPlanner(ModuleRegistry()).plan(d)
             H.ok("e2e/$file/plan-tasks", plan.tasks.isNotEmpty())
         } catch (e: Exception) {
             H.ok("e2e/$file :: ${e.message}", false)
@@ -92,7 +94,7 @@ fun endToEndTests() {
         H.ok("e2e/complex/has-parallel", d.flow.steps.any { it is ParallelNode })
         H.ok("e2e/complex/has-if", d.flow.steps.any { it is IfNode })
         H.ok("e2e/complex/on-error", d.flow.errorHandler != null)
-        val plan = FlowPlanner().plan(d)
+        val plan = FlowPlanner(ModuleRegistry()).plan(d)
         H.ok("e2e/complex/plan-parallel", plan.nodes.any { it is ParallelGroupNode })
     }
     run {
@@ -157,7 +159,7 @@ fun roundTripTests() {
     }
 
     run {
-        val plan = FlowPlanner().plan(FlowParser().parse(exampleFile("api-sync.flow")))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FlowParser().parse(exampleFile("api-sync.flow")))
         for (target in projectionTargets.keys) {
             val rendered = renderManifest(manifestFor(plan, target))
             H.ok("gen/$target/review-kind", rendered.contains("kind: TargetProjectionReview"))
@@ -169,7 +171,7 @@ fun roundTripTests() {
 
 fun legacyProjectionBoundaryTests() {
     for (file in listOf("build-test.flow", "complex-devops-flow.flow")) {
-        val plan = FlowPlanner().plan(FlowParser().parse(exampleFile(file)))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FlowParser().parse(exampleFile(file)))
         for (target in projectionTargets.keys) {
             val manifest = manifestFor(plan, target)
             val readiness = TargetRenderPolicy.evaluate(manifest)

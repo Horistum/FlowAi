@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.modules.ModuleRegistry
+
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.AiIntentResponse
 import org.flowlang.ai.normalization.ConfidenceScore
@@ -31,7 +33,7 @@ import kotlin.test.assertTrue
  */
 class FlowIntentProposalReviewTests {
 
-    private val review = IntentProposalReview()
+    private val review = IntentProposalReview(ModuleRegistry())
 
     /** A provider that reports a pristine, zero-risk, nothing-to-clarify response. */
     private fun confidentProposal(intent: IntentDocument): AiIntentResponse = AiIntentResponse(

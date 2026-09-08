@@ -22,13 +22,12 @@ import org.flowlang.ast.WhenNode
 import org.flowlang.ast.FlowDocument
 import org.flowlang.modules.Effects
 import org.flowlang.modules.ModuleActionContract
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 import org.flowlang.safety.EnvironmentClassificationEvidence
 import org.flowlang.safety.EnvironmentParameterEvidence
 import org.flowlang.safety.EnvironmentSafetyPolicy
 import org.flowlang.safety.EnvironmentSensitivity
 import org.flowlang.safety.EnvironmentValueKind
-import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 
 /**
  * Production safety gate evaluated before planning and target projection.
@@ -39,8 +38,8 @@ import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
  * approval only when every executable value is policy-classified non-sensitive.
  */
 class SafetyBoundaryValidator(
-    private val registry: ModuleRegistry = ModuleRegistry(),
-    private val environmentPolicy: EnvironmentSafetyPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
+    private val registry: ModuleCatalog,
+    private val environmentPolicy: EnvironmentSafetyPolicy
 ) {
     private data class ApprovalState(
         val unconditional: Boolean = false,

@@ -8,8 +8,8 @@ import org.flowlang.controls.ControlRequirementScopeKind
 import org.flowlang.topology.ExecutionTopologyRequirement
 import org.flowlang.topology.ExecutionTopologyRequirementSource
 import org.flowlang.ast.*
-import org.flowlang.modules.ModuleRegistry
-import org.flowlang.parser.ExpressionParser
+import org.flowlang.modules.ModuleCatalog
+import org.flowlang.lowering.IntentExpressionParser
 import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.lowering.IntentValueExpressionLowering
 
@@ -39,7 +39,7 @@ internal class ValidatedIntent private constructor(
     val report: IntentValidationReport
 ) {
     companion object {
-        fun evaluate(registry: ModuleRegistry, document: IntentDocument): ValidatedIntentEvaluation {
+        fun evaluate(registry: ModuleCatalog, document: IntentDocument): ValidatedIntentEvaluation {
             val report = IntentCapabilityValidator(registry).validate(document)
             return ValidatedIntentEvaluation(
                 report = report,
@@ -49,7 +49,10 @@ internal class ValidatedIntent private constructor(
     }
 }
 
-class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()) {
+class IntentToAstPlanner(
+    private val registry: ModuleCatalog,
+    private val expressions: IntentExpressionParser
+) {
 
     fun plan(intent: IntentDocument): FlowDocument {
         val evaluation = ValidatedIntent.evaluate(registry, intent)
@@ -75,7 +78,7 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
         val allSteps = declaredWorkflows.flatMap { it.steps }
         ensureImplicitSystems(intent, allSteps, bindings, systems)
         val errorHandler = buildErrorHandler(intent)
-        val sourceMetadata = IntentLoweringAuthority.sourceMetadata(intent)
+        val sourceMetadata = IntentLoweringAuthority.sourceMetadata(intent, expressions)
         val inputNodes = intent.inputs.map { it.toInputNode() }
         val triggerNodes = intent.triggers
             .map { trigger ->
@@ -448,10 +451,10 @@ class IntentToAstPlanner(private val registry: ModuleRegistry = ModuleRegistry()
     private fun ref(name: String) = ReferenceNode(path = listOf(name))
     private fun paramText(step: IntentStep, key: String): String? = step.params[key].asTextOrNull()
 
-    private fun IntentValue.toExpression(): ExpressionNode = IntentValueExpressionLowering.lower(this)
+    private fun IntentValue.toExpression(): ExpressionNode = IntentValueExpressionLowering.lower(this, expressions)
 
     private fun approvalPolicy(intent: IntentDocument): IntentPolicy? = intent.policies.firstOrNull { it.type == IntentPolicyType.APPROVAL }
     private fun approvalMessage(intent: IntentDocument): String = approvalPolicy(intent)?.message ?: "Approval required for ${intent.name}"
     private fun approvalCondition(intent: IntentDocument): ExpressionNode? = approvalPolicy(intent)?.condition?.let { parseCondition(it) }
-    private fun parseCondition(raw: String): ExpressionNode = ExpressionParser.parseSource(raw)
+    private fun parseCondition(raw: String): ExpressionNode = expressions.parse(raw)
 }

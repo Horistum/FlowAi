@@ -103,7 +103,7 @@ internal class SemanticBoundaryChecks(
     }
 
     private fun checkV044AiProposalReview(): ConformanceCheck = runCheck("v0.4.4.ai-proposal-review") {
-        val review = IntentProposalReview()
+        val review = IntentProposalReview(ModuleRegistry())
         val clean = ScenarioPackIntentNormalizer().normalize(AiIntentRequest("Build and test the orders service."))
         require(review.review(clean) is IntentProposalDecision.Accepted) { "A clean deterministic proposal must be accepted." }
         val migrate = IntentDocument(

@@ -110,13 +110,60 @@ class CompilerModuleExtractionLifecycleTests {
             (section(work["lifecycle"]) + ("offlineBoundary" to mapOf("status" to "passed"))))), "offlineBoundary")
     }
 
+    @Test
+    fun compilerSliceRequiresItsMergedKernelBaseline() {
+        val current = snapshot
+        val slices = (current.successorWorkPackage["implementationSlices"] as List<*>).map { value ->
+            val slice = section(value)
+            if (slice["id"] == "AR-03B") slice + ("predecessorMerge" to null) else slice
+        }
+        rejected(current.copy(successorWorkPackage = current.successorWorkPackage +
+            ("implementationSlices" to slices)), "merged kernel predecessor")
+    }
+
+    @Test
+    fun compilerPredecessorRunRejectsFractionalAndTextReceipts() {
+        val current = snapshot
+        listOf<Any>(1.5, "34216542159", 0L, -1L).forEach { malformed ->
+            val slices = (current.successorWorkPackage["implementationSlices"] as List<*>).map { value ->
+                val slice = section(value)
+                if (slice["id"] == "AR-03B") slice + ("predecessorMainRunId" to malformed) else slice
+            }
+            rejected(current.copy(successorWorkPackage = current.successorWorkPackage +
+                ("implementationSlices" to slices)), "merged kernel predecessor")
+        }
+    }
+
+    @Test
+    fun compilerImplementationCannotPublishItsOwnFutureCiResult() {
+        val current = snapshot
+        val slices = (current.successorWorkPackage["implementationSlices"] as List<*>).map { value ->
+            val slice = section(value)
+            if (slice["id"] == "AR-03B") slice + ("acceptance" to
+                (section(slice["acceptance"]) + ("conclusion" to "success"))) else slice
+        }
+        rejected(current.copy(successorWorkPackage = current.successorWorkPackage +
+            ("implementationSlices" to slices)), "manufactured result")
+    }
+
+    @Test
+    fun compilerImplementationCannotSilentlyActivateAdapterExtraction() {
+        val current = snapshot
+        val slices = (current.successorWorkPackage["implementationSlices"] as List<*>).map { value ->
+            val slice = section(value)
+            if (slice["id"] == "AR-03C") slice + ("status" to "active") else slice
+        }
+        rejected(current.copy(successorWorkPackage = current.successorWorkPackage +
+            ("implementationSlices" to slices)), "later module slices")
+    }
+
     private fun completedKernelFixture(): WorkflowSemanticsRecoveryLifecycleSnapshot {
         // Synthetic values stay in a unit-test snapshot; never admit them to repository metadata.
         val current = snapshot
         val work = current.successorWorkPackage
         val slices = (work["implementationSlices"] as List<*>).map { value ->
             val slice = section(value)
-            if (slice["id"] == "AR-03A") slice + ("status" to "complete") else slice
+            if (slice["id"] == "AR-03A") slice + ("status" to "complete") else slice + ("status" to "planned")
         }
         val activation = mapOf(
             "status" to "passed", "conclusion" to "success", "workflowRunId" to 101,
@@ -133,7 +180,7 @@ class CompilerModuleExtractionLifecycleTests {
             "exactHeadJobId" to 205, "mergeCandidateJobId" to 206
         )
         return current.copy(successorWorkPackage = work + mapOf(
-            "nextSlice" to "AR-03B", "implementationSlices" to slices,
+            "selectedSlice" to "AR-03A", "nextSlice" to "AR-03B", "implementationSlices" to slices,
             "lifecycle" to mapOf(
                 "activationBoundary" to activation, "implementationBoundary" to implementation,
                 "offlineBoundary" to offline, "completionBoundary" to mapOf("status" to "pending")

@@ -1,5 +1,9 @@
 package org.flowlang.tests
 
+import org.flowlang.modules.ModuleRegistry
+
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
@@ -32,7 +36,7 @@ class FlowRenderedVersionStampTests {
     )
 
     private fun plan() =
-        FlowPlanner().plan(IntentToAstPlanner().plan(IntentExamples.buildTestDeploy))
+        FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(IntentExamples.buildTestDeploy))
 
     private fun render(target: String): String {
         val plan = plan()

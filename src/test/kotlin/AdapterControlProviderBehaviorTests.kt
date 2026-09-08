@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -161,7 +162,7 @@ class AdapterControlProviderBehaviorTests {
         )
 
     private fun compile(source: String, identity: String): CompilationUnit =
-        FlowCompilationService(modules).compile(
+        FrontendCompilerComposition.compiler(modules).compile(
             FlowSourceCompilationInput(
                 source = CompilationSource.fromBytes(
                     frontend = CompilationFrontend.FLOW_SOURCE,

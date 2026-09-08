@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -135,7 +136,7 @@ class UniversalModelCompletionTests {
                 )
             )
         )
-        val ast = IntentToAstPlanner().plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner().plan(intent)
         val actions = ast.flow.steps.filterIsInstance<ActionNode>()
 
         assertEquals(listOf("standard", "standard"), actions.map { it.module })
@@ -164,7 +165,7 @@ class UniversalModelCompletionTests {
                 )
             )
         )
-        val action = IntentToAstPlanner().plan(intent).flow.steps.single() as ActionNode
+        val action = FrontendCompilerComposition.intentPlanner().plan(intent).flow.steps.single() as ActionNode
 
         assertEquals("kubernetes", action.module)
         assertEquals("deploy", action.action)
@@ -195,9 +196,9 @@ class UniversalModelCompletionTests {
                       certificate: api-tls
             """.trimIndent()
         )
-        IntentCapabilityValidator().validate(intent).assertValid()
-        val ast = IntentToAstPlanner().plan(intent)
-        val plan = FlowPlanner().plan(ast)
+        IntentCapabilityValidator(ModuleRegistry()).validate(intent).assertValid()
+        val ast = FrontendCompilerComposition.intentPlanner().plan(intent)
+        val plan = FlowPlanner(ModuleRegistry()).plan(ast)
 
         assertEquals(IntentTriggerType.SCHEDULE, intent.triggers.single().type)
         assertEquals(IntentScheduleKind.INTERVAL, intent.triggers.single().schedule?.kind)

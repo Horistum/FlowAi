@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.modules.ModuleRegistry
+
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -15,7 +17,7 @@ import org.flowlang.intent.StandardCapability
 
 class FlowSafetyPolicyValidationTests {
     private fun validate(vararg steps: IntentStep, policies: List<IntentPolicy> = emptyList()) =
-        IntentCapabilityValidator().validate(
+        IntentCapabilityValidator(ModuleRegistry()).validate(
             IntentDocument(
                 name = "safety-test",
                 workflows = listOf(IntentWorkflow("main", IntentWorkflowKind.CUSTOM, steps.toList())),

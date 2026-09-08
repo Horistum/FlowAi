@@ -50,7 +50,8 @@ def run_script(step: str) -> str:
 
 def build_steps(job: str) -> list[str]:
     return [step for step in step_blocks(job)
-            if "./gradlew " in step or "python3 tools/verify_semantic_kernel_isolation.py " in step]
+            if "./gradlew " in step or "python3 tools/verify_semantic_kernel_isolation.py " in step
+            or "python3 tools/verify_compiler_isolation.py " in step]
 
 
 class CiCostPolicyTests(unittest.TestCase):
@@ -114,10 +115,11 @@ class CiCostPolicyTests(unittest.TestCase):
         for name in CI_JOBS:
             with self.subTest(job=name):
                 steps = build_steps(job_block(self.ci, name))
-                self.assertEqual(len(steps), 3)
+                self.assertEqual(len(steps), 4)
                 self.assertIn("--build-cache clean test ", steps[0])
                 self.assertIn("python3 tools/verify_semantic_kernel_isolation.py --offline", steps[1])
-                self.assertIn('--build-cache run --args="conformance"', steps[2])
+                self.assertIn("python3 tools/verify_compiler_isolation.py --offline", steps[2])
+                self.assertIn('--build-cache run --args="conformance"', steps[3])
                 for step in steps:
                     self.assertNotRegex(step, r"(?m)^        if:")
                     self.assertNotIn("continue-on-error", step)
@@ -140,6 +142,15 @@ class CiCostPolicyTests(unittest.TestCase):
                 self.assertIn("outputs.upToDateWhen { false }", block.group(1))
                 self.assertIn("outputs.cacheIf { false }", block.group(1))
 
+    def test_new_module_suites_cannot_reuse_cached_results(self) -> None:
+        shared = (ROOT / "gradle/production-module.gradle.kts").read_text()
+        self.assertIn('tasks.named<Test>("test")', shared)
+        self.assertIn("outputs.upToDateWhen { false }", shared)
+        self.assertIn("outputs.cacheIf { false }", shared)
+        for module in ("flow-module-contracts", "flow-compiler", "flow-frontends"):
+            self.assertIn('apply(from = rootProject.file("gradle/production-module.gradle.kts"))',
+                          (ROOT / module / "build.gradle.kts").read_text())
+
     def test_reports_survive_failures_but_not_obsolete_cancellations(self) -> None:
         for name in CI_JOBS:
             with self.subTest(job=name):
@@ -152,6 +163,10 @@ class CiCostPolicyTests(unittest.TestCase):
                 self.assertIn("build/test-results/test/*.xml", uploads[1])
                 self.assertIn("flow-semantic-kernel/build/test-results/test/*.xml", uploads[1])
                 self.assertIn("ci-logs/kernel-isolation/**", uploads[0])
+                self.assertIn("ci-logs/compiler-isolation/**", uploads[0])
+                for module in ("flow-compiler", "flow-module-contracts", "flow-frontends"):
+                    self.assertIn(f"{module}/build/test-results/test/*.xml", uploads[1])
+                    self.assertIn(f"{module}/build/reports/production-module-boundary/**", uploads[0])
 
     def test_offline_is_manual_only_and_has_one_revision_not_a_duplicate_matrix(self) -> None:
         triggers = top_block(self.offline, "on")
@@ -190,6 +205,9 @@ class CiWorkflowShellTests(unittest.TestCase):
         wrapper.chmod(0o755)
         (self.root / "tools/verify_semantic_kernel_isolation.py").write_text(
             'import os, sys\nprint("Isolation fixture", sys.argv[1:])\nsys.exit(int(os.environ["TEST_BUILD_EXIT"]))\n')
+
+        shutil.copyfile(self.root / "tools/verify_semantic_kernel_isolation.py",
+                        self.root / "tools/verify_compiler_isolation.py")
 
     def execute(self, step: str, **env: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", run_script(step)],

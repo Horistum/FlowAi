@@ -45,7 +45,8 @@ data class WorkflowFailurePolicy(
 }
 
 /** Planner-owned policy plus the exact legacy compatibility mirror. */
-internal data class PlannedWorkflowFailurePolicy(
+/** Planning input, not authorization. The canonical graph gate checks its exact plan projection. */
+data class PlannedWorkflowFailurePolicy(
     val policy: WorkflowFailurePolicy = WorkflowFailurePolicy(),
     val handlerNodes: List<PlanNode> = emptyList(),
     val compatibilityBoundaryNodeId: String? = null

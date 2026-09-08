@@ -18,7 +18,8 @@ Both final PR checks retain their original job identities:
 `compile-test-conformance` and `merge-candidate-compile-test-conformance`.
 Each verifies the actual Git checkout, runs the Python tooling tests, validates
 and generates the agent context, executes the complete Kotlin test suite,
-proves kernel isolation without product sources, and runs standalone conformance.
+proves kernel isolation without product sources, proves the compiler and contracts
+without frontends or concrete adapters, and runs standalone conformance.
 There are no source-path filters: documentation and lifecycle metadata remain
 inputs to repository-aware tests.
 
@@ -41,11 +42,13 @@ The existing `setup-gradle` action manages Gradle user-home state; there is no
 second overlapping cache mechanism. Same-repository PR runs can save cache state
 for later revisions of that PR. Fork PRs use this action in read-only mode.
 
-Both root and kernel test tasks explicitly disable output reuse and test-result
+All root and module test tasks explicitly disable output reuse and test-result
 caching. Their tests execute on every validated revision even when Kotlin
 compilation is restored from cache. Source-ownership and production-classpath
 guards remain in the task graph. The separate kernel-isolation script still
-performs its uncached offline proof; standalone conformance is not replaced by
+performs its uncached offline proof. The compiler-isolation proof compiles the
+kernel dependency but runs only the compiler and module-contract suites, avoiding
+a third execution of the kernel suite. Standalone conformance is not replaced by
 a cached success receipt.
 
 A cold cache must remain correct. Warm-cache acceleration is an additional
@@ -86,7 +89,7 @@ validation is the preferred place for iterative failures before publication.
 
 ## Budgets and evidence
 
-Normal validation jobs have a 20-minute ceiling each. Failure logs, root/kernel
+Normal validation jobs have a 20-minute ceiling each. Failure logs, all module
 JUnit reports and isolation evidence are still uploaded after failures. Canceled,
 superseded runs do not upload obsolete reports; retained artifacts expire after
 seven days. Artifact retention saves storage, not build minutes.

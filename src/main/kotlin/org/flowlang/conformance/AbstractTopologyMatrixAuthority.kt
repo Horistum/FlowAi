@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionLoader
 import org.flowlang.adapters.yaml.IntentYamlLoader
@@ -176,7 +178,7 @@ class AbstractTopologyMatrixAuthority(
                 return@forEach
             }
             val planResult = runCatching {
-                FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(IntentYamlLoader.load(intentFile)))
+                FlowPlanner(registry).plan(FrontendCompilerComposition.intentPlanner(registry).plan(IntentYamlLoader.load(intentFile)))
             }
             val plan = planResult.getOrNull()
             if (plan == null) {

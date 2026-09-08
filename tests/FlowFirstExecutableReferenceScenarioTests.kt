@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -194,8 +196,8 @@ class FlowFirstExecutableReferenceScenarioTests {
     private fun referencePlan(): ExecutionPlan {
         val intent = IntentYamlLoader.load(intentFile)
         IntentCapabilityValidator(modules).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(modules).plan(intent)
-        val validation = FlowValidator(modules).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(modules).plan(intent)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(ast)
         assertTrue(validation.valid, validation.issues.joinToString { "${it.code}: ${it.message}" })
         return FlowPlanner(modules).plan(ast)
     }

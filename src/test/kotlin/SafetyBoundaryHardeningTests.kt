@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.flowlang.parser.FlowParser
@@ -69,8 +70,8 @@ class SafetyBoundaryHardeningTests {
         assertTrue(issues.none { it.code == "ROLLBACK_APPROVAL_REQUIRED" }, issues.toString())
     }
 
-    private fun defaultValidator() = SafetyBoundaryValidator()
-    private fun strictValidator() = SafetyBoundaryValidator(
+    private fun defaultValidator() = FrontendCompilerComposition.safetyValidator()
+    private fun strictValidator() = FrontendCompilerComposition.safetyValidator(
         environmentPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
     )
     private fun parse(source: String) = FlowParser().parse(source.trimIndent())

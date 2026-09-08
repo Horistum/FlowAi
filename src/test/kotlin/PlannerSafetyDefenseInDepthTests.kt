@@ -1,3 +1,5 @@
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.frontend.FrontendCompilerComposition
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -26,11 +28,11 @@ class PlannerSafetyDefenseInDepthTests {
             )
         )
 
-        val validation = FlowValidator().validate(document)
+        val validation = FrontendCompilerComposition.flowValidator().validate(document)
         assertTrue(validation.issues.any { issue -> issue.code == "ACTION_NOT_FOUND" })
 
         val failure = assertFailsWith<MissingPlanningActionContractException> {
-            FlowPlanner().plan(document)
+            FlowPlanner(ModuleRegistry()).plan(document)
         }
 
         assertEquals("missing-module", failure.moduleName)

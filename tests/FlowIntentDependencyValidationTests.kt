@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentStep
@@ -38,7 +40,7 @@ class FlowIntentDependencyValidationTests {
     @Test
     fun unknownStepDependencyAbortsLoweringWithCode() {
         val doc = docWith(listOf(IntentStep("test", StandardCapability.TEST, requires = listOf("missing"))))
-        val error = assertFailsWith<IllegalStateException> { IntentToAstPlanner().plan(doc) }
+        val error = assertFailsWith<IllegalStateException> { FrontendCompilerComposition.intentPlanner().plan(doc) }
         assertTrue(
             (error.message ?: "").contains("UNKNOWN_STEP_DEPENDENCY"),
             "Lowering must abort with UNKNOWN_STEP_DEPENDENCY, got: ${error.message}"
@@ -64,7 +66,7 @@ class FlowIntentDependencyValidationTests {
                 IntentStep("b", StandardCapability.TEST, requires = listOf("a"))
             )
         )
-        val error = assertFailsWith<IllegalStateException> { IntentToAstPlanner().plan(doc) }
+        val error = assertFailsWith<IllegalStateException> { FrontendCompilerComposition.intentPlanner().plan(doc) }
         assertTrue(
             (error.message ?: "").contains("CYCLIC_STEP_DEPENDENCY"),
             "Lowering must abort with CYCLIC_STEP_DEPENDENCY, got: ${error.message}"
@@ -81,6 +83,6 @@ class FlowIntentDependencyValidationTests {
         )
         assertTrue(!hasError(doc, "UNKNOWN_STEP_DEPENDENCY"), "Valid chain must not raise UNKNOWN_STEP_DEPENDENCY")
         assertTrue(!hasError(doc, "CYCLIC_STEP_DEPENDENCY"), "Valid chain must not raise CYCLIC_STEP_DEPENDENCY")
-        IntentToAstPlanner().plan(doc)
+        FrontendCompilerComposition.intentPlanner().plan(doc)
     }
 }

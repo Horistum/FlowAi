@@ -2,10 +2,10 @@ package org.flowlang.frontend.source
 
 import java.io.File
 import org.flowlang.ast.FlowDocument
-import org.flowlang.compiler.CapturedCompilationSource
+import org.flowlang.frontend.CapturedCompilationSource
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationResult
-import org.flowlang.compiler.CompilationSourceCapture
+import org.flowlang.frontend.CompilationSourceCapture
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.FlowSourceCompilationInput
 import org.flowlang.parser.FlowParser

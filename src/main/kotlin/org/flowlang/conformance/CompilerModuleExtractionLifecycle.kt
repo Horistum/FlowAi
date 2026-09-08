@@ -35,11 +35,40 @@ internal object CompilerModuleExtractionLifecycle {
         ) add("Release metadata must distinguish the completed predecessor from active AR-03.")
 
         val slices = (work["implementationSlices"] as? List<*>).orEmpty().map(::section)
-        if (work["selectedSlice"] != "AR-03A" ||
-            slices.map { it["id"] } != listOf("AR-03A", "AR-03B", "AR-03C", "AR-03D") ||
-            slices.firstOrNull()?.get("status") !in setOf("selected", "active", "complete") ||
-            slices.drop(1).any { it["status"] != "planned" }
-        ) add("The kernel extraction cannot claim later module slices as implemented.")
+        val selected = work["selectedSlice"]
+        val orderedSlices = slices.map { it["id"] } == listOf("AR-03A", "AR-03B", "AR-03C", "AR-03D")
+        val kernelStatus = slices.firstOrNull()?.get("status")
+        when (selected) {
+            "AR-03A" -> if (!orderedSlices ||
+                kernelStatus !in setOf("selected", "active", "complete") ||
+                slices.drop(1).any { it["status"] != "planned" }
+            ) add("The kernel extraction cannot claim later module slices as implemented.")
+            "AR-03B" -> {
+                val compiler = slices.getOrNull(1).orEmpty()
+                if (!orderedSlices || kernelStatus != "complete" ||
+                    compiler["status"] !in setOf("active", "implemented") ||
+                    slices.drop(2).any { it["status"] != "planned" } || work["nextSlice"] != "AR-03C"
+                ) add("Compiler extraction requires a completed kernel and cannot activate later module slices.")
+                val predecessor = compiler["predecessorMerge"] as? String
+                val predecessorRun = when (val value = compiler["predecessorMainRunId"]) {
+                    is Int -> value.toLong()
+                    is Long -> value
+                    else -> null
+                }
+                if (predecessor == null || !predecessor.matches(Regex("[0-9a-f]{40}")) ||
+                    predecessor.toSet().size == 1 || predecessor == main ||
+                    predecessorRun == null || predecessorRun <= 0
+                ) add("Compiler extraction requires its independently verified merged kernel predecessor.")
+                // Current-revision CI results belong to GitHub checks, not a self-referential
+                // receipt committed before those checks execute. Implementation is not acceptance.
+                val acceptance = section(compiler["acceptance"])
+                if (acceptance["source"] != "current-revision-ci" ||
+                    acceptance["requiredChecks"] != listOf("compile-test-conformance", "merge-candidate-compile-test-conformance") ||
+                    acceptance.keys != setOf("source", "requiredChecks")
+                ) add("Compiler implementation needs both current-revision CI checks, without a manufactured result receipt.")
+            }
+            else -> add("Module extraction must select an explicitly implemented roadmap slice.")
+        }
         val lifecycle = section(work["lifecycle"])
         val activation = section(lifecycle["activationBoundary"])
         when (slices.firstOrNull()?.get("status")) {
@@ -61,7 +90,7 @@ internal object CompilerModuleExtractionLifecycle {
                 offline["exactHead"] != implementation["exactHead"] ||
                 offline["syntheticMergeCandidate"] != implementation["syntheticMergeCandidate"]
             ) add("Kernel completion needs an independent offline proof of the same implementation.")
-            if (work["nextSlice"] != "AR-03B") add("Completed kernel work must leave AR-03B as its unactivated successor.")
+            if (selected == "AR-03A" && work["nextSlice"] != "AR-03B") add("Completed kernel work must leave AR-03B as its unactivated successor.")
         } else {
             listOf("implementationBoundary", "offlineBoundary").forEach { name ->
                 if (section(lifecycle[name])["status"] != "pending") {
@@ -75,7 +104,7 @@ internal object CompilerModuleExtractionLifecycle {
         val completion = section(work["completionDecision"])
         if (completion["status"] != "not-complete" || completion["closesFindings"] != emptyList<Any>() ||
             (completion["remainingFindings"] as? List<*>)?.toSet() != setOf("F-10", "F-20")
-        ) add("A kernel-only candidate cannot close the full module-extraction findings.")
+        ) add("A bounded module candidate cannot close the full module-extraction findings.")
     }
 
     private fun section(value: Any?): Map<*, *> = value as? Map<*, *> ?: emptyMap<Any, Any>()

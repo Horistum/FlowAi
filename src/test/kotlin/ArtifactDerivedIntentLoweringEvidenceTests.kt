@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,10 +27,10 @@ import org.flowlang.planner.TaskNode
 class ArtifactDerivedIntentLoweringEvidenceTests {
     @Test
     fun reportIsIssuedOnlyAfterTheExecutionPlanExists() {
-        val ast = IntentToAstPlanner().plan(stableIdentityIntent())
+        val ast = FrontendCompilerComposition.intentPlanner().plan(stableIdentityIntent())
         assertNull(ast.metadata.loweringReport)
 
-        val plan = FlowPlanner().plan(ast)
+        val plan = FlowPlanner(ModuleRegistry()).plan(ast)
         val report = assertNotNull(plan.loweringReport)
 
         assertEquals(IntentLoweringReport.CONTRACT_VERSION, report.contractVersion)
@@ -45,7 +46,7 @@ class ArtifactDerivedIntentLoweringEvidenceTests {
     @Test
     fun stableIdentitiesRemainCorrectWhenTopologicalLoweringReordersSourceSteps() {
         val intent = stableIdentityIntent()
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(intent))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(intent))
         val report = assertNotNull(plan.loweringReport)
 
         assertEquals(listOf("compile-artifact", "publish-artifact"), plan.tasks.mapNotNull { it.sourceId })
@@ -65,7 +66,7 @@ class ArtifactDerivedIntentLoweringEvidenceTests {
 
     @Test
     fun preservedAndTransformedClaimsAreValueBacked() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(stableIdentityIntent()))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(stableIdentityIntent()))
         val report = assertNotNull(plan.loweringReport)
 
         val preserved = report.evidence.single { it.sourceIdentity == "step/compile-artifact/param/phase" }
@@ -85,7 +86,7 @@ class ArtifactDerivedIntentLoweringEvidenceTests {
 
     @Test
     fun changedConcreteTargetValueInvalidatesTheReport() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(stableIdentityIntent()))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(stableIdentityIntent()))
         val tampered = plan.copy(nodes = plan.nodes.map { node ->
             if (node is TaskNode && node.sourceId == "compile-artifact") {
                 node.copy(
@@ -102,7 +103,7 @@ class ArtifactDerivedIntentLoweringEvidenceTests {
 
     @Test
     fun forgedArtifactDigestIsRejectedEvenWhenEveryEvidenceEntryLooksValid() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(stableIdentityIntent()))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(stableIdentityIntent()))
         val report = assertNotNull(plan.loweringReport)
         val forged = plan.copy(loweringReport = report.copy(evidenceDigest = "0".repeat(64)))
 
@@ -111,7 +112,7 @@ class ArtifactDerivedIntentLoweringEvidenceTests {
 
     @Test
     fun missingAndDuplicateStableEvidenceCannotBeHidden() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(stableIdentityIntent()))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(stableIdentityIntent()))
         val report = assertNotNull(plan.loweringReport)
         val removed = report.evidence.first()
         val missing = plan.copy(loweringReport = report.copy(evidence = report.evidence.drop(1)))
@@ -125,7 +126,7 @@ class ArtifactDerivedIntentLoweringEvidenceTests {
 
     @Test
     fun validArtifactDerivedEvidencePassesMaterializationValidation() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(stableIdentityIntent()))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(stableIdentityIntent()))
         val loweringIssues = ExecutionPlanMaterializationValidator.validate(plan, ModuleRegistry())
             .filter { it.code.startsWith("planning.lowering.") }
 

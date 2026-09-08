@@ -1,8 +1,9 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.validator.FlowValidator
 
 fun moduleRegistrySafetyParityTest(registry: ModuleRegistry) {
-    val report = FlowValidator(registry).validate(
+    val report = FrontendCompilerComposition.flowValidator(registry).validate(
         doc(
             """
             use module "kubernetes" version "1.0"

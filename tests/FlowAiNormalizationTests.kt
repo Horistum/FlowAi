@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.flowlang.ai.normalization.*
@@ -33,8 +35,8 @@ class FlowAiNormalizationTests {
             "Deploy application billing-api to Kubernetes. Require approval in production. Verify health after deploy and rollback on failure."
         ))
         IntentCapabilityValidator(registry).validate(response.normalizedIntent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
-        val astValidation = FlowValidator(registry).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(response.normalizedIntent)
+        val astValidation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         assertTrue(astValidation.valid, astValidation.issues.joinToString { it.code + ": " + it.message })
         val plan = FlowPlanner(registry).plan(ast)
         assertTrue(plan.nodes.isNotEmpty(), "Normalized deployment must lower to an execution plan.")
@@ -56,7 +58,7 @@ class FlowAiNormalizationRegressionTests {
             "Deploy application billing-api to Kubernetes. Require approval in production. Verify health after deploy."
         ))
         IntentCapabilityValidator(registry).validate(response.normalizedIntent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(response.normalizedIntent)
         val plan = FlowPlanner(registry).plan(ast)
         val build = plan.tasks.first {
         it.module == "standard" &&

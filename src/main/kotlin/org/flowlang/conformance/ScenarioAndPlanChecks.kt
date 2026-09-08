@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ClarificationSeverity
@@ -46,8 +48,8 @@ internal class ScenarioAndPlanChecks(
             val intentReport = IntentCapabilityValidator(registry).validate(response.normalizedIntent)
             if (response.report.openQuestions.none { it.severity == ClarificationSeverity.REQUIRED }) {
                 intentReport.assertValid()
-                val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
-                val validation = FlowValidator(registry).validate(ast)
+                val ast = FrontendCompilerComposition.intentPlanner(registry).plan(response.normalizedIntent)
+                val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
                 require(validation.valid) { "Scenario pack produced invalid Flow AST for '$sample': " + validation.issues.joinToString { it.code + ": " + it.message } }
                 val plan = FlowPlanner(registry).plan(ast)
                 require(plan.nodes.isNotEmpty()) { "Scenario pack produced empty execution plan for '$sample'." }

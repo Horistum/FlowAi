@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -147,7 +148,7 @@ class UniversalControlPolicyRequirementsTests {
     fun conditionalApprovalRemainsPendingAtIntentButFailsClosedInExecutionPlan() {
         val intent = dynamicApprovalIntent()
         val validation = IntentCapabilityValidator(modules).validate(intent)
-        val plan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(intent))
+        val plan = FlowPlanner(modules).plan(FrontendCompilerComposition.intentPlanner(modules).plan(intent))
 
         assertTrue(validation.valid, validation.issues.toString())
         assertEquals(ControlDecisionStatus.PENDING, validation.controlAssessment.decision.status)
@@ -177,7 +178,7 @@ class UniversalControlPolicyRequirementsTests {
 
         val dynamicValidation = IntentCapabilityValidator(modules).validate(dynamic)
         val unknownValidation = IntentCapabilityValidator(modules).validate(unknown)
-        val dynamicPlan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(dynamic))
+        val dynamicPlan = FlowPlanner(modules).plan(FrontendCompilerComposition.intentPlanner(modules).plan(dynamic))
 
         assertTrue(dynamicValidation.valid)
         assertEquals(ControlDecisionStatus.PENDING, dynamicValidation.controlAssessment.decision.status)

@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.conformance.ConformanceRunner
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -26,7 +27,7 @@ fun betaConformanceTests() {
         val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
         IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "github-actions")
         val manifest = GitHubActionsManifestGenerator().generate(plan, compatibility)
@@ -41,7 +42,7 @@ fun betaConformanceTests() {
         val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
         val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
-        val ast = IntentToAstPlanner(registry).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
         val manifest = JenkinsManifestGenerator().generate(plan, compatibility)
@@ -59,7 +60,7 @@ fun rc4SemanticGeneratorRegressionTests() {
     val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
     val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
     IntentCapabilityValidator(registry).validate(intent).assertValid()
-    val ast = IntentToAstPlanner(registry).plan(intent)
+    val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
     val plan = FlowPlanner(registry).plan(ast)
 
     H.scenario {
@@ -84,7 +85,7 @@ fun rc4SemanticGeneratorRegressionTests() {
         """.trimIndent())
         val conditionalValidation = IntentCapabilityValidator(registry).validate(conditionalIntent)
         H.ok("rc4/jenkins-condition/intent-valid", conditionalValidation.valid)
-        val conditionalPlan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(conditionalIntent))
+        val conditionalPlan = FlowPlanner(registry).plan(FrontendCompilerComposition.intentPlanner(registry).plan(conditionalIntent))
         val manifest = BuiltInTargetProjections.pipeline(targets)
             .generateDiagnosticEvidence(testDiagnosticMaterializationRequest(conditionalPlan, "jenkins", targets))
         val rendered = JenkinsManifestRenderer().render(manifest)

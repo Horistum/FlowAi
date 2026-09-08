@@ -149,7 +149,10 @@ class OfflineBuildEntryPointTests(unittest.TestCase):
         shutil.copyfile(SCRIPT, self.root / "tools/offline_gradle_build.sh")
         for name in ("gradle/wrapper/gradle-wrapper.properties", "gradle/wrapper/gradle-wrapper.jar",
                      "flow-semantic-kernel/build.gradle.kts", "gradle/semantic-kernel-sources.txt",
-                     "build.gradle.kts", "settings.gradle.kts"):
+                     "build.gradle.kts", "settings.gradle.kts",
+                     "gradle/production-source-ownership.gradle.kts", "gradle/production-module.gradle.kts",
+                     "gradle/compiler-sources.txt", "gradle/module-contracts-sources.txt", "gradle/frontends-sources.txt",
+                     "flow-compiler/build.gradle.kts", "flow-module-contracts/build.gradle.kts", "flow-frontends/build.gradle.kts"):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("fixture\n", encoding="utf-8")
@@ -192,7 +195,10 @@ exit "${TEST_PREPARE_EXIT:-0}"
         self.assertNotIn("--offline", prepared[1])
         for argument in ("--offline", "--no-build-cache", "clean", "test", "run", "--args=conformance"):
             self.assertIn(argument, verified[1].split())
-        self.assertTrue((self.root / ".flow-offline/input-manifest.txt").is_file())
+        manifest = (self.root / ".flow-offline/input-manifest.txt").read_text()
+        for module in ("flow-compiler", "flow-module-contracts", "flow-frontends"):
+            self.assertIn(f"{module}/build.gradle.kts-sha256=", manifest)
+        self.assertIn("gradle/production-source-ownership.gradle.kts-sha256=", manifest)
 
     def test_prepare_failure_propagates_without_success_manifest(self) -> None:
         self.assertEqual(self.run_mode("prepare", TEST_PREPARE_EXIT="17").returncode, 17)

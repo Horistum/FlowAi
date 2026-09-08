@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.continuity.UnresolvedAdapterContinuitySatisfactionException
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -94,7 +96,7 @@ class WorkflowOwnershipConformanceChecks(private val rootDir: File) {
         val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
         val projections = BuiltInTargetProjections.registry
         val pipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
-        val mergeId = merge.authorization.bindings.nodeMetadata.single {
+        val mergeId = merge.authorization.inspectionView().bindings.nodeMetadata.single {
             it.nodeId == merge.graph.valueMerges.single().targetNodeId
         }.planNodeId.let(::sanitizeId)
         return targets.keys.sorted().flatMap { target ->
@@ -203,7 +205,7 @@ class WorkflowOwnershipConformanceChecks(private val rootDir: File) {
 
     private fun compile(): CompilationUnit {
         val modules = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
-        val result = IntentYamlFrontend(FlowCompilationService(modules)).compileText(FIXTURE, "ar02c-conformance.intent.yaml")
+        val result = IntentYamlFrontend(FrontendCompilerComposition.compiler(modules)).compileText(FIXTURE, "ar02c-conformance.intent.yaml")
         return (result as? CompilationResult.Accepted)?.unit
             ?: error("AR-02C multi-workflow fixture was rejected: $result")
     }

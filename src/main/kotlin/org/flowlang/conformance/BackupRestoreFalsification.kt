@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.modules.ModuleRegistry
+
 import java.io.File
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
@@ -297,7 +299,7 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
         capability: StandardCapability,
         values: Map<String, String>
     ): SemanticProjection {
-        val report = IntentCapabilityValidator().validate(
+        val report = IntentCapabilityValidator(ModuleRegistry()).validate(
             IntentDocument(
                 name = "ef03-${capability.name.lowercase()}",
                 workflows = listOf(

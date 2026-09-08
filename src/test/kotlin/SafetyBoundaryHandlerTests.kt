@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.flowlang.parser.FlowParser
@@ -38,7 +39,7 @@ class SafetyBoundaryHandlerTests {
               }
             }
         """
-        val issues = SafetyBoundaryValidator().validate(parse(src))
+        val issues = FrontendCompilerComposition.safetyValidator().validate(parse(src))
         assertTrue(
             issues.any { it.code == "APPROVAL_REQUIRED" },
             "a destructive action nested in a result-handler branch must not bypass the safety boundary: $issues"
@@ -68,7 +69,7 @@ class SafetyBoundaryHandlerTests {
               }
             }
         """
-        val issues = SafetyBoundaryValidator().validate(parse(src))
+        val issues = FrontendCompilerComposition.safetyValidator().validate(parse(src))
         assertTrue(
             issues.none { it.code == "ROLLBACK_APPROVAL_REQUIRED" },
             "rollback inside a handler error branch is a legitimate error handler and must stay allowed: $issues"

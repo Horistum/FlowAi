@@ -46,6 +46,13 @@ prepare() {
     sha256sum "$ROOT_DIR/flow-semantic-kernel/build.gradle.kts" | awk '{print $1}'
     printf 'semantic-kernel-source-ownership-sha256='
     sha256sum "$ROOT_DIR/gradle/semantic-kernel-sources.txt" | awk '{print $1}'
+    local input
+    for input in gradle/production-source-ownership.gradle.kts gradle/production-module.gradle.kts \
+        gradle/compiler-sources.txt gradle/module-contracts-sources.txt gradle/frontends-sources.txt \
+        flow-compiler/build.gradle.kts flow-module-contracts/build.gradle.kts flow-frontends/build.gradle.kts; do
+      printf '%s-sha256=' "$input"
+      sha256sum "$ROOT_DIR/$input" | awk '{print $1}'
+    done
     printf 'build-gradle-sha256='
     sha256sum "$ROOT_DIR/build.gradle.kts" | awk '{print $1}'
     if [[ -f "$ROOT_DIR/settings.gradle.kts" ]]; then

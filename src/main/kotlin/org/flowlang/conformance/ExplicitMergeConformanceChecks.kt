@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.ast.ActionNode
 import org.flowlang.ast.CallExpressionNode
@@ -52,7 +54,7 @@ class ExplicitMergeConformanceChecks(private val rootDir: File) {
         if (merge.paths != merge.incoming.flatMap { it.paths }.toSet()) {
             add("Explicit merge path coverage is not exhaustive and exact.")
         }
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         if (!validation.valid) add("Valid explicit merge was rejected: ${validation.issues}.")
         val plan = FlowPlanner(modules).plan(document)
         val mergeNode = plan.nodes.getOrNull(1)
@@ -110,7 +112,7 @@ class ExplicitMergeConformanceChecks(private val rootDir: File) {
         document: FlowDocument,
         identity: String
     ): org.flowlang.compiler.CompilationUnit {
-        val result = FlowCompilationService(modules).compile(
+        val result = FrontendCompilerComposition.compiler(modules).compile(
             FlowSourceCompilationInput(
                 source = CompilationSource.fromBytes(
                     CompilationFrontend.FLOW_SOURCE,

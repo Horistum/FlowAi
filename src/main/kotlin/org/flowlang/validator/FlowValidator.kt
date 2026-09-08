@@ -5,9 +5,8 @@ import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityIssueKind
 import org.flowlang.core.FlowValueAvailability
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 import org.flowlang.safety.EnvironmentSafetyPolicy
-import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 
 /**
  * Flow AST validator (docs/03, docs/04, docs/06).
@@ -24,8 +23,8 @@ import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
  * resolves to.
  */
 class FlowValidator(
-    private val registry: ModuleRegistry = ModuleRegistry(),
-    private val environmentPolicy: EnvironmentSafetyPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
+    private val registry: ModuleCatalog,
+    private val environmentPolicy: EnvironmentSafetyPolicy
 ) {
 
     private val standardResultFields = setOf(

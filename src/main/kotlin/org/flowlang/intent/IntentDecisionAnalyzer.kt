@@ -1,6 +1,6 @@
 package org.flowlang.intent
 
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 import org.flowlang.standard.FlowStandardVersions
 
 data class IntentDecisionReport(
@@ -73,7 +73,7 @@ data class IntentLoweringDecision(
  * extracted, which are still missing, which assumptions were made, and whether
  * lowering should proceed without silently guessing critical values.
  */
-class IntentDecisionAnalyzer(private val registry: ModuleRegistry = ModuleRegistry()) {
+class IntentDecisionAnalyzer(private val registry: ModuleCatalog) {
     fun analyze(intent: IntentDocument): IntentDecisionReport {
         val steps = intent.workflows.flatMap { it.steps }
         val decisions = mutableListOf<IntentDecision>()

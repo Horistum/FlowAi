@@ -1,3 +1,4 @@
+import org.flowlang.modules.ModuleRegistry
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -69,7 +70,7 @@ class FlowLegacyGeneratorFixtureRemovalTests {
         assertEquals(expectedShellCommands.keys, discovered)
 
         discovered.sorted().forEach { example ->
-            val plan = FlowPlanner().plan(FlowParser().parse(File(migrationDir, example)))
+            val plan = FlowPlanner(ModuleRegistry()).plan(FlowParser().parse(File(migrationDir, example)))
             targets.keys.forEach { target ->
                 val manifest = manifest(plan, target)
                 val shellSteps = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForTest() } }

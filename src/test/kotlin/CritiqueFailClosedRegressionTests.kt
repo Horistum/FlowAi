@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -48,7 +49,7 @@ class CritiqueFailClosedRegressionTests {
 
     @Test
     fun deeplyNestedStatementsFailWithParseDiagnosticInsteadOfStackOverflow() {
-        val depth = FlowParser.MAX_STATEMENT_NESTING_DEPTH + 2
+        val depth = org.flowlang.frontend.testing.FrontendTestFixtures.statementNestingDepth + 2
         val source = buildString {
             append("flow \"deep\" { steps { ")
             repeat(depth) { append("if true { ") }
@@ -65,7 +66,7 @@ class CritiqueFailClosedRegressionTests {
 
     @Test
     fun deeplyNestedExpressionsFailWithParseDiagnosticInsteadOfStackOverflow() {
-        val depth = ExpressionParser.MAX_EXPRESSION_NESTING_DEPTH + 2
+        val depth = org.flowlang.frontend.testing.FrontendTestFixtures.expressionNestingDepth + 2
         val source = "(".repeat(depth) + "true" + ")".repeat(depth)
 
         val failure = assertFailsWith<ParseException> { ExpressionParser.parseSource(source) }
@@ -75,12 +76,12 @@ class CritiqueFailClosedRegressionTests {
     @Test
     fun safetyValidatorRejectsManuallyConstructedAstBeyondDepthLimit() {
         var statements: List<StatementNode> = emptyList()
-        repeat(SafetyBoundaryValidator.MAX_STATEMENT_NESTING_DEPTH + 2) {
+        repeat(org.flowlang.compiler.testing.CompilerTestFixtures.safetyStatementNestingDepth + 2) {
             statements = listOf(IfNode(condition = BooleanLiteralNode(value = true), then = statements))
         }
         val document = FlowDocument(flow = FlowNode(name = "deep", steps = statements))
 
-        val issues = SafetyBoundaryValidator().validate(document)
+        val issues = FrontendCompilerComposition.safetyValidator().validate(document)
 
         assertTrue(issues.any { it.code == "SAFETY_NESTING_DEPTH_EXCEEDED" })
     }

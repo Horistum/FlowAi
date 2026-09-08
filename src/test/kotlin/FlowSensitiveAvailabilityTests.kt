@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -68,7 +69,7 @@ class FlowSensitiveAvailabilityTests {
         assertEquals(FlowValueAvailability.MAYBE_DEFINED, state.availability)
         assertEquals(FlowAvailabilityReason.PARTIAL_PATHS, state.reason)
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(validation.issues.any { it.code == "VALUE_MAY_BE_UNDEFINED" }, validation.issues.toString())
         assertFalse(validation.issues.any {
@@ -97,7 +98,7 @@ class FlowSensitiveAvailabilityTests {
         assertEquals(FlowAvailabilityReason.AMBIGUOUS_PRODUCERS, state.reason)
         assertEquals(2, state.producers.size)
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(validation.issues.any { it.code == "VALUE_PRODUCER_AMBIGUOUS" }, validation.issues.toString())
         assertFailsWith<UnsafeFlowAvailabilityException> { FlowPlanner(modules).plan(document) }
@@ -119,7 +120,7 @@ class FlowSensitiveAvailabilityTests {
             )
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertTrue(validation.valid, validation.issues.toString())
         val condition = FlowPlanner(modules).plan(document).nodes.single() as ConditionNode
         val thenProducer = condition.then[0] as TaskNode
@@ -151,7 +152,7 @@ class FlowSensitiveAvailabilityTests {
         assertEquals(FlowValueAvailability.MAYBE_DEFINED, state.availability)
         assertEquals(FlowAvailabilityReason.PARTIAL_PATHS, state.reason)
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(validation.issues.any { it.code == "VALUE_MAY_BE_UNDEFINED" }, validation.issues.toString())
         assertFailsWith<UnsafeFlowAvailabilityException> { FlowPlanner(modules).plan(document) }
@@ -176,7 +177,7 @@ class FlowSensitiveAvailabilityTests {
             analysis.bindingBefore(FlowStatementPath.flowStep(2), "stableValue").availability
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertTrue(validation.valid, validation.issues.toString())
         val plan = FlowPlanner(modules).plan(document)
         val stable = plan.nodes[0] as TaskNode
@@ -199,7 +200,7 @@ class FlowSensitiveAvailabilityTests {
             shell(result = "consumer", command = ref("loopValue"))
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(validation.issues.any { it.code == "VALUE_MAY_BE_UNDEFINED" }, validation.issues.toString())
         assertFailsWith<UnsafeFlowAvailabilityException> { FlowPlanner(modules).plan(document) }
@@ -221,7 +222,7 @@ class FlowSensitiveAvailabilityTests {
             .bindingBefore(FlowStatementPath.flowStep(1), "caseValue")
         assertEquals(FlowValueAvailability.MAYBE_DEFINED, state.availability)
         assertEquals(FlowAvailabilityReason.PARTIAL_PATHS, state.reason)
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(validation.issues.any { it.code == "VALUE_MAY_BE_UNDEFINED" }, validation.issues.toString())
     }
@@ -245,7 +246,7 @@ class FlowSensitiveAvailabilityTests {
             FlowAvailabilityReason.PARTIAL_PATHS,
             analysis.bindingBefore(FlowStatementPath.flowStep(1), "errorValue").reason
         )
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(validation.issues.any { it.code == "VALUE_MAY_BE_UNDEFINED" }, validation.issues.toString())
     }
@@ -257,7 +258,7 @@ class FlowSensitiveAvailabilityTests {
             errorSteps = listOf(shell(result = "sharedValue", command = literal("failure")))
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertTrue(validation.valid, validation.issues.toString())
         val plan = FlowPlanner(modules).plan(document)
         val normal = plan.nodes.first() as TaskNode
@@ -280,7 +281,7 @@ class FlowSensitiveAvailabilityTests {
             )
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertTrue(validation.valid, validation.issues.toString())
         val plan = FlowPlanner(modules).plan(document)
         val producer = (plan.nodes[0] as ConditionNode).then.single() as TaskNode
@@ -315,7 +316,7 @@ class FlowSensitiveAvailabilityTests {
             analysis.bindingBefore(FlowStatementPath.flowStep(1), "unreachableValue").availability
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertTrue(validation.valid, validation.issues.toString())
         val plan = FlowPlanner(modules).plan(document)
         val condition = plan.nodes[0] as ConditionNode

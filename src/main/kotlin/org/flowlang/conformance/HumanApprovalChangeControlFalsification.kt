@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.modules.ModuleRegistry
+
 import java.io.File
 import org.flowlang.controls.ControlDecisionStatus
 import org.flowlang.controls.ControlEvidenceStatus
@@ -685,7 +687,7 @@ class HumanApprovalChangeControlFalsification(private val rootDir: File = File("
     private fun validate(
         steps: List<IntentStep>,
         policies: List<IntentPolicy>
-    ): IntentValidationReport = IntentCapabilityValidator().validate(
+    ): IntentValidationReport = IntentCapabilityValidator(ModuleRegistry()).validate(
         IntentDocument(
             name = "ef09-approval-change-control",
             workflows = listOf(

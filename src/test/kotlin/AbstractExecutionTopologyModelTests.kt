@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -97,7 +98,7 @@ class AbstractExecutionTopologyModelTests {
     @Test
     fun actionCapabilityAloneCannotAuthorizeMaterialization() {
         val target = testTargetCapability("action-only", "Action capability without topology").copy(topologyProfile = null)
-        val plan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(IntentDocument(
+        val plan = FlowPlanner(modules).plan(FrontendCompilerComposition.intentPlanner(modules).plan(IntentDocument(
             name = "build",
             workflows = listOf(IntentWorkflow(
                 name = "build",
@@ -140,7 +141,7 @@ class AbstractExecutionTopologyModelTests {
     @Test
     fun jenkinsReferenceMatchesWhileGithubActionsWorkspaceTopologyBlocks() {
         val intent = IntentYamlLoader.load(File("examples/intent/checkout-build-image.intent.yaml"))
-        val plan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(intent))
+        val plan = FlowPlanner(modules).plan(FrontendCompilerComposition.intentPlanner(modules).plan(intent))
         val jenkins = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, targets.getValue("jenkins").topologyProfile)
         val github = ExecutionTopologyMatchingAuthority.assess(plan.topologyRequirements, targets.getValue("github-actions").topologyProfile)
 

@@ -115,8 +115,7 @@ val verifySemanticKernelSourceOwnership by tasks.registering(VerifyKernelSourceO
     description = "Verify the complete, disjoint source partition using declared file inputs."
     expectedSources.from(semanticKernelSources.map { rootProject.file("src/main/kotlin/$it") })
     kernelSources.from(files(kotlin.sourceSets.getByName("main").kotlin).asFileTree)
-    val productKotlin = rootProject.extensions.getByType<KotlinJvmProjectExtension>()
-    productSources.from(files(productKotlin.sourceSets.getByName("main").kotlin).asFileTree)
+    productSources.from(rootProject.extra["nonKernelProductionSources"])
     allProductionSources.from(rootProject.fileTree("src/main/kotlin") { include("**/*.kt") })
     unownedKernelSources.from(fileTree("src/main") { include("**/*.kt") })
     kernelJavaSources.from(files(sourceSets.main.get().java).asFileTree)

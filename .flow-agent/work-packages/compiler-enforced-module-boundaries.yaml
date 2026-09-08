@@ -28,8 +28,8 @@ verifiedBaseline:
   errors: 0
   skipped: 0
 
-selectedSlice: "AR-03A"
-nextSlice: "AR-03B"
+selectedSlice: "AR-03B"
+nextSlice: "AR-03C"
 implementationSlices:
   - id: "AR-03A"
     name: "Independently compiled semantic kernel"
@@ -43,8 +43,21 @@ implementationSlices:
       - "Preserve all 1367 baseline regression tests and standalone conformance; report subproject tests in CI artifacts."
   - id: "AR-03B"
     name: "Compiler, frontend and module-contract boundary"
-    status: planned
+    status: implemented
     invariant: "Compiler orchestration depends on the semantic kernel and neutral contracts; frontend parsing and serialization remain outside it."
+    predecessorMerge: "0f96ef60e2a180ab1e7aa6d0f5d8e2b0003c8047"
+    predecessorMainRunId: 34216542159
+    acceptance:
+      source: current-revision-ci
+      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+    scope:
+      - "Extract flow-module-contracts, flow-compiler and flow-frontends as disjoint Gradle production compilations."
+      - "Replace compiler dependencies on loading registries with a neutral read-only ModuleCatalog."
+      - "Supply expression syntax and environment-policy inputs explicitly; do not parse YAML or load default descriptors inside the compiler."
+      - "Preserve all existing regression-test identities and compile-time authorization encapsulation."
+      - "Prove the actual compiler and contracts on classpaths and source trees without frontends, adapters, serialization or conformance."
+      - "Retain source locations under an exhaustive ownership partition until integrated closure reviews physical relocation."
+    validationPolicy: "Local development first. Only final exact-head and merge-candidate CI are automatic; offline CI remains manual per docs/CI_COST_POLICY.md."
   - id: "AR-03C"
     name: "Adapter contracts and concrete implementation extraction"
     status: planned
@@ -108,7 +121,7 @@ completionDecision:
   status: not-complete
   closesFindings: []
   remainingFindings: ["F-10", "F-20"]
-  rule: "AR-03 remains active after the kernel slice. AR-04 is not activated and EF-09 remains paused."
+  rule: "AR-03 remains active after bounded kernel and compiler extraction. AR-04 is not activated and EF-09 remains paused."
 
 forbiddenScope:
   - "No semantic digest, graph interpretation, parser acceptance or target support changes."
@@ -121,7 +134,7 @@ validationPlan:
   - "Validate activation independently before the first extraction commit."
   - "Run Flow Agent tooling tests, structure validation and context generation locally."
   - "Run isolated kernel tests and positive/negative external Kotlin compiler probes."
-  - "Run exact-head and synthetic-merge clean test, standalone conformance and the offline build proof when build inputs change."
+  - "Run exact-head and synthetic-merge clean test, standalone conformance and physical kernel/compiler isolation. The full relocated offline proof is manual-only under docs/CI_COST_POLICY.md; local offline compilation is used during development."
   - "Compare complete baseline test identities, not only counts."
   - "Do not claim local Gradle execution without an available JDK 25 and resolved dependency cache."
 

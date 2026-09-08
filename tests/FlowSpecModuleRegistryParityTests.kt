@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.parser.FlowParser
 import org.flowlang.planner.FlowPlanner
@@ -5,7 +6,7 @@ import org.flowlang.validator.FlowValidator
 
 fun descriptorRegistryParityTests() {
     val registry = ModuleRegistry.fromDirectory(modulesDir(), includeDefaults = false)
-    val validator = FlowValidator(registry)
+    val validator = FrontendCompilerComposition.flowValidator(registry)
     val planner = FlowPlanner(registry)
     val files = listOf(
         "api-sync.flow",

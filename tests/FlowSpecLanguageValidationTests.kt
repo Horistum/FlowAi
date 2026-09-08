@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.ast.*
 import org.flowlang.parser.*
 import org.flowlang.validator.*
@@ -299,12 +300,12 @@ fun validatorTests() {
             steps = listOf(ActionNode(module = "shell", action = "run",
                 target = ReferenceNode(path = listOf("l")),
                 handler = ResultHandlerNode(rules = listOf(ExpectNode(expressions = listOf(BooleanLiteralNode(value = true)))))))))
-        H.ok("v/handler-without-result", hasError(FlowValidator().validate(docAst), "HANDLER_WITHOUT_RESULT"))
+        H.ok("v/handler-without-result", hasError(FrontendCompilerComposition.flowValidator().validate(docAst), "HANDLER_WITHOUT_RESULT"))
     }
     run {
         val docAst = FlowDocument(flow = FlowNode(name = "t",
             steps = listOf(FailNode(message = BinaryExpressionNode(operator = "><", left = NumberLiteralNode(value = 1.0), right = NumberLiteralNode(value = 2.0))))))
-        H.ok("v/unknown-operator", hasError(FlowValidator().validate(docAst), "UNKNOWN_OPERATOR"))
+        H.ok("v/unknown-operator", hasError(FrontendCompilerComposition.flowValidator().validate(docAst), "UNKNOWN_OPERATOR"))
     }
 
     H.ok("v/for-item-scope", !hasError(validateSrc("""

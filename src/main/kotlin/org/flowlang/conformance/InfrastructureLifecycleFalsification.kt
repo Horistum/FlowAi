@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.modules.ModuleRegistry
+
 import java.io.File
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
@@ -458,7 +460,7 @@ class InfrastructureLifecycleFalsification(private val rootDir: File = File(".")
     )
 
     private fun validate(steps: List<IntentStep>): IntentValidationReport =
-        IntentCapabilityValidator().validate(
+        IntentCapabilityValidator(ModuleRegistry()).validate(
             IntentDocument(
                 name = "ef08-infrastructure-lifecycle",
                 workflows = listOf(

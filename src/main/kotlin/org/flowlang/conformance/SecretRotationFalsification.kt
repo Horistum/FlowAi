@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.modules.ModuleRegistry
+
 import java.io.File
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
@@ -275,7 +277,7 @@ class SecretRotationFalsification(private val rootDir: File = File(".")) {
     }
 
     private fun semanticProjection(values: Map<String, String>, triggers: List<IntentTrigger> = emptyList()): SemanticProjection {
-        val report = IntentCapabilityValidator().validate(
+        val report = IntentCapabilityValidator(ModuleRegistry()).validate(
             IntentDocument(
                 name = "ef06-secret-rotation",
                 triggers = triggers,

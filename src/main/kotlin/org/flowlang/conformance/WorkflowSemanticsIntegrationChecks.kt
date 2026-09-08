@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -36,7 +38,7 @@ internal fun workflowSemanticsPrerequisiteChecks(rootDir: File): List<Conformanc
 /** Cross-layer evidence using public frontends and the existing target-boundary owner. */
 class WorkflowSemanticsIntegrationChecks(private val rootDir: File) {
     private val modules by lazy { ModuleRegistry.fromDirectory(File(rootDir, "modules")) }
-    private val compiler by lazy { FlowCompilationService(modules) }
+    private val compiler by lazy { FrontendCompilerComposition.compiler(modules) }
     private val commonIntent by lazy { compileIntent(COMMON_INTENT, "ar02e-common.intent.yaml") }
     private val commonAi by lazy { compileAi(COMMON_INTENT, "ar02e-common-ai") }
     private val commonFlow by lazy { compileFlowSource(COMMON_SOURCE, "ar02e-common-source") }
@@ -76,7 +78,7 @@ class WorkflowSemanticsIntegrationChecks(private val rootDir: File) {
         }
         (commonUnits() + listOf(mergeUnit, failureUnit, multiUnit, multiAi)).forEach { unit ->
             unit.authorization.requireIntegrity()
-            val validation = CanonicalExecutionGraphValidator.validate(CanonicalExecutionGraphBuild(unit.graph, unit.authorization.bindings))
+            val validation = CanonicalExecutionGraphValidator.validate(CanonicalExecutionGraphBuild(unit.graph, unit.authorization.inspectionView().bindings))
             if (!validation.valid) add("${unit.source.identity} produced invalid graph evidence: ${validation.issues}")
         }
     }

@@ -90,21 +90,42 @@ class CompilationAuthorization internal constructor(
     }
 
     fun requireIntegrity(): CompilationAuthorization {
-        CanonicalExecutionGraphValidator.requireValid(CanonicalExecutionGraphBuild(graph, bindings))
-        CanonicalExecutionGraphDigestComputer.requireMatches(graph, graphDigest)
-        val projected = CanonicalExecutionGraphProjection.toWorkflowExecutionPlanSet(graph, bindings)
+        requireBoundGraph(graph, graphDigest)
+        return this
+    }
+
+    /**
+     * Validated diagnostic data, not an authorization factory. A modified view
+     * must pass the graph validator and cannot replace this authorization.
+     */
+    fun inspectionView(): CanonicalExecutionGraphBuild {
+        requireIntegrity()
+        return CanonicalExecutionGraphBuild(graph, bindings)
+    }
+
+    /** Verify that an externally retained graph still belongs to this exact authority. */
+    fun requireMatchingGraph(candidate: CanonicalExecutionGraph, digest: CanonicalExecutionGraphDigest) {
+        requireIntegrity()
+        requireBoundGraph(candidate, digest)
+    }
+
+    private fun requireBoundGraph(candidate: CanonicalExecutionGraph, digest: CanonicalExecutionGraphDigest) {
+        CanonicalExecutionGraphValidator.requireValid(CanonicalExecutionGraphBuild(candidate, bindings))
+        CanonicalExecutionGraphDigestComputer.requireMatches(candidate, digest)
+        val projected = CanonicalExecutionGraphProjection.toWorkflowExecutionPlanSet(candidate, bindings)
         require(projected == workflowPlanSet) {
             "Graph-derived WorkflowExecutionPlanSet drifted after authorization."
         }
-        require(validationBinding.graphDigest == graphDigest.value) {
+        require(validationBinding.graphDigest == digest.value) {
             "Compilation authorization evidence no longer matches the canonical graph digest."
         }
-        return this
     }
+
 }
 
 
-internal data class AuthorizedCanonicalTask(
+@ConsistentCopyVisibility
+data class AuthorizedCanonicalTask internal constructor(
     val node: CanonicalTaskNode,
     val binding: CanonicalTaskBinding,
     val compatibilityTask: TaskNode
@@ -116,7 +137,7 @@ internal data class AuthorizedCanonicalTask(
  * Materialization may inspect implementation binding only after this equality gate. Semantic
  * capability is read from [AuthorizedCanonicalTask.node], never reconstructed from module/action.
  */
-internal fun CompilationAuthorization.requireAuthorizedTask(task: TaskNode): AuthorizedCanonicalTask {
+fun CompilationAuthorization.requireAuthorizedTask(task: TaskNode): AuthorizedCanonicalTask {
     requireIntegrity()
     val projectedTask = workflowPlanSet.workflows
         .flatMap { workflow -> PlanDependencyRelations.flatten(workflow.executionPlan.nodes) }
@@ -270,10 +291,18 @@ object CanonicalExecutionGraphGate {
      * planning-evidence validator has inspected it; this gate is evaluated only
      * after that boundary or when graph evidence is explicitly requested.
      */
-    internal fun authorizeCompatibilityPlan(
+    fun authorizeCompatibilityPlan(
+        plannerPlan: ExecutionPlan,
+        evidenceId: String
+    ): CompilationAuthorization = authorizeCompatibilityPlan(
+        plannerPlan, evidenceId, PlannedWorkflowFailurePolicy.none()
+    )
+
+    /** Untrusted compatibility input is validated; it can never claim source or proposal evidence. */
+    fun authorizeCompatibilityPlan(
         plannerPlan: ExecutionPlan,
         evidenceId: String,
-        failurePolicy: PlannedWorkflowFailurePolicy = PlannedWorkflowFailurePolicy.none()
+        failurePolicy: PlannedWorkflowFailurePolicy
     ): CompilationAuthorization {
         require(evidenceId.isNotBlank()) { "Compatibility-plan evidence id must not be blank." }
         return authorize(

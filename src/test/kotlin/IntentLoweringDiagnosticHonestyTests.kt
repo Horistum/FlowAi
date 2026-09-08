@@ -1,3 +1,5 @@
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.frontend.FrontendCompilerComposition
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -47,8 +49,8 @@ class IntentLoweringDiagnosticHonestyTests {
     @Test
     fun structuredValuesOutputsMetadataAndBindingHintsSurviveLowering() {
         val intent = IntentYamlLoader.loadText(BLOCK_INTENT)
-        val ast = IntentToAstPlanner().plan(intent)
-        val plan = FlowPlanner().plan(ast)
+        val ast = FrontendCompilerComposition.intentPlanner().plan(intent)
+        val plan = FlowPlanner(ModuleRegistry()).plan(ast)
         val action = assertIs<ActionNode>(ast.flow.steps.single())
         val report = assertNotNull(plan.loweringReport)
 
@@ -101,8 +103,8 @@ class IntentLoweringDiagnosticHonestyTests {
                 )
             )
         )
-        val ast = IntentToAstPlanner().plan(intent)
-        val plan = FlowPlanner().plan(ast)
+        val ast = FrontendCompilerComposition.intentPlanner().plan(intent)
+        val plan = FlowPlanner(ModuleRegistry()).plan(ast)
         val action = assertIs<ActionNode>(ast.flow.steps.single())
 
         assertEquals(setOf("system", "tool", "engine"), action.bindingMetadata.keys)
@@ -141,7 +143,7 @@ class IntentLoweringDiagnosticHonestyTests {
 
     @Test
     fun unsupportedMeaningIsRejectedInsteadOfDiscarded() {
-        fun report(intent: IntentDocument) = IntentCapabilityValidator().validate(intent)
+        fun report(intent: IntentDocument) = IntentCapabilityValidator(ModuleRegistry()).validate(intent)
 
         val unknownParam = report(
             singleStep(IntentStep("test", StandardCapability.TEST, params = mapOf("mystery" to IntentString("lost"))))

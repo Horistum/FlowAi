@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.modules.ModuleRegistry
+
 import java.io.File
 import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
@@ -377,7 +379,7 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
     }
 
     private fun validate(steps: List<IntentStep>, triggers: List<IntentTrigger> = emptyList()) =
-        IntentCapabilityValidator().validate(
+        IntentCapabilityValidator(ModuleRegistry()).validate(
             IntentDocument(
                 name = "ef07-data-orchestration",
                 triggers = triggers,

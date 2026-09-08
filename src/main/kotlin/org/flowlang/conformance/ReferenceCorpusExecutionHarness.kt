@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.ai.normalization.AiIntentRequest
 import org.flowlang.ai.normalization.ClarificationSeverity
 import org.flowlang.ai.normalization.IntentProposalDecision
@@ -59,7 +61,7 @@ data class ReferenceCorpusExecutionReport(
 class ReferenceCorpusExecutionHarness(
     private val registry: ModuleRegistry = ModuleRegistry(),
     private val normalizer: ScenarioPackIntentNormalizer = ScenarioPackIntentNormalizer(),
-    private val proposalReview: IntentProposalReview = IntentProposalReview()
+    private val proposalReview: IntentProposalReview = IntentProposalReview(ModuleRegistry())
 ) {
     fun execute(corpus: ReferenceIntentCorpusReport = StandardSurface.referenceIntentCorpus()): ReferenceCorpusExecutionReport {
         val executions = corpus.scenarios.map { executeScenario(it) }
@@ -197,8 +199,8 @@ class ReferenceCorpusExecutionHarness(
         }
         return try {
             response.assertUsableForLowering()
-            val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
-            val validation = FlowValidator(registry).validate(ast)
+            val ast = FrontendCompilerComposition.intentPlanner(registry).plan(response.normalizedIntent)
+            val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
             if (!validation.valid) {
                 return LoweringResult(lowerable = false, loweredToAst = true, planned = false, message = validation.issues.joinToString { it.code + ": " + it.message })
             }

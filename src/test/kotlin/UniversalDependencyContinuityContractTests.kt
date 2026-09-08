@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -82,7 +83,7 @@ class UniversalDependencyContinuityContractTests {
     @Test
     fun workspaceContinuityUsesExplicitProviderAndPreserverContracts() {
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
-        val plan = FlowPlanner(canonicalModules).plan(IntentToAstPlanner(canonicalModules).plan(intent))
+        val plan = FlowPlanner(canonicalModules).plan(FrontendCompilerComposition.intentPlanner(canonicalModules).plan(intent))
 
         val workspace = plan.dependencyRelations.single {
             it.kind == PlanDependencyKind.WORKSPACE && it.targetNodeId == "docker_build_1"
@@ -97,7 +98,7 @@ class UniversalDependencyContinuityContractTests {
     @Test
     fun targetEvidenceDistinguishesWorkspaceSupportFromTaskOrdering() {
         val intent = IntentYamlLoader.load(File("examples/intent/checkout-build-image.intent.yaml"))
-        val plan = FlowPlanner(canonicalModules).plan(IntentToAstPlanner(canonicalModules).plan(intent))
+        val plan = FlowPlanner(canonicalModules).plan(FrontendCompilerComposition.intentPlanner(canonicalModules).plan(intent))
         val analyzer = CompatibilityAnalyzer(targets)
 
         assertEquals(SupportLevel.SUPPORTED, analyzer.analyze(plan, "jenkins").status)

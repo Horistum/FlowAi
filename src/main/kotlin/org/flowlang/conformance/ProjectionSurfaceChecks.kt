@@ -143,7 +143,7 @@ internal class ProjectionSurfaceChecks(
             ) == "FAIL"
         ) { "A corpus whose required id set is discarded must fail status validation." }
 
-        val review = IntentProposalReview()
+        val review = IntentProposalReview(ModuleRegistry())
         corpus.scenarios.forEach { scenario ->
             val response = ScenarioPackIntentNormalizer().normalize(AiIntentRequest(scenario.inputText))
             val intent = response.normalizedIntent

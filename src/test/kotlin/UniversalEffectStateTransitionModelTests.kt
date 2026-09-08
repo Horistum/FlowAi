@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -119,7 +120,7 @@ class UniversalEffectStateTransitionModelTests {
     fun boundAndUnboundIntentCarryTheSameSemanticEffectsIntoExecutionPlan() {
         val bound = IntentYamlLoader.load(File("examples/intent/checkout-build-image.intent.yaml"))
         val boundBuild = FlowPlanner(modules)
-            .plan(IntentToAstPlanner(modules).plan(bound))
+            .plan(FrontendCompilerComposition.intentPlanner(modules).plan(bound))
             .tasks.single { it.semanticCapability == StandardCapability.BUILD_IMAGE.name }
 
         val unbound = IntentDocument(
@@ -135,7 +136,7 @@ class UniversalEffectStateTransitionModelTests {
             ))
         )
         val unboundBuild = FlowPlanner(modules)
-            .plan(IntentToAstPlanner(modules).plan(unbound))
+            .plan(FrontendCompilerComposition.intentPlanner(modules).plan(unbound))
             .tasks.single()
 
         assertEquals("docker", boundBuild.module)

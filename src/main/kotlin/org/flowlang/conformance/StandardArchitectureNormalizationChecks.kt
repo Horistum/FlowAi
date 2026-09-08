@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.cli.Json
 import org.flowlang.generators.manifest.TargetRenderMode
@@ -233,7 +235,7 @@ internal class StandardArchitectureNormalizationChecks(
             "Equivalent intent changed topology requirements across implementation inventories."
         }
 
-        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+        val plan = FlowPlanner(registry).plan(FrontendCompilerComposition.intentPlanner(registry).plan(intent))
         require(plan.topologyRequirements.any { it.kind == ExecutionTopologyKind.EPHEMERAL_WORKSPACE })
         require(plan.topologyRequirements.any { it.kind == ExecutionTopologyKind.WORKSPACE_PROPAGATION })
 
@@ -326,7 +328,7 @@ internal class StandardArchitectureNormalizationChecks(
         )
         require(block == flowStyle) { "Equivalent block and flow-style source forms normalized differently." }
 
-        val ast = IntentToAstPlanner(registry).plan(block)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(block)
         val plan = FlowPlanner(registry).plan(ast)
         val sourceMetadata = requireNotNull(ast.metadata.sourceIntent) { "AST lacks stable lowering source metadata." }
         require(sourceMetadata.fields.isNotEmpty()) { "AST lacks stable lowering source field identities." }
@@ -390,7 +392,7 @@ internal class StandardArchitectureNormalizationChecks(
                 )
             }
 
-            val dynamic = FlowValidator(registry).validate(flow("environment", input = true))
+            val dynamic = FrontendCompilerComposition.flowValidator(registry).validate(flow("environment", input = true))
             require(!dynamic.valid && dynamic.issues.any { it.code == "ENVIRONMENT_CLASSIFICATION_UNKNOWN" }) {
                 "Runtime environment reference was not blocked by the production Flow validator."
             }
@@ -399,17 +401,17 @@ internal class StandardArchitectureNormalizationChecks(
                 "Reference environment evidence was reinterpreted as a literal."
             }
 
-            val sensitive = FlowValidator(registry).validate(flow("\"prod\""))
+            val sensitive = FrontendCompilerComposition.flowValidator(registry).validate(flow("\"prod\""))
             require(!sensitive.valid && sensitive.issues.any { it.code == "ENVIRONMENT_APPROVAL_REQUIRED" }) {
                 "Sensitive environment mutation was not approval-gated."
             }
 
-            val approved = FlowValidator(registry).validate(flow("\"prod\"", approval = true))
+            val approved = FrontendCompilerComposition.flowValidator(registry).validate(flow("\"prod\"", approval = true))
             require(approved.issues.none { it.code.startsWith("ENVIRONMENT_") }) {
                 "Unconditional approval did not satisfy sensitive environment policy: ${approved.issues}."
             }
 
-            val engineering = FlowValidator(registry).validate(flow("\"dev\""))
+            val engineering = FrontendCompilerComposition.flowValidator(registry).validate(flow("\"dev\""))
             require(engineering.issues.none { it.code.startsWith("ENVIRONMENT_") }) {
                 "Known non-sensitive environment was blocked: ${engineering.issues}."
             }
@@ -533,8 +535,8 @@ internal class StandardArchitectureNormalizationChecks(
     private fun checkAiNormalizationFullPipelineValidation(): ConformanceCheck = runCheck("ai.normalization.full-pipeline-validation") {
         val response = ScenarioPackIntentNormalizer().normalize(AiIntentRequest("Deploy application billing-api to Kubernetes. Require approval in production. Verify health after deploy and rollback on failure."))
         IntentCapabilityValidator(registry).validate(response.normalizedIntent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
-        val validation = FlowValidator(registry).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(response.normalizedIntent)
+        val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         require(validation.valid) { "Normalized deployment produced invalid Flow AST: " + validation.issues.joinToString { it.code + ": " + it.message } }
         val plan = FlowPlanner(registry).plan(ast)
         require(plan.nodes.isNotEmpty()) { "Normalized deployment produced an empty execution plan." }

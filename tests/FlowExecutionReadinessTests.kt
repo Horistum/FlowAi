@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -28,7 +30,7 @@ class FlowExecutionReadinessTests {
     private fun referencePlan(): ExecutionPlan =
         IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
             .also { IntentCapabilityValidator(registry).validate(it).assertValid() }
-            .let { IntentToAstPlanner(registry).plan(it) }
+            .let { FrontendCompilerComposition.intentPlanner(registry).plan(it) }
             .let { FlowPlanner(registry).plan(it) }
 
     @Test
