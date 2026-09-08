@@ -14,7 +14,7 @@ import org.flowlang.compiler.CanonicalDependencyResolution
 import org.flowlang.compiler.CanonicalExecutionGraph
 import org.flowlang.compiler.CanonicalExecutionGraphBuild
 import org.flowlang.compiler.CanonicalExecutionGraphBuilder
-import org.flowlang.compiler.CanonicalExecutionGraphDigestAuthority
+import org.flowlang.compiler.CanonicalExecutionGraphDigestComputer
 import org.flowlang.compiler.CanonicalExecutionGraphProjection
 import org.flowlang.compiler.CanonicalExecutionGraphValidator
 import org.flowlang.compiler.CanonicalNodeId
@@ -70,7 +70,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
             controlEvidence = graph.controlEvidence.reversed(),
             topologyRequirements = graph.topologyRequirements.reversed()
         )
-        assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestAuthority.digest(reordered))
+        assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestComputer.digest(reordered))
 
         val alternatePlan = unit.executionPlan.copy(
             nodes = unit.executionPlan.nodes.map(::replaceImplementationLabels)
@@ -83,18 +83,18 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         )
         assertEquals(graph, alternateBuild.graph)
         assertNotEquals(unit.authorization.bindings.tasks, alternateBuild.bindings.tasks)
-        assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestAuthority.digest(alternateBuild.graph))
+        assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestComputer.digest(alternateBuild.graph))
     }
 
     @Test
     fun semanticMutationsChangeDigestAcrossOwnedFacets() {
         val graph = referenceUnit().graph
-        val baseline = CanonicalExecutionGraphDigestAuthority.digest(graph)
+        val baseline = CanonicalExecutionGraphDigestComputer.digest(graph)
         val task = graph.nodes.filterIsInstance<CanonicalTaskNode>().first()
 
         assertNotEquals(
             baseline,
-            CanonicalExecutionGraphDigestAuthority.digest(
+            CanonicalExecutionGraphDigestComputer.digest(
                 graph.replace(task.copy(semantics = task.semantics.copy(
                     capability = CanonicalCapabilityId((task.semantics.capability?.value ?: "task") + ".mutation")
                 )))
@@ -104,7 +104,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         val effect = task.semantics.effects.first()
         assertNotEquals(
             baseline,
-            CanonicalExecutionGraphDigestAuthority.digest(
+            CanonicalExecutionGraphDigestComputer.digest(
                 graph.replace(task.copy(semantics = task.semantics.copy(
                     effects = listOf(effect.copy(resource = effect.resource + ".mutation")) + task.semantics.effects.drop(1)
                 )))
@@ -114,7 +114,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         val edge = graph.dependencyEdges.first()
         assertNotEquals(
             baseline,
-            CanonicalExecutionGraphDigestAuthority.digest(
+            CanonicalExecutionGraphDigestComputer.digest(
                 graph.copy(
                     dependencyEdges = listOf(edge.copy(channel = (edge.channel ?: "ordering") + ".mutation")) +
                         graph.dependencyEdges.drop(1)
@@ -125,7 +125,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         val control = graph.controlRequirements.first()
         assertNotEquals(
             baseline,
-            CanonicalExecutionGraphDigestAuthority.digest(
+            CanonicalExecutionGraphDigestComputer.digest(
                 graph.copy(
                     controlRequirements = listOf(control.copy(subject = control.subject + ".mutation")) +
                         graph.controlRequirements.drop(1)
@@ -136,7 +136,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         val topology = graph.topologyRequirements.first()
         assertNotEquals(
             baseline,
-            CanonicalExecutionGraphDigestAuthority.digest(
+            CanonicalExecutionGraphDigestComputer.digest(
                 graph.copy(
                     topologyRequirements = listOf(topology.copy(subject = topology.subject + ".mutation")) +
                         graph.topologyRequirements.drop(1)
@@ -208,7 +208,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         )
 
         assertFailsWith<IllegalArgumentException> {
-            CanonicalExecutionGraphDigestAuthority.requireMatches(changed, unit.graphDigest)
+            CanonicalExecutionGraphDigestComputer.requireMatches(changed, unit.graphDigest)
         }
     }
 

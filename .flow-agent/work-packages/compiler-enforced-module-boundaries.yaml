@@ -32,7 +32,7 @@ selectedSlice: "AR-03A"
 implementationSlices:
   - id: "AR-03A"
     name: "Independently compiled semantic kernel"
-    status: selected
+    status: active
     invariant: "The typed canonical graph, semantic digest and their neutral contract dependencies compile and test on a classpath containing no product implementation, concrete adapter, frontend, CLI, conformance or serialization implementation."
     scope:
       - "Introduce flow-semantic-kernel as a real Gradle project and remove its sources from root compilation."
@@ -55,8 +55,22 @@ implementationSlices:
 
 lifecycle:
   activationBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    workflowRunId: 34190794340
+    workflowRunNumber: 3234
+    exactHead: "9412d4c94b0cad6a36c887d6d53b3d21f9d2d55b"
+    syntheticMergeCandidate: "0d16202ea51e6feaf4cc408f85e7a301a84eabb1"
+    exactHeadJobId: 101948267594
+    mergeCandidateJobId: 101948267471
+    kotlinTestsPerJob: 1374
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: "Flow CI #3234 passed clean Kotlin compilation, 1374 tests, Flow Agent tooling and standalone conformance on both the exact activation head and synthetic merge candidate. Implementation follows this independently green boundary."
   implementationBoundary:
+    status: pending
+  offlineBoundary:
     status: pending
   completionBoundary:
     status: pending

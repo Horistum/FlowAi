@@ -69,6 +69,13 @@ jobs:
           ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
           exit ${PIPESTATUS[0]}
 
+      - name: Prove Kernel Without Product Sources
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_semantic_kernel_isolation.py --offline 2>&1 | tee ci-logs/kernel-isolation.log
+          exit ${PIPESTATUS[0]}
+
       - name: Run Conformance
         shell: bash
         run: |
@@ -93,19 +100,22 @@ jobs:
           echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Isolated kernel build and external compiler boundary probes" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          if compgen -G "build/test-results/test/*.xml" > /dev/null; then
+          if compgen -G "build/test-results/test/*.xml" > /dev/null || compgen -G "flow-semantic-kernel/build/test-results/test/*.xml" > /dev/null; then
             echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import glob
           import html
           import xml.etree.ElementTree as ET
-          for path in sorted(glob.glob('build/test-results/test/*.xml')):
+          for path in sorted(glob.glob('build/test-results/test/*.xml') + glob.glob('flow-semantic-kernel/build/test-results/test/*.xml')):
               root = ET.parse(path).getroot()
               for case in root.findall('testcase'):
-                  failure = case.find('failure') or case.find('error')
+                  failure = case.find('failure')
+                  if failure is None:
+                      failure = case.find('error')
                   if failure is None:
                       continue
                   cls = case.attrib.get('classname', '')
@@ -138,7 +148,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: flow-ci-exact-head-gradle-logs
-          path: ci-logs/*.log
+          path: |
+            ci-logs/*.log
+            ci-logs/kernel-isolation/**
+            flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
           if-no-files-found: warn
 
       - name: Upload CI Test Reports
@@ -149,6 +162,8 @@ jobs:
           path: |
             build/test-results/test/*.xml
             build/reports/tests/test/**
+            flow-semantic-kernel/build/test-results/test/*.xml
+            flow-semantic-kernel/build/reports/tests/test/**
           if-no-files-found: warn
 
   merge-candidate-compile-test-conformance:
@@ -206,6 +221,13 @@ jobs:
           ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
           exit ${PIPESTATUS[0]}
 
+      - name: Prove Merge Candidate Kernel Without Product Sources
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_semantic_kernel_isolation.py --offline 2>&1 | tee ci-logs/merge-candidate-kernel-isolation.log
+          exit ${PIPESTATUS[0]}
+
       - name: Run Merge Candidate Conformance
         shell: bash
         run: |
@@ -228,7 +250,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: flow-ci-merge-candidate-gradle-logs
-          path: ci-logs/*.log
+          path: |
+            ci-logs/*.log
+            ci-logs/kernel-isolation/**
+            flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
           if-no-files-found: warn
 
       - name: Upload Merge Candidate Test Reports
@@ -239,4 +264,6 @@ jobs:
           path: |
             build/test-results/test/*.xml
             build/reports/tests/test/**
+            flow-semantic-kernel/build/test-results/test/*.xml
+            flow-semantic-kernel/build/reports/tests/test/**
           if-no-files-found: warn

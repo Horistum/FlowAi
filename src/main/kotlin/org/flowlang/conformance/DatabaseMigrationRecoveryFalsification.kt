@@ -218,14 +218,16 @@ class DatabaseMigrationRecoveryFalsification(private val rootDir: File = File(".
         )
         val preserved = "subject" in contract.requiredParams && "recoveryPoint" in params && effects.any { effect ->
             val recovery = effect.recovery
+            val source = recovery?.source
+            val target = recovery?.target
             effect.domain == EffectDomain.STATE_RECOVERY &&
                 effect.operation == EffectOperation.UPSERT &&
                 effect.resource == "protected.state" &&
                 recovery?.kind == RecoveryEffectKind.STATE_RESTORE &&
-                recovery.source?.kind == RecoveryEndpointKind.RECOVERY_POINT &&
-                recovery.source.identity == recoveryPoint &&
-                recovery.target?.kind == RecoveryEndpointKind.PROTECTED_STATE &&
-                recovery.target.identity == subject
+                source?.kind == RecoveryEndpointKind.RECOVERY_POINT &&
+                source.identity == recoveryPoint &&
+                target?.kind == RecoveryEndpointKind.PROTECTED_STATE &&
+                target.identity == subject
         }
         return if (preserved) {
             ExternalFalsificationOutcome.REPRESENTABLE to

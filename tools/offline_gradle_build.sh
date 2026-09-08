@@ -42,6 +42,10 @@ prepare() {
     sha256sum "$ROOT_DIR/gradle/wrapper/gradle-wrapper.properties" | awk '{print $1}'
     printf 'gradle-wrapper-jar-sha256='
     sha256sum "$ROOT_DIR/gradle/wrapper/gradle-wrapper.jar" | awk '{print $1}'
+    printf 'semantic-kernel-build-sha256='
+    sha256sum "$ROOT_DIR/flow-semantic-kernel/build.gradle.kts" | awk '{print $1}'
+    printf 'semantic-kernel-source-ownership-sha256='
+    sha256sum "$ROOT_DIR/gradle/semantic-kernel-sources.txt" | awk '{print $1}'
     printf 'build-gradle-sha256='
     sha256sum "$ROOT_DIR/build.gradle.kts" | awk '{print $1}'
     if [[ -f "$ROOT_DIR/settings.gradle.kts" ]]; then
@@ -62,10 +66,11 @@ verify() {
   mkdir -p "$VERIFY_DIR"
   cp -a "$CACHE_DIR"/. "$VERIFY_DIR"/
 
-  # Use a distinct Gradle home and one fully offline invocation. clean forces
-  # recompilation instead of accidentally validating outputs from prepare.
+  # Use a distinct Gradle home and one fully offline invocation. Disable the
+  # build cache as well: clean alone could restore compiled outputs from the
+  # prepared home rather than prove that compiler inputs are sufficient.
   # Missing wrapper/plugin/dependency inputs therefore fail closed.
-  run_boundary "$VERIFY_DIR" --offline clean test run --args=conformance
+  run_boundary "$VERIFY_DIR" --offline --no-build-cache clean test run --args=conformance
 }
 
 case "$MODE" in

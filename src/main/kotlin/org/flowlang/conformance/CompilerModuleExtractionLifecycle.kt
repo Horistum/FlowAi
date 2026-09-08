@@ -37,7 +37,7 @@ internal object CompilerModuleExtractionLifecycle {
         val slices = (work["implementationSlices"] as? List<*>).orEmpty().map(::section)
         if (work["selectedSlice"] != "AR-03A" ||
             slices.map { it["id"] } != listOf("AR-03A", "AR-03B", "AR-03C", "AR-03D") ||
-            slices.firstOrNull()?.get("status") !in setOf("selected", "active") ||
+            slices.firstOrNull()?.get("status") !in setOf("selected", "active", "complete") ||
             slices.drop(1).any { it["status"] != "planned" }
         ) add("The kernel extraction cannot claim later module slices as implemented.")
         val lifecycle = section(work["lifecycle"])
@@ -46,12 +46,31 @@ internal object CompilerModuleExtractionLifecycle {
             "selected" -> if (activation["status"] != "pending") {
                 add("Selected kernel work must remain a pending activation candidate.")
             }
-            "active" -> addAll(WorkflowSemanticsRecoveryLifecycle.boundaryErrors("AR-03 activationBoundary", activation))
+            "active", "complete" -> addAll(WorkflowSemanticsRecoveryLifecycle.boundaryErrors("AR-03 activationBoundary", activation))
         }
-        listOf("implementationBoundary", "completionBoundary").forEach { name ->
-            if (section(lifecycle[name])["status"] != "pending") {
-                add("The active kernel candidate must not publish a future $name receipt.")
+        if (slices.firstOrNull()?.get("status") == "complete") {
+            val implementation = section(lifecycle["implementationBoundary"])
+            val offline = section(lifecycle["offlineBoundary"])
+            addAll(WorkflowSemanticsRecoveryLifecycle.boundaryErrors("AR-03A implementationBoundary", implementation))
+            addAll(WorkflowSemanticsRecoveryLifecycle.boundaryErrors("AR-03A offlineBoundary", offline))
+            if (implementation["workflowRunId"] == activation["workflowRunId"] ||
+                implementation["exactHead"] == activation["exactHead"] ||
+                implementation["syntheticMergeCandidate"] == activation["syntheticMergeCandidate"]
+            ) add("Kernel completion cannot reuse its activation as implementation evidence.")
+            if (offline["workflowRunId"] == implementation["workflowRunId"] ||
+                offline["exactHead"] != implementation["exactHead"] ||
+                offline["syntheticMergeCandidate"] != implementation["syntheticMergeCandidate"]
+            ) add("Kernel completion needs an independent offline proof of the same implementation.")
+            if (work["nextSlice"] != "AR-03B") add("Completed kernel work must leave AR-03B as its unactivated successor.")
+        } else {
+            listOf("implementationBoundary", "offlineBoundary").forEach { name ->
+                if (section(lifecycle[name])["status"] != "pending") {
+                    add("The active kernel candidate must not publish a future $name receipt.")
+                }
             }
+        }
+        if (section(lifecycle["completionBoundary"])["status"] != "pending") {
+            add("The kernel slice cannot publish the full AR-03 completionBoundary receipt.")
         }
         val completion = section(work["completionDecision"])
         if (completion["status"] != "not-complete" || completion["closesFindings"] != emptyList<Any>() ||
