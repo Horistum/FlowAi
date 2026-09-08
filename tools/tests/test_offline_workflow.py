@@ -1,23 +1,27 @@
-"""Regression contracts for the repository's offline Actions workflow.
+"""Offline workflow contracts and real shell entry-point regression tests.
 
-These helpers inspect its explicit job/step indentation, not arbitrary YAML.
-No third-party parser is needed by the standard-library tooling test suite.
+Workflow helpers inspect this file's explicit indentation, not arbitrary YAML.
+Shell tests replace Java/Gradle with local fixtures; they do not claim a build.
 """
 from __future__ import annotations
 
+import os
 import pathlib
 import re
+import shutil
+import subprocess
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/flow-offline-check.yml"
-JOBS = ("check", "empty-home-proof")
+SCRIPT = ROOT / "tools/offline_gradle_build.sh"
+JOBS = ("offline-exact-head", "offline-merge-candidate")
 
 
 def job_block(workflow: str, name: str) -> str:
     match = re.search(
-        rf"(?ms)^  {re.escape(name)}:\s*\n(.*?)(?=^  [\w-]+:\s*\n|\Z)",
-        workflow,
+        rf"(?ms)^  {re.escape(name)}:\s*\n(.*?)(?=^  [\w-]+:\s*\n|\Z)", workflow
     )
     if match is None:
         raise ValueError(f"Missing offline job: {name}")
@@ -32,8 +36,7 @@ def phase_steps(job: str) -> list[tuple[str, str]]:
     phases = []
     for step in step_blocks(job):
         calls = re.findall(
-            r"(?m)^\s*(?:run:\s*)?\./tools/offline_gradle_build\.sh\s+(\S+)",
-            step,
+            r"(?m)^\s*(?:run:\s*)?bash tools/offline_gradle_build\.sh\s+(\S+)", step
         )
         phases.extend((mode, step) for mode in calls)
     return phases
@@ -41,8 +44,8 @@ def phase_steps(job: str) -> list[tuple[str, str]]:
 
 def validate_phase_budgets(job: str) -> None:
     phases = phase_steps(job)
-    if [mode for mode, _ in phases] != ["prefetch", "verify"]:
-        raise ValueError("Prefetch and verify must be ordered, separate phases")
+    if [mode for mode, _ in phases] != ["prepare", "verify"]:
+        raise ValueError("Prepare and verify must be ordered, separate bash phases")
     if phases[0][1] == phases[1][1]:
         raise ValueError("Build phases must not share a step timeout")
     limits = []
@@ -61,18 +64,20 @@ class OfflineWorkflowTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.workflow = WORKFLOW.read_text(encoding="utf-8")
 
-    def test_both_jobs_budget_each_build_phase_and_job_overhead(self) -> None:
+    def test_both_jobs_budget_each_phase_and_job_overhead(self) -> None:
         for name in JOBS:
             with self.subTest(job=name):
                 validate_phase_budgets(job_block(self.workflow, name))
 
-    def test_combined_all_mode_cannot_reintroduce_the_timeout(self) -> None:
+    def test_combined_all_or_unknown_mode_is_rejected(self) -> None:
         for name in JOBS:
-            with self.subTest(job=name):
-                job = job_block(self.workflow, name)
-                broken = job.replace("offline_gradle_build.sh prefetch", "offline_gradle_build.sh all")
-                with self.assertRaisesRegex(ValueError, "separate phases"):
-                    validate_phase_budgets(broken)
+            for mode in ("all", "prefetch"):
+                with self.subTest(job=name, mode=mode):
+                    broken = job_block(self.workflow, name).replace(
+                        "offline_gradle_build.sh prepare", f"offline_gradle_build.sh {mode}"
+                    )
+                    with self.assertRaisesRegex(ValueError, "separate bash phases"):
+                        validate_phase_budgets(broken)
 
     def test_two_commands_cannot_share_one_step_budget(self) -> None:
         broken = """    timeout-minutes: 50
@@ -80,25 +85,26 @@ class OfflineWorkflowTests(unittest.TestCase):
       - name: Combined build
         timeout-minutes: 20
         run: |
-          ./tools/offline_gradle_build.sh prefetch
-          ./tools/offline_gradle_build.sh verify
+          bash tools/offline_gradle_build.sh prepare
+          bash tools/offline_gradle_build.sh verify
 """
         with self.assertRaisesRegex(ValueError, "share a step"):
             validate_phase_budgets(broken)
 
-    def test_job_timeout_cannot_undercut_its_phase_budgets(self) -> None:
+    def test_job_timeout_cannot_undercut_phase_budgets(self) -> None:
         for name in JOBS:
             with self.subTest(job=name):
-                job = job_block(self.workflow, name)
-                broken = re.sub(r"(?m)^    timeout-minutes: \d+$", "    timeout-minutes: 20", job)
+                broken = re.sub(r"(?m)^    timeout-minutes: \d+$", "    timeout-minutes: 20",
+                                job_block(self.workflow, name))
                 with self.assertRaisesRegex(ValueError, "Job must also budget"):
                     validate_phase_budgets(broken)
 
     def test_missing_or_reduced_phase_timeout_is_rejected(self) -> None:
-        job = job_block(self.workflow, "check")
         for replacement in ("", "        timeout-minutes: 10"):
             with self.subTest(replacement=replacement):
-                broken = job.replace("        timeout-minutes: 20", replacement, 1)
+                broken = job_block(self.workflow, JOBS[0]).replace(
+                    "        timeout-minutes: 20", replacement, 1
+                )
                 with self.assertRaisesRegex(ValueError, "explicit 20-minute"):
                     validate_phase_budgets(broken)
 
@@ -111,32 +117,97 @@ class OfflineWorkflowTests(unittest.TestCase):
                     self.assertNotRegex(step, r"(?m)^        if:")
                     self.assertNotIn("|| true", step)
 
-    def test_empty_home_is_reset_only_before_prefetch_and_reused_for_verify(self) -> None:
-        phases = phase_steps(job_block(self.workflow, "empty-home-proof"))
-        self.assertEqual([mode for mode, _ in phases], ["prefetch", "verify"])
-        prefetch, verify = (step for _, step in phases)
-        for step in (prefetch, verify):
-            self.assertIn('proof_root="$RUNNER_TEMP/flow-empty-home-proof"', step)
-            self.assertIn('--prefetch-gradle-home "$proof_root/prepared-gradle-home"', step)
-            self.assertIn('--verify-gradle-home "$proof_root/verified-gradle-home"', step)
-        self.assertLess(prefetch.index('rm -rf "$proof_root"'), prefetch.index("./tools/offline_gradle_build.sh"))
-        self.assertNotIn("rm -", verify)
+    def test_exact_head_and_merge_candidate_revision_guards_are_retained(self) -> None:
+        exact = job_block(self.workflow, JOBS[0])
+        merge = job_block(self.workflow, JOBS[1])
+        self.assertIn("ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}", exact)
+        self.assertIn("EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}", exact)
+        self.assertIn("EXPECTED_SHA: ${{ github.sha }}", merge)
+        for job in (exact, merge):
+            self.assertIn('test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"', job)
+            self.assertIn("persist-credentials: false", job)
 
-    def test_cache_evidence_is_uploaded_even_after_failure(self) -> None:
+    def test_manifest_is_uploaded_even_after_failure(self) -> None:
         for name in JOBS:
             with self.subTest(job=name):
                 uploads = [step for step in step_blocks(job_block(self.workflow, name))
                            if "uses: actions/upload-artifact@" in step]
                 self.assertEqual(len(uploads), 1)
                 self.assertIn("if: always()", uploads[0])
-                self.assertIn("build/reports/offline-cache/*.json", uploads[0])
-                self.assertIn("build/reports/offline-cache/*.txt", uploads[0])
+                self.assertIn("path: .flow-offline/input-manifest.txt", uploads[0])
+                self.assertIn("include-hidden-files: true", uploads[0])
 
-    def test_empty_home_proof_keeps_scheduled_and_manual_activation(self) -> None:
-        self.assertIn(
-            "if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'",
-            job_block(self.workflow, "empty-home-proof"),
-        )
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sha256sum"), "Unix shell tools required")
+class OfflineBuildEntryPointTests(unittest.TestCase):
+    def setUp(self) -> None:
+        temp = tempfile.TemporaryDirectory(prefix="offline-contract-")
+        self.addCleanup(temp.cleanup)
+        self.root = pathlib.Path(temp.name)
+        (self.root / "tools").mkdir()
+        shutil.copyfile(SCRIPT, self.root / "tools/offline_gradle_build.sh")
+        for name in ("gradle/wrapper/gradle-wrapper.properties", "gradle/wrapper/gradle-wrapper.jar",
+                     "flow-semantic-kernel/build.gradle.kts", "gradle/semantic-kernel-sources.txt",
+                     "build.gradle.kts", "settings.gradle.kts"):
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("fixture\n", encoding="utf-8")
+        bin_dir = self.root / "bin"
+        bin_dir.mkdir()
+        java = bin_dir / "java"
+        java.write_text('#!/usr/bin/env bash\nprintf \'openjdk version "%s"\\n\' "${TEST_JAVA_VERSION:-25}" >&2\n', encoding="utf-8")
+        java.chmod(0o755)
+        gradle = self.root / "gradlew"
+        gradle.write_text('''#!/usr/bin/env bash
+set -euo pipefail
+printf '%s|%s\\n' "$GRADLE_USER_HOME" "$*" >> "$TEST_GRADLE_LOG"
+if [[ " $* " == *" --offline "* ]]; then
+  test -f "$GRADLE_USER_HOME/prepared-input"
+  exit "${TEST_VERIFY_EXIT:-0}"
+fi
+mkdir -p "$GRADLE_USER_HOME"
+printf 'compiler input\\n' > "$GRADLE_USER_HOME/prepared-input"
+exit "${TEST_PREPARE_EXIT:-0}"
+''', encoding="utf-8")
+        gradle.chmod(0o755)
+        self.env = {key: value for key, value in os.environ.items()
+                    if not key.startswith(("FLOW_OFFLINE_", "TEST_"))}
+        self.env.update(PATH=f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+                        TEST_GRADLE_LOG=str(self.root / "gradle-calls.log"))
+
+    def run_mode(self, mode: str, **environment: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(["bash", "tools/offline_gradle_build.sh", mode], cwd=self.root,
+                              env={**self.env, **environment}, text=True, capture_output=True,
+                              timeout=15, check=False)
+
+    def test_separate_processes_relocate_inputs_and_keep_full_offline_command(self) -> None:
+        for mode in ("prepare", "verify"):
+            result = self.run_mode(mode)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        calls = (self.root / "gradle-calls.log").read_text().splitlines()
+        self.assertEqual(len(calls), 2)
+        prepared, verified = (line.split("|", 1) for line in calls)
+        self.assertNotEqual(prepared[0], verified[0])
+        self.assertNotIn("--offline", prepared[1])
+        for argument in ("--offline", "--no-build-cache", "clean", "test", "run", "--args=conformance"):
+            self.assertIn(argument, verified[1].split())
+        self.assertTrue((self.root / ".flow-offline/input-manifest.txt").is_file())
+
+    def test_prepare_failure_propagates_without_success_manifest(self) -> None:
+        self.assertEqual(self.run_mode("prepare", TEST_PREPARE_EXIT="17").returncode, 17)
+        self.assertFalse((self.root / ".flow-offline/input-manifest.txt").exists())
+
+    def test_verify_failure_propagates(self) -> None:
+        self.assertEqual(self.run_mode("prepare").returncode, 0)
+        self.assertEqual(self.run_mode("verify", TEST_VERIFY_EXIT="19").returncode, 19)
+
+    def test_verify_rejects_an_unprepared_home(self) -> None:
+        self.assertEqual(self.run_mode("verify").returncode, 3)
+        self.assertFalse((self.root / "gradle-calls.log").exists())
+
+    def test_wrong_jdk_is_rejected_before_gradle(self) -> None:
+        self.assertEqual(self.run_mode("prepare", TEST_JAVA_VERSION="17").returncode, 2)
+        self.assertFalse((self.root / "gradle-calls.log").exists())
 
 
 if __name__ == "__main__":
