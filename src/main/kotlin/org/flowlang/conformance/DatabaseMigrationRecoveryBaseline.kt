@@ -138,8 +138,8 @@ class DatabaseMigrationRecoveryBaselineVerifier(
     private fun key(finding: DatabaseMigrationRecoveryFinding): String = "${finding.caseId}::${finding.factId}"
 
     companion object {
-        const val BASELINE_PATH = "conformance/corpus/external/baselines/ef-02-database-migration-recovery.yaml"
-        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/EF-02-database-migration-recovery-falsification.yaml"
+        const val BASELINE_PATH = "conformance/corpus/external/baselines/database-migration-recovery.yaml"
+        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/database-migration-recovery-falsification.yaml"
         const val KIND = "FlowDatabaseMigrationRecoveryFalsificationBaseline"
         const val VERSION = "1.0"
         private const val COMPLETE_STATUS = "complete"

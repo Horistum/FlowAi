@@ -136,8 +136,8 @@ class IncidentRemediationBaselineVerifier(
     private fun key(finding: IncidentRemediationFinding): String = "${finding.caseId}::${finding.factId}"
 
     companion object {
-        const val BASELINE_PATH = "conformance/corpus/external/baselines/ef-04-incident-remediation.yaml"
-        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/EF-04-incident-remediation-falsification.yaml"
+        const val BASELINE_PATH = "conformance/corpus/external/baselines/incident-remediation.yaml"
+        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/incident-remediation-falsification.yaml"
         const val KIND = "FlowIncidentRemediationFalsificationBaseline"
         const val VERSION = "1.0"
         private const val COMPLETE_STATUS = "complete"

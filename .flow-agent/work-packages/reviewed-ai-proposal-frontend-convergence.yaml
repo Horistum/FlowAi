@@ -1,0 +1,102 @@
+version: "AR-01C"
+name: "Reviewed AI Proposal Frontend Convergence"
+type: "architecture-recovery-delivery"
+status: complete
+stream: "architecture-recovery"
+parentWorkPackage: ".flow-agent/work-packages/canonical-compiler-axis-authoritative-execution-graph.yaml"
+strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-01"
+
+objective: "Converge reviewed AI proposals onto the same source-bound, graph-authorized FlowCompilationService axis already used by Flow Source and strict Intent YAML, while retaining provider request, response, assumptions, diagnostics and independently re-derived proposal-review evidence outside CanonicalExecutionGraph identity."
+
+authorization:
+  predecessor: "AR-01B"
+  mainAtStart: "1e894c7fc2eeba82c3d1e0bfd8a45961390e2c85"
+  rule: "AR-01C may introduce the reviewed-AI frontend, typed proposal evidence, proposal-review compilation stage and compiler-entrypoint convergence. It must preserve canonical graph semantics, public artifact versions, target support and the AR-01B graph-authorization boundary."
+
+requiredOutcomes:
+  - "ReviewedAiProposalFrontend captures a deterministic immutable JSON source view of provider identity, the exact typed request and the complete provider response before entering compilation."
+  - "ReviewedAiProposalCompilationInput is distinct from strict Intent YAML input; changing a provenance enum cannot forge standard review evidence."
+  - "FlowCompilationService independently re-derives proposal review and shared Intent validation before lowering, Flow validation, planning, graph construction or authorization."
+  - "CompilationUnit retains provider request, response, review and validation evidence while CanonicalExecutionGraph equality and digest remain independent of provider metadata, confidence, explanations and source identity."
+  - "CompilationValidationBinding binds successful proposal review, exact proposal source digest and exact canonical graph digest."
+  - "The normalize product path and its target materialization use CompilationUnit rather than a direct parser-validator-planner composition or compatibility-plan authorization."
+  - "The compiler entrypoint inventory lists Flow Source, Intent YAML and reviewed AI proposals as converged, with no deferred product compiler path."
+  - "Intent 2.0, AST 2.2, Execution Plan 2.4, lowering evidence 2.1, Target Manifest 3.0 and Target Registry 3.2 remain frozen."
+
+productionBoundary:
+  proposalReview:
+    - "src/main/kotlin/org/flowlang/ai/normalization/IntentProposalReview.kt"
+    - "src/main/kotlin/org/flowlang/ai/normalization/RuleBasedIntentNormalizer.kt"
+  frontend:
+    - "src/main/kotlin/org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt"
+  compiler:
+    - "src/main/kotlin/org/flowlang/compiler/CompilationContracts.kt"
+    - "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
+    - "src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt"
+  productComposition:
+    - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
+  evidence:
+    - "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
+    - "architecture-recovery/conformance/check-inventory.yaml"
+    - "src/main/kotlin/org/flowlang/conformance/CompilerAxisConformanceChecks.kt"
+  documentation:
+    - "docs/AI_NORMALIZATION_CONTRACT.md"
+    - "docs/REFERENCE_INTENT_CORPUS.md"
+
+requiredTests:
+  - "Equivalent accepted Intent YAML and reviewed AI proposal fixtures produce equal CanonicalExecutionGraph values, digests and compatibility plans with distinct frontend provenance."
+  - "Provider identity, prompt, confidence, explanation and map insertion order cannot change graph identity; semantic Intent mutations do change it."
+  - "Caller-owned mutable request, report and Intent collections are detached before source hashing so later provider mutations cannot drift retained proposal evidence."
+  - "Unsafe or structurally invalid proposals fail at PROPOSAL_REVIEW before AST lowering or Flow planning and retain the exact independently derived review evidence."
+  - "Intent YAML and reviewed AI proposal input types reject borrowed frontend provenance."
+  - "Reviewed proposal authorization binds successful proposal review, exact source digest and exact graph digest."
+  - "The normalize --lower product path returns through the converged compiler and source-bound materialization path."
+  - "Direct proposal review, validator, planner or reviewed-input construction outside the owned compiler/frontend boundaries fails architecture conformance."
+  - "Public artifact versions and existing target readiness remain unchanged."
+
+conformanceChecks:
+  - "architecture-recovery.ar-01.compiler-entrypoint-inventory"
+  - "architecture-recovery.ar-01.reviewed-ai-frontend-convergence"
+  - "architecture-recovery.ar-01.compiler-dependency-direction"
+  - "architecture-recovery.ar-01.public-contract-freeze"
+  - "architecture-recovery.ar-01.authorization-digest-binding"
+  - "architecture-recovery.ar-01.derived-view-consistency"
+
+nonGoals:
+  - "AR-01C does not trust provider-reported risks, confidence or open questions as standard authorization."
+  - "AR-01C does not implement AR-01D retirement of remaining compatibility and architecture-obligation views."
+  - "AR-01C does not implement AR-02 branch value lattices, phi nodes or multi-workflow execution."
+  - "AR-01C does not implement AR-03 concrete adapter extraction or promote target maturity."
+  - "AR-01C does not change public artifact schemas or versions."
+
+lifecycle:
+  implementationBoundary:
+    status: passed
+    exactHead: "7fcc90f194d17df922ec2ea2076273abbd92ca5d"
+    syntheticMergeCandidate: "261a84ba490c828052313f0d19959e70eff521fb"
+    workflowRunId: 33156598999
+    workflowRunNumber: 3128
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, complete JDK 25 compilation, all 1,260 tests and standalone conformance passed after final proposal snapshot and authorization hardening."
+      - "Synthetic merge-candidate Flow Agent validation, complete JDK 25 compilation, all 1,260 tests and standalone conformance passed against main 1e894c7fc2eeba82c3d1e0bfd8a45961390e2c85."
+  validationBoundary:
+    status: passed
+    exactHead: "abff2017ba89b1582b3b91fa58fd54bd29767fcd"
+    syntheticMergeCandidate: "3c636e0e415664ab24be20dcae35c14ced49b829"
+    workflowRunId: 33157338574
+    workflowRunNumber: 3129
+    conclusion: success
+    evidence:
+      - "Exact-head complete compilation, all 1,260 tests and standalone conformance independently revalidated the implementation-boundary evidence recorded by the preceding commit."
+      - "Synthetic merge-candidate complete compilation, all 1,260 tests and standalone conformance independently revalidated AR-01C against current main."
+  completionBoundary:
+    status: passed
+    exactHead: "a7ae683ae6693fe298586e0ddd32b2371d4d7214"
+    syntheticMergeCandidate: "7755db430d7854a1ec4de08f534afe7c3b2eed9e"
+    workflowRunId: 33158000306
+    workflowRunNumber: 3130
+    conclusion: success
+    evidence:
+      - "Exact-head Flow Agent validation, complete JDK 25 compilation, all 1,260 tests and standalone conformance passed after recording the independent validation boundary."
+      - "Synthetic merge-candidate Flow Agent validation, complete JDK 25 compilation, all 1,260 tests and standalone conformance passed against current main with the complete AR-01C production and evidence surface."

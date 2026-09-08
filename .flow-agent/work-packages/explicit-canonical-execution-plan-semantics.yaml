@@ -1,0 +1,70 @@
+version: "SI-04"
+name: "Explicit Canonical Execution-Plan Semantics"
+type: "semantic-integrity-correction"
+stream: semantic-integrity
+status: complete
+objective: "Replace lexical execution-plan node-kind inference with one explicit typed target-neutral semantic authority while preserving implementation metadata as non-authoritative evidence."
+
+authorization:
+  status: completed
+  source: "Semantic-integrity roadmap transition after independently validated and merged SI-03 completion."
+  predecessor: "SI-03"
+  strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#14-make-canonical-execution-plan-semantics-explicit"
+
+invariant:
+  - "CanonicalPlanNode.kind is determined by explicit typed canonical meaning and cannot change merely because module, action or resource labels change."
+  - "Rollback, notification, secret and artifact classifications require semantic evidence appropriate to that concept rather than lexical recognition of implementation identifiers."
+  - "Implementation module/action/target metadata remains independently inspectable but is never the authority for public canonical node kind."
+  - "Existing structured control-flow node kinds remain explicit structural semantics and are not weakened into generic task labels."
+
+scope:
+  - "Inventory every production source and consumer of CanonicalPlanNode.kind and identify which distinctions are public semantics versus projection convenience."
+  - "Replace ExecutionPlanCanonicalizer.taskKind lexical rules for module, action and resource strings with typed canonical semantic evidence."
+  - "Add a closed typed representation or equally explicit existing semantic source for task classification; do not create another free-form string heuristic under a different name."
+  - "Prove implementation-label invariance with positive and negative regression tests across rollback, notification, secret, artifact and ordinary task cases."
+  - "Audit target projection, conformance, lowering evidence and serialization consumers before changing the public node-kind contract."
+  - "Make an explicit ExecutionPlan artifact-version decision from the observed contract impact and document any required migration."
+
+forbiddenScope:
+  - "Do not classify canonical node kind from module name, action text, target identity, resource-name substrings or adapter registry ordering."
+  - "Do not collapse all task kinds to task merely to remove the heuristics; public semantic distinctions must either be typed and justified or explicitly migrated."
+  - "Do not infer target support, renderer behavior or adapter capability from canonical node kind."
+  - "Do not implement the Track 1.5 effect-model redesign, Track 1.6 parser coercion cleanup or unrelated planner refactoring in SI-04."
+  - "Do not rewrite historical SI-01 through SI-03, C1.0, AR0.1 or Core closure evidence."
+  - "Do not declare serialized artifact versions unchanged before the semantic contract impact has been analyzed."
+
+versionDecision:
+  publicStandard: unchanged
+  artifactContracts:
+    executionPlan: "2.1 -> 2.2"
+    executionPlanLoweringEvidence: unchanged
+  reason: "SI-04 changes the interpretation of the public CanonicalPlanNode.kind value domain without changing the JSON object shape. ExecutionPlan therefore advances to 2.2; authored lowering evidence remains 2.1 because its proof contract is unchanged."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2903
+  runId: 31676804951
+  exactHead: "bc6cccdd64343bc7573a3d6e401765e5e50572c7"
+  mergeCandidate: "67ae12c036c6e1acf231bfb75ce76863e30bac48"
+completionMergeCommit: "e1d1998c643e6c859aaa7f2fb5989610b9641b72"
+
+localValidation:
+  status: passed
+  validatedAt: "2026-08-13"
+  authorizedBaseHead: "ad90c7140f30ae785557afddc9506d6e38c15e33"
+  commands:
+    - "python3 -m unittest discover -s tools/tests -p 'test_*.py'"
+    - "python3 tools/flow_agent_validate.py"
+    - "python3 tools/flow_agent_runner.py"
+    - "GRADLE_USER_HOME=/mnt/data/si04_gradle/.gradle-user-home ./gradlew clean compileKotlin --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=/mnt/data/si04_gradle/.gradle-user-home ./gradlew test --offline --no-daemon --console=plain --max-workers=5"
+    - "GRADLE_USER_HOME=/mnt/data/si04_gradle/.gradle-user-home ./gradlew run --args='conformance' --offline --no-daemon --console=plain --max-workers=5"
+  results:
+    toolingTests: "31/31 passed"
+    flowAgentStructure: passed
+    flowAgentContextGeneration: passed
+    productionCompile: "BUILD SUCCESSFUL with zero Kotlin compiler warnings"
+    completeTests: "1013/1013 passed; 0 failures; 0 errors; 0 skipped"
+    standaloneConformance: passed
+  rule: "This remains historical local implementation evidence for the exact SI-04 candidate tree. SI-04 completion is established separately by the recorded external completionBoundary."

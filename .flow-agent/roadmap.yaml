@@ -102,7 +102,7 @@ architectureDebtBacklog:
 
 strategicDirection:
   status: "toolchain-modernization-complete-track-2-not-activated"
-  detailDocument: "docs/PROJECT_DIRECTION_AFTER_C1_0.md"
+  detailDocument: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md"
   postToolchainRoadmap: ".flow-agent/roadmap-post-toolchain.yaml"
   lifecycleRule: "Strategic tracks remain ordered intent and are activated only by a distinct global transition. A completed enabling milestone does not itself activate the next product track."
   enablingMilestones:

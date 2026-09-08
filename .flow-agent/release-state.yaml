@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 59
+stateVersion: 60
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -47,6 +47,12 @@ roadmapState:
   completedEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
   completedEnablingMilestoneName: "Kotlin and Gradle Toolchain Modernization"
   postToolchainRoadmap: ".flow-agent/roadmap-post-toolchain.yaml"
+  completedRecoveryItem: "AR-02"
+  completedRecoveryItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
+  completedRecoveryWorkPackage: ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
+  nextRecoveryItem: "AR-03"
+  nextRecoveryItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  nextRecoveryActivationState: "not-activated"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -191,18 +197,20 @@ qualityPrinciples:
   - "An orthogonal enabling milestone must not fabricate a product-roadmap successor or reopen a completed roadmap stream."
 
 lastKnownValidation:
-  flowAgentTooling: "passed-on-toolchain-closure-boundary"
-  flowAgentStructure: "passed-on-toolchain-closure-boundary"
-  flowAgentContextGeneration: "passed-on-toolchain-closure-boundary"
-  cleanTest: "passed-on-toolchain-closure-boundary"
-  conformance: "passed-on-toolchain-closure-boundary"
-  executableReferenceEvidence: "unchanged-by-toolchain-modernization"
-  adapterArtifactRenderingEvidence: "unchanged-by-toolchain-modernization"
-  adapterTriggerMaterializationEvidence: "unchanged-by-toolchain-modernization"
-  boundedDomainCorpusEvidence: "unchanged-by-toolchain-modernization"
-  roadmapTransitionEvidence: "passed-on-toolchain-closure-boundary"
-  validationSource: "Flow CI #2968, run 32440920335, passed exact head 60c17379ad56b64f10fecf9d1dcda09a96c3600d and synthetic merge candidate 028231fcb824d25d4f813bfbbc46a963731007e2 after distinct offline implementation boundary Flow CI #2967."
+  flowAgentTooling: "passed-on-ar-02-closure-validation-boundary"
+  flowAgentStructure: "passed-on-ar-02-closure-validation-boundary"
+  flowAgentContextGeneration: "passed-on-ar-02-closure-validation-boundary"
+  cleanTest: "passed-on-ar-02-closure-validation-boundary"
+  conformance: "passed-on-ar-02-closure-validation-boundary"
+  executableReferenceEvidence: "passed-on-ar-02-closure-validation-boundary"
+  adapterArtifactRenderingEvidence: "passed-on-ar-02-closure-validation-boundary"
+  adapterTriggerMaterializationEvidence: "passed-on-ar-02-closure-validation-boundary"
+  boundedDomainCorpusEvidence: "passed-on-ar-02-closure-validation-boundary"
+  roadmapTransitionEvidence: "passed-lifecycle-regressions-final-transition-verified-by-pr-ci"
+  validationSource: "Flow CI #3228, run 34116599418, passed exact head 748fa4390f5e6e404e691f8d3e6a3318af9ed746 and synthetic merge candidate 60f370f6d98446f9c01a6d6511d4ed7a885ebab8 after distinct integrated validation Flow CI #3226. The final completion-transition commit requires its own exact-head and merge-candidate PR CI."
   notes:
+    - "AR-02 is complete through AR-02E, with historical activation, AR-02A through AR-02D implementation, integrated validation and independent closure receipts in its work package. AR-03 remains next and not activated; EF-09 remains paused."
+    - "Closure validation includes 1358 Kotlin tests, Flow Agent tooling and standalone conformance on exact head and synthetic merge candidate. No local Gradle run, new runtime adapter certification or public artifact version migration is claimed by this transition."
     - "TOOLCHAIN-MODERNIZATION is complete on Kotlin 2.4.10, Gradle 9.5.0 and JDK 25 with distinct Kotlin, Gradle, JDK, offline implementation and lifecycle completion evidence."
     - "The offline boundary prepared an isolated Gradle home and verified clean tests plus standalone conformance from a second isolated Gradle home using --offline."
     - "Candidate validation remains external exact-head CI evidence until the candidate head passes; committed metadata cites only already-passed boundaries."

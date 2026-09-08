@@ -1,0 +1,73 @@
+version: "1.0"
+findings:
+  - findingId: "F-02"
+    implementations:
+      - pullRequest: 167
+        commit: "2346f8bd50636b2647cd31cb06115bf03b582157"
+      - pullRequest: 169
+        commit: "63aa873143c51184df6c17cb47fe611caa9089a3"
+    productionContracts:
+      - path: "src/main/kotlin/org/flowlang/core/FlowAvailabilityAnalyzer.kt"
+        symbol: "FlowAvailabilityAnalyzer"
+      - path: "src/main/kotlin/org/flowlang/validator/FlowValidator.kt"
+        symbol: "FlowValidator"
+      - path: "src/main/kotlin/org/flowlang/planner/FlowPlanner.kt"
+        symbol: "FlowPlanner"
+      - path: "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
+        symbol: "ExecutionPlanMaterializationValidator"
+    positiveChecks:
+      - "architecture-recovery.ar-02.value-availability-lattice"
+      - "architecture-recovery.ar-02.explicit-merge-integrity"
+    negativeChecks:
+      - "architecture-recovery.ar-02.maybe-defined-read-rejection"
+      - "architecture-recovery.ar-02.producer-permutation-invariance"
+    regressionWitnesses:
+      - path: "src/test/kotlin/ExplicitMergeSemanticsTests.kt"
+        symbol: "mergeRejectsIncompleteOverlapExternalAmbiguityAndKnownTypeConflict"
+        formerBehavior: "A display-name or last-visited producer cannot supply exhaustive, unambiguous merge evidence."
+      - path: "src/test/kotlin/ExplicitMergeMaterializationRegressionTests.kt"
+        symbol: "realParsedMergePassesPlanningEvidenceBeforeTargetSupportIsConsidered"
+        formerBehavior: "A valid typed merge was rejected before target support because ControlNode had no legacy dependsOn field."
+  - findingId: "F-08"
+    implementations:
+      - pullRequest: 170
+        commit: "ca0fe0e563eab0b200d1f229ef6e4a0df69e6e5d"
+    productionContracts:
+      - path: "src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt"
+        symbol: "IntentToAstPlanner"
+      - path: "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt"
+        symbol: "CanonicalExecutionGraphBuilder"
+      - path: "src/main/kotlin/org/flowlang/materialization/TargetSelection.kt"
+        symbol: "TargetMaterializationRequest"
+    positiveChecks:
+      - "architecture-recovery.ar-02.workflow-membership-integrity"
+    negativeChecks:
+      - "architecture-recovery.ar-02.multi-workflow-materialization-gate"
+    regressionWitnesses:
+      - path: "src/test/kotlin/WorkflowSemanticsIntegrationTests.kt"
+        symbol: "staleAuthorizationRejectsWorkflowMembershipAndRoutingChanges"
+        formerBehavior: "A first-workflow or flattened program could silently discard ownership and trigger routing."
+  - findingId: "F-15"
+    implementations:
+      - pullRequest: 171
+        commit: "4e045991d6a9bb1824f08d80140710142ebf807d"
+    productionContracts:
+      - path: "src/main/kotlin/org/flowlang/planner/WorkflowFailurePolicy.kt"
+        symbol: "WorkflowFailurePolicy"
+      - path: "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraph.kt"
+        symbol: "CanonicalWorkflowFailurePolicy"
+      - path: "src/main/kotlin/org/flowlang/adapters/control/AdapterControlRequirementAuthority.kt"
+        symbol: "AdapterControlRequirementAuthority"
+      - path: "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
+        symbol: "BuiltInTargetProjections"
+    positiveChecks:
+      - "architecture-recovery.ar-02.failure-policy-integrity"
+    negativeChecks:
+      - "architecture-recovery.ar-02.no-synthetic-handler-authority"
+    regressionWitnesses:
+      - path: "src/test/kotlin/WorkflowSemanticsIntegrationTests.kt"
+        symbol: "staleAuthorizationRejectsFailureAndHandlerChanges"
+        formerBehavior: "A terminal Try shape, generated identifier or unchanged legacy view could impersonate workflow failure authority."
+      - path: "src/test/kotlin/WorkflowSemanticsIntegrationTests.kt"
+        symbol: "targetMatrixRejectsRenderingWithoutPropagateRethrow"
+        formerBehavior: "A rendered handler without the required rethrow would swallow workflow failure."

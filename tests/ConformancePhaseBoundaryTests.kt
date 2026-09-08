@@ -6,7 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.conformance.AbstractTopologyMatrixConformanceInventory
 import org.flowlang.conformance.AbstractTopologyMatrixConformanceRunner
-import org.flowlang.conformance.AdapterA1ConformanceInventory
+import org.flowlang.conformance.ExecutableContinuityConformanceInventory
 import org.flowlang.conformance.AdapterConformanceInventory
 import org.flowlang.conformance.AdapterConformanceRunner
 import org.flowlang.conformance.AdapterExecutableContinuityConformanceRunner
@@ -38,7 +38,7 @@ class ConformancePhaseBoundaryTests {
             .map { it.index }
         val coreInventory = ConformanceSuiteInventory.load()
         val adapterInventory = AdapterConformanceInventory.load(File("."))
-        val a1Inventory = AdapterA1ConformanceInventory.load(File("."))
+        val a1Inventory = ExecutableContinuityConformanceInventory.load(File("."))
         val c02Inventory = AbstractTopologyMatrixConformanceInventory.load(File("."))
 
         assertTrue(closureIndex >= 0, names.joinToString())

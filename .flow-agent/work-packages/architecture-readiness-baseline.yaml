@@ -1,0 +1,92 @@
+version: "AR0.2"
+name: "Architecture Readiness Baseline"
+type: "post-toolchain-architecture-measurement"
+status: complete
+stream: "post-toolchain"
+
+objective: "Measure the live architecture before External Falsification expands the corpus, using code-derived evidence rather than hand-maintained estimates."
+
+authorization:
+  status: completed
+  predecessor: "TOOLCHAIN-MODERNIZATION"
+  strategicSource: ".flow-agent/roadmap-post-toolchain.yaml#AR0.2"
+  rule: "AR0.2 is observational. It may measure and classify architecture debt but must not change Flow semantics, target support, public artifact contracts or execution evidence."
+
+activationBasis:
+  completedEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
+  mainAfterCiOptimizationMerge: "7ab02ddd295b8bce1a59d13504960510950848ff"
+  retainedValidation:
+    workflow: "Flow CI"
+    runNumber: 2982
+    runId: 32444816500
+    exactHead: "44a506dcab6d9b23f10d0ec70d0a595234e31c82"
+    mergeCandidate: "367200b07d180daf2ecb1e9eef92fb265e7cdf29"
+    status: passed
+
+implementationEvidence:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2987
+  runId: 32446414154
+  exactHead: "4afb48d46b35342accf499fc01123d4cf7effa9a"
+  mergeCandidate: "4b12b9702a5268dff6baf2faa67124f5ba8ca879"
+  reportArtifact: "flow-ci-exact-head-test-reports"
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2986
+  runId: 32447046000
+  exactHead: "8957903ee57709be114f5174620242642606f721"
+  mergeCandidate: "1bfe5a5df66e67f8c5a25656ea8e3ac6ba5623c0"
+
+measuredBaseline:
+  productionKotlinTypeCount: 1130
+  authorityCount: 77
+  conformanceCheckCount: 92
+  lexicalArchitectureCheckCount: 5
+  lexicalArchitectureTermCount: 31
+  coreToAdapterDependencyViolationCount: 0
+  stringlyTypedSemanticCandidateCount: 17
+  report: ".flow-agent/reports/architecture-readiness-baseline.md"
+
+requiredMeasurements:
+  - "Production Kotlin type count derived from lexical code spans."
+  - "Production Authority count derived from AuthorityResponsibilityCatalog discovery."
+  - "Complete conformance check count derived from ConformanceSuiteInventory, including the closure check."
+  - "Lexical architecture direction and forbidden-term counts derived from ArchitectureGovernanceAnalyzer."
+  - "Core-to-adapter dependency violations across target-neutral semantic package roots."
+  - "Independent public artifact contract version axes from FlowStandardVersions."
+  - "Stringly typed semantic-field candidates in target-neutral semantic packages."
+
+implementation:
+  analyzer: "src/main/kotlin/org/flowlang/architecture/ArchitectureReadinessBaselineAnalyzer.kt"
+  tests: "src/test/kotlin/ArchitectureReadinessBaselineAnalyzerTests.kt"
+  report: ".flow-agent/reports/architecture-readiness-baseline.md"
+
+invariants:
+  - "Measurements come from live repository code or canonical machine-readable inventories."
+  - "AR0.2 does not introduce target-specific meaning into Core."
+  - "AR0.2 does not rename, merge or delete authorities merely to improve a metric."
+  - "A string field is only a candidate for later strengthening; AR0.2 does not change its type."
+  - "No artifact-contract version advances because of this measurement milestone."
+
+forbiddenScope:
+  - "Do not perform the future multi-module STRUCTURAL-BOUNDARIES split."
+  - "Do not implement External Falsification corpus domains in this milestone."
+  - "Do not add new StandardCapability values."
+  - "Do not weaken conformance or governance checks to improve measured counts."
+
+completionEvidence:
+  - "ArchitectureReadinessBaselineAnalyzer passed on exact head and synthetic merge candidate and reported no Core-to-adapter dependency violation in its declared target-neutral roots."
+  - "The committed AR0.2 report records exact measured counts, public artifact contracts and stringly typed semantic candidates from passed implementation evidence."
+  - "Flow CI run 32447046000 passed the later report-bearing exact-head and synthetic merge-candidate boundary."
+  - "EF-01 is selected only as the next planned post-toolchain item and is not activated by AR0.2 closure."
+
+localValidation:
+  status: passed
+  evidence:
+    - "Flow CI #2987 passed exact-head tests and standalone conformance on 4afb48d46b35342accf499fc01123d4cf7effa9a and its synthetic merge candidate."
+    - "JUnit evidence reported 1130 production Kotlin types, 77 authorities, 92 conformance checks, five documented architecture directions, 31 forbidden terms, zero Core-to-adapter violations and 17 stringly typed semantic candidates."
+    - "Later Flow CI run 32447046000 passed exact-head and synthetic merge-candidate tests plus standalone conformance with the committed baseline report and implementation evidence present."
+  rule: "AR0.2 is complete; any later metric change is new architecture evidence rather than a rewrite of this baseline."

@@ -13,4 +13,4 @@ promotions:
       - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
       - "src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt"
       - "tests/FlowFirstExecutableReferenceScenarioTests.kt"
-      - "docs/A1_0_GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"
+      - "docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"

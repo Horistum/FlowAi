@@ -94,7 +94,7 @@ class AdapterBindingRoadmapLifecycleAuthority(private val rootDir: File = File("
     private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) = AdapterBindingLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/A0.3-capability-binding-migration.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/capability-binding-migration.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"

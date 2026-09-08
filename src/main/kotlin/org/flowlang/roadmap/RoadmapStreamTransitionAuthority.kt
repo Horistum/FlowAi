@@ -1468,21 +1468,21 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ARCHITECTURE_ROADMAP = ".flow-agent/roadmap-architecture.yaml"
-        const val AR01_WORK_PACKAGE = ".flow-agent/work-packages/AR0.1-authority-responsibility-consolidation.yaml"
-        const val AR01_DOCUMENTATION = "docs/AR0_1_AUTHORITY_RESPONSIBILITY_CONSOLIDATION.md"
+        const val AR01_WORK_PACKAGE = ".flow-agent/work-packages/authority-responsibility-consolidation.yaml"
+        const val AR01_DOCUMENTATION = "docs/AUTHORITY_RESPONSIBILITY_CONSOLIDATION.md"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
-        const val CORRECTION_WORK_PACKAGE = ".flow-agent/work-packages/C0.1.1-bounded-domain-integrity-correction.yaml"
-        const val A10_WORK_PACKAGE = ".flow-agent/work-packages/A1.0-github-actions-artifact-workspace-continuity.yaml"
-        const val C02_WORK_PACKAGE = ".flow-agent/work-packages/C0.2-abstract-topology-matrix.yaml"
-        const val C03_WORK_PACKAGE = ".flow-agent/work-packages/C0.3-semantic-equivalence-rules.yaml"
-        const val C04_WORK_PACKAGE = ".flow-agent/work-packages/C0.4-adapter-profile-evidence.yaml"
-        const val C10_WORK_PACKAGE = ".flow-agent/work-packages/C1.0-operational-domain-adequacy.yaml"
-        const val C10_DOCUMENTATION = "docs/C1_0_OPERATIONAL_DOMAIN_ADEQUACY.md"
+        const val CORRECTION_WORK_PACKAGE = ".flow-agent/work-packages/bounded-domain-integrity-correction.yaml"
+        const val A10_WORK_PACKAGE = ".flow-agent/work-packages/github-actions-artifact-workspace-continuity.yaml"
+        const val C02_WORK_PACKAGE = ".flow-agent/work-packages/abstract-topology-matrix.yaml"
+        const val C03_WORK_PACKAGE = ".flow-agent/work-packages/semantic-equivalence-rules.yaml"
+        const val C04_WORK_PACKAGE = ".flow-agent/work-packages/adapter-profile-evidence.yaml"
+        const val C10_WORK_PACKAGE = ".flow-agent/work-packages/operational-domain-adequacy.yaml"
+        const val C10_DOCUMENTATION = "docs/OPERATIONAL_DOMAIN_ADEQUACY.md"
         const val SEMANTIC_INTEGRITY_ROADMAP = ".flow-agent/roadmap-semantic-integrity.yaml"
-        const val SI_01_1_WORK_PACKAGE = ".flow-agent/work-packages/SI-01.1-post-c1-integrity-reconciliation.yaml"
-        const val SI_02_WORK_PACKAGE = ".flow-agent/work-packages/SI-02-authored-dependency-graph-preservation.yaml"
-        const val SI_03_WORK_PACKAGE = ".flow-agent/work-packages/SI-03-canonical-technology-neutrality.yaml"
-        const val POST_C1_DIRECTION_DOCUMENT = "docs/PROJECT_DIRECTION_AFTER_C1_0.md"
+        const val SI_01_1_WORK_PACKAGE = ".flow-agent/work-packages/semantic-integrity-reconciliation.yaml"
+        const val SI_02_WORK_PACKAGE = ".flow-agent/work-packages/authored-dependency-graph-preservation.yaml"
+        const val SI_03_WORK_PACKAGE = ".flow-agent/work-packages/canonical-technology-neutrality.yaml"
+        const val POST_C1_DIRECTION_DOCUMENT = "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md"
         const val ADAPTER_SEQUENCE = "src/main/kotlin/org/flowlang/adapters/portfolio/AdapterRoadmapSequence.kt"
         private const val CORE_CLOSURE = "0.9.7.10"
         private const val CORRECTION_ITEM_NAME = "Bounded Domain Integrity Correction"
@@ -1524,7 +1524,7 @@ class RoadmapStreamTransitionAuthority(private val rootDir: File = File(".")) {
             "src/main/kotlin/org/flowlang/conformance/RealWorldPolarityAuthority.kt",
             "src/test/kotlin/RoadmapStreamTransitionAuthorityTests.kt",
             "tests/RealWorldCorpusTests.kt",
-            "docs/C0_1_BOUNDED_DOMAIN_CORPUS.md"
+            "docs/BOUNDED_DOMAIN_CORPUS.md"
         )
     }
 }

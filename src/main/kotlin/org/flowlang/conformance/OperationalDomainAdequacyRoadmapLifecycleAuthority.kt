@@ -204,8 +204,8 @@ class OperationalDomainAdequacyRoadmapLifecycleAuthority(
         }.orEmpty()
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/C1.0-operational-domain-adequacy.yaml"
-        const val AR01_WORK_PACKAGE = ".flow-agent/work-packages/AR0.1-authority-responsibility-consolidation.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/operational-domain-adequacy.yaml"
+        const val AR01_WORK_PACKAGE = ".flow-agent/work-packages/authority-responsibility-consolidation.yaml"
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ARCHITECTURE_ROADMAP = ".flow-agent/roadmap-architecture.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
@@ -222,7 +222,7 @@ class OperationalDomainAdequacyRoadmapLifecycleAuthority(
             "src/test/kotlin/OperationalDomainCorpusLoaderTests.kt",
             "src/test/kotlin/OperationalDomainAdequacyRoadmapLifecycleAuthorityTests.kt",
             "src/test/kotlin/OperationalDomainAdequacyConformanceChecksTests.kt",
-            "docs/C1_0_OPERATIONAL_DOMAIN_ADEQUACY.md"
+            "docs/OPERATIONAL_DOMAIN_ADEQUACY.md"
         )
     }
 }

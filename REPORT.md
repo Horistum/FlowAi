@@ -22,7 +22,7 @@ The implementation retained the existing Intent `2.0` wire shape while advancing
 
 Flow CI #2943 / run `31802519219` passed exact implementation head `e5bc5cd82d591a6b744650478070b6c4919d60cf` and synthetic merge candidate `7a9a349c929a9b2fccadd16e5f5411f77156b7c6` before PR #137 merged as `03c3bcb9c8d4f428b4302c2c35d098848793505e`. Post-merge main Flow CI #2944 also passed. The semantic-integrity stream is therefore terminally complete through SI-08.
 
-This completion transition deliberately selects no successor. `EXTERNAL-FALSIFICATION` remains the next ordered strategic candidate in `docs/PROJECT_DIRECTION_AFTER_C1_0.md`, but activating it is a separate cross-stream lifecycle decision rather than an implicit consequence of SI-08 completion.
+This completion transition deliberately selects no successor. `EXTERNAL-FALSIFICATION` remains the next ordered strategic candidate in `docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md`, but activating it is a separate cross-stream lifecycle decision rather than an implicit consequence of SI-08 completion.
 
 SI-07 remains completed predecessor evidence: Flow CI #2928 / run `31773901231` passed exact head `f27bf53afffb555fcef99b2db32770d9b241beba` and synthetic merge candidate `303fa34f0e3147a8482acf2c4905fca4cadaa3b0` before merge commit `fc905efa20c255846c098ccf058f560d61ee7378`.
 
@@ -35,6 +35,13 @@ The Core closure remains historical and closed. Post-C1.0 SI-01 changed scoped c
 The live package remains `0.9.5` and the public standard remains `0.8.0`. Live artifact contracts are tracked independently: Intent `2.0`, AST `2.2`, ExecutionPlan `2.4`, WorkflowExecutionPlanSet `1.1`, execution-plan lowering evidence `2.1`, TargetManifest `3.0` and TargetRegistry `3.2`.
 
 WorkflowExecutionPlanSet 1.1 now carries first-class workflow failure policy, exact handler-region membership and handler-entry availability. ExecutionPlan 2.4 remains the graph-derived single-workflow compatibility shape and cannot establish failure meaning by itself.
+
+
+## Completed AR-02 semantic recovery
+
+AR-02 is completed through the integrated AR-02E closure gate. One shared flow-sensitive analysis, explicit producer and merge identities, first-class workflow ownership, trigger routing and typed workflow failure policy now survive canonical graph construction, digesting, authorization and graph-derived public views.
+
+The integrated closure matrix binds F-02, F-08 and F-15 to exact production files, positive conformance and independent negative or mutation evidence. Current adapters remain fail closed for multi-workflow and explicit-merge execution unless provider-owned certification exists. AR-03 is next in Architecture Recovery order and is not activated by AR-02 completion.
 
 ## Completed adapter baseline
 
@@ -106,7 +113,7 @@ Requirement derivation preserves exact semantic, subject, completeness and scope
 - external and unknown modes cannot impersonate manual approval;
 - retry requirements remain at `TASK` scope;
 - timeout variants retain step, task, workflow, per-attempt or cumulative scope;
-- canonical flow-level error handling is recognized only from planner provenance (`onError_<n>` plus `errorHandlers.finally` capability) and actual preceding protected work;
+- workflow-level error handling is derived from `CompilationAuthorization` and typed `WorkflowFailurePolicy`; the synthetic tail `TryPlanNode` is only a checked compatibility mirror;
 - detached empty-body handlers remain blocking;
 - scheduling derives CRON, interval, calendar, timezone, concurrency and catch-up requirements at `TRIGGER` scope;
 - incomplete preserved RETRY/TIMEOUT metadata remains `PRESERVED_UNSPECIFIED` and blocking.

@@ -69,7 +69,7 @@ data class SemanticEquivalenceConformanceInventory(
     }
 
     companion object {
-        const val PATH = "conformance/equivalence/c0.3-check-inventory.yaml"
+        const val PATH = "conformance/equivalence/semantic-equivalence-check-inventory.yaml"
         const val VERSION = "1.0"
         private val KEYS = setOf("version", "checks")
 

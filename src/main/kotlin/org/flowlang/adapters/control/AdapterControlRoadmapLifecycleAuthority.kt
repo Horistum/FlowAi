@@ -96,7 +96,7 @@ class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File("
     private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) = AdapterControlLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/A0.4-control-requirement-materialization.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/control-requirement-materialization.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
@@ -116,7 +116,7 @@ class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File("
             "src/test/kotlin/AdapterControlTypedEvidenceIntegrityTests.kt",
             "src/test/kotlin/AdapterControlEvidenceAnchorTests.kt",
             "src/test/kotlin/org/flowlang/generators/manifest/TargetReadinessDiagnosticCodeAuthorityTests.kt",
-            "docs/A0_4_CONTROL_REQUIREMENT_MATERIALIZATION.md"
+            "docs/CONTROL_REQUIREMENT_MATERIALIZATION.md"
         )
     }
 }

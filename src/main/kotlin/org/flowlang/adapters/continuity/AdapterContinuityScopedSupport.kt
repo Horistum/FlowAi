@@ -97,7 +97,7 @@ object BuiltInAdapterContinuityScopedSupport {
             "src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt",
             "src/test/kotlin/AdapterContinuityProviderBehaviorTests.kt",
             "conformance/snapshots/github-actions-checkout-build-image/github-actions.executable.yaml",
-            "docs/A1_0_GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"
+            "docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"
         ),
         limitations = listOf(
             "The proof covers regular-file bytes, relative paths and hidden entries for the exact checkout-build-image source channel only.",

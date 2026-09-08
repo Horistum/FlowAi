@@ -216,7 +216,7 @@ class AdapterTriggerRoadmapLifecycleAuthority(
         AdapterTriggerLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/A0.7-trigger-materialization-coverage.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/trigger-materialization-coverage.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
@@ -243,7 +243,7 @@ class AdapterTriggerRoadmapLifecycleAuthority(
             "src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt",
             "src/test/kotlin/AdapterTriggerCliEvidenceTests.kt",
             "src/test/kotlin/AdapterTriggerRoadmapLifecycleAuthorityTests.kt",
-            "docs/A0_7_TRIGGER_MATERIALIZATION_COVERAGE.md"
+            "docs/TRIGGER_MATERIALIZATION_COVERAGE.md"
         )
     }
 }

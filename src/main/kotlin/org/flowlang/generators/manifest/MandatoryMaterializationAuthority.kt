@@ -474,6 +474,22 @@ internal object ExecutionPlanMaterializationValidator {
         issues: MutableList<PlanningEvidenceIssue>
     ) {
         val nodesById = PlanDependencyRelations.flatten(plan.nodes).associateBy { it.id }
+        // Control nodes have no legacy dependsOn field. Their ordering must be
+        // backed by a well-formed direct typed relation, never by their name or
+        // rendered detail. Tasks and approvals retain their independent mirror check.
+        val controlOrderingEdges = plan.dependencyRelations.asSequence()
+            .filter { relation ->
+                relation.kind == PlanDependencyKind.ORDERING &&
+                    relation.resolution == PlanDependencyResolution.RESOLVED &&
+                    relation.channel == null && relation.candidates.isEmpty() &&
+                    relation.sourceNodeId != null &&
+                    relation.sourceNodeId != relation.targetNodeId &&
+                    relation.sourceNodeId in nodesById &&
+                    nodesById[relation.targetNodeId] is ControlNode &&
+                    relation.path == listOf(relation.sourceNodeId, relation.targetNodeId)
+            }
+            .map { requireNotNull(it.sourceNodeId) to it.targetNodeId }
+            .toSet()
         val duplicates = plan.dependencyRelations
             .groupBy(PlanDependencyRelations::relationKey)
             .filterValues { it.size > 1 }
@@ -543,7 +559,7 @@ internal object ExecutionPlanMaterializationValidator {
                     if (relation.sourceNodeId == null) {
                         issues += issue("planning.dependency.source.missing", location, "Resolved dependency relation must name a source node.")
                     }
-                    validateResolvedPath(relation, nodesById, location, issues)
+                    validateResolvedPath(relation, nodesById, controlOrderingEdges, location, issues)
                 }
                 PlanDependencyResolution.UNRESOLVED -> {
                     if (relation.sourceNodeId != null || relation.candidates.isNotEmpty() || relation.path.isNotEmpty()) {
@@ -596,6 +612,7 @@ internal object ExecutionPlanMaterializationValidator {
     private fun validateResolvedPath(
         relation: PlanDependencyRelation,
         nodesById: Map<String, PlanNode>,
+        controlOrderingEdges: Set<Pair<String, String>>,
         location: String,
         issues: MutableList<PlanningEvidenceIssue>
     ) {
@@ -609,7 +626,12 @@ internal object ExecutionPlanMaterializationValidator {
         }
         relation.path.zipWithNext().forEach { (upstream, downstream) ->
             val downstreamNode = nodesById[downstream]
-            if (downstreamNode == null || upstream !in PlanDependencyRelations.dependencies(downstreamNode)) {
+            val ordered = when (downstreamNode) {
+                is ControlNode -> (upstream to downstream) in controlOrderingEdges
+                null -> false
+                else -> upstream in PlanDependencyRelations.dependencies(downstreamNode)
+            }
+            if (upstream !in nodesById || !ordered) {
                 issues += issue(
                     "planning.dependency.path.unordered",
                     location,

@@ -455,7 +455,7 @@ class DataOrchestrationFalsification(private val rootDir: File = File(".")) {
         const val DOMAIN = "data-orchestration"
         const val KIND = "FlowDataOrchestrationFalsification"
         const val VERSION = "1.0"
-        const val ASSESSMENT_FILE = "ef07.yaml"
+        const val ASSESSMENT_FILE = "data-orchestration.yaml"
         const val MIN_CASES = 8
         const val MIN_REPOSITORIES = 2
 

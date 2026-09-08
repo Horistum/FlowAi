@@ -803,7 +803,7 @@ class HumanApprovalChangeControlFalsification(private val rootDir: File = File("
         const val DOMAIN = "human-approval-change-control"
         const val KIND = "FlowHumanApprovalChangeControlFalsification"
         const val VERSION = "1.0"
-        const val ASSESSMENT_FILE = "ef09.yaml"
+        const val ASSESSMENT_FILE = "human-approval-change-control.yaml"
         const val MIN_CASES = 6
         const val MIN_REPOSITORIES = 2
 

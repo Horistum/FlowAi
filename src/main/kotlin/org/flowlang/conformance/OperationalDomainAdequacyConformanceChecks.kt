@@ -245,7 +245,7 @@ data class OperationalDomainAdequacyConformanceInventory(
     }
 
     companion object {
-        const val PATH = "conformance/operational/c1.0-check-inventory.yaml"
+        const val PATH = "conformance/operational/operational-adequacy-check-inventory.yaml"
         const val VERSION = "1.0"
         private val KEYS = setOf("version", "checks")
 

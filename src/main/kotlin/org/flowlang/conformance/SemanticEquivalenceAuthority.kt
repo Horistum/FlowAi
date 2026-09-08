@@ -398,7 +398,7 @@ class SemanticEquivalenceAuthority(
         val frozenInventories = mapOf(
             ConformanceSuiteInventory.PATH to ConformanceSuiteInventory.load(rootDir).preClosureChecks,
             AdapterConformanceInventory.PATH to AdapterConformanceInventory.load(rootDir).checks,
-            AdapterA1ConformanceInventory.PATH to AdapterA1ConformanceInventory.load(rootDir).checks,
+            ExecutableContinuityConformanceInventory.PATH to ExecutableContinuityConformanceInventory.load(rootDir).checks,
             RealWorldCorpusConformanceChecks.INVENTORY_PATH to loadInventory(RealWorldCorpusConformanceChecks.INVENTORY_PATH),
             AbstractTopologyMatrixConformanceInventory.PATH to AbstractTopologyMatrixConformanceInventory.load(rootDir).checks
         )
