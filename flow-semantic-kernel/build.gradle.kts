@@ -147,6 +147,9 @@ tasks.named("compileKotlin") {
 
 tasks.test {
     useJUnitPlatform()
+    // Cache compilation, not evidence: execute compiler probes on every revision.
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
     val compilerArguments = objects.newInstance(KernelCompilerArguments::class.java)
     compilerArguments.kernelClasspath.from(sourceSets.main.get().runtimeClasspath)
     compilerArguments.compilerClasspath.from(compilerProbeRuntime)

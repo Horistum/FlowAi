@@ -16,7 +16,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/flow-offline-check.yml"
 SCRIPT = ROOT / "tools/offline_gradle_build.sh"
-JOBS = ("offline-exact-head", "offline-merge-candidate")
+JOBS = ("offline-exact-head",)
 
 
 def job_block(workflow: str, name: str) -> str:
@@ -55,7 +55,7 @@ def validate_phase_budgets(job: str) -> None:
             raise ValueError("Each build phase needs an explicit 20-minute budget")
         limits.append(int(match.group(1)))
     parent = re.search(r"(?m)^    timeout-minutes: (\d+)\s*$", job)
-    if parent is None or int(parent.group(1)) < sum(limits) + 10:
+    if parent is None or int(parent.group(1)) < sum(limits) + 5:
         raise ValueError("Job must also budget for setup and evidence upload")
 
 
@@ -64,7 +64,7 @@ class OfflineWorkflowTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.workflow = WORKFLOW.read_text(encoding="utf-8")
 
-    def test_both_jobs_budget_each_phase_and_job_overhead(self) -> None:
+    def test_requested_job_budgets_each_phase_and_job_overhead(self) -> None:
         for name in JOBS:
             with self.subTest(job=name):
                 validate_phase_budgets(job_block(self.workflow, name))
@@ -117,15 +117,16 @@ class OfflineWorkflowTests(unittest.TestCase):
                     self.assertNotRegex(step, r"(?m)^        if:")
                     self.assertNotIn("|| true", step)
 
-    def test_exact_head_and_merge_candidate_revision_guards_are_retained(self) -> None:
-        exact = job_block(self.workflow, JOBS[0])
-        merge = job_block(self.workflow, JOBS[1])
-        self.assertIn("ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}", exact)
-        self.assertIn("EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}", exact)
-        self.assertIn("EXPECTED_SHA: ${{ github.sha }}", merge)
-        for job in (exact, merge):
-            self.assertIn('test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"', job)
-            self.assertIn("persist-credentials: false", job)
+    def test_selected_revision_guard_is_unconditional(self) -> None:
+        job = job_block(self.workflow, JOBS[0])
+        self.assertIn("ref: ${{ inputs.revision || github.sha }}", job)
+        self.assertIn("EXPECTED_SHA: ${{ inputs.revision || github.sha }}", job)
+        guards = [step for step in step_blocks(job) if "EXPECTED_SHA:" in step]
+        self.assertEqual(len(guards), 1)
+        self.assertNotRegex(guards[0], r"(?m)^        if:")
+        self.assertIn('test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"', guards[0])
+        self.assertIn('[[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]', guards[0])
+        self.assertIn("persist-credentials: false", job)
 
     def test_manifest_is_uploaded_even_after_failure(self) -> None:
         for name in JOBS:
@@ -133,7 +134,7 @@ class OfflineWorkflowTests(unittest.TestCase):
                 uploads = [step for step in step_blocks(job_block(self.workflow, name))
                            if "uses: actions/upload-artifact@" in step]
                 self.assertEqual(len(uploads), 1)
-                self.assertIn("if: always()", uploads[0])
+                self.assertIn("if: ${{ !cancelled() }}", uploads[0])
                 self.assertIn("path: .flow-offline/input-manifest.txt", uploads[0])
                 self.assertIn("include-hidden-files: true", uploads[0])
 

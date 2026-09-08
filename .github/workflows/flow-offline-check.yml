@@ -1,47 +1,46 @@
 name: Flow Offline Proof
 
+# A deliberate portability proof, not another build on every PR or a timer.
+# Normal Flow CI still validates both the exact PR head and merge candidate.
 on:
-  pull_request:
-    paths:
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradle.properties'
-      - 'gradle/**'
-      - 'flow-semantic-kernel/**'
-      - 'tools/verify_semantic_kernel_isolation.py'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - 'tools/offline_gradle_build.sh'
-      - 'tools/tests/test_offline_workflow.py'
-      - '.github/workflows/flow-offline-check.yml'
-  schedule:
-    - cron: '17 3 * * 1'
   workflow_dispatch:
+    inputs:
+      revision:
+        description: 'Optional full 40-character commit SHA; empty uses the selected branch/tag SHA'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.revision || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   offline-exact-head:
     runs-on: ubuntu-latest
-    # Each clean build has its own budget; reserve time for setup and evidence.
-    timeout-minutes: 50
+    # Two explicitly requested clean builds, plus five minutes of setup/teardown.
+    # This ceiling is not a build-time target and consumes no automatic PR minutes.
+    timeout-minutes: 45
     steps:
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ inputs.revision || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
       - name: Verify Exact Checked-Out Revision
-        if: github.event_name == 'pull_request'
         shell: bash
         env:
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+          EXPECTED_SHA: ${{ inputs.revision || github.sha }}
         run: |
           set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "FLOW_OFFLINE_SHA=$EXPECTED_SHA" >> "$GITHUB_ENV"
 
       - name: Set up JDK 25
         uses: actions/setup-java@v5
@@ -59,55 +58,21 @@ jobs:
         shell: bash
         run: bash tools/offline_gradle_build.sh verify
 
+      - name: Write offline proof summary
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          echo "# Requested offline proof" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated checkout: ${FLOW_OFFLINE_SHA:-unverified}" >> "$GITHUB_STEP_SUMMARY"
+          echo "This run covers only this revision, not a second HEAD/merge boundary." >> "$GITHUB_STEP_SUMMARY"
+          echo "Preparation and verification outcomes are recorded in the job steps." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload offline input manifest
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: flow-offline-exact-head-input-manifest
           path: .flow-offline/input-manifest.txt
           if-no-files-found: warn
           include-hidden-files: true
-
-  offline-merge-candidate:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 50
-    steps:
-      - name: Checkout Merge Candidate
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Verify Merge Candidate Revision
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - name: Prepare isolated Gradle inputs
-        timeout-minutes: 20
-        shell: bash
-        run: bash tools/offline_gradle_build.sh prepare
-
-      - name: Verify relocated inputs with a clean offline build
-        timeout-minutes: 20
-        shell: bash
-        run: bash tools/offline_gradle_build.sh verify
-
-      - name: Upload offline input manifest
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: flow-offline-merge-candidate-input-manifest
-          path: .flow-offline/input-manifest.txt
-          if-no-files-found: warn
-          include-hidden-files: true
+          retention-days: 7
