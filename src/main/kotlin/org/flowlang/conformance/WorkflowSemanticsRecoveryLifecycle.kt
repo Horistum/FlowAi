@@ -8,7 +8,8 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val recovery: Map<String, Any?>,
     val postToolchain: Map<String, Any?>,
     val release: Map<String, Any?>,
-    val global: Map<String, Any?>
+    val global: Map<String, Any?>,
+    val successorWorkPackage: Map<String, Any?> = emptyMap()
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -25,7 +26,10 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         FlowYaml.readMap(File(root, ".flow-agent/roadmap-architecture-recovery.yaml")),
         FlowYaml.readMap(File(root, ".flow-agent/roadmap-post-toolchain.yaml")),
         FlowYaml.readMap(File(root, ".flow-agent/release-state.yaml")),
-        FlowYaml.readMap(File(root, ".flow-agent/roadmap.yaml"))
+        FlowYaml.readMap(File(root, ".flow-agent/roadmap.yaml")),
+        File(root, CompilerModuleExtractionLifecycle.WORK_PACKAGE).let { file ->
+            if (file.isFile) FlowYaml.readMap(file) else emptyMap()
+        }
     )
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
@@ -44,19 +48,25 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         if (ar02?.get("status") != if (complete) "completed" else "active") {
             add("AR-02 roadmap milestone disagrees with its lifecycle evidence.")
         }
-        if (ar03?.get("status") != "planned") add("AR-03 must remain planned and not activated.")
         val decision = map(snapshot.recovery["currentDecision"])
+        val successorActivated = complete && decision["workPackage"] == CompilerModuleExtractionLifecycle.WORK_PACKAGE
+        if (successorActivated) {
+            addAll(CompilerModuleExtractionLifecycle.errors(snapshot))
+        } else if (ar03?.get("status") != "planned") {
+            add("AR-03 must remain planned unless its own activation transition authorizes it.")
+        }
         val post = map(snapshot.postToolchain["currentDecision"])
         val recoveryState = map(snapshot.postToolchain["recoveryRoadmap"])
         val release = map(snapshot.release["roadmapState"])
         val expectedPrevious = if (complete) "AR-02" else "AR-01"
         val expectedNext = if (complete) "AR-03" else "AR-02"
-        val expectedActivation = if (complete) "not-activated" else "active"
+        val expectedActivation = if (complete && !successorActivated) "not-activated" else "active"
+        val expectedWorkPackage = if (successorActivated) CompilerModuleExtractionLifecycle.WORK_PACKAGE else WORK_PACKAGE
         if (decision["previousCompletedItem"] != expectedPrevious || decision["nextItem"] != expectedNext ||
-            decision["activationState"] != expectedActivation || decision["workPackage"] != WORK_PACKAGE
+            decision["activationState"] != expectedActivation || decision["workPackage"] != expectedWorkPackage
         ) add("Recovery currentDecision contradicts the AR-02 lifecycle.")
         if (post["completedItem"] != expectedPrevious || post["nextItem"] != expectedNext ||
-            post["activationState"] != expectedActivation || post["workPackage"] != WORK_PACKAGE
+            post["activationState"] != expectedActivation || post["workPackage"] != expectedWorkPackage
         ) add("Post-toolchain currentDecision contradicts the AR-02 lifecycle.")
         if (recoveryState["completedItem"] != expectedPrevious || recoveryState["activationState"] != expectedActivation) {
             add("Post-toolchain recovery state contradicts the AR-02 lifecycle.")
@@ -91,7 +101,7 @@ internal object WorkflowSemanticsRecoveryLifecycle {
                 (completion["closesFindings"] as? List<*>)?.toSet() != setOf("F-02", "F-08", "F-15")
             ) add("AR-02 completion decision lacks exact closure and successor boundaries.")
             if (release["completedRecoveryItem"] != "AR-02" || release["nextRecoveryItem"] != "AR-03" ||
-                release["nextRecoveryActivationState"] != "not-activated"
+                release["nextRecoveryActivationState"] != expectedActivation
             ) add("Release recovery succession disagrees with completed AR-02.")
         } else {
             if (map(work["completionDecision"])["status"] in setOf("complete", "implementation-complete") ||
