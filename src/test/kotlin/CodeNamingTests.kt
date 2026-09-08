@@ -1,7 +1,9 @@
 package org.flowlang.tests
 
 import java.io.File
+import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.flowlang.architecture.KotlinSourceBoundaryScanner
@@ -49,9 +51,56 @@ class CodeNamingTests {
         ).forEach { assertFalse(isMilestoneName(it), "Descriptive or versioned name was rejected: $it") }
     }
 
-    private fun repositoryFiles(): List<File> = root.walkTopDown()
-        .onEnter { it.name !in excludedDirectories }
-        .filter(File::isFile).toList()
+    @Test
+    fun generatedRootOfflineCachesAreNotRepositoryNamingInputs() = withRepositoryFixture { directory ->
+        val source = "src/main/kotlin/Meaning.kt"
+        listOf(
+            source,
+            ".flow-offline/prepared-gradle-home/caches/AR-02-generated.kt",
+            ".flow-offline/verified-gradle-home/wrapper/EF-09-dependency.yaml"
+        ).forEach { path ->
+            File(directory, path).apply { parentFile.mkdirs(); writeText("fixture\n") }
+        }
+        val inspected = repositoryFiles(File(directory, "."))
+            .map { it.relativeTo(directory).invariantSeparatorsPath }.toSet()
+        assertEquals(setOf(source), inspected)
+    }
+
+    @Test
+    fun offlineCacheExclusionCannotHideAuthoredSourcesOrNestedDirectories() = withRepositoryFixture { directory ->
+        val paths = setOf(
+            "src/main/kotlin/AR-02-invalid.kt",
+            "src/test/kotlin/AR-02-invalid.kt",
+            "flow-semantic-kernel/src/test/kotlin/AR-02-invalid.kt",
+            ".flow-agent/reports/AR-02-invalid.md",
+            "docs/AR-02-invalid.md",
+            "src/main/kotlin/.flow-offline/AR-02-invalid.kt"
+        )
+        paths.forEach { path ->
+            File(directory, path).apply { parentFile.mkdirs(); writeText("fixture\n") }
+        }
+        val violations = repositoryFiles(directory).filter { isMilestoneName(it.name) }
+            .map { it.relativeTo(directory).invariantSeparatorsPath }.toSet()
+        assertEquals(paths, violations)
+    }
+
+    private fun repositoryFiles(repositoryRoot: File = root): List<File> {
+        // The offline proof stores resolved third-party build inputs here. Limit
+        // this exclusion to that generated root, not every directory with its name.
+        val offlineBuildDirectory = File(repositoryRoot, ".flow-offline").absoluteFile.normalize()
+        return repositoryRoot.walkTopDown()
+            .onEnter { it.name !in excludedDirectories && it.absoluteFile.normalize() != offlineBuildDirectory }
+            .filter(File::isFile).toList()
+    }
+
+    private fun withRepositoryFixture(checkFixture: (File) -> Unit) {
+        val directory = createTempDirectory("naming-audit-").toFile()
+        try {
+            checkFixture(directory)
+        } finally {
+            check(directory.deleteRecursively()) { "Cannot remove naming audit fixture." }
+        }
+    }
 
     private fun isMilestoneName(name: String): Boolean =
         delimitedMilestone.containsMatchIn(name) || camelCaseMilestone.containsMatchIn(name)
