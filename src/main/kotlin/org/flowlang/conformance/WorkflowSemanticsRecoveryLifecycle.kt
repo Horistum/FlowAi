@@ -13,7 +13,7 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
 internal object WorkflowSemanticsRecoveryLifecycle {
-    const val WORK_PACKAGE = ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
+    const val WORK_PACKAGE = ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
     val boundaryNames = listOf("activationBoundary", "implementationBoundary", "validationBoundary", "completionBoundary")
     private val receiptFields = listOf(
         "status", "conclusion", "workflowRunId", "workflowRunNumber",

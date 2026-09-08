@@ -324,7 +324,7 @@ class AdapterExecutableContinuityConformanceChecks(
     }
 }
 
-data class AdapterA1ConformanceInventory(val version: String, val checks: List<String>) {
+data class ExecutableContinuityConformanceInventory(val version: String, val checks: List<String>) {
     init {
         require(version == VERSION) { "A1 conformance inventory version '$version' is unsupported; expected '$VERSION'." }
         require(checks.isNotEmpty()) { "A1 conformance inventory must declare checks." }
@@ -333,11 +333,11 @@ data class AdapterA1ConformanceInventory(val version: String, val checks: List<S
     }
 
     companion object {
-        const val PATH = "adapters/conformance/a1-check-inventory.yaml"
+        const val PATH = "adapters/conformance/executable-continuity-check-inventory.yaml"
         const val VERSION = "1.0"
         private val KEYS = setOf("version", "checks")
 
-        fun load(rootDir: File): AdapterA1ConformanceInventory {
+        fun load(rootDir: File): ExecutableContinuityConformanceInventory {
             val file = File(rootDir, PATH)
             require(file.isFile) { "A1 conformance inventory is missing: ${file.path}" }
             val yaml = FlowYaml.readMap(file)
@@ -349,7 +349,7 @@ data class AdapterA1ConformanceInventory(val version: String, val checks: List<S
                 (value as? String)?.takeIf(String::isNotBlank)
                     ?: error("$PATH.checks[$index] must be non-blank text.")
             } ?: error("$PATH.checks must be a list.")
-            return AdapterA1ConformanceInventory(yaml["version"]?.toString().orEmpty(), checks)
+            return ExecutableContinuityConformanceInventory(yaml["version"]?.toString().orEmpty(), checks)
         }
     }
 }
@@ -361,7 +361,7 @@ class AdapterExecutableContinuityConformanceRunner(
 ) {
     fun checks(): List<ConformanceCheck> {
         val produced = AdapterExecutableContinuityConformanceChecks(rootDir, targets, projections).checks()
-        val inventoryResult = runCatching { AdapterA1ConformanceInventory.load(rootDir) }
+        val inventoryResult = runCatching { ExecutableContinuityConformanceInventory.load(rootDir) }
         val inventory = inventoryResult.getOrNull()
         val observed = produced.map { it.name }
         val exact = inventory != null && observed == inventory.checks

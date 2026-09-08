@@ -127,7 +127,7 @@ class AdapterTopologyRoadmapLifecycleAuthority(private val rootDir: File = File(
     private fun check(id: String, passed: Boolean, evidence: List<String>, message: String) = AdapterTopologyLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/A0.2-topology-evidence-adoption.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/topology-evidence-adoption.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"

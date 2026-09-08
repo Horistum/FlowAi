@@ -272,8 +272,8 @@ class AdapterProfileEvidenceRoadmapLifecycleAuthority(
         }.orEmpty()
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/C0.4-adapter-profile-evidence.yaml"
-        const val C03_WORK_PACKAGE = ".flow-agent/work-packages/C0.3-semantic-equivalence-rules.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/adapter-profile-evidence.yaml"
+        const val C03_WORK_PACKAGE = ".flow-agent/work-packages/semantic-equivalence-rules.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
@@ -288,7 +288,7 @@ class AdapterProfileEvidenceRoadmapLifecycleAuthority(
             "src/main/kotlin/org/flowlang/conformance/AdapterProfileEvidenceConformanceChecks.kt",
             "src/test/kotlin/AdapterProfileEvidenceAuthorityTests.kt",
             "src/test/kotlin/AdapterProfileEvidenceRoadmapLifecycleAuthorityTests.kt",
-            "docs/C0_4_ADAPTER_PROFILE_EVIDENCE.md"
+            "docs/ADAPTER_PROFILE_EVIDENCE.md"
         )
     }
 }

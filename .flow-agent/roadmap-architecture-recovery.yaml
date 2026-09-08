@@ -20,11 +20,11 @@ currentDecision:
   preemptedItem: "EF-09"
   preemptedItemName: "Human Approval and Change-Control Falsification"
   preemptedItemState: "active-after-evidence-admission"
-  preemptedWorkPackage: ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
+  preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
   nextItem: "AR-03"
   nextItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
   activationState: "not-activated"
-  workPackage: ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
+  workPackage: ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
   decisionBasis: "AR-02 closes F-02, F-08 and F-15 after the integrated AR-02E frontend, authorization-mutation, target, public-contract and lifecycle matrices passed distinct exact-head and synthetic merge-candidate Flow CI boundaries. Implementation baseline PR #171, validation run 34113587213 and independent closure run 34116599418 are recorded in the completed work package. AR-03 is selected only as the next ordered milestone and requires a separate activation transition; EF-09 remains paused."
 
 deliveryModel:
@@ -80,8 +80,8 @@ milestones:
     name: "Target Honesty and Semantic Safety Freeze"
     order: 1
     status: "completed"
-    workPackage: ".flow-agent/work-packages/AR-00-target-honesty-semantic-safety-freeze.yaml"
-    report: ".flow-agent/reports/ar-00-target-honesty-semantic-safety-freeze.md"
+    workPackage: ".flow-agent/work-packages/target-honesty-semantic-safety-freeze.yaml"
+    report: ".flow-agent/reports/target-honesty-semantic-safety-freeze.md"
     containsFindings: ["F-01", "F-06", "F-11", "F-18"]
     closesFindings: []
     purpose: "Stop current target and executable-readiness claims from overstating behavior before deeper architecture work begins."
@@ -106,8 +106,8 @@ milestones:
     order: 2
     status: "completed"
     dependsOn: ["AR-00"]
-    workPackage: ".flow-agent/work-packages/AR-01-canonical-compiler-axis-authoritative-execution-graph.yaml"
-    report: ".flow-agent/reports/ar-01-canonical-compiler-axis-authoritative-execution-graph.md"
+    workPackage: ".flow-agent/work-packages/canonical-compiler-axis-authoritative-execution-graph.yaml"
+    report: ".flow-agent/reports/canonical-compiler-axis-authoritative-execution-graph.md"
     closesFindings: ["F-04", "F-09", "F-17"]
     purpose: "Establish one compiler pipeline and one typed owner of executable meaning before moving implementation boundaries."
     requiredOutcomes:
@@ -130,8 +130,8 @@ milestones:
     order: 3
     status: "completed"
     dependsOn: ["AR-01"]
-    workPackage: ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
-    report: ".flow-agent/reports/ar-02-flow-sensitive-workflow-data-failure-semantics.md"
+    workPackage: ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
+    report: ".flow-agent/reports/flow-sensitive-workflow-data-failure-semantics.md"
     closesFindings: ["F-02", "F-08", "F-15"]
     purpose: "Make control-flow, value availability, workflow ownership and failure behavior explicit instead of relying on mutable global planner state or synthetic node shapes."
     requiredOutcomes:

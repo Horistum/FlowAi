@@ -22,7 +22,7 @@ The implementation retained the existing Intent `2.0` wire shape while advancing
 
 Flow CI #2943 / run `31802519219` passed exact implementation head `e5bc5cd82d591a6b744650478070b6c4919d60cf` and synthetic merge candidate `7a9a349c929a9b2fccadd16e5f5411f77156b7c6` before PR #137 merged as `03c3bcb9c8d4f428b4302c2c35d098848793505e`. Post-merge main Flow CI #2944 also passed. The semantic-integrity stream is therefore terminally complete through SI-08.
 
-This completion transition deliberately selects no successor. `EXTERNAL-FALSIFICATION` remains the next ordered strategic candidate in `docs/PROJECT_DIRECTION_AFTER_C1_0.md`, but activating it is a separate cross-stream lifecycle decision rather than an implicit consequence of SI-08 completion.
+This completion transition deliberately selects no successor. `EXTERNAL-FALSIFICATION` remains the next ordered strategic candidate in `docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md`, but activating it is a separate cross-stream lifecycle decision rather than an implicit consequence of SI-08 completion.
 
 SI-07 remains completed predecessor evidence: Flow CI #2928 / run `31773901231` passed exact head `f27bf53afffb555fcef99b2db32770d9b241beba` and synthetic merge candidate `303fa34f0e3147a8482acf2c4905fca4cadaa3b0` before merge commit `fc905efa20c255846c098ccf058f560d61ee7378`.
 

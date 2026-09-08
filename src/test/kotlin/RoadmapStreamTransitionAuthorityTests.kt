@@ -466,7 +466,7 @@ class RoadmapStreamTransitionAuthorityTests {
             File(root, "standard/architecture/authority-responsibilities.yaml").apply { parentFile.mkdirs() },
             overwrite = true
         )
-        File("docs/AR0_1_AUTHORITY_RESPONSIBILITY_CONSOLIDATION.md").copyTo(
+        File("docs/AUTHORITY_RESPONSIBILITY_CONSOLIDATION.md").copyTo(
             File(root, RoadmapStreamTransitionAuthority.AR01_DOCUMENTATION).apply { parentFile.mkdirs() },
             overwrite = true
         )
@@ -530,7 +530,7 @@ class RoadmapStreamTransitionAuthorityTests {
             "src/main/kotlin/org/flowlang/conformance/RealWorldPolarityAuthority.kt",
             "src/test/kotlin/RoadmapStreamTransitionAuthorityTests.kt",
             "tests/RealWorldCorpusTests.kt",
-            "docs/C0_1_BOUNDED_DOMAIN_CORPUS.md"
+            "docs/BOUNDED_DOMAIN_CORPUS.md"
         )
     }
 }

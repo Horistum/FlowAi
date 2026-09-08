@@ -40,7 +40,7 @@ class GitHubActionsWorkspaceContinuityTests {
         assertTrue(scope.evidenceReferences.any { it.startsWith("src/main/") })
         assertTrue(scope.evidenceReferences.any { it.startsWith("src/test/") })
         assertTrue(scope.evidenceReferences.any { it.endsWith("github-actions.executable.yaml") })
-        assertTrue(scope.evidenceReferences.any { it.endsWith("A1_0_GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md") })
+        assertTrue(scope.evidenceReferences.any { it.endsWith("GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md") })
     }
 
     @Test

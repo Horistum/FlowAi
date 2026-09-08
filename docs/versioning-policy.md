@@ -43,7 +43,7 @@ Intent remains at `2.0`; AST remains at `2.2`; ExecutionPlan remains at `2.4`; W
 - WorkflowExecutionPlanSet 1.0 introduces the non-flattening public envelope for independent workflow views and exact trigger routes. Existing ExecutionPlan 2.4 remains the exact single-workflow compatibility contract.
 - WorkflowExecutionPlanSet 1.1 adds first-class workflow failure policy, handler-region identity and handler-entry availability to each workflow view. The synthetic tail `TryPlanNode` remains a checked compatibility mirror, not semantic authority.
 
-The AST and ExecutionPlan 2.1 migration is documented in `docs/SI_01_EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`. The ExecutionPlan 2.2 semantic migration is documented in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`. The AST 2.2 and ExecutionPlan 2.3 recovery-effect migration is documented in `docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`. The ExecutionPlan 2.4 state-lifetime and module-schema 1.3 migration is documented in `docs/SI_08_TYPED_POLICY_STATE_LIFETIME_MIGRATION.md`. The WorkflowExecutionPlanSet 1.0 migration is documented in `docs/AR_02C_WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md`; the 1.1 failure-policy migration is documented in `docs/AR_02D_WORKFLOW_FAILURE_POLICY_MIGRATION.md`.
+The AST and ExecutionPlan 2.1 migration is documented in `docs/EXECUTION_PLAN_CONTROL_SCOPE_MIGRATION.md`. The ExecutionPlan 2.2 semantic migration is documented in `docs/EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`. The AST 2.2 and ExecutionPlan 2.3 recovery-effect migration is documented in `docs/OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`. The ExecutionPlan 2.4 state-lifetime and module-schema 1.3 migration is documented in `docs/TYPED_POLICY_STATE_LIFETIME_MIGRATION.md`. The WorkflowExecutionPlanSet 1.0 migration is documented in `docs/WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md`; the 1.1 failure-policy migration is documented in `docs/WORKFLOW_FAILURE_POLICY_MIGRATION.md`.
 
 Target contracts advance separately:
 
@@ -52,7 +52,7 @@ Target contracts advance separately:
 - TargetRegistry 3.2 aligns the published interchange shape with the production loader for expression profiles, defaults and the closed authored support vocabulary; it also rejects duplicate authored expression features rather than collapsing them into a set.
 - TargetManifest 3.0 preserves binding kind, source provenance, resolved compile-time values and symbolic runtime references.
 
-The typed-binding migration is documented in `docs/V0_9_6_TYPED_BINDING_MIGRATION.md`. The TargetRegistry 3.1 to 3.2 acceptance migration is documented in `docs/SI_07_PUBLIC_SCHEMA_ACCEPTANCE_ALIGNMENT_MIGRATION.md`.
+The typed-binding migration is documented in `docs/V0_9_6_TYPED_BINDING_MIGRATION.md`. The TargetRegistry 3.1 to 3.2 acceptance migration is documented in `docs/PUBLIC_SCHEMA_ACCEPTANCE_ALIGNMENT_MIGRATION.md`.
 
 Artifact versions are not cosmetic. A breaking shape or interpretation change requires a migration document, updated schema, exact snapshots and conformance evidence.
 

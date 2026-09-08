@@ -49,7 +49,7 @@ roadmapState:
   postToolchainRoadmap: ".flow-agent/roadmap-post-toolchain.yaml"
   completedRecoveryItem: "AR-02"
   completedRecoveryItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
-  completedRecoveryWorkPackage: ".flow-agent/work-packages/AR-02-flow-sensitive-workflow-data-failure-semantics.yaml"
+  completedRecoveryWorkPackage: ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
   nextRecoveryItem: "AR-03"
   nextRecoveryItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
   nextRecoveryActivationState: "not-activated"

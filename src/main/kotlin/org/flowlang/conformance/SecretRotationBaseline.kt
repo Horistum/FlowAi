@@ -106,8 +106,8 @@ class SecretRotationBaselineVerifier(
     private fun key(finding: SecretRotationFinding) = "${finding.caseId}::${finding.factId}"
 
     companion object {
-        const val BASELINE_PATH = "conformance/corpus/external/baselines/ef-06-secret-rotation.yaml"
-        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/EF-06-secret-rotation-falsification.yaml"
+        const val BASELINE_PATH = "conformance/corpus/external/baselines/secret-rotation.yaml"
+        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/secret-rotation-falsification.yaml"
         const val KIND = "FlowSecretRotationFalsificationBaseline"
         const val VERSION = "1.0"
         private const val COMPLETE_STATUS = "complete"

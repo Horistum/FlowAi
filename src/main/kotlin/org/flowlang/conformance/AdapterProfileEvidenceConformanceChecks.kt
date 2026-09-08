@@ -68,7 +68,7 @@ data class AdapterProfileEvidenceConformanceInventory(
     }
 
     companion object {
-        const val PATH = "conformance/profiles/c0.4-check-inventory.yaml"
+        const val PATH = "conformance/profiles/adapter-profile-check-inventory.yaml"
         const val VERSION = "1.0"
         private val KEYS = setOf("version", "checks")
 

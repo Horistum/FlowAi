@@ -556,7 +556,7 @@ class InfrastructureLifecycleFalsification(private val rootDir: File = File(".")
         const val DOMAIN = "infrastructure-lifecycle"
         const val KIND = "FlowInfrastructureLifecycleFalsification"
         const val VERSION = "1.0"
-        const val ASSESSMENT_FILE = "ef08.yaml"
+        const val ASSESSMENT_FILE = "infrastructure-lifecycle.yaml"
         const val MIN_CASES = 8
         const val MIN_REPOSITORIES = 2
 

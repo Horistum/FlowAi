@@ -153,9 +153,9 @@ class HumanApprovalChangeControlBaselineVerifier(
 
     companion object {
         const val BASELINE_PATH =
-            "conformance/corpus/external/baselines/ef-09-human-approval-change-control.yaml"
+            "conformance/corpus/external/baselines/human-approval-change-control.yaml"
         const val WORK_PACKAGE_PATH =
-            ".flow-agent/work-packages/EF-09-human-approval-change-control-falsification.yaml"
+            ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
         const val KIND = "FlowHumanApprovalChangeControlFalsificationBaseline"
         const val VERSION = "1.0"
         private const val COMPLETE_STATUS = "complete"

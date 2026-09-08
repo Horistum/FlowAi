@@ -28,10 +28,10 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 /** Execute each slice once; the integrated closure consumes these exact observations. */
 internal fun workflowSemanticsPrerequisiteChecks(rootDir: File): List<ConformanceCheck> =
-    Ar02FlowSensitiveConformanceChecks(rootDir).checks() +
-        Ar02ExplicitMergeConformanceChecks(rootDir).checks() +
+    FlowSensitiveConformanceChecks(rootDir).checks() +
+        ExplicitMergeConformanceChecks(rootDir).checks() +
         WorkflowOwnershipConformanceChecks(rootDir).checks() +
-        Ar02WorkflowFailureConformanceChecks(rootDir).checks()
+        WorkflowFailureConformanceChecks(rootDir).checks()
 
 /** Cross-layer evidence using public frontends and the existing target-boundary owner. */
 class WorkflowSemanticsIntegrationChecks(private val rootDir: File) {
@@ -215,7 +215,7 @@ class WorkflowSemanticsIntegrationChecks(private val rootDir: File) {
         const val TARGET_MATRIX = "architecture-recovery.ar-02.integrated-target-gating-matrix"
         const val PUBLIC_COMPATIBILITY_MATRIX = "architecture-recovery.ar-02.integrated-public-compatibility-matrix"
         const val FINDING_CLOSURE = "architecture-recovery.ar-02.finding-closure-evidence"
-        const val REPORT_PATH = ".flow-agent/reports/ar-02-flow-sensitive-workflow-data-failure-semantics.md"
+        const val REPORT_PATH = ".flow-agent/reports/flow-sensitive-workflow-data-failure-semantics.md"
 
         internal val COMMON_INTENT = """
             intentVersion: "2.0"

@@ -22,7 +22,7 @@ findings:
       - "architecture-recovery.ar-02.maybe-defined-read-rejection"
       - "architecture-recovery.ar-02.producer-permutation-invariance"
     regressionWitnesses:
-      - path: "src/test/kotlin/Ar02ExplicitMergeSemanticsTests.kt"
+      - path: "src/test/kotlin/ExplicitMergeSemanticsTests.kt"
         symbol: "mergeRejectsIncompleteOverlapExternalAmbiguityAndKnownTypeConflict"
         formerBehavior: "A display-name or last-visited producer cannot supply exhaustive, unambiguous merge evidence."
       - path: "src/test/kotlin/ExplicitMergeMaterializationRegressionTests.kt"

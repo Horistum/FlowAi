@@ -217,7 +217,7 @@ records:
         facet: transfer
         status: unsupported
         mechanism: "Separate jobs receive separate workspaces and the provider emits no upload/download bridge."
-        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt", "docs/A0_1_ADAPTER_PORTFOLIO_REASSESSMENT.md"]
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt", "docs/ADAPTER_PORTFOLIO_REASSESSMENT.md"]
         limitations: ["The checkout-build-image multi-job path cannot preserve workspace continuity."]
       statePropagation:
         facet: transfer
@@ -274,7 +274,7 @@ records:
         facet: state_lifetime
         status: unsupported
         mechanism: "The provider emits no owned suspension or manual approval Task."
-        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt", "docs/A0_1_ADAPTER_PORTFOLIO_REASSESSMENT.md"]
+        evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt", "docs/ADAPTER_PORTFOLIO_REASSESSMENT.md"]
         limitations: ["External gates are not native suspend/resume evidence."]
       ephemeralWorkspace:
         facet: scope
@@ -316,7 +316,7 @@ records:
         facet: interaction
         status: partial
         mechanism: "An external gate may be composed around a Pipeline, but the provider owns no native interaction payload."
-        evidenceReferences: ["docs/A0_1_ADAPTER_PORTFOLIO_REASSESSMENT.md", "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
+        evidenceReferences: ["docs/ADAPTER_PORTFOLIO_REASSESSMENT.md", "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"]
         limitations: ["Manual approval remains external and review-only."]
       concurrency:
         facet: concurrency

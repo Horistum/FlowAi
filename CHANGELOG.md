@@ -17,7 +17,7 @@ All project source text is written in English. The changelog records architectur
 
 - Advanced `WorkflowExecutionPlanSet` from 1.0 to 1.1 so every workflow view publishes its typed `failurePolicy`.
 - Kept `ExecutionPlan` 2.4 unchanged as the single-workflow compatibility view; its synthetic terminal `TryPlanNode` is a verified graph-derived mirror and no longer establishes workflow-failure authority.
-- Published `docs/AR_02D_WORKFLOW_FAILURE_POLICY_MIGRATION.md` and updated the strict public schema.
+- Published `docs/WORKFLOW_FAILURE_POLICY_MIGRATION.md` and updated the strict public schema.
 
 #### Validation
 
@@ -36,7 +36,7 @@ All project source text is written in English. The changelog records architectur
 #### Contract migration
 
 - Added a new `workflowExecutionPlanSet` artifact-contract axis at `1.0`; existing Intent, AST, ExecutionPlan, lowering-evidence, TargetManifest and TargetRegistry versions remain unchanged.
-- Published `schemas/workflow-execution-plan-set.schema.json` and `docs/AR_02C_WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md`.
+- Published `schemas/workflow-execution-plan-set.schema.json` and `docs/WORKFLOW_EXECUTION_PLAN_SET_MIGRATION.md`.
 - Preserved the historical AR-01 and 0.9.7.10 certified contract boundaries without rewriting them to include this later contract.
 
 ### SI-05 Operational Effect Model Re-evaluation
@@ -54,7 +54,7 @@ All project source text is written in English. The changelog records architectur
 - Advanced AST from `2.1` to `2.2` and ExecutionPlan from `2.2` to `2.3` because `SemanticEffect` is serialized through both public artifact boundaries.
 - Kept Intent `2.0`, ExecutionPlan lowering evidence `2.1`, TargetManifest `3.0`, TargetRegistry `3.1`, implementation package `0.9.5` and public standard `0.8.0` unchanged.
 - Regenerated committed AST and ExecutionPlan reference snapshots for the new artifact versions; the existing non-recovery reference scenarios retain all other semantic content.
-- Documented the representability and ownership decisions in `docs/SI_05_OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`.
+- Documented the representability and ownership decisions in `docs/OPERATIONAL_EFFECT_MODEL_RE_EVALUATION_MIGRATION.md`.
 
 #### Validation
 
@@ -75,7 +75,7 @@ All project source text is written in English. The changelog records architectur
 
 - Advanced ExecutionPlan from `2.1` to `2.2` because SI-04 changes the public interpretation of `CanonicalPlanNode.kind` even though the JSON object shape is unchanged.
 - Kept Intent `2.0`, AST `2.1`, ExecutionPlan lowering evidence `2.1`, package `0.9.5` and public standard `0.8.0` unchanged because their contracts are not modified by SI-04.
-- Tightened the ExecutionPlan 2.2 schema `kind` enum to exactly the closed lowercase `CanonicalPlanNodeKind` vocabulary and documented consumer migration in `docs/SI_04_EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`.
+- Tightened the ExecutionPlan 2.2 schema `kind` enum to exactly the closed lowercase `CanonicalPlanNodeKind` vocabulary and documented consumer migration in `docs/EXPLICIT_CANONICAL_EXECUTION_PLAN_SEMANTICS_MIGRATION.md`.
 
 #### Validation
 

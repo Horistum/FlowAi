@@ -318,7 +318,7 @@ class ToolchainModernizationLifecycleTests {
             authorization:
               status: active
               predecessor: "SI-08"
-              strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#enabling-milestone-kotlin-and-gradle-toolchain-modernization"
+              strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#enabling-milestone-kotlin-and-gradle-toolchain-modernization"
             baseline:
               kotlin: "1.9.24"
               gradle: "8.10.2"

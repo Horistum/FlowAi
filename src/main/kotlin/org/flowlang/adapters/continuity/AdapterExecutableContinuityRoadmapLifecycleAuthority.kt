@@ -226,7 +226,7 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthority(
         AdapterExecutableContinuityLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/A1.0-github-actions-artifact-workspace-continuity.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/github-actions-artifact-workspace-continuity.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
@@ -237,7 +237,7 @@ class AdapterExecutableContinuityRoadmapLifecycleAuthority(
             "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt",
             "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedCapabilityResolver.kt",
             "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityProjectionExecutionGate.kt",
-            "docs/A1_0_GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"
+            "docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"
         )
     }
 }

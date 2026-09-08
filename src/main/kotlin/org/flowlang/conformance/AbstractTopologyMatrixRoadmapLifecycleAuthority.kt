@@ -254,7 +254,7 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
         }.orEmpty()
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/C0.2-abstract-topology-matrix.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/abstract-topology-matrix.yaml"
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
@@ -270,7 +270,7 @@ class AbstractTopologyMatrixRoadmapLifecycleAuthority(
             "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixConformanceChecks.kt",
             "src/test/kotlin/AbstractTopologyMatrixAuthorityTests.kt",
             "src/test/kotlin/AbstractTopologyMatrixRoadmapLifecycleAuthorityTests.kt",
-            "docs/C0_2_ABSTRACT_TOPOLOGY_MATRIX.md"
+            "docs/ABSTRACT_TOPOLOGY_MATRIX.md"
         )
     }
 }

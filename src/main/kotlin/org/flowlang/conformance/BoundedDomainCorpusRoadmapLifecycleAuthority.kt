@@ -99,7 +99,7 @@ class BoundedDomainCorpusRoadmapLifecycleAuthority(
         }.orEmpty()
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/C0.1-bounded-domain-corpus.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/bounded-domain-corpus.yaml"
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         private const val CURRENT_ITEM = "C0.1"
         private val REQUIRED_FILES = listOf(
@@ -117,7 +117,7 @@ class BoundedDomainCorpusRoadmapLifecycleAuthority(
             "src/main/kotlin/org/flowlang/conformance/RealWorldPolarityAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusConformanceChecks.kt",
             "tests/RealWorldCorpusTests.kt",
-            "docs/C0_1_BOUNDED_DOMAIN_CORPUS.md"
+            "docs/BOUNDED_DOMAIN_CORPUS.md"
         )
     }
 }

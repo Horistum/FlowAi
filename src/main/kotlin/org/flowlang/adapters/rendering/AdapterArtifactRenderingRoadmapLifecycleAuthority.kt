@@ -223,7 +223,7 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthority(
         AdapterArtifactRenderingLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/A0.6-adapter-artifact-rendering.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/adapter-artifact-rendering.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
@@ -245,7 +245,7 @@ class AdapterArtifactRenderingRoadmapLifecycleAuthority(
             "src/test/kotlin/AdapterArtifactRenderingProviderBehaviorTests.kt",
             "src/test/kotlin/AdapterArtifactRenderingCliTests.kt",
             "src/test/kotlin/AdapterArtifactRenderingRoadmapLifecycleAuthorityTests.kt",
-            "docs/A0_6_ADAPTER_ARTIFACT_RENDERING.md"
+            "docs/ADAPTER_ARTIFACT_RENDERING.md"
         )
     }
 }

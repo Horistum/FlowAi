@@ -69,7 +69,7 @@ data class AbstractTopologyMatrixConformanceInventory(
     }
 
     companion object {
-        const val PATH = "conformance/topology/c0.2-check-inventory.yaml"
+        const val PATH = "conformance/topology/topology-matrix-check-inventory.yaml"
         const val VERSION = "1.0"
         private val KEYS = setOf("version", "checks")
 

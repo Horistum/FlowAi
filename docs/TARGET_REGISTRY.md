@@ -62,7 +62,7 @@ Target Registry `3.2` makes the public interchange schema and the production loa
 - Inline `topology` remains optional at the document shape boundary because a distribution may supply adapter-owned topology evidence beside the registry. `loadDirectory` still fails closed when neither source provides topology evidence.
 - Schema validation remains a syntactic interchange check. Production validity is still owned by `TargetRegistryYamlLoader` and the typed authorities it invokes.
 
-This is a public contract migration from 3.1 to 3.2, documented in `SI_07_PUBLIC_SCHEMA_ACCEPTANCE_ALIGNMENT_MIGRATION.md`.
+This is a public contract migration from 3.1 to 3.2, documented in `PUBLIC_SCHEMA_ACCEPTANCE_ALIGNMENT_MIGRATION.md`.
 
 ## Projection rules
 

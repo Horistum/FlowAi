@@ -1,11 +1,15 @@
-# Code naming and historical evidence
+# Responsibility-based names
 
-Production code, conformance implementations and regression tests are named after their responsibility or the invariant they exercise, not the milestone or pull request that introduced them. Use a matching Kotlin file and primary declaration name, for example `WorkflowFailureProjectionEvidence.kt` or `ExplicitMergeMaterializationRegressionTests.kt`.
+Kotlin files, declarations, conformance implementations and regression tests are named after the responsibility or invariant they implement. Do not encode delivery milestones or pull-request identifiers in names. For example, use `WorkflowFailureProjectionEvidence.kt`, `ExplicitMergeMaterializationRegressionTests.kt` and `CompilerAxisConformanceChecks.kt`.
 
-Milestone IDs belong in work packages, roadmap entries, migration records, completion reports and commit/PR history. A recovery-specific implementation should identify the recovered domain and its lifecycle responsibility, such as `WorkflowSemanticsRecoveryLifecycle`; a descriptive rename must not imply that a milestone-specific validator has become a generic lifecycle framework.
+Use descriptive names for work-package, report, migration-guide, check-inventory and authored corpus-assessment files as well. Their `version`, milestone, finding and check identifiers remain in the document contents. Repository links and live source inventories must point to the renamed files.
 
-Stable conformance IDs, historical receipt identities and existing fixture identities are not class names. Keep them unchanged in a naming-only refactor. Renaming an evidence identity requires its own compatibility decision; it must not silently invalidate historical CI or change a fixture's canonical meaning.
+Actual public contract or release versions are different from delivery milestones: a versioned schema, immutable versioned baseline or version-specific migration guide may retain its version when the version distinguishes its contract. Do not erase meaningful technical identifiers such as SHA-256.
 
-A code rename must update declarations, imports, callers, evidence paths and source inventories together. Do not retain empty forwarding classes or type aliases solely to preserve an unpublished milestone-based implementation name. Verify the full test and conformance inventories after the rename, rather than relying only on successful compilation.
+A recovery-specific validator should name its recovered domain and lifecycle responsibility, such as `WorkflowSemanticsRecoveryLifecycle`. A descriptive rename does not turn a bounded historical validator into a generic lifecycle framework.
 
-Apply this convention to new code and the code being changed. Unrelated historical implementations are not automatically renamed as part of another milestone's delivery.
+A naming refactor must update declarations, imports, callers, evidence paths, documentation links and source inventories together. Preserve the required ordering of every source inventory. Do not introduce forwarding classes or type aliases just to retain milestone-based names.
+
+Stable conformance IDs, workflow names inside existing fixtures, historical commit/run/job receipts and the contents of frozen external evidence are not implementation names. Preserve those identities and evidence bytes. Paths may move only with their consumers; changing an identity or the semantics of a fixture is a separate change.
+
+`CodeNamingTests` checks repository filenames and structurally parsed Kotlin declarations, including tests and type aliases. The rule has positive and negative cases, ignores generated build directories, and permits real contract versions. Full compilation, all regression tests and standalone conformance must pass after renaming. Compare the complete test inventory across the rename rather than relying only on equal test counts.

@@ -358,7 +358,7 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
         const val DOMAIN = "backup-and-restore"
         const val KIND = "FlowBackupRestoreFalsification"
         const val VERSION = "1.0"
-        const val ASSESSMENT_FILE = "ef03.yaml"
+        const val ASSESSMENT_FILE = "backup-restore.yaml"
         const val MIN_CASES = 2
         const val MIN_REPOSITORIES = 2
 

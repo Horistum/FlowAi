@@ -1,0 +1,73 @@
+version: "SI-07"
+name: "Align Public Schemas with Production Acceptance"
+type: "semantic-integrity-correction"
+stream: semantic-integrity
+status: complete
+objective: "Classify every published schema as syntactic-only or validity-authoritative and remove false interoperability promises where schema acceptance and production acceptance disagree."
+
+authorization:
+  status: completed
+  source: "Semantic-integrity roadmap transition after independently validated and merged SI-06 completion."
+  predecessor: "SI-06"
+  strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#17-align-public-schemas-with-production-acceptance"
+
+invariant:
+  - "Every published schema has an explicit authority classification."
+  - "Validity-authoritative schema acceptance agrees with the corresponding production loader and validator."
+  - "Alignment is proved in both acceptance directions with positive and negative evidence."
+
+scope:
+  - "Inventory published schemas and map each to its production loader, validator and typed contract owner."
+  - "Begin with the confirmed TargetRegistry 3.1 mismatch deferred by SI-06, including expressionProfiles."
+  - "Add bidirectional differential tests for validity-authoritative schemas."
+  - "Correct the owning schema, loader or documentation without weakening strict production validation."
+  - "Decide schema and artifact version consequences from actual public-contract impact."
+
+forbiddenScope:
+  - "Do not implement Track 1.8 typed policy or state-lifetime redesign."
+  - "Do not weaken SI-06 strict loader behavior merely to recover schema agreement."
+  - "Do not call a schema syntactic-only merely to avoid repairing a documented validity contradiction."
+  - "Do not rewrite historical SI-01 through SI-06, C1.0, AR0.1 or Core closure evidence."
+
+versionDecision:
+  publicStandard: unchanged
+  implementationPackage: unchanged
+  artifactContracts:
+    targetRegistry: "3.1 -> 3.2"
+    intent: unchanged
+    ast: unchanged
+    executionPlan: unchanged
+    executionPlanLoweringEvidence: unchanged
+    targetManifest: unchanged
+  reason: "TargetRegistry authored wire acceptance changes incompatibly by closing undocumented support aliases and rejecting duplicate expression features, while the remaining schema repairs describe producer fields that already exist."
+
+schemaAuthorityDecision:
+  currentClassification: SYNTACTIC_INTERCHANGE
+  promotionRule: "A schema may become PRODUCTION_VALIDITY only after bidirectional acceptance equivalence with its named production owner is proven."
+  reason: "JSON Schema constrains public interchange shape but does not encode every typed or semantic production invariant; classifying it as complete validity authority without proof would preserve the SI-07 defect under a new label."
+
+acceptanceEvidence:
+  - "A repository-wide schema ownership matrix records authority and production ownership."
+  - "Validity-authoritative schemas have bidirectional schema-versus-production acceptance tests."
+  - "The known TargetRegistry mismatch is resolved without reintroducing coercion or unknown-field dropping."
+  - "Syntactic-only schemas are explicitly documented and are not used as proof of production validity."
+  - "Version and migration decisions follow actual public contract changes."
+  - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2928
+  runId: 31773901231
+  exactHead: "f27bf53afffb555fcef99b2db32770d9b241beba"
+  mergeCandidate: "303fa34f0e3147a8482acf2c4905fca4cadaa3b0"
+completionMergeCommit: "fc905efa20c255846c098ccf058f560d61ee7378"
+
+localValidation:
+  status: pending
+  evidence:
+    - "Targeted Kotlin compilation passed for the changed production schema/registry boundaries against the supplied offline dependency set."
+    - "A targeted runtime harness passed positive TargetRegistry 3.2 loading and negative alias/duplicate-feature polarity through both schema and production boundaries."
+    - "All 64 published schemas passed Draft 2020-12 meta-validation and the schema ownership inventory covered all 64 files exactly once."
+  limitation: "The supplied offline Gradle build reached Kotlin compilation but did not complete within the available execution window, so no full local Gradle PASS is claimed. Independent Flow CI remains required before SI-07 implementation can be considered validated."
+  rule: "No full local PASS is claimed for the final SI-07 implementation tree. SI-07 completion is established separately by Flow CI #2928 exact-head and synthetic merge-candidate evidence, merge commit fc905efa20c255846c098ccf058f560d61ee7378, and successful post-merge main Flow CI #2929."

@@ -241,7 +241,7 @@ class AdapterRoadmapLifecycleAuthority(private val rootDir: File = File(".")) {
         AdapterRoadmapLifecycleCheck(id, if (passed) "PASS" else "FAIL", evidence, message)
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/A0.1-adapter-portfolio-reassessment.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/adapter-portfolio-reassessment.yaml"
         const val ADAPTER_ROADMAP = ".flow-agent/roadmap-adapters.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"

@@ -144,9 +144,9 @@ class InfrastructureLifecycleBaselineVerifier(
 
     companion object {
         const val BASELINE_PATH =
-            "conformance/corpus/external/baselines/ef-08-infrastructure-lifecycle.yaml"
+            "conformance/corpus/external/baselines/infrastructure-lifecycle.yaml"
         const val WORK_PACKAGE_PATH =
-            ".flow-agent/work-packages/EF-08-infrastructure-lifecycle-falsification.yaml"
+            ".flow-agent/work-packages/infrastructure-lifecycle-falsification.yaml"
         const val KIND = "FlowInfrastructureLifecycleFalsificationBaseline"
         const val VERSION = "1.0"
         private const val COMPLETE_STATUS = "complete"

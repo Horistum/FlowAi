@@ -316,7 +316,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
         }.orEmpty()
 
     companion object {
-        const val WORK_PACKAGE = ".flow-agent/work-packages/C0.3-semantic-equivalence-rules.yaml"
+        const val WORK_PACKAGE = ".flow-agent/work-packages/semantic-equivalence-rules.yaml"
         const val CONFORMANCE_ROADMAP = ".flow-agent/roadmap-conformance.yaml"
         const val ROADMAP_INDEX = ".flow-agent/roadmap.yaml"
         const val RELEASE_STATE = ".flow-agent/release-state.yaml"
@@ -343,7 +343,7 @@ class SemanticEquivalenceRoadmapLifecycleAuthority(
             "src/main/kotlin/org/flowlang/conformance/SemanticEquivalenceConformanceChecks.kt",
             "src/test/kotlin/SemanticEquivalenceAuthorityTests.kt",
             "src/test/kotlin/SemanticEquivalenceRoadmapLifecycleAuthorityTests.kt",
-            "docs/C0_3_SEMANTIC_EQUIVALENCE_RULES.md"
+            "docs/SEMANTIC_EQUIVALENCE_RULES.md"
         )
     }
 }

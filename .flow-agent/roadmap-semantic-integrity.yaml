@@ -42,7 +42,7 @@ items:
     dependsOnAdapters: "A1.0"
     dependsOnConformance: "C1.0"
     dependsOnArchitecture: "AR0.1"
-    workPackage: ".flow-agent/work-packages/SI-01.1-post-c1-integrity-reconciliation.yaml"
+    workPackage: ".flow-agent/work-packages/semantic-integrity-reconciliation.yaml"
     completionBoundary:
       status: passed
       workflow: "Flow CI"
@@ -63,8 +63,8 @@ items:
     status: completed
     purpose: "Preserve authored semantic ordering exactly: every authored dependency edge survives lowering and no additional semantic ordering edge is invented from source position, planner convenience or data-reference inference."
     dependsOn: "SI-01.1"
-    workPackage: ".flow-agent/work-packages/SI-02-authored-dependency-graph-preservation.yaml"
-    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#12-preserve-the-authored-dependency-graph-exactly"
+    workPackage: ".flow-agent/work-packages/authored-dependency-graph-preservation.yaml"
+    strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#12-preserve-the-authored-dependency-graph-exactly"
     completionBoundary:
       status: passed
       workflow: "Flow CI"
@@ -86,8 +86,8 @@ items:
     status: completed
     purpose: "Remove concrete implementation technology from target-neutral image capability meaning while retaining useful implementation detail only as explicit binding or adapter evidence."
     dependsOn: "SI-02"
-    workPackage: ".flow-agent/work-packages/SI-03-canonical-technology-neutrality.yaml"
-    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#13-remove-implementation-technology-from-canonical-meaning"
+    workPackage: ".flow-agent/work-packages/canonical-technology-neutrality.yaml"
+    strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#13-remove-implementation-technology-from-canonical-meaning"
     completionBoundary:
       status: passed
       workflow: "Flow CI"
@@ -109,8 +109,8 @@ items:
     status: completed
     purpose: "Derive every public canonical execution-plan node kind from explicit typed canonical meaning rather than implementation module/action/resource naming heuristics."
     dependsOn: "SI-03"
-    workPackage: ".flow-agent/work-packages/SI-04-explicit-canonical-execution-plan-semantics.yaml"
-    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#14-make-canonical-execution-plan-semantics-explicit"
+    workPackage: ".flow-agent/work-packages/explicit-canonical-execution-plan-semantics.yaml"
+    strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#14-make-canonical-execution-plan-semantics-explicit"
     completionBoundary:
       status: passed
       workflow: "Flow CI"
@@ -132,8 +132,8 @@ items:
     status: completed
     purpose: "Use backup and restore operational evidence to determine the minimum target-neutral effect semantics needed for recovery meaning without speculative type-system expansion."
     dependsOn: "SI-04"
-    workPackage: ".flow-agent/work-packages/SI-05-operational-effect-model-re-evaluation.yaml"
-    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#15-re-evaluate-the-effect-model-under-operational-evidence"
+    workPackage: ".flow-agent/work-packages/operational-effect-model-re-evaluation.yaml"
+    strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#15-re-evaluate-the-effect-model-under-operational-evidence"
     completionBoundary:
       status: passed
       workflow: "Flow CI"
@@ -156,8 +156,8 @@ items:
     status: completed
     purpose: "Reject explicitly authored malformed or unknown parser values instead of silently converting them into defaults or alternate semantic values."
     dependsOn: "SI-05"
-    workPackage: ".flow-agent/work-packages/SI-06-eliminate-remaining-silent-authored-value-coercion.yaml"
-    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#16-eliminate-remaining-silent-authored-value-coercion"
+    workPackage: ".flow-agent/work-packages/eliminate-remaining-silent-authored-value-coercion.yaml"
+    strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#16-eliminate-remaining-silent-authored-value-coercion"
     completionBoundary:
       status: passed
       workflow: "Flow CI"
@@ -180,8 +180,8 @@ items:
     status: completed
     purpose: "Classify each published schema's authority and eliminate mismatches between schemas that claim public validity and the corresponding production loader or validator acceptance contract."
     dependsOn: "SI-06"
-    workPackage: ".flow-agent/work-packages/SI-07-align-public-schemas-with-production-acceptance.yaml"
-    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#17-align-public-schemas-with-production-acceptance"
+    workPackage: ".flow-agent/work-packages/align-public-schemas-with-production-acceptance.yaml"
+    strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#17-align-public-schemas-with-production-acceptance"
     completionBoundary:
       status: passed
       workflow: "Flow CI"
@@ -203,8 +203,8 @@ items:
     status: completed
     purpose: "Replace string-fragment policy classification and unconditional durable-state assumptions with explicit typed policy and state-lifetime semantics."
     dependsOn: "SI-07"
-    workPackage: ".flow-agent/work-packages/SI-08-typed-policy-state-lifetime-semantics.yaml"
-    strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#18-replace-string-heuristics-with-typed-policy-and-lifetime-semantics"
+    workPackage: ".flow-agent/work-packages/typed-policy-state-lifetime-semantics.yaml"
+    strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#18-replace-string-heuristics-with-typed-policy-and-lifetime-semantics"
     completionBoundary:
       status: passed
       workflow: "Flow CI"

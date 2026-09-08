@@ -382,7 +382,7 @@ class IncidentRemediationFalsification(private val rootDir: File = File(".")) {
         const val DOMAIN = "incident-remediation"
         const val KIND = "FlowIncidentRemediationFalsification"
         const val VERSION = "1.0"
-        const val ASSESSMENT_FILE = "ef04.yaml"
+        const val ASSESSMENT_FILE = "incident-remediation.yaml"
         const val MIN_CASES = 2
         const val MIN_REPOSITORIES = 2
 

@@ -140,8 +140,8 @@ class CertificateLifecycleBaselineVerifier(
     private fun key(finding: CertificateLifecycleFinding): String = "${finding.caseId}::${finding.factId}"
 
     companion object {
-        const val BASELINE_PATH = "conformance/corpus/external/baselines/ef-05-certificate-lifecycle.yaml"
-        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/EF-05-certificate-lifecycle-falsification.yaml"
+        const val BASELINE_PATH = "conformance/corpus/external/baselines/certificate-lifecycle.yaml"
+        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/certificate-lifecycle-falsification.yaml"
         const val KIND = "FlowCertificateLifecycleFalsificationBaseline"
         const val VERSION = "1.0"
         private const val COMPLETE_STATUS = "complete"

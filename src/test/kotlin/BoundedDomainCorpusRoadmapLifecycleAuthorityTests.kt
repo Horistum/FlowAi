@@ -114,7 +114,7 @@ class BoundedDomainCorpusRoadmapLifecycleAuthorityTests {
             "src/main/kotlin/org/flowlang/conformance/RealWorldPolarityAuthority.kt",
             "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusConformanceChecks.kt",
             "tests/RealWorldCorpusTests.kt",
-            "docs/C0_1_BOUNDED_DOMAIN_CORPUS.md"
+            "docs/BOUNDED_DOMAIN_CORPUS.md"
         )
     }
 }

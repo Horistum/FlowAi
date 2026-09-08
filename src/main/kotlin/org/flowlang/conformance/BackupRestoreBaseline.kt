@@ -136,8 +136,8 @@ class BackupRestoreBaselineVerifier(
     private fun key(finding: BackupRestoreFinding): String = "${finding.caseId}::${finding.factId}"
 
     companion object {
-        const val BASELINE_PATH = "conformance/corpus/external/baselines/ef-03-backup-restore.yaml"
-        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/EF-03-backup-restore-falsification.yaml"
+        const val BASELINE_PATH = "conformance/corpus/external/baselines/backup-restore.yaml"
+        const val WORK_PACKAGE_PATH = ".flow-agent/work-packages/backup-restore-falsification.yaml"
         const val KIND = "FlowBackupRestoreFalsificationBaseline"
         const val VERSION = "1.0"
         private const val COMPLETE_STATUS = "complete"

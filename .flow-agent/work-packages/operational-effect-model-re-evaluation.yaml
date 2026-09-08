@@ -1,0 +1,72 @@
+version: "SI-05"
+name: "Operational Effect Model Re-evaluation"
+type: "semantic-integrity-correction"
+stream: semantic-integrity
+status: complete
+objective: "Determine the minimum target-neutral effect semantics required for backup and restore recovery meaning, using operational evidence to decide whether the SemanticEffect type system must evolve."
+
+authorization:
+  status: completed
+  source: "Semantic-integrity roadmap transition after independently validated and merged SI-04 completion."
+  predecessor: "SI-04"
+  strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#15-re-evaluate-the-effect-model-under-operational-evidence"
+
+invariant:
+  - "Recovery meaning is derived from authored canonical semantics, never from implementation labels or inventory."
+  - "Recovery-point identity, source/target state relationship, consistency boundary, retention/lifetime, recoverability and state replacement versus state creation must each have an explicit typed ownership decision."
+  - "Authored recovery distinctions judged semantically relevant cannot collapse into one canonical representation."
+  - "Existing implementation-independent effect meaning remains stable unless operational evidence proves the type system insufficient."
+
+scope:
+  - "Build a representability matrix for BACKUP and RESTORE across Intent, AST, ExecutionPlan, schema, semantic equivalence and conformance."
+  - "Use operational DP01 backup and DP02 restore evidence plus focused negative pairs to falsify the current DATA_TRANSFORMATION state-transition model."
+  - "Classify each recovery property as SemanticEffect meaning, another typed canonical contract, or intentionally unsupported authoring surface."
+  - "Change the effect type system only where evidence demonstrates semantic information loss."
+  - "Audit observation identity, semantic equivalence, serialization and materialization consumers for every accepted change."
+  - "Make public contract-version decisions from actual serialized and normative impact."
+
+forbiddenScope:
+  - "Do not add BACKUP or RESTORE effect operations merely to rename existing information loss."
+  - "Do not add effect domains or fields speculatively because one implementation exposes them."
+  - "Do not encode structured recovery meaning inside free-form resource strings."
+  - "Do not let target, provider, module, action or adapter identity define universal recovery meaning."
+  - "Do not implement Track 1.6 parser coercion, Track 1.7 schema-validity alignment or the general Track 1.8 policy/state-lifetime redesign unless a narrow dependency is proven necessary."
+  - "Do not rewrite historical SI-01 through SI-04, C1.0, AR0.1 or Core closure evidence."
+
+semanticOwnership:
+  recoveryPointIdentity: "Owned by the typed recovery facet when explicitly authored. RESTORE may identify its source recovery point; current BACKUP syntax does not identify the recovery point it creates, so no identity is invented."
+  sourceTargetRelationship: "Owned by typed recovery endpoints on SemanticEffect. BACKUP relates protected state to an optional authored backup destination; RESTORE relates an optional authored recovery point to protected state."
+  consistencyBoundary: "Intentionally unsupported authored semantic surface in SI-05. No consistency guarantee is inferred from implementation or scenario prose."
+  retentionLifetime: "Owned narrowly by RECOVERY_POINT_CAPTURE when the existing BACKUP retention parameter is authored. This does not redefine general durable-state lifetime semantics."
+  recoverability: "Owned by external operational/conformance evidence, not guaranteed by a canonical BACKUP effect. Creating a recovery point does not prove a viable restore."
+  stateReplacementVersusCreation: "Unresolved by the current authored RESTORE contract. The canonical transition remains UPSERT UNKNOWN->PRESENT rather than inventing create or replace meaning."
+
+versionDecision:
+  publicStandard: unchanged
+  artifactContracts:
+    intent: unchanged
+    ast: "2.1 -> 2.2"
+    executionPlan: "2.2 -> 2.3"
+    executionPlanLoweringEvidence: unchanged
+  reason: "SI-05 does not add authored Intent syntax, but it enriches the serialized SemanticEffect carried by AST and ExecutionPlan. The lowering-evidence proof structure is unchanged and already certifies the authored recovery parameters."
+
+acceptanceEvidence:
+  - "DP01 and DP02 remain positively representable through the production pipeline."
+  - "Negative recovery pairs prove semantically relevant recovery-point, destination, retention, consistency or replacement distinctions do not silently collapse."
+  - "Implementation-label invariance proves implementation metadata cannot change canonical recovery effects."
+  - "Serialization and schema tests preserve every newly owned recovery semantic exactly and reject unsupported shapes fail closed."
+  - "Semantic-equivalence behavior changes only where reviewed effect semantics require it."
+  - "Full compile, tests, standalone conformance and Flow Agent validation pass before completion."
+
+completionBoundary:
+  status: passed
+  workflow: "Flow CI"
+  runNumber: 2913
+  runId: 31688348916
+  exactHead: "dc7ac98ef3c9d465470bde4f780c1207eb81a351"
+  mergeCandidate: "afcf9a42d257df4be514458947968e11a3b46529"
+completionMergeCommit: "495a51ac21d518d2c03d37fe84bea631ceca7975"
+
+localValidation:
+  status: pending
+  rule: "No full local PASS is claimed for the final SI-05 implementation tree: the available offline sandbox reached Kotlin compilation without a compiler error but exceeded its execution window. SI-05 completion is established separately by the recorded external exact-head and synthetic merge-candidate completionBoundary and merged implementation commit."

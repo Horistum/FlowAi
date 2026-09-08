@@ -33,12 +33,12 @@ internal object WorkflowSemanticsFindingCatalog {
 internal object WorkflowSemanticsFindingEvidenceValidator {
     private val expectedChecks = mapOf(
         "F-02" to (
-            setOf(Ar02FlowSensitiveConformanceChecks.LATTICE_CHECK, Ar02ExplicitMergeConformanceChecks.MERGE_CHECK) to
-                setOf(Ar02FlowSensitiveConformanceChecks.REJECTION_CHECK, Ar02ExplicitMergeConformanceChecks.PERMUTATION_CHECK)
+            setOf(FlowSensitiveConformanceChecks.LATTICE_CHECK, ExplicitMergeConformanceChecks.MERGE_CHECK) to
+                setOf(FlowSensitiveConformanceChecks.REJECTION_CHECK, ExplicitMergeConformanceChecks.PERMUTATION_CHECK)
         ),
         "F-08" to (setOf(WorkflowOwnershipConformanceChecks.MEMBERSHIP) to setOf(WorkflowOwnershipConformanceChecks.TARGET_GATE)),
-        "F-15" to (setOf(Ar02WorkflowFailureConformanceChecks.FAILURE_POLICY_INTEGRITY) to
-            setOf(Ar02WorkflowFailureConformanceChecks.NO_SYNTHETIC_HANDLER_AUTHORITY))
+        "F-15" to (setOf(WorkflowFailureConformanceChecks.FAILURE_POLICY_INTEGRITY) to
+            setOf(WorkflowFailureConformanceChecks.NO_SYNTHETIC_HANDLER_AUTHORITY))
     )
 
     fun errors(

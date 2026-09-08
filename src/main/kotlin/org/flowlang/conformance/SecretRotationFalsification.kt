@@ -358,7 +358,7 @@ class SecretRotationFalsification(private val rootDir: File = File(".")) {
         const val DOMAIN = "secret-rotation"
         const val KIND = "FlowSecretRotationFalsification"
         const val VERSION = "1.0"
-        const val ASSESSMENT_FILE = "ef06.yaml"
+        const val ASSESSMENT_FILE = "secret-rotation.yaml"
         const val MIN_CASES = 6
         const val MIN_REPOSITORIES = 2
 

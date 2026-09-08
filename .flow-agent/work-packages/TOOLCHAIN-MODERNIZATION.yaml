@@ -9,7 +9,7 @@ objective: "Modernize the Flow compiler and build baseline without changing targ
 authorization:
   status: completed
   predecessor: "SI-08"
-  strategicSource: "docs/PROJECT_DIRECTION_AFTER_C1_0.md#enabling-milestone-kotlin-and-gradle-toolchain-modernization"
+  strategicSource: "docs/PROJECT_SEMANTIC_INTEGRITY_DIRECTION.md#enabling-milestone-kotlin-and-gradle-toolchain-modernization"
   rule: "This work package is an orthogonal enabling milestone. It does not reopen the completed semantic-integrity stream and does not activate External Falsification."
 
 activationBasis:

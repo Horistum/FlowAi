@@ -477,7 +477,7 @@ class CertificateLifecycleFalsification(private val rootDir: File = File(".")) {
         const val DOMAIN = "certificate-lifecycle"
         const val KIND = "FlowCertificateLifecycleFalsification"
         const val VERSION = "1.0"
-        const val ASSESSMENT_FILE = "ef05.yaml"
+        const val ASSESSMENT_FILE = "certificate-lifecycle.yaml"
         const val MIN_CASES = 5
         const val MIN_REPOSITORIES = 2
 
