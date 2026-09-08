@@ -64,28 +64,13 @@ tasks.test {
 }
 
 
+// The implementation is configured in the child after both Kotlin source sets
+// exist. This alias preserves the root verification entry point without reading
+// another Project or its extensions at task execution time.
 val verifySemanticKernelSourceOwnership by tasks.registering {
     group = "verification"
     description = "Check the actual Gradle source sets form a complete, disjoint partition."
-    inputs.file(kernelManifest)
-    doLast {
-        val kernelProject = project(":flow-semantic-kernel")
-        val kernelKotlin = kernelProject.extensions.getByType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension>()
-        val expected = semanticKernelSources.map { file("src/main/kotlin/$it").canonicalFile }.toSet()
-        val observedKernel = kernelKotlin.sourceSets.getByName("main").kotlin.files.map { it.canonicalFile }.toSet()
-        val observedRoot = kotlin.sourceSets.getByName("main").kotlin.files.map { it.canonicalFile }.toSet()
-        val allSources = file("src/main/kotlin").walkTopDown()
-            .filter { it.isFile && it.extension == "kt" }.map { it.canonicalFile }.toSet()
-        check(observedKernel == expected) { "Kernel compilation differs from its source-ownership manifest." }
-        check(observedKernel.intersect(observedRoot).isEmpty()) { "Kernel sources are compiled twice." }
-        check(observedKernel + observedRoot == allSources) { "The source partition lost or invented production files." }
-        val javaSources = kernelProject.extensions.getByType<org.gradle.api.tasks.SourceSetContainer>()
-            .getByName("main").java.files
-        check(kernelProject.file("src/main").walkTopDown().none { it.isFile && it.extension == "kt" }) {
-            "Kernel source relocation must update the explicit ownership partition, not introduce ignored sources."
-        }
-        check(javaSources.isEmpty()) { "This kernel boundary owns Kotlin sources only; Java additions require review." }
-    }
+    dependsOn(":flow-semantic-kernel:verifySemanticKernelSourceOwnership")
 }
 
 tasks.named("compileKotlin") { dependsOn(verifySemanticKernelSourceOwnership) }
