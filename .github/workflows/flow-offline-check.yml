@@ -1,97 +1,91 @@
-name: Flow Offline Proof
+name: flow-offline-check
 
 on:
   pull_request:
-    paths:
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradle.properties'
-      - 'gradle/**'
-      - 'flow-semantic-kernel/**'
-      - 'tools/verify_semantic_kernel_isolation.py'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - 'tools/offline_gradle_build.sh'
-      - '.github/workflows/flow-offline-check.yml'
+  push:
+    branches: [main]
   schedule:
-    - cron: '17 3 * * 1'
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  offline-exact-head:
+  check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Two independent 20-minute build phases plus setup and evidence upload.
+    timeout-minutes: 50
     steps:
-      - name: Checkout Exact Revision
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Verify Exact Checked-Out Revision
-        if: github.event_name == 'pull_request'
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: 25
 
-      - name: Prepare and verify isolated offline build
-        shell: bash
-        run: bash tools/offline_gradle_build.sh all
+      - name: Install online prefetch prerequisites
+        run: sudo apt-get update && sudo apt-get install -y curl unzip python3
 
-      - name: Upload offline input manifest
+      - name: Prefetch and seal the Gradle input cache
+        timeout-minutes: 20
+        run: ./tools/offline_gradle_build.sh prefetch
+
+      - name: Verify the relocated offline Gradle cache contract
+        timeout-minutes: 20
+        run: ./tools/offline_gradle_build.sh verify
+
+      - name: Upload offline input-cache manifests
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: flow-offline-exact-head-input-manifest
-          path: .flow-offline/input-manifest.txt
-          if-no-files-found: warn
+          name: flow-offline-input-manifests
+          path: |
+            build/reports/offline-cache/*.json
+            build/reports/offline-cache/*.txt
+          retention-days: 14
 
-  offline-merge-candidate:
-    if: github.event_name == 'pull_request'
+  empty-home-proof:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Keep the same phase budgets for the independently prepared empty home.
+    timeout-minutes: 50
     steps:
-      - name: Checkout Merge Candidate
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Verify Merge Candidate Revision
-        shell: bash
-        env:
-          EXPECTED_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: 25
 
-      - name: Prepare and verify isolated offline build
-        shell: bash
-        run: bash tools/offline_gradle_build.sh all
+      - name: Install online prefetch prerequisites
+        run: sudo apt-get update && sudo apt-get install -y curl unzip python3
 
-      - name: Upload offline input manifest
+      - name: Prefetch and seal with an explicitly empty home
+        timeout-minutes: 20
+        run: |
+          proof_root="$RUNNER_TEMP/flow-empty-home-proof"
+          rm -rf "$proof_root"
+          ./tools/offline_gradle_build.sh prefetch \
+            --prefetch-gradle-home "$proof_root/prepared-gradle-home" \
+            --verify-gradle-home "$proof_root/verified-gradle-home"
+
+      - name: Verify the relocated explicitly empty home
+        timeout-minutes: 20
+        run: |
+          proof_root="$RUNNER_TEMP/flow-empty-home-proof"
+          ./tools/offline_gradle_build.sh verify \
+            --prefetch-gradle-home "$proof_root/prepared-gradle-home" \
+            --verify-gradle-home "$proof_root/verified-gradle-home"
+
+      - name: Upload empty-home offline input-cache manifests
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: flow-offline-merge-candidate-input-manifest
-          path: .flow-offline/input-manifest.txt
-          if-no-files-found: warn
+          name: flow-offline-empty-home-input-manifests
+          path: |
+            build/reports/offline-cache/*.json
+            build/reports/offline-cache/*.txt
+          retention-days: 14
