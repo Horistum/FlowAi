@@ -8,7 +8,9 @@ sources:
   - id: topology
     path: "adapters/topology/builtin-adapter-topology.yaml"
     documentVersion: "1.0"
-    sha256: "1d687e5e441bb25087b795c5985da0f9ee7cae85571cda2677808758028cf6e8"
+    # Only three documentation reference paths moved; the historical source digest
+    # remains verified by TopologyEvidenceReferenceMigrationTests.
+    sha256: "d9686e646881595efc173b1cf491bb863751da61dae34263252855e46b89954f"
   - id: bindings
     path: "adapters/bindings/builtin-capability-bindings.yaml"
     documentVersion: "1.0"
