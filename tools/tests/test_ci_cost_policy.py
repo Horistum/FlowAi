@@ -1,0 +1,242 @@
+"""Cost controls must not remove either final PR validation boundary.
+
+The structural checks target the workflows' explicit YAML layout. Shell tests
+execute their actual run blocks with local tool fixtures, not real compilation.
+No network access or third-party Python packages are needed.
+"""
+from __future__ import annotations
+
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import tempfile
+import textwrap
+import unittest
+
+from test_offline_workflow import job_block, step_blocks
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+CI = ROOT / ".github/workflows/flow-agent-check.yml"
+OFFLINE = ROOT / ".github/workflows/flow-offline-check.yml"
+CI_JOBS = ("compile-test-conformance", "merge-candidate-compile-test-conformance")
+
+
+def top_block(workflow: str, name: str) -> str:
+    match = re.search(rf"(?ms)^{re.escape(name)}:\n(.*?)(?=^\S|\Z)", workflow)
+    if match is None:
+        raise ValueError(f"Missing workflow section: {name}")
+    return match.group(1)
+
+
+def named_step(job: str, name: str) -> str:
+    matches = [step for step in step_blocks(job) if step.splitlines()[0] == f"name: {name}"]
+    if len(matches) != 1:
+        raise ValueError(f"Expected one step named {name}, found {len(matches)}")
+    return matches[0]
+
+
+def run_script(step: str) -> str:
+    lines = step.splitlines(keepends=True)
+    start = lines.index("        run: |\n") + 1
+    body = []
+    for line in lines[start:]:
+        if line.strip() and not line.startswith("          "):
+            break
+        body.append(line)
+    return textwrap.dedent("".join(body))
+
+
+def build_steps(job: str) -> list[str]:
+    return [step for step in step_blocks(job)
+            if "./gradlew " in step or "python3 tools/verify_semantic_kernel_isolation.py " in step]
+
+
+class CiCostPolicyTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.ci = CI.read_text(encoding="utf-8")
+        cls.offline = OFFLINE.read_text(encoding="utf-8")
+
+    def test_branch_pushes_do_not_duplicate_pr_runs(self) -> None:
+        triggers = top_block(self.ci, "on")
+        push = triggers.split("  push:\n", 1)[1].split("  pull_request:\n", 1)[0]
+        self.assertEqual(push.strip(), "branches:\n      - main")
+        self.assertIn("  workflow_dispatch:", triggers)
+
+    def test_draft_transitions_cancel_work_and_ready_transition_revalidates(self) -> None:
+        triggers = top_block(self.ci, "on")
+        match = re.search(r"types: \[([^]]+)\]", triggers)
+        self.assertIsNotNone(match)
+        self.assertEqual({value.strip() for value in match.group(1).split(",")},
+                         {"opened", "synchronize", "reopened", "ready_for_review", "converted_to_draft"})
+        exact = job_block(self.ci, CI_JOBS[0])
+        merge = job_block(self.ci, CI_JOBS[1])
+        self.assertIn("if: github.event_name != 'pull_request' || github.event.pull_request.draft == false", exact)
+        self.assertIn("if: github.event_name == 'pull_request' && github.event.pull_request.draft == false", merge)
+
+    def test_metadata_changes_are_not_filtered_out_of_final_validation(self) -> None:
+        self.assertNotRegex(top_block(self.ci, "on"), r"paths(?:-ignore)?:")
+
+    def test_concurrency_cancels_obsolete_runs_without_combining_prs(self) -> None:
+        normal = top_block(self.ci, "concurrency")
+        self.assertIn("${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}", normal)
+        self.assertNotIn("github.sha", normal)
+        for workflow in (self.ci, self.offline):
+            block = top_block(workflow, "concurrency")
+            self.assertIn("${{ github.workflow }}", block)
+            self.assertIn("cancel-in-progress: true", block)
+
+    def test_required_job_identities_and_exact_revision_selection_survive(self) -> None:
+        jobs = top_block(self.ci, "jobs")
+        self.assertEqual(re.findall(r"(?m)^  ([\w-]+):$", jobs), list(CI_JOBS))
+        exact = job_block(self.ci, CI_JOBS[0])
+        merge = job_block(self.ci, CI_JOBS[1])
+        self.assertIn("ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}", exact)
+        self.assertIn("EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}", exact)
+        self.assertIn("EXPECTED_SHA: ${{ github.sha }}", merge)
+        self.assertNotIn("ref:", named_step(merge, "Checkout Merge Candidate"))
+        for job in (exact, merge):
+            self.assertIn("timeout-minutes: 20", job)
+            self.assertIn('actual_sha="$(git rev-parse HEAD)"', job)
+            self.assertIn('if [ "$actual_sha" != "$EXPECTED_SHA" ]; then', job)
+
+    def test_cheap_checks_fail_before_jdk_and_gradle_setup(self) -> None:
+        for name in CI_JOBS:
+            with self.subTest(job=name):
+                job = job_block(self.ci, name)
+                for step in ("Test Flow Agent Tooling", "Validate Flow Agent Structure", "Generate Flow Agent Context"):
+                    self.assertLess(job.index(f"name: {step}"), job.index("name: Set up JDK 25"))
+                self.assertLess(job.index("name: Set up JDK 25"), job.index("name: Set up Gradle"))
+
+    def test_full_test_isolation_and_standalone_conformance_steps_remain(self) -> None:
+        for name in CI_JOBS:
+            with self.subTest(job=name):
+                steps = build_steps(job_block(self.ci, name))
+                self.assertEqual(len(steps), 3)
+                self.assertIn("--build-cache clean test ", steps[0])
+                self.assertIn("python3 tools/verify_semantic_kernel_isolation.py --offline", steps[1])
+                self.assertIn('--build-cache run --args="conformance"', steps[2])
+                for step in steps:
+                    self.assertNotRegex(step, r"(?m)^        if:")
+                    self.assertNotIn("continue-on-error", step)
+                    self.assertNotIn("|| true", step)
+                    self.assertNotIn("--tests", step)
+                    self.assertNotRegex(step, r"\s-x\s|--exclude-task")
+
+    def test_same_repo_pr_caches_can_be_saved_but_forks_are_read_only(self) -> None:
+        expected = ("cache-read-only: ${{ github.event_name == 'pull_request' && "
+                    "github.event.pull_request.head.repo.full_name != github.repository }}")
+        for name in CI_JOBS:
+            self.assertIn(expected, named_step(job_block(self.ci, name), "Set up Gradle"))
+
+    def test_build_cache_cannot_substitute_root_or_kernel_test_evidence(self) -> None:
+        for path in ("build.gradle.kts", "flow-semantic-kernel/build.gradle.kts"):
+            with self.subTest(path=path):
+                source = (ROOT / path).read_text(encoding="utf-8")
+                block = re.search(r"(?ms)^tasks\.test \{\n(.*?)^\}", source)
+                self.assertIsNotNone(block)
+                self.assertIn("outputs.upToDateWhen { false }", block.group(1))
+                self.assertIn("outputs.cacheIf { false }", block.group(1))
+
+    def test_reports_survive_failures_but_not_obsolete_cancellations(self) -> None:
+        for name in CI_JOBS:
+            with self.subTest(job=name):
+                uploads = [step for step in step_blocks(job_block(self.ci, name))
+                           if "uses: actions/upload-artifact@" in step]
+                self.assertEqual(len(uploads), 2)
+                for step in uploads:
+                    self.assertIn("if: ${{ !cancelled() }}", step)
+                    self.assertIn("retention-days: 7", step)
+                self.assertIn("build/test-results/test/*.xml", uploads[1])
+                self.assertIn("flow-semantic-kernel/build/test-results/test/*.xml", uploads[1])
+                self.assertIn("ci-logs/kernel-isolation/**", uploads[0])
+
+    def test_offline_is_manual_only_and_has_one_revision_not_a_duplicate_matrix(self) -> None:
+        triggers = top_block(self.offline, "on")
+        self.assertEqual(re.findall(r"(?m)^  ([\w-]+):$", triggers), ["workflow_dispatch"])
+        self.assertEqual(re.findall(r"(?m)^  ([\w-]+):$", top_block(self.offline, "jobs")), ["offline-exact-head"])
+        self.assertNotIn("matrix:", self.offline)
+        job = job_block(self.offline, "offline-exact-head")
+        self.assertIn("ref: ${{ inputs.revision || github.sha }}", job)
+        self.assertIn("EXPECTED_SHA: ${{ inputs.revision || github.sha }}", job)
+
+    def test_optimization_does_not_add_privileges_or_error_suppression(self) -> None:
+        for workflow in (self.ci, self.offline):
+            self.assertEqual(top_block(workflow, "permissions").strip(), "contents: read")
+            self.assertNotIn("pull_request_target", workflow)
+            self.assertNotIn("continue-on-error", workflow)
+            self.assertNotIn("persist-credentials: true", workflow)
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("git"), "Unix shell and Git required")
+class CiWorkflowShellTests(unittest.TestCase):
+    def setUp(self) -> None:
+        temp = tempfile.TemporaryDirectory(prefix="ci-policy-")
+        self.addCleanup(temp.cleanup)
+        self.root = pathlib.Path(temp.name)
+        subprocess.run(["git", "init", "--quiet", "--initial-branch=main", str(self.root)], check=True)
+        subprocess.run(["git", "-c", "user.name=CI test", "-c", "user.email=ci-test@localhost",
+                        "commit", "--quiet", "--allow-empty", "-m", "fixture"], cwd=self.root, check=True)
+        self.sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=self.root, text=True).strip()
+        self.ci = CI.read_text(encoding="utf-8")
+        self.offline = OFFLINE.read_text(encoding="utf-8")
+        self.env = {**os.environ, "GITHUB_ENV": str(self.root / "github-env")}
+        (self.root / "ci-logs").mkdir()
+        (self.root / "tools").mkdir()
+        wrapper = self.root / "gradlew"
+        wrapper.write_text('#!/usr/bin/env bash\nprintf "Gradle fixture %s\\n" "$*"\nexit "${TEST_BUILD_EXIT:-0}"\n')
+        wrapper.chmod(0o755)
+        (self.root / "tools/verify_semantic_kernel_isolation.py").write_text(
+            'import os, sys\nprint("Isolation fixture", sys.argv[1:])\nsys.exit(int(os.environ["TEST_BUILD_EXIT"]))\n')
+
+    def execute(self, step: str, **env: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", run_script(step)],
+                              cwd=self.root, env={**self.env, **env}, text=True,
+                              capture_output=True, timeout=15, check=False)
+
+    def guards(self) -> list[str]:
+        return [named_step(job_block(self.ci, CI_JOBS[0]), "Verify Exact Checked-Out Revision"),
+                named_step(job_block(self.ci, CI_JOBS[1]), "Verify Merge Candidate Revision"),
+                named_step(job_block(self.offline, "offline-exact-head"), "Verify Exact Checked-Out Revision")]
+
+    def test_all_revision_guards_accept_the_actual_commit(self) -> None:
+        for guard in self.guards():
+            with self.subTest(guard=guard.splitlines()[0]):
+                result = self.execute(guard, EXPECTED_SHA=self.sha)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(self.sha, (self.root / "github-env").read_text())
+
+    def test_all_guards_reject_wrong_empty_and_shell_shaped_values_without_evidence(self) -> None:
+        for guard in self.guards():
+            for expected in ("0" * 40, "", "$(touch injected)"):
+                with self.subTest(guard=guard.splitlines()[0], expected=expected):
+                    (self.root / "github-env").unlink(missing_ok=True)
+                    self.assertNotEqual(self.execute(guard, EXPECTED_SHA=expected).returncode, 0)
+                    self.assertFalse((self.root / "github-env").exists())
+                    self.assertFalse((self.root / "injected").exists())
+
+    def test_offline_guard_rejects_symbolic_refs(self) -> None:
+        guard = self.guards()[-1]
+        for ref in ("HEAD", "main", "refs/heads/main", self.sha[:12]):
+            with self.subTest(ref=ref):
+                self.assertNotEqual(self.execute(guard, EXPECTED_SHA=ref).returncode, 0)
+
+    def test_all_six_expensive_steps_propagate_failure_through_tee(self) -> None:
+        for name in CI_JOBS:
+            for step in build_steps(job_block(self.ci, name)):
+                with self.subTest(job=name, step=step.splitlines()[0]):
+                    result = self.execute(step, TEST_BUILD_EXIT="37")
+                    self.assertEqual(result.returncode, 37, result.stdout + result.stderr)
+
+    def test_all_six_expensive_steps_accept_success(self) -> None:
+        for name in CI_JOBS:
+            for step in build_steps(job_block(self.ci, name)):
+                with self.subTest(job=name, step=step.splitlines()[0]):
+                    result = self.execute(step, TEST_BUILD_EXIT="0")
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 8
+revision: 9
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -13,9 +13,9 @@ currentDecision:
   nextItem: "AR-03"
   nextItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-  activationState: "not-activated"
-  workPackage: ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
-  decisionBasis: "EF-08 remains complete and EF-09 remains paused after evidence admission. AR-02 now closes F-02, F-08 and F-15 through shared path-sensitive analysis, explicit merge provenance, workflow ownership and typed failure policy, with integrated AR-02E validation run 34113587213 and independent closure run 34116599418. AR-03 is the next ordered recovery milestone but is not activated; compiler-enforced extraction requires a separate transition."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
+  decisionBasis: "Merged AR-02 remains immutable predecessor evidence. AR-03 is independently activated for compiler-enforced module boundaries, starting with an isolated semantic kernel. The activation transition must be green before implementation; AR-04 is not activated and EF-09 remains paused."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
@@ -23,10 +23,10 @@ recoveryRoadmap:
   findingCount: 22
   groupedMilestoneCount: 8
   completedItem: "AR-02"
-  activeItem: ""
-  activeWorkPackage: ""
+  activeItem: "AR-03"
+  activeWorkPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
   nextItem: "AR-03"
-  activationState: "not-activated"
+  activationState: "active"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
 principles:

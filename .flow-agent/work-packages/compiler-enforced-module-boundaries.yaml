@@ -1,0 +1,128 @@
+version: "AR-03"
+name: "Compiler-Enforced Boundaries and Adapter Extraction"
+type: "architecture-recovery-module-extraction"
+status: active
+stream: "architecture-recovery"
+
+objective: "Replace package-only architectural boundaries with separately compiled production modules, without changing canonical meaning, public artifact versions or target maturity. This work package closes only after the compiler and semantic kernel can build without concrete adapters and the remaining reference composition is explicit."
+
+authorization:
+  status: active
+  predecessor: "AR-02"
+  strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-03"
+  mainAtActivation: "c5c37283d99a47a6e387213dccfda2927ec6acd2"
+  rule: "A separately green activation transition precedes implementation. Each bounded extraction needs exact-head and synthetic-merge compilation, all regression tests and standalone conformance. A kernel-only slice cannot close F-10 or claim that the entire compiler is adapter-independent."
+
+verifiedBaseline:
+  mergedPullRequest: 172
+  mainCommit: "c5c37283d99a47a6e387213dccfda2927ec6acd2"
+  sourceTree: "a3d4da21b128397e5401326d185ef459633b5ce4"
+  exactHead: "891f693484dd2f41e051a3c834b1423a0cee1d80"
+  workflowRunId: 34185085663
+  workflowRunNumber: 3232
+  exactHeadJobId: 101931689570
+  mergeCandidateJobId: 101931689468
+  syntheticMergeCandidate: "7c001bb34728e79266a8f3b01eb5816c654f5755"
+  kotlinTestsPerJob: 1367
+  failures: 0
+  errors: 0
+  skipped: 0
+
+selectedSlice: "AR-03A"
+nextSlice: "AR-03B"
+implementationSlices:
+  - id: "AR-03A"
+    name: "Independently compiled semantic kernel"
+    status: complete
+    invariant: "The typed canonical graph, semantic digest and their neutral contract dependencies compile and test on a classpath containing no product implementation, concrete adapter, frontend, CLI, conformance or serialization implementation."
+    scope:
+      - "Introduce flow-semantic-kernel as a real Gradle project and remove its sources from root compilation."
+      - "Retain existing source paths and public qualified names during this first cut; one explicit source-ownership manifest prevents duplicate compilation and preserves live source inventories."
+      - "Keep graph construction, binding metadata, authorization and validation in the residual product project."
+      - "Add positive and negative Kotlin compilation probes and execute the kernel without the residual product source tree."
+      - "Preserve all 1367 baseline regression tests and standalone conformance; report subproject tests in CI artifacts."
+  - id: "AR-03B"
+    name: "Compiler, frontend and module-contract boundary"
+    status: planned
+    invariant: "Compiler orchestration depends on the semantic kernel and neutral contracts; frontend parsing and serialization remain outside it."
+  - id: "AR-03C"
+    name: "Adapter contracts and concrete implementation extraction"
+    status: planned
+    invariant: "Generic planning and materialization receive explicit adapter contracts; concrete adapter defaults and composition are distribution-owned."
+  - id: "AR-03D"
+    name: "Conformance, distribution and integrated boundary closure"
+    status: planned
+    invariant: "Production does not depend on conformance; deletion of any concrete adapter leaves kernel and compiler tests buildable, and every temporary boundary has an owner and removal decision."
+
+lifecycle:
+  activationBoundary:
+    status: passed
+    conclusion: success
+    workflowRunId: 34190794340
+    workflowRunNumber: 3234
+    exactHead: "9412d4c94b0cad6a36c887d6d53b3d21f9d2d55b"
+    syntheticMergeCandidate: "0d16202ea51e6feaf4cc408f85e7a301a84eabb1"
+    exactHeadJobId: 101948267594
+    mergeCandidateJobId: 101948267471
+    kotlinTestsPerJob: 1374
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: "Flow CI #3234 passed clean Kotlin compilation, 1374 tests, Flow Agent tooling and standalone conformance on both the exact activation head and synthetic merge candidate. Implementation follows this independently green boundary."
+  implementationBoundary:
+    status: passed
+    conclusion: success
+    workflowRunId: 34200961012
+    workflowRunNumber: 3239
+    exactHead: "8d754c9eef6ca2a53d0a9ababc37868317512242"
+    syntheticMergeCandidate: "5d1252bf9eb87b0492b32c6e1f05af2e2569c5a8"
+    exactHeadJobId: 101979381310
+    mergeCandidateJobId: 101979381044
+    kotlinTestsPerJob: 1392
+    rootKotlinTestsPerJob: 1380
+    kernelKotlinTestsPerJob: 12
+    toolingTestsPerJob: 53
+    preservedBaselineTestIdentities: 1367
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: "Flow CI #3239 passed both exact-head and synthetic-merge jobs, including clean compilation, 1392 Kotlin tests, 53 tooling tests, physical kernel isolation and standalone conformance. Independent JUnit archive comparison retained all 1367 baseline test identities with no failures, errors or skips."
+  offlineBoundary:
+    status: passed
+    conclusion: success
+    workflowRunId: 34200960933
+    workflowRunNumber: 16
+    exactHead: "8d754c9eef6ca2a53d0a9ababc37868317512242"
+    syntheticMergeCandidate: "5d1252bf9eb87b0492b32c6e1f05af2e2569c5a8"
+    exactHeadJobId: 101979380734
+    mergeCandidateJobId: 101979380635
+    kotlinTestsPerJob: 1392
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: "Flow Offline Proof #16 passed isolated input preparation and relocated clean --offline --no-build-cache verification, complete Kotlin tests and conformance on both revisions. Separate 20-minute phase limits and a 50-minute job limit preserve both full builds; the merge-candidate job completed successfully after exceeding the former 20-minute total limit."
+  completionBoundary:
+    status: pending
+
+completionDecision:
+  status: not-complete
+  closesFindings: []
+  remainingFindings: ["F-10", "F-20"]
+  rule: "AR-03 remains active after the kernel slice. AR-04 is not activated and EF-09 remains paused."
+
+forbiddenScope:
+  - "No semantic digest, graph interpretation, parser acceptance or target support changes."
+  - "No public package, standard or artifact-contract version bump."
+  - "No runtime executor, plugin lifecycle, hot loading or target-specific public language."
+  - "No friend-path bypass, duplicate source compilation or lexical-only substitute for classpath isolation."
+  - "No blanket source-governance exemption or removal of baseline tests."
+
+validationPlan:
+  - "Validate activation independently before the first extraction commit."
+  - "Run Flow Agent tooling tests, structure validation and context generation locally."
+  - "Run isolated kernel tests and positive/negative external Kotlin compiler probes."
+  - "Run exact-head and synthetic-merge clean test, standalone conformance and the offline build proof when build inputs change."
+  - "Compare complete baseline test identities, not only counts."
+  - "Do not claim local Gradle execution without an available JDK 25 and resolved dependency cache."
+
+report: ".flow-agent/reports/compiler-enforced-module-boundaries.md"

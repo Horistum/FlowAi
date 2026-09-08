@@ -4,19 +4,23 @@ on:
   push:
     branches:
       - main
-      - 'feature/**'
-      - 'fix/**'
-      - 'chore/**'
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# One active run per PR/ref. Returning to draft cancels obsolete paid work.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   compile-test-conformance:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Checkout Exact Revision
@@ -39,15 +43,6 @@ jobs:
           fi
           echo "FLOW_VALIDATED_SHA=$actual_sha" >> "$GITHUB_ENV"
 
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-
       - name: Prepare CI Workspace
         run: |
           chmod +x ./gradlew
@@ -62,22 +57,42 @@ jobs:
       - name: Generate Flow Agent Context
         run: python3 tools/flow_agent_runner.py
 
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # Repeated same-repository PR revisions may reuse compilation outputs.
+          # Forks can restore caches but cannot publish them through this action.
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+
       - name: Compile and Test
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          ./gradlew --no-daemon --build-cache clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Prove Kernel Without Product Sources
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_semantic_kernel_isolation.py --offline 2>&1 | tee ci-logs/kernel-isolation.log
           exit ${PIPESTATUS[0]}
 
       - name: Run Conformance
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-conformance.log
+          ./gradlew --no-daemon --build-cache run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-conformance.log
           exit ${PIPESTATUS[0]}
 
       - name: Write CI Summary
-        if: always()
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           echo "# Flow CI Exact-Head Result" >> "$GITHUB_STEP_SUMMARY"
@@ -87,25 +102,28 @@ jobs:
           echo "Branch/ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
           echo "Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Checks executed:" >> "$GITHUB_STEP_SUMMARY"
+          echo "Required checks (execution status is recorded in the job steps):" >> "$GITHUB_STEP_SUMMARY"
           echo "- Exact checked-out revision verification" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent tooling unit tests" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Isolated kernel build and external compiler boundary probes" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          if compgen -G "build/test-results/test/*.xml" > /dev/null; then
+          if compgen -G "build/test-results/test/*.xml" > /dev/null || compgen -G "flow-semantic-kernel/build/test-results/test/*.xml" > /dev/null; then
             echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import glob
           import html
           import xml.etree.ElementTree as ET
-          for path in sorted(glob.glob('build/test-results/test/*.xml')):
+          for path in sorted(glob.glob('build/test-results/test/*.xml') + glob.glob('flow-semantic-kernel/build/test-results/test/*.xml')):
               root = ET.parse(path).getroot()
               for case in root.findall('testcase'):
-                  failure = case.find('failure') or case.find('error')
+                  failure = case.find('failure')
+                  if failure is None:
+                      failure = case.find('error')
                   if failure is None:
                       continue
                   cls = case.attrib.get('classname', '')
@@ -134,27 +152,34 @@ jobs:
           done
 
       - name: Upload CI Gradle Logs
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: flow-ci-exact-head-gradle-logs
-          path: ci-logs/*.log
+          path: |
+            ci-logs/*.log
+            ci-logs/kernel-isolation/**
+            flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
           if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload CI Test Reports
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: flow-ci-exact-head-test-reports
           path: |
             build/test-results/test/*.xml
             build/reports/tests/test/**
+            flow-semantic-kernel/build/test-results/test/*.xml
+            flow-semantic-kernel/build/reports/tests/test/**
           if-no-files-found: warn
+          retention-days: 7
 
   merge-candidate-compile-test-conformance:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Checkout Merge Candidate
@@ -176,15 +201,6 @@ jobs:
           fi
           echo "FLOW_MERGE_CANDIDATE_SHA=$actual_sha" >> "$GITHUB_ENV"
 
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-
       - name: Prepare CI Workspace
         run: |
           chmod +x ./gradlew
@@ -199,22 +215,42 @@ jobs:
       - name: Generate Flow Agent Context
         run: python3 tools/flow_agent_runner.py
 
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # Repeated same-repository PR revisions may reuse compilation outputs.
+          # Forks can restore caches but cannot publish them through this action.
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+
       - name: Compile and Test Merge Candidate
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon clean test --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
+          ./gradlew --no-daemon --build-cache clean test --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Prove Merge Candidate Kernel Without Product Sources
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_semantic_kernel_isolation.py --offline 2>&1 | tee ci-logs/merge-candidate-kernel-isolation.log
           exit ${PIPESTATUS[0]}
 
       - name: Run Merge Candidate Conformance
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-conformance.log
+          ./gradlew --no-daemon --build-cache run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-conformance.log
           exit ${PIPESTATUS[0]}
 
       - name: Write Merge Candidate Summary
-        if: always()
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           echo "# Flow CI Merge-Candidate Result" >> "$GITHUB_STEP_SUMMARY"
@@ -224,19 +260,26 @@ jobs:
           echo "Pull request base: ${{ github.event.pull_request.base.sha }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Merge Candidate Gradle Logs
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: flow-ci-merge-candidate-gradle-logs
-          path: ci-logs/*.log
+          path: |
+            ci-logs/*.log
+            ci-logs/kernel-isolation/**
+            flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
           if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload Merge Candidate Test Reports
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: flow-ci-merge-candidate-test-reports
           path: |
             build/test-results/test/*.xml
             build/reports/tests/test/**
+            flow-semantic-kernel/build/test-results/test/*.xml
+            flow-semantic-kernel/build/reports/tests/test/**
           if-no-files-found: warn
+          retention-days: 7

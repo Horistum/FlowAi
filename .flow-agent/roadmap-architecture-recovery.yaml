@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 7
+revision: 8
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -23,9 +23,9 @@ currentDecision:
   preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
   nextItem: "AR-03"
   nextItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
-  activationState: "not-activated"
-  workPackage: ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
-  decisionBasis: "AR-02 closes F-02, F-08 and F-15 after the integrated AR-02E frontend, authorization-mutation, target, public-contract and lifecycle matrices passed distinct exact-head and synthetic merge-candidate Flow CI boundaries. Implementation baseline PR #171, validation run 34113587213 and independent closure run 34116599418 are recorded in the completed work package. AR-03 is selected only as the next ordered milestone and requires a separate activation transition; EF-09 remains paused."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
+  decisionBasis: "AR-02 is complete after merged PR #172. AR-03 is independently activated for bounded module extraction, beginning with the semantic kernel. Activation must pass its own exact-head and synthetic-merge CI before implementation; F-10 and F-20 remain open and EF-09 remains paused."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -151,7 +151,8 @@ milestones:
   - id: "AR-03"
     name: "Compiler-Enforced Boundaries and Adapter Extraction"
     order: 4
-    status: "planned"
+    status: "active"
+    workPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
     dependsOn: ["AR-01"]
     closesFindings: ["F-10"]
     containsFindings: ["F-20"]

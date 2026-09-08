@@ -190,12 +190,13 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
         )
         val preserved = projection.semanticParametersAccepted && projection.effects.any { effect ->
             val recovery = effect.recovery
+            val source = recovery?.source
             effect.domain == EffectDomain.STATE_RECOVERY &&
                 effect.operation == EffectOperation.CREATE &&
                 effect.resource == "recovery.point" &&
                 recovery?.kind == RecoveryEffectKind.RECOVERY_POINT_CAPTURE &&
-                recovery.source?.kind == RecoveryEndpointKind.PROTECTED_STATE &&
-                recovery.source.identity == subject
+                source?.kind == RecoveryEndpointKind.PROTECTED_STATE &&
+                source.identity == subject
         }
         return if (preserved) {
             ExternalFalsificationOutcome.REPRESENTABLE to
@@ -216,14 +217,16 @@ class BackupRestoreFalsification(private val rootDir: File = File(".")) {
         )
         val preserved = projection.semanticParametersAccepted && projection.effects.any { effect ->
             val recovery = effect.recovery
+            val source = recovery?.source
+            val target = recovery?.target
             effect.domain == EffectDomain.STATE_RECOVERY &&
                 effect.operation == EffectOperation.UPSERT &&
                 effect.resource == "protected.state" &&
                 recovery?.kind == RecoveryEffectKind.STATE_RESTORE &&
-                recovery.source?.kind == RecoveryEndpointKind.RECOVERY_POINT &&
-                recovery.source.identity == recoveryPoint &&
-                recovery.target?.kind == RecoveryEndpointKind.PROTECTED_STATE &&
-                (authoredSubject == null || recovery.target.identity == authoredSubject)
+                source?.kind == RecoveryEndpointKind.RECOVERY_POINT &&
+                source.identity == recoveryPoint &&
+                target?.kind == RecoveryEndpointKind.PROTECTED_STATE &&
+                (authoredSubject == null || target.identity == authoredSubject)
         }
         return if (preserved) {
             ExternalFalsificationOutcome.REPRESENTABLE to
