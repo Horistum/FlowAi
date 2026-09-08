@@ -23,3 +23,44 @@ A real Temurin JDK 25.0.2 and resolved Gradle 9.5.0 / Kotlin 2.4.10 dependency c
 The kernel's own completion transition requires distinct implementation CI and a separate offline proof for the same head and synthetic merge. Full AR-03 completion remains pending. Compiler/frontend separation, concrete adapters and conformance/distribution composition remain future work, F-10/F-20 remain open, AR-04 is not activated and EF-09 stays paused. Public package and artifact versions, canonical graph semantics and target maturity do not change.
 
 Source-layout migration debt and its owners are documented in `docs/COMPILER_MODULE_BOUNDARIES.md`: module-aware source discovery belongs to AR-03B, with an explicit relocation or reviewed retention decision at AR-03D and final AR-07 audit. Retained paths are not a governance exemption or a claim of full compiler extraction.
+
+## Completed kernel slice and implementation evidence
+
+AR-03A is complete. Its implementation revision is
+`8d754c9eef6ca2a53d0a9ababc37868317512242`; the independently tested synthetic merge is
+`5d1252bf9eb87b0492b32c6e1f05af2e2569c5a8`. These receipts describe completed runs,
+not a future documentation commit or the earlier activation boundary.
+
+- [Flow CI #3239](https://github.com/milank78git/FlowAi/actions/runs/34200961012):
+  exact-head job `101979381310` and merge-candidate job `101979381044` both passed.
+  Each executed 1,380 root and 12 kernel tests, with zero failures, errors or
+  skips, plus 53 Python tooling tests, physical kernel isolation and standalone
+  conformance. The isolated kernel's repeated 12 tests are not counted as extra
+  unique tests.
+- Downloaded JUnit archives from both jobs independently preserve every one of
+  the 1,367 baseline `(classname, name)` identities. Neither test removal nor
+  replacement by unrelated new tests was used to meet the regression floor.
+- [Flow Offline Proof #16](https://github.com/milank78git/FlowAi/actions/runs/34200960933):
+  exact-head job `101979380734` and merge-candidate job `101979380635` both passed
+  preparation, relocated offline verification, all 1,392 Kotlin tests and
+  conformance, and uploaded the explicit input manifests.
+
+The failed preceding proof had a 20-minute **whole-job** limit covering two
+complete clean builds. Passing tests did not prevent cancellation when the total
+budget expired. Preparation and verification now have separate 20-minute step
+limits, with a 50-minute job safety limit for both phases, setup and evidence
+upload. Both full proof jobs then passed. Raising the job ceiling is not a
+performance improvement and does not hide a failed test.
+
+The workflow retains exact-head and synthetic-merge revision guards, uses the
+script's actual `bash tools/offline_gradle_build.sh prepare` and `verify` entry
+points, and preserves `--offline --no-build-cache`, complete tests and
+conformance. Thirteen new tooling regressions cover phase separation, budgets,
+revision guards, evidence upload and real shell entry-point behavior with
+controlled Java/Gradle fixtures. Those fixtures test orchestration and failure
+propagation; the actual compilation proof is the successful JDK 25 CI above.
+
+Only AR-03A is closed. AR-03 stays active, its full completion boundary stays
+pending, F-10 and F-20 stay open, and AR-03B is the next unactivated slice.
+AR-04 is not activated and EF-09 remains paused. No public contract or semantic
+meaning is changed by this completion transition.

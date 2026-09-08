@@ -29,10 +29,11 @@ verifiedBaseline:
   skipped: 0
 
 selectedSlice: "AR-03A"
+nextSlice: "AR-03B"
 implementationSlices:
   - id: "AR-03A"
     name: "Independently compiled semantic kernel"
-    status: active
+    status: complete
     invariant: "The typed canonical graph, semantic digest and their neutral contract dependencies compile and test on a classpath containing no product implementation, concrete adapter, frontend, CLI, conformance or serialization implementation."
     scope:
       - "Introduce flow-semantic-kernel as a real Gradle project and remove its sources from root compilation."
@@ -69,9 +70,37 @@ lifecycle:
     skipped: 0
     evidence: "Flow CI #3234 passed clean Kotlin compilation, 1374 tests, Flow Agent tooling and standalone conformance on both the exact activation head and synthetic merge candidate. Implementation follows this independently green boundary."
   implementationBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    workflowRunId: 34200961012
+    workflowRunNumber: 3239
+    exactHead: "8d754c9eef6ca2a53d0a9ababc37868317512242"
+    syntheticMergeCandidate: "5d1252bf9eb87b0492b32c6e1f05af2e2569c5a8"
+    exactHeadJobId: 101979381310
+    mergeCandidateJobId: 101979381044
+    kotlinTestsPerJob: 1392
+    rootKotlinTestsPerJob: 1380
+    kernelKotlinTestsPerJob: 12
+    toolingTestsPerJob: 53
+    preservedBaselineTestIdentities: 1367
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: "Flow CI #3239 passed both exact-head and synthetic-merge jobs, including clean compilation, 1392 Kotlin tests, 53 tooling tests, physical kernel isolation and standalone conformance. Independent JUnit archive comparison retained all 1367 baseline test identities with no failures, errors or skips."
   offlineBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    workflowRunId: 34200960933
+    workflowRunNumber: 16
+    exactHead: "8d754c9eef6ca2a53d0a9ababc37868317512242"
+    syntheticMergeCandidate: "5d1252bf9eb87b0492b32c6e1f05af2e2569c5a8"
+    exactHeadJobId: 101979380734
+    mergeCandidateJobId: 101979380635
+    kotlinTestsPerJob: 1392
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: "Flow Offline Proof #16 passed isolated input preparation and relocated clean --offline --no-build-cache verification, complete Kotlin tests and conformance on both revisions. Separate 20-minute phase limits and a 50-minute job limit preserve both full builds; the merge-candidate job completed successfully after exceeding the former 20-minute total limit."
   completionBoundary:
     status: pending
 
