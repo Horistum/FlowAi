@@ -1,0 +1,137 @@
+name: Local Candidate Tree Transfer
+
+# Temporary branch-only transport; removed from the verified candidate.
+on:
+  push:
+    branches: [agent/adapter-contract-boundaries]
+    paths: [.github/workflows/local-candidate-transfer.yml]
+permissions:
+  contents: write
+concurrency:
+  group: flow-local-candidate-tree-transfer
+  cancel-in-progress: true
+jobs:
+  transfer:
+    if: github.repository == 'milank78git/FlowAi' && github.ref == 'refs/heads/agent/adapter-contract-boundaries'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Reconstruct verified candidate and upload non-workflow tree without moving refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECEIPT: ${{ runner.temp }}/ci-completion-tree-receipt.json
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, os, subprocess, urllib.request, urllib.error
+          from pathlib import Path
+
+          REPO = 'milank78git/FlowAi'
+          BASE = 'f73b3256fd5a90a68b3d2460dc17258d391d1e48'
+          BASE_TREE = '298b1a2ac12dce8c5c07439ab0afb3eaf1ccfae0'
+          EXPECTED_TREE = 'd3a265f3571b55b306c3814c92b131fb3c22d306'
+          WORKFLOW_BLOB = '2b9ca3f61b2d757ac3c89ec4fe958cdd8999d6bf'
+          PACKED_BLOB = '9136ac9ebedb48ea1a6049cd1b4267a1cdfda7b3'
+          PATCH_SHA256 = 'f3d549758b23a057d65c86bf8fcdf407916b7c471e776ccec5115a7b5dc3c9b8'
+          PACKED_SHA256 = 'f556912c08cb48b748ef046218b2050c847fa831975db5a4909650009ea268f7'
+
+          def git(*args):
+              return subprocess.check_output(['git', *args])
+
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+
+          def api(path, data=None):
+              request = urllib.request.Request(
+                  'https://api.github.com/repos/' + REPO + path,
+                  data=None if data is None else json.dumps(data).encode('utf-8'),
+                  method='GET' if data is None else 'POST',
+                  headers={
+                      'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                      'Accept': 'application/vnd.github+json',
+                      'Content-Type': 'application/json',
+                      'User-Agent': 'flow-local-candidate-transfer',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=60) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as error:
+                  raise RuntimeError(f'GitHub {path}: {error.code}: {error.read(2000).decode()}') from error
+
+          head = git('rev-parse', 'HEAD').decode().strip()
+          require(head == os.environ['GITHUB_SHA'], 'Checkout differs from workflow revision.')
+          require(git('rev-parse', 'HEAD^').decode().strip() == BASE, 'Source branch moved; refusing transfer.')
+          blob = api('/git/blobs/' + PACKED_BLOB)
+          require(blob['encoding'] == 'base64', 'Unexpected blob encoding.')
+          packed = base64.b64decode(''.join(blob['content'].split()), validate=True)
+          require(len(packed) == 11496, 'Truncated transfer blob.')
+          require(hashlib.sha1(b'blob 11496\0' + packed).hexdigest() == PACKED_BLOB, 'Git blob identity mismatch.')
+          require(hashlib.sha256(packed).hexdigest() == PACKED_SHA256, 'Compressed patch digest mismatch.')
+          patch = lzma.decompress(packed)
+          require(len(patch) == 45637, 'Patch size mismatch.')
+          require(hashlib.sha256(patch).hexdigest() == PATCH_SHA256, 'Patch digest mismatch.')
+          git('rm', '--', '.github/workflows/local-candidate-transfer.yml')
+          require(git('write-tree').decode().strip() == BASE_TREE, 'Unexpected source-tree change before patch.')
+          subprocess.run(
+              ['git', 'apply', '--index', '--binary', '--unidiff-zero', '--whitespace=error', '-'],
+              input=patch, check=True,
+          )
+          require(git('write-tree').decode().strip() == EXPECTED_TREE, 'Candidate differs from locally tested tree.')
+          for path in ('.github/workflows/local-source-export.yml', '.github/workflows/local-candidate-transfer.yml'):
+              require(not Path(path).exists(), 'Temporary workflow remains in candidate: ' + path)
+          workflow_content = git('show', ':.github/workflows/flow-agent-check.yml')
+          uploaded_workflow = api('/git/blobs', {'encoding': 'base64', 'content': base64.b64encode(workflow_content).decode()})
+          require(uploaded_workflow['sha'] == WORKFLOW_BLOB, 'Workflow blob differs from verified candidate.')
+
+          # This token has content permission, not workflow-edit permission.
+          # The authenticated connector finalizes exactly the three workflow edits.
+          git('restore', '--source=HEAD', '--staged', '--worktree', '--', '.github')
+          intermediate_tree = git('write-tree').decode().strip()
+          index = {}
+          for record in git('ls-files', '--stage', '-z').split(b'\0'):
+              if not record:
+                  continue
+              metadata, path = record.split(b'\t', 1)
+              mode, sha, stage = metadata.decode().split()
+              require(stage == '0', 'Unmerged index entry.')
+              index[path.decode()] = (mode, sha)
+          entries = []
+          for raw_path in git('diff', '--cached', '--no-renames', '--name-only', '-z', 'HEAD').split(b'\0'):
+              if not raw_path:
+                  continue
+              path = raw_path.decode()
+              require(not path.startswith('.github/'), 'Workflow edits require the authorized connector.')
+              if path not in index:
+                  entries.append({'path': path, 'mode': '100644', 'type': 'blob', 'sha': None})
+              else:
+                  mode, sha = index[path]
+                  require(mode in ('100644', '100755'), 'Unexpected candidate file mode.')
+                  entries.append({'path': path, 'mode': mode, 'type': 'blob', 'content': git('show', ':' + path).decode('utf-8')})
+          result = api('/git/trees', {
+              'base_tree': git('rev-parse', 'HEAD^{tree}').decode().strip(),
+              'tree': entries,
+          })
+          require(result['sha'] == intermediate_tree, 'Remote non-workflow tree differs from verified local tree.')
+          receipt = {
+              'status': 'verified', 'sourceBase': BASE, 'transportHead': head,
+              'intermediateTree': result['sha'], 'candidateTree': EXPECTED_TREE,
+              'workflowBlob': WORKFLOW_BLOB, 'patchSha256': PATCH_SHA256,
+              'compressedPatchSha256': PACKED_SHA256, 'changedEntries': len(entries),
+              'commitCreated': False, 'refsModified': False,
+          }
+          Path(os.environ['RECEIPT']).write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt, indent=2))
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ci-completion-tree
+          path: ${{ runner.temp }}/ci-completion-tree-receipt.json
+          retention-days: 1
