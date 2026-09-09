@@ -1,145 +1,24 @@
 package org.flowlang.generators.manifest
 
-import org.flowlang.compiler.CompilationAuthorization
+import org.flowlang.adapters.contract.AdapterCatalog
 import org.flowlang.capabilities.TargetCapability
+import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.modules.ModuleRegistry
 
-interface TargetManifestGenerator {
-    val target: String
-    val nativeProjectionCatalog: TargetNativeProjectionCatalog
-        get() = TargetNativeProjectionCatalog.empty(target)
-
-    fun generate(authorization: TargetProjectionAuthorization): TargetManifest
-}
-
-abstract class ReconciledTargetManifestGenerator : TargetManifestGenerator {
-    final override fun generate(authorization: TargetProjectionAuthorization): TargetManifest {
-        require(authorization.target == target) {
-            "Manifest generator '$target' cannot consume authorization for '${authorization.target}'."
-        }
-        val compatibility = authorization.compatibility
-        nativeProjectionCatalog.requireCompatibleRules(compatibility.projectionRules)
-        return buildManifest(authorization)
-            .reconcileCompatibilityReadiness()
-            .also(nativeProjectionCatalog::requireManifest)
-            .also { manifest ->
-                if (
-                    authorization.purpose == TargetProjectionAuthorizationPurpose.DIAGNOSTIC_EVIDENCE &&
-                    authorization.compatibility.hasErrors
-                ) {
-                    require(!manifest.compatibility.executable) {
-                        "Diagnostic projection for unsupported target '$target' cannot claim executable readiness."
-                    }
-                }
-            }
-    }
-
-    protected abstract fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest
-}
-
-interface TargetManifestRenderer {
-    val target: String
-    val artifactFileName: String
-    fun render(manifest: TargetManifest): String
-}
-
 fun interface TargetProjectionCapabilityResolver {
-    fun resolve(
-        authorization: CompilationAuthorization,
-        target: String,
-        declared: TargetCapability
-    ): TargetCapability
+    fun resolve(authorization: CompilationAuthorization, target: String, declared: TargetCapability): TargetCapability
 }
 
 fun interface TargetProjectionExecutionGate {
     fun requireAuthorized(authorization: CompilationAuthorization, target: String)
 }
 
-class TargetProjectionProvider(
-    val generator: TargetManifestGenerator,
-    val renderer: TargetManifestRenderer
-) {
-    val target: String = generator.target
-    val nativeProjectionCatalog: TargetNativeProjectionCatalog = generator.nativeProjectionCatalog
-    val artifactFileName: String = renderer.artifactFileName
-
-    init {
-        require(target.isNotBlank()) { "Target projection provider must declare a non-blank target id." }
-        require(renderer.target == target) {
-            "Target projection provider mismatch: generator '${generator.target}' cannot be paired with renderer '${renderer.target}'."
-        }
-        require(nativeProjectionCatalog.target == target) {
-            "Target projection provider mismatch: generator '$target' cannot use native projection catalog '${nativeProjectionCatalog.target}'."
-        }
-        require(artifactFileName.isNotBlank()) {
-            "Target projection provider '$target' must declare a non-blank artifact file name."
-        }
-        require('/' !in artifactFileName && '\\' !in artifactFileName && artifactFileName !in setOf(".", "..")) {
-            "Target projection provider '$target' must declare a file name, not a path: '$artifactFileName'."
-        }
-    }
-
-    fun generate(authorization: TargetProjectionAuthorization): TargetManifest {
-        require(authorization.target == target) {
-            "Projection provider '$target' cannot consume authorization for '${authorization.target}'."
-        }
-        nativeProjectionCatalog.requireCompatibleRules(authorization.compatibility.projectionRules)
-        return generator.generate(authorization).also(nativeProjectionCatalog::requireManifest)
-    }
-
-    fun render(manifest: TargetManifest): String {
-        require(manifest.target == target) {
-            "Projection provider '$target' cannot render manifest target '${manifest.target}'."
-        }
-        nativeProjectionCatalog.requireManifest(manifest)
-        TargetRenderPolicy.requireExecutable(manifest)
-        return renderer.render(manifest)
-    }
-}
-
-class TargetProjectionRegistry private constructor(
-    private val providersByTarget: Map<String, TargetProjectionProvider>
-) {
-    val targetIds: Set<String> = providersByTarget.keys
-
-    fun providerFor(target: String): TargetProjectionProvider? = providersByTarget[target]
-
-    fun requireProvider(target: String): TargetProjectionProvider = providerFor(target)
-        ?: error(
-            "No target projection provider is registered for '$target'. " +
-                "Available providers: ${targetIds.sorted().joinToString().ifBlank { "none" }}."
-        )
-
-    companion object {
-        fun of(providers: Iterable<TargetProjectionProvider>): TargetProjectionRegistry {
-            val indexed = linkedMapOf<String, TargetProjectionProvider>()
-            providers.forEach { provider ->
-                require(indexed.putIfAbsent(provider.target, provider) == null) {
-                    "Duplicate target projection provider '${provider.target}'."
-                }
-            }
-            return TargetProjectionRegistry(indexed.toMap())
-        }
-
-        fun of(vararg providers: TargetProjectionProvider): TargetProjectionRegistry = of(providers.asIterable())
-
-        fun empty(): TargetProjectionRegistry = TargetProjectionRegistry(emptyMap())
-    }
-}
-
-/**
- * Canonical manifest pipeline with plan-specific capability and execution evidence.
- *
- * The legacy planning validator sees the untouched compatibility plan first, so
- * malformed retained fields keep their stable diagnostics. After that boundary,
- * every execution or diagnostic candidate is rebound to the exact validated
- * CanonicalExecutionGraph authorization before a provider can observe the plan.
- */
+/** Generic orchestration receives an adapter catalog explicitly; it owns no concrete defaults. */
 class TargetManifestGenerationPipeline(
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry,
+    private val projections: AdapterCatalog<TargetProjectionProvider>,
     private val capabilityResolvers: List<TargetProjectionCapabilityResolver> = emptyList(),
     private val executionGates: List<TargetProjectionExecutionGate> = emptyList()
 ) {
@@ -150,10 +29,7 @@ class TargetManifestGenerationPipeline(
     private val composedCapabilityResolvers: List<TargetProjectionCapabilityResolver> =
         capabilityResolvers + executionGates.filterIsInstance<TargetProjectionCapabilityResolver>()
 
-    fun effectiveTarget(
-        authorization: CompilationAuthorization,
-        target: String
-    ): TargetCapability {
+    fun effectiveTarget(authorization: CompilationAuthorization, target: String): TargetCapability {
         authorization.requireIntegrity()
         val declared = requireNotNull(targets[target]) { "Unknown target '$target'." }
         return composedCapabilityResolvers.fold(declared) { current, resolver ->
@@ -165,10 +41,7 @@ class TargetManifestGenerationPipeline(
         }
     }
 
-    fun effectiveTargets(
-        authorization: CompilationAuthorization,
-        target: String
-    ): Map<String, TargetCapability> =
+    fun effectiveTargets(authorization: CompilationAuthorization, target: String): Map<String, TargetCapability> =
         targets + (target to effectiveTarget(authorization, target))
 
     fun generate(request: TargetMaterializationRequest): TargetManifest {
@@ -178,26 +51,31 @@ class TargetManifestGenerationPipeline(
         require(graphAuthorization.executionPlan == rawPlan) {
             "Planning validation and canonical graph authorization disagree on the execution plan."
         }
-        val provider = projections.requireProvider(request.target)
+        val provider = projections.requireAdapter(request.target)
         val authority = MandatoryMaterializationAuthority(effectiveTargets(graphAuthorization, request.target))
         val authorization = authority.authorize(request)
-        executionGates.forEach { gate ->
-            gate.requireAuthorized(authorization.compilationAuthorization, authorization.target)
-        }
-        return provider.generate(authorization)
+        executionGates.forEach { gate -> gate.requireAuthorized(authorization.compilationAuthorization, authorization.target) }
+        return provider.generate(authorization.toProjectionContext())
     }
 
-    fun generateDiagnosticEvidence(
-        request: TargetDiagnosticMaterializationRequest
-    ): TargetManifest {
+    fun generateDiagnosticEvidence(request: TargetDiagnosticMaterializationRequest): TargetManifest {
         val rawPlan = request.plan
         ExecutionPlanMaterializationValidator.requireValid(rawPlan, ModuleRegistry())
         val graphAuthorization = request.authorization.also { it.requireIntegrity() }
         require(graphAuthorization.executionPlan == rawPlan) {
             "Diagnostic planning validation and canonical graph authorization disagree on the execution plan."
         }
-        val provider = projections.requireProvider(request.target)
+        val provider = projections.requireAdapter(request.target)
         val authority = MandatoryMaterializationAuthority(effectiveTargets(graphAuthorization, request.target))
-        return provider.generate(authority.authorizeDiagnosticEvidence(request))
+        return provider.generate(authority.authorizeDiagnosticEvidence(request).toProjectionContext())
     }
 }
+
+private fun TargetProjectionAuthorization.toProjectionContext(): TargetProjectionContext = TargetProjectionContext(
+    compilationAuthorization = compilationAuthorization,
+    target = target,
+    compatibility = compatibility,
+    strict = strict,
+    topology = topology,
+    diagnosticEvidence = purpose == TargetProjectionAuthorizationPurpose.DIAGNOSTIC_EVIDENCE
+)
