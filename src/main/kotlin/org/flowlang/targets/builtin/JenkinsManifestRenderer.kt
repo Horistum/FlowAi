@@ -101,7 +101,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         step.mappingNotes.forEach { note ->
             sb.appendLine("${indent}// Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}")
         }
-        TargetProjectionDiagnostics.append(ProjectionTarget.JENKINS, step, manifest.inputs, sb, indent, "//")
+        TargetProjectionDiagnostics.append(JenkinsProjectionSyntax, step, manifest.inputs, sb, indent, "//")
         when (step.type) {
             "try" -> renderJenkinsTry(step, manifest, sb, indent)
             "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry" ->
@@ -116,7 +116,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         val payload = requireNotNull(step.rendererPayload) {
             "Executable Jenkins approval '${step.id}' has no provider renderer payload."
         }
-        require(payload.kind == BuiltInProjectionPayloadKinds.JENKINS_STEP && payload.reference == "input") {
+        require(payload.kind == JenkinsProjectionPayloadKinds.JENKINS_STEP && payload.reference == "input") {
             "Jenkins approval '${step.id}' requires the owned JENKINS_STEP/input payload, not '${payload.kind}/${payload.reference}'."
         }
         val mode = requireNotNull(payload.bindings["mode"]?.value) {
@@ -172,7 +172,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
     ) {
         requireJenkinsStructure(step, "if")
         val condition = step.params["condition"] ?: "false"
-        val rendered = TargetExpressionTranslator.groovy(
+        val rendered = JenkinsTargetExpressionTranslator.groovy(
             condition,
             manifest.inputs,
             manifest.compatibility.expressionSupport
@@ -189,10 +189,10 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "Executable Jenkins structural step '${step.id}' has no provider renderer payload."
         }
         require(
-            payload.kind == BuiltInProjectionPayloadKinds.JENKINS_STRUCTURE &&
+            payload.kind == JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE &&
                 payload.reference == reference
         ) {
-            "Jenkins structural step '${step.id}' requires the owned ${BuiltInProjectionPayloadKinds.JENKINS_STRUCTURE}/$reference payload, not '${payload.kind}/${payload.reference}'."
+            "Jenkins structural step '${step.id}' requires the owned ${JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE}/$reference payload, not '${payload.kind}/${payload.reference}'."
         }
     }
 
@@ -205,9 +205,9 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         val opaqueNames = TargetProjectionDiagnostics.opaqueNames(step)
         if (opaqueNames.isNotEmpty()) {
             val items = opaqueNames.joinToString(", ") {
-                TargetProjectionValue.mappingSpec(ProjectionTarget.JENKINS, it)
+                JenkinsProjectionSyntax.mappingSpec(it)
             }
-            sb.appendLine("${indent}${TargetProjectionValue.boundary(ProjectionTarget.JENKINS)}([$items]) {")
+            sb.appendLine("${indent}${JenkinsProjectionSyntax.boundary()}([$items]) {")
             renderJenkinsLeafBody(step, manifest, sb, "$indent  ")
             sb.appendLine("${indent}}")
         } else {
@@ -224,7 +224,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         val payload = requireNotNull(step.rendererPayload) {
             "Executable Jenkins step '${step.id}' has no renderer payload."
         }
-        require(payload.kind == BuiltInProjectionPayloadKinds.JENKINS_STEP) {
+        require(payload.kind == JenkinsProjectionPayloadKinds.JENKINS_STEP) {
             "Jenkins cannot render payload kind '${payload.kind}' for step '${step.id}'."
         }
         when (payload.reference) {
@@ -275,12 +275,12 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "$context cannot render custom Dockerfile '$dockerfile' without falling back to Docker CLI argument strings."
         }
         val push = ImageBuildProjectionValues.push(payload, "push", context)
-        val imageArgument = ImageBuildProjectionValues.jenkinsImageArgument(
+        val imageArgument = JenkinsImageBuildProjectionValues.jenkinsImageArgument(
             image,
             manifest.inputs,
             "$context binding 'image'"
         )
-        val variable = ImageBuildProjectionValues.jenkinsVariable(stepId)
+        val variable = JenkinsImageBuildProjectionValues.jenkinsVariable(stepId)
         val buildCall = if (buildContext == ".") {
             "docker.build($imageArgument)"
         } else {

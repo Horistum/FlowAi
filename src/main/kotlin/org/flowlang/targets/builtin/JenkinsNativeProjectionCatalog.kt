@@ -15,7 +15,7 @@ object JenkinsNativeProjectionCatalog {
         target = "jenkins",
         definitions = listOf(
             TargetNativeProjectionDefinition(
-                kind = BuiltInProjectionPayloadKinds.JENKINS_STEP,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STEP,
                 reference = "git",
                 bindings = mapOf(
                     "url" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.TASK_PARAMETER)),
@@ -24,7 +24,7 @@ object JenkinsNativeProjectionCatalog {
                 )
             ),
             TargetNativeProjectionDefinition(
-                kind = BuiltInProjectionPayloadKinds.JENKINS_STEP,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STEP,
                 reference = "docker-build",
                 bindings = imageBuildBindings()
             )
@@ -32,7 +32,7 @@ object JenkinsNativeProjectionCatalog {
         approvalDefinitions = listOf(
             TargetNativeApprovalProjectionDefinition(
                 capability = "approval.manual",
-                kind = BuiltInProjectionPayloadKinds.JENKINS_STEP,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STEP,
                 reference = "input",
                 evidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#approval.manual.input",
                 bindings = mapOf(
@@ -44,14 +44,14 @@ object JenkinsNativeProjectionCatalog {
         structuralDefinitions = listOf(
             TargetNativeStructuralProjectionDefinition(
                 structure = TargetStructuralProjectionKind.CONDITION,
-                kind = BuiltInProjectionPayloadKinds.JENKINS_STRUCTURE,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
                 reference = "if",
                 implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#condition",
                 behavioralEvidenceReference = "src/test/kotlin/TargetStructuralProjectionHonestyTests.kt#jenkinsConditionPreservesGuardedExecution"
             ),
             TargetNativeStructuralProjectionDefinition(
                 structure = TargetStructuralProjectionKind.ERROR_BOUNDARY,
-                kind = BuiltInProjectionPayloadKinds.JENKINS_STRUCTURE,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
                 reference = "try-catch",
                 implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#error-boundary",
                 behavioralEvidenceReference = "src/test/kotlin/TargetStructuralProjectionHonestyTests.kt#jenkinsErrorBoundaryPreservesHandlerExecution"

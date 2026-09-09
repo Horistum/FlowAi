@@ -6,17 +6,21 @@ import org.flowlang.generators.GroovyExpr
 import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.parser.ExpressionParser
 
-/** Jenkins-owned translation of Flow conditions to Groovy expressions. */
+/** Jenkins-owned translation with the existing fail-closed diagnostic contract. */
 object JenkinsTargetExpressionTranslator {
-    fun render(
+    fun groovy(
         condition: String,
         inputs: List<TargetInput>,
         expressionSupport: TargetExpressionSupportDeclaration?
-    ): String {
+    ): String = try {
         val parsed = ExpressionParser.parseSource(condition)
         TargetExpressionSupport.unsupportedReason("jenkins", expressionSupport, parsed)?.let {
-            throw IllegalArgumentException(it)
+            throw TargetExpressionTranslationException(it)
         }
-        return GroovyExpr(inputs.map { it.name }.toSet()).render(parsed)
+        GroovyExpr(inputs.map { it.name }.toSet()).render(parsed)
+    } catch (e: TargetExpressionTranslationException) {
+        throw e
+    } catch (e: Exception) {
+        throw TargetExpressionTranslationException("Unable to translate Flow condition to Groovy: $condition", e)
     }
 }

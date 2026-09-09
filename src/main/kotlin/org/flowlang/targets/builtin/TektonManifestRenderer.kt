@@ -8,7 +8,7 @@ import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererContractValidator
 import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
 import org.flowlang.generators.manifest.TargetRendererPayload
-import org.flowlang.generators.manifest.sanitizeId
+import org.flowlang.generators.manifest.AdapterManifestLowering.id as sanitizeId
 
 class TektonManifestRenderer : TargetManifestRenderer {
     override val target: String = "tekton"
@@ -52,7 +52,7 @@ class TektonManifestRenderer : TargetManifestRenderer {
     private fun projectionWorkspaceNames(manifest: TargetManifest): List<String> = manifest.jobs
         .flatMap { job -> job.steps.flatMap { it.flatten() } }
         .mapNotNull { step -> step.rendererPayload }
-        .filter { payload -> payload.kind == BuiltInProjectionPayloadKinds.TEKTON_TASK }
+        .filter { payload -> payload.kind == TektonProjectionPayloadKinds.TEKTON_TASK }
         .mapNotNull { payload ->
             when (payload.reference) {
                 "git-clone" -> CheckoutProjectionValues.workspace(payload, "workspace", "Tekton git-clone payload")
@@ -96,7 +96,7 @@ class TektonManifestRenderer : TargetManifestRenderer {
     ) {
         val context = "Tekton buildah payload for '$stepId'"
         val image = ImageBuildProjectionValues.renderText(
-            ProjectionTarget.TEKTON,
+            TektonProjectionSyntax,
             ImageBuildProjectionValues.image(payload, "image", context),
             manifest.inputs,
             "$context binding 'image'"
@@ -106,12 +106,12 @@ class TektonManifestRenderer : TargetManifestRenderer {
             "$context binding 'context'"
         )
         val renderedContext = ImageBuildProjectionValues.renderText(
-            ProjectionTarget.TEKTON,
+            TektonProjectionSyntax,
             rawContext,
             manifest.inputs,
             "$context binding 'context'"
         )
-        val rawDockerfile = ImageBuildProjectionValues.tektonDockerfile(
+        val rawDockerfile = TektonImageBuildProjectionValues.tektonDockerfile(
             rawContext,
             ImageBuildProjectionValues.dockerfile(payload, "dockerfile", context)
         )
@@ -120,7 +120,7 @@ class TektonManifestRenderer : TargetManifestRenderer {
             "$context binding 'dockerfile'"
         )
         val renderedDockerfile = ImageBuildProjectionValues.renderText(
-            ProjectionTarget.TEKTON,
+            TektonProjectionSyntax,
             rawDockerfile,
             manifest.inputs,
             "$context binding 'dockerfile'"
@@ -154,7 +154,7 @@ class TektonManifestRenderer : TargetManifestRenderer {
         if (payload.bindings.isEmpty()) return
         sb.appendLine("      params:")
         payload.bindings.forEach { (name, binding) ->
-            val value = ProjectionBindingRenderer.tektonValue(binding, "$stepId.bindings.$name")
+            val value = TektonProjectionBindingRenderer.tektonValue(binding, "$stepId.bindings.$name")
             sb.appendLine("        - name: ${sanitizeId(name)}")
             sb.appendLine("          value: ${yamlScalar(value)}")
         }
@@ -167,7 +167,7 @@ class TektonManifestRenderer : TargetManifestRenderer {
             sb.appendLine("      runAfter: [${job.dependsOn.joinToString(", ") { sanitizeId(it) }}]")
         }
         job.metadata["condition"]?.let { condition ->
-            val whenBlock = TargetExpressionTranslator.tektonWhen(
+            val whenBlock = TektonTargetExpressionTranslator.tektonWhen(
                 condition,
                 manifest.inputs,
                 manifest.compatibility.expressionSupport
@@ -183,7 +183,7 @@ class TektonManifestRenderer : TargetManifestRenderer {
         val payload = requireNotNull(step.rendererPayload) {
             "Executable Tekton step '${step.id}' has no renderer payload."
         }
-        require(payload.kind == BuiltInProjectionPayloadKinds.TEKTON_TASK) {
+        require(payload.kind == TektonProjectionPayloadKinds.TEKTON_TASK) {
             "Tekton cannot render payload kind '${payload.kind}' for step '${step.id}'."
         }
         when (payload.reference) {

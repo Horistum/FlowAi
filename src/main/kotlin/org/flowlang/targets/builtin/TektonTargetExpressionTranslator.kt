@@ -8,30 +8,40 @@ import org.flowlang.parser.ExpressionParser
 
 /** Tekton-owned lowering of the supported Flow condition subset to `when`. */
 object TektonTargetExpressionTranslator {
-    fun whenBlock(condition: String, inputs: List<TargetInput>, expressionSupport: TargetExpressionSupportDeclaration?): String? = try {
+    fun tektonWhen(
+        condition: String,
+        inputs: List<TargetInput>,
+        expressionSupport: TargetExpressionSupportDeclaration?
+    ): String? = try {
         val parsed = ExpressionParser.parseSource(condition)
         if (TargetExpressionSupport.unsupportedReason("tekton", expressionSupport, parsed) != null) null
-        else renderWhen(parsed, inputs.map { it.name }.toSet())
+        else renderTektonWhen(parsed, inputs.map { it.name }.toSet())
     } catch (_: Exception) {
         null
     }
 
-    private fun renderWhen(e: ExpressionNode, inputs: Set<String>): String? = when (e) {
+    private fun renderTektonWhen(e: ExpressionNode, inputs: Set<String>): String? = when (e) {
         is BinaryExpressionNode -> {
-            val left = value(e.left, inputs)
-            val right = value(e.right, inputs)
+            val left = tektonValue(e.left, inputs)
+            val right = tektonValue(e.right, inputs)
             if (left == null || right == null) null else when (e.operator) {
-                "==" -> "when:\n  - input: ${yaml(left)}\n    operator: in\n    values:\n      - ${yaml(right)}\n"
-                "!=" -> "when:\n  - input: ${yaml(left)}\n    operator: notin\n    values:\n      - ${yaml(right)}\n"
+                "==" -> "when:\n  - input: ${yamlScalar(left)}\n    operator: in\n    values:\n      - ${yamlScalar(right)}\n"
+                "!=" -> "when:\n  - input: ${yamlScalar(left)}\n    operator: notin\n    values:\n      - ${yamlScalar(right)}\n"
                 "in" -> {
-                    val values = if (e.right is ListLiteralNode) e.right.items.mapNotNull { value(it, inputs) } else listOf(right)
-                    "when:\n  - input: ${yaml(left)}\n    operator: in\n    values:\n" + values.joinToString("") { "      - ${yaml(it)}\n" }
+                    val rightExpression = e.right
+                    val values = if (rightExpression is ListLiteralNode) {
+                        rightExpression.items.mapNotNull { tektonValue(it, inputs) }
+                    } else {
+                        listOf(right)
+                    }
+                    "when:\n  - input: ${yamlScalar(left)}\n    operator: in\n    values:\n" +
+                        values.joinToString("") { "      - ${yamlScalar(it)}\n" }
                 }
                 else -> null
             }
         }
         is LogicalExpressionNode -> if (e.operator == "and") {
-            val blocks = e.operands.mapNotNull { renderWhen(it, inputs) }
+            val blocks = e.operands.mapNotNull { renderTektonWhen(it, inputs) }
             if (blocks.size == e.operands.size) {
                 val entries = blocks.flatMap { block -> block.lines().drop(1).filter { it.isNotBlank() } }
                 "when:\n" + entries.joinToString("\n") + "\n"
@@ -40,15 +50,17 @@ object TektonTargetExpressionTranslator {
         else -> null
     }
 
-    private fun value(e: ExpressionNode, inputs: Set<String>): String? = when (e) {
+    private fun tektonValue(e: ExpressionNode, inputs: Set<String>): String? = when (e) {
         is StringLiteralNode -> e.value
         is NumberLiteralNode -> if (e.isInteger) e.value.toLong().toString() else e.value.toString()
         is BooleanLiteralNode -> e.value.toString()
         is IdentifierLiteralNode -> e.value
-        is ReferenceNode -> if (e.path.size == 1 && e.path.first() in inputs) "\$(params.${e.path.first()})" else e.path.joinToString(".")
-        is MemberExpressionNode -> value(e.target, inputs)?.let { "$it.${e.member}" }
+        is ReferenceNode -> if (e.path.size == 1 && e.path.first() in inputs) {
+            "\$(params.${e.path.first()})"
+        } else {
+            e.path.joinToString(".")
+        }
+        is MemberExpressionNode -> tektonValue(e.target, inputs)?.let { "$it.${e.member}" }
         else -> null
     }
-
-    private fun yaml(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
 }

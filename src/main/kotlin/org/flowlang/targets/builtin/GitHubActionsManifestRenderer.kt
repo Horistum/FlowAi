@@ -9,7 +9,7 @@ import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRendererContractValidator
 import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
 import org.flowlang.generators.manifest.TargetRendererPayload
-import org.flowlang.generators.manifest.sanitizeId
+import org.flowlang.generators.manifest.AdapterManifestLowering.id as sanitizeId
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingKind
 import org.flowlang.projection.ProjectionBindingResolutionStatus
@@ -74,7 +74,7 @@ class GitHubActionsManifestRenderer(
         if (opaqueNames.isNotEmpty()) {
             sb.appendLine("    env:")
             opaqueNames.forEach { name ->
-                sb.appendLine("      ${safeEnvName(name)}: ${TargetProjectionValue.bindingValue(ProjectionTarget.GITHUB_ACTIONS, name)}")
+                sb.appendLine("      ${safeEnvName(name)}: ${GitHubActionsProjectionSyntax.bindingValue(name)}")
             }
         }
         require(materializedSteps.isNotEmpty()) { "Executable GitHub Actions job '${job.id}' has no steps." }
@@ -83,7 +83,7 @@ class GitHubActionsManifestRenderer(
             val payload = requireNotNull(step.rendererPayload) {
                 "Executable GitHub Actions step '${step.id}' has no renderer payload."
             }
-            require(payload.kind == BuiltInProjectionPayloadKinds.GITHUB_ACTION) {
+            require(payload.kind == GitHubActionsProjectionPayloadKinds.GITHUB_ACTION) {
                 "GitHub Actions cannot render payload kind '${payload.kind}' for step '${step.id}'."
             }
             sb.appendLine("      - name: ${yamlScalar(step.name)}")
@@ -106,7 +106,7 @@ class GitHubActionsManifestRenderer(
         sb: StringBuilder
     ) {
         val context = "GitHub checkout payload for '$stepId'"
-        val repository = CheckoutProjectionValues.githubRepository(payload, "repository", context)
+        val repository = GitHubActionsCheckoutProjectionValues.githubRepository(payload, "repository", context)
         val ref = CheckoutProjectionValues.branch(payload, "ref", context)
         val depth = payload.bindings["fetch-depth"]?.let {
             CheckoutProjectionValues.depth(payload, "fetch-depth", context)
@@ -125,7 +125,7 @@ class GitHubActionsManifestRenderer(
     ) {
         val context = "GitHub image-build payload for '$stepId'"
         val image = ImageBuildProjectionValues.renderText(
-            ProjectionTarget.GITHUB_ACTIONS,
+            GitHubActionsProjectionSyntax,
             ImageBuildProjectionValues.image(payload, "image", context),
             manifest.inputs,
             "$context binding 'image'"
@@ -140,10 +140,10 @@ class GitHubActionsManifestRenderer(
         val push = ImageBuildProjectionValues.push(payload, "push", context)
 
         sb.appendLine("        with:")
-        ImageBuildProjectionValues.githubContext(buildContext)?.let {
+        GitHubActionsImageBuildProjectionValues.githubContext(buildContext)?.let {
             sb.appendLine("          context: ${yamlScalar(it)}")
         }
-        ImageBuildProjectionValues.githubDockerfile(buildContext, dockerfile)?.let {
+        GitHubActionsImageBuildProjectionValues.githubDockerfile(buildContext, dockerfile)?.let {
             sb.appendLine("          file: ${yamlScalar(it)}")
         }
         sb.appendLine("          tags: ${yamlScalar(image)}")
@@ -220,7 +220,7 @@ class GitHubActionsManifestRenderer(
         if (bindings.isEmpty()) return
         sb.appendLine("        with:")
         bindings.forEach { (name, binding) ->
-            val value = ProjectionBindingRenderer.githubValue(binding, "$stepId.bindings.$name")
+            val value = GitHubActionsProjectionBindingRenderer.githubValue(binding, "$stepId.bindings.$name")
             sb.appendLine("          ${sanitizeId(name)}: ${yamlScalar(value)}")
         }
     }
