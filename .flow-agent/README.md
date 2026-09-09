@@ -1,6 +1,8 @@
-# Flow Roadmap Development Agent
+# Horistum Roadmap Development Agent
 
-This directory defines the repository-bound development agent for Flow Core.
+<a id="flow-roadmap-development-agent"></a>
+
+This directory defines the repository-bound development agent for Horistum. Its technical Core retains the name Flow Core.
 
 The agent is not a runtime executor, SDK, plugin framework, or target-specific workflow engine.
 It is a controlled development mechanism for evolving Flow Core according to the approved roadmap,
@@ -8,10 +10,16 @@ architecture constitution, quality gates, and release state.
 
 ## Purpose
 
-The agent exists to keep Flow development aligned with the original project purpose:
+The agent exists to keep Horistum development aligned with the original project purpose, quoted here with its retained technical name:
 
 > Flow is an AI-first standardization layer for DevOps and IT automation. It separates human intent,
 > rules, risks, and safety boundaries from target-specific workflow syntax and platform lifecycle details.
+
+## Product identity
+
+Use Horistum as the product name in current presentation material. Retain `FlowAi`, `Flow`, `flow` and `flowlang` where they identify existing code, tooling, contracts or historical evidence. This is intentional compatibility, not unfinished cleanup. See [Product identity and retained technical names](../docs/PRODUCT_IDENTITY.md).
+
+The `.flow-agent/` path, architecture constitution, roadmap, release state and validation rules remain unchanged. The naming decision does not authorize a namespace migration, a contract version change, or a new roadmap stream.
 
 ## Mandatory Process
 
