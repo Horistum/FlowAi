@@ -1,16 +1,26 @@
-# Flow AI
+# Horistum
 
-Flow AI is an AI-first standardization layer for IT and DevOps automation intent.
+<a id="flow-ai"></a>
+
+Horistum is an AI-first standardization layer for IT and DevOps automation intent.
 
 It is designed to turn human or AI-written automation requests into a validated, portable automation model that can be checked against target capabilities before any target-specific output is generated.
 
-Flow is not a runtime executor, SDK-first platform, plugin lifecycle framework, Jenkins DSL, Kubernetes DSL, GitHub Actions DSL, or general-purpose programming language. Those boundaries are deliberate. The project exists to define a stable automation standard that can be projected to multiple DevOps platforms without making the standard depend on any one of them.
+Horistum is not a runtime executor, SDK-first platform, plugin lifecycle framework, Jenkins DSL, Kubernetes DSL, GitHub Actions DSL, or general-purpose programming language. Those boundaries are deliberate. The project exists to define a stable automation standard that can be projected to multiple DevOps platforms without making the standard depend on any one of them.
+
+## Product name and technical compatibility
+
+Horistum is the current product name; the project was previously presented as **Flow AI**. This is the same project, not a fork, a new standard, or a runtime product.
+
+Existing technical names are retained deliberately: the repository remains `milank78git/FlowAi`, Kotlin packages remain `org.flowlang`, and the Flow language, Flow AST, `flow-*` modules, CLI commands and artifact formats keep their current identities. The commands below continue to use the existing toolchain. No `horistum` executable or new repository URL is introduced by this branding change.
+
+Use **Horistum** for product-facing prose and keep the exact technical identifier when discussing code, formats or tooling. There is no planned requirement to rename every function, type or package. See [Product identity and retained technical names](docs/PRODUCT_IDENTITY.md) and [Responsibility-based code names](docs/CODE_NAMING.md).
 
 ## Core idea
 
 Modern automation is fragmented across CI/CD systems, Kubernetes tools, workflow engines, scripts, platform-specific YAML files and internal conventions. AI can help users express automation intent, but raw AI output is unsafe unless it is normalized, validated and checked against a deterministic standard.
 
-Flow separates the automation problem into stable layers:
+Horistum separates the automation problem into stable layers:
 
 ```text
 Human or AI intent
@@ -24,11 +34,13 @@ Human or AI intent
   -> Optional vendor renderer
 ```
 
-The important point is that the AI does not directly generate arbitrary Jenkinsfiles, GitHub Actions workflows, Tekton pipelines or shell scripts. AI proposes intent. Flow validates and plans. Target generators only project an already validated execution plan.
+The important point is that the AI does not directly generate arbitrary Jenkinsfiles, GitHub Actions workflows, Tekton pipelines or shell scripts. AI proposes intent. Horistum validates and plans. Target generators only project an already validated execution plan.
 
-## What Flow is
+<a id="what-flow-is"></a>
 
-Flow is:
+## What Horistum is
+
+Horistum is:
 
 - an AI-first automation intent standard,
 - a portable model for DevOps and IT automation,
@@ -38,9 +50,11 @@ Flow is:
 - a safety boundary between natural language and executable automation,
 - a way to describe automation intent without hardcoding one vendor workflow language.
 
-## What Flow is not
+<a id="what-flow-is-not"></a>
 
-Flow is not:
+## What Horistum is not
+
+Horistum is not:
 
 - a runtime executor,
 - an SDK-first framework,
@@ -302,4 +316,4 @@ Recommended workflow:
 
 ## License
 
-Flow AI is licensed under the Apache License, Version 2.0. See `LICENSE`.
+Horistum is licensed under the Apache License, Version 2.0. See `LICENSE`.
