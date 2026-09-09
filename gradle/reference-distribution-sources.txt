@@ -1,1 +1,4 @@
 org/flowlang/distribution/reference/ReferenceTargetProjections.kt
+org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt
+org/flowlang/targets/builtin/BuiltInProjectionPayloadKinds.kt
+org/flowlang/targets/builtin/TargetExpressionTranslator.kt

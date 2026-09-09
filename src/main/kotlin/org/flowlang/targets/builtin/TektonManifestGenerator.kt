@@ -8,22 +8,22 @@ import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetMappingNote
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
-import org.flowlang.generators.manifest.TargetProjectionContext
+import org.flowlang.generators.manifest.TargetProjectionAuthorization
 
 class TektonManifestGenerator(
     override val nativeProjectionCatalog: TargetNativeProjectionCatalog = TektonNativeProjectionCatalog.catalog
 ) : ReconciledTargetManifestGenerator() {
     override val target: String = "tekton"
 
-    override fun buildManifest(context: TargetProjectionContext): TargetManifest {
-        val plan = context.plan
-        val compatibility = context.compatibility
+    override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
+        val plan = authorization.plan
+        val compatibility = authorization.compatibility
         val jobs = AdapterWorkflowProjectionLowering.jobPerTask(
-            projection = context.compilationAuthorization.requireSingleWorkflowFailureProjection(),
-            authorization = context.compilationAuthorization,
-            targetName = target,
-            projectionRules = compatibility.projectionRules,
-            nativeProjections = nativeProjectionCatalog
+            authorization.compilationAuthorization.requireSingleWorkflowFailureProjection(),
+            authorization.compilationAuthorization,
+            target,
+            compatibility.projectionRules,
+            nativeProjectionCatalog
         )
         val resolvedJobs = jobs.ifEmpty {
             listOf(TargetJob(
@@ -39,13 +39,11 @@ class TektonManifestGenerator(
         )
         val untranslatableConditionNotes = resolvedJobs.mapNotNull { job ->
             val condition = job.metadata["condition"]
-            if (condition != null && TektonTargetExpressionTranslator.whenBlock(
-                    condition, inputs, compatibility.expressionSupport
-                ) == null
+            if (condition != null &&
+                TektonTargetExpressionTranslator.tektonWhen(condition, inputs, compatibility.expressionSupport) == null
             ) {
                 TargetMappingNote(
-                    level = "error", target = target, nodeId = job.id,
-                    feature = "condition.unsupported",
+                    level = "error", target = target, nodeId = job.id, feature = "condition.unsupported",
                     message = "Flow condition cannot be enforced as a native Tekton 'when' guard; without resolution the task would run unconditionally. Use a supported condition shape or an explicit target note before production use: $condition"
                 )
             } else null

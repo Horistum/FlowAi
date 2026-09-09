@@ -7,19 +7,19 @@ import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
-import org.flowlang.generators.manifest.TargetProjectionContext
+import org.flowlang.generators.manifest.TargetProjectionAuthorization
 
 class JenkinsManifestGenerator(
     override val nativeProjectionCatalog: TargetNativeProjectionCatalog = JenkinsNativeProjectionCatalog.catalog
 ) : ReconciledTargetManifestGenerator() {
     override val target: String = "jenkins"
 
-    override fun buildManifest(context: TargetProjectionContext): TargetManifest {
-        val plan = context.plan
-        val compatibility = context.compatibility
+    override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
+        val plan = authorization.plan
+        val compatibility = authorization.compatibility
         val steps = AdapterWorkflowProjectionLowering.nodePreservingSteps(
-            projection = context.compilationAuthorization.requireSingleWorkflowFailureProjection(),
-            authorization = context.compilationAuthorization,
+            projection = authorization.compilationAuthorization.requireSingleWorkflowFailureProjection(),
+            authorization = authorization.compilationAuthorization,
             targetName = target,
             projectionRules = compatibility.projectionRules,
             nativeProjections = nativeProjectionCatalog

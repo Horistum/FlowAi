@@ -1,17 +1,10 @@
-plugins {
-    kotlin("jvm") version "2.4.10"
-    `java-library`
-}
+plugins { kotlin("jvm"); `java-library` }
 
-group = "org.flowlang"
+group = rootProject.group
 version = rootProject.version
 
-repositories { mavenCentral() }
-
-val allowedProductionProjects by extra(listOf<String>())
-val allowedProductionLibraries by extra(listOf<String>())
+extra["allowedProductionProjects"] = listOf<String>()
+extra["allowedProductionLibraries"] = listOf<String>()
 apply(from = rootProject.file("gradle/production-module.gradle.kts"))
 
-dependencies {
-    testImplementation(kotlin("test"))
-}
+dependencies { testImplementation(kotlin("test")) }

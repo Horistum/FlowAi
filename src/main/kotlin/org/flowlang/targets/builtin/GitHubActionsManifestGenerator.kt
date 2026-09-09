@@ -7,22 +7,22 @@ import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
-import org.flowlang.generators.manifest.TargetProjectionContext
+import org.flowlang.generators.manifest.TargetProjectionAuthorization
 
 class GitHubActionsManifestGenerator(
     override val nativeProjectionCatalog: TargetNativeProjectionCatalog = GitHubActionsNativeProjectionCatalog.catalog
 ) : ReconciledTargetManifestGenerator() {
     override val target: String = "github-actions"
 
-    override fun buildManifest(context: TargetProjectionContext): TargetManifest {
-        val plan = context.plan
-        val compatibility = context.compatibility
+    override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
+        val plan = authorization.plan
+        val compatibility = authorization.compatibility
         val jobs = AdapterWorkflowProjectionLowering.jobPerTask(
-            projection = context.compilationAuthorization.requireSingleWorkflowFailureProjection(),
-            authorization = context.compilationAuthorization,
-            targetName = target,
-            projectionRules = compatibility.projectionRules,
-            nativeProjections = nativeProjectionCatalog
+            authorization.compilationAuthorization.requireSingleWorkflowFailureProjection(),
+            authorization.compilationAuthorization,
+            target,
+            compatibility.projectionRules,
+            nativeProjectionCatalog
         )
         val baseJobs = jobs.ifEmpty {
             listOf(TargetJob(
