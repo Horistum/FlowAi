@@ -1,0 +1,133 @@
+name: Local Candidate Tree Transfer
+
+# Temporary branch-only transport. The verified candidate removes this workflow.
+on:
+  push:
+    branches: [agent/adapter-contract-boundaries]
+    paths: [.github/workflows/local-candidate-transfer.yml]
+permissions:
+  contents: write
+concurrency:
+  group: flow-local-candidate-tree-transfer
+  cancel-in-progress: true
+jobs:
+  transfer:
+    if: github.repository == 'milank78git/FlowAi' && github.ref == 'refs/heads/agent/adapter-contract-boundaries'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify exact local patch and upload Git tree without committing or moving refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECEIPT: ${{ runner.temp }}/ar03c-tree-receipt.json
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, os, subprocess, urllib.request
+          from pathlib import Path
+
+          REPO = 'milank78git/FlowAi'
+          BASE = 'aed578964da4d303e3afdd5822cfe96b8cabefda'
+          BASE_TREE = '407d700dc1c01497fe2f9dab5314df731bd95a47'
+          EXPECTED_TREE = '80019dfa7b117672574fb7fe7fbf09fcf0632afc'
+          PATCH_SHA256 = '89c9ccae764b6de2e3bf89f5f849ac8aa3385ed3b7672c3813f77c861b4f77ce'
+          PACKED_SHA256 = 'a39d1652a9a7ce177541da04ddeb64c92cb8c184c8f91a49439e611cda8bfeb0'
+          BLOBS = [
+              ('85a671a5ec5d38745c7b3dc7c8a6a6f805a974b4', 11433),
+              ('94e63fd3f993c8afc1403b3b652c5668612e749b', 11433),
+              ('6e6a7f5e91d25dcc4d777883e9228f79c4de895b', 11430),
+          ]
+
+          def git(*args):
+              return subprocess.check_output(['git', *args])
+
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+
+          def api(path, data=None):
+              body = None if data is None else json.dumps(data).encode('utf-8')
+              request = urllib.request.Request(
+                  'https://api.github.com/repos/' + REPO + path,
+                  data=body,
+                  method='GET' if data is None else 'POST',
+                  headers={
+                      'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                      'Accept': 'application/vnd.github+json',
+                      'Content-Type': 'application/json',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+
+          head = git('rev-parse', 'HEAD').decode().strip()
+          require(head == os.environ['GITHUB_SHA'], 'Checkout differs from workflow revision.')
+          require(git('rev-parse', 'HEAD^').decode().strip() == BASE, 'Source branch moved; refusing transfer.')
+          chunks = []
+          for sha, size in BLOBS:
+              blob = api('/git/blobs/' + sha)
+              require(blob['encoding'] == 'base64', 'Unexpected blob encoding.')
+              chunk = base64.b64decode(''.join(blob['content'].split()), validate=True)
+              require(len(chunk) == size, 'Truncated transfer blob.')
+              observed = hashlib.sha1(b'blob ' + str(size).encode() + b'\0' + chunk).hexdigest()
+              require(observed == sha, 'Git blob identity mismatch.')
+              chunks.append(chunk)
+          packed = b''.join(chunks)
+          require(hashlib.sha256(packed).hexdigest() == PACKED_SHA256, 'Compressed patch digest mismatch.')
+          patch = lzma.decompress(packed)
+          require(len(patch) == 237684, 'Patch size mismatch.')
+          require(hashlib.sha256(patch).hexdigest() == PATCH_SHA256, 'Patch digest mismatch.')
+          git('rm', '--', '.github/workflows/local-candidate-transfer.yml')
+          require(git('write-tree').decode().strip() == BASE_TREE, 'Unexpected source-tree change before applying patch.')
+          subprocess.run(
+              ['git', 'apply', '--index', '--binary', '--unidiff-zero', '--whitespace=error', '-'],
+              input=patch, check=True,
+          )
+          require(git('write-tree').decode().strip() == EXPECTED_TREE, 'Reconstructed candidate differs from locally tested tree.')
+          require(not Path('.github/workflows/ar03c-local-inputs.yml').exists(), 'Input workflow remains in candidate.')
+          require(not Path('.github/workflows/local-candidate-transfer.yml').exists(), 'Transfer workflow remains in candidate.')
+
+          index = {}
+          for record in git('ls-files', '--stage', '-z').split(b'\0'):
+              if not record:
+                  continue
+              metadata, path = record.split(b'\t', 1)
+              mode, sha, stage = metadata.decode().split()
+              require(stage == '0', 'Unmerged index entry.')
+              index[path.decode()] = (mode, sha)
+          entries = []
+          for raw_path in git('diff', '--cached', '--no-renames', '--name-only', '-z', 'HEAD').split(b'\0'):
+              if not raw_path:
+                  continue
+              path = raw_path.decode()
+              if path not in index:
+                  entries.append({'path': path, 'mode': '100644', 'type': 'blob', 'sha': None})
+              else:
+                  mode, sha = index[path]
+                  require(mode in ('100644', '100755'), 'Unexpected candidate file mode.')
+                  entries.append({'path': path, 'mode': mode, 'type': 'blob', 'content': git('show', ':' + path).decode('utf-8')})
+          result = api('/git/trees', {
+              'base_tree': git('rev-parse', 'HEAD^{tree}').decode().strip(),
+              'tree': entries,
+          })
+          require(result['sha'] == EXPECTED_TREE, 'Remote tree differs from locally tested candidate.')
+          receipt = {
+              'status': 'verified', 'sourceBase': BASE, 'transportHead': head,
+              'candidateTree': result['sha'], 'patchSha256': PATCH_SHA256,
+              'compressedPatchSha256': PACKED_SHA256, 'changedEntries': len(entries),
+              'commitCreated': False, 'refsModified': False,
+          }
+          Path(os.environ['RECEIPT']).write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt, indent=2))
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ar03c-candidate-tree
+          path: ${{ runner.temp }}/ar03c-tree-receipt.json
+          retention-days: 1
