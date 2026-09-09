@@ -159,7 +159,7 @@ class CompilerModuleExtractionLifecycleTests {
 
     @Test
     fun adapterSliceRetainsCompilerReceiptsAndNamesOnlyCurrentCiRequirements() {
-        val current = snapshot
+        val current = adapterStageFixture()
         assertEquals("AR-03C", current.successorWorkPackage["selectedSlice"])
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(current).isEmpty())
         assertEquals("AR-03D", current.successorWorkPackage["nextSlice"])
@@ -192,7 +192,7 @@ class CompilerModuleExtractionLifecycleTests {
 
     @Test
     fun adapterSliceCannotSilentlyActivateIntegratedClosureOrSkipIt() {
-        val current = snapshot
+        val current = adapterStageFixture()
         val work = current.successorWorkPackage
         val slices = (work["implementationSlices"] as List<*>).map { value ->
             val slice = section(value)
@@ -204,7 +204,7 @@ class CompilerModuleExtractionLifecycleTests {
 
     @Test
     fun adapterSliceRequiresUniqueOrderedOwnersAndCompatibilityInventory() {
-        val current = snapshot
+        val current = adapterStageFixture()
         val work = current.successorWorkPackage
         val slices = work["implementationSlices"] as List<*>
         rejected(current.copy(successorWorkPackage = work + ("implementationSlices" to (slices + slices[2]))), "integrated closure")
@@ -221,6 +221,19 @@ class CompilerModuleExtractionLifecycleTests {
             if (slice["id"] == "AR-03C") change(slice) else slice
         }
         return current.copy(successorWorkPackage = work + ("implementationSlices" to slices))
+    }
+
+    private fun adapterStageFixture(): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        // Keep the earlier adapter-only activation regression meaningful after integrated extraction.
+        val current = snapshot
+        val work = current.successorWorkPackage
+        val slices = (work["implementationSlices"] as List<*>).map { value ->
+            val slice = section(value)
+            if (slice["id"] == "AR-03D") slice + ("status" to "planned") else slice
+        }
+        return current.copy(successorWorkPackage = work + mapOf(
+            "selectedSlice" to "AR-03C", "nextSlice" to "AR-03D", "implementationSlices" to slices
+        ))
     }
 
     private fun compilerStageFixture(): WorkflowSemanticsRecoveryLifecycleSnapshot {

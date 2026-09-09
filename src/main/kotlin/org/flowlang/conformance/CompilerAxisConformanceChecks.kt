@@ -119,7 +119,7 @@ class CompilerAxisConformanceChecks(
 
     private fun flowSourceAxisErrors(): List<String> = buildList {
         val source = read(STANDARD_CLI)
-        val runFlow = between(source, "private fun runFlow(", "private fun runConformance(")
+        val runFlow = between(source, "private fun runFlow(", "private fun runCatalog(")
         requireContains(runFlow, "FlowSourceFrontend(", STANDARD_CLI, this)
         requireContains(runFlow, "FrontendCompilerComposition.compiler(", STANDARD_CLI, this)
         requireContains(runFlow, ".requireAccepted()", STANDARD_CLI, this)

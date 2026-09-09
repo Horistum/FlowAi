@@ -21,7 +21,7 @@ internal class TargetSemanticsExportChecks(
     )
 
     private fun checkV048TargetSemanticsMatrix(): ConformanceCheck = runCheck("v0.4.8.target-semantics-matrix") {
-        val matrix = StandardSurface.targetSemanticsMatrix()
+        val matrix = org.flowlang.distribution.reference.ReferenceStandardArtifacts.targetSemanticsMatrix()
         require(matrix.status == "PASS") { "Target semantics matrix must pass computed validation." }
         require(matrix.targetIds.toSet() == targets.keys) {
             "Target semantics matrix inventory ${matrix.targetIds} disagrees with registry ${targets.keys.sorted()}."

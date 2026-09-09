@@ -28,8 +28,8 @@ verifiedBaseline:
   errors: 0
   skipped: 0
 
-selectedSlice: "AR-03C"
-nextSlice: "AR-03D"
+selectedSlice: "AR-03D"
+nextSlice: null
 implementationSlices:
   - id: "AR-03A"
     name: "Independently compiled semantic kernel"
@@ -82,8 +82,43 @@ implementationSlices:
     validationPolicy: "Local offline development first; only final exact-head and synthetic-merge Flow CI are automatic. AR-03 and F-10/F-20 remain open for integrated AR-03D closure."
   - id: "AR-03D"
     name: "Conformance, distribution and integrated boundary closure"
-    status: planned
+    status: implemented
     invariant: "Production does not depend on conformance; deletion of any concrete adapter leaves kernel and compiler tests buildable, and every temporary boundary has an owner and removal decision."
+    predecessorMerge: "a11e8b3d70fe0e6844f135b85bc9f85290084594"
+    predecessorPullRequest: 175
+    predecessorAcceptedHead: "f63966e591e7cc106c1aae57892d373693101025"
+    predecessorAcceptedRunId: 34331743662
+    predecessorMainRunId: 34348510109
+    preservedBaselineTestIdentities: 1463
+    acceptance:
+      source: current-revision-ci
+      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+    compatibilityInventory: ".flow-agent/architecture/compiler-adapter-boundary-inventory.yaml"
+    productionProfile:
+      module: "flow-cli"
+      entryPoint: "org.flowlang.cli.honest.HonestFlowCliKt"
+      distributionTask: ":flow-cli:installDist"
+      verificationDependencies: forbidden
+    verificationProfile:
+      module: "flow-conformance-kit"
+      entryPoint: "org.flowlang.verification.VerificationCliKt"
+      distributionTask: ":flow-conformance-kit:installDist"
+      rootCompatibilityLauncher: "flow-core"
+    integratedEvidence:
+      sourceOwnershipReport: "build/reports/module-ownership/source-ownership.json"
+      productIsolation: "tools/verify_product_isolation.py"
+      compilerIsolation: "tools/verify_compiler_isolation.py"
+      adapterIsolation: "tools/verify_adapter_isolation.py"
+      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+    scope:
+      - "Compile standard artifact contracts, product CLI and verification tooling as separately owned modules; the root owns no JVM implementation."
+      - "Inject verification commands through a static typed CLI port. Product compile/runtime dependencies and its independent distribution exclude the verification implementation."
+      - "Keep historical root launchers as an explicit verification profile, not as a falsely production-only distribution."
+      - "Supply StandardSurface native catalogs from reference composition instead of hidden concrete defaults in the generic artifact authority."
+      - "Preserve every predecessor regression identity; keep verification white-box tests in their actual owning module without widening internal APIs."
+      - "Build and run the installed product after physically omitting verification sources, root tests and cached class outputs."
+      - "Record each temporary compatibility boundary, reviewed retention and AR-07 removal decision; F-20 is contained, not closed."
+    validationPolicy: "Local offline iteration; final exact-head and merge-candidate CI. Physical proofs are shared only for identical complete Git trees in the same run. No automatic offline-portability workflow or additional full validation matrix."
 
 lifecycle:
   activationBoundary:
@@ -139,7 +174,11 @@ completionDecision:
   status: not-complete
   closesFindings: []
   remainingFindings: ["F-10", "F-20"]
-  rule: "AR-03 remains active after bounded kernel, compiler and adapter extraction. AR-04 is not activated and EF-09 remains paused."
+  integratedReadiness: current-revision-acceptance-required
+  candidateClosesFindings: ["F-10"]
+  containedFindings: ["F-20"]
+  deferredClosureOwner: "AR-07"
+  rule: "AR-03D implements the integrated boundary. The final PR acceptance is recorded against its immutable HEAD and merge candidate, never as a fabricated future source receipt. The next post-merge transition can close F-10 with that actual evidence; F-20 removal remains AR-07-owned. AR-04 is not activated and EF-09 remains paused."
 
 forbiddenScope:
   - "No semantic digest, graph interpretation, parser acceptance or target support changes."
@@ -152,7 +191,7 @@ validationPlan:
   - "Validate activation independently before the first extraction commit."
   - "Run Flow Agent tooling tests, structure validation and context generation locally."
   - "Run isolated kernel tests and positive/negative external Kotlin compiler probes."
-  - "Run exact-head and synthetic-merge clean test and standalone conformance independently. Require physical kernel/compiler/adapter isolation for every distinct complete source tree; identical HEAD/merge trees share only these file-based proofs in the same run. The full relocated offline proof is manual-only under docs/CI_COST_POLICY.md; local offline compilation is used during development."
+  - "Run exact-head and synthetic-merge clean test and standalone conformance independently. Require physical kernel/compiler/adapter/product isolation for every distinct complete source tree; identical HEAD/merge trees share only these file-based proofs in the same run. The full relocated offline proof is manual-only under docs/CI_COST_POLICY.md; local offline compilation is used during development."
   - "Compare complete baseline test identities, not only counts."
   - "Do not claim local Gradle execution without an available JDK 25 and resolved dependency cache."
 

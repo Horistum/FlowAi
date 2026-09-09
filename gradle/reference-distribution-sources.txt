@@ -1,4 +1,5 @@
 org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt
+org/flowlang/distribution/reference/ReferenceStandardArtifacts.kt
 org/flowlang/distribution/reference/ReferenceTargetProjections.kt
 org/flowlang/targets/StandardTargetRegistryHonestySnapshots.kt
 org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt

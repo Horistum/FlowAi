@@ -1,6 +1,98 @@
 # Compiler-enforced module boundaries
 
-## Current AR-03C adapter extraction
+## Current AR-03D integrated product/verification boundary
+
+The exact predecessor is merged PR #175, main
+`a11e8b3d70fe0e6844f135b85bc9f85290084594`, tree
+`d3a265f3571b55b306c3814c92b131fb3c22d306`. Its accepted head is
+`f63966e591e7cc106c1aae57892d373693101025`, accepted run `34331743662`;
+the independently checked post-merge run `34348510109` also passed.
+The baseline was rebuilt locally with JDK 25, Gradle 9.5.0 and Kotlin 2.4.10,
+including complete tests, conformance and installation. It contains 1,463
+unique Kotlin test identities and 130 Python tests, not the older AR-03B totals.
+
+### Implemented boundary
+
+The root now has no implementation sources and no JAR. Fourteen actual Gradle
+modules own the complete 370-file source partition: 235 product files and 135
+verification/tooling files. Standard artifact contracts, product CLI and
+conformance/release tooling have distinct compiler outputs, classpaths and
+application profiles. The six semantic-kernel files remain byte-for-byte unchanged.
+The original integration tests are owned by the kit without widening internal
+visibility, changing their identities or introducing production friend paths.
+
+The product has no compile/runtime dependency on the verification kit. A static,
+immutable typed command catalog breaks the CLI/conformance cycle: the kit supplies
+five verification commands to the same product execution/presentation boundary.
+Invalid, duplicate or shadowing command registrations fail closed; no global
+registration, discovery or plugin lifecycle is introduced. Failures retain
+previously collected presentation evidence. Product-only help is truthful.
+
+Root's historical `flow-core` launcher remains an explicit reference/verification
+profile. `flow-cli:installDist` is the independent product-only distribution;
+`flow-conformance-kit:installDist` is the verification application. Root also
+exposes `flow-product` with a product-only classpath. The combined installation
+contains verification libraries deliberately and is not represented as a pure
+product package. Distinct child execution task names prevent accidental multiple
+applications from an unqualified Gradle `run` command.
+
+StandardSurface no longer chooses a hidden reference native-catalog default.
+Its caller supplies both catalogs; ReferenceStandardArtifacts is the explicit
+reference composition. The generic library cannot import that composition and
+an empty native catalog stays empty even for familiar target names. The old
+root-directory factory signature has an explicit migration, not fictitious
+source compatibility.
+
+### Integrated proofs and cost control
+
+The existing three physical deletion proofs remain mandatory. A fourth builds,
+tests and installs all thirteen product modules after physically omitting the
+kit, root integration tests, fixture sources, metadata and prior class outputs.
+It inspects actual resolved classpaths and source ownership, verifies installed
+JAR/class uniqueness and absence of verification classes, and executes installed
+product diagnostics/help from an empty directory. An unavailable verification
+command must be rejected. This is not a claim that all repository-dependent CLI
+commands are working-directory independent; that broader work remains AR-05.
+
+The added proof is inside the existing tree-deduplicated prerequisite, not a new
+full-validation matrix. Both exact HEAD and synthetic merge still run all tests.
+They now assemble distributions in that same Gradle graph and invoke installed
+reference conformance directly, avoiding the second Gradle launch and exercising
+real packaging. Local iteration, draft gating, cancellation, read-only fork
+caches, manual-only full offline portability and timeout ceilings remain.
+Actual runner costs belong to the final CI run; no saving percentage is assumed.
+
+### Compatibility and pre-existing release failure
+
+The updated inventory reviews all eighteen deprecated declarations in fourteen
+actual owned files, the retained compatibility facades, test-only variants and
+source/layout retention. Tests compare structural Kotlin annotations with exact
+files/counts and actual Gradle owners. F-20 is contained here, not retired:
+compatibility removal and its final closure remain AR-07-owned. Historical
+statements below referring to integrated F-10/F-20 closure must not be read as
+permission to close F-20 in AR-03D.
+
+Baseline installed `standard-draft` failed because the existing release metadata
+report had no registered artifact producer. The bounded repair registers its real
+producer and historical introduction, and admits its exact provenance anchors
+only for that artifact. Unknown producer names, fabricated references and release
+anchors on unrelated intent evidence remain rejected. No conformance, integrity,
+compliance or publication gate is bypassed to obtain a successful release.
+
+### Acceptance
+
+The work package records implemented scope and current-revision check
+requirements, not an invented future result. Final local/CI counts, accepted
+immutable HEAD/merge identities and independent artifact checks are recorded in
+the PR after execution. Every baseline identity must remain, and isolated repeats
+are never added to the unique test total. The next post-merge transition can use
+those actual receipts to close F-10. AR-04 is not activated; EF-09 remains paused.
+
+Design and commands: `docs/COMPILER_MODULE_BOUNDARIES.md`.
+Cost policy: `docs/CI_COST_POLICY.md`.
+Migration inventory: `.flow-agent/architecture/compiler-adapter-boundary-inventory.yaml`.
+
+## Historical AR-03C adapter extraction
 
 ### Final CI orchestration correction
 

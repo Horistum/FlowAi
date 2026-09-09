@@ -59,19 +59,47 @@ internal object CompilerModuleExtractionLifecycle {
                     slices.getOrNull(3)?.get("status") != "planned" || work["nextSlice"] != "AR-03D"
                 ) add("Adapter extraction requires its implemented compiler predecessor and cannot activate integrated closure.")
                 addAll(compilerEvidenceErrors(compiler, main))
-                val predecessor = adapter["predecessorMerge"]
-                val acceptedHead = adapter["predecessorAcceptedHead"]
-                if (!validCommit(predecessor) || !validCommit(acceptedHead) ||
-                    predecessor == acceptedHead || predecessor == main ||
-                    predecessor == compiler["predecessorMerge"] ||
-                    positiveInteger(adapter["predecessorPullRequest"]) == null ||
-                    positiveInteger(adapter["predecessorAcceptedRunId"]) == null ||
-                    positiveInteger(adapter["preservedBaselineTestIdentities"]) == null
-                ) add("Adapter extraction requires its independently verified merged compiler predecessor and accepted test baseline.")
-                addAll(acceptanceErrors("Adapter", adapter))
-                if (adapter["compatibilityInventory"] !=
-                    ".flow-agent/architecture/compiler-adapter-boundary-inventory.yaml"
-                ) add("Adapter extraction requires the owned compatibility boundary inventory.")
+                addAll(adapterEvidenceErrors(adapter, compiler, main))
+            }
+            "AR-03D" -> {
+                val compiler = slices.getOrNull(1).orEmpty()
+                val adapter = slices.getOrNull(2).orEmpty()
+                val integrated = slices.getOrNull(3).orEmpty()
+                if (!orderedSlices || kernelStatus != "complete" || compiler["status"] != "implemented" ||
+                    adapter["status"] != "implemented" || integrated["status"] !in setOf("active", "implemented") ||
+                    !work.containsKey("nextSlice") || work["nextSlice"] != null
+                ) add("Integrated closure requires every implemented predecessor, explicit selection and no implicit next activation.")
+                addAll(compilerEvidenceErrors(compiler, main))
+                addAll(adapterEvidenceErrors(adapter, compiler, main))
+                val predecessor = integrated["predecessorMerge"]
+                val acceptedHead = integrated["predecessorAcceptedHead"]
+                if (!validCommit(predecessor) || !validCommit(acceptedHead) || predecessor == acceptedHead ||
+                    predecessor in setOf(main, compiler["predecessorMerge"], adapter["predecessorMerge"]) ||
+                    positiveInteger(integrated["predecessorPullRequest"]) == null ||
+                    positiveInteger(integrated["predecessorAcceptedRunId"]) == null ||
+                    positiveInteger(integrated["predecessorMainRunId"]) == null ||
+                    integrated["predecessorAcceptedRunId"] == integrated["predecessorMainRunId"] ||
+                    integrated["predecessorAcceptedRunId"] == adapter["predecessorAcceptedRunId"] ||
+                    positiveInteger(integrated["preservedBaselineTestIdentities"]) == null
+                ) add("Integrated closure requires a distinct merged adapter predecessor, accepted HEAD and main run, and test baseline.")
+                addAll(acceptanceErrors("Integrated", integrated))
+                if (integrated["compatibilityInventory"] != ".flow-agent/architecture/compiler-adapter-boundary-inventory.yaml") {
+                    add("Integrated closure requires the reviewed compatibility boundary inventory.")
+                }
+                if (section(integrated["productionProfile"]) != mapOf(
+                    "module" to "flow-cli", "entryPoint" to "org.flowlang.cli.honest.HonestFlowCliKt",
+                    "distributionTask" to ":flow-cli:installDist", "verificationDependencies" to "forbidden"
+                ) || section(integrated["verificationProfile"]) != mapOf(
+                    "module" to "flow-conformance-kit", "entryPoint" to "org.flowlang.verification.VerificationCliKt",
+                    "distributionTask" to ":flow-conformance-kit:installDist", "rootCompatibilityLauncher" to "flow-core"
+                )) add("Integrated closure must distinguish production and verification distribution profiles.")
+                if (section(integrated["integratedEvidence"]) != mapOf(
+                    "sourceOwnershipReport" to "build/reports/module-ownership/source-ownership.json",
+                    "productIsolation" to "tools/verify_product_isolation.py",
+                    "compilerIsolation" to "tools/verify_compiler_isolation.py",
+                    "adapterIsolation" to "tools/verify_adapter_isolation.py",
+                    "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")
+                )) add("Integrated closure requires actual source ownership, physical deletion proofs and both final checks.")
             }
             else -> add("Module extraction must select an explicitly implemented roadmap slice.")
         }
@@ -105,12 +133,32 @@ internal object CompilerModuleExtractionLifecycle {
             }
         }
         if (section(lifecycle["completionBoundary"])["status"] != "pending") {
-            add("The kernel slice cannot publish the full AR-03 completionBoundary receipt.")
+            add("A candidate cannot manufacture the full AR-03 completionBoundary receipt before actual acceptance.")
         }
         val completion = section(work["completionDecision"])
         if (completion["status"] != "not-complete" || completion["closesFindings"] != emptyList<Any>() ||
             (completion["remainingFindings"] as? List<*>)?.toSet() != setOf("F-10", "F-20")
         ) add("A bounded module candidate cannot close the full module-extraction findings.")
+        if (selected == "AR-03D" && (completion["integratedReadiness"] != "current-revision-acceptance-required" ||
+            completion["candidateClosesFindings"] != listOf("F-10") ||
+            completion["containedFindings"] != listOf("F-20") || completion["deferredClosureOwner"] != "AR-07")
+        ) add("Integrated acceptance may close F-10 only; F-20 compatibility removal remains AR-07-owned.")
+    }
+
+    private fun adapterEvidenceErrors(adapter: Map<*, *>, compiler: Map<*, *>, activationMain: String?): List<String> = buildList {
+        val predecessor = adapter["predecessorMerge"]
+        val acceptedHead = adapter["predecessorAcceptedHead"]
+        if (!validCommit(predecessor) || !validCommit(acceptedHead) ||
+            predecessor == acceptedHead || predecessor == activationMain ||
+            predecessor == compiler["predecessorMerge"] ||
+            positiveInteger(adapter["predecessorPullRequest"]) == null ||
+            positiveInteger(adapter["predecessorAcceptedRunId"]) == null ||
+            positiveInteger(adapter["preservedBaselineTestIdentities"]) == null
+        ) add("Adapter extraction requires its independently verified merged compiler predecessor and accepted test baseline.")
+        addAll(acceptanceErrors("Adapter", adapter))
+        if (adapter["compatibilityInventory"] != ".flow-agent/architecture/compiler-adapter-boundary-inventory.yaml") {
+            add("Adapter extraction requires the owned compatibility boundary inventory.")
+        }
     }
 
     private fun compilerEvidenceErrors(compiler: Map<*, *>, activationMain: String?): List<String> = buildList {

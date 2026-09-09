@@ -1,65 +1,233 @@
-version: "1.0"
-workPackage: "AR-03C"
-rule: "No compatibility entry issues an unchecked projection authorization or adds a concrete dependency to compiler, kernel or generic adapter layers."
+version: '1.1'
+workPackage: AR-03D
+rule: No compatibility entry issues an unchecked projection authorization or adds a concrete dependency to compiler,
+  kernel or generic adapter layers.
 compatibility:
-  - symbol: "BuiltInTargetProjections"
-    path: "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
-    owner: "flow-reference-distribution"
-    reason: "Retained source-compatible catalog/pipeline facade delegates to the actual reference composition."
-    removalTarget: "AR-07"
-    exit: "Conformance and external callers use explicit catalogs or ReferenceTargetProjections; migrate historical source anchors before deletion."
-  - symbol: "BuiltInNativeProjectionCatalogs"
-    path: "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt"
-    owner: "flow-reference-distribution"
-    reason: "Retained names delegate to provider-owned native catalogs; concrete modules never import the facade."
-    removalTarget: "AR-07"
-    exit: "Callers use the selected provider catalog and historical evidence anchors have migrated."
-  - symbol: "TargetExpressionTranslator"
-    path: "src/main/kotlin/org/flowlang/targets/builtin/TargetExpressionTranslator.kt"
-    owner: "flow-reference-distribution"
-    reason: "Deprecated source facade forwards to separately compiled concrete translators."
-    removalTarget: "AR-07"
-    exit: "Remaining conformance and test callers use the concrete translator or adapter-facing inspection API."
-  - symbol: "CompatibilityMaterializationBoundary"
-    path: "src/main/kotlin/org/flowlang/materialization/CompatibilityMaterializationBoundary.kt"
-    owner: "flow-adapter-runtime"
-    reason: "Deprecated bridge preserves retained CLI diagnostic and conformance raw-plan requests across module boundaries; all original planning, graph, capability, control and topology gates remain mandatory."
-    removalTarget: "AR-07"
-    exit: "Replace retained raw-plan evidence consumers with CompilationUnit-bound requests, then remove the bridge and original internal compatibility factories."
-  - symbol: "ReferenceAdapterEvidence.portfolio.compositionEvidenceReference"
-    path: "src/main/kotlin/org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt"
-    owner: "flow-reference-distribution"
-    reason: "The reference distribution explicitly supplies the historical facade path cited by versioned portfolio evidence; generic validation no longer hardcodes it."
-    removalTarget: "AR-07"
-    exit: "Migrate versioned portfolio anchors to the direct reference composition before deleting its historical facade."
+- symbol: BuiltInTargetProjections
+  path: src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt
+  owner: flow-reference-distribution
+  reason: Retained source-compatible catalog/pipeline facade delegates to the actual reference composition.
+  removalTarget: AR-07
+  exit: Conformance and external callers use explicit catalogs or ReferenceTargetProjections; migrate historical
+    source anchors before deletion.
+- symbol: BuiltInNativeProjectionCatalogs
+  path: src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt
+  owner: flow-reference-distribution
+  reason: Retained names delegate to provider-owned native catalogs; concrete modules never import the facade.
+  removalTarget: AR-07
+  exit: Callers use the selected provider catalog and historical evidence anchors have migrated.
+- symbol: TargetExpressionTranslator
+  path: src/main/kotlin/org/flowlang/targets/builtin/TargetExpressionTranslator.kt
+  owner: flow-reference-distribution
+  reason: Deprecated source facade forwards to separately compiled concrete translators.
+  removalTarget: AR-07
+  exit: Remaining conformance and test callers use the concrete translator or adapter-facing inspection API.
+- symbol: CompatibilityMaterializationBoundary
+  path: src/main/kotlin/org/flowlang/materialization/CompatibilityMaterializationBoundary.kt
+  owner: flow-adapter-runtime
+  reason: Deprecated bridge preserves retained CLI diagnostic and conformance raw-plan requests across module boundaries;
+    all original planning, graph, capability, control and topology gates remain mandatory.
+  removalTarget: AR-07
+  exit: Replace retained raw-plan evidence consumers with CompilationUnit-bound requests, then remove the bridge
+    and original internal compatibility factories.
+- symbol: ReferenceAdapterEvidence.portfolio.compositionEvidenceReference
+  path: src/main/kotlin/org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt
+  owner: flow-reference-distribution
+  reason: The reference distribution explicitly supplies the historical facade path cited by versioned portfolio
+    evidence; generic validation no longer hardcodes it.
+  removalTarget: AR-07
+  exit: Migrate versioned portfolio anchors to the direct reference composition before deleting its historical facade.
+- symbol: TargetExpressionSupport.evaluate(TargetCapability, String)
+  path: src/main/kotlin/org/flowlang/capabilities/TargetExpressionSupport.kt
+  owner: flow-adapter-runtime
+  reason: The retained convenience overload parses Flow syntax through the explicit frontend module; typed AST evaluation
+    remains target-neutral and has no concrete-target switch.
+  removalTarget: AR-07
+  exit: Review remaining string-based callers and move parsing to composition where the typed AST overload suffices;
+    preserve invalid-expression rejection tests.
 retainedPublicBoundaries:
-  - symbol: "AdapterManifestLowering / AdapterWorkflowProjectionLowering"
-    owner: "flow-adapter-runtime"
-    decision: "Retain as neutral lowering API. They consume validated compiler views and explicit provider contracts, not platform switches. Review API surface at AR-07."
-  - symbol: "ProjectionValueSyntax / shared binding value helpers"
-    owner: "flow-adapter-runtime"
-    decision: "Retain strategy-based traversal and neutral validation; target syntax remains concrete-owned. Review package relocation at AR-03D and AR-07."
-  - symbol: "GitHubActionsProjectionInspection"
-    owner: "flow-adapter-github-actions"
-    decision: "Retain a non-authorizing read-only adapter observation API; internal condition/trigger helpers remain internal. Review at AR-07."
+- symbol: AdapterManifestLowering / AdapterWorkflowProjectionLowering
+  owner: flow-adapter-runtime
+  decision: Retain as neutral lowering API. They consume validated compiler views and explicit provider contracts,
+    not platform switches. Review API surface at AR-07.
+- symbol: ProjectionValueSyntax / shared binding value helpers
+  owner: flow-adapter-runtime
+  decision: Retain strategy-based traversal and neutral validation; target syntax remains concrete-owned. Review
+    package relocation at AR-03D and AR-07.
+- symbol: GitHubActionsProjectionInspection
+  owner: flow-adapter-github-actions
+  decision: Retain a non-authorizing read-only adapter observation API; internal condition/trigger helpers remain
+    internal. Review at AR-07.
+- symbol: CliCommandCatalog / CliCommandHandler / CliOutput
+  owner: flow-cli
+  decision: Retain the static typed host-composition port. No global discovery, runtime plugin lifecycle or authorization
+    is added; duplicate and product-shadowing commands fail closed.
+- symbol: ReferenceStandardArtifacts.targetSemanticsMatrix
+  owner: flow-reference-distribution
+  decision: Retain explicit reference catalog composition. Generic StandardSurface requires both caller-supplied
+    target and native catalogs and cannot import the reference module.
 testOnlyBoundaries:
-  - symbol: "AdapterRuntimeTestFixtures / MaterializationResolutionFixture / MaterializationResolverFixture / MaterializationEvidenceFixture / PlanningEvidenceValidatorFixture"
-    owner: "flow-adapter-runtime:testFixtures"
-    decision: "Retain actual white-box regression access in test variants only; AR-07 audits necessity. Production classpath gates reject test-fixture variants."
-  - symbol: "RenderingEvidenceTestFixture"
-    owner: "flow-adapter-evidence:testFixtures"
-    decision: "Retain receipt mutation tests without widening the production integrity owner; AR-07 audits necessity."
+- symbol: AdapterRuntimeTestFixtures / MaterializationResolutionFixture / MaterializationResolverFixture / MaterializationEvidenceFixture
+    / PlanningEvidenceValidatorFixture
+  owner: flow-adapter-runtime:testFixtures
+  decision: Retain actual white-box regression access in test variants only; AR-07 audits necessity. Production
+    classpath gates reject test-fixture variants.
+- symbol: RenderingEvidenceTestFixture
+  owner: flow-adapter-evidence:testFixtures
+  decision: Retain receipt mutation tests without widening the production integrity owner; AR-07 audits necessity.
+- symbol: CompilerTestFixtures
+  owner: flow-compiler:testFixtures
+  decision: Retain original graph/depth mutation tests without widening compiler-internal constructors; production
+    classpath guards reject this variant. AR-07 reviews necessity.
+- symbol: FrontendTestFixtures
+  owner: flow-frontends:testFixtures
+  decision: Retain parser-limit white-box regressions in the test-only variant; no product classpath may include
+    it. AR-07 reviews necessity.
 retiredNow:
-  - symbol: "BuiltInProjectionPayloadKinds"
-    decision: "Removed unused global payload registry. Each concrete adapter owns its private identifiers; wire values are unchanged."
-  - symbol: "ProjectionTarget"
-    decision: "Removed shared platform-switch enum; concrete adapters supply ProjectionValueSyntax."
-  - symbol: "TargetProjectionContext"
-    decision: "No staged unguarded context remains. Concrete generators consume the existing checked TargetProjectionAuthorization."
-remainingIntegratedWork:
-  owner: "AR-03D"
-  items:
-    - "Extract residual conformance, release tooling and CLI composition; current root still owns these and is not a neutral library."
-    - "Audit frontend parsing/notes dependencies of the generic materialization edge; kernel/compiler remain independent already."
-    - "Decide physical source relocation only after migrating every source scanner and evidence anchor."
-    - "Close F-10/F-20 only with integrated completion evidence; AR-03C does not close them."
+- symbol: BuiltInProjectionPayloadKinds
+  decision: Removed unused global payload registry. Each concrete adapter owns its private identifiers; wire values
+    are unchanged.
+- symbol: ProjectionTarget
+  decision: Removed shared platform-switch enum; concrete adapters supply ProjectionValueSyntax.
+- symbol: TargetProjectionContext
+  decision: No staged unguarded context remains. Concrete generators consume the existing checked TargetProjectionAuthorization.
+- symbol: StandardSurface implicit ReferenceTargetProjections native-catalog default
+  decision: Removed. Callers must supply catalogs; ReferenceStandardArtifacts is the explicit reference composition.
+- symbol: Product CLI direct ConformanceRunner / StandardReleaseAssemblyAuthority calls
+  decision: Removed. VerificationCli owns those commands; the product executes only a statically supplied typed
+    command catalog.
+- symbol: Root production Kotlin compilation
+  decision: Removed. The build root is an aggregate with separate product and verification runtime profiles, no
+    implementation sources and no root JAR.
+deprecatedSources:
+- path: src/main/kotlin/org/flowlang/ai/normalization/RuleBasedIntentNormalizer.kt
+  owner: flow-frontends
+  declarationCount: 1
+  symbols: RuleBasedIntentNormalizer
+  removalTarget: AR-07
+  exit: ScenarioPackIntentNormalizer already owns deterministic behavior; migrate remaining source callers before
+    deleting the forwarding facade.
+- path: src/main/kotlin/org/flowlang/artifacts/StandardArtifactRegistry.kt
+  owner: flow-standard-artifacts
+  declarationCount: 1
+  symbols: StandardArtifactRegistry
+  removalTarget: AR-07
+  exit: ArtifactContractAuthority is the producer/provenance owner; remove the legacy registry facade after callers
+    migrate.
+- path: src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphDigest.kt
+  owner: flow-semantic-kernel
+  declarationCount: 1
+  symbols: CanonicalExecutionGraphDigestAuthority
+  removalTarget: AR-07
+  exit: Keep the internal digest-computer alias only for source migration; the six unchanged kernel files retain
+    semantic behavior.
+- path: src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt
+  owner: flow-compiler
+  declarationCount: 1
+  symbols: CanonicalExecutionGraphAuthority
+  removalTarget: AR-07
+  exit: Keep the internal gate alias until all callers name CanonicalExecutionGraphGate; do not widen authorization
+    construction.
+- path: src/main/kotlin/org/flowlang/intent/MandatorySafetyPolicy.kt
+  owner: flow-compiler
+  declarationCount: 1
+  symbols: MandatorySafetyPolicy
+  removalTarget: AR-07
+  exit: CanonicalControlRequirementAuthority owns evaluation; remove the compatibility facade after source callers
+    migrate.
+- path: src/main/kotlin/org/flowlang/intent/SafetyPolicyValidator.kt
+  owner: flow-compiler
+  declarationCount: 1
+  symbols: SafetyPolicyValidator
+  removalTarget: AR-07
+  exit: CanonicalControlRequirementAuthority owns evaluation; remove the compatibility facade after source callers
+    migrate.
+- path: src/main/kotlin/org/flowlang/intent/StandardCapabilityCompatibility.kt
+  owner: flow-frontends
+  declarationCount: 1
+  symbols: StandardCapability.Companion.KUBERNETES_MAINTENANCE
+  removalTarget: AR-07
+  exit: Keep only the already reviewed identity-specific source alias; preserve canonical CLUSTER_MAINTENANCE and
+    the versioned alias manifest.
+- path: src/main/kotlin/org/flowlang/materialization/CompatibilityMaterializationBoundary.kt
+  owner: flow-adapter-runtime
+  declarationCount: 1
+  symbols: CompatibilityMaterializationBoundary
+  removalTarget: AR-07
+  exit: Retain only checked raw-plan compatibility requests; migrate consumers to CompilationUnit-bound requests
+    without deleting negative regression coverage.
+- path: src/main/kotlin/org/flowlang/materialization/TargetSelection.kt
+  owner: flow-adapter-runtime
+  declarationCount: 3
+  symbols: TargetSelectionAuthority.fromExplicitConfiguration / TargetMaterializationRequest compatibility constructor
+    / TargetDiagnosticMaterializationRequest compatibility constructor
+  removalTarget: AR-07
+  exit: Replace legacy string provenance and internal raw-plan construction with typed source-specific selection
+    and graph-bound requests. Existing integrity checks remain mandatory.
+- path: src/main/kotlin/org/flowlang/modules/ModuleRegistry.kt
+  owner: flow-frontends
+  declarationCount: 3
+  symbols: ModuleRegistry.fromDirectory(includeDefaults) / ModuleRegistry.fromDescriptors(includeDefaults) / ModuleRegistry.defaultModules
+  removalTarget: AR-07
+  exit: Remove ignored includeDefaults parameters and the old default-module name after source callers use complete
+    explicit catalogs or loadCanonical.
+- path: src/main/kotlin/org/flowlang/planner/CanonicalExecutionPlan.kt
+  owner: flow-compiler
+  declarationCount: 1
+  symbols: ExecutionPlanCanonicalizer
+  removalTarget: AR-07
+  exit: Keep the independent historical parity view, not an alternate semantic owner; migrate retained external
+    callers before deleting it.
+- path: src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt
+  owner: flow-reference-distribution
+  declarationCount: 1
+  symbols: BuiltInNativeProjectionCatalogs
+  removalTarget: AR-07
+  exit: Use provider-owned native catalogs; retain the old source name only for the reviewed migration.
+- path: src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt
+  owner: flow-reference-distribution
+  declarationCount: 1
+  symbols: BuiltInTargetProjections
+  removalTarget: AR-07
+  exit: ReferenceTargetProjections owns composition; migrate historical evidence anchors before deleting the forwarding
+    facade.
+- path: src/main/kotlin/org/flowlang/targets/builtin/TargetExpressionTranslator.kt
+  owner: flow-reference-distribution
+  declarationCount: 1
+  symbols: TargetExpressionTranslator
+  removalTarget: AR-07
+  exit: Use concrete translators or the read-only adapter inspection API; no generic platform switch is restored.
+reviewedRetention:
+- symbol: Historical source paths
+  owner: build-tooling
+  decision: Retain paths for versioned source anchors and scanners, but enforce actual exhaustive source ownership
+    through fourteen separate compiler invocations. Physical relocation is not a substitute for dependency isolation.
+  reviewTarget: AR-07
+- symbol: org.flowlang.cli.Json
+  owner: flow-frontends
+  decision: Retain the existing qualified name for source compatibility while the JSON presentation helper is compiled
+    with the frontend serialization implementation. It imports neither CLI commands nor verification code.
+  reviewTarget: AR-07
+- symbol: Root flow-core / Gradle run
+  owner: flow-conformance-kit
+  decision: Retain the historical command surface as an explicitly documented verification profile. Production consumers
+    use flow-cli installDist; the combined profile also exposes flow-product with a product-only runtime classpath.
+  reviewTarget: AR-07
+- symbol: Notes and descriptor loading on generic adapter edges
+  owner: flow-adapter-runtime
+  decision: Retain the declared frontend dependency for NotesPackage contracts, expression parsing and YAML-backed
+    continuity evidence. No concrete adapter or verification dependency is admitted. Kernel/compiler remain independent;
+    source-only parser convenience migration is inventoried separately.
+  reviewTarget: AR-07
+integratedDecision:
+  status: implemented-awaiting-final-ci
+  candidateClosesFindings:
+  - F-10
+  containedFindings:
+  - F-20
+  deferredClosureOwner: AR-07
+  nextItem: AR-04
+  nextItemActivation: not-activated
+  rule: All four source-deletion directions and both complete final CI candidates must pass. Compatibility containment
+    is not compatibility retirement. Final accepted SHA/run evidence is recorded in the PR without a self-referential
+    future receipt in source.

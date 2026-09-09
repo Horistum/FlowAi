@@ -1,4 +1,7 @@
 org/flowlang/adapters/yaml/IntentYamlLoader.kt
+org/flowlang/ai/normalization/RuleBasedIntentNormalizer.kt
+org/flowlang/ai/normalization/TargetPortabilityDisposition.kt
+org/flowlang/cli/Json.kt
 org/flowlang/frontend/CompilationSourceCapture.kt
 org/flowlang/frontend/FrontendCompilerComposition.kt
 org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt
@@ -20,4 +23,9 @@ org/flowlang/parser/Lexer.kt
 org/flowlang/parser/Token.kt
 org/flowlang/parser/TokenStream.kt
 org/flowlang/safety/StandardEnvironmentSafetyPolicyNotes.kt
+org/flowlang/scenarios/BaseScenarioPack.kt
+org/flowlang/scenarios/DeliveryScenarioPacks.kt
+org/flowlang/scenarios/MaintenanceScenarioPacks.kt
+org/flowlang/scenarios/OperationsScenarioPacks.kt
+org/flowlang/scenarios/ScenarioPacks.kt
 org/flowlang/serialization/FlowYaml.kt

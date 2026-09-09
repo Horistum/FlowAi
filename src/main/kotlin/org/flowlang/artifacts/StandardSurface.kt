@@ -2,7 +2,6 @@ package org.flowlang.artifacts
 
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.StandardModel
-import org.flowlang.targets.TargetRegistryYamlLoader
 import java.io.File
 
 data class PublicSurfaceEntry(
@@ -382,11 +381,10 @@ object StandardSurface {
         PublicContractAliasInvariant("normalization-report.confidence-derived", "NormalizationReport.confidence", "NormalizationReport.confidenceByArea", "0.8.0", true, "NormalizationReport.confidenceByArea is a derived compatibility view and must remain synchronized with confidence.")
     )
 
-    fun targetSemanticsMatrix(rootDir: File = File(".")): TargetSemanticsMatrixReport =
-        TargetSemanticsAuthority.build(
-            TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
-            org.flowlang.distribution.reference.ReferenceTargetProjections.nativeCatalogs
-        )
+    fun targetSemanticsMatrix(
+        targets: Map<String, org.flowlang.capabilities.TargetCapability>,
+        nativeCatalogs: Map<String, org.flowlang.generators.manifest.TargetNativeProjectionCatalog>
+    ): TargetSemanticsMatrixReport = TargetSemanticsAuthority.build(targets, nativeCatalogs)
 
     fun standardExportBundle(): StandardExportBundleReport {
         val requiredDirectories = listOf("docs/", "schemas/", "conformance/", "standard/", "targets/", "examples/")

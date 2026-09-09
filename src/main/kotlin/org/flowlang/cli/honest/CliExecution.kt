@@ -30,19 +30,26 @@ sealed interface CliPresentationItem {
 
 data class CliPresentation(val items: List<CliPresentationItem> = emptyList())
 
-internal class CliOutputCollector {
+/** Presentation port shared with statically composed command implementations. */
+interface CliOutput {
+    fun section(title: String, value: Any)
+    fun text(value: String)
+    fun snapshot(): CliPresentation
+}
+
+internal class CliOutputCollector : CliOutput {
     private val items = mutableListOf<CliPresentationItem>()
 
-    fun section(title: String, value: Any) {
+    override fun section(title: String, value: Any) {
         require(title.isNotBlank()) { "CLI presentation section title must not be blank." }
         items += CliPresentationItem.Section(title, value)
     }
 
-    fun text(value: String) {
+    override fun text(value: String) {
         items += CliPresentationItem.Text(value)
     }
 
-    fun snapshot(): CliPresentation = CliPresentation(items.toList())
+    override fun snapshot(): CliPresentation = CliPresentation(items.toList())
 }
 
 enum class CliDiagnosticCode(val wireCode: String) {

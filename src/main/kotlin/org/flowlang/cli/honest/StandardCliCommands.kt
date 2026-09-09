@@ -5,13 +5,8 @@ import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import org.flowlang.adapters.maturity.AdapterTargetMaturityPublisher
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
-import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.cli.Json
-import org.flowlang.conformance.ConformanceManifestBuilder
-import org.flowlang.conformance.ConformanceRunner
-import org.flowlang.conformance.ConformanceVectorIndexBuilder
-import org.flowlang.conformance.ReferenceSnapshotBundleGenerator
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
 import org.flowlang.frontend.source.FlowSourceFrontend
@@ -19,7 +14,6 @@ import org.flowlang.modules.ModuleContractAnalyzer
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.preview.PlanPreview
 import org.flowlang.scenarios.ScenarioPackRegistry
-import org.flowlang.standard.StandardDiagnosticCatalog
 import org.flowlang.standard.StandardIntentCatalog
 import org.flowlang.distribution.reference.ReferenceTargetProjections
 
@@ -27,8 +21,6 @@ import org.flowlang.distribution.reference.ReferenceTargetProjections
 internal object StandardCliCommands {
     val names: Set<String> = setOf(
         "flow",
-        "conformance",
-        "reference-snapshot",
         "catalog",
         "targets",
         "modules",
@@ -39,8 +31,6 @@ internal object StandardCliCommands {
     fun run(command: String, args: List<String>, output: CliOutputCollector) {
         when (command) {
             "flow" -> runFlow(args, output)
-            "conformance" -> runConformance(args, output)
-            "reference-snapshot" -> runReferenceSnapshot(args, output)
             "catalog" -> runCatalog(args, output)
             "targets" -> runTargets(output)
             "modules" -> runModules(output)
@@ -67,49 +57,6 @@ internal object StandardCliCommands {
         output.section("CANONICAL EXECUTION PLAN", compilation.canonicalPlan)
         output.section("PLAN PREVIEW", PlanPreview().render(plan))
         output.section("TARGET-NEUTRAL NEGOTIATION REPORT", CompatibilityAnalyzer(targets).negotiate(plan))
-    }
-
-    private fun runConformance(args: List<String>, output: CliOutputCollector) {
-        val summary = ConformanceRunner().run()
-        val manifest = ConformanceManifestBuilder().build(summary)
-        val vectorIndex = ConformanceVectorIndexBuilder().build(
-            runnerChecks = summary.checks.map { it.name },
-            releaseProfileChecks = StandardReleaseProfile.report().requiredConformanceChecks
-        )
-        output.section("FLOW CONFORMANCE REPORT", summary)
-        output.section("FLOW CONFORMANCE MANIFEST", manifest)
-        parseOption(args, "--out")?.let { out ->
-            val directory = File(out)
-            require(directory.mkdirs() || directory.isDirectory)
-            writeJson(directory, "conformance-manifest.json", manifest)
-            writeJson(directory, "conformance-vector-index.json", vectorIndex)
-            writeJson(directory, "standard-diagnostic-catalog.json", StandardDiagnosticCatalog.report())
-        }
-        require(summary.ok) { "Flow conformance failed." }
-    }
-
-    private fun runReferenceSnapshot(args: List<String>, output: CliOutputCollector) {
-        val source = parseOption(args, "--intent")
-            ?: args.firstOrNull { !it.startsWith("--") }
-            ?: "examples/intent/build-test-deploy.intent.yaml"
-        val outputPath = parseOption(args, "--out") ?: "conformance/snapshots/build-test-deploy"
-        val scenarioId = parseOption(args, "--scenario-id")
-            ?: File(source).nameWithoutExtension.removeSuffix(".intent")
-        val targets = parseOption(args, "--targets")
-            ?.split(',')
-            ?.map(String::trim)
-            ?.filter(String::isNotEmpty)
-            ?.toSet()
-            ?: ReferenceTargetProjections.registry.targetIds
-        val snapshot = ReferenceSnapshotBundleGenerator().generate(
-            intentFile = File(source),
-            outputDir = File(outputPath),
-            scenarioId = scenarioId,
-            targetIds = targets
-        )
-        output.section("REFERENCE SNAPSHOT INDEX", snapshot)
-        output.text("===== EXPORTED REFERENCE SNAPSHOT =====")
-        output.text(File(outputPath).absolutePath)
     }
 
     private fun runCatalog(args: List<String>, output: CliOutputCollector) {

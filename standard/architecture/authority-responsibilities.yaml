@@ -615,13 +615,13 @@ authorities:
     inputs: "Validated roadmap, conformance, artifact and release metadata; production API: analyze, equal, boolean, contains."
     outputs: "Release/closure decision or assembled publication state."
     callers:
-      - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
       - "src/main/kotlin/org/flowlang/conformance/CliReleaseHonestyChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt"
       - "src/main/kotlin/org/flowlang/release/ClosureEvidenceBoundaryAuthority.kt"
       - "src/main/kotlin/org/flowlang/release/SemanticClosureAuthority.kt"
       - "src/main/kotlin/org/flowlang/release/StandardReleaseAssembly.kt"
+      - "src/main/kotlin/org/flowlang/verification/VerificationCli.kt"
   - name: "RoadmapStreamTransitionAuthority"
     path: "src/main/kotlin/org/flowlang/roadmap/RoadmapStreamTransitionAuthority.kt"
     role: "lifecycle-boundary"
@@ -678,7 +678,7 @@ authorities:
     inputs: "Validated roadmap, conformance, artifact and release metadata; production API: assemble, writeValidatedDraft, publishValidatedBundle."
     outputs: "Release/closure decision or assembled publication state."
     callers:
-      - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
+      - "src/main/kotlin/org/flowlang/verification/VerificationCli.kt"
   - name: "StandardSurfaceStatusAuthority"
     path: "src/main/kotlin/org/flowlang/artifacts/StandardSurfaceStatusAuthority.kt"
     role: "semantic-invariant-owner"

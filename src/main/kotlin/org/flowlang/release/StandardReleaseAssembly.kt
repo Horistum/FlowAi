@@ -128,7 +128,7 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
             "public-standard-surface.json" to StandardSurface.publicSurface(),
             "compatibility-migration-policy.json" to StandardSurface.compatibilityMigrationPolicy(),
             "reference-intent-corpus.json" to StandardSurface.referenceIntentCorpus(),
-            "target-semantics-matrix.json" to StandardSurface.targetSemanticsMatrix(rootDir),
+            "target-semantics-matrix.json" to org.flowlang.distribution.reference.ReferenceStandardArtifacts.targetSemanticsMatrix(rootDir),
             "standard-export-bundle.json" to StandardSurface.standardExportBundle(),
             "conformance-levels.json" to StandardSurface.conformanceLevels(),
             "standard-export-manifest.json" to StandardSurface.standardExportManifest(),

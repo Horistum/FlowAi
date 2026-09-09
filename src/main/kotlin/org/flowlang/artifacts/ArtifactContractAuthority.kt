@@ -24,6 +24,17 @@ object ArtifactContractAuthority {
         "conformance/"
     )
 
+    // These are exact provenance identifiers, not filesystem permissions or
+    // implementation dependencies. Scope them to their emitted artifact so a
+    // release input cannot authorize unrelated intent/planning evidence.
+    private val artifactExternalSources = mapOf(
+        "conformance-manifest.json" to setOf("src/main/kotlin/org/flowlang/conformance/ConformanceRunner.kt"),
+        "release-metadata-honesty-report.json" to setOf(
+            "build.gradle.kts", ".flow-agent/release-state.yaml", ".flow-agent/roadmap.yaml",
+            "REPORT.md", "CHANGELOG-v0.9.7.9.md"
+        )
+    )
+
     private val producerByArtifact: Map<String, String> = mapOf(
         "standard-version.txt" to "flow.standard.version",
         "standard-diagnostic-catalog.json" to "flow.standard.diagnostic-catalog",
@@ -51,6 +62,7 @@ object ArtifactContractAuthority {
         "diagnostic-coverage-report.json" to "flow.diagnostics.coverage",
         "artifact-integrity-report.json" to "flow.artifact.integrity",
         "conformance-manifest.json" to "flow.conformance.manifest",
+        "release-metadata-honesty-report.json" to "flow.release.metadata-honesty",
         "standard-contract-index.json" to "flow.standard.contract-index",
         "standard-release-profile.json" to "flow.standard.release-profile",
         "artifact-evidence-report.json" to "flow.artifact.evidence",
@@ -103,6 +115,8 @@ object ArtifactContractAuthority {
             "adapter-diagnostics.json" to "0.3.12",
             "diagnostic-coverage-report.json" to "0.3.14",
             "artifact-integrity-report.json" to "0.3.15",
+            // The report was introduced by the CLI/release-honesty work, not this module extraction.
+            "release-metadata-honesty-report.json" to "0.9.7.9.7",
             "standard-contract-index.json" to "0.3.16",
             "standard-release-profile.json" to "0.3.17",
             "artifact-evidence-report.json" to "0.3.18",
@@ -153,7 +167,8 @@ object ArtifactContractAuthority {
                     invalid += artifact.name
                 }
                 if (artifact.derivedFrom.any { source ->
-                        source !in nameSet && source !in registeredExternalSources
+                        source !in nameSet && source !in registeredExternalSources &&
+                            source !in artifactExternalSources[artifact.name].orEmpty()
                     }) {
                     invalid += artifact.name
                 }

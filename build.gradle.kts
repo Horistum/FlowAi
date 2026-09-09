@@ -1,71 +1,84 @@
+import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
+import org.gradle.jvm.application.tasks.CreateStartScripts
+
 plugins {
     kotlin("jvm") version "2.4.10"
-    application
+    distribution
 }
 
 group = "org.flowlang"
 
-// Published implementation package line. Historical and unreleased v0.9.5.x
-// through v0.9.7.x correction/work-item identifiers evolve governance and
-// standard evidence without creating additional published package versions.
+// Published package line, not a delivery-milestone identifier.
 version = "0.9.5"
-
-application { mainClass.set("org.flowlang.cli.honest.HonestFlowCliKt") }
-
 kotlin { jvmToolchain(25) }
 
-// Every production file is owned by exactly one separately compiled project.
+// The root owns no source or product dependency. Every JVM implementation has
+// one separately compiled owner; verification is a separate application profile.
 apply(from = "gradle/production-source-ownership.gradle.kts")
+sourceSets.test {
+    kotlin.setSrcDirs(emptyList<String>())
+    resources.setSrcDirs(emptyList<String>())
+}
+sourceSets.main { resources.setSrcDirs(emptyList<String>()) }
+tasks.jar { enabled = false }
 
+fun org.gradle.api.artifacts.Configuration.applicationRuntime() {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
+        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.JAR))
+    }
+}
+val verificationRuntime by configurations.creating { applicationRuntime() }
+val productRuntime by configurations.creating { applicationRuntime() }
 dependencies {
-    // The residual CLI/conformance edge composes the reference distribution;
-    // adding a project never grants it an implicit production dependency.
-    listOf(
-        ":flow-semantic-kernel", ":flow-module-contracts", ":flow-compiler",
-        ":flow-frontends", ":flow-adapter-runtime", ":flow-reference-distribution"
-    ).filter { findProject(it) != null }.forEach { implementation(project(it)) }
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2")
-    implementation("com.fasterxml.jackson.module:jackson-module-jsonSchema:2.17.2")
-    testImplementation(kotlin("test"))
-    if (findProject(":flow-frontends") != null) {
-        testImplementation(testFixtures(project(":flow-compiler")))
-        testImplementation(testFixtures(project(":flow-frontends")))
+    if (findProject(":flow-conformance-kit") != null) {
+        verificationRuntime(project(":flow-conformance-kit"))
     }
-    if (findProject(":flow-adapter-runtime") != null) {
-        testImplementation(testFixtures(project(":flow-adapter-runtime")))
-    }
-    if (findProject(":flow-adapter-evidence") != null) {
-        testImplementation(testFixtures(project(":flow-adapter-evidence")))
+    if (findProject(":flow-cli") != null) {
+        productRuntime(project(":flow-cli"))
     }
 }
 
-sourceSets {
-    main { resources.exclude("standard/compatibility/capability-aliases.yaml") }
-    test {
-        kotlin.srcDirs("src/test/kotlin", "tests")
-        resources.srcDirs("src/test/resources")
+// Historical developer command compatibility. This is a verification host,
+// not the production CLI's compile/runtime classpath. The independent product
+// application is :flow-cli:runProduct / :flow-cli:installDist.
+val run by tasks.registering(JavaExec::class) {
+    group = "application"
+    description = "Run the reference verification host (including product commands)."
+    mainClass.set("org.flowlang.verification.VerificationCliKt")
+    classpath = verificationRuntime
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+}
+val startScripts by tasks.registering(CreateStartScripts::class) {
+    applicationName = "flow-core"
+    mainClass.set("org.flowlang.verification.VerificationCliKt")
+    classpath = verificationRuntime
+    outputDir = layout.buildDirectory.dir("scripts/reference").get().asFile
+}
+val productStartScripts by tasks.registering(CreateStartScripts::class) {
+    applicationName = "flow-product"
+    mainClass.set("org.flowlang.cli.honest.HonestFlowCliKt")
+    classpath = productRuntime
+    outputDir = layout.buildDirectory.dir("scripts/product").get().asFile
+}
+distributions.main {
+    contents {
+        from(startScripts) { into("bin"); filePermissions { unix("rwxr-xr-x") } }
+        from(productStartScripts) { into("bin"); filePermissions { unix("rwxr-xr-x") } }
+        from(verificationRuntime) { into("lib") }
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
-    // These tests inspect live repository metadata and source inventories that
-    // are not represented by the test runtime classpath. Re-execute them even
-    // when a lifecycle-only change leaves all compiled classes unchanged.
-    outputs.upToDateWhen { false }
-    outputs.cacheIf { false }
-    testLogging { events("passed", "skipped", "failed") }
-}
-
-// The implementation is configured in the child after both Kotlin source sets
-// exist. This alias preserves the root verification entry point without reading
-// another Project or its extensions at task execution time.
+// Verification aggregation never turns test fixtures into production inputs.
 val verifySemanticKernelSourceOwnership by tasks.registering {
     group = "verification"
     description = "Check the actual Gradle source sets form a complete, disjoint partition."
     dependsOn(":flow-semantic-kernel:verifySemanticKernelSourceOwnership")
 }
-
 tasks.named("compileKotlin") { dependsOn(verifySemanticKernelSourceOwnership) }
 tasks.test { dependsOn(subprojects.map { "${it.path}:test" }) }

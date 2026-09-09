@@ -73,7 +73,7 @@ internal class SchemaScenarioCatalogChecks(
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.publicSurface()), Json.mapper.readTree(File(schemaDir, "public-standard-surface.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.compatibilityMigrationPolicy()), Json.mapper.readTree(File(schemaDir, "compatibility-migration-policy.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.referenceIntentCorpus()), Json.mapper.readTree(File(schemaDir, "reference-intent-corpus.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.targetSemanticsMatrix()), Json.mapper.readTree(File(schemaDir, "target-semantics-matrix.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(org.flowlang.distribution.reference.ReferenceStandardArtifacts.targetSemanticsMatrix()), Json.mapper.readTree(File(schemaDir, "target-semantics-matrix.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.standardExportBundle()), Json.mapper.readTree(File(schemaDir, "standard-export-bundle.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.conformanceLevels()), Json.mapper.readTree(File(schemaDir, "conformance-levels.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.standardExportManifest()), Json.mapper.readTree(File(schemaDir, "standard-export-manifest.schema.json")))
