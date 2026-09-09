@@ -248,6 +248,7 @@ object AdapterTriggerRequirementAuthority {
     }
 
     private fun shapeDiagnostic(trigger: PlanTrigger, family: AdapterTriggerFamily): String? {
+        val schedule = trigger.schedule
         if (trigger.id.isBlank()) return "Trigger id is blank."
         if (trigger.workflows.isEmpty() || trigger.workflows.any { it.isBlank() }) {
             return "Trigger workflows must contain non-blank workflow identities."
@@ -264,8 +265,8 @@ object AdapterTriggerRequirementAuthority {
             AdapterTriggerFamily.CRON,
             AdapterTriggerFamily.INTERVAL,
             AdapterTriggerFamily.CALENDAR -> when {
-                trigger.schedule == null -> "Schedule trigger is missing schedule evidence."
-                trigger.schedule.expression.isBlank() -> "Schedule trigger expression is blank."
+                schedule == null -> "Schedule trigger is missing schedule evidence."
+                schedule.expression.isBlank() -> "Schedule trigger expression is blank."
                 !trigger.event.isNullOrBlank() -> "Schedule trigger must not declare an event."
                 else -> null
             }

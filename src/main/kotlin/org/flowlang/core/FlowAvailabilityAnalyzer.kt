@@ -348,8 +348,9 @@ class FlowAvailabilityAnalyzer {
             path: FlowStatementPath
         ): ConditionStates = when (expression) {
             is UnaryPostfixExpressionNode -> {
-                if (expression.operator == "exists" && expression.operand is ReferenceNode) {
-                    val reference = expression.operand
+                val operand = expression.operand
+                if (expression.operator == "exists" && operand is ReferenceNode) {
+                    val reference = operand
                     val binding = reference.path.firstOrNull()
                     if (binding == null) {
                         ConditionStates(input, input)

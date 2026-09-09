@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,7 +28,7 @@ class IntentLoweringNoShellProjectionTests {
             ))
         )
 
-        val ast = IntentToAstPlanner().plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner().plan(intent)
         val actions = ast.flow.steps.filterIsInstance<ActionNode>()
 
         assertTrue(actions.isNotEmpty(), "Intent lowering must produce semantic actions.")
@@ -48,7 +49,7 @@ class IntentLoweringNoShellProjectionTests {
             ))
         )
 
-        val ast = IntentToAstPlanner().plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner().plan(intent)
         val action = ast.flow.steps.single() as ActionNode
 
         assertEquals("standard", action.module)

@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -80,6 +81,6 @@ class AdapterArtifactRenderingProviderBehaviorTests {
         File(root, "examples/intent/checkout-build-image.intent.yaml")
     ).let { intent ->
         IntentCapabilityValidator(modules).validate(intent).assertValid()
-        FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(intent))
+        FlowPlanner(modules).plan(FrontendCompilerComposition.intentPlanner(modules).plan(intent))
     }
 }

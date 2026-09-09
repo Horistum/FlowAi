@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,7 +40,7 @@ import org.flowlang.planner.TryPlanNode
 
 class CanonicalExecutionGraphAuthorityCutoverTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"))
-    private val frontend = IntentYamlFrontend(FlowCompilationService(registry))
+    private val frontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
 
     @Test
     fun acceptedCompilationOwnsTypedGraphAndGraphDerivedViews() {
@@ -52,7 +53,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         assertEquals(unit.graphDigest.value, unit.validationBinding.graphDigest)
         assertEquals(
             unit.executionPlan,
-            CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.bindings)
+            CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.inspectionView().bindings)
         )
         assertEquals(ExecutionPlanCanonicalizer.canonicalize(unit.executionPlan), unit.canonicalPlan)
         unit.authorization.requireIntegrity()
@@ -75,14 +76,14 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
         val alternatePlan = unit.executionPlan.copy(
             nodes = unit.executionPlan.nodes.map(::replaceImplementationLabels)
         )
-        val alternateBuild = CanonicalExecutionGraphBuilder.build(
+        val alternateBuild = org.flowlang.compiler.testing.CompilerTestFixtures.buildGraph(
             plan = alternatePlan,
             mergeContracts = emptyList(),
             producerNodeIds = emptyMap(),
             failurePolicy = testWorkflowFailurePolicy(alternatePlan)
         )
         assertEquals(graph, alternateBuild.graph)
-        assertNotEquals(unit.authorization.bindings.tasks, alternateBuild.bindings.tasks)
+        assertNotEquals(unit.authorization.inspectionView().bindings.tasks, alternateBuild.bindings.tasks)
         assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestComputer.digest(alternateBuild.graph))
     }
 
@@ -149,7 +150,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
     fun graphValidatorRejectsDuplicateDanglingAndCyclicMeaning() {
         val unit = referenceUnit()
         val graph = unit.graph
-        val bindings = unit.authorization.bindings
+        val bindings = unit.authorization.inspectionView().bindings
         val first = graph.nodes.first()
 
         val duplicate = CanonicalExecutionGraphValidator.validate(

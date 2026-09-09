@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
 import org.flowlang.artifacts.ArtifactIntegrityAnalyzer
@@ -49,7 +51,7 @@ internal abstract class ConformanceCheckSupport(
 ) {
     protected val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
     protected val artifactRendering = AdapterArtifactRenderingAuthority(rootDir, projections)
-    protected val intentFrontend = IntentYamlFrontend(FlowCompilationService(registry))
+    protected val intentFrontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
 
     protected fun buildPipeline(target: String, strict: Boolean = false): PipelineArtifacts {
         val compilation = intentFrontend

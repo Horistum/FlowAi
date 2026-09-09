@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.binding.AdapterBindingRoadmapLifecycleAuthority
 import org.flowlang.adapters.binding.AdapterCapabilityBindingAuthority
@@ -120,7 +122,7 @@ class AdapterBindingConformanceChecks(private val rootDir: File) {
         if (binding.parameterSources["wait"] != IntentBindingParameterSource.DEFAULT) add("wait must retain DEFAULT provenance.")
         if (binding.parameterSources["timeout"] != IntentBindingParameterSource.DEFAULT) add("timeout must retain DEFAULT provenance.")
 
-        val action = IntentToAstPlanner(registry).plan(intent).flow.steps.single() as? ActionNode
+        val action = FrontendCompilerComposition.intentPlanner(registry).plan(intent).flow.steps.single() as? ActionNode
         if (action == null) {
             add("Resolved explicit binding did not lower to ActionNode.")
         } else if (action.params.keys != binding.resolvedParameters.keys) {
@@ -132,7 +134,7 @@ class AdapterBindingConformanceChecks(private val rootDir: File) {
         val intentFile = File(rootDir, "examples/intent/checkout-build-image.intent.yaml")
         val intent = IntentYamlLoader.load(intentFile)
         val resolution = CanonicalIntentMeaningAuthority(registry).resolve(intent)
-        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+        val plan = FlowPlanner(registry).plan(FrontendCompilerComposition.intentPlanner(registry).plan(intent))
         val meaningByStep = resolution.meaning.workflows.flatMap { it.steps }.associateBy { it.id }
         if (resolution.bindings.any { it.status != IntentBindingStatus.RESOLVED }) {
             add("Executable reference contains a non-resolved explicit binding: ${resolution.bindings}")

@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
@@ -30,26 +31,26 @@ class EnvironmentSafetyProductionIntegrationTests {
 
     @Test
     fun flowValidatorIncludesSensitiveEnvironmentSafetyByDefault() {
-        val report = FlowValidator().validate(parse(deploy(namespace = "\"prod\"")))
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(deploy(namespace = "\"prod\"")))
         assertFalse(report.valid)
         assertTrue(report.issues.any { it.code == "ENVIRONMENT_APPROVAL_REQUIRED" }, report.issues.toString())
     }
 
     @Test
     fun approvedSensitiveLiteralPassesEnvironmentBoundary() {
-        val report = FlowValidator().validate(parse(deploy(namespace = "\"production\"", approval = true)))
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(deploy(namespace = "\"production\"", approval = true)))
         assertTrue(report.issues.none { it.code.startsWith("ENVIRONMENT_") }, report.issues.toString())
     }
 
     @Test
     fun knownEngineeringLiteralPassesEnvironmentBoundary() {
-        val report = FlowValidator().validate(parse(deploy(namespace = "\"qa\"")))
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(deploy(namespace = "\"qa\"")))
         assertTrue(report.issues.none { it.code.startsWith("ENVIRONMENT_") }, report.issues.toString())
     }
 
     @Test
     fun unclassifiedLiteralFailsClosedButIsNotInventedAsProduction() {
-        val report = FlowValidator().validate(parse(deploy(namespace = null, environment = "\"customer-a\"")))
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(deploy(namespace = null, environment = "\"customer-a\"")))
         assertFalse(report.valid)
         assertTrue(report.issues.any { it.code == "ENVIRONMENT_CLASSIFICATION_UNKNOWN" }, report.issues.toString())
         assertTrue(report.issues.none { it.code == "ENVIRONMENT_APPROVAL_REQUIRED" }, report.issues.toString())
@@ -57,7 +58,7 @@ class EnvironmentSafetyProductionIntegrationTests {
 
     @Test
     fun referenceRemainsReferenceAndFailsClosed() {
-        val report = FlowValidator().validate(parse(deploy(namespace = "environment", input = true)))
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(deploy(namespace = "environment", input = true)))
         val issue = report.issues.single { it.code == "ENVIRONMENT_CLASSIFICATION_UNKNOWN" }
         assertTrue(issue.message.contains("runtime reference 'environment'"), issue.message)
         assertFalse(issue.message.contains("namespace=environment"), issue.message)
@@ -65,13 +66,13 @@ class EnvironmentSafetyProductionIntegrationTests {
 
     @Test
     fun unrelatedProductionTextIsNotEnvironmentEvidence() {
-        val report = FlowValidator().validate(parse(deploy(namespace = null, app = "\"production\"")))
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(deploy(namespace = null, app = "\"production\"")))
         assertTrue(report.issues.none { it.code.startsWith("ENVIRONMENT_") }, report.issues.toString())
     }
 
     @Test
     fun sensitiveEnvironmentConditionalApprovalGuardsDynamicEnvironment() {
-        val report = FlowValidator().validate(parse(
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(
             """
             version "1.0"
             use module "kubernetes" version "1.0"
@@ -96,7 +97,7 @@ class EnvironmentSafetyProductionIntegrationTests {
 
     @Test
     fun unrelatedConditionalApprovalDoesNotAuthorizeDynamicEnvironment() {
-        val report = FlowValidator().validate(parse(
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(
             """
             version "1.0"
             use module "kubernetes" version "1.0"
@@ -124,7 +125,7 @@ class EnvironmentSafetyProductionIntegrationTests {
 
     @Test
     fun finiteOnlyIfGuardProvesDestructiveWorkIsNonSensitive() {
-        val report = FlowValidator().validate(parse(
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(
             """
             version "1.0"
             use module "kubernetes" version "1.0"
@@ -146,7 +147,7 @@ class EnvironmentSafetyProductionIntegrationTests {
 
     @Test
     fun onlyIfGuardDoesNotPassWhenFiniteDomainStillContainsSensitiveValues() {
-        val report = FlowValidator().validate(parse(
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(
             """
             version "1.0"
             use module "kubernetes" version "1.0"
@@ -171,7 +172,7 @@ class EnvironmentSafetyProductionIntegrationTests {
         val source = deploy(namespace = "\"prod\"")
             .replace("image: \"demo:1\"", "image: \"demo:1\"\n          safety: onlyIf allow == true")
             .replace("flow \"environment safety\" {", "flow \"environment safety\" {\n      input { allow: boolean required }")
-        val report = FlowValidator().validate(parse(source))
+        val report = FrontendCompilerComposition.flowValidator().validate(parse(source))
         assertTrue(report.issues.any { it.code == "ENVIRONMENT_APPROVAL_REQUIRED" }, report.issues.toString())
     }
 

@@ -4,7 +4,7 @@ import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentValidationIssue
 import org.flowlang.intent.IntentValidationReport
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 
 /**
  * The standard's decision about a proposed intent.
@@ -71,7 +71,7 @@ data class IntentProposalReviewEvidence(
  * using the standard's own [IntentCapabilityValidator] (which also runs the safety policy checks),
  * so a hallucinated or adversarial proposal cannot bypass capability contracts or safety policies.
  */
-class IntentProposalReview(registry: ModuleRegistry = ModuleRegistry()) {
+class IntentProposalReview(registry: ModuleCatalog) {
     private val validator = IntentCapabilityValidator(registry)
 
     fun review(response: AiIntentResponse): IntentProposalDecision = reviewWithEvidence(response).decision

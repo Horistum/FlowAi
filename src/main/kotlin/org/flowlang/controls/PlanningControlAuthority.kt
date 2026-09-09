@@ -1,6 +1,6 @@
 package org.flowlang.controls
 
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.LoopNode
@@ -32,7 +32,7 @@ object PlanningControlAuthority {
         canonicalRequirements: List<ControlRequirement>,
         canonicalEvidence: List<ControlEvidence>,
         nodes: List<PlanNode>,
-        modules: ModuleRegistry,
+        modules: ModuleCatalog,
         workflowFailureHandlerNodes: List<PlanNode> = emptyList()
     ): ControlAssessment {
         val semanticNodes = nodes + workflowFailureHandlerNodes
@@ -73,7 +73,7 @@ object PlanningControlAuthority {
 
     fun rederivedModuleRequirements(
         nodes: List<PlanNode>,
-        modules: ModuleRegistry,
+        modules: ModuleCatalog,
         workflowFailureHandlerNodes: List<PlanNode> = emptyList()
     ): List<ControlRequirement> = assess(
         canonicalRequirements = emptyList(),

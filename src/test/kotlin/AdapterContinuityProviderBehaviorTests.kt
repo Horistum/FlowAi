@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -277,6 +278,6 @@ class AdapterContinuityProviderBehaviorTests {
         File(root, "examples/intent/checkout-build-image.intent.yaml")
     ).let { intent ->
         IntentCapabilityValidator(modules).validate(intent).assertValid()
-        FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(intent))
+        FlowPlanner(modules).plan(FrontendCompilerComposition.intentPlanner(modules).plan(intent))
     }
 }

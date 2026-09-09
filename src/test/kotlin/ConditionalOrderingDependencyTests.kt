@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,7 +60,7 @@ class ConditionalOrderingDependencyTests {
             }.accepted
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertTrue(validation.valid, validation.issues.toString())
 
         val plan = FlowPlanner(modules).plan(document)
@@ -97,7 +98,7 @@ class ConditionalOrderingDependencyTests {
             )
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(
             validation.issues.any { it.code == "VALUE_MAY_BE_UNDEFINED" },
@@ -119,7 +120,7 @@ class ConditionalOrderingDependencyTests {
             shell(result = "consumer", dependsOn = listOf("gate"))
         )
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(
             validation.issues.any { it.code == "VALUE_PRODUCER_AMBIGUOUS" },
@@ -132,8 +133,8 @@ class ConditionalOrderingDependencyTests {
 
     @Test
     fun conditionalIntentApprovalRetainsItsOrderingEdgeIntoDeploy() {
-        val ast = IntentToAstPlanner(modules).plan(IntentExamples.buildTestDeploy)
-        val validation = FlowValidator(modules).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(modules).plan(IntentExamples.buildTestDeploy)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(ast)
         assertTrue(validation.valid, validation.issues.toString())
 
         val plan = FlowPlanner(modules).plan(ast)

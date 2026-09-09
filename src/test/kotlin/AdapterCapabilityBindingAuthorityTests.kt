@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
@@ -134,7 +135,7 @@ class AdapterCapabilityBindingAuthorityTests {
         assertEquals(IntentBindingParameterSource.DEFAULT, binding.parameterSources.getValue("app"))
         assertEquals(IntentString("demo"), binding.resolvedParameters.getValue("app"))
 
-        val action = IntentToAstPlanner(registry).plan(intent).flow.steps.single() as ActionNode
+        val action = FrontendCompilerComposition.intentPlanner(registry).plan(intent).flow.steps.single() as ActionNode
         assertEquals("demo", (action.params.getValue("app") as StringLiteralNode).value)
         assertEquals(setOf("app"), action.params.keys)
     }
@@ -216,7 +217,7 @@ class AdapterCapabilityBindingAuthorityTests {
         val registry = ModuleRegistry()
         val intent = IntentYamlLoader.load(File("examples/intent/checkout-build-image.intent.yaml"))
         val resolution = CanonicalIntentMeaningAuthority(registry).resolve(intent)
-        val ast = IntentToAstPlanner(registry).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
         val plan = FlowPlanner(registry).plan(ast)
         val meaningByStep = resolution.meaning.workflows.flatMap { it.steps }.associateBy { it.id }
         val bindingByStep = resolution.bindings.associateBy { it.stepId }
@@ -250,7 +251,7 @@ class AdapterCapabilityBindingAuthorityTests {
 
         val resolution = CanonicalIntentMeaningAuthority(ModuleRegistry()).resolve(intent)
         assertEquals(IntentBindingStatus.UNBOUND, resolution.bindings.single().status)
-        val action = IntentToAstPlanner().plan(intent).flow.steps.single() as ActionNode
+        val action = FrontendCompilerComposition.intentPlanner().plan(intent).flow.steps.single() as ActionNode
         assertEquals("standard", action.module)
         assertEquals("execute", action.action)
     }

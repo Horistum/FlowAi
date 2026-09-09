@@ -12,7 +12,7 @@ import org.flowlang.ai.normalization.AiIntentResponse
 import org.flowlang.ai.normalization.NormalizationReport
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationResult
-import org.flowlang.compiler.CompilationSourceCapture
+import org.flowlang.frontend.CompilationSourceCapture
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.ReviewedAiProposalCompilationInput
 import org.flowlang.intent.IntentDocument
@@ -124,10 +124,12 @@ private fun NormalizationReport.snapshot(): NormalizationReport = copy(
     risks = risks.map { it.copy() },
     safetyGates = safetyGates.toList(),
     targetPortability = targetPortability.toMap(),
-    scenarioSelection = scenarioSelection?.copy(
-        matchedTriggers = scenarioSelection.matchedTriggers.toList(),
-        alternativesRejected = scenarioSelection.alternativesRejected.map { it.copy() }
-    ),
+    scenarioSelection = scenarioSelection?.let { selection ->
+        selection.copy(
+            matchedTriggers = selection.matchedTriggers.toList(),
+            alternativesRejected = selection.alternativesRejected.map { it.copy() }
+        )
+    },
     confidenceByArea = confidenceByArea.toMap(),
     explanation = explanation.toList(),
     guardrails = guardrails.toList()

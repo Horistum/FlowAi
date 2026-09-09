@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.parser.FlowParser
 import org.flowlang.parser.ParseException
 import org.flowlang.validator.FlowValidator
@@ -35,6 +36,6 @@ private fun parserExceptionLocationTest() {
 }
 
 private fun exampleLocationRegressionTest() {
-    val report = FlowValidator().validate(FlowParser().parse(exampleFile("api-sync.flow")))
+    val report = FrontendCompilerComposition.flowValidator().validate(FlowParser().parse(exampleFile("api-sync.flow")))
     H.ok("loc/examples-no-errors", report.issues.none { it.level == "error" })
 }

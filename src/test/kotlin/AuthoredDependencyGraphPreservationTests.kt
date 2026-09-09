@@ -1,5 +1,9 @@
 package org.flowlang.tests
 
+import org.flowlang.modules.ModuleRegistry
+
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -22,7 +26,7 @@ import org.flowlang.planner.PlanDependencyRelation
 class AuthoredDependencyGraphPreservationTests {
     @Test
     fun intentLoweringDoesNotSerializeIndependentSiblings() {
-        val ast = IntentToAstPlanner().plan(diamondIntent())
+        val ast = FrontendCompilerComposition.intentPlanner().plan(diamondIntent())
         val actions = ast.flow.steps.filterIsInstance<ActionNode>().associateBy { it.sourceId }
 
         assertEquals(emptyList(), actions.getValue("root").dependsOn)
@@ -35,7 +39,7 @@ class AuthoredDependencyGraphPreservationTests {
 
     @Test
     fun diamondPlanContainsExactlyTheAuthoredDeclaredOrderingEdges() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(diamondIntent()))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(diamondIntent()))
 
         assertEquals(
             setOf("root->left", "root->right", "left->join", "right->join"),
@@ -52,7 +56,7 @@ class AuthoredDependencyGraphPreservationTests {
 
     @Test
     fun extraDeclaredOrderingRelationFailsArtifactDerivedLowering() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(diamondIntent()))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(diamondIntent()))
         val left = plan.tasks.single { it.sourceId == "left" }
         val right = plan.tasks.single { it.sourceId == "right" }
         val tampered = plan.copy(
@@ -75,7 +79,7 @@ class AuthoredDependencyGraphPreservationTests {
 
     @Test
     fun missingDeclaredOrderingEvidenceFailsEvenWhenNodeDependencyStillExists() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(diamondIntent()))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(diamondIntent()))
         val root = plan.tasks.single { it.sourceId == "root" }
         val right = plan.tasks.single { it.sourceId == "right" }
         val tampered = plan.copy(
@@ -97,7 +101,7 @@ class AuthoredDependencyGraphPreservationTests {
 
     @Test
     fun dataReferenceOrderingDoesNotPretendToBeAuthoredOrdering() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(referenceIntent(authoredRequires = false)))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(referenceIntent(authoredRequires = false)))
         val producer = plan.tasks.single { it.sourceId == "producer" }
         val consumer = plan.tasks.single { it.sourceId == "consumer" }
         val ordering = plan.dependencyRelations.filter { relation ->
@@ -116,7 +120,7 @@ class AuthoredDependencyGraphPreservationTests {
 
     @Test
     fun authoredAndDataReferenceReasonsSurviveIndependentlyForSameEdge() {
-        val plan = FlowPlanner().plan(IntentToAstPlanner().plan(referenceIntent(authoredRequires = true)))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FrontendCompilerComposition.intentPlanner().plan(referenceIntent(authoredRequires = true)))
         val producer = plan.tasks.single { it.sourceId == "producer" }
         val consumer = plan.tasks.single { it.sourceId == "consumer" }
         val evidence = plan.dependencyRelations.filter { relation ->

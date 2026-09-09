@@ -21,85 +21,6 @@ import org.flowlang.planner.RuntimeParamRenderer
 import org.flowlang.planner.TaskNode
 import org.flowlang.standard.FlowStandardVersions
 
-/** How an accepted intent value is represented in the certified execution artifact. */
-enum class IntentLoweringDisposition { PRESERVED, TRANSFORMED }
-
-/**
- * Immutable source-side expectation created while the original IntentDocument is
- * still available. Identities are semantic and never depend on list position.
- */
-data class IntentSourceField(
-    val identity: String,
-    val sourcePath: String,
-    val targetIdentity: String,
-    val disposition: IntentLoweringDisposition,
-    val valueKind: String,
-    val sourceDigest: String,
-    val expectedTargetDigest: String,
-    val transform: String? = null
-)
-
-/** Evidence calculated from the concrete ExecutionPlan value addressed by targetIdentity. */
-data class IntentLoweringEvidence(
-    val sourceIdentity: String,
-    val sourcePath: String,
-    val targetIdentity: String,
-    val disposition: IntentLoweringDisposition,
-    val valueKind: String,
-    val sourceDigest: String,
-    val targetDigest: String,
-    val transform: String? = null
-)
-
-data class IntentLoweringReport(
-    val contractVersion: String = CONTRACT_VERSION,
-    val artifactKind: String = ARTIFACT_KIND,
-    val evidenceDigest: String = "",
-    val evidence: List<IntentLoweringEvidence> = emptyList()
-) {
-    companion object {
-        const val CONTRACT_VERSION = FlowStandardVersions.EXECUTION_PLAN_LOWERING_EVIDENCE_VERSION
-        const val ARTIFACT_KIND = "execution-plan"
-    }
-}
-
-data class IntentSourceMetadata(
-    val description: String? = null,
-    val workflows: List<IntentWorkflowMetadata> = emptyList(),
-    val policies: List<IntentPolicyMetadata> = emptyList(),
-    val systems: List<IntentSystemMetadata> = emptyList(),
-    val systemPurposes: Map<String, String> = emptyMap(),
-    val failure: IntentFailureMetadata = IntentFailureMetadata(),
-    val fields: List<IntentSourceField> = emptyList()
-)
-
-data class IntentWorkflowMetadata(
-    val name: String,
-    val kind: String,
-    val stepIds: List<String> = emptyList()
-)
-
-data class IntentPolicyMetadata(
-    val name: String,
-    val type: String,
-    val condition: String? = null,
-    val message: String? = null
-)
-
-data class IntentSystemMetadata(
-    val name: String,
-    val sourceType: String,
-    val canonicalType: String,
-    val purpose: String? = null,
-    val config: Map<String, String> = emptyMap()
-)
-
-data class IntentFailureMetadata(
-    val notify: Boolean = false,
-    val rollback: Boolean = false,
-    val stopOnError: Boolean = true
-)
-
 /**
  * Artifact-derived lowering authority.
  *
@@ -114,7 +35,7 @@ object IntentLoweringAuthority {
 
     fun canonicalSystemType(type: String): String = IntentSystemTypeAuthority.bindingType(type)
 
-    fun sourceMetadata(intent: IntentDocument): IntentSourceMetadata {
+    fun sourceMetadata(intent: IntentDocument, expressions: IntentExpressionParser): IntentSourceMetadata {
         val inputNames = intent.inputs.map { it.name }.toSet()
         val systems = intent.systems.map { system ->
             IntentSystemMetadata(
@@ -123,7 +44,7 @@ object IntentLoweringAuthority {
                 canonicalType = canonicalSystemType(system.type),
                 purpose = system.purpose,
                 config = system.config.toSortedMap().mapValues { (_, value) ->
-                    RuntimeParamRenderer.render(IntentValueExpressionLowering.lower(value), inputNames)
+                    RuntimeParamRenderer.render(IntentValueExpressionLowering.lower(value, expressions), inputNames)
                 }
             )
         }
@@ -133,7 +54,7 @@ object IntentLoweringAuthority {
         val policies = intent.policies.map { policy ->
             IntentPolicyMetadata(policy.name, policy.type.name, policy.condition, policy.message)
         }
-        val fields = sourceFields(intent, systems, policies, inputNames).sortedBy(IntentSourceField::identity)
+        val fields = sourceFields(intent, systems, policies, inputNames, expressions).sortedBy(IntentSourceField::identity)
 
         require(fields.map { it.identity }.distinct().size == fields.size) {
             "Intent lowering source identities must be unique."
@@ -240,7 +161,8 @@ object IntentLoweringAuthority {
         intent: IntentDocument,
         systems: List<IntentSystemMetadata>,
         policies: List<IntentPolicyMetadata>,
-        inputNames: Set<String>
+        inputNames: Set<String>,
+        expressions: IntentExpressionParser
     ): List<IntentSourceField> = buildList {
         add(preserved("intent/name", "$.name", "plan/flow/name", "string", intent.name))
         intent.description?.let {
@@ -269,7 +191,7 @@ object IntentLoweringAuthority {
                 input.required.toString()
             ))
             input.default?.let { value ->
-                val rendered = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value))
+                val rendered = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value, expressions))
                 add(preserved(
                     "input/$inputId/default",
                     "$source.default",
@@ -314,7 +236,7 @@ object IntentLoweringAuthority {
                 ))
             }
             system.config.toSortedMap().forEach { (key, value) ->
-                val expressionValue = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value))
+                val expressionValue = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value, expressions))
                 val projectedValue = metadata.config.getValue(key)
                 val target = "plan/source-intent/system/$systemId/config/${segment(key)}"
                 if (expressionValue == projectedValue) {
@@ -358,8 +280,8 @@ object IntentLoweringAuthority {
                 add(preserved("trigger/$triggerId/event", "$source.event", "plan/trigger/$triggerId/event", "string", event))
             }
             trigger.params.toSortedMap().forEach { (key, value) ->
-                val expressionValue = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value))
-                val projectedValue = RuntimeParamRenderer.render(IntentValueExpressionLowering.lower(value), emptySet())
+                val expressionValue = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value, expressions))
+                val projectedValue = RuntimeParamRenderer.render(IntentValueExpressionLowering.lower(value, expressions), emptySet())
                 val target = "plan/trigger/$triggerId/param/${segment(key)}"
                 if (expressionValue == projectedValue) {
                     add(preserved("trigger/$triggerId/param/${segment(key)}", "$source.params.$key", target, value.kind, expressionValue))
@@ -391,7 +313,7 @@ object IntentLoweringAuthority {
                     "workflow-step-membership",
                     step.id
                 ))
-                addStepFields(step, "$workflowSource.steps[$stepIndex]", inputNames)
+                addStepFields(step, "$workflowSource.steps[$stepIndex]", inputNames, expressions)
             }
         }
 
@@ -417,7 +339,8 @@ object IntentLoweringAuthority {
     private fun MutableList<IntentSourceField>.addStepFields(
         step: IntentStep,
         sourcePath: String,
-        inputNames: Set<String>
+        inputNames: Set<String>,
+        expressions: IntentExpressionParser
     ) {
         val stepId = segment(step.id)
         val targetRoot = "plan/node/source/$stepId"
@@ -487,8 +410,8 @@ object IntentLoweringAuthority {
                 val message = value.asTextOrNull().orEmpty()
                 add(preserved("step/$stepId/param/${segment(key)}", "$sourcePath.params.$key", targetIdentity, value.kind, message))
             } else {
-                val expressionValue = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value))
-                val projectedValue = RuntimeParamRenderer.render(IntentValueExpressionLowering.lower(value), inputNames)
+                val expressionValue = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value, expressions))
+                val projectedValue = RuntimeParamRenderer.render(IntentValueExpressionLowering.lower(value, expressions), inputNames)
                 if (expressionValue == projectedValue) {
                     add(preserved("step/$stepId/param/${segment(key)}", "$sourcePath.params.$key", targetIdentity, value.kind, expressionValue))
                 } else {

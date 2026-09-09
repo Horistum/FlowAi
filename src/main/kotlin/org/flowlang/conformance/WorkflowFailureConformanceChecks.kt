@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.control.AdapterControlMaterializationAuthority
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -102,7 +104,7 @@ class WorkflowFailureConformanceChecks(private val rootDir: File) {
             )
         )
         val overlapReport = CanonicalExecutionGraphValidator.validate(
-            CanonicalExecutionGraphBuild(overlap, unit.authorization.bindings)
+            CanonicalExecutionGraphBuild(overlap, unit.authorization.inspectionView().bindings)
         )
         if (overlapReport.issues.none { it.code == "graph.workflow.failure-handler.root-overlap" }) {
             add("Canonical validation accepted one node as both normal root and failure-handler member.")
@@ -118,7 +120,7 @@ class WorkflowFailureConformanceChecks(private val rootDir: File) {
         val crossingReport = CanonicalExecutionGraphValidator.validate(
             CanonicalExecutionGraphBuild(
                 unit.graph.copy(dependencyEdges = unit.graph.dependencyEdges + crossing),
-                unit.authorization.bindings
+                unit.authorization.inspectionView().bindings
             )
         )
         if (crossingReport.issues.none { it.code == "graph.workflow.failure-handler.edge-crossing" }) {
@@ -133,7 +135,7 @@ class WorkflowFailureConformanceChecks(private val rootDir: File) {
         val outputReport = CanonicalExecutionGraphValidator.validate(
             CanonicalExecutionGraphBuild(
                 unit.graph.copy(outputs = unit.graph.outputs + failureOutput),
-                unit.authorization.bindings
+                unit.authorization.inspectionView().bindings
             )
         )
         if (outputReport.issues.none { it.code == "graph.workflow.failure-handler.output" }) {
@@ -235,7 +237,7 @@ class WorkflowFailureConformanceChecks(private val rootDir: File) {
         return try {
             file.writeText(source)
             FlowSourceFrontend(
-                FlowCompilationService(ModuleRegistry.fromDirectory(File(rootDir, "modules"))),
+                FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File(rootDir, "modules"))),
                 FlowParser()
             ).compile(file).requireAccepted()
         } finally {

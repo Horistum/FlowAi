@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.yaml.IntentYamlLoader
@@ -32,7 +34,7 @@ internal class CliReleaseHonestyChecks(
 
             val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
             IntentCapabilityValidator(registry).validate(intent).assertValid()
-            val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+            val plan = FlowPlanner(registry).plan(FrontendCompilerComposition.intentPlanner(registry).plan(intent))
             val evidence = CliTargetEvidenceAuthority(targets, projections).evaluate(
                 plan = plan,
                 explicitSelection = explicitTarget("jenkins", "conformance:cli-release"),

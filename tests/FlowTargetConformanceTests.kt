@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.*
@@ -33,7 +34,7 @@ fun targetConformanceTests() {
                 requires: [approve]
                 params: { namespace: demo, image: demo:1.0 }
     """.trimIndent())
-    val ast = IntentToAstPlanner(registry).plan(intent)
+    val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
     val plan = FlowPlanner(registry).plan(ast)
 
     val tektonReport = CompatibilityAnalyzer(targets).analyze(plan, "tekton", strict = false)

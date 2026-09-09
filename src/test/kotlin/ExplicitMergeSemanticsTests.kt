@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -71,7 +72,7 @@ class ExplicitMergeSemanticsTests {
         assertEquals(2, merge.paths.size)
         assertEquals(merge.paths, merge.incoming.flatMap { it.paths }.toSet())
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertTrue(validation.valid, validation.issues.toString())
         val plan = FlowPlanner(modules).plan(document)
         val condition = plan.nodes[0] as ConditionNode
@@ -99,7 +100,7 @@ class ExplicitMergeSemanticsTests {
         assertEquals(2, canonicalMerge.inputs.size)
         assertEquals(canonicalMerge.paths.toSet(), canonicalMerge.inputs.flatMap { it.paths }.toSet())
         assertTrue(CanonicalExecutionGraphValidator.validate(
-            org.flowlang.compiler.CanonicalExecutionGraphBuild(unit.graph, unit.authorization.bindings)
+            org.flowlang.compiler.CanonicalExecutionGraphBuild(unit.graph, unit.authorization.inspectionView().bindings)
         ).valid)
     }
 
@@ -134,7 +135,7 @@ class ExplicitMergeSemanticsTests {
                 }
                 """.trimIndent()
             )
-            val result = FlowSourceFrontend(FlowCompilationService(modules)).compile(source)
+            val result = FlowSourceFrontend(FrontendCompilerComposition.compiler(modules)).compile(source)
             val unit = assertNotNull((result as? CompilationResult.Accepted)?.unit, result.toString())
             val canonicalMerge = unit.graph.valueMerges.single()
             assertEquals("joined", canonicalMerge.resultBinding)
@@ -177,7 +178,7 @@ class ExplicitMergeSemanticsTests {
         )
         val analysis = FlowAvailabilityAnalyzer().analyze(document)
         assertEquals(null, analysis.merges.single().valueType)
-        assertTrue(FlowValidator(modules).validate(document).valid)
+        assertTrue(FrontendCompilerComposition.flowValidator(modules).validate(document).valid)
         assertEquals(null, compile(document, "merge-partial-type").graph.valueMerges.single().valueType)
     }
 
@@ -225,7 +226,7 @@ class ExplicitMergeSemanticsTests {
                 )
             )
         )
-        val result = FlowCompilationService(registry).compile(
+        val result = FrontendCompilerComposition.compiler(registry).compile(
             FlowSourceCompilationInput(
                 source = CompilationSource.fromBytes(
                     frontend = CompilationFrontend.FLOW_SOURCE,
@@ -274,7 +275,7 @@ class ExplicitMergeSemanticsTests {
         assertEquals(FlowAvailabilityReason.AMBIGUOUS_PRODUCERS, state.reason)
         assertTrue(analysis.merges.isEmpty())
 
-        val validation = FlowValidator(modules).validate(document)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(validation.valid)
         assertTrue(validation.issues.any { it.code == "VALUE_PRODUCER_AMBIGUOUS" })
         assertFailsWith<UnsafeFlowAvailabilityException> { FlowPlanner(modules).plan(document) }
@@ -293,13 +294,13 @@ class ExplicitMergeSemanticsTests {
             ),
             merge("joined", "left", "alsoLeft")
         )
-        val overlapReport = FlowValidator(modules).validate(overlap)
+        val overlapReport = FrontendCompilerComposition.flowValidator(modules).validate(overlap)
         assertFalse(overlapReport.valid)
         assertTrue(overlapReport.issues.any { it.code == "MERGE_PATH_OVERLAP" })
         assertTrue(overlapReport.issues.any { it.code == "MERGE_PATH_INCOMPLETE" })
 
         val external = flow(merge("joined", "condition", "otherInput"), extraInput = true)
-        val externalReport = FlowValidator(modules).validate(external)
+        val externalReport = FrontendCompilerComposition.flowValidator(modules).validate(external)
         assertFalse(externalReport.valid)
         assertTrue(externalReport.issues.any { it.code == "MERGE_SOURCE_EXTERNAL" })
 
@@ -308,7 +309,7 @@ class ExplicitMergeSemanticsTests {
             leftValue = text("left"),
             rightValue = NumberLiteralNode(value = 42.0, isInteger = true)
         )
-        val incompatibleReport = FlowValidator(modules).validate(incompatible)
+        val incompatibleReport = FrontendCompilerComposition.flowValidator(modules).validate(incompatible)
         assertFalse(incompatibleReport.valid)
         assertTrue(incompatibleReport.issues.any { it.code == "MERGE_TYPE_INCOMPATIBLE" })
     }
@@ -321,7 +322,7 @@ class ExplicitMergeSemanticsTests {
                 CallExpressionNode(function = "merge", args = listOf(ref("condition"), ref("condition")))
             )
         )
-        val report = FlowValidator(modules).validate(document)
+        val report = FrontendCompilerComposition.flowValidator(modules).validate(document)
         assertFalse(report.valid)
         assertTrue(report.issues.any { it.code == "MERGE_CONTEXT_INVALID" })
         assertFailsWith<UnsafeFlowAvailabilityException> { FlowPlanner(modules).plan(document) }
@@ -355,7 +356,7 @@ class ExplicitMergeSemanticsTests {
             )
         )
 
-        val report = FlowValidator(registry).validate(document)
+        val report = FrontendCompilerComposition.flowValidator(registry).validate(document)
         assertTrue(report.valid, report.issues.toString())
         val plan = FlowPlanner(registry).plan(document)
         val mergeNode = plan.nodes[1]
@@ -397,7 +398,7 @@ class ExplicitMergeSemanticsTests {
             dependencyEdges = unit.graph.dependencyEdges - requiredEdge
         )
         val report = CanonicalExecutionGraphValidator.validate(
-            org.flowlang.compiler.CanonicalExecutionGraphBuild(missingEdge, unit.authorization.bindings)
+            org.flowlang.compiler.CanonicalExecutionGraphBuild(missingEdge, unit.authorization.inspectionView().bindings)
         )
         assertFalse(report.valid)
         assertTrue(report.issues.any { it.code == "graph.merge.edge.value.missing" })
@@ -406,7 +407,7 @@ class ExplicitMergeSemanticsTests {
             valueMerges = listOf(merge.copy(valueType = CanonicalValueTypeId("number")))
         )
         val typeReport = CanonicalExecutionGraphValidator.validate(
-            org.flowlang.compiler.CanonicalExecutionGraphBuild(forgedType, unit.authorization.bindings)
+            org.flowlang.compiler.CanonicalExecutionGraphBuild(forgedType, unit.authorization.inspectionView().bindings)
         )
         assertFalse(typeReport.valid)
         assertTrue(typeReport.issues.any { it.code == "graph.merge.type.mismatch" })
@@ -415,7 +416,7 @@ class ExplicitMergeSemanticsTests {
             valueMerges = listOf(merge.copy(resultBinding = "forged"))
         )
         val bindingReport = CanonicalExecutionGraphValidator.validate(
-            org.flowlang.compiler.CanonicalExecutionGraphBuild(forgedBinding, unit.authorization.bindings)
+            org.flowlang.compiler.CanonicalExecutionGraphBuild(forgedBinding, unit.authorization.inspectionView().bindings)
         )
         assertFalse(bindingReport.valid)
         assertTrue(bindingReport.issues.any { it.code == "graph.merge.target.detail.mismatch" })
@@ -423,7 +424,7 @@ class ExplicitMergeSemanticsTests {
 
     private fun compile(document: FlowDocument, identity: String): org.flowlang.compiler.CompilationUnit {
         val bytes = identity.toByteArray()
-        val result = FlowCompilationService(modules).compile(
+        val result = FrontendCompilerComposition.compiler(modules).compile(
             FlowSourceCompilationInput(
                 source = CompilationSource.fromBytes(
                     frontend = CompilationFrontend.FLOW_SOURCE,

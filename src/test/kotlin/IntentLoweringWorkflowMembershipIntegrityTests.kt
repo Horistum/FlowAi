@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -83,8 +84,8 @@ class IntentLoweringWorkflowMembershipIntegrityTests {
         )
     }
 
-    private fun referencePlan() = FlowPlanner().plan(
-        IntentToAstPlanner().plan(
+    private fun referencePlan() = FlowPlanner(ModuleRegistry()).plan(
+        FrontendCompilerComposition.intentPlanner().plan(
             IntentDocument(
                 name = "workflow-membership-integrity",
                 workflows = listOf(

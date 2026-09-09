@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -71,7 +72,7 @@ class CrossTargetCheckoutProjectionTests {
             }
             """.trimIndent()
         )
-        val validation = FlowValidator(modules).validate(ast)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(ast)
         assertTrue(validation.valid, validation.issues.joinToString { "${it.code}: ${it.message}" })
         val plan = FlowPlanner(modules).plan(ast)
         val task = plan.tasks.single()

@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +39,7 @@ import org.flowlang.modules.ModuleRegistry
 
 class ReviewedAiProposalFrontendConvergenceTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"))
-    private val compiler = FlowCompilationService(registry)
+    private val compiler = FrontendCompilerComposition.compiler(registry)
     private val aiFrontend = ReviewedAiProposalFrontend(compiler)
     private val intentFrontend = IntentYamlFrontend(compiler)
     private val referenceFile = File("examples/intent/build-test-deploy.intent.yaml")

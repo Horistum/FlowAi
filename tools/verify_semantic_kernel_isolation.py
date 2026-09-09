@@ -25,7 +25,7 @@ BUILD_INPUTS = (
     Path("build.gradle.kts"), Path("settings.gradle.kts"), Path("gradle.properties"),
     Path("gradlew"), Path("gradle/wrapper/gradle-wrapper.jar"),
     Path("gradle/wrapper/gradle-wrapper.properties"), MANIFEST,
-    MODULE / "build.gradle.kts",
+    MODULE / "build.gradle.kts", Path("gradle/production-source-ownership.gradle.kts"),
 )
 
 
@@ -90,7 +90,7 @@ def verify(root: Path, report_dir: Path, offline: bool) -> None:
     command = ["bash", "gradlew", "--no-daemon", "--console=plain", "--no-build-cache"]
     if offline:
         command.append("--offline")
-    command += [":flow-semantic-kernel:clean", ":flow-semantic-kernel:test"]
+    command += ["-Pflow.isolatedBoundary=semantic-kernel", ":flow-semantic-kernel:clean", ":flow-semantic-kernel:test"]
     with tempfile.TemporaryDirectory(prefix="flow-kernel-isolation-") as temporary:
         isolated = Path(temporary)
         inputs = prepare_isolated_project(root, isolated)

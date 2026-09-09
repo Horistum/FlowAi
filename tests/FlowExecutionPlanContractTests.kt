@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -22,7 +24,7 @@ class FlowExecutionPlanContractTests {
             AiIntentRequest("Deploy application billing-api to Kubernetes. Require approval in production. Verify health after deploy and rollback on failure.")
         )
         IntentCapabilityValidator(registry).validate(response.normalizedIntent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(response.normalizedIntent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(response.normalizedIntent)
         val plan = FlowPlanner(registry).plan(ast)
         val canonical = ExecutionPlanCanonicalizer.canonicalize(plan)
         val nodes = canonical.nodes.flatMap { flatten(it) }

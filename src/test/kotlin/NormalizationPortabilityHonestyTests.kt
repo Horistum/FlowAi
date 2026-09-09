@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -55,7 +56,7 @@ class NormalizationPortabilityHonestyTests {
         val validation = IntentCapabilityValidator(registry).validate(intent)
         assertTrue(validation.valid, validation.issues.joinToString { it.code })
 
-        val ast = IntentToAstPlanner(registry).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
         assertEquals("containerRegistry", ast.flow.systems.single { it.name == "registry" }.systemType)
         assertEquals(
             "containerRegistry",
@@ -65,7 +66,7 @@ class NormalizationPortabilityHonestyTests {
 
     @Test
     fun explicitDockerRegistryLegacyAliasStillSelectsDockerBindingType() {
-        val ast = IntentToAstPlanner(registry).plan(unboundIntent("dockerRegistry"))
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(unboundIntent("dockerRegistry"))
         assertEquals("docker", ast.flow.systems.single { it.name == "registry" }.systemType)
         assertEquals("docker", ast.metadata.sourceIntent?.systems?.single { it.name == "registry" }?.canonicalType)
     }

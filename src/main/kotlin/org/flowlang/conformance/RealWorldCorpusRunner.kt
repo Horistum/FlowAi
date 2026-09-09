@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import java.util.ArrayDeque
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -39,7 +41,7 @@ class RealWorldCorpusRunner(
 ) {
     private val loader = RealWorldCorpusLoader(rootDir)
     private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
-    private val intentFrontend = IntentYamlFrontend(FlowCompilationService(registry))
+    private val intentFrontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
 
     fun load(): LoadedRealWorldCorpus = loader.load()
 

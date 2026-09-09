@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,14 +22,14 @@ import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
 
 class DerivedViewAuthorityRetirementTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"))
-    private val compiler = FlowCompilationService(registry)
+    private val compiler = FrontendCompilerComposition.compiler(registry)
 
     @Test
     fun canonicalCompatibilityViewIsProjectedDirectlyFromTheAuthorizedGraph() {
         val unit = referenceUnit()
         val direct = CanonicalExecutionGraphProjection.toCanonicalExecutionPlan(
             unit.graph,
-            unit.authorization.bindings
+            unit.authorization.inspectionView().bindings
         )
 
         assertEquals(unit.canonicalPlan, direct)

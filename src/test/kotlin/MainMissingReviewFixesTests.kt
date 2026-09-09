@@ -1,3 +1,4 @@
+import org.flowlang.modules.ModuleRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -79,7 +80,7 @@ class MainMissingReviewFixesTests {
     }
 
     private fun jenkinsManifestWithFlowLevelErrorHandler(): TargetManifest = JenkinsManifestGenerator().generate(
-        FlowPlanner().plan(flowWithErrorHandler()),
+        FlowPlanner(ModuleRegistry()).plan(flowWithErrorHandler()),
         CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED)
     )
 

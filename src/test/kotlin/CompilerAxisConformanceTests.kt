@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
@@ -23,8 +25,8 @@ class CompilerAxisConformanceTests {
         val cli = File(root, HONEST_CLI)
         cli.writeText(
             cli.readText().replace(
-                "IntentYamlFrontend(FlowCompilationService(registry))",
-                "IntentToAstPlanner(registry)"
+                "IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))",
+                "FrontendCompilerComposition.intentPlanner(registry)"
             )
         )
 
@@ -63,7 +65,7 @@ class CompilerAxisConformanceTests {
                 import org.flowlang.planner.FlowPlanner
 
                 fun bypass() {
-                    IntentToAstPlanner(registry)
+                    FrontendCompilerComposition.intentPlanner(registry)
                     FlowPlanner(registry)
                 }
                 """.trimIndent()
@@ -77,12 +79,33 @@ class CompilerAxisConformanceTests {
     }
 
     @Test
+    fun aliasedFrontendFactoryCannotHideAnUnlistedProductPipeline() {
+        val root = copiedFixture()
+        File(root, "src/main/kotlin/org/flowlang/product/FactoryBypass.kt").apply {
+            parentFile.mkdirs()
+            writeText("""
+                package org.flowlang.product
+                import org.flowlang.frontend.FrontendCompilerComposition as Inputs
+                import org.flowlang.planner.FlowPlanner as Planner
+                fun bypass() {
+                    Inputs.intentPlanner(registry)
+                    Planner(registry)
+                }
+            """.trimIndent())
+        }
+        val check = CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == CompilerAxisConformanceChecks.INVENTORY_CHECK }
+        assertEquals(false, check.passed)
+        assertTrue(check.message.orEmpty().contains("FactoryBypass.kt"), check.message)
+    }
+
+    @Test
     fun directReviewedProposalReviewBypassFailsConvergence() {
         val root = copiedFixture()
         val cli = File(root, HONEST_CLI)
         cli.writeText(
             cli.readText().replace(
-                "ReviewedAiProposalFrontend(FlowCompilationService(registry))",
+                "ReviewedAiProposalFrontend(FrontendCompilerComposition.compiler(registry))",
                 "IntentProposalReview(registry)"
             )
         )
@@ -118,7 +141,11 @@ class CompilerAxisConformanceTests {
     @Test
     fun sourceCaptureWithoutStrictUtf8FailsDirectionCheck() {
         val root = copiedFixture()
-        val contracts = File(root, COMPILATION_CONTRACTS)
+        val baseline = CompilerAxisConformanceChecks(root).checks()
+            .single { it.name == CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+        assertTrue(baseline.passed, baseline.message)
+        val contracts = File(root, FRONTEND_SOURCE_CAPTURE)
+        assertTrue("CodingErrorAction.REPORT" in contracts.readText())
         contracts.writeText(contracts.readText().replace("CodingErrorAction.REPORT", "CodingErrorAction.REPLACE"))
 
         val check = CompilerAxisConformanceChecks(root).checks()
@@ -201,6 +228,7 @@ class CompilerAxisConformanceTests {
 
     companion object {
         private const val INVENTORY = "architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml"
+        private const val FRONTEND_SOURCE_CAPTURE = "src/main/kotlin/org/flowlang/frontend/CompilationSourceCapture.kt"
         private const val COMPILATION_CONTRACTS = "src/main/kotlin/org/flowlang/compiler/CompilationContracts.kt"
         private const val FLOW_COMPILATION_SERVICE = "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt"
         private const val STANDARD_CLI = "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt"
@@ -208,8 +236,11 @@ class CompilerAxisConformanceTests {
         private const val REFERENCE_SNAPSHOT = "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
         private val REQUIRED_PATHS = listOf(
             INVENTORY,
+            FRONTEND_SOURCE_CAPTURE,
             COMPILATION_CONTRACTS,
             FLOW_COMPILATION_SERVICE,
+            "src/main/kotlin/org/flowlang/compiler/WorkflowFailureAuthorization.kt",
+            "src/main/kotlin/org/flowlang/conformance/ExplicitMergeConformanceChecks.kt",
             "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraph.kt",
             "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBindings.kt",
             "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt",

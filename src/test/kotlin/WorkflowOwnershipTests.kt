@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
@@ -137,7 +138,7 @@ class WorkflowOwnershipTests {
 
         val intent = org.flowlang.adapters.yaml.IntentYamlLoader.loadText(MULTI_WORKFLOW_INTENT)
         assertFailsWith<MultipleWorkflowCompatibilityViewException> {
-            IntentToAstPlanner(modules).plan(intent)
+            FrontendCompilerComposition.intentPlanner(modules).plan(intent)
         }
     }
 
@@ -171,7 +172,7 @@ class WorkflowOwnershipTests {
             }
         )
         val rootReport = CanonicalExecutionGraphValidator.validate(
-            CanonicalExecutionGraphBuild(crossedRoot, unit.authorization.bindings)
+            CanonicalExecutionGraphBuild(crossedRoot, unit.authorization.inspectionView().bindings)
         )
         assertFalse(rootReport.valid)
         assertTrue(rootReport.issues.any { it.code == "graph.workflow.root.crossing" })
@@ -187,7 +188,7 @@ class WorkflowOwnershipTests {
             )
         )
         val edgeReport = CanonicalExecutionGraphValidator.validate(
-            CanonicalExecutionGraphBuild(crossedEdge, unit.authorization.bindings)
+            CanonicalExecutionGraphBuild(crossedEdge, unit.authorization.inspectionView().bindings)
         )
         assertFalse(edgeReport.valid)
         assertTrue(edgeReport.issues.any { it.code == "graph.edge.workflow.crossing" })
@@ -201,21 +202,21 @@ class WorkflowOwnershipTests {
             }
         )
         val triggerReport = CanonicalExecutionGraphValidator.validate(
-            CanonicalExecutionGraphBuild(unknownRoute, unit.authorization.bindings)
+            CanonicalExecutionGraphBuild(unknownRoute, unit.authorization.inspectionView().bindings)
         )
         assertFalse(triggerReport.valid)
         assertTrue(triggerReport.issues.any { it.code == "graph.trigger.workflow.unknown" })
         assertNotEquals(unit.graphDigest, CanonicalExecutionGraphDigestComputer.digest(unknownRoute))
 
         val workflowByNodeId = unit.graph.nodes.associate { node -> node.id to node.workflow }
-        val buildMetadata = unit.authorization.bindings.nodeMetadata.first { metadata ->
+        val buildMetadata = unit.authorization.inspectionView().bindings.nodeMetadata.first { metadata ->
             workflowByNodeId[metadata.nodeId] == buildWorkflow.id
         }
-        val reportMetadata = unit.authorization.bindings.nodeMetadata.first { metadata ->
+        val reportMetadata = unit.authorization.inspectionView().bindings.nodeMetadata.first { metadata ->
             workflowByNodeId[metadata.nodeId] == reportWorkflow.id
         }
-        val crossedBindings = unit.authorization.bindings.copy(
-            nodeMetadata = unit.authorization.bindings.nodeMetadata.map { metadata ->
+        val crossedBindings = unit.authorization.inspectionView().bindings.copy(
+            nodeMetadata = unit.authorization.inspectionView().bindings.nodeMetadata.map { metadata ->
                 if (metadata.nodeId == reportMetadata.nodeId) {
                     metadata.copy(planNodeId = buildMetadata.planNodeId)
                 } else {
@@ -354,7 +355,7 @@ class WorkflowOwnershipTests {
     }
 
     private fun compile(text: String, identity: String): org.flowlang.compiler.CompilationUnit {
-        val result = IntentYamlFrontend(FlowCompilationService(modules)).compileText(text, "$identity.intent.yaml")
+        val result = IntentYamlFrontend(FrontendCompilerComposition.compiler(modules)).compileText(text, "$identity.intent.yaml")
         return assertNotNull((result as? CompilationResult.Accepted)?.unit, result.toString())
     }
 

@@ -7,7 +7,6 @@ import org.flowlang.compiler.CanonicalExecutionGraph
 import org.flowlang.compiler.CanonicalExecutionGraphBuild
 import org.flowlang.compiler.CanonicalExecutionGraphDigestComputer
 import org.flowlang.compiler.CanonicalExecutionGraphValidator
-import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationUnit
 import org.flowlang.planner.WorkflowExecutionPlanSet
@@ -41,28 +40,17 @@ internal object WorkflowSemanticEvidence {
         val staleDigest = runCatching {
             CanonicalExecutionGraphDigestComputer.requireMatches(changed, original.graphDigest)
         }.exceptionOrNull()
-        // Keep the old digest, source validation binding and public views. Neither
-        // a changed graph nor its freshly computed hash may reuse that authority.
+        // Verify retained candidates through the same compiler-owned integrity
+        // predicate used by requireIntegrity. Conformance cannot construct an
+        // authorization or replace its source binding across the module boundary.
         val stale = runCatching {
-            CompilationAuthorization(
-                graph = changed,
-                graphDigest = original.graphDigest,
-                bindings = original.authorization.bindings,
-                validationBinding = original.authorization.validationBinding,
-                workflowPlanSet = original.workflowPlanSet
-            ).requireIntegrity()
+            original.authorization.requireMatchingGraph(changed, original.graphDigest)
         }.exceptionOrNull()
         val rebound = runCatching {
-            CompilationAuthorization(
-                graph = changed,
-                graphDigest = digest,
-                bindings = original.authorization.bindings,
-                validationBinding = original.authorization.validationBinding,
-                workflowPlanSet = original.workflowPlanSet
-            ).requireIntegrity()
+            original.authorization.requireMatchingGraph(changed, digest)
         }.exceptionOrNull()
         val validation = CanonicalExecutionGraphValidator.validate(
-            CanonicalExecutionGraphBuild(changed, original.authorization.bindings)
+            CanonicalExecutionGraphBuild(changed, original.authorization.inspectionView().bindings)
         )
         return WorkflowSemanticMutationObservation(
             id, original.graphDigest.value, digest.value, changed != original.graph,

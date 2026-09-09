@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -105,7 +106,7 @@ class ClosureBlockingTopologyIntegrityTests {
     }
 
     private fun approvalPlan() = FlowPlanner(modules).plan(
-        IntentToAstPlanner(modules).plan(
+        FrontendCompilerComposition.intentPlanner(modules).plan(
             IntentDocument(
                 name = "approval-topology",
                 workflows = listOf(

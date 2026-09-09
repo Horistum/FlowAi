@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -124,7 +125,7 @@ class WorkflowFailureSemanticsTests {
               on error { }
             }
         """.trimIndent()
-        val validation = FlowValidator(modules).validate(
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(
             FlowParser().parse(source, "empty-handler.flow")
         )
 
@@ -171,7 +172,7 @@ class WorkflowFailureSemanticsTests {
             }
         """.trimIndent()
         val ast = FlowParser().parse(source, "ar02d-unsafe.flow")
-        val result = FlowCompilationService(modules).compile(
+        val result = FrontendCompilerComposition.compiler(modules).compile(
             FlowSourceCompilationInput(
                 CompilationSource.fromBytes(
                     CompilationFrontend.FLOW_SOURCE,
@@ -206,7 +207,7 @@ class WorkflowFailureSemanticsTests {
             workflows = listOf(workflow.copy(rootNodeIds = workflow.rootNodeIds + handler.nodeIds.first()))
         )
         val report = CanonicalExecutionGraphValidator.validate(
-            CanonicalExecutionGraphBuild(overlap, unit.authorization.bindings)
+            CanonicalExecutionGraphBuild(overlap, unit.authorization.inspectionView().bindings)
         )
         assertFalse(report.valid)
         assertTrue(report.issues.any { it.code == "graph.workflow.failure-handler.root-overlap" })
@@ -221,7 +222,7 @@ class WorkflowFailureSemanticsTests {
         val crossingReport = CanonicalExecutionGraphValidator.validate(
             CanonicalExecutionGraphBuild(
                 unit.graph.copy(dependencyEdges = unit.graph.dependencyEdges + crossingEdge),
-                unit.authorization.bindings
+                unit.authorization.inspectionView().bindings
             )
         )
         assertFalse(crossingReport.valid)
@@ -237,7 +238,7 @@ class WorkflowFailureSemanticsTests {
         val outputReport = CanonicalExecutionGraphValidator.validate(
             CanonicalExecutionGraphBuild(
                 unit.graph.copy(outputs = unit.graph.outputs + failureOutput),
-                unit.authorization.bindings
+                unit.authorization.inspectionView().bindings
             )
         )
         assertFalse(outputReport.valid)
@@ -260,7 +261,7 @@ class WorkflowFailureSemanticsTests {
     """.trimIndent()
 
     private fun compile(source: String, identity: String) =
-        FlowCompilationService(modules).compile(
+        FrontendCompilerComposition.compiler(modules).compile(
             FlowSourceCompilationInput(
                 source = CompilationSource.fromBytes(
                     frontend = CompilationFrontend.FLOW_SOURCE,

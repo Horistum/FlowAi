@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
@@ -25,7 +27,7 @@ import org.flowlang.validator.FlowValidator
 
 class IntentFrontendConvergenceTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"))
-    private val compiler = FlowCompilationService(registry)
+    private val compiler = FrontendCompilerComposition.compiler(registry)
     private val frontend = IntentYamlFrontend(compiler)
     private val referenceIntent = File("examples/intent/build-test-deploy.intent.yaml")
 
@@ -35,8 +37,8 @@ class IntentFrontendConvergenceTests {
 
         val intent = IntentYamlLoader.load(referenceIntent)
         val intentValidation = IntentCapabilityValidator(registry).validate(intent).also { it.assertValid() }
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val validation = FlowValidator(registry).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
+        val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         assertTrue(validation.valid, validation.issues.joinToString { it.code })
         val plan = FlowPlanner(registry).plan(ast)
         val canonical = ExecutionPlanCanonicalizer.canonicalize(plan)

@@ -62,7 +62,7 @@ data class CapabilityModuleIssue(
  * owned by target registries and provider catalogs, not module contracts.
  */
 object ModuleContractAnalyzer {
-    fun analyze(registry: ModuleRegistry): CapabilityModuleContractReport {
+    fun analyze(registry: ModuleCatalog): CapabilityModuleContractReport {
         val modules = registry.allModules().sortedBy { it.name }
         val issues = mutableListOf<CapabilityModuleIssue>()
         val summaries = modules.map { module ->

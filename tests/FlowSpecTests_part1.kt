@@ -1,3 +1,5 @@
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.ast.*
 import org.flowlang.parser.*
 import org.flowlang.planner.*
@@ -45,8 +47,8 @@ fun expr(src: String): ExpressionNode = ExpressionParser.parseSource(dollarize(s
 fun doc(src: String): FlowDocument = FlowParser().parse(dollarize(src))
 fun stmts(stepsSrc: String): List<StatementNode> = doc("flow \"t\" { steps {\n$stepsSrc\n} }").flow.steps
 fun firstStmt(stepsSrc: String): StatementNode = stmts(stepsSrc).first()
-fun validateSrc(src: String): ValidationReport = FlowValidator().validate(doc(src))
-fun planSrc(src: String): ExecutionPlan = FlowPlanner().plan(doc(src))
+fun validateSrc(src: String): ValidationReport = FrontendCompilerComposition.flowValidator().validate(doc(src))
+fun planSrc(src: String): ExecutionPlan = FlowPlanner(ModuleRegistry()).plan(doc(src))
 
 fun parseOk(name: String, src: String) {
     try { doc(src); H.ok(name, true) } catch (e: Exception) { H.ok("$name :: ${e.message}", false) }

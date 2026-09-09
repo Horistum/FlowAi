@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -30,7 +31,7 @@ class DerivedModelGovernanceIntegrityTests {
     private fun referencePlan(): ExecutionPlan =
         IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
             .also { IntentCapabilityValidator(registry).validate(it).assertValid() }
-            .let { IntentToAstPlanner(registry).plan(it) }
+            .let { FrontendCompilerComposition.intentPlanner(registry).plan(it) }
             .let { FlowPlanner(registry).plan(it) }
 
     @Test

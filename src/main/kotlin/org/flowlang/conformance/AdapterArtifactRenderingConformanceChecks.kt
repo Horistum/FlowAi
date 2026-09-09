@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingEvidenceIntegrityAuthority
@@ -189,7 +191,7 @@ class AdapterArtifactRenderingConformanceChecks(
         val modules = ModuleRegistry.fromDirectory(File(rootDir, "modules"))
         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/checkout-build-image.intent.yaml"))
         IntentCapabilityValidator(modules).validate(intent).assertValid()
-        val plan = FlowPlanner(modules).plan(IntentToAstPlanner(modules).plan(intent))
+        val plan = FlowPlanner(modules).plan(FrontendCompilerComposition.intentPlanner(modules).plan(intent))
         val selection = TargetSelectionAuthority.fromConformanceCheck(
             value = "jenkins",
             checkId = EXECUTABLE_PROOF_CHECK,

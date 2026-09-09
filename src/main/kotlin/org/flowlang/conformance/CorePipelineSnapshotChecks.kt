@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.ExecutionReadinessAnalyzer
@@ -49,8 +51,8 @@ internal class CorePipelineSnapshotChecks(
     private fun checkTektonStrictApprovalFails(): ConformanceCheck = runCheck("target.strict.tekton-approval-unsupported") {
         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
         IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
-        val validation = FlowValidator(registry).validate(ast)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
+        val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         require(validation.valid) { validation.issues.joinToString { it.code + ": " + it.message } }
         val plan = FlowPlanner(registry).plan(ast)
         val report = CompatibilityAnalyzer(targets).analyze(plan, "tekton", strict = true)
@@ -71,7 +73,7 @@ internal class CorePipelineSnapshotChecks(
     private fun checkGitHubManifestGeneration(): ConformanceCheck = runCheck("generator.manifest.github-actions") {
         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
         IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+        val plan = FlowPlanner(registry).plan(FrontendCompilerComposition.intentPlanner(registry).plan(intent))
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "github-actions", strict = false)
         val readiness = ExecutionReadinessAnalyzer(targets).analyze(plan, "github-actions", strict = false)
         require(compatibility.hasErrors) {
@@ -86,7 +88,7 @@ internal class CorePipelineSnapshotChecks(
     private fun checkTektonManifestGeneration(): ConformanceCheck = runCheck("generator.manifest.tekton.partial") {
         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/build-test-deploy.intent.yaml"))
         IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+        val plan = FlowPlanner(registry).plan(FrontendCompilerComposition.intentPlanner(registry).plan(intent))
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "tekton", strict = false)
         val readiness = ExecutionReadinessAnalyzer(targets).analyze(plan, "tekton", strict = false)
         require(compatibility.hasErrors) { "Tekton reference pipeline must fail compatibility before manifest generation." }

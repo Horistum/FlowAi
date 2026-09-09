@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -33,7 +34,7 @@ class FlowSemanticCorrectnessHardeningTests {
             )
         )
 
-        val ast = IntentToAstPlanner(registry).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
         val deploy = ast.flow.steps.single() as ActionNode
         assertEquals("standard", deploy.module)
         assertEquals("execute", deploy.action)
@@ -81,7 +82,7 @@ class FlowSemanticCorrectnessHardeningTests {
             )
         )
 
-        val report = FlowValidator(registry).validate(document)
+        val report = FrontendCompilerComposition.flowValidator(registry).validate(document)
         assertFalse(report.issues.any { it.level == "error" && it.code == "UNRESOLVED_REFERENCE" }, report.issues.toString())
     }
 
@@ -99,7 +100,7 @@ class FlowSemanticCorrectnessHardeningTests {
         val report = IntentCapabilityValidator(registry).validate(migration)
         assertFalse(report.valid)
         assertTrue(report.issues.any { it.code == "SAFETY_REQUIRES_BACKUP" }, report.issues.toString())
-        assertFailsWith<IllegalStateException> { IntentToAstPlanner(registry).plan(migration) }
+        assertFailsWith<IllegalStateException> { FrontendCompilerComposition.intentPlanner(registry).plan(migration) }
     }
 
     @Test

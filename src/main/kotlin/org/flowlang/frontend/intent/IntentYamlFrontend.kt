@@ -2,10 +2,10 @@ package org.flowlang.frontend.intent
 
 import java.io.File
 import org.flowlang.adapters.yaml.IntentYamlLoader
-import org.flowlang.compiler.CapturedCompilationSource
+import org.flowlang.frontend.CapturedCompilationSource
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationResult
-import org.flowlang.compiler.CompilationSourceCapture
+import org.flowlang.frontend.CompilationSourceCapture
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.IntentCompilationInput
 import org.flowlang.intent.IntentDocument
@@ -14,7 +14,7 @@ import org.flowlang.intent.IntentDocument
 class IntentYamlFrontend(
     private val compiler: FlowCompilationService
 ) {
-    internal fun load(file: File): CapturedCompilationSource<IntentDocument> =
+    fun load(file: File): CapturedCompilationSource<IntentDocument> =
         CompilationSourceCapture.capture(
             file = file,
             frontend = CompilationFrontend.INTENT_YAML,
@@ -32,7 +32,7 @@ class IntentYamlFrontend(
         )
     )
 
-    internal fun compile(
+    fun compile(
         captured: CapturedCompilationSource<IntentDocument>
     ): CompilationResult = compiler.compile(
         IntentCompilationInput(

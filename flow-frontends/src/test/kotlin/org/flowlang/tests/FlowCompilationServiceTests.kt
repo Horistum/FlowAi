@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
@@ -11,7 +13,7 @@ import org.flowlang.compiler.CanonicalExecutionGraphDigestComputer
 import org.flowlang.compiler.CanonicalExecutionGraphProjection
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationSource
-import org.flowlang.compiler.CompilationSourceCapture
+import org.flowlang.frontend.CompilationSourceCapture
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
 import org.flowlang.frontend.source.FlowSourceFrontend
@@ -23,7 +25,7 @@ import org.flowlang.validator.FlowValidator
 
 class FlowCompilationServiceTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"))
-    private val compiler = FlowCompilationService(registry)
+    private val compiler = FrontendCompilerComposition.compiler(registry)
 
     @Test
     fun flowSourceFrontendPreservesExistingAcceptedMeaningAndSourceLocations() {
@@ -31,7 +33,7 @@ class FlowCompilationServiceTests {
         val unit = FlowSourceFrontend(compiler).compile(sourceFile).requireAccepted()
 
         val legacyAst = FlowParser().parse(sourceFile)
-        val legacyValidation = FlowValidator(registry).validate(legacyAst)
+        val legacyValidation = FrontendCompilerComposition.flowValidator(registry).validate(legacyAst)
         val legacyPlan = FlowPlanner(registry).plan(legacyAst)
 
         assertEquals(CompilationFrontend.FLOW_SOURCE, unit.source.frontend)
@@ -46,7 +48,7 @@ class FlowCompilationServiceTests {
         assertEquals(ExecutionPlanCanonicalizer.canonicalize(legacyPlan), unit.canonicalPlan)
         assertEquals(
             unit.executionPlan,
-            CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.bindings)
+            CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.inspectionView().bindings)
         )
         assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestComputer.digest(unit.graph))
         unit.authorization.requireIntegrity()

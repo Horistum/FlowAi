@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.ast.ActionNode
 import org.flowlang.ast.FlowDocument
@@ -158,7 +160,7 @@ class FlowSensitiveConformanceChecks(
             IfNode(condition = ref("condition"), then = listOf(shell("value"))),
             shell("consumer", ref("value"))
         )
-        val validation = FlowValidator(modules).validate(unsafe)
+        val validation = FrontendCompilerComposition.flowValidator(modules).validate(unsafe)
         if (validation.valid || validation.issues.none { it.code == "VALUE_MAY_BE_UNDEFINED" }) {
             add("FlowValidator did not reject an unguarded MaybeDefined read with the stable AR-02 code.")
         }
@@ -174,7 +176,7 @@ class FlowSensitiveConformanceChecks(
                 otherwise = listOf(shell("value", literal("otherwise")), shell("elseConsumer", ref("value")))
             )
         )
-        val localValidation = FlowValidator(modules).validate(branchLocal)
+        val localValidation = FrontendCompilerComposition.flowValidator(modules).validate(branchLocal)
         if (!localValidation.valid) {
             add("Branch-local definitely-defined reads were rejected: ${localValidation.issues}.")
             return@buildList

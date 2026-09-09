@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.flowlang.adapters.yaml.IntentYamlLoader
@@ -19,7 +21,7 @@ class FlowExecutionPlanPortabilityTests {
     fun negotiationReportExplainsExecutionPlanPortability() {
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
         IntentCapabilityValidator(registry).validate(intent).assertValid()
-        val ast = IntentToAstPlanner(registry).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
         val plan = FlowPlanner(registry).plan(ast)
         val report = CompatibilityAnalyzer(targets).negotiate(plan)
 

@@ -14,37 +14,23 @@ application { mainClass.set("org.flowlang.cli.honest.HonestFlowCliKt") }
 
 kotlin { jvmToolchain(25) }
 
-// Gradle projects consume one explicit, validated source partition. No glob may
-// widen the kernel to include residual implementation files.
-val kernelManifest = layout.projectDirectory.file("gradle/semantic-kernel-sources.txt")
-val semanticKernelSources = providers.fileContents(kernelManifest).asText.get()
-    .lineSequence().map(String::trim).filter { it.isNotEmpty() && !it.startsWith("#") }.toList()
-require(semanticKernelSources.isNotEmpty() && semanticKernelSources == semanticKernelSources.distinct().sorted()) {
-    "Semantic-kernel source ownership must be non-empty, unique and sorted."
-}
-semanticKernelSources.forEach { path ->
-    require(path.matches(Regex("[A-Za-z0-9_/]+\\.kt")) && path.startsWith("org/flowlang/")) {
-        "Semantic-kernel sources must be explicit relative Kotlin paths: $path"
-    }
-    val sourceRoot = file("src/main/kotlin").canonicalFile.toPath()
-    val source = file("src/main/kotlin/$path")
-    require(source.isFile && source.canonicalFile.toPath().startsWith(sourceRoot)) {
-        "Semantic-kernel source is missing or escapes the source root: $path"
-    }
-}
-extra["semanticKernelSources"] = semanticKernelSources
+// Every production file is owned by exactly one separately compiled project.
+apply(from = "gradle/production-source-ownership.gradle.kts")
 
 dependencies {
-    implementation(project(":flow-semantic-kernel"))
+    subprojects.forEach { implementation(project(it.path)) }
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2")
     implementation("com.fasterxml.jackson.module:jackson-module-jsonSchema:2.17.2")
     testImplementation(kotlin("test"))
+    if (findProject(":flow-frontends") != null) {
+        testImplementation(testFixtures(project(":flow-compiler")))
+        testImplementation(testFixtures(project(":flow-frontends")))
+    }
 }
 
 
 sourceSets {
-    main { kotlin.exclude(semanticKernelSources) }
     test {
         kotlin.srcDirs("src/test/kotlin", "tests")
         resources.srcDirs("src/test/resources")
@@ -74,4 +60,4 @@ val verifySemanticKernelSourceOwnership by tasks.registering {
 }
 
 tasks.named("compileKotlin") { dependsOn(verifySemanticKernelSourceOwnership) }
-tasks.test { dependsOn(":flow-semantic-kernel:test") }
+tasks.test { dependsOn(subprojects.map { "${it.path}:test" }) }

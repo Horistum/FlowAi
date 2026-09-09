@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.JenkinsManifestGenerator
@@ -88,7 +89,7 @@ class ManifestHonestyTests {
     @Test
     fun rollbackIsNotesProjectedOnlyAfterConnectedMaterializationEvidenceExists() {
         val intent = IntentYamlLoader.load(File("examples/intent/build-test-deploy.intent.yaml"))
-        val ast = IntentToAstPlanner(registry).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, "jenkins")
         val steps = allSteps(JenkinsManifestGenerator().generate(plan, compatibility))

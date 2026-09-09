@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentStep
 import org.flowlang.intent.IntentString
@@ -37,7 +39,7 @@ class FlowCapabilityContractValidationTests {
 
     private fun assertMissingParam(cap: StandardCapability, param: String, params: Map<String, IntentValue>) {
         val error = assertFailsWith<IllegalStateException> {
-            IntentToAstPlanner().plan(singleStep(cap, params))
+            FrontendCompilerComposition.intentPlanner().plan(singleStep(cap, params))
         }
         val message = error.message ?: ""
         assertTrue(
@@ -48,7 +50,7 @@ class FlowCapabilityContractValidationTests {
 
     private fun assertLowers(cap: StandardCapability, params: Map<String, IntentValue>) {
         // Must not throw: required params satisfied, intent lowers to an AST.
-        IntentToAstPlanner().plan(singleStep(cap, params))
+        FrontendCompilerComposition.intentPlanner().plan(singleStep(cap, params))
     }
 
     @Test

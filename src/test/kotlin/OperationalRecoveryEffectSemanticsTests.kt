@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,7 +40,7 @@ class OperationalRecoveryEffectSemanticsTests {
             File("conformance/corpus/operational/cases/DP01-backup/canonical.intent.yaml")
         )
         val task = FlowPlanner(modules)
-            .plan(IntentToAstPlanner(modules).plan(intent))
+            .plan(FrontendCompilerComposition.intentPlanner(modules).plan(intent))
             .tasks.single { it.semanticCapability == StandardCapability.BACKUP.name }
         val effect = task.effectModel.single { it.recovery != null }
         val recovery = requireNotNull(effect.recovery)
@@ -66,7 +67,7 @@ class OperationalRecoveryEffectSemanticsTests {
             File("conformance/corpus/operational/cases/DP02-restore/canonical.intent.yaml")
         )
         val task = FlowPlanner(modules)
-            .plan(IntentToAstPlanner(modules).plan(intent))
+            .plan(FrontendCompilerComposition.intentPlanner(modules).plan(intent))
             .tasks.single { it.semanticCapability == StandardCapability.RESTORE.name }
         val effect = task.effectModel.single { it.recovery != null }
         val recovery = requireNotNull(effect.recovery)

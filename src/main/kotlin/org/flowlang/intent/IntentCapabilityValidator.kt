@@ -1,6 +1,6 @@
 package org.flowlang.intent
 
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.controls.ControlAssessment
 import org.flowlang.modules.SchemaField
@@ -14,7 +14,7 @@ import org.flowlang.standard.StandardCapabilityContracts
  * low-level Flow program. That keeps the user in the architect role instead of
  * forcing them to debug platform-specific runtime failures.
  */
-class IntentCapabilityValidator(private val registry: ModuleRegistry = ModuleRegistry()) {
+class IntentCapabilityValidator(private val registry: ModuleCatalog) {
 
     fun validate(intent: IntentDocument): IntentValidationReport {
         val issues = mutableListOf<IntentValidationIssue>()

@@ -24,7 +24,7 @@ object StandardCapabilityCompatibility {
 
     val retiredSourceNames: Set<String> get() = sourceAliases.keys
 
-    internal fun isSupportedManifestText(text: String): Boolean =
+    fun isSupportedManifestText(text: String): Boolean =
         sha256(text) == SUPPORTED_MANIFEST_SHA256
 
     private fun loadAliases(): Map<String, StandardCapability> {

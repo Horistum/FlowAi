@@ -84,6 +84,13 @@ jobs:
           python3 tools/verify_semantic_kernel_isolation.py --offline 2>&1 | tee ci-logs/kernel-isolation.log
           exit ${PIPESTATUS[0]}
 
+      - name: Prove Compiler Without Frontends Or Adapters
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_compiler_isolation.py --offline 2>&1 | tee ci-logs/compiler-isolation.log
+          exit ${PIPESTATUS[0]}
+
       - name: Run Conformance
         shell: bash
         run: |
@@ -109,16 +116,17 @@ jobs:
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Isolated kernel build and external compiler boundary probes" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Isolated compiler and contracts without frontends or adapters" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          if compgen -G "build/test-results/test/*.xml" > /dev/null || compgen -G "flow-semantic-kernel/build/test-results/test/*.xml" > /dev/null; then
+          if compgen -G "build/test-results/test/*.xml" > /dev/null || compgen -G "flow-*/build/test-results/test/*.xml" > /dev/null; then
             echo "## Failing test report excerpts" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import glob
           import html
           import xml.etree.ElementTree as ET
-          for path in sorted(glob.glob('build/test-results/test/*.xml') + glob.glob('flow-semantic-kernel/build/test-results/test/*.xml')):
+          for path in sorted(glob.glob('build/test-results/test/*.xml') + glob.glob('flow-*/build/test-results/test/*.xml')):
               root = ET.parse(path).getroot()
               for case in root.findall('testcase'):
                   failure = case.find('failure')
@@ -159,7 +167,11 @@ jobs:
           path: |
             ci-logs/*.log
             ci-logs/kernel-isolation/**
+            ci-logs/compiler-isolation/**
             flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
+            flow-module-contracts/build/reports/production-module-boundary/**
+            flow-compiler/build/reports/production-module-boundary/**
+            flow-frontends/build/reports/production-module-boundary/**
           if-no-files-found: warn
           retention-days: 7
 
@@ -173,6 +185,12 @@ jobs:
             build/reports/tests/test/**
             flow-semantic-kernel/build/test-results/test/*.xml
             flow-semantic-kernel/build/reports/tests/test/**
+            flow-module-contracts/build/test-results/test/*.xml
+            flow-module-contracts/build/reports/tests/test/**
+            flow-compiler/build/test-results/test/*.xml
+            flow-compiler/build/reports/tests/test/**
+            flow-frontends/build/test-results/test/*.xml
+            flow-frontends/build/reports/tests/test/**
           if-no-files-found: warn
           retention-days: 7
 
@@ -242,6 +260,13 @@ jobs:
           python3 tools/verify_semantic_kernel_isolation.py --offline 2>&1 | tee ci-logs/merge-candidate-kernel-isolation.log
           exit ${PIPESTATUS[0]}
 
+      - name: Prove Merge Candidate Compiler Without Frontends Or Adapters
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_compiler_isolation.py --offline 2>&1 | tee ci-logs/merge-candidate-compiler-isolation.log
+          exit ${PIPESTATUS[0]}
+
       - name: Run Merge Candidate Conformance
         shell: bash
         run: |
@@ -267,7 +292,11 @@ jobs:
           path: |
             ci-logs/*.log
             ci-logs/kernel-isolation/**
+            ci-logs/compiler-isolation/**
             flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
+            flow-module-contracts/build/reports/production-module-boundary/**
+            flow-compiler/build/reports/production-module-boundary/**
+            flow-frontends/build/reports/production-module-boundary/**
           if-no-files-found: warn
           retention-days: 7
 
@@ -281,5 +310,11 @@ jobs:
             build/reports/tests/test/**
             flow-semantic-kernel/build/test-results/test/*.xml
             flow-semantic-kernel/build/reports/tests/test/**
+            flow-module-contracts/build/test-results/test/*.xml
+            flow-module-contracts/build/reports/tests/test/**
+            flow-compiler/build/test-results/test/*.xml
+            flow-compiler/build/reports/tests/test/**
+            flow-frontends/build/test-results/test/*.xml
+            flow-frontends/build/reports/tests/test/**
           if-no-files-found: warn
           retention-days: 7

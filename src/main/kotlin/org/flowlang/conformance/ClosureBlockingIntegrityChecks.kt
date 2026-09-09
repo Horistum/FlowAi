@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.architecture.CiCdBiasInventoryAnalyzer
@@ -173,7 +175,7 @@ internal class ClosureBlockingIntegrityChecks(
         val intent = org.flowlang.adapters.yaml.IntentYamlLoader.load(
             File(rootDir, "examples/intent/build-test-deploy.intent.yaml")
         )
-        val plan = FlowPlanner(registry).plan(IntentToAstPlanner(registry).plan(intent))
+        val plan = FlowPlanner(registry).plan(FrontendCompilerComposition.intentPlanner(registry).plan(intent))
         val review = CliTargetEvidenceAuthority(targets, projections).evaluate(
             plan = plan,
             explicitSelection = explicitTarget("github-actions", "conformance:closure-cli"),
@@ -205,7 +207,7 @@ internal class ClosureBlockingIntegrityChecks(
 
     private fun checkCanonicalTopology() {
         val plan = FlowPlanner(registry).plan(
-            IntentToAstPlanner(registry).plan(
+            FrontendCompilerComposition.intentPlanner(registry).plan(
                 IntentDocument(
                     name = "closure-topology",
                     workflows = listOf(

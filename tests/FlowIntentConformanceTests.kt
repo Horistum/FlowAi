@@ -1,3 +1,4 @@
+import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.ast.*
@@ -9,8 +10,8 @@ import org.flowlang.validator.FlowValidator
 
 fun intentConformanceTests() {
     fun load(text: String) = IntentYamlLoader.loadText(text)
-    fun lower(text: String) = IntentToAstPlanner().plan(load(text))
-    fun validateAst(ast: FlowDocument) = FlowValidator(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).validate(ast)
+    fun lower(text: String) = FrontendCompilerComposition.intentPlanner().plan(load(text))
+    fun validateAst(ast: FlowDocument) = FrontendCompilerComposition.flowValidator(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).validate(ast)
 
     H.scenario {
         val intent = load("""
@@ -179,7 +180,7 @@ fun intentConformanceTests() {
         H.eq("intent/yaml/flow-style-param", (intent.workflows.first().steps.first().params["app"] as org.flowlang.intent.IntentString).value, "demo")
         val rep = IntentCapabilityValidator(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).validate(intent)
         H.ok("intent/capability/argocd-config-ok", rep.valid)
-        val ast = IntentToAstPlanner(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).plan(intent)
         val argo = ast.flow.systems.first { it.name == "argo" }
         H.ok("intent/lowering/system-config-carried", argo.config.containsKey("url") && argo.config.containsKey("token"))
     }
@@ -203,7 +204,7 @@ fun intentConformanceTests() {
         val rep = IntentCapabilityValidator(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).validate(intent)
         H.ok("intent/capability/argocd-missing-url-token", rep.issues.count { it.code == "MISSING_SYSTEM_CONFIG" } >= 2)
         try {
-            IntentToAstPlanner(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).plan(intent)
+            FrontendCompilerComposition.intentPlanner(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).plan(intent)
             H.ok("intent/lowering/stops-on-capability-errors", false)
         } catch (e: Exception) {
             H.ok("intent/lowering/stops-on-capability-errors", e.message?.contains("Intent validation failed") == true)
@@ -242,7 +243,7 @@ fun intentConformanceTests() {
         val params = intent.workflows.first().steps.first().params
         H.ok("intent/yaml/structured-object-preserved", params["filters"] is org.flowlang.intent.IntentObject)
         H.ok("intent/yaml/structured-list-preserved", params["batches"] is org.flowlang.intent.IntentList)
-        val ast = IntentToAstPlanner(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).plan(intent)
+        val ast = FrontendCompilerComposition.intentPlanner(ModuleRegistry.fromDirectory(java.io.File("modules"), includeDefaults = true)).plan(intent)
         val action = ast.flow.steps.first() as org.flowlang.ast.ActionNode
         H.ok("intent/lowering/object-to-map-literal", action.params["filters"] is org.flowlang.ast.MapLiteralNode)
         H.ok("intent/lowering/list-to-list-literal", action.params["batches"] is org.flowlang.ast.ListLiteralNode)

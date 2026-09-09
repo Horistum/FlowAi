@@ -5,7 +5,7 @@ import org.flowlang.effects.SemanticEffect
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.controls.ControlRequirement
 import org.flowlang.modules.ModuleActionContract
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 import org.flowlang.standard.StandardCapabilityContracts
 import org.flowlang.topology.CanonicalTopologyRequirementAuthority
 import org.flowlang.topology.ExecutionTopologyRequirement
@@ -88,7 +88,7 @@ data class CanonicalIntentResolution(
  * binding evidence beside that meaning; it never mutates or enriches the
  * canonical meaning from inventory contents.
  */
-class CanonicalIntentMeaningAuthority(private val registry: ModuleRegistry) {
+class CanonicalIntentMeaningAuthority(private val registry: ModuleCatalog) {
 
     fun resolve(intent: IntentDocument): CanonicalIntentResolution = CanonicalIntentResolution(
         meaning = canonicalize(intent),

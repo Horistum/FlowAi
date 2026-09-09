@@ -1,5 +1,7 @@
 package org.flowlang.tests
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.ast.ReferenceNode
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
@@ -23,7 +25,7 @@ import kotlin.test.assertTrue
  */
 class FlowRemainingFindingsTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
-    private fun validate(src: String) = FlowValidator(registry).validate(FlowParser().parse(src))
+    private fun validate(src: String) = FrontendCompilerComposition.flowValidator(registry).validate(FlowParser().parse(src))
     private fun flatten(step: TargetStep): List<TargetStep> = listOf(step) + step.children.flatMap { flatten(it) }
 
     @Test
@@ -36,7 +38,7 @@ class FlowRemainingFindingsTests {
             }
         """.trimIndent()
         val ast = FlowParser().parse(src)
-        assertTrue(FlowValidator(registry).validate(ast).valid)
+        assertTrue(FrontendCompilerComposition.flowValidator(registry).validate(ast).valid)
         val plan = FlowPlanner(registry).plan(ast)
         val manifest = JenkinsManifestGenerator().generate(plan, CompatibilityReport(target = "jenkins", status = SupportLevel.SUPPORTED))
         val notifyStep = manifest.jobs.flatMap { it.steps }.flatMap { flatten(it) }.single { it.module == "notify" && it.action == "send" }

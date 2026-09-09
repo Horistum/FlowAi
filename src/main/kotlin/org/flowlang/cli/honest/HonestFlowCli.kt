@@ -1,5 +1,7 @@
 package org.flowlang.cli.honest
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import java.io.File
 import kotlin.system.exitProcess
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
@@ -190,7 +192,7 @@ private fun runIntentCommand(
         TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
     }
 
-    val compilation = IntentYamlFrontend(FlowCompilationService(registry))
+    val compilation = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
         .compile(file)
         .requireAccepted()
     val intentEvidence = compilation.requireIntentEvidence()
@@ -355,7 +357,7 @@ private fun runNormalizeCommand(
         )
     }
 
-    val compilation = ReviewedAiProposalFrontend(FlowCompilationService(registry))
+    val compilation = ReviewedAiProposalFrontend(FrontendCompilerComposition.compiler(registry))
         .compile(
             ReviewedAiProposal(
                 providerId = ScenarioPackIntentNormalizer.PROVIDER_ID,

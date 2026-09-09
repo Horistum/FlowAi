@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.frontend.FrontendCompilerComposition
+
 import org.flowlang.adapters.trigger.AdapterTriggerAuthorizedRenderingAuthority
 import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -33,7 +35,7 @@ class ReferenceSnapshotBundleGenerator(
     private val manifestPipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
     private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
     private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
-    private val intentFrontend = IntentYamlFrontend(FlowCompilationService(registry))
+    private val intentFrontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
 
     internal fun planFor(intentFile: File): ExecutionPlan =
         intentFrontend.compile(intentFile).requireAccepted().executionPlan
