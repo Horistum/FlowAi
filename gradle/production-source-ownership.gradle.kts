@@ -39,7 +39,8 @@ val registeredManifests = linkedMapOf(
     ":flow-semantic-kernel" to "gradle/semantic-kernel-sources.txt",
     ":flow-module-contracts" to "gradle/module-contracts-sources.txt",
     ":flow-compiler" to "gradle/compiler-sources.txt",
-    ":flow-frontends" to "gradle/frontends-sources.txt"
+    ":flow-frontends" to "gradle/frontends-sources.txt",
+    ":flow-adapter-contracts" to "gradle/adapter-contracts-sources.txt"
 )
 require(subprojects.map { it.path }.all { it in registeredManifests }) {
     "Every production project must have an explicit source-ownership manifest."
