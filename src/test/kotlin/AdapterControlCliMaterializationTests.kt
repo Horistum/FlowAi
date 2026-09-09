@@ -1,3 +1,4 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,7 +33,7 @@ class AdapterControlCliMaterializationTests {
                 body = emptyList()
             ))
         )
-        val selection = TargetSelectionAuthority.fromTestFixture(
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture(
             value = "jenkins",
             fixtureId = "a0.4-unsupported-retry",
             targets = targets

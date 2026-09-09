@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -36,7 +37,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 class AdapterControlMaterializationAuthorityTests {
     private val rootDir = File(".")
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
-    private val authority = AdapterControlMaterializationAuthority(rootDir, targets, BuiltInTargetProjections.registry)
+    private val authority = ReferenceAdapterEvidence.control(rootDir, targets, BuiltInTargetProjections.registry)
 
     @Test
     fun builtInControlManifestIsCompleteAndHonest() {
@@ -85,7 +86,7 @@ class AdapterControlMaterializationAuthorityTests {
     @Test
     fun runtimeCompositionCanUseAnExactSubsetOfDistributionTargets() {
         val subset = mapOf("jenkins" to targets.getValue("jenkins"))
-        val subsetAuthority = AdapterControlMaterializationAuthority(
+        val subsetAuthority = ReferenceAdapterEvidence.control(
             rootDir = rootDir,
             targets = subset,
             projections = BuiltInTargetProjections.registry
@@ -407,7 +408,7 @@ class AdapterControlMaterializationAuthorityTests {
     }
 
     private fun authorityFor(document: AdapterControlMaterializationDocument) =
-        AdapterControlMaterializationAuthority(
+        ReferenceAdapterEvidence.control(
             rootDir = rootDir,
             targets = targets,
             projections = BuiltInTargetProjections.registry,

@@ -1,3 +1,4 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
@@ -28,7 +29,7 @@ class AdapterContinuityCliEvidenceTests {
     @Test
     fun provenJenkinsWorkspaceContinuityRemainsExecutable() {
         val plan = planFor("examples/intent/checkout-build-image.intent.yaml")
-        val selection = TargetSelectionAuthority.fromTestFixture(
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture(
             value = "jenkins",
             fixtureId = "a0.5-jenkins-workspace",
             targets = targets
@@ -48,7 +49,7 @@ class AdapterContinuityCliEvidenceTests {
     @Test
     fun unsupportedJenkinsValueContinuityProducesReviewEvidenceAndNoJenkinsfile() {
         val plan = planFor("conformance/corpus/real-world/cases/C06-artifact-transfer/canonical.intent.yaml")
-        val selection = TargetSelectionAuthority.fromTestFixture(
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture(
             value = "jenkins",
             fixtureId = "a0.5-jenkins-value-blocker",
             targets = targets

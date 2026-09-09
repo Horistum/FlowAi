@@ -2,7 +2,7 @@ package org.flowlang.targets.builtin
 
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetTrigger
-import org.flowlang.generators.manifest.sanitizeId
+import org.flowlang.generators.manifest.AdapterManifestLowering.id as sanitizeId
 
 /**
  * Plans and renders the GitHub Actions `on` mapping independently from whole

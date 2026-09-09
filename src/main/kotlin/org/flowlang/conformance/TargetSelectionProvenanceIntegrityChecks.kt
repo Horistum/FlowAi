@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import java.io.File
 import org.flowlang.cli.honest.CliDiagnosticCode
 import org.flowlang.cli.honest.CliExecutionDiagnostic
@@ -71,7 +72,7 @@ internal class TargetSelectionProvenanceIntegrityChecks(
         }
 
         val rejected = runCatching {
-            TargetSelectionAuthority.fromExplicitConfiguration(
+            CompatibilityMaterializationBoundary.legacySelection(
                 value = target,
                 source = "cli:compatibility-report",
                 targets = targets

@@ -18,3 +18,10 @@ dependencies {
 
 // Original file-capture regressions inspect the distribution's modules and examples.
 tasks.test { workingDir(rootProject.projectDir) }
+
+// Strict source-name compatibility is part of the frontend implementation.
+// Keep the historical repository path, with exactly one packaged resource owner.
+sourceSets.main {
+    resources.setSrcDirs(listOf(rootProject.file("src/main/resources")))
+    resources.include("standard/compatibility/capability-aliases.yaml")
+}

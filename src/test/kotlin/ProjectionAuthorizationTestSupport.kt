@@ -1,8 +1,9 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import org.flowlang.adapters.continuity.AdapterContinuityScopedCapabilityResolver
 import org.flowlang.capabilities.TargetProjectionRule
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
-import org.flowlang.generators.manifest.TargetMaterializationResolution
-import org.flowlang.generators.manifest.TargetMaterializationResolver
+import org.flowlang.adapters.testing.MaterializationResolutionFixture as TargetMaterializationResolution
+import org.flowlang.adapters.testing.MaterializationResolverFixture as TargetMaterializationResolver
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.planner.TaskNode
 import org.flowlang.capabilities.CompatibilityReport
@@ -128,7 +129,7 @@ internal fun testTargetSelection(
     target: String,
     targets: Map<String, TargetCapability>,
     source: String = "test:explicit-target"
-): ExplicitTargetSelection = TargetSelectionAuthority.fromTestFixture(target, source, targets)
+): ExplicitTargetSelection = AdapterRuntimeTestFixtures.fromTestFixture(target, source, targets)
 
 internal fun testTargetSelection(
     target: String,
@@ -145,7 +146,7 @@ internal fun testMaterializationRequest(
     targets: Map<String, TargetCapability>,
     strict: Boolean = false,
     source: String = "test:materialization"
-): TargetMaterializationRequest = TargetMaterializationRequest.fromCompatibilityPlan(
+): TargetMaterializationRequest = AdapterRuntimeTestFixtures.executionRequest(
     plan = plan,
     selection = testTargetSelection(target, targets, source),
     strict = strict,
@@ -158,7 +159,7 @@ internal fun testDiagnosticMaterializationRequest(
     target: String,
     targets: Map<String, TargetCapability>,
     source: String = "test:diagnostic-materialization"
-): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest.fromCompatibilityPlan(
+): TargetDiagnosticMaterializationRequest = AdapterRuntimeTestFixtures.diagnosticRequest(
     plan = plan,
     selection = testTargetSelection(target, targets, source),
     evidenceId = source,
@@ -176,7 +177,7 @@ internal fun TargetManifestGenerator.generate(
         "test:projection-generator:${compatibility.target}"
     )
     return generate(
-        TargetProjectionAuthorization(
+        AdapterRuntimeTestFixtures.projectionAuthorization(
             compilationAuthorization = authorization,
             selection = testTargetSelection(compatibility.target),
             compatibility = compatibility,
@@ -203,7 +204,7 @@ internal fun TargetProjectionProvider.generate(
         "test:projection-provider:${compatibility.target}"
     )
     return generate(
-        TargetProjectionAuthorization(
+        AdapterRuntimeTestFixtures.projectionAuthorization(
             compilationAuthorization = authorization,
             selection = testTargetSelection(compatibility.target),
             compatibility = compatibility,

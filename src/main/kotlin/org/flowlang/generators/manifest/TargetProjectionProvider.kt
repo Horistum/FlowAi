@@ -1,10 +1,11 @@
 package org.flowlang.generators.manifest
 
+import org.flowlang.adapters.contract.AdapterCatalog
 import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 
 interface TargetManifestGenerator {
     val target: String
@@ -100,11 +101,13 @@ class TargetProjectionProvider(
 }
 
 class TargetProjectionRegistry private constructor(
-    private val providersByTarget: Map<String, TargetProjectionProvider>
-) {
-    val targetIds: Set<String> = providersByTarget.keys
+    providers: Map<String, TargetProjectionProvider>
+) : AdapterCatalog<TargetProjectionProvider> {
+    private val providersByTarget = java.util.Collections.unmodifiableMap(LinkedHashMap(providers))
+    override val targetIds: Set<String> = java.util.Collections.unmodifiableSet(LinkedHashSet(providersByTarget.keys))
 
-    fun providerFor(target: String): TargetProjectionProvider? = providersByTarget[target]
+    override fun adapterFor(target: String): TargetProjectionProvider? = providersByTarget[target]
+    fun providerFor(target: String): TargetProjectionProvider? = adapterFor(target)
 
     fun requireProvider(target: String): TargetProjectionProvider = providerFor(target)
         ?: error(
@@ -120,28 +123,43 @@ class TargetProjectionRegistry private constructor(
                     "Duplicate target projection provider '${provider.target}'."
                 }
             }
-            return TargetProjectionRegistry(indexed.toMap())
+            return TargetProjectionRegistry(indexed)
         }
 
         fun of(vararg providers: TargetProjectionProvider): TargetProjectionRegistry = of(providers.asIterable())
-
         fun empty(): TargetProjectionRegistry = TargetProjectionRegistry(emptyMap())
     }
 }
 
+/** Lookup across the adapter SPI; a catalog cannot relabel a provider as another target. */
+fun org.flowlang.adapters.contract.AdapterCatalog<TargetProjectionProvider>.providerFor(
+    target: String
+): TargetProjectionProvider? = adapterFor(target)?.also { provider ->
+    require(provider.target == target) {
+        "Adapter catalog key '$target' does not match provider '${provider.target}'."
+    }
+}
+
+fun org.flowlang.adapters.contract.AdapterCatalog<TargetProjectionProvider>.requireProvider(
+    target: String
+): TargetProjectionProvider = providerFor(target) ?: error(
+    "No target projection provider is registered for '$target'. " +
+        "Available providers: ${targetIds.sorted().joinToString().ifBlank { "none" }}."
+)
+
 /**
- * Canonical manifest pipeline with plan-specific capability and execution evidence.
+ * Canonical manifest pipeline with explicitly supplied adapters and plan-specific evidence.
  *
- * The legacy planning validator sees the untouched compatibility plan first, so
- * malformed retained fields keep their stable diagnostics. After that boundary,
- * every execution or diagnostic candidate is rebound to the exact validated
- * CanonicalExecutionGraph authorization before a provider can observe the plan.
+ * The untouched compatibility plan is validated before graph authorization so
+ * malformed retained fields keep their stable diagnostics. Neither the catalog
+ * nor the adapter implementation can replace TargetProjectionAuthorization.
  */
 class TargetManifestGenerationPipeline(
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry,
+    private val projections: AdapterCatalog<TargetProjectionProvider>,
     private val capabilityResolvers: List<TargetProjectionCapabilityResolver> = emptyList(),
-    private val executionGates: List<TargetProjectionExecutionGate> = emptyList()
+    private val executionGates: List<TargetProjectionExecutionGate> = emptyList(),
+    private val modules: ModuleCatalog
 ) {
     init {
         require(targets.isNotEmpty()) { "Target manifest pipeline requires a non-empty target registry." }
@@ -168,18 +186,24 @@ class TargetManifestGenerationPipeline(
     fun effectiveTargets(
         authorization: CompilationAuthorization,
         target: String
-    ): Map<String, TargetCapability> =
-        targets + (target to effectiveTarget(authorization, target))
+    ): Map<String, TargetCapability> = targets + (target to effectiveTarget(authorization, target))
+
+    private fun requireProvider(target: String): TargetProjectionProvider = projections.adapterFor(target)
+        ?.also { require(it.target == target) { "Adapter catalog key '$target' returned provider '${it.target}'." } }
+        ?: error(
+            "No target projection provider is registered for '$target'. " +
+                "Available providers: ${projections.targetIds.sorted().joinToString().ifBlank { "none" }}."
+        )
 
     fun generate(request: TargetMaterializationRequest): TargetManifest {
         val rawPlan = request.plan
-        ExecutionPlanMaterializationValidator.requireValid(rawPlan, ModuleRegistry())
+        ExecutionPlanMaterializationValidator.requireValid(rawPlan, modules)
         val graphAuthorization = request.authorization.also { it.requireIntegrity() }
         require(graphAuthorization.executionPlan == rawPlan) {
             "Planning validation and canonical graph authorization disagree on the execution plan."
         }
-        val provider = projections.requireProvider(request.target)
-        val authority = MandatoryMaterializationAuthority(effectiveTargets(graphAuthorization, request.target))
+        val provider = requireProvider(request.target)
+        val authority = MandatoryMaterializationAuthority(effectiveTargets(graphAuthorization, request.target), modules)
         val authorization = authority.authorize(request)
         executionGates.forEach { gate ->
             gate.requireAuthorized(authorization.compilationAuthorization, authorization.target)
@@ -187,17 +211,15 @@ class TargetManifestGenerationPipeline(
         return provider.generate(authorization)
     }
 
-    fun generateDiagnosticEvidence(
-        request: TargetDiagnosticMaterializationRequest
-    ): TargetManifest {
+    fun generateDiagnosticEvidence(request: TargetDiagnosticMaterializationRequest): TargetManifest {
         val rawPlan = request.plan
-        ExecutionPlanMaterializationValidator.requireValid(rawPlan, ModuleRegistry())
+        ExecutionPlanMaterializationValidator.requireValid(rawPlan, modules)
         val graphAuthorization = request.authorization.also { it.requireIntegrity() }
         require(graphAuthorization.executionPlan == rawPlan) {
             "Diagnostic planning validation and canonical graph authorization disagree on the execution plan."
         }
-        val provider = projections.requireProvider(request.target)
-        val authority = MandatoryMaterializationAuthority(effectiveTargets(graphAuthorization, request.target))
+        val provider = requireProvider(request.target)
+        val authority = MandatoryMaterializationAuthority(effectiveTargets(graphAuthorization, request.target), modules)
         return provider.generate(authority.authorizeDiagnosticEvidence(request))
     }
 }

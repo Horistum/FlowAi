@@ -18,7 +18,12 @@ kotlin { jvmToolchain(25) }
 apply(from = "gradle/production-source-ownership.gradle.kts")
 
 dependencies {
-    subprojects.forEach { implementation(project(it.path)) }
+    // The residual CLI/conformance edge composes the reference distribution;
+    // adding a project never grants it an implicit production dependency.
+    listOf(
+        ":flow-semantic-kernel", ":flow-module-contracts", ":flow-compiler",
+        ":flow-frontends", ":flow-adapter-runtime", ":flow-reference-distribution"
+    ).filter { findProject(it) != null }.forEach { implementation(project(it)) }
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2")
     implementation("com.fasterxml.jackson.module:jackson-module-jsonSchema:2.17.2")
@@ -27,10 +32,16 @@ dependencies {
         testImplementation(testFixtures(project(":flow-compiler")))
         testImplementation(testFixtures(project(":flow-frontends")))
     }
+    if (findProject(":flow-adapter-runtime") != null) {
+        testImplementation(testFixtures(project(":flow-adapter-runtime")))
+    }
+    if (findProject(":flow-adapter-evidence") != null) {
+        testImplementation(testFixtures(project(":flow-adapter-evidence")))
+    }
 }
 
-
 sourceSets {
+    main { resources.exclude("standard/compatibility/capability-aliases.yaml") }
     test {
         kotlin.srcDirs("src/test/kotlin", "tests")
         resources.srcDirs("src/test/resources")
@@ -44,11 +55,8 @@ tasks.test {
     // when a lifecycle-only change leaves all compiled classes unchanged.
     outputs.upToDateWhen { false }
     outputs.cacheIf { false }
-    testLogging {
-        events("passed", "skipped", "failed")
-    }
+    testLogging { events("passed", "skipped", "failed") }
 }
-
 
 // The implementation is configured in the child after both Kotlin source sets
 // exist. This alias preserves the root verification entry point without reading

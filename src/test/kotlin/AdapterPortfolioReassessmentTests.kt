@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -18,7 +19,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 class AdapterPortfolioReassessmentTests {
     private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
-    private val authority = AdapterPortfolioAuthority(File("."), targets, BuiltInTargetProjections.registry)
+    private val authority = ReferenceAdapterEvidence.portfolio(File("."), targets, BuiltInTargetProjections.registry)
     private val document = AdapterPortfolioLoader.load()
 
     @Test

@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
 import org.flowlang.frontend.source.FlowSourceFrontend
-import org.flowlang.generators.manifest.ExecutionPlanMaterializationValidator
+import org.flowlang.adapters.testing.PlanningEvidenceValidatorFixture as ExecutionPlanMaterializationValidator
 import org.flowlang.generators.manifest.InvalidPlanningEvidenceException
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ApprovalNode

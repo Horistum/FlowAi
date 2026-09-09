@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
+import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import java.io.File
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceStatus
 import org.flowlang.adapters.continuity.AdapterContinuitySatisfactionAuthority
@@ -23,7 +25,7 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.planner.PlanDependencyRelations
 import org.flowlang.planner.TaskNode
-import org.flowlang.targets.builtin.BuiltInTargetProjections
+import org.flowlang.distribution.reference.ReferenceTargetProjections
 
 data class SemanticImplementationObservationProfile(
     val target: String,
@@ -73,12 +75,12 @@ class SemanticImplementationObservationAuthority(
     private val rootDir: File = File("."),
     private val targets: Map<String, TargetCapability> =
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
+    private val projections: TargetProjectionRegistry = ReferenceTargetProjections.registry
 ) {
-    private val manifestPipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
-    private val continuityAuthority = AdapterContinuitySatisfactionAuthority(rootDir, targets, projections)
-    private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
-    private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
+    private val manifestPipeline = ReferenceTargetProjections.pipeline(targets, rootDir, projections)
+    private val continuityAuthority = ReferenceAdapterEvidence.continuity(rootDir, targets, projections)
+    private val triggerAuthority = ReferenceAdapterEvidence.trigger(rootDir, targets, projections)
+    private val renderingAuthority = ReferenceAdapterEvidence.authorizedRendering(rootDir, projections)
 
     fun profile(
         plan: ExecutionPlan,
@@ -97,7 +99,7 @@ class SemanticImplementationObservationAuthority(
             targets = targets
         )
         val generatedManifest = manifestPipeline.generate(
-            TargetMaterializationRequest.fromCompatibilityPlan(
+            CompatibilityMaterializationBoundary.executionRequest(
                 plan = plan,
                 selection = selection,
                 evidenceId = "conformance:semantic-observation:$scenarioId:$target"

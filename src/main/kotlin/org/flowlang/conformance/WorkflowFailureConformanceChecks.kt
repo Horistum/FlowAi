@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import java.io.File
@@ -172,7 +173,7 @@ class WorkflowFailureConformanceChecks(private val rootDir: File) {
         }
 
         val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
-        val authority = AdapterControlMaterializationAuthority(
+        val authority = ReferenceAdapterEvidence.control(
             rootDir = rootDir,
             targets = targets,
             projections = BuiltInTargetProjections.registry

@@ -1,6 +1,89 @@
 # Compiler-enforced module boundaries
 
-## Current compiler/frontend implementation
+## Current AR-03C adapter extraction
+
+### Final CI orchestration correction
+
+Flow CI #3251 at `3161446ab5f22c682c67a33715c493d9004cae67` passed both
+complete Kotlin test steps and the kernel/compiler deletion proofs. Each job
+then reached its 20-minute ceiling during the third generic-adapter proof;
+standalone conformance and final artifact upload were not executed in that run.
+That canceled run is not completion evidence.
+
+The correction keeps the original two required check names, independent complete
+HEAD/merge test and conformance execution, all three real source-deletion proofs,
+and all external compiler probes. It gives physical isolation a separate bounded
+job and selects one proof suite per complete Git tree. Identical HEAD/merge trees
+share only this same-run file-based proof; differing trees remain independent.
+A failed/missing selection or proof explicitly fails both required checks. No
+prior success receipt, build-output cache, source filter or test exclusion is
+used to replace a proof. Normal job ceilings remain 20 minutes.
+
+The selector is covered by real-Git regression tests, including changed file
+modes/metadata, malformed merge parents, shallow checkout, dirty source trees and
+rejected symbolic or shell-shaped identifiers. Workflow shell tests cover all
+prerequisite failure states and every expensive step's failure propagation.
+Current complete validation and runner durations are recorded against the final
+HEAD in PR #175, not inferred from the canceled predecessor.
+
+
+The predecessor is merged PR #174, main
+`c8ca99273a3cc7380c840d4075ad0b57361b86e2`. Accepted exact-head run
+`34224886497` contains 1,424 distinct Kotlin regression identities. Those
+identities, rather than historical AR-03A counts, are this slice's preservation
+floor. AR-03 remains active and does not close F-10/F-20 until integrated AR-03D.
+
+The extraction provides independently compiled catalog contracts, neutral
+materialization SPI, generic adapter evidence, three concrete target modules and
+reference composition. Generic authorities now receive explicit adapter catalogs;
+materialization also receives a decoded ModuleCatalog instead of loading one
+implicitly. Reference factories own default provider/continuity selection and the
+historical portfolio composition anchor. Each concrete module owns its generator,
+renderer, expression syntax, native definitions and target-specific continuity.
+
+Production projection authorization constructors remain internal. Inventoried
+compatibility factories issue requests that still cross all existing gates.
+Test-only fixture variants preserve white-box mutation coverage without widening
+production integrity owners. Two original diagnostic-code tests are owned by the
+runtime module with unchanged identities and assertions. Native projection and
+control evidence anchors follow real moved declarations rather than being waived.
+The frozen control-source re-pin has an inverse-byte migration regression and
+a tamper rejection test; no status, capability or limitation is changed. The
+explicit adapter lifecycle retains earlier receipts and rejects future acceptance
+claims or premature integrated closure.
+The strict alias resource is frontend-owned, removing a dependency on root's
+resource packaging for independently used frontends.
+
+Independent Kotlin compiler probes cover positive API use, missing explicit
+inputs, forbidden module imports, private authorizations, fixture leakage,
+provider relabeling and absent-provider fallback. The physical generic-adapter
+proof copies the actual Gradle files, declared sources, frontend alias resource
+and test inputs into an empty directory without any concrete/reference/root
+implementation; it performs clean compilation without the build cache (offline locally, with dependency resolution permitted for cold CI).
+Existing kernel/compiler proofs remain separate. Python tests falsify missing,
+failed, skipped, duplicate and stale evidence rather than substituting mocked
+compilation for the real proof.
+
+Validation is local-first on actual Temurin JDK 25 and resolved Gradle/Kotlin
+inputs. Final acceptance requires complete local tests, all baseline identities,
+all three physical proofs, tooling/structure checks, standalone conformance and
+a usable installed CLI. Both final GitHub exact-head and synthetic-merge checks
+must independently pass. The PR records actual results after execution; no future
+green receipt is invented here. All module reports are uploaded. Draft gating,
+manual-only full offline verification and both required check identities remain.
+Physical proofs now have their own tree-deduplicated prerequisite job budget.
+Temporary development/publishing transport is absent from the final source tree.
+
+See `docs/COMPILER_MODULE_BOUNDARIES.md` for the current dependency graph and
+`.flow-agent/architecture/compiler-adapter-boundary-inventory.yaml` for every compatibility
+owner/removal decision. The materialization edge still explicitly depends on
+frontend notes/syntax; the residual root still owns CLI/conformance/release
+composition. These are recorded integrated boundaries, not hidden compiler
+or concrete-adapter dependencies. AR-03D is next; AR-04 remains inactive and EF-09
+paused. Public package/wire versions, canonical meaning and target maturity do
+not change.
+
+## Historical AR-03B compiler/frontend implementation
 
 AR-03B follows merged PR #173: main
 `0f96ef60e2a180ab1e7aa6d0f5d8e2b0003c8047`, tree

@@ -13,8 +13,8 @@ import org.flowlang.generators.manifest.ReconciledTargetManifestGenerator
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
 import org.flowlang.generators.manifest.TargetManifestRenderer
-import org.flowlang.generators.manifest.TargetMaterializationEvidenceAuthority
-import org.flowlang.generators.manifest.TargetMaterializationResolver
+import org.flowlang.adapters.testing.MaterializationEvidenceFixture as TargetMaterializationEvidenceAuthority
+import org.flowlang.adapters.testing.MaterializationResolverFixture as TargetMaterializationResolver
 import org.flowlang.generators.manifest.TargetProjectionProvider
 import org.flowlang.generators.manifest.TargetProjectionAuthorization
 import org.flowlang.generators.manifest.TargetProjectionRegistry
@@ -35,7 +35,8 @@ class MandatoryMaterializationAuthorityTests {
             targets = targets,
             projections = TargetProjectionRegistry.of(
                 TargetProjectionProvider(generator, syntheticRenderer(target))
-            )
+            ),
+            modules = org.flowlang.modules.ModuleRegistry()
         )
         val invalid = ExecutionPlan(
             flowName = "",
@@ -63,7 +64,8 @@ class MandatoryMaterializationAuthorityTests {
             targets = targets,
             projections = TargetProjectionRegistry.of(
                 TargetProjectionProvider(syntheticGenerator(target) { invoked = true }, syntheticRenderer(target))
-            )
+            ),
+            modules = org.flowlang.modules.ModuleRegistry()
         )
 
         val manifest = pipeline.generate(testMaterializationRequest(ExecutionPlan(flowName = "future-flow"), target, targets))

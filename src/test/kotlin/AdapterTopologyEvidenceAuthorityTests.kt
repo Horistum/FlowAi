@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -18,7 +19,7 @@ import org.flowlang.topology.ExecutionTopologySupportStatus
 class AdapterTopologyEvidenceAuthorityTests {
     private val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
     private val document = AdapterTopologyEvidenceLoader.load()
-    private val authority = AdapterTopologyEvidenceAuthority(
+    private val authority = ReferenceAdapterEvidence.topology(
         File("."),
         targets,
         BuiltInTargetProjections.registry,

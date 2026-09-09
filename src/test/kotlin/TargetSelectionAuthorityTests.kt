@@ -1,3 +1,4 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -75,7 +76,7 @@ class TargetSelectionAuthorityTests {
     @Test
     fun arbitraryConfigurationSourceCannotForgeSelectionProvenance() {
         assertFailsWith<UnsupportedExplicitConfigurationSourceException> {
-            TargetSelectionAuthority.fromExplicitConfiguration(
+            AdapterRuntimeTestFixtures.fromExplicitConfiguration(
                 "jenkins",
                 "cli:compatibility-report",
                 targets
@@ -106,7 +107,7 @@ class TargetSelectionAuthorityTests {
 
     @Test
     fun explicitSelectionImplementationCannotBeConstructedByCallers() {
-        val implementation = TargetSelectionAuthority.fromTestFixture(
+        val implementation = AdapterRuntimeTestFixtures.fromTestFixture(
             "jenkins",
             "reflection",
             targets
@@ -121,7 +122,7 @@ class TargetSelectionAuthorityTests {
     fun targetedCliResultRequiresSelectionEvidenceAndDerivesProcessStatus() {
         val modules = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
         val plan = FlowPlanner(modules).plan(FlowParser().parse(File("examples/api-sync.flow")))
-        val selected = TargetSelectionAuthority.fromTestFixture(
+        val selected = AdapterRuntimeTestFixtures.fromTestFixture(
             "jenkins",
             "targeted-result",
             targets

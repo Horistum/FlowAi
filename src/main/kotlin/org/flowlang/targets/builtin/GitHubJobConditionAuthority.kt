@@ -2,13 +2,13 @@ package org.flowlang.targets.builtin
 
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.sanitizeId
+import org.flowlang.generators.manifest.AdapterManifestLowering.id as sanitizeId
 
 /** Preserves GitHub cancellation and dependency success semantics while translating explicit Flow conditions. */
 internal object GitHubJobConditionAuthority {
     fun expression(job: TargetJob, manifest: TargetManifest): String? {
         val own = job.metadata["condition"]?.let {
-            TargetExpressionTranslator.github(it, manifest.inputs, manifest.compatibility.expressionSupport)
+            GitHubActionsTargetExpressionTranslator.github(it, manifest.inputs, manifest.compatibility.expressionSupport)
         }
         if (job.metadata["errorHandler"] == "true") {
             val parts = mutableListOf("!cancelled()", "failure()")

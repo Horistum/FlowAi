@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,7 +20,7 @@ import org.flowlang.planner.PlanDependencyResolution
 class AdapterContinuitySatisfactionAuthorityTests {
     private val root = File(".")
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
-    private val authority = AdapterContinuitySatisfactionAuthority(rootDir = root, targets = targets)
+    private val authority = ReferenceAdapterEvidence.continuity(rootDir = root, targets = targets)
 
     @Test
     fun orderingOnlyPlanCreatesNoContinuityRequirement() {

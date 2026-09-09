@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import org.flowlang.adapters.trigger.AdapterTriggerAuthorizedRenderingAuthority
@@ -18,7 +19,7 @@ import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.targets.builtin.BuiltInTargetProjections
+import org.flowlang.distribution.reference.ReferenceTargetProjections
 import java.io.File
 
 /**
@@ -30,11 +31,11 @@ class ReferenceSnapshotBundleGenerator(
     private val registry: ModuleRegistry = ModuleRegistry.fromDirectory(File(rootDir, "modules")),
     private val targets: Map<String, org.flowlang.capabilities.TargetCapability> =
         TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
+    private val projections: TargetProjectionRegistry = ReferenceTargetProjections.registry
 ) {
-    private val manifestPipeline = BuiltInTargetProjections.pipeline(targets, rootDir)
-    private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
-    private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
+    private val manifestPipeline = ReferenceTargetProjections.pipeline(targets, rootDir, projections)
+    private val triggerAuthority = ReferenceAdapterEvidence.trigger(rootDir, targets, projections)
+    private val renderingAuthority = ReferenceAdapterEvidence.authorizedRendering(rootDir, projections)
     private val intentFrontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
 
     internal fun planFor(intentFile: File): ExecutionPlan =

@@ -9,7 +9,7 @@ import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.generators.manifest.sanitizeId
+import org.flowlang.generators.manifest.AdapterManifestLowering.id as sanitizeId
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingResolutionStatus
@@ -31,7 +31,7 @@ object GitHubActionsWorkspaceContinuityPlanner {
     const val UPLOAD_REFERENCE = "actions/upload-artifact@v7"
     const val DOWNLOAD_REFERENCE = "actions/download-artifact@v8"
     const val WORKSPACE_PATH = "."
-    const val PAYLOAD_KIND = BuiltInProjectionPayloadKinds.GITHUB_ACTION
+    const val PAYLOAD_KIND = GitHubActionsProjectionPayloadKinds.GITHUB_ACTION
 
     private val supportedScope: AdapterContinuityScopedSupport =
         BuiltInAdapterContinuityScopedSupport.githubActionsCheckoutBuildWorkspace

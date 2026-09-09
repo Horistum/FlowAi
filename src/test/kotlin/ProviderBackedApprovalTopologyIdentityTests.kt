@@ -234,7 +234,8 @@ class ProviderBackedApprovalTopologyIdentityTests {
         val targets = mapOf(target to capability)
         return TargetManifestGenerationPipeline(
             targets = targets,
-            projections = TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
+            projections = TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer)),
+            modules = org.flowlang.modules.ModuleRegistry()
         ).generate(testMaterializationRequest(approvalPlan(), target, targets))
     }
 

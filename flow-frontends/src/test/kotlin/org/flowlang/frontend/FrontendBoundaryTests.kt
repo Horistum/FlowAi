@@ -4,6 +4,16 @@ import kotlin.test.Test
 import org.flowlang.testing.ExternalCompilerProbe
 
 class FrontendBoundaryTests {
+    @kotlin.test.Test
+    fun compatibilityAliasResourceBelongsToTheFrontendArtifact() {
+        val resources = java.util.Collections.list(javaClass.classLoader.getResources(
+            "standard/compatibility/capability-aliases.yaml"
+        ))
+        kotlin.test.assertEquals(1, resources.size, "Exactly one production artifact must own the frontend aliases")
+        kotlin.test.assertTrue(resources.single().toString().contains("flow-frontends"), resources.toString())
+        kotlin.test.assertTrue(resources.single().readText().isNotBlank())
+    }
+
     @Test fun independentConsumerCanUseFrontendComposition() {
         ExternalCompilerProbe.accepts("""
             package independent.consumer

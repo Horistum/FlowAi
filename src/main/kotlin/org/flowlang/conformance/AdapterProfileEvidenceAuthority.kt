@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import java.security.MessageDigest
 import org.flowlang.adapters.binding.AdapterCapabilityBindingMigrationAuthority
@@ -8,7 +9,6 @@ import org.flowlang.adapters.binding.AdapterCapabilityBindingLoader
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceDocument
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceIntegrityAuthority
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceLoader
-import org.flowlang.adapters.control.AdapterControlEvidenceIntegrityAuthority
 import org.flowlang.adapters.control.AdapterControlMaterializationDocument
 import org.flowlang.adapters.control.AdapterControlMaterializationLoader
 import org.flowlang.adapters.portfolio.AdapterPortfolioAuthority
@@ -227,10 +227,10 @@ class AdapterProfileEvidenceAuthority(
     }
 
     private fun implementationErrors(documents: ProfileDocuments): List<String> = buildList {
-        val portfolio = AdapterPortfolioAuthority(rootDir, targets, projections).evaluate(documents.portfolio)
+        val portfolio = ReferenceAdapterEvidence.portfolio(rootDir, targets, projections).evaluate(documents.portfolio)
         portfolio.findings.forEach { add("portfolio:${it.code}:${it.target}:${it.message}") }
 
-        val topology = AdapterTopologyEvidenceAuthority(
+        val topology = ReferenceAdapterEvidence.topology(
             rootDir = rootDir,
             targets = targets,
             projections = projections,
@@ -241,10 +241,10 @@ class AdapterProfileEvidenceAuthority(
         val bindings = AdapterCapabilityBindingMigrationAuthority(rootDir, registry).analyze()
         bindings.findings.forEach { add("binding-migration:$it") }
 
-        val controls = AdapterControlEvidenceIntegrityAuthority(rootDir, targets, projections).analyze(documents.controls)
+        val controls = ReferenceAdapterEvidence.control(rootDir, targets, projections).analyze(documents.controls)
         controls.findings.forEach { add("control:${it.code}:${it.target}:${it.family}:${it.message}") }
 
-        val continuity = AdapterContinuityEvidenceIntegrityAuthority(
+        val continuity = ReferenceAdapterEvidence.continuityIntegrity(
             rootDir = rootDir,
             targets = targets,
             projections = projections,
@@ -252,7 +252,7 @@ class AdapterProfileEvidenceAuthority(
         ).analyze(documents.continuity)
         continuity.findings.forEach { add("continuity:${it.code}:${it.target}:${it.family}:${it.message}") }
 
-        val rendering = AdapterArtifactRenderingEvidenceIntegrityAuthority(
+        val rendering = ReferenceAdapterEvidence.renderingIntegrity(
             rootDir = rootDir,
             projections = projections,
             portfolio = documents.portfolio

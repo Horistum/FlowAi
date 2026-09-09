@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
+import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import java.io.File
@@ -27,7 +29,7 @@ class AdapterArtifactRenderingConformanceChecks(
     private val projections: TargetProjectionRegistry
 ) {
     private val renderingAuthority by lazy {
-        AdapterArtifactRenderingAuthority(rootDir, projections)
+        ReferenceAdapterEvidence.rendering(rootDir, projections)
     }
     private val referenceEvidence: CliTargetEvidence by lazy(::renderReferenceEvidence)
 
@@ -35,7 +37,7 @@ class AdapterArtifactRenderingConformanceChecks(
         val lifecycleResult = runCatching { AdapterArtifactRenderingRoadmapLifecycleAuthority(rootDir).analyze() }
         val lifecycle = lifecycleResult.getOrNull()
         val evidenceResult = runCatching {
-            AdapterArtifactRenderingEvidenceIntegrityAuthority(rootDir, projections).analyze()
+            ReferenceAdapterEvidence.renderingIntegrity(rootDir, projections).analyze()
         }
         val evidence = evidenceResult.getOrNull()
         val runtimeResult = runCatching(::runtimeAuthorityErrors)
@@ -192,7 +194,7 @@ class AdapterArtifactRenderingConformanceChecks(
         val intent = IntentYamlLoader.load(File(rootDir, "examples/intent/checkout-build-image.intent.yaml"))
         IntentCapabilityValidator(modules).validate(intent).assertValid()
         val plan = FlowPlanner(modules).plan(FrontendCompilerComposition.intentPlanner(modules).plan(intent))
-        val selection = TargetSelectionAuthority.fromConformanceCheck(
+        val selection = CompatibilityMaterializationBoundary.conformanceSelection(
             value = "jenkins",
             checkId = EXECUTABLE_PROOF_CHECK,
             targets = targets

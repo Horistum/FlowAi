@@ -12,7 +12,7 @@ import org.flowlang.capabilities.TargetRendererPayloadTemplate
 import org.flowlang.generators.manifest.TargetNativeProjectionBindingContract
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetNativeProjectionDefinition
-import org.flowlang.generators.manifest.TargetMaterializationResolver
+import org.flowlang.adapters.testing.MaterializationResolverFixture as TargetMaterializationResolver
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
 import org.flowlang.projection.ProjectionBinding

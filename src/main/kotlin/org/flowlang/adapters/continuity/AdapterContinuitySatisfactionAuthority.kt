@@ -6,9 +6,11 @@ import org.flowlang.capabilities.CompatibilityIssue
 import org.flowlang.capabilities.CompatibilityLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 /**
  * Matches resolved Core continuity requirements against adapter-owned evidence.
@@ -21,10 +23,9 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 class AdapterContinuitySatisfactionAuthority(
     private val rootDir: File = File("."),
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    private val projections: AdapterCatalog<TargetProjectionProvider>,
     private val documentOverride: AdapterContinuityEvidenceDocument? = null,
-    private val scopedSupports: List<AdapterContinuityScopedSupport> =
-        BuiltInAdapterContinuityScopedSupport.declarations
+    private val scopedSupports: List<AdapterContinuityScopedSupport>
 ) {
     private val document: AdapterContinuityEvidenceDocument by lazy {
         documentOverride ?: AdapterContinuityEvidenceLoader.load(rootDir)

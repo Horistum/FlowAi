@@ -115,7 +115,7 @@ class AdapterControlRoadmapLifecycleAuthority(private val rootDir: File = File("
             "src/test/kotlin/AdapterControlCliMaterializationTests.kt",
             "src/test/kotlin/AdapterControlTypedEvidenceIntegrityTests.kt",
             "src/test/kotlin/AdapterControlEvidenceAnchorTests.kt",
-            "src/test/kotlin/org/flowlang/generators/manifest/TargetReadinessDiagnosticCodeAuthorityTests.kt",
+            "flow-adapter-runtime/src/test/kotlin/org/flowlang/generators/manifest/TargetReadinessDiagnosticCodeAuthorityTests.kt",
             "docs/CONTROL_REQUIREMENT_MATERIALIZATION.md"
         )
     }

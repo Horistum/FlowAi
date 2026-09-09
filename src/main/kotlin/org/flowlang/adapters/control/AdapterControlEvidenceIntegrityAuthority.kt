@@ -5,7 +5,10 @@ import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.adapters.portfolio.AdapterPortfolioRole
 import org.flowlang.adapters.portfolio.AdapterSupportClass
 import org.flowlang.capabilities.TargetCapability
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 
 /**
  * Validates distribution evidence independently from plan requirement matching.
@@ -15,7 +18,7 @@ import org.flowlang.generators.manifest.TargetProjectionRegistry
 internal class AdapterControlEvidenceIntegrityAuthority(
     private val rootDir: File,
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry
+    private val projections: AdapterCatalog<TargetProjectionProvider>
 ) {
     private val repositoryRoot = rootDir.canonicalFile.toPath()
 

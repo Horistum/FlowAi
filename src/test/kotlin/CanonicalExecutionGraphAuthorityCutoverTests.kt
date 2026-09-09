@@ -1,3 +1,4 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
@@ -217,7 +218,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
     fun targetRequestsCarryGraphAuthorizationRatherThanIndependentPlanAuthority() {
         val unit = referenceUnit()
         val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
-        val selection = TargetSelectionAuthority.fromTestFixture(
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture(
             "jenkins",
             "canonical-graph-authority",
             targets
@@ -231,7 +232,7 @@ class CanonicalExecutionGraphAuthorityCutoverTests {
             compilationRequest.authorization.validationBinding.origin
         )
 
-        val compatibilityRequest = TargetMaterializationRequest.fromCompatibilityPlan(
+        val compatibilityRequest = AdapterRuntimeTestFixtures.executionRequest(
             unit.executionPlan,
             selection,
             evidenceId = "test:canonical-graph-compatibility-ingress",

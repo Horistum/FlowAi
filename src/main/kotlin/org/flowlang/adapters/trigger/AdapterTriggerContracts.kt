@@ -285,7 +285,7 @@ object AdapterTriggerRequirementAuthority {
 
     fun isPortablePosixCron(expression: String): Boolean {
         val normalized = expression.trim()
-        if (normalized.startsWith("@") || JENKINS_HASH_TOKEN.containsMatchIn(normalized)) return false
+        if (normalized.startsWith("@") || HASHED_CRON_TOKEN.containsMatchIn(normalized)) return false
         return normalized.split(Regex("\\s+")).size == 5
     }
 
@@ -305,5 +305,5 @@ object AdapterTriggerRequirementAuthority {
     }
 
     private val EVENT_NAME = Regex("[a-z][a-z0-9_-]*")
-    private val JENKINS_HASH_TOKEN = Regex("(^|[^A-Za-z])H([^A-Za-z]|$)")
+    private val HASHED_CRON_TOKEN = Regex("(^|[^A-Za-z])H([^A-Za-z]|$)")
 }

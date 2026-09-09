@@ -21,7 +21,7 @@ import org.flowlang.preview.PlanPreview
 import org.flowlang.scenarios.ScenarioPackRegistry
 import org.flowlang.standard.StandardDiagnosticCatalog
 import org.flowlang.standard.StandardIntentCatalog
-import org.flowlang.targets.builtin.BuiltInTargetProjections
+import org.flowlang.distribution.reference.ReferenceTargetProjections
 
 /** Explicit non-release CLI commands. There is no legacy fallback entrypoint. */
 internal object StandardCliCommands {
@@ -100,7 +100,7 @@ internal object StandardCliCommands {
             ?.map(String::trim)
             ?.filter(String::isNotEmpty)
             ?.toSet()
-            ?: BuiltInTargetProjections.registry.targetIds
+            ?: ReferenceTargetProjections.registry.targetIds
         val snapshot = ReferenceSnapshotBundleGenerator().generate(
             intentFile = File(source),
             outputDir = File(outputPath),
@@ -128,7 +128,7 @@ internal object StandardCliCommands {
             AdapterTargetMaturityPublisher(
                 rootDir = File("."),
                 targets = targets,
-                projections = BuiltInTargetProjections.registry
+                projections = ReferenceTargetProjections.registry
             ).analyze()
         )
     }

@@ -7,14 +7,16 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
 import java.security.MessageDigest
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.generators.manifest.TargetRenderFinding
 import org.flowlang.generators.manifest.TargetRenderMode
 import org.flowlang.generators.manifest.TargetRenderPolicy
 import org.flowlang.generators.manifest.TargetRenderReadiness
 import org.flowlang.generators.manifest.TargetReviewArtifactRenderer
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 /**
  * The single application-edge authority for adapter artifacts.
@@ -25,7 +27,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
  */
 class AdapterArtifactRenderingAuthority(
     private val rootDir: File = File("."),
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    private val projections: AdapterCatalog<TargetProjectionProvider>,
     private val documentOverride: AdapterArtifactRenderingDocument? = null
 ) {
     private val document: AdapterArtifactRenderingDocument by lazy {

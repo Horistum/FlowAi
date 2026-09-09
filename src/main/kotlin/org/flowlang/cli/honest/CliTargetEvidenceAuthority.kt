@@ -1,5 +1,7 @@
 package org.flowlang.cli.honest
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
+import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import java.io.File
 import org.flowlang.adapters.continuity.AdapterContinuitySatisfactionAuthority
 import org.flowlang.adapters.continuity.UnresolvedAdapterContinuitySatisfactionException
@@ -43,7 +45,6 @@ import org.flowlang.materialization.ExplicitTargetSelection
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionEvidenceReport
-import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 data class CliRenderedArtifact(
     val fileName: String,
@@ -96,14 +97,14 @@ data class CliTargetEvidence(
  */
 class CliTargetEvidenceAuthority(
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    private val projections: TargetProjectionRegistry,
     rootDir: File = File(".")
 ) {
-    private val pipeline = TargetManifestGenerationPipeline(targets, projections)
-    private val controlAuthority = AdapterControlMaterializationAuthority(rootDir, targets, projections)
-    private val continuityAuthority = AdapterContinuitySatisfactionAuthority(rootDir, targets, projections)
-    private val triggerAuthority = AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
-    private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)
+    private val pipeline = TargetManifestGenerationPipeline(targets, projections, modules = org.flowlang.modules.ModuleRegistry())
+    private val controlAuthority = ReferenceAdapterEvidence.control(rootDir, targets, projections)
+    private val continuityAuthority = ReferenceAdapterEvidence.continuity(rootDir, targets, projections)
+    private val triggerAuthority = ReferenceAdapterEvidence.trigger(rootDir, targets, projections)
+    private val renderingAuthority = ReferenceAdapterEvidence.authorizedRendering(rootDir, projections)
 
     fun evaluate(
         compilation: CompilationUnit,
@@ -141,7 +142,7 @@ class CliTargetEvidenceAuthority(
         strict = strict,
         renderRequested = renderRequested,
         materializationRequest = {
-            TargetMaterializationRequest.fromCompatibilityPlan(
+            CompatibilityMaterializationBoundary.executionRequest(
                 plan = plan,
                 selection = explicitSelection,
                 strict = strict,
@@ -149,7 +150,7 @@ class CliTargetEvidenceAuthority(
             )
         },
         diagnosticRequest = {
-            TargetDiagnosticMaterializationRequest.fromCompatibilityPlan(
+            CompatibilityMaterializationBoundary.diagnosticRequest(
                 plan = plan,
                 selection = explicitSelection,
                 evidenceId = explicitSelection.evidence.source

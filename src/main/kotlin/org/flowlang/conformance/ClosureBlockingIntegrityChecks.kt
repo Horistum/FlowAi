@@ -35,7 +35,7 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.TaskNode
 import org.flowlang.release.ReleaseMetadataHonestyAuthority
-import org.flowlang.targets.builtin.GitHubJobConditionAuthority
+import org.flowlang.targets.builtin.GitHubActionsProjectionInspection
 import org.flowlang.topology.ExecutionTopologyRequirementSource
 
 internal class ClosureBlockingIntegrityChecks(
@@ -313,7 +313,7 @@ internal class ClosureBlockingIntegrityChecks(
                 TargetJob(id = "test", dependsOn = listOf("build"))
             )
         )
-        require(GitHubJobConditionAuthority.expression(ordinaryManifest.jobs.last(), ordinaryManifest) == null) {
+        require(GitHubActionsProjectionInspection.jobCondition(ordinaryManifest.jobs.last(), ordinaryManifest) == null) {
             "Ordinary GitHub dependencies override native success or cancellation semantics."
         }
 
@@ -323,7 +323,7 @@ internal class ClosureBlockingIntegrityChecks(
                 TargetJob(id = "deploy", dependsOn = listOf("approve"))
             )
         )
-        val expression = GitHubJobConditionAuthority.expression(approvalManifest.jobs.last(), approvalManifest).orEmpty()
+        val expression = GitHubActionsProjectionInspection.jobCondition(approvalManifest.jobs.last(), approvalManifest).orEmpty()
         require(expression.contains("!cancelled()") && !expression.contains("always()")) {
             "Provider-approval dependency evaluation does not preserve workflow cancellation."
         }
@@ -335,7 +335,7 @@ internal class ClosureBlockingIntegrityChecks(
                 TargetJob(id = "deploy", dependsOn = listOf("approve", "build"))
             )
         )
-        val mixedExpression = GitHubJobConditionAuthority.expression(
+        val mixedExpression = GitHubActionsProjectionInspection.jobCondition(
             mixedManifest.jobs.last(),
             mixedManifest
         ).orEmpty()

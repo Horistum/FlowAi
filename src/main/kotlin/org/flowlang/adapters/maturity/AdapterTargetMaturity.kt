@@ -10,7 +10,10 @@ import org.flowlang.adapters.portfolio.AdapterSupportClass
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetProjectionMode
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.serialization.FlowYaml
 
@@ -182,7 +185,7 @@ data class AdapterTargetMaturityReport(
 class AdapterTargetMaturityPublisher(
     private val rootDir: File,
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry
+    private val projections: AdapterCatalog<TargetProjectionProvider>
 ) {
     fun analyze(): AdapterTargetMaturityReport {
         val document = runCatching { AdapterTargetMaturityEvidenceLoader.load(rootDir) }

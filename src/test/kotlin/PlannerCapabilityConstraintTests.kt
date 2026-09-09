@@ -75,7 +75,8 @@ class PlannerCapabilityConstraintTests {
         }
         val pipeline = TargetManifestGenerationPipeline(
             targets,
-            TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
+            TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer)),
+            modules = org.flowlang.modules.ModuleRegistry()
         )
 
         assertFailsWith<UnresolvedExecutionTopologyException> {

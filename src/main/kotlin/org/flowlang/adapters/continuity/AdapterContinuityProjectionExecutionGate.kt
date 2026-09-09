@@ -5,7 +5,10 @@ import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
 import org.flowlang.generators.manifest.TargetProjectionExecutionGate
 import org.flowlang.compiler.CompilationAuthorization
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 
 /**
  * Adapter-owned continuity boundary composed at the production projection edge.
@@ -17,14 +20,16 @@ import org.flowlang.generators.manifest.TargetProjectionRegistry
 class AdapterContinuityProjectionExecutionGate(
     rootDir: File,
     targets: Map<String, TargetCapability>,
-    projections: TargetProjectionRegistry
+    projections: AdapterCatalog<TargetProjectionProvider>,
+    scopedSupports: List<AdapterContinuityScopedSupport>,
+    private val capabilityResolver: org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
 ) : TargetProjectionExecutionGate, TargetProjectionCapabilityResolver {
     private val authority = AdapterContinuitySatisfactionAuthority(
         rootDir = rootDir,
         targets = targets,
-        projections = projections
+        projections = projections,
+        scopedSupports = scopedSupports
     )
-    private val capabilityResolver = AdapterContinuityScopedCapabilityResolver()
 
     override fun resolve(
         authorization: CompilationAuthorization,

@@ -1,9 +1,12 @@
 package org.flowlang.adapters.portfolio
 
+import org.flowlang.adapters.continuity.AdapterContinuityScopedSupport
 import java.io.File
-import org.flowlang.adapters.continuity.BuiltInAdapterContinuityScopedSupport
 import org.flowlang.capabilities.TargetCapability
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.serialization.FlowYaml
 
 /** Post-A0 bounded promotion. Historical portfolio evidence remains immutable. */
@@ -99,7 +102,8 @@ object AdapterExecutableReferencePromotionLoader {
 class AdapterExecutableReferencePromotionAuthority(
     private val rootDir: File = File("."),
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry
+    private val projections: AdapterCatalog<TargetProjectionProvider>,
+    private val scopedSupports: List<AdapterContinuityScopedSupport>
 ) {
     fun analyze(): AdapterExecutableReferencePromotionReport =
         evaluate(AdapterExecutableReferencePromotionLoader.load(rootDir))
@@ -124,7 +128,7 @@ class AdapterExecutableReferencePromotionAuthority(
         }
 
         val basePortfolio = AdapterPortfolioLoader.load(rootDir).records.associateBy { it.target }
-        val declaredScopes = BuiltInAdapterContinuityScopedSupport.declarations.associateBy { it.identity }
+        val declaredScopes = scopedSupports.associateBy { it.identity }
         document.promotions.forEach { promotion ->
             val target = promotion.target
             val base = basePortfolio[target]

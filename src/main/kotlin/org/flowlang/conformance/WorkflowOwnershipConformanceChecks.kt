@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import java.io.File
@@ -17,7 +18,7 @@ import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.UnresolvedExecutionTopologyException
 import org.flowlang.generators.manifest.UnresolvedPlanningContinuityException
 import org.flowlang.generators.manifest.UnresolvedPlanningControlException
-import org.flowlang.generators.manifest.sanitizeId
+import org.flowlang.generators.manifest.AdapterManifestLowering.id as sanitizeId
 import org.flowlang.materialization.MultiWorkflowTargetMaterializationUnsupportedException
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
@@ -69,7 +70,7 @@ class WorkflowOwnershipConformanceChecks(private val rootDir: File) {
             if (unit != null) {
                 val targets = TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets"))
                 targets.keys.sorted().forEach { target ->
-                    val selection = TargetSelectionAuthority.fromConformanceCheck(target, TARGET_GATE, targets)
+                    val selection = CompatibilityMaterializationBoundary.conformanceSelection(target, TARGET_GATE, targets)
                     if (runCatching { TargetMaterializationRequest.fromCompilation(unit, selection) }
                             .exceptionOrNull() !is MultiWorkflowTargetMaterializationUnsupportedException) {
                         add("$target executable target materialization did not fail closed for multiple workflows.")
@@ -100,7 +101,7 @@ class WorkflowOwnershipConformanceChecks(private val rootDir: File) {
             it.nodeId == merge.graph.valueMerges.single().targetNodeId
         }.planNodeId.let(::sanitizeId)
         return targets.keys.sorted().flatMap { target ->
-            val selection = TargetSelectionAuthority.fromConformanceCheck(
+            val selection = CompatibilityMaterializationBoundary.conformanceSelection(
                 target, WorkflowSemanticsIntegrationChecks.TARGET_MATRIX, targets
             )
             WorkflowTargetScenario.entries.map { scenario ->

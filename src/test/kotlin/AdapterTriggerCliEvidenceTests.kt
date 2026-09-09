@@ -1,3 +1,4 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,7 +34,7 @@ class AdapterTriggerCliEvidenceTests {
                 schedule = ScheduleNode(kind = "CRON", expression = "0 3 * * *")
             )
         )
-        val selection = TargetSelectionAuthority.fromTestFixture(
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture(
             value = "jenkins",
             fixtureId = "a0.7-jenkins-cron-cli",
             targets = targets
@@ -60,7 +61,7 @@ class AdapterTriggerCliEvidenceTests {
                 schedule = ScheduleNode(kind = "INTERVAL", expression = "PT15M")
             )
         )
-        val selection = TargetSelectionAuthority.fromTestFixture(
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture(
             value = "github-actions",
             fixtureId = "a0.7-github-interval-cli",
             targets = targets
@@ -94,7 +95,7 @@ class AdapterTriggerCliEvidenceTests {
                 )
             )
         )
-        val selection = TargetSelectionAuthority.fromTestFixture(
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture(
             value = "jenkins",
             fixtureId = "a0.7-jenkins-timezone-cli",
             targets = targets

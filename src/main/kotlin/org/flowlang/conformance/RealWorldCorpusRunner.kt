@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import java.io.File
@@ -40,7 +41,7 @@ class RealWorldCorpusRunner(
     private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
 ) {
     private val loader = RealWorldCorpusLoader(rootDir)
-    private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
+    private val manifestPipeline = TargetManifestGenerationPipeline(targets, projections, modules = org.flowlang.modules.ModuleRegistry())
     private val intentFrontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
 
     fun load(): LoadedRealWorldCorpus = loader.load()
@@ -321,7 +322,7 @@ class RealWorldCorpusRunner(
                 targets = targets
             )
             val manifest = manifestPipeline.generate(
-                TargetMaterializationRequest.fromCompatibilityPlan(
+                CompatibilityMaterializationBoundary.executionRequest(
                     plan = plan,
                     selection = selection,
                     evidenceId = "conformance:real-world:$caseId:$target"

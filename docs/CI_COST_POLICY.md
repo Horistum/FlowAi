@@ -17,9 +17,32 @@ Running duplicate builds in parallel does not reduce this cost.
 Both final PR checks retain their original job identities:
 `compile-test-conformance` and `merge-candidate-compile-test-conformance`.
 Each verifies the actual Git checkout, runs the Python tooling tests, validates
-and generates the agent context, executes the complete Kotlin test suite,
-proves kernel isolation without product sources, proves the compiler and contracts
-without frontends or concrete adapters, and runs standalone conformance.
+and generates the agent context, executes the complete Kotlin test suite, and
+runs standalone conformance. Both also require successful physical isolation
+as a fail-closed prerequisite, rather than repeating it inside their job budget.
+
+A cheap `isolation-candidates` job verifies the immutable event checkout and, for
+PRs, the ordered base/head parents of the synthetic merge. It compares **complete
+Git tree identities**, including file modes and metadata, not a changed-path
+heuristic. Equal HEAD/merge trees select one `module-isolation` matrix entry;
+different trees select two. Push/manual events select exactly their event commit.
+The selection is a plan, not a successful verification receipt.
+
+Each selected tree then runs all three existing proofs: kernel without product
+sources, compiler/contracts without frontends or adapters, and generic adapter
+materialization/evidence without concrete/reference sources. Each still copies
+actual inputs to its own empty directory, builds without compiled-output cache,
+runs its actual tests and compiler probes, and emits input SHA-256 fingerprints.
+These copies contain neither `.git` nor prior outputs. Sharing this file-based
+proof for byte-identical complete trees therefore does not share Git-sensitive
+root tests. **HEAD and merge still run their own complete tests and conformance.**
+There is no sharing across runs or commits with different trees and no reuse of
+an old success marker.
+
+Both original required jobs explicitly inspect the selection and proof job
+results before checkout or toolchain setup. A failed or skipped prerequisite
+fails those required checks instead of silently turning them into successful
+skips. Obsolete workflow cancellation still cancels downstream work.
 There are no source-path filters: documentation and lifecycle metadata remain
 inputs to repository-aware tests.
 
@@ -45,10 +68,15 @@ for later revisions of that PR. Fork PRs use this action in read-only mode.
 All root and module test tasks explicitly disable output reuse and test-result
 caching. Their tests execute on every validated revision even when Kotlin
 compilation is restored from cache. Source-ownership and production-classpath
-guards remain in the task graph. The separate kernel-isolation script still
-performs its uncached offline proof. The compiler-isolation proof compiles the
+guards remain in the task graph. The source-isolation scripts still
+perform uncached clean proofs. The independent CI proof job permits dependency
+resolution so a cold cache remains supported; this does not enable compiled
+output reuse. Local `--offline` remains supported and the distinct relocated
+cache portability workflow remains manual-only. The compiler-isolation proof compiles the
 kernel dependency but runs only the compiler and module-contract suites, avoiding
-a third execution of the kernel suite. Standalone conformance is not replaced by
+a third execution of the kernel suite. The adapter proof compiles its actual
+product dependencies but executes only catalog/runtime/evidence suites, not all
+frontend, kernel and concrete suites again. Standalone conformance is not replaced by
 a cached success receipt.
 
 A cold cache must remain correct. Warm-cache acceleration is an additional
@@ -89,17 +117,28 @@ validation is the preferred place for iterative failures before publication.
 
 ## Budgets and evidence
 
-Normal validation jobs have a 20-minute ceiling each. Failure logs, all module
-JUnit reports and isolation evidence are still uploaded after failures. Canceled,
-superseded runs do not upload obsolete reports; retained artifacts expire after
+Full-validation jobs retain a 20-minute ceiling each. The shared isolation job
+has its own 20-minute ceiling and the cheap selector has a three-minute limit.
+These are separate bounded responsibilities, not a longer limit for one
+repeated-build job. Failure logs and all module JUnit reports are uploaded by
+the original full-validation jobs; `flow-isolation-<label>` artifacts own the
+three proof reports, copied-input fingerprints, logs and exact checkout/tree
+identity. Isolation artifacts use the same seven-day retention and are uploaded
+after failures. Canceled, superseded runs do not upload obsolete reports; retained artifacts expire after
 seven days. Artifact retention saves storage, not build minutes.
 
-Before this change, a build-affecting PR could execute two normal builds and
-four additional full builds through the two-phase, two-revision offline workflow.
-The normal ready-PR path now executes only the two required builds and retains
-both kernel-isolation checks. This removes four full build/test/conformance
-invocations from that automatic path before any warm-cache savings. Non-build
-PRs did not necessarily incur the previous offline runs; savings vary by event.
+The earlier automatic relocated-offline workflow could add four complete
+build/test/conformance invocations to a build-affecting PR. That workflow was
+already made manual-only; the current correction does not claim that saving
+again.
+
+The canceled AR-03C layout placed two full builds plus six physical-isolation
+invocations on the automatic path. Deduplication now reduces equal HEAD/merge
+trees to two full builds plus three physical-isolation invocations. Different
+trees intentionally retain six proofs and pay the small extra job setup cost.
+The reduction is in repeated compilation work, not fewer test identities or a
+shorter timeout. Actual wall time and runner-minute savings still depend on
+runner performance and compilation-cache hits.
 
 Measure cost as the sum of job durations, not the longest concurrent job.
 Report cold- and warm-cache results separately; do not imply that a timeout
@@ -115,5 +154,9 @@ validation against the actual current HEAD and merge SHA in the PR.
 Regression coverage in `tools/tests/test_ci_cost_policy.py` and
 `tools/tests/test_offline_workflow.py` checks scheduling, draft transitions,
 cache/test boundaries, revision guards, phase budgets and failure propagation.
+`tools/tests/test_ci_isolation_candidates.py` also exercises real Git commits:
+equal/different trees, mode-only and metadata changes, two-generation shallow
+clones, malformed/reordered parents, dirty tracked inputs, replacement objects,
+invalid identifiers and output publication only after successful selection.
 Shell fixtures test orchestration; complete compilation and conformance are
 validated by the normal CI jobs.

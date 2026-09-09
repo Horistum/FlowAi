@@ -5,8 +5,10 @@ import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingBundle
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetProjectionRegistry
-import org.flowlang.targets.builtin.BuiltInTargetProjections
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 
 /**
  * Trigger-aware decorator over the single A0.6 artifact rendering authority.
@@ -17,7 +19,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
  */
 class AdapterTriggerAuthorizedRenderingAuthority(
     rootDir: File = File("."),
-    projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    projections: AdapterCatalog<TargetProjectionProvider>,
     private val delegate: AdapterArtifactRenderingAuthority =
         AdapterArtifactRenderingAuthority(rootDir, projections)
 ) {
