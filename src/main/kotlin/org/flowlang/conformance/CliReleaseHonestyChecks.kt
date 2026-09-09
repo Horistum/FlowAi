@@ -27,7 +27,7 @@ internal class CliReleaseHonestyChecks(
 
     private fun checkCliDiagnosticAndReleaseHonesty(): ConformanceCheck =
         runCheck("cli.release.diagnostic-honesty") {
-            val gradle = File(rootDir, "build.gradle.kts").readText()
+            val gradle = File(rootDir, "flow-cli/build.gradle.kts").readText()
             require(gradle.contains("org.flowlang.cli.honest.HonestFlowCliKt")) {
                 "The application entrypoint bypasses the honest CLI authority."
             }

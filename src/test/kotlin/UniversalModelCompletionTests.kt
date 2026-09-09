@@ -241,7 +241,7 @@ class UniversalModelCompletionTests {
 
     @Test
     fun targetSemanticsAreRegistryKeyedAndVendorFieldFree() {
-        val matrix = StandardSurface.targetSemanticsMatrix()
+        val matrix = org.flowlang.distribution.reference.ReferenceStandardArtifacts.targetSemanticsMatrix()
         val source = File("src/main/kotlin/org/flowlang/artifacts/StandardSurface.kt").readText()
 
         assertEquals("2.0", matrix.matrixVersion)

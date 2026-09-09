@@ -135,7 +135,7 @@ class PublicArtifactEvidenceIntegrityTests {
 
     @Test
     fun approvalSemanticsFollowProviderOwnedCatalogs() {
-        val matrix = StandardSurface.targetSemanticsMatrix()
+        val matrix = org.flowlang.distribution.reference.ReferenceStandardArtifacts.targetSemanticsMatrix()
         val approvals = matrix.entries.single { it.feature == "approvals" }
         val strict = matrix.entries.single { it.feature == "strict-manual-approval" }
 

@@ -17,7 +17,6 @@ import org.flowlang.artifacts.FlowArtifactBundleReport
 import org.flowlang.artifacts.FlowArtifactEntry
 import org.flowlang.artifacts.FlowArtifactRole
 import org.flowlang.artifacts.StandardBundleVerifier
-import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.TargetSelectionAnalyzer
 import org.flowlang.cli.Json
@@ -37,8 +36,6 @@ import org.flowlang.modules.ModuleRegistry
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.WorkflowExecutionPlanSet
 import org.flowlang.planner.CanonicalExecutionPlan
-import org.flowlang.release.ReleaseMetadataHonestyAuthority
-import org.flowlang.release.StandardReleaseAssemblyAuthority
 import org.flowlang.standard.DiagnosticCoverageAnalyzer
 import org.flowlang.standard.DiagnosticCoverageReport
 import org.flowlang.standard.FlowStandardVersions
@@ -115,36 +112,41 @@ fun main(args: Array<String>) {
 }
 
 /** Public facade: execute one typed command result, then present it. */
-fun runCli(args: Array<String>): Int {
-    val result = executeCli(args)
+fun runCli(args: Array<String>): Int = runCli(args, CliCommandCatalog.empty())
+
+/** Static composition boundary. No discovery, global registration or fallback. */
+fun runCli(args: Array<String>, commands: CliCommandCatalog): Int {
+    val result = executeCli(args, commands)
     CliPresenter.present(result)
     return result.exitCode
 }
 
 /** Testable execution boundary. It returns typed outcomes and does not write to stdout. */
-fun executeCli(args: Array<String>): CliExecutionResult {
+fun executeCli(args: Array<String>): CliExecutionResult = executeCli(args, CliCommandCatalog.empty())
+
+/** Product execution is independent of optional verification command implementations. */
+fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionResult {
     val output = CliOutputCollector()
     val command = args.firstOrNull()
-    if (command == null) {
-        printHelp(output)
-        return CliExecutionResult.Help(output.snapshot())
-    }
     return try {
+        commands.requireDisjoint(productCommands)
         when (command) {
+            null -> {
+                printHelp(output, commands.names)
+                CliExecutionResult.Help(output.snapshot())
+            }
             "intent" -> runIntentCommand(args.drop(1), output)
             "normalize" -> runNormalizeCommand(args.drop(1), output)
             "diagnostics" -> runDiagnosticsCommand(args.drop(1), output)
-            "release-profile" -> runReleaseProfileCommand(args.drop(1), output)
-            "standard-draft" -> runStandardDraftCommand(args.drop(1), output)
-            "standard-export" -> runStandardExportCommand(args.drop(1), output)
             "standard-verify" -> runStandardVerifyCommand(args.drop(1), output)
             in StandardCliCommands.names -> {
                 StandardCliCommands.run(command, args.drop(1), output)
                 CliExecutionResult.Completed(output.snapshot())
             }
+            in commands.names -> commands.execute(command, args.drop(1), output)
             else -> throw CliTypedFailure(
                 CliDiagnosticCode.UNKNOWN_COMMAND,
-                "Unknown command '$command'. Supported commands: ${supportedCommands.joinToString()}."
+                "Unknown command '$command'. Supported commands: ${(productCommands + commands.names).sorted().joinToString()}."
             )
         }
     } catch (failure: Exception) {
@@ -164,12 +166,12 @@ fun executeCli(args: Array<String>): CliExecutionResult {
             "CLI DIAGNOSTIC FAILURE",
             CliCommandFailureReport(
                 code = code.wireCode,
-                command = command,
+                command = command.orEmpty(),
                 message = diagnostic.message,
                 causeType = diagnostic.causeType.orEmpty()
             )
         )
-        CliExecutionResult.Rejected(command, diagnostic, output.snapshot())
+        CliExecutionResult.Rejected(command.orEmpty(), diagnostic, output.snapshot())
     }
 }
 
@@ -885,62 +887,6 @@ private fun runDiagnosticsCommand(
     )
 }
 
-private fun runReleaseProfileCommand(
-    args: List<String>,
-    output: CliOutputCollector
-): CliExecutionResult {
-    val profile = StandardReleaseProfile.report()
-    val honesty = ReleaseMetadataHonestyAuthority().requireValid()
-    output.section("FLOW STANDARD RELEASE PROFILE", profile)
-    output.section("RELEASE METADATA HONESTY REPORT", honesty)
-    val persisted = parseOption(args, "--out")?.let { out ->
-        val directory = File(out)
-        require(directory.mkdirs() || directory.isDirectory)
-        File(directory, "standard-release-profile.json").writeText(Json.mapper.writeValueAsString(profile) + "\n")
-        File(directory, "release-metadata-honesty-report.json").writeText(Json.mapper.writeValueAsString(honesty) + "\n")
-        true
-    } ?: false
-    return CliExecutionResult.Completed(
-        presentation = output.snapshot(),
-        artifacts = listOf(
-            CliArtifact("standard-release-profile.json", CliArtifactRole.REVIEW_DOCUMENT, persisted),
-            CliArtifact("release-metadata-honesty-report.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted)
-        )
-    )
-}
-
-private fun runStandardDraftCommand(
-    args: List<String>,
-    output: CliOutputCollector
-): CliExecutionResult {
-    val authority = StandardReleaseAssemblyAuthority()
-    val destination = parseOption(args, "--out")
-    val assembly = if (destination == null) authority.assemble() else authority.writeValidatedDraft(File(destination))
-    output.section("FLOW STANDARD DRAFT", assembly.artifacts.getValue("flow-standard-draft.json"))
-    return CliExecutionResult.Completed(
-        presentation = output.snapshot(),
-        artifacts = listOf(CliArtifact("flow-standard-draft.json", CliArtifactRole.REVIEW_DOCUMENT, destination != null))
-    )
-}
-
-private fun runStandardExportCommand(
-    args: List<String>,
-    output: CliOutputCollector
-): CliExecutionResult {
-    val destination = File(
-        parseOption(args, "--out")
-            ?: "dist/flow-standard-${FlowStandardVersions.FLOW_STANDARD_VERSION}"
-    )
-    val verification = StandardReleaseAssemblyAuthority().publishValidatedBundle(destination)
-    output.section("FLOW STANDARD BUNDLE VERIFICATION", verification)
-    output.text("===== PUBLISHED VERIFIED FLOW STANDARD BUNDLE =====")
-    output.text(destination.absolutePath)
-    return CliExecutionResult.Completed(
-        presentation = output.snapshot(),
-        artifacts = listOf(CliArtifact("standard-bundle-verification.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, true))
-    )
-}
-
 private fun runStandardVerifyCommand(
     args: List<String>,
     output: CliOutputCollector
@@ -983,15 +929,13 @@ private fun parseOption(args: List<String>, name: String): String? {
     }
 }
 
-private fun printHelp(output: CliOutputCollector) {
-    output.text("Flow CLI commands: ${supportedCommands.joinToString()}")
+private fun printHelp(output: CliOutputCollector, additionalCommands: Set<String>) {
+    output.text("Flow CLI commands: ${(productCommands + additionalCommands).sorted().joinToString()}")
     output.text("Target materialization requires --target. Rendering additionally requires --render.")
 }
 
-private val supportedCommands = (
-    setOf("intent", "normalize", "diagnostics", "release-profile", "standard-draft", "standard-export", "standard-verify") +
-        StandardCliCommands.names
-).sorted()
+private val productCommands = setOf("intent", "normalize", "diagnostics", "standard-verify") +
+    StandardCliCommands.names
 
 private val knownJsonArtifacts = setOf(
     "standard-version.txt",

@@ -113,7 +113,7 @@ internal class IntentSafetyChecks(
     private fun checkV064TargetSemanticsNegativeCorpus(): ConformanceCheck = runCheck("v0.6.4.target-semantics-negative-corpus") {
         val releaseProfile = StandardReleaseProfile.report()
         val requiredGate = "v0.6.4.target-semantics-negative-corpus"
-        val matrix = StandardSurface.targetSemanticsMatrix()
+        val matrix = org.flowlang.distribution.reference.ReferenceStandardArtifacts.targetSemanticsMatrix()
         val features = matrix.entries.associateBy { it.feature }
         val negativeDiagnostics = PublicStandardDraft.negativeCorpus().cases.map { it.expectedDiagnostic }.toSet()
 

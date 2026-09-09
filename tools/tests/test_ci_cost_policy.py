@@ -54,7 +54,9 @@ def build_steps(job: str) -> list[str]:
     return [step for step in step_blocks(job)
             if "./gradlew " in step or "python3 tools/verify_semantic_kernel_isolation.py " in step
             or "python3 tools/verify_compiler_isolation.py " in step
-            or "python3 tools/verify_adapter_isolation.py " in step]
+            or "python3 tools/verify_adapter_isolation.py " in step
+            or "python3 tools/verify_product_isolation.py " in step
+            or "./build/install/flow-core/bin/flow-core conformance" in step]
 
 
 class CiCostPolicyTests(unittest.TestCase):
@@ -121,13 +123,14 @@ class CiCostPolicyTests(unittest.TestCase):
             with self.subTest(job=name):
                 steps = build_steps(job_block(self.ci, name))
                 self.assertEqual(len(steps), 2)
-                self.assertIn("--build-cache clean test ", steps[0])
-                self.assertIn('--build-cache run --args="conformance"', steps[1])
+                self.assertIn("--build-cache clean test installDist ", steps[0])
+                self.assertIn("./build/install/flow-core/bin/flow-core conformance", steps[1])
+                self.assertNotIn("./gradlew", steps[1])
                 job = job_block(self.ci, name)
                 self.assertIn("needs: [isolation-candidates, module-isolation]", job)
                 steps += build_steps(job_block(self.ci, "module-isolation"))
-                self.assertEqual(5, len(steps))
-                for script in ("semantic_kernel", "compiler", "adapter"):
+                self.assertEqual(6, len(steps))
+                for script in ("semantic_kernel", "compiler", "adapter", "product"):
                     self.assertTrue(any(f"python3 tools/verify_{script}_isolation.py " in step for step in steps))
                 for step in steps:
                     self.assertNotRegex(step, r"(?m)^        if:")
@@ -148,7 +151,7 @@ class CiCostPolicyTests(unittest.TestCase):
         for step in build_steps(job):
             self.assertNotIn("--offline", step)
             self.assertNotIn("--build-cache", step)
-        for script in ("semantic_kernel", "compiler", "adapter"):
+        for script in ("semantic_kernel", "compiler", "adapter", "product"):
             source = (ROOT / f"tools/verify_{script}_isolation.py").read_text()
             self.assertIn('"--no-build-cache"', source)
             self.assertIn("tempfile.TemporaryDirectory", source)
@@ -187,13 +190,22 @@ class CiCostPolicyTests(unittest.TestCase):
             self.assertIn(expected, named_step(job_block(self.ci, name), "Set up Gradle"))
 
     def test_build_cache_cannot_substitute_root_or_kernel_test_evidence(self) -> None:
-        for path in ("build.gradle.kts", "flow-semantic-kernel/build.gradle.kts"):
-            with self.subTest(path=path):
-                source = (ROOT / path).read_text(encoding="utf-8")
-                block = re.search(r"(?ms)^tasks\.test \{\n(.*?)^\}", source)
-                self.assertIsNotNone(block)
-                self.assertIn("outputs.upToDateWhen { false }", block.group(1))
-                self.assertIn("outputs.cacheIf { false }", block.group(1))
+        kernel = (ROOT / "flow-semantic-kernel/build.gradle.kts").read_text()
+        block = re.search(r"(?ms)^tasks\.test \{\n(.*?)^\}", kernel)
+        self.assertIsNotNone(block)
+        self.assertIn("outputs.upToDateWhen { false }", block.group(1))
+        self.assertIn("outputs.cacheIf { false }", block.group(1))
+        # The former root suite now belongs to the verification module. Check
+        # the actual owner and aggregate, not inert flags on a NO-SOURCE task.
+        root = (ROOT / "build.gradle.kts").read_text()
+        self.assertIn('kotlin.setSrcDirs(emptyList<String>())', root)
+        self.assertIn('tasks.test { dependsOn(subprojects.map { "${it.path}:test" }) }', root)
+        kit = (ROOT / "flow-conformance-kit/build.gradle.kts").read_text()
+        self.assertIn('kotlin.srcDirs(rootProject.file("src/test/kotlin"), rootProject.file("tests"))', kit)
+        self.assertIn('apply(from = rootProject.file("gradle/production-module.gradle.kts"))', kit)
+        common = (ROOT / "gradle/production-module.gradle.kts").read_text()
+        self.assertIn("outputs.upToDateWhen { false }", common)
+        self.assertIn("outputs.cacheIf { false }", common)
 
     def test_new_module_suites_cannot_reuse_cached_results(self) -> None:
         shared = (ROOT / "gradle/production-module.gradle.kts").read_text()
@@ -225,7 +237,7 @@ class CiCostPolicyTests(unittest.TestCase):
                     self.assertTrue(any(fnmatch.fnmatch(f"{module}/build/reports/{boundary}/classpath.txt", pattern)
                                         for pattern in log_patterns), f"Missing classpath upload for {module}")
                 isolation_upload = named_step(job_block(self.ci, "module-isolation"), "Upload Isolation Evidence")
-                for path in ("kernel", "compiler", "adapter"):
+                for path in ("kernel", "compiler", "adapter", "product"):
                     self.assertIn(f"ci-logs/{path}-isolation/**", isolation_upload)
                 self.assertIn("if: ${{ !cancelled() }}", isolation_upload)
                 self.assertIn("retention-days: 7", isolation_upload)
@@ -239,6 +251,31 @@ class CiCostPolicyTests(unittest.TestCase):
         job = job_block(self.offline, "offline-exact-head")
         self.assertIn("ref: ${{ inputs.revision || github.sha }}", job)
         self.assertIn("EXPECTED_SHA: ${{ inputs.revision || github.sha }}", job)
+
+    def test_new_boundary_uses_the_existing_tree_deduplicated_job(self) -> None:
+        self.assertEqual(set(CI_JOBS + ISOLATION_JOBS), set(re.findall(r"(?m)^  ([\w-]+):$", top_block(self.ci, "jobs"))))
+        for name in CI_JOBS:
+            self.assertNotIn("verify_product_isolation.py", job_block(self.ci, name))
+        step = named_step(job_block(self.ci, "module-isolation"), "Prove Installed Product Without Verification Sources")
+        self.assertIn("python3 tools/verify_product_isolation.py", step)
+        for name in CI_JOBS:
+            self.assertIn("build/reports/module-ownership/**", job_block(self.ci, name))
+
+    def test_product_and_verification_launchers_are_explicit_without_extra_run_selection(self) -> None:
+        for module, run_task, entry in (
+            ("flow-cli", "runProduct", "org.flowlang.cli.honest.HonestFlowCliKt"),
+            ("flow-conformance-kit", "runVerification", "org.flowlang.verification.VerificationCliKt"),
+        ):
+            build = (ROOT / module / "build.gradle.kts").read_text()
+            self.assertIn(f'extra["cliRunTaskName"] = "{run_task}"', build)
+            self.assertIn(f'extra["cliMainClass"] = "{entry}"', build)
+            self.assertNotRegex(build, r"\bapplication\s*[;}]|application\s*\{")
+        common = (ROOT / "gradle/cli-application.gradle.kts").read_text()
+        self.assertIn('tasks.register<JavaExec>(cliRunTaskName)', common)
+        root = (ROOT / "build.gradle.kts").read_text()
+        self.assertIn('tasks.jar { enabled = false }', root)
+        self.assertIn('classpath = verificationRuntime', root)
+        self.assertIn('classpath = productRuntime', root)
 
     def test_optimization_does_not_add_privileges_or_error_suppression(self) -> None:
         for workflow in (self.ci, self.offline):
@@ -269,9 +306,14 @@ class CiWorkflowShellTests(unittest.TestCase):
         (self.root / "tools/verify_semantic_kernel_isolation.py").write_text(
             'import os, sys\nprint("Isolation fixture", sys.argv[1:])\nsys.exit(int(os.environ["TEST_BUILD_EXIT"]))\n')
 
-        for kind in ("compiler", "adapter"):
+        for kind in ("compiler", "adapter", "product"):
             shutil.copyfile(self.root / "tools/verify_semantic_kernel_isolation.py",
                             self.root / f"tools/verify_{kind}_isolation.py")
+
+        launcher = self.root / "build/install/flow-core/bin/flow-core"
+        launcher.parent.mkdir(parents=True)
+        shutil.copyfile(wrapper, launcher)
+        launcher.chmod(0o755)
 
     def execute(self, step: str, **env: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", run_script(step)],

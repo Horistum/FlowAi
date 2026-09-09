@@ -1,5 +1,8 @@
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.MapProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.OutputFile
+import groovy.json.JsonOutput
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
@@ -12,6 +15,7 @@ buildscript {
 
 /** Validate actual compiler inputs, not merely a hand-maintained file count. */
 abstract class VerifyProductionSourceOwnership : DefaultTask() {
+    @get:OutputFile abstract val report: RegularFileProperty
     @get:Input abstract val expectedByOwner: MapProperty<String, List<String>>
     @get:Input abstract val actualByOwner: MapProperty<String, List<String>>
     @get:InputFiles abstract val allKotlinSources: ConfigurableFileCollection
@@ -32,6 +36,17 @@ abstract class VerifyProductionSourceOwnership : DefaultTask() {
         check(claimed.toSet() == all) { "Production ownership lost or invented Kotlin source files." }
         check(unownedModuleSources.isEmpty) { "Module source relocation must update the ownership contract; unowned sources are forbidden." }
         check(javaSources.isEmpty) { "Java production sources require an explicitly reviewed ownership contract." }
+        report.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf(
+                "version" to 1,
+                "completePartition" to true,
+                "modules" to actual.toSortedMap().mapValues { (owner, files) -> mapOf(
+                    "role" to when (owner) { ":" -> "aggregate"; ":flow-conformance-kit" -> "verification"; else -> "product" },
+                    "sources" to files.map { java.io.File(it).invariantSeparatorsPath.substringAfter("/src/main/kotlin/") }.sorted()
+                ) }
+            ))) + "\n")
+        }
     }
 }
 
@@ -46,7 +61,10 @@ val registeredManifests = linkedMapOf(
     ":flow-adapter-jenkins" to "gradle/adapter-jenkins-sources.txt",
     ":flow-adapter-github-actions" to "gradle/adapter-github-actions-sources.txt",
     ":flow-adapter-tekton" to "gradle/adapter-tekton-sources.txt",
-    ":flow-reference-distribution" to "gradle/reference-distribution-sources.txt"
+    ":flow-reference-distribution" to "gradle/reference-distribution-sources.txt",
+    ":flow-standard-artifacts" to "gradle/standard-artifacts-sources.txt",
+    ":flow-cli" to "gradle/cli-sources.txt",
+    ":flow-conformance-kit" to "gradle/conformance-kit-sources.txt"
 )
 require(subprojects.map { it.path }.all { it in registeredManifests }) {
     "Every production project must have an explicit source-ownership manifest."
@@ -93,9 +111,13 @@ if (isolated != null) {
 val verifyProductionSourceOwnership = tasks.register<VerifyProductionSourceOwnership>("verifyProductionSourceOwnership") {
     group = "verification"
     description = "Require one exhaustive, disjoint owner for every actual production compiler input."
+    report.set(layout.buildDirectory.file("reports/module-ownership/source-ownership.json"))
     expectedByOwner.set(ownership.mapValues { (_, paths) -> paths.map { sourceRoot.resolve(it).absolutePath } })
     val rootExpected = fileTree(sourceRoot) { include("**/*.kt"); exclude(claimed) }.files.map { it.absolutePath }.sorted()
-    expectedByOwner.put(":", rootExpected)
+    require(rootExpected.isEmpty()) {
+        "The root must remain source-free; register every Kotlin source with its actual module owner."
+    }
+    expectedByOwner.put(":", emptyList())
     actualByOwner.put(":", files(rootKotlin.sourceSets.getByName("main").kotlin).asFileTree.elements.map { locations ->
         locations.map { it.asFile.absolutePath }.sorted()
     })

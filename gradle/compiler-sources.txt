@@ -31,7 +31,9 @@ org/flowlang/intent/IntentSourceDirectiveAuthority.kt
 org/flowlang/intent/IntentSystemTypeAuthority.kt
 org/flowlang/intent/IntentToAstPlanner.kt
 org/flowlang/intent/LoweredIntentProgram.kt
+org/flowlang/intent/MandatorySafetyPolicy.kt
 org/flowlang/intent/PolicyCondition.kt
+org/flowlang/intent/SafetyPolicyValidator.kt
 org/flowlang/lowering/IntentLoweringContracts.kt
 org/flowlang/lowering/IntentValueExpressionLowering.kt
 org/flowlang/modules/ModuleContractAnalyzer.kt

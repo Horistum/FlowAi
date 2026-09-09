@@ -1,237 +1,249 @@
 # Compiler-enforced module boundaries
 
-## Current production composition (AR-03C)
+## Current composition (AR-03D)
 
-The residual root project composes eleven separately compiled Kotlin/JVM modules.
-Each has its own production classpath, output, JAR and test suite. Sharing an
-existing package or source directory does not grant Kotlin `internal` access.
+The build root is an aggregate, not a residual implementation module. Fourteen
+separately compiled Kotlin/JVM modules own all **370** production-source files:
+**235** product files and **135** verification/tooling files. Here “production
+source” means a Gradle `main` source set; it does not mean that the verification
+kit is a dependency of the product. Root owns **zero** files and emits no JAR.
 
 | Project | Owned Kotlin files | Responsibility | Direct production dependencies |
 | --- | ---: | --- | --- |
-| `flow-semantic-kernel` | 6 | Canonical graph, digest, effect/control/topology contracts | Standard library and annotations only |
+| `flow-semantic-kernel` | 6 | Canonical graph, digest and semantic contracts | Standard library and annotations only |
 | `flow-module-contracts` | 7 | Typed AST and decoded module-catalog contracts | Semantic kernel |
-| `flow-compiler` | 54 | Validation, planning, canonical graph construction and authorization | Kernel and module contracts |
-| `flow-frontends` | 23 | Syntax, source capture, YAML and default-input loading | Compiler, kernel, contracts; explicit Jackson/YAML |
+| `flow-compiler` | 56 | Validation, planning, canonical graph construction, authorization and retained safety facades | Kernel and module contracts |
+| `flow-frontends` | 31 | Syntax, source capture, YAML, catalogs, scenario normalization and JSON presentation | Compiler, kernel, contracts; explicit Jackson/YAML |
 | `flow-adapter-contracts` | 1 | Immutable, explicit generic AdapterCatalog | Standard library and annotations only |
-| `flow-adapter-runtime` | 47 | Neutral materialization SPI, checked authorization, lowering and binding validation | Kernel, contracts, compiler, frontends, adapter contracts |
-| `flow-adapter-evidence` | 28 | Generic provider evidence and target-registry validation | Adapter runtime; explicit Jackson Kotlin |
-| `flow-adapter-jenkins` | 7 | Generator, renderer, Groovy translation and native definitions | Adapter runtime |
-| `flow-adapter-github-actions` | 13 | Generator, renderer, expression/trigger/continuity policies and native definitions | Adapter runtime |
-| `flow-adapter-tekton` | 6 | Generator, renderer, when translation and native definitions | Adapter runtime |
-| `flow-reference-distribution` | 6 | Concrete composition, reference defaults and retained facades | Runtime, evidence and three concrete adapters |
-| `:` | 169 | Residual CLI, conformance, release and architecture governance | Explicit reference distribution and shared product modules |
+| `flow-adapter-runtime` | 47 | Materialization contracts, checked authorization, lowering and binding validation | Kernel, contracts, compiler, frontends, adapter contracts |
+| `flow-adapter-evidence` | 28 | Generic provider evidence and registry validation | Adapter runtime; explicit Jackson Kotlin |
+| `flow-adapter-jenkins` | 7 | Jenkins generator, renderer, Groovy translation and native definitions | Adapter runtime |
+| `flow-adapter-github-actions` | 13 | GitHub Actions generator, renderer, expression/trigger/continuity policies | Adapter runtime |
+| `flow-adapter-tekton` | 6 | Tekton generator, renderer, when translation and native definitions | Adapter runtime |
+| `flow-standard-artifacts` | 20 | Artifact contracts, provenance, public standard views and bundle verification | Kernel, adapter runtime; explicit Jackson Kotlin |
+| `flow-reference-distribution` | 7 | Explicit concrete composition, reference defaults and retained facades | Runtime, evidence, standard artifacts and three concrete adapters |
+| `flow-cli` | 6 | Product CLI, typed execution/presentation and plan preview | Standard artifacts, reference distribution; explicit Jackson Kotlin |
+| `flow-conformance-kit` | 135 | Conformance, source governance, release tooling, reference snapshots and verification commands | Product CLI; explicit Jackson/YAML/schema tooling |
+| `:` | 0 | Verification aggregation and explicit application profiles | Separate resolvable product/verification configurations; no production implementation |
 
-The dependency graph has no reverse concrete-adapter edges. Removing every
-concrete adapter leaves the kernel and compiler compilable; generic adapter
-materialization and evidence also compile after those sources are physically
-omitted. Every concrete adapter compiles without siblings, evidence composition,
-reference distribution, CLI or conformance on its production classpath.
+The six kernel source files are byte-for-byte unchanged by AR-03D. Ownership of
+existing safety/scenario/JSON files changes without rewriting their behavior.
+Every product module rejects `flow-conformance-kit` on both its compile and
+runtime classpaths. A local allowlist cannot authorize that reverse dependency.
+Concrete adapters also remain independent of sibling adapters, CLI, reference
+composition and the verification implementation.
 
-`flow-adapter-runtime` names compiler-side materialization, not a workflow
-executor. Its frontend dependency currently supplies expression parsing and
-strict notes/policy decoding. This bounded edge is explicit, not an assertion
-that all product modules are frontend-independent. Kernel/compiler classpaths
-remain free of frontend, serialization, concrete adapter and conformance code.
-The residual root/conformance/CLI split and integrated F-10/F-20 closure remain
-AR-03D work.
+`flow-adapter-runtime` means compiler-side materialization, not a workflow
+executor. Its declared frontend dependency supplies Flow expression parsing,
+notes contracts and strict YAML-backed evidence. This edge is reviewed and
+retained, not hidden or mislabeled frontend-independent. The typed AST overload
+of expression evaluation does not select a target parser. Kernel/compiler remain
+free of frontends, serialization, concrete adapters and verification code.
 
-Generic materialization requires an explicit `AdapterCatalog<TargetProjectionProvider>`
-and a decoded `ModuleCatalog`. Evidence authorities likewise require the supplied
-catalog; no generic authority chooses a built-in provider. Capability matrices
-receive the distribution's required-target set explicitly. Reference defaults
-are selected in `ReferenceTargetProjections` and `ReferenceAdapterEvidence` only.
-An injected empty catalog is never replaced by the reference registry.
+## Explicit composition, not hidden defaults
 
-The strict source-alias YAML retains its repository path but is packaged only by
-`flow-frontends`, not root. Standalone frontend consumers therefore have the same
-source compatibility data as the installed distribution, with no duplicate
-resource on the classpath. The physical generic-adapter proof includes this exact
-resource as a fingerprinted input.
+`FlowCompilationService` requires a decoded `ModuleCatalog`, environment safety
+policy and `IntentExpressionParser`. `FrontendCompilerComposition` supplies the
+reference frontend implementation. The compiler never loads YAML or discovers a
+registry by itself. All three accepted frontends continue through that compiler.
 
-## Inputs and explicit composition
+Generic materialization receives an explicit
+`AdapterCatalog<TargetProjectionProvider>` and decoded module catalog. Generic
+evidence receives the supplied catalog, not a built-in provider. An empty catalog
+is never silently replaced by reference defaults. Concrete generation remains
+behind checked projection authorization and provider-owned evidence.
 
-`ModuleCatalog` provides already decoded `FlowModule` contracts. It has no loader,
-filesystem lookup or default descriptor discovery. `ModuleRegistry` implements
-that interface in the frontend module; its existing loading and lookup semantics
-are retained.
-
-`FlowCompilationService` now requires three explicit inputs:
+AR-03D also removes the residual reference-native-catalog default from
+`StandardSurface.targetSemanticsMatrix`. The artifact library cannot import
+`ReferenceTargetProjections`. Callers choose one of two explicit paths:
 
 ```kotlin
-FlowCompilationService(moduleCatalog, environmentSafetyPolicy, expressionParser)
+// A library consumer supplies both independent catalogs.
+StandardSurface.targetSemanticsMatrix(targets, nativeCatalogs)
+
+// The reference distribution deliberately selects its reference providers.
+ReferenceStandardArtifacts.targetSemanticsMatrix(rootDir)
 ```
 
-`IntentExpressionParser` is a typed port returning the existing expression AST.
-The Flow implementation lives in the frontend module. Raw-source requests whose
-AST is already parsed do not invoke that port. Intent expression lowering uses
-the supplied parser and preserves its existing rejection behavior. The policy
-object is decoded outside the compiler instead of obtaining YAML-backed defaults
-from a validator constructor.
+The old `StandardSurface.targetSemanticsMatrix(rootDir)` construction API changes.
+That is an explicit source migration, not a claim of unchanged Kotlin factory
+compatibility. Target meaning, public wire versions and maturity are unchanged.
+Supplying familiar target names without native definitions cannot install the
+reference implementations implicitly.
 
-Product entrypoints use `FrontendCompilerComposition.compiler(registry)` for the
-existing distribution defaults. Its `intentPlanner`, `flowValidator` and
-`safetyValidator` factories replace corresponding implicit-loading constructor
-calls. This is an explicit source-level construction migration, not a silent
-fallback to reflection, service loading or a global registry inside the compiler.
-Public package/artifact versions and wire contracts are unchanged.
+## Product and verification CLI profiles
 
-`CompilationInput` variants are untrusted parsed requests, not authorizations.
-The compiler still executes validation, availability analysis, graph building,
-semantic digest computation and graph-derived projection before acceptance.
-The ordinary product routes remain the three inventoried frontends.
+The product owns command parsing, typed results, diagnostics and presentation.
+It has ten product commands: `catalog`, `diagnostics`, `flow`, `intent`, `modules`,
+`normalize`, `scenario`, `scenarios`, `standard-verify` and `targets`.
 
-## Authorization and source capture
+Verification adds five commands: `conformance`, `reference-snapshot`,
+`release-profile`, `standard-draft` and `standard-export`. Their implementations
+live in `VerificationCli`, which invokes the product execution boundary with an
+explicit immutable `CliCommandCatalog`. `CliCommandHandler` and `CliOutput` are
+small typed host-composition ports, not discovery or authorization mechanisms.
+Duplicate command names, invalid identifiers and attempts to replace product
+commands fail closed, including when the requested operation is help. There is
+no service loading, reflection-based command discovery, mutable global registry
+or fallback to verification code.
 
-Source capture belongs to frontends. Strict UTF-8 decoding and the single-read
-source snapshot are unchanged. `CapturedCompilationSource` has an internal
-constructor and no public copy operation. Corpus preflight may retain and compile
-a captured Intent source without rereading a changed file. The source audit and
-its mutation regression now inspect the frontend-owned capture implementation.
+Both hosts use the same output collector and failure mapping. An injected command
+that writes evidence and then fails retains that evidence alongside the typed
+failure. The collector implementation remains internal; external command handlers
+can use only the presentation port. Product-only help lists only installed
+commands, and requesting absent verification returns `CLI_UNKNOWN_COMMAND`.
 
-`CompilationAuthorization` constructors and rich graph-building factories remain
-internal to the compiler. Downstream materializers use the existing guarded task
-and failure-policy readers through narrow public APIs. Their result constructors
-and data-class copies remain internal. An external same-package consumer is
-compiled to prove it cannot construct an authorization or copy an authorized view.
+| Build/task | Installed launcher | Profile |
+| --- | --- | --- |
+| `:flow-cli:installDist` | `flow-cli/build/install/flow-core/bin/flow-core` | Product only; no kit, verification classes, schema generator or test fixtures in `lib` |
+| `:flow-conformance-kit:installDist` | `flow-conformance-kit/build/install/flow-conformance/bin/flow-conformance` | Product plus verification tooling |
+| Root `:installDist` | `build/install/flow-core/bin/flow-core` | Historical reference/verification profile with all fifteen commands |
+| Root `:installDist` | `build/install/flow-core/bin/flow-product` | Product-only classpath within the combined reference installation |
 
-`inspectionView()` first checks integrity and exposes diagnostic graph/binding
-data; it does not issue or replace authorization. `requireMatchingGraph` verifies
-an externally retained candidate against the original authorization's bindings,
-projection and digest. Mutation evidence no longer instantiates an internal
-compiler authorization from conformance. Compatibility-plan entrypoints always
-retain `COMPATIBILITY_PLAN` origin and cannot claim source or proposal review.
+The root reference installation deliberately contains the kit in its shared
+`lib` directory. It is **not** the product-only distribution. Its `flow-product`
+launcher selects only product dependencies; the independent `flow-cli` package
+contains no verification JAR at all.
 
-White-box regression fixtures use Gradle's test-fixtures variants for their own
-module's internal helpers and depth limits. There are no manually supplied
-cross-production friend paths. Fixture capabilities are explicitly rejected on
-production classpaths and fixture JARs are not distribution dependencies.
+The root `run --args=conformance` developer command is retained as an explicit
+verification host. Child execution tasks have distinct names, `runProduct` and
+`runVerification`, so the unqualified `run` selector cannot accidentally execute
+several applications. `installDist` can still assemble all three profiles in one
+Gradle graph without recompiling their shared dependencies.
 
-## Exhaustive source ownership
+The one-argument `runCli(args)` and `executeCli(args)` Kotlin functions remain
+product entrypoints. Kotlin consumers that previously invoked verification
+commands through them must select `executeVerificationCli(args)` from the kit,
+or explicitly supply `VerificationCommands.catalog`. The historical installed
+root CLI keeps those commands. Root no longer publishes an implementation JAR;
+module consumers select the module providing their API.
 
-Each module has one sorted exact manifest under `gradle/`. Existing production
-source paths remain under `src/main/kotlin` to preserve source inventories and
-historical evidence. No source file is copied into a second production module.
-The root compilation excludes the union of owned module sources.
+Repository-bound commands still need repository descriptors and metadata. The
+physical product proof runs installed diagnostics/help from an empty directory;
+it does not claim complete working-directory independence for every command.
+That broader distribution/input work remains AR-05.
 
-`verifyProductionSourceOwnership` compares the actual Gradle source sets with
-those manifests and the complete 367-file production tree. Missing files,
-overlap, escaping paths, additional source roots, unowned child-module sources
-and unreviewed Java production inputs fail closed. The original kernel ownership
-gate also sees all non-kernel source sets rather than only the residual root.
+## Actual source and dependency enforcement
 
-Every production compile depends on ownership and resolved-classpath gates.
-Classpath checks inspect both compile and runtime component identities, reject
-local files/composite substitutions and test-fixture variants, and admit only
-explicit project/library identities. External Kotlin compiler probes use the
-actual **main** runtime classpath, never the test runtime or a friend path.
+Each module has one sorted exact manifest under `gradle/`. Existing source paths
+remain under `src/main/kotlin` to preserve versioned anchors and source audits.
+Sharing a directory or package grants neither duplicate compilation nor Kotlin
+`internal` access. Root excludes every owned file and rejects any residual file.
 
-Physical relocation remains explicit migration debt. AR-03B supplies exhaustive
-module-aware Gradle ownership; existing source scanners still inspect the retained
-shared source root. AR-03D must either migrate every scanner before relocation or
-record a reviewed retention decision. AR-07 audits that decision. No blanket
-source-governance exception is introduced.
+`verifyProductionSourceOwnership` reconciles the **actual Gradle source sets**
+with the complete filesystem partition. Missing files, overlapping ownership,
+escaping paths, additional source roots, unowned child-module Kotlin and Java
+production inputs fail closed. The emitted
+`build/reports/module-ownership/source-ownership.json` records each actual owner,
+role and relative source path. It is produced only after validation and uploaded
+by both required CI jobs.
 
-## Executable evidence and cost controls
+Resolved classpath gates check both compile and runtime component identities,
+including transitive dependencies. They reject local JARs, composite substitutes
+and test-fixture variants. Normal test tasks never reuse test outputs, even when
+compilation is restored from cache. External Kotlin probes compile against the
+actual module **main** classpath, not test dependencies or injected friend paths.
 
-The complete suite is available through `clean test` or root `:test`; all module
-suites are dependencies of the root test task. All test tasks disable cached
-results and up-to-date substitution, while normal CI may cache compilation.
-The distribution composition tests check distinct class origins and a single
-runtime definition of owned classes.
+All historical root integration tests are now compiled by `flow-conformance-kit`.
+This preserves their identities and verification-internal access without making
+internal governance classes public. Root `test` aggregates all module tests and
+has no test sources of its own. Module-owned compiler/frontend/adapter fixtures
+remain test-only variants; no production distribution includes those JARs.
+
+## Four physical deletion directions
+
+Each proof copies the original build inputs and actual owned sources into an
+empty workspace, records SHA-256 digests and disables the compiled-output cache.
+No `.git`, prior class output, substituted implementation or fake build is copied.
+
+1. Kernel: six actual kernel files compile and their real tests run without any
+   residual product implementation.
+2. Compiler: kernel/contracts/compiler compile with frontend and concrete adapter
+   sources physically absent. The compiler and contract suites run; kernel tests
+   are not needlessly repeated here.
+3. Generic adapter: catalog/runtime/evidence compile and their suites run without
+   concrete adapters, reference distribution, CLI or verification sources.
+4. Product: all thirteen product modules compile, new CLI/artifact suites run and
+   the product distribution is installed without any of the 135 kit sources,
+   root integration suites, fixture sources or repository metadata. The proof
+   validates every product classpath and actual ownership report, inspects JARs
+   for missing/duplicate/verification classes, runs installed diagnostics/help
+   from an empty directory and checks rejection of an unavailable verifier.
+
+The earlier concrete-adapter compiler probes remain independent sibling-access
+checks. Repeated isolation executions are not additional unique regression tests.
+Python fixtures falsify orchestration and malformed evidence, not compilation;
+actual Gradle builds supply the compilation proof.
 
 ```bash
 python3 -m unittest discover -s tools/tests -p 'test_*.py'
 python3 tools/flow_agent_validate.py
 python3 tools/flow_agent_runner.py
-./gradlew --offline --no-daemon --build-cache clean test
+./gradlew --offline --no-daemon --build-cache clean test installDist
+./build/install/flow-core/bin/flow-core conformance
 python3 tools/verify_semantic_kernel_isolation.py --offline
 python3 tools/verify_compiler_isolation.py --offline
 python3 tools/verify_adapter_isolation.py --offline
-./gradlew --offline --no-daemon --build-cache run --args=conformance
+python3 tools/verify_product_isolation.py --offline
 ```
 
-The kernel proof copies its actual build, six sources and tests into an empty
-project without residual production sources, then executes clean tests without a
-build cache. The compiler proof copies the actual production build and exactly
-67 kernel/contract/compiler sources, with no frontend, concrete adapter, root
-integration sources or compiled outputs. It compiles the kernel dependency and
-runs the compiler and contract suites, without repeating the kernel suite a
-third time. The adapter proof additionally rebuilds catalog, runtime and evidence tests with
-all concrete and reference sources absent. These proofs emit input SHA-256 fingerprints, JUnit evidence and production
-classpath reports. Dependency-cache reuse is allowed; build-output reuse is not.
+## CI cost and final evidence
 
-The isolation property in the production settings selects the corresponding
-projects and rejects any residual source tree. The proofs do not synthesize a
-replacement Gradle build or inject fake production classes. Compiler tests cover
-real parsed-source and Intent compilation, explicit decoded module contracts,
-rejection, semantic mutation and unauthorized API access.
+Development remains local-first. A ready PR has the same two required complete
+checks, `compile-test-conformance` and
+`merge-candidate-compile-test-conformance`. Each tests its actual immutable
+revision, assembles distributions in that same Gradle graph, then runs
+**installed** reference conformance. The second Gradle startup formerly used only
+to launch conformance is no longer necessary, and packaging is exercised rather
+than bypassed through an uninstalled classpath.
 
-Only ready PRs run the complete exact-head and synthetic-merge checks. Each
-publishes root and all eleven module test reports, and each requires a passing
-source-isolation prerequisite. A cheap selector checks both immutable commits,
-the synthetic merge's ordered parents and complete tree identities. Identical
-trees need one physical proof suite; differing trees need two. All three proofs
-remain real uncached clean builds in empty workspaces, with their own JUnit,
-input fingerprints and classpath artifacts. The proof job has a separate bounded
-budget, so a cold full build cannot consume the isolation budget before it runs.
+The existing cheap selector compares full HEAD/merge Git trees. One physical
+proof suite covers identical trees in the same run; distinct trees require two.
+The new product proof is a fourth step in that existing prerequisite, not a new
+matrix or automatic offline workflow. Full tests and installed conformance still
+execute separately for HEAD and merge. A failed or skipped prerequisite fails
+both required checks. There is no source-path heuristic or old receipt reuse.
 
-Both original required checks explicitly fail when selection or isolation fails
-or is skipped. Sharing is limited to file-based isolation in the same run; full
-Kotlin tests and standalone conformance execute independently on both revisions.
-Proofs may resolve dependencies on a cold CI runner, while local offline proof
-execution remains available. Draft/branch-push suppression, cancellation of
-obsolete runs and manual-only relocated offline verification are unchanged.
-See `CI_COST_POLICY.md` for the dependency graph and billing tradeoff.
+Draft suppression, superseded-run cancellation, manual-only relocated offline
+verification, read-only fork caches and existing timeout ceilings remain.
+One new uncached product proof has a real cost; no new performance-saving
+percentage is claimed without measuring actual final job durations. See
+`CI_COST_POLICY.md` for aggregation and billing distinctions.
 
-## Compatibility and visibility
+## Compatibility inventory and release repair
 
-`TargetProjectionAuthorization` retains an internal constructor in the generic adapter runtime;
-independent Kotlin compilation rejects direct construction. Raw compatibility
-requests retain their original validation order before graph authorization, so
-normalization cannot erase a malformed retained field before it is diagnosed.
-`CompatibilityMaterializationBoundary` is an explicitly deprecated source bridge
-for retained CLI/conformance consumers, not a constructor for authorization.
-Product frontends continue to use `CompilationUnit` factories. This bridge is
-public across the extraction boundary and must not be mistaken for a completed
-retirement of raw-plan compatibility.
+`.flow-agent/architecture/compiler-adapter-boundary-inventory.yaml` records
+compatibility facades, all eighteen deprecated declarations in fourteen files,
+actual module owners, test-only access and reviewed source/layout retention.
+Mandatory tests reconcile deprecated counts and exact files with structural
+Kotlin source and the actual Gradle ownership report. A new alias, changed count,
+missing owner or unreviewed AR-07 removal decision fails instead of disappearing
+behind a matching total. Retained lowering/composition APIs are distinguished from
+removal candidates. `org.flowlang.cli.Json` keeps its qualified name but is
+frontend-owned; it imports no product CLI or verification implementation.
 
-White-box tests use module-owned test-fixture variants. Two existing diagnostic
-code tests moved into the runtime test module without changing class/method
-identities or assertions. Receipt and materialization mutation fixtures invoke
-the real internal validators; no production friend-path or duplicate compiler
-input is introduced. `GitHubActionsProjectionInspection` exposes only read-only
-condition/trigger observations, leaving the implementation helpers internal.
+Baseline installed `standard-draft` exposed an existing unregistered
+`release-metadata-honesty-report.json` producer. AR-03D registers its real producer
+and historical `0.9.7.9.7` introduction. Its existing external provenance anchors,
+and the conformance manifest's source anchor, are allowed only for their owning
+artifact. They are identifiers, not filesystem permissions or implementation
+imports. Unrelated intent evidence cannot borrow release anchors; unknown
+producers and fabricated provenance still fail. Real conformance, artifact
+integrity, compliance, staged publication and bundle verification remain required.
 
-Every temporary facade and compatibility entry has an owner, rationale and AR-07
-exit condition in `.flow-agent/architecture/compiler-adapter-boundary-inventory.yaml`.
-Stable lowering APIs are distinguished from removal candidates. The unused
-global payload registry and platform-switch enum are removed now rather than
-preserved as additional authorities. Concrete payload wire values are unchanged.
-The CI/CD vocabulary inventory recognizes exactly the reviewed concrete reference
-composition file; a neighbouring distribution file still fails semantic-health
-checks. Module classpath enforcement is independent of that lexical inventory.
+## Lifecycle
 
-## Lifecycle evidence
+AR-03D starts from merged PR #175, main
+`a11e8b3d70fe0e6844f135b85bc9f85290084594`, accepted predecessor head
+`f63966e591e7cc106c1aae57892d373693101025` and accepted run `34331743662`.
+The post-merge run `34348510109` passed. Its independently built local baseline
+contains 1,463 distinct Kotlin identities; preservation compares `(classname,
+name)`, not merely total counts. Earlier AR-03A/B/C receipts remain historical.
 
-AR-03A's historical receipts and AR-03B's report remain preserved. AR-03C starts
-from merged PR #174, main `c8ca99273a3cc7380c840d4075ad0b57361b86e2`.
-The accepted predecessor head `536a2d661e69b5b710242866d4b246c977cfca70`
-passed Flow CI #3243 (run `34224886497`). Its downloaded exact-head JUnit archive
-contains 1,424 distinct identities; preservation compares `(classname, name)`,
-not a replacement count. Repeated isolated tests are not extra unique tests.
-
-The frozen control-evidence source is re-pinned only for eleven reviewed
-implementation reference occurrences (eight unique moves).
-`ControlEvidenceReferenceMigrationTests` reverses those moves and recovers the
-exact accepted historical SHA-256; a later unreviewed byte still fails the source
-integrity gate. Lifecycle tests admit the explicit adapter slice while retaining
-compiler/kernel predecessor receipts and rejecting premature integrated closure.
-
-Implementation status is separate from current-revision acceptance. The PR's
-actual immutable HEAD and synthetic merge must both pass all checks. Their
-run/job identifiers and independently checked JUnit totals are recorded in the
-PR after execution, not fabricated inside a self-referential future receipt.
-
-AR-03 remains active; F-10 and F-20 remain open. AR-03D is next, AR-04 is not
-activated and EF-09 stays paused. This extraction does not change semantic
-digests, parser acceptance, public wire versions or adapter support/maturity.
+Implementation and current-revision acceptance are separate. The work package
+requires both final checks but never fabricates its own future SHA/run result.
+Actual accepted HEAD, synthetic merge and evidence are recorded in the PR after
+execution. The next post-merge transition can use those receipts to close F-10.
+AR-03D contains F-20; **retirement and F-20 closure remain AR-07-owned**. AR-04 is
+not activated and EF-09 remains paused. No semantic digest, parser acceptance,
+public package/wire version or adapter maturity is promoted by this extraction.

@@ -18,7 +18,7 @@ Both final PR checks retain their original job identities:
 `compile-test-conformance` and `merge-candidate-compile-test-conformance`.
 Each verifies the actual Git checkout, runs the Python tooling tests, validates
 and generates the agent context, executes the complete Kotlin test suite, and
-runs standalone conformance. Both also require successful physical isolation
+assembles the actual distributions and runs installed reference conformance. Both also require successful physical isolation
 as a fail-closed prerequisite, rather than repeating it inside their job budget.
 
 A cheap `isolation-candidates` job verifies the immutable event checkout and, for
@@ -28,9 +28,10 @@ heuristic. Equal HEAD/merge trees select one `module-isolation` matrix entry;
 different trees select two. Push/manual events select exactly their event commit.
 The selection is a plan, not a successful verification receipt.
 
-Each selected tree then runs all three existing proofs: kernel without product
-sources, compiler/contracts without frontends or adapters, and generic adapter
-materialization/evidence without concrete/reference sources. Each still copies
+Each selected tree then runs four proofs: kernel without product sources,
+compiler/contracts without frontends or adapters, generic adapter materialization/
+evidence without concrete/reference sources, and the installed product without
+verification sources or integration tests. Each copies
 actual inputs to its own empty directory, builds without compiled-output cache,
 runs its actual tests and compiler probes, and emits input SHA-256 fingerprints.
 These copies contain neither `.git` nor prior outputs. Sharing this file-based
@@ -60,13 +61,18 @@ not pay for downloading and initializing the toolchain.
 
 ## Caching without substituting test evidence
 
-Normal CI enables the Gradle build cache for compilation and retains `clean test`.
+Normal CI enables the Gradle build cache for compilation and runs `clean test installDist`.
+The installed reference launcher then runs conformance directly, avoiding a second
+Gradle startup and checking real packaged dependencies. Product and verification
+profiles are explicit; the product-only package excludes the verification kit.
 The existing `setup-gradle` action manages Gradle user-home state; there is no
 second overlapping cache mechanism. Same-repository PR runs can save cache state
 for later revisions of that PR. Fork PRs use this action in read-only mode.
 
-All root and module test tasks explicitly disable output reuse and test-result
-caching. Their tests execute on every validated revision even when Kotlin
+All actual module test tasks explicitly disable output reuse and test-result
+caching. The former root suite is now owned by `flow-conformance-kit`; root
+aggregates all module tests and has no source or cached test result of its own.
+Their tests execute on every validated revision even when Kotlin
 compilation is restored from cache. Source-ownership and production-classpath
 guards remain in the task graph. The source-isolation scripts still
 perform uncached clean proofs. The independent CI proof job permits dependency
@@ -76,8 +82,10 @@ cache portability workflow remains manual-only. The compiler-isolation proof com
 kernel dependency but runs only the compiler and module-contract suites, avoiding
 a third execution of the kernel suite. The adapter proof compiles its actual
 product dependencies but executes only catalog/runtime/evidence suites, not all
-frontend, kernel and concrete suites again. Standalone conformance is not replaced by
-a cached success receipt.
+frontend, kernel and concrete suites again. The product proof runs the new CLI
+and standard-artifact suites plus installed product smoke checks, not the full
+verification suite a third time. Standalone conformance is not replaced by a
+cached success receipt.
 
 A cold cache must remain correct. Warm-cache acceleration is an additional
 benefit, not a prerequisite and not a promised five-minute build time.
@@ -122,7 +130,7 @@ has its own 20-minute ceiling and the cheap selector has a three-minute limit.
 These are separate bounded responsibilities, not a longer limit for one
 repeated-build job. Failure logs and all module JUnit reports are uploaded by
 the original full-validation jobs; `flow-isolation-<label>` artifacts own the
-three proof reports, copied-input fingerprints, logs and exact checkout/tree
+four proof reports, copied-input fingerprints, logs and exact checkout/tree
 identity. Isolation artifacts use the same seven-day retention and are uploaded
 after failures. Canceled, superseded runs do not upload obsolete reports; retained artifacts expire after
 seven days. Artifact retention saves storage, not build minutes.
@@ -134,9 +142,11 @@ again.
 
 The canceled AR-03C layout placed two full builds plus six physical-isolation
 invocations on the automatic path. Deduplication now reduces equal HEAD/merge
-trees to two full builds plus three physical-isolation invocations. Different
-trees intentionally retain six proofs and pay the small extra job setup cost.
-The reduction is in repeated compilation work, not fewer test identities or a
+trees to two full builds plus three physical-isolation invocations in AR-03C. AR-03D
+adds the real product-without-verification proof to that same deduplicated job: four
+proofs for identical trees, eight for different trees. It does not add another
+full test matrix. Different trees intentionally pay the independent proof cost.
+The deduplication reduction is in repeated compilation work, not fewer test identities or a
 shorter timeout. Actual wall time and runner-minute savings still depend on
 runner performance and compilation-cache hits.
 

@@ -121,6 +121,13 @@ jobs:
           python3 tools/verify_adapter_isolation.py 2>&1 | tee ci-logs/adapter-isolation.log
           exit ${PIPESTATUS[0]}
 
+      - name: Prove Installed Product Without Verification Sources
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_product_isolation.py --report-dir ci-logs/product-isolation 2>&1 | tee ci-logs/product-isolation.log
+          exit ${PIPESTATUS[0]}
+
       - name: Upload Isolation Evidence
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
@@ -132,6 +139,7 @@ jobs:
             ci-logs/kernel-isolation/**
             ci-logs/compiler-isolation/**
             ci-logs/adapter-isolation/**
+            ci-logs/product-isolation/**
           if-no-files-found: error
           retention-days: 7
 
@@ -205,14 +213,14 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon --build-cache clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          ./gradlew --no-daemon --build-cache clean test installDist --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
           exit ${PIPESTATUS[0]}
 
       - name: Run Conformance
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon --build-cache run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-conformance.log
+          ./build/install/flow-core/bin/flow-core conformance 2>&1 | tee ci-logs/gradle-conformance.log
           exit ${PIPESTATUS[0]}
 
       - name: Write CI Summary
@@ -285,6 +293,7 @@ jobs:
             ci-logs/*.log
             flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
             flow-*/build/reports/production-module-boundary/**
+            build/reports/module-ownership/**
           if-no-files-found: warn
           retention-days: 7
 
@@ -370,14 +379,14 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon --build-cache clean test --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
+          ./gradlew --no-daemon --build-cache clean test installDist --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
           exit ${PIPESTATUS[0]}
 
       - name: Run Merge Candidate Conformance
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon --build-cache run --args="conformance" --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-conformance.log
+          ./build/install/flow-core/bin/flow-core conformance 2>&1 | tee ci-logs/merge-candidate-conformance.log
           exit ${PIPESTATUS[0]}
 
       - name: Write Merge Candidate Summary
@@ -400,6 +409,7 @@ jobs:
             ci-logs/*.log
             flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
             flow-*/build/reports/production-module-boundary/**
+            build/reports/module-ownership/**
           if-no-files-found: warn
           retention-days: 7
 

@@ -67,6 +67,11 @@ dependencies.add("compilerProbeRuntime", "org.jetbrains.kotlin:kotlin-compiler-e
 
 val allowedProductionProjects: List<String> by extra
 val allowedProductionLibraries: List<String> by extra
+require(project.path == ":flow-conformance-kit" ||
+    ":flow-conformance-kit" !in allowedProductionProjects &&
+    "org.flowlang:flow-conformance-kit" !in allowedProductionLibraries) {
+    "A product module cannot authorize a dependency on the conformance implementation."
+}
 val verifyProductionClasspath = tasks.register<VerifyProductionModuleClasspath>("verifyProductionClasspath") {
     group = "verification"
     allowedProjects.set(allowedProductionProjects)
