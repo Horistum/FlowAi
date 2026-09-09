@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import org.flowlang.adapters.portfolio.AdapterPortfolioAuthority
 import org.flowlang.adapters.portfolio.AdapterPortfolioDocument
@@ -21,7 +22,7 @@ class AdapterPortfolioConformanceChecks(
         val documentResult = runCatching { AdapterPortfolioLoader.load(rootDir) }
         val document = documentResult.getOrNull()
         val assessmentResult = document?.let {
-            runCatching { AdapterPortfolioAuthority(rootDir, targets, projections).evaluate(it) }
+            runCatching { ReferenceAdapterEvidence.portfolio(rootDir, targets, projections).evaluate(it) }
         }
         val assessment = assessmentResult?.getOrNull()
         val lifecycleResult = runCatching { AdapterRoadmapLifecycleAuthority(rootDir).analyze() }

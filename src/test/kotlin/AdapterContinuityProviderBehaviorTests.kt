@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import java.nio.file.Files
@@ -34,7 +35,7 @@ class AdapterContinuityProviderBehaviorTests {
     private val root = File(".")
     private val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
-    private val authority = AdapterContinuitySatisfactionAuthority(rootDir = root, targets = targets)
+    private val authority = ReferenceAdapterEvidence.continuity(rootDir = root, targets = targets)
 
     @Test
     fun jenkinsCheckoutBuildImageReplaysOneSharedWorkspacePath() {
@@ -227,7 +228,7 @@ class AdapterContinuityProviderBehaviorTests {
 
     @Test
     fun scopedSupportEvidenceIsRepositoryBackedAndTektonRemainsBlocked() {
-        val report = AdapterContinuityScopedSupportIntegrityAuthority(root).analyze()
+        val report = ReferenceAdapterEvidence.scopedSupportIntegrity(root).analyze()
         assertEquals("PASS", report.status, report.findings.joinToString { "${it.code}:${it.message}" })
         assertEquals(1, report.declarationCount)
 

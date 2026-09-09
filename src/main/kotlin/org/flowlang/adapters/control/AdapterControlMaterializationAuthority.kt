@@ -7,9 +7,11 @@ import org.flowlang.capabilities.CompatibilityLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.compiler.CompilationAuthorization
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 /**
  * Single orchestration boundary for adapter control materialization.
@@ -22,7 +24,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 class AdapterControlMaterializationAuthority(
     private val rootDir: File = File("."),
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    private val projections: AdapterCatalog<TargetProjectionProvider>,
     private val documentOverride: AdapterControlMaterializationDocument? = null
 ) {
     private val document: AdapterControlMaterializationDocument by lazy {

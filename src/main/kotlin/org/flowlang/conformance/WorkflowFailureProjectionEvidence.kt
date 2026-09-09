@@ -3,7 +3,7 @@ package org.flowlang.conformance
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
-import org.flowlang.generators.manifest.sanitizeId
+import org.flowlang.generators.manifest.AdapterManifestLowering.id as sanitizeId
 import org.flowlang.planner.WorkflowFailurePolicy
 
 /**

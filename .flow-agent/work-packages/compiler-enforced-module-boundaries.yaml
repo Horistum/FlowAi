@@ -28,8 +28,8 @@ verifiedBaseline:
   errors: 0
   skipped: 0
 
-selectedSlice: "AR-03B"
-nextSlice: "AR-03C"
+selectedSlice: "AR-03C"
+nextSlice: "AR-03D"
 implementationSlices:
   - id: "AR-03A"
     name: "Independently compiled semantic kernel"
@@ -60,8 +60,26 @@ implementationSlices:
     validationPolicy: "Local development first. Only final exact-head and merge-candidate CI are automatic; offline CI remains manual per docs/CI_COST_POLICY.md."
   - id: "AR-03C"
     name: "Adapter contracts and concrete implementation extraction"
-    status: planned
+    status: implemented
     invariant: "Generic planning and materialization receive explicit adapter contracts; concrete adapter defaults and composition are distribution-owned."
+    predecessorMerge: "c8ca99273a3cc7380c840d4075ad0b57361b86e2"
+    predecessorPullRequest: 174
+    predecessorAcceptedHead: "536a2d661e69b5b710242866d4b246c977cfca70"
+    predecessorAcceptedRunId: 34224886497
+    preservedBaselineTestIdentities: 1424
+    acceptance:
+      source: current-revision-ci
+      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+    scope:
+      - "Compile adapter catalog, neutral materialization SPI, generic evidence, three concrete adapters and reference composition as distinct Gradle modules."
+      - "Require explicit AdapterCatalog and ModuleCatalog inputs at generic boundaries; move concrete defaults and scoped support selection into reference composition."
+      - "Keep generators, renderers, expression translation, native catalogs, payload identifiers and target-specific continuity in their own adapter modules."
+      - "Preserve projection-authorization constructors as module-internal; expose only guarded compatibility requests and test-only white-box fixtures."
+      - "Package the strict source-alias resource in the frontend artifact, with no duplicate root resource."
+      - "Physically build generic adapter layers without concrete or reference sources; prove each adapter cannot import its siblings or conformance."
+      - "Preserve all 1424 accepted predecessor regression identities and standalone conformance."
+    compatibilityInventory: ".flow-agent/architecture/compiler-adapter-boundary-inventory.yaml"
+    validationPolicy: "Local offline development first; only final exact-head and synthetic-merge Flow CI are automatic. AR-03 and F-10/F-20 remain open for integrated AR-03D closure."
   - id: "AR-03D"
     name: "Conformance, distribution and integrated boundary closure"
     status: planned
@@ -121,7 +139,7 @@ completionDecision:
   status: not-complete
   closesFindings: []
   remainingFindings: ["F-10", "F-20"]
-  rule: "AR-03 remains active after bounded kernel and compiler extraction. AR-04 is not activated and EF-09 remains paused."
+  rule: "AR-03 remains active after bounded kernel, compiler and adapter extraction. AR-04 is not activated and EF-09 remains paused."
 
 forbiddenScope:
   - "No semantic digest, graph interpretation, parser acceptance or target support changes."
@@ -134,7 +152,7 @@ validationPlan:
   - "Validate activation independently before the first extraction commit."
   - "Run Flow Agent tooling tests, structure validation and context generation locally."
   - "Run isolated kernel tests and positive/negative external Kotlin compiler probes."
-  - "Run exact-head and synthetic-merge clean test, standalone conformance and physical kernel/compiler isolation. The full relocated offline proof is manual-only under docs/CI_COST_POLICY.md; local offline compilation is used during development."
+  - "Run exact-head and synthetic-merge clean test, standalone conformance and physical kernel/compiler/adapter isolation. The full relocated offline proof is manual-only under docs/CI_COST_POLICY.md; local offline compilation is used during development."
   - "Compare complete baseline test identities, not only counts."
   - "Do not claim local Gradle execution without an available JDK 25 and resolved dependency cache."
 

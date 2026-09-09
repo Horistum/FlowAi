@@ -152,7 +152,14 @@ class OfflineBuildEntryPointTests(unittest.TestCase):
                      "build.gradle.kts", "settings.gradle.kts",
                      "gradle/production-source-ownership.gradle.kts", "gradle/production-module.gradle.kts",
                      "gradle/compiler-sources.txt", "gradle/module-contracts-sources.txt", "gradle/frontends-sources.txt",
-                     "flow-compiler/build.gradle.kts", "flow-module-contracts/build.gradle.kts", "flow-frontends/build.gradle.kts"):
+                     "flow-compiler/build.gradle.kts", "flow-module-contracts/build.gradle.kts", "flow-frontends/build.gradle.kts",
+                     "gradle/adapter-contracts-sources.txt", "flow-adapter-contracts/build.gradle.kts",
+                     "gradle/adapter-runtime-sources.txt", "flow-adapter-runtime/build.gradle.kts",
+                     "gradle/adapter-evidence-sources.txt", "flow-adapter-evidence/build.gradle.kts",
+                     "gradle/adapter-jenkins-sources.txt", "flow-adapter-jenkins/build.gradle.kts",
+                     "gradle/adapter-github-actions-sources.txt", "flow-adapter-github-actions/build.gradle.kts",
+                     "gradle/adapter-tekton-sources.txt", "flow-adapter-tekton/build.gradle.kts",
+                     "gradle/reference-distribution-sources.txt", "flow-reference-distribution/build.gradle.kts"):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("fixture\n", encoding="utf-8")
@@ -196,7 +203,8 @@ exit "${TEST_PREPARE_EXIT:-0}"
         for argument in ("--offline", "--no-build-cache", "clean", "test", "run", "--args=conformance"):
             self.assertIn(argument, verified[1].split())
         manifest = (self.root / ".flow-offline/input-manifest.txt").read_text()
-        for module in ("flow-compiler", "flow-module-contracts", "flow-frontends"):
+        for module in ("flow-compiler", "flow-module-contracts", "flow-frontends",
+                       "flow-adapter-contracts", "flow-adapter-runtime", "flow-adapter-evidence", "flow-adapter-jenkins", "flow-adapter-github-actions", "flow-adapter-tekton", "flow-reference-distribution"):
             self.assertIn(f"{module}/build.gradle.kts-sha256=", manifest)
         self.assertIn("gradle/production-source-ownership.gradle.kts-sha256=", manifest)
 

@@ -91,6 +91,13 @@ jobs:
           python3 tools/verify_compiler_isolation.py --offline 2>&1 | tee ci-logs/compiler-isolation.log
           exit ${PIPESTATUS[0]}
 
+      - name: Prove Generic Adapter Boundary Without Concrete Implementations
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_adapter_isolation.py --offline 2>&1 | tee ci-logs/adapter-isolation.log
+          exit ${PIPESTATUS[0]}
+
       - name: Run Conformance
         shell: bash
         run: |
@@ -117,6 +124,7 @@ jobs:
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Isolated kernel build and external compiler boundary probes" >> "$GITHUB_STEP_SUMMARY"
           echo "- Isolated compiler and contracts without frontends or adapters" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Generic adapter contracts, materialization and evidence without concrete sources" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if compgen -G "build/test-results/test/*.xml" > /dev/null || compgen -G "flow-*/build/test-results/test/*.xml" > /dev/null; then
@@ -168,10 +176,9 @@ jobs:
             ci-logs/*.log
             ci-logs/kernel-isolation/**
             ci-logs/compiler-isolation/**
+            ci-logs/adapter-isolation/**
             flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
-            flow-module-contracts/build/reports/production-module-boundary/**
-            flow-compiler/build/reports/production-module-boundary/**
-            flow-frontends/build/reports/production-module-boundary/**
+            flow-*/build/reports/production-module-boundary/**
           if-no-files-found: warn
           retention-days: 7
 
@@ -183,14 +190,8 @@ jobs:
           path: |
             build/test-results/test/*.xml
             build/reports/tests/test/**
-            flow-semantic-kernel/build/test-results/test/*.xml
-            flow-semantic-kernel/build/reports/tests/test/**
-            flow-module-contracts/build/test-results/test/*.xml
-            flow-module-contracts/build/reports/tests/test/**
-            flow-compiler/build/test-results/test/*.xml
-            flow-compiler/build/reports/tests/test/**
-            flow-frontends/build/test-results/test/*.xml
-            flow-frontends/build/reports/tests/test/**
+            flow-*/build/test-results/test/*.xml
+            flow-*/build/reports/tests/test/**
           if-no-files-found: warn
           retention-days: 7
 
@@ -267,6 +268,13 @@ jobs:
           python3 tools/verify_compiler_isolation.py --offline 2>&1 | tee ci-logs/merge-candidate-compiler-isolation.log
           exit ${PIPESTATUS[0]}
 
+      - name: Prove Generic Adapter Boundary Without Concrete Implementations
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_adapter_isolation.py --offline 2>&1 | tee ci-logs/adapter-isolation.log
+          exit ${PIPESTATUS[0]}
+
       - name: Run Merge Candidate Conformance
         shell: bash
         run: |
@@ -293,10 +301,9 @@ jobs:
             ci-logs/*.log
             ci-logs/kernel-isolation/**
             ci-logs/compiler-isolation/**
+            ci-logs/adapter-isolation/**
             flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
-            flow-module-contracts/build/reports/production-module-boundary/**
-            flow-compiler/build/reports/production-module-boundary/**
-            flow-frontends/build/reports/production-module-boundary/**
+            flow-*/build/reports/production-module-boundary/**
           if-no-files-found: warn
           retention-days: 7
 
@@ -308,13 +315,7 @@ jobs:
           path: |
             build/test-results/test/*.xml
             build/reports/tests/test/**
-            flow-semantic-kernel/build/test-results/test/*.xml
-            flow-semantic-kernel/build/reports/tests/test/**
-            flow-module-contracts/build/test-results/test/*.xml
-            flow-module-contracts/build/reports/tests/test/**
-            flow-compiler/build/test-results/test/*.xml
-            flow-compiler/build/reports/tests/test/**
-            flow-frontends/build/test-results/test/*.xml
-            flow-frontends/build/reports/tests/test/**
+            flow-*/build/test-results/test/*.xml
+            flow-*/build/reports/tests/test/**
           if-no-files-found: warn
           retention-days: 7

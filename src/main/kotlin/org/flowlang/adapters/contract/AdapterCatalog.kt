@@ -20,9 +20,10 @@ interface AdapterCatalog<out T : Any> {
 
 /** Immutable catalog implementation for explicit distribution composition. */
 class StaticAdapterCatalog<T : Any> private constructor(
-    private val entries: Map<String, T>
+    entries: Map<String, T>
 ) : AdapterCatalog<T> {
-    override val targetIds: Set<String> = entries.keys
+    private val entries: Map<String, T> = java.util.Collections.unmodifiableMap(LinkedHashMap(entries))
+    override val targetIds: Set<String> = java.util.Collections.unmodifiableSet(LinkedHashSet(this.entries.keys))
     override fun adapterFor(target: String): T? = entries[target]
 
     companion object {

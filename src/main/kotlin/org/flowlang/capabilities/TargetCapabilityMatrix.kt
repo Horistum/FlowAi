@@ -31,7 +31,7 @@ data class TargetCapabilityMatrixEntry(
 
 class TargetCapabilityMatrixAnalyzer(
     private val targets: Map<String, TargetCapability>,
-    private val requiredTargets: Set<String> = setOf("jenkins", "github-actions", "tekton")
+    private val requiredTargets: Set<String>
 ) {
     private val coreCapabilities: List<String> = listOf(
         "sequentialTasks",

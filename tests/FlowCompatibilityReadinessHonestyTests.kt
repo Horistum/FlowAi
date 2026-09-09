@@ -169,7 +169,8 @@ class FlowCompatibilityReadinessHonestyTests {
         }
         val manifest = TargetManifestGenerationPipeline(
             targets,
-            TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer))
+            TargetProjectionRegistry.of(TargetProjectionProvider(generator, renderer)),
+            modules = org.flowlang.modules.ModuleRegistry()
         ).generate(testMaterializationRequest(plan, "jenkins", targets))
         assertEquals(SupportLevel.PARTIAL, manifest.compatibility.status)
         assertEquals(SupportLevel.SUPPORTED, manifest.compatibility.capabilityStatus)

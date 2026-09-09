@@ -4,7 +4,6 @@ import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.projection.ProjectionBindingKind
-import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
 
 /**
  * Builds the public target-semantics matrix exclusively from registry capability
@@ -24,7 +23,7 @@ object TargetSemanticsAuthority {
 
     fun build(
         targets: Map<String, TargetCapability>,
-        nativeCatalogs: Map<String, TargetNativeProjectionCatalog> = BuiltInNativeProjectionCatalogs.byTarget
+        nativeCatalogs: Map<String, TargetNativeProjectionCatalog>
     ): TargetSemanticsMatrixReport {
         val targetIds = targets.keys.sorted()
         val entries = listOf(

@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import java.nio.file.Files
 import org.flowlang.adapters.continuity.AdapterContinuityClaimStatus
@@ -30,7 +31,7 @@ class AdapterExecutableContinuityConformanceChecks(
         val lifecycleResult = runCatching { AdapterExecutableContinuityRoadmapLifecycleAuthority(rootDir).analyze() }
         val lifecycle = lifecycleResult.getOrNull()
         val promotionResult = runCatching {
-            AdapterExecutableReferencePromotionAuthority(rootDir, targets, projections).analyze()
+            ReferenceAdapterEvidence.promotion(rootDir, targets, projections).analyze()
         }
         val promotion = promotionResult.getOrNull()
         val executableResult = runCatching(::executableReferenceErrors)

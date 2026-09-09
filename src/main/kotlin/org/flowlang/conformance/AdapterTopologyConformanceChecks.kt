@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.adapters.portfolio.AdapterSupportClass
@@ -28,7 +29,7 @@ class AdapterTopologyConformanceChecks(
     fun checks(): List<ConformanceCheck> {
         val lifecycleResult = runCatching { AdapterTopologyRoadmapLifecycleAuthority(rootDir).analyze() }
         val lifecycle = lifecycleResult.getOrNull()
-        val topologyResult = runCatching { AdapterTopologyEvidenceAuthority(rootDir, targets, projections).analyze() }
+        val topologyResult = runCatching { ReferenceAdapterEvidence.topology(rootDir, targets, projections).analyze() }
         val topology = topologyResult.getOrNull()
         val runtimeResult = runCatching(::runtimeAuthorityErrors)
         val demotionResult = runCatching(::profileOnlyDemotionErrors)

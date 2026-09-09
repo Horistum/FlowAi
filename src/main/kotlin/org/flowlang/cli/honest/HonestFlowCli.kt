@@ -255,7 +255,7 @@ private fun runIntentCommand(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    val evidence = CliTargetEvidenceAuthority(targets).evaluate(compilation, selection, strict, renderRequested)
+    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry).evaluate(compilation, selection, strict, renderRequested)
     printTargetEvidence(evidence, renderRequested, output)
     outDir?.let {
         writeIntentArtifacts(
@@ -427,7 +427,7 @@ private fun runNormalizeCommand(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    val evidence = CliTargetEvidenceAuthority(targets).evaluate(compilation, selection, strict, renderRequested)
+    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry).evaluate(compilation, selection, strict, renderRequested)
     printTargetEvidence(evidence, renderRequested, output)
     outputDir?.let {
         writeIntentArtifacts(
@@ -501,7 +501,7 @@ private fun runMultiWorkflowIntentCompilation(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    CliTargetEvidenceAuthority(targets).evaluate(compilation, selection, strict, renderRequested)
+    CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry).evaluate(compilation, selection, strict, renderRequested)
     error(
         "Target '${selection.target}' unexpectedly accepted a multi-workflow compilation without " +
             "an explicit adapter contract."

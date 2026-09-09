@@ -283,6 +283,7 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             COMPATIBILITY_BOUNDARY
         path == STANDARD_INTENT_CATALOG -> DESCRIPTIVE_CATALOG
         path in BUILD_CONFIGURATION_PATHS -> BUILD_CONFIGURATION
+        path == REFERENCE_ADAPTER_COMPOSITION -> ADAPTER_BOUNDARY
         path in TARGET_NEUTRAL_GENERATOR_AUTHORITIES -> ACTIVE_SEMANTIC_SOURCE
         path.startsWith("docs/") ||
             path.startsWith(".flow-agent/") ||
@@ -354,6 +355,11 @@ class CiCdBiasInventoryAnalyzer(private val rootDir: File = File(".")) {
             "src/main/kotlin/org/flowlang/standard/StandardIntentCatalog.kt"
         private const val STANDARD_CAPABILITY_ALIAS_MANIFEST =
             "src/main/resources/standard/compatibility/capability-aliases.yaml"
+
+        // One reviewed, separately compiled composition root may name concrete
+        // adapters. Other distribution/CLI sources retain semantic governance.
+        private const val REFERENCE_ADAPTER_COMPOSITION =
+            "src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt"
 
         private val BUILD_CONFIGURATION_PATHS = setOf(
             "build.gradle.kts",

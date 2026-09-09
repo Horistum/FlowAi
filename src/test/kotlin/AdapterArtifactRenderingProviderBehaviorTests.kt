@@ -1,3 +1,4 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
@@ -24,13 +25,13 @@ class AdapterArtifactRenderingProviderBehaviorTests {
     @Test
     fun executableReferenceTraversesAllAdapterEvidenceBeforeRendering() {
         val plan = referencePlan()
-        val selection = TargetSelectionAuthority.fromTestFixture(
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture(
             value = "jenkins",
             fixtureId = "a0.6-executable-reference",
             targets = targets
         )
 
-        val evidence = CliTargetEvidenceAuthority(targets, rootDir = root).evaluate(
+        val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry, rootDir = root).evaluate(
             plan = plan,
             explicitSelection = selection,
             strict = false,

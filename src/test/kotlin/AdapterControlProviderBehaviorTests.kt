@@ -1,3 +1,4 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
@@ -136,7 +137,7 @@ class AdapterControlProviderBehaviorTests {
         rootDir = rootDir
     ).evaluate(
         compilation = compilation,
-        explicitSelection = TargetSelectionAuthority.fromTestFixture(
+        explicitSelection = AdapterRuntimeTestFixtures.fromTestFixture(
             value = target,
             fixtureId = fixtureId,
             targets = targets
@@ -152,7 +153,7 @@ class AdapterControlProviderBehaviorTests {
             rootDir = rootDir
         ).evaluate(
             plan = plan,
-            explicitSelection = TargetSelectionAuthority.fromTestFixture(
+            explicitSelection = AdapterRuntimeTestFixtures.fromTestFixture(
                 value = target,
                 fixtureId = fixtureId,
                 targets = targets

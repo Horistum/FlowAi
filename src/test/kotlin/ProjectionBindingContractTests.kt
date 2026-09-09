@@ -18,7 +18,7 @@ import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestContractValidator
 import org.flowlang.generators.manifest.TargetMaterialization
-import org.flowlang.generators.manifest.TargetMaterializationResolver
+import org.flowlang.adapters.testing.MaterializationResolverFixture as TargetMaterializationResolver
 import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetNativeProjectionBindingContract
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog

@@ -12,7 +12,7 @@ import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
 import org.flowlang.compiler.requireAuthorizedTask
 import org.flowlang.frontend.intent.IntentYamlFrontend
-import org.flowlang.generators.manifest.TargetMaterializationResolver
+import org.flowlang.adapters.testing.MaterializationResolverFixture as TargetMaterializationResolver
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.obligations.ArchitectureObligationKind
 import org.flowlang.planner.ExecutionPlan

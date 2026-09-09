@@ -5,6 +5,7 @@ execute their actual run blocks with local tool fixtures, not real compilation.
 No network access or third-party Python packages are needed.
 """
 from __future__ import annotations
+import fnmatch
 
 import os
 import pathlib
@@ -147,7 +148,8 @@ class CiCostPolicyTests(unittest.TestCase):
         self.assertIn('tasks.named<Test>("test")', shared)
         self.assertIn("outputs.upToDateWhen { false }", shared)
         self.assertIn("outputs.cacheIf { false }", shared)
-        for module in ("flow-module-contracts", "flow-compiler", "flow-frontends"):
+        for module in (project.parent.name for project in ROOT.glob("flow-*/build.gradle.kts")
+                       if project.parent.name != "flow-semantic-kernel"):
             self.assertIn('apply(from = rootProject.file("gradle/production-module.gradle.kts"))',
                           (ROOT / module / "build.gradle.kts").read_text())
 
@@ -161,12 +163,18 @@ class CiCostPolicyTests(unittest.TestCase):
                     self.assertIn("if: ${{ !cancelled() }}", step)
                     self.assertIn("retention-days: 7", step)
                 self.assertIn("build/test-results/test/*.xml", uploads[1])
-                self.assertIn("flow-semantic-kernel/build/test-results/test/*.xml", uploads[1])
+                patterns = re.findall(r"(?m)^            (\S+)$", uploads[1])
+                log_patterns = re.findall(r"(?m)^            (\S+)$", uploads[0])
+                for project in sorted(ROOT.glob("flow-*/build.gradle.kts")):
+                    module = project.parent.name
+                    self.assertTrue(any(fnmatch.fnmatch(f"{module}/build/test-results/test/TEST-example.xml", pattern)
+                                        for pattern in patterns), f"Missing JUnit upload for {module}")
+                    boundary = "semantic-kernel-boundary" if module == "flow-semantic-kernel" else "production-module-boundary"
+                    self.assertTrue(any(fnmatch.fnmatch(f"{module}/build/reports/{boundary}/classpath.txt", pattern)
+                                        for pattern in log_patterns), f"Missing classpath upload for {module}")
                 self.assertIn("ci-logs/kernel-isolation/**", uploads[0])
                 self.assertIn("ci-logs/compiler-isolation/**", uploads[0])
-                for module in ("flow-compiler", "flow-module-contracts", "flow-frontends"):
-                    self.assertIn(f"{module}/build/test-results/test/*.xml", uploads[1])
-                    self.assertIn(f"{module}/build/reports/production-module-boundary/**", uploads[0])
+                self.assertIn("ci-logs/adapter-isolation/**", uploads[0])
 
     def test_offline_is_manual_only_and_has_one_revision_not_a_duplicate_matrix(self) -> None:
         triggers = top_block(self.offline, "on")

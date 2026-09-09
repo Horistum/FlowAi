@@ -34,6 +34,7 @@ org/flowlang/generators/manifest/TargetProjectionProvider.kt
 org/flowlang/generators/manifest/TargetRenderPolicy.kt
 org/flowlang/generators/manifest/TargetRendererContractValidator.kt
 org/flowlang/generators/manifest/TargetReviewArtifactRenderer.kt
+org/flowlang/materialization/CompatibilityMaterializationBoundary.kt
 org/flowlang/materialization/MaterializationNegotiation.kt
 org/flowlang/materialization/TargetSelection.kt
 org/flowlang/obligations/ArchitectureObligationGraph.kt
@@ -43,3 +44,4 @@ org/flowlang/targets/builtin/CheckoutProjectionRenderingSupport.kt
 org/flowlang/targets/builtin/ImageBuildProjectionRenderingSupport.kt
 org/flowlang/targets/builtin/TargetExpressionTranslationException.kt
 org/flowlang/targets/builtin/TargetProjectionRenderingSupport.kt
+org/flowlang/topology/ExecutionPlanCanonicalTopologyAuthority.kt

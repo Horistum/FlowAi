@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import org.flowlang.adapters.control.AdapterControlClaimStatus
 import org.flowlang.adapters.control.AdapterControlDecision
@@ -189,7 +190,7 @@ class AdapterControlConformanceChecks(
                 )
             }
         )
-        val invalidAuthority = AdapterControlMaterializationAuthority(
+        val invalidAuthority = ReferenceAdapterEvidence.control(
             rootDir = rootDir,
             targets = targets,
             projections = BuiltInTargetProjections.registry,
@@ -288,7 +289,7 @@ class AdapterControlConformanceChecks(
         }
     }
 
-    private fun authority() = AdapterControlMaterializationAuthority(
+    private fun authority() = ReferenceAdapterEvidence.control(
         rootDir = rootDir,
         targets = targets,
         projections = BuiltInTargetProjections.registry

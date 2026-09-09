@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -20,7 +21,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 class AdapterTriggerMaterializationAuthorityTests {
     private val root = File(".")
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
-    private val authority = AdapterTriggerMaterializationAuthority(root, targets, BuiltInTargetProjections.registry)
+    private val authority = ReferenceAdapterEvidence.trigger(root, targets, BuiltInTargetProjections.registry)
 
     @Test
     fun committedTriggerEvidenceIsCompleteAndValid() {

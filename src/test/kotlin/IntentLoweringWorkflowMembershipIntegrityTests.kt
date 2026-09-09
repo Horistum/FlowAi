@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import org.flowlang.cli.Json
-import org.flowlang.generators.manifest.ExecutionPlanMaterializationValidator
+import org.flowlang.adapters.testing.PlanningEvidenceValidatorFixture as ExecutionPlanMaterializationValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentStep
 import org.flowlang.intent.IntentToAstPlanner

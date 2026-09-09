@@ -1,5 +1,6 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import org.flowlang.adapters.continuity.AdapterContinuityClaimStatus
 import org.flowlang.adapters.continuity.AdapterContinuityDecision
@@ -226,7 +227,7 @@ class AdapterContinuityConformanceChecks(
         }
     }
 
-    private fun authority() = AdapterContinuitySatisfactionAuthority(rootDir, targets, projections)
+    private fun authority() = ReferenceAdapterEvidence.continuity(rootDir, targets, projections)
 
     private fun planWith(vararg relations: PlanDependencyRelation) = ExecutionPlan(
         flowName = "a0.5-conformance",

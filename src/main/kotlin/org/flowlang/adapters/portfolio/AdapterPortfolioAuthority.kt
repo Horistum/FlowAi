@@ -3,10 +3,12 @@ package org.flowlang.adapters.portfolio
 import java.io.File
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetProjectionMode
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.targets.TargetRegistryYamlLoader
-import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 enum class AdapterPortfolioRole {
     SEMANTIC_REFERENCE,
@@ -164,10 +166,12 @@ object AdapterPortfolioLoader {
  */
 class AdapterPortfolioAuthority(
     private val rootDir: File = File("."),
-    private val targets: Map<String, TargetCapability> =
-        TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry
+    private val targets: Map<String, TargetCapability>,
+    private val projections: AdapterCatalog<TargetProjectionProvider>,
+    private val compositionEvidenceReference: String
 ) {
+    init { require(compositionEvidenceReference.isNotBlank()) { "Composition evidence reference must not be blank." } }
+
     fun analyze(): AdapterPortfolioReport = evaluate(AdapterPortfolioLoader.load(rootDir))
 
     fun evaluate(document: AdapterPortfolioDocument): AdapterPortfolioReport {
@@ -275,7 +279,7 @@ class AdapterPortfolioAuthority(
                 )
             }
             if (providerAvailable && record.evidenceReferences.none {
-                    it.substringBefore('#') == BUILT_IN_PROJECTIONS
+                    it.substringBefore('#') == compositionEvidenceReference.substringBefore('#')
                 }) {
                 findings += finding(
                     "ADAPTER_PORTFOLIO_PROVIDER_EVIDENCE_MISSING",
@@ -310,7 +314,5 @@ class AdapterPortfolioAuthority(
     companion object {
         const val KIND = "FlowAdapterPortfolio"
         const val VERSION = "1.0"
-        const val BUILT_IN_PROJECTIONS =
-            "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt"
     }
 }

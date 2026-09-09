@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
@@ -8,7 +9,7 @@ import kotlin.test.assertTrue
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingBlockedException
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingEvidenceLoader
-import org.flowlang.adapters.rendering.AdapterArtifactRenderingIntegrityAuthority
+import org.flowlang.adapters.testing.RenderingEvidenceTestFixture as AdapterArtifactRenderingIntegrityAuthority
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -26,7 +27,7 @@ class AdapterArtifactRenderingAuthorityTests {
     private val root = File(".")
     private val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
-    private val authority = AdapterArtifactRenderingAuthority(root, BuiltInTargetProjections.registry)
+    private val authority = ReferenceAdapterEvidence.rendering(root, BuiltInTargetProjections.registry)
 
     @Test
     fun executableManifestProducesProviderArtifactAndBoundReceipt() {

@@ -6,9 +6,11 @@ import org.flowlang.capabilities.CompatibilityIssue
 import org.flowlang.capabilities.CompatibilityLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetProjectionRegistry
+import org.flowlang.adapters.contract.AdapterCatalog
+import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.planner.ExecutionPlan
-import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 /**
  * Matches preserved Core trigger requirements against adapter-owned materialization evidence.
@@ -20,7 +22,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 class AdapterTriggerMaterializationAuthority(
     private val rootDir: File = File("."),
     private val targets: Map<String, TargetCapability>,
-    private val projections: TargetProjectionRegistry = BuiltInTargetProjections.registry,
+    private val projections: AdapterCatalog<TargetProjectionProvider>,
     private val documentOverride: AdapterTriggerEvidenceDocument? = null
 ) {
     private val document: AdapterTriggerEvidenceDocument by lazy {

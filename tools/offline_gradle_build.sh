@@ -49,7 +49,14 @@ prepare() {
     local input
     for input in gradle/production-source-ownership.gradle.kts gradle/production-module.gradle.kts \
         gradle/compiler-sources.txt gradle/module-contracts-sources.txt gradle/frontends-sources.txt \
-        flow-compiler/build.gradle.kts flow-module-contracts/build.gradle.kts flow-frontends/build.gradle.kts; do
+        flow-compiler/build.gradle.kts flow-module-contracts/build.gradle.kts flow-frontends/build.gradle.kts \
+        gradle/adapter-contracts-sources.txt flow-adapter-contracts/build.gradle.kts \
+        gradle/adapter-runtime-sources.txt flow-adapter-runtime/build.gradle.kts \
+        gradle/adapter-evidence-sources.txt flow-adapter-evidence/build.gradle.kts \
+        gradle/adapter-jenkins-sources.txt flow-adapter-jenkins/build.gradle.kts \
+        gradle/adapter-github-actions-sources.txt flow-adapter-github-actions/build.gradle.kts \
+        gradle/adapter-tekton-sources.txt flow-adapter-tekton/build.gradle.kts \
+        gradle/reference-distribution-sources.txt flow-reference-distribution/build.gradle.kts; do
       printf '%s-sha256=' "$input"
       sha256sum "$ROOT_DIR/$input" | awk '{print $1}'
     done

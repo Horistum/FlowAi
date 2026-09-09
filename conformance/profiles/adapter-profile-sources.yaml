@@ -18,7 +18,9 @@ sources:
   - id: controls
     path: "adapters/controls/builtin-control-materialization.yaml"
     documentVersion: "1.0"
-    sha256: "ae3314dbbba94715afc7d30d162b549918854991b1d3ef1f726f5b95b62b9e3c"
+    # Only reviewed implementation-reference moves; byte-for-byte inverse migration
+    # is verified by ControlEvidenceReferenceMigrationTests. No support claim changed.
+    sha256: "f19771b522f919035bc09d6a144c41eba61a91e7c3964d6f4fe5859da67c43a0"
   - id: continuity
     path: "adapters/continuity/builtin-continuity-satisfaction.yaml"
     documentVersion: "1.0"

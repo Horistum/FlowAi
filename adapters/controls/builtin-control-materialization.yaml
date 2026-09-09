@@ -116,7 +116,7 @@ targets:
             approval.external: "No external approval controller contract is composed."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt#approval.manual.input"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt#approval.manual.input"
           - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsApproval"
           - "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt#jenkinsApprovalIsNativeOnlyWithOwnedProviderPayload"
         platformReferences:
@@ -184,7 +184,7 @@ targets:
           unknown: {}
         evidenceReferences:
           - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsTry"
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#toJenkinsTargetSteps"
+          - "src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt#nodePreservingSteps"
           - "src/test/kotlin/AdapterControlProviderBehaviorTests.kt#jenkinsFlowLevelErrorHandlerRendersProtectedTryCatchBoundary"
           - "targets/builtin-targets.yaml#targets.jenkins.projectionRules.standard.rollback"
         platformReferences:
@@ -231,7 +231,7 @@ targets:
             approval.external: "No external approval controller contract is composed."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt#githubActions"
+          - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsNativeProjectionCatalog.kt#catalog"
           - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#providerApprovalPayload"
           - "src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt#githubEnvironmentCapabilityDoesNotForgeStepPayloadEvidence"
         platformReferences:
@@ -255,7 +255,7 @@ targets:
             retry.cancellation: "No cancellation interaction is certified."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#RetryGroupNode"
+          - "src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt#RetryGroupNode"
           - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt"
         platformReferences:
           - "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax"
@@ -298,7 +298,7 @@ targets:
             compensation.always-run: "No always-run contract is emitted."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#TryPlanNode"
+          - "src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt#TryPlanNode"
           - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt#GitHubJobConditionAuthority"
           - "targets/builtin-targets.yaml#targets.github-actions.projectionRules.standard.rollback"
         platformReferences:
@@ -345,7 +345,7 @@ targets:
             approval.external: "No CustomRun approval controller is composed."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt#tekton"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonNativeProjectionCatalog.kt#catalog"
           - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
         platformReferences:
           - "https://github.com/tektoncd/experimental/tree/main/custom-tasks/approvals"
@@ -367,7 +367,7 @@ targets:
             retry.cancellation: "No cancellation behavior is certified."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#RetryGroupNode"
+          - "src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt#RetryGroupNode"
           - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
         platformReferences:
           - "https://tekton.dev/docs/pipelines/pipelines/#using-the-retries-field"
@@ -410,7 +410,7 @@ targets:
             compensation.always-run: "No finally/always-run contract is emitted."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#TryPlanNode"
+          - "src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt#TryPlanNode"
           - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
         platformReferences:
           - "https://tekton.dev/docs/pipelines/pipelines/#using-the-finally-field"
@@ -433,7 +433,7 @@ targets:
             scheduling.catch-up: "No scheduler integration."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#TektonManifestGenerator"
+          - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestGenerator.kt#TektonManifestGenerator"
           - "src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt"
         platformReferences:
           - "https://tekton.dev/docs/triggers/"
@@ -457,7 +457,7 @@ targets:
             approval.external: "No external approval controller provider."
         evidenceReferences:
           - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.argo-workflows"
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#registry"
+          - "src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt#registry"
         platformReferences:
           - "https://argo-workflows.readthedocs.io/en/latest/walk-through/suspending/"
         prerequisites: []
@@ -564,7 +564,7 @@ targets:
             approval.external: "No external check integration is composed."
         evidenceReferences:
           - "adapters/portfolio/builtin-adapter-portfolio.yaml#targets.azure-devops"
-          - "src/main/kotlin/org/flowlang/targets/builtin/BuiltInTargetProjections.kt#registry"
+          - "src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt#registry"
         platformReferences:
           - "https://learn.microsoft.com/en-us/azure/devops/pipelines/process/approvals"
         prerequisites: []

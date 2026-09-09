@@ -5,7 +5,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.flowlang.generators.manifest.ExecutionPlanMaterializationValidator
+import org.flowlang.adapters.testing.PlanningEvidenceValidatorFixture as ExecutionPlanMaterializationValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentInput
 import org.flowlang.intent.IntentObject

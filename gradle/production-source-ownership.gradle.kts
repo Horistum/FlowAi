@@ -41,6 +41,7 @@ val registeredManifests = linkedMapOf(
     ":flow-compiler" to "gradle/compiler-sources.txt",
     ":flow-frontends" to "gradle/frontends-sources.txt",
     ":flow-adapter-contracts" to "gradle/adapter-contracts-sources.txt",
+    ":flow-adapter-evidence" to "gradle/adapter-evidence-sources.txt",
     ":flow-adapter-runtime" to "gradle/adapter-runtime-sources.txt",
     ":flow-adapter-jenkins" to "gradle/adapter-jenkins-sources.txt",
     ":flow-adapter-github-actions" to "gradle/adapter-github-actions-sources.txt",

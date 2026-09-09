@@ -1,7 +1,6 @@
 package org.flowlang.targets.builtin
 
 import java.io.File
-import org.flowlang.adapters.continuity.AdapterContinuityProjectionExecutionGate
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.generators.manifest.TargetManifestGenerationPipeline
@@ -21,9 +20,5 @@ object BuiltInTargetProjections {
     fun pipeline(
         targets: Map<String, TargetCapability>,
         rootDir: File = File(".")
-    ): TargetManifestGenerationPipeline = TargetManifestGenerationPipeline(
-        targets = targets,
-        projections = registry,
-        executionGates = listOf(AdapterContinuityProjectionExecutionGate(rootDir, targets, registry))
-    )
+    ): TargetManifestGenerationPipeline = ReferenceTargetProjections.pipeline(targets, rootDir)
 }

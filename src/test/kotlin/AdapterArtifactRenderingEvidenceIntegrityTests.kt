@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,7 +11,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 class AdapterArtifactRenderingEvidenceIntegrityTests {
     private val root = File(".")
-    private val authority = AdapterArtifactRenderingEvidenceIntegrityAuthority(
+    private val authority = ReferenceAdapterEvidence.renderingIntegrity(
         rootDir = root,
         projections = BuiltInTargetProjections.registry
     )

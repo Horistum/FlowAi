@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,7 +33,7 @@ class AdapterControlEvidenceAnchorTests {
                 )
             }
         )
-        val report = AdapterControlMaterializationAuthority(
+        val report = ReferenceAdapterEvidence.control(
             rootDir = rootDir,
             targets = targets,
             projections = BuiltInTargetProjections.registry,

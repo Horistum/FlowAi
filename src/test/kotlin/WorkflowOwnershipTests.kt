@@ -1,3 +1,4 @@
+import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.io.path.createTempDirectory
@@ -148,7 +149,7 @@ class WorkflowOwnershipTests {
         val targets = mapOf(
             "jenkins" to testTargetCapability(target = "jenkins", description = "AR-02C target gate")
         )
-        val selection = TargetSelectionAuthority.fromTestFixture("jenkins", "ar02c-target-gate", targets)
+        val selection = AdapterRuntimeTestFixtures.fromTestFixture("jenkins", "ar02c-target-gate", targets)
 
         assertFailsWith<MultiWorkflowTargetMaterializationUnsupportedException> {
             TargetMaterializationRequest.fromCompilation(unit, selection)

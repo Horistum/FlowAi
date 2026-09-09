@@ -10,7 +10,7 @@ import org.flowlang.controls.ControlEvidenceStatus
 import org.flowlang.controls.ControlRequirement
 import org.flowlang.controls.ControlRequirementScope
 import org.flowlang.controls.ControlRequirementScopeKind
-import org.flowlang.generators.manifest.ExecutionPlanMaterializationValidator
+import org.flowlang.adapters.testing.PlanningEvidenceValidatorFixture as ExecutionPlanMaterializationValidator
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentStep
 import org.flowlang.intent.IntentWorkflow

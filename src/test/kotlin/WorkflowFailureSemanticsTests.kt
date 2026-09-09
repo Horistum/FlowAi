@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
@@ -79,7 +80,7 @@ class WorkflowFailureSemanticsTests {
     fun adapterRequirementsAreDerivedFromTypedWorkflowPolicy() {
         val unit = compile(globalHandlerSource(), "ar02d-adapter-policy")
         val handler = assertNotNull(unit.workflowPlanSet.workflows.single().failurePolicy.handler)
-        val authority = AdapterControlMaterializationAuthority(
+        val authority = ReferenceAdapterEvidence.control(
             rootDir = File("."),
             targets = targets,
             projections = BuiltInTargetProjections.registry
@@ -94,7 +95,7 @@ class WorkflowFailureSemanticsTests {
 
     @Test
     fun compatibilityPlanCannotForgeWorkflowFailureMeaningByTailShape() {
-        val authority = AdapterControlMaterializationAuthority(
+        val authority = ReferenceAdapterEvidence.control(
             rootDir = File("."),
             targets = targets,
             projections = BuiltInTargetProjections.registry

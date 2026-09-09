@@ -19,7 +19,8 @@ Both final PR checks retain their original job identities:
 Each verifies the actual Git checkout, runs the Python tooling tests, validates
 and generates the agent context, executes the complete Kotlin test suite,
 proves kernel isolation without product sources, proves the compiler and contracts
-without frontends or concrete adapters, and runs standalone conformance.
+without frontends or concrete adapters, proves generic adapter materialization
+and evidence without concrete/reference sources, and runs standalone conformance.
 There are no source-path filters: documentation and lifecycle metadata remain
 inputs to repository-aware tests.
 
@@ -48,7 +49,9 @@ compilation is restored from cache. Source-ownership and production-classpath
 guards remain in the task graph. The separate kernel-isolation script still
 performs its uncached offline proof. The compiler-isolation proof compiles the
 kernel dependency but runs only the compiler and module-contract suites, avoiding
-a third execution of the kernel suite. Standalone conformance is not replaced by
+a third execution of the kernel suite. The adapter proof compiles its actual
+product dependencies but executes only catalog/runtime/evidence suites, not all
+frontend, kernel and concrete suites again. Standalone conformance is not replaced by
 a cached success receipt.
 
 A cold cache must remain correct. Warm-cache acceleration is an additional

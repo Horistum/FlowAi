@@ -9,7 +9,7 @@ object TektonNativeProjectionCatalog {
     val catalog: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.of(
         "tekton",
         TargetNativeProjectionDefinition(
-            kind = BuiltInProjectionPayloadKinds.TEKTON_TASK,
+            kind = TektonProjectionPayloadKinds.TEKTON_TASK,
             reference = "git-clone",
             bindings = mapOf(
                 "url" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.TASK_PARAMETER)),
@@ -19,7 +19,7 @@ object TektonNativeProjectionCatalog {
             )
         ),
         TargetNativeProjectionDefinition(
-            kind = BuiltInProjectionPayloadKinds.TEKTON_TASK,
+            kind = TektonProjectionPayloadKinds.TEKTON_TASK,
             reference = "buildah",
             bindings = imageBuildBindings() + mapOf(
                 "workspace" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.LITERAL))

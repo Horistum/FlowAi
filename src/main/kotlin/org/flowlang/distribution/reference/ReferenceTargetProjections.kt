@@ -16,4 +16,20 @@ object ReferenceTargetProjections {
         TargetProjectionProvider(GitHubActionsManifestGenerator(), GitHubActionsManifestRenderer()),
         TargetProjectionProvider(TektonManifestGenerator(), TektonManifestRenderer())
     )
+
+    val nativeCatalogs: Map<String, org.flowlang.generators.manifest.TargetNativeProjectionCatalog>
+        get() = registry.targetIds.associateWith { registry.requireProvider(it).nativeProjectionCatalog }
+
+    fun pipeline(
+        targets: Map<String, org.flowlang.capabilities.TargetCapability>,
+        rootDir: java.io.File = java.io.File("."),
+        projections: TargetProjectionRegistry = registry,
+        modules: org.flowlang.modules.ModuleCatalog = org.flowlang.modules.ModuleRegistry()
+    ): org.flowlang.generators.manifest.TargetManifestGenerationPipeline =
+        org.flowlang.generators.manifest.TargetManifestGenerationPipeline(
+            targets = targets,
+            projections = projections,
+            executionGates = listOf(ReferenceAdapterEvidence.executionGate(rootDir, targets, projections)),
+            modules = modules
+        )
 }

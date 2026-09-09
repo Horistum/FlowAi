@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.frontend.FrontendCompilerComposition
 import java.io.File
 import kotlin.test.Test
@@ -35,7 +36,7 @@ class GitHubActionsWorkspaceContinuityTests {
         assertTrue(scope.limitations.any { it.contains("Unix mode bits") })
         assertTrue(scope.limitations.any { it.contains("Symbolic-link identity") })
 
-        val report = AdapterContinuityScopedSupportIntegrityAuthority(root).analyze()
+        val report = ReferenceAdapterEvidence.scopedSupportIntegrity(root).analyze()
         assertEquals("PASS", report.status, report.findings.joinToString { "${it.code}:${it.message}" })
         assertEquals(1, report.declarationCount)
         assertTrue(scope.evidenceReferences.any { it.startsWith("src/main/") })

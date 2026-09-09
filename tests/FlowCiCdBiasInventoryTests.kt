@@ -31,6 +31,23 @@ class FlowCiCdBiasInventoryTests {
     }
 
     @Test
+    fun onlyTheReviewedAdapterCompositionRootMayNameConcreteProviders() {
+        val root = Files.createTempDirectory("flow-cicd-reference-composition").toFile()
+        try {
+            val directory = File(root, "src/main/kotlin/org/flowlang/distribution/reference")
+            directory.mkdirs()
+            File(directory, "ReferenceTargetProjections.kt").writeText("val provider = JenkinsManifestGenerator()")
+            File(directory, "UnreviewedDefault.kt").writeText("val provider = JenkinsManifestGenerator()")
+            val report = CiCdBiasInventoryAnalyzer(root).analyze()
+            assertTrue(report.adapterBoundaryEvidence.any { it.path.endsWith("ReferenceTargetProjections.kt") })
+            assertTrue(report.actionableEvidence.isNotEmpty())
+            assertTrue(report.actionableEvidence.all { it.path.endsWith("UnreviewedDefault.kt") })
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun adapterVocabularyIsInventoryButNotSemanticHealthFailure() {
         val root = Files.createTempDirectory("flow-cicd-adapter-inventory").toFile()
         try {

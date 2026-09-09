@@ -7,3 +7,7 @@ bin/
 .gradle-user-home/
 __pycache__/
 *.py[cod]
+
+# Local Kotlin compiler state and CI proof outputs are not product sources.
+.kotlin/
+/ci-logs/

@@ -9,7 +9,7 @@ object GitHubActionsNativeProjectionCatalog {
     val catalog: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.of(
         "github-actions",
         TargetNativeProjectionDefinition(
-            kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
+            kind = GitHubActionsProjectionPayloadKinds.GITHUB_ACTION,
             reference = "actions/checkout@v4",
             bindings = mapOf(
                 "repository" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.TASK_PARAMETER)),
@@ -18,12 +18,12 @@ object GitHubActionsNativeProjectionCatalog {
             )
         ),
         TargetNativeProjectionDefinition(
-            kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
+            kind = GitHubActionsProjectionPayloadKinds.GITHUB_ACTION,
             reference = "docker/build-push-action@v7",
             bindings = imageBuildBindings()
         ),
         TargetNativeProjectionDefinition(
-            kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
+            kind = GitHubActionsProjectionPayloadKinds.GITHUB_ACTION,
             reference = GitHubActionsWorkspaceContinuityPlanner.UPLOAD_REFERENCE,
             bindings = mapOf(
                 "name" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.ARTIFACT)),
@@ -33,7 +33,7 @@ object GitHubActionsNativeProjectionCatalog {
             )
         ),
         TargetNativeProjectionDefinition(
-            kind = BuiltInProjectionPayloadKinds.GITHUB_ACTION,
+            kind = GitHubActionsProjectionPayloadKinds.GITHUB_ACTION,
             reference = GitHubActionsWorkspaceContinuityPlanner.DOWNLOAD_REFERENCE,
             bindings = mapOf(
                 "name" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.ARTIFACT)),

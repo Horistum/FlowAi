@@ -24,7 +24,7 @@ class GitHubJobConditionAuthorityTests {
             TargetJob(id = "test", dependsOn = listOf("build"))
         )
 
-        val expression = GitHubJobConditionAuthority.expression(manifest.jobs.last(), manifest)
+        val expression = GitHubActionsProjectionInspection.jobCondition(manifest.jobs.last(), manifest)
 
         assertNull(expression)
     }
@@ -36,7 +36,7 @@ class GitHubJobConditionAuthorityTests {
             TargetJob(id = "deploy", dependsOn = listOf("approve"))
         )
 
-        val expression = GitHubJobConditionAuthority.expression(manifest.jobs.last(), manifest).orEmpty()
+        val expression = GitHubActionsProjectionInspection.jobCondition(manifest.jobs.last(), manifest).orEmpty()
 
         assertTrue(expression.startsWith("!cancelled()"))
         assertTrue(expression.contains("needs.approve.result == 'skipped'"))
@@ -51,7 +51,7 @@ class GitHubJobConditionAuthorityTests {
             TargetJob(id = "deploy", dependsOn = listOf("approve", "build"))
         )
 
-        val expression = GitHubJobConditionAuthority.expression(manifest.jobs.last(), manifest).orEmpty()
+        val expression = GitHubActionsProjectionInspection.jobCondition(manifest.jobs.last(), manifest).orEmpty()
 
         assertTrue(expression.startsWith("!cancelled()"))
         assertTrue(expression.contains("needs.approve.result == 'success'"))
@@ -67,7 +67,7 @@ class GitHubJobConditionAuthorityTests {
             TargetJob(id = "recover", metadata = mapOf("errorHandler" to "true"))
         )
 
-        val expression = GitHubJobConditionAuthority.expression(manifest.jobs.single(), manifest)
+        val expression = GitHubActionsProjectionInspection.jobCondition(manifest.jobs.single(), manifest)
 
         assertEquals("!cancelled() && failure()", expression)
         assertFalse(expression.orEmpty().contains("always()"))

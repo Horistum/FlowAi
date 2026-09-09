@@ -22,7 +22,7 @@ import org.flowlang.planner.ControlNode
 import org.flowlang.planner.DataOpNode
 import org.flowlang.modules.ContinuityChannel
 import org.flowlang.modules.ContinuityKind
-import org.flowlang.modules.ModuleRegistry
+import org.flowlang.modules.ModuleCatalog
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyEvidence
 import org.flowlang.planner.PlanDependencyKind
@@ -109,7 +109,7 @@ class InvalidPlanningEvidenceException(
  */
 class MandatoryMaterializationAuthority(
     private val targets: Map<String, TargetCapability>,
-    private val modules: ModuleRegistry = ModuleRegistry()
+    private val modules: ModuleCatalog
 ) {
     private val capabilityGate = PlannerCapabilityConstraintGate(targets)
 
@@ -221,12 +221,12 @@ class MandatoryMaterializationAuthority(
 }
 
 internal object ExecutionPlanMaterializationValidator {
-    fun requireValid(plan: ExecutionPlan, modules: ModuleRegistry) {
+    fun requireValid(plan: ExecutionPlan, modules: ModuleCatalog) {
         val issues = validate(plan, modules)
         if (issues.isNotEmpty()) throw InvalidPlanningEvidenceException(issues)
     }
 
-    fun validate(plan: ExecutionPlan, modules: ModuleRegistry): List<PlanningEvidenceIssue> {
+    fun validate(plan: ExecutionPlan, modules: ModuleCatalog): List<PlanningEvidenceIssue> {
         val issues = mutableListOf<PlanningEvidenceIssue>()
         if (plan.flowName.isBlank()) {
             issues += issue("planning.flow-name.missing", "flowName", "Flow name must not be blank.")
@@ -469,7 +469,7 @@ internal object ExecutionPlanMaterializationValidator {
 
     private fun validateDependencyRelations(
         plan: ExecutionPlan,
-        modules: ModuleRegistry,
+        modules: ModuleCatalog,
         nodeIds: Set<String>,
         issues: MutableList<PlanningEvidenceIssue>
     ) {
@@ -645,7 +645,7 @@ internal object ExecutionPlanMaterializationValidator {
         relation: PlanDependencyRelation,
         requirement: ContinuityChannel,
         nodesById: Map<String, PlanNode>,
-        modules: ModuleRegistry,
+        modules: ModuleCatalog,
         issues: MutableList<PlanningEvidenceIssue>
     ) {
         val path = relation.path
@@ -674,7 +674,7 @@ internal object ExecutionPlanMaterializationValidator {
     private fun validateEffectEvidence(
         nodes: List<PlanNode>,
         path: String,
-        modules: ModuleRegistry,
+        modules: ModuleCatalog,
         issues: MutableList<PlanningEvidenceIssue>
     ) {
         nodes.forEachIndexed { index, node ->
@@ -717,7 +717,7 @@ internal object ExecutionPlanMaterializationValidator {
     private fun validateTaskEffects(
         task: TaskNode,
         location: String,
-        modules: ModuleRegistry,
+        modules: ModuleCatalog,
         issues: MutableList<PlanningEvidenceIssue>
     ) {
         val contract = modules.findAction(task.module, task.action)
@@ -934,7 +934,7 @@ internal object ExecutionPlanMaterializationValidator {
 
     private fun validateControlEvidence(
         plan: ExecutionPlan,
-        modules: ModuleRegistry,
+        modules: ModuleCatalog,
         issues: MutableList<PlanningEvidenceIssue>
     ) {
         val duplicateRequirements = plan.controlRequirements.groupBy(ControlRequirement::id).filterValues { it.size > 1 }

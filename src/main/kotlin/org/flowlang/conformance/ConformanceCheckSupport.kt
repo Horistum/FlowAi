@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
+import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import org.flowlang.capabilities.CompatibilityAnalyzer
@@ -49,8 +51,8 @@ internal abstract class ConformanceCheckSupport(
     protected val targets: Map<String, org.flowlang.capabilities.TargetCapability>,
     protected val projections: TargetProjectionRegistry
 ) {
-    protected val manifestPipeline = TargetManifestGenerationPipeline(targets, projections)
-    protected val artifactRendering = AdapterArtifactRenderingAuthority(rootDir, projections)
+    protected val manifestPipeline = TargetManifestGenerationPipeline(targets, projections, modules = org.flowlang.modules.ModuleRegistry())
+    protected val artifactRendering = ReferenceAdapterEvidence.rendering(rootDir, projections)
     protected val intentFrontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
 
     protected fun buildPipeline(target: String, strict: Boolean = false): PipelineArtifacts {
@@ -83,14 +85,14 @@ internal abstract class ConformanceCheckSupport(
     protected fun explicitTarget(
         target: String,
         source: String
-    ): ExplicitTargetSelection = TargetSelectionAuthority.fromConformanceCheck(target, source, targets)
+    ): ExplicitTargetSelection = CompatibilityMaterializationBoundary.conformanceSelection(target, source, targets)
 
     protected fun materializationRequest(
         plan: ExecutionPlan,
         target: String,
         strict: Boolean = false,
         source: String
-    ): TargetMaterializationRequest = TargetMaterializationRequest.fromCompatibilityPlan(
+    ): TargetMaterializationRequest = CompatibilityMaterializationBoundary.executionRequest(
         plan = plan,
         selection = explicitTarget(target, source),
         strict = strict,
@@ -101,7 +103,7 @@ internal abstract class ConformanceCheckSupport(
         plan: ExecutionPlan,
         target: String,
         source: String
-    ): TargetDiagnosticMaterializationRequest = TargetDiagnosticMaterializationRequest.fromCompatibilityPlan(
+    ): TargetDiagnosticMaterializationRequest = CompatibilityMaterializationBoundary.diagnosticRequest(
         plan = plan,
         selection = explicitTarget(target, source),
         evidenceId = source

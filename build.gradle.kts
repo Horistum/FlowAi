@@ -35,9 +35,13 @@ dependencies {
     if (findProject(":flow-adapter-runtime") != null) {
         testImplementation(testFixtures(project(":flow-adapter-runtime")))
     }
+    if (findProject(":flow-adapter-evidence") != null) {
+        testImplementation(testFixtures(project(":flow-adapter-evidence")))
+    }
 }
 
 sourceSets {
+    main { resources.exclude("standard/compatibility/capability-aliases.yaml") }
     test {
         kotlin.srcDirs("src/test/kotlin", "tests")
         resources.srcDirs("src/test/resources")

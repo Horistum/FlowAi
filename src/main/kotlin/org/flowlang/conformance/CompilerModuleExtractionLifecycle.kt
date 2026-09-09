@@ -49,23 +49,29 @@ internal object CompilerModuleExtractionLifecycle {
                     compiler["status"] !in setOf("active", "implemented") ||
                     slices.drop(2).any { it["status"] != "planned" } || work["nextSlice"] != "AR-03C"
                 ) add("Compiler extraction requires a completed kernel and cannot activate later module slices.")
-                val predecessor = compiler["predecessorMerge"] as? String
-                val predecessorRun = when (val value = compiler["predecessorMainRunId"]) {
-                    is Int -> value.toLong()
-                    is Long -> value
-                    else -> null
-                }
-                if (predecessor == null || !predecessor.matches(Regex("[0-9a-f]{40}")) ||
-                    predecessor.toSet().size == 1 || predecessor == main ||
-                    predecessorRun == null || predecessorRun <= 0
-                ) add("Compiler extraction requires its independently verified merged kernel predecessor.")
-                // Current-revision CI results belong to GitHub checks, not a self-referential
-                // receipt committed before those checks execute. Implementation is not acceptance.
-                val acceptance = section(compiler["acceptance"])
-                if (acceptance["source"] != "current-revision-ci" ||
-                    acceptance["requiredChecks"] != listOf("compile-test-conformance", "merge-candidate-compile-test-conformance") ||
-                    acceptance.keys != setOf("source", "requiredChecks")
-                ) add("Compiler implementation needs both current-revision CI checks, without a manufactured result receipt.")
+                addAll(compilerEvidenceErrors(compiler, main))
+            }
+            "AR-03C" -> {
+                val compiler = slices.getOrNull(1).orEmpty()
+                val adapter = slices.getOrNull(2).orEmpty()
+                if (!orderedSlices || kernelStatus != "complete" || compiler["status"] != "implemented" ||
+                    adapter["status"] !in setOf("active", "implemented") ||
+                    slices.getOrNull(3)?.get("status") != "planned" || work["nextSlice"] != "AR-03D"
+                ) add("Adapter extraction requires its implemented compiler predecessor and cannot activate integrated closure.")
+                addAll(compilerEvidenceErrors(compiler, main))
+                val predecessor = adapter["predecessorMerge"]
+                val acceptedHead = adapter["predecessorAcceptedHead"]
+                if (!validCommit(predecessor) || !validCommit(acceptedHead) ||
+                    predecessor == acceptedHead || predecessor == main ||
+                    predecessor == compiler["predecessorMerge"] ||
+                    positiveInteger(adapter["predecessorPullRequest"]) == null ||
+                    positiveInteger(adapter["predecessorAcceptedRunId"]) == null ||
+                    positiveInteger(adapter["preservedBaselineTestIdentities"]) == null
+                ) add("Adapter extraction requires its independently verified merged compiler predecessor and accepted test baseline.")
+                addAll(acceptanceErrors("Adapter", adapter))
+                if (adapter["compatibilityInventory"] !=
+                    ".flow-agent/architecture/compiler-adapter-boundary-inventory.yaml"
+                ) add("Adapter extraction requires the owned compatibility boundary inventory.")
             }
             else -> add("Module extraction must select an explicitly implemented roadmap slice.")
         }
@@ -105,6 +111,32 @@ internal object CompilerModuleExtractionLifecycle {
         if (completion["status"] != "not-complete" || completion["closesFindings"] != emptyList<Any>() ||
             (completion["remainingFindings"] as? List<*>)?.toSet() != setOf("F-10", "F-20")
         ) add("A bounded module candidate cannot close the full module-extraction findings.")
+    }
+
+    private fun compilerEvidenceErrors(compiler: Map<*, *>, activationMain: String?): List<String> = buildList {
+        val predecessor = compiler["predecessorMerge"]
+        if (!validCommit(predecessor) || predecessor == activationMain ||
+            positiveInteger(compiler["predecessorMainRunId"]) == null
+        ) add("Compiler extraction requires its independently verified merged kernel predecessor.")
+        addAll(acceptanceErrors("Compiler", compiler))
+    }
+
+    private fun acceptanceErrors(owner: String, slice: Map<*, *>): List<String> {
+        // A candidate may name required checks, never publish its own future CI result.
+        val acceptance = section(slice["acceptance"])
+        return if (acceptance["source"] == "current-revision-ci" &&
+            acceptance["requiredChecks"] == listOf("compile-test-conformance", "merge-candidate-compile-test-conformance") &&
+            acceptance.keys == setOf("source", "requiredChecks")
+        ) emptyList() else listOf("$owner implementation needs both current-revision CI checks, without a manufactured result receipt.")
+    }
+
+    private fun validCommit(value: Any?): Boolean = value is String &&
+        value.matches(Regex("[0-9a-f]{40}")) && value.toSet().size != 1
+
+    private fun positiveInteger(value: Any?): Long? = when (value) {
+        is Int -> value.toLong().takeIf { it > 0 }
+        is Long -> value.takeIf { it > 0 }
+        else -> null
     }
 
     private fun section(value: Any?): Map<*, *> = value as? Map<*, *> ?: emptyMap<Any, Any>()

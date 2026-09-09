@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,7 +15,7 @@ import org.flowlang.targets.builtin.BuiltInTargetProjections
 class AdapterContinuityEvidenceIntegrityTests {
     private val root = File(".")
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
-    private val authority = AdapterContinuityEvidenceIntegrityAuthority(
+    private val authority = ReferenceAdapterEvidence.continuityIntegrity(
         rootDir = root,
         targets = targets,
         projections = BuiltInTargetProjections.registry

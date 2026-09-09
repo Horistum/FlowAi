@@ -11,7 +11,7 @@ class TargetCapabilityMatrixTests {
     @Test
     fun repositoryTargetRegistryPassesCapabilityMatrix() {
         val targets = TargetRegistryYamlLoader.loadDirectory(File("targets"))
-        val report = TargetCapabilityMatrixAnalyzer(targets).analyze()
+        val report = TargetCapabilityMatrixAnalyzer(targets, requiredTargets = setOf("jenkins", "github-actions", "tekton")).analyze()
 
         assertEquals("PASS", report.status, report.issues.joinToString())
         assertTrue(report.targets.containsAll(listOf("jenkins", "github-actions", "tekton")))
@@ -25,7 +25,7 @@ class TargetCapabilityMatrixTests {
         val targets = mapOf(
             "jenkins" to testTargetCapability(target = "jenkins", description = "Jenkins test target")
         )
-        val report = TargetCapabilityMatrixAnalyzer(targets).analyze()
+        val report = TargetCapabilityMatrixAnalyzer(targets, requiredTargets = setOf("jenkins", "github-actions", "tekton")).analyze()
 
         assertEquals("FAIL", report.status)
         assertTrue(report.issues.any { it.contains("github-actions") })
@@ -39,7 +39,7 @@ class TargetCapabilityMatrixTests {
             "github-actions" to testTargetCapability(target = "github-actions", description = "GitHub Actions test target"),
             "tekton" to testTargetCapability(target = "tekton", description = "Tekton test target")
         )
-        val report = TargetCapabilityMatrixAnalyzer(targets).analyze()
+        val report = TargetCapabilityMatrixAnalyzer(targets, requiredTargets = setOf("jenkins", "github-actions", "tekton")).analyze()
 
         assertEquals("FAIL", report.status)
         assertTrue(report.issues.any { it.contains("must declare a description") })

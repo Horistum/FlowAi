@@ -383,7 +383,10 @@ object StandardSurface {
     )
 
     fun targetSemanticsMatrix(rootDir: File = File(".")): TargetSemanticsMatrixReport =
-        TargetSemanticsAuthority.build(TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")))
+        TargetSemanticsAuthority.build(
+            TargetRegistryYamlLoader.loadDirectory(File(rootDir, "targets")),
+            org.flowlang.distribution.reference.ReferenceTargetProjections.nativeCatalogs
+        )
 
     fun standardExportBundle(): StandardExportBundleReport {
         val requiredDirectories = listOf("docs/", "schemas/", "conformance/", "standard/", "targets/", "examples/")

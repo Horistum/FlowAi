@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,15 +18,15 @@ import org.flowlang.parser.FlowParser
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.targets.builtin.BuiltInTargetProjections
-import org.flowlang.targets.builtin.GitHubActionsTriggerProjectionPlanner
+import org.flowlang.targets.builtin.GitHubActionsProjectionInspection
 
 class AdapterTriggerProviderBehaviorTests {
     private val root = File(".")
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
     private val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
     private val analyzer = CompatibilityAnalyzer(targets)
-    private val triggerAuthority = AdapterTriggerMaterializationAuthority(root, targets, BuiltInTargetProjections.registry)
-    private val renderingAuthority = AdapterTriggerAuthorizedRenderingAuthority(root, BuiltInTargetProjections.registry)
+    private val triggerAuthority = ReferenceAdapterEvidence.trigger(root, targets, BuiltInTargetProjections.registry)
+    private val renderingAuthority = ReferenceAdapterEvidence.authorizedRendering(root, BuiltInTargetProjections.registry)
 
     @Test
     fun jenkinsManualTriggerRemainsManualOnly() {
@@ -87,7 +88,7 @@ class AdapterTriggerProviderBehaviorTests {
         val assessment = triggerAuthority.requireMatched(plan, "github-actions")
         val manifest = triggerAuthority.reconcileDiagnostic(generated, assessment)
 
-        val triggerProjection = GitHubActionsTriggerProjectionPlanner.render(manifest)
+        val triggerProjection = GitHubActionsProjectionInspection.triggerDocument(manifest)
         val reviewBundle = renderingAuthority.render(manifest)
 
         assertTrue(triggerProjection.contains("  release:"))

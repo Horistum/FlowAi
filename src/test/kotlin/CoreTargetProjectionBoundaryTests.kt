@@ -1,3 +1,4 @@
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,7 +25,7 @@ class CoreTargetProjectionBoundaryTests {
             TargetProjectionProvider(SyntheticGenerator("future-orchestrator"), SyntheticRenderer("future-orchestrator"))
         )
         val targets = mapOf("future-orchestrator" to testTargetCapability("future-orchestrator", "Synthetic future target"))
-        val pipeline = TargetManifestGenerationPipeline(targets, registry)
+        val pipeline = TargetManifestGenerationPipeline(targets, registry, modules = org.flowlang.modules.ModuleRegistry())
 
         val manifest = pipeline.generate(testMaterializationRequest(ExecutionPlan(flowName = "future-flow"), "future-orchestrator", targets))
         val rendered = registry.requireProvider("future-orchestrator").render(manifest)
@@ -73,7 +74,7 @@ class CoreTargetProjectionBoundaryTests {
     @Test
     fun pipelineRejectsUnregisteredTargetInsteadOfFallingBack() {
         val targets = mapOf("missing-target" to testTargetCapability("missing-target", "Missing provider target"))
-        val pipeline = TargetManifestGenerationPipeline(targets, TargetProjectionRegistry.empty())
+        val pipeline = TargetManifestGenerationPipeline(targets, TargetProjectionRegistry.empty(), modules = org.flowlang.modules.ModuleRegistry())
 
         val failure = assertFailsWith<IllegalStateException> {
             pipeline.generate(testMaterializationRequest(ExecutionPlan(flowName = "missing"), "missing-target", targets))
@@ -136,13 +137,13 @@ class CoreTargetProjectionBoundaryTests {
         assertNotNull(loader.getResource("org/flowlang/adapters/rendering/AdapterArtifactRenderingAuthority.class"))
         assertNotNull(loader.getResource("org/flowlang/adapters/trigger/AdapterTriggerMaterializationAuthority.class"))
         assertNotNull(loader.getResource("org/flowlang/adapters/trigger/AdapterTriggerAuthorizedRenderingAuthority.class"))
-        assertTrue(referenceGenerator.contains("BuiltInTargetProjections.registry"))
+        assertTrue(referenceGenerator.contains("ReferenceTargetProjections.registry"))
         assertTrue(referenceGenerator.contains("TargetSelectionAuthority.fromReferenceSnapshot"))
-        assertTrue(referenceGenerator.contains("AdapterTriggerMaterializationAuthority(rootDir, targets, projections)"))
-        assertTrue(referenceGenerator.contains("AdapterTriggerAuthorizedRenderingAuthority(rootDir, projections)"))
+        assertTrue(referenceGenerator.contains("ReferenceAdapterEvidence.trigger(rootDir, targets, projections)"))
+        assertTrue(referenceGenerator.contains("ReferenceAdapterEvidence.authorizedRendering(rootDir, projections)"))
         assertTrue(referenceGenerator.contains("triggerAuthority.reconcileDiagnostic(generated, triggerAssessment)"))
         assertTrue(referenceGenerator.contains("renderingAuthority.render(manifest)"))
-        assertFalse(referenceGenerator.contains("AdapterArtifactRenderingAuthority(rootDir, projections)"))
+        assertFalse(referenceGenerator.contains("ReferenceAdapterEvidence.rendering(rootDir, projections)"))
         assertFalse(referenceGenerator.contains("projections.requireProvider(target)"))
         assertFalse(referenceGenerator.contains("when (manifest.target)"))
         assertTrue(triggerDecorator.contains("AdapterArtifactRenderingAuthority(rootDir, projections)"))

@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
+import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import java.io.File
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.trigger.AdapterTriggerDecision
@@ -24,7 +26,7 @@ import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.FlowPlanner
 import org.flowlang.planner.PlanSchedule
 import org.flowlang.planner.PlanTrigger
-import org.flowlang.targets.builtin.GitHubActionsTriggerProjectionPlanner
+import org.flowlang.targets.builtin.GitHubActionsProjectionInspection
 
 class AdapterTriggerConformanceChecks(
     private val rootDir: File,
@@ -35,14 +37,14 @@ class AdapterTriggerConformanceChecks(
         ModuleRegistry.fromDirectory(File(rootDir, "modules"))
     }
     private val authority by lazy {
-        AdapterTriggerMaterializationAuthority(rootDir, targets, projections)
+        ReferenceAdapterEvidence.trigger(rootDir, targets, projections)
     }
 
     fun checks(): List<ConformanceCheck> {
         val lifecycleResult = runCatching { AdapterTriggerRoadmapLifecycleAuthority(rootDir).analyze() }
         val lifecycle = lifecycleResult.getOrNull()
         val evidenceResult = runCatching {
-            AdapterTriggerEvidenceIntegrityAuthority(rootDir, targets, projections).analyze()
+            ReferenceAdapterEvidence.triggerIntegrity(rootDir, targets, projections).analyze()
         }
         val evidence = evidenceResult.getOrNull()
 
@@ -151,7 +153,7 @@ class AdapterTriggerConformanceChecks(
                 schedule = ScheduleNode(kind = "INTERVAL", expression = "PT15M")
             )
         )
-        val selection = TargetSelectionAuthority.fromConformanceCheck(
+        val selection = CompatibilityMaterializationBoundary.conformanceSelection(
             value = "github-actions",
             checkId = REVIEW_EVIDENCE_CHECK,
             targets = targets
@@ -189,7 +191,7 @@ class AdapterTriggerConformanceChecks(
                 schedule = ScheduleNode(kind = "CRON", expression = "0 3 * * *")
             )
         )
-        val selection = TargetSelectionAuthority.fromConformanceCheck(
+        val selection = CompatibilityMaterializationBoundary.conformanceSelection(
             value = "jenkins",
             checkId = EXECUTABLE_PROOF_CHECK,
             targets = targets
@@ -223,14 +225,14 @@ class AdapterTriggerConformanceChecks(
             add("Bounded event leaf proof expected preliminary PARTIAL registry context.")
             return@buildList
         }
-        val selection = TargetSelectionAuthority.fromConformanceCheck(
+        val selection = CompatibilityMaterializationBoundary.conformanceSelection(
             value = "github-actions",
             checkId = BOUNDED_EVENT_CHECK,
             targets = targets
         )
-        val diagnosticManifest = TargetManifestGenerationPipeline(targets, projections)
+        val diagnosticManifest = TargetManifestGenerationPipeline(targets, projections, modules = org.flowlang.modules.ModuleRegistry())
             .generateDiagnosticEvidence(
-                TargetDiagnosticMaterializationRequest.fromCompatibilityPlan(
+                CompatibilityMaterializationBoundary.diagnosticRequest(
                     plan = plan,
                     selection = selection,
                     evidenceId = "conformance:adapter-trigger:bounded-event"
@@ -238,7 +240,7 @@ class AdapterTriggerConformanceChecks(
             )
         val assessment = authority.requireMatched(plan, "github-actions")
         val manifest = authority.reconcileDiagnostic(diagnosticManifest, assessment)
-        val rendered = GitHubActionsTriggerProjectionPlanner.render(manifest)
+        val rendered = GitHubActionsProjectionInspection.triggerDocument(manifest)
         if ("  release:" !in rendered) {
             add("GitHub bounded event planner did not preserve the exact release event identity.")
         }
