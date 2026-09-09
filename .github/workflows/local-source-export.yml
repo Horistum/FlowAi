@@ -1,0 +1,30 @@
+name: Local Source Export
+on:
+  push:
+    branches: [agent/adapter-contract-boundaries]
+    paths: [.github/workflows/local-source-export.yml]
+permissions:
+  contents: read
+concurrency:
+  group: local-source-export
+  cancel-in-progress: true
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Export repository without credentials or caches
+        run: |
+          set -euo pipefail
+          git bundle create "$RUNNER_TEMP/candidate.bundle" HEAD refs/remotes/origin/main
+          sha256sum "$RUNNER_TEMP/candidate.bundle"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: local-candidate-sources
+          path: ${{ runner.temp }}/candidate.bundle
+          retention-days: 1
