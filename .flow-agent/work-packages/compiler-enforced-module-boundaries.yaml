@@ -152,7 +152,7 @@ validationPlan:
   - "Validate activation independently before the first extraction commit."
   - "Run Flow Agent tooling tests, structure validation and context generation locally."
   - "Run isolated kernel tests and positive/negative external Kotlin compiler probes."
-  - "Run exact-head and synthetic-merge clean test, standalone conformance and physical kernel/compiler/adapter isolation. The full relocated offline proof is manual-only under docs/CI_COST_POLICY.md; local offline compilation is used during development."
+  - "Run exact-head and synthetic-merge clean test and standalone conformance independently. Require physical kernel/compiler/adapter isolation for every distinct complete source tree; identical HEAD/merge trees share only these file-based proofs in the same run. The full relocated offline proof is manual-only under docs/CI_COST_POLICY.md; local offline compilation is used during development."
   - "Compare complete baseline test identities, not only counts."
   - "Do not claim local Gradle execution without an available JDK 25 and resolved dependency cache."
 

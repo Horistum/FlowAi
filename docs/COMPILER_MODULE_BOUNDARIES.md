@@ -166,16 +166,26 @@ replacement Gradle build or inject fake production classes. Compiler tests cover
 real parsed-source and Intent compilation, explicit decoded module contracts,
 rejection, semantic mutation and unauthorized API access.
 
-Only final exact-head and synthetic-merge Flow CI jobs run automatically for a
-ready PR. Both publish root and all eleven module test reports and all three isolation
-proofs. Draft/branch-push suppression, cancellation of obsolete runs and manual-
-only full relocated offline verification are unchanged. See `CI_COST_POLICY.md`.
-The compiler and adapter proofs are inside those existing jobs, not additional
-workflows or repeated full product/conformance builds.
+Only ready PRs run the complete exact-head and synthetic-merge checks. Each
+publishes root and all eleven module test reports, and each requires a passing
+source-isolation prerequisite. A cheap selector checks both immutable commits,
+the synthetic merge's ordered parents and complete tree identities. Identical
+trees need one physical proof suite; differing trees need two. All three proofs
+remain real uncached clean builds in empty workspaces, with their own JUnit,
+input fingerprints and classpath artifacts. The proof job has a separate bounded
+budget, so a cold full build cannot consume the isolation budget before it runs.
+
+Both original required checks explicitly fail when selection or isolation fails
+or is skipped. Sharing is limited to file-based isolation in the same run; full
+Kotlin tests and standalone conformance execute independently on both revisions.
+Proofs may resolve dependencies on a cold CI runner, while local offline proof
+execution remains available. Draft/branch-push suppression, cancellation of
+obsolete runs and manual-only relocated offline verification are unchanged.
+See `CI_COST_POLICY.md` for the dependency graph and billing tradeoff.
 
 ## Compatibility and visibility
 
-`TargetProjectionAuthorization` remains internal to the generic adapter runtime;
+`TargetProjectionAuthorization` retains an internal constructor in the generic adapter runtime;
 independent Kotlin compilation rejects direct construction. Raw compatibility
 requests retain their original validation order before graph authorization, so
 normalization cannot erase a malformed retained field before it is diagnosed.

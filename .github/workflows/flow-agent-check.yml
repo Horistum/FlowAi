@@ -17,12 +17,143 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  compile-test-conformance:
+  isolation-candidates:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      matrix: ${{ steps.candidates.outputs.matrix }}
+    steps:
+      - name: Checkout Event And Immediate Parents
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Test Flow Agent Tooling
+        run: python3 -m unittest discover -s tools/tests -p 'test_*.py'
+
+      - name: Validate Flow Agent Structure
+        run: python3 tools/flow_agent_validate.py
+
+      - name: Generate Flow Agent Context
+        run: python3 tools/flow_agent_runner.py
+
+      - name: Select Exact Isolation Trees
+        id: candidates
+        shell: bash
+        env:
+          VALIDATION_EVENT: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          python3 tools/ci_isolation_candidates.py --event "$VALIDATION_EVENT" \
+            --event-sha "$EVENT_SHA" --head-sha "$HEAD_SHA" --base-sha "$BASE_SHA"
+
+  # Source-deletion proofs depend on copied files, never Git history. Run them
+  # once per complete tree, not once per label when HEAD and merge are identical.
+  # Different trees retain independent proofs. No earlier-run receipt is reused.
+  module-isolation:
+    needs: isolation-candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJSON(needs.isolation-candidates.outputs.matrix) }}
+    steps:
+      - name: Checkout Isolation Candidate
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify Isolation Revision And Tree
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ matrix.revision }}
+          EXPECTED_TREE: ${{ matrix.tree }}
+          COVERS: ${{ join(matrix.covers, ',') }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ && "$EXPECTED_TREE" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$EXPECTED_TREE"
+          mkdir -p ci-logs
+          printf 'revision=%s\ntree=%s\ncovers=%s\nrun=%s\nattempt=%s\n' \
+            "$EXPECTED_SHA" "$EXPECTED_TREE" "$COVERS" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            > ci-logs/isolation-revision.txt
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+
+      # A cold runner may resolve dependencies. Compiled outputs remain forbidden
+      # by each proof's --no-build-cache and fresh physical workspace.
+      - name: Prove Kernel Without Product Sources
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_semantic_kernel_isolation.py 2>&1 | tee ci-logs/kernel-isolation.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Prove Compiler Without Frontends Or Adapters
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_compiler_isolation.py 2>&1 | tee ci-logs/compiler-isolation.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Prove Generic Adapter Boundary Without Concrete Implementations
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_adapter_isolation.py 2>&1 | tee ci-logs/adapter-isolation.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload Isolation Evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: flow-isolation-${{ matrix.label }}
+          path: |
+            ci-logs/*.log
+            ci-logs/isolation-revision.txt
+            ci-logs/kernel-isolation/**
+            ci-logs/compiler-isolation/**
+            ci-logs/adapter-isolation/**
+          if-no-files-found: error
+          retention-days: 7
+
+  compile-test-conformance:
+    needs: [isolation-candidates, module-isolation]
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
+      - name: Require Successful Module Isolation
+        shell: bash
+        env:
+          SELECTION_RESULT: ${{ needs.isolation-candidates.result }}
+          ISOLATION_RESULT: ${{ needs.module-isolation.result }}
+        run: |
+          set -euo pipefail
+          if [ "$SELECTION_RESULT" != success ] || [ "$ISOLATION_RESULT" != success ]; then
+            echo "Isolation prerequisites did not pass: selection=$SELECTION_RESULT, proof=$ISOLATION_RESULT" >&2
+            exit 1
+          fi
+
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
         with:
@@ -77,27 +208,6 @@ jobs:
           ./gradlew --no-daemon --build-cache clean test --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
           exit ${PIPESTATUS[0]}
 
-      - name: Prove Kernel Without Product Sources
-        shell: bash
-        run: |
-          set -o pipefail
-          python3 tools/verify_semantic_kernel_isolation.py --offline 2>&1 | tee ci-logs/kernel-isolation.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Prove Compiler Without Frontends Or Adapters
-        shell: bash
-        run: |
-          set -o pipefail
-          python3 tools/verify_compiler_isolation.py --offline 2>&1 | tee ci-logs/compiler-isolation.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Prove Generic Adapter Boundary Without Concrete Implementations
-        shell: bash
-        run: |
-          set -o pipefail
-          python3 tools/verify_adapter_isolation.py --offline 2>&1 | tee ci-logs/adapter-isolation.log
-          exit ${PIPESTATUS[0]}
-
       - name: Run Conformance
         shell: bash
         run: |
@@ -110,6 +220,7 @@ jobs:
         shell: bash
         run: |
           echo "# Flow CI Exact-Head Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "Physical isolation prerequisite: ${{ needs.module-isolation.result }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Validated checkout: ${FLOW_VALIDATED_SHA:-unverified}" >> "$GITHUB_STEP_SUMMARY"
           echo "Event SHA: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
@@ -122,9 +233,7 @@ jobs:
           echo "- Flow agent structure validation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow agent context generation" >> "$GITHUB_STEP_SUMMARY"
           echo "- Gradle clean test" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Isolated kernel build and external compiler boundary probes" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Isolated compiler and contracts without frontends or adapters" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Generic adapter contracts, materialization and evidence without concrete sources" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Required source-tree isolation prerequisite (kernel/compiler/generic adapters)" >> "$GITHUB_STEP_SUMMARY"
           echo "- Flow conformance" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if compgen -G "build/test-results/test/*.xml" > /dev/null || compgen -G "flow-*/build/test-results/test/*.xml" > /dev/null; then
@@ -174,9 +283,6 @@ jobs:
           name: flow-ci-exact-head-gradle-logs
           path: |
             ci-logs/*.log
-            ci-logs/kernel-isolation/**
-            ci-logs/compiler-isolation/**
-            ci-logs/adapter-isolation/**
             flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
             flow-*/build/reports/production-module-boundary/**
           if-no-files-found: warn
@@ -196,11 +302,24 @@ jobs:
           retention-days: 7
 
   merge-candidate-compile-test-conformance:
-    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    needs: [isolation-candidates, module-isolation]
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
+      - name: Require Successful Module Isolation
+        shell: bash
+        env:
+          SELECTION_RESULT: ${{ needs.isolation-candidates.result }}
+          ISOLATION_RESULT: ${{ needs.module-isolation.result }}
+        run: |
+          set -euo pipefail
+          if [ "$SELECTION_RESULT" != success ] || [ "$ISOLATION_RESULT" != success ]; then
+            echo "Isolation prerequisites did not pass: selection=$SELECTION_RESULT, proof=$ISOLATION_RESULT" >&2
+            exit 1
+          fi
+
       - name: Checkout Merge Candidate
         uses: actions/checkout@v6
         with:
@@ -254,27 +373,6 @@ jobs:
           ./gradlew --no-daemon --build-cache clean test --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
           exit ${PIPESTATUS[0]}
 
-      - name: Prove Merge Candidate Kernel Without Product Sources
-        shell: bash
-        run: |
-          set -o pipefail
-          python3 tools/verify_semantic_kernel_isolation.py --offline 2>&1 | tee ci-logs/merge-candidate-kernel-isolation.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Prove Merge Candidate Compiler Without Frontends Or Adapters
-        shell: bash
-        run: |
-          set -o pipefail
-          python3 tools/verify_compiler_isolation.py --offline 2>&1 | tee ci-logs/merge-candidate-compiler-isolation.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Prove Generic Adapter Boundary Without Concrete Implementations
-        shell: bash
-        run: |
-          set -o pipefail
-          python3 tools/verify_adapter_isolation.py --offline 2>&1 | tee ci-logs/adapter-isolation.log
-          exit ${PIPESTATUS[0]}
-
       - name: Run Merge Candidate Conformance
         shell: bash
         run: |
@@ -287,6 +385,7 @@ jobs:
         shell: bash
         run: |
           echo "# Flow CI Merge-Candidate Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "Physical isolation prerequisite: ${{ needs.module-isolation.result }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Validated merge candidate: ${FLOW_MERGE_CANDIDATE_SHA:-unverified}" >> "$GITHUB_STEP_SUMMARY"
           echo "Pull request head: ${{ github.event.pull_request.head.sha }}" >> "$GITHUB_STEP_SUMMARY"
@@ -299,9 +398,6 @@ jobs:
           name: flow-ci-merge-candidate-gradle-logs
           path: |
             ci-logs/*.log
-            ci-logs/kernel-isolation/**
-            ci-logs/compiler-isolation/**
-            ci-logs/adapter-isolation/**
             flow-semantic-kernel/build/reports/semantic-kernel-boundary/**
             flow-*/build/reports/production-module-boundary/**
           if-no-files-found: warn

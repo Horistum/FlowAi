@@ -22,6 +22,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 CI = ROOT / ".github/workflows/flow-agent-check.yml"
 OFFLINE = ROOT / ".github/workflows/flow-offline-check.yml"
 CI_JOBS = ("compile-test-conformance", "merge-candidate-compile-test-conformance")
+ISOLATION_JOBS = ("isolation-candidates", "module-isolation")
 
 
 def top_block(workflow: str, name: str) -> str:
@@ -52,7 +53,8 @@ def run_script(step: str) -> str:
 def build_steps(job: str) -> list[str]:
     return [step for step in step_blocks(job)
             if "./gradlew " in step or "python3 tools/verify_semantic_kernel_isolation.py " in step
-            or "python3 tools/verify_compiler_isolation.py " in step]
+            or "python3 tools/verify_compiler_isolation.py " in step
+            or "python3 tools/verify_adapter_isolation.py " in step]
 
 
 class CiCostPolicyTests(unittest.TestCase):
@@ -75,8 +77,10 @@ class CiCostPolicyTests(unittest.TestCase):
                          {"opened", "synchronize", "reopened", "ready_for_review", "converted_to_draft"})
         exact = job_block(self.ci, CI_JOBS[0])
         merge = job_block(self.ci, CI_JOBS[1])
-        self.assertIn("if: github.event_name != 'pull_request' || github.event.pull_request.draft == false", exact)
-        self.assertIn("if: github.event_name == 'pull_request' && github.event.pull_request.draft == false", merge)
+        self.assertIn("if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}", exact)
+        self.assertIn("if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}", merge)
+        self.assertIn("if: github.event_name != 'pull_request' || github.event.pull_request.draft == false",
+                      job_block(self.ci, "isolation-candidates"))
 
     def test_metadata_changes_are_not_filtered_out_of_final_validation(self) -> None:
         self.assertNotRegex(top_block(self.ci, "on"), r"paths(?:-ignore)?:")
@@ -92,7 +96,7 @@ class CiCostPolicyTests(unittest.TestCase):
 
     def test_required_job_identities_and_exact_revision_selection_survive(self) -> None:
         jobs = top_block(self.ci, "jobs")
-        self.assertEqual(re.findall(r"(?m)^  ([\w-]+):$", jobs), list(CI_JOBS))
+        self.assertEqual(re.findall(r"(?m)^  ([\w-]+):$", jobs), list(ISOLATION_JOBS + CI_JOBS))
         exact = job_block(self.ci, CI_JOBS[0])
         merge = job_block(self.ci, CI_JOBS[1])
         self.assertIn("ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}", exact)
@@ -116,17 +120,65 @@ class CiCostPolicyTests(unittest.TestCase):
         for name in CI_JOBS:
             with self.subTest(job=name):
                 steps = build_steps(job_block(self.ci, name))
-                self.assertEqual(len(steps), 4)
+                self.assertEqual(len(steps), 2)
                 self.assertIn("--build-cache clean test ", steps[0])
-                self.assertIn("python3 tools/verify_semantic_kernel_isolation.py --offline", steps[1])
-                self.assertIn("python3 tools/verify_compiler_isolation.py --offline", steps[2])
-                self.assertIn('--build-cache run --args="conformance"', steps[3])
+                self.assertIn('--build-cache run --args="conformance"', steps[1])
+                job = job_block(self.ci, name)
+                self.assertIn("needs: [isolation-candidates, module-isolation]", job)
+                steps += build_steps(job_block(self.ci, "module-isolation"))
+                self.assertEqual(5, len(steps))
+                for script in ("semantic_kernel", "compiler", "adapter"):
+                    self.assertTrue(any(f"python3 tools/verify_{script}_isolation.py " in step for step in steps))
                 for step in steps:
                     self.assertNotRegex(step, r"(?m)^        if:")
                     self.assertNotIn("continue-on-error", step)
                     self.assertNotIn("|| true", step)
                     self.assertNotIn("--tests", step)
                     self.assertNotRegex(step, r"\s-x\s|--exclude-task")
+
+    def test_isolation_has_its_own_budget_and_no_warm_cache_requirement(self) -> None:
+        job = job_block(self.ci, "module-isolation")
+        self.assertIn("timeout-minutes: 20", job)
+        self.assertIn("needs: isolation-candidates", job)
+        self.assertIn("matrix: ${{ fromJSON(needs.isolation-candidates.outputs.matrix) }}", job)
+        self.assertIn("fail-fast: true", job)
+        self.assertIn("ref: ${{ matrix.revision }}", job)
+        self.assertIn("fetch-depth: 1", job)
+        self.assertIn("EXPECTED_TREE: ${{ matrix.tree }}", job)
+        for step in build_steps(job):
+            self.assertNotIn("--offline", step)
+            self.assertNotIn("--build-cache", step)
+        for script in ("semantic_kernel", "compiler", "adapter"):
+            source = (ROOT / f"tools/verify_{script}_isolation.py").read_text()
+            self.assertIn('"--no-build-cache"', source)
+            self.assertIn("tempfile.TemporaryDirectory", source)
+
+    def test_selection_is_cheap_and_uses_both_exact_event_parents(self) -> None:
+        job = job_block(self.ci, "isolation-candidates")
+        self.assertIn("timeout-minutes: 3", job)
+        self.assertIn("fetch-depth: 2", job)
+        self.assertIn("EVENT_SHA: ${{ github.sha }}", job)
+        self.assertIn("HEAD_SHA: ${{ github.event.pull_request.head.sha }}", job)
+        self.assertIn("BASE_SHA: ${{ github.event.pull_request.base.sha }}", job)
+        self.assertIn("matrix: ${{ steps.candidates.outputs.matrix }}", job)
+        self.assertIn("python3 tools/ci_isolation_candidates.py", job)
+        for command in ("flow_agent_validate.py", "flow_agent_runner.py"):
+            self.assertIn(f"python3 tools/{command}", job)
+            self.assertLess(job.index(f"python3 tools/{command}"), job.index("name: Select Exact Isolation Trees"))
+        self.assertNotIn("Set up Gradle", job)
+        self.assertNotIn("Set up JDK", job)
+
+    def test_required_jobs_do_not_silently_skip_failed_prerequisites(self) -> None:
+        for name in CI_JOBS:
+            job = job_block(self.ci, name)
+            self.assertIn("!cancelled()", job.split("steps:")[0])
+            self.assertNotIn("success()", job.split("steps:")[0])
+            self.assertIn("needs: [isolation-candidates, module-isolation]", job)
+            guard = named_step(job, "Require Successful Module Isolation")
+            self.assertEqual(step_blocks(job)[0], guard)
+            self.assertIn("SELECTION_RESULT: ${{ needs.isolation-candidates.result }}", guard)
+            self.assertIn("ISOLATION_RESULT: ${{ needs.module-isolation.result }}", guard)
+            self.assertIn('exit 1', guard)
 
     def test_same_repo_pr_caches_can_be_saved_but_forks_are_read_only(self) -> None:
         expected = ("cache-read-only: ${{ github.event_name == 'pull_request' && "
@@ -172,9 +224,12 @@ class CiCostPolicyTests(unittest.TestCase):
                     boundary = "semantic-kernel-boundary" if module == "flow-semantic-kernel" else "production-module-boundary"
                     self.assertTrue(any(fnmatch.fnmatch(f"{module}/build/reports/{boundary}/classpath.txt", pattern)
                                         for pattern in log_patterns), f"Missing classpath upload for {module}")
-                self.assertIn("ci-logs/kernel-isolation/**", uploads[0])
-                self.assertIn("ci-logs/compiler-isolation/**", uploads[0])
-                self.assertIn("ci-logs/adapter-isolation/**", uploads[0])
+                isolation_upload = named_step(job_block(self.ci, "module-isolation"), "Upload Isolation Evidence")
+                for path in ("kernel", "compiler", "adapter"):
+                    self.assertIn(f"ci-logs/{path}-isolation/**", isolation_upload)
+                self.assertIn("if: ${{ !cancelled() }}", isolation_upload)
+                self.assertIn("retention-days: 7", isolation_upload)
+                self.assertIn("if-no-files-found: error", isolation_upload)
 
     def test_offline_is_manual_only_and_has_one_revision_not_a_duplicate_matrix(self) -> None:
         triggers = top_block(self.offline, "on")
@@ -214,8 +269,9 @@ class CiWorkflowShellTests(unittest.TestCase):
         (self.root / "tools/verify_semantic_kernel_isolation.py").write_text(
             'import os, sys\nprint("Isolation fixture", sys.argv[1:])\nsys.exit(int(os.environ["TEST_BUILD_EXIT"]))\n')
 
-        shutil.copyfile(self.root / "tools/verify_semantic_kernel_isolation.py",
-                        self.root / "tools/verify_compiler_isolation.py")
+        for kind in ("compiler", "adapter"):
+            shutil.copyfile(self.root / "tools/verify_semantic_kernel_isolation.py",
+                            self.root / f"tools/verify_{kind}_isolation.py")
 
     def execute(self, step: str, **env: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", run_script(step)],
@@ -249,15 +305,39 @@ class CiWorkflowShellTests(unittest.TestCase):
             with self.subTest(ref=ref):
                 self.assertNotEqual(self.execute(guard, EXPECTED_SHA=ref).returncode, 0)
 
-    def test_all_six_expensive_steps_propagate_failure_through_tee(self) -> None:
+    def test_every_unsuccessful_prerequisite_fails_required_checks(self) -> None:
         for name in CI_JOBS:
+            guard = named_step(job_block(self.ci, name), "Require Successful Module Isolation")
+            self.assertEqual(0, self.execute(guard, SELECTION_RESULT="success", ISOLATION_RESULT="success").returncode)
+            for key in ("SELECTION_RESULT", "ISOLATION_RESULT"):
+                for state in ("failure", "cancelled", "skipped", "", "pending"):
+                    env = {"SELECTION_RESULT": "success", "ISOLATION_RESULT": "success", key: state}
+                    with self.subTest(job=name, prerequisite=key, state=state):
+                        self.assertNotEqual(0, self.execute(guard, **env).returncode)
+
+    def test_isolation_checkout_rejects_wrong_tree_before_recording_evidence(self) -> None:
+        guard = named_step(job_block(self.ci, "module-isolation"), "Verify Isolation Revision And Tree")
+        tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=self.root, text=True).strip()
+        env = {"EXPECTED_SHA": self.sha, "EXPECTED_TREE": tree, "COVERS": '["exact-head"]',
+               "GITHUB_RUN_ID": "17", "GITHUB_RUN_ATTEMPT": "1"}
+        self.assertEqual(0, self.execute(guard, **env).returncode)
+        for key in ("EXPECTED_SHA", "EXPECTED_TREE"):
+            for value in ("0" * 40, "", "HEAD", "$(touch injected)"):
+                receipt = self.root / "ci-logs/isolation-revision.txt"
+                receipt.unlink(missing_ok=True)
+                self.assertNotEqual(0, self.execute(guard, **{**env, key: value}).returncode)
+                self.assertFalse(receipt.exists())
+        self.assertFalse((self.root / "injected").exists())
+
+    def test_all_six_expensive_steps_propagate_failure_through_tee(self) -> None:
+        for name in CI_JOBS + ("module-isolation",):
             for step in build_steps(job_block(self.ci, name)):
                 with self.subTest(job=name, step=step.splitlines()[0]):
                     result = self.execute(step, TEST_BUILD_EXIT="37")
                     self.assertEqual(result.returncode, 37, result.stdout + result.stderr)
 
     def test_all_six_expensive_steps_accept_success(self) -> None:
-        for name in CI_JOBS:
+        for name in CI_JOBS + ("module-isolation",):
             for step in build_steps(job_block(self.ci, name)):
                 with self.subTest(job=name, step=step.splitlines()[0]):
                     result = self.execute(step, TEST_BUILD_EXIT="0")
