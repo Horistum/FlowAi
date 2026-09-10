@@ -1,15 +1,16 @@
 # Horistum language and contract integrity
 
-## Activation boundary
+## Accepted activation boundary
 
 This transition accepts the completed compiler-module boundary (AR-03/F-10) and
 independently activates language, contract, type and identity integrity (AR-04).
-It does not implement a parser correction, change schema acceptance, migrate
-semantic identities, or claim that any AR-04 finding is closed.
+That activation-only commit did not implement parser corrections. It is preserved as
+the parent of the AR-04A implementation, not rewritten or reused as its validation.
 
 AR-04A selects duplicate authored declarations and stable source diagnostics.
-Its implementation starts only after this activation's exact HEAD and synthetic
-merge candidate pass. The following bounded slices cover schema types/defaults,
+Its activation HEAD `7974f0a2480ccb0f15e3ae3eaecb837b8b1f4558` and synthetic
+merge `6e61c8d37c70440b5d4285e75c76bb7fc76d0413` passed Flow CI #3262
+(`34478865620`), each with 1,544 Kotlin tests and 242 conformance checks. The following bounded slices cover schema types/defaults,
 system identity, lossless semantic identity, strict public loaders and integrated
 acceptance. They belong to the existing eight-item recovery roadmap, not a second
 competing product roadmap.
@@ -64,3 +65,26 @@ to the PR only after execution; this document does not assert future CI success.
 No workflow file, check identity, timeout, draft gating, cancellation policy or
 cache policy changes. The relocated offline portability proof remains manual;
 all four physical module proofs and both complete final validation jobs remain.
+
+## Implemented source declaration boundary
+
+AR-04A now rejects duplicate action/approval arguments, safety declarations,
+transform filters and selected fields, aggregate fields, match singleton branches,
+global error handlers, system fields, input modifiers and decoded map keys before
+an AST can lose the first declaration. Both original positions and the owning
+path are reported through `FLOW_DUPLICATE_DECLARATION`. Interpolation diagnostics
+map back to the original source without moving valid AST locations. Additive
+blocks and ordered rule lists remain legal. See `docs/SOURCE_DECLARATION_INTEGRITY.md`.
+
+Four live behavioral checks cover rejected singletons/maps, preserved scopes and
+source rejection before module lookup. Product and installed-reference CLI tests
+cover invalid-input exit 2 and absence of partial planning artifacts. All prior
+activation regressions are retained against their exact historical work-package
+fixture, and implementation-phase regressions exercise the new live transition.
+
+The committed activation evidence is `.flow-agent/evidence/language-activation-acceptance.json`.
+Its bytes are fingerprinted in the same read used to parse them. The real accepted
+activation does not certify this later implementation; its own final HEAD/merge
+results are recorded in PR metadata after CI completes. Whole-AR-04 boundaries
+remain pending and the other five slices remain planned. F-07 awaits integrated
+finding acceptance; no unrelated finding is closed and AR-04B is not implemented.

@@ -17,6 +17,7 @@ org/flowlang/notes/CanonicalNotesPackageLoader.kt
 org/flowlang/notes/NotesPackageModel.kt
 org/flowlang/notes/NotesPackageValidation.kt
 org/flowlang/notes/StandardNotesPackageContracts.kt
+org/flowlang/parser/DeclarationOccurrences.kt
 org/flowlang/parser/ExpressionParser.kt
 org/flowlang/parser/FlowParser.kt
 org/flowlang/parser/Lexer.kt

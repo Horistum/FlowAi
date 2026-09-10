@@ -11,7 +11,7 @@ authorization:
   predecessor: "AR-03"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-04"
   mainAtActivation: "0a863eb10f60a64945f9657b0fcf090714ab543a"
-  rule: "AR-04A follows independently green activation commit 7974f0a and its synthetic merge in Flow CI #3262. Implementation has its own current-revision HEAD/merge acceptance; historical module or activation success cannot replace it."
+  rule: "This is a separate activation transition, not a language implementation. Its exact HEAD and synthetic merge must pass before AR-04A can start. Historical module-extraction receipts cannot stand in for that activation."
 
 verifiedBaseline:
   mergedPullRequest: 177
@@ -34,10 +34,7 @@ nextSlice: "AR-04B"
 implementationSlices:
   - id: "AR-04A"
     name: "Duplicate authored declarations and stable source diagnostics"
-    status: implemented
-    acceptance:
-      source: current-revision-ci
-      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+    status: selected
     ownsFindings: ["F-07"]
     invariant: "Every duplicate-bearing Flow grammar structure rejects the second authored declaration with a stable diagnostic, source location and owning path; no last-write-wins behavior is accepted."
     scope:
@@ -72,25 +69,7 @@ implementationSlices:
 
 lifecycle:
   activationBoundary:
-    status: passed
-    conclusion: success
-    workflowRunId: 34478865620
-    workflowRunNumber: 3262
-    exactHead: "7974f0a2480ccb0f15e3ae3eaecb837b8b1f4558"
-    syntheticMergeCandidate: "6e61c8d37c70440b5d4285e75c76bb7fc76d0413"
-    base: "0a863eb10f60a64945f9657b0fcf090714ab543a"
-    sourceTree: "fe6cd77670d5d3218dab8df3914de8e037bc0e31"
-    exactHeadJobId: 102879260761
-    mergeCandidateJobId: 102879260748
-    isolationJobId: 102876378879
-    kotlinTests: 1544
-    toolingTests: 151
-    conformanceChecks: 242
-    failures: 0
-    errors: 0
-    skipped: 0
-    evidence: ".flow-agent/evidence/language-activation-acceptance.json"
-    evidenceSha256: "81afd6901fc3de408a2d53e7bde8879a518b171f17fcf354043e1199dbde8758"
+    status: pending
   implementationBoundary:
     status: pending
   validationBoundary:
@@ -106,7 +85,7 @@ completionDecision:
   nextItemActivationState: not-activated
 
 forbiddenScope:
-  - "Only reject demonstrated duplicate authored meaning in AR-04A. Do not change accepted AST bytes, schema types, identity encoding or general public-loader policy."
+  - "Do not change parser acceptance, schema types, identity encoding or public-loader behavior in this activation-only transition."
   - "Do not reopen AR-02 or rewrite historical AR-03A/B/C/D receipts."
   - "Do not retire F-20 compatibility surfaces; their removal remains AR-07-owned."
   - "Do not activate AR-05 or resume EF-09."

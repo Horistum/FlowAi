@@ -105,6 +105,7 @@ org/flowlang/conformance/SemanticEquivalencePlanFactory.kt
 org/flowlang/conformance/SemanticEquivalenceRoadmapLifecycleAuthority.kt
 org/flowlang/conformance/SemanticImplementationObservationAuthority.kt
 org/flowlang/conformance/SemanticObservationAuthority.kt
+org/flowlang/conformance/SourceDeclarationConformanceChecks.kt
 org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
 org/flowlang/conformance/StandardEvidenceChecks.kt
 org/flowlang/conformance/StrictStandardBundleFixture.kt

@@ -1,0 +1,552 @@
+{
+  "schemaVersion": 1,
+  "repository": "milank78git/FlowAi",
+  "pullRequest": 178,
+  "verifiedAt": "2026-09-10T13:20:30.807847+00:00",
+  "verificationMethod": "Downloaded artifact-byte inspection; no fresh Kotlin compilation or CI rerun",
+  "status": "passed",
+  "head": "7974f0a2480ccb0f15e3ae3eaecb837b8b1f4558",
+  "syntheticMerge": "6e61c8d37c70440b5d4285e75c76bb7fc76d0413",
+  "base": "0a863eb10f60a64945f9657b0fcf090714ab543a",
+  "sourceTree": "fe6cd77670d5d3218dab8df3914de8e037bc0e31",
+  "workflowRunId": 34478865620,
+  "workflowRunNumber": 3262,
+  "jobs": {
+    "exactHead": 102879260761,
+    "mergeCandidate": 102879260748,
+    "physicalIsolation": 102876378879,
+    "toolingAndSelection": 102876309819
+  },
+  "artifacts": [
+    {
+      "file": "pr178-head-tests.zip",
+      "artifactId": 10153661210,
+      "sha256": "f1340b7f034717a1b8b585bcb184bcf33f8613b5fd5c702e08c500b383a5cef1",
+      "sizeBytes": 624853,
+      "zipIntegrity": "passed"
+    },
+    {
+      "file": "pr178-merge-tests.zip",
+      "artifactId": 10153493799,
+      "sha256": "ce7ff6287c80b3c52e8063ba12b5126a802090aee0415c549cda49c726902599",
+      "sizeBytes": 624254,
+      "zipIntegrity": "passed"
+    },
+    {
+      "file": "pr178-head-logs.zip",
+      "artifactId": 10153659968,
+      "sha256": "7c2f7ca153a5604984a1c3511024e233898282ebdefda4eff1ac4680bcf5b9b9",
+      "sizeBytes": 55568,
+      "zipIntegrity": "passed"
+    },
+    {
+      "file": "pr178-merge-logs.zip",
+      "artifactId": 10153492625,
+      "sha256": "4498c4e0c112674175834710643d5b9cd9f8f0c30120e7c19af602ad382cf2ae",
+      "sizeBytes": 55600,
+      "zipIntegrity": "passed"
+    },
+    {
+      "file": "pr178-isolation.zip",
+      "artifactId": 10153038764,
+      "sha256": "1e3609d2367bca373a6c650a136c44ff6359b22e3721fb618104eba235639923",
+      "sizeBytes": 68789,
+      "zipIntegrity": "passed"
+    },
+    {
+      "file": "main-merged-test-reports.zip",
+      "artifactId": 10112839320,
+      "sha256": "25c83442d170260dc0f969b9ee936e8d8e0c01cf4a3ba216f58047c068aeba36",
+      "sizeBytes": 621278,
+      "zipIntegrity": "passed"
+    },
+    {
+      "file": "main-merged-isolation.zip",
+      "artifactId": 10112179643,
+      "sha256": "a8e58567cd73baa5403eac2f9d42fd87857c4131d6fe313a8547b1a3bc0eb09b",
+      "sizeBytes": 68792,
+      "zipIntegrity": "passed"
+    }
+  ],
+  "junit": {
+    "baseline": {
+      "tests": 1512,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "reports": 273,
+      "uniqueIdentities": 1512,
+      "identitiesSha256": "c546b8eba622182098f7d0a87655054d5005837f2c30705dcc3bd1f1ad58c31c",
+      "byModule": {
+        "flow-adapter-contracts": 5,
+        "flow-adapter-evidence": 3,
+        "flow-adapter-github-actions": 3,
+        "flow-adapter-jenkins": 3,
+        "flow-adapter-runtime": 10,
+        "flow-adapter-tekton": 3,
+        "flow-cli": 15,
+        "flow-compiler": 15,
+        "flow-conformance-kit": 1413,
+        "flow-frontends": 9,
+        "flow-module-contracts": 5,
+        "flow-reference-distribution": 4,
+        "flow-semantic-kernel": 12,
+        "flow-standard-artifacts": 12
+      }
+    },
+    "exactHead": {
+      "tests": 1544,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "reports": 274,
+      "uniqueIdentities": 1544,
+      "identitiesSha256": "072f9edbcb90bb82590870fd4556f2bdaa5aec5216e13d164d2d241f92971ba6",
+      "byModule": {
+        "flow-adapter-contracts": 5,
+        "flow-adapter-evidence": 3,
+        "flow-adapter-github-actions": 3,
+        "flow-adapter-jenkins": 3,
+        "flow-adapter-runtime": 10,
+        "flow-adapter-tekton": 3,
+        "flow-cli": 15,
+        "flow-compiler": 15,
+        "flow-conformance-kit": 1445,
+        "flow-frontends": 9,
+        "flow-module-contracts": 5,
+        "flow-reference-distribution": 4,
+        "flow-semantic-kernel": 12,
+        "flow-standard-artifacts": 12
+      }
+    },
+    "mergeCandidate": {
+      "tests": 1544,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "reports": 274,
+      "uniqueIdentities": 1544,
+      "identitiesSha256": "072f9edbcb90bb82590870fd4556f2bdaa5aec5216e13d164d2d241f92971ba6",
+      "byModule": {
+        "flow-adapter-contracts": 5,
+        "flow-adapter-evidence": 3,
+        "flow-adapter-github-actions": 3,
+        "flow-adapter-jenkins": 3,
+        "flow-adapter-runtime": 10,
+        "flow-adapter-tekton": 3,
+        "flow-cli": 15,
+        "flow-compiler": 15,
+        "flow-conformance-kit": 1445,
+        "flow-frontends": 9,
+        "flow-module-contracts": 5,
+        "flow-reference-distribution": 4,
+        "flow-semantic-kernel": 12,
+        "flow-standard-artifacts": 12
+      }
+    },
+    "baselineIdentitiesPreserved": 1512,
+    "newTests": [
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "acceptanceCannotChangeTheTestIdentitySetOrHideFailedTests()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "activationCannotCloseItsOwnFindings()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "actualMergeCannotBeSubstitutedByOriginalHeadOrSyntheticMerge()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "compatibilityRetirementRemainsOutsideThisTransition()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "completionCannotReuseKernelOrActivationRun()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "currentTransitionAcceptsModulesAndSelectsOnlyDuplicateDeclarationWork()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "duplicateMissingOrReorderedSlicesCannotAuthorizeBroaderWork()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "evenRealPredecessorSuccessCannotBeBorrowedAsNewActivation()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "everyActivationBaselineFieldIsBoundToAcceptedActualMain()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "everyExtractionSliceMustBeCompleteBeforeMilestoneClosure()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "everyIntegratedReceiptFieldMustMatchIndependentEvidence()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "everyPostMergeReceiptFieldIsRequired()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "evidenceBytesAreBoundAtTheRealFileLoader()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "findingRegisterCannotDiscardReassignOrDuplicateFindings()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "historicalUnacceptedExtractionStillHasAPositiveAndNegativeBoundary()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "languageImplementationCannotStartInsideActivationTransition()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "laterMilestonesCannotBeActivatedByLanguageSelection()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "lifecycleCannotClaimFutureActivationOrImplementationSuccess()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "malformedOrDuplicateEvidenceCannotBecomeAnEmptyPassedReceipt()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "missingFailedOrPartialIsolationProofRejectsClosure()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "missingOrUnacceptedModulePredecessorCannotActivateLanguageWork()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "missingSuccessorWorkPackageCannotBorrowCompletedModules()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "moduleCompletionKeepsHistoricalSuccessorDecisionImmutable()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "pausedExternalFalsificationCannotBeResumedAsASideEffect()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "predecessorAndStrategicAuthorityAreExplicit()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "pushReceiptCannotPretendToContainASecondSyntheticMergeJob()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "receiptNumbersCannotBeCoercedFromStringsFractionsBooleansOrZero()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "recoveryPointersCannotRemainOnTheOldActiveWorkPackage()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "reviewedEvidenceMustExistAndMatchItsExactHash()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "successorWorkPackageCannotBeHiddenByChangingOnlyCurrentDecision()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "validLookingButUnrelatedCommitAndJobIdsDoNotProveIntegration()"
+      ],
+      [
+        "org.flowlang.conformance.LanguageContractIntegrityLifecycleTests",
+        "zeroOutcomeCountsAreRequiredRatherThanAssumedWhenMissing()"
+      ]
+    ]
+  },
+  "fullBuilds": {
+    "exactHead": {
+      "successful": true,
+      "testTasksActuallyExecuted": [
+        ":flow-adapter-contracts:test",
+        ":flow-adapter-evidence:test",
+        ":flow-adapter-github-actions:test",
+        ":flow-adapter-jenkins:test",
+        ":flow-adapter-runtime:test",
+        ":flow-adapter-tekton:test",
+        ":flow-cli:test",
+        ":flow-compiler:test",
+        ":flow-conformance-kit:test",
+        ":flow-frontends:test",
+        ":flow-module-contracts:test",
+        ":flow-reference-distribution:test",
+        ":flow-semantic-kernel:test",
+        ":flow-standard-artifacts:test"
+      ],
+      "conformance": {
+        "passed": 242,
+        "failed": 0
+      },
+      "buildLogSha256": "d21cb06083c5a7a38bb98f87fae3c710f52efde23f6c6e6eac0250c8bfb3d062",
+      "conformanceLogSha256": "f1d6ba0f84c7270d536b076b17c2957836432b49401f3e302ca9800820cf1d72"
+    },
+    "mergeCandidate": {
+      "successful": true,
+      "testTasksActuallyExecuted": [
+        ":flow-adapter-contracts:test",
+        ":flow-adapter-evidence:test",
+        ":flow-adapter-github-actions:test",
+        ":flow-adapter-jenkins:test",
+        ":flow-adapter-runtime:test",
+        ":flow-adapter-tekton:test",
+        ":flow-cli:test",
+        ":flow-compiler:test",
+        ":flow-conformance-kit:test",
+        ":flow-frontends:test",
+        ":flow-module-contracts:test",
+        ":flow-reference-distribution:test",
+        ":flow-semantic-kernel:test",
+        ":flow-standard-artifacts:test"
+      ],
+      "conformance": {
+        "passed": 242,
+        "failed": 0
+      },
+      "buildLogSha256": "0449307cd5a6db8a8fad6c0a617f0944bd97f00b68d4f711d40fcf41a40a1bb3",
+      "conformanceLogSha256": "027c24a1088aa9d2df18a93b59d2dd6e0949fee0a0e0c649537f86fc2e9da55d"
+    }
+  },
+  "sourceOwnership": {
+    "total": 372,
+    "product": 235,
+    "verification": 137,
+    "root": 0,
+    "productModuleCount": 13,
+    "productClasspathsExcludeConformanceKit": true,
+    "sameForHeadAndMerge": true
+  },
+  "isolation": {
+    "receipt": {
+      "revision": "7974f0a2480ccb0f15e3ae3eaecb837b8b1f4558",
+      "tree": "fe6cd77670d5d3218dab8df3914de8e037bc0e31",
+      "covers": "exact-head,merge-candidate",
+      "run": "34478865620",
+      "attempt": "1"
+    },
+    "proofs": {
+      "kernel": {
+        "status": "passed",
+        "junit": {
+          "tests": 12,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "reports": 2,
+          "uniqueIdentities": 12,
+          "identitiesSha256": "f5301c4ce316dcb3158f75f3f16ba658af75e6a38213872bf4bafb6ea31ee73a",
+          "byModule": {
+            "TEST-org.flowlang.kernel.KernelCompilerBoundaryTests.xml": 8,
+            "TEST-org.flowlang.kernel.KernelSemanticContractTests.xml": 4
+          }
+        },
+        "copiedInputDigests": 17,
+        "copiedInputsEqualAcceptedMain": true,
+        "proofSha256": "ffd36dda95ca5f5840f1319cacfd2dc199a4c82ab1134413283223a4b77e3215",
+        "command": [
+          "bash",
+          "gradlew",
+          "--no-daemon",
+          "--console=plain",
+          "--no-build-cache",
+          "-Pflow.isolatedBoundary=semantic-kernel",
+          ":flow-semantic-kernel:clean",
+          ":flow-semantic-kernel:test"
+        ]
+      },
+      "compiler": {
+        "status": "passed",
+        "junit": {
+          "tests": 20,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "reports": 3,
+          "uniqueIdentities": 20,
+          "identitiesSha256": "9b43da16c99094f5ce85959b048639f134a4f6bfa5ba54b555f1605adc324842",
+          "byModule": {
+            "flow-compiler": 15,
+            "flow-module-contracts": 5
+          }
+        },
+        "copiedInputDigests": 90,
+        "copiedInputsEqualAcceptedMain": true,
+        "proofSha256": "d15558bf37c77f90717a97c956e5d2e21ac036996c6893d9b9128ce52195a6c9",
+        "command": [
+          "bash",
+          "gradlew",
+          "--no-daemon",
+          "--console=plain",
+          "--no-build-cache",
+          "-Pflow.isolatedBoundary=compiler",
+          ":flow-semantic-kernel:clean",
+          ":flow-module-contracts:clean",
+          ":flow-compiler:clean",
+          ":flow-module-contracts:test",
+          ":flow-compiler:test"
+        ]
+      },
+      "adapter": {
+        "status": "passed",
+        "junit": {
+          "tests": 18,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "reports": 4,
+          "uniqueIdentities": 18,
+          "identitiesSha256": "2fb0b31ce85aa463e98d1f43b73e29b2aa57686df156546f2052186c1e91612a",
+          "byModule": {
+            "flow-adapter-contracts": 5,
+            "flow-adapter-evidence": 3,
+            "flow-adapter-runtime": 10
+          }
+        },
+        "copiedInputDigests": 208,
+        "copiedInputsEqualAcceptedMain": true,
+        "proofSha256": "5c25689e4f33a8a91ac2363db778f7bdffd5d734c2fe41d202885b717b6a5460",
+        "command": [
+          "bash",
+          "gradlew",
+          "--no-daemon",
+          "--console=plain",
+          "--no-build-cache",
+          "-Pflow.isolatedBoundary=adapter-evidence",
+          ":flow-semantic-kernel:clean",
+          ":flow-module-contracts:clean",
+          ":flow-compiler:clean",
+          ":flow-frontends:clean",
+          ":flow-adapter-contracts:clean",
+          ":flow-adapter-runtime:clean",
+          ":flow-adapter-evidence:clean",
+          ":flow-adapter-contracts:test",
+          ":flow-adapter-runtime:test",
+          ":flow-adapter-evidence:test"
+        ]
+      },
+      "product": {
+        "status": "passed",
+        "junit": {
+          "tests": 27,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "reports": 4,
+          "uniqueIdentities": 27,
+          "identitiesSha256": "aeb5b68e1b6f302b509aa0c6f0dadb11c26853361e37208121d0ece3147f1f2a",
+          "byModule": {
+            "flow-cli": 15,
+            "flow-standard-artifacts": 12
+          }
+        },
+        "copiedInputDigests": 276,
+        "copiedInputsEqualAcceptedMain": true,
+        "proofSha256": "652721da5ff0b7acbfa631aee5309ba9b187e5537c27fff99229832b341d00c3",
+        "command": [
+          "bash",
+          "gradlew",
+          "--no-daemon",
+          "--console=plain",
+          "--no-build-cache",
+          "-Pflow.isolatedBoundary=product",
+          ":flow-semantic-kernel:clean",
+          ":flow-module-contracts:clean",
+          ":flow-compiler:clean",
+          ":flow-frontends:clean",
+          ":flow-adapter-contracts:clean",
+          ":flow-adapter-runtime:clean",
+          ":flow-adapter-evidence:clean",
+          ":flow-adapter-jenkins:clean",
+          ":flow-adapter-github-actions:clean",
+          ":flow-adapter-tekton:clean",
+          ":flow-standard-artifacts:clean",
+          ":flow-reference-distribution:clean",
+          ":flow-cli:clean",
+          ":flow-standard-artifacts:test",
+          ":flow-cli:test",
+          ":flow-cli:installDist"
+        ],
+        "installedProduct": {
+          "jarsSha256": {
+            "annotations-13.0.jar": "ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478",
+            "flow-adapter-contracts-0.9.5.jar": "86634f2311ed7a3f9b99b8f3b2e46c8bb58f1b06979d6941dbe9427909da31e6",
+            "flow-adapter-evidence-0.9.5.jar": "34c7cace389cd879484277c9b07ef9c2e0ada032b1f32d6e7f38696031eaf840",
+            "flow-adapter-github-actions-0.9.5.jar": "48c449ac5007525239587043458de18641353404f9c7f2ffaf672fbbf250b81d",
+            "flow-adapter-jenkins-0.9.5.jar": "97cb74499443cc4ed004b0ab73bc692abcdcf122e5728ffb9b2501225eae0e16",
+            "flow-adapter-runtime-0.9.5.jar": "27539c8a620b608052c6aa048bf20381db41c6e0149f96f388b8ddde6fce5b9b",
+            "flow-adapter-tekton-0.9.5.jar": "81a9cae21d017e738ec62bbf05053df8d8f0dd8fdb26efc3e758c81418827cee",
+            "flow-cli-0.9.5.jar": "7210f353e443eac93837c84ba8b7eca999f5a713ec7eb6584c13ca8a2d2d8761",
+            "flow-compiler-0.9.5.jar": "f70bea98efbf31414d248c45510cc7d07a3585cdcc1c77e66f4660be3cedf0ee",
+            "flow-frontends-0.9.5.jar": "a43d1909707db7100a51359394d86eea14b10ed36b15e97c8a71bdb80c70e5ed",
+            "flow-module-contracts-0.9.5.jar": "6ca482de9d93bbf8bf6895869ff8314a30f2e6728ff8371ba3be3af6a9b44599",
+            "flow-reference-distribution-0.9.5.jar": "0f02d7fc9785fd6238b498d73cad768ddfbb745fdee07b6129c71ac75d4f9619",
+            "flow-semantic-kernel-0.9.5.jar": "32691a3de0cde9071a2f2229a119bd6bf83f3bd89c451774c595631496242c5d",
+            "flow-standard-artifacts-0.9.5.jar": "ef24855fe560be681f4331c81db13388e3f52e8f70a1217ba7d88fdde265f6e0",
+            "jackson-annotations-2.17.2.jar": "873a606e23507969f9bbbea939d5e19274a88775ea5a169ba7e2d795aa5156e1",
+            "jackson-core-2.17.2.jar": "721a189241dab0525d9e858e5cb604d3ecc0ede081e2de77d6f34fa5779a5b46",
+            "jackson-databind-2.17.2.jar": "c04993f33c0f845342653784f14f38373d005280e6359db5f808701cfae73c0c",
+            "jackson-dataformat-yaml-2.17.2.jar": "941bcd8b1381bb3b0d726fab41624fa8ece0ee7b6cf2860ad95e8157ce673376",
+            "jackson-module-kotlin-2.17.2.jar": "f96986fe7bc25559f938324065bd7a0e96c0d59acf17a48e26e517a9abd411e8",
+            "kotlin-reflect-1.7.22.jar": "4d4471d1cbc203d3f9e51d6123956dddbb96d5747f1aee02463c7b920feb2baf",
+            "kotlin-stdlib-2.4.10.jar": "4ec0293bc3751423b203f1d8493251c57c42e73eb6377a6b8560d0974ff0a6df",
+            "snakeyaml-2.2.jar": "1467931448a0817696ae2805b7b8b20bfb082652bf9c4efaed528930dc49389b"
+          },
+          "projectJarCount": 13,
+          "uniqueFlowClasses": 1321
+        },
+        "installedCli": {
+          "diagnostics": {
+            "exitCode": 0,
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdoutSha256": "9e20a2ba3902414f7005cebf47b298a3c6875e794167a23efa8ac15adb497bcc"
+          },
+          "help": {
+            "exitCode": 0,
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdoutSha256": "8b502ab0da089741174fcd15b269f3b2c0c2facfb764b79342e55be92b1fc5da"
+          },
+          "reject-verification": {
+            "exitCode": 2,
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdoutSha256": "a7a62162395f9065c2d585e43f60c7b75a32ab03016319d3b87be5fe5c684326"
+          }
+        },
+        "jarVerificationScope": "Compared recorded binary digests and build assertions; JAR binaries not separately downloaded in this completion"
+      }
+    }
+  },
+  "tooling": {
+    "tests": 151,
+    "failures": 0,
+    "evidenceKind": "Direct GitHub job log read",
+    "jobId": 102876309819,
+    "command": "python3 -m unittest discover -s tools/tests -p 'test_*.py'",
+    "observedSummary": "Ran 151 tests in 3.975s; OK",
+    "structureValidation": "passed",
+    "contextGeneration": "passed"
+  },
+  "newWorkflowRunsTriggeredByThisCompletion": 0,
+  "sourceCommitsCreatedByThisCompletion": 0,
+  "scope": "AR-03/F-10 closure and independently checked AR-04 activation; not AR-04A parser implementation"
+}

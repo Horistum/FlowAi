@@ -33,3 +33,7 @@ checks:
   - architecture-recovery.ar-02.integrated-target-gating-matrix
   - architecture-recovery.ar-02.integrated-public-compatibility-matrix
   - architecture-recovery.ar-02.finding-closure-evidence
+  - architecture-recovery.language.non-overwriting-singletons
+  - architecture-recovery.language.non-overwriting-map-keys
+  - architecture-recovery.language.declaration-scope-preservation
+  - architecture-recovery.language.early-source-rejection

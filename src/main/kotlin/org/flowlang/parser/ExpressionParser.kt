@@ -35,9 +35,12 @@ class ExpressionParser(
             require(inheritedNestingDepth <= MAX_EXPRESSION_NESTING_DEPTH) {
                 "Expression nesting depth must not exceed $MAX_EXPRESSION_NESTING_DEPTH."
             }
-            val ts = TokenStream(Lexer(source).tokenize())
+            val ts = TokenStream.fromSource(source)
             ts.skipNewlines()
-            return ExpressionParser(ts, scope, inheritedNestingDepth).parse()
+            val expression = ExpressionParser(ts, scope, inheritedNestingDepth).parse()
+            ts.skipNewlines()
+            ts.expect(TokenType.EOF, "end of expression")
+            return expression
         }
 
         internal const val MAX_EXPRESSION_NESTING_DEPTH = 128
@@ -136,7 +139,7 @@ class ExpressionParser(
         try {
             return when (t.type) {
                 TokenType.NUMBER -> { ts.next(); NumberLiteralNode(value = t.text.toDouble(), isInteger = t.isInteger) }
-                TokenType.STRING -> { ts.next(); parseStringContent(t.rawValue ?: "") }
+                TokenType.STRING -> { ts.next(); parseStringContent(t) }
                 TokenType.LBRACKET -> parseList()
                 TokenType.LBRACE -> parseMap()
                 TokenType.LPAREN -> { ts.next(); val e = parseOr(); ts.expect(TokenType.RPAREN, "')'"); e }
@@ -205,7 +208,7 @@ class ExpressionParser(
                 ts.check(TokenType.LBRACKET) -> {
                     flushCompactPath()
                     ts.next()
-                    val idx = parseOr()
+                    val idx = ts.atPath("${ts.diagnosticPath}.index") { parseOr() }
                     ts.expect(TokenType.RBRACKET, "']'")
                     expr = IndexExpressionNode(target = expr, index = idx, safe = false)
                 }
@@ -230,7 +233,7 @@ class ExpressionParser(
             while (true) {
                 // aggregate-style optional 'where' marker inside a call (docs/02 aggregate)
                 if (ts.checkWord("where")) ts.next()
-                args += parseOr()
+                args += ts.atPath("${ts.diagnosticPath}.args[${args.size}]") { parseOr() }
                 ts.skipSeparators()
                 if (ts.check(TokenType.RPAREN)) break
                 if (!ts.match(TokenType.COMMA)) ts.skipSeparators()
@@ -247,7 +250,7 @@ class ExpressionParser(
         val items = mutableListOf<ExpressionNode>()
         ts.skipSeparators()
         while (!ts.check(TokenType.RBRACKET)) {
-            items += parseOr()
+            items += ts.atPath("${ts.diagnosticPath}[${items.size}]") { parseOr() }
             ts.skipSeparators()
         }
         ts.expect(TokenType.RBRACKET, "']'")
@@ -257,14 +260,18 @@ class ExpressionParser(
     private fun parseMap(): ExpressionNode {
         ts.expect(TokenType.LBRACE, "'{'")
         val entries = LinkedHashMap<String, ExpressionNode>()
+        val declarations = DeclarationOccurrences()
         ts.skipSeparators()
         while (!ts.check(TokenType.RBRACE)) {
-            val key = when (ts.peek().type) {
+            val keyToken = ts.peek()
+            val key = when (keyToken.type) {
                 TokenType.IDENT, TokenType.STRING -> ts.next().let { it.rawValue ?: it.text }
                 else -> { val t = ts.peek(); throw ParseException("expected map key", t.line, t.column) }
             }
+            val path = declarationPath(ts.diagnosticPath, key)
+            declarations.declare(key, keyToken, path)
             ts.expect(TokenType.COLON, "':'")
-            entries[key] = parseOr()
+            entries[key] = ts.atPath(path) { parseOr() }
             ts.skipSeparators()
         }
         ts.expect(TokenType.RBRACE, "'}'")
@@ -273,7 +280,8 @@ class ExpressionParser(
 
     // --- template strings -----------------------------------------------------
 
-    private fun parseStringContent(raw: String): ExpressionNode {
+    private fun parseStringContent(token: Token): ExpressionNode {
+        val raw = token.rawValue.orEmpty()
         if (!containsInterpolation(raw)) return StringLiteralNode(value = raw.replace("\\$", "$"))
         val parts = mutableListOf<ExpressionNode>()
         val literal = StringBuilder()
@@ -289,7 +297,24 @@ class ExpressionParser(
                 flush()
                 val end = matchingBrace(raw, i + 1)
                 val inner = raw.substring(i + 2, end)
-                val expr = ExpressionParser.parseSource(inner, scope, inheritedNestingDepth + primaryNestingDepth)
+                val fragment = TokenStream.fromSource(inner)
+                val expr = try {
+                    fragment.atPath("${ts.diagnosticPath}.parts[${parts.size}]") {
+                        fragment.skipNewlines()
+                        val expression = ExpressionParser(fragment, scope, inheritedNestingDepth + primaryNestingDepth).parse()
+                        fragment.skipNewlines()
+                        fragment.expect(TokenType.EOF, "end of interpolation expression")
+                        expression
+                    }
+                } catch (duplicate: DuplicateDeclarationException) {
+                    // Map diagnostics only. Repositioning successful expressions would change
+                    // serialized AST bytes and canonical input fingerprints.
+                    val origins = ts.stringContentLocations(token)
+                    if (origins == null) throw duplicate
+                    throw duplicate.remapLocations { location ->
+                        origins[i + 2 + sourceOffset(inner, location)]
+                    }
+                }
                 if (expr is SecretRefNode) sensitive = true
                 parts += expr
                 i = end + 1
@@ -299,6 +324,12 @@ class ExpressionParser(
         }
         flush()
         return TemplateStringNode(parts = parts, sensitive = sensitive)
+    }
+
+    private fun sourceOffset(source: String, location: SourceLocation): Int {
+        var offset = 0
+        repeat(location.line - 1) { offset = source.indexOf('\n', offset) + 1 }
+        return offset + location.column - 1
     }
 
     private fun containsInterpolation(raw: String): Boolean {

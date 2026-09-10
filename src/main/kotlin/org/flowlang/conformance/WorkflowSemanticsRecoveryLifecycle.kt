@@ -14,7 +14,9 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val integrityWorkPackage: Map<String, Any?> = emptyMap(),
     val moduleAcceptanceEvidence: Map<String, Any?> = emptyMap(),
     val moduleAcceptanceSha256: String? = null,
-    val moduleBoundaryInventory: Map<String, Any?> = emptyMap()
+    val moduleBoundaryInventory: Map<String, Any?> = emptyMap(),
+    val languageActivationEvidence: Map<String, Any?> = emptyMap(),
+    val languageActivationSha256: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -29,6 +31,8 @@ internal object WorkflowSemanticsRecoveryLifecycle {
     fun load(root: File): WorkflowSemanticsRecoveryLifecycleSnapshot {
         // Parse and fingerprint the same bytes; a second file read could attest different content.
         val evidence = File(root, CompilerModuleAcceptance.EVIDENCE).takeIf { it.isFile }?.readBytes()
+        val activation = File(root, LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE)
+            .takeIf { it.isFile }?.readBytes()
         return WorkflowSemanticsRecoveryLifecycleSnapshot(
             FlowYaml.readMap(File(root, WORK_PACKAGE)),
             FlowYaml.readMap(File(root, ".flow-agent/roadmap-architecture-recovery.yaml")),
@@ -44,7 +48,13 @@ internal object WorkflowSemanticsRecoveryLifecycle {
                 MessageDigest.getInstance("SHA-256").digest(bytes)
                     .joinToString("") { "%02x".format(it.toInt() and 0xff) }
             },
-            optionalMap(root, CompilerModuleAcceptance.INVENTORY)
+            optionalMap(root, CompilerModuleAcceptance.INVENTORY),
+            activation?.let { FlowYaml.readMap(it.toString(Charsets.UTF_8), LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE) }
+                ?: emptyMap(),
+            activation?.let { bytes ->
+                MessageDigest.getInstance("SHA-256").digest(bytes)
+                    .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            }
         )
     }
 

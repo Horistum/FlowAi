@@ -8,7 +8,10 @@ import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
 class LanguageContractIntegrityLifecycleTests {
-    private val snapshot get() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private val snapshot get() = WorkflowSemanticsRecoveryLifecycle.load(File(".")).let { current ->
+        current.copy(integrityWorkPackage = org.flowlang.serialization.FlowYaml.readMap(
+            File("src/test/resources/lifecycle/language-integrity-activation.yaml")))
+    }
 
     @Test fun currentTransitionAcceptsModulesAndSelectsOnlyDuplicateDeclarationWork() {
         val current = snapshot
@@ -273,7 +276,7 @@ class LanguageContractIntegrityLifecycleTests {
         val root = createTempDirectory("language-lifecycle-").toFile()
         try {
             listOf(WorkflowSemanticsRecoveryLifecycle.WORK_PACKAGE, CompilerModuleExtractionLifecycle.WORK_PACKAGE,
-                LanguageContractIntegrityLifecycle.WORK_PACKAGE, CompilerModuleAcceptance.EVIDENCE, CompilerModuleAcceptance.INVENTORY,
+                LanguageContractIntegrityLifecycle.WORK_PACKAGE, LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE, CompilerModuleAcceptance.EVIDENCE, CompilerModuleAcceptance.INVENTORY,
                 ".flow-agent/roadmap-architecture-recovery.yaml", ".flow-agent/roadmap-post-toolchain.yaml",
                 ".flow-agent/release-state.yaml", ".flow-agent/roadmap.yaml").forEach { name ->
                 File(name).copyTo(File(root, name).also { it.parentFile.mkdirs() })
