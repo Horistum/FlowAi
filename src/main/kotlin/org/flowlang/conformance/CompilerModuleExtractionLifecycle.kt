@@ -6,9 +6,10 @@ internal object CompilerModuleExtractionLifecycle {
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
         val work = snapshot.successorWorkPackage
+        val complete = work["status"] == "complete"
         val authorization = section(work["authorization"])
-        if (work["version"] != "AR-03" || work["status"] != "active" ||
-            authorization["status"] != "active" || authorization["predecessor"] != "AR-02"
+        if (work["version"] != "AR-03" || work["status"] !in setOf("active", "complete") ||
+            authorization["status"] != (if (complete) "completed" else "active") || authorization["predecessor"] != "AR-02"
         ) add("AR-03 requires its own active work package and explicit completed AR-02 predecessor.")
         val main = authorization["mainAtActivation"] as? String
         if (main == null || !main.matches(Regex("[0-9a-f]{40}")) || main.toSet().size == 1 ||
@@ -17,27 +18,33 @@ internal object CompilerModuleExtractionLifecycle {
 
         val milestones = (snapshot.recovery["milestones"] as? List<*>).orEmpty().map(::section)
         val milestone = milestones.singleOrNull { it["id"] == "AR-03" }
-        if (milestone?.get("status") != "active" || milestone["workPackage"] != WORK_PACKAGE) {
+        if (milestone?.get("status") != (if (complete) "completed" else "active") || milestone["workPackage"] != WORK_PACKAGE) {
             add("AR-03 roadmap activation must identify its own work package.")
         }
-        if (milestones.singleOrNull { it["id"] == "AR-04" }?.get("status") != "planned") {
-            add("Kernel extraction cannot activate AR-04.")
+        if (!complete) {
+            if (milestones.singleOrNull { it["id"] == "AR-04" }?.get("status") != "planned") {
+                add("Kernel extraction cannot activate AR-04.")
+            }
+            val recoveryState = section(snapshot.postToolchain["recoveryRoadmap"])
+            if (recoveryState["activeItem"] != "AR-03" || recoveryState["nextItem"] != "AR-03" ||
+                recoveryState["activeWorkPackage"] != WORK_PACKAGE
+            ) add("Post-toolchain recovery state must identify the active AR-03 work package.")
+            val postDecision = section(snapshot.postToolchain["currentDecision"])
+            if (postDecision["pausedItem"] != "EF-09") add("AR-03 must retain paused EF-09 ownership.")
+            val release = section(snapshot.release["roadmapState"])
+            if (release["activeRecoveryWorkPackage"] != WORK_PACKAGE ||
+                release["completedRecoveryWorkPackage"] != WorkflowSemanticsRecoveryLifecycle.WORK_PACKAGE
+            ) add("Release metadata must distinguish the completed predecessor from active AR-03.")
         }
-        val recoveryState = section(snapshot.postToolchain["recoveryRoadmap"])
-        if (recoveryState["activeItem"] != "AR-03" || recoveryState["nextItem"] != "AR-03" ||
-            recoveryState["activeWorkPackage"] != WORK_PACKAGE
-        ) add("Post-toolchain recovery state must identify the active AR-03 work package.")
-        val postDecision = section(snapshot.postToolchain["currentDecision"])
-        if (postDecision["pausedItem"] != "EF-09") add("AR-03 must retain paused EF-09 ownership.")
-        val release = section(snapshot.release["roadmapState"])
-        if (release["activeRecoveryWorkPackage"] != WORK_PACKAGE ||
-            release["completedRecoveryWorkPackage"] != WorkflowSemanticsRecoveryLifecycle.WORK_PACKAGE
-        ) add("Release metadata must distinguish the completed predecessor from active AR-03.")
 
         val slices = (work["implementationSlices"] as? List<*>).orEmpty().map(::section)
         val selected = work["selectedSlice"]
         val orderedSlices = slices.map { it["id"] } == listOf("AR-03A", "AR-03B", "AR-03C", "AR-03D")
         val kernelStatus = slices.firstOrNull()?.get("status")
+        val acceptedSliceStatus = if (complete) "complete" else "implemented"
+        if (complete && (selected != "AR-03D" || slices.any { it["status"] != "complete" })) {
+            add("Full module completion requires all four completed slices and integrated AR-03D selection.")
+        }
         when (selected) {
             "AR-03A" -> if (!orderedSlices ||
                 kernelStatus !in setOf("selected", "active", "complete") ||
@@ -65,8 +72,9 @@ internal object CompilerModuleExtractionLifecycle {
                 val compiler = slices.getOrNull(1).orEmpty()
                 val adapter = slices.getOrNull(2).orEmpty()
                 val integrated = slices.getOrNull(3).orEmpty()
-                if (!orderedSlices || kernelStatus != "complete" || compiler["status"] != "implemented" ||
-                    adapter["status"] != "implemented" || integrated["status"] !in setOf("active", "implemented") ||
+                if (!orderedSlices || kernelStatus != "complete" || compiler["status"] != acceptedSliceStatus ||
+                    adapter["status"] != acceptedSliceStatus || integrated["status"] !in
+                    (if (complete) setOf("complete") else setOf("active", "implemented")) ||
                     !work.containsKey("nextSlice") || work["nextSlice"] != null
                 ) add("Integrated closure requires every implemented predecessor, explicit selection and no implicit next activation.")
                 addAll(compilerEvidenceErrors(compiler, main))
@@ -132,17 +140,21 @@ internal object CompilerModuleExtractionLifecycle {
                 }
             }
         }
-        if (section(lifecycle["completionBoundary"])["status"] != "pending") {
-            add("A candidate cannot manufacture the full AR-03 completionBoundary receipt before actual acceptance.")
+        if (complete) {
+            addAll(CompilerModuleAcceptance.errors(snapshot))
+        } else {
+            if (section(lifecycle["completionBoundary"])["status"] != "pending") {
+                add("A candidate cannot manufacture the full AR-03 completionBoundary receipt before actual acceptance.")
+            }
+            val completion = section(work["completionDecision"])
+            if (completion["status"] != "not-complete" || completion["closesFindings"] != emptyList<Any>() ||
+                (completion["remainingFindings"] as? List<*>)?.toSet() != setOf("F-10", "F-20")
+            ) add("A bounded module candidate cannot close the full module-extraction findings.")
+            if (selected == "AR-03D" && (completion["integratedReadiness"] != "current-revision-acceptance-required" ||
+                completion["candidateClosesFindings"] != listOf("F-10") ||
+                completion["containedFindings"] != listOf("F-20") || completion["deferredClosureOwner"] != "AR-07")
+            ) add("Integrated acceptance may close F-10 only; F-20 compatibility removal remains AR-07-owned.")
         }
-        val completion = section(work["completionDecision"])
-        if (completion["status"] != "not-complete" || completion["closesFindings"] != emptyList<Any>() ||
-            (completion["remainingFindings"] as? List<*>)?.toSet() != setOf("F-10", "F-20")
-        ) add("A bounded module candidate cannot close the full module-extraction findings.")
-        if (selected == "AR-03D" && (completion["integratedReadiness"] != "current-revision-acceptance-required" ||
-            completion["candidateClosesFindings"] != listOf("F-10") ||
-            completion["containedFindings"] != listOf("F-20") || completion["deferredClosureOwner"] != "AR-07")
-        ) add("Integrated acceptance may close F-10 only; F-20 compatibility removal remains AR-07-owned.")
     }
 
     private fun adapterEvidenceErrors(adapter: Map<*, *>, compiler: Map<*, *>, activationMain: String?): List<String> = buildList {

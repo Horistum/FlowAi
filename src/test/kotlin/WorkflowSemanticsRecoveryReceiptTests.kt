@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.flowlang.conformance.WorkflowSemanticsRecoveryLifecycle
 import org.flowlang.conformance.WorkflowSemanticsRecoveryLifecycleSnapshot
+import org.flowlang.conformance.moduleExtractionCandidateSnapshot
 
 class WorkflowSemanticsRecoveryReceiptTests {
     @Test
@@ -131,7 +132,7 @@ class WorkflowSemanticsRecoveryReceiptTests {
 
     /** Builds a coherent completed fixture without changing repository lifecycle files. */
     private fun completedSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-        val snapshot = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+        val snapshot = moduleExtractionCandidateSnapshot()
         val boundaries = WorkflowSemanticsRecoveryLifecycle.boundaryNames.mapIndexed { index, name ->
             name to (validReceipt() + mapOf(
                 "workflowRunId" to (100000L + index),

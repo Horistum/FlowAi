@@ -45,6 +45,7 @@ org/flowlang/conformance/CliReleaseHonestyChecks.kt
 org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt
 org/flowlang/conformance/ClosureEvidenceBoundaryChecks.kt
 org/flowlang/conformance/CompilerAxisConformanceChecks.kt
+org/flowlang/conformance/CompilerModuleAcceptance.kt
 org/flowlang/conformance/CompilerModuleExtractionLifecycle.kt
 org/flowlang/conformance/ConformanceCheckSupport.kt
 org/flowlang/conformance/ConformanceManifest.kt
@@ -73,6 +74,7 @@ org/flowlang/conformance/InfrastructureLifecycleBaseline.kt
 org/flowlang/conformance/InfrastructureLifecycleFalsification.kt
 org/flowlang/conformance/IntentSafetyChecks.kt
 org/flowlang/conformance/JsonSchemaSmokeValidator.kt
+org/flowlang/conformance/LanguageContractIntegrityLifecycle.kt
 org/flowlang/conformance/OperationalDomainAdequacyConformanceChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyContracts.kt
 org/flowlang/conformance/OperationalDomainAdequacyRoadmapLifecycleAuthority.kt
