@@ -133,9 +133,7 @@ class CanonicalModuleAuthorityTests {
         assertFailsWith<IllegalArgumentException> {
             SchemaField(type = SchemaType.NUMBER, defaultValue = "42")
         }
-        assertFailsWith<IllegalArgumentException> {
-            SchemaField(type = "invented")
-        }
+        assertEquals(null, SchemaType.fromWireName("invented"))
         assertEquals(SchemaType.BOOLEAN, SchemaField(type = SchemaType.BOOLEAN, defaultValue = true).type)
     }
 
