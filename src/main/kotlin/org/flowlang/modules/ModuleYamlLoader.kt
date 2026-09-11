@@ -110,10 +110,12 @@ object ModuleYamlLoader {
     }
 
     private fun parseSchema(node: Any?): Map<String, SchemaField> =
-        asMap(node).mapValues { (_, fieldBody) ->
+        asMap(node).mapValues { (fieldName, fieldBody) ->
             val field = asMap(fieldBody)
+            val wireType = field["type"]?.toString().orEmpty()
             SchemaField(
-                type = field["type"]?.toString().orEmpty(),
+                type = SchemaType.fromWireName(wireType)
+                    ?: error("Canonical module validation admitted unsupported schema type '$wireType' for '$fieldName'."),
                 required = boolOf(field["required"]),
                 sensitive = boolOf(field["sensitive"]),
                 defaultValue = field["default"]
