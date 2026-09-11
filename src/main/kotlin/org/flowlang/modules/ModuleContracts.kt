@@ -75,7 +75,7 @@ enum class SchemaType(val wireName: String) {
     override fun toString(): String = wireName
 
     companion object {
-        private val byWireName: Map<String, SchemaType> = values().associateBy(SchemaType::wireName)
+        private val byWireName: Map<String, SchemaType> = entries.associateBy { it.wireName }
         val supportedWireNames: Set<String> = byWireName.keys.toSortedSet()
 
         fun fromWireName(value: String): SchemaType? = byWireName[value]
@@ -103,23 +103,15 @@ enum class SchemaValueKind(val wireName: String) {
 object SchemaTypeCompatibility {
     fun accepts(type: SchemaType, kind: SchemaValueKind): Boolean = when (type) {
         SchemaType.ANY -> true
-        SchemaType.TEXT -> kind in setOf(SchemaValueKind.TEXT, SchemaValueKind.SECRET, SchemaValueKind.DYNAMIC)
-        SchemaType.NUMBER -> kind in setOf(SchemaValueKind.NUMBER, SchemaValueKind.DYNAMIC)
-        SchemaType.BOOLEAN -> kind in setOf(SchemaValueKind.BOOLEAN, SchemaValueKind.DYNAMIC)
-        SchemaType.LIST -> kind in setOf(SchemaValueKind.LIST, SchemaValueKind.DYNAMIC)
-        SchemaType.MAP -> kind in setOf(SchemaValueKind.MAP, SchemaValueKind.DYNAMIC)
-        SchemaType.SECRET -> kind == SchemaValueKind.SECRET
-        SchemaType.DURATION -> kind in setOf(SchemaValueKind.TEXT, SchemaValueKind.DYNAMIC)
-        SchemaType.ARTIFACT -> kind in setOf(SchemaValueKind.TEXT, SchemaValueKind.MAP, SchemaValueKind.DYNAMIC)
-        SchemaType.JSON, SchemaType.YAML -> kind in setOf(
-            SchemaValueKind.NULL,
-            SchemaValueKind.TEXT,
-            SchemaValueKind.NUMBER,
-            SchemaValueKind.BOOLEAN,
-            SchemaValueKind.LIST,
-            SchemaValueKind.MAP,
-            SchemaValueKind.DYNAMIC
-        )
+        SchemaType.TEXT -> kind == SchemaValueKind.TEXT || kind == SchemaValueKind.SECRET || kind == SchemaValueKind.DYNAMIC
+        SchemaType.NUMBER -> kind == SchemaValueKind.NUMBER || kind == SchemaValueKind.DYNAMIC
+        SchemaType.BOOLEAN -> kind == SchemaValueKind.BOOLEAN || kind == SchemaValueKind.DYNAMIC
+        SchemaType.LIST -> kind == SchemaValueKind.LIST || kind == SchemaValueKind.DYNAMIC
+        SchemaType.MAP -> kind == SchemaValueKind.MAP || kind == SchemaValueKind.DYNAMIC
+        SchemaType.SECRET -> kind == SchemaValueKind.SECRET || kind == SchemaValueKind.DYNAMIC
+        SchemaType.DURATION -> kind == SchemaValueKind.TEXT || kind == SchemaValueKind.DYNAMIC
+        SchemaType.ARTIFACT -> kind == SchemaValueKind.TEXT || kind == SchemaValueKind.MAP || kind == SchemaValueKind.DYNAMIC
+        SchemaType.JSON, SchemaType.YAML -> kind != SchemaValueKind.SECRET
     }
 
     fun defaultValidationError(type: SchemaType, value: Any?): String? {
@@ -156,21 +148,6 @@ data class SchemaField(
     val sensitive: Boolean = false,
     val defaultValue: Any? = null
 ) {
-    constructor(
-        type: String,
-        required: Boolean = false,
-        sensitive: Boolean = false,
-        defaultValue: Any? = null
-    ) : this(
-        type = SchemaType.fromWireName(type)
-            ?: throw IllegalArgumentException(
-                "Unsupported module schema type '$type'. Supported types: ${SchemaType.supportedWireNames.joinToString()}."
-            ),
-        required = required,
-        sensitive = sensitive,
-        defaultValue = defaultValue
-    )
-
     init {
         if (defaultValue != null) {
             val validationError = SchemaTypeCompatibility.defaultValidationError(type, defaultValue)
