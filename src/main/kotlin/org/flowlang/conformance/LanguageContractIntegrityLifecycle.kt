@@ -112,9 +112,9 @@ internal object LanguageContractIntegrityLifecycle {
 
     private fun validateAr04aPhase(
         snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot,
-        work: Map<String, Any?>,
-        slices: List<Map<String, Any?>>,
-        lifecycle: Map<String, Any?>,
+        work: Map<*, *>,
+        slices: List<Map<*, *>>,
+        lifecycle: Map<*, *>,
         boundaries: List<String>,
         errors: MutableList<String>
     ) {
@@ -137,9 +137,9 @@ internal object LanguageContractIntegrityLifecycle {
 
     private fun validateAr04bPhase(
         snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot,
-        work: Map<String, Any?>,
-        slices: List<Map<String, Any?>>,
-        lifecycle: Map<String, Any?>,
+        work: Map<*, *>,
+        slices: List<Map<*, *>>,
+        lifecycle: Map<*, *>,
         boundaries: List<String>,
         errors: MutableList<String>
     ) {
