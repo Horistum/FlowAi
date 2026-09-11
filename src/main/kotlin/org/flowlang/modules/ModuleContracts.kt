@@ -156,6 +156,21 @@ data class SchemaField(
     val sensitive: Boolean = false,
     val defaultValue: Any? = null
 ) {
+    constructor(
+        type: String,
+        required: Boolean = false,
+        sensitive: Boolean = false,
+        defaultValue: Any? = null
+    ) : this(
+        type = SchemaType.fromWireName(type)
+            ?: throw IllegalArgumentException(
+                "Unsupported module schema type '$type'. Supported types: ${SchemaType.supportedWireNames.joinToString()}."
+            ),
+        required = required,
+        sensitive = sensitive,
+        defaultValue = defaultValue
+    )
+
     init {
         if (defaultValue != null) {
             val validationError = SchemaTypeCompatibility.defaultValidationError(type, defaultValue)
