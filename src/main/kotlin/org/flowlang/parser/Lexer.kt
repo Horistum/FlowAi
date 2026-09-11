@@ -1,5 +1,7 @@
 package org.flowlang.parser
 
+import org.flowlang.ast.SourceLocation
+
 /**
  * Flow lexer.
  *
@@ -16,6 +18,8 @@ class Lexer(private val src: String) {
     private var line = 1
     private var col = 1
     private val tokens = mutableListOf<Token>()
+    // Diagnostic provenance only: valid expression tokens and AST positions are not relocated.
+    private val decodedStringLocations = linkedMapOf<Token, List<SourceLocation>>()
 
     fun tokenize(): List<Token> {
         while (pos < src.length) {
@@ -53,7 +57,7 @@ class Lexer(private val src: String) {
         }
         // collapse: drop trailing newline noise then EOF
         add(TokenType.EOF, "")
-        return tokens
+        return SourceTokenList(tokens.toList(), decodedStringLocations.toMap())
     }
 
     // --- helpers --------------------------------------------------------------
@@ -119,28 +123,38 @@ class Lexer(private val src: String) {
         val startLine = line; val startCol = col
         advance() // opening quote
         val sb = StringBuilder()
+        val locationRuns = mutableListOf<Pair<Int, Int>>()
+        fun appendDecoded(text: String) {
+            text.forEach { character ->
+                val shift = col - sb.length
+                if (locationRuns.lastOrNull()?.second != shift) locationRuns += sb.length to shift
+                sb.append(character)
+            }
+        }
         while (pos < src.length && src[pos] != quote) {
             val ch = src[pos]
             if (ch == '\\') {
                 val next = peek(1)
                 when (next) {
-                    quote -> { sb.append(quote); advance(2) }
-                    '"' -> { sb.append('"'); advance(2) }
-                    '\\' -> { sb.append('\\'); advance(2) }
-                    'n' -> { sb.append('\n'); advance(2) }
-                    't' -> { sb.append('\t'); advance(2) }
-                    'r' -> { sb.append('\r'); advance(2) }
-                    '$' -> { sb.append("\\$"); advance(2) }   // escaped interpolation marker
-                    else -> { sb.append('\\'); advance() }
+                    quote -> { appendDecoded(quote.toString()); advance(2) }
+                    '"' -> { appendDecoded("\""); advance(2) }
+                    '\\' -> { appendDecoded("\\"); advance(2) }
+                    'n' -> { appendDecoded("\n"); advance(2) }
+                    't' -> { appendDecoded("\t"); advance(2) }
+                    'r' -> { appendDecoded("\r"); advance(2) }
+                    '$' -> { appendDecoded("\\$"); advance(2) }   // escaped interpolation marker
+                    else -> { appendDecoded("\\"); advance() }
                 }
             } else if (ch == '\n') {
                 throw LexException("unterminated string literal", startLine, startCol)
             } else {
-                sb.append(ch); advance()
+                appendDecoded(ch.toString()); advance()
             }
         }
         if (pos >= src.length) throw LexException("unterminated string literal", startLine, startCol)
         advance() // closing quote
-        tokens += Token(TokenType.STRING, sb.toString(), startLine, startCol, rawValue = sb.toString())
+        val token = Token(TokenType.STRING, sb.toString(), startLine, startCol, rawValue = sb.toString())
+        tokens += token
+        decodedStringLocations[token] = DecodedStringLocations(startLine, sb.length, locationRuns.toList())
     }
 }

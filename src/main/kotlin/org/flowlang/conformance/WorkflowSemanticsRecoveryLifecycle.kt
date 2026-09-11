@@ -1,6 +1,7 @@
 package org.flowlang.conformance
 
 import java.io.File
+import java.security.MessageDigest
 import org.flowlang.serialization.FlowYaml
 
 internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
@@ -9,7 +10,13 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val postToolchain: Map<String, Any?>,
     val release: Map<String, Any?>,
     val global: Map<String, Any?>,
-    val successorWorkPackage: Map<String, Any?> = emptyMap()
+    val successorWorkPackage: Map<String, Any?> = emptyMap(),
+    val integrityWorkPackage: Map<String, Any?> = emptyMap(),
+    val moduleAcceptanceEvidence: Map<String, Any?> = emptyMap(),
+    val moduleAcceptanceSha256: String? = null,
+    val moduleBoundaryInventory: Map<String, Any?> = emptyMap(),
+    val languageActivationEvidence: Map<String, Any?> = emptyMap(),
+    val languageActivationSha256: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -21,16 +28,38 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         "exactHead", "syntheticMergeCandidate", "exactHeadJobId", "mergeCandidateJobId"
     )
 
-    fun load(root: File): WorkflowSemanticsRecoveryLifecycleSnapshot = WorkflowSemanticsRecoveryLifecycleSnapshot(
-        FlowYaml.readMap(File(root, WORK_PACKAGE)),
-        FlowYaml.readMap(File(root, ".flow-agent/roadmap-architecture-recovery.yaml")),
-        FlowYaml.readMap(File(root, ".flow-agent/roadmap-post-toolchain.yaml")),
-        FlowYaml.readMap(File(root, ".flow-agent/release-state.yaml")),
-        FlowYaml.readMap(File(root, ".flow-agent/roadmap.yaml")),
-        File(root, CompilerModuleExtractionLifecycle.WORK_PACKAGE).let { file ->
-            if (file.isFile) FlowYaml.readMap(file) else emptyMap()
-        }
-    )
+    fun load(root: File): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        // Parse and fingerprint the same bytes; a second file read could attest different content.
+        val evidence = File(root, CompilerModuleAcceptance.EVIDENCE).takeIf { it.isFile }?.readBytes()
+        val activation = File(root, LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE)
+            .takeIf { it.isFile }?.readBytes()
+        return WorkflowSemanticsRecoveryLifecycleSnapshot(
+            FlowYaml.readMap(File(root, WORK_PACKAGE)),
+            FlowYaml.readMap(File(root, ".flow-agent/roadmap-architecture-recovery.yaml")),
+            FlowYaml.readMap(File(root, ".flow-agent/roadmap-post-toolchain.yaml")),
+            FlowYaml.readMap(File(root, ".flow-agent/release-state.yaml")),
+            FlowYaml.readMap(File(root, ".flow-agent/roadmap.yaml")),
+            File(root, CompilerModuleExtractionLifecycle.WORK_PACKAGE).let { file ->
+                if (file.isFile) FlowYaml.readMap(file) else emptyMap()
+            },
+            optionalMap(root, LanguageContractIntegrityLifecycle.WORK_PACKAGE),
+            evidence?.let { FlowYaml.readMap(it.toString(Charsets.UTF_8), CompilerModuleAcceptance.EVIDENCE) } ?: emptyMap(),
+            evidence?.let { bytes ->
+                MessageDigest.getInstance("SHA-256").digest(bytes)
+                    .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            },
+            optionalMap(root, CompilerModuleAcceptance.INVENTORY),
+            activation?.let { FlowYaml.readMap(it.toString(Charsets.UTF_8), LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE) }
+                ?: emptyMap(),
+            activation?.let { bytes ->
+                MessageDigest.getInstance("SHA-256").digest(bytes)
+                    .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            }
+        )
+    }
+
+    private fun optionalMap(root: File, path: String): Map<String, Any?> =
+        File(root, path).let { if (it.isFile) FlowYaml.readMap(it) else emptyMap() }
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
         val work = snapshot.workPackage
@@ -49,19 +78,32 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             add("AR-02 roadmap milestone disagrees with its lifecycle evidence.")
         }
         val decision = map(snapshot.recovery["currentDecision"])
-        val successorActivated = complete && decision["workPackage"] == CompilerModuleExtractionLifecycle.WORK_PACKAGE
+        val integritySelected = complete && decision["workPackage"] == LanguageContractIntegrityLifecycle.WORK_PACKAGE
+        val successorActivated = complete && (integritySelected ||
+            decision["workPackage"] == CompilerModuleExtractionLifecycle.WORK_PACKAGE)
+        val moduleComplete = successorActivated && snapshot.successorWorkPackage["status"] == "complete"
         if (successorActivated) {
             addAll(CompilerModuleExtractionLifecycle.errors(snapshot))
         } else if (ar03?.get("status") != "planned") {
             add("AR-03 must remain planned unless its own activation transition authorizes it.")
         }
+        if (integritySelected) {
+            addAll(LanguageContractIntegrityLifecycle.errors(snapshot))
+        } else if (milestones.singleOrNull { it["id"] == "AR-04" }?.get("status") != "planned") {
+            add("AR-04 must remain planned unless its own activation transition authorizes it.")
+        }
         val post = map(snapshot.postToolchain["currentDecision"])
         val recoveryState = map(snapshot.postToolchain["recoveryRoadmap"])
         val release = map(snapshot.release["roadmapState"])
-        val expectedPrevious = if (complete) "AR-02" else "AR-01"
-        val expectedNext = if (complete) "AR-03" else "AR-02"
-        val expectedActivation = if (complete && !successorActivated) "not-activated" else "active"
-        val expectedWorkPackage = if (successorActivated) CompilerModuleExtractionLifecycle.WORK_PACKAGE else WORK_PACKAGE
+        val expectedPrevious = if (moduleComplete) "AR-03" else if (complete) "AR-02" else "AR-01"
+        val expectedNext = if (moduleComplete) "AR-04" else if (complete) "AR-03" else "AR-02"
+        val expectedActivation = if ((moduleComplete && !integritySelected) ||
+            (complete && !successorActivated)) "not-activated" else "active"
+        val expectedWorkPackage = when {
+            integritySelected -> LanguageContractIntegrityLifecycle.WORK_PACKAGE
+            successorActivated -> CompilerModuleExtractionLifecycle.WORK_PACKAGE
+            else -> WORK_PACKAGE
+        }
         if (decision["previousCompletedItem"] != expectedPrevious || decision["nextItem"] != expectedNext ||
             decision["activationState"] != expectedActivation || decision["workPackage"] != expectedWorkPackage
         ) add("Recovery currentDecision contradicts the AR-02 lifecycle.")
@@ -100,7 +142,7 @@ internal object WorkflowSemanticsRecoveryLifecycle {
                 completion["nextItem"] != "AR-03" || completion["nextItemActivationState"] != "not-activated" ||
                 (completion["closesFindings"] as? List<*>)?.toSet() != setOf("F-02", "F-08", "F-15")
             ) add("AR-02 completion decision lacks exact closure and successor boundaries.")
-            if (release["completedRecoveryItem"] != "AR-02" || release["nextRecoveryItem"] != "AR-03" ||
+            if (release["completedRecoveryItem"] != expectedPrevious || release["nextRecoveryItem"] != expectedNext ||
                 release["nextRecoveryActivationState"] != expectedActivation
             ) add("Release recovery succession disagrees with completed AR-02.")
         } else {

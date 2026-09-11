@@ -33,4 +33,4 @@ data class Token(
 }
 
 class LexException(message: String, val line: Int, val column: Int) :
-    RuntimeException("Lex error at $line:$column: $message")
+    IllegalArgumentException("Lex error at $line:$column: $message")

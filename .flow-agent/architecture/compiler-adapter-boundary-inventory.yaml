@@ -220,14 +220,14 @@ reviewedRetention:
     source-only parser convenience migration is inventoried separately.
   reviewTarget: AR-07
 integratedDecision:
-  status: implemented-awaiting-final-ci
-  candidateClosesFindings:
+  status: accepted-on-merged-main
+  closesFindings:
   - F-10
   containedFindings:
   - F-20
   deferredClosureOwner: AR-07
   nextItem: AR-04
   nextItemActivation: not-activated
-  rule: All four source-deletion directions and both complete final CI candidates must pass. Compatibility containment
-    is not compatibility retirement. Final accepted SHA/run evidence is recorded in the PR without a self-referential
-    future receipt in source.
+  acceptanceEvidence: .flow-agent/evidence/compiler-module-acceptance.json
+  rule: Accepted PR and actual merged-main evidence closes F-10 after all four physical proofs and complete tests.
+    Compatibility containment is not retirement. The next activation belongs to its own work package.

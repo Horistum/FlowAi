@@ -1,0 +1,102 @@
+version: "AR-04"
+name: "Language, Contract, Type and Identity Integrity"
+type: "architecture-recovery-language-integrity"
+status: active
+stream: "architecture-recovery"
+
+objective: "Preserve authored meaning at language and contract boundaries through explicit duplicate rejection, closed schema types, deterministic system identity, collision-safe semantic identity and strict public loaders."
+
+authorization:
+  status: active
+  predecessor: "AR-03"
+  strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-04"
+  mainAtActivation: "0a863eb10f60a64945f9657b0fcf090714ab543a"
+  rule: "This is a separate activation transition, not a language implementation. Its exact HEAD and synthetic merge must pass before AR-04A can start. Historical module-extraction receipts cannot stand in for that activation."
+
+verifiedBaseline:
+  mergedPullRequest: 177
+  mainCommit: "0a863eb10f60a64945f9657b0fcf090714ab543a"
+  sourceTree: "084e5cc4229f60bad01e5c036f249dad50816810"
+  workflowRunId: 34370712591
+  workflowRunNumber: 3261
+  exactHeadJobId: 102534450799
+  isolationJobId: 102530970478
+  kotlinTests: 1512
+  toolingTests: 151
+  conformanceChecks: 242
+  failures: 0
+  errors: 0
+  skipped: 0
+  evidence: ".flow-agent/evidence/compiler-module-acceptance.json"
+
+selectedSlice: "AR-04A"
+nextSlice: "AR-04B"
+implementationSlices:
+  - id: "AR-04A"
+    name: "Duplicate authored declarations and stable source diagnostics"
+    status: selected
+    ownsFindings: ["F-07"]
+    invariant: "Every duplicate-bearing Flow grammar structure rejects the second authored declaration with a stable diagnostic, source location and owning path; no last-write-wins behavior is accepted."
+    scope:
+      - "Audit action arguments, safety clauses, transform/select fields, aggregate fields, match defaults/error cases and global error handlers against actual parser behavior."
+      - "Preserve existing strict rejection and implement only demonstrated silent-loss cases."
+      - "Exercise every public Flow frontend, positive non-duplicate counterparts and nested same-name declarations in distinct scopes."
+  - id: "AR-04B"
+    name: "Closed schema types and validated descriptor defaults"
+    status: planned
+    ownsFindings: ["F-12"]
+    invariant: "Module schema types belong to one closed model; defaults and authored values pass the same type checker before planning."
+  - id: "AR-04C"
+    name: "Deterministic system-contract identity"
+    status: planned
+    ownsFindings: ["F-13"]
+    invariant: "Duplicate system identities fail or use an explicitly version-qualified contract; neither filesystem nor registry ordering selects meaning."
+  - id: "AR-04D"
+    name: "Lossless semantic identities and collision rejection"
+    status: planned
+    ownsFindings: ["F-14"]
+    invariant: "Typed semantic identity, lossless wire encoding and display names remain distinct; collisions fail before AST construction and target-safe derivation."
+  - id: "AR-04E"
+    name: "Strict public contract loaders"
+    status: planned
+    ownsFindings: ["F-21"]
+    invariant: "Every public YAML/JSON contract entry point follows one explicit duplicate, unknown-field and complexity policy; permissive parsing cannot be selected accidentally."
+  - id: "AR-04F"
+    name: "Integrated language integrity acceptance"
+    status: planned
+    ownsFindings: []
+    invariant: "All five finding families have positive and mutation evidence across public entry points; no unrelated finding, support level or package version is closed or promoted."
+
+lifecycle:
+  activationBoundary:
+    status: pending
+  implementationBoundary:
+    status: pending
+  validationBoundary:
+    status: pending
+  completionBoundary:
+    status: pending
+
+completionDecision:
+  status: not-complete
+  closesFindings: []
+  remainingFindings: ["F-07", "F-12", "F-13", "F-14", "F-21"]
+  nextItem: "AR-05"
+  nextItemActivationState: not-activated
+
+forbiddenScope:
+  - "Do not change parser acceptance, schema types, identity encoding or public-loader behavior in this activation-only transition."
+  - "Do not reopen AR-02 or rewrite historical AR-03A/B/C/D receipts."
+  - "Do not retire F-20 compatibility surfaces; their removal remains AR-07-owned."
+  - "Do not activate AR-05 or resume EF-09."
+  - "Do not rename existing Flow technical contracts for the Horistum product brand."
+  - "Do not change public versions, canonical graph semantics, target support or CI check identities."
+
+validationPlan:
+  - "Independently verify accepted PR #177 and actual merged-main receipts and complete test identity sets."
+  - "Exercise the live lifecycle gate with accepted and rejected closure/activation snapshots, including missing evidence, reused receipts, numeric coercion, premature implementation and finding-ownership drift."
+  - "Run complete local Kotlin tests and installed conformance using JDK 25 and resolved offline Gradle inputs."
+  - "Preserve every accepted predecessor regression identity."
+  - "Run one final Flow CI with exact-head and synthetic-merge checks and the existing physical module proofs. Do not auto-run offline portability or introduce a new validation matrix."
+
+report: ".flow-agent/reports/language-contract-type-identity-integrity.md"

@@ -1,0 +1,591 @@
+{
+  "schemaVersion": 1,
+  "repository": "milank78git/FlowAi",
+  "pullRequest": 177,
+  "verifiedAt": "2026-09-10T03:16:02.716703+00:00",
+  "status": "implementation-acceptance-verified-on-actual-merged-main",
+  "revisions": {
+    "exactPrHead": {
+      "commit": "a9e63289bef71293d59cdc4b9a48b47cd8aff9ed",
+      "workflowRunId": 34358811924,
+      "workflowRunNumber": 3259,
+      "jobId": 102492957367,
+      "jobConclusion": "success",
+      "junit": {
+        "tests": 1512,
+        "uniqueIdentities": 1512,
+        "reports": 273,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "identitiesSha256": "c546b8eba622182098f7d0a87655054d5005837f2c30705dcc3bd1f1ad58c31c",
+        "byModule": {
+          "flow-adapter-contracts": 5,
+          "flow-adapter-evidence": 3,
+          "flow-adapter-github-actions": 3,
+          "flow-adapter-jenkins": 3,
+          "flow-adapter-runtime": 10,
+          "flow-adapter-tekton": 3,
+          "flow-cli": 15,
+          "flow-compiler": 15,
+          "flow-conformance-kit": 1413,
+          "flow-frontends": 9,
+          "flow-module-contracts": 5,
+          "flow-reference-distribution": 4,
+          "flow-semantic-kernel": 12,
+          "flow-standard-artifacts": 12
+        }
+      },
+      "conformance": {
+        "passed": 242,
+        "failed": 0
+      },
+      "testTasksExecutedWithoutReusingTestResults": [
+        ":flow-adapter-contracts:test",
+        ":flow-adapter-evidence:test",
+        ":flow-adapter-github-actions:test",
+        ":flow-adapter-jenkins:test",
+        ":flow-adapter-runtime:test",
+        ":flow-adapter-tekton:test",
+        ":flow-cli:test",
+        ":flow-compiler:test",
+        ":flow-conformance-kit:test",
+        ":flow-frontends:test",
+        ":flow-module-contracts:test",
+        ":flow-reference-distribution:test",
+        ":flow-semantic-kernel:test",
+        ":flow-standard-artifacts:test"
+      ],
+      "sourceOwnership": {
+        "total": 370,
+        "product": 235,
+        "verification": 135,
+        "root": 0,
+        "productModules": 13,
+        "totalModules": 14
+      }
+    },
+    "originalSyntheticMerge": {
+      "commit": "298a0409a8c0b2570d9a54573b973b7c6172abed",
+      "workflowRunId": 34358811924,
+      "workflowRunNumber": 3259,
+      "jobId": 102492957381,
+      "jobConclusion": "success",
+      "junit": {
+        "tests": 1512,
+        "uniqueIdentities": 1512,
+        "reports": 273,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "identitiesSha256": "c546b8eba622182098f7d0a87655054d5005837f2c30705dcc3bd1f1ad58c31c",
+        "byModule": {
+          "flow-adapter-contracts": 5,
+          "flow-adapter-evidence": 3,
+          "flow-adapter-github-actions": 3,
+          "flow-adapter-jenkins": 3,
+          "flow-adapter-runtime": 10,
+          "flow-adapter-tekton": 3,
+          "flow-cli": 15,
+          "flow-compiler": 15,
+          "flow-conformance-kit": 1413,
+          "flow-frontends": 9,
+          "flow-module-contracts": 5,
+          "flow-reference-distribution": 4,
+          "flow-semantic-kernel": 12,
+          "flow-standard-artifacts": 12
+        }
+      },
+      "conformance": {
+        "passed": 242,
+        "failed": 0
+      },
+      "testTasksExecutedWithoutReusingTestResults": [
+        ":flow-adapter-contracts:test",
+        ":flow-adapter-evidence:test",
+        ":flow-adapter-github-actions:test",
+        ":flow-adapter-jenkins:test",
+        ":flow-adapter-runtime:test",
+        ":flow-adapter-tekton:test",
+        ":flow-cli:test",
+        ":flow-compiler:test",
+        ":flow-conformance-kit:test",
+        ":flow-frontends:test",
+        ":flow-module-contracts:test",
+        ":flow-reference-distribution:test",
+        ":flow-semantic-kernel:test",
+        ":flow-standard-artifacts:test"
+      ],
+      "sourceOwnership": {
+        "total": 370,
+        "product": 235,
+        "verification": 135,
+        "root": 0,
+        "productModules": 13,
+        "totalModules": 14
+      }
+    },
+    "actualMergedMain": {
+      "commit": "0a863eb10f60a64945f9657b0fcf090714ab543a",
+      "workflowRunId": 34370712591,
+      "workflowRunNumber": 3261,
+      "jobId": 102534450799,
+      "jobConclusion": "success",
+      "junit": {
+        "tests": 1512,
+        "uniqueIdentities": 1512,
+        "reports": 273,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "identitiesSha256": "c546b8eba622182098f7d0a87655054d5005837f2c30705dcc3bd1f1ad58c31c",
+        "byModule": {
+          "flow-adapter-contracts": 5,
+          "flow-adapter-evidence": 3,
+          "flow-adapter-github-actions": 3,
+          "flow-adapter-jenkins": 3,
+          "flow-adapter-runtime": 10,
+          "flow-adapter-tekton": 3,
+          "flow-cli": 15,
+          "flow-compiler": 15,
+          "flow-conformance-kit": 1413,
+          "flow-frontends": 9,
+          "flow-module-contracts": 5,
+          "flow-reference-distribution": 4,
+          "flow-semantic-kernel": 12,
+          "flow-standard-artifacts": 12
+        }
+      },
+      "conformance": {
+        "passed": 242,
+        "failed": 0
+      },
+      "testTasksExecutedWithoutReusingTestResults": [
+        ":flow-adapter-contracts:test",
+        ":flow-adapter-evidence:test",
+        ":flow-adapter-github-actions:test",
+        ":flow-adapter-jenkins:test",
+        ":flow-adapter-runtime:test",
+        ":flow-adapter-tekton:test",
+        ":flow-cli:test",
+        ":flow-compiler:test",
+        ":flow-conformance-kit:test",
+        ":flow-frontends:test",
+        ":flow-module-contracts:test",
+        ":flow-reference-distribution:test",
+        ":flow-semantic-kernel:test",
+        ":flow-standard-artifacts:test"
+      ],
+      "sourceOwnership": {
+        "total": 370,
+        "product": 235,
+        "verification": 135,
+        "root": 0,
+        "productModules": 13,
+        "totalModules": 14
+      }
+    }
+  },
+  "isolation": {
+    "prHeadAndOriginalMerge": {
+      "receipt": {
+        "revision": "a9e63289bef71293d59cdc4b9a48b47cd8aff9ed",
+        "tree": "ca9c3eac909cdc3ce84280b85ec738a3140a136f",
+        "covers": "exact-head,merge-candidate",
+        "run": "34358811924",
+        "attempt": "1"
+      },
+      "proofs": {
+        "kernel": {
+          "status": "passed",
+          "tests": 12,
+          "testReports": 2,
+          "failuresErrorsSkipped": 0,
+          "inputDigests": 17,
+          "proofSha256": "ffd36dda95ca5f5840f1319cacfd2dc199a4c82ab1134413283223a4b77e3215",
+          "excludedSourcesAbsent": true,
+          "command": [
+            "bash",
+            "gradlew",
+            "--no-daemon",
+            "--console=plain",
+            "--no-build-cache",
+            "-Pflow.isolatedBoundary=semantic-kernel",
+            ":flow-semantic-kernel:clean",
+            ":flow-semantic-kernel:test"
+          ]
+        },
+        "compiler": {
+          "status": "passed",
+          "tests": 20,
+          "testReports": 3,
+          "failuresErrorsSkipped": 0,
+          "inputDigests": 90,
+          "proofSha256": "d15558bf37c77f90717a97c956e5d2e21ac036996c6893d9b9128ce52195a6c9",
+          "excludedSourcesAbsent": true,
+          "command": [
+            "bash",
+            "gradlew",
+            "--no-daemon",
+            "--console=plain",
+            "--no-build-cache",
+            "-Pflow.isolatedBoundary=compiler",
+            ":flow-semantic-kernel:clean",
+            ":flow-module-contracts:clean",
+            ":flow-compiler:clean",
+            ":flow-module-contracts:test",
+            ":flow-compiler:test"
+          ]
+        },
+        "adapter": {
+          "status": "passed",
+          "tests": 18,
+          "testReports": 4,
+          "failuresErrorsSkipped": 0,
+          "inputDigests": 208,
+          "proofSha256": "5c25689e4f33a8a91ac2363db778f7bdffd5d734c2fe41d202885b717b6a5460",
+          "excludedSourcesAbsent": true,
+          "command": [
+            "bash",
+            "gradlew",
+            "--no-daemon",
+            "--console=plain",
+            "--no-build-cache",
+            "-Pflow.isolatedBoundary=adapter-evidence",
+            ":flow-semantic-kernel:clean",
+            ":flow-module-contracts:clean",
+            ":flow-compiler:clean",
+            ":flow-frontends:clean",
+            ":flow-adapter-contracts:clean",
+            ":flow-adapter-runtime:clean",
+            ":flow-adapter-evidence:clean",
+            ":flow-adapter-contracts:test",
+            ":flow-adapter-runtime:test",
+            ":flow-adapter-evidence:test"
+          ]
+        },
+        "product": {
+          "status": "passed",
+          "tests": 27,
+          "testReports": 4,
+          "failuresErrorsSkipped": 0,
+          "inputDigests": 276,
+          "proofSha256": "652721da5ff0b7acbfa631aee5309ba9b187e5537c27fff99229832b341d00c3",
+          "excludedSourcesAbsent": true,
+          "command": [
+            "bash",
+            "gradlew",
+            "--no-daemon",
+            "--console=plain",
+            "--no-build-cache",
+            "-Pflow.isolatedBoundary=product",
+            ":flow-semantic-kernel:clean",
+            ":flow-module-contracts:clean",
+            ":flow-compiler:clean",
+            ":flow-frontends:clean",
+            ":flow-adapter-contracts:clean",
+            ":flow-adapter-runtime:clean",
+            ":flow-adapter-evidence:clean",
+            ":flow-adapter-jenkins:clean",
+            ":flow-adapter-github-actions:clean",
+            ":flow-adapter-tekton:clean",
+            ":flow-standard-artifacts:clean",
+            ":flow-reference-distribution:clean",
+            ":flow-cli:clean",
+            ":flow-standard-artifacts:test",
+            ":flow-cli:test",
+            ":flow-cli:installDist"
+          ],
+          "installedCli": {
+            "diagnostics": {
+              "exitCode": 0,
+              "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutSha256": "9e20a2ba3902414f7005cebf47b298a3c6875e794167a23efa8ac15adb497bcc"
+            },
+            "help": {
+              "exitCode": 0,
+              "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutSha256": "8b502ab0da089741174fcd15b269f3b2c0c2facfb764b79342e55be92b1fc5da"
+            },
+            "reject-verification": {
+              "exitCode": 2,
+              "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutSha256": "a7a62162395f9065c2d585e43f60c7b75a32ab03016319d3b87be5fe5c684326"
+            }
+          },
+          "installedProductReport": {
+            "jarsSha256": {
+              "annotations-13.0.jar": "ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478",
+              "flow-adapter-contracts-0.9.5.jar": "86634f2311ed7a3f9b99b8f3b2e46c8bb58f1b06979d6941dbe9427909da31e6",
+              "flow-adapter-evidence-0.9.5.jar": "34c7cace389cd879484277c9b07ef9c2e0ada032b1f32d6e7f38696031eaf840",
+              "flow-adapter-github-actions-0.9.5.jar": "48c449ac5007525239587043458de18641353404f9c7f2ffaf672fbbf250b81d",
+              "flow-adapter-jenkins-0.9.5.jar": "97cb74499443cc4ed004b0ab73bc692abcdcf122e5728ffb9b2501225eae0e16",
+              "flow-adapter-runtime-0.9.5.jar": "27539c8a620b608052c6aa048bf20381db41c6e0149f96f388b8ddde6fce5b9b",
+              "flow-adapter-tekton-0.9.5.jar": "81a9cae21d017e738ec62bbf05053df8d8f0dd8fdb26efc3e758c81418827cee",
+              "flow-cli-0.9.5.jar": "7210f353e443eac93837c84ba8b7eca999f5a713ec7eb6584c13ca8a2d2d8761",
+              "flow-compiler-0.9.5.jar": "f70bea98efbf31414d248c45510cc7d07a3585cdcc1c77e66f4660be3cedf0ee",
+              "flow-frontends-0.9.5.jar": "a43d1909707db7100a51359394d86eea14b10ed36b15e97c8a71bdb80c70e5ed",
+              "flow-module-contracts-0.9.5.jar": "6ca482de9d93bbf8bf6895869ff8314a30f2e6728ff8371ba3be3af6a9b44599",
+              "flow-reference-distribution-0.9.5.jar": "0f02d7fc9785fd6238b498d73cad768ddfbb745fdee07b6129c71ac75d4f9619",
+              "flow-semantic-kernel-0.9.5.jar": "32691a3de0cde9071a2f2229a119bd6bf83f3bd89c451774c595631496242c5d",
+              "flow-standard-artifacts-0.9.5.jar": "ef24855fe560be681f4331c81db13388e3f52e8f70a1217ba7d88fdde265f6e0",
+              "jackson-annotations-2.17.2.jar": "873a606e23507969f9bbbea939d5e19274a88775ea5a169ba7e2d795aa5156e1",
+              "jackson-core-2.17.2.jar": "721a189241dab0525d9e858e5cb604d3ecc0ede081e2de77d6f34fa5779a5b46",
+              "jackson-databind-2.17.2.jar": "c04993f33c0f845342653784f14f38373d005280e6359db5f808701cfae73c0c",
+              "jackson-dataformat-yaml-2.17.2.jar": "941bcd8b1381bb3b0d726fab41624fa8ece0ee7b6cf2860ad95e8157ce673376",
+              "jackson-module-kotlin-2.17.2.jar": "f96986fe7bc25559f938324065bd7a0e96c0d59acf17a48e26e517a9abd411e8",
+              "kotlin-reflect-1.7.22.jar": "4d4471d1cbc203d3f9e51d6123956dddbb96d5747f1aee02463c7b920feb2baf",
+              "kotlin-stdlib-2.4.10.jar": "4ec0293bc3751423b203f1d8493251c57c42e73eb6377a6b8560d0974ff0a6df",
+              "snakeyaml-2.2.jar": "1467931448a0817696ae2805b7b8b20bfb082652bf9c4efaed528930dc49389b"
+            },
+            "projectJarCount": 13,
+            "uniqueFlowClasses": 1321
+          }
+        }
+      }
+    },
+    "actualMergedMain": {
+      "receipt": {
+        "revision": "0a863eb10f60a64945f9657b0fcf090714ab543a",
+        "tree": "084e5cc4229f60bad01e5c036f249dad50816810",
+        "covers": "exact-head",
+        "run": "34370712591",
+        "attempt": "1"
+      },
+      "proofs": {
+        "kernel": {
+          "status": "passed",
+          "tests": 12,
+          "testReports": 2,
+          "failuresErrorsSkipped": 0,
+          "inputDigests": 17,
+          "proofSha256": "ffd36dda95ca5f5840f1319cacfd2dc199a4c82ab1134413283223a4b77e3215",
+          "excludedSourcesAbsent": true,
+          "command": [
+            "bash",
+            "gradlew",
+            "--no-daemon",
+            "--console=plain",
+            "--no-build-cache",
+            "-Pflow.isolatedBoundary=semantic-kernel",
+            ":flow-semantic-kernel:clean",
+            ":flow-semantic-kernel:test"
+          ]
+        },
+        "compiler": {
+          "status": "passed",
+          "tests": 20,
+          "testReports": 3,
+          "failuresErrorsSkipped": 0,
+          "inputDigests": 90,
+          "proofSha256": "d15558bf37c77f90717a97c956e5d2e21ac036996c6893d9b9128ce52195a6c9",
+          "excludedSourcesAbsent": true,
+          "command": [
+            "bash",
+            "gradlew",
+            "--no-daemon",
+            "--console=plain",
+            "--no-build-cache",
+            "-Pflow.isolatedBoundary=compiler",
+            ":flow-semantic-kernel:clean",
+            ":flow-module-contracts:clean",
+            ":flow-compiler:clean",
+            ":flow-module-contracts:test",
+            ":flow-compiler:test"
+          ]
+        },
+        "adapter": {
+          "status": "passed",
+          "tests": 18,
+          "testReports": 4,
+          "failuresErrorsSkipped": 0,
+          "inputDigests": 208,
+          "proofSha256": "5c25689e4f33a8a91ac2363db778f7bdffd5d734c2fe41d202885b717b6a5460",
+          "excludedSourcesAbsent": true,
+          "command": [
+            "bash",
+            "gradlew",
+            "--no-daemon",
+            "--console=plain",
+            "--no-build-cache",
+            "-Pflow.isolatedBoundary=adapter-evidence",
+            ":flow-semantic-kernel:clean",
+            ":flow-module-contracts:clean",
+            ":flow-compiler:clean",
+            ":flow-frontends:clean",
+            ":flow-adapter-contracts:clean",
+            ":flow-adapter-runtime:clean",
+            ":flow-adapter-evidence:clean",
+            ":flow-adapter-contracts:test",
+            ":flow-adapter-runtime:test",
+            ":flow-adapter-evidence:test"
+          ]
+        },
+        "product": {
+          "status": "passed",
+          "tests": 27,
+          "testReports": 4,
+          "failuresErrorsSkipped": 0,
+          "inputDigests": 276,
+          "proofSha256": "652721da5ff0b7acbfa631aee5309ba9b187e5537c27fff99229832b341d00c3",
+          "excludedSourcesAbsent": true,
+          "command": [
+            "bash",
+            "gradlew",
+            "--no-daemon",
+            "--console=plain",
+            "--no-build-cache",
+            "-Pflow.isolatedBoundary=product",
+            ":flow-semantic-kernel:clean",
+            ":flow-module-contracts:clean",
+            ":flow-compiler:clean",
+            ":flow-frontends:clean",
+            ":flow-adapter-contracts:clean",
+            ":flow-adapter-runtime:clean",
+            ":flow-adapter-evidence:clean",
+            ":flow-adapter-jenkins:clean",
+            ":flow-adapter-github-actions:clean",
+            ":flow-adapter-tekton:clean",
+            ":flow-standard-artifacts:clean",
+            ":flow-reference-distribution:clean",
+            ":flow-cli:clean",
+            ":flow-standard-artifacts:test",
+            ":flow-cli:test",
+            ":flow-cli:installDist"
+          ],
+          "installedCli": {
+            "diagnostics": {
+              "exitCode": 0,
+              "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutSha256": "9e20a2ba3902414f7005cebf47b298a3c6875e794167a23efa8ac15adb497bcc"
+            },
+            "help": {
+              "exitCode": 0,
+              "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutSha256": "8b502ab0da089741174fcd15b269f3b2c0c2facfb764b79342e55be92b1fc5da"
+            },
+            "reject-verification": {
+              "exitCode": 2,
+              "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutSha256": "a7a62162395f9065c2d585e43f60c7b75a32ab03016319d3b87be5fe5c684326"
+            }
+          },
+          "installedProductReport": {
+            "jarsSha256": {
+              "annotations-13.0.jar": "ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478",
+              "flow-adapter-contracts-0.9.5.jar": "86634f2311ed7a3f9b99b8f3b2e46c8bb58f1b06979d6941dbe9427909da31e6",
+              "flow-adapter-evidence-0.9.5.jar": "34c7cace389cd879484277c9b07ef9c2e0ada032b1f32d6e7f38696031eaf840",
+              "flow-adapter-github-actions-0.9.5.jar": "48c449ac5007525239587043458de18641353404f9c7f2ffaf672fbbf250b81d",
+              "flow-adapter-jenkins-0.9.5.jar": "97cb74499443cc4ed004b0ab73bc692abcdcf122e5728ffb9b2501225eae0e16",
+              "flow-adapter-runtime-0.9.5.jar": "27539c8a620b608052c6aa048bf20381db41c6e0149f96f388b8ddde6fce5b9b",
+              "flow-adapter-tekton-0.9.5.jar": "81a9cae21d017e738ec62bbf05053df8d8f0dd8fdb26efc3e758c81418827cee",
+              "flow-cli-0.9.5.jar": "7210f353e443eac93837c84ba8b7eca999f5a713ec7eb6584c13ca8a2d2d8761",
+              "flow-compiler-0.9.5.jar": "f70bea98efbf31414d248c45510cc7d07a3585cdcc1c77e66f4660be3cedf0ee",
+              "flow-frontends-0.9.5.jar": "a43d1909707db7100a51359394d86eea14b10ed36b15e97c8a71bdb80c70e5ed",
+              "flow-module-contracts-0.9.5.jar": "6ca482de9d93bbf8bf6895869ff8314a30f2e6728ff8371ba3be3af6a9b44599",
+              "flow-reference-distribution-0.9.5.jar": "0f02d7fc9785fd6238b498d73cad768ddfbb745fdee07b6129c71ac75d4f9619",
+              "flow-semantic-kernel-0.9.5.jar": "32691a3de0cde9071a2f2229a119bd6bf83f3bd89c451774c595631496242c5d",
+              "flow-standard-artifacts-0.9.5.jar": "ef24855fe560be681f4331c81db13388e3f52e8f70a1217ba7d88fdde265f6e0",
+              "jackson-annotations-2.17.2.jar": "873a606e23507969f9bbbea939d5e19274a88775ea5a169ba7e2d795aa5156e1",
+              "jackson-core-2.17.2.jar": "721a189241dab0525d9e858e5cb604d3ecc0ede081e2de77d6f34fa5779a5b46",
+              "jackson-databind-2.17.2.jar": "c04993f33c0f845342653784f14f38373d005280e6359db5f808701cfae73c0c",
+              "jackson-dataformat-yaml-2.17.2.jar": "941bcd8b1381bb3b0d726fab41624fa8ece0ee7b6cf2860ad95e8157ce673376",
+              "jackson-module-kotlin-2.17.2.jar": "f96986fe7bc25559f938324065bd7a0e96c0d59acf17a48e26e517a9abd411e8",
+              "kotlin-reflect-1.7.22.jar": "4d4471d1cbc203d3f9e51d6123956dddbb96d5747f1aee02463c7b920feb2baf",
+              "kotlin-stdlib-2.4.10.jar": "4ec0293bc3751423b203f1d8493251c57c42e73eb6377a6b8560d0974ff0a6df",
+              "snakeyaml-2.2.jar": "1467931448a0817696ae2805b7b8b20bfb082652bf9c4efaed528930dc49389b"
+            },
+            "projectJarCount": 13,
+            "uniqueFlowClasses": 1321
+          }
+        }
+      }
+    }
+  },
+  "archives": {
+    "main-merged-test-reports.zip": {
+      "artifactId": 10112839320,
+      "sha256": "25c83442d170260dc0f969b9ee936e8d8e0c01cf4a3ba216f58047c068aeba36",
+      "bytes": 621278,
+      "zipIntegrityVerified": true
+    },
+    "main-merged-gradle-logs.zip": {
+      "artifactId": 10112837921,
+      "sha256": "70560a6cbf0fdcad3da71bdc84a328a60b38ff91a3397b4a6d5fe6504162de89",
+      "bytes": 54857,
+      "zipIntegrityVerified": true
+    },
+    "main-merged-isolation.zip": {
+      "artifactId": 10112179643,
+      "sha256": "a8e58567cd73baa5403eac2f9d42fd87857c4131d6fe313a8547b1a3bc0eb09b",
+      "bytes": 68792,
+      "zipIntegrityVerified": true
+    },
+    "pr177-head-test-reports.zip": {
+      "artifactId": 10107891722,
+      "sha256": "6c57e5fcbc9bceb02bfdc241f3bddd675c37f754c879395097622bce6f8ca787",
+      "bytes": 621200,
+      "zipIntegrityVerified": true
+    },
+    "pr177-head-gradle-logs.zip": {
+      "artifactId": 10107890241,
+      "sha256": "4a6eb34d21afea834c69dc62bc5f9cde314781a44c890bb386a8d6a65c36a120",
+      "bytes": 54828,
+      "zipIntegrityVerified": true
+    },
+    "pr177-merge-test-reports.zip": {
+      "artifactId": 10107747023,
+      "sha256": "d56569efe61a36c8592248f2f4431e2c4726095b0356d6ac129d60ff33e5637d",
+      "bytes": 620770,
+      "zipIntegrityVerified": true
+    },
+    "pr177-merge-gradle-logs.zip": {
+      "artifactId": 10107745529,
+      "sha256": "8e1c4d2ce60c2641d2eef2e8e9a63c7d73092b7af8b99fad02182c7803679a11",
+      "bytes": 54863,
+      "zipIntegrityVerified": true
+    },
+    "pr177-isolation.zip": {
+      "artifactId": 10107218400,
+      "sha256": "81f69dc54a2dbc019728296b4d9a1b4d739ed2c3f2cdd004ed9d46b88ac014c3",
+      "bytes": 68796,
+      "zipIntegrityVerified": true
+    }
+  },
+  "crossRevisionChecks": {
+    "all1512TestIdentitiesIdentical": true,
+    "matchesPreviouslyRecordedLocalTestIdentities": true,
+    "sourceOwnershipIdentical": true,
+    "allIsolationInputDigestsIdentical": true,
+    "installedProductJarDigestsIdentical": true
+  },
+  "tooling": {
+    "postmergeJobId": 102530903871,
+    "pythonTests": 151,
+    "conclusion": "success",
+    "observedLog": "Ran 151 tests in 2.697s; OK",
+    "flowAgentStructureValidation": "passed"
+  },
+  "integration": {
+    "mergeParents": [
+      "50fee3403e9d244a8b9c4037f48e0a1ee65476f0",
+      "a9e63289bef71293d59cdc4b9a48b47cd8aff9ed"
+    ],
+    "additionalFilesComparedToPrHead": [
+      ".flow-agent/README.md",
+      "README.md",
+      "docs/CODE_NAMING.md",
+      "docs/PRODUCT_IDENTITY.md"
+    ],
+    "additionalProductionCodeChanges": false
+  },
+  "scopeAndLimits": [
+    "This verification inspected existing GitHub CI artifacts; no Kotlin build was executed locally in this session.",
+    "ZIP hashes were compared against GitHub API artifact digests. JUnit XML, conformance output, classpaths, ownership and CLI output hashes were independently parsed.",
+    "Installed JAR binaries were not downloaded; JAR hashes and structural results are recorded by the actual isolation build and cross-checked between runs.",
+    "Python result was read from the post-merge candidate-selection job log; it is not a newly executed local test run.",
+    "Formal repository AR-03/F-10 lifecycle transition remains a separate post-merge action under the existing work-package rule; F-20 remains AR-07-owned."
+  ],
+  "newWorkflowRunsTriggeredByThisCompletion": 0,
+  "sourceCommitsCreatedByThisCompletion": 0
+}

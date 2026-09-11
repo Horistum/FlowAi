@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 8
+revision: 9
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -15,17 +15,17 @@ auditBaseline:
   coverageRule: "Every F-01 through F-22 finding has one explicit closure milestone. Findings with immediate safety impact also have a separate containment milestone. A finding may be reclassified only by reviewed production-code evidence; it may not disappear from the roadmap because an implementation is inconvenient."
 
 currentDecision:
-  previousCompletedItem: "AR-02"
-  previousCompletedItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
+  previousCompletedItem: "AR-03"
+  previousCompletedItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
   preemptedItem: "EF-09"
   preemptedItemName: "Human Approval and Change-Control Falsification"
   preemptedItemState: "active-after-evidence-admission"
   preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
-  nextItem: "AR-03"
-  nextItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  nextItem: "AR-04"
+  nextItemName: "Language, Contract, Type and Identity Integrity"
   activationState: "active"
-  workPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
-  decisionBasis: "AR-02 is complete after merged PR #172. AR-03 is independently activated for bounded module extraction, beginning with the semantic kernel. Activation must pass its own exact-head and synthetic-merge CI before implementation; F-10 and F-20 remain open and EF-09 remains paused."
+  workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+  decisionBasis: "AR-03 is complete on accepted PR #177 and independently verified merged main 0a863eb. F-10 is closed; F-20 remains contained with AR-07 retirement. AR-04 has a separate activation-only transition before AR-04A implementation; EF-09 remains paused."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -151,7 +151,7 @@ milestones:
   - id: "AR-03"
     name: "Compiler-Enforced Boundaries and Adapter Extraction"
     order: 4
-    status: "active"
+    status: "completed"
     workPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
     dependsOn: ["AR-01"]
     closesFindings: ["F-10"]
@@ -175,8 +175,10 @@ milestones:
   - id: "AR-04"
     name: "Language, Contract, Type and Identity Integrity"
     order: 5
-    status: "planned"
-    dependsOn: ["AR-01"]
+    status: "active"
+    workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+    report: ".flow-agent/reports/language-contract-type-identity-integrity.md"
+    dependsOn: ["AR-01", "AR-03"]
     closesFindings: ["F-07", "F-12", "F-13", "F-14", "F-21"]
     purpose: "Eliminate silent authored-meaning loss, open type fallbacks and order-dependent identity resolution at every source and contract boundary."
     requiredOutcomes:
@@ -303,6 +305,8 @@ findingRegister:
     severity: "MEDIUM"
     title: "Architecture boundaries are not enforced by the compiler or build graph."
     closureMilestone: "AR-03"
+    status: closed
+    closureEvidence: ".flow-agent/evidence/compiler-module-acceptance.json"
   - id: "F-11"
     severity: "MEDIUM"
     title: "Declared target portfolio is much broader than executable certification."
@@ -346,6 +350,7 @@ findingRegister:
     title: "Migration overlaps and compatibility wrappers create API ambiguity."
     containmentMilestone: "AR-03"
     closureMilestone: "AR-07"
+    status: contained
   - id: "F-21"
     severity: "LOW"
     title: "A benevolent non-strict FlowYaml API remains publicly available."

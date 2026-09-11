@@ -1,6 +1,21 @@
 # Compiler-enforced module boundaries
 
-## Current AR-03D integrated product/verification boundary
+## Accepted integrated closure
+
+AR-03 and F-10 are complete after independently verified PR #177 and actual
+merged main `0a863eb10f60a64945f9657b0fcf090714ab543a`. The exact PR HEAD and
+original merge passed Flow CI #3259; the actual merged tree, including Horistum
+documentation, passed Flow CI #3261. Immutable detailed acceptance is in
+`.flow-agent/evidence/compiler-module-acceptance.json`, bound by SHA-256 from
+the work package. All 1,512 Kotlin test identities, 242 conformance checks and
+four physical proofs are preserved. F-20 is contained, not retired; AR-07 owns
+its removal. The separately owned AR-04 activation is described in
+`language-contract-type-identity-integrity.md`.
+
+The following implementation sections describe their historical revisions and
+pending-at-publication state. They do not override the accepted closure above.
+
+## Historical AR-03D integrated product/verification boundary
 
 The exact predecessor is merged PR #175, main
 `a11e8b3d70fe0e6844f135b85bc9f85290084594`, tree

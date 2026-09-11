@@ -72,7 +72,9 @@ class IntegratedBoundaryInventoryTests {
 
     @Test fun integratedDecisionDoesNotCloseCompatibilityOrActivateTheNextMilestone() {
         val decision = section(inventory["integratedDecision"])
-        assertEquals(listOf("F-10"), decision["candidateClosesFindings"])
+        assertEquals("accepted-on-merged-main", decision["status"])
+        assertEquals(listOf("F-10"), decision["closesFindings"])
+        assertEquals(".flow-agent/evidence/compiler-module-acceptance.json", decision["acceptanceEvidence"])
         assertEquals(listOf("F-20"), decision["containedFindings"])
         assertEquals("AR-07", decision["deferredClosureOwner"])
         assertEquals("not-activated", decision["nextItemActivation"])

@@ -1,31 +1,31 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 9
+revision: 10
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
 currentDecision:
-  completedItem: "AR-02"
-  completedItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
+  completedItem: "AR-03"
+  completedItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
   pausedItem: "EF-09"
   pausedItemName: "Human Approval and Change-Control Falsification"
   pausedItemState: "active-after-evidence-admission"
   pausedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
-  nextItem: "AR-03"
-  nextItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  nextItem: "AR-04"
+  nextItemName: "Language, Contract, Type and Identity Integrity"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
-  workPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
-  decisionBasis: "Merged AR-02 remains immutable predecessor evidence. AR-03 is independently activated for compiler-enforced module boundaries, starting with an isolated semantic kernel. The activation transition must be green before implementation; AR-04 is not activated and EF-09 remains paused."
+  workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+  decisionBasis: "AR-03/F-10 closes against actual accepted PR #177 and merged-main evidence. AR-04 is independently activated for language integrity, with AR-04A selected but not implemented. F-20 remains AR-07-owned and EF-09 stays paused."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
   status: "active"
   findingCount: 22
   groupedMilestoneCount: 8
-  completedItem: "AR-02"
-  activeItem: "AR-03"
-  activeWorkPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
-  nextItem: "AR-03"
+  completedItem: "AR-03"
+  activeItem: "AR-04"
+  activeWorkPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+  nextItem: "AR-04"
   activationState: "active"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
@@ -108,11 +108,11 @@ sequence:
     status: active
     interrupts: "EF-09"
     roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-    completedItem: "AR-02"
-    activeItem: ""
-    nextItem: "AR-03"
-    activationState: "not-activated"
-    workPackage: ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
+    completedItem: "AR-03"
+    activeItem: "AR-04"
+    nextItem: "AR-04"
+    activationState: "active"
+    workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."

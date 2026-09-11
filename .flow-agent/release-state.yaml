@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 61
+stateVersion: 62
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -47,13 +47,13 @@ roadmapState:
   completedEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
   completedEnablingMilestoneName: "Kotlin and Gradle Toolchain Modernization"
   postToolchainRoadmap: ".flow-agent/roadmap-post-toolchain.yaml"
-  completedRecoveryItem: "AR-02"
-  completedRecoveryItemName: "Flow-Sensitive Workflow, Data and Failure Semantics"
-  completedRecoveryWorkPackage: ".flow-agent/work-packages/flow-sensitive-workflow-data-failure-semantics.yaml"
-  nextRecoveryItem: "AR-03"
-  nextRecoveryItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  completedRecoveryItem: "AR-03"
+  completedRecoveryItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  completedRecoveryWorkPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
+  nextRecoveryItem: "AR-04"
+  nextRecoveryItemName: "Language, Contract, Type and Identity Integrity"
   nextRecoveryActivationState: "active"
-  activeRecoveryWorkPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
+  activeRecoveryWorkPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -196,6 +196,14 @@ qualityPrinciples:
   - "C0.3 semantic equivalence compares explicit observable results and continuity, never target syntax, job layout or action identity."
   - "Canonical capability meaning must remain independent from concrete implementation technology; implementation-only parameters belong to explicit binding or adapter evidence."
   - "An orthogonal enabling milestone must not fabricate a product-roadmap successor or reopen a completed roadmap stream."
+
+recoveryAcceptance:
+  completedItem: "AR-03"
+  evidence: ".flow-agent/evidence/compiler-module-acceptance.json"
+  acceptedMain: "0a863eb10f60a64945f9657b0fcf090714ab543a"
+  workflowRunId: 34370712591
+  successorCandidate: "AR-04"
+  candidateValidation: current-revision-ci-required
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-ar-02-closure-validation-boundary"

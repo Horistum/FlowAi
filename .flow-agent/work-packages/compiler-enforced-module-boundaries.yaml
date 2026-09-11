@@ -1,13 +1,13 @@
 version: "AR-03"
 name: "Compiler-Enforced Boundaries and Adapter Extraction"
 type: "architecture-recovery-module-extraction"
-status: active
+status: complete
 stream: "architecture-recovery"
 
 objective: "Replace package-only architectural boundaries with separately compiled production modules, without changing canonical meaning, public artifact versions or target maturity. This work package closes only after the compiler and semantic kernel can build without concrete adapters and the remaining reference composition is explicit."
 
 authorization:
-  status: active
+  status: completed
   predecessor: "AR-02"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-03"
   mainAtActivation: "c5c37283d99a47a6e387213dccfda2927ec6acd2"
@@ -43,7 +43,7 @@ implementationSlices:
       - "Preserve all 1367 baseline regression tests and standalone conformance; report subproject tests in CI artifacts."
   - id: "AR-03B"
     name: "Compiler, frontend and module-contract boundary"
-    status: implemented
+    status: complete
     invariant: "Compiler orchestration depends on the semantic kernel and neutral contracts; frontend parsing and serialization remain outside it."
     predecessorMerge: "0f96ef60e2a180ab1e7aa6d0f5d8e2b0003c8047"
     predecessorMainRunId: 34216542159
@@ -60,7 +60,7 @@ implementationSlices:
     validationPolicy: "Local development first. Only final exact-head and merge-candidate CI are automatic; offline CI remains manual per docs/CI_COST_POLICY.md."
   - id: "AR-03C"
     name: "Adapter contracts and concrete implementation extraction"
-    status: implemented
+    status: complete
     invariant: "Generic planning and materialization receive explicit adapter contracts; concrete adapter defaults and composition are distribution-owned."
     predecessorMerge: "c8ca99273a3cc7380c840d4075ad0b57361b86e2"
     predecessorPullRequest: 174
@@ -82,7 +82,7 @@ implementationSlices:
     validationPolicy: "Local offline development first; only final exact-head and synthetic-merge Flow CI are automatic. AR-03 and F-10/F-20 remain open for integrated AR-03D closure."
   - id: "AR-03D"
     name: "Conformance, distribution and integrated boundary closure"
-    status: implemented
+    status: complete
     invariant: "Production does not depend on conformance; deletion of any concrete adapter leaves kernel and compiler tests buildable, and every temporary boundary has an owner and removal decision."
     predecessorMerge: "a11e8b3d70fe0e6844f135b85bc9f85290084594"
     predecessorPullRequest: 175
@@ -167,18 +167,55 @@ lifecycle:
     errors: 0
     skipped: 0
     evidence: "Flow Offline Proof #16 passed isolated input preparation and relocated clean --offline --no-build-cache verification, complete Kotlin tests and conformance on both revisions. Separate 20-minute phase limits and a 50-minute job limit preserve both full builds; the merge-candidate job completed successfully after exceeding the former 20-minute total limit."
+  integratedBoundary:
+    status: passed
+    conclusion: success
+    workflowRunId: 34358811924
+    workflowRunNumber: 3259
+    exactHead: "a9e63289bef71293d59cdc4b9a48b47cd8aff9ed"
+    syntheticMergeCandidate: "298a0409a8c0b2570d9a54573b973b7c6172abed"
+    exactHeadJobId: 102492957367
+    mergeCandidateJobId: 102492957381
+    kotlinTestsPerJob: 1512
+    failures: 0
+    errors: 0
+    skipped: 0
   completionBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    event: push
+    mergedPullRequest: 177
+    mainCommit: "0a863eb10f60a64945f9657b0fcf090714ab543a"
+    sourceTree: "084e5cc4229f60bad01e5c036f249dad50816810"
+    implementationHead: "a9e63289bef71293d59cdc4b9a48b47cd8aff9ed"
+    workflowRunId: 34370712591
+    workflowRunNumber: 3261
+    exactHeadJobId: 102534450799
+    isolationJobId: 102530970478
+    kotlinTests: 1512
+    toolingTests: 151
+    conformanceChecks: 242
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: ".flow-agent/evidence/compiler-module-acceptance.json"
+    rule: "This is the independently validated actual merge, not a second synthetic-merge job or a receipt for the following transition commit."
+
+acceptanceEvidence:
+  path: ".flow-agent/evidence/compiler-module-acceptance.json"
+  sha256: "4e16d5d516b24c977f6d5f30915c1f1d6d7d7b5d35a0c92fdc95dfb8c0804b48"
 
 completionDecision:
-  status: not-complete
-  closesFindings: []
-  remainingFindings: ["F-10", "F-20"]
-  integratedReadiness: current-revision-acceptance-required
-  candidateClosesFindings: ["F-10"]
+  status: complete
+  completedSlice: "AR-03D"
+  closesFindings: ["F-10"]
+  remainingFindings: ["F-20"]
+  integratedReadiness: accepted-on-merged-main
   containedFindings: ["F-20"]
   deferredClosureOwner: "AR-07"
-  rule: "AR-03D implements the integrated boundary. The final PR acceptance is recorded against its immutable HEAD and merge candidate, never as a fabricated future source receipt. The next post-merge transition can close F-10 with that actual evidence; F-20 removal remains AR-07-owned. AR-04 is not activated and EF-09 remains paused."
+  nextItem: "AR-04"
+  nextItemActivationState: not-activated
+  rule: "The completed module boundary closes F-10 using exact PR and actual merged-main evidence. Its historical completion does not itself activate AR-04; the successor has a separate work package and independently verified activation. F-20 retirement remains AR-07-owned."
 
 forbiddenScope:
   - "No semantic digest, graph interpretation, parser acceptance or target support changes."

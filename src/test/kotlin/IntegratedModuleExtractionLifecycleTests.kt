@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class IntegratedModuleExtractionLifecycleTests {
-    private val snapshot get() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private val snapshot get() = moduleExtractionCandidateSnapshot()
 
     @Test fun integratedSliceRetainsAcceptedPredecessorsWithoutInventingItsOwnReceipt() {
         val current = snapshot
