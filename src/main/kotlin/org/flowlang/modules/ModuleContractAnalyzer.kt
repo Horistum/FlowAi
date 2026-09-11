@@ -112,7 +112,7 @@ object ModuleContractAnalyzer {
         if (action.safety.destructive && !action.safety.requiresSafety) {
             issues += issue("error", module.name, action.name, "DESTRUCTIVE_ACTION_REQUIRES_SAFETY", "Destructive action '${module.name}.${action.name}' must require an explicit safety gate.")
         }
-        action.input.filterValues { it.sensitive && it.type != "secret" }.forEach { (name, field) ->
+        action.input.filterValues { it.sensitive && it.type != SchemaType.SECRET }.forEach { (name, field) ->
             issues += issue("warning", module.name, action.name, "SENSITIVE_INPUT_NOT_SECRET", "Sensitive input '$name' on '${module.name}.${action.name}' is declared as '${field.type}', not 'secret'.")
         }
         action.secrets.forEach { secret ->

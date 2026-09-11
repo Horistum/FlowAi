@@ -46,6 +46,7 @@ import org.flowlang.modules.FlowModule
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.modules.SchemaField
+import org.flowlang.modules.SchemaType
 import org.flowlang.modules.SystemTypeContract
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.ControlNode
@@ -198,7 +199,7 @@ class ExplicitMergeSemanticsTests {
                         "consume" to ModuleActionContract(
                             name = "consume",
                             targetTypes = setOf("local"),
-                            input = mapOf("value" to SchemaField("any", required = true))
+                            input = mapOf("value" to SchemaField(SchemaType.ANY, required = true))
                         )
                     )
                 )
@@ -506,7 +507,7 @@ class ExplicitMergeSemanticsTests {
                     "consume" to ModuleActionContract(
                         name = "consume",
                         targetTypes = setOf("local"),
-                        input = mapOf("value" to SchemaField("any", required = true)),
+                        input = mapOf("value" to SchemaField(SchemaType.ANY, required = true)),
                         continuity = ContinuityContract(
                             requires = listOf(ContinuityChannel(ContinuityKind.VALUE, "payload"))
                         )

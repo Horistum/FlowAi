@@ -3,13 +3,34 @@ package org.flowlang.conformance
 import org.flowlang.conformance.CompilerModuleAcceptance.matchingFields
 import org.flowlang.conformance.CompilerModuleAcceptance.section
 
-/** Owns the successor activation without rewriting accepted module-extraction history. */
+/** Owns AR-04 slice progression without rewriting accepted predecessor history. */
 internal object LanguageContractIntegrityLifecycle {
     const val WORK_PACKAGE = ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
     const val ACTIVATION_EVIDENCE = ".flow-agent/evidence/language-activation-acceptance.json"
     private const val ACTIVATION_SHA256 = "81afd6901fc3de408a2d53e7bde8879a518b171f17fcf354043e1199dbde8758"
     private val findings = listOf("F-07", "F-12", "F-13", "F-14", "F-21")
     private val sliceIds = listOf("AR-04A", "AR-04B", "AR-04C", "AR-04D", "AR-04E", "AR-04F")
+    private val requiredChecks = listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")
+    private val ar04aAcceptance = mapOf<String, Any?>(
+        "source" to "current-revision-ci",
+        "requiredChecks" to requiredChecks,
+        "pullRequest" to 178,
+        "base" to "0a863eb10f60a64945f9657b0fcf090714ab543a",
+        "head" to "5d19cef68c0cf84c26a9bfd4004c5d7579ec43c0",
+        "syntheticMerge" to "eca3cc2976b4eb8fd29ac37114ace08af1efc719",
+        "mergedMain" to "9053658838dd7c06622717a34007c67c5cb1c38c",
+        "sourceTree" to "54bcfd11fc641bb1357b842af931cac841cee436",
+        "workflowRunId" to 34493567009L,
+        "workflowRunNumber" to 3265,
+        "exactHeadJobId" to 102929485718L,
+        "mergeCandidateJobId" to 102929485758L,
+        "kotlinTests" to 1590,
+        "toolingTests" to 151,
+        "conformanceChecks" to 246,
+        "failures" to 0,
+        "errors" to 0,
+        "skipped" to 0
+    )
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
         val work = snapshot.integrityWorkPackage
@@ -59,27 +80,22 @@ internal object LanguageContractIntegrityLifecycle {
             "acceptedMain" to completion["mainCommit"], "workflowRunId" to completion["workflowRunId"],
             "successorCandidate" to "AR-04", "candidateValidation" to "current-revision-ci-required"
         )))
+
         val slices = (work["implementationSlices"] as? List<*>).orEmpty().map(::section)
-        val implemented = slices.firstOrNull()?.get("status") == "implemented"
-        if (work["selectedSlice"] != "AR-04A" || work["nextSlice"] != "AR-04B" ||
-            slices.map { it["id"] } != sliceIds || slices.firstOrNull()?.get("status") !in setOf("selected", "implemented") ||
-            slices.drop(1).any { it["status"] != "planned" } ||
-            slices.map { it["ownsFindings"] } != findings.map { listOf(it) } + listOf(emptyList<String>())
-        ) add("Language integrity activation selects duplicate-declaration work only; implementation needs a separate green activation.")
+        val structurallyValid = slices.map { it["id"] } == sliceIds &&
+            slices.map { it["ownsFindings"] } == findings.map { listOf(it) } + listOf(emptyList<String>())
+        if (!structurallyValid) {
+            add("Language integrity slice identities and finding ownership must remain stable.")
+        }
+
         val lifecycle = section(work["lifecycle"])
         val boundaries = listOf("activationBoundary", "implementationBoundary", "validationBoundary", "completionBoundary")
-        if (implemented) {
-            addAll(activationErrors(snapshot, section(lifecycle["activationBoundary"])))
-            if (section(slices.first()["acceptance"]) != mapOf(
-                    "source" to "current-revision-ci", "requiredChecks" to listOf(
-                        "compile-test-conformance", "merge-candidate-compile-test-conformance"))) {
-                add("Implemented duplicate-declaration work requires its own current-revision CI acceptance.")
-            }
+        when (work["selectedSlice"]) {
+            "AR-04A" -> validateAr04aPhase(snapshot, work, slices, lifecycle, boundaries, this)
+            "AR-04B" -> validateAr04bPhase(snapshot, work, slices, lifecycle, boundaries, this)
+            else -> add("Language integrity may advance only through an explicitly supported AR-04 slice transition.")
         }
-        val pending = if (implemented) boundaries.drop(1) else boundaries
-        if (lifecycle.keys != boundaries.toSet() || pending.any {
-            section(lifecycle[it]) != mapOf("status" to "pending")
-        }) add("Language integrity activation cannot publish its own future receipt or borrow predecessor success.")
+
         val decision = section(work["completionDecision"])
         if (decision["status"] != "not-complete" || decision["closesFindings"] != emptyList<String>() ||
             decision["remainingFindings"] != findings || decision["nextItem"] != "AR-05" ||
@@ -91,6 +107,69 @@ internal object LanguageContractIntegrityLifecycle {
             if (finding?.get("closureMilestone") != "AR-04" || finding["status"] in setOf("closed", "complete", "completed")) {
                 add("Language integrity finding $id must remain open and AR-04-owned during activation.")
             }
+        }
+    }
+
+    private fun validateAr04aPhase(
+        snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot,
+        work: Map<*, *>,
+        slices: List<Map<*, *>>,
+        lifecycle: Map<*, *>,
+        boundaries: List<String>,
+        errors: MutableList<String>
+    ) {
+        val implemented = slices.firstOrNull()?.get("status") == "implemented"
+        if (work["nextSlice"] != "AR-04B" || slices.firstOrNull()?.get("status") !in setOf("selected", "implemented") ||
+            slices.drop(1).any { it["status"] != "planned" }
+        ) errors += "Language integrity activation selects duplicate-declaration work only; implementation needs a separate green activation."
+        if (implemented) {
+            errors += activationErrors(snapshot, section(lifecycle["activationBoundary"]))
+            if (section(slices.first()["acceptance"]) != mapOf(
+                    "source" to "current-revision-ci", "requiredChecks" to requiredChecks)) {
+                errors += "Implemented duplicate-declaration work requires its own current-revision CI acceptance."
+            }
+        }
+        val pending = if (implemented) boundaries.drop(1) else boundaries
+        if (lifecycle.keys != boundaries.toSet() || pending.any {
+            section(lifecycle[it]) != mapOf("status" to "pending")
+        }) errors += "Language integrity activation cannot publish its own future receipt or borrow predecessor success."
+    }
+
+    private fun validateAr04bPhase(
+        snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot,
+        work: Map<*, *>,
+        slices: List<Map<*, *>>,
+        lifecycle: Map<*, *>,
+        boundaries: List<String>,
+        errors: MutableList<String>
+    ) {
+        val ar04a = slices.getOrNull(0).orEmpty()
+        val ar04b = slices.getOrNull(1).orEmpty()
+        val ar04bStatus = ar04b["status"]
+        if (work["nextSlice"] != "AR-04C" || ar04a["status"] != "complete" ||
+            ar04bStatus !in setOf("selected", "implemented") || slices.drop(2).any { it["status"] != "planned" }
+        ) {
+            errors += "AR-04B requires completed duplicate-declaration work and may select only closed schema type/default integrity."
+        }
+
+        errors += activationErrors(snapshot, section(lifecycle["activationBoundary"]))
+        val acceptedA = section(ar04a["acceptance"])
+        errors += matchingFields("AR-04A acceptance", acceptedA, ar04aAcceptance)
+        if (acceptedA.keys != ar04aAcceptance.keys) {
+            errors += "AR-04A acceptance must contain only the immutable accepted PR receipt fields."
+        }
+
+        if (ar04bStatus == "implemented") {
+            val expected = mapOf("source" to "current-revision-ci", "requiredChecks" to requiredChecks)
+            if (section(ar04b["acceptance"]) != expected) {
+                errors += "Implemented schema-integrity work requires its own current-revision CI acceptance."
+            }
+        }
+
+        if (lifecycle.keys != boundaries.toSet() || boundaries.drop(1).any {
+            section(lifecycle[it]) != mapOf("status" to "pending")
+        }) {
+            errors += "AR-04B cannot publish a future receipt for milestone-wide implementation, validation or completion success."
         }
     }
 

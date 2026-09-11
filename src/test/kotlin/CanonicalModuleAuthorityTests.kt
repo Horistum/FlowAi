@@ -8,6 +8,8 @@ import kotlin.test.assertTrue
 import org.flowlang.modules.CanonicalModuleLoader
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.modules.ModuleYamlLoader
+import org.flowlang.modules.SchemaField
+import org.flowlang.modules.SchemaType
 
 class CanonicalModuleAuthorityTests {
     @Test
@@ -71,6 +73,68 @@ class CanonicalModuleAuthorityTests {
         assertFailsWith<CanonicalModuleLoader.ContractException> {
             CanonicalModuleLoader.loadText(malformed)
         }
+    }
+
+    @Test
+    fun unknownSchemaTypeFailsThroughEveryPublicLoader() {
+        val malformed = validDescriptor().replace("type: text", "type: string")
+
+        val canonical = assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(malformed)
+        }
+        assertTrue(canonical.message.orEmpty().contains("must be one of"))
+        assertFailsWith<ModuleYamlLoader.LoadException> {
+            ModuleYamlLoader.loadText(malformed)
+        }
+    }
+
+    @Test
+    fun descriptorDefaultMustMatchDeclaredSchemaType() {
+        val malformed = validDescriptor().replace(
+            "        type: text\n        required: true",
+            "        type: number\n        required: true\n        default: \"forty-two\""
+        )
+
+        val failure = assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(malformed)
+        }
+        assertTrue(failure.message.orEmpty().contains("default"))
+        assertTrue(failure.message.orEmpty().contains("number"))
+        assertTrue(failure.message.orEmpty().contains("text"))
+    }
+
+    @Test
+    fun explicitNullDefaultFailsInsteadOfBecomingNoDefault() {
+        val malformed = validDescriptor().replace(
+            "        required: true",
+            "        required: true\n        default: null"
+        )
+
+        val failure = assertFailsWith<CanonicalModuleLoader.ContractException> {
+            CanonicalModuleLoader.loadText(malformed)
+        }
+        assertTrue(failure.message.orEmpty().contains("must not be null"))
+    }
+
+    @Test
+    fun validDefaultPreservesClosedSchemaType() {
+        val descriptor = validDescriptor().replace(
+            "        type: text\n        required: true",
+            "        type: number\n        required: true\n        default: 42"
+        )
+
+        val field = CanonicalModuleLoader.loadText(descriptor).actions.getValue("perform").input.getValue("value")
+        assertEquals(SchemaType.NUMBER, field.type)
+        assertTrue(field.defaultValue is Number)
+    }
+
+    @Test
+    fun programmaticDefaultsUseTheSameCompatibilityAuthority() {
+        assertFailsWith<IllegalArgumentException> {
+            SchemaField(type = SchemaType.NUMBER, defaultValue = "42")
+        }
+        assertEquals(null, SchemaType.fromWireName("invented"))
+        assertEquals(SchemaType.BOOLEAN, SchemaField(type = SchemaType.BOOLEAN, defaultValue = true).type)
     }
 
     @Test

@@ -4,6 +4,8 @@ import org.flowlang.modules.ModuleCatalog
 import org.flowlang.controls.CanonicalControlRequirementAuthority
 import org.flowlang.controls.ControlAssessment
 import org.flowlang.modules.SchemaField
+import org.flowlang.modules.SchemaTypeCompatibility
+import org.flowlang.modules.SchemaValueKind
 import org.flowlang.standard.StandardCapabilityContracts
 
 /**
@@ -206,15 +208,18 @@ class IntentCapabilityValidator(private val registry: ModuleCatalog) {
         else -> false
     }
 
-    private fun matchesType(value: IntentValue, field: SchemaField): Boolean = when (field.type) {
-        "text", "duration" -> value is IntentString || value is IntentRef || value is IntentExpression || value is IntentSecretRef
-        "secret" -> value is IntentSecretRef
-        "boolean" -> value is IntentBoolean || (value is IntentString && (value.value.equals("true", true) || value.value.equals("false", true)))
-        "number" -> value is IntentNumber || (value is IntentString && value.value.toDoubleOrNull() != null)
-        "map", "object", "json", "yaml" -> value is IntentObject || field.type in setOf("json", "yaml")
-        "list" -> value is IntentList
-        "any" -> true
-        else -> true
+    private fun matchesType(value: IntentValue, field: SchemaField): Boolean =
+        SchemaTypeCompatibility.accepts(field.type, value.schemaValueKind())
+
+    private fun IntentValue.schemaValueKind(): SchemaValueKind = when (this) {
+        is IntentString -> SchemaValueKind.TEXT
+        is IntentNumber -> SchemaValueKind.NUMBER
+        is IntentBoolean -> SchemaValueKind.BOOLEAN
+        is IntentNull -> SchemaValueKind.NULL
+        is IntentList -> SchemaValueKind.LIST
+        is IntentObject -> SchemaValueKind.MAP
+        is IntentSecretRef -> SchemaValueKind.SECRET
+        is IntentRef, is IntentExpression -> SchemaValueKind.DYNAMIC
     }
 
     private fun detectCycles(steps: List<IntentStep>, issues: MutableList<IntentValidationIssue>) {

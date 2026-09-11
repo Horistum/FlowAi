@@ -103,9 +103,20 @@ object CanonicalModuleLoader {
             val fieldPath = "$path.$fieldName"
             val field = map(rawField, fieldPath, required = true)
             rejectUnknownFields(field, SCHEMA_FIELD_KEYS, fieldPath)
-            text(field, "type", fieldPath)
+            val wireType = text(field, "type", fieldPath)
+            val schemaType = SchemaType.fromWireName(wireType)
+                ?: throw ContractException(
+                    "$fieldPath.type must be one of: ${SchemaType.supportedWireNames.joinToString()}."
+                )
             bool(field["required"], "$fieldPath.required")
             bool(field["sensitive"], "$fieldPath.sensitive")
+            if (field.containsKey("default")) {
+                val defaultValue = field["default"]
+                    ?: throw ContractException("$fieldPath.default must not be null; omit the field when no default is intended.")
+                SchemaTypeCompatibility.defaultValidationError(schemaType, defaultValue)?.let { problem ->
+                    throw ContractException("$fieldPath.default $problem.")
+                }
+            }
         }
     }
 

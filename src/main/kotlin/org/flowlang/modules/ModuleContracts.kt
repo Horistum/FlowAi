@@ -52,12 +52,109 @@ data class ModuleErrorRule(
     val message: String
 )
 
+/**
+ * Closed type vocabulary for module system/action schemas.
+ *
+ * This is intentionally separate from Flow source input types and target-manifest
+ * types. A module descriptor is a semantic contract, so accepting an unknown wire
+ * string here would make every downstream type check fail open.
+ */
+enum class SchemaType(val wireName: String) {
+    ANY("any"),
+    TEXT("text"),
+    NUMBER("number"),
+    BOOLEAN("boolean"),
+    LIST("list"),
+    MAP("map"),
+    SECRET("secret"),
+    DURATION("duration"),
+    ARTIFACT("artifact"),
+    JSON("json"),
+    YAML("yaml");
+
+    override fun toString(): String = wireName
+
+    companion object {
+        private val byWireName: Map<String, SchemaType> = entries.associateBy { it.wireName }
+        val supportedWireNames: Set<String> = byWireName.keys.toSortedSet()
+
+        fun fromWireName(value: String): SchemaType? = byWireName[value]
+    }
+}
+
+/** Value categories shared by descriptor defaults and authored module values. */
+enum class SchemaValueKind(val wireName: String) {
+    NULL("null"),
+    TEXT("text"),
+    NUMBER("number"),
+    BOOLEAN("boolean"),
+    LIST("list"),
+    MAP("map"),
+    SECRET("secret"),
+    DYNAMIC("dynamic")
+}
+
+/**
+ * Single compatibility authority for module schema values.
+ *
+ * Frontends classify their concrete values into [SchemaValueKind]; this object is
+ * the only place that decides whether the category satisfies a [SchemaType].
+ */
+object SchemaTypeCompatibility {
+    fun accepts(type: SchemaType, kind: SchemaValueKind): Boolean = when (type) {
+        SchemaType.ANY -> true
+        SchemaType.TEXT -> kind == SchemaValueKind.TEXT || kind == SchemaValueKind.SECRET || kind == SchemaValueKind.DYNAMIC
+        SchemaType.NUMBER -> kind == SchemaValueKind.NUMBER || kind == SchemaValueKind.DYNAMIC
+        SchemaType.BOOLEAN -> kind == SchemaValueKind.BOOLEAN || kind == SchemaValueKind.DYNAMIC
+        SchemaType.LIST -> kind == SchemaValueKind.LIST || kind == SchemaValueKind.DYNAMIC
+        SchemaType.MAP -> kind == SchemaValueKind.MAP || kind == SchemaValueKind.DYNAMIC
+        SchemaType.SECRET -> kind == SchemaValueKind.SECRET || kind == SchemaValueKind.DYNAMIC
+        SchemaType.DURATION -> kind == SchemaValueKind.TEXT || kind == SchemaValueKind.DYNAMIC
+        SchemaType.ARTIFACT -> kind == SchemaValueKind.TEXT || kind == SchemaValueKind.MAP || kind == SchemaValueKind.DYNAMIC
+        SchemaType.JSON, SchemaType.YAML -> kind != SchemaValueKind.SECRET
+    }
+
+    fun defaultValidationError(type: SchemaType, value: Any?): String? {
+        if (!isRepresentableDefault(value)) {
+            val kind = value?.javaClass?.name ?: "null"
+            return "uses unsupported default value kind '$kind'"
+        }
+        val actual = defaultValueKind(value)
+        return if (accepts(type, actual)) null
+        else "expects schema type '${type.wireName}' but the default is '${actual.wireName}'"
+    }
+
+    fun defaultValueKind(value: Any?): SchemaValueKind = when (value) {
+        null -> SchemaValueKind.NULL
+        is String -> SchemaValueKind.TEXT
+        is Number -> SchemaValueKind.NUMBER
+        is Boolean -> SchemaValueKind.BOOLEAN
+        is List<*> -> SchemaValueKind.LIST
+        is Map<*, *> -> SchemaValueKind.MAP
+        else -> throw IllegalArgumentException("Unsupported module schema default type '${value.javaClass.name}'.")
+    }
+
+    fun isRepresentableDefault(value: Any?): Boolean = when (value) {
+        null, is String, is Number, is Boolean -> true
+        is List<*> -> value.all(::isRepresentableDefault)
+        is Map<*, *> -> value.entries.all { (key, item) -> key is String && isRepresentableDefault(item) }
+        else -> false
+    }
+}
+
 data class SchemaField(
-    val type: String,
+    val type: SchemaType,
     val required: Boolean = false,
     val sensitive: Boolean = false,
     val defaultValue: Any? = null
-)
+) {
+    init {
+        if (defaultValue != null) {
+            val validationError = SchemaTypeCompatibility.defaultValidationError(type, defaultValue)
+            require(validationError == null) { "Invalid module schema default: $validationError." }
+        }
+    }
+}
 
 data class Effects(
     val reads: List<String> = emptyList(),

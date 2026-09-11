@@ -15,8 +15,12 @@ class SourceDeclarationLifecycleTests {
         val current = snapshot
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(current).isEmpty(), errors(current))
         val slices = current.integrityWorkPackage["implementationSlices"] as List<*>
-        assertEquals("implemented", section(slices.first())["status"])
-        assertTrue(slices.drop(1).all { section(it)["status"] == "planned" })
+        val selectedSlice = current.integrityWorkPackage["selectedSlice"]
+        val selectedIndex = slices.indexOfFirst { section(it)["id"] == selectedSlice }
+        assertTrue(selectedIndex >= 0, "Selected slice '$selectedSlice' must exist in implementationSlices.")
+        assertTrue(slices.take(selectedIndex).all { section(it)["status"] == "complete" })
+        assertEquals("implemented", section(slices[selectedIndex])["status"])
+        assertTrue(slices.drop(selectedIndex + 1).all { section(it)["status"] == "planned" })
         assertEquals("pending", section(section(current.integrityWorkPackage["lifecycle"])["implementationBoundary"])["status"])
     }
 
@@ -71,7 +75,12 @@ class SourceDeclarationLifecycleTests {
                 (lifecycle + (name to lifecycle["activationBoundary"])))), "future receipt")
         }
         val slices = current.integrityWorkPackage["implementationSlices"] as List<*>
-        val changed = listOf(section(slices.first()) - "acceptance") + slices.drop(1)
+        val selectedSlice = current.integrityWorkPackage["selectedSlice"]
+        assertTrue(slices.any { section(it)["id"] == selectedSlice }, "Selected slice '$selectedSlice' must exist in implementationSlices.")
+        val changed = slices.map { slice ->
+            val record = section(slice)
+            if (record["id"] == selectedSlice) record - "acceptance" else record
+        }
         rejected(current.copy(integrityWorkPackage = current.integrityWorkPackage + ("implementationSlices" to changed)), "current-revision CI")
     }
 
