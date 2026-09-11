@@ -6,6 +6,9 @@ import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityIssueKind
 import org.flowlang.core.FlowValueAvailability
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.SchemaType
+import org.flowlang.modules.SchemaTypeCompatibility
+import org.flowlang.modules.SchemaValueKind
 import org.flowlang.safety.EnvironmentSafetyPolicy
 
 /**
@@ -394,8 +397,7 @@ class FlowValidator(
         if (expr !is ReferenceNode) return false
         if (expr.path.size != 1) return false
         if (scope.has(expr.path.first())) return false
-        val expected = field.type.lowercase()
-        return expected in setOf("text", "string", "duration")
+        return field.type in setOf(SchemaType.TEXT, SchemaType.DURATION)
     }
 
     private fun validateValueType(
@@ -410,23 +412,18 @@ class FlowValidator(
         }
     }
 
-    private fun isCompatible(expr: ExpressionNode, expectedRaw: String): Boolean {
-        val expected = expectedRaw.lowercase()
-        if (expected == "any") return true
-        // References/calls are runtime values; module schema validation can only prove
-        // literal mismatches now. Stronger inferred typing belongs to a later phase.
-        if (expr is ReferenceNode || expr is MemberExpressionNode || expr is IndexExpressionNode || expr is CallExpressionNode) return true
-        return when (expected) {
-            "text", "string" -> expr is StringLiteralNode || expr is TemplateStringNode || expr is IdentifierLiteralNode || expr is SecretRefNode
-            "number", "int", "integer", "float", "double" -> expr is NumberLiteralNode
-            "boolean", "bool" -> expr is BooleanLiteralNode
-            "list", "array" -> expr is ListLiteralNode
-            "map", "object", "json", "yaml" -> expr is MapLiteralNode
-            "secret" -> expr is SecretRefNode
-            "duration" -> expr is StringLiteralNode || expr is IdentifierLiteralNode
-            "artifact" -> expr is StringLiteralNode || expr is TemplateStringNode || expr is MapLiteralNode || expr is ReferenceNode
-            else -> true
-        }
+    private fun isCompatible(expr: ExpressionNode, expected: SchemaType): Boolean =
+        SchemaTypeCompatibility.accepts(expected, schemaValueKind(expr))
+
+    private fun schemaValueKind(expr: ExpressionNode): SchemaValueKind = when (expr) {
+        is StringLiteralNode, is TemplateStringNode, is IdentifierLiteralNode -> SchemaValueKind.TEXT
+        is NumberLiteralNode -> SchemaValueKind.NUMBER
+        is BooleanLiteralNode -> SchemaValueKind.BOOLEAN
+        is ListLiteralNode -> SchemaValueKind.LIST
+        is MapLiteralNode -> SchemaValueKind.MAP
+        is SecretRefNode -> SchemaValueKind.SECRET
+        is NullLiteralNode -> SchemaValueKind.NULL
+        else -> SchemaValueKind.DYNAMIC
     }
 
     /**
