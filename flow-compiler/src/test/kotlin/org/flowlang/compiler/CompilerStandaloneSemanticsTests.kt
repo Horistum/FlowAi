@@ -99,8 +99,8 @@ class CompilerStandaloneSemanticsTests {
         val module = FlowModule(name = "catalog", version = "1.0",
             systemTypes = mapOf("documentStore" to SystemTypeContract(name = "documentStore")),
             actions = mapOf("fetch" to ModuleActionContract(name = "fetch", targetTypes = setOf("documentStore"),
-                input = mapOf("id" to SchemaField(type = "text", required = true)),
-                output = mapOf("value" to SchemaField(type = "text")), effects = Effects(reads = listOf("records")))))
+                input = mapOf("id" to SchemaField(type = SchemaType.TEXT, required = true)),
+                output = mapOf("value" to SchemaField(type = SchemaType.TEXT)), effects = Effects(reads = listOf("records")))))
         val decoded = object : ModuleCatalog {
             override fun findModule(name: String) = module.takeIf { name == it.name }
             override fun allModules() = listOf(module)
