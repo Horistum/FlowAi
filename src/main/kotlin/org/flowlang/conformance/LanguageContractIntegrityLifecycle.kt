@@ -169,7 +169,7 @@ internal object LanguageContractIntegrityLifecycle {
         if (lifecycle.keys != boundaries.toSet() || boundaries.drop(1).any {
             section(lifecycle[it]) != mapOf("status" to "pending")
         }) {
-            errors += "AR-04B cannot publish future milestone-wide implementation, validation or completion receipts."
+            errors += "AR-04B cannot publish a future receipt for milestone-wide implementation, validation or completion success."
         }
     }
 

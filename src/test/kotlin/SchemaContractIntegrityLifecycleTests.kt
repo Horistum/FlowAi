@@ -5,12 +5,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class LanguageContractIntegrityAr04bLifecycleTests {
+class SchemaContractIntegrityLifecycleTests {
     private fun live(): WorkflowSemanticsRecoveryLifecycleSnapshot =
         WorkflowSemanticsRecoveryLifecycle.load(File("."))
 
     @Test
-    fun liveWorkPackageSelectsSchemaIntegrityAfterAcceptedAr04a() {
+    fun liveWorkPackageSelectsSchemaIntegrityAfterAcceptedPredecessorSlice() {
         val current = live()
         val errors = WorkflowSemanticsRecoveryLifecycle.errors(current)
         assertTrue(errors.isEmpty(), errors.joinToString(" | "))
@@ -25,7 +25,7 @@ class LanguageContractIntegrityAr04bLifecycleTests {
     }
 
     @Test
-    fun ar04bCannotBorrowOrRewriteAr04aAcceptance() {
+    fun schemaIntegrityCannotBorrowOrRewriteAcceptedPredecessorSlice() {
         val current = live()
         val slices = records(current.integrityWorkPackage["implementationSlices"])
         val changed = slices.map { slice ->
@@ -43,14 +43,17 @@ class LanguageContractIntegrityAr04bLifecycleTests {
     }
 
     @Test
-    fun ar04bCannotPublishFutureMilestoneWideSuccess() {
+    fun schemaIntegrityCannotPublishFutureMilestoneWideSuccess() {
         val current = live()
         val lifecycle = section(current.integrityWorkPackage["lifecycle"])
         val mutated = lifecycle + ("implementationBoundary" to mapOf("status" to "passed"))
         val errors = WorkflowSemanticsRecoveryLifecycle.errors(
             current.copy(integrityWorkPackage = current.integrityWorkPackage + ("lifecycle" to mutated))
         )
-        assertTrue(errors.any { "future milestone-wide" in it }, errors.joinToString(" | "))
+        assertTrue(
+            errors.any { "future receipt" in it && "milestone-wide" in it },
+            errors.joinToString(" | ")
+        )
     }
 
     @Suppress("UNCHECKED_CAST")
