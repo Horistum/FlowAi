@@ -38,10 +38,11 @@ class GitOptsReferenceExampleTests {
             "open-pull-request" to "openPullRequest"
         )
 
-        assertEquals(expectedSteps, plan.tasks.mapNotNull { it.sourceId })
+        assertEquals(expectedSteps, plan.tasks.map { requireNotNull(it.sourceId) })
         plan.tasks.forEach { task ->
+            val sourceId = requireNotNull(task.sourceId)
             assertEquals("gitops", task.module)
-            assertEquals(expectedActions.getValue(task.sourceId), task.action)
+            assertEquals(expectedActions.getValue(sourceId), task.action)
         }
 
         val required = setOf(
