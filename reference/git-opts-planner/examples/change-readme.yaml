@@ -1,0 +1,23 @@
+apiVersion: horistum.dev/git-opts/v1
+kind: GitOptsIntent
+repository:
+  url: https://github.com/Horistum/example.git
+baseRef: main
+branch: example/update-reference-docs
+changes:
+  - path: README.md
+    operation: upsert
+    content: |
+      # Horistum
+
+      Git opts planner reference example.
+  - path: docs/git-opts-example.md
+    operation: create
+    content: |
+      This file is produced by the reference intent.
+commit:
+  message: "docs: demonstrate git opts planner"
+delivery:
+  mode: pull-request
+  title: "Demonstrate git opts planner"
+  body: "Generated from the reference Git opts intent."

@@ -14,7 +14,25 @@ dependencies {
     api(project(":flow-adapter-jenkins"))
     api(project(":flow-adapter-github-actions"))
     api(project(":flow-adapter-tekton"))
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2")
     testImplementation(kotlin("test"))
+}
+
+val gitOptsFile = providers.gradleProperty("gitOptsFile")
+tasks.register<JavaExec>("gitOptsPlan") {
+    group = "application"
+    description = "Plan a git-opts reference intent without executing Git or network side effects."
+    dependsOn(tasks.named("classes"))
+    mainClass.set("org.flowlang.distribution.reference.gitopts.GitOptsPlannerCliKt")
+    classpath = sourceSets.main.get().runtimeClasspath
+    workingDir(rootProject.projectDir)
+    doFirst {
+        require(gitOptsFile.isPresent) {
+            "Provide -PgitOptsFile=<intent.yaml>; for example reference/git-opts-planner/examples/change-readme.yaml"
+        }
+        args(gitOptsFile.get())
+    }
 }
 
 tasks.test { workingDir(rootProject.projectDir) }

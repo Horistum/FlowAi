@@ -1,6 +1,10 @@
 org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt
 org/flowlang/distribution/reference/ReferenceStandardArtifacts.kt
 org/flowlang/distribution/reference/ReferenceTargetProjections.kt
+org/flowlang/distribution/reference/gitopts/GitOptsModel.kt
+org/flowlang/distribution/reference/gitopts/GitOptsPlanner.kt
+org/flowlang/distribution/reference/gitopts/GitOptsPlannerCli.kt
+org/flowlang/distribution/reference/gitopts/GitOptsYaml.kt
 org/flowlang/targets/StandardTargetRegistryHonestySnapshots.kt
 org/flowlang/targets/builtin/BuiltInNativeProjectionCatalogs.kt
 org/flowlang/targets/builtin/BuiltInTargetProjections.kt

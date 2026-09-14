@@ -1,0 +1,26 @@
+{
+  "apiVersion": "horistum.dev/reference-planner/v1",
+  "kind": "ReferencePlanner",
+  "id": "git-opts-planner",
+  "version": "1.0.0",
+  "accepts": ["horistum.dev/git-opts/v1#GitOptsIntent"],
+  "produces": ["GitOptsPlan"],
+  "properties": {
+    "deterministic": true,
+    "sideEffectFree": true,
+    "networkRequired": false,
+    "shellExecution": false
+  },
+  "capabilityVocabulary": [
+    "scm.repository.read",
+    "scm.branch.create",
+    "workspace.file.create",
+    "workspace.file.update",
+    "workspace.file.upsert",
+    "workspace.file.delete",
+    "scm.commit.create",
+    "scm.ref.publish",
+    "scm.change-request.open"
+  ],
+  "referenceCommand": "./gradlew :flow-reference-distribution:gitOptsPlan -PgitOptsFile=reference/git-opts-planner/examples/change-readme.yaml"
+}

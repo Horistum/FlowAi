@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://horistum.dev/schema/reference/git-opts-intent-v1.schema.json",
+  "title": "Horistum Git opts reference intent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "repository", "branch", "changes", "commit"],
+  "properties": {
+    "apiVersion": { "const": "horistum.dev/git-opts/v1" },
+    "kind": { "const": "GitOptsIntent" },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string", "minLength": 1 }
+      }
+    },
+    "baseRef": { "type": "string", "minLength": 1, "default": "main" },
+    "branch": { "type": "string", "minLength": 1 },
+    "changes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "operation"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "operation": { "enum": ["create", "update", "upsert", "delete"] },
+          "content": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "commit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message"],
+      "properties": {
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["local", "push", "pull-request"], "default": "local" },
+        "title": { "type": ["string", "null"] },
+        "body": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
