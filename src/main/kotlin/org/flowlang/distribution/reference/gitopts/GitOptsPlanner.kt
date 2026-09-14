@@ -14,8 +14,17 @@ class GitOptsPlanner {
         if (intent.kind != GIT_OPTS_KIND) {
             error("GIT_OPTS_UNSUPPORTED_KIND", "kind", "Expected '$GIT_OPTS_KIND'.")
         }
-        if (intent.repository.url.isBlank() || intent.repository.url.any { it == '\u0000' || it == '\r' || it == '\n' }) {
+        val repository = intent.repository.url
+        if (repository.isBlank() || repository.any { it == '\u0000' || it == '\r' || it == '\n' }) {
             error("GIT_OPTS_INVALID_REPOSITORY", "repository.url", "Repository URL must be a non-blank single-line value.")
+        } else if (repository != repository.trim()) {
+            error("GIT_OPTS_INVALID_REPOSITORY", "repository.url", "Repository URL must not contain leading or trailing whitespace.")
+        } else if (Regex("^https?://[^/@]+@", RegexOption.IGNORE_CASE).containsMatchIn(repository)) {
+            error(
+                "GIT_OPTS_REPOSITORY_EMBEDS_CREDENTIALS",
+                "repository.url",
+                "HTTP(S) repository URLs must not embed user information or credentials. Bind credentials at execution time."
+            )
         }
         validateRef(intent.baseRef, "baseRef")?.let { error("GIT_OPTS_INVALID_REF", "baseRef", it) }
         validateRef(intent.branch, "branch")?.let { error("GIT_OPTS_INVALID_REF", "branch", it) }
@@ -60,11 +69,9 @@ class GitOptsPlanner {
         val diagnostics = validate(intent)
         if (diagnostics.isNotEmpty()) throw GitOptsPlanningException(diagnostics)
 
-        val baseRef = intent.baseRef.trim()
-        val branch = intent.branch.trim()
         val operations = mutableListOf<GitOptsOperation>()
-        operations += GitCheckoutOperation(repository = intent.repository.url.trim(), ref = baseRef)
-        operations += GitCreateBranchOperation(branch = branch, fromRef = baseRef)
+        operations += GitCheckoutOperation(repository = intent.repository.url, ref = intent.baseRef)
+        operations += GitCreateBranchOperation(branch = intent.branch, fromRef = intent.baseRef)
 
         val fileOperations = intent.changes
             .sortedWith(compareBy<GitFileChange> { it.path }.thenBy { it.operation.toWireName() })
@@ -83,12 +90,12 @@ class GitOptsPlanner {
         )
 
         if (intent.delivery.mode != GitDeliveryMode.LOCAL) {
-            operations += GitPublishRefOperation(branch = branch)
+            operations += GitPublishRefOperation(branch = intent.branch)
         }
         if (intent.delivery.mode == GitDeliveryMode.PULL_REQUEST) {
             operations += GitOpenChangeRequestOperation(
-                baseRef = baseRef,
-                headRef = branch,
+                baseRef = intent.baseRef,
+                headRef = intent.branch,
                 title = requireNotNull(intent.delivery.title),
                 body = intent.delivery.body
             )
@@ -107,13 +114,15 @@ class GitOptsPlanner {
     private fun validateRef(value: String, name: String): String? {
         if (value.isBlank()) return "$name must not be blank."
         if (value != value.trim()) return "$name must not contain leading or trailing whitespace."
-        if (value.startsWith('-') || value.startsWith('/') || value.endsWith('/') || value.endsWith('.')) {
+        if (value == "@" || value.startsWith('-') || value.startsWith('/') || value.endsWith('/')) {
             return "$name is not a safe Git ref."
         }
         if (".." in value || "@{" in value || "//" in value) return "$name contains a forbidden Git ref sequence."
         val forbidden = setOf(' ', '~', '^', ':', '?', '*', '[', '\\')
         if (value.any { it.code < 32 || it.code == 127 || it in forbidden }) return "$name contains a forbidden Git ref character."
-        if (value.split('/').any { it.isBlank() || it == "." || it == ".." || it.endsWith(".lock") }) {
+        if (value.split('/').any {
+                it.isBlank() || it == "." || it == ".." || it.startsWith('.') || it.endsWith('.') || it.endsWith(".lock")
+            }) {
             return "$name contains an invalid Git ref path component."
         }
         return null
@@ -134,6 +143,7 @@ object GitOptsPlanIntegrity {
     fun requireValid(plan: GitOptsPlan): GitOptsPlan {
         require(plan.plannerId == GIT_OPTS_PLANNER_ID) { "Unexpected planner id '${plan.plannerId}'." }
         require(plan.plannerVersion == GIT_OPTS_PLANNER_VERSION) { "Unexpected planner version '${plan.plannerVersion}'." }
+        require(plan.sourceApiVersion == GIT_OPTS_API_VERSION) { "Unexpected source API version '${plan.sourceApiVersion}'." }
         require(plan.operations.isNotEmpty()) { "A git opts plan must contain operations." }
 
         val byId = plan.operations.associateBy(GitOptsOperation::id)

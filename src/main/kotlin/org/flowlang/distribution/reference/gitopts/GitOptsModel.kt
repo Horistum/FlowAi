@@ -9,8 +9,8 @@ const val GIT_OPTS_PLANNER_ID: String = "git-opts-planner"
 const val GIT_OPTS_PLANNER_VERSION: String = "1.0.0"
 
 data class GitOptsIntent(
-    val apiVersion: String = GIT_OPTS_API_VERSION,
-    val kind: String = GIT_OPTS_KIND,
+    val apiVersion: String,
+    val kind: String,
     val repository: GitRepositorySpec,
     val baseRef: String = "main",
     val branch: String,
@@ -91,50 +91,55 @@ data class GitCheckoutOperation(
     override val id: String = "checkout",
     val repository: String,
     val ref: String,
-    override val dependsOn: List<String> = emptyList(),
-    override val kind: String = "scm.repository.checkout",
-    override val capability: GitOptsCapability = GitOptsCapability.REPOSITORY_READ
-) : GitOptsOperation
+    override val dependsOn: List<String> = emptyList()
+) : GitOptsOperation {
+    override val kind: String get() = "scm.repository.checkout"
+    override val capability: GitOptsCapability get() = GitOptsCapability.REPOSITORY_READ
+}
 
 data class GitCreateBranchOperation(
     override val id: String = "create-branch",
     val branch: String,
     val fromRef: String,
-    override val dependsOn: List<String> = listOf("checkout"),
-    override val kind: String = "scm.branch.create",
-    override val capability: GitOptsCapability = GitOptsCapability.BRANCH_CREATE
-) : GitOptsOperation
+    override val dependsOn: List<String> = listOf("checkout")
+) : GitOptsOperation {
+    override val kind: String get() = "scm.branch.create"
+    override val capability: GitOptsCapability get() = GitOptsCapability.BRANCH_CREATE
+}
 
 data class GitFileMutationOperation(
     override val id: String,
     val path: String,
     val operation: GitFileOperation,
     val content: String?,
-    override val dependsOn: List<String> = listOf("create-branch"),
-    override val kind: String = "workspace.file.mutate",
-    override val capability: GitOptsCapability = when (operation) {
+    override val dependsOn: List<String> = listOf("create-branch")
+) : GitOptsOperation {
+    override val kind: String get() = "workspace.file.mutate"
+    override val capability: GitOptsCapability get() = when (operation) {
         GitFileOperation.CREATE -> GitOptsCapability.FILE_CREATE
         GitFileOperation.UPDATE -> GitOptsCapability.FILE_UPDATE
         GitFileOperation.UPSERT -> GitOptsCapability.FILE_UPSERT
         GitFileOperation.DELETE -> GitOptsCapability.FILE_DELETE
     }
-) : GitOptsOperation
+}
 
 data class GitCreateCommitOperation(
     override val id: String = "commit",
     val message: String,
-    override val dependsOn: List<String>,
-    override val kind: String = "scm.commit.create",
-    override val capability: GitOptsCapability = GitOptsCapability.COMMIT_CREATE
-) : GitOptsOperation
+    override val dependsOn: List<String>
+) : GitOptsOperation {
+    override val kind: String get() = "scm.commit.create"
+    override val capability: GitOptsCapability get() = GitOptsCapability.COMMIT_CREATE
+}
 
 data class GitPublishRefOperation(
     override val id: String = "publish-ref",
     val branch: String,
-    override val dependsOn: List<String> = listOf("commit"),
-    override val kind: String = "scm.ref.publish",
-    override val capability: GitOptsCapability = GitOptsCapability.REF_PUBLISH
-) : GitOptsOperation
+    override val dependsOn: List<String> = listOf("commit")
+) : GitOptsOperation {
+    override val kind: String get() = "scm.ref.publish"
+    override val capability: GitOptsCapability get() = GitOptsCapability.REF_PUBLISH
+}
 
 data class GitOpenChangeRequestOperation(
     override val id: String = "open-change-request",
@@ -142,10 +147,11 @@ data class GitOpenChangeRequestOperation(
     val headRef: String,
     val title: String,
     val body: String? = null,
-    override val dependsOn: List<String> = listOf("publish-ref"),
-    override val kind: String = "scm.change-request.open",
-    override val capability: GitOptsCapability = GitOptsCapability.CHANGE_REQUEST_OPEN
-) : GitOptsOperation
+    override val dependsOn: List<String> = listOf("publish-ref")
+) : GitOptsOperation {
+    override val kind: String get() = "scm.change-request.open"
+    override val capability: GitOptsCapability get() = GitOptsCapability.CHANGE_REQUEST_OPEN
+}
 
 data class GitOptsPlan(
     val plannerId: String = GIT_OPTS_PLANNER_ID,

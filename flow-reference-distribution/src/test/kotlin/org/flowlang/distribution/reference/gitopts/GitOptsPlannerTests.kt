@@ -40,6 +40,21 @@ class GitOptsPlannerTests {
         assertEquals(listOf("a.txt", "z.txt"), mutations.map(GitFileMutationOperation::path))
     }
 
+    @Test fun operationTypeOwnsItsSemanticIdentity() {
+        val checkout = GitCheckoutOperation(repository = "file:///tmp/origin.git", ref = "main")
+        assertEquals("scm.repository.checkout", checkout.kind)
+        assertEquals(GitOptsCapability.REPOSITORY_READ, checkout.capability)
+
+        val delete = GitFileMutationOperation(
+            id = "delete",
+            path = "obsolete.txt",
+            operation = GitFileOperation.DELETE,
+            content = null
+        )
+        assertEquals("workspace.file.mutate", delete.kind)
+        assertEquals(GitOptsCapability.FILE_DELETE, delete.capability)
+    }
+
     @Test fun localDeliveryStopsAtTheCommitBoundary() {
         val plan = planner.plan(baseIntent())
         assertIs<GitCreateCommitOperation>(plan.operations.last())
@@ -61,6 +76,20 @@ class GitOptsPlannerTests {
             planner.plan(baseIntent(changes = listOf(GitFileChange(".git/config", GitFileOperation.UPDATE, "no"))))
         }
         assertTrue(failure.diagnostics.any { it.code == "GIT_OPTS_INVALID_PATH" })
+    }
+
+    @Test fun httpRepositoryCannotSmuggleCredentialsIntoCanonicalIntent() {
+        val failure = assertFailsWith<GitOptsPlanningException> {
+            planner.plan(baseIntent(repository = GitRepositorySpec("https://token@example.invalid/Horistum/example.git")))
+        }
+        assertTrue(failure.diagnostics.any { it.code == "GIT_OPTS_REPOSITORY_EMBEDS_CREDENTIALS" })
+    }
+
+    @Test fun unsafeGitRefShapesFailBeforePlanning() {
+        listOf("@", ".hidden/change", "feature/../main", "feature.lock").forEach { branch ->
+            val failure = assertFailsWith<GitOptsPlanningException> { planner.plan(baseIntent(branch = branch)) }
+            assertTrue(failure.diagnostics.any { it.code == "GIT_OPTS_INVALID_REF" && it.path == "branch" }, branch)
+        }
     }
 
     @Test fun pullRequestDeliveryRequiresAnExplicitTitle() {
@@ -111,13 +140,39 @@ class GitOptsPlannerTests {
         }
     }
 
+    @Test fun yamlDecoderRequiresVersionAndKindRatherThanInventingThem() {
+        val temp = File.createTempFile("git-opts-version", ".yaml")
+        try {
+            temp.writeText(
+                """
+                repository:
+                  url: https://github.com/Horistum/example.git
+                branch: example/change
+                changes:
+                  - path: README.md
+                    operation: upsert
+                    content: ok
+                commit:
+                  message: test
+                """.trimIndent()
+            )
+            assertFailsWith<Exception> { GitOptsYaml.load(temp) }
+        } finally {
+            temp.delete()
+        }
+    }
+
     private fun baseIntent(
+        repository: GitRepositorySpec = GitRepositorySpec("https://github.com/Horistum/example.git"),
+        branch: String = "example/reference-change",
         changes: List<GitFileChange> = listOf(GitFileChange("README.md", GitFileOperation.UPSERT, "# Horistum\n")),
         delivery: GitDeliverySpec = GitDeliverySpec()
     ) = GitOptsIntent(
-        repository = GitRepositorySpec("https://github.com/Horistum/example.git"),
+        apiVersion = GIT_OPTS_API_VERSION,
+        kind = GIT_OPTS_KIND,
+        repository = repository,
         baseRef = "main",
-        branch = "example/reference-change",
+        branch = branch,
         changes = changes,
         commit = GitCommitSpec("docs: demonstrate git opts planner"),
         delivery = delivery
