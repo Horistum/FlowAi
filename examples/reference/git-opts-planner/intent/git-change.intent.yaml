@@ -1,0 +1,83 @@
+intentVersion: "2.0"
+kind: FlowIntentDocument
+name: git-opts-reference-change
+description: >-
+  Standalone reference consumer showing how Git-specific planning can be modeled
+  outside Horistum product code through an external module descriptor and Standard Intent.
+
+systems:
+  - name: repository
+    type: git
+    purpose: Repository changed by the reference planner
+    config:
+      url: https://github.com/example/example-repository.git
+
+workflows:
+  - name: change
+    kind: CUSTOM
+    steps:
+      - id: checkout
+        capability: CHECKOUT
+        uses: gitops.checkout
+        params:
+          system: repository
+          branch: main
+
+      - id: create-branch
+        capability: CUSTOM
+        uses: gitops.createBranch
+        requires: [checkout]
+        params:
+          system: repository
+          branch: example/update-readme
+          from: main
+          description: Create an isolated change branch
+
+      - id: update-readme
+        capability: CUSTOM
+        uses: gitops.writeFile
+        requires: [create-branch]
+        params:
+          system: repository
+          path: README.md
+          mode: upsert
+          content: |
+            # Example repository
+
+            This change was planned through the Horistum git-opts reference example.
+          description: Update one repository file
+
+      - id: commit
+        capability: CUSTOM
+        uses: gitops.commit
+        requires: [update-readme]
+        params:
+          system: repository
+          message: "docs: update README through Horistum reference"
+          description: Commit the planned workspace change
+
+      - id: push
+        capability: CUSTOM
+        uses: gitops.push
+        requires: [commit]
+        params:
+          system: repository
+          branch: example/update-readme
+          description: Publish the change branch
+
+      - id: open-pull-request
+        capability: CUSTOM
+        uses: gitops.openPullRequest
+        requires: [push]
+        params:
+          system: repository
+          base: main
+          head: example/update-readme
+          title: "Update README through Horistum reference"
+          body: "Reference change request produced from an external module-backed intent."
+          description: Open the review request after publishing the branch
+
+failure:
+  notify: false
+  rollback: false
+  stopOnError: true

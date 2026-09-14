@@ -1,0 +1,185 @@
+kind: FlowModule
+name: gitops
+version: "1.0"
+description: "Reference external Git change module for the git-opts-planner example. This descriptor is example-owned, not part of Horistum Core."
+systemTypes:
+  git:
+    input:
+      url:
+        type: text
+        required: true
+        sensitive: false
+actions:
+  checkout:
+    kind: action
+    implements: [CHECKOUT]
+    targetTypes: [git]
+    input:
+      branch:
+        type: text
+        required: true
+    output:
+      ok:
+        type: boolean
+      path:
+        type: text
+    effects:
+      reads:
+        - git.repository
+      filesystem:
+        - workspace.write
+    continuity:
+      provides:
+        - kind: workspace
+          name: source
+    requiredCapabilities:
+      - git.checkout
+    safety:
+      destructive: false
+
+  createBranch:
+    kind: action
+    implements: [CUSTOM]
+    targetTypes: [git]
+    input:
+      branch:
+        type: text
+        required: true
+      from:
+        type: text
+        required: true
+    output:
+      ok:
+        type: boolean
+    effects:
+      creates:
+        - git.branch
+    continuity:
+      requires:
+        - kind: workspace
+          name: source
+      provides:
+        - kind: workspace
+          name: source
+    requiredCapabilities:
+      - git.branch.create
+    safety:
+      destructive: false
+
+  writeFile:
+    kind: action
+    implements: [CUSTOM]
+    targetTypes: [git]
+    input:
+      path:
+        type: text
+        required: true
+      mode:
+        type: text
+        required: true
+      content:
+        type: text
+        required: true
+    output:
+      ok:
+        type: boolean
+    effects:
+      writes:
+        - workspace.file
+      filesystem:
+        - workspace.write
+    continuity:
+      requires:
+        - kind: workspace
+          name: source
+      provides:
+        - kind: workspace
+          name: source
+    requiredCapabilities:
+      - workspace.file.write
+    safety:
+      destructive: false
+
+  commit:
+    kind: action
+    implements: [CUSTOM]
+    targetTypes: [git]
+    input:
+      message:
+        type: text
+        required: true
+    output:
+      ok:
+        type: boolean
+      commitSha:
+        type: text
+    effects:
+      creates:
+        - git.commit
+    continuity:
+      requires:
+        - kind: workspace
+          name: source
+      provides:
+        - kind: workspace
+          name: source
+    requiredCapabilities:
+      - git.commit.create
+    safety:
+      destructive: false
+
+  push:
+    kind: action
+    implements: [CUSTOM]
+    targetTypes: [git]
+    input:
+      branch:
+        type: text
+        required: true
+    output:
+      ok:
+        type: boolean
+    effects:
+      network:
+        - git.remote
+      writes:
+        - git.remote-ref
+    continuity:
+      requires:
+        - kind: workspace
+          name: source
+    requiredCapabilities:
+      - git.ref.publish
+    safety:
+      destructive: false
+
+  openPullRequest:
+    kind: action
+    implements: [CUSTOM]
+    targetTypes: [git]
+    input:
+      base:
+        type: text
+        required: true
+      head:
+        type: text
+        required: true
+      title:
+        type: text
+        required: true
+      body:
+        type: text
+    output:
+      ok:
+        type: boolean
+      url:
+        type: text
+    effects:
+      network:
+        - scm.provider
+      creates:
+        - scm.change-request
+    requiredCapabilities:
+      - scm.change-request.open
+    safety:
+      destructive: false

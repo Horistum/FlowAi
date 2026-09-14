@@ -1,0 +1,54 @@
+kind: FlowTargetRegistry
+version: "3.2"
+description: >-
+  Analysis-only target profile for the git-opts reference. It intentionally does
+  not claim executable Git operations; the example demonstrates planning, not a hidden executor.
+
+expressionProfiles:
+  - id: flow-full
+    description: Complete expression support for reference analysis.
+    supportsAll: true
+
+targets:
+  - name: reference-analysis
+    expressionProfile: flow-full
+    description: Planning-only profile. Git operation execution is deliberately unsupported.
+    topology:
+      evidenceReference: examples/reference/git-opts-planner/targets/reference-analysis.yaml#reference-analysis.topology
+      capabilities:
+        workflowScope: supported
+        branchIsolation: supported
+        attemptIsolation: supported
+        workflowLifetime: supported
+        suspendResume: unsupported
+        ephemeralWorkspace: supported
+        durableState: unsupported
+        valuePropagation: supported
+        workspacePropagation: supported
+        statePropagation: unsupported
+        failurePropagation: supported
+    capabilities:
+      sequentialTasks: supported
+      parallel: unsupported
+      conditions: supported
+      dynamicLoops: unsupported
+      match: unsupported
+      retry: unsupported
+      approvals: unsupported
+      errorHandlers: supported
+      artifacts: unsupported
+      secrets: unsupported
+      nativeRuntime: unsupported
+    features:
+      continuity.value: supported
+      continuity.workspace: supported
+      continuity.state: unsupported
+      git.checkout: unsupported
+      git.branch.create: unsupported
+      workspace.file.write: unsupported
+      git.commit.create: unsupported
+      git.ref.publish: unsupported
+      scm.change-request.open: unsupported
+    notes:
+      - This target exists only so the standalone example can produce compatibility evidence.
+      - Unsupported Git features are intentional until a real external executor/adapter is supplied.
