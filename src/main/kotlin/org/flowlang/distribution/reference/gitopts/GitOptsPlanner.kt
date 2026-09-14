@@ -19,7 +19,7 @@ class GitOptsPlanner {
             error("GIT_OPTS_INVALID_REPOSITORY", "repository.url", "Repository URL must be a non-blank single-line value.")
         } else if (repository != repository.trim()) {
             error("GIT_OPTS_INVALID_REPOSITORY", "repository.url", "Repository URL must not contain leading or trailing whitespace.")
-        } else if (Regex("^https?://[^/@]+@", RegexOption.IGNORE_CASE).containsMatchIn(repository)) {
+        } else if (Regex("^https?://[^/]*@", RegexOption.IGNORE_CASE).containsMatchIn(repository)) {
             error(
                 "GIT_OPTS_REPOSITORY_EMBEDS_CREDENTIALS",
                 "repository.url",

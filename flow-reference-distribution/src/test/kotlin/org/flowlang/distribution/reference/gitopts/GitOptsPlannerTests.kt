@@ -26,7 +26,7 @@ class GitOptsPlannerTests {
         GitOptsPlanIntegrity.requireValid(plan)
     }
 
-    @Test fun equivalentChangesProduceTheSameCanonicalPlanRegardlessOfAuthoredOrder() {
+    @Test fun equivalentChangesProduceTheSameCanonicalPlanAndJsonRegardlessOfAuthoredOrder() {
         val first = baseIntent(
             changes = listOf(
                 GitFileChange("z.txt", GitFileOperation.UPSERT, "z"),
@@ -35,8 +35,11 @@ class GitOptsPlannerTests {
         )
         val second = first.copy(changes = first.changes.reversed())
 
-        assertEquals(planner.plan(first), planner.plan(second))
-        val mutations = planner.plan(first).operations.filterIsInstance<GitFileMutationOperation>()
+        val firstPlan = planner.plan(first)
+        val secondPlan = planner.plan(second)
+        assertEquals(firstPlan, secondPlan)
+        assertEquals(GitOptsYaml.renderPlan(firstPlan), GitOptsYaml.renderPlan(secondPlan))
+        val mutations = firstPlan.operations.filterIsInstance<GitFileMutationOperation>()
         assertEquals(listOf("a.txt", "z.txt"), mutations.map(GitFileMutationOperation::path))
     }
 
@@ -116,47 +119,64 @@ class GitOptsPlannerTests {
     }
 
     @Test fun yamlDecoderRejectsUnknownFieldsInsteadOfSilentlyIgnoringThem() {
-        val temp = File.createTempFile("git-opts-unknown", ".yaml")
-        try {
-            temp.writeText(
-                """
-                apiVersion: horistum.dev/git-opts/v1
-                kind: GitOptsIntent
-                repository:
-                  url: https://github.com/Horistum/example.git
-                branch: example/change
-                changes:
-                  - path: README.md
-                    operation: upsert
-                    content: ok
-                commit:
-                  message: test
-                inventedField: true
-                """.trimIndent()
-            )
-            assertFailsWith<Exception> { GitOptsYaml.load(temp) }
-        } finally {
-            temp.delete()
-        }
+        withTempYaml(
+            """
+            apiVersion: horistum.dev/git-opts/v1
+            kind: GitOptsIntent
+            repository:
+              url: https://github.com/Horistum/example.git
+            branch: example/change
+            changes:
+              - path: README.md
+                operation: upsert
+                content: ok
+            commit:
+              message: test
+            inventedField: true
+            """
+        ) { file -> assertFailsWith<Exception> { GitOptsYaml.load(file) } }
+    }
+
+    @Test fun yamlDecoderRejectsDuplicateAuthoredFields() {
+        withTempYaml(
+            """
+            apiVersion: horistum.dev/git-opts/v1
+            kind: GitOptsIntent
+            repository:
+              url: https://github.com/Horistum/example.git
+            branch: example/first
+            branch: example/second
+            changes:
+              - path: README.md
+                operation: upsert
+                content: ok
+            commit:
+              message: test
+            """
+        ) { file -> assertFailsWith<Exception> { GitOptsYaml.load(file) } }
     }
 
     @Test fun yamlDecoderRequiresVersionAndKindRatherThanInventingThem() {
-        val temp = File.createTempFile("git-opts-version", ".yaml")
+        withTempYaml(
+            """
+            repository:
+              url: https://github.com/Horistum/example.git
+            branch: example/change
+            changes:
+              - path: README.md
+                operation: upsert
+                content: ok
+            commit:
+              message: test
+            """
+        ) { file -> assertFailsWith<Exception> { GitOptsYaml.load(file) } }
+    }
+
+    private fun withTempYaml(source: String, block: (File) -> Unit) {
+        val temp = File.createTempFile("git-opts-test", ".yaml")
         try {
-            temp.writeText(
-                """
-                repository:
-                  url: https://github.com/Horistum/example.git
-                branch: example/change
-                changes:
-                  - path: README.md
-                    operation: upsert
-                    content: ok
-                commit:
-                  message: test
-                """.trimIndent()
-            )
-            assertFailsWith<Exception> { GitOptsYaml.load(temp) }
+            temp.writeText(source.trimIndent())
+            block(temp)
         } finally {
             temp.delete()
         }
