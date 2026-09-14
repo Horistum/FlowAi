@@ -19,6 +19,7 @@ workflows:
       - id: checkout
         capability: CHECKOUT
         uses: gitops.checkout
+        description: Resolve the repository workspace from the selected base branch
         params:
           system: repository
           branch: main
@@ -26,16 +27,17 @@ workflows:
       - id: create-branch
         capability: CUSTOM
         uses: gitops.createBranch
+        description: Create an isolated change branch
         requires: [checkout]
         params:
           system: repository
           branch: example/update-readme
           from: main
-          description: Create an isolated change branch
 
       - id: update-readme
         capability: CUSTOM
         uses: gitops.writeFile
+        description: Update one repository file
         requires: [create-branch]
         params:
           system: repository
@@ -45,29 +47,29 @@ workflows:
             # Example repository
 
             This change was planned through the Horistum git-opts reference example.
-          description: Update one repository file
 
       - id: commit
         capability: CUSTOM
         uses: gitops.commit
+        description: Commit the planned workspace change
         requires: [update-readme]
         params:
           system: repository
           message: "docs: update README through Horistum reference"
-          description: Commit the planned workspace change
 
       - id: push
         capability: CUSTOM
         uses: gitops.push
+        description: Publish the change branch
         requires: [commit]
         params:
           system: repository
           branch: example/update-readme
-          description: Publish the change branch
 
       - id: open-pull-request
         capability: CUSTOM
         uses: gitops.openPullRequest
+        description: Open the review request after publishing the branch
         requires: [push]
         params:
           system: repository
@@ -75,7 +77,6 @@ workflows:
           head: example/update-readme
           title: "Update README through Horistum reference"
           body: "Reference change request produced from an external module-backed intent."
-          description: Open the review request after publishing the branch
 
 failure:
   notify: false

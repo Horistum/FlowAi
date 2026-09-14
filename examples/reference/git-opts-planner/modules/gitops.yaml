@@ -58,9 +58,6 @@ actions:
       requires:
         - kind: workspace
           name: source
-      provides:
-        - kind: workspace
-          name: source
     requiredCapabilities:
       - git.branch.create
     safety:
@@ -92,9 +89,6 @@ actions:
       requires:
         - kind: workspace
           name: source
-      provides:
-        - kind: workspace
-          name: source
     requiredCapabilities:
       - workspace.file.write
     safety:
@@ -118,9 +112,6 @@ actions:
         - git.commit
     continuity:
       requires:
-        - kind: workspace
-          name: source
-      provides:
         - kind: workspace
           name: source
     requiredCapabilities:
