@@ -10,4 +10,6 @@ apply(from = rootProject.file("gradle/production-module.gradle.kts"))
 dependencies {
     api(project(":flow-adapter-runtime"))
     testImplementation(kotlin("test"))
+    // Evaluate generated literals and expressions; Groovy is not a product runtime dependency.
+    testImplementation(localGroovy())
 }
