@@ -1,0 +1,38 @@
+version: "EXT-2026-09-SEMANTICS"
+name: "External Review Semantic Boundary Corrections"
+stream: "core"
+status: "active"
+authorization:
+  status: "maintainer-authorized"
+  source: "Maintainer instruction on 2026-09-16: fix confirmed review defects before continuing AR-04."
+  baseline: "dc3cfab1ec2e16ff315f6af0b8f3a7c1ef62707c"
+  review: "Horistum/FlowAi#182 at 18d01dae490d47b6fbedd9714ede0759ddc393d0"
+objective: "Correct confirmed external-review defects without claiming AR-04 or any other recovery milestone completed."
+architecturePurpose: "Safety reports must consume canonical control evidence; graph authorization must bind semantic dependency fields."
+universalInvariant: "A derived report cannot approve meaning rejected by its authority, and a change to semantic dependency evidence cannot retain the same semantic identity."
+forbiddenScope:
+  - "No concrete target implementation in this Core work package."
+  - "No new approval scope enum, unproven target support, broad schema migration or roadmap completion claims."
+  - "No blanket deletion of conformance or historical audit evidence."
+scope:
+  include:
+    - "EXT-03 expression operator validation and fail-closed boundaries."
+    - "EXT-04 scoped approval evidence, checked against existing conditional-policy contracts."
+    - "EXT-05 and EXT-06 canonical safety assessment and diagnostic projection."
+    - "EXT-07 dependency evidence in the canonical semantic digest."
+    - "EXT-08 public diagnostic code consistency."
+    - "Focused regression tests and correction documentation."
+  exclude:
+    - "AR-04C/F implementation, identity redesign, adapter portfolio expansion and market roadmap changes."
+completionEvidence:
+  - "Each accepted defect has a concrete regression that fails on the baseline behavior."
+  - "Valid conditional approvals and non-sensitive workflows remain accepted."
+  - "No new parallel safety classifier is introduced."
+  - "Semantic dependency evidence changes the graph digest; diagnostic provenance remains separately documented."
+  - "Actual emitted diagnostic codes agree with the public diagnostic contract."
+  - "Exact-head and synthetic-merge-candidate Flow CI pass before merge."
+validationPlan:
+  - "Revalidate the actual call path and existing acceptance tests before each semantic correction."
+  - "Run focused positive, negative and mutation regressions."
+  - "Run existing complete Flow CI and standalone conformance without weakening gates."
+report: ".flow-agent/reports/external-review-pre-ar04-fixes.md"
