@@ -45,7 +45,7 @@ class JenkinsLiteralBoundaryTests {
     }
 
     @Test fun escapedFlowInterpolationRemainsLiteralThroughTheParser() {
-        val parsed = ExpressionParser.parseSource("\"\" matches \"(?x)#\\\${mark()}\"")
+        val parsed = ExpressionParser.parseSource("\"\" matches \"(?x)#\\\${mark()}\"", scope = "auto")
         val marker = mutableListOf(false)
         val rendered = GroovyExpr(emptySet()).render(parsed)
         assertEquals(true, evaluate("def mark() { marker[0] = true; return '' }\n$rendered", mapOf("marker" to marker)))
