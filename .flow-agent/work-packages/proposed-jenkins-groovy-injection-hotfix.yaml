@@ -1,0 +1,112 @@
+version: "EXT-2026-09-HOTFIX"
+name: "Jenkins Groovy String/Regex Escaping Hotfix"
+stream: "adapters"
+
+status: "proposed"
+authorization:
+  status: "not-activated"
+  note: "This work package is a draft proposal from an independent external code review (.flow-agent/reports/2026-09-external-code-review-findings.md, EXT-01/EXT-02). It has not passed activationBoundary and must not be treated as authorized Architecture Recovery work. A maintainer must explicitly activate it (or fold it into an existing adapters-stream item) before implementation begins."
+
+objective: "Close two Groovy string/regex escaping gaps in the Jenkins adapter that allow authored Flow input to break out of a generated string or regex literal in the rendered Jenkinsfile, including one path (EXT-01) that allows arbitrary Groovy code execution via GString interpolation."
+
+roadmapReference:
+  version: "EXT-2026-09"
+  name: "External Code Review Findings — September 2026"
+  type: "external-review-hotfix"
+  stream: "adapters"
+
+architecturePurpose: "Adapters own concrete capability bindings and execution evidence (.flow-agent/roadmap.yaml architectureConstitution.roadmapOwnership.adapters); correct escaping of authored values into the target's native syntax is part of that ownership. This is a localized correctness fix, not a change to canonical semantics, capability identity or target support claims."
+
+universalInvariant: "No authored Flow value (input name, credential name, string literal, or builtin pattern) can escape its intended Groovy string or regex literal boundary in generated Jenkins output."
+
+forbiddenScope:
+  - "No change to canonical execution graph, capability identity, or target-neutral validation."
+  - "No change to Jenkins target support/maturity claims in adapters/portfolio/*.yaml."
+  - "No broadening of Jenkins structural rendering (parallel/loop/match) — that is AR-06 scope, not this hotfix."
+  - "No introduction of a new governance authority or lifecycle tracker for this fix; it is a bounded bug fix."
+
+completionEvidence:
+  - "EXT-01: JenkinsGroovyExpr.slashRegex() (or its caller patternFor()) escapes '$' (and any other GString-interpolation trigger) before the value is placed inside a Groovy slashy-string, for both builtin pattern fragments and authored string-literal regex values."
+  - "EXT-02: groovyEscape() in JenkinsProjectionRenderingSupport.kt escapes backslash before single-quote, matching groovyString()'s existing escaping order, so escaping cannot be reordered to reopen the same class of defect."
+  - "A negative/mutation fixture proves that a Flow input or string literal containing a dollar-brace GString interpolation marker, or a trailing backslash before a quote, can no longer alter the structure of the generated Jenkinsfile Groovy source."
+  - "Existing Jenkins generator/renderer tests continue to pass unchanged for all non-adversarial inputs."
+
+scope:
+  include:
+    - "src/main/kotlin/org/flowlang/generators/JenkinsGroovyExpr.kt"
+    - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt"
+    - "Corresponding test files for these two source files (generator and target-rendering test suites)."
+  exclude:
+    - "GitHub Actions and Tekton expression translators (not affected by this finding)."
+    - "Jenkins structural rendering (parallel/loop/match/retry) — owned by AR-06."
+    - "Canonical control/approval logic (EXT-04) — separate finding, separate scope."
+
+nonGoals:
+  - "No runtime executor."
+  - "No SDK-first architecture."
+  - "No plugin lifecycle."
+  - "No target-specific public DSL."
+  - "No concrete platform as Core semantic authority."
+  - "No adapter implementation in a Core work package."
+  - "No test-only hacks."
+
+ownershipBoundary:
+  coreMayChange: []
+  adapterMayChange:
+    - "src/main/kotlin/org/flowlang/generators/JenkinsGroovyExpr.kt"
+    - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt"
+  conformanceMayChange:
+    - "Negative/mutation fixtures proving the escaping defect is closed, if the conformance suite already exercises Jenkins Groovy rendering."
+  forbiddenCrossStreamChanges:
+    - "No change to Core validator, planner, canonical execution graph, or capability/control authorities."
+    - "No change to any auditBaseline, findingRegister or milestone status in roadmap-architecture-recovery.yaml."
+
+expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/generators/JenkinsGroovyExpr.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt"
+  - "Any other caller of slashRegex(), groovyEscape() or groovyString() to confirm no third inconsistent escaping path exists."
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/generators/JenkinsGroovyExpr.kt"
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt"
+expectedFilesToAdd:
+  - "Negative/mutation test fixtures for both escaping paths, colocated with existing tests for the two changed files."
+
+testsToAddOrUpdate:
+  - "A test asserting slashRegex() (or patternFor()) escapes a literal '$' character so it cannot form Groovy GString interpolation in the rendered 'matches' expression."
+  - "A test asserting groovyEscape() escapes a trailing backslash before a single quote so it cannot terminate the surrounding Groovy string literal early."
+conformanceToAddOrUpdate:
+  - "If Jenkins Groovy rendering has conformance-level fixtures, add one negative case per escaping gap; otherwise this stays scoped to unit tests per completionEvidence."
+documentationToUpdate:
+  - ".flow-agent/reports/2026-09-external-code-review-findings.md — update EXT-01/EXT-02 status once this work package is activated and completed."
+
+architectureChecks:
+  - "The change supports the original Flow purpose."
+  - "The change preserves the declared universal invariant."
+  - "The change stays inside its roadmap stream ownership boundary."
+  - "The change does not move concrete implementation behavior into universal semantics."
+  - "The change does not duplicate standard concepts."
+  - "The change reduces or avoids technical debt."
+
+validationPlan:
+  - "Run Flow Agent tooling unit tests."
+  - "Run Flow Agent structure validation."
+  - "Generate Flow Agent context."
+  - "Run targeted compilation for the two changed files and their dependents."
+  - "Run unit tests for the Jenkins generator and target-rendering test suites."
+  - "Run conformance if Jenkins Groovy rendering has conformance-level fixtures."
+  - "Verify report and release-state consistency; update this work package's status only after a maintainer activates it and real validation evidence (exact-head result) exists."
+
+riskAssessment:
+  risks:
+    - "A published Jenkinsfile snapshot fixture may need its expected output regenerated if it exercised the previously-unescaped characters incidentally."
+    - "Over-escaping could change benign existing output for inputs that happen to contain a backslash or dollar sign today, requiring a review of existing golden-file tests."
+  mitigations:
+    - "Regenerate only the specific golden fixtures affected by the corrected escaping, with a diff review confirming the change is exactly the added escape sequence."
+    - "Add the new negative fixtures alongside existing positive fixtures rather than replacing them, so the fix is provably additive."
+
+releaseArtifacts:
+  - "Updated roadmap or source contracts."
+  - "Updated tests."
+  - "Updated conformance vectors when applicable."
+  - "Updated documentation."
+  - "Bounded work report."

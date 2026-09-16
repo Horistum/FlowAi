@@ -200,6 +200,21 @@ strategicDirection:
         - "Do not invent email, Slack, Docker, Kubernetes, clusters or other implementation choices when the user did not author them."
         - "Treat heuristic match scores as match strength unless they are actually calibrated probabilities."
         - "Validate every provider-produced intent through the same production parser, canonicalization, safety and conformance boundaries as authored intent."
+    - id: "MARKET-READINESS-AND-PRODUCT-SURFACE"
+      order: 6
+      activationGate: "AI-INTENT-PROVIDER acceptance criteria pass, or the maintainers explicitly choose to narrow scope before completing the full five-track sequence. This track requires the architecture-recovery critical/high findings (F-01..F-22 and any accepted external-review finding) to already be closed or explicitly contained, per releaseReadiness below."
+      purpose: "Convert an internally-consistent standardization model into one externally adoptable product: one flagship target certified end-to-end, a real distribution and adoption surface, and evidence that the model is used outside this repository — while measurably shrinking the governance-to-product code ratio instead of only adding new tracks and authorities."
+      requiredOutcomes:
+        - "Select exactly one target adapter as the flagship BEHAVIORALLY_CERTIFIED target (GitHub Actions is the current best candidate given its A1.0 completion) and defer broadening the certified portfolio until that target has real external users."
+        - "Publish a versioned, installable distribution (CLI plus editor/language-server integration) with onboarding documentation written for an external developer who has never read .flow-agent/, not only for the internal AI-agent development process."
+        - "Establish at least one external adoption signal — a real non-Flow-authored pipeline migrated end-to-end, or an external contributor's Flow definition accepted and executed — as evidence the standardization model generalizes beyond this repository's own fixtures."
+        - "Measure the ratio of governance/process code (conformance, adapters/*RoadmapLifecycleAuthority, roadmap validation) to product code (parser, compiler, generators, adapter rendering logic), set an explicit budget, and retire or archive lifecycle-validation classes for permanently closed roadmap phases instead of running them unbounded on every build."
+        - "Publish an explicit comparison of Flow's standardization model against adjacent prior art (workflow-as-code DSLs, provider-ecosystem tools) so market positioning is stated once, publicly, rather than left implicit across internal documents."
+        - "Bind every claim made to external users to the same unforgeable-evidence and fail-closed principles already enforced internally; a product surface must not relax honesty standards for adoption or marketing purposes."
+      nonGoals:
+        - "Do not broaden certified target support merely to grow a comparison table; one certified target with real external adoption outranks several shallow ones."
+        - "Do not build a hosted execution runtime; Flow remains a standardization and compilation layer, not a runtime executor, per the existing architecture constitution."
+        - "Do not relax or skip AR-04 through AR-07 architecture-recovery closure as a precondition; this track activates after or alongside recovery closure, never instead of it."
   releaseReadiness:
     - "No broad portability claim from semantic representability alone."
     - "No stable capability label without independent semantic, adapter and executable evidence appropriate to that claim."

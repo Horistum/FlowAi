@@ -370,3 +370,26 @@ overallAcceptance:
   - "The packaged CLI and artifact writer pass isolated distribution, input-limit, partial-write and tamper tests."
   - "Architecture simplification is measurable: concrete adapters are extracted, redundant semantic models and wrappers decrease, and lexical governance is removed where compiler boundaries supersede it."
   - "No open critical or high audit finding remains before post-recovery feature development resumes."
+
+# The block below is purely additive cross-reference metadata. It does not modify auditBaseline,
+# currentDecision, deliveryModel, milestones or findingRegister above, and it does not add,
+# remove or reclassify any F-01..F-22 finding. It records an independent external code review
+# so its EXT-01..EXT-08 candidate findings are traceable from this roadmap without being
+# confused with the audited, CI-validated F-series register. See coverageRule above: this
+# register's own coverage guarantee is unaffected because no F-id is touched.
+externalReviewCrossReferences:
+  - reviewId: "EXT-2026-09"
+    date: "2026-09-16"
+    report: ".flow-agent/reports/2026-09-external-code-review-findings.md"
+    provenance: "independent-external-code-review"
+    validation: "none — no Flow CI run, no work package, no activation/implementation/validation/completion boundary evidence exists for these items"
+    status: "pending-maintainer-triage"
+    findingIdNamespace: "EXT-"
+    findingCount: 8
+    severityCounts:
+      critical: 1
+      high: 7
+      medium: 0
+      low: 0
+    relatedMilestones: ["AR-01", "AR-04", "AR-07"]
+    disclosure: "EXT-01 and EXT-02 are proposed as an immediate hotfix independent of milestone sequencing (see .flow-agent/work-packages/proposed-jenkins-groovy-injection-hotfix.yaml, status: proposed, not activated). EXT-03 is proposed for AR-04's remaining planned slices. EXT-07 flags a candidate gap against AR-01's own completionEvidence and is proposed for maintainer revalidation only; AR-01's status field above is intentionally left unchanged pending that review. EXT-08 is proposed for AR-07 scope. EXT-04, EXT-05 and EXT-06 do not fit an existing milestone and are proposed for maintainer scoping as ordinary bug-fix work. No entry in this block authorizes work; it is a pointer for triage."
