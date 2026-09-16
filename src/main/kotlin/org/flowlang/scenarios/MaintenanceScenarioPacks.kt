@@ -2,6 +2,10 @@ package org.flowlang.scenarios
 
 import org.flowlang.ai.normalization.*
 import org.flowlang.intent.*
+import org.flowlang.safety.EnvironmentParameterEvidence
+import org.flowlang.safety.EnvironmentSensitivity
+import org.flowlang.safety.EnvironmentValueKind
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.standard.FlowStandardVersions
 
 
@@ -31,7 +35,18 @@ object KubernetesMaintenanceScenarioPack : BaseScenarioPack() {
             lower.contains("delete") -> "delete"
             else -> "maintenance"
         }
-        val prod = lower.contains("prod") || lower.contains("production")
+        // Extraction proposes values; the same policy used by the compiler owns
+        // their classification. A context default must not erase explicit source evidence.
+        val sourceEnvironment = environmentEntity(text, request.context.copy(defaultEnvironment = null))
+        val environments = listOfNotNull(request.context.defaultEnvironment, sourceEnvironment)
+            .map(String::trim).filter(String::isNotEmpty).distinctBy { it.lowercase() }
+        val environment = environments.takeIf { it.isNotEmpty() }?.let { values ->
+            StandardEnvironmentSafetyPolicyNotes.policy().classify(values.map { value ->
+                EnvironmentParameterEvidence("environment", EnvironmentValueKind.LITERAL, literalValue = value)
+            })
+        }
+        val prod = environment?.sensitivity == EnvironmentSensitivity.SENSITIVE
+        val unresolvedEnvironment = environment?.sensitivity == EnvironmentSensitivity.UNKNOWN
         val destructive = operation in setOf("drain", "delete", "restart")
         val wantsApproval = explicitApprovalRequested(lower)
         val wantsDryRun = lower.contains("dry-run") || lower.contains("dry run")
@@ -39,6 +54,8 @@ object KubernetesMaintenanceScenarioPack : BaseScenarioPack() {
         val wantsNotify = notificationRequested(text)
         val questions = mutableListOf<ClarificationQuestion>()
         if (scope == null) questions += requiredQuestion("missing-kubernetes-scope", "entities.kubernetes.scope", "Which cluster, namespace or resource scope is affected?")
+        if (environments.size > 1) questions += requiredQuestion("conflicting-maintenance-environment", "safety.environment", "Source and context name different environments (${environments.joinToString()}); which environment is intended?")
+        if (unresolvedEnvironment) questions += requiredQuestion("unclassified-maintenance-environment", "safety.environment", environment?.reason ?: "An explicit environment classification is required.")
         if (prod && window == null) questions += requiredQuestion("missing-maintenance-window", "safety.maintenance.window", "Which maintenance window authorizes this production maintenance?")
         if (!wantsDryRun && destructive) questions += recommendedQuestion("maintenance-dry-run", "safety.dryRun", "Should this maintenance run in dry-run mode before applying changes?")
         val systems = commonSystems(text, request.context, notify = wantsNotify) + IntentSystem("standard", "standard", "semantic Kubernetes maintenance operations")
@@ -61,8 +78,8 @@ object KubernetesMaintenanceScenarioPack : BaseScenarioPack() {
             if (wantsApproval) add(IntentPolicy("kubernetes-maintenance-approval", IntentPolicyType.APPROVAL, if (prod) "environment == 'prod'" else "true", "Approval required before Kubernetes maintenance."))
             if (prod || destructive) add(IntentPolicy("kubernetes-maintenance-dry-run", IntentPolicyType.SAFETY, "requiresDryRun", "Production or disruptive maintenance must run dry-run first."))
         }
-        val risks = listOf(mediumRisk("kubernetes-disruption", "Kubernetes maintenance can disrupt running workloads.", "Use explicit scope, dry-run and health verification.", mitigated = (!prod && !destructive) || wantsDryRun))
-        return packResult(request, match, "kubernetes-maintenance-${scope ?: "unknown"}", text, environmentInputs(prod, request.context), systems, steps, policies, IntentFailurePolicy(notify = wantsNotify), mapOfNotNull("scope" to scope, "operation" to operation, "window" to window, "scenario" to "kubernetes-maintenance"), questions = questions, risks = risks, explanation = listOf("Kubernetes maintenance scenario selected; production and disruptive-operation safety are explicit without auto-approval."))
+        val risks = listOf(mediumRisk("kubernetes-disruption", "Kubernetes maintenance can disrupt running workloads.", "Use explicit scope, dry-run and health verification.", mitigated = !unresolvedEnvironment && environments.size <= 1 && ((!prod && !destructive) || wantsDryRun)))
+        return packResult(request, match, "kubernetes-maintenance-${scope ?: "unknown"}", text, environmentInputs(prod || unresolvedEnvironment, request.context), systems, steps, policies, IntentFailurePolicy(notify = wantsNotify), mapOfNotNull("scope" to scope, "operation" to operation, "window" to window, "scenario" to "kubernetes-maintenance"), questions = questions, risks = risks, explanation = listOf("Kubernetes maintenance scenario selected; environment classification uses the standard safety policy and never a substring production guess."))
     }
 }
 

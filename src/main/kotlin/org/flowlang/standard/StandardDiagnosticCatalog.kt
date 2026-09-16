@@ -117,7 +117,8 @@ object StandardDiagnosticCatalog {
         code("ARCHITECTURE_GOVERNANCE_TERM_MISSING", "architecture", "error", "conformance-manifest.json", "A required architecture governance term is missing."),
         code("ARCHITECTURE_FORBIDDEN_DIRECTION_MISSING", "architecture", "error", "conformance-manifest.json", "A forbidden architecture direction is not documented."),
         code("ARCHITECTURE_RUNTIME_PACKAGE_FORBIDDEN", "architecture", "error", "conformance-manifest.json", "Active source exposes a runtime package, which is outside the Flow standard boundary."),
-        code("ARCHITECTURE_FORBIDDEN_TERM_IN_SOURCE", "architecture", "error", "conformance-manifest.json", "Active source contains a term that indicates SDK, runtime, plugin or silent fallback drift."),
+        code("ARCHITECTURE_FORBIDDEN_TERM_IN_SOURCE", "architecture", "error", "conformance-manifest.json", "Legacy term-scanner diagnostic retained for report compatibility; the current structural scanner emits ARCHITECTURE_FORBIDDEN_SYMBOL_IN_SOURCE."),
+        code("ARCHITECTURE_FORBIDDEN_SYMBOL_IN_SOURCE", "architecture", "error", "conformance-manifest.json", "Active Kotlin source contains a forbidden structural architecture symbol; comments and literal diagnostic text do not establish this violation."),
         code("CONFORMANCE_CHECK_FAILED", "conformance", "error", "conformance-manifest.json", "A required conformance check failed.")
     ).sortedBy { it.code }
 

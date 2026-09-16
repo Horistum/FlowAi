@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://flowlang.dev/schemas/intent-decision-report/1.0/intent-decision-report.schema.json",
-  "title": "Flow Intent Decision Report v1.0",
+  "$id": "https://flowlang.dev/schemas/intent-decision-report/1.1/intent-decision-report.schema.json",
+  "title": "Flow Intent Decision Report v1.1",
   "type": "object",
   "required": ["standardVersion", "decisionModelVersion", "intentName", "extractedDecisions", "missingDecisions", "assumptions", "risks", "safetyGates", "loweringDecision", "validForLowering"],
   "properties": {
@@ -78,7 +78,7 @@
         "properties": {
           "id": { "type": "string" },
           "policy": { "type": "string" },
-          "status": { "enum": ["satisfied", "blocked"] },
+          "status": { "enum": ["satisfied", "blocked", "pending"] },
           "reason": { "type": "string" },
           "blocksLowering": { "type": "boolean" }
         },

@@ -24,7 +24,7 @@ object GitHubActionsTargetExpressionTranslator {
         throw TargetExpressionTranslationException("Unable to translate Flow condition to GitHub Actions expression: $condition", e)
     }
 
-    private fun renderGitHub(e: ExpressionNode, inputs: Set<String>): String = when (e) {
+    internal fun renderGitHub(e: ExpressionNode, inputs: Set<String>): String = when (e) {
         is StringLiteralNode -> "'" + e.value.replace("'", "''") + "'"
         is NumberLiteralNode -> if (e.isInteger) e.value.toLong().toString() else e.value.toString()
         is BooleanLiteralNode -> e.value.toString()
@@ -45,18 +45,21 @@ object GitHubActionsTargetExpressionTranslator {
                 ?: "null"
             else -> "${e.function}(${e.args.joinToString(", ") { renderGitHub(it, inputs) }})"
         }
-        is UnaryExpressionNode -> if (e.operator == "not") {
-            "!(${renderGitHub(e.operand, inputs)})"
-        } else {
-            "${e.operator}(${renderGitHub(e.operand, inputs)})"
+        is UnaryExpressionNode -> when (e.operator) {
+            "not" -> "!(${renderGitHub(e.operand, inputs)})"
+            else -> unsupported("GitHub Actions conditions do not support Flow unary operator '${e.operator}'.")
         }
         is UnaryPostfixExpressionNode -> when (e.operator) {
             "exists" -> "${renderGitHub(e.operand, inputs)} != null"
             "empty" -> "${renderGitHub(e.operand, inputs)} == ''"
-            else -> renderGitHub(e.operand, inputs)
+            else -> unsupported("GitHub Actions conditions do not support Flow postfix operator '${e.operator}'.")
         }
         is LogicalExpressionNode -> {
-            val op = if (e.operator == "and") "&&" else "||"
+            val op = when (e.operator) {
+                "and" -> "&&"
+                "or" -> "||"
+                else -> unsupported("GitHub Actions conditions do not support Flow logical operator '${e.operator}'.")
+            }
             e.operands.joinToString(" $op ", "(", ")") { renderGitHub(it, inputs) }
         }
         is BinaryExpressionNode -> {

@@ -179,12 +179,19 @@ object CanonicalControlRequirementAuthority {
         graph: IntentControlGraph,
         allowIntentWideApproval: Boolean
     ): ControlEvidence {
+        // Closed safety requirement tokens are not runtime conditions. Explicit
+        // expressions, including "true", retain their existing DYNAMIC contract:
+        // their presence is not proof of runtime enforcement or full-scope approval.
+        val condition = requirement.condition?.trim()?.takeIf(String::isNotEmpty)?.takeUnless {
+            PolicyCondition.parse(it) is PolicyCondition.Requirement
+        }
         val approvals = if (
+            condition != null &&
             allowIntentWideApproval &&
             requirement.scope.kind == ControlRequirementScopeKind.INTENT &&
             requirement.source == ControlRequirementSource.INTENT_POLICY
         ) {
-            graph.intentControlSteps(StandardCapability.APPROVE)
+            graph.conditionalIntentControlSteps(StandardCapability.APPROVE)
         } else {
             graph.controlStepsProtecting(requirement, StandardCapability.APPROVE)
         }
@@ -194,13 +201,12 @@ object CanonicalControlRequirementAuthority {
                 "An approval declaration is not evidence that a reachable approval mechanism protects the required scope."
             )
         }
-        val condition = requirement.condition?.trim()?.takeIf(String::isNotEmpty)
         return if (condition != null) {
             ControlEvidence(
                 requirementId = requirement.id,
                 status = ControlEvidenceStatus.DYNAMIC,
                 source = ControlEvidenceSource.DYNAMIC_CONDITION,
-                detail = "Approval step(s) ${approvals.map { it.step.id }.sorted().joinToString()} with condition $condition",
+                detail = "Approval step(s) ${approvals.map { it.step.id }.sorted().joinToString()} with condition $condition; runtime enforcement and scope remain pending",
                 enforcementCapabilities = listOf("approval.manual", "condition.evaluate")
             )
         } else {
@@ -489,7 +495,8 @@ object CanonicalControlRequirementAuthority {
         fun controlSteps(capability: StandardCapability): List<ScopedIntentStep> =
             allSteps.filter { it.step.capability == capability }
 
-        fun intentControlSteps(capability: StandardCapability): List<ScopedIntentStep> {
+        /** Candidate mechanisms for DYNAMIC evidence only, never unconditional coverage. */
+        fun conditionalIntentControlSteps(capability: StandardCapability): List<ScopedIntentStep> {
             val controls = controlSteps(capability)
             val operations = nonControlOperations()
             if (operations.isEmpty()) return controls
@@ -517,12 +524,17 @@ object CanonicalControlRequirementAuthority {
             val operations = nonControlOperations()
             val controls = controlSteps(capability)
             if (operations.isEmpty()) return controls
-            return controls.filter { control ->
-                operations.all { operation ->
-                    control.workflow == operation.workflow &&
-                        control.step.id in ancestorsOf(operation.workflow, operation.step.id)
+            // Every operation needs a predecessor in its own workflow. Separate
+            // operations may legitimately use separate controls; one control is
+            // not required to dominate unrelated workflows.
+            val coverage = operations.map { operation ->
+                val ancestors = ancestorsOf(operation.workflow, operation.step.id)
+                controls.filter { control ->
+                    control.workflow == operation.workflow && control.step.id in ancestors
                 }
             }
+            if (coverage.any { it.isEmpty() }) return emptyList()
+            return coverage.flatten().distinct()
         }
 
         private fun protectedStep(requirement: ControlRequirement): ScopedIntentStep? {
