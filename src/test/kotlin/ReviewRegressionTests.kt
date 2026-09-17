@@ -45,7 +45,7 @@ class ReviewRegressionTests {
     }
 
     @Test
-    fun jenkinsUrlBuiltinPatternIsSafeInsideSlashRegexLiteral() {
+    fun jenkinsUrlBuiltinPatternUsesANonInterpolatingRegexOperand() {
         val rendered = GroovyExpr(inputs = setOf("candidate")).render(
             BinaryExpressionNode(
                 operator = "matches",
@@ -54,8 +54,9 @@ class ReviewRegressionTests {
             )
         )
 
-        assertTrue(rendered.contains("https?:\\/\\/"), rendered)
-        assertFalse(rendered.contains("https?://"), rendered)
+        assertTrue(rendered.contains("==~ 'https?://"), rendered)
+        assertTrue(rendered.contains("[^\\\\s]"), rendered)
+        assertFalse(rendered.contains("==~ /"), rendered)
     }
 
     @Test

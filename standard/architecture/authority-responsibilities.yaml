@@ -349,6 +349,7 @@ authorities:
       - "src/main/kotlin/org/flowlang/generators/manifest/MandatoryMaterializationAuthority.kt"
       - "src/main/kotlin/org/flowlang/intent/CanonicalIntentMeaning.kt"
       - "src/main/kotlin/org/flowlang/intent/IntentCapabilityValidator.kt"
+      - "src/main/kotlin/org/flowlang/intent/IntentDecisionAnalyzer.kt"
       - "src/main/kotlin/org/flowlang/intent/MandatorySafetyPolicy.kt"
       - "src/main/kotlin/org/flowlang/intent/SafetyPolicyValidator.kt"
   - name: "CanonicalIntentEffectAuthority"

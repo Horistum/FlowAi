@@ -9,7 +9,9 @@ data class HumanApprovalChangeControlBaselineFact(
     val factId: String,
     val observationRef: String,
     val requirement: HumanApprovalChangeControlRequirement,
-    val initialOutcome: ExternalFalsificationOutcome
+    val initialOutcome: ExternalFalsificationOutcome,
+    val correctedOutcome: ExternalFalsificationOutcome? = null,
+    val correctionReference: String? = null
 )
 
 data class HumanApprovalChangeControlBaseline(
@@ -26,9 +28,10 @@ data class HumanApprovalChangeControlBaselineVerification(
 /**
  * Verifies the EF-09 initial mixed falsification snapshot.
  *
- * Active and validating states must match exactly. Once complete, historical REPRESENTABLE facts
- * may not regress while a MODEL_GAP may improve only through a later independently authorized
- * semantic correction.
+ * Active and validating states must match exactly, including explicitly recorded
+ * corrections to the immutable initial observation. A recorded correction may only
+ * promote MODEL_GAP to REPRESENTABLE and must reference its reviewed change.
+ * Neither historical nor corrected representability may regress after completion.
  */
 class HumanApprovalChangeControlBaselineVerifier(
     private val rootDir: File = File("."),
@@ -89,17 +92,28 @@ class HumanApprovalChangeControlBaselineVerifier(
                 errors += "EF-09 fact '${key(historical)}' typed requirement drifted: " +
                     "baseline=${historical.requirement} current=${currentFinding.requirement}."
             }
+            val corrected = historical.correctedOutcome
+            val reference = historical.correctionReference
+            if ((corrected == null) != (reference == null) ||
+                (reference != null && reference.isBlank()) ||
+                (corrected != null &&
+                    (historical.initialOutcome != ExternalFalsificationOutcome.MODEL_GAP ||
+                        corrected != ExternalFalsificationOutcome.REPRESENTABLE))) {
+                errors += "EF-09 fact '${key(historical)}' has an invalid recorded correction; " +
+                    "only MODEL_GAP to REPRESENTABLE with a non-blank correction reference is allowed."
+            }
+            val expected = corrected ?: historical.initialOutcome
             when {
                 lifecycleStatus != COMPLETE_STATUS &&
-                    historical.initialOutcome != currentFinding.outcome ->
+                    expected != currentFinding.outcome ->
                     errors += "EF-09 initial snapshot mismatch for '${key(historical)}': " +
-                        "baseline=${historical.initialOutcome} current=${currentFinding.outcome}; " +
+                        "initial=${historical.initialOutcome} expected=$expected current=${currentFinding.outcome}; " +
                         "active/validating baseline recording must exactly match live evaluation."
                 lifecycleStatus == COMPLETE_STATUS &&
-                    historical.initialOutcome == ExternalFalsificationOutcome.REPRESENTABLE &&
+                    expected == ExternalFalsificationOutcome.REPRESENTABLE &&
                     currentFinding.outcome != ExternalFalsificationOutcome.REPRESENTABLE ->
                     errors += "EF-09 representability regression for '${key(historical)}': " +
-                        "the historical REPRESENTABLE fact is now ${currentFinding.outcome}."
+                        "the historical or corrected REPRESENTABLE fact is now ${currentFinding.outcome}."
             }
         }
         return HumanApprovalChangeControlBaselineVerification(

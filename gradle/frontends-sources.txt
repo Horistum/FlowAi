@@ -8,6 +8,7 @@ org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt
 org/flowlang/frontend/intent/FlowIntentExpressionParser.kt
 org/flowlang/frontend/intent/IntentYamlFrontend.kt
 org/flowlang/frontend/source/FlowSourceFrontend.kt
+org/flowlang/intent/IntentDecisionAnalyzer.kt
 org/flowlang/intent/IntentYamlLoader.kt
 org/flowlang/intent/StandardCapabilityCompatibility.kt
 org/flowlang/modules/CanonicalModuleLoader.kt

@@ -24,12 +24,18 @@ Intent YAML
   -> execution-plan.json          (SEMANTIC_ONLY)
   -> target evidence
        -> jenkins.review.yaml      (REVIEW_ONLY, manifest present, non-executable)
-       -> github-actions.review.yaml (REVIEW_ONLY, manifest present, non-executable)
+       -> github-actions.blocked.json (FAIL_FAST, no manifest, no target YAML)
        -> tekton.blocked.json      (FAIL_FAST, no manifest, no target YAML)
 ```
 
-Jenkins and GitHub Actions preserve the realistic pipeline as review artifacts because required materialization and renderer payload evidence is incomplete. Tekton fails before manifest generation because the current scenario requires unsupported approval and rollback capabilities.
+Jenkins preserves the pipeline as a review artifact because required materialization and renderer payload evidence is incomplete. GitHub Actions remains blocked without the required workspace-continuity evidence. Tekton fails before manifest generation because the current scenario requires unsupported approval and rollback capabilities.
 
 Review-only files deliberately avoid executable-looking names such as `Jenkinsfile` or `github-actions.yml`. A blocked target uses JSON diagnostic evidence rather than a `.yaml` file, because no target syntax was emitted.
 
-Snapshot updates must be generated with the `reference-snapshot` command, which uses the real intent loader, validators, planners, compatibility analyzer, canonical manifest pipeline and render policy. Editing snapshots merely to satisfy conformance is forbidden, as it should be in any project that has not entirely surrendered to decorative testing.
+Snapshot updates must be generated with the `reference-snapshot` command, which uses the real intent loader, validators, planners, compatibility analyzer, canonical manifest pipeline and render policy. Do not edit generated output merely to satisfy conformance expectations.
+
+## Whole-intent approval coverage
+
+The authored YAML declares an unconditional intent-wide approval policy. The approval is therefore the predecessor of checkout and, transitively, of test, image build, deployment and verification. Moving the gate back to the deployment boundary while retaining that policy is a negative case: it must be rejected, because the earlier operations would be uncovered. The compiler does not insert this ordering on the user's behalf.
+
+This reference is not a deployment-only approval policy and is not evidence that conditional approvals have been executed. Conditional policies retain their separate pending-evidence contract.

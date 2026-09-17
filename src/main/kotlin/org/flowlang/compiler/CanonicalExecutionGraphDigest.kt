@@ -49,6 +49,7 @@ object CanonicalExecutionGraphDigestComputer {
 
     private fun canonicalGraph(graph: CanonicalExecutionGraph): String {
         val fields = mutableListOf(
+            "digestFormat" to atom("flow-canonical-semantic-v2"),
             "version" to atom(graph.graphVersion),
             "flowName" to atom(graph.flowName),
             "workflows" to unordered(graph.workflows.map(::canonicalWorkflow)),
@@ -229,6 +230,9 @@ object CanonicalExecutionGraphDigestComputer {
         "nodes" to ordered(case.nodeIds.map { atom(it.value) })
     )
 
+    // Evidence classification and its ordered node path affect graph validation and
+    // must be bound by authorization. evidenceReference is a diagnostic provenance
+    // pointer, not semantic meaning; changing that pointer alone preserves identity.
     private fun canonicalEdge(edge: CanonicalDependencyEdge): String = record(
         "edge",
         "source" to optional(edge.sourceNodeId?.value),
@@ -236,6 +240,8 @@ object CanonicalExecutionGraphDigestComputer {
         "kind" to atom(edge.kind.name),
         "channel" to optional(edge.channel),
         "stateLifetime" to optional(edge.stateLifetime?.name),
+        "evidence" to atom(edge.evidence.name),
+        "path" to ordered(edge.path.map { atom(it.value) }),
         "resolution" to atom(edge.resolution.name),
         "candidates" to unordered(edge.candidates.map { atom(it.value) })
     )

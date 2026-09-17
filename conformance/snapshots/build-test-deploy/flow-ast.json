@@ -80,7 +80,7 @@
       "kind" : "APPROVAL",
       "subject" : "production-approval",
       "source" : "INTENT_POLICY",
-      "message" : "Approval is required before deployment in this reference flow.",
+      "message" : "Approval is required before any operation in this reference flow.",
       "scope" : {
         "kind" : "INTENT"
       }
@@ -123,6 +123,22 @@
       "evidenceReference" : "intent.workflows.application-lifecycle"
     } ],
     "steps" : [ {
+      "type" : "Approve",
+      "mode" : "manual",
+      "params" : {
+        "message" : {
+          "type" : "StringLiteral",
+          "value" : "Approval is required before any operation in this reference flow."
+        }
+      },
+      "result" : {
+        "type" : "ResultBinding",
+        "name" : "approve_prod"
+      },
+      "sourceId" : "approve-prod",
+      "declaredOutputs" : [ ],
+      "dependsOn" : [ ]
+    }, {
       "type" : "Action",
       "module" : "git",
       "action" : "checkout",
@@ -158,7 +174,7 @@
         }
       },
       "declaredOutputs" : [ ],
-      "dependsOn" : [ ]
+      "dependsOn" : [ "approve_prod" ]
     }, {
       "type" : "Action",
       "module" : "standard",
@@ -272,22 +288,6 @@
       "declaredOutputs" : [ ],
       "dependsOn" : [ "test" ]
     }, {
-      "type" : "Approve",
-      "mode" : "manual",
-      "params" : {
-        "message" : {
-          "type" : "StringLiteral",
-          "value" : "Approval is required before deployment in this reference flow."
-        }
-      },
-      "result" : {
-        "type" : "ResultBinding",
-        "name" : "approve_prod"
-      },
-      "sourceId" : "approve-prod",
-      "declaredOutputs" : [ ],
-      "dependsOn" : [ "build_image" ]
-    }, {
       "type" : "Action",
       "module" : "standard",
       "action" : "execute",
@@ -334,7 +334,7 @@
       "sourceId" : "deploy",
       "bindingMetadata" : { },
       "declaredOutputs" : [ ],
-      "dependsOn" : [ "approve_prod" ]
+      "dependsOn" : [ "build_image" ]
     }, {
       "type" : "Action",
       "module" : "standard",
@@ -487,12 +487,12 @@
       "workflows" : [ {
         "name" : "application-lifecycle",
         "kind" : "DEPLOY",
-        "stepIds" : [ "checkout", "test", "build-image", "approve-prod", "deploy", "verify" ]
+        "stepIds" : [ "approve-prod", "checkout", "test", "build-image", "deploy", "verify" ]
       } ],
       "policies" : [ {
         "name" : "production-approval",
         "type" : "APPROVAL",
-        "message" : "Approval is required before deployment in this reference flow."
+        "message" : "Approval is required before any operation in this reference flow."
       } ],
       "systems" : [ {
         "name" : "source",
@@ -626,8 +626,8 @@
         "targetIdentity" : "plan/source-intent/policy/production-approval/message",
         "disposition" : "PRESERVED",
         "valueKind" : "string",
-        "sourceDigest" : "d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25",
-        "expectedTargetDigest" : "d063be79e5ea2fcdf9384664323fa97b25af2dd1f554e5522333f98683b04a25"
+        "sourceDigest" : "60b9973a116d170c0daf445cf35502f065cc35232ffb443518724fd109045070",
+        "expectedTargetDigest" : "60b9973a116d170c0daf445cf35502f065cc35232ffb443518724fd109045070"
       }, {
         "identity" : "policy/production-approval/name",
         "sourcePath" : "$.policies[0].name",
@@ -646,7 +646,7 @@
         "expectedTargetDigest" : "92d3fde9a85d7f8079555520f9de64d8dd6154c7bdfa2c14bd2f4c94a5442191"
       }, {
         "identity" : "step/approve-prod/capability",
-        "sourcePath" : "$.workflows[0].steps[3].capability",
+        "sourcePath" : "$.workflows[0].steps[0].capability",
         "targetIdentity" : "plan/node/source/approve-prod/semantic-capability",
         "disposition" : "PRESERVED",
         "valueKind" : "enum",
@@ -654,7 +654,7 @@
         "expectedTargetDigest" : "a9e765dc557578159fd12ad44b0a603abef775076ddae1970c968728257eb1d1"
       }, {
         "identity" : "step/approve-prod/id",
-        "sourcePath" : "$.workflows[0].steps[3].id",
+        "sourcePath" : "$.workflows[0].steps[0].id",
         "targetIdentity" : "plan/node/source/approve-prod/identity",
         "disposition" : "TRANSFORMED",
         "valueKind" : "step-identity",
@@ -662,16 +662,8 @@
         "expectedTargetDigest" : "496cb0f11177d6583c07b17d57d4ed4ab6f5c8c2cd0aec8aaeca4fbbf80de45e",
         "transform" : "step-id-to-source-and-result-identity"
       }, {
-        "identity" : "step/approve-prod/requires/build-image",
-        "sourcePath" : "$.workflows[0].steps[3].requires",
-        "targetIdentity" : "plan/node/source/approve-prod/dependency/source/build-image",
-        "disposition" : "PRESERVED",
-        "valueKind" : "step-reference",
-        "sourceDigest" : "01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b",
-        "expectedTargetDigest" : "01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b"
-      }, {
         "identity" : "step/build-image/capability",
-        "sourcePath" : "$.workflows[0].steps[2].capability",
+        "sourcePath" : "$.workflows[0].steps[3].capability",
         "targetIdentity" : "plan/node/source/build-image/semantic-capability",
         "disposition" : "PRESERVED",
         "valueKind" : "enum",
@@ -679,7 +671,7 @@
         "expectedTargetDigest" : "cbbb06206a7f5c594d687b21ec88a941a20587170fa9baa8bdebfdd60906a6c8"
       }, {
         "identity" : "step/build-image/id",
-        "sourcePath" : "$.workflows[0].steps[2].id",
+        "sourcePath" : "$.workflows[0].steps[3].id",
         "targetIdentity" : "plan/node/source/build-image/identity",
         "disposition" : "TRANSFORMED",
         "valueKind" : "step-identity",
@@ -688,7 +680,7 @@
         "transform" : "step-id-to-source-and-result-identity"
       }, {
         "identity" : "step/build-image/param/image",
-        "sourcePath" : "$.workflows[0].steps[2].params.image",
+        "sourcePath" : "$.workflows[0].steps[3].params.image",
         "targetIdentity" : "plan/node/source/build-image/param/image",
         "disposition" : "PRESERVED",
         "valueKind" : "string",
@@ -696,7 +688,7 @@
         "expectedTargetDigest" : "b81c6447718a7ea85ef95f3780d5d50b60900951eccee780b5c327512ffe3094"
       }, {
         "identity" : "step/build-image/param/path",
-        "sourcePath" : "$.workflows[0].steps[2].params.path",
+        "sourcePath" : "$.workflows[0].steps[3].params.path",
         "targetIdentity" : "plan/node/source/build-image/param/path",
         "disposition" : "PRESERVED",
         "valueKind" : "string",
@@ -704,7 +696,7 @@
         "expectedTargetDigest" : "6e2974fe97ee2b36a4743b56e15399bfaf106815bdf9f48a66833e68b0f9f2f1"
       }, {
         "identity" : "step/build-image/param/push",
-        "sourcePath" : "$.workflows[0].steps[2].params.push",
+        "sourcePath" : "$.workflows[0].steps[3].params.push",
         "targetIdentity" : "plan/node/source/build-image/param/push",
         "disposition" : "PRESERVED",
         "valueKind" : "boolean",
@@ -712,7 +704,7 @@
         "expectedTargetDigest" : "b80d83f9e626e9c5e5aab1062e02b396d16d4a85fec72831c417c562fa440f95"
       }, {
         "identity" : "step/build-image/param/system",
-        "sourcePath" : "$.workflows[0].steps[2].params.system",
+        "sourcePath" : "$.workflows[0].steps[3].params.system",
         "targetIdentity" : "plan/node/source/build-image/binding-metadata/system",
         "disposition" : "PRESERVED",
         "valueKind" : "string",
@@ -720,7 +712,7 @@
         "expectedTargetDigest" : "46b7611008335b55fefb8d5767517ad7630077d8f4d99f95d1df7683981604cd"
       }, {
         "identity" : "step/build-image/requires/test",
-        "sourcePath" : "$.workflows[0].steps[2].requires",
+        "sourcePath" : "$.workflows[0].steps[3].requires",
         "targetIdentity" : "plan/node/source/build-image/dependency/source/test",
         "disposition" : "PRESERVED",
         "valueKind" : "step-reference",
@@ -728,7 +720,7 @@
         "expectedTargetDigest" : "0ee3ad1caad5dc2f194b9d67e6abe3a18eafb359a8eddb27e6bf9194294b5083"
       }, {
         "identity" : "step/build-image/uses",
-        "sourcePath" : "$.workflows[0].steps[2].uses",
+        "sourcePath" : "$.workflows[0].steps[3].uses",
         "targetIdentity" : "plan/node/source/build-image/binding",
         "disposition" : "TRANSFORMED",
         "valueKind" : "binding",
@@ -737,7 +729,7 @@
         "transform" : "explicit-action-binding-resolution"
       }, {
         "identity" : "step/checkout/capability",
-        "sourcePath" : "$.workflows[0].steps[0].capability",
+        "sourcePath" : "$.workflows[0].steps[1].capability",
         "targetIdentity" : "plan/node/source/checkout/semantic-capability",
         "disposition" : "PRESERVED",
         "valueKind" : "enum",
@@ -745,7 +737,7 @@
         "expectedTargetDigest" : "d97da08e4408e2c56add57373fe780f062eac80307e105ebb8e08ecaa66f6ca2"
       }, {
         "identity" : "step/checkout/id",
-        "sourcePath" : "$.workflows[0].steps[0].id",
+        "sourcePath" : "$.workflows[0].steps[1].id",
         "targetIdentity" : "plan/node/source/checkout/identity",
         "disposition" : "TRANSFORMED",
         "valueKind" : "step-identity",
@@ -754,7 +746,7 @@
         "transform" : "step-id-to-source-and-result-identity"
       }, {
         "identity" : "step/checkout/param/branch",
-        "sourcePath" : "$.workflows[0].steps[0].params.branch",
+        "sourcePath" : "$.workflows[0].steps[1].params.branch",
         "targetIdentity" : "plan/node/source/checkout/param/branch",
         "disposition" : "PRESERVED",
         "valueKind" : "string",
@@ -762,15 +754,23 @@
         "expectedTargetDigest" : "afedeb26c97b61e580f8beb5e9ce118880aab89d81d43bbb96866dc87ebcf56b"
       }, {
         "identity" : "step/checkout/param/system",
-        "sourcePath" : "$.workflows[0].steps[0].params.system",
+        "sourcePath" : "$.workflows[0].steps[1].params.system",
         "targetIdentity" : "plan/node/source/checkout/binding-metadata/system",
         "disposition" : "PRESERVED",
         "valueKind" : "string",
         "sourceDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095",
         "expectedTargetDigest" : "ad7275765bb55bbec04142542dc3fc6424ea27e8004e53d64e3633d785bcc095"
       }, {
+        "identity" : "step/checkout/requires/approve-prod",
+        "sourcePath" : "$.workflows[0].steps[1].requires",
+        "targetIdentity" : "plan/node/source/checkout/dependency/source/approve-prod",
+        "disposition" : "PRESERVED",
+        "valueKind" : "step-reference",
+        "sourceDigest" : "89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3",
+        "expectedTargetDigest" : "89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3"
+      }, {
         "identity" : "step/checkout/uses",
-        "sourcePath" : "$.workflows[0].steps[0].uses",
+        "sourcePath" : "$.workflows[0].steps[1].uses",
         "targetIdentity" : "plan/node/source/checkout/binding",
         "disposition" : "TRANSFORMED",
         "valueKind" : "binding",
@@ -795,16 +795,16 @@
         "expectedTargetDigest" : "792888039a1e603c90cfc443d6e6faa90541b0e8416efb41055b18649905208a",
         "transform" : "step-id-to-source-and-result-identity"
       }, {
-        "identity" : "step/deploy/requires/approve-prod",
+        "identity" : "step/deploy/requires/build-image",
         "sourcePath" : "$.workflows[0].steps[4].requires",
-        "targetIdentity" : "plan/node/source/deploy/dependency/source/approve-prod",
+        "targetIdentity" : "plan/node/source/deploy/dependency/source/build-image",
         "disposition" : "PRESERVED",
         "valueKind" : "step-reference",
-        "sourceDigest" : "89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3",
-        "expectedTargetDigest" : "89cd566d059f658b069d3163b207fefef773b306921dff1b1b5c6adde8c65bc3"
+        "sourceDigest" : "01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b",
+        "expectedTargetDigest" : "01ae70dc8010c59bc8e199b834171cf833a1ac28aab00d23ce80002495ef818b"
       }, {
         "identity" : "step/test/capability",
-        "sourcePath" : "$.workflows[0].steps[1].capability",
+        "sourcePath" : "$.workflows[0].steps[2].capability",
         "targetIdentity" : "plan/node/source/test/semantic-capability",
         "disposition" : "PRESERVED",
         "valueKind" : "enum",
@@ -812,7 +812,7 @@
         "expectedTargetDigest" : "bba3898617eabfa329a8b494f0472ebb9a17f4e83deb2529a3574226ce96f8ce"
       }, {
         "identity" : "step/test/id",
-        "sourcePath" : "$.workflows[0].steps[1].id",
+        "sourcePath" : "$.workflows[0].steps[2].id",
         "targetIdentity" : "plan/node/source/test/identity",
         "disposition" : "TRANSFORMED",
         "valueKind" : "step-identity",
@@ -821,7 +821,7 @@
         "transform" : "step-id-to-source-and-result-identity"
       }, {
         "identity" : "step/test/requires/checkout",
-        "sourcePath" : "$.workflows[0].steps[1].requires",
+        "sourcePath" : "$.workflows[0].steps[2].requires",
         "targetIdentity" : "plan/node/source/test/dependency/source/checkout",
         "disposition" : "PRESERVED",
         "valueKind" : "step-reference",
@@ -967,7 +967,7 @@
         "expectedTargetDigest" : "c1f6cccdbfb9837c0efb0760dff7f0d7974b684927cff0d07f06346b22232d87"
       }, {
         "identity" : "workflow/application-lifecycle/step/approve-prod",
-        "sourcePath" : "$.workflows[0].steps[3].id",
+        "sourcePath" : "$.workflows[0].steps[0].id",
         "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/approve-prod",
         "disposition" : "PRESERVED",
         "valueKind" : "workflow-step-membership",
@@ -975,7 +975,7 @@
         "expectedTargetDigest" : "9f61a68d30411098d4602e876fd933bf0801d3cebb82642220abc9e3d1b4b52e"
       }, {
         "identity" : "workflow/application-lifecycle/step/build-image",
-        "sourcePath" : "$.workflows[0].steps[2].id",
+        "sourcePath" : "$.workflows[0].steps[3].id",
         "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/build-image",
         "disposition" : "PRESERVED",
         "valueKind" : "workflow-step-membership",
@@ -983,7 +983,7 @@
         "expectedTargetDigest" : "49792475f73449f0ddaeeca88c012f5a85941a5745b5276abffe5a9e4732f31c"
       }, {
         "identity" : "workflow/application-lifecycle/step/checkout",
-        "sourcePath" : "$.workflows[0].steps[0].id",
+        "sourcePath" : "$.workflows[0].steps[1].id",
         "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/checkout",
         "disposition" : "PRESERVED",
         "valueKind" : "workflow-step-membership",
@@ -999,7 +999,7 @@
         "expectedTargetDigest" : "5d228d2cf50f4ee75564e668dd54cf1203cc46375ef8a682c83071e96de28451"
       }, {
         "identity" : "workflow/application-lifecycle/step/test",
-        "sourcePath" : "$.workflows[0].steps[1].id",
+        "sourcePath" : "$.workflows[0].steps[2].id",
         "targetIdentity" : "plan/source-intent/workflow/application-lifecycle/step/test",
         "disposition" : "PRESERVED",
         "valueKind" : "workflow-step-membership",

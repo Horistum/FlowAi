@@ -166,7 +166,7 @@ object PublicStandardDraft {
             NegativeConformanceCase("unknown-diagnostic-code", "Public report emits an uncataloged diagnostic.", "DIAGNOSTIC_CODE_UNKNOWN", true),
             NegativeConformanceCase("artifact-integrity-failure", "Required public artifact is missing.", "ARTIFACT_REQUIRED_MISSING", true),
             NegativeConformanceCase("architecture-runtime-drift", "A runtime executor package appears in active source.", "ARCHITECTURE_RUNTIME_PACKAGE_FORBIDDEN", true),
-            NegativeConformanceCase("architecture-sdk-drift", "A public SDK or plugin direction appears in active source.", "ARCHITECTURE_FORBIDDEN_TERM_IN_SOURCE", true),
+            NegativeConformanceCase("architecture-sdk-drift", "A public SDK or plugin direction appears in active source.", "ARCHITECTURE_FORBIDDEN_SYMBOL_IN_SOURCE", true),
             NegativeConformanceCase("kubernetes-maintenance-without-dry-run", "Cluster maintenance lacks dry-run or safe maintenance window.", "SAFETY_REQUIRES_DRY_RUN", true),
             NegativeConformanceCase("secret-rotation-without-subject", "Secret rotation lacks a concrete secret name.", "SECRET_REQUIRES_SUBJECT", true),
             NegativeConformanceCase("certificate-renewal-without-subject", "Certificate renewal lacks a concrete certificate identity.", "CERTIFICATE_REQUIRES_SUBJECT", true),

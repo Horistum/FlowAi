@@ -1,11 +1,22 @@
 package org.flowlang.intent
 
+import org.flowlang.controls.CanonicalControlRequirementAuthority
+import org.flowlang.controls.ControlAssessment
+import org.flowlang.controls.ControlEvidenceStatus
+import org.flowlang.controls.ControlRequirementKind
+import org.flowlang.controls.ControlRequirementScopeKind
+import org.flowlang.controls.ControlRequirementSource
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.safety.EnvironmentParameterEvidence
+import org.flowlang.safety.EnvironmentSafetyPolicy
+import org.flowlang.safety.EnvironmentSensitivity
+import org.flowlang.safety.EnvironmentValueKind
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.standard.FlowStandardVersions
 
 data class IntentDecisionReport(
     val standardVersion: String = FlowStandardVersions.FLOW_STANDARD_VERSION,
-    val decisionModelVersion: String = "1.0",
+    val decisionModelVersion: String = "1.1",
     val intentName: String,
     val extractedDecisions: List<IntentDecision> = emptyList(),
     val missingDecisions: List<IntentMissingDecision> = emptyList(),
@@ -66,27 +77,28 @@ data class IntentLoweringDecision(
 )
 
 /**
- * Decision-level analysis for normalized human/AI intent.
- *
- * Capability validation answers "is the model structurally valid?". This report
- * answers a different question: which human/architectural decisions were
- * extracted, which are still missing, which assumptions were made, and whether
- * lowering should proceed without silently guessing critical values.
+ * Frontend decision report. Canonical controls and environment policy own safety
+ * meaning; this class projects their evidence and asks for missing decisions.
+ * Lowerability is not execution authorization: pending controls remain pending.
  */
-class IntentDecisionAnalyzer(private val registry: ModuleCatalog) {
+class IntentDecisionAnalyzer(
+    private val registry: ModuleCatalog,
+    private val environmentPolicy: EnvironmentSafetyPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
+) {
     fun analyze(intent: IntentDocument): IntentDecisionReport {
         val steps = intent.workflows.flatMap { it.steps }
+        val controls = CanonicalControlRequirementAuthority.assess(intent)
         val decisions = mutableListOf<IntentDecision>()
         val missing = mutableListOf<IntentMissingDecision>()
         val risks = mutableListOf<IntentDecisionRisk>()
         val gates = mutableListOf<IntentSafetyGate>()
 
         extractDecisions(intent, steps, decisions)
-        detectCleanupDecisions(steps, missing, risks)
+        detectCleanupDecisions(steps, controls, missing, risks)
         detectBackupScheduleDecisions(steps, intent, missing)
-        detectDatabaseMigrationDecisions(steps, intent, missing, risks)
-        detectProductionDeployApproval(intent, steps, missing, risks, gates)
-        detectPolicySafetyGates(intent, steps, gates)
+        detectDatabaseMigrationDecisions(steps, intent, controls, missing, risks)
+        detectProductionDeployApproval(intent, missing, risks, gates)
+        projectControlSafetyGates(controls, gates)
 
         val assumptions = ConventionResolver.assumptions(intent).mapIndexed { index, message ->
             IntentDecisionAssumption(
@@ -110,7 +122,7 @@ class IntentDecisionAnalyzer(private val registry: ModuleCatalog) {
             safetyGates = gates.distinctBy { it.id },
             loweringDecision = IntentLoweringDecision(
                 allowed = allowed,
-                reason = if (allowed) "No blocking missing decisions or safety gates were found." else "Lowering is blocked until required decisions and safety gates are resolved.",
+                reason = if (allowed) "No blocking missing decisions or safety gates were found; pending controls still require compiler and runtime enforcement evidence." else "Lowering is blocked until required decisions and safety gates are resolved.",
                 blockingDecisionIds = blockingDecisions,
                 blockingSafetyGateIds = blockingGates
             )
@@ -143,18 +155,20 @@ class IntentDecisionAnalyzer(private val registry: ModuleCatalog) {
 
     private fun detectCleanupDecisions(
         steps: List<IntentStep>,
+        controls: ControlAssessment,
         missing: MutableList<IntentMissingDecision>,
         risks: MutableList<IntentDecisionRisk>
     ) {
         steps.filter { it.capability == StandardCapability.CLEANUP }.forEach { step ->
+            val protected = operationControlSatisfied(controls, step.id, ControlRequirementKind.RETENTION_GUARD)
             risks += IntentDecisionRisk(
                 id = "risk.cleanup.${step.id}",
                 severity = "medium",
                 message = "Cleanup step '${step.id}' may remove resources permanently.",
                 mitigation = "Require explicit retention or safety rule.",
-                mitigated = hasCleanupSafety(step)
+                mitigated = protected
             )
-            if (!hasCleanupSafety(step)) {
+            if (!protected) {
                 missing += IntentMissingDecision(
                     id = "decision.cleanup.${step.id}.retention",
                     field = "safety.cleanup.retention",
@@ -190,19 +204,18 @@ class IntentDecisionAnalyzer(private val registry: ModuleCatalog) {
     private fun detectDatabaseMigrationDecisions(
         steps: List<IntentStep>,
         intent: IntentDocument,
+        controls: ControlAssessment,
         missing: MutableList<IntentMissingDecision>,
         risks: MutableList<IntentDecisionRisk>
     ) {
-        val migrations = steps.filter { it.capability == StandardCapability.DATABASE_MIGRATE }
-        if (migrations.isEmpty()) return
-        val hasBackup = steps.any { it.capability == StandardCapability.BACKUP } || steps.any { it.params["backup"].isConfirmedText() }
-        migrations.forEach { step ->
+        steps.filter { it.capability == StandardCapability.DATABASE_MIGRATE }.forEach { step ->
+            val hasBackup = operationControlSatisfied(controls, step.id, ControlRequirementKind.BACKUP)
             risks += IntentDecisionRisk(
                 id = "risk.database-migration.${step.id}",
                 severity = "high",
                 message = "Database migration '${step.id}' can change persistent data.",
                 mitigation = "Require backup/restore point and rollback plan.",
-                mitigated = hasBackup && (intent.failure.rollback || steps.any { it.capability == StandardCapability.ROLLBACK })
+                mitigated = hasBackup && intent.failure.rollback
             )
             if (!hasBackup) {
                 missing += IntentMissingDecision(
@@ -219,84 +232,104 @@ class IntentDecisionAnalyzer(private val registry: ModuleCatalog) {
 
     private fun detectProductionDeployApproval(
         intent: IntentDocument,
-        steps: List<IntentStep>,
         missing: MutableList<IntentMissingDecision>,
         risks: MutableList<IntentDecisionRisk>,
         gates: MutableList<IntentSafetyGate>
     ) {
-        val deploys = steps.filter { it.capability == StandardCapability.DEPLOY }
-        if (deploys.isEmpty() || !isProduction(intent, steps)) return
-        val hasApproval = hasApproval(intent, steps)
-        risks += IntentDecisionRisk(
-            id = "risk.prod-deploy",
-            severity = "high",
-            message = "Production deployment can affect live users.",
-            mitigation = "Require approval or an equivalent change gate.",
-            mitigated = hasApproval
-        )
-        if (!hasApproval) {
-            missing += IntentMissingDecision(
-                id = "decision.prod-deploy.approval",
-                field = "safety.approval",
-                severity = "required",
-                question = "Who or what gate approves production deployment?",
-                reason = "Production deploy without approval must be explicit and policy-backed.",
-                blocksLowering = true
-            )
-            gates += IntentSafetyGate(
-                id = "gate.prod-deploy.approval",
-                policy = "forbidProductionWithoutApproval",
-                status = "blocked",
-                reason = "Production deploy has no approval step or approval policy.",
-                blocksLowering = true
-            )
+        intent.workflows.forEach { workflow ->
+            workflow.steps.filter { it.capability == StandardCapability.DEPLOY }.forEach deploy@ { step ->
+                val parameters = step.params.filterKeys(environmentPolicy::recognizesParameter)
+                    .map { (name, value) -> environmentParameter(name, value) } +
+                    intent.inputs.filter { input ->
+                        environmentPolicy.recognizesParameter(input.name) &&
+                            step.params.keys.none { it.equals(input.name, ignoreCase = true) }
+                    }.map { environmentParameter(it.name, it.default) }
+                val environment = environmentPolicy.classify(parameters)
+                if (environment.sensitivity == EnvironmentSensitivity.NON_SENSITIVE || !environment.evidenceAvailable) return@deploy
+                if (environment.sensitivity == EnvironmentSensitivity.UNKNOWN) {
+                    missing += IntentMissingDecision(
+                        "decision.environment.${workflow.name}.${step.id}", "safety.environment", "required",
+                        "Which explicit safety policy classifies the environment for '${step.id}'?",
+                        environment.reason, true
+                    )
+                    gates += IntentSafetyGate(
+                        "gate.environment.${workflow.name}.${step.id}", "resolveEnvironmentClassification", "blocked",
+                        environment.reason, true
+                    )
+                    return@deploy
+                }
+                // Presence is a frontend observation, not proof of scope or runtime approval.
+                // The compiler's safety/control boundaries remain authoritative for that proof.
+                val mechanismPresent = workflow.steps.any { it.capability == StandardCapability.APPROVE }
+                risks += IntentDecisionRisk(
+                    id = "risk.prod-deploy.${workflow.name}.${step.id}", severity = "high",
+                    message = "Production deployment '${step.id}' can affect live users.",
+                    mitigation = "Require compiler-validated approval scope and runtime enforcement.",
+                    mitigated = false
+                )
+                gates += IntentSafetyGate(
+                    id = "gate.prod-deploy.approval.${workflow.name}.${step.id}",
+                    policy = "forbidProductionWithoutApproval",
+                    status = if (mechanismPresent) "pending" else "blocked",
+                    reason = if (mechanismPresent) "An approval step is present; scope and runtime enforcement must still be validated by the compiler." else "Production deploy has no authored approval mechanism in its workflow.",
+                    blocksLowering = !mechanismPresent
+                )
+                if (!mechanismPresent) {
+                    missing += IntentMissingDecision(
+                        id = "decision.prod-deploy.approval.${workflow.name}.${step.id}",
+                        field = "safety.approval", severity = "required",
+                        question = "Who or what gate approves production deployment '${step.id}'?",
+                        reason = "An approval policy declaration alone is not an approval mechanism.",
+                        blocksLowering = true
+                    )
+                }
+            }
         }
     }
 
-    private fun detectPolicySafetyGates(intent: IntentDocument, steps: List<IntentStep>, gates: MutableList<IntentSafetyGate>) {
-        intent.policies.filter { it.type == IntentPolicyType.SAFETY }.forEach { policy ->
-            val condition = policy.condition.orEmpty()
-            val normalized = condition.replace("-", "").replace("_", "").replace(" ", "").lowercase()
-            val blocked = when (normalized) {
-                "requiresclarification", "unmitigatedhighrisk" -> true
-                "requiresapproval" -> !hasApproval(intent, steps)
-                "requiresdryrun" -> steps.none { it.params["dryRun"].asBooleanOrNull() == true || it.params["mode"].asTextOrNull()?.equals("dry-run", true) == true }
-                "requiresbackup" -> steps.none { it.capability == StandardCapability.BACKUP || it.params["backup"].isConfirmedText() }
-                "requiresrollbackplan" -> !intent.failure.rollback && steps.none { it.capability == StandardCapability.ROLLBACK || it.params["rollbackPlan"].isConfirmedText() }
-                else -> false
-            }
+    private fun environmentParameter(name: String, value: IntentValue?): EnvironmentParameterEvidence =
+        EnvironmentParameterEvidence(
+            parameterName = name,
+            valueKind = if (value is IntentString) EnvironmentValueKind.LITERAL else EnvironmentValueKind.DYNAMIC_EXPRESSION,
+            literalValue = (value as? IntentString)?.value
+        )
+
+    private fun projectControlSafetyGates(controls: ControlAssessment, gates: MutableList<IntentSafetyGate>) {
+        val evidenceById = controls.evidence.associateBy { it.requirementId }
+        val policyNameCounts = controls.requirements.filter { it.source == ControlRequirementSource.INTENT_POLICY }
+            .groupingBy { it.subject }.eachCount()
+        controls.requirements.forEach { requirement ->
+            val evidence = evidenceById[requirement.id]
+            val status = evidence?.status ?: ControlEvidenceStatus.UNKNOWN
+            val blocked = status == ControlEvidenceStatus.UNKNOWN || status == ControlEvidenceStatus.UNSATISFIED
+            val policy = (PolicyCondition.parse(requirement.condition) as? PolicyCondition.Requirement)?.kind?.normalized
+                ?: requirement.condition?.takeIf(String::isNotBlank) ?: requirement.kind.name.lowercase()
+            val id = if (requirement.source == ControlRequirementSource.INTENT_POLICY && policyNameCounts[requirement.subject] == 1) {
+                "gate.policy.${requirement.subject}"
+            } else "gate.control.${requirement.id}"
             gates += IntentSafetyGate(
-                id = "gate.policy.${policy.name}",
-                policy = normalized.ifBlank { policy.name },
-                status = if (blocked) "blocked" else "satisfied",
-                reason = policy.message ?: condition.ifBlank { "Safety policy '${policy.name}'." },
+                id = id,
+                policy = policy,
+                status = when (status) {
+                    ControlEvidenceStatus.SATISFIED -> "satisfied"
+                    ControlEvidenceStatus.DYNAMIC -> "pending"
+                    ControlEvidenceStatus.UNKNOWN, ControlEvidenceStatus.UNSATISFIED -> "blocked"
+                },
+                reason = evidence?.detail ?: "Canonical control evidence is missing for '${requirement.id}'.",
                 blocksLowering = blocked
             )
         }
     }
 
-    private fun hasCleanupSafety(step: IntentStep): Boolean =
-        step.params["retention"].isConfirmedText() || step.params["safety"].isConfirmedText()
-
-    private fun hasApproval(intent: IntentDocument, steps: List<IntentStep>): Boolean =
-        steps.any { it.capability == StandardCapability.APPROVE } || intent.policies.any { it.type == IntentPolicyType.APPROVAL }
+    private fun operationControlSatisfied(controls: ControlAssessment, stepId: String, kind: ControlRequirementKind): Boolean {
+        val requirements = controls.requirements.filter {
+            it.kind == kind && it.scope.kind == ControlRequirementScopeKind.OPERATION && it.scope.subjectId == stepId
+        }
+        val evidence = controls.evidence.associateBy { it.requirementId }
+        return requirements.isNotEmpty() && requirements.all { evidence[it.id]?.status == ControlEvidenceStatus.SATISFIED }
+    }
 
     private fun hasAnyDecision(intent: IntentDocument, steps: List<IntentStep>, vararg names: String): Boolean =
         intent.inputs.any { input -> names.any { it.equals(input.name, ignoreCase = true) } && input.default.asTextOrNull()?.isNotBlank() == true } ||
             steps.any { step -> names.any { name -> step.params[name].asTextOrNull()?.isNotBlank() == true } }
-
-    private fun isProduction(intent: IntentDocument, steps: List<IntentStep>): Boolean {
-        val values = intent.inputs.mapNotNull { it.default.asTextOrNull() } +
-            steps.flatMap { step -> listOfNotNull(step.params["environment"].asTextOrNull(), step.params["namespace"].asTextOrNull(), step.params["target"].asTextOrNull()) }
-        return values.any { value ->
-            val normalized = value.trim().lowercase()
-            normalized == "prod" || normalized == "production" || normalized.contains(" production")
-        }
-    }
-
-    private fun IntentValue?.isConfirmedText(): Boolean {
-        val raw = asTextOrNull()?.trim().orEmpty()
-        if (raw.isBlank()) return false
-        return raw.lowercase() !in setOf("false", "no", "none", "not-confirmed", "unspecified")
-    }
 }

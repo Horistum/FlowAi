@@ -26,8 +26,11 @@ workflows:
   - name: application-lifecycle
     kind: DEPLOY
     steps:
+      - id: approve-prod
+        capability: APPROVE
       - id: checkout
         capability: CHECKOUT
+        requires: [approve-prod]
         uses: git.checkout
         params:
           system: source
@@ -44,19 +47,16 @@ workflows:
           image: build-test-deploy:${version}
           path: .
           push: false
-      - id: approve-prod
-        capability: APPROVE
-        requires: [build-image]
       - id: deploy
         capability: DEPLOY
-        requires: [approve-prod]
+        requires: [build-image]
       - id: verify
         capability: VERIFY
         requires: [deploy]
 policies:
   - name: production-approval
     type: APPROVAL
-    message: Approval is required before deployment in this reference flow.
+    message: Approval is required before any operation in this reference flow.
 failure:
   notify: true
   rollback: true

@@ -23,7 +23,6 @@ org/flowlang/intent/CanonicalIntentMeaning.kt
 org/flowlang/intent/ConventionResolver.kt
 org/flowlang/intent/IntentBindingContracts.kt
 org/flowlang/intent/IntentCapabilityValidator.kt
-org/flowlang/intent/IntentDecisionAnalyzer.kt
 org/flowlang/intent/IntentDesignAnalyzer.kt
 org/flowlang/intent/IntentModel.kt
 org/flowlang/intent/IntentSourceContradictionAuthority.kt

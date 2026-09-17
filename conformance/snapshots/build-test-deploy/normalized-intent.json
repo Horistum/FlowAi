@@ -38,10 +38,16 @@
     "name" : "application-lifecycle",
     "kind" : "DEPLOY",
     "steps" : [ {
+      "id" : "approve-prod",
+      "capability" : "APPROVE",
+      "requires" : [ ],
+      "produces" : [ ],
+      "params" : { }
+    }, {
       "id" : "checkout",
       "capability" : "CHECKOUT",
       "uses" : "git.checkout",
-      "requires" : [ ],
+      "requires" : [ "approve-prod" ],
       "produces" : [ ],
       "params" : {
         "system" : {
@@ -84,15 +90,9 @@
         }
       }
     }, {
-      "id" : "approve-prod",
-      "capability" : "APPROVE",
-      "requires" : [ "build-image" ],
-      "produces" : [ ],
-      "params" : { }
-    }, {
       "id" : "deploy",
       "capability" : "DEPLOY",
-      "requires" : [ "approve-prod" ],
+      "requires" : [ "build-image" ],
       "produces" : [ ],
       "params" : { }
     }, {
@@ -106,7 +106,7 @@
   "policies" : [ {
     "name" : "production-approval",
     "type" : "APPROVAL",
-    "message" : "Approval is required before deployment in this reference flow."
+    "message" : "Approval is required before any operation in this reference flow."
   } ],
   "failure" : {
     "notify" : true,

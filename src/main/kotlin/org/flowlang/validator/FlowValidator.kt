@@ -34,8 +34,8 @@ class FlowValidator(
         "ok", "status", "code", "data", "text", "lines", "json", "yaml", "error", "meta", "artifacts"
     )
     private val validOperators = setOf(
-        "==", "!=", ">", ">=", "<", "<=", "and", "or", "not",
-        "in", "contains", "startsWith", "endsWith", "matches", "exists", "empty"
+        "==", "!=", ">", ">=", "<", "<=", "and", "or",
+        "in", "contains", "startsWith", "endsWith", "matches"
     )
     private val builtinPatterns = setOf(
         "email", "url", "uuid", "ipv4", "ipv6", "date", "datetime",
@@ -349,8 +349,14 @@ class FlowValidator(
                 if (expr.operator !in setOf("and", "or")) issues += err("UNKNOWN_OPERATOR", "Unknown logical operator '${expr.operator}'", expr.location)
                 expr.operands.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
             }
-            is UnaryExpressionNode -> checkExpr(expr.operand, scope, defaultScope, resultFields, issues, strictResultFields)
-            is UnaryPostfixExpressionNode -> checkExpr(expr.operand, scope, defaultScope, resultFields, issues, strictResultFields)
+            is UnaryExpressionNode -> {
+                if (expr.operator != "not") issues += err("UNKNOWN_OPERATOR", "Unknown unary operator '${expr.operator}'")
+                checkExpr(expr.operand, scope, defaultScope, resultFields, issues, strictResultFields)
+            }
+            is UnaryPostfixExpressionNode -> {
+                if (expr.operator !in setOf("exists", "empty")) issues += err("UNKNOWN_OPERATOR", "Unknown postfix operator '${expr.operator}'")
+                checkExpr(expr.operand, scope, defaultScope, resultFields, issues, strictResultFields)
+            }
             is ListLiteralNode -> expr.items.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
             is MapLiteralNode -> expr.entries.values.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
             is TemplateStringNode -> expr.parts.forEach { checkExpr(it, scope, defaultScope, resultFields, issues, strictResultFields) }
