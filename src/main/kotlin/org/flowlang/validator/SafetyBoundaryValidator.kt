@@ -23,6 +23,7 @@ import org.flowlang.ast.FlowDocument
 import org.flowlang.modules.Effects
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.safety.EnvironmentClassificationEvidence
 import org.flowlang.safety.EnvironmentParameterEvidence
 import org.flowlang.safety.EnvironmentSafetyPolicy
@@ -38,9 +39,11 @@ import org.flowlang.safety.EnvironmentValueKind
  * approval only when every executable value is policy-classified non-sensitive.
  */
 class SafetyBoundaryValidator(
-    private val registry: ModuleCatalog,
+    registry: ModuleCatalog,
     private val environmentPolicy: EnvironmentSafetyPolicy
 ) {
+    private val registry = ModuleCatalogIndex.capture(registry)
+
     private data class ApprovalState(
         val unconditional: Boolean = false,
         val sensitiveEnvironmentGuard: Boolean = false

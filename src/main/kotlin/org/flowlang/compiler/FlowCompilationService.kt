@@ -12,6 +12,7 @@ import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.intent.IntentValidationReport
 import org.flowlang.intent.ValidatedIntent
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.lowering.IntentExpressionParser
 import org.flowlang.safety.EnvironmentSafetyPolicy
 import org.flowlang.planner.FlowPlanner
@@ -36,15 +37,17 @@ import org.flowlang.validator.FlowValidator
  * has one control-flow truth rather than two implementations that can drift.
  */
 class FlowCompilationService(
-    private val registry: ModuleCatalog,
+    registry: ModuleCatalog,
     environmentPolicy: EnvironmentSafetyPolicy,
     expressions: IntentExpressionParser
 ) {
-    private val proposalReview = IntentProposalReview(registry)
-    private val intentPlanner = IntentToAstPlanner(registry, expressions)
+    private val registry = ModuleCatalogIndex.capture(registry)
+
+    private val proposalReview = IntentProposalReview(this.registry)
+    private val intentPlanner = IntentToAstPlanner(this.registry, expressions)
     private val flowAvailabilityAnalyzer = FlowAvailabilityAnalyzer()
-    private val flowValidator = FlowValidator(registry, environmentPolicy)
-    private val flowPlanner = FlowPlanner(registry)
+    private val flowValidator = FlowValidator(this.registry, environmentPolicy)
+    private val flowPlanner = FlowPlanner(this.registry)
 
     fun compile(input: CompilationInput): CompilationResult = when (input) {
         is FlowSourceCompilationInput -> compileFlowSource(input)

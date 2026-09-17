@@ -9,6 +9,7 @@ import org.flowlang.topology.ExecutionTopologyRequirement
 import org.flowlang.topology.ExecutionTopologyRequirementSource
 import org.flowlang.ast.*
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.lowering.IntentExpressionParser
 import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.lowering.IntentValueExpressionLowering
@@ -50,9 +51,10 @@ internal class ValidatedIntent private constructor(
 }
 
 class IntentToAstPlanner(
-    private val registry: ModuleCatalog,
+    registry: ModuleCatalog,
     private val expressions: IntentExpressionParser
 ) {
+    private val registry = ModuleCatalogIndex.capture(registry)
 
     fun plan(intent: IntentDocument): FlowDocument {
         val evaluation = ValidatedIntent.evaluate(registry, intent)
@@ -91,7 +93,7 @@ class IntentToAstPlanner(
         val lowered = declaredWorkflows.map { workflow ->
             val statements = lowerOrderedSteps(workflow.steps, intent, bindings)
             val imports = collectModules(statements, systems.values).sorted()
-                .map { ModuleImportNode(name = it, version = "1.0") }
+                .map { name -> ModuleImportNode(name = name, version = registry.requireModule(name).version) }
             val control = if (multiple) {
                 workflowControlAssessment(validation.controlAssessment, workflow.name)
             } else {
@@ -421,10 +423,9 @@ class IntentToAstPlanner(
     private fun collectModules(statements: List<StatementNode>, systems: Collection<SystemNode>): Set<String> {
         val out = linkedSetOf<String>()
         systems.forEach { system ->
-            out += when (system.systemType) {
-                "email" -> "notify"
-                else -> system.systemType
-            }
+            // System type identity and module identity are different contracts.
+            // Unknown types stay explicit validation warnings, not invented imports.
+            registry.findSystemType(system.systemType)?.first?.let { out += it.name }
         }
         fun visit(statement: StatementNode) {
             when (statement) {

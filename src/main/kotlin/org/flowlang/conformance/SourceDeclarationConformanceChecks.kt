@@ -91,13 +91,16 @@ internal class SourceDeclarationConformanceChecks {
             override fun findModule(name: String): FlowModule? { lookups++; return null }
             override fun allModules(): Collection<FlowModule> { lookups++; return emptyList() }
         }
+        val frontend = FlowSourceFrontend(FrontendCompilerComposition.compiler(catalog))
+        // Composition captures the catalog once; source rejection must not read it again.
+        lookups = 0
         val directory = createTempDirectory("source-integrity-evidence-").toFile()
         try {
             val file = File(directory, "source.flow").apply {
                 writeText(flow("m.a s { safety: requiresApproval safety: onlyIf true }"))
             }
             val failure = runCatching {
-                FlowSourceFrontend(FrontendCompilerComposition.compiler(catalog)).compile(file)
+                frontend.compile(file)
             }.exceptionOrNull()
             return if (failure is DuplicateDeclarationException && failure.path == "flow.steps[0].safety" && lookups == 0) {
                 emptyList()

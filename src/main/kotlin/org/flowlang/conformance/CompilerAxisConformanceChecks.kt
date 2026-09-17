@@ -266,8 +266,15 @@ class CompilerAxisConformanceChecks(
             errors = this
         )
         requireExactProductionCallers(
-            symbol = "IntentProposalReview(registry)",
+            symbol = "IntentProposalReview(this.registry)",
             expectedPaths = setOf(FLOW_COMPILATION_SERVICE),
+            errors = this
+        )
+        // Construction now passes the captured inventory explicitly. Retain the
+        // old spelling as forbidden rather than opening a raw-catalog bypass.
+        requireExactProductionCallers(
+            symbol = "IntentProposalReview(registry)",
+            expectedPaths = emptySet(),
             errors = this
         )
         requireExactProductionCallers(

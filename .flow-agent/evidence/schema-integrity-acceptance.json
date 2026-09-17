@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "pullRequest": 179,
+  "base": "9053658838dd7c06622717a34007c67c5cb1c38c",
+  "head": "e641753e48ff3465cf2736ae56a70ac71c83ff74",
+  "mergedMain": "dc3cfab1ec2e16ff315f6af0b8f3a7c1ef62707c",
+  "sourceTree": "8bf6e7ef1f50969a11c5b1db0ba9429d1e01e937",
+  "workflowRunId": 34572383170,
+  "jobs": {
+    "exactHead": 103179363019,
+    "mergeCandidate": 103179362952,
+    "physicalIsolation": 103177235461
+  },
+  "junit": {
+    "exactHead": {
+      "artifactId": 10188953417,
+      "sha256": "16e6197134bcb19a236c7722e0a4d632eba0166d8db82d711c7bfa1d6b0c0265",
+      "tests": 1600,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 281,
+      "uniqueIdentities": 1600,
+      "identitiesSha256": "3e729a8d7ddb3c2f23e465a96ec44dd0a2bd9156d1c85560e64c4fac964c7a7a"
+    },
+    "mergeCandidate": {
+      "artifactId": 10188878664,
+      "sha256": "032440172fd4a3d057c8741c1e47c2dcdbe62364940fac79ffad22b918080b89",
+      "tests": 1600,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 281,
+      "uniqueIdentities": 1600,
+      "identitiesSha256": "3e729a8d7ddb3c2f23e465a96ec44dd0a2bd9156d1c85560e64c4fac964c7a7a"
+    }
+  },
+  "toolingTests": 151,
+  "conformance": {
+    "exactHead": {
+      "passed": 246,
+      "failed": 0
+    },
+    "mergeCandidate": {
+      "passed": 246,
+      "failed": 0
+    }
+  },
+  "logArtifacts": [
+    {
+      "artifactId": 10188952671,
+      "sha256": "567791aecf16e97123ffbc14fa6590f2a43f900583b4d3ac054c242c79ce5d50"
+    },
+    {
+      "artifactId": 10188877876,
+      "sha256": "eb4c0965c83c7c989f6d0c4e39af5a69da8c932bfdc788d712b83f7fb53f5096"
+    }
+  ],
+  "scope": "Accepted schema integrity predecessor only. Not evidence of system-identity implementation or whole AR-04 completion."
+}

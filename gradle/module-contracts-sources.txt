@@ -3,5 +3,6 @@ org/flowlang/ast/ExpressionNodes.kt
 org/flowlang/lowering/IntentExpressionParser.kt
 org/flowlang/lowering/IntentLoweringMetadata.kt
 org/flowlang/modules/ModuleCatalog.kt
+org/flowlang/modules/ModuleCatalogIndex.kt
 org/flowlang/modules/ModuleContracts.kt
 org/flowlang/standard/FlowStandardVersions.kt

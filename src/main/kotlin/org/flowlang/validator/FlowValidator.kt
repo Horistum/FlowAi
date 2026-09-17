@@ -6,6 +6,7 @@ import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityIssueKind
 import org.flowlang.core.FlowValueAvailability
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.modules.SchemaType
 import org.flowlang.modules.SchemaTypeCompatibility
 import org.flowlang.modules.SchemaValueKind
@@ -26,9 +27,10 @@ import org.flowlang.safety.EnvironmentSafetyPolicy
  * resolves to.
  */
 class FlowValidator(
-    private val registry: ModuleCatalog,
+    registry: ModuleCatalog,
     private val environmentPolicy: EnvironmentSafetyPolicy
 ) {
+    private val registry = ModuleCatalogIndex.capture(registry)
 
     private val standardResultFields = setOf(
         "ok", "status", "code", "data", "text", "lines", "json", "yaml", "error", "meta", "artifacts"
@@ -127,7 +129,7 @@ class FlowValidator(
         }
 
         reconcileAvailabilityIssues(issues, availability)
-        issues += SafetyBoundaryValidator(registry, environmentPolicy).validate(document)
+        issues += SafetyBoundaryValidator(this.registry, environmentPolicy).validate(document)
         return ValidationReport(valid = issues.none { it.level == "error" }, issues = issues)
     }
 

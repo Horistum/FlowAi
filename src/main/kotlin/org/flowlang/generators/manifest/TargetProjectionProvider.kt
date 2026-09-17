@@ -6,6 +6,7 @@ import org.flowlang.capabilities.TargetCapability
 import org.flowlang.materialization.TargetDiagnosticMaterializationRequest
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 
 interface TargetManifestGenerator {
     val target: String
@@ -159,8 +160,10 @@ class TargetManifestGenerationPipeline(
     private val projections: AdapterCatalog<TargetProjectionProvider>,
     private val capabilityResolvers: List<TargetProjectionCapabilityResolver> = emptyList(),
     private val executionGates: List<TargetProjectionExecutionGate> = emptyList(),
-    private val modules: ModuleCatalog
+    modules: ModuleCatalog
 ) {
+    private val modules = ModuleCatalogIndex.capture(modules)
+
     init {
         require(targets.isNotEmpty()) { "Target manifest pipeline requires a non-empty target registry." }
     }

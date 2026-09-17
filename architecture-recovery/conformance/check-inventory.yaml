@@ -37,3 +37,6 @@ checks:
   - architecture-recovery.language.non-overwriting-map-keys
   - architecture-recovery.language.declaration-scope-preservation
   - architecture-recovery.language.early-source-rejection
+  - architecture-recovery.language.system-contract-ambiguity-rejection
+  - architecture-recovery.language.system-contract-owner-preservation
+  - architecture-recovery.language.system-contract-snapshot-stability

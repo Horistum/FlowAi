@@ -63,7 +63,7 @@ data class CapabilityModuleIssue(
  */
 object ModuleContractAnalyzer {
     fun analyze(registry: ModuleCatalog): CapabilityModuleContractReport {
-        val modules = registry.allModules().sortedBy { it.name }
+        val modules = ModuleCatalogIndex.capture(registry).allModules().sortedBy { it.name }
         val issues = mutableListOf<CapabilityModuleIssue>()
         val summaries = modules.map { module ->
             if (module.description.isBlank()) {

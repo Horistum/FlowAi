@@ -15,15 +15,13 @@ object CanonicalModuleLoader {
             .orEmpty()
         if (files.isEmpty()) throw ContractException("Module directory is empty: ${dir.path}")
         val modules = files.map { file -> loadText(file.readText(), file.path) }
-        rejectDuplicateModuleIds(modules)
-        return modules
+        return validateCatalog(modules)
     }
 
     fun loadTexts(texts: List<String>): List<FlowModule> {
         if (texts.isEmpty()) throw ContractException("At least one module descriptor is required.")
         val modules = texts.mapIndexed { index, text -> loadText(text, "<module-${index + 1}>") }
-        rejectDuplicateModuleIds(modules)
-        return modules
+        return validateCatalog(modules)
     }
 
     fun loadText(yaml: String, source: String = "<module>"): FlowModule {
@@ -92,9 +90,10 @@ object CanonicalModuleLoader {
         return ModuleYamlLoader.decodeText(yaml, source)
     }
 
-    private fun rejectDuplicateModuleIds(modules: List<FlowModule>) {
-        val duplicates = modules.groupBy { it.name }.filterValues { it.size > 1 }.keys.sorted()
-        if (duplicates.isNotEmpty()) throw ContractException("Duplicate modules: ${duplicates.joinToString()}")
+    private fun validateCatalog(modules: List<FlowModule>): List<FlowModule> = try {
+        ModuleCatalogIndex.fromModules(modules).allModules().toList()
+    } catch (error: ModuleCatalogException) {
+        throw ContractException(error.message ?: "Invalid module catalog.", error)
     }
 
     private fun validateSchema(value: Any?, path: String, required: Boolean) {

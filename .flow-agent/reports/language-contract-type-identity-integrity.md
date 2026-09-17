@@ -85,10 +85,10 @@ milestone-wide success records.
 
 ## Scope and lifecycle
 
-AR-04 remains active. AR-04B is the selected implementation slice and AR-04C is next.
+AR-04 remains active. AR-04C is the selected implementation slice and AR-04D is next.
 F-07, F-12, F-13, F-14 and F-21 remain open until the milestone's integrated
 acceptance; no finding is closed merely because source code exists on a candidate
-branch. AR-04C/D/E behavior is intentionally not implemented here. AR-05/06/07 remain
+branch. AR-04D/E behavior is intentionally not implemented here. AR-05/06/07 remain
 planned, EF-09 remains paused and F-20 remains AR-07-owned.
 
 Product presentation is Horistum. Existing Flow technical identities, public
@@ -103,3 +103,52 @@ run is added by AR-04B. The candidate must pass the existing exact-HEAD and synt
 merge compile/test/conformance checks plus physical module isolation. Final run IDs,
 counts and review outcome belong in PR metadata only after GitHub has actually
 produced them; this report deliberately does not predict a green future run.
+
+
+## Accepted schema predecessor and system-contract identity
+
+Schema-integrity PR #179 was merged as `dc3cfab1ec2e16ff315f6af0b8f3a7c1ef62707c`.
+Its final head `e641753e48ff3465cf2736ae56a70ac71c83ff74` passed Flow CI run
+`34572383170`, including exact-head job `103179363019`, merge-candidate job
+`103179362952` and physical isolation `103177235461`. Both inspected test archives
+contain the same 1,600 distinct tests in 281 suites with no failures, errors or skips;
+both installed conformance logs report 246 passing checks. The immutable receipt is
+`.flow-agent/evidence/schema-integrity-acceptance.json`. This accepts B, not C.
+
+The current implementation starts from merged correction main
+`e1574def2dbe8ef82dd2903eb551bd4c61807770`. Its separate post-merge Flow CI run
+`35171357137` passed source isolation and full compile/test/conformance; the
+synthetic-merge job was correctly skipped for a push event. No CI workflow is changed.
+
+AR-04C introduces one loader-independent `ModuleCatalogIndex`. A composed catalog
+has globally unique module and system-type names, matching identity keys and nonblank
+module versions. Duplicate system types are rejected even if their schemas happen
+to match. Diagnostic ordering is deterministic; renaming descriptor files or changing
+registration order cannot choose a different owner. Qualified multi-version type
+selection is not invented as a fallback.
+
+Compiler, validator, planner, report and adapter composition capture the declarations
+once. The index ignores a provider's custom lookup override and detaches identity-bearing
+collections so subsequent source mutation cannot replace an owner or its schema map.
+Intent imports use the actual declaring module and version, not a system type label
+or hardcoded version 1.0. Unknown types stay explicit; they do not invent module imports.
+This is not a general deep-freeze of arbitrary schema defaults or an AR-04D identity redesign.
+
+Regression evidence covers descriptor loaders, direct registry construction, programmatic
+catalogs, dormant conflicts, both registration orders, three-module permutations, source
+and returned-collection mutations, compiler/validator/planner/report/adapter entry points,
+and external owner/version preservation. Three executable conformance probes independently
+exercise ambiguity rejection, owner preservation and snapshot stability. Source-rejection
+probes now distinguish catalog construction from per-source lookup: a syntax failure must
+still stop before any additional lookup, planning or artifact construction.
+
+The existing lifecycle checker accepts the pinned B receipt and keeps all milestone-wide
+boundaries pending. C requires its own actual exact-head and merge-candidate CI before merge.
+No F-13 closure, target support promotion, AR-05 activation or EF-09 resumption is asserted.
+
+
+Integration review retained the existing compiler-axis guard for the former raw-catalog
+proposal-review spelling and added the exact captured-catalog spelling. A negative
+regression rejects either spelling from an unlisted caller. Metadata-copy tests now
+include the newly pinned predecessor receipt before exercising byte-tampering rejection.
+No conformance or test assertion was disabled to accommodate the new implementation.
