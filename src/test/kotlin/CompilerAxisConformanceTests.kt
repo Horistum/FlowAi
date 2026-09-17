@@ -122,6 +122,23 @@ class CompilerAxisConformanceTests {
     }
 
     @Test
+    fun rawAndCapturedCatalogSpellingCannotHideUnlistedProposalReview() {
+        listOf("IntentProposalReview(registry)", "IntentProposalReview(this.registry)").forEach { call ->
+            val root = copiedFixture()
+            try {
+                File(root, "src/main/kotlin/org/flowlang/product/ReviewBypass.kt").apply {
+                    parentFile.mkdirs()
+                    writeText("package org.flowlang.product\nfun bypass() = $call\n")
+                }
+                val check = CompilerAxisConformanceChecks(root).checks()
+                    .single { it.name == CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+                assertEquals(false, check.passed)
+                assertTrue(check.message.orEmpty().contains("ReviewBypass.kt"), check.message)
+            } finally { root.deleteRecursively() }
+        }
+    }
+
+    @Test
     fun compilerImportingConcreteTargetLayerFailsDirectionCheck() {
         val root = copiedFixture()
         val service = File(root, FLOW_COMPILATION_SERVICE)

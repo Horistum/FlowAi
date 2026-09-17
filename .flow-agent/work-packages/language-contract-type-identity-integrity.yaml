@@ -11,7 +11,7 @@ authorization:
   predecessor: "AR-03"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-04"
   mainAtActivation: "0a863eb10f60a64945f9657b0fcf090714ab543a"
-  rule: "AR-04B follows merged and independently green AR-04A PR #178. Closed schema types/default validation has its own current-revision HEAD/merge acceptance; AR-04A or activation success cannot replace it."
+  rule: "Maintainer-authorized AR-04C follows accepted schema integrity PR #179 and green post-correction main e1574def. Its own exact-head and merge-candidate CI is required; predecessor evidence cannot replace it."
 
 verifiedBaseline:
   mergedPullRequest: 177
@@ -29,8 +29,8 @@ verifiedBaseline:
   skipped: 0
   evidence: ".flow-agent/evidence/compiler-module-acceptance.json"
 
-selectedSlice: "AR-04B"
-nextSlice: "AR-04C"
+selectedSlice: "AR-04C"
+nextSlice: "AR-04D"
 implementationSlices:
   - id: "AR-04A"
     name: "Duplicate authored declarations and stable source diagnostics"
@@ -62,10 +62,29 @@ implementationSlices:
       - "Exercise every public Flow frontend, positive non-duplicate counterparts and nested same-name declarations in distinct scopes."
   - id: "AR-04B"
     name: "Closed schema types and validated descriptor defaults"
-    status: implemented
+    status: complete
     acceptance:
       source: current-revision-ci
-      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+      requiredChecks:
+      - compile-test-conformance
+      - merge-candidate-compile-test-conformance
+      pullRequest: 179
+      base: 9053658838dd7c06622717a34007c67c5cb1c38c
+      head: e641753e48ff3465cf2736ae56a70ac71c83ff74
+      mergedMain: dc3cfab1ec2e16ff315f6af0b8f3a7c1ef62707c
+      sourceTree: 8bf6e7ef1f50969a11c5b1db0ba9429d1e01e937
+      workflowRunId: 34572383170
+      exactHeadJobId: 103179363019
+      mergeCandidateJobId: 103179362952
+      isolationJobId: 103177235461
+      kotlinTests: 1600
+      toolingTests: 151
+      conformanceChecks: 246
+      failures: 0
+      errors: 0
+      skipped: 0
+      evidence: .flow-agent/evidence/schema-integrity-acceptance.json
+      evidenceSha256: 0576dfe6ac1b8713be5ecca683f30980b7840e27deeae1bba41fddedb162225c
     ownsFindings: ["F-12"]
     invariant: "Module schema types belong to one closed model; defaults and authored values pass the same type checker before planning."
     scope:
@@ -75,9 +94,20 @@ implementationSlices:
       - "Preserve existing module descriptors and programmatic canonical type construction while rejecting unsupported strings immediately."
   - id: "AR-04C"
     name: "Deterministic system-contract identity"
-    status: planned
+    status: implemented
+    acceptance:
+      source: current-revision-ci
+      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
     ownsFindings: ["F-13"]
     invariant: "Duplicate system identities fail or use an explicitly version-qualified contract; neither filesystem nor registry ordering selects meaning."
+    scope:
+      - "Use globally unique, case-sensitive system type names within one composed module catalog; no new qualification syntax or version selection."
+      - "Share a loader-independent catalog index across descriptor loaders, direct registry construction and programmatic compiler/validator/planner composition."
+      - "Reject duplicate module/type owners and mismatched identity keys before lookup or AST construction, including dormant conflicts."
+      - "Detach and protect identity-bearing maps so caller mutation cannot change the selected contract after composition."
+      - "Import the actual declaring module and version, never infer either from the system type name."
+      - "Add positive, negative, permutation and mutation tests plus independently executed conformance checks."
+
   - id: "AR-04D"
     name: "Lossless semantic identities and collision rejection"
     status: planned
@@ -130,7 +160,7 @@ completionDecision:
   nextItemActivationState: not-activated
 
 forbiddenScope:
-  - "AR-04B owns only module schema type/default integrity and shared authored-value compatibility. Do not implement system identity, semantic ID encoding or general loader-hardening work from AR-04C/D/E."
+  - "AR-04C owns only composed module/system identity and owner-preserving imports. Do not implement the semantic ID encoding or general loader-hardening work from AR-04D/E."
   - "Do not reopen AR-02 or rewrite historical AR-03A/B/C/D or AR-04A receipts."
   - "Do not retire F-20 compatibility surfaces; their removal remains AR-07-owned."
   - "Do not activate AR-05 or resume EF-09."
@@ -138,9 +168,9 @@ forbiddenScope:
   - "Do not change public versions, canonical graph semantics, target support or CI check identities."
 
 validationPlan:
-  - "Preserve and verify the merged AR-04A receipt before selecting AR-04B."
-  - "Reject unknown module schema wire types and mismatched descriptor defaults before decoding or planning."
-  - "Exercise the same schema compatibility authority through both Flow and Intent authored system values, including positive native values and negative wrong-type values."
+  - "Preserve AR-04A and verify the accepted PR #179 schema-integrity receipt before selecting system identity work."
+  - "Retain rejection of unknown schema types and invalid defaults; reject ambiguous or inconsistent catalog identities before compilation."
+  - "Exercise descriptor, programmatic, compiler, validator, planner and adapter composition; verify order independence, preserved owner/version and caller-mutation isolation."
   - "Run complete Kotlin tests, installed conformance and physical module-isolation proofs in the existing Flow CI on exact HEAD and synthetic merge."
   - "Preserve every accepted predecessor regression identity without adding a second validation matrix or automatic offline portability run."
 

@@ -21,6 +21,7 @@ import org.flowlang.modules.ContinuityContract
 import org.flowlang.modules.ContinuityKind
 import org.flowlang.modules.ModuleActionContract
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.topology.PlanningTopologyAuthority
 
 /**
@@ -53,7 +54,8 @@ internal data class FlowPlanningResult(
  * Mutually exclusive branches therefore never overwrite a global binding map or
  * lend their producer identity to a sibling branch.
  */
-class FlowPlanner(private val registry: ModuleCatalog) {
+class FlowPlanner(registry: ModuleCatalog) {
+    private val registry = ModuleCatalogIndex.capture(registry)
 
     fun plan(document: FlowDocument): ExecutionPlan =
         planWithProvenance(document, FlowAvailabilityAnalyzer().analyze(document)).plan

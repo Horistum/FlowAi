@@ -1,6 +1,7 @@
 package org.flowlang.controls
 
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.LoopNode
@@ -35,12 +36,13 @@ object PlanningControlAuthority {
         modules: ModuleCatalog,
         workflowFailureHandlerNodes: List<PlanNode> = emptyList()
     ): ControlAssessment {
+        val catalog = ModuleCatalogIndex.capture(modules)
         val semanticNodes = nodes + workflowFailureHandlerNodes
         val graph = ControlGraph.index(nodes, workflowFailureHandlerNodes)
         val taskDrafts = mutableListOf<TaskRequirementDraft>()
 
         flatten(semanticNodes).filterIsInstance<TaskNode>().forEach { task ->
-            val contract = modules.findAction(task.module, task.action)?.safety ?: return@forEach
+            val contract = catalog.findAction(task.module, task.action)?.safety ?: return@forEach
             if (contract.requiresApproval || contract.destructive) {
                 taskDrafts += draft(task, ControlRequirementKind.APPROVAL, approvalEvidence(task, graph))
             }

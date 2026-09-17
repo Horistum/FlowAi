@@ -202,6 +202,8 @@ class SourceDeclarationIntegrityTests {
             override fun allModules(): Collection<FlowModule> { lookups++; return emptyList() }
         }
         val frontend = FlowSourceFrontend(FrontendCompilerComposition.compiler(catalog))
+        // Catalog validation happens once at composition, not while parsing authored input.
+        lookups = 0
         val directory = createTempDirectory("source-integrity-").toFile()
         try {
             val file = File(directory, "source.flow").apply { writeText(flow("m.a s { safety: requiresApproval safety: onlyIf true }")) }

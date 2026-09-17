@@ -6,8 +6,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SchemaContractIntegrityLifecycleTests {
-    private fun live(): WorkflowSemanticsRecoveryLifecycleSnapshot =
-        WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live(): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+        // Exercise the accepted historical B phase after the live roadmap has advanced to C.
+        val slices = records(current.integrityWorkPackage["implementationSlices"]).map { slice ->
+            when (slice["id"]) {
+                "AR-04B" -> slice + mapOf("status" to "implemented", "acceptance" to mapOf(
+                    "source" to "current-revision-ci",
+                    "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
+                "AR-04C" -> (slice - "acceptance") + ("status" to "planned")
+                else -> slice
+            }
+        }
+        return current.copy(integrityWorkPackage = current.integrityWorkPackage + mapOf(
+            "selectedSlice" to "AR-04B", "nextSlice" to "AR-04C", "implementationSlices" to slices))
+    }
 
     @Test
     fun liveWorkPackageSelectsSchemaIntegrityAfterAcceptedPredecessorSlice() {

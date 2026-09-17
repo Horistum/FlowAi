@@ -1,6 +1,10 @@
 package org.flowlang.modules
 
-/** Read-only, already decoded module contracts. Implementations own loading, never semantics. */
+/**
+ * Already decoded module declarations. Implementations own loading, never semantics.
+ * Semantic consumers capture [allModules] through [ModuleCatalogIndex] before use;
+ * lookup overrides cannot select a different owner than the declared inventory.
+ */
 interface ModuleCatalog {
     fun findModule(name: String): FlowModule?
     fun allModules(): Collection<FlowModule>
@@ -8,5 +12,5 @@ interface ModuleCatalog {
     fun findAction(moduleName: String, actionName: String): ModuleActionContract? =
         findModule(moduleName)?.actions?.get(actionName)
     fun findSystemType(typeName: String): Pair<FlowModule, SystemTypeContract>? =
-        allModules().firstNotNullOfOrNull { module -> module.systemTypes[typeName]?.let { module to it } }
+        ModuleCatalogIndex.capture(this).findSystemType(typeName)
 }

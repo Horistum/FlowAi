@@ -1,6 +1,7 @@
 package org.flowlang.intent
 
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.standard.FlowStandardVersions
 import org.flowlang.standard.StandardIntentCatalog
 
@@ -40,7 +41,9 @@ data class IntentRequiredSystem(
     val reason: String
 )
 
-class IntentDesignAnalyzer(private val registry: ModuleCatalog) {
+class IntentDesignAnalyzer(registry: ModuleCatalog) {
+    private val registry = ModuleCatalogIndex.capture(registry)
+
     fun analyze(intent: IntentDocument): IntentDesignReport {
         val declaredSystems = intent.systems.associateBy { it.name }
         val steps = intent.workflows.flatMap { it.steps }

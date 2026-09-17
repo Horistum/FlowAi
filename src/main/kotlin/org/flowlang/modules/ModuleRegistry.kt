@@ -3,14 +3,14 @@ package org.flowlang.modules
 import java.io.File
 
 class ModuleRegistry(
-    private val modules: Map<String, FlowModule> = loadCanonical().associateBy { it.name }
+    modules: Map<String, FlowModule> = loadCanonical().associateBy { it.name }
 ) : ModuleCatalog {
-    override fun findModule(name: String): FlowModule? = modules[name]
-    override fun allModules(): Collection<FlowModule> = modules.values
-    override fun requireModule(name: String): FlowModule = modules[name] ?: error("Module not registered: $name")
-    override fun findAction(moduleName: String, actionName: String): ModuleActionContract? = modules[moduleName]?.actions?.get(actionName)
+    private val catalog = ModuleCatalogIndex.fromMap(modules)
+
+    override fun findModule(name: String): FlowModule? = catalog.findModule(name)
+    override fun allModules(): Collection<FlowModule> = catalog.allModules()
     override fun findSystemType(typeName: String): Pair<FlowModule, SystemTypeContract>? =
-        modules.values.firstNotNullOfOrNull { module -> module.systemTypes[typeName]?.let { module to it } }
+        catalog.findSystemType(typeName)
 
     companion object {
         fun fromDirectory(dir: File): ModuleRegistry =

@@ -8,6 +8,8 @@ internal object LanguageContractIntegrityLifecycle {
     const val WORK_PACKAGE = ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
     const val ACTIVATION_EVIDENCE = ".flow-agent/evidence/language-activation-acceptance.json"
     private const val ACTIVATION_SHA256 = "81afd6901fc3de408a2d53e7bde8879a518b171f17fcf354043e1199dbde8758"
+    const val SCHEMA_EVIDENCE = ".flow-agent/evidence/schema-integrity-acceptance.json"
+    private const val SCHEMA_SHA256 = "0576dfe6ac1b8713be5ecca683f30980b7840e27deeae1bba41fddedb162225c"
     private val findings = listOf("F-07", "F-12", "F-13", "F-14", "F-21")
     private val sliceIds = listOf("AR-04A", "AR-04B", "AR-04C", "AR-04D", "AR-04E", "AR-04F")
     private val requiredChecks = listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")
@@ -93,6 +95,7 @@ internal object LanguageContractIntegrityLifecycle {
         when (work["selectedSlice"]) {
             "AR-04A" -> validateAr04aPhase(snapshot, work, slices, lifecycle, boundaries, this)
             "AR-04B" -> validateAr04bPhase(snapshot, work, slices, lifecycle, boundaries, this)
+            "AR-04C" -> validateAr04cPhase(snapshot, work, slices, lifecycle, boundaries, this)
             else -> add("Language integrity may advance only through an explicitly supported AR-04 slice transition.")
         }
 
@@ -171,6 +174,58 @@ internal object LanguageContractIntegrityLifecycle {
         }) {
             errors += "AR-04B cannot publish a future receipt for milestone-wide implementation, validation or completion success."
         }
+    }
+
+    private fun validateAr04cPhase(
+        snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot,
+        work: Map<*, *>,
+        slices: List<Map<*, *>>,
+        lifecycle: Map<*, *>,
+        boundaries: List<String>,
+        errors: MutableList<String>
+    ) {
+        // Validate historical B independently; accepting it does not rewrite A or activation.
+        val pendingAcceptance = mapOf("source" to "current-revision-ci", "requiredChecks" to requiredChecks)
+        val historical = slices.mapIndexed { index, slice -> when (index) {
+            1 -> slice + mapOf("status" to "implemented", "acceptance" to pendingAcceptance)
+            2 -> (slice - "acceptance") + ("status" to "planned")
+            else -> slice
+        } }
+        validateAr04bPhase(snapshot, work + ("nextSlice" to "AR-04C"), historical, lifecycle, boundaries, errors)
+        if (work["nextSlice"] != "AR-04D" || slices.getOrNull(1)?.get("status") != "complete" ||
+            slices.getOrNull(2)?.get("status") != "implemented" || slices.drop(3).any { it["status"] != "planned" } ||
+            section(slices.getOrNull(2)?.get("acceptance")) != pendingAcceptance ||
+            slices.drop(3).any { it.containsKey("acceptance") }
+        ) errors += "System-contract integrity requires accepted AR-04B, its own current-revision CI and no later-slice activation."
+
+        val evidence = snapshot.schemaIntegrityEvidence
+        val jobs = section(evidence["jobs"])
+        val junit = section(evidence["junit"])
+        val head = section(junit["exactHead"])
+        val merge = section(junit["mergeCandidate"])
+        if (snapshot.schemaIntegritySha256 != SCHEMA_SHA256 || evidence["status"] != "passed" ||
+            evidence["repository"] != "Horistum/FlowAi" || !CompilerModuleAcceptance.same(evidence["pullRequest"], 179) ||
+            evidence["base"] != ar04aAcceptance["mergedMain"] ||
+            evidence["head"] == evidence["mergedMain"] ||
+            listOf(head, merge).any { result ->
+                !CompilerModuleAcceptance.same(result["tests"], 1600) ||
+                    !CompilerModuleAcceptance.same(result["uniqueIdentities"], 1600) ||
+                    listOf("failures", "errors", "skipped").any { !CompilerModuleAcceptance.same(result[it], 0) }
+            } || head["identitiesSha256"] != merge["identitiesSha256"]
+        ) errors += "AR-04B acceptance requires its independently inspected, byte-pinned complete CI evidence."
+        val expected = mapOf(
+            "source" to "current-revision-ci", "requiredChecks" to requiredChecks,
+            "pullRequest" to evidence["pullRequest"], "base" to evidence["base"], "head" to evidence["head"],
+            "mergedMain" to evidence["mergedMain"], "sourceTree" to evidence["sourceTree"],
+            "workflowRunId" to evidence["workflowRunId"], "exactHeadJobId" to jobs["exactHead"],
+            "mergeCandidateJobId" to jobs["mergeCandidate"], "isolationJobId" to jobs["physicalIsolation"],
+            "kotlinTests" to 1600, "toolingTests" to 151, "conformanceChecks" to 246,
+            "failures" to 0, "errors" to 0, "skipped" to 0,
+            "evidence" to SCHEMA_EVIDENCE, "evidenceSha256" to SCHEMA_SHA256
+        )
+        val receipt = section(slices.getOrNull(1)?.get("acceptance"))
+        errors += matchingFields("AR-04B acceptance", receipt, expected)
+        if (receipt.keys != expected.keys) errors += "AR-04B acceptance has missing or unsupported receipt fields."
     }
 
     private fun activationErrors(

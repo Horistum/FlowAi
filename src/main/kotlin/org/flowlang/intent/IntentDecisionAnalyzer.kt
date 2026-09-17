@@ -7,6 +7,7 @@ import org.flowlang.controls.ControlRequirementKind
 import org.flowlang.controls.ControlRequirementScopeKind
 import org.flowlang.controls.ControlRequirementSource
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.safety.EnvironmentParameterEvidence
 import org.flowlang.safety.EnvironmentSafetyPolicy
 import org.flowlang.safety.EnvironmentSensitivity
@@ -82,9 +83,11 @@ data class IntentLoweringDecision(
  * Lowerability is not execution authorization: pending controls remain pending.
  */
 class IntentDecisionAnalyzer(
-    private val registry: ModuleCatalog,
+    registry: ModuleCatalog,
     private val environmentPolicy: EnvironmentSafetyPolicy = StandardEnvironmentSafetyPolicyNotes.policy()
 ) {
+    private val registry = ModuleCatalogIndex.capture(registry)
+
     fun analyze(intent: IntentDocument): IntentDecisionReport {
         val steps = intent.workflows.flatMap { it.steps }
         val controls = CanonicalControlRequirementAuthority.assess(intent)

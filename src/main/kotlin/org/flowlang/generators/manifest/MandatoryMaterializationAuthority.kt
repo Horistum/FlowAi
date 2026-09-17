@@ -23,6 +23,7 @@ import org.flowlang.planner.DataOpNode
 import org.flowlang.modules.ContinuityChannel
 import org.flowlang.modules.ContinuityKind
 import org.flowlang.modules.ModuleCatalog
+import org.flowlang.modules.ModuleCatalogIndex
 import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.PlanDependencyEvidence
 import org.flowlang.planner.PlanDependencyKind
@@ -109,8 +110,10 @@ class InvalidPlanningEvidenceException(
  */
 class MandatoryMaterializationAuthority(
     private val targets: Map<String, TargetCapability>,
-    private val modules: ModuleCatalog
+    modules: ModuleCatalog
 ) {
+    private val modules = ModuleCatalogIndex.capture(modules)
+
     private val capabilityGate = PlannerCapabilityConstraintGate(targets)
 
     init {
