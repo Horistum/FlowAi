@@ -36,6 +36,7 @@ object IntentLoweringAuthority {
     fun canonicalSystemType(type: String): String = IntentSystemTypeAuthority.bindingType(type)
 
     fun sourceMetadata(intent: IntentDocument, expressions: IntentExpressionParser): IntentSourceMetadata {
+        org.flowlang.intent.IntentIdentityIndex.capture(intent)
         val inputNames = intent.inputs.map { it.name }.toSet()
         val systems = intent.systems.map { system ->
             IntentSystemMetadata(
@@ -352,7 +353,7 @@ object IntentLoweringAuthority {
             sourceValue = step.id,
             expectedTargetValue = canonicalRecord(
                 "sourceId" to step.id,
-                "resultName" to step.id.replace('-', '_')
+                "resultName" to org.flowlang.intent.IntentStepIdentity.from(step).resultName
             ),
             transform = "step-id-to-source-and-result-identity"
         ))
@@ -782,8 +783,8 @@ object IntentLoweringAuthority {
         return bytes.joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
     }
 
-    private fun segment(value: String): String = value.replace("~", "~0").replace("/", "~1")
-    private fun unsegment(value: String): String = value.replace("~1", "/").replace("~0", "~")
+    private fun segment(value: String): String = org.flowlang.identity.IdentityWireSegment.encode(value)
+    private fun unsegment(value: String): String = org.flowlang.identity.IdentityWireSegment.decode(value)
 
     private fun missing(identity: String): Nothing =
         throw IllegalArgumentException("Lowering target '$identity' does not resolve to a concrete execution-plan value.")

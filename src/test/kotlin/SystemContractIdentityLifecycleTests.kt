@@ -7,7 +7,17 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SystemContractIdentityLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live(): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+        val historical = records(current.integrityWorkPackage["implementationSlices"]).map { slice -> when (slice["id"]) {
+            "AR-04C" -> slice + mapOf("status" to "implemented", "acceptance" to mapOf(
+                "source" to "current-revision-ci", "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
+            "AR-04D" -> (slice - "acceptance") + ("status" to "planned")
+            else -> slice
+        } }
+        return current.copy(integrityWorkPackage = current.integrityWorkPackage + mapOf(
+            "selectedSlice" to "AR-04C", "nextSlice" to "AR-04D", "implementationSlices" to historical))
+    }
     @Suppress("UNCHECKED_CAST")
     private fun records(value: Any?) = value as List<Map<String, Any?>>
     @Suppress("UNCHECKED_CAST")
@@ -48,7 +58,7 @@ class SystemContractIdentityLifecycleTests {
                 CompilerModuleAcceptance.EVIDENCE, CompilerModuleAcceptance.INVENTORY,
                 LanguageContractIntegrityLifecycle.WORK_PACKAGE,
                 LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE,
-                LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE,
+                LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE, LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE,
                 ".flow-agent/roadmap-architecture-recovery.yaml", ".flow-agent/roadmap-post-toolchain.yaml",
                 ".flow-agent/release-state.yaml", ".flow-agent/roadmap.yaml"
             )

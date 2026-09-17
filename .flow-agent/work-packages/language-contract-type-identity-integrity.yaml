@@ -11,7 +11,7 @@ authorization:
   predecessor: "AR-03"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-04"
   mainAtActivation: "0a863eb10f60a64945f9657b0fcf090714ab543a"
-  rule: "Maintainer-authorized AR-04C follows accepted schema integrity PR #179 and green post-correction main e1574def. Its own exact-head and merge-candidate CI is required; predecessor evidence cannot replace it."
+  rule: "Maintainer explicitly authorizes AR-04D after merged PR #184 and its successful post-merge Flow CI 35176517700. D requires its own exact-head and merge-candidate CI; predecessor success cannot stand in for current validation."
 
 verifiedBaseline:
   mergedPullRequest: 177
@@ -29,8 +29,8 @@ verifiedBaseline:
   skipped: 0
   evidence: ".flow-agent/evidence/compiler-module-acceptance.json"
 
-selectedSlice: "AR-04C"
-nextSlice: "AR-04D"
+selectedSlice: "AR-04D"
+nextSlice: "AR-04E"
 implementationSlices:
   - id: "AR-04A"
     name: "Duplicate authored declarations and stable source diagnostics"
@@ -94,10 +94,34 @@ implementationSlices:
       - "Preserve existing module descriptors and programmatic canonical type construction while rejecting unsupported strings immediately."
   - id: "AR-04C"
     name: "Deterministic system-contract identity"
-    status: implemented
+    status: complete
     acceptance:
       source: current-revision-ci
-      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+      requiredChecks:
+      - compile-test-conformance
+      - merge-candidate-compile-test-conformance
+      pullRequest: 184
+      base: e1574def2dbe8ef82dd2903eb551bd4c61807770
+      head: c9fa14d48abb0e09b6e6860443961e00cb9cdc34
+      syntheticMerge: 837bc45474f2e1f8a451fb01349fe11ae21be198
+      mergedMain: 1d125c154394cd8d6e1083eddd20c6b217a89bb4
+      sourceTree: d86118179709fde20d8c91b1260b51c52c1116d6
+      workflowRunId: 35175006081
+      workflowRunNumber: 3285
+      exactHeadJobId: 105055907055
+      mergeCandidateJobId: 105055906949
+      isolationJobId: 105054706708
+      postMergeWorkflowRunId: 35176517700
+      postMergeJobId: 105061032303
+      postMergeIsolationJobId: 105059361646
+      kotlinTests: 1665
+      toolingTests: 151
+      conformanceChecks: 249
+      failures: 0
+      errors: 0
+      skipped: 0
+      evidence: .flow-agent/evidence/system-identity-acceptance.json
+      evidenceSha256: 1f304dbfd544df93ea906086d935cff0c41067f9649f7d76cf8a8ed78a51b075
     ownsFindings: ["F-13"]
     invariant: "Duplicate system identities fail or use an explicitly version-qualified contract; neither filesystem nor registry ordering selects meaning."
     scope:
@@ -110,7 +134,16 @@ implementationSlices:
 
   - id: "AR-04D"
     name: "Lossless semantic identities and collision rejection"
-    status: planned
+    status: implemented
+    acceptance:
+      source: current-revision-ci
+      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+    scope:
+      - "Use typed, exact SemanticId values and one reversible wire-segment codec, with display text outside identity equality."
+      - "Validate authored namespaces and derived result-symbol collisions before AST construction. Preserve noncolliding result spellings and exact source IDs."
+      - "Remove implicit hyphen/underscore equivalence from Flow binding lookup and producer identity; do not introduce a new reference alias."
+      - "Reject derived target-name collisions before projection and rendering; resolve dependency and safety relationships by exact IDs only."
+      - "Preserve predecessor test identities and add positive, negative, permutation, wire round-trip and independently executed mutation evidence."
     ownsFindings: ["F-14"]
     invariant: "Typed semantic identity, lossless wire encoding and display names remain distinct; collisions fail before AST construction and target-safe derivation."
   - id: "AR-04E"
@@ -160,7 +193,7 @@ completionDecision:
   nextItemActivationState: not-activated
 
 forbiddenScope:
-  - "AR-04C owns only composed module/system identity and owner-preserving imports. Do not implement the semantic ID encoding or general loader-hardening work from AR-04D/E."
+  - "AR-04D owns semantic identity and collision boundaries only. Do not implement general loader hardening from AR-04E or integrated milestone closure from AR-04F."
   - "Do not reopen AR-02 or rewrite historical AR-03A/B/C/D or AR-04A receipts."
   - "Do not retire F-20 compatibility surfaces; their removal remains AR-07-owned."
   - "Do not activate AR-05 or resume EF-09."
@@ -168,10 +201,9 @@ forbiddenScope:
   - "Do not change public versions, canonical graph semantics, target support or CI check identities."
 
 validationPlan:
-  - "Preserve AR-04A and verify the accepted PR #179 schema-integrity receipt before selecting system identity work."
-  - "Retain rejection of unknown schema types and invalid defaults; reject ambiguous or inconsistent catalog identities before compilation."
-  - "Exercise descriptor, programmatic, compiler, validator, planner and adapter composition; verify order independence, preserved owner/version and caller-mutation isolation."
-  - "Run complete Kotlin tests, installed conformance and physical module-isolation proofs in the existing Flow CI on exact HEAD and synthetic merge."
-  - "Preserve every accepted predecessor regression identity without adding a second validation matrix or automatic offline portability run."
-
+  - "Accept AR-04C from its own inspected PR #184 and post-merge CI evidence; preserve historical A/B receipts."
+  - "Reject identity collisions before AST lowering or target-name publication without alias selection, invented suffixes or dropped declarations."
+  - "Exercise exact references, reversible wire segments, Unicode distinctions, display-name independence and independent target projection boundaries."
+  - "Run complete Kotlin tests, installed conformance and physical module-isolation proofs in existing Flow CI on exact HEAD and synthetic merge."
+  - "Preserve every accepted predecessor regression identity; no second CI matrix, timeout change or automatic portability workflow."
 report: ".flow-agent/reports/language-contract-type-identity-integrity.md"

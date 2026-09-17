@@ -37,14 +37,15 @@ internal data class ValidatedIntentEvaluation(
  */
 internal class ValidatedIntent private constructor(
     val document: IntentDocument,
-    val report: IntentValidationReport
+    val report: IntentValidationReport,
+    val identities: IntentIdentityIndex
 ) {
     companion object {
         fun evaluate(registry: ModuleCatalog, document: IntentDocument): ValidatedIntentEvaluation {
             val report = IntentCapabilityValidator(registry).validate(document)
             return ValidatedIntentEvaluation(
                 report = report,
-                accepted = ValidatedIntent(document, report).takeIf { report.valid }
+                accepted = if (report.valid) ValidatedIntent(document, report, IntentIdentityIndex.capture(document)) else null
             )
         }
     }
@@ -91,7 +92,7 @@ class IntentToAstPlanner(
             .sortedBy { it.id }
 
         val lowered = declaredWorkflows.map { workflow ->
-            val statements = lowerOrderedSteps(workflow.steps, intent, bindings)
+            val statements = lowerOrderedSteps(workflow.steps, intent, bindings, validated.identities)
             val imports = collectModules(statements, systems.values).sorted()
                 .map { name -> ModuleImportNode(name = name, version = registry.requireModule(name).version) }
             val control = if (multiple) {
@@ -251,10 +252,11 @@ class IntentToAstPlanner(
     private fun lowerOrderedSteps(
         steps: List<IntentStep>,
         intent: IntentDocument,
-        bindings: Map<String, IntentBindingEvidence>
+        bindings: Map<String, IntentBindingEvidence>,
+        identities: IntentIdentityIndex
     ): List<StatementNode> {
         return orderedSteps(steps).flatMap { step ->
-            lowerStep(step, intent, step.requires.distinct(), bindings.getValue(step.id))
+            lowerStep(step, intent, step.requires.map { identities.step(it).resultName }, bindings.getValue(step.id), identities.step(step.id))
         }
     }
 
@@ -262,15 +264,16 @@ class IntentToAstPlanner(
         step: IntentStep,
         intent: IntentDocument,
         dependencyIds: List<String>,
-        binding: IntentBindingEvidence
+        binding: IntentBindingEvidence,
+        identity: IntentStepIdentity
     ): List<StatementNode> {
         val semanticEffects = CanonicalIntentEffectAuthority.effectsFor(
             step.capability,
             CanonicalIntentMeaningAuthority.semanticParameters(step)
         )
         val node: StatementNode = when (binding.status) {
-            IntentBindingStatus.RESOLVED -> boundAction(step, binding, semanticEffects)
-            IntentBindingStatus.UNBOUND -> semanticStatement(step, intent, semanticEffects)
+            IntentBindingStatus.RESOLVED -> boundAction(step, binding, semanticEffects, identity)
+            IntentBindingStatus.UNBOUND -> semanticStatement(step, intent, semanticEffects, identity)
             IntentBindingStatus.INVALID -> error(
                 "Internal planner invariant: invalid binding '${binding.requestedAction}' for step '${step.id}' passed validation."
             )
@@ -281,16 +284,18 @@ class IntentToAstPlanner(
     private fun semanticStatement(
         step: IntentStep,
         intent: IntentDocument,
-        semanticEffects: List<SemanticEffect>
+        semanticEffects: List<SemanticEffect>,
+        identity: IntentStepIdentity
     ): StatementNode =
         if (step.capability == StandardCapability.APPROVE) {
-            approvalStatement(step, intent)
+            approvalStatement(step, intent, identity)
         } else {
             standardAction(
                 step = step,
                 operation = semanticOperation(step.capability),
                 intent = intent,
-                semanticEffects = semanticEffects
+                semanticEffects = semanticEffects,
+                identity = identity
             )
         }
 
@@ -304,7 +309,8 @@ class IntentToAstPlanner(
     private fun boundAction(
         step: IntentStep,
         binding: IntentBindingEvidence,
-        semanticEffects: List<SemanticEffect>
+        semanticEffects: List<SemanticEffect>,
+        identity: IntentStepIdentity
     ): ActionNode {
         val moduleName = requireNotNull(binding.module)
         val actionName = requireNotNull(binding.action)
@@ -320,11 +326,11 @@ class IntentToAstPlanner(
             action = actionName,
             target = ref(systemName),
             params = binding.resolvedParameters.mapValues { (_, value) -> value.toExpression() },
-            result = result(step.id),
+            result = ResultBindingNode(name = identity.resultName),
             semanticCapability = step.capability.name,
             semanticEffects = semanticEffects,
-            sourceId = step.id,
-            sourceDescription = step.description,
+            sourceId = identity.semanticId.authored,
+            sourceDescription = identity.displayName,
             bindingMetadata = step.params.filterKeys { it in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
                 .mapValues { (_, value) -> value.toExpression() },
             declaredOutputs = step.produces
@@ -332,7 +338,7 @@ class IntentToAstPlanner(
     }
 
     private fun applyDependencies(node: StatementNode, dependencyIds: List<String>): StatementNode {
-        val deps = dependencyIds.map { it.replace('-', '_') }.distinct()
+        val deps = dependencyIds.distinct()
         if (deps.isEmpty()) return node
         return when (node) {
             is ActionNode -> node.copy(dependsOn = deps)
@@ -345,13 +351,13 @@ class IntentToAstPlanner(
         }
     }
 
-    private fun approvalStatement(step: IntentStep, intent: IntentDocument): StatementNode {
+    private fun approvalStatement(step: IntentStep, intent: IntentDocument, identity: IntentStepIdentity): StatementNode {
         val approval = ApproveNode(
             mode = "manual",
             params = mapOf("message" to StringLiteralNode(value = paramText(step, "message") ?: approvalMessage(intent))),
-            result = result(step.id),
-            sourceId = step.id,
-            sourceDescription = step.description,
+            result = ResultBindingNode(name = identity.resultName),
+            sourceId = identity.semanticId.authored,
+            sourceDescription = identity.displayName,
             declaredOutputs = step.produces
         )
         val condition = approvalCondition(intent)
@@ -362,7 +368,8 @@ class IntentToAstPlanner(
         step: IntentStep,
         operation: String,
         intent: IntentDocument,
-        semanticEffects: List<SemanticEffect> = CanonicalIntentEffectAuthority.effectsFor(step.capability)
+        semanticEffects: List<SemanticEffect>,
+        identity: IntentStepIdentity
     ): ActionNode {
         val params = linkedMapOf<String, ExpressionNode>(
             "operation" to StringLiteralNode(value = operation),
@@ -375,11 +382,11 @@ class IntentToAstPlanner(
         return ActionNode(
             module = "standard", action = if (operation == "rollback") "rollback" else "execute", target = ref("standard"),
             params = params,
-            result = result(step.id),
+            result = ResultBindingNode(name = identity.resultName),
             semanticCapability = step.capability.name,
             semanticEffects = semanticEffects,
-            sourceId = step.id,
-            sourceDescription = step.description,
+            sourceId = identity.semanticId.authored,
+            sourceDescription = identity.displayName,
             bindingMetadata = step.params.filterKeys { it in CanonicalIntentMeaningAuthority.BINDING_METADATA_PARAMS }
                 .mapValues { (_, value) -> value.toExpression() },
             declaredOutputs = step.produces
@@ -448,7 +455,6 @@ class IntentToAstPlanner(
         return out
     }
 
-    private fun result(id: String) = ResultBindingNode(name = id.replace('-', '_'))
     private fun ref(name: String) = ReferenceNode(path = listOf(name))
     private fun paramText(step: IntentStep, key: String): String? = step.params[key].asTextOrNull()
 

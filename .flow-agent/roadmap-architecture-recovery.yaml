@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Language, Contract, Type and Identity Integrity"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
-  decisionBasis: "AR-03 remains accepted and complete. AR-04A and AR-04B have independently accepted receipts; AR-04C implements deterministic system-contract ownership from green post-correction main e1574def and requires its own exact-head/merge CI. AR-04D/E/F remain planned, F-20 remains AR-07-owned and EF-09 stays paused."
+  decisionBasis: "AR-03 remains accepted and complete. AR-04A/B/C have independently accepted receipts, including actual PR #184 post-merge main. Maintainer-authorized AR-04D implements lossless semantic identity and collision rejection and requires its own current-revision CI. AR-04E/F stay planned, F-20 remains AR-07-owned and EF-09 stays paused."
 
 deliveryModel:
   roadmapMilestoneCount: 8

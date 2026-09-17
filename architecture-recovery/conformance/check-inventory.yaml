@@ -40,3 +40,7 @@ checks:
   - architecture-recovery.language.system-contract-ambiguity-rejection
   - architecture-recovery.language.system-contract-owner-preservation
   - architecture-recovery.language.system-contract-snapshot-stability
+  - architecture-recovery.language.lossless-identity-wire
+  - architecture-recovery.language.early-identity-collision-rejection
+  - architecture-recovery.language.exact-producer-identity
+  - architecture-recovery.language.derived-name-collision-rejection

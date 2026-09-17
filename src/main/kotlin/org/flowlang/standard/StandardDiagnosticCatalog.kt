@@ -18,6 +18,13 @@ data class StandardDiagnosticCatalogReport(
 /** Stable diagnostic code catalog for Flow public reports. */
 object StandardDiagnosticCatalog {
     val codes: List<StandardDiagnosticCode> = listOf(
+        code("INVALID_SEMANTIC_ID", "intent", "error", "intent-capability-validation-report.json", "An authored identity is blank or contains malformed Unicode."),
+        code("DUPLICATE_INTENT_INPUT", "intent", "error", "intent-capability-validation-report.json", "Intent declares an input identity more than once."),
+        code("DUPLICATE_INTENT_SYSTEM", "intent", "error", "intent-capability-validation-report.json", "Intent declares a system identity more than once."),
+        code("DUPLICATE_INTENT_TRIGGER", "intent", "error", "intent-capability-validation-report.json", "Intent declares a trigger identity more than once."),
+        code("DUPLICATE_INTENT_POLICY", "intent", "error", "intent-capability-validation-report.json", "Intent declares a policy identity more than once."),
+        code("INTENT_SYMBOL_COLLISION", "intent", "error", "intent-capability-validation-report.json", "Distinct declarations map to the same Flow binding in one workflow."),
+        code("INTENT_SYSTEM_COLLISION", "intent", "error", "intent-capability-validation-report.json", "An authored system conflicts with a required semantic system."),
         code("INTENT_NAME_EMPTY", "intent", "error", "intent-capability-validation-report.json", "Intent document has an empty name."),
         code("UNKNOWN_INTENT_FIELD", "intent-source", "error", "intent-source-diagnostic.json", "Intent source contains a field outside the declared source contract."),
         code("UNSUPPORTED_INTENT_KIND", "intent-source", "error", "intent-source-diagnostic.json", "Intent source declares an unsupported document kind."),

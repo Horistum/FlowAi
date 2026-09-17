@@ -24,6 +24,7 @@ object AdapterWorkflowProjectionLowering {
         projectionRules: List<TargetProjectionRule>,
         nativeProjections: TargetNativeProjectionCatalog
     ): List<TargetStep> {
+        TargetProjectionIdentityChecks.requireNodePreserving(projection)
         val handler = projection.policy.handler ?: return projection.normalNodes.flatMap {
             it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections)
         }
@@ -73,6 +74,7 @@ object AdapterWorkflowProjectionLowering {
         projectionRules: List<TargetProjectionRule>,
         nativeProjections: TargetNativeProjectionCatalog
     ): List<TargetJob> {
+        TargetProjectionIdentityChecks.requireJobPerTask(projection)
         val out = mutableListOf<TargetJob>()
         projection.normalNodes.forEach { node ->
             node.toTargetJobs(authorization, out, null, targetName, projectionRules, nativeProjections)

@@ -4,7 +4,7 @@ import org.flowlang.ast.SourceLocation
 
 internal data class ProducerKey(
     val path: FlowStatementPath,
-    val binding: String
+    val binding: org.flowlang.identity.SemanticId
 )
 
 internal data class ConditionStates(
@@ -12,7 +12,6 @@ internal data class ConditionStates(
     val whenFalse: FlowAvailabilityState
 )
 
-internal fun bindingAliases(name: String): Set<String> = linkedSetOf(name, name.replace('-', '_'))
 
 internal fun issueForState(
     binding: String,

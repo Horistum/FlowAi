@@ -30,6 +30,7 @@ org/flowlang/generators/manifest/TargetManifestLowering.kt
 org/flowlang/generators/manifest/TargetMaterializationResolver.kt
 org/flowlang/generators/manifest/TargetMaterializationResolverEngine.kt
 org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt
+org/flowlang/generators/manifest/TargetProjectionIdentityChecks.kt
 org/flowlang/generators/manifest/TargetProjectionProvider.kt
 org/flowlang/generators/manifest/TargetRenderPolicy.kt
 org/flowlang/generators/manifest/TargetRendererContractValidator.kt

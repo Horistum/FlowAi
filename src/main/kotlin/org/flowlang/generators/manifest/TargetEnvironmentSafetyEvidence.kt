@@ -32,7 +32,7 @@ class TargetEnvironmentSafetyEvidenceResolver(
         }
 
         val downstream = manifest.jobs.filter { job ->
-            approvalJob.id in job.dependsOn || sanitizeId(approvalJob.id) in job.dependsOn.map(::sanitizeId)
+            approvalJob.id in job.dependsOn
         }
         val classifications = downstream.flatMap { job ->
             job.steps.flatMap { step -> step.flattenForEnvironmentEvidence() }

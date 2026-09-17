@@ -1,5 +1,6 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.AdapterManifestLowering
 import org.flowlang.generators.manifest.AdapterManifestLowering.id as sanitizeId
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingKind
@@ -10,7 +11,7 @@ internal object GitHubActionsProjectionPayloadKinds {
 
 internal object GitHubActionsProjectionSyntax : ProjectionValueSyntax {
     override fun renderOpaque(name: String): String = githubExpression("env.${safeEnvName(name)}")
-    override fun renderInput(name: String): String = githubExpression("inputs.$name")
+    override fun renderInput(name: String): String = githubExpression("inputs.${AdapterManifestLowering.id(name)}")
     fun bindingValue(name: String): String = githubExpression("secrets.$name")
     override fun mappingNote(name: String): String =
         "value mapping requirement: repository opaque value $name must be available as ${renderOpaque(name)}"
@@ -22,7 +23,7 @@ internal object GitHubActionsProjectionBindingRenderer {
         ProjectionBindingKind.TASK_PARAMETER,
         ProjectionBindingKind.TASK_INPUT,
         ProjectionBindingKind.TASK_METADATA -> requireNotNull(binding.value) { "$context ${binding.kind} binding is unresolved." }
-        ProjectionBindingKind.FLOW_INPUT -> githubExpression("inputs.${safeIdentifier(requireName(binding, context))}")
+        ProjectionBindingKind.FLOW_INPUT -> githubExpression("inputs.${AdapterManifestLowering.id(requireName(binding, context))}")
         ProjectionBindingKind.SECRET -> githubExpression("secrets.${requireName(binding, context)}")
         ProjectionBindingKind.TASK_OUTPUT -> githubExpression(
             "needs.${sanitizeId(requireNotNull(binding.taskId) { "$context TASK_OUTPUT is missing taskId." })}.outputs.${sanitizeId(requireNotNull(binding.output) { "$context TASK_OUTPUT is missing output." })}"

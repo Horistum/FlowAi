@@ -238,7 +238,24 @@ class CanonicalIntentMeaningAuthority(registry: ModuleCatalog) {
         const val BINDING_SYSTEM_PARAM: String = "system"
         val BINDING_METADATA_PARAMS: Set<String> = setOf(BINDING_SYSTEM_PARAM, "tool", "engine")
 
-        fun canonicalize(intent: IntentDocument): CanonicalIntentMeaning = CanonicalIntentMeaning(
+        fun canonicalize(intent: IntentDocument): CanonicalIntentMeaning {
+            IntentIdentityIndex.capture(intent)
+            return projectAuthoredMeaning(intent,
+                CanonicalControlRequirementAuthority.requirementsFor(intent),
+                CanonicalTopologyRequirementAuthority.requirementsFor(intent))
+        }
+
+        /** Invalid identities have no resolvable requirement owners. Retain authored structure, never derived evidence. */
+        internal fun rejectedIdentityMeaning(intent: IntentDocument): CanonicalIntentMeaning {
+            require(IntentIdentityIndex.issues(intent).isNotEmpty()) { "A valid intent requires normal semantic resolution." }
+            return projectAuthoredMeaning(intent, emptyList(), emptyList())
+        }
+
+        private fun projectAuthoredMeaning(
+            intent: IntentDocument,
+            controls: List<ControlRequirement>,
+            topology: List<ExecutionTopologyRequirement>
+        ): CanonicalIntentMeaning = CanonicalIntentMeaning(
             intentVersion = intent.intentVersion,
             kind = intent.kind,
             name = intent.name,
@@ -262,8 +279,8 @@ class CanonicalIntentMeaningAuthority(registry: ModuleCatalog) {
                     }
                 )
             },
-            controlRequirements = CanonicalControlRequirementAuthority.requirementsFor(intent),
-            topologyRequirements = CanonicalTopologyRequirementAuthority.requirementsFor(intent),
+            controlRequirements = controls,
+            topologyRequirements = topology,
             policies = intent.policies,
             failure = intent.failure
         )

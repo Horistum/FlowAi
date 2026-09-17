@@ -6,6 +6,9 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
+import org.flowlang.ast.ActionNode
+import org.flowlang.intent.IntentCapabilityValidator
 import org.flowlang.adapters.yaml.IntentYamlLoader
 import org.flowlang.intent.IntentToAstPlanner
 import org.flowlang.modules.ModuleRegistry
@@ -75,7 +78,23 @@ class DeclaredIntentOutputValidationTests {
             "duplicate-declared-output.intent.yaml"
         )
 
-        val ast = FrontendCompilerComposition.intentPlanner(registry).plan(intent)
+        // Authored collisions now fail earlier, without removing the independent AST defense.
+        val early = IntentCapabilityValidator(registry).validate(intent)
+        assertEquals(false, early.valid)
+        assertTrue(early.issues.any { it.code == "INTENT_SYMBOL_COLLISION" })
+        assertFailsWith<IllegalStateException> { FrontendCompilerComposition.intentPlanner(registry).plan(intent) }
+
+        val valid = intent.copy(workflows = intent.workflows.map { workflow -> workflow.copy(
+            steps = workflow.steps.map { step -> if (step.id == "second")
+                step.copy(produces = listOf("other_bundle"), requires = listOf("first")) else step }
+        ) })
+        val acceptedAst = FrontendCompilerComposition.intentPlanner(registry).plan(valid)
+        assertTrue(FrontendCompilerComposition.flowValidator(registry).validate(acceptedAst).valid)
+        val ast = acceptedAst.copy(flow = acceptedAst.flow.copy(steps = acceptedAst.flow.steps.map { statement ->
+            if (statement is ActionNode && statement.sourceId == "second")
+                statement.copy(declaredOutputs = listOf("bundle")) else statement
+        }))
+        assertEquals(2, ast.flow.steps.filterIsInstance<ActionNode>().count { "bundle" in it.declaredOutputs })
         val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         assertEquals(false, validation.valid)
         assertTrue(validation.issues.any { it.code == "DUPLICATE_RESULT" })

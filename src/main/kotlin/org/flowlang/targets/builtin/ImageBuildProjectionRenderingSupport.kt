@@ -2,7 +2,6 @@ package org.flowlang.targets.builtin
 
 import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.generators.manifest.TargetRendererPayload
-import org.flowlang.generators.manifest.sanitizeId
 import org.flowlang.generators.manifest.unquote
 import org.flowlang.projection.ProjectionBindingResolutionStatus
 
@@ -31,7 +30,7 @@ object ImageBuildProjectionValues {
     fun workspace(payload: TargetRendererPayload, name: String, context: String): String {
         val raw = requiredText(payload, name, context)
         require(raw.isNotBlank()) { "$context binding '$name' must not be blank." }
-        return sanitizeId(raw)
+        return raw
     }
 
     fun renderText(

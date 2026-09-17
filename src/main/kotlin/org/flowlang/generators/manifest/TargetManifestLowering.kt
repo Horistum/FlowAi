@@ -132,7 +132,7 @@ internal fun PlanNode.toTargetSteps(
             type = TargetStructuralProjectionKind.PARALLEL.stepType,
             children = branches.mapIndexed { index, branch ->
                 TargetStep(
-                    id = sanitizeId(branch.name ?: "branch-${index + 1}"),
+                    id = sanitizeId(TargetProjectionIdentityChecks.branchId(id, index)),
                     name = branch.name ?: "branch-${index + 1}",
                     type = "parallel-branch",
                     children = branch.steps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },

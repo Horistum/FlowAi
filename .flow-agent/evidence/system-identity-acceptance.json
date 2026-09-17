@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "pullRequest": 184,
+  "base": "e1574def2dbe8ef82dd2903eb551bd4c61807770",
+  "head": "c9fa14d48abb0e09b6e6860443961e00cb9cdc34",
+  "syntheticMerge": "837bc45474f2e1f8a451fb01349fe11ae21be198",
+  "mergedMain": "1d125c154394cd8d6e1083eddd20c6b217a89bb4",
+  "sourceTree": "d86118179709fde20d8c91b1260b51c52c1116d6",
+  "workflowRunId": 35175006081,
+  "workflowRunNumber": 3285,
+  "jobs": {
+    "exactHead": 105055907055,
+    "mergeCandidate": 105055906949,
+    "physicalIsolation": 105054706708
+  },
+  "postMerge": {
+    "workflowRunId": 35176517700,
+    "workflowRunNumber": 3286,
+    "head": "1d125c154394cd8d6e1083eddd20c6b217a89bb4",
+    "status": "completed",
+    "conclusion": "success",
+    "exactHeadJobId": 105061032303,
+    "isolationJobId": 105059361646
+  },
+  "junit": {
+    "exactHead": {
+      "artifactId": 10478423765,
+      "sha256": "2bd87cef5b786068ea71b4e1cfcf9108d670489491d95753bd5d452fd181b118",
+      "tests": 1665,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 293,
+      "uniqueIdentities": 1665,
+      "identitiesSha256": "fef33ec05256eda3fe467a8fd3637fa2ba8d7a08da0b91613bf32821dd3a862b"
+    },
+    "mergeCandidate": {
+      "artifactId": 10479290395,
+      "sha256": "cbe149488a779050a572e633d491b78d02f59c146f12df993f15febe5958fa74",
+      "tests": 1665,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 293,
+      "uniqueIdentities": 1665,
+      "identitiesSha256": "fef33ec05256eda3fe467a8fd3637fa2ba8d7a08da0b91613bf32821dd3a862b"
+    },
+    "postMerge": {
+      "artifactId": 10479591780,
+      "sha256": "d1df9a61bfb6aa2fdd6e9d4220a347ce3401398fbda5fe8502a619c7f079c85a",
+      "tests": 1665,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 293,
+      "uniqueIdentities": 1665,
+      "identitiesSha256": "fef33ec05256eda3fe467a8fd3637fa2ba8d7a08da0b91613bf32821dd3a862b"
+    }
+  },
+  "conformance": {
+    "exactHead": {
+      "artifactId": 10478204802,
+      "sha256": "1666f057c6dff4088a9e35f3fc177f003f4bcffd024297f14bd2a144029cde10",
+      "passed": 249,
+      "failed": 0,
+      "orderedIdentitiesSha256": "88c006b6d35f78d50da4fc14824728dc74f6d1598222f5b2c2f92281ebec8792"
+    },
+    "mergeCandidate": {
+      "artifactId": 10479150694,
+      "sha256": "91e8f47bbaf0a9a19a8e722c6a2a606dfc3624e5c3ced3cb9185ba9fb19ad4fd",
+      "passed": 249,
+      "failed": 0,
+      "orderedIdentitiesSha256": "88c006b6d35f78d50da4fc14824728dc74f6d1598222f5b2c2f92281ebec8792"
+    },
+    "postMerge": {
+      "artifactId": 10479606870,
+      "sha256": "2949729cfbaede282eb5a0852fbe179c3e03464991600687620e92dddc65cbe6",
+      "passed": 249,
+      "failed": 0,
+      "orderedIdentitiesSha256": "88c006b6d35f78d50da4fc14824728dc74f6d1598222f5b2c2f92281ebec8792"
+    }
+  },
+  "physicalIsolation": {
+    "pullRequest": {
+      "artifactId": 10477979016,
+      "sha256": "fc0f2e2f6441debf7631d9053c92a2df8f40bc27daa6f425ae4123b255c4092c",
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ],
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true
+    },
+    "postMerge": {
+      "artifactId": 10478537009,
+      "sha256": "67f611ef7240e76e95aa41cface616c77e34b992d41df0b779dba8462f13b006",
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ],
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true
+    }
+  },
+  "toolingTests": 151,
+  "identityAlgorithm": "SHA-256 of UTF-8 newline-joined class.method identities (sorted) or ordered conformance names; including one trailing newline",
+  "scope": "Accepted system-contract identity predecessor only. This is not validation of semantic identity implementation or whole AR-04 completion."
+}
