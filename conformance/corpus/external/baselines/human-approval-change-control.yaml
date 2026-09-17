@@ -41,6 +41,8 @@ facts:
     observationRef: preserve-whole-changeset-coverage
     requirement: WHOLE_CHANGESET_APPROVAL_COVERAGE
     initialOutcome: MODEL_GAP
+    correctedOutcome: REPRESENTABLE
+    correctionReference: "Horistum/FlowAi#183 EXT-04; .flow-agent/reports/external-review-boundary-corrections.md"
   - caseId: atlantis-undiverged-execution
     factId: revision-bound-change-execution
     observationRef: preserve-revision-bound-change-execution

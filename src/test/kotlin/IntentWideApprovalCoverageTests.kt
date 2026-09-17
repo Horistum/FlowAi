@@ -55,4 +55,22 @@ class IntentWideApprovalCoverageTests {
             assertEquals(listOf("approval.manual", "condition.evaluate"), assessment.evidence.single().enforcementCapabilities)
         }
     }
+
+    @Test fun authoredReferenceCoversEveryOperationAndPartialMutationFails() {
+        val document = IntentYamlLoader.load(java.io.File("examples/intent/build-test-deploy.intent.yaml"))
+        val assessment = CanonicalControlRequirementAuthority.assess(document)
+        assertEquals(ControlDecisionStatus.ALLOWED, assessment.decision.status)
+        assertTrue(assessment.evidence.all { it.status == ControlEvidenceStatus.SATISFIED })
+        val workflow = document.workflows.single()
+        val checkout = workflow.steps.single { it.id == "checkout" }
+        assertEquals(listOf("approve-prod"), checkout.requires)
+        val withoutCheckoutApproval = document.copy(workflows = listOf(workflow.copy(
+            steps = workflow.steps.map { step ->
+                if (step.id == "checkout") step.copy(requires = emptyList()) else step
+            }
+        )))
+        assertEquals(ControlDecisionStatus.BLOCKED,
+            CanonicalControlRequirementAuthority.assess(withoutCheckoutApproval).decision.status)
+    }
+
 }

@@ -116,6 +116,62 @@ class HumanApprovalChangeControlBaselineTests {
         )
     }
 
+    @Test
+    fun recordedCorrectionPreservesTheInitialGapAndRejectsRegression() {
+        listOf("active", "validating", "complete").forEach { status ->
+            val root = copiedEf09Root(status)
+            try {
+                val baseline = File(root, HumanApprovalChangeControlBaselineVerifier.BASELINE_PATH).readText()
+                assertTrue(baseline.contains("initialOutcome: MODEL_GAP\n    correctedOutcome: REPRESENTABLE"))
+                val report = HumanApprovalChangeControlFalsification(root).evaluate()
+                val regressed = report.copy(findings = report.findings.map { finding ->
+                    if (finding.factId == "whole-changeset-approval-coverage") {
+                        finding.copy(outcome = ExternalFalsificationOutcome.MODEL_GAP)
+                    } else finding
+                })
+                val verifier = HumanApprovalChangeControlBaselineVerifier(root)
+                assertEquals("PASS", verifier.verify(report).status, status)
+                assertEquals("FAIL", verifier.verify(regressed).status, status)
+            } finally {
+                root.deleteRecursively()
+            }
+        }
+    }
+
+    @Test
+    fun aCorrectionDeclarationCannotManufactureSemanticSupport() {
+        val root = copiedEf09Root()
+        try {
+            val baseline = File(root, HumanApprovalChangeControlBaselineVerifier.BASELINE_PATH)
+            baseline.writeText(baseline.readText().replace(
+                "requirement: APPROVAL_DECISION_STATE\n    initialOutcome: MODEL_GAP",
+                "requirement: APPROVAL_DECISION_STATE\n    initialOutcome: MODEL_GAP\n" +
+                    "    correctedOutcome: REPRESENTABLE\n    correctionReference: unproven-change"
+            ))
+            val result = HumanApprovalChangeControlBaselineVerifier(root).verify()
+            assertEquals("FAIL", result.status)
+            assertTrue(result.errors.any { it.contains("approval-decision-state") })
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun missingCorrectionReferenceFailsClosed() {
+        val root = copiedEf09Root()
+        try {
+            val baseline = File(root, HumanApprovalChangeControlBaselineVerifier.BASELINE_PATH)
+            baseline.writeText(baseline.readText().lineSequence()
+                .filterNot { it.trimStart().startsWith("correctionReference:") }
+                .joinToString("\n"))
+            val result = HumanApprovalChangeControlBaselineVerifier(root).verify()
+            assertEquals("FAIL", result.status)
+            assertTrue(result.errors.any { it.contains("invalid recorded correction") })
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     private fun copiedEf09Root(status: String = "active"): File {
         val root = Files.createTempDirectory("flow-ef09-baseline-").toFile()
         val corpusSource = File(ExternalCorpusLoader.CORPUS_ROOT)

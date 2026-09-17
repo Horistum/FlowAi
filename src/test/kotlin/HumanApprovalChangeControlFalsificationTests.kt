@@ -19,8 +19,8 @@ class HumanApprovalChangeControlFalsificationTests {
 
         assertEquals(6, report.caseCount)
         assertEquals(2, report.distinctRepositoryCount)
-        assertEquals(2, report.representableCount)
-        assertEquals(7, report.modelGapCount)
+        assertEquals(3, report.representableCount)
+        assertEquals(6, report.modelGapCount)
         assertEquals(
             ExternalFalsificationOutcome.REPRESENTABLE,
             outcomes["github-required-review-policy:blocking-approval-requirement"]
@@ -50,7 +50,7 @@ class HumanApprovalChangeControlFalsificationTests {
             outcomes["github-stale-approval-revision:revision-bound-approval"]
         )
         assertEquals(
-            ExternalFalsificationOutcome.MODEL_GAP,
+            ExternalFalsificationOutcome.REPRESENTABLE,
             outcomes["github-stale-approval-revision:whole-changeset-approval-coverage"]
         )
         assertEquals(
@@ -148,9 +148,9 @@ class HumanApprovalChangeControlFalsificationTests {
             HumanApprovalChangeControlRequirement.WHOLE_CHANGESET_APPROVAL_COVERAGE,
             finding.requirement
         )
-        assertEquals(ExternalFalsificationOutcome.MODEL_GAP, finding.outcome)
-        assertTrue(finding.reason.contains("only one of multiple change operations"))
-        assertTrue(finding.reason.contains("whole-change authorization"))
+        assertEquals(ExternalFalsificationOutcome.REPRESENTABLE, finding.outcome)
+        assertTrue(finding.reason.contains("protects every authored change operation"))
+        assertTrue(finding.reason.contains("fails closed when any operation is outside"))
     }
 
     @Test

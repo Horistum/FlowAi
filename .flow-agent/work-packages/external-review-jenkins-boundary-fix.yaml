@@ -33,4 +33,4 @@ validationPlan:
   - "Run Jenkins and GitHub Actions adapter unit tests, including positive cases and harmless negative controls."
   - "Run the existing complete Flow CI, source isolation, clean test and standalone conformance gates."
   - "Record actual commit/run identities and distinguish local subset checks from repository CI."
-report: ".flow-agent/reports/external-review-pre-ar04-fixes.md"
+report: ".flow-agent/reports/external-review-boundary-corrections.md"

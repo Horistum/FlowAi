@@ -8,6 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationResult
@@ -90,17 +91,16 @@ class IntentFrontendConvergenceTests {
     @Test
     fun invalidIntentStopsBeforeFlowPlanning() {
         val directory = createTempDirectory("flow-invalid-intent").toFile()
-        val invalid = File(directory, referenceIntent.name).apply {
-            writeText(
-                referenceIntent.readText().replace(
-                    "      - id: approve-prod\n        capability: APPROVE\n        requires: [build-image]\n",
-                    ""
-                )
-            )
-        }
+        val source = referenceIntent.readText()
+        val approvalDeclaration = "      - id: approve-prod\n        capability: APPROVE\n"
+        assertEquals(1, source.split(approvalDeclaration).size - 1,
+            "The negative fixture must remove exactly one declared approval.")
+        val mutated = source.replace(approvalDeclaration, "")
+        assertNotEquals(source, mutated, "The negative fixture must change the authored intent.")
+        val invalid = File(directory, referenceIntent.name).apply { writeText(mutated) }
 
         val result = frontend.compile(invalid)
-        val rejection = (result as CompilationResult.Rejected).rejection
+        val rejection = assertIs<CompilationResult.Rejected>(result).rejection
 
         assertEquals(CompilationStage.INTENT_VALIDATION, rejection.stage)
         assertTrue(rejection.diagnostics.any { it.code == "UNKNOWN_STEP_DEPENDENCY" })

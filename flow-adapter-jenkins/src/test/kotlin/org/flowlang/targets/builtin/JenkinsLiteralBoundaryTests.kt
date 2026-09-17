@@ -97,4 +97,20 @@ class JenkinsLiteralBoundaryTests {
         assertFailsWith<IllegalStateException> { renderer.render(BinaryExpressionNode(operator = "bogus", left = operand, right = operand)) }
         assertFailsWith<IllegalStateException> { renderer.render(LogicalExpressionNode(operator = "bogus", operands = listOf(operand))) }
     }
+
+    @Test fun builtinUrlPatternRetainsSlashesAndRejectsWhitespace() {
+        val renderer = GroovyExpr(setOf("candidate"))
+        val expression = renderer.render(BinaryExpressionNode(operator = "matches",
+            left = ReferenceNode(path = listOf("candidate")),
+            right = ReferenceNode(path = listOf("url"))))
+        listOf(
+            "https://example.invalid/a/b" to true,
+            "http://example.invalid" to true,
+            "http://example.invalid/a b" to false,
+            "ftp://example.invalid" to false
+        ).forEach { (url, expected) ->
+            assertEquals(expected, evaluate(expression, mapOf("params" to mapOf("candidate" to url))), url)
+        }
+    }
+
 }

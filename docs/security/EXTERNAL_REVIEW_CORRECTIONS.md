@@ -31,3 +31,9 @@ All canonical digests and compilation/materialization receipts must be recompute
 ## Architecture diagnostics
 
 The actual structural scanner emits `ARCHITECTURE_FORBIDDEN_SYMBOL_IN_SOURCE`. The catalog and current negative corpus now agree with that behavior. `ARCHITECTURE_FORBIDDEN_TERM_IN_SOURCE` remains cataloged for compatibility with historical reports; it is not presented as the current scanner's output.
+
+## Reference scenario and retained evidence
+
+The `build-test-deploy` YAML declares an unconditional intent-wide approval policy. Its authored approval now precedes checkout, test, build, deployment and verification; the compiler does not silently insert or relocate gates. The earlier shape placed approval only before deployment and therefore did not satisfy the declared whole-intent requirement. Conditional-policy semantics remain separate and pending, and this correction does not claim additional target execution support.
+
+The EF-09 baseline retains its initial MODEL_GAP observation for whole-change approval coverage. A separate `correctedOutcome` and `correctionReference` record the EXT-04 correction. The live evaluator must prove that correction, and a regression is rejected in active, validating and completed lifecycle states. The other six model gaps and EF-09's paused recovery relationship remain unchanged.

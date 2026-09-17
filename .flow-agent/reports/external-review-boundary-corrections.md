@@ -11,7 +11,9 @@ Implementation and regression-test candidates exist for EXT-01 through EXT-08. T
 
 The first Jenkins-only candidate `7579c6f3e4566fe171dee18ee0e243984009dd15` failed Flow CI run `35121254732` while compiling its new parser regression: the test omitted the parser scope argument. That test now supplies `scope = "auto"` explicitly. A failed CI run is not recorded as proof that runtime tests passed.
 
-No full local Gradle execution is claimed: the editing environment does not have the repository's required toolchain/dependency access. Repository CI is the complete validation boundary. No complete external Jenkins runtime certification is claimed by the Groovy expression tests.
+The initial complete Flow CI candidate `97d33a948cdf10ba316462675f9a05dc7f3da3f6` failed run `35125548570`: 1,560 JVM tests were reported with 71 failures. Source-isolation checks passed, but that does not turn a failed test boundary into accepted evidence.
+
+For the follow-up, exact source and isolated build inputs were retrieved through temporary validation run `35167184071`, pinned to that candidate. The local source tree matched `7afd30f6f4ad934511c99575d7c5dbe25ed4d2ce` before editing. Local Gradle validation now runs offline with JDK 25 and Gradle 9.5.0; it is no longer described as unavailable. Final exact-head and synthetic-merge CI are still required. No complete external Jenkins runtime certification is claimed by the Groovy expression tests.
 
 ## Implemented boundaries and regressions
 
@@ -31,3 +33,22 @@ No full local Gradle execution is claimed: the editing environment does not have
 See `docs/security/EXTERNAL_REVIEW_CORRECTIONS.md`. Decision reports now declare model version 1.1 and expose a pending state. Canonical digests/receipts must be recomputed. The decision-report implementation is frontend-owned because its default policy composition belongs to frontends; Core must not acquire a reverse dependency on that composition.
 
 The larger AR-04 identity/type migration, callable-function contract, other adapters' identifier encoding, market roadmap changes and governance retirement are not declared finished by these corrections. No new runtime executor, target feature certification or historical lifecycle authority is introduced.
+
+
+## Follow-up integration corrections
+
+- The authored reference YAML had an unconditional intent-wide approval policy but put approval after checkout/test/build. It now explicitly places approval before every operation. Production-generated snapshots were regenerated with `reference-snapshot`, not hand-edited. An independent negative mutation removes the checkout dependency and must be rejected.
+- The authority-responsibility catalog records the actual new canonical-control consumer, `IntentDecisionAnalyzer`.
+- EF-09 retains its historical `MODEL_GAP` observation. A separate reviewed correction records `REPRESENTABLE` for whole-changeset approval coverage. The existing verifier checks the correction against live positive/negative evaluation and rejects regression, missing provenance and a declaration that claims unsupported behavior. Six other model gaps remain; EF-09 is not declared complete.
+- The obsolete slashy-regex source assertion now checks non-interpolating regex encoding. Actual Groovy evaluation additionally verifies built-in URL pattern semantics.
+- The frontend rejection regression now verifies that its fixture removes exactly one approval declaration; it cannot silently pass an unchanged reference to the compiler after a sample edit.
+- The correction report uses a responsibility-based filename to satisfy the existing naming rule. No test, source-isolation gate or workflow requirement is disabled.
+
+## Local validation
+
+- Flow Agent structure validation: PASS.
+- Flow Agent tooling: 151 tests passed.
+- Targeted JVM integration regressions: 50 tests passed, 0 failures, 0 skipped.
+- Standalone installed verification CLI: 246 conformance checks passed, 0 failed.
+- The first complete local integration run reached 1,496 conformance-kit tests with one failure: the frontend negative fixture still searched for the old approval declaration and therefore submitted unchanged, valid input. The fixture mutation and typed rejection assertion are corrected in this follow-up.
+- Final full-suite and exact-head/merge-candidate CI results must be read from PR #183 for the final commit. No passing final boundary is inferred from targeted checks or recorded before that execution.
