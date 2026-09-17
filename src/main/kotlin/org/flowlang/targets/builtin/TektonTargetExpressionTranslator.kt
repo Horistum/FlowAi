@@ -1,5 +1,6 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.AdapterManifestLowering
 import org.flowlang.ast.*
 import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.capabilities.TargetExpressionSupportDeclaration
@@ -56,7 +57,7 @@ object TektonTargetExpressionTranslator {
         is BooleanLiteralNode -> e.value.toString()
         is IdentifierLiteralNode -> e.value
         is ReferenceNode -> if (e.path.size == 1 && e.path.first() in inputs) {
-            "\$(params.${e.path.first()})"
+            "\$(params.${AdapterManifestLowering.id(e.path.first())})"
         } else {
             e.path.joinToString(".")
         }

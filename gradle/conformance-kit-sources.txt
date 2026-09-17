@@ -103,6 +103,7 @@ org/flowlang/conformance/SemanticEquivalenceConformanceChecks.kt
 org/flowlang/conformance/SemanticEquivalenceContracts.kt
 org/flowlang/conformance/SemanticEquivalencePlanFactory.kt
 org/flowlang/conformance/SemanticEquivalenceRoadmapLifecycleAuthority.kt
+org/flowlang/conformance/SemanticIdentityConformanceChecks.kt
 org/flowlang/conformance/SemanticImplementationObservationAuthority.kt
 org/flowlang/conformance/SemanticObservationAuthority.kt
 org/flowlang/conformance/SourceDeclarationConformanceChecks.kt

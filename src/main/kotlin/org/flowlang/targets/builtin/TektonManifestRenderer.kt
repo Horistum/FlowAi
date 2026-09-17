@@ -1,5 +1,7 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.AdapterManifestLowering
+import org.flowlang.generators.manifest.TargetProjectionIdentityChecks
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetManifestRenderer
@@ -16,6 +18,7 @@ class TektonManifestRenderer : TargetManifestRenderer {
 
     override fun render(manifest: TargetManifest): String {
         TargetRendererContractValidator.requireRenderable(manifest, target)
+        TargetRenderingIdentityChecks.requireValid(manifest, AdapterManifestLowering::id, AdapterManifestLowering::id)
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)
         check(readiness.mode == TargetRenderMode.EXECUTABLE)
@@ -32,6 +35,8 @@ class TektonManifestRenderer : TargetManifestRenderer {
         sb.appendLine("  name: ${sanitizeId(manifest.flowName)}")
         sb.appendLine("spec:")
         val projectionWorkspaces = projectionWorkspaceNames(manifest)
+        TargetProjectionIdentityChecks.requireNames(
+            "render.workspaces", projectionWorkspaces, ::sanitizeId)
         if (projectionWorkspaces.isNotEmpty()) {
             sb.appendLine("  workspaces:")
             projectionWorkspaces.forEach { workspace ->

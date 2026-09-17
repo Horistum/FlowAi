@@ -14,7 +14,7 @@ class SchemaContractIntegrityLifecycleTests {
                 "AR-04B" -> slice + mapOf("status" to "implemented", "acceptance" to mapOf(
                     "source" to "current-revision-ci",
                     "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
-                "AR-04C" -> (slice - "acceptance") + ("status" to "planned")
+                "AR-04C", "AR-04D" -> (slice - "acceptance") + ("status" to "planned")
                 else -> slice
             }
         }

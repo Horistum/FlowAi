@@ -163,7 +163,7 @@ data class FlowMergeContract(
             "Flow merge '${identity.resultBinding}' cannot merge concurrent path identities."
         }
         require(incoming.size >= 2) { "Flow merge '${identity.resultBinding}' needs at least two inputs." }
-        require(incoming.map { it.binding.replace('-', '_') }.toSet().size == incoming.size) {
+        require(incoming.map { it.binding }.toSet().size == incoming.size) {
             "Flow merge '${identity.resultBinding}' contains duplicate logical inputs."
         }
         val pathOccurrences = incoming.flatMap(FlowMergeInput::paths)
@@ -329,18 +329,15 @@ data class FlowAvailabilityState(
     }
 
     fun binding(name: String): FlowBindingState =
-        bindings[name] ?: bindings[name.replace('-', '_')] ?: FlowBindingState.Undefined
+        bindings[name] ?: FlowBindingState.Undefined
 
     internal fun withBinding(name: String, state: FlowBindingState): FlowAvailabilityState {
         if (!reachable) return this
         require(state.coveredPaths.all { it in paths }) {
             "Binding '$name' cannot be installed with path evidence outside the current state."
         }
-        val aliases = bindingAliases(name)
         val next = bindings.toMutableMap()
-        aliases.forEach { alias ->
-            if (state.availability == FlowValueAvailability.UNDEFINED) next.remove(alias) else next[alias] = state
-        }
+        if (state.availability == FlowValueAvailability.UNDEFINED) next.remove(name) else next[name] = state
         return copy(bindings = next.toSortedMap())
     }
 
@@ -485,8 +482,7 @@ class FlowAvailabilityAnalysis internal constructor(
     )
 
     fun producerAt(path: FlowStatementPath, binding: String): FlowProducerIdentity =
-        producedBindings[ProducerKey(path, binding)]
-            ?: producedBindings[ProducerKey(path, binding.replace('-', '_'))]
+        producedBindings[ProducerKey(path, org.flowlang.identity.SemanticId.of(binding))]
             ?: error("Statement '$path' does not produce binding '$binding'.")
 
     fun requireDirectPlanningSafe() {

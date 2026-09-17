@@ -464,7 +464,7 @@ class FlowAvailabilityAnalyzer {
             allowUniquePartialProducer: Boolean = false,
             allowUndefined: Boolean = false
         ) {
-            val binding = rawBinding.replace('-', '_')
+            val binding = rawBinding
             val bindingState = state.binding(binding)
             val accepted = !state.reachable || bindingState.safeToRead ||
                 (allowUndefined && bindingState.availability == FlowValueAvailability.UNDEFINED) ||
@@ -514,7 +514,7 @@ class FlowAvailabilityAnalyzer {
                     )
                     return@forEachIndexed
                 }
-                val binding = rawBinding.replace('-', '_')
+                val binding = rawBinding
                 if (!seen.add(binding)) {
                     issues += mergeIssue(
                         "MERGE_INPUT_DUPLICATE",
@@ -619,7 +619,7 @@ class FlowAvailabilityAnalyzer {
                 valueType = valueType
             )
             merges += contract
-            bindingAliases(statement.name).forEach { alias -> produced[ProducerKey(path, alias)] = contract.producer }
+            produced[ProducerKey(path, org.flowlang.identity.SemanticId.of(statement.name))] = contract.producer
             return input.withBinding(
                 statement.name,
                 FlowBindingState.merged(contract.producer, input.paths, valueType)
@@ -663,7 +663,7 @@ class FlowAvailabilityAnalyzer {
             valueType: FlowValueType? = null
         ): FlowAvailabilityState {
             val producer = FlowProducerIdentity(path, rawBinding)
-            bindingAliases(rawBinding).forEach { alias -> produced[ProducerKey(path, alias)] = producer }
+            produced[ProducerKey(path, org.flowlang.identity.SemanticId.of(rawBinding))] = producer
             if (!input.reachable) return input
             return input.withBinding(rawBinding, FlowBindingState.produced(producer, input.paths, valueType))
         }

@@ -624,7 +624,7 @@ class FlowPlanner(registry: ModuleCatalog) {
                     val state = exitState.binding(candidate.output.name)
                     state.safeToRead && !state.external && state.producers.singleOrNull() == candidate.producer
                 }
-                .distinctBy { candidate -> candidate.output.name.replace('-', '_') }
+                .distinctBy { candidate -> candidate.output.name }
                 .map(OutputCandidate::output)
 
         fun resolveProducer(

@@ -1,5 +1,6 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.TargetProjectionIdentityChecks
 import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
@@ -17,6 +18,15 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
 
     override fun render(manifest: TargetManifest): String {
         TargetRendererContractValidator.requireRenderable(manifest, target)
+        TargetRenderingIdentityChecks.requireValid(manifest, { it }, { it })
+        manifest.jobs.forEach { job ->
+            val imageIds = job.steps.flatMap { it.flatten() }.filter {
+                val payload = it.rendererPayload
+                payload?.kind == JenkinsProjectionPayloadKinds.JENKINS_STEP && payload.reference == "docker-build"
+            }.map { it.id }
+            TargetProjectionIdentityChecks.requireNames(
+                "render.jobs.${job.id}.image-variables", imageIds, JenkinsImageBuildProjectionValues::jenkinsVariable)
+        }
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)
         check(readiness.mode == TargetRenderMode.EXECUTABLE)

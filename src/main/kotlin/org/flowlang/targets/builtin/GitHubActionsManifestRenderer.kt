@@ -1,5 +1,6 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.AdapterManifestLowering
 import org.flowlang.generators.manifest.TargetEnvironmentSafetyEvidenceResolver
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
@@ -22,6 +23,7 @@ class GitHubActionsManifestRenderer(
 
     override fun render(manifest: TargetManifest): String {
         TargetRendererContractValidator.requireRenderable(manifest, target)
+        TargetRenderingIdentityChecks.requireValid(manifest, AdapterManifestLowering::id, AdapterManifestLowering::id)
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)
         check(readiness.mode == TargetRenderMode.EXECUTABLE)

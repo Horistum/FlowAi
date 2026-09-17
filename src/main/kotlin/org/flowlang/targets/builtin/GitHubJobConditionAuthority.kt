@@ -19,7 +19,7 @@ internal object GitHubJobConditionAuthority {
         val dependencyKinds = job.dependsOn.map { dependency ->
             val safeDependency = sanitizeId(dependency)
             val isProviderBackedApproval = manifest.jobs.firstOrNull {
-                sanitizeId(it.id) == safeDependency
+                it.id == dependency
             }?.metadata?.get("providerApprovalPayload") == "true"
             safeDependency to isProviderBackedApproval
         }

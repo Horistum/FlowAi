@@ -311,7 +311,7 @@ class FlowValidator(
             issues += err("RESULT_NAME_EMPTY", "Result and declared output names must not be empty", location)
             return
         }
-        val logicalName = name.replace('-', '_')
+        val logicalName = name
         if (!results.add(logicalName)) {
             issues += err("DUPLICATE_RESULT", "Result '$name' is already defined", location)
         }

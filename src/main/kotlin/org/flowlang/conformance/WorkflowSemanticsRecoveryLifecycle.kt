@@ -18,7 +18,9 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val languageActivationEvidence: Map<String, Any?> = emptyMap(),
     val languageActivationSha256: String? = null,
     val schemaIntegrityEvidence: Map<String, Any?> = emptyMap(),
-    val schemaIntegritySha256: String? = null
+    val schemaIntegritySha256: String? = null,
+    val systemIdentityEvidence: Map<String, Any?> = emptyMap(),
+    val systemIdentitySha256: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -36,6 +38,8 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         val activation = File(root, LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE)
             .takeIf { it.isFile }?.readBytes()
         val schema = File(root, LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE)
+            .takeIf { it.isFile }?.readBytes()
+        val systemIdentity = File(root, LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE)
             .takeIf { it.isFile }?.readBytes()
         return WorkflowSemanticsRecoveryLifecycleSnapshot(
             FlowYaml.readMap(File(root, WORK_PACKAGE)),
@@ -62,6 +66,12 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             schema?.let { FlowYaml.readMap(it.toString(Charsets.UTF_8), LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE) }
                 ?: emptyMap(),
             schema?.let { bytes ->
+                MessageDigest.getInstance("SHA-256").digest(bytes)
+                    .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            },
+            systemIdentity?.let { FlowYaml.readMap(it.toString(Charsets.UTF_8), LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE) }
+                ?: emptyMap(),
+            systemIdentity?.let { bytes ->
                 MessageDigest.getInstance("SHA-256").digest(bytes)
                     .joinToString("") { "%02x".format(it.toInt() and 0xff) }
             }

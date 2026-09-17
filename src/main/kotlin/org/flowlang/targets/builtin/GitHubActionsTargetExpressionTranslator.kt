@@ -1,5 +1,6 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.AdapterManifestLowering
 import org.flowlang.ast.*
 import org.flowlang.capabilities.TargetExpressionSupport
 import org.flowlang.capabilities.TargetExpressionSupportDeclaration
@@ -99,7 +100,7 @@ object GitHubActionsTargetExpressionTranslator {
     private fun renderGitHubRef(path: List<String>, inputs: Set<String>): String {
         if (path.isEmpty()) return "null"
         val root = path.first()
-        val head = if (root in inputs) "inputs.$root" else root
+        val head = if (root in inputs) "inputs.${AdapterManifestLowering.id(root)}" else root
         return (listOf(head) + path.drop(1)).joinToString(".")
     }
 }

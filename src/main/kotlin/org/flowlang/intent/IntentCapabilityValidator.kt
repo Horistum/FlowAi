@@ -21,18 +21,19 @@ class IntentCapabilityValidator(registry: ModuleCatalog) {
     private val registry = ModuleCatalogIndex.capture(registry)
 
     fun validate(intent: IntentDocument): IntentValidationReport {
-        val issues = mutableListOf<IntentValidationIssue>()
+        val issues = IntentIdentityIndex.issues(intent).toMutableList()
+        if (issues.isNotEmpty()) return IntentValidationReport(
+            valid = false,
+            issues = issues,
+            meaning = CanonicalIntentMeaningAuthority.rejectedIdentityMeaning(intent)
+        )
         val resolution = CanonicalIntentMeaningAuthority(registry).resolve(intent)
         val bindingsByStep = resolution.bindings.associateBy { it.stepId }
         val steps = intent.workflows.flatMap { it.steps }
         val stepIds = steps.map { it.id }
 
-        if (intent.name.isBlank()) issues += err("INTENT_NAME_EMPTY", "Intent name must not be empty.")
         intent.workflows.filter { it.name.isBlank() }.forEach {
             issues += err("EMPTY_INTENT_WORKFLOW_NAME", "Intent workflow name must not be empty.")
-        }
-        intent.workflows.groupBy { it.name }.filterValues { it.size > 1 }.keys.forEach { name ->
-            issues += err("DUPLICATE_INTENT_WORKFLOW", "Intent workflow '$name' is declared more than once.")
         }
         if (!intent.failure.stopOnError) {
             issues += err(
@@ -48,9 +49,6 @@ class IntentCapabilityValidator(registry: ModuleCatalog) {
         }
         val workflowNames = intent.workflows.map { it.name }.filter(String::isNotBlank).toSet()
             .ifEmpty { setOf("main") }
-        intent.triggers.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { id ->
-            issues += err("DUPLICATE_INTENT_TRIGGER", "Intent trigger '$id' is declared more than once.")
-        }
         intent.triggers.forEach { trigger ->
             if (trigger.workflows.isEmpty()) {
                 issues += err(
@@ -92,9 +90,6 @@ class IntentCapabilityValidator(registry: ModuleCatalog) {
                 }
             }
         }
-        stepIds.groupBy { it }.filterValues { it.size > 1 }.keys.forEach { id ->
-            issues += err("DUPLICATE_INTENT_STEP", "Intent step '$id' is declared more than once.")
-        }
         val workflowByStep = intent.workflows.flatMap { workflow ->
             workflow.steps.map { step -> step.id to workflow.name }
         }.groupBy({ it.first }, { it.second })
@@ -114,9 +109,6 @@ class IntentCapabilityValidator(registry: ModuleCatalog) {
             }
             step.produces.filter { it.isBlank() }.forEach {
                 issues += err("EMPTY_STEP_OUTPUT", "Step '${step.id}' declares an empty output name.")
-            }
-            step.produces.groupBy { it }.filterValues { it.size > 1 }.keys.forEach { output ->
-                issues += err("DUPLICATE_STEP_OUTPUT", "Step '${step.id}' declares output '$output' more than once.")
             }
         }
 

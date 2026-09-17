@@ -85,10 +85,10 @@ milestone-wide success records.
 
 ## Scope and lifecycle
 
-AR-04 remains active. AR-04C is the selected implementation slice and AR-04D is next.
+AR-04 remains active. AR-04D is the selected implementation slice and AR-04E is next.
 F-07, F-12, F-13, F-14 and F-21 remain open until the milestone's integrated
 acceptance; no finding is closed merely because source code exists on a candidate
-branch. AR-04D/E behavior is intentionally not implemented here. AR-05/06/07 remain
+branch. Strict public-loader work (E) and integrated milestone acceptance (F) remain unimplemented. AR-05/06/07 remain
 planned, EF-09 remains paused and F-20 remains AR-07-owned.
 
 Product presentation is Horistum. Existing Flow technical identities, public
@@ -97,9 +97,9 @@ unchanged.
 
 ## Validation and CI cost
 
-Development keeps the existing Flow CI topology. No workflow, required-check identity,
+Development keeps the existing Flow CI topology. No product workflow, required-check identity,
 timeout, cancellation, cache policy, extra matrix or automatic offline-portability
-run is added by AR-04B. The candidate must pass the existing exact-HEAD and synthetic
+run is added by these slices. The candidate must pass the existing exact-HEAD and synthetic
 merge compile/test/conformance checks plus physical module isolation. Final run IDs,
 counts and review outcome belong in PR metadata only after GitHub has actually
 produced them; this report deliberately does not predict a green future run.
@@ -115,7 +115,7 @@ contain the same 1,600 distinct tests in 281 suites with no failures, errors or 
 both installed conformance logs report 246 passing checks. The immutable receipt is
 `.flow-agent/evidence/schema-integrity-acceptance.json`. This accepts B, not C.
 
-The current implementation starts from merged correction main
+The historical system-contract implementation started from merged correction main
 `e1574def2dbe8ef82dd2903eb551bd4c61807770`. Its separate post-merge Flow CI run
 `35171357137` passed source isolation and full compile/test/conformance; the
 synthetic-merge job was correctly skipped for a push event. No CI workflow is changed.
@@ -152,3 +152,60 @@ proposal-review spelling and added the exact captured-catalog spelling. A negati
 regression rejects either spelling from an unlisted caller. Metadata-copy tests now
 include the newly pinned predecessor receipt before exercising byte-tampering rejection.
 No conformance or test assertion was disabled to accommodate the new implementation.
+
+
+## Accepted system identity and selected semantic identity
+
+System identity PR #184 was merged as `1d125c154394cd8d6e1083eddd20c6b217a89bb4`,
+source tree `d86118179709fde20d8c91b1260b51c52c1116d6`. Its own exact-head and
+synthetic-merge Flow CI `35175006081` and actual post-merge Flow CI `35176517700`
+passed. All three independently inspected archives contain the same 1,665 test
+identities in 293 suites, no failures/errors/skips, and the same ordered 249
+conformance checks. Every input hash in the PR and post-merge physical isolation
+proofs matches that source tree. Archive checksums, actual job IDs and counts are
+pinned in `.flow-agent/evidence/system-identity-acceptance.json`; its byte hash is
+`1f304dbfd544df93ea906086d935cff0c41067f9649f7d76cf8a8ed78a51b075`.
+This accepts C only. A/B receipt bytes and their prior acceptance fields are unchanged.
+
+The maintainer explicitly selected AR-04D. `SemanticId` now owns exact authored
+identity and is used by the compiler's step index and producer keys. One reversible
+wire-segment codec is used by real lowering evidence, including strict malformed-escape
+rejection. Descriptions are independent display values. Existing noncolliding Intent
+result spellings remain compatible; a conflicting declaration set is rejected before
+AST construction with path-aware identity diagnostics, not repaired with a suffix.
+Rejected reports retain authored structure but publish no derived control/topology or
+binding evidence for ambiguous owners. No rejected report grants compilation authority.
+
+The compiler no longer treats a hyphen and an underscore as implicit reference aliases.
+Ordering resolves exact authored step IDs through the checked result-name index, while
+value references use exact declared symbols. Adapter lowering checks the namespaces
+that would otherwise lose distinctions through case folding or sanitization. Structural
+parallel wrappers derive from their owning node and ordinal, never their display label.
+Renderer checks cover inputs, jobs, steps, payload keys and secret environment names;
+Jenkins image variables and Tekton workspaces retain their separate namespace checks.
+Workspace identities remain raw until checked and rendered. GitHub workspace composition
+also rejects competing job names and generated-step collisions without changing its
+bounded capability claim. Approval and environment relationships use exact dependencies.
+
+The patch contains positive and negative compiler, frontend, producer, serialization,
+projection and lifecycle tests, including a finite sweep of non-surrogate UTF-16 code
+units. Four executable conformance probes test wire preservation, early collision
+rejection, exact producer references and derived-name collision rejection. The complete
+current candidate must still pass its own offline and exact-head/synthetic-merge CI.
+Validation run IDs and final outcomes are recorded in the pull request only after
+execution; this committed report does not certify its own future commit.
+
+No public artifact layout, public contract version, target support claim, execution
+engine, compatibility retirement or successor milestone is changed. The scope is the
+identity invariant, not full grammar validation for every target-native name or a new
+runtime implementation of generic symbolic bindings. E/F and whole-AR-04 completion
+remain pending, and the existing failure, path, merge and workflow semantics remain
+owned by their established authorities.
+
+
+Integration review distinguished node identity from whole-program payload identity. Bound-action
+source labels remain metadata. The historical unbound standard action also carries descriptions
+as action parameters; this slice preserves that payload rather than filtering it from the graph
+digest. Separate tests exercise stable node identity and retained parameter sensitivity. The old
+AST duplicate-output regression now checks early Intent rejection and independently injects a
+duplicate into a previously valid AST, retaining its original DUPLICATE_RESULT assertion.

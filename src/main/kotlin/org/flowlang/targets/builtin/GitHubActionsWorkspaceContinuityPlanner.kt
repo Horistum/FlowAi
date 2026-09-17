@@ -1,5 +1,6 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.TargetProjectionIdentityChecks
 import org.flowlang.adapters.continuity.AdapterContinuityRequirement
 import org.flowlang.adapters.continuity.AdapterContinuityRequirementAuthority
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupport
@@ -40,6 +41,10 @@ object GitHubActionsWorkspaceContinuityPlanner {
         val requirements = AdapterContinuityRequirementAuthority.derive(plan)
         if (requirements.isEmpty()) return jobs
 
+        TargetProjectionIdentityChecks.requireNames(
+            "continuity.plan-task-names", plan.tasks.map { it.id }, ::sanitizeId)
+        TargetProjectionIdentityChecks.requireNames(
+            "continuity.job-names", jobs.map { it.id }, ::sanitizeId)
         val jobsById = jobs.associateBy(TargetJob::id)
         require(jobsById.size == jobs.size) { "GitHub Actions manifest contains duplicate job ids." }
 
@@ -124,7 +129,7 @@ object GitHubActionsWorkspaceContinuityPlanner {
         val orphanBlockers = blockers.filter { sanitizeId(it.requirement.targetNodeId) !in jobsById }
         val orphanHost = jobs.firstOrNull()?.id
 
-        return jobs.map { job ->
+        val result = jobs.map { job ->
             val downloads = downloadsByTarget[job.id].orEmpty()
             val uploads = uploadsBySource[job.id].orEmpty()
             val jobBlockers = blockersByTarget[job.id].orEmpty() +
@@ -139,6 +144,11 @@ object GitHubActionsWorkspaceContinuityPlanner {
                 )
             )
         }
+        result.forEach { job ->
+            TargetProjectionIdentityChecks.requireNames(
+                "continuity.jobs.${job.id}.steps", job.steps.flatMap { it.flatten() }.map { it.id }, ::sanitizeId)
+        }
+        return result
     }
 
     fun transferCount(plan: ExecutionPlan): Int = AdapterContinuityRequirementAuthority.derive(plan)

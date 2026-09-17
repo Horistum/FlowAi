@@ -1,5 +1,7 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.AdapterManifestLowering
+import org.flowlang.generators.manifest.TargetProjectionIdentityChecks
 import org.flowlang.generators.manifest.TargetInput
 import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetStep
@@ -79,3 +81,20 @@ fun safeIdentifier(value: String): String = value.replace(Regex("[^A-Za-z0-9_-]+
 fun yamlScalar(value: String): String = "\"" + value.replace("\\", "\\\\")
     .replace("\"", "\\\"").replace("\n", "\\n") + "\""
 fun TargetStep.flatten(): List<TargetStep> = listOf(this) + children.flatMap { it.flatten() }
+
+/** Shared checks accept the concrete adapter's name projections rather than selecting a target by id. */
+object TargetRenderingIdentityChecks {
+    fun requireValid(manifest: TargetManifest, inputName: (String) -> String, payloadName: (String) -> String) {
+        val checks = TargetProjectionIdentityChecks
+        checks.requireNames("render.jobs", manifest.jobs.map { it.id }, AdapterManifestLowering::id)
+        checks.requireNames("render.inputs", manifest.inputs.map { it.name }, inputName)
+        checks.requireNames("render.secret-environment", TargetProjectionDiagnostics.opaqueNames(manifest), ::safeEnvName)
+        manifest.jobs.forEach { job ->
+            val steps = job.steps.flatMap { it.flatten() }
+            checks.requireNames("render.jobs.${job.id}.steps", steps.map { it.id }, AdapterManifestLowering::id)
+            steps.forEach { step ->
+                checks.requireNames("render.steps.${step.id}.bindings", step.rendererPayload?.bindings.orEmpty().keys.toList(), payloadName)
+            }
+        }
+    }
+}

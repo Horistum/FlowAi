@@ -1,5 +1,6 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.TargetProjectionIdentityChecks
 import org.flowlang.compiler.requireSingleWorkflowFailureProjection
 import org.flowlang.generators.manifest.AdapterManifestLowering
 import org.flowlang.generators.manifest.AdapterWorkflowProjectionLowering
@@ -17,6 +18,8 @@ class TektonManifestGenerator(
 
     override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
         val plan = authorization.plan
+        TargetProjectionIdentityChecks.requireNames(
+            "projection.inputs", plan.inputs.map { it.name }, AdapterManifestLowering::id)
         val compatibility = authorization.compatibility
         val jobs = AdapterWorkflowProjectionLowering.jobPerTask(
             authorization.compilationAuthorization.requireSingleWorkflowFailureProjection(),

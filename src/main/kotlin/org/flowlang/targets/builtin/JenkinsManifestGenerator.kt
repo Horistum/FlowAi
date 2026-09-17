@@ -1,5 +1,6 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.generators.manifest.TargetProjectionIdentityChecks
 import org.flowlang.compiler.requireSingleWorkflowFailureProjection
 import org.flowlang.generators.manifest.AdapterManifestLowering
 import org.flowlang.generators.manifest.AdapterWorkflowProjectionLowering
@@ -16,6 +17,8 @@ class JenkinsManifestGenerator(
 
     override fun buildManifest(authorization: TargetProjectionAuthorization): TargetManifest {
         val plan = authorization.plan
+        TargetProjectionIdentityChecks.requireNames(
+            "projection.inputs", plan.inputs.map { it.name }, { it })
         val compatibility = authorization.compatibility
         val steps = AdapterWorkflowProjectionLowering.nodePreservingSteps(
             projection = authorization.compilationAuthorization.requireSingleWorkflowFailureProjection(),
