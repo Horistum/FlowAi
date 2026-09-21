@@ -37,7 +37,21 @@ internal class StrictContractConformanceChecks {
         },
         check(VOCABULARY) {
             val intent = "name: strict-probe\nworkflows: []"
-            val module = "kind: FlowModule\nname: strict-probe\nversion: \"1.0\"\ndescription: strict probe\nsystemTypes: {probe: {input: {}}}\nactions: {inspect: {kind: action, targetTypes: [probe], input: {}, output: {}}}"
+            val module = """
+                kind: FlowModule
+                name: strict-probe
+                version: "1.0"
+                description: strict probe
+                systemTypes: {probe: {input: {}}}
+                actions:
+                  inspect:
+                    kind: action
+                    targetTypes: [probe]
+                    input: {}
+                    output: {}
+                    effects: {}
+                    safety: {destructive: false}
+            """.trimIndent()
             IntentYamlLoader.loadText(intent).name == "strict-probe" &&
                 CanonicalModuleLoader.loadText(module).name == "strict-probe" &&
                 runCatching { IntentYamlLoader.loadText(intent + "\nunknown: true") }.isFailure &&
