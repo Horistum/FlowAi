@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import org.flowlang.adapters.continuity.AdapterContinuityClaimStatus
@@ -171,7 +173,7 @@ class AdapterContinuityConformanceChecks(
         for (record in portfolio.records.filter { it.supportClass == AdapterSupportClass.EXECUTABLE_REFERENCE }) {
             for (reference in record.executableEvidence) {
                 val snapshotFile = File(rootDir, reference.substringBefore('#'))
-                val snapshotResult = runCatching { Json.mapper.readValue(snapshotFile, ReferenceSnapshotSet::class.java) }
+                val snapshotResult = runCatching { FlowJson.read(snapshotFile, ReferenceSnapshotSet::class.java) }
                 val snapshot = snapshotResult.getOrNull()
                 if (snapshot == null) {
                     add("${record.target}: executable snapshot cannot be parsed: ${snapshotResult.exceptionOrNull()?.message}")

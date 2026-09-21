@@ -1,0 +1,31 @@
+version: "AR-04E"
+name: "Strict public contract loaders"
+status: active
+stream: architecture-recovery
+parent: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+authorization:
+  source: "Maintainer request to review feature branches and finish the next roadmap goal."
+  baseline: "b51aca23ff6765bb407211981aa7f8fc88e103ac"
+  predecessorPullRequest: 185
+  predecessorPostMergeRun: 35193433327
+invariant: "Public YAML and JSON contracts reject duplicate declarations, unknown model fields, trailing documents, coercion and excessive complexity through one frontend-owned parsing policy."
+scope:
+  - "Make every FlowYaml entry point strict, including the historical read method."
+  - "Share bounded single-document parsing, scalar and unknown-field rules with public JSON evidence readers."
+  - "Keep contract-specific dynamic-map vocabulary validation in its existing owner."
+  - "Reject unsupported YAML alias references explicitly instead of treating an anchor name as a literal value."
+  - "Preserve all accepted predecessor regression identities and add executable positive/negative conformance."
+  - "Record current branches, their exact compared heads and separate reference-example work."
+nonGoals:
+  - "Do not close AR-04 as a whole; integrated acceptance remains AR-04F."
+  - "Do not activate AR-05, change package/schema versions, target support or required CI identities."
+  - "Do not introduce general source/output I/O and atomic-publication contracts owned by AR-05."
+acceptance:
+  - "YAML and JSON file/text entry points reject duplicate root and nested fields, trailing content, unknown typed fields and scalar coercion."
+  - "Parser limits apply before object binding, including maps and unknown subtrees, with source-aware diagnostics."
+  - "Intent, modules, notes, target registries, adapter evidence and corpus/bundle evidence retain their existing vocabulary owners."
+  - "Positive documents, equivalent JSON/YAML data, quoted alias-like strings and literal claim templates remain accepted."
+  - "Current-head and synthetic-merge Flow CI plus all four physical isolation proofs pass without weaker gates."
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]

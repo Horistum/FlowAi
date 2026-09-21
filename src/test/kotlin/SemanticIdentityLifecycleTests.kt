@@ -5,7 +5,10 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class SemanticIdentityLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File(".")).let { current ->
+        current.copy(integrityWorkPackage = org.flowlang.serialization.FlowYaml.readMap(
+            File("src/test/resources/lifecycle/semantic-identity-implementation.yaml")))
+    }
     @Suppress("UNCHECKED_CAST") private fun section(value: Any?) = value as Map<String, Any?>
     @Suppress("UNCHECKED_CAST") private fun slices(value: Any?) = value as List<Map<String, Any?>>
     private fun changeSlice(current: WorkflowSemanticsRecoveryLifecycleSnapshot, id: String,
@@ -64,7 +67,7 @@ class SemanticIdentityLifecycleTests {
             val paths = listOf(WorkflowSemanticsRecoveryLifecycle.WORK_PACKAGE, CompilerModuleExtractionLifecycle.WORK_PACKAGE,
                 CompilerModuleAcceptance.EVIDENCE, CompilerModuleAcceptance.INVENTORY, LanguageContractIntegrityLifecycle.WORK_PACKAGE,
                 LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE, LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE,
-                LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE, ".flow-agent/roadmap-architecture-recovery.yaml",
+                LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE, LanguageContractIntegrityLifecycle.SEMANTIC_IDENTITY_EVIDENCE, ".flow-agent/roadmap-architecture-recovery.yaml",
                 ".flow-agent/roadmap-post-toolchain.yaml", ".flow-agent/release-state.yaml", ".flow-agent/roadmap.yaml")
             paths.forEach { path -> File(path).copyTo(File(root, path).also { it.parentFile.mkdirs() }) }
             val baseline = WorkflowSemanticsRecoveryLifecycle.load(root)

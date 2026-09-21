@@ -30,4 +30,6 @@ org/flowlang/scenarios/DeliveryScenarioPacks.kt
 org/flowlang/scenarios/MaintenanceScenarioPacks.kt
 org/flowlang/scenarios/OperationsScenarioPacks.kt
 org/flowlang/scenarios/ScenarioPacks.kt
+org/flowlang/serialization/ContractReadPolicy.kt
+org/flowlang/serialization/FlowJson.kt
 org/flowlang/serialization/FlowYaml.kt

@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import java.io.File
 import org.flowlang.adapters.maturity.AdapterTargetMaturityEvidenceLoader
 import org.flowlang.adapters.maturity.AdapterTargetMaturityPublisher
@@ -157,7 +159,7 @@ class AdapterTargetMaturityConformanceChecks(
         document.scopes.forEach { scope ->
             val snapshotFile = File(rootDir, scope.snapshotReference.substringBefore('#'))
             val snapshotResult = runCatching {
-                Json.mapper.readValue(snapshotFile, ReferenceSnapshotSet::class.java)
+                FlowJson.read(snapshotFile, ReferenceSnapshotSet::class.java)
             }
             val snapshot = snapshotResult.getOrNull()
             if (snapshot == null) {
@@ -269,7 +271,7 @@ class ArchitectureRecoveryConformanceRunner(
         val predecessors = workflowSemanticsPrerequisiteChecks(rootDir)
         val produced = foundation + predecessors + WorkflowSemanticsIntegrationChecks(rootDir).checks(predecessors) +
             SourceDeclarationConformanceChecks().checks() + SystemContractIdentityConformanceChecks().checks() +
-            SemanticIdentityConformanceChecks().checks()
+            SemanticIdentityConformanceChecks().checks() + StrictContractConformanceChecks().checks()
         val inventoryResult = runCatching { ArchitectureRecoveryConformanceInventory.load(rootDir) }
         val inventory = inventoryResult.getOrNull()
         val observed = produced.map { it.name }

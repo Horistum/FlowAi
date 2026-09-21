@@ -44,3 +44,7 @@ checks:
   - architecture-recovery.language.early-identity-collision-rejection
   - architecture-recovery.language.exact-producer-identity
   - architecture-recovery.language.derived-name-collision-rejection
+  - architecture-recovery.language.strict-typed-contracts
+  - architecture-recovery.language.single-document-duplicate-rejection
+  - architecture-recovery.language.bounded-contract-parsing
+  - architecture-recovery.language.contract-vocabulary-preservation

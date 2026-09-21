@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import com.fasterxml.jackson.databind.JsonNode
 import java.io.File
 import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionLoader
@@ -76,10 +78,10 @@ internal fun semanticSnapshotPlanErrors(
     rightPlanFile: File?
 ): List<String> = buildList {
     val leftTree = leftPlanFile?.let { planFile ->
-        runCatching { Json.mapper.readTree(planFile) }
+        runCatching { FlowJson.readTree(planFile) }
     }
     val rightTree = rightPlanFile?.let { planFile ->
-        runCatching { Json.mapper.readTree(planFile) }
+        runCatching { FlowJson.readTree(planFile) }
     }
 
     if (leftTree?.isFailure == true) {
@@ -321,7 +323,7 @@ class SemanticEquivalenceAuthority(
             addAll(left.errors)
             addAll(right.errors)
             val productionTree = runCatching {
-                Json.mapper.readTree(Json.mapper.writeValueAsBytes(ExecutionPlanCanonicalizer.canonicalize(plan)))
+                FlowJson.readTree(Json.mapper.writeValueAsString(ExecutionPlanCanonicalizer.canonicalize(plan)))
             }
             if (productionTree.isFailure) {
                 add("Concrete pair '${pair.id}' production execution plan cannot be serialized: ${productionTree.exceptionOrNull()?.message}.")
@@ -420,7 +422,7 @@ class SemanticEquivalenceAuthority(
             errors += "Concrete pair '$pairId' snapshot is missing: ${indexFile.path}."
             return SnapshotValidation(errors, null, null)
         }
-        val snapshotResult = runCatching { Json.mapper.readValue(indexFile, ReferenceSnapshotSet::class.java) }
+        val snapshotResult = runCatching { FlowJson.read(indexFile, ReferenceSnapshotSet::class.java) }
         val snapshot = snapshotResult.getOrNull()
         if (snapshot == null) {
             errors += "Concrete pair '$pairId' snapshot '$path' cannot be parsed: ${snapshotResult.exceptionOrNull()?.message}."

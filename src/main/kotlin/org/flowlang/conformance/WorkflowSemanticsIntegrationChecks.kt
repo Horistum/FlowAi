@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import java.io.File
@@ -148,7 +150,7 @@ class WorkflowSemanticsIntegrationChecks(private val rootDir: File) {
     )
 
     private fun publicCompatibilityErrors(): List<String> = WorkflowPlanSetCompatibilityMatrix.errors(
-        failureUnit, multiUnit, Json.mapper.readTree(File(rootDir, "schemas/workflow-execution-plan-set.schema.json"))
+        failureUnit, multiUnit, FlowJson.readTree(File(rootDir, "schemas/workflow-execution-plan-set.schema.json"))
     )
 
     private fun findingClosureErrors(predecessors: List<ConformanceCheck>, matrices: List<ConformanceCheck>): List<String> = buildList {

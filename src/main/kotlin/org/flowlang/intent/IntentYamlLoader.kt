@@ -21,7 +21,7 @@ class IntentSourceException(
 object IntentYamlLoader {
     private val rootFields = setOf("intentVersion", "kind", "name", "description", "inputs", "systems", "triggers", "workflows", "policies", "failure")
 
-    fun load(file: File): IntentDocument = loadText(file.readText(), file.path)
+    fun load(file: File): IntentDocument = normalize(FlowYaml.readMap(file), file.path)
 
     fun loadText(text: String, sourceName: String = "<intent>"): IntentDocument =
         normalize(FlowYaml.readMap(text, sourceName), sourceName)

@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import java.io.File
 import org.flowlang.cli.Json
 
@@ -237,7 +239,7 @@ class OperationalDomainCorpusLoader(private val rootDir: File = File(".")) {
 
     private fun validateSchema(value: Any, schemaPath: String) {
         val schemaFile = resolveRootFile(schemaPath, "schema")
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(value), Json.mapper.readTree(schemaFile))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(value), FlowJson.readTree(schemaFile))
     }
 
     private fun OperationalDomainCorpusManifest.schema(id: String): String =

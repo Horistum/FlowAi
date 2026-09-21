@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.flowlang.artifacts.StandardBundleVerifier
@@ -71,7 +73,7 @@ internal class ExportManifestVerifierChecks(
 
         val failedConformanceBundle = StrictStandardBundleFixture.create(rootDir)
         val conformanceFile = File(failedConformanceBundle, "conformance-manifest.json")
-        val conformance = Json.mapper.readTree(conformanceFile) as ObjectNode
+        val conformance = FlowJson.readTree(conformanceFile) as ObjectNode
         conformance.put("status", "FAIL")
         val total = conformance.path("totalChecks").asInt()
         conformance.put("passed", total - 1)
@@ -87,7 +89,7 @@ internal class ExportManifestVerifierChecks(
 
         val substringBundle = StrictStandardBundleFixture.create(rootDir)
         val exportFile = File(substringBundle, "standard-export-bundle.json")
-        val export = Json.mapper.readTree(exportFile) as ObjectNode
+        val export = FlowJson.readTree(exportFile) as ObjectNode
         val missingArtifact = StandardSurface.publicSurface().stableArtifacts.first()
         val requiredArtifacts = export.withArray("requiredArtifacts") as ArrayNode
         val retained = requiredArtifacts.filterNot { it.asText() == missingArtifact }.map { it.asText() }

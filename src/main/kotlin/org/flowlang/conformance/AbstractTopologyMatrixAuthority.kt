@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import java.io.File
@@ -195,7 +197,7 @@ class AbstractTopologyMatrixAuthority(
                 add("Concrete reference '${reference.id}' expected topology ${reference.expectedTopologyDecision} but observed ${assessment.decision.status}.")
             }
             val snapshotFile = File(rootDir, reference.executableSnapshot)
-            val snapshotResult = runCatching { Json.mapper.readValue(snapshotFile, ReferenceSnapshotSet::class.java) }
+            val snapshotResult = runCatching { FlowJson.read(snapshotFile, ReferenceSnapshotSet::class.java) }
             val snapshot = snapshotResult.getOrNull()
             if (snapshot == null) {
                 add("Concrete reference '${reference.id}' snapshot cannot be parsed: ${snapshotResult.exceptionOrNull()?.message}.")

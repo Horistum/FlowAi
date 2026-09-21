@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import java.nio.file.Files
@@ -80,7 +82,7 @@ class AdapterExecutableContinuityConformanceChecks(
         }
         val snapshotFile = File(rootDir, promotion.snapshotReference)
         val committedResult = runCatching {
-            Json.mapper.readValue(snapshotFile, ReferenceSnapshotSet::class.java)
+            FlowJson.read(snapshotFile, ReferenceSnapshotSet::class.java)
         }
         val committed = committedResult.getOrNull()
         if (committed == null) {
@@ -233,7 +235,7 @@ class AdapterExecutableContinuityConformanceChecks(
     private fun jenkinsPreservationErrors(): List<String> = buildList {
         val snapshotDir = File(rootDir, "conformance/snapshots/checkout-build-image")
         val snapshotFile = File(snapshotDir, "snapshot-index.json")
-        val committedResult = runCatching { Json.mapper.readValue(snapshotFile, ReferenceSnapshotSet::class.java) }
+        val committedResult = runCatching { FlowJson.read(snapshotFile, ReferenceSnapshotSet::class.java) }
         val committed = committedResult.getOrNull()
         if (committed == null) {
             add("Historical Jenkins snapshot cannot be parsed: ${committedResult.exceptionOrNull()?.message}")
@@ -281,7 +283,7 @@ class AdapterExecutableContinuityConformanceChecks(
             val left = committed.getValue(name)
             val right = generated.getValue(name)
             val equal = if (name.endsWith(".json")) {
-                Json.mapper.readTree(left) == Json.mapper.readTree(right)
+                FlowJson.readTree(left) == FlowJson.readTree(right)
             } else {
                 left.readText().trimEnd() == right.readText().trimEnd()
             }

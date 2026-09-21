@@ -109,6 +109,7 @@ org/flowlang/conformance/SemanticObservationAuthority.kt
 org/flowlang/conformance/SourceDeclarationConformanceChecks.kt
 org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
 org/flowlang/conformance/StandardEvidenceChecks.kt
+org/flowlang/conformance/StrictContractConformanceChecks.kt
 org/flowlang/conformance/StrictStandardBundleFixture.kt
 org/flowlang/conformance/SystemContractIdentityConformanceChecks.kt
 org/flowlang/conformance/TargetNeutralConformanceFixture.kt

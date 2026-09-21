@@ -3,17 +3,9 @@ package org.flowlang.serialization
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.core.StreamReadFeature
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.cfg.CoercionAction
-import com.fasterxml.jackson.databind.cfg.CoercionInputShape
-import com.fasterxml.jackson.databind.type.LogicalType
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
-import java.io.IOException
 
 /**
  * Single YAML parsing boundary for Flow repository documents.
@@ -22,49 +14,40 @@ import java.io.IOException
  * comments, quoting, duplicate detection and error reporting cannot drift between
  * module descriptors, intent documents, target registries and conformance metadata.
  *
- * [readStrict] is for evidence or contract documents where unknown properties and
- * coercions must fail. It is a mode of the same boundary, not a second YAML owner.
+ * Every entry point rejects duplicates, trailing documents, coercion and excessive
+ * complexity. [read] retains its source signature but has the same strict behavior
+ * as [readStrict]; there is no permissive mapper. Map callers own field vocabulary.
  */
 object FlowYaml {
-    private val mapper: ObjectMapper = ObjectMapper(YAMLFactory())
-        .registerKotlinModule()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
-    private val strictMapper: ObjectMapper = YAMLMapper.builder(
+    private val strictMapper = ContractReadPolicy.configure(ObjectMapper(
         YAMLFactory.builder()
             .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+            .streamReadConstraints(ContractReadPolicy.constraints())
+            .loaderOptions(org.yaml.snakeyaml.LoaderOptions().apply {
+                codePointLimit = ContractReadLimits.MAX_DOCUMENT_BYTES
+                nestingDepthLimit = ContractReadLimits.MAX_DEPTH
+                maxAliasesForCollections = 0
+                setAllowDuplicateKeys(false)
+                setAllowRecursiveKeys(false)
+            })
             .build()
-    )
-        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
-        .enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
-        .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
-        .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
-        .build()
-        .registerKotlinModule()
-        .apply {
-            coercionConfigFor(LogicalType.Textual)
-                .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
-                .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
-                .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail)
-        }
+    ))
 
     private val mapType = object : TypeReference<LinkedHashMap<String, Any?>>() {}
 
-    fun readMap(file: File): Map<String, Any?> = readMap(file.readText(), file.path)
+    fun readMap(file: File): Map<String, Any?> = guarded(file.path) { readMap(ContractReadPolicy.readText(file), file.path) }
 
     fun readMap(text: String, sourceName: String = "<yaml>"): Map<String, Any?> {
-        if (text.isBlank()) return emptyMap()
         return readWith(strictMapper, text, mapType, sourceName)
     }
 
-    fun <T> read(file: File, type: Class<T>): T = read(file.readText(), type, file.path)
+    fun <T> read(file: File, type: Class<T>): T = readStrict(file, type)
 
     fun <T> read(text: String, type: Class<T>, sourceName: String = "<yaml>"): T =
-        readWith(mapper, text, type, sourceName)
+        readStrict(text, type, sourceName)
 
     fun <T> readStrict(file: File, type: Class<T>): T =
-        readStrict(file.readText(), type, file.path)
+        guarded(file.path) { readStrict(ContractReadPolicy.readText(file), type, file.path) }
 
     fun <T> readStrict(text: String, type: Class<T>, sourceName: String = "<yaml>"): T =
         readWith(strictMapper, text, type, sourceName)
@@ -74,10 +57,9 @@ object FlowYaml {
         text: String,
         type: Class<T>,
         sourceName: String
-    ): T = try {
+    ): T = guarded(sourceName) {
+        validate(text, owner)
         owner.readValue(text, type)
-    } catch (error: IOException) {
-        throw invalidYaml(sourceName, error)
     }
 
     private fun <T> readWith(
@@ -85,17 +67,26 @@ object FlowYaml {
         text: String,
         type: TypeReference<T>,
         sourceName: String
-    ): T = try {
+    ): T = guarded(sourceName) {
+        validate(text, owner)
         owner.readValue(text, type)
-    } catch (error: IOException) {
-        throw invalidYaml(sourceName, error)
     }
 
-    private fun invalidYaml(sourceName: String, error: IOException): FlowYamlException {
+    private fun validate(text: String, owner: ObjectMapper) =
+        ContractReadPolicy.validate(text, owner.factory) { parser ->
+            require(!(parser as com.fasterxml.jackson.dataformat.yaml.YAMLParser).isCurrentAlias) {
+                "CONTRACT_YAML_ALIAS: alias references are unsupported; author the value explicitly."
+            }
+        }
+
+    private inline fun <T> guarded(source: String, block: () -> T): T = try {
+        block()
+    } catch (error: FlowYamlException) {
+        throw error
+    } catch (error: Exception) {
         val detail = (error as? JsonProcessingException)?.originalMessage
-            ?: error.message
-            ?: error.javaClass.simpleName
-        return FlowYamlException("Invalid YAML in '$sourceName': $detail", error)
+            ?: error.message ?: error.javaClass.simpleName
+        throw FlowYamlException("Invalid YAML in '$source': $detail", error)
     }
 }
 

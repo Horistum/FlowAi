@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import org.flowlang.adapters.yaml.IntentYamlLoader
@@ -80,11 +82,11 @@ internal class StandardArchitectureNormalizationChecks(
         require(review.contains("renderMode: REVIEW_ONLY"))
         require(review.contains("executable: false"))
         listOf("github-actions.blocked.json", "tekton.blocked.json").forEach { name ->
-            val blocked = Json.mapper.readValue(File(dir, name), ReferenceSnapshotTargetState::class.java)
+            val blocked = FlowJson.read(File(dir, name), ReferenceSnapshotTargetState::class.java)
             require(blocked.renderMode == TargetRenderMode.FAIL_FAST)
             require(!blocked.manifestPresent && !blocked.renderedArtifactPresent)
         }
-        val index = Json.mapper.readValue(File(dir, "snapshot-index.json"), ReferenceSnapshotSet::class.java)
+        val index = FlowJson.read(File(dir, "snapshot-index.json"), ReferenceSnapshotSet::class.java)
         require(index.versionBoundary.implementationPackageVersion == FlowStandardVersions.IMPLEMENTATION_PACKAGE_VERSION)
         require(index.versionBoundary.publicStandardVersion == standardVersion)
         require(index.versionBoundary.artifactContractVersion == FlowStandardVersions.TARGET_MANIFEST_VERSION)
