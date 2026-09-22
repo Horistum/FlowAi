@@ -22,7 +22,7 @@ object ModuleYamlLoader {
     }
 
     fun loadFile(file: File): FlowModule = canonical {
-        CanonicalModuleLoader.loadText(file.readText(), file.path)
+        CanonicalModuleLoader.loadFile(file)
     }
 
     fun loadDirectory(dir: File): List<FlowModule> = canonical {

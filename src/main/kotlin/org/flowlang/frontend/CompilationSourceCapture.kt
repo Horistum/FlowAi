@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import org.flowlang.compiler.CompilationFrontend
+import org.flowlang.serialization.ContractReadPolicy
 import org.flowlang.compiler.CompilationSource
 
 class CapturedCompilationSource<T> internal constructor(
@@ -24,7 +25,8 @@ internal object CompilationSourceCapture {
         parse: (String, String) -> T
     ): CapturedCompilationSource<T> {
         require(file.isFile) { "Compilation source does not exist: ${file.path}" }
-        val bytes = file.readBytes()
+        val bytes = if (frontend == CompilationFrontend.INTENT_YAML) ContractReadPolicy.readBytes(file)
+            else file.readBytes()
         val sourceName = file.path
         val identity = file.absoluteFile.toPath().normalize().toString()
         val text = decodeUtf8(bytes, sourceName)
@@ -45,6 +47,7 @@ internal object CompilationSourceCapture {
         frontend: CompilationFrontend,
         parse: (String, String) -> T
     ): CapturedCompilationSource<T> {
+        if (frontend == CompilationFrontend.INTENT_YAML) ContractReadPolicy.requireSize(text, identity)
         val bytes = text.toByteArray(StandardCharsets.UTF_8)
         return CapturedCompilationSource(
             source = CompilationSource.fromBytes(

@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import org.flowlang.adapters.portfolio.AdapterPortfolioAuthority
@@ -81,7 +83,7 @@ class AdapterPortfolioConformanceChecks(
                     continue
                 }
                 val snapshotResult = runCatching {
-                    Json.mapper.readValue(file, ReferenceSnapshotSet::class.java)
+                    FlowJson.read(file, ReferenceSnapshotSet::class.java)
                 }
                 val snapshot = snapshotResult.getOrNull()
                 if (snapshot == null) {

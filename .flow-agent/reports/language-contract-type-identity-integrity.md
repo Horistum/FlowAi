@@ -209,3 +209,17 @@ as action parameters; this slice preserves that payload rather than filtering it
 digest. Separate tests exercise stable node identity and retained parameter sensitivity. The old
 AST duplicate-output regression now checks early Intent rejection and independently injects a
 duplicate into a previously valid AST, retaining its original DUPLICATE_RESULT assertion.
+
+## Accepted semantic identity and selected strict loaders
+
+PR #185 and its post-merge Flow CI 35193433327 were independently inspected:
+1,707 identical test identities and 253 conformance checks pass on exact head,
+synthetic merge and actual main. The new byte-pinned receipt is
+`.flow-agent/evidence/semantic-identity-acceptance.json`.
+
+The maintainer-selected successor is AR-04E. Every public YAML entry point is
+strict; JSON contract readers now share duplicate, scalar, trailing-content and
+complexity rules. See `docs/modules/STRICT_CONTRACT_LOADING.md` for the explicit
+policy and `.flow-agent/reports/strict-public-contract-loaders.md` for the branch
+review and validation scope. Existing contract vocabulary owners remain in place.
+E requires its own candidate CI. AR-04F and whole-milestone closure remain pending.

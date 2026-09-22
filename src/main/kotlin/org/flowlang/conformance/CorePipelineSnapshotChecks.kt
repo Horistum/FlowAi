@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import org.flowlang.adapters.yaml.IntentYamlLoader
@@ -175,15 +177,15 @@ internal class CorePipelineSnapshotChecks(
                 val generatedFile = File(generated, name)
                 val committedFile = File(committed, name)
                 if (name.endsWith(".json")) {
-                    val expected = Json.mapper.readTree(committedFile.readText())
-                    val actual = Json.mapper.readTree(generatedFile.readText())
+                    val expected = FlowJson.readTree(committedFile)
+                    val actual = FlowJson.readTree(generatedFile)
                     require(expected == actual) { "JSON snapshot mismatch for $name." }
                 } else {
                     assertSnapshotEquals(committedFile, generatedFile.readText())
                 }
             }
 
-            val canonicalPlan = Json.mapper.readTree(File(committed, "execution-plan.json"))
+            val canonicalPlan = FlowJson.readTree(File(committed, "execution-plan.json"))
             val canonicalModules = canonicalPlan.findValuesAsText("module")
             val canonicalActions = canonicalPlan.findValuesAsText("action")
             require("shell" !in canonicalModules) { "Canonical reference plan must not contain a shell module." }
@@ -233,7 +235,7 @@ internal class CorePipelineSnapshotChecks(
                     val generatedFile = File(executableGenerated, name)
                     val committedFile = File(executableCommitted, name)
                     if (name.endsWith(".json")) {
-                        require(Json.mapper.readTree(committedFile) == Json.mapper.readTree(generatedFile)) {
+                        require(FlowJson.readTree(committedFile) == FlowJson.readTree(generatedFile)) {
                             "Executable JSON snapshot mismatch for $name."
                         }
                     } else {

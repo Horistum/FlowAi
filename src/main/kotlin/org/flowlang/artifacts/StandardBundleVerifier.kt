@@ -1,8 +1,6 @@
 package org.flowlang.artifacts
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationFeature
-import org.flowlang.cli.Json
+import org.flowlang.serialization.FlowJson
 import org.flowlang.standard.FlowStandardVersions
 import java.io.File
 
@@ -38,10 +36,6 @@ data class StandardBundleVerificationReport(
  * is not conformance evidence.
  */
 class StandardBundleVerifier {
-    private val strictMapper = Json.mapper.copy()
-        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .also { mapper -> mapper.factory.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION) }
-
     fun verify(bundleDir: File): StandardBundleVerificationReport {
         val manifest = StandardSurface.standardExportManifest()
         val export = StandardSurface.standardExportBundle()
@@ -185,7 +179,7 @@ class StandardBundleVerifier {
     }
 
     private fun <T> strictRead(file: File, type: Class<T>): T? =
-        runCatching { strictMapper.readValue(file, type) }.getOrNull()
+        runCatching { FlowJson.read(file, type) }.getOrNull()
 
     private fun check(id: String, missing: List<String>, passMessage: String, failMessage: String): StandardBundleVerificationCheck =
         StandardBundleVerificationCheck(

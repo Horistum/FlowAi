@@ -14,8 +14,16 @@ object CanonicalModuleLoader {
             ?.sortedBy { it.name }
             .orEmpty()
         if (files.isEmpty()) throw ContractException("Module directory is empty: ${dir.path}")
-        val modules = files.map { file -> loadText(file.readText(), file.path) }
+        val modules = files.map(::loadFile)
         return validateCatalog(modules)
+    }
+
+    fun loadFile(file: File): FlowModule = try {
+        loadText(org.flowlang.serialization.ContractReadPolicy.readText(file), file.path)
+    } catch (error: ContractException) {
+        throw error
+    } catch (error: Exception) {
+        throw ContractException("Invalid module descriptor '${file.path}': ${error.message}", error)
     }
 
     fun loadTexts(texts: List<String>): List<FlowModule> {

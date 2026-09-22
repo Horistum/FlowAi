@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
@@ -163,7 +165,7 @@ class AdapterTopologyConformanceChecks(
             for (reference in record.executableEvidence) {
                 val snapshotFile = File(rootDir, reference.substringBefore('#'))
                 val snapshotResult = runCatching {
-                    Json.mapper.readValue(snapshotFile, ReferenceSnapshotSet::class.java)
+                    FlowJson.read(snapshotFile, ReferenceSnapshotSet::class.java)
                 }
                 val snapshot = snapshotResult.getOrNull()
                 if (snapshot == null) {

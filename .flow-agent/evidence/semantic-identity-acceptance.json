@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "pullRequest": 185,
+  "base": "1d125c154394cd8d6e1083eddd20c6b217a89bb4",
+  "head": "d379a45f489f330d062a61c0d3825e781bc3ffd6",
+  "syntheticMerge": "20c8fb23343a0c5490ffc13221890b72722155d5",
+  "mergedMain": "b51aca23ff6765bb407211981aa7f8fc88e103ac",
+  "sourceTree": "5976bca42b0961a87858e57127bcd5093aea6fcc",
+  "workflowRunId": 35191069466,
+  "workflowRunNumber": 3287,
+  "toolingTests": 151,
+  "jobs": {
+    "exactHead": 105105210671,
+    "mergeCandidate": 105105210764,
+    "physicalIsolation": 105103608568
+  },
+  "postMerge": {
+    "workflowRunId": 35193433327,
+    "workflowRunNumber": 3288,
+    "head": "b51aca23ff6765bb407211981aa7f8fc88e103ac",
+    "status": "completed",
+    "conclusion": "success",
+    "exactHeadJobId": 105112799342,
+    "isolationJobId": 105111068395
+  },
+  "junit": {
+    "exactHead": {
+      "tests": 1707,
+      "suites": 299,
+      "uniqueIdentities": 1707,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "identitiesSha256": "3bbc2087aa3d43a177abdc0237e4dcea0aac8144f7d72a521dc2a251dbeec2fd"
+    },
+    "mergeCandidate": {
+      "tests": 1707,
+      "suites": 299,
+      "uniqueIdentities": 1707,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "identitiesSha256": "3bbc2087aa3d43a177abdc0237e4dcea0aac8144f7d72a521dc2a251dbeec2fd"
+    },
+    "postMerge": {
+      "tests": 1707,
+      "suites": 299,
+      "uniqueIdentities": 1707,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "identitiesSha256": "3bbc2087aa3d43a177abdc0237e4dcea0aac8144f7d72a521dc2a251dbeec2fd"
+    }
+  },
+  "conformance": {
+    "exactHead": {
+      "passed": 253,
+      "failed": 0,
+      "orderedIdentitiesSha256": "e809a43ce037dc1c82569375a80364ea8cc88542ba4f4f1f08eb5b01029e1cfd"
+    },
+    "mergeCandidate": {
+      "passed": 253,
+      "failed": 0,
+      "orderedIdentitiesSha256": "e809a43ce037dc1c82569375a80364ea8cc88542ba4f4f1f08eb5b01029e1cfd"
+    },
+    "postMerge": {
+      "passed": 253,
+      "failed": 0,
+      "orderedIdentitiesSha256": "e809a43ce037dc1c82569375a80364ea8cc88542ba4f4f1f08eb5b01029e1cfd"
+    }
+  },
+  "physicalIsolation": {
+    "pullRequest": {
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true,
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ]
+    },
+    "postMerge": {
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true,
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ]
+    }
+  },
+  "artifacts": {
+    "ar04d-main-tests.zip": {
+      "sha256": "78b21242f3c942558caf4193db07756624cfcb3601858c4e11e550c2a62bdd4e"
+    },
+    "flow-ci-exact-head-gradle-logs.zip": {
+      "sha256": "e759fe9c0862293994e5b00ead30b3990af08561c8537e71ac6aae1de8c07bf3"
+    },
+    "flow-ci-exact-head-test-reports.zip": {
+      "sha256": "c050b2183eb505b12f572bcc7df56dc7a804c9f45e9864edb99137aae2b60368"
+    },
+    "flow-ci-merge-candidate-gradle-logs.zip": {
+      "sha256": "70201231b1455f354eedc753d74722d2d48b235a226e1a40aa8ee5750bc7a175"
+    },
+    "flow-ci-merge-candidate-test-reports.zip": {
+      "sha256": "1f55849023be4ed98d089fb68bfcebe60d52d21a9cfd57d57ba1de986e5ea884"
+    },
+    "flow-isolation-exact-head.zip": {
+      "sha256": "d3ff7b678f01676188a2c06662cd482b90a641af1390bc2378257367ed68698f"
+    },
+    "main-gradle-logs.zip": {
+      "sha256": "284f8a4009143d5434c800f9d526f123eb2d7f9ef55eeceb791681494c06aacf"
+    },
+    "main-isolation.zip": {
+      "sha256": "62ab62aacaabbdb71c24b237e7f86de4ab108d59d1b698a4da6af7b819a680c0"
+    }
+  }
+}

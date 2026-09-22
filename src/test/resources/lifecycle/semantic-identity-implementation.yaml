@@ -11,7 +11,7 @@ authorization:
   predecessor: "AR-03"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-04"
   mainAtActivation: "0a863eb10f60a64945f9657b0fcf090714ab543a"
-  rule: "Maintainer authorizes the next roadmap goal AR-04E after inspected PR #185 and successful post-merge Flow CI 35193433327. E requires its own exact-head and merge-candidate CI; predecessor success cannot stand in for current validation."
+  rule: "Maintainer explicitly authorizes AR-04D after merged PR #184 and its successful post-merge Flow CI 35176517700. D requires its own exact-head and merge-candidate CI; predecessor success cannot stand in for current validation."
 
 verifiedBaseline:
   mergedPullRequest: 177
@@ -29,8 +29,8 @@ verifiedBaseline:
   skipped: 0
   evidence: ".flow-agent/evidence/compiler-module-acceptance.json"
 
-selectedSlice: "AR-04E"
-nextSlice: "AR-04F"
+selectedSlice: "AR-04D"
+nextSlice: "AR-04E"
 implementationSlices:
   - id: "AR-04A"
     name: "Duplicate authored declarations and stable source diagnostics"
@@ -134,21 +134,10 @@ implementationSlices:
 
   - id: "AR-04D"
     name: "Lossless semantic identities and collision rejection"
-    status: complete
+    status: implemented
     acceptance:
       source: current-revision-ci
       requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
-      pullRequest: 185
-      mergedMain: b51aca23ff6765bb407211981aa7f8fc88e103ac
-      head: d379a45f489f330d062a61c0d3825e781bc3ffd6
-      syntheticMerge: 20c8fb23343a0c5490ffc13221890b72722155d5
-      workflowRunId: 35191069466
-      postMergeWorkflowRunId: 35193433327
-      kotlinTests: 1707
-      toolingTests: 151
-      conformanceChecks: 253
-      evidence: .flow-agent/evidence/semantic-identity-acceptance.json
-      evidenceSha256: 2c33de906e4d9aaa7c0a4b1528848f9059951f73e5ebf2c75a08d7762c800967
     scope:
       - "Use typed, exact SemanticId values and one reversible wire-segment codec, with display text outside identity equality."
       - "Validate authored namespaces and derived result-symbol collisions before AST construction. Preserve noncolliding result spellings and exact source IDs."
@@ -159,11 +148,7 @@ implementationSlices:
     invariant: "Typed semantic identity, lossless wire encoding and display names remain distinct; collisions fail before AST construction and target-safe derivation."
   - id: "AR-04E"
     name: "Strict public contract loaders"
-    status: implemented
-    workPackage: ".flow-agent/work-packages/strict-public-contract-loaders.yaml"
-    acceptance:
-      source: current-revision-ci
-      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+    status: planned
     ownsFindings: ["F-21"]
     invariant: "Every public YAML/JSON contract entry point follows one explicit duplicate, unknown-field and complexity policy; permissive parsing cannot be selected accidentally."
   - id: "AR-04F"
@@ -208,7 +193,7 @@ completionDecision:
   nextItemActivationState: not-activated
 
 forbiddenScope:
-  - "AR-04E owns strict public contract loading only. Do not claim integrated milestone closure from AR-04F or general source/output I/O integrity from AR-05."
+  - "AR-04D owns semantic identity and collision boundaries only. Do not implement general loader hardening from AR-04E or integrated milestone closure from AR-04F."
   - "Do not reopen AR-02 or rewrite historical AR-03A/B/C/D or AR-04A receipts."
   - "Do not retire F-20 compatibility surfaces; their removal remains AR-07-owned."
   - "Do not activate AR-05 or resume EF-09."
@@ -216,7 +201,7 @@ forbiddenScope:
   - "Do not change public versions, canonical graph semantics, target support or CI check identities."
 
 validationPlan:
-  - "Accept AR-04D from its own inspected PR #185 and post-merge CI evidence; preserve historical A/B/C receipts."
+  - "Accept AR-04C from its own inspected PR #184 and post-merge CI evidence; preserve historical A/B receipts."
   - "Reject identity collisions before AST lowering or target-name publication without alias selection, invented suffixes or dropped declarations."
   - "Exercise exact references, reversible wire segments, Unicode distinctions, display-name independence and independent target projection boundaries."
   - "Run complete Kotlin tests, installed conformance and physical module-isolation proofs in existing Flow CI on exact HEAD and synthetic merge."

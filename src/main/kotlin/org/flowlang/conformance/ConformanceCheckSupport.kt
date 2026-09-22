@@ -1,5 +1,7 @@
 package org.flowlang.conformance
 
+import org.flowlang.serialization.FlowJson
+
 import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.materialization.CompatibilityMaterializationBoundary
 import org.flowlang.frontend.FrontendCompilerComposition
@@ -198,8 +200,8 @@ internal abstract class ConformanceCheckSupport(
 
     protected fun assertJsonSnapshotEquals(file: File, actual: Any) {
         require(file.isFile) { "Missing snapshot ${file.path}" }
-        val expected = Json.mapper.readTree(file.readText())
-        val got = Json.mapper.readTree(pretty(actual))
+        val expected = FlowJson.readTree(file)
+        val got = FlowJson.readTree(pretty(actual))
         require(expected == got) { "JSON snapshot mismatch for ${file.name}. Update snapshot only after reviewing generated semantics." }
     }
 
