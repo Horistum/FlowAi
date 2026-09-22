@@ -1,6 +1,8 @@
 package org.flowlang.frontend
 
 import org.flowlang.serialization.*
+import org.flowlang.frontend.intent.IntentYamlFrontend
+import org.flowlang.modules.ModuleRegistry
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.*
@@ -102,6 +104,11 @@ class StrictContractParsingTests {
         assertFailsWith<FlowYamlException> { FlowYaml.readMap(tooLarge, "large.yaml") }
         assertFailsWith<FlowYamlException> { FlowYaml.readMap(unicode, "unicode.yaml") }
         assertFailsWith<FlowJsonException> { FlowJson.readTree(tooLarge, "large.json") }
+        val frontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(ModuleRegistry(emptyMap())))
+        val failure = assertFailsWith<IllegalArgumentException> {
+            frontend.compileText(tooLarge, "oversized.intent.yaml")
+        }
+        assertContains(failure.message.orEmpty(), "oversized.intent.yaml")
     }
 
     @Test fun filesUseTheSameStrictPolicyAndRejectMalformedUtf8() {

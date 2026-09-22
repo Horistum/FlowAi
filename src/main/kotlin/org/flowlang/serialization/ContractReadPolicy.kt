@@ -68,10 +68,10 @@ internal object ContractReadPolicy {
         throw IllegalArgumentException("CONTRACT_UTF8: '${file.path}' must contain valid UTF-8.", error)
     }
 
-    fun requireSize(text: String) {
+    fun requireSize(text: String, sourceName: String? = null) {
         require(text.length <= ContractReadLimits.MAX_DOCUMENT_BYTES &&
             text.toByteArray(Charsets.UTF_8).size <= ContractReadLimits.MAX_DOCUMENT_BYTES) {
-            "CONTRACT_DOCUMENT_LIMIT: document exceeds the byte budget."
+            "CONTRACT_DOCUMENT_LIMIT: ${sourceName?.let { "'$it'" } ?: "document"} exceeds the byte budget."
         }
     }
 

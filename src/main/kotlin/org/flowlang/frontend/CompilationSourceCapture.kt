@@ -47,7 +47,7 @@ internal object CompilationSourceCapture {
         frontend: CompilationFrontend,
         parse: (String, String) -> T
     ): CapturedCompilationSource<T> {
-        if (frontend == CompilationFrontend.INTENT_YAML) ContractReadPolicy.requireSize(text)
+        if (frontend == CompilationFrontend.INTENT_YAML) ContractReadPolicy.requireSize(text, identity)
         val bytes = text.toByteArray(StandardCharsets.UTF_8)
         return CapturedCompilationSource(
             source = CompilationSource.fromBytes(
