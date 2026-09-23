@@ -90,4 +90,4 @@ object FlowYaml {
     }
 }
 
-class FlowYamlException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+class FlowYamlException(message: String, cause: Throwable? = null) : IllegalArgumentException(message, cause)

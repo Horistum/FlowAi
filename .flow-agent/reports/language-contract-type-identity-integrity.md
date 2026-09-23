@@ -85,11 +85,11 @@ milestone-wide success records.
 
 ## Scope and lifecycle
 
-AR-04 remains active. AR-04D is the selected implementation slice and AR-04E is next.
-F-07, F-12, F-13, F-14 and F-21 remain open until the milestone's integrated
-acceptance; no finding is closed merely because source code exists on a candidate
-branch. Strict public-loader work (E) and integrated milestone acceptance (F) remain unimplemented. AR-05/06/07 remain
-planned, EF-09 remains paused and F-20 remains AR-07-owned.
+AR-04 remains active. AR-04A through E have independently accepted receipts.
+AR-04F is the selected integrated acceptance candidate. F-07, F-12, F-13, F-14
+and F-21 remain open until that candidate's independent acceptance; implementation
+alone does not close a finding. AR-05/06/07 remain planned, EF-09 remains paused
+and F-20 remains AR-07-owned.
 
 Product presentation is Horistum. Existing Flow technical identities, public
 versions, canonical graph semantics, target support and CI check identities remain
@@ -223,3 +223,15 @@ complexity rules. See `docs/modules/STRICT_CONTRACT_LOADING.md` for the explicit
 policy and `.flow-agent/reports/strict-public-contract-loaders.md` for the branch
 review and validation scope. Existing contract vocabulary owners remain in place.
 E requires its own candidate CI. AR-04F and whole-milestone closure remain pending.
+
+## Current integrated acceptance candidate
+
+PR #186 and post-merge Flow CI 35705768665 have been independently inspected:
+1,722 identical test identities, 257 ordered conformance checks and all four
+physical isolation proofs pass on the accepted strict-loader source tree.
+The receipt is `.flow-agent/evidence/strict-loader-acceptance.json`.
+AR-04F now composes the five finding families through real public frontends,
+requires positive counterparts for negative probes, and checks that failures
+cannot publish accepted plans or CLI artifacts. See
+`integrated-language-integrity-acceptance.md` for the current scope and evidence.
+Earlier sections above describe historical slice decisions, not the current selection.

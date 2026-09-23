@@ -5,7 +5,10 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class StrictContractLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File(".")).let { current ->
+        current.copy(integrityWorkPackage = org.flowlang.serialization.FlowYaml.readMap(
+            File("src/test/resources/lifecycle/language-integrity-strict-loaders.yaml")))
+    }
     @Suppress("UNCHECKED_CAST") private fun section(value: Any?) = value as Map<String, Any?>
     @Suppress("UNCHECKED_CAST") private fun slices(value: Any?) = value as List<Map<String, Any?>>
     private fun changeSlice(current: WorkflowSemanticsRecoveryLifecycleSnapshot, id: String,

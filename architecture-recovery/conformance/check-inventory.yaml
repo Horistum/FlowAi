@@ -48,3 +48,10 @@ checks:
   - architecture-recovery.language.single-document-duplicate-rejection
   - architecture-recovery.language.bounded-contract-parsing
   - architecture-recovery.language.contract-vocabulary-preservation
+  - architecture-recovery.language.integrated-frontend-parity
+  - architecture-recovery.language.integrated-declaration-rejection
+  - architecture-recovery.language.integrated-schema-contracts
+  - architecture-recovery.language.integrated-authored-types
+  - architecture-recovery.language.integrated-system-owners
+  - architecture-recovery.language.integrated-semantic-identities
+  - architecture-recovery.language.integrated-public-loaders
