@@ -67,4 +67,10 @@ budgets cannot be skipped.
 
 There is no package, standard, schema or target-support version promotion.
 Malformed input now fails instead of being partially consumed or coerced.
-The integrated AR-04 milestone acceptance remains AR-04F.
+Integrated AR-04F checks compose these readers with loaded schema contracts,
+exact system ownership, semantic identities and the shared compiler. The runner
+executes both accepted counterparts and rejected mutations. Malformed YAML now
+uses `FlowYamlException : IllegalArgumentException`, consistent with JSON input
+errors: the CLI returns `CLI_INVALID_INPUT` (exit 2), preserves parser/source
+details, and publishes no output artifacts. Semantic integrity rejection keeps
+`CLI_INTEGRITY_BLOCKED` (exit 4).

@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 9
+revision: 10
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Language, Contract, Type and Identity Integrity"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
-  decisionBasis: "AR-03 remains accepted and complete. AR-04A/B/C have independently accepted receipts, including actual PR #184 post-merge main. Maintainer-authorized AR-04D implements lossless semantic identity and collision rejection and requires its own current-revision CI. AR-04E/F stay planned, F-20 remains AR-07-owned and EF-09 stays paused."
+  decisionBasis: "AR-03 remains accepted and complete. AR-04A/B/C/D/E have independently accepted receipts, including actual PR #186 post-merge main. Maintainer-authorized AR-04F composes the five integrity families and requires its own current-revision CI. Whole-milestone closure remains pending; F-20 remains AR-07-owned and EF-09 stays paused."
 
 deliveryModel:
   roadmapMilestoneCount: 8

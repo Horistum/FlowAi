@@ -14,6 +14,8 @@ internal object LanguageContractIntegrityLifecycle {
     private const val SYSTEM_IDENTITY_SHA256 = "1f304dbfd544df93ea906086d935cff0c41067f9649f7d76cf8a8ed78a51b075"
     const val SEMANTIC_IDENTITY_EVIDENCE = ".flow-agent/evidence/semantic-identity-acceptance.json"
     private const val SEMANTIC_IDENTITY_SHA256 = "2c33de906e4d9aaa7c0a4b1528848f9059951f73e5ebf2c75a08d7762c800967"
+    const val STRICT_LOADER_EVIDENCE = ".flow-agent/evidence/strict-loader-acceptance.json"
+    private const val STRICT_LOADER_SHA256 = "41265c0279a972c80793ca3bc3e958ac6dc1fd85b2e35fbfc02760505d202c02"
     private val findings = listOf("F-07", "F-12", "F-13", "F-14", "F-21")
     private val sliceIds = listOf("AR-04A", "AR-04B", "AR-04C", "AR-04D", "AR-04E", "AR-04F")
     private val requiredChecks = listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")
@@ -102,6 +104,7 @@ internal object LanguageContractIntegrityLifecycle {
             "AR-04C" -> validateAr04cPhase(snapshot, work, slices, lifecycle, boundaries, this)
             "AR-04D" -> validateAr04dPhase(snapshot, work, slices, lifecycle, boundaries, this)
             "AR-04E" -> validateAr04ePhase(snapshot, work, slices, lifecycle, boundaries, this)
+            "AR-04F" -> validateAr04fPhase(snapshot, work, slices, lifecycle, boundaries, this)
             else -> add("Language integrity may advance only through an explicitly supported AR-04 slice transition.")
         }
 
@@ -373,6 +376,65 @@ internal object LanguageContractIntegrityLifecycle {
         val receipt = section(slices.getOrNull(3)?.get("acceptance"))
         errors += matchingFields("AR-04D acceptance", receipt, expected)
         if (receipt.keys != expected.keys) errors += "AR-04D receipt has missing or unsupported fields."
+    }
+
+    private fun validateAr04fPhase(
+        snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot,
+        work: Map<*, *>, slices: List<Map<*, *>>, lifecycle: Map<*, *>,
+        boundaries: List<String>, errors: MutableList<String>
+    ) {
+        val pending = mapOf("source" to "current-revision-ci", "requiredChecks" to requiredChecks)
+        val historical = slices.mapIndexed { index, slice -> when (index) {
+            4 -> slice + mapOf("status" to "implemented", "acceptance" to pending)
+            5 -> (slice - "acceptance") + ("status" to "planned")
+            else -> slice
+        } }
+        validateAr04ePhase(snapshot, work + ("nextSlice" to "AR-04F"), historical, lifecycle, boundaries, errors)
+        if (work["nextSlice"] != "" || slices.getOrNull(4)?.get("status") != "complete" ||
+            slices.getOrNull(5)?.get("status") != "implemented" ||
+            section(slices.getOrNull(5)?.get("acceptance")) != pending
+        ) errors += "Integrated acceptance requires accepted strict loaders and its own current-revision CI."
+
+        val evidence = snapshot.strictLoaderEvidence
+        if (snapshot.strictLoaderSha256 != STRICT_LOADER_SHA256) {
+            errors += "AR-04E acceptance requires independently inspected, byte-pinned CI evidence."
+        }
+        errors += matchingFields("AR-04E evidence", evidence, mapOf(
+            "version" to 1, "status" to "passed", "repository" to "Horistum/FlowAi", "pullRequest" to 186,
+            "base" to "b51aca23ff6765bb407211981aa7f8fc88e103ac",
+            "head" to "ca502fbfdbe07239df94840da10b373b7e3fd05e",
+            "syntheticMerge" to "586dff9daf3b643ac3b7a987c8c03d3d4c4ad091",
+            "mergedMain" to "f1071f389111e1c406a82c46ead45187f2fc3948",
+            "sourceTree" to "13e2125744281e9e69bcbdb399765f67e2ddeaa9",
+            "workflowRunId" to 35670644502L, "workflowRunNumber" to 3291, "toolingTests" to 151))
+        errors += matchingFields("AR-04E jobs", section(evidence["jobs"]), mapOf(
+            "exactHead" to 106567432474L, "mergeCandidate" to 106567432535L, "physicalIsolation" to 106566207799L))
+        errors += matchingFields("AR-04E post-merge", section(evidence["postMerge"]), mapOf(
+            "workflowRunId" to 35705768665L, "workflowRunNumber" to 3292, "head" to evidence["mergedMain"],
+            "status" to "completed", "conclusion" to "success", "exactHeadJobId" to 106676944077L,
+            "isolationJobId" to 106674240608L))
+        listOf("exactHead", "mergeCandidate", "postMerge").forEach { boundary ->
+            errors += matchingFields("AR-04E $boundary tests", section(section(evidence["junit"])[boundary]), mapOf(
+                "tests" to 1722, "suites" to 302, "uniqueIdentities" to 1722, "failures" to 0, "errors" to 0, "skipped" to 0,
+                "identitiesSha256" to "9e156131af0fed58dd110796d403b7a72ddb43ed2a4bb6810e76d1f111ab1d66"))
+            errors += matchingFields("AR-04E $boundary conformance", section(section(evidence["conformance"])[boundary]), mapOf(
+                "passed" to 257, "failed" to 0,
+                "orderedIdentitiesSha256" to "4cba48eace4586520256c4a5397c6ee47838728a14abd3e8f21023032dac4a97"))
+        }
+        listOf("pullRequest", "postMerge").forEach { boundary ->
+            errors += matchingFields("AR-04E $boundary isolation", section(section(evidence["physicalIsolation"])[boundary]), mapOf(
+                "status" to "passed", "allListedInputsMatchSourceTree" to true,
+                "proofs" to listOf("adapter-isolation/proof.json", "compiler-isolation/proof.json", "kernel-isolation/proof.json", "product-isolation/proof.json")))
+        }
+        val expected = mapOf(
+            "source" to "current-revision-ci", "requiredChecks" to requiredChecks, "pullRequest" to 186,
+            "head" to evidence["head"], "syntheticMerge" to evidence["syntheticMerge"], "mergedMain" to evidence["mergedMain"],
+            "workflowRunId" to evidence["workflowRunId"], "postMergeWorkflowRunId" to 35705768665L,
+            "kotlinTests" to 1722, "toolingTests" to 151, "conformanceChecks" to 257,
+            "evidence" to STRICT_LOADER_EVIDENCE, "evidenceSha256" to STRICT_LOADER_SHA256)
+        val receipt = section(slices.getOrNull(4)?.get("acceptance"))
+        errors += matchingFields("AR-04E acceptance", receipt, expected)
+        if (receipt.keys != expected.keys) errors += "AR-04E receipt has missing or unsupported fields."
     }
 
     private fun activationErrors(

@@ -58,7 +58,7 @@ class SystemContractIdentityLifecycleTests {
                 CompilerModuleAcceptance.EVIDENCE, CompilerModuleAcceptance.INVENTORY,
                 LanguageContractIntegrityLifecycle.WORK_PACKAGE,
                 LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE,
-                LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE, LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE, LanguageContractIntegrityLifecycle.SEMANTIC_IDENTITY_EVIDENCE,
+                LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE, LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE, LanguageContractIntegrityLifecycle.SEMANTIC_IDENTITY_EVIDENCE, LanguageContractIntegrityLifecycle.STRICT_LOADER_EVIDENCE,
                 ".flow-agent/roadmap-architecture-recovery.yaml", ".flow-agent/roadmap-post-toolchain.yaml",
                 ".flow-agent/release-state.yaml", ".flow-agent/roadmap.yaml"
             )

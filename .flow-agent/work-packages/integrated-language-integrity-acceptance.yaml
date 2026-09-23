@@ -1,0 +1,28 @@
+version: "AR-04F"
+name: "Integrated language integrity acceptance"
+status: active
+stream: architecture-recovery
+parent: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+authorization:
+  source: "Maintainer request to inspect current main and implement the next roadmap step."
+  baseline: "f1071f389111e1c406a82c46ead45187f2fc3948"
+  predecessorPullRequest: 186
+  predecessorPostMergeRun: 35705768665
+invariant: "Accepted documents preserve typed values and exact ownership through compilation; each of the five AR-04 defect families is rejected at its public boundary before a plan or artifact can be authorized."
+scope:
+  - "Accept strict-loader implementation from independently inspected PR and post-merge evidence."
+  - "Exercise real source, YAML/JSON Intent, descriptor and reviewed AI entry points with positive baselines and negative mutations."
+  - "Check composed schema, system ownership, semantic identity and duplicate handling, not merely individual helper functions."
+  - "Run the integrated probes in the standalone conformance distribution and preserve predecessor test identities."
+  - "Reconcile active-slice documentation and enforce acceptance progression without borrowing prior validation."
+nonGoals:
+  - "No AR-05 activation, EF-09 resumption, F-20 retirement, version changes or target support promotions."
+  - "No new CI topology or changes to historical accepted receipt bytes."
+acceptance:
+  - "Every negative probe first compiles a valid counterpart and checks the expected rejection stage and diagnostic."
+  - "The same typed system contract and exact dependency identity survive YAML, JSON and reviewed AI inputs."
+  - "Descriptor and registry order cannot select an ambiguous owner or accept an invalid default."
+  - "Existing exact-head and merge-candidate CI plus physical module-isolation proofs pass for the current revision."
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]

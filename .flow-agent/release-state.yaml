@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 63
+stateVersion: 64
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -218,7 +218,7 @@ lastKnownValidation:
   roadmapTransitionEvidence: "passed-lifecycle-regressions-final-transition-verified-by-pr-ci"
   validationSource: "Flow CI #3228, run 34116599418, passed exact head 748fa4390f5e6e404e691f8d3e6a3318af9ed746 and synthetic merge candidate 60f370f6d98446f9c01a6d6511d4ed7a885ebab8 after distinct integrated validation Flow CI #3226. The final completion-transition commit requires its own exact-head and merge-candidate PR CI."
   notes:
-    - "AR-04E is the maintainer-selected current implementation. D is accepted from PR #185 and post-merge CI 35193433327 with 1707 tests and 253 conformance checks. Its byte-pinned receipt is in the active work package; it is not current-candidate E validation. F remains planned and whole-AR-04 boundaries remain pending."
+    - "AR-04F is the maintainer-selected integrated acceptance candidate. E is accepted from PR #186 and post-merge CI 35705768665 with 1722 tests and 257 conformance checks. Its byte-pinned receipt is historical evidence, not current-candidate F validation. Whole-AR-04 boundaries remain pending until independent integrated acceptance passes."
     - "AR-02 is complete through AR-02E, with historical activation, AR-02A through AR-02D implementation, integrated validation and independent closure receipts in its work package. AR-03 now has a separate active module-extraction work package; its current candidate validation is not claimed by this historical AR-02 receipt. EF-09 remains paused."
     - "Closure validation includes 1358 Kotlin tests, Flow Agent tooling and standalone conformance on exact head and synthetic merge candidate. No local Gradle run, new runtime adapter certification or public artifact version migration is claimed by this transition."
     - "TOOLCHAIN-MODERNIZATION is complete on Kotlin 2.4.10, Gradle 9.5.0 and JDK 25 with distinct Kotlin, Gradle, JDK, offline implementation and lifecycle completion evidence."

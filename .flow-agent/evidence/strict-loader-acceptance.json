@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "pullRequest": 186,
+  "base": "b51aca23ff6765bb407211981aa7f8fc88e103ac",
+  "head": "ca502fbfdbe07239df94840da10b373b7e3fd05e",
+  "syntheticMerge": "586dff9daf3b643ac3b7a987c8c03d3d4c4ad091",
+  "mergedMain": "f1071f389111e1c406a82c46ead45187f2fc3948",
+  "sourceTree": "13e2125744281e9e69bcbdb399765f67e2ddeaa9",
+  "workflowRunId": 35670644502,
+  "workflowRunNumber": 3291,
+  "toolingTests": 151,
+  "jobs": {
+    "exactHead": 106567432474,
+    "mergeCandidate": 106567432535,
+    "physicalIsolation": 106566207799
+  },
+  "postMerge": {
+    "workflowRunId": 35705768665,
+    "workflowRunNumber": 3292,
+    "head": "f1071f389111e1c406a82c46ead45187f2fc3948",
+    "status": "completed",
+    "conclusion": "success",
+    "exactHeadJobId": 106676944077,
+    "isolationJobId": 106674240608
+  },
+  "identityEncoding": "SHA-256 of compact UTF-8 JSON; sorted [classname,name] pairs for JUnit, ordered check names for conformance",
+  "junit": {
+    "exactHead": {
+      "tests": 1722,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 302,
+      "uniqueIdentities": 1722,
+      "identitiesSha256": "9e156131af0fed58dd110796d403b7a72ddb43ed2a4bb6810e76d1f111ab1d66"
+    },
+    "mergeCandidate": {
+      "tests": 1722,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 302,
+      "uniqueIdentities": 1722,
+      "identitiesSha256": "9e156131af0fed58dd110796d403b7a72ddb43ed2a4bb6810e76d1f111ab1d66"
+    },
+    "postMerge": {
+      "tests": 1722,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 302,
+      "uniqueIdentities": 1722,
+      "identitiesSha256": "9e156131af0fed58dd110796d403b7a72ddb43ed2a4bb6810e76d1f111ab1d66"
+    }
+  },
+  "conformance": {
+    "exactHead": {
+      "passed": 257,
+      "failed": 0,
+      "orderedIdentitiesSha256": "4cba48eace4586520256c4a5397c6ee47838728a14abd3e8f21023032dac4a97"
+    },
+    "mergeCandidate": {
+      "passed": 257,
+      "failed": 0,
+      "orderedIdentitiesSha256": "4cba48eace4586520256c4a5397c6ee47838728a14abd3e8f21023032dac4a97"
+    },
+    "postMerge": {
+      "passed": 257,
+      "failed": 0,
+      "orderedIdentitiesSha256": "4cba48eace4586520256c4a5397c6ee47838728a14abd3e8f21023032dac4a97"
+    }
+  },
+  "physicalIsolation": {
+    "pullRequest": {
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true,
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ]
+    },
+    "postMerge": {
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true,
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ]
+    }
+  },
+  "artifacts": {
+    "exactHeadTests": {
+      "file": "ar04e-exact-head-tests.zip",
+      "sha256": "c71aa147b5308c796bfa92322e38ee7ab8995a5a15f0ac4b4a9eceb88abd2bc4"
+    },
+    "mergeCandidateTests": {
+      "file": "ar04e-merge-candidate-tests.zip",
+      "sha256": "a1b205ec1733de28ff13298f55498c73b18028d20ab0fc5bdc287baaa9733057"
+    },
+    "postMergeTests": {
+      "file": "ar04e-main-tests.zip",
+      "sha256": "7b31f688d870061fe7d3009accb70e958741bfbc6ffdfae5f1303a4667d53430"
+    },
+    "exactHeadLogs": {
+      "file": "ar04e-exact-head-logs.zip",
+      "sha256": "a7a7f8c697be586fbe75ff713a9f9ac4cba96e4f9c297fb6ba02890f25f7f787"
+    },
+    "mergeCandidateLogs": {
+      "file": "ar04e-merge-candidate-logs.zip",
+      "sha256": "06f0240d3b0c06415b5feda216f5653fbc0f1071a0f584929c8b9131539f4149"
+    },
+    "postMergeLogs": {
+      "file": "ar04e-main-logs.zip",
+      "sha256": "20e7a567dc8119e55643c5a6c5d593df1aca61e637146a2b39602b1ae391597d"
+    },
+    "pullRequestIsolation": {
+      "file": "ar04e-final-isolation.zip",
+      "sha256": "657489f37ce1145db6b59fba059e86035d23e0f500284a98f5e785d53d5a26a1"
+    },
+    "postMergeIsolation": {
+      "file": "ar04e-main-isolation.zip",
+      "sha256": "4f6c3c65979c52cc0d0b963c60539d77378f3b4715c6d63eb883a8785b5011b4"
+    }
+  }
+}
