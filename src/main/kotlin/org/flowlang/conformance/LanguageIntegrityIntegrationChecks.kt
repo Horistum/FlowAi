@@ -89,7 +89,7 @@ internal class LanguageIntegrityIntegrationChecks {
     private fun rejectsInvalidSchemaContracts() = withDirectory { directory ->
         val valid = CanonicalModuleLoader.loadText(descriptor, "schema-positive.yaml")
         require(valid.systemTypes.getValue("remote").input.getValue("count").type == SchemaType.NUMBER)
-        require(valid.actions.getValue("inspect").input.getValue("count").default is Number)
+        require(valid.actions.getValue("inspect").input.getValue("count").defaultValue is Number)
         accepted(IntentYamlFrontend(FrontendCompilerComposition.compiler(registry(listOf(valid))))
             .compileText(intentYaml))
         val mutants = listOf(
