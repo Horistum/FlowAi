@@ -1,6 +1,6 @@
 version: "AR-04E"
 name: "Strict public contract loaders"
-status: active
+status: complete
 stream: architecture-recovery
 parent: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
 authorization:
@@ -27,5 +27,7 @@ acceptance:
   - "Positive documents, equivalent JSON/YAML data, quoted alias-like strings and literal claim templates remain accepted."
   - "Current-head and synthetic-merge Flow CI plus all four physical isolation proofs pass without weaker gates."
 validation:
-  status: current-revision-ci-required
+  status: accepted-predecessor
+  evidence: ".flow-agent/evidence/strict-loader-acceptance.json"
+  postMergeWorkflowRunId: 35705768665
   requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]

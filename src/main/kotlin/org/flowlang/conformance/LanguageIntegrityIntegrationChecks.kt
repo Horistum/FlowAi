@@ -1,9 +1,11 @@
 package org.flowlang.conformance
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import org.flowlang.ai.normalization.*
 import org.flowlang.ast.ModuleImportNode
+import org.flowlang.ast.NumberLiteralNode
 import org.flowlang.compiler.*
 import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.ai.ReviewedAiProposal
@@ -19,6 +21,8 @@ import org.flowlang.cli.Json
 
 /** Composed public boundaries: every rejection has a successfully compiled counterpart. */
 internal class LanguageIntegrityIntegrationChecks {
+    // Fixture conversion must preserve explicit nulls, unlike optional-field artifact output.
+    private val fixtureJson = Json.mapper.copy().setSerializationInclusion(JsonInclude.Include.ALWAYS)
     fun checks(): List<ConformanceCheck> = listOf(
         check(PARITY, ::preservesComposedMeaning),
         check(DECLARATIONS, ::rejectsDuplicateSourceDeclarations),
@@ -46,7 +50,12 @@ internal class LanguageIntegrityIntegrationChecks {
                 confidence = ConfidenceScore(1.0, 1.0, 1.0, 1.0, 1.0))),
             sourceIdentity = "integrity:proposal", sourceName = "integrity-proposal.json"))
 
-    private fun json(yaml: String): String = Json.mapper.writeValueAsString(FlowYaml.readMap(yaml))
+    private fun json(yaml: String): String {
+        val authored = FlowYaml.readMap(yaml)
+        val encoded = fixtureJson.writeValueAsString(authored)
+        require(FlowYaml.readMap(encoded) == authored) { "Fixture encoding changed authored fields or scalar values." }
+        return encoded
+    }
 
     private fun preservesComposedMeaning() {
         val compiler = compiler()
@@ -57,6 +66,11 @@ internal class LanguageIntegrityIntegrationChecks {
             accepted(proposal(compiler, IntentYamlLoader.loadText(intentYaml))))
         require(units.map { it.graphDigest }.distinct().size == 1) { "Equivalent frontends changed the canonical graph." }
         units.forEach { unit ->
+            val system = unit.ast.flow.systems.single { it.name == "target" }
+            val count = system.config["count"] as? NumberLiteralNode
+            require(system.systemType == "remote" && count != null && count.value == 12.0 && count.isInteger) {
+                "The typed authored system value was dropped, coerced or changed."
+            }
             require(unit.ast.imports.contains(ModuleImportNode(name = "typed", version = "2.3"))) {
                 "System identity lost its actual module/version owner."
             }
@@ -103,7 +117,7 @@ internal class LanguageIntegrityIntegrationChecks {
                     { CanonicalModuleLoader.loadFile(file) }).forEach { load ->
                     val error = runCatching(load).exceptionOrNull()
                     require(error is CanonicalModuleLoader.ContractException && path in error.message.orEmpty() &&
-                        file.path in error.message.orEmpty()) { "Invalid schema crossed its public loader: $error" }
+                        file.path in error.message.orEmpty()) { "Invalid schema ${file.path}$path crossed its public loader: $error" }
                 }
             }
         }

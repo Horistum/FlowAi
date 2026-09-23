@@ -12,7 +12,7 @@ class SystemContractIdentityLifecycleTests {
         val historical = records(current.integrityWorkPackage["implementationSlices"]).map { slice -> when (slice["id"]) {
             "AR-04C" -> slice + mapOf("status" to "implemented", "acceptance" to mapOf(
                 "source" to "current-revision-ci", "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
-            "AR-04D", "AR-04E" -> (slice - "acceptance") + ("status" to "planned")
+            "AR-04D", "AR-04E", "AR-04F" -> (slice - "acceptance") + ("status" to "planned")
             else -> slice
         } }
         return current.copy(integrityWorkPackage = current.integrityWorkPackage + mapOf(

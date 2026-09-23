@@ -43,6 +43,12 @@ checks the expected failure boundary. A rejected compiler result cannot expose
 an accepted compilation unit for planning/materialization. Additional integration
 tests exercise reuse after failures and the real CLI output directory boundary.
 
+Fixture conversion explicitly preserves null-valued fields and verifies a map
+round trip. The artifact serializer omits optional nulls, so using it unchanged
+would silently remove an invalid authored `default: null` from the JSON mutant.
+The exact conformance inventory includes all seven new checks, and historical
+lifecycle scenarios explicitly reset F to planned when replaying earlier phases.
+
 The review found a concrete diagnostic mismatch: `FlowYamlException` inherited
 directly from `RuntimeException`, so malformed YAML reached the CLI's internal
 error branch, while the corresponding JSON parser exception already represented
