@@ -75,6 +75,7 @@ org/flowlang/conformance/InfrastructureLifecycleFalsification.kt
 org/flowlang/conformance/IntentSafetyChecks.kt
 org/flowlang/conformance/JsonSchemaSmokeValidator.kt
 org/flowlang/conformance/LanguageContractIntegrityLifecycle.kt
+org/flowlang/conformance/LanguageIntegrityCompletion.kt
 org/flowlang/conformance/LanguageIntegrityIntegrationChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyConformanceChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyContracts.kt
