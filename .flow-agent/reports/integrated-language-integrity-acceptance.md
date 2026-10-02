@@ -1,5 +1,43 @@
 # Horistum integrated language integrity acceptance
 
+## Current bounded correction: Intent source types
+
+Inspection of main `b7e53bc16849ac0e59cbf5cf0e86c3d2696c2157` found a
+remaining normalization defect after PR #187. Strict token parsing preserved
+`null` and quoted text, but `IntentYamlLoader` then interpreted explicit null
+as an absent field and converted quoted booleans into boolean values. For
+example, `policies: null` became an empty policy list, `failure: null` became
+the default failure policy and `stopOnError: "false"` became `false`.
+
+`AR-04F-INPUT-TYPES` corrects this map-to-model boundary in its existing owner.
+Absent optional fields retain their documented defaults. Authored null at a
+non-nullable field now reports `INTENT_FIELD_TYPE_MISMATCH` with its exact source
+and path. Quoted booleans report `INVALID_INTENT_BOOLEAN`. Explicitly nullable
+metadata remains accepted, and null inside `IntentValue` still becomes
+`IntentNull`, including defaults and nested values. The published Intent 2.0
+schema already rejects the corrected malformed forms; no schema or version
+change is needed. Scalar-to-list source shorthand is outside this correction.
+
+The regression matrix covers 35 non-nullable paths through both map entry
+points and the legacy and adapter-facing YAML/JSON text and file loaders.
+It also covers four boolean fields, omitted and empty counterparts, nullable
+metadata, and nested null data. Installed conformance compiles positive
+counterparts and rejects null/coercion mutants at source capture, before AST
+construction. The existing malformed-document probe now checks the expected
+exception type and, for model validation, exact code, path and source.
+CLI regressions prove rejection publishes no new artifacts and preserves every
+byte of a previously accepted output directory.
+
+Historical PR #187 Flow CI `35804817305` and post-merge Flow CI `35807790103`
+both succeeded. Those runs establish the inspected baseline, not validation
+of this correction. The archived PR exact-head JUnit report was inspected:
+1,728 unique tests in 304 suites, with zero failures, errors or skips. Its
+archive SHA-256 is
+`3cf5c98ff5e676de3910d91690e9a73740383813248827d7a28c6938382bf852`.
+Current Kotlin validation is required through the existing exact-head,
+synthetic-merge and physical-isolation CI checks. The complete AR-04 finding
+closure remains pending; this correction does not accept its own future CI.
+
 ## Baseline and architectural decision
 
 The inspected main is `f1071f389111e1c406a82c46ead45187f2fc3948`, complete tree

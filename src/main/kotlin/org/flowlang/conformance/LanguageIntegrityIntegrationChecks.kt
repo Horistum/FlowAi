@@ -13,10 +13,12 @@ import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
 import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.frontend.source.FlowSourceFrontend
 import org.flowlang.intent.IntentDocument
+import org.flowlang.intent.IntentSourceException
 import org.flowlang.intent.IntentYamlLoader
 import org.flowlang.modules.*
 import org.flowlang.parser.DuplicateDeclarationException
 import org.flowlang.serialization.FlowYaml
+import org.flowlang.serialization.FlowYamlException
 import org.flowlang.cli.Json
 
 /** Composed public boundaries: every rejection has a successfully compiled counterpart. */
@@ -197,8 +199,35 @@ internal class LanguageIntegrityIntegrationChecks {
             val file = File(directory, "malformed-$index.yaml").apply { writeText(text) }
             listOf<() -> Any>({ frontend.compileText(text, file.path) }, { frontend.compile(file) }).forEach { compile ->
                 val error = runCatching(compile).exceptionOrNull()
-                require(error != null && file.path in error.message.orEmpty()) {
+                val expected = if (index == 1 || index == 5) {
+                    error is IntentSourceException && error.code == "UNKNOWN_INTENT_FIELD" &&
+                        error.path == "$" && error.sourceName == file.path
+                } else error is FlowYamlException
+                require(expected && file.path in error?.message.orEmpty()) {
                     "Malformed input must fail at capture with source provenance; observed $error."
+                }
+            }
+        }
+        // Map normalization is a second type boundary after strict token parsing.
+        // A parser accepting a null token must not turn it into omitted meaning.
+        val typedMutants = listOf(
+            Triple(intentYaml + "\npolicies: null", "INTENT_FIELD_TYPE_MISMATCH", "$.policies"),
+            Triple(intentYaml + "\nfailure: null", "INTENT_FIELD_TYPE_MISMATCH", "$.failure"),
+            Triple(intentYaml + "\nkind: null", "INTENT_FIELD_TYPE_MISMATCH", "$.kind"),
+            Triple(intentYaml + "\nfailure: {stopOnError: null}", "INTENT_FIELD_TYPE_MISMATCH", "$.failure.stopOnError"),
+            Triple(intentYaml + "\nfailure: {stopOnError: 'false'}", "INVALID_INTENT_BOOLEAN", "$.failure.stopOnError"))
+        listOf(intentYaml + "\npolicies: []", intentYaml + "\nfailure: {stopOnError: true}",
+            intentYaml + "\nkind: FlowIntentDocument", intentYaml + "\ndescription: null").forEach { positive ->
+            accepted(frontend.compileText(positive))
+            accepted(frontend.compileText(json(positive)))
+        }
+        typedMutants.forEachIndexed { index, (source, code, path) ->
+            listOf(source, json(source)).forEachIndexed { format, text ->
+                val file = File(directory, "typed-malformed-$index-$format.yaml").apply { writeText(text) }
+                listOf<() -> Any>({ frontend.compileText(text, file.path) }, { frontend.compile(file) }).forEach { compile ->
+                    val error = runCatching(compile).exceptionOrNull()
+                    require(error is IntentSourceException && error.code == code && error.path == path &&
+                        error.sourceName == file.path) { "Expected $code at $path in ${file.path}; observed $error." }
                 }
             }
         }

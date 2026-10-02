@@ -4,6 +4,14 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### AR-04F Intent Source Type Integrity
+
+- Rejected explicit null in non-nullable Intent fields before defaults or empty collections can erase authored meaning.
+- Removed quoted-boolean coercion at the map-to-Intent boundary while preserving omission defaults, nullable metadata and explicit null data values.
+- Added a 35-path YAML/JSON, file/text and map-entry regression matrix, boolean polarity coverage and CLI output preservation checks.
+- Strengthened installed integrated conformance to require the expected rejection type, code, path and source rather than any exception.
+- Kept Intent 2.0 and existing support claims unchanged; the malformed forms already violate the public schema. Whole-AR-04 acceptance remains pending.
+
 ### AR-02D First-Class Workflow Failure Semantics
 
 #### Added

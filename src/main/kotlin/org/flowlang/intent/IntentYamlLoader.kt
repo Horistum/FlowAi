@@ -44,7 +44,7 @@ object IntentYamlLoader {
             intentVersion = intentVersion,
             kind = kind,
             name = name,
-            description = root.optionalString("description", "$.description", sourceName),
+            description = root.optionalString("description", "$.description", sourceName, nullable = true),
             inputs = root.objectList("inputs", "$.inputs", sourceName).mapIndexed { index, value -> value.toIntentInput("$.inputs[$index]", sourceName) },
             systems = root.objectList("systems", "$.systems", sourceName).mapIndexed { index, value -> value.toIntentSystem("$.systems[$index]", sourceName) },
             triggers = root.objectList("triggers", "$.triggers", sourceName).mapIndexed { index, value -> value.toIntentTrigger("$.triggers[$index]", sourceName) },
@@ -79,7 +79,7 @@ object IntentYamlLoader {
         return IntentSystem(
             name = name,
             type = type,
-            purpose = optionalString("purpose", "$path.purpose", source),
+            purpose = optionalString("purpose", "$path.purpose", source, nullable = true),
             config = nested + inline
         )
     }
@@ -93,7 +93,7 @@ object IntentYamlLoader {
             IntentSchedule(
                 kind = strictEnum(raw.requiredString("kind", "$path.schedule.kind", source), "UNKNOWN_SCHEDULE_KIND", "$path.schedule.kind", source),
                 expression = raw.requiredString("expression", "$path.schedule.expression", source),
-                timezone = raw.optionalString("timezone", "$path.schedule.timezone", source)
+                timezone = raw.optionalString("timezone", "$path.schedule.timezone", source, nullable = true)
             )
         }
         return IntentTrigger(
@@ -105,7 +105,7 @@ object IntentYamlLoader {
                 listOf("main")
             },
             schedule = schedule,
-            event = optionalString("event", "$path.event", source),
+            event = optionalString("event", "$path.event", source, nullable = true),
             params = optionalObject("params", "$path.params", source).orEmpty()
                 .mapValues { (key, value) -> value.toIntentValue("$path.params.$key", source) }
         )
@@ -127,8 +127,8 @@ object IntentYamlLoader {
         return IntentStep(
             id = id,
             capability = strictCapability(optionalString("capability", "$path.capability", source) ?: "CUSTOM", id, "$path.capability", source),
-            description = optionalString("description", "$path.description", source),
-            uses = optionalString("uses", "$path.uses", source),
+            description = optionalString("description", "$path.description", source, nullable = true),
+            uses = optionalString("uses", "$path.uses", source, nullable = true),
             requires = stringList("requires", "$path.requires", source),
             produces = stringList("produces", "$path.produces", source),
             params = optionalObject("params", "$path.params", source).orEmpty()
@@ -142,8 +142,8 @@ object IntentYamlLoader {
         return IntentPolicy(
             name = name,
             type = strictEnum(optionalString("type", "$path.type", source) ?: "CUSTOM", "UNKNOWN_POLICY_TYPE", "$path.type", source),
-            condition = optionalString("condition", "$path.condition", source),
-            message = optionalString("message", "$path.message", source)
+            condition = optionalString("condition", "$path.condition", source, nullable = true),
+            message = optionalString("message", "$path.message", source, nullable = true)
         )
     }
 
@@ -207,26 +207,24 @@ object IntentYamlLoader {
     private fun Map<String, Any?>.requiredString(key: String, path: String, source: String): String =
         optionalString(key, path, source) ?: fail("MISSING_REQUIRED_INTENT_FIELD", path, source, "Required string field '$key' is missing.")
 
-    private fun Map<String, Any?>.optionalString(key: String, path: String, source: String): String? = when (val value = this[key]) {
-        null -> null
+    private fun Map<String, Any?>.optionalString(
+        key: String, path: String, source: String, nullable: Boolean = false
+    ): String? = when (val value = this[key]) {
+        null -> if (nullable || !containsKey(key)) null else nullField(path, source, "a string")
         is String -> value
         else -> fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected a string but found ${value::class.simpleName}.")
     }
 
     private fun Map<String, Any?>.optionalBoolean(key: String, path: String, source: String): Boolean? = when (val value = this[key]) {
-        null -> null
+        null -> if (!containsKey(key)) null else nullField(path, source, "a boolean")
         is Boolean -> value
-        is String -> when (value.trim().lowercase()) {
-            "true" -> true
-            "false" -> false
-            else -> fail("INVALID_INTENT_BOOLEAN", path, source, "Expected true or false but found '$value'.")
-        }
+        is String -> fail("INVALID_INTENT_BOOLEAN", path, source, "Expected a boolean, not quoted text '$value'.")
         else -> fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected a boolean but found ${value::class.simpleName}.")
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun Map<String, Any?>.optionalObject(key: String, path: String, source: String): Map<String, Any?>? = when (val value = this[key]) {
-        null -> null
+        null -> if (!containsKey(key)) null else nullField(path, source, "an object")
         is Map<*, *> -> {
             if (value.keys.any { it !is String }) fail("NON_STRING_OBJECT_KEY", path, source, "Object keys must be strings.")
             value as Map<String, Any?>
@@ -236,7 +234,7 @@ object IntentYamlLoader {
 
     @Suppress("UNCHECKED_CAST")
     private fun Map<String, Any?>.objectList(key: String, path: String, source: String): List<Map<String, Any?>> = when (val value = this[key]) {
-        null -> emptyList()
+        null -> if (!containsKey(key)) emptyList() else nullField(path, source, "a list of objects")
         is List<*> -> value.mapIndexed { index, item ->
             val map = item as? Map<*, *> ?: fail("INTENT_LIST_ITEM_TYPE_MISMATCH", "$path[$index]", source, "Expected an object.")
             if (map.keys.any { it !is String }) fail("NON_STRING_OBJECT_KEY", "$path[$index]", source, "Object keys must be strings.")
@@ -246,13 +244,18 @@ object IntentYamlLoader {
     }
 
     private fun Map<String, Any?>.stringList(key: String, path: String, source: String): List<String> = when (val value = this[key]) {
-        null -> emptyList()
+        null -> if (!containsKey(key)) emptyList() else nullField(path, source, "a string or list of strings")
         is String -> listOf(value)
         is List<*> -> value.mapIndexed { index, item ->
             item as? String ?: fail("INTENT_LIST_ITEM_TYPE_MISMATCH", "$path[$index]", source, "Expected a string.")
         }
         else -> fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected a string or list of strings but found ${value::class.simpleName}.")
     }
+
+    // Absence may select a documented default. Authored null is a value and may
+    // only cross fields whose contract explicitly permits it (including IntentValue).
+    private fun nullField(path: String, source: String, expected: String): Nothing =
+        fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected $expected but found null; explicit null is not allowed for this field.")
 
     private fun strictCapability(value: String, stepId: String, path: String, source: String): StandardCapability {
         val normalized = normalizeEnum(value)
