@@ -4,7 +4,7 @@ import java.io.File
 
 /** Replays accepted implementation before milestone closure; evidence documents remain untouched. */
 internal fun languageIntegrityImplementationSnapshot(
-    current: WorkflowSemanticsRecoveryLifecycleSnapshot = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    current: WorkflowSemanticsRecoveryLifecycleSnapshot = languageIntegrityCompletedSnapshot()
 ): WorkflowSemanticsRecoveryLifecycleSnapshot {
     fun section(value: Any?): Map<String, Any?> = (value as Map<*, *>).entries.associate { it.key.toString() to it.value }
     fun records(value: Any?) = (value as List<*>).map(::section)
@@ -48,4 +48,25 @@ internal fun languageIntegrityImplementationSnapshot(
                 "acceptedMain" to modules["mainCommit"], "workflowRunId" to modules["workflowRunId"],
                 "successorCandidate" to "AR-04", "candidateValidation" to "current-revision-ci-required"))
     )
+}
+
+/** The completed AR-04 context is independent of later active milestone pointers. */
+internal fun languageIntegrityCompletedSnapshot(
+    current: WorkflowSemanticsRecoveryLifecycleSnapshot = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+): WorkflowSemanticsRecoveryLifecycleSnapshot {
+    fun section(value: Any?): Map<String, Any?> = (value as Map<*, *>).entries.associate { it.key.toString() to it.value }
+    fun records(value: Any?) = (value as List<*>).map(::section)
+    val path = LanguageContractIntegrityLifecycle.WORK_PACKAGE
+    return current.copy(
+        recovery = current.recovery + mapOf(
+            "currentDecision" to (section(current.recovery["currentDecision"]) + mapOf("activationState" to "not-activated", "workPackage" to path)),
+            "milestones" to records(current.recovery["milestones"]).map { if (it["id"] == "AR-05") it + ("status" to "planned") else it }),
+        postToolchain = current.postToolchain + mapOf(
+            "currentDecision" to (section(current.postToolchain["currentDecision"]) + mapOf("activationState" to "not-activated", "workPackage" to path)),
+            "recoveryRoadmap" to (section(current.postToolchain["recoveryRoadmap"]) + mapOf(
+                "activeItem" to "", "activeWorkPackage" to "", "activationState" to "not-activated")),
+            "sequence" to records(current.postToolchain["sequence"]).map { if (it["id"] == "ARCHITECTURE-RECOVERY")
+                it + mapOf("activeItem" to "", "activationState" to "not-activated", "workPackage" to path) else it }),
+        release = current.release + ("roadmapState" to (section(current.release["roadmapState"]) + mapOf(
+            "activeRecoveryWorkPackage" to "", "nextRecoveryActivationState" to "not-activated"))))
 }

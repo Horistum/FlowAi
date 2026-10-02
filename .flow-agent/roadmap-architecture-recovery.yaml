@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 12
+revision: 13
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -23,9 +23,9 @@ currentDecision:
   preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
   nextItem: "AR-05"
   nextItemName: "Artifact, Distribution, CLI and I/O Integrity"
-  activationState: "not-activated"
-  workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
-  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. AR-05 is the next planned milestone and is not activated. EF-09 stays paused and F-20 remains AR-07-owned."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A implements typed argument parsing while later artifact and distribution slices remain planned. EF-09 stays paused and F-20 remains AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -199,7 +199,9 @@ milestones:
   - id: "AR-05"
     name: "Artifact, Distribution, CLI and I/O Integrity"
     order: 6
-    status: "planned"
+    status: "active"
+    workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+    report: ".flow-agent/reports/artifact-distribution-cli-io-integrity.md"
     dependsOn: ["AR-03", "AR-04"]
     closesFindings: ["F-03", "F-05", "F-19", "F-22"]
     purpose: "Make the CLI and exported bundles independently installable, bounded against pathological input and verified from actual written bytes."

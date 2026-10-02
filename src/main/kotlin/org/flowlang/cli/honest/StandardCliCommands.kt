@@ -6,7 +6,6 @@ import java.io.File
 import org.flowlang.adapters.maturity.AdapterTargetMaturityPublisher
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.CompatibilityAnalyzer
-import org.flowlang.cli.Json
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.requireAccepted
 import org.flowlang.frontend.source.FlowSourceFrontend
@@ -28,7 +27,7 @@ internal object StandardCliCommands {
         "scenario"
     )
 
-    fun run(command: String, args: List<String>, output: CliOutputCollector) {
+    fun run(command: String, args: CliArguments, output: CliOutputCollector) {
         when (command) {
             "flow" -> runFlow(args, output)
             "catalog" -> runCatalog(args, output)
@@ -40,8 +39,8 @@ internal object StandardCliCommands {
         }
     }
 
-    private fun runFlow(args: List<String>, output: CliOutputCollector) {
-        val source = args.firstOrNull { !it.startsWith("--") }
+    private fun runFlow(args: CliArguments, output: CliOutputCollector) {
+        val source = args.positionals.singleOrNull()
             ?: error("flow requires a source .flow file.")
         val file = File(source)
         require(file.isFile) { "Flow file does not exist: $source" }
@@ -59,8 +58,8 @@ internal object StandardCliCommands {
         output.section("TARGET-NEUTRAL NEGOTIATION REPORT", CompatibilityAnalyzer(targets).negotiate(plan))
     }
 
-    private fun runCatalog(args: List<String>, output: CliOutputCollector) {
-        if ("--markdown" in args) {
+    private fun runCatalog(args: CliArguments, output: CliOutputCollector) {
+        if (args.has(CliFlagOption.MARKDOWN)) {
             output.text(StandardIntentCatalog.markdown())
         } else {
             output.section("FLOW STANDARD INTENT CATALOG", StandardIntentCatalog.definitions)
@@ -84,20 +83,20 @@ internal object StandardCliCommands {
         output.section("FLOW CAPABILITY MODULE CONTRACT REPORT", ModuleContractAnalyzer.analyze(moduleRegistry()))
     }
 
-    private fun runScenarios(args: List<String>, output: CliOutputCollector) {
-        if ("--markdown" in args) {
+    private fun runScenarios(args: CliArguments, output: CliOutputCollector) {
+        if (args.has(CliFlagOption.MARKDOWN)) {
             output.text(ScenarioPackRegistry.markdown())
         } else {
             output.section("FLOW SCENARIO PACKS", ScenarioPackRegistry.jsonReady())
         }
     }
 
-    private fun runScenario(args: List<String>, output: CliOutputCollector) {
-        val id = args.firstOrNull { !it.startsWith("--") }
+    private fun runScenario(args: CliArguments, output: CliOutputCollector) {
+        val id = args.positionals.singleOrNull()
             ?: error("scenario requires a scenario pack id.")
         val pack = ScenarioPackRegistry.packs.firstOrNull { it.definition.id == id }
             ?: error("Unknown scenario pack '$id'. Run 'scenarios' to list available packs.")
-        if ("--examples" in args) {
+        if (args.has(CliFlagOption.EXAMPLES)) {
             output.text("===== SCENARIO EXAMPLES: ${pack.definition.id} =====")
             pack.definition.exampleRequests.forEach { output.text("- $it") }
         } else {
@@ -114,18 +113,4 @@ internal object StandardCliCommands {
         require(it.isNotEmpty()) { "No target registry found under targets." }
     }
 
-    private fun parseOption(args: List<String>, name: String): String? {
-        val index = args.indexOf(name)
-        if (index >= 0) {
-            require(index + 1 < args.size && !args[index + 1].startsWith("--")) { "$name requires a value." }
-            return args[index + 1]
-        }
-        return args.firstOrNull { it.startsWith("$name=") }?.substringAfter('=')?.also {
-            require(it.isNotBlank()) { "$name requires a value." }
-        }
-    }
-
-    private fun writeJson(directory: File, name: String, value: Any) {
-        File(directory, name).writeText(Json.mapper.writeValueAsString(value) + "\n")
-    }
 }

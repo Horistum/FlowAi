@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "main": {
+    "status": "passed",
+    "event": "push",
+    "mergedPullRequest": 190,
+    "mainCommit": "dd048746af6eb1b483538c4809ba5554cceb22a5",
+    "sourceTree": "727c1b1ffa6e796053c23a4b011062a1605332d7",
+    "workflowRunId": 36992890729,
+    "workflowRunNumber": 3305,
+    "exactHeadJobId": 110794898025,
+    "isolationJobId": 110792998983,
+    "kotlinTests": 1748,
+    "toolingTests": 151,
+    "conformanceChecks": 264,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "acceptedPullRequest": {
+    "number": 190,
+    "workflowRunId": 36990947553,
+    "workflowRunNumber": 3304,
+    "base": "22c382b86351c8f7a17be8150ade0833653cce5d",
+    "exactHead": "504132550602f13e671fb6f81cb0d59718a0f629",
+    "syntheticMerge": "ccaa8b627aabbf94beb9c1e73e7b2fedc5ee7c11",
+    "sourceTree": "727c1b1ffa6e796053c23a4b011062a1605332d7",
+    "exactHeadJobId": 110788750380,
+    "mergeCandidateJobId": 110788750375
+  },
+  "junit": {
+    "tests": 1748,
+    "suites": 306,
+    "identitiesSha256": "bcf478ea3c1fbc7d73b68b7407a8e8242827c7114acfe78e3e9293b44a7ab614"
+  },
+  "conformance": {
+    "passed": 264,
+    "failed": 0,
+    "orderedIdentitiesSha256": "bb8bc361d8d989a8c106ec8b1218e4a10e46ab62dec6c647278992ccb1f978b5"
+  },
+  "allThreeCandidateAndMainInventoriesIdentical": true,
+  "physicalIsolation": {
+    "receipt": {
+      "revision": "dd048746af6eb1b483538c4809ba5554cceb22a5",
+      "tree": "727c1b1ffa6e796053c23a4b011062a1605332d7",
+      "covers": "exact-head",
+      "run": "36992890729",
+      "attempt": "1"
+    },
+    "inputCounts": {
+      "adapter-isolation/proof.json": 215,
+      "compiler-isolation/proof.json": 95,
+      "kernel-isolation/proof.json": 19,
+      "product-isolation/proof.json": 284
+    },
+    "allListedInputsMatchSourceTree": true
+  },
+  "artifacts": [
+    {
+      "id": 11221097845,
+      "sha256": "2826f651eb4ee68d2f040d8a598b752a2e47a14174f13c75a814bd68994e257d"
+    },
+    {
+      "id": 11221152606,
+      "sha256": "17fb61787ef87ad91367367a2c0ddb1f1f6cd1baecb4ffaaa0f08157df75840a"
+    },
+    {
+      "id": 11220033917,
+      "sha256": "c6a0aa65bb11793d2878853c90a9f7b54e27e41925033dd5a2afd50c8739caa6"
+    }
+  ]
+}

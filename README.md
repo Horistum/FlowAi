@@ -180,6 +180,8 @@ Export conformance artifacts:
 ./gradlew run --args="conformance --out generated/conformance"
 ```
 
+CLI argument syntax and strict validation rules are documented in [Typed CLI argument parsing](docs/migrations/ar-05a-cli-arguments.md).
+
 Render a Jenkins artifact bundle from an intent file:
 
 ```bash

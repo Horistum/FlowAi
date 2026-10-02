@@ -5,6 +5,9 @@ import kotlin.system.exitProcess
 import org.flowlang.artifacts.StandardReleaseProfile
 import org.flowlang.cli.Json
 import org.flowlang.cli.honest.CliArtifact
+import org.flowlang.cli.honest.CliArguments
+import org.flowlang.cli.honest.CliArgumentSchema
+import org.flowlang.cli.honest.CliValueOption
 import org.flowlang.cli.honest.CliArtifactRole
 import org.flowlang.cli.honest.CliCommandCatalog
 import org.flowlang.cli.honest.CliCommandHandler
@@ -33,32 +36,40 @@ fun executeVerificationCli(args: Array<String>): CliExecutionResult = executeCli
 
 object VerificationCommands {
     val catalog: CliCommandCatalog = CliCommandCatalog.of(
-        "conformance" to command { args, output ->
+        "conformance" to command("conformance") { args, output ->
             runConformance(args, output)
             CliExecutionResult.Completed(output.snapshot())
         },
-        "reference-snapshot" to command { args, output ->
+        "reference-snapshot" to command("reference-snapshot") { args, output ->
             runReferenceSnapshot(args, output)
             CliExecutionResult.Completed(output.snapshot())
         },
-        "release-profile" to command(::runReleaseProfileCommand),
-        "standard-draft" to command(::runStandardDraftCommand),
-        "standard-export" to command(::runStandardExportCommand)
+        "release-profile" to command("release-profile", ::runReleaseProfileCommand),
+        "standard-draft" to command("standard-draft", ::runStandardDraftCommand),
+        "standard-export" to command("standard-export", ::runStandardExportCommand)
     )
 
-    private fun command(action: (List<String>, CliOutput) -> CliExecutionResult): CliCommandHandler =
-        CliCommandHandler { args, output -> action(args, output) }
+    private val outputSchema = CliArgumentSchema(setOf(CliValueOption.OUT))
+    private val snapshotSchema = CliArgumentSchema(
+        setOf(CliValueOption.OUT, CliValueOption.INTENT, CliValueOption.SCENARIO_ID, CliValueOption.TARGETS),
+        maxPositionals = 1, positionalAlternative = CliValueOption.INTENT)
+
+    private fun command(name: String, action: (CliArguments, CliOutput) -> CliExecutionResult): CliCommandHandler =
+        CliCommandHandler { args, output ->
+            val schema = if (name == "reference-snapshot") snapshotSchema else outputSchema
+            action(schema.parse(name, args), output)
+        }
 }
 
 private fun runReleaseProfileCommand(
-    args: List<String>,
+    args: CliArguments,
     output: CliOutput
 ): CliExecutionResult {
     val profile = StandardReleaseProfile.report()
     val honesty = ReleaseMetadataHonestyAuthority().requireValid()
     output.section("FLOW STANDARD RELEASE PROFILE", profile)
     output.section("RELEASE METADATA HONESTY REPORT", honesty)
-    val persisted = parseOption(args, "--out")?.let { out ->
+    val persisted = args.value(CliValueOption.OUT)?.let { out ->
         val directory = File(out)
         require(directory.mkdirs() || directory.isDirectory)
         File(directory, "standard-release-profile.json").writeText(Json.mapper.writeValueAsString(profile) + "\n")
@@ -75,11 +86,11 @@ private fun runReleaseProfileCommand(
 }
 
 private fun runStandardDraftCommand(
-    args: List<String>,
+    args: CliArguments,
     output: CliOutput
 ): CliExecutionResult {
     val authority = StandardReleaseAssemblyAuthority()
-    val destination = parseOption(args, "--out")
+    val destination = args.value(CliValueOption.OUT)
     val assembly = if (destination == null) authority.assemble() else authority.writeValidatedDraft(File(destination))
     output.section("FLOW STANDARD DRAFT", assembly.artifacts.getValue("flow-standard-draft.json"))
     return CliExecutionResult.Completed(
@@ -89,11 +100,11 @@ private fun runStandardDraftCommand(
 }
 
 private fun runStandardExportCommand(
-    args: List<String>,
+    args: CliArguments,
     output: CliOutput
 ): CliExecutionResult {
     val destination = File(
-        parseOption(args, "--out")
+        args.value(CliValueOption.OUT)
             ?: "dist/flow-standard-${FlowStandardVersions.FLOW_STANDARD_VERSION}"
     )
     val verification = StandardReleaseAssemblyAuthority().publishValidatedBundle(destination)
@@ -106,7 +117,7 @@ private fun runStandardExportCommand(
     )
 }
 
-private fun runConformance(args: List<String>, output: CliOutput) {
+private fun runConformance(args: CliArguments, output: CliOutput) {
     val summary = ConformanceRunner().run()
     val manifest = ConformanceManifestBuilder().build(summary)
     val vectorIndex = ConformanceVectorIndexBuilder().build(
@@ -115,7 +126,7 @@ private fun runConformance(args: List<String>, output: CliOutput) {
     )
     output.section("FLOW CONFORMANCE REPORT", summary)
     output.section("FLOW CONFORMANCE MANIFEST", manifest)
-    parseOption(args, "--out")?.let { out ->
+    args.value(CliValueOption.OUT)?.let { out ->
         val directory = File(out)
         require(directory.mkdirs() || directory.isDirectory)
         writeJson(directory, "conformance-manifest.json", manifest)
@@ -125,14 +136,13 @@ private fun runConformance(args: List<String>, output: CliOutput) {
     require(summary.ok) { "Flow conformance failed." }
 }
 
-private fun runReferenceSnapshot(args: List<String>, output: CliOutput) {
-    val source = parseOption(args, "--intent")
-        ?: args.firstOrNull { !it.startsWith("--") }
+private fun runReferenceSnapshot(args: CliArguments, output: CliOutput) {
+    val source = args.source(CliValueOption.INTENT)
         ?: "examples/intent/build-test-deploy.intent.yaml"
-    val outputPath = parseOption(args, "--out") ?: "conformance/snapshots/build-test-deploy"
-    val scenarioId = parseOption(args, "--scenario-id")
+    val outputPath = args.value(CliValueOption.OUT) ?: "conformance/snapshots/build-test-deploy"
+    val scenarioId = args.value(CliValueOption.SCENARIO_ID)
         ?: File(source).nameWithoutExtension.removeSuffix(".intent")
-    val targets = parseOption(args, "--targets")
+    val targets = args.value(CliValueOption.TARGETS)
         ?.split(',')
         ?.map(String::trim)
         ?.filter(String::isNotEmpty)
@@ -149,17 +159,6 @@ private fun runReferenceSnapshot(args: List<String>, output: CliOutput) {
     output.text(File(outputPath).absolutePath)
 }
 
-
-private fun parseOption(args: List<String>, name: String): String? {
-    val index = args.indexOf(name)
-    if (index >= 0) {
-        require(index + 1 < args.size && !args[index + 1].startsWith("--")) { "$name requires a value." }
-        return args[index + 1]
-    }
-    return args.firstOrNull { it.startsWith("$name=") }?.substringAfter('=')?.also {
-        require(it.isNotBlank()) { "$name requires a value." }
-    }
-}
 
 private fun writeJson(directory: File, name: String, value: Any) {
     File(directory, name).writeText(Json.mapper.writeValueAsString(value) + "\n")

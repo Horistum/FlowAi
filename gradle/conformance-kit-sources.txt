@@ -35,12 +35,14 @@ org/flowlang/conformance/AdapterTopologyConformanceChecks.kt
 org/flowlang/conformance/AdapterTriggerConformanceChecks.kt
 org/flowlang/conformance/ArchitectureCoherenceChecks.kt
 org/flowlang/conformance/ArchitectureRecoveryConformanceChecks.kt
+org/flowlang/conformance/ArtifactIntegrityLifecycle.kt
 org/flowlang/conformance/BackupRestoreBaseline.kt
 org/flowlang/conformance/BackupRestoreFalsification.kt
 org/flowlang/conformance/BoundedDomainCorpusRoadmapLifecycleAuthority.kt
 org/flowlang/conformance/CanonicalExecutionPlanKindConformanceOracle.kt
 org/flowlang/conformance/CertificateLifecycleBaseline.kt
 org/flowlang/conformance/CertificateLifecycleFalsification.kt
+org/flowlang/conformance/CliArgumentIntegrityChecks.kt
 org/flowlang/conformance/CliReleaseHonestyChecks.kt
 org/flowlang/conformance/ClosureBlockingIntegrityChecks.kt
 org/flowlang/conformance/ClosureEvidenceBoundaryChecks.kt

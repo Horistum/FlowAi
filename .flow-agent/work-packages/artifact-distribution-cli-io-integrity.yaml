@@ -1,0 +1,108 @@
+version: "AR-05"
+name: "Artifact, Distribution, CLI and I/O Integrity"
+type: "architecture-recovery-artifact-integrity"
+status: active
+stream: "architecture-recovery"
+objective: "Make installed CLI inputs unambiguous and bounded, resolve packaged contracts independently of the checkout, and publish artifacts only after validating actual written bytes."
+authorization:
+  status: active
+  predecessor: "AR-04"
+  strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-05"
+  rule: "Maintainer explicitly authorizes AR-05. Its accepted AR-04 baseline is immutable; each implementation slice requires its own exact-head and synthetic-merge CI."
+selectedSlice: "AR-05A"
+nextSlice: "AR-05B"
+implementationSlices:
+  - id: "AR-05A"
+    name: "Typed CLI argument parsing"
+    status: implemented
+    ownsFindings: ["F-19"]
+    acceptance:
+      source: current-revision-ci
+      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  - id: "AR-05B"
+    name: "Packaged contract resources and relocatable distributions"
+    status: planned
+    ownsFindings: ["F-05"]
+  - id: "AR-05C"
+    name: "Central input and output limits"
+    status: planned
+    ownsFindings: ["F-22"]
+  - id: "AR-05D"
+    name: "Atomic artifact publication and actual-byte receipts"
+    status: planned
+    ownsFindings: ["F-03", "F-22"]
+  - id: "AR-05E"
+    name: "Integrated installed-product integrity and independent closure"
+    status: planned
+    ownsFindings: ["F-03", "F-05", "F-19", "F-22"]
+completionDecision:
+  status: not-complete
+  closesFindings: []
+  remainingFindings: ["F-03", "F-05", "F-19", "F-22"]
+  nextItem: "AR-06"
+  nextItemActivationState: not-activated
+architecturePurpose: "Keep argument syntax in flow-cli, with both product and verification hosts consuming the same parser and command-specific schemas. Parsing completes before file reads, report generation or output writes."
+universalInvariant: "An option value never becomes a positional source. Every argument is consumed exactly once or rejected with CLI_INVALID_INPUT before command side effects."
+scope:
+  include:
+    - "One typed flag/value parser with command-specific allowed options and positional bounds."
+    - "Both --name value and --name=value, interspersed options and the -- end-of-options delimiter."
+    - "Reject unknown, duplicate, empty, missing, conflicting and surplus arguments."
+    - "Migrate every built-in product and verification command; preserve the explicit custom-command composition port."
+  exclude:
+    - "No packaged-resource, default-source, artifact-format or atomic-publication changes in AR-05A."
+    - "No milestone finding closure, AR-06/AR-07 activation or EF-09 resumption."
+expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/cli/honest/"
+  - "src/main/kotlin/org/flowlang/verification/VerificationCli.kt"
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
+  - "src/main/kotlin/org/flowlang/cli/honest/StandardCliCommands.kt"
+  - "src/main/kotlin/org/flowlang/verification/VerificationCli.kt"
+  - "gradle/cli-sources.txt"
+expectedFilesToAdd:
+  - "src/main/kotlin/org/flowlang/cli/honest/CliArguments.kt"
+testsToAddOrUpdate:
+  - "Parser matrices for order, option syntax, delimiter, malformed input and immutable results."
+  - "Both-host end-to-end source selection, normalization text retention and no-write rejection."
+  - "AR-05 activation, immutable predecessor and later-milestone boundary regressions."
+conformanceToAddOrUpdate:
+  - "Append CLI argument behavior checks to Architecture Recovery without modifying frozen inventories."
+documentationToUpdate:
+  - "Document supported command options and strict argument migration."
+validationPlan:
+  - "Inspect actual PR #190 and merged-main validation artifacts before admitting the baseline."
+  - "Run all Python tooling tests, structure validation and context generation."
+  - "Run existing Flow CI with physical module isolation, complete tests and installed conformance on exact head and synthetic merge."
+  - "Compare test identities and conformance ordering with the accepted predecessor."
+
+lifecycle:
+  activationBoundary:
+    status: authorized
+    source: maintainer-request
+    validation: current-revision-ci-required
+  implementationBoundary:
+    status: pending
+  validationBoundary:
+    status: pending
+  completionBoundary:
+    status: pending
+
+verifiedBaseline:
+  status: passed
+  event: push
+  mergedPullRequest: 190
+  mainCommit: dd048746af6eb1b483538c4809ba5554cceb22a5
+  sourceTree: 727c1b1ffa6e796053c23a4b011062a1605332d7
+  workflowRunId: 36992890729
+  workflowRunNumber: 3305
+  exactHeadJobId: 110794898025
+  isolationJobId: 110792998983
+  kotlinTests: 1748
+  toolingTests: 151
+  conformanceChecks: 264
+  failures: 0
+  errors: 0
+  skipped: 0
+  evidence: .flow-agent/evidence/artifact-integrity-activation-baseline.json
+  evidenceSha256: 28ee22ce6c628ca8166bd8a3dc70bf05f3b1579487287b61ea01a529f6afd5af
