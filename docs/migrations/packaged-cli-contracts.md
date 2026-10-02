@@ -50,8 +50,7 @@ The existing physical product isolation gate builds both distribution forms with
 verification classes, relocates them to paths containing spaces, verifies resource
 bytes, deletes the staged resource inputs, and runs them from empty and misleading
 directories. It covers provenance, registries, default and authored intent, Flow source,
-normalization including production-sensitive maintenance, explicit overrides, rejected incomplete overrides, and executable
-Jenkins/GitHub Actions artifacts. Target maturity must remain `PASS`, and output must
+normalization including production-sensitive maintenance, explicit overrides, rejected incomplete overrides, an executable Jenkinsfile and the existing review-only GitHub Actions evidence. Target maturity must remain `PASS`, and output must
 be identical across both distribution forms and working-directory variants.
 
 Repository verification commands in the separate verification launcher still consume

@@ -69,7 +69,7 @@ real adapter rendering. The product isolation proof stages resource inputs outsi
 compilation roots, builds both distribution forms, compares their bytes, relocates them,
 deletes staged inputs and exercises 44 actual process invocations across empty and
 misleading working directories. Every selected hash and target maturity is checked;
-Jenkins and GitHub Actions must produce executable artifacts. Two appended conformance
+Jenkins must produce executable syntax; the existing GitHub Actions CLI scenario must remain review-only with exit 3 and no executable workflow. Two appended conformance
 checks exercise packaged byte provenance and fail-closed incomplete overrides.
 
 Local tooling and structural validation precede CI. Complete Kotlin, isolation and

@@ -55,7 +55,7 @@ def sections(stdout: str) -> dict:
     titles = parts[1::2]
     if len(titles) != len(set(titles)):
         raise ValueError("Duplicate CLI section.")
-    return {parts[i]: parts[i + 1] if parts[i].startswith("RENDERED EXECUTABLE TARGET OUTPUT: ")
+    return {parts[i]: parts[i + 1] if parts[i].startswith(("RENDERED EXECUTABLE TARGET OUTPUT: ", "RENDERED NON-EXECUTABLE REVIEW EVIDENCE: "))
             else json.loads(parts[i + 1]) for i in range(1, len(parts), 2)}
 
 
@@ -120,7 +120,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                          ("external", ["resources", "--contracts", str(external)], 0),
                          ("missing-external", ["intent", "--contracts", str(invalid), "--out", "forbidden"], 2)]
                 for target in ("jenkins", "github-actions"):
-                    cases.append((target, ["intent", str(authored), "--target", target, "--render", "--out", target], 0))
+                    cases.append((target, ["intent", str(authored), "--target", target, "--render", "--out", target], 0 if target == "jenkins" else 3))
                 for name, args, exit_code in cases:
                     result = subprocess.run(["bash", str(distribution / "bin/flow-core"), *args], cwd=cwd,
                                             capture_output=True, text=True, check=False, timeout=60)
@@ -143,10 +143,17 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                     if name == "missing-external" and ((cwd / "forbidden").exists() or "CLI_INVALID_INPUT" not in result.stdout):
                         raise ValueError("Incomplete override was not rejected before output writes.")
                     if name in ("jenkins", "github-actions"):
-                        artifact = cwd / name / ("Jenkinsfile" if name == "jenkins" else "github-actions.yml")
+                        executable = name == "jenkins"
+                        artifact = cwd / name / ("Jenkinsfile" if executable else "flow-github-actions-review.yaml")
                         if not artifact.is_file():
                             raise ValueError(f"Relocated {name} did not produce its executable artifact.")
-                        displayed = document[f"RENDERED EXECUTABLE TARGET OUTPUT: {artifact.name}"].removesuffix("\n")
+                        title = "RENDERED EXECUTABLE TARGET OUTPUT" if executable else "RENDERED NON-EXECUTABLE REVIEW EVIDENCE"
+                        outcome = document["CLI TARGET OUTCOME"]
+                        if outcome["outcome"] != ("EXECUTABLE" if executable else "REVIEW_ONLY") or outcome["renderAuthorized"] != executable:
+                            raise ValueError("Relocation changed target authorization.")
+                        if not executable and (cwd / name / "github-actions.yml").exists():
+                            raise ValueError("Review-only evidence was mislabeled as executable GitHub Actions syntax.")
+                        displayed = document[f"{title}: {artifact.name}"].removesuffix("\n")
                         if artifact.read_text() != displayed + ("" if displayed.endswith("\n") else "\n"):
                             raise ValueError(f"Relocated {name} wrote different artifact bytes from its presentation.")
                     digest = hashlib.sha256(result.stdout.encode()).hexdigest()

@@ -123,9 +123,13 @@ class ContractResourceTests {
             for (target in listOf("jenkins", "github-actions")) {
                 val input = File(resources.root, "examples/intent/checkout-build-image.intent.yaml")
                 val result = assertIs<CliExecutionResult.Targeted>(executeCli(arrayOf("intent", input.path, "--target", target, "--render")))
-                assertEquals(0, result.exitCode, Json.mapper.writeValueAsString(result.presentation))
-                val expected = if (target == "jenkins") "Jenkinsfile" else "github-actions.yml"
-                assertTrue(result.artifacts.any { it.name == expected && it.role == CliArtifactRole.RENDERED_TARGET })
+                val executable = target == "jenkins"
+                assertEquals(if (executable) 0 else 3, result.exitCode, Json.mapper.writeValueAsString(result.presentation))
+                assertEquals(if (executable) CliTargetEvidenceOutcome.EXECUTABLE else CliTargetEvidenceOutcome.REVIEW_ONLY, result.evidence.outcome)
+                val expected = if (executable) "Jenkinsfile" else "flow-github-actions-review.yaml"
+                val role = if (executable) CliArtifactRole.RENDERED_TARGET else CliArtifactRole.REVIEW_DOCUMENT
+                assertTrue(result.artifacts.any { it.name == expected && it.role == role })
+                if (!executable) assertTrue(result.artifacts.none { it.role == CliArtifactRole.RENDERED_TARGET || it.name == "github-actions.yml" })
             }
         }
     }

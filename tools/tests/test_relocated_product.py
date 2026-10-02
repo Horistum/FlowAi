@@ -59,6 +59,8 @@ class RelocatedProductTests(unittest.TestCase):
         self.assertEqual({"REPORT": {"status": "PASS"}}, relocated.sections('===== REPORT =====\n{"status":"PASS"}\n'))
         rendered = '===== REPORT =====\n{}\n===== RENDERED EXECUTABLE TARGET OUTPUT: output.yaml =====\nsteps: []\n'
         self.assertEqual("steps: []\n", relocated.sections(rendered)["RENDERED EXECUTABLE TARGET OUTPUT: output.yaml"])
+        review = rendered.replace("RENDERED EXECUTABLE TARGET OUTPUT", "RENDERED NON-EXECUTABLE REVIEW EVIDENCE")
+        self.assertEqual("steps: []\n", relocated.sections(review)["RENDERED NON-EXECUTABLE REVIEW EVIDENCE: output.yaml"])
         for text in ("unstructured", "===== REPORT =====\nnot json", "noise\n===== REPORT =====\n{}",
                      "===== REPORT =====\n{}\n===== REPORT =====\n{}\n"):
             with self.subTest(text=text), self.assertRaises(ValueError):
