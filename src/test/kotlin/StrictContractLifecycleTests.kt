@@ -5,7 +5,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class StrictContractLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File(".")).let { current ->
+    private fun live() = languageIntegrityImplementationSnapshot().let { current ->
         current.copy(integrityWorkPackage = org.flowlang.serialization.FlowYaml.readMap(
             File("src/test/resources/lifecycle/language-integrity-strict-loaders.yaml")))
     }

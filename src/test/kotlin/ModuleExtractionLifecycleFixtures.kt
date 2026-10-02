@@ -4,7 +4,7 @@ import java.io.File
 
 /** Reconstructs an unaccepted extraction candidate; never supplies repository acceptance evidence. */
 internal fun moduleExtractionCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    val current = languageIntegrityImplementationSnapshot()
     fun section(value: Any?): Map<String, Any?> = (value as Map<*, *>).entries.associate { it.key.toString() to it.value }
     val work = current.successorWorkPackage
     val slices = (work["implementationSlices"] as List<*>).map { value ->

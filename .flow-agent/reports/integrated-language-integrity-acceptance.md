@@ -1,6 +1,40 @@
 # Horistum integrated language integrity acceptance
 
-## Accepted implementation and next validation boundary
+## Completed AR-04 and unactivated AR-05 successor
+
+AR-04 closes F-07, F-12, F-13, F-14 and F-21. All A-through-F implementation
+receipts remain immutable. PR #188 supplies the implementation boundary;
+PR #189 supplies independent exact-head and synthetic-merge validation; the
+separate push run on actual PR #189 merged main supplies completion evidence.
+This follows the actual-main acceptance model already used for AR-03.
+
+Validation Flow CI #3301 (`36985044059`) passed head
+`7a041c82775046ab7dab6faaa08d2449f73fe606` and synthetic merge
+`2adaaf29cdafe9559906c93a2e6568b4c7500e6e`. Actual main
+`22c382b86351c8f7a17be8150ade0833653cce5d` passed Flow CI #3302
+(`36987070806`). All three source trees equal
+`a407fdb290042327c92d8400951a4c8323cf8562` and all three downloaded JUnit
+archives contain identical 1,739 unique tests in 305 suites, with no failures,
+errors or skips. All 1,733 predecessor test identities and the same ordered
+264 passing conformance checks are preserved. All four PR and post-merge
+isolation proofs were checked against every listed source-input hash.
+
+The byte-pinned `.flow-agent/evidence/language-integrity-completion-acceptance.json`
+records revisions, jobs, artifact fingerprints, identity fingerprints and the
+pre-closure finding state. Completion rejects missing or altered evidence,
+reused receipts, synthetic-merge fields in a push receipt, partial slice
+acceptance, contradictory roadmap pointers and changes to unrelated finding
+owners or closure states. Historical activation and implementation scenarios
+reconstruct their own coherent active context without changing evidence bytes.
+
+The closure transition itself requires new exact-head and synthetic-merge CI;
+its future result is not committed as historical evidence. AR-05 is next and
+planned, with no active work package. EF-09 remains paused, F-20 remains
+contained and AR-07-owned, and the terminal Core roadmap, public versions,
+CI topology and target-support claims are unchanged.
+
+
+## Historical implementation acceptance (PR #189)
 
 Corrected AR-04F implementation is accepted from PR #188. Flow CI #3298
 (`36971285367`) passed exact head `fe59c65825a60ed918361d14adfb21350194b72f`
@@ -18,18 +52,15 @@ match every listed input hash against the accepted tree: kernel 19, compiler
 job identities, merge parents and test inventories are recorded in
 `.flow-agent/evidence/integrated-language-implementation-acceptance.json`.
 
-The lifecycle accepts F and advances only `implementationBoundary`. It verifies
+At PR #189, the lifecycle accepted F and advanced only `implementationBoundary`. It verifies
 the immutable evidence document before parsing it, then checks every slice and
 boundary receipt field against that authenticated document. Missing documents,
 changed bytes, malformed documents, substituted predecessor receipts and
 self-declared replacement digests fail closed. Historical A through E scenarios
 retain their original pending milestone-wide implementation boundary.
 
-This transition must pass its own exact-head and synthetic-merge Flow CI.
-`validationBoundary` and `completionBoundary` remain pending; the implementation
-receipt cannot certify this new candidate or a future completion transition.
-All five findings remain open until whole-AR-04 completion. AR-05 stays planned,
-EF-09 stays paused and F-20 remains AR-07-owned.
+At that implementation transition, validation and completion remained pending.
+The completed independent PR and actual-main evidence are now accepted above.
 
 ## Accepted bounded correction: Intent source types
 
@@ -66,7 +97,7 @@ of this correction. The archived PR exact-head JUnit report was inspected:
 archive SHA-256 is
 `3cf5c98ff5e676de3910d91690e9a73740383813248827d7a28c6938382bf852`.
 The correction subsequently passed independent PR #188 and post-merge validation
-as recorded above. Complete AR-04 finding closure remains pending.
+as recorded above. The separate AR-04 finding closure is recorded in the completion section.
 
 ## Baseline and architectural decision
 
@@ -137,7 +168,7 @@ existing Flow CI. Local tooling validation is available; this container does not
 have JDK 25 or the project's Gradle cache, so no local Kotlin/offline Gradle pass
 is claimed. Actual candidate validation belongs in PR metadata after execution.
 
-Whole-AR-04 completion remains pending until independent integrated evidence is
-accepted. AR-05 remains the successor, without activation; EF-09 remains paused
+Whole-AR-04 completion now accepts the independent integrated evidence recorded
+above. AR-05 remains the successor without activation, EF-09 remains paused
 and F-20 remains owned by AR-07. Package/schema versions, canonical semantics,
 target support and required CI check identities are unchanged.

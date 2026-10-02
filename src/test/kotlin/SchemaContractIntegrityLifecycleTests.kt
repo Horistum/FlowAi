@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 
 class SchemaContractIntegrityLifecycleTests {
     private fun live(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-        val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+        val current = languageIntegrityImplementationSnapshot()
         // Exercise the accepted historical B phase after the live roadmap has advanced to C.
         val slices = records(current.integrityWorkPackage["implementationSlices"]).map { slice ->
             when (slice["id"]) {

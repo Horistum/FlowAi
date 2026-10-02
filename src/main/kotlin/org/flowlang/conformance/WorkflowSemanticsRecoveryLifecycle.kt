@@ -26,7 +26,8 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val strictLoaderEvidence: Map<String, Any?> = emptyMap(),
     val strictLoaderSha256: String? = null,
     // Keep the immutable document: acceptance fingerprints and parses this same value.
-    val integratedLanguageEvidence: String? = null
+    val integratedLanguageEvidence: String? = null,
+    val languageCompletionEvidence: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -98,6 +99,8 @@ internal object WorkflowSemanticsRecoveryLifecycle {
                     .joinToString("") { "%02x".format(it.toInt() and 0xff) }
             },
             File(root, LanguageContractIntegrityLifecycle.INTEGRATED_EVIDENCE)
+                .takeIf { it.isFile }?.readText(Charsets.UTF_8),
+            File(root, LanguageIntegrityCompletion.EVIDENCE)
                 .takeIf { it.isFile }?.readText(Charsets.UTF_8)
         )
     }
@@ -123,6 +126,7 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         }
         val decision = map(snapshot.recovery["currentDecision"])
         val integritySelected = complete && decision["workPackage"] == LanguageContractIntegrityLifecycle.WORK_PACKAGE
+        val integrityComplete = integritySelected && snapshot.integrityWorkPackage["status"] == "complete"
         val successorActivated = complete && (integritySelected ||
             decision["workPackage"] == CompilerModuleExtractionLifecycle.WORK_PACKAGE)
         val moduleComplete = successorActivated && snapshot.successorWorkPackage["status"] == "complete"
@@ -139,9 +143,9 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         val post = map(snapshot.postToolchain["currentDecision"])
         val recoveryState = map(snapshot.postToolchain["recoveryRoadmap"])
         val release = map(snapshot.release["roadmapState"])
-        val expectedPrevious = if (moduleComplete) "AR-03" else if (complete) "AR-02" else "AR-01"
-        val expectedNext = if (moduleComplete) "AR-04" else if (complete) "AR-03" else "AR-02"
-        val expectedActivation = if ((moduleComplete && !integritySelected) ||
+        val expectedPrevious = if (integrityComplete) "AR-04" else if (moduleComplete) "AR-03" else if (complete) "AR-02" else "AR-01"
+        val expectedNext = if (integrityComplete) "AR-05" else if (moduleComplete) "AR-04" else if (complete) "AR-03" else "AR-02"
+        val expectedActivation = if (integrityComplete || (moduleComplete && !integritySelected) ||
             (complete && !successorActivated)) "not-activated" else "active"
         val expectedWorkPackage = when {
             integritySelected -> LanguageContractIntegrityLifecycle.WORK_PACKAGE

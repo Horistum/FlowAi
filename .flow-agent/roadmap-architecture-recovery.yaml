@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 11
+revision: 12
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -15,17 +15,17 @@ auditBaseline:
   coverageRule: "Every F-01 through F-22 finding has one explicit closure milestone. Findings with immediate safety impact also have a separate containment milestone. A finding may be reclassified only by reviewed production-code evidence; it may not disappear from the roadmap because an implementation is inconvenient."
 
 currentDecision:
-  previousCompletedItem: "AR-03"
-  previousCompletedItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
+  previousCompletedItem: "AR-04"
+  previousCompletedItemName: "Language, Contract, Type and Identity Integrity"
   preemptedItem: "EF-09"
   preemptedItemName: "Human Approval and Change-Control Falsification"
   preemptedItemState: "active-after-evidence-admission"
   preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
-  nextItem: "AR-04"
-  nextItemName: "Language, Contract, Type and Identity Integrity"
-  activationState: "active"
+  nextItem: "AR-05"
+  nextItemName: "Artifact, Distribution, CLI and I/O Integrity"
+  activationState: "not-activated"
   workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
-  decisionBasis: "AR-03 remains accepted and complete. AR-04A through F implementations are accepted, including corrected PR #188 and actual merged-main CI 36973061505. AR-04 now requires independent validation and completion boundaries; AR-05 is not activated. F-20 remains AR-07-owned and EF-09 stays paused."
+  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. AR-05 is the next planned milestone and is not activated. EF-09 stays paused and F-20 remains AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -175,7 +175,7 @@ milestones:
   - id: "AR-04"
     name: "Language, Contract, Type and Identity Integrity"
     order: 5
-    status: "active"
+    status: "completed"
     workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
     report: ".flow-agent/reports/language-contract-type-identity-integrity.md"
     dependsOn: ["AR-01", "AR-03"]
@@ -293,6 +293,8 @@ findingRegister:
     severity: "HIGH"
     title: "Flow parsing silently keeps the last value for multiple duplicate declarations."
     closureMilestone: "AR-04"
+    status: closed
+    closureEvidence: ".flow-agent/evidence/language-integrity-completion-acceptance.json"
   - id: "F-08"
     severity: "MEDIUM"
     title: "The model declares multiple workflows while executable lowering supports one."
@@ -316,14 +318,20 @@ findingRegister:
     severity: "MEDIUM"
     title: "Module schema types are open strings and defaults are not type-checked."
     closureMilestone: "AR-04"
+    status: closed
+    closureEvidence: ".flow-agent/evidence/language-integrity-completion-acceptance.json"
   - id: "F-13"
     severity: "MEDIUM"
     title: "Duplicate system types across modules are resolved by load order."
     closureMilestone: "AR-04"
+    status: closed
+    closureEvidence: ".flow-agent/evidence/language-integrity-completion-acceptance.json"
   - id: "F-14"
     severity: "MEDIUM"
     title: "Intent identities use lossy lowering and can collide across boundaries."
     closureMilestone: "AR-04"
+    status: closed
+    closureEvidence: ".flow-agent/evidence/language-integrity-completion-acceptance.json"
   - id: "F-15"
     severity: "MEDIUM"
     title: "Global error handling is encoded as a synthetic tail Try node."
@@ -355,6 +363,8 @@ findingRegister:
     severity: "LOW"
     title: "A benevolent non-strict FlowYaml API remains publicly available."
     closureMilestone: "AR-04"
+    status: closed
+    closureEvidence: ".flow-agent/evidence/language-integrity-completion-acceptance.json"
   - id: "F-22"
     severity: "LOW"
     title: "Input limits and atomic I/O boundaries are not systematic."

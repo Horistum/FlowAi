@@ -46,13 +46,15 @@ internal object LanguageContractIntegrityLifecycle {
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
         val work = snapshot.integrityWorkPackage
+        val complete = work["status"] == "complete"
         val predecessor = snapshot.successorWorkPackage
         val authorization = section(work["authorization"])
-        if (work["version"] != "AR-04" || work["status"] != "active" || authorization["status"] != "active" ||
+        if (work["version"] != "AR-04" || work["status"] !in setOf("active", "complete") ||
+            authorization["status"] != (if (complete) "completed" else "active") ||
             authorization["predecessor"] != "AR-03" ||
             authorization["strategicSource"] != ".flow-agent/roadmap-architecture-recovery.yaml#AR-04" ||
             predecessor["status"] != "complete"
-        ) add("Language integrity requires its own active work package and completed AR-03 predecessor.")
+        ) add("Language integrity requires its own active work package or independently accepted completion, and completed AR-03 predecessor.")
         val completion = section(section(predecessor["lifecycle"])["completionBoundary"])
         val baseline = section(work["verifiedBaseline"])
         val baselineFields = listOf("mergedPullRequest", "mainCommit", "sourceTree", "workflowRunId", "workflowRunNumber",
@@ -64,7 +66,7 @@ internal object LanguageContractIntegrityLifecycle {
         ) add("Language integrity activation must use the independently accepted merged main.")
         val milestones = (snapshot.recovery["milestones"] as? List<*>).orEmpty().map(::section)
         val milestone = milestones.singleOrNull { it["id"] == "AR-04" }
-        if (milestone?.get("status") != "active" || milestone["workPackage"] != WORK_PACKAGE ||
+        if (milestone?.get("status") != (if (complete) "completed" else "active") || milestone["workPackage"] != WORK_PACKAGE ||
             milestone["dependsOn"] != listOf("AR-01", "AR-03") || milestone["closesFindings"] != findings
         ) add("Language integrity roadmap must preserve its explicit dependencies and five finding owners.")
         val post = section(snapshot.postToolchain["currentDecision"])
@@ -72,26 +74,28 @@ internal object LanguageContractIntegrityLifecycle {
         val recovery = section(snapshot.recovery["currentDecision"])
         val sequence = (snapshot.postToolchain["sequence"] as? List<*>).orEmpty().map(::section)
         val recoverySequence = sequence.singleOrNull { it["id"] == "ARCHITECTURE-RECOVERY" }
-        if (state["activeItem"] != "AR-04" || state["nextItem"] != "AR-04" || state["activeWorkPackage"] != WORK_PACKAGE ||
+        if (!complete && (state["activeItem"] != "AR-04" || state["nextItem"] != "AR-04" || state["activeWorkPackage"] != WORK_PACKAGE ||
             recoverySequence?.get("completedItem") != "AR-03" || recoverySequence["activeItem"] != "AR-04" ||
             recoverySequence["nextItem"] != "AR-04" || recoverySequence["activationState"] != "active" ||
             recoverySequence["workPackage"] != WORK_PACKAGE
-        ) add("Post-toolchain recovery pointers must agree on language integrity activation.")
+        )) add("Post-toolchain recovery pointers must agree on language integrity activation.")
         if (post["pausedItem"] != "EF-09" || recovery["preemptedItem"] != "EF-09" ||
             sequence.singleOrNull { it["id"] == "EF-09" }?.get("status") != "paused" ||
             milestones.filter { it["id"] in setOf("AR-05", "AR-06", "AR-07") }.let {
                 it.size != 3 || it.any { milestone -> milestone["status"] != "planned" }
             }
         ) add("Language integrity cannot resume EF-09 or activate later recovery milestones.")
-        val release = section(snapshot.release["roadmapState"])
-        if (release["activeRecoveryWorkPackage"] != WORK_PACKAGE ||
-            release["completedRecoveryWorkPackage"] != CompilerModuleExtractionLifecycle.WORK_PACKAGE
-        ) add("Release metadata must distinguish accepted modules from active language integrity.")
-        addAll(matchingFields("Release recovery acceptance", section(snapshot.release["recoveryAcceptance"]), mapOf(
-            "completedItem" to "AR-03", "evidence" to CompilerModuleAcceptance.EVIDENCE,
-            "acceptedMain" to completion["mainCommit"], "workflowRunId" to completion["workflowRunId"],
-            "successorCandidate" to "AR-04", "candidateValidation" to "current-revision-ci-required"
-        )))
+        if (!complete) {
+            val release = section(snapshot.release["roadmapState"])
+            if (release["activeRecoveryWorkPackage"] != WORK_PACKAGE ||
+                release["completedRecoveryWorkPackage"] != CompilerModuleExtractionLifecycle.WORK_PACKAGE
+            ) add("Release metadata must distinguish accepted modules from active language integrity.")
+            addAll(matchingFields("Release recovery acceptance", section(snapshot.release["recoveryAcceptance"]), mapOf(
+                "completedItem" to "AR-03", "evidence" to CompilerModuleAcceptance.EVIDENCE,
+                "acceptedMain" to completion["mainCommit"], "workflowRunId" to completion["workflowRunId"],
+                "successorCandidate" to "AR-04", "candidateValidation" to "current-revision-ci-required"
+            )))
+        }
 
         val slices = (work["implementationSlices"] as? List<*>).orEmpty().map(::section)
         val structurallyValid = slices.map { it["id"] } == sliceIds &&
@@ -100,7 +104,14 @@ internal object LanguageContractIntegrityLifecycle {
             add("Language integrity slice identities and finding ownership must remain stable.")
         }
 
-        val lifecycle = section(work["lifecycle"])
+        val recordedLifecycle = section(work["lifecycle"])
+        // Historical slice acceptance stays immutable when later milestone receipts arrive.
+        val lifecycle = if (complete) recordedLifecycle + mapOf(
+            "validationBoundary" to mapOf("status" to "pending"),
+            "completionBoundary" to mapOf("status" to "pending")) else recordedLifecycle
+        if (complete && (work["selectedSlice"] != "AR-04F" || slices.any { it["status"] != "complete" })) {
+            add("Language completion requires all six accepted implementation slices and integrated AR-04F selection.")
+        }
         val boundaries = listOf("activationBoundary", "implementationBoundary", "validationBoundary", "completionBoundary")
         when (work["selectedSlice"]) {
             "AR-04A" -> validateAr04aPhase(snapshot, work, slices, lifecycle, boundaries, this)
@@ -123,16 +134,20 @@ internal object LanguageContractIntegrityLifecycle {
             else -> add("Language integrity may advance only through an explicitly supported AR-04 slice transition.")
         }
 
-        val decision = section(work["completionDecision"])
-        if (decision["status"] != "not-complete" || decision["closesFindings"] != emptyList<String>() ||
-            decision["remainingFindings"] != findings || decision["nextItem"] != "AR-05" ||
-            decision["nextItemActivationState"] != "not-activated"
-        ) add("Language integrity activation cannot close any finding or activate AR-05.")
-        val register = (snapshot.recovery["findingRegister"] as? List<*>).orEmpty().map(::section)
-        findings.forEach { id ->
-            val finding = register.singleOrNull { it["id"] == id }
-            if (finding?.get("closureMilestone") != "AR-04" || finding["status"] in setOf("closed", "complete", "completed")) {
-                add("Language integrity finding $id must remain open and AR-04-owned during activation.")
+        if (complete) {
+            addAll(LanguageIntegrityCompletion.errors(snapshot))
+        } else {
+            val decision = section(work["completionDecision"])
+            if (decision["status"] != "not-complete" || decision["closesFindings"] != emptyList<String>() ||
+                decision["remainingFindings"] != findings || decision["nextItem"] != "AR-05" ||
+                decision["nextItemActivationState"] != "not-activated"
+            ) add("Language integrity activation cannot close any finding or activate AR-05.")
+            val register = (snapshot.recovery["findingRegister"] as? List<*>).orEmpty().map(::section)
+            findings.forEach { id ->
+                val finding = register.singleOrNull { it["id"] == id }
+                if (finding?.get("closureMilestone") != "AR-04" || finding["status"] in setOf("closed", "complete", "completed")) {
+                    add("Language integrity finding $id must remain open and AR-04-owned during activation.")
+                }
             }
         }
     }

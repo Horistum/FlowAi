@@ -43,4 +43,4 @@ validation:
   postMergeWorkflowRunId: 36973061505
   evidence: .flow-agent/evidence/integrated-language-implementation-acceptance.json
   requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
-  scope: "Implementation only; AR-04 validation and completion remain independently gated in the parent work package."
+  scope: "This historical receipt accepts implementation only; independent AR-04 validation and actual-main completion are recorded in the parent work package."

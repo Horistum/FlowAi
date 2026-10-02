@@ -1,0 +1,342 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "pullRequest": 189,
+  "base": "1d88151f0f3d6ccc9185522b967934724cc4d5b4",
+  "head": "7a041c82775046ab7dab6faaa08d2449f73fe606",
+  "syntheticMerge": "2adaaf29cdafe9559906c93a2e6568b4c7500e6e",
+  "mergedMain": "22c382b86351c8f7a17be8150ade0833653cce5d",
+  "sourceTree": "a407fdb290042327c92d8400951a4c8323cf8562",
+  "workflowRunId": 36985044059,
+  "workflowRunNumber": 3301,
+  "toolingTests": 151,
+  "jobs": {
+    "exactHead": 110770158382,
+    "mergeCandidate": 110770158361,
+    "physicalIsolation": 110768082108
+  },
+  "postMerge": {
+    "workflowRunId": 36987070806,
+    "workflowRunNumber": 3302,
+    "event": "push",
+    "head": "22c382b86351c8f7a17be8150ade0833653cce5d",
+    "sourceTree": "a407fdb290042327c92d8400951a4c8323cf8562",
+    "mergeParents": [
+      "1d88151f0f3d6ccc9185522b967934724cc4d5b4",
+      "7a041c82775046ab7dab6faaa08d2449f73fe606"
+    ],
+    "status": "completed",
+    "conclusion": "success",
+    "exactHeadJobId": 110775853199,
+    "isolationJobId": 110774468502
+  },
+  "identityEncoding": "SHA-256 of compact UTF-8 JSON; sorted [classname,name] pairs for JUnit, ordered check names for conformance",
+  "junit": {
+    "exactHead": {
+      "tests": 1739,
+      "suites": 305,
+      "identitiesSha256": "50ec561b78257adf85b86641ce56fbd11ae0e0a19bf39c877e9991140ffb8c10",
+      "uniqueIdentities": 1739,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mergeCandidate": {
+      "tests": 1739,
+      "suites": 305,
+      "identitiesSha256": "50ec561b78257adf85b86641ce56fbd11ae0e0a19bf39c877e9991140ffb8c10",
+      "uniqueIdentities": 1739,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "postMerge": {
+      "tests": 1739,
+      "suites": 305,
+      "identitiesSha256": "50ec561b78257adf85b86641ce56fbd11ae0e0a19bf39c877e9991140ffb8c10",
+      "uniqueIdentities": 1739,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "conformance": {
+    "exactHead": {
+      "passed": 264,
+      "failed": 0,
+      "orderedIdentitiesSha256": "bb8bc361d8d989a8c106ec8b1218e4a10e46ab62dec6c647278992ccb1f978b5"
+    },
+    "mergeCandidate": {
+      "passed": 264,
+      "failed": 0,
+      "orderedIdentitiesSha256": "bb8bc361d8d989a8c106ec8b1218e4a10e46ab62dec6c647278992ccb1f978b5"
+    },
+    "postMerge": {
+      "passed": 264,
+      "failed": 0,
+      "orderedIdentitiesSha256": "bb8bc361d8d989a8c106ec8b1218e4a10e46ab62dec6c647278992ccb1f978b5"
+    }
+  },
+  "physicalIsolation": {
+    "pullRequest": {
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true,
+      "receipt": {
+        "revision": "7a041c82775046ab7dab6faaa08d2449f73fe606",
+        "tree": "a407fdb290042327c92d8400951a4c8323cf8562",
+        "covers": "exact-head,merge-candidate",
+        "run": "36985044059",
+        "attempt": "1"
+      },
+      "inputCounts": {
+        "adapter-isolation/proof.json": 215,
+        "compiler-isolation/proof.json": 95,
+        "kernel-isolation/proof.json": 19,
+        "product-isolation/proof.json": 284
+      },
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ]
+    },
+    "postMerge": {
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true,
+      "receipt": {
+        "revision": "22c382b86351c8f7a17be8150ade0833653cce5d",
+        "tree": "a407fdb290042327c92d8400951a4c8323cf8562",
+        "covers": "exact-head",
+        "run": "36987070806",
+        "attempt": "1"
+      },
+      "inputCounts": {
+        "adapter-isolation/proof.json": 215,
+        "compiler-isolation/proof.json": 95,
+        "kernel-isolation/proof.json": 19,
+        "product-isolation/proof.json": 284
+      },
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ]
+    }
+  },
+  "artifacts": {
+    "exactHeadTests": {
+      "id": 11217312965,
+      "file": "ar04f-acceptance-final-flow-ci-exact-head-test-reports.zip",
+      "sha256": "0ea0b227f3fb3a3b54d45afc1b6cb176c3a06b07194b40935239519809735cad"
+    },
+    "mergeCandidateTests": {
+      "id": 11217154802,
+      "file": "ar04f-acceptance-final-flow-ci-merge-candidate-test-reports.zip",
+      "sha256": "06de2dfea9369879e3d3328af78ee922c938a14d22bc8f6873acc77b2d4fa6be"
+    },
+    "postMergeTests": {
+      "id": 11218209122,
+      "file": "ar04-closure-main189-flow-ci-exact-head-test-reports.zip",
+      "sha256": "35e14698902aa6a0a03064f151ac8bf69c88566df2301ea829b94c42d950e6be"
+    },
+    "exactHeadLogs": {
+      "id": 11217497659,
+      "file": "ar04f-acceptance-final-flow-ci-exact-head-gradle-logs.zip",
+      "sha256": "6bb1dd838ff4ed9bd6fbea8175adb0b57901eee56df0a32903221fd19c652eb1"
+    },
+    "mergeCandidateLogs": {
+      "id": 11218145812,
+      "file": "ar04f-acceptance-final-flow-ci-merge-candidate-gradle-logs.zip",
+      "sha256": "e823caec2ec2b772b933aae555267147aa4719e714100d82025a286385c6e1d1"
+    },
+    "postMergeLogs": {
+      "id": 11218243960,
+      "file": "ar04-closure-main189-flow-ci-exact-head-gradle-logs.zip",
+      "sha256": "ecaf4543ecd7fed54d34e781b20d6c6e06314bab472aaf815504a76213dd0471"
+    },
+    "pullRequestIsolation": {
+      "id": 11217995180,
+      "file": "ar04f-acceptance-final-isolation.zip",
+      "sha256": "81ad705ad8400be8e6eb7fe5f799e6c9b440398717db5b0f0d3776a5c7934144"
+    },
+    "postMergeIsolation": {
+      "id": 11217523413,
+      "file": "ar04-closure-main189-flow-isolation-exact-head.zip",
+      "sha256": "c6601c2c324505780ce0e0c486cf7bdf2be98da423475d4e05941bc648925ff1"
+    }
+  },
+  "preservation": {
+    "predecessorPullRequest": 188,
+    "predecessorTests": 1733,
+    "allPredecessorTestIdentitiesPreserved": true,
+    "addedTests": 6,
+    "predecessorConformanceChecks": 264,
+    "allPredecessorConformanceIdentitiesPreservedInOrder": true
+  },
+  "closesFindings": [
+    "F-07",
+    "F-12",
+    "F-13",
+    "F-14",
+    "F-21"
+  ],
+  "findingStateBeforeClosure": [
+    {
+      "id": "F-01",
+      "closureMilestone": "AR-06",
+      "containmentMilestone": "AR-00",
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-02",
+      "closureMilestone": "AR-02",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-03",
+      "closureMilestone": "AR-05",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-04",
+      "closureMilestone": "AR-01",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-05",
+      "closureMilestone": "AR-05",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-06",
+      "closureMilestone": "AR-06",
+      "containmentMilestone": "AR-00",
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-07",
+      "closureMilestone": "AR-04",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-08",
+      "closureMilestone": "AR-02",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-09",
+      "closureMilestone": "AR-01",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-10",
+      "closureMilestone": "AR-03",
+      "containmentMilestone": null,
+      "status": "closed",
+      "closureEvidence": ".flow-agent/evidence/compiler-module-acceptance.json"
+    },
+    {
+      "id": "F-11",
+      "closureMilestone": "AR-06",
+      "containmentMilestone": "AR-00",
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-12",
+      "closureMilestone": "AR-04",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-13",
+      "closureMilestone": "AR-04",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-14",
+      "closureMilestone": "AR-04",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-15",
+      "closureMilestone": "AR-02",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-16",
+      "closureMilestone": "AR-07",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-17",
+      "closureMilestone": "AR-01",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-18",
+      "closureMilestone": "AR-06",
+      "containmentMilestone": "AR-00",
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-19",
+      "closureMilestone": "AR-05",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-20",
+      "closureMilestone": "AR-07",
+      "containmentMilestone": "AR-03",
+      "status": "contained",
+      "closureEvidence": null
+    },
+    {
+      "id": "F-21",
+      "closureMilestone": "AR-04",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    },
+    {
+      "id": "F-22",
+      "closureMilestone": "AR-05",
+      "containmentMilestone": null,
+      "status": null,
+      "closureEvidence": null
+    }
+  ]
+}
