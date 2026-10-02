@@ -1,6 +1,37 @@
 # Horistum integrated language integrity acceptance
 
-## Current bounded correction: Intent source types
+## Accepted implementation and next validation boundary
+
+Corrected AR-04F implementation is accepted from PR #188. Flow CI #3298
+(`36971285367`) passed exact head `fe59c65825a60ed918361d14adfb21350194b72f`
+and synthetic merge `2c8dc365123d20db5b1b15dc307ae2dbd63543a3`. Flow CI #3299
+(`36973061505`) independently passed actual merged main
+`1d88151f0f3d6ccc9185522b967934724cc4d5b4`. All three revisions share tree
+`49bcdf2513379b0d8eb0f2a6486a8e578f77900c`.
+
+All three downloaded JUnit archives contain the same 1,733 unique tests in
+305 suites, with zero failures, errors or skips. All 1,728 predecessor test
+identities remain, with five additions. Standalone conformance preserves the
+same ordered 264 passing checks. PR and post-merge physical isolation proofs
+match every listed input hash against the accepted tree: kernel 19, compiler
+95, adapter 215 and product 284 inputs. Archive IDs, SHA-256 fingerprints,
+job identities, merge parents and test inventories are recorded in
+`.flow-agent/evidence/integrated-language-implementation-acceptance.json`.
+
+The lifecycle accepts F and advances only `implementationBoundary`. It verifies
+the immutable evidence document before parsing it, then checks every slice and
+boundary receipt field against that authenticated document. Missing documents,
+changed bytes, malformed documents, substituted predecessor receipts and
+self-declared replacement digests fail closed. Historical A through E scenarios
+retain their original pending milestone-wide implementation boundary.
+
+This transition must pass its own exact-head and synthetic-merge Flow CI.
+`validationBoundary` and `completionBoundary` remain pending; the implementation
+receipt cannot certify this new candidate or a future completion transition.
+All five findings remain open until whole-AR-04 completion. AR-05 stays planned,
+EF-09 stays paused and F-20 remains AR-07-owned.
+
+## Accepted bounded correction: Intent source types
 
 Inspection of main `b7e53bc16849ac0e59cbf5cf0e86c3d2696c2157` found a
 remaining normalization defect after PR #187. Strict token parsing preserved
@@ -34,9 +65,8 @@ of this correction. The archived PR exact-head JUnit report was inspected:
 1,728 unique tests in 304 suites, with zero failures, errors or skips. Its
 archive SHA-256 is
 `3cf5c98ff5e676de3910d91690e9a73740383813248827d7a28c6938382bf852`.
-Current Kotlin validation is required through the existing exact-head,
-synthetic-merge and physical-isolation CI checks. The complete AR-04 finding
-closure remains pending; this correction does not accept its own future CI.
+The correction subsequently passed independent PR #188 and post-merge validation
+as recorded above. Complete AR-04 finding closure remains pending.
 
 ## Baseline and architectural decision
 
@@ -98,8 +128,8 @@ artifact-publication redesign is included.
 
 ## Candidate validation and lifecycle
 
-The active work package selects F and accepts E from the byte-pinned predecessor
-receipt. Historical A through E fixtures and regression identities remain live.
+The active parent work package selects F and accepts its implementation from the
+byte-pinned PR #188 and actual merged-main receipt. Historical A through E fixtures and regression identities remain live.
 Roadmap and release notes no longer describe D as selected or E as unimplemented.
 The candidate must pass its own exact-head and synthetic-merge compilation,
 complete tests, standalone conformance, tooling and physical isolation in the

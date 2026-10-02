@@ -2,6 +2,8 @@ package org.flowlang.conformance
 
 import org.flowlang.conformance.CompilerModuleAcceptance.matchingFields
 import org.flowlang.conformance.CompilerModuleAcceptance.section
+import org.flowlang.serialization.FlowYaml
+import java.security.MessageDigest
 
 /** Owns AR-04 slice progression without rewriting accepted predecessor history. */
 internal object LanguageContractIntegrityLifecycle {
@@ -16,6 +18,8 @@ internal object LanguageContractIntegrityLifecycle {
     private const val SEMANTIC_IDENTITY_SHA256 = "2c33de906e4d9aaa7c0a4b1528848f9059951f73e5ebf2c75a08d7762c800967"
     const val STRICT_LOADER_EVIDENCE = ".flow-agent/evidence/strict-loader-acceptance.json"
     private const val STRICT_LOADER_SHA256 = "41265c0279a972c80793ca3bc3e958ac6dc1fd85b2e35fbfc02760505d202c02"
+    const val INTEGRATED_EVIDENCE = ".flow-agent/evidence/integrated-language-implementation-acceptance.json"
+    private const val INTEGRATED_SHA256 = "add8c1f1d5936d8d7a805846295d4df97903c910b3126cce6badf854fa2cccf7"
     private val findings = listOf("F-07", "F-12", "F-13", "F-14", "F-21")
     private val sliceIds = listOf("AR-04A", "AR-04B", "AR-04C", "AR-04D", "AR-04E", "AR-04F")
     private val requiredChecks = listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")
@@ -104,7 +108,18 @@ internal object LanguageContractIntegrityLifecycle {
             "AR-04C" -> validateAr04cPhase(snapshot, work, slices, lifecycle, boundaries, this)
             "AR-04D" -> validateAr04dPhase(snapshot, work, slices, lifecycle, boundaries, this)
             "AR-04E" -> validateAr04ePhase(snapshot, work, slices, lifecycle, boundaries, this)
-            "AR-04F" -> validateAr04fPhase(snapshot, work, slices, lifecycle, boundaries, this)
+            "AR-04F" -> {
+                val accepted = slices.getOrNull(5)?.get("status") == "complete"
+                val historical = if (accepted) slices.mapIndexed { index, slice ->
+                    if (index == 5) slice + mapOf("status" to "implemented", "acceptance" to mapOf(
+                        "source" to "current-revision-ci", "requiredChecks" to requiredChecks)) else slice
+                } else slices
+                val historicalLifecycle = if (accepted) lifecycle +
+                    ("implementationBoundary" to mapOf("status" to "pending")) else lifecycle
+                validateAr04fPhase(snapshot, work, historical, historicalLifecycle, boundaries, this)
+                if (accepted) addAll(integratedImplementationErrors(snapshot,
+                    section(slices[5]["acceptance"]), section(lifecycle["implementationBoundary"])))
+            }
             else -> add("Language integrity may advance only through an explicitly supported AR-04 slice transition.")
         }
 
@@ -435,6 +450,49 @@ internal object LanguageContractIntegrityLifecycle {
         val receipt = section(slices.getOrNull(4)?.get("acceptance"))
         errors += matchingFields("AR-04E acceptance", receipt, expected)
         if (receipt.keys != expected.keys) errors += "AR-04E receipt has missing or unsupported fields."
+    }
+
+    private fun integratedImplementationErrors(
+        snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot,
+        receipt: Map<*, *>,
+        boundary: Map<*, *>
+    ): List<String> = buildList {
+        val document = snapshot.integratedLanguageEvidence
+        val actualSha256 = document?.let {
+            MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+        }
+        // Authenticate before parsing. No caller-supplied digest or mutable parsed map
+        // can substitute evidence; every field belongs to the inspected PR #188 receipt.
+        if (actualSha256 != INTEGRATED_SHA256) {
+            add("AR-04F implementation requires the exact independently inspected PR and merged-main evidence bytes.")
+            return@buildList
+        }
+        val evidence = FlowYaml.readMap(requireNotNull(document), INTEGRATED_EVIDENCE)
+        val jobs = section(evidence["jobs"])
+        val results = section(section(evidence["junit"])["exactHead"])
+        val checks = section(section(evidence["conformance"])["exactHead"])
+        val common = mapOf(
+            "sourceTree" to evidence["sourceTree"], "workflowRunId" to evidence["workflowRunId"],
+            "kotlinTests" to results["tests"], "toolingTests" to evidence["toolingTests"],
+            "conformanceChecks" to checks["passed"], "evidence" to INTEGRATED_EVIDENCE,
+            "evidenceSha256" to INTEGRATED_SHA256)
+        val expectedReceipt = common + mapOf(
+            "source" to "current-revision-ci", "requiredChecks" to requiredChecks,
+            "pullRequest" to evidence["pullRequest"], "head" to evidence["head"],
+            "syntheticMerge" to evidence["syntheticMerge"], "mergedMain" to evidence["mergedMain"],
+            "postMergeWorkflowRunId" to section(evidence["postMerge"])["workflowRunId"])
+        val expectedBoundary = common + mapOf(
+            "status" to "passed", "conclusion" to "success", "base" to evidence["base"],
+            "workflowRunNumber" to evidence["workflowRunNumber"], "exactHead" to evidence["head"],
+            "syntheticMergeCandidate" to evidence["syntheticMerge"], "exactHeadJobId" to jobs["exactHead"],
+            "mergeCandidateJobId" to jobs["mergeCandidate"], "isolationJobId" to jobs["physicalIsolation"],
+            "failures" to 0, "errors" to 0, "skipped" to 0)
+        addAll(matchingFields("AR-04F acceptance", receipt, expectedReceipt))
+        addAll(matchingFields("Language implementation boundary", boundary, expectedBoundary))
+        if (receipt.keys != expectedReceipt.keys || boundary.keys != expectedBoundary.keys) {
+            add("Language implementation acceptance has missing or unsupported receipt fields.")
+        }
     }
 
     private fun activationErrors(

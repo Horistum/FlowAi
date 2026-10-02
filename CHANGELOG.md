@@ -4,6 +4,13 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### AR-04 Integrated Implementation Acceptance
+
+- Accepted corrected AR-04F implementation from independently inspected PR #188 and actual merged-main evidence, preserving all predecessor test and conformance identities.
+- Bound the implementation transition to an immutable receipt, including exact-head, synthetic-merge, post-merge and physical isolation evidence.
+- Added negative lifecycle coverage for missing, changed, substituted and self-authenticated evidence, incomplete receipts and premature validation, completion or successor activation.
+- Advanced the implementation boundary only; separate AR-04 validation and completion remain required.
+
 ### AR-04F Intent Source Type Integrity
 
 - Rejected explicit null in non-nullable Intent fields before defaults or empty collections can erase authored meaning.

@@ -16,7 +16,9 @@ class SystemContractIdentityLifecycleTests {
             else -> slice
         } }
         return current.copy(integrityWorkPackage = current.integrityWorkPackage + mapOf(
-            "selectedSlice" to "AR-04C", "nextSlice" to "AR-04D", "implementationSlices" to historical))
+            "selectedSlice" to "AR-04C", "nextSlice" to "AR-04D", "implementationSlices" to historical,
+            "lifecycle" to (section(current.integrityWorkPackage["lifecycle"]) +
+                ("implementationBoundary" to mapOf("status" to "pending")))))
     }
     @Suppress("UNCHECKED_CAST")
     private fun records(value: Any?) = value as List<Map<String, Any?>>
@@ -52,17 +54,7 @@ class SystemContractIdentityLifecycleTests {
     @Test fun sourceReceiptIsBoundToTheActualSingleReadBytes() {
         val root = createTempDirectory("system-contract-receipt").toFile()
         try {
-            val paths = listOf(
-                WorkflowSemanticsRecoveryLifecycle.WORK_PACKAGE,
-                CompilerModuleExtractionLifecycle.WORK_PACKAGE,
-                CompilerModuleAcceptance.EVIDENCE, CompilerModuleAcceptance.INVENTORY,
-                LanguageContractIntegrityLifecycle.WORK_PACKAGE,
-                LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE,
-                LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE, LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE, LanguageContractIntegrityLifecycle.SEMANTIC_IDENTITY_EVIDENCE, LanguageContractIntegrityLifecycle.STRICT_LOADER_EVIDENCE,
-                ".flow-agent/roadmap-architecture-recovery.yaml", ".flow-agent/roadmap-post-toolchain.yaml",
-                ".flow-agent/release-state.yaml", ".flow-agent/roadmap.yaml"
-            )
-            paths.forEach { name -> File(name).copyTo(File(root, name).also { it.parentFile.mkdirs() }) }
+            File(".flow-agent").copyRecursively(File(root, ".flow-agent"))
             val baseline = WorkflowSemanticsRecoveryLifecycle.load(root)
             assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(baseline).isEmpty())
             File(root, LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE).appendText("\n")
