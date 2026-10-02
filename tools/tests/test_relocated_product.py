@@ -57,7 +57,10 @@ class RelocatedProductTests(unittest.TestCase):
 
     def test_cli_receipt_requires_parseable_sections(self):
         self.assertEqual({"REPORT": {"status": "PASS"}}, relocated.sections('===== REPORT =====\n{"status":"PASS"}\n'))
-        for text in ("unstructured", "===== REPORT =====\nnot json", "noise\n===== REPORT =====\n{}"):
+        rendered = '===== REPORT =====\n{}\n===== RENDERED EXECUTABLE TARGET OUTPUT: output.yaml =====\nsteps: []\n'
+        self.assertEqual("steps: []\n", relocated.sections(rendered)["RENDERED EXECUTABLE TARGET OUTPUT: output.yaml"])
+        for text in ("unstructured", "===== REPORT =====\nnot json", "noise\n===== REPORT =====\n{}",
+                     "===== REPORT =====\n{}\n===== REPORT =====\n{}\n"):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 relocated.sections(text)
 

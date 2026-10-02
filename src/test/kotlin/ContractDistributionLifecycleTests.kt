@@ -14,7 +14,7 @@ class ContractDistributionLifecycleTests {
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isEmpty(), WorkflowSemanticsRecoveryLifecycle.errors(s).joinToString(" | "))
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(cliArgumentCandidateSnapshot()).isEmpty())
         @Suppress("UNCHECKED_CAST") val completion = s.artifactWorkPackage["completionDecision"] as Map<String, Any?>
-        assertEquals(emptyList(), completion["closesFindings"])
+        assertEquals(emptyList<String>(), completion["closesFindings"])
     }
 
     @Test fun everyAcceptanceFieldAndImmutableActualMainReceiptAreRequired() {

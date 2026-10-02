@@ -52,7 +52,11 @@ def sections(stdout: str) -> dict:
     parts = re.split(r"^===== (.*?) =====\n", stdout, flags=re.MULTILINE)
     if parts[0] or len(parts) % 2 == 0:
         raise ValueError("Expected structured CLI sections.")
-    return {parts[i]: json.loads(parts[i + 1]) for i in range(1, len(parts), 2)}
+    titles = parts[1::2]
+    if len(titles) != len(set(titles)):
+        raise ValueError("Duplicate CLI section.")
+    return {parts[i]: parts[i + 1] if parts[i].startswith("RENDERED EXECUTABLE TARGET OUTPUT: ")
+            else json.loads(parts[i + 1]) for i in range(1, len(parts), 2)}
 
 
 def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) -> dict:
@@ -124,7 +128,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                     (report_dir / f"{key}.stderr").write_text(result.stderr)
                     if result.returncode != exit_code or result.stderr:
                         raise ValueError(f"Relocated CLI {key} failed: exit={result.returncode}; {result.stdout[-1500:]} {result.stderr}")
-                    if name not in ("missing-external", "flow"):
+                    if name != "missing-external":
                         document = sections(result.stdout)
                         records = document["FLOW CONTRACT RESOURCE PROVENANCE"]
                         if {r["path"] for r in records} != set(resources) or len(records) != len(resources):
@@ -138,8 +142,12 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                     if name == "missing-external" and ((cwd / "forbidden").exists() or "CLI_INVALID_INPUT" not in result.stdout):
                         raise ValueError("Incomplete override was not rejected before output writes.")
                     if name in ("jenkins", "github-actions"):
-                        if not (cwd / name / f"{name}.executable.yaml").is_file():
+                        artifact = cwd / name / ("Jenkinsfile" if name == "jenkins" else "github-actions.yml")
+                        if not artifact.is_file():
                             raise ValueError(f"Relocated {name} did not produce its executable artifact.")
+                        displayed = document[f"RENDERED EXECUTABLE TARGET OUTPUT: {artifact.name}"].removesuffix("\n")
+                        if artifact.read_text() != displayed + ("" if displayed.endswith("\n") else "\n"):
+                            raise ValueError(f"Relocated {name} wrote different artifact bytes from its presentation.")
                     digest = hashlib.sha256(result.stdout.encode()).hexdigest()
                     # Only malformed input diagnostics contain invocation-specific paths.
                     if name != "missing-external":

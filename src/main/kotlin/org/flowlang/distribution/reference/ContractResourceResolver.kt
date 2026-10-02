@@ -49,7 +49,7 @@ class ContractResourceResolver(
             val provenance = entries.map { (path, expectedHash) ->
                 val bytes = if (external == null) resource("$PREFIX/$path") else {
                     val file = external.resolve(path)
-                    var component = external
+                    var component: java.nio.file.Path = external
                     for (part in external.relativize(file)) {
                         component = component.resolve(part)
                         require(!Files.isSymbolicLink(component)) { "Symbolic contract resource is forbidden: $path" }
