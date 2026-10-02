@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 66
+stateVersion: 67
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -47,13 +47,13 @@ roadmapState:
   completedEnablingMilestone: "TOOLCHAIN-MODERNIZATION"
   completedEnablingMilestoneName: "Kotlin and Gradle Toolchain Modernization"
   postToolchainRoadmap: ".flow-agent/roadmap-post-toolchain.yaml"
-  completedRecoveryItem: "AR-03"
-  completedRecoveryItemName: "Compiler-Enforced Boundaries and Adapter Extraction"
-  completedRecoveryWorkPackage: ".flow-agent/work-packages/compiler-enforced-module-boundaries.yaml"
-  nextRecoveryItem: "AR-04"
-  nextRecoveryItemName: "Language, Contract, Type and Identity Integrity"
-  nextRecoveryActivationState: "active"
-  activeRecoveryWorkPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+  completedRecoveryItem: "AR-04"
+  completedRecoveryItemName: "Language, Contract, Type and Identity Integrity"
+  completedRecoveryWorkPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+  nextRecoveryItem: "AR-05"
+  nextRecoveryItemName: "Artifact, Distribution, CLI and I/O Integrity"
+  nextRecoveryActivationState: "not-activated"
+  activeRecoveryWorkPackage: ""
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -198,11 +198,11 @@ qualityPrinciples:
   - "An orthogonal enabling milestone must not fabricate a product-roadmap successor or reopen a completed roadmap stream."
 
 recoveryAcceptance:
-  completedItem: "AR-03"
-  evidence: ".flow-agent/evidence/compiler-module-acceptance.json"
-  acceptedMain: "0a863eb10f60a64945f9657b0fcf090714ab543a"
-  workflowRunId: 34370712591
-  successorCandidate: "AR-04"
+  completedItem: "AR-04"
+  evidence: ".flow-agent/evidence/language-integrity-completion-acceptance.json"
+  acceptedMain: "22c382b86351c8f7a17be8150ade0833653cce5d"
+  workflowRunId: 36987070806
+  successorCandidate: "AR-05"
   candidateValidation: current-revision-ci-required
 
 lastKnownValidation:
@@ -219,8 +219,8 @@ lastKnownValidation:
   validationSource: "Flow CI #3228, run 34116599418, passed exact head 748fa4390f5e6e404e691f8d3e6a3318af9ed746 and synthetic merge candidate 60f370f6d98446f9c01a6d6511d4ed7a885ebab8 after distinct integrated validation Flow CI #3226. The final completion-transition commit requires its own exact-head and merge-candidate PR CI."
   notes:
     - "AR-04F-INPUT-TYPES is accepted from PR #188 and actual merged-main CI 36973061505: identical 1733-test and 264-check inventories, zero failures/errors/skips, and all four source-bound isolation proofs."
-    - "AR-04A through F implementations are accepted. The byte-pinned integrated-language-implementation-acceptance.json receipt advances only implementationBoundary; validationBoundary and completionBoundary remain pending and require independent current-revision CI. AR-05 is not activated."
-    - "AR-02 is complete through AR-02E, with historical activation, AR-02A through AR-02D implementation, integrated validation and independent closure receipts in its work package. AR-03 now has a separate active module-extraction work package; its current candidate validation is not claimed by this historical AR-02 receipt. EF-09 remains paused."
+    - "AR-04 is complete against immutable implementation, independent PR #189 validation and actual-main completion receipts. All three validation archives contain identical 1739-test and 264-check inventories. This closure transition still requires its own CI; AR-05 is next but not activated."
+    - "AR-02 is complete through AR-02E, with historical activation, AR-02A through AR-02D implementation, integrated validation and independent closure receipts in its work package. AR-03 used a separate module-extraction work package; its subsequent validation is not claimed by this historical AR-02 receipt. EF-09 remains paused."
     - "Closure validation includes 1358 Kotlin tests, Flow Agent tooling and standalone conformance on exact head and synthetic merge candidate. No local Gradle run, new runtime adapter certification or public artifact version migration is claimed by this transition."
     - "TOOLCHAIN-MODERNIZATION is complete on Kotlin 2.4.10, Gradle 9.5.0 and JDK 25 with distinct Kotlin, Gradle, JDK, offline implementation and lifecycle completion evidence."
     - "The offline boundary prepared an isolated Gradle home and verified clean tests plus standalone conformance from a second isolated Gradle home using --offline."

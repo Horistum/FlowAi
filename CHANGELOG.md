@@ -4,6 +4,13 @@ All project source text is written in English. The changelog records architectur
 
 ## Unreleased - v0.9.7 correction track
 
+### AR-04 Language Integrity Completion
+
+- Closed F-07, F-12, F-13, F-14 and F-21 against accepted implementation receipts, independent PR #189 validation and separately executed actual-main evidence.
+- Bound completion to immutable CI evidence and consistent roadmap, release and finding state; rejected borrowed receipts, synthetic push claims and premature successor activation.
+- Preserved historical lifecycle scenarios through an explicit active implementation context and added nine completion regressions.
+- Selected AR-05 as the next planned milestone without activating it; retained paused EF-09, AR-07-owned F-20 containment and existing public versions and support claims.
+
 ### AR-04 Integrated Implementation Acceptance
 
 - Accepted corrected AR-04F implementation from independently inspected PR #188 and actual merged-main evidence, preserving all predecessor test and conformance identities.

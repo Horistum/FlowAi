@@ -8,7 +8,7 @@ import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
 class LanguageContractIntegrityLifecycleTests {
-    private val snapshot get() = WorkflowSemanticsRecoveryLifecycle.load(File(".")).let { current ->
+    private val snapshot get() = languageIntegrityImplementationSnapshot().let { current ->
         current.copy(integrityWorkPackage = org.flowlang.serialization.FlowYaml.readMap(
             File("src/test/resources/lifecycle/language-integrity-activation.yaml")))
     }

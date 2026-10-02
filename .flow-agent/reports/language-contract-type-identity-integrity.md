@@ -1,6 +1,40 @@
 # Horistum language and contract integrity
 
-## Accepted implementation and next validation boundary
+## Completed AR-04 and unactivated AR-05 successor
+
+AR-04 closes F-07, F-12, F-13, F-14 and F-21. All A-through-F implementation
+receipts remain immutable. PR #188 supplies the implementation boundary;
+PR #189 supplies independent exact-head and synthetic-merge validation; the
+separate push run on actual PR #189 merged main supplies completion evidence.
+This follows the actual-main acceptance model already used for AR-03.
+
+Validation Flow CI #3301 (`36985044059`) passed head
+`7a041c82775046ab7dab6faaa08d2449f73fe606` and synthetic merge
+`2adaaf29cdafe9559906c93a2e6568b4c7500e6e`. Actual main
+`22c382b86351c8f7a17be8150ade0833653cce5d` passed Flow CI #3302
+(`36987070806`). All three source trees equal
+`a407fdb290042327c92d8400951a4c8323cf8562` and all three downloaded JUnit
+archives contain identical 1,739 unique tests in 305 suites, with no failures,
+errors or skips. All 1,733 predecessor test identities and the same ordered
+264 passing conformance checks are preserved. All four PR and post-merge
+isolation proofs were checked against every listed source-input hash.
+
+The byte-pinned `.flow-agent/evidence/language-integrity-completion-acceptance.json`
+records revisions, jobs, artifact fingerprints, identity fingerprints and the
+pre-closure finding state. Completion rejects missing or altered evidence,
+reused receipts, synthetic-merge fields in a push receipt, partial slice
+acceptance, contradictory roadmap pointers and changes to unrelated finding
+owners or closure states. Historical activation and implementation scenarios
+reconstruct their own coherent active context without changing evidence bytes.
+
+The closure transition itself requires new exact-head and synthetic-merge CI;
+its future result is not committed as historical evidence. AR-05 is next and
+planned, with no active work package. EF-09 remains paused, F-20 remains
+contained and AR-07-owned, and the terminal Core roadmap, public versions,
+CI topology and target-support claims are unchanged.
+
+
+## Historical implementation acceptance (PR #189)
 
 Corrected AR-04F implementation is accepted from PR #188. Flow CI #3298
 (`36971285367`) passed exact head `fe59c65825a60ed918361d14adfb21350194b72f`
@@ -18,18 +52,16 @@ match every listed input hash against the accepted tree: kernel 19, compiler
 job identities, merge parents and test inventories are recorded in
 `.flow-agent/evidence/integrated-language-implementation-acceptance.json`.
 
-The lifecycle accepts F and advances only `implementationBoundary`. It verifies
+At PR #189, the lifecycle accepted F and advanced only `implementationBoundary`. It verifies
 the immutable evidence document before parsing it, then checks every slice and
 boundary receipt field against that authenticated document. Missing documents,
 changed bytes, malformed documents, substituted predecessor receipts and
 self-declared replacement digests fail closed. Historical A through E scenarios
 retain their original pending milestone-wide implementation boundary.
 
-This transition must pass its own exact-head and synthetic-merge Flow CI.
-`validationBoundary` and `completionBoundary` remain pending; the implementation
-receipt cannot certify this new candidate or a future completion transition.
-All five findings remain open until whole-AR-04 completion. AR-05 stays planned,
-EF-09 stays paused and F-20 remains AR-07-owned.
+At that implementation transition, `validationBoundary` and `completionBoundary`
+remained pending and all five findings remained open. The completed independent
+validation and actual-main evidence are now accepted as recorded above.
 
 
 ## Accepted activation boundary
@@ -117,7 +149,7 @@ milestone-wide success records.
 
 ## Scope and lifecycle
 
-AR-04 remains active. AR-04A through E have independently accepted receipts.
+At the earlier integration candidate, AR-04 remained active and AR-04A through E had independently accepted receipts.
 AR-04F is the selected integrated acceptance candidate. F-07, F-12, F-13, F-14
 and F-21 remain open until that candidate's independent acceptance; implementation
 alone does not close a finding. AR-05/06/07 remain planned, EF-09 remains paused
@@ -230,8 +262,8 @@ execution; this committed report does not certify its own future commit.
 No public artifact layout, public contract version, target support claim, execution
 engine, compatibility retirement or successor milestone is changed. The scope is the
 identity invariant, not full grammar validation for every target-native name or a new
-runtime implementation of generic symbolic bindings. E/F and whole-AR-04 completion
-remain pending, and the existing failure, path, merge and workflow semantics remain
+runtime implementation of generic symbolic bindings. At that transition, E/F and whole-AR-04 completion
+remained pending, and the existing failure, path, merge and workflow semantics remain
 owned by their established authorities.
 
 
@@ -254,9 +286,9 @@ strict; JSON contract readers now share duplicate, scalar, trailing-content and
 complexity rules. See `docs/modules/STRICT_CONTRACT_LOADING.md` for the explicit
 policy and `.flow-agent/reports/strict-public-contract-loaders.md` for the branch
 review and validation scope. Existing contract vocabulary owners remain in place.
-E requires its own candidate CI. AR-04F and whole-milestone closure remain pending.
+E required its own candidate CI. At that transition, AR-04F and whole-milestone closure remained pending.
 
-## Current integrated acceptance candidate
+## Historical integrated acceptance candidate
 
 PR #186 and post-merge Flow CI 35705768665 have been independently inspected:
 1,722 identical test identities, 257 ordered conformance checks and all four

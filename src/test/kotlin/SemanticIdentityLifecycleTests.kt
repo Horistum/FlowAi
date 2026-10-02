@@ -5,7 +5,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class SemanticIdentityLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File(".")).let { current ->
+    private fun live() = languageIntegrityImplementationSnapshot().let { current ->
         current.copy(integrityWorkPackage = org.flowlang.serialization.FlowYaml.readMap(
             File("src/test/resources/lifecycle/semantic-identity-implementation.yaml")))
     }

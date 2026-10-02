@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 
 class SystemContractIdentityLifecycleTests {
     private fun live(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-        val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+        val current = languageIntegrityImplementationSnapshot()
         val historical = records(current.integrityWorkPackage["implementationSlices"]).map { slice -> when (slice["id"]) {
             "AR-04C" -> slice + mapOf("status" to "implemented", "acceptance" to mapOf(
                 "source" to "current-revision-ci", "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))

@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 
 /** Replay authored-declaration implementation against its independently verified activation. */
 class SourceDeclarationLifecycleTests {
-    private val snapshot get() = WorkflowSemanticsRecoveryLifecycle.load(File(".")).let { current ->
+    private val snapshot get() = languageIntegrityImplementationSnapshot().let { current ->
         val activation = org.flowlang.serialization.FlowYaml.readMap(
             File("src/test/resources/lifecycle/language-integrity-activation.yaml"))
         val slices = (activation["implementationSlices"] as List<*>).mapIndexed { index, value ->

@@ -1,17 +1,17 @@
 version: "AR-04"
 name: "Language, Contract, Type and Identity Integrity"
 type: "architecture-recovery-language-integrity"
-status: active
+status: complete
 stream: "architecture-recovery"
 
 objective: "Preserve authored meaning at language and contract boundaries through explicit duplicate rejection, closed schema types, deterministic system identity, collision-safe semantic identity and strict public loaders."
 
 authorization:
-  status: active
+  status: completed
   predecessor: "AR-03"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-04"
   mainAtActivation: "0a863eb10f60a64945f9657b0fcf090714ab543a"
-  rule: "Maintainer authorizes the next AR-04 transition after inspected PR #188 and successful post-merge Flow CI 36973061505. Implementation is accepted from independent evidence; validation and completion require separate current-revision CI boundaries."
+  rule: "Maintainer authorizes AR-04 completion after independent PR #189 validation and actual merged-main Flow CI 36987070806. PR #188 remains the immutable implementation receipt; the closure transition requires its own exact-head and synthetic-merge CI. AR-05 activation is separate."
 
 verifiedBaseline:
   mergedPullRequest: 177
@@ -241,14 +241,55 @@ lifecycle:
     evidence: .flow-agent/evidence/integrated-language-implementation-acceptance.json
     evidenceSha256: add8c1f1d5936d8d7a805846295d4df97903c910b3126cce6badf854fa2cccf7
   validationBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    sourceTree: a407fdb290042327c92d8400951a4c8323cf8562
+    kotlinTests: 1739
+    toolingTests: 151
+    conformanceChecks: 264
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: .flow-agent/evidence/language-integrity-completion-acceptance.json
+    evidenceSha256: ce43db74f89150896854f98e52dcf12a62aca6aab6f741b54f3c8e81ede6419e
+    workflowRunId: 36985044059
+    workflowRunNumber: 3301
+    exactHead: 7a041c82775046ab7dab6faaa08d2449f73fe606
+    syntheticMergeCandidate: 2adaaf29cdafe9559906c93a2e6568b4c7500e6e
+    base: 1d88151f0f3d6ccc9185522b967934724cc4d5b4
+    exactHeadJobId: 110770158382
+    mergeCandidateJobId: 110770158361
+    isolationJobId: 110768082108
   completionBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    sourceTree: a407fdb290042327c92d8400951a4c8323cf8562
+    kotlinTests: 1739
+    toolingTests: 151
+    conformanceChecks: 264
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: .flow-agent/evidence/language-integrity-completion-acceptance.json
+    evidenceSha256: ce43db74f89150896854f98e52dcf12a62aca6aab6f741b54f3c8e81ede6419e
+    event: push
+    mergedPullRequest: 189
+    mainCommit: 22c382b86351c8f7a17be8150ade0833653cce5d
+    validatedHead: 7a041c82775046ab7dab6faaa08d2449f73fe606
+    workflowRunId: 36987070806
+    workflowRunNumber: 3302
+    exactHeadJobId: 110775853199
+    isolationJobId: 110774468502
+
+acceptanceEvidence:
+  path: .flow-agent/evidence/language-integrity-completion-acceptance.json
+  sha256: ce43db74f89150896854f98e52dcf12a62aca6aab6f741b54f3c8e81ede6419e
 
 completionDecision:
-  status: not-complete
-  closesFindings: []
-  remainingFindings: ["F-07", "F-12", "F-13", "F-14", "F-21"]
+  status: complete
+  completedSlice: "AR-04F"
+  closesFindings: ["F-07", "F-12", "F-13", "F-14", "F-21"]
+  remainingFindings: []
   nextItem: "AR-05"
   nextItemActivationState: not-activated
 
@@ -262,7 +303,8 @@ forbiddenScope:
 
 validationPlan:
   - "Accept corrected AR-04F implementation from independently inspected PR #188 and actual merged-main CI; preserve historical A/B/C/D/E receipts."
-  - "Validate this acceptance transition on its own exact head and synthetic merge; implementation evidence cannot certify the validation or completion boundary."
+  - "Accept separate PR #189 exact-head/synthetic-merge validation and actual-main push completion; neither reuses PR #188 implementation evidence."
+  - "Validate this closure transition on its own exact head and synthetic merge without publishing its future CI receipt."
   - "Reject identity collisions before AST lowering or target-name publication without alias selection, invented suffixes or dropped declarations."
   - "Exercise exact references, reversible wire segments, Unicode distinctions, display-name independence and independent target projection boundaries."
   - "Run complete Kotlin tests, installed conformance and physical module-isolation proofs in existing Flow CI on exact HEAD and synthetic merge."

@@ -5,7 +5,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class IntegratedLanguageIntegrityLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = languageIntegrityImplementationSnapshot()
     @Suppress("UNCHECKED_CAST") private fun section(value: Any?) = value as Map<String, Any?>
     @Suppress("UNCHECKED_CAST") private fun slices(value: Any?) = value as List<Map<String, Any?>>
     private fun rejected(value: WorkflowSemanticsRecoveryLifecycleSnapshot) =
