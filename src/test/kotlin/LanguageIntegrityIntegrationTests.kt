@@ -54,7 +54,9 @@ class LanguageIntegrityIntegrationTests {
             assertEquals(0, positive.exitCode, positive.toString())
             assertTrue(acceptedOut.walkTopDown().any { it.isFile })
             val mutants = listOf(valid + "\nname: overwritten", valid + "\nunknown: true",
-                valid + "\n---\n{}", valid.replace("id: record", "id: audit_step"))
+                valid + "\n---\n{}", valid.replace("id: record", "id: audit_step"),
+                valid + "\npolicies: null", valid + "\nfailure: null",
+                valid + "\nfailure: {stopOnError: null}", valid + "\nfailure: {stopOnError: 'false'}")
             mutants.forEachIndexed { index, text ->
                 source.writeText(text)
                 val output = File(directory, "rejected-$index")
@@ -64,6 +66,14 @@ class LanguageIntegrityIntegrationTests {
                 assertEquals(if (index == 0 || index == 2) 2 else 4, result.exitCode)
                 assertTrue(result.diagnostic.message.isNotBlank())
                 assertFalse(output.exists(), "Rejected input published output: $text")
+                // Reusing an existing output path must not erase or replace the
+                // previously accepted bundle when source capture fails.
+                val before = acceptedOut.walkTopDown().filter { it.isFile }
+                    .associate { it.relativeTo(acceptedOut).path to it.readBytes().toList() }
+                val reused = executeCli(arrayOf("intent", source.path, "--out", acceptedOut.path))
+                assertIs<CliExecutionResult.Rejected>(reused)
+                assertEquals(before, acceptedOut.walkTopDown().filter { it.isFile }
+                    .associate { it.relativeTo(acceptedOut).path to it.readBytes().toList() })
             }
         } finally { directory.deleteRecursively() }
     }
