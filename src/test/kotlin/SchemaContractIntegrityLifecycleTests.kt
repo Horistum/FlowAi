@@ -19,7 +19,9 @@ class SchemaContractIntegrityLifecycleTests {
             }
         }
         return current.copy(integrityWorkPackage = current.integrityWorkPackage + mapOf(
-            "selectedSlice" to "AR-04B", "nextSlice" to "AR-04C", "implementationSlices" to slices))
+            "selectedSlice" to "AR-04B", "nextSlice" to "AR-04C", "implementationSlices" to slices,
+            "lifecycle" to (section(current.integrityWorkPackage["lifecycle"]) +
+                ("implementationBoundary" to mapOf("status" to "pending")))))
     }
 
     @Test

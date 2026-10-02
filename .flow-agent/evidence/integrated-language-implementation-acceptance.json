@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "pullRequest": 188,
+  "base": "b7e53bc16849ac0e59cbf5cf0e86c3d2696c2157",
+  "head": "fe59c65825a60ed918361d14adfb21350194b72f",
+  "syntheticMerge": "2c8dc365123d20db5b1b15dc307ae2dbd63543a3",
+  "mergedMain": "1d88151f0f3d6ccc9185522b967934724cc4d5b4",
+  "sourceTree": "49bcdf2513379b0d8eb0f2a6486a8e578f77900c",
+  "workflowRunId": 36971285367,
+  "workflowRunNumber": 3298,
+  "toolingTests": 151,
+  "jobs": {
+    "exactHead": 110727292229,
+    "mergeCandidate": 110727292136,
+    "physicalIsolation": 110725689875
+  },
+  "postMerge": {
+    "workflowRunId": 36973061505,
+    "workflowRunNumber": 3299,
+    "event": "push",
+    "head": "1d88151f0f3d6ccc9185522b967934724cc4d5b4",
+    "sourceTree": "49bcdf2513379b0d8eb0f2a6486a8e578f77900c",
+    "mergeParents": [
+      "b7e53bc16849ac0e59cbf5cf0e86c3d2696c2157",
+      "fe59c65825a60ed918361d14adfb21350194b72f"
+    ],
+    "status": "completed",
+    "conclusion": "success",
+    "exactHeadJobId": 110732773075,
+    "isolationJobId": 110730983035
+  },
+  "identityEncoding": "SHA-256 of compact UTF-8 JSON; sorted [classname,name] pairs for JUnit, ordered check names for conformance",
+  "junit": {
+    "exactHead": {
+      "tests": 1733,
+      "suites": 305,
+      "identitiesSha256": "2b97319c53790ae1210abff1b77174ab09e32f2421108a3dc8b6ef0fb0be63f3",
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "uniqueIdentities": 1733
+    },
+    "mergeCandidate": {
+      "tests": 1733,
+      "suites": 305,
+      "identitiesSha256": "2b97319c53790ae1210abff1b77174ab09e32f2421108a3dc8b6ef0fb0be63f3",
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "uniqueIdentities": 1733
+    },
+    "postMerge": {
+      "tests": 1733,
+      "suites": 305,
+      "identitiesSha256": "2b97319c53790ae1210abff1b77174ab09e32f2421108a3dc8b6ef0fb0be63f3",
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "uniqueIdentities": 1733
+    }
+  },
+  "conformance": {
+    "exactHead": {
+      "passed": 264,
+      "failed": 0,
+      "orderedIdentitiesSha256": "bb8bc361d8d989a8c106ec8b1218e4a10e46ab62dec6c647278992ccb1f978b5"
+    },
+    "mergeCandidate": {
+      "passed": 264,
+      "failed": 0,
+      "orderedIdentitiesSha256": "bb8bc361d8d989a8c106ec8b1218e4a10e46ab62dec6c647278992ccb1f978b5"
+    },
+    "postMerge": {
+      "passed": 264,
+      "failed": 0,
+      "orderedIdentitiesSha256": "bb8bc361d8d989a8c106ec8b1218e4a10e46ab62dec6c647278992ccb1f978b5"
+    }
+  },
+  "preservation": {
+    "predecessorPullRequest": 187,
+    "predecessorTests": 1728,
+    "allPredecessorTestIdentitiesPreserved": true,
+    "addedTests": 5,
+    "predecessorConformanceChecks": 264,
+    "allPredecessorConformanceIdentitiesPreservedInOrder": true
+  },
+  "physicalIsolation": {
+    "pullRequest": {
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true,
+      "inputCounts": {
+        "adapter-isolation/proof.json": 215,
+        "compiler-isolation/proof.json": 95,
+        "kernel-isolation/proof.json": 19,
+        "product-isolation/proof.json": 284
+      },
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ]
+    },
+    "postMerge": {
+      "status": "passed",
+      "allListedInputsMatchSourceTree": true,
+      "inputCounts": {
+        "adapter-isolation/proof.json": 215,
+        "compiler-isolation/proof.json": 95,
+        "kernel-isolation/proof.json": 19,
+        "product-isolation/proof.json": 284
+      },
+      "proofs": [
+        "adapter-isolation/proof.json",
+        "compiler-isolation/proof.json",
+        "kernel-isolation/proof.json",
+        "product-isolation/proof.json"
+      ]
+    }
+  },
+  "artifacts": {
+    "exactHeadTests": {
+      "id": 11212352049,
+      "file": "ar04f-type-flow-ci-exact-head-test-reports.zip",
+      "sha256": "83cacf0aaf46c6f948f758fbd5ee1e10194669a31644c0aac9eb9e97c1ec7686"
+    },
+    "mergeCandidateTests": {
+      "id": 11212227994,
+      "file": "ar04f-type-flow-ci-merge-candidate-test-reports.zip",
+      "sha256": "04ac1305234d7949376ada73539348a76141da5a888f01d4dbd082a0595d69ee"
+    },
+    "postMergeTests": {
+      "id": 11213251181,
+      "file": "ar04f-main-tests.zip",
+      "sha256": "b319a7d83e8774294156b9b3ae97cd1a58def19e1f703cc8f1da9be49f0770bf"
+    },
+    "exactHeadLogs": {
+      "id": 11212252721,
+      "file": "ar04f-type-flow-ci-exact-head-gradle-logs.zip",
+      "sha256": "f2e97b55a07b8e5747a5def72461537f21fb9c34472d5cf182b7072cb577219c"
+    },
+    "mergeCandidateLogs": {
+      "id": 11212545158,
+      "file": "ar04f-type-flow-ci-merge-candidate-gradle-logs.zip",
+      "sha256": "6439821f12b4450f437e0386522a59dc3ddabc9032812d7da23e1f11cd87e896"
+    },
+    "postMergeLogs": {
+      "id": 11212881587,
+      "file": "ar04f-main-logs.zip",
+      "sha256": "92965958e3866e632040fae59f48813997e4f8c2801b374b685a5daa7b549a24"
+    },
+    "pullRequestIsolation": {
+      "id": 11212082102,
+      "file": "ar04f-type-isolation.zip",
+      "sha256": "d86b6619f9edcb16a70e2c3751d64cfdcf17fbffb8619a89940196c1c4b8147c"
+    },
+    "postMergeIsolation": {
+      "id": 11212432817,
+      "file": "ar04f-main-isolation.zip",
+      "sha256": "d1c5519e4618782cd4c0025c5d05750755264c27f921ba66874713272df25d0e"
+    }
+  }
+}

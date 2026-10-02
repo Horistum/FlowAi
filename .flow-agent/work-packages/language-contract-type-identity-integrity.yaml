@@ -11,7 +11,7 @@ authorization:
   predecessor: "AR-03"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-04"
   mainAtActivation: "0a863eb10f60a64945f9657b0fcf090714ab543a"
-  rule: "Maintainer authorizes integrated AR-04F after inspected PR #186 and successful post-merge Flow CI 35705768665. Current integrated acceptance requires its own exact-head and merge-candidate CI; predecessor success cannot stand in for current validation."
+  rule: "Maintainer authorizes the next AR-04 transition after inspected PR #188 and successful post-merge Flow CI 36973061505. Implementation is accepted from independent evidence; validation and completion require separate current-revision CI boundaries."
 
 verifiedBaseline:
   mergedPullRequest: 177
@@ -179,11 +179,23 @@ implementationSlices:
     invariant: "Every public YAML/JSON contract entry point follows one explicit duplicate, unknown-field and complexity policy; permissive parsing cannot be selected accidentally."
   - id: "AR-04F"
     name: "Integrated language integrity acceptance"
-    status: implemented
+    status: complete
     workPackage: ".flow-agent/work-packages/integrated-language-integrity-acceptance.yaml"
     acceptance:
       source: current-revision-ci
       requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+      pullRequest: 188
+      head: fe59c65825a60ed918361d14adfb21350194b72f
+      syntheticMerge: 2c8dc365123d20db5b1b15dc307ae2dbd63543a3
+      mergedMain: 1d88151f0f3d6ccc9185522b967934724cc4d5b4
+      sourceTree: 49bcdf2513379b0d8eb0f2a6486a8e578f77900c
+      workflowRunId: 36971285367
+      postMergeWorkflowRunId: 36973061505
+      kotlinTests: 1733
+      toolingTests: 151
+      conformanceChecks: 264
+      evidence: .flow-agent/evidence/integrated-language-implementation-acceptance.json
+      evidenceSha256: add8c1f1d5936d8d7a805846295d4df97903c910b3126cce6badf854fa2cccf7
     ownsFindings: []
     invariant: "All five finding families have positive and mutation evidence across public entry points; no unrelated finding, support level or package version is closed or promoted."
 
@@ -209,7 +221,25 @@ lifecycle:
     evidence: ".flow-agent/evidence/language-activation-acceptance.json"
     evidenceSha256: "81afd6901fc3de408a2d53e7bde8879a518b171f17fcf354043e1199dbde8758"
   implementationBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    workflowRunId: 36971285367
+    workflowRunNumber: 3298
+    exactHead: fe59c65825a60ed918361d14adfb21350194b72f
+    syntheticMergeCandidate: 2c8dc365123d20db5b1b15dc307ae2dbd63543a3
+    base: b7e53bc16849ac0e59cbf5cf0e86c3d2696c2157
+    sourceTree: 49bcdf2513379b0d8eb0f2a6486a8e578f77900c
+    exactHeadJobId: 110727292229
+    mergeCandidateJobId: 110727292136
+    isolationJobId: 110725689875
+    kotlinTests: 1733
+    toolingTests: 151
+    conformanceChecks: 264
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: .flow-agent/evidence/integrated-language-implementation-acceptance.json
+    evidenceSha256: add8c1f1d5936d8d7a805846295d4df97903c910b3126cce6badf854fa2cccf7
   validationBoundary:
     status: pending
   completionBoundary:
@@ -231,7 +261,8 @@ forbiddenScope:
   - "Do not change public versions, canonical graph semantics, target support or CI check identities."
 
 validationPlan:
-  - "Accept AR-04E from its own inspected PR #186 and post-merge CI evidence; preserve historical A/B/C/D receipts."
+  - "Accept corrected AR-04F implementation from independently inspected PR #188 and actual merged-main CI; preserve historical A/B/C/D/E receipts."
+  - "Validate this acceptance transition on its own exact head and synthetic merge; implementation evidence cannot certify the validation or completion boundary."
   - "Reject identity collisions before AST lowering or target-name publication without alias selection, invented suffixes or dropped declarations."
   - "Exercise exact references, reversible wire segments, Unicode distinctions, display-name independence and independent target projection boundaries."
   - "Run complete Kotlin tests, installed conformance and physical module-isolation proofs in existing Flow CI on exact HEAD and synthetic merge."

@@ -1,6 +1,6 @@
 version: "AR-04F"
 name: "Integrated language integrity acceptance"
-status: active
+status: complete
 stream: architecture-recovery
 parent: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
 authorization:
@@ -11,7 +11,7 @@ authorization:
 invariant: "Accepted documents preserve typed values and exact ownership through compilation; each of the five AR-04 defect families is rejected at its public boundary before a plan or artifact can be authorized."
 boundedCorrection:
   id: "AR-04F-INPUT-TYPES"
-  status: implemented
+  status: complete
   inspectedMain: "b7e53bc16849ac0e59cbf5cf0e86c3d2696c2157"
   predecessorPullRequest: 187
   predecessorWorkflowRun: 35804817305
@@ -19,7 +19,7 @@ boundedCorrection:
   findings: ["F-12", "F-21"]
   falsifiedInvariant: "Intent map normalization accepted explicit null as omission and coerced quoted booleans despite strict token parsing."
   acceptance: "All non-nullable Intent fields reject explicit null with source and path; boolean fields reject text; nullable metadata and IntentNull remain lossless."
-  validation: current-revision-ci-required
+  validation: accepted-on-merged-main
 scope:
   - "Accept strict-loader implementation from independently inspected PR and post-merge evidence."
   - "Exercise real source, YAML/JSON Intent, descriptor and reviewed AI entry points with positive baselines and negative mutations."
@@ -37,5 +37,10 @@ acceptance:
   - "Existing exact-head and merge-candidate CI plus physical module-isolation proofs pass for the current revision."
   - "Malformed-input probes verify the expected exception class, stable code, field path and source identity; unrelated exceptions never count as semantic rejection."
 validation:
-  status: current-revision-ci-required
+  status: accepted-on-merged-main
+  pullRequest: 188
+  workflowRunId: 36971285367
+  postMergeWorkflowRunId: 36973061505
+  evidence: .flow-agent/evidence/integrated-language-implementation-acceptance.json
   requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  scope: "Implementation only; AR-04 validation and completion remain independently gated in the parent work package."

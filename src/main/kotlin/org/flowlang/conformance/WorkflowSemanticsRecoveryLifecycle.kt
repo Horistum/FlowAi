@@ -24,7 +24,9 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val semanticIdentityEvidence: Map<String, Any?> = emptyMap(),
     val semanticIdentitySha256: String? = null,
     val strictLoaderEvidence: Map<String, Any?> = emptyMap(),
-    val strictLoaderSha256: String? = null
+    val strictLoaderSha256: String? = null,
+    // Keep the immutable document: acceptance fingerprints and parses this same value.
+    val integratedLanguageEvidence: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -94,7 +96,9 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             strictLoader?.let { bytes ->
                 MessageDigest.getInstance("SHA-256").digest(bytes)
                     .joinToString("") { "%02x".format(it.toInt() and 0xff) }
-            }
+            },
+            File(root, LanguageContractIntegrityLifecycle.INTEGRATED_EVIDENCE)
+                .takeIf { it.isFile }?.readText(Charsets.UTF_8)
         )
     }
 

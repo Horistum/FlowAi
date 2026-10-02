@@ -16,7 +16,9 @@ class SystemContractIdentityLifecycleTests {
             else -> slice
         } }
         return current.copy(integrityWorkPackage = current.integrityWorkPackage + mapOf(
-            "selectedSlice" to "AR-04C", "nextSlice" to "AR-04D", "implementationSlices" to historical))
+            "selectedSlice" to "AR-04C", "nextSlice" to "AR-04D", "implementationSlices" to historical,
+            "lifecycle" to (section(current.integrityWorkPackage["lifecycle"]) +
+                ("implementationBoundary" to mapOf("status" to "pending")))))
     }
     @Suppress("UNCHECKED_CAST")
     private fun records(value: Any?) = value as List<Map<String, Any?>>
