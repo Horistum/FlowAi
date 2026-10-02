@@ -33,7 +33,7 @@ byte provenance; it does not certify semantic validity or adapter support.
 Each resource-consuming command publishes a `FLOW CONTRACT RESOURCE PROVENANCE`
 JSON section containing each logical path, `CLASSPATH` or `EXTERNAL` origin, stable
 classpath identity or explicit file URI, actual byte length and SHA-256. Capture
-stdout to retain this record. The root used internally by File-based authorities is
+stdout to retain this record. Target expression evidence uses stable `contract:<path>#<anchor>` identities, resolved against that selected resource inventory. Temporary snapshot paths are never published as those evidence identities. The root used internally by File-based authorities is
 a private command-scoped snapshot and is removed on successful and exceptional
 completion. It does not become the default input/output directory. Available temporary
 disk space is required; this slice does not promise filesystem immutability or atomic

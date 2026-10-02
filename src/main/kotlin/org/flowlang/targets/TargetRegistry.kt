@@ -27,7 +27,11 @@ object TargetRegistryYamlLoader {
         return document
     }
 
-    fun loadDirectory(dir: File): Map<String, TargetCapability> {
+    fun loadDirectory(dir: File): Map<String, TargetCapability> =
+        loadDirectory(dir) { it.path.replace(File.separatorChar, '/') }
+
+    /** Logical identities let packaged callers retain source provenance after a temporary snapshot is removed. */
+    fun loadDirectory(dir: File, sourceIdentity: (File) -> String): Map<String, TargetCapability> {
         if (!dir.isDirectory) return emptyMap()
         val docs = dir.listFiles { file ->
             file.isFile && (file.extension == "yaml" || file.extension == "yml")
@@ -35,9 +39,14 @@ object TargetRegistryYamlLoader {
         val topologyProfiles = adapterTopologyProfiles(dir)
 
         val out = linkedMapOf<String, TargetCapability>()
+        val identities = mutableSetOf<String>()
         docs.forEach { file ->
             val document = load(file)
-            val profiles = expressionProfiles(document, file)
+            val identity = sourceIdentity(file)
+            require(identity.isNotBlank() && '#' !in identity && identities.add(identity)) {
+                "Target registry source identities must be non-blank, fragment-free and unique."
+            }
+            val profiles = expressionProfiles(document, file, identity)
             document.targets.forEach { descriptor ->
                 require(topologyProfiles.isNotEmpty() || descriptor.topology != null) {
                     "Target '${descriptor.name}' must declare topology evidence in ${file.path}; missing topology evidence fails closed."
@@ -107,7 +116,8 @@ object TargetRegistryYamlLoader {
 
     private fun expressionProfiles(
         document: TargetRegistryDocument,
-        file: File
+        file: File,
+        sourceIdentity: String = file.path.replace(File.separatorChar, '/')
     ): Map<String, TargetExpressionSupportDeclaration> {
         val profiles = linkedMapOf<String, TargetExpressionSupportDeclaration>()
         document.expressionProfiles.forEach { descriptor ->
@@ -121,7 +131,7 @@ object TargetRegistryYamlLoader {
             require(descriptor.id !in profiles) {
                 "Expression profile '${descriptor.id}' is duplicated in ${file.path}."
             }
-            val reference = file.path.replace(File.separatorChar, '/') + "#expressionProfiles.${descriptor.id}"
+            val reference = sourceIdentity + "#expressionProfiles.${descriptor.id}"
             val declaration = descriptor.toDeclaration(reference)
             TargetExpressionSupport.declarationValidationReason(declaration)?.let { reason ->
                 error("Invalid expression profile '${descriptor.id}' in ${file.path}: $reason")

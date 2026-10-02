@@ -85,3 +85,10 @@ through compiler creation, intent decisions, maintenance normalization and refer
 renderer selection. Repository-default factories remain source-compatible. A dedicated
 positive/negative maintenance test verifies sensitive, unknown and non-sensitive
 classification and rejects invalid external notes before output writes.
+
+Cross-process relocation checks caught temporary snapshot paths in target expression
+profile evidence. The canonical target loader now accepts explicit logical source
+identities while preserving filesystem identities for existing repository callers.
+Product commands use `contract:<path>#<anchor>` references tied to their selected
+provenance inventory; they never publish ephemeral snapshot paths as source identity.
+Repeated target reports must be byte-identical, without masking differing fields.

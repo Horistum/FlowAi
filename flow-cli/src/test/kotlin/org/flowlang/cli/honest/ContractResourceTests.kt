@@ -26,6 +26,11 @@ class ContractResourceTests {
                 assertEquals("classpath:/${ContractResourceResolver.PREFIX}/${record.path}", record.location)
             }
             assertTrue(ModuleRegistry.fromDirectory(File(resources.root, "modules")).allModules().isNotEmpty())
+            for (identity in listOf("", " ", "contract:targets/registry.yaml#forged")) {
+                assertFailsWith<IllegalArgumentException> {
+                    org.flowlang.targets.TargetRegistryYamlLoader.loadDirectory(File(resources.root, "targets")) { identity }
+                }
+            }
             assertFailsWith<UnsupportedOperationException> {
                 (resources.provenance as MutableList<ContractResourceProvenance>).clear()
             }
@@ -116,6 +121,10 @@ class ContractResourceTests {
 
     @Test fun installedContractsPreserveTargetMaturityAndExecutableRendering() {
         val targets = assertIs<CliExecutionResult.Completed>(executeCli(arrayOf("targets")))
+        val json = Json.mapper.writeValueAsString(targets.presentation)
+        assertEquals(json, Json.mapper.writeValueAsString(executeCli(arrayOf("targets")).presentation))
+        assertTrue(json.contains("contract:targets/builtin-targets.yaml#expressionProfiles."))
+        assertFalse(json.contains("/flow-contracts-"))
         val maturity = targets.presentation.items.filterIsInstance<CliPresentationItem.Section>()
             .single { it.title == "FLOW TARGET MATURITY REPORT" }.value
         assertEquals("PASS", Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(maturity)["status"].asText())

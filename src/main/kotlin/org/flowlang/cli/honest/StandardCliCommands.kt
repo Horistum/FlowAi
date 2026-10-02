@@ -107,7 +107,9 @@ internal object StandardCliCommands {
 
     private fun moduleRegistry(root: File) = ModuleRegistry.fromDirectory(File(root, "modules"))
 
-    private fun targetRegistry(root: File) = TargetRegistryYamlLoader.loadDirectory(File(root, "targets")).also {
+    private fun targetRegistry(root: File) = TargetRegistryYamlLoader.loadDirectory(File(root, "targets")) { file ->
+        "contract:${file.relativeTo(root).invariantSeparatorsPath}"
+    }.also {
         require(it.isNotEmpty()) { "No target registry found in the selected contracts." }
     }
 }
