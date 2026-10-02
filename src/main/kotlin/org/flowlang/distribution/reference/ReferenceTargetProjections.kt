@@ -1,5 +1,9 @@
 package org.flowlang.distribution.reference
 
+import java.io.File
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
+import org.flowlang.safety.EnvironmentSafetyPolicy
+import org.flowlang.generators.manifest.TargetEnvironmentSafetyEvidenceResolver
 import org.flowlang.generators.manifest.TargetProjectionProvider
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.targets.builtin.GitHubActionsManifestGenerator
@@ -11,9 +15,13 @@ import org.flowlang.targets.builtin.TektonManifestRenderer
 
 /** Concrete adapter composition owned by the reference distribution, never by generic authorities. */
 object ReferenceTargetProjections {
-    val registry: TargetProjectionRegistry = TargetProjectionRegistry.of(
+    val registry: TargetProjectionRegistry by lazy { create(StandardEnvironmentSafetyPolicyNotes.policy()) }
+
+    fun fromContracts(rootDir: File): TargetProjectionRegistry = create(StandardEnvironmentSafetyPolicyNotes.policy(rootDir))
+
+    private fun create(policy: EnvironmentSafetyPolicy): TargetProjectionRegistry = TargetProjectionRegistry.of(
         TargetProjectionProvider(JenkinsManifestGenerator(), JenkinsManifestRenderer()),
-        TargetProjectionProvider(GitHubActionsManifestGenerator(), GitHubActionsManifestRenderer()),
+        TargetProjectionProvider(GitHubActionsManifestGenerator(), GitHubActionsManifestRenderer(TargetEnvironmentSafetyEvidenceResolver(policy))),
         TargetProjectionProvider(TektonManifestGenerator(), TektonManifestRenderer())
     )
 

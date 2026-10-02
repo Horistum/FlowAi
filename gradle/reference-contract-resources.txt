@@ -66,6 +66,12 @@ src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt
 src/test/kotlin/TargetNeutralProjectionPayloadTests.kt
 src/test/kotlin/TargetProjectionTestBoundaryTests.kt
 src/test/kotlin/TargetStructuralProjectionHonestyTests.kt
+standard/notes/packages.yaml
+standard/notes/packages/capability-core.yaml
+standard/notes/packages/conformance-core.yaml
+standard/notes/packages/domain-core.yaml
+standard/notes/packages/runtime-core.yaml
+standard/notes/packages/safety-core.yaml
 targets/builtin-targets.yaml
 tests/FlowFirstExecutableReferenceScenarioTests.kt
 tests/FlowRendererFailureSemanticsTests.kt

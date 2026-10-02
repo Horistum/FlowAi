@@ -1,5 +1,6 @@
 package org.flowlang.ai.normalization
 
+import org.flowlang.safety.EnvironmentSafetyPolicy
 import org.flowlang.scenarios.ScenarioPackRegistry
 
 /**
@@ -8,8 +9,8 @@ import org.flowlang.scenarios.ScenarioPackRegistry
  * This provider is intentionally not an LLM adapter. It is the reproducible
  * reference implementation used by tests and conformance vectors.
  */
-class ScenarioPackIntentNormalizer : AiIntentProvider {
-    override fun normalize(request: AiIntentRequest): AiIntentResponse = ScenarioPackRegistry.normalize(request)
+class ScenarioPackIntentNormalizer(private val environmentPolicy: EnvironmentSafetyPolicy? = null) : AiIntentProvider {
+    override fun normalize(request: AiIntentRequest): AiIntentResponse = ScenarioPackRegistry.normalize(request, environmentPolicy)
 
     companion object {
         const val PROVIDER_ID: String = "scenario-pack"

@@ -247,6 +247,7 @@ def verify(root: Path, report_dir: Path, offline: bool) -> None:
                  "gradleExitCode": result.returncode, "modules": modules,
                  "productionSourceCounts": {module: len(paths) for module, paths in ownership.items()},
                  "verificationSourcesPresent": False, "rootIntegrationTestsPresent": False,
+                 "sourcePresenceScope": "compilation roots; inventoried source-text witnesses are resource data",
                  "inputsSha256": inputs, "installedProduct": distribution, "installedCli": smoke, "relocatedProduct": relocated}
         (report_dir / "proof.json").write_text(json.dumps(proof, indent=2, sort_keys=True) + "\n")
         if not passed:

@@ -1,5 +1,6 @@
 package org.flowlang.cli.honest
 
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.frontend.FrontendCompilerComposition
 
 import java.io.File
@@ -45,7 +46,7 @@ internal object StandardCliCommands {
         val file = File(source)
         require(file.isFile) { "Flow file does not exist: $source" }
         val modules = moduleRegistry(contractRoot)
-        val compilation = FlowSourceFrontend(FrontendCompilerComposition.compiler(modules))
+        val compilation = FlowSourceFrontend(FrontendCompilerComposition.compiler(modules, StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)))
             .compile(file)
             .requireAccepted()
         val plan = compilation.executionPlan
@@ -74,7 +75,7 @@ internal object StandardCliCommands {
             AdapterTargetMaturityPublisher(
                 rootDir = contractRoot,
                 targets = targets,
-                projections = ReferenceTargetProjections.registry
+                projections = ReferenceTargetProjections.fromContracts(contractRoot)
             ).analyze()
         )
     }

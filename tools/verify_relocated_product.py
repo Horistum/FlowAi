@@ -116,6 +116,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                          ("targets", ["targets"], 0), ("default-intent", ["intent"], 0),
                          ("flow", ["flow", str(flow)], 0),
                          ("normalize", ["normalize", "build and test", "--app", "shop"], 0),
+                         ("maintenance", ["normalize", "Run Kubernetes maintenance in namespace payments with dry-run.", "--environment", "prod"], 0),
                          ("external", ["resources", "--contracts", str(external)], 0),
                          ("missing-external", ["intent", "--contracts", str(invalid), "--out", "forbidden"], 2)]
                 for target in ("jenkins", "github-actions"):

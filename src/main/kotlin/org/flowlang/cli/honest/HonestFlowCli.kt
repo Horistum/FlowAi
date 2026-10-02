@@ -2,6 +2,7 @@ package org.flowlang.cli.honest
 
 import org.flowlang.frontend.FrontendCompilerComposition
 
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.distribution.reference.ContractResourceResolver
 import java.io.File
 import kotlin.system.exitProcess
@@ -208,13 +209,13 @@ private fun runIntentCommand(
         TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
     }
 
-    val frontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
+    val frontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry, StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)))
     val compilation = (if (args.positionals.isEmpty())
         frontend.compileText(file.readText(), "contract:$source") else frontend.compile(file)).requireAccepted()
     val intentEvidence = compilation.requireIntentEvidence()
     val intent = intentEvidence.intent
     val design = IntentDesignAnalyzer(registry).analyze(intent)
-    val decision = IntentDecisionAnalyzer(registry).analyze(intent)
+    val decision = IntentDecisionAnalyzer(registry, StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)).analyze(intent)
     val intentValidation = intentEvidence.validation
 
     output.section("INTENT DESIGN REPORT", design)
@@ -272,7 +273,7 @@ private fun runIntentCommand(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry, contractRoot).evaluate(compilation, selection, strict, renderRequested)
+    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.fromContracts(contractRoot), contractRoot).evaluate(compilation, selection, strict, renderRequested)
     printTargetEvidence(evidence, renderRequested, output)
     outDir?.let {
         writeIntentArtifacts(
@@ -336,11 +337,11 @@ private fun runNormalizeCommand(
         ),
         mode
     )
-    val response = ScenarioPackIntentNormalizer().normalize(request)
+    val response = ScenarioPackIntentNormalizer(StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)).normalize(request)
     output.section("AI INTENT NORMALIZATION REPORT", response.report)
     output.section("NORMALIZED INTENT JSON", response.normalizedIntent)
     val registry = moduleRegistry(contractRoot)
-    val decision = IntentDecisionAnalyzer(registry).analyze(response.normalizedIntent)
+    val decision = IntentDecisionAnalyzer(registry, StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)).analyze(response.normalizedIntent)
     output.section("INTENT DECISION REPORT", decision)
     if (strict) response.assertUsableForLowering()
 
@@ -375,7 +376,7 @@ private fun runNormalizeCommand(
         )
     }
 
-    val compilation = ReviewedAiProposalFrontend(FrontendCompilerComposition.compiler(registry))
+    val compilation = ReviewedAiProposalFrontend(FrontendCompilerComposition.compiler(registry, StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)))
         .compile(
             ReviewedAiProposal(
                 providerId = ScenarioPackIntentNormalizer.PROVIDER_ID,
@@ -446,7 +447,7 @@ private fun runNormalizeCommand(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry, contractRoot).evaluate(compilation, selection, strict, renderRequested)
+    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.fromContracts(contractRoot), contractRoot).evaluate(compilation, selection, strict, renderRequested)
     printTargetEvidence(evidence, renderRequested, output)
     outputDir?.let {
         writeIntentArtifacts(
@@ -521,7 +522,7 @@ private fun runMultiWorkflowIntentCompilation(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry, contractRoot).evaluate(compilation, selection, strict, renderRequested)
+    CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.fromContracts(contractRoot), contractRoot).evaluate(compilation, selection, strict, renderRequested)
     error(
         "Target '${selection.target}' unexpectedly accepted a multi-workflow compilation without " +
             "an explicit adapter contract."

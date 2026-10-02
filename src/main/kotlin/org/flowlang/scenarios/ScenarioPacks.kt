@@ -1,5 +1,6 @@
 package org.flowlang.scenarios
 
+import org.flowlang.safety.EnvironmentSafetyPolicy
 import org.flowlang.ai.normalization.*
 import org.flowlang.intent.*
 import org.flowlang.standard.FlowStandardVersions
@@ -44,6 +45,8 @@ interface ScenarioPack {
     val definition: ScenarioPackDefinition
     fun match(text: String, context: AiIntentContext): ScenarioPackMatch
     fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult
+    fun normalize(request: AiIntentRequest, match: ScenarioPackMatch, environmentPolicy: EnvironmentSafetyPolicy): ScenarioNormalizationResult =
+        normalize(request, match)
 }
 
 object ScenarioPackRegistry {
@@ -69,12 +72,14 @@ object ScenarioPackRegistry {
         return if (best.score <= 0.05) ScenarioPackMatch("custom", 0.35, emptyList()) else best
     }
 
-    fun normalize(request: AiIntentRequest): AiIntentResponse {
+    fun normalize(request: AiIntentRequest): AiIntentResponse = normalize(request, null)
+
+    fun normalize(request: AiIntentRequest, environmentPolicy: EnvironmentSafetyPolicy?): AiIntentResponse {
         val text = request.userText.trim()
         require(text.isNotBlank()) { "Normalization input must not be blank." }
         val match = bestMatch(text, request.context)
         val pack = packs.firstOrNull { it.definition.id == match.packId } ?: CustomScenarioPack
-        val result = pack.normalize(request, match)
+        val result = if (environmentPolicy == null) pack.normalize(request, match) else pack.normalize(request, match, environmentPolicy)
         val report = NormalizationReport(
             standardVersion = FlowStandardVersions.FLOW_STANDARD_VERSION,
             mode = request.mode,

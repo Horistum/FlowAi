@@ -1,7 +1,7 @@
 # Packaged CLI contracts
 
 The product distribution now owns its built-in module descriptors, target registry,
-reference inputs and adapter evidence. `flow-cli:installDist` and `flow-cli:distZip`
+reference inputs, semantic/safety notes and adapter evidence. `flow-cli:installDist` and `flow-cli:distZip`
 produce the same application bytes. Move the entire distribution directory, including
 `bin` and `lib`, and run it with JDK 25 from any working directory:
 
@@ -50,7 +50,7 @@ The existing physical product isolation gate builds both distribution forms with
 verification classes, relocates them to paths containing spaces, verifies resource
 bytes, deletes the staged resource inputs, and runs them from empty and misleading
 directories. It covers provenance, registries, default and authored intent, Flow source,
-normalization, explicit overrides, rejected incomplete overrides, and executable
+normalization including production-sensitive maintenance, explicit overrides, rejected incomplete overrides, and executable
 Jenkins/GitHub Actions artifacts. Target maturity must remain `PASS`, and output must
 be identical across both distribution forms and working-directory variants.
 
@@ -58,3 +58,5 @@ Repository verification commands in the separate verification launcher still con
 their explicitly repository-owned verification inputs. Central input/output limits,
 atomic artifact publication and independent whole-milestone acceptance remain later
 AR-05 slices.
+
+The selected notes authority is passed explicitly into compiler, decision analysis, maintenance normalization and reference renderer composition. Repository-default factories remain available for repository tools; product commands never select those ambient defaults.

@@ -1,12 +1,16 @@
 package org.flowlang.safety
 
+import java.io.File
+
 import org.flowlang.notes.NotesPackageContract
 import org.flowlang.notes.NotesPackageKind
 import org.flowlang.notes.StandardNotesPackageContracts
 
 object StandardEnvironmentSafetyPolicyNotes {
-    fun baseline(): EnvironmentSafetyPolicyNotes {
-        val contract = StandardNotesPackageContracts.baseline().singleSafetyContract()
+    fun baseline(): EnvironmentSafetyPolicyNotes = baseline(File("."))
+
+    fun baseline(rootDir: File): EnvironmentSafetyPolicyNotes {
+        val contract = StandardNotesPackageContracts.baseline(rootDir).singleSafetyContract()
         return EnvironmentSafetyPolicyNotes(
             packageId = contract.packageId,
             packageVersion = contract.packageVersion,
@@ -39,6 +43,8 @@ object StandardEnvironmentSafetyPolicyNotes {
     }
 
     fun policy(): EnvironmentSafetyPolicy = EnvironmentSafetyPolicy(baseline())
+
+    fun policy(rootDir: File): EnvironmentSafetyPolicy = EnvironmentSafetyPolicy(baseline(rootDir))
 
     private fun List<NotesPackageContract>.singleSafetyContract(): NotesPackageContract =
         single { contract ->

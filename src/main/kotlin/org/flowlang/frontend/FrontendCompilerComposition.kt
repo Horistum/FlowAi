@@ -13,7 +13,10 @@ import org.flowlang.validator.SafetyBoundaryValidator
 /** Explicit composition of decoded defaults and syntax services outside semantic compilation. */
 object FrontendCompilerComposition {
     fun compiler(registry: ModuleCatalog = ModuleRegistry()): FlowCompilationService =
-        FlowCompilationService(registry, StandardEnvironmentSafetyPolicyNotes.policy(), FlowIntentExpressionParser)
+        compiler(registry, StandardEnvironmentSafetyPolicyNotes.policy())
+
+    fun compiler(registry: ModuleCatalog, environmentPolicy: EnvironmentSafetyPolicy): FlowCompilationService =
+        FlowCompilationService(registry, environmentPolicy, FlowIntentExpressionParser)
 
     fun intentPlanner(registry: ModuleCatalog = ModuleRegistry()): IntentToAstPlanner =
         IntentToAstPlanner(registry, FlowIntentExpressionParser)
