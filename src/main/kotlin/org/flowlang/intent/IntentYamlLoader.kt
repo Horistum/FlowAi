@@ -255,7 +255,7 @@ object IntentYamlLoader {
     // Absence may select a documented default. Authored null is a value and may
     // only cross fields whose contract explicitly permits it (including IntentValue).
     private fun nullField(path: String, source: String, expected: String): Nothing =
-        fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected $expected but found null; omit the field to use its default.")
+        fail("INTENT_FIELD_TYPE_MISMATCH", path, source, "Expected $expected but found null; explicit null is not allowed for this field.")
 
     private fun strictCapability(value: String, stepId: String, path: String, source: String): StandardCapability {
         val normalized = normalizeEnum(value)
