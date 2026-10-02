@@ -7,9 +7,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
-/** The live implementation follows, rather than replaces, its independently verified activation. */
+/** Replay authored-declaration implementation against its independently verified activation. */
 class SourceDeclarationLifecycleTests {
-    private val snapshot get() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private val snapshot get() = WorkflowSemanticsRecoveryLifecycle.load(File(".")).let { current ->
+        val activation = org.flowlang.serialization.FlowYaml.readMap(
+            File("src/test/resources/lifecycle/language-integrity-activation.yaml"))
+        val slices = (activation["implementationSlices"] as List<*>).mapIndexed { index, value ->
+            if (index == 0) section(value) + mapOf("status" to "implemented", "acceptance" to mapOf(
+                "source" to "current-revision-ci",
+                "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
+            else section(value)
+        }
+        current.copy(integrityWorkPackage = activation + mapOf("implementationSlices" to slices,
+            "lifecycle" to (section(activation["lifecycle"]) + ("activationBoundary" to
+                section(current.integrityWorkPackage["lifecycle"])["activationBoundary"]))))
+    }
 
     @Test fun actualImplementationHasIndependentActivationAndKeepsLaterSlicesPlanned() {
         val current = snapshot

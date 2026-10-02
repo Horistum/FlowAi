@@ -64,12 +64,7 @@ class SemanticIdentityLifecycleTests {
     @Test fun evidenceHashBindsTheSingleReadBytesRatherThanOnlyDecodedFields() {
         val root = createTempDirectory("semantic-identity-receipt").toFile()
         try {
-            val paths = listOf(WorkflowSemanticsRecoveryLifecycle.WORK_PACKAGE, CompilerModuleExtractionLifecycle.WORK_PACKAGE,
-                CompilerModuleAcceptance.EVIDENCE, CompilerModuleAcceptance.INVENTORY, LanguageContractIntegrityLifecycle.WORK_PACKAGE,
-                LanguageContractIntegrityLifecycle.ACTIVATION_EVIDENCE, LanguageContractIntegrityLifecycle.SCHEMA_EVIDENCE,
-                LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE, LanguageContractIntegrityLifecycle.SEMANTIC_IDENTITY_EVIDENCE, LanguageContractIntegrityLifecycle.STRICT_LOADER_EVIDENCE, ".flow-agent/roadmap-architecture-recovery.yaml",
-                ".flow-agent/roadmap-post-toolchain.yaml", ".flow-agent/release-state.yaml", ".flow-agent/roadmap.yaml")
-            paths.forEach { path -> File(path).copyTo(File(root, path).also { it.parentFile.mkdirs() }) }
+            File(".flow-agent").copyRecursively(File(root, ".flow-agent"))
             val baseline = WorkflowSemanticsRecoveryLifecycle.load(root)
             assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(baseline).isEmpty())
             val file = File(root, LanguageContractIntegrityLifecycle.SYSTEM_IDENTITY_EVIDENCE)
