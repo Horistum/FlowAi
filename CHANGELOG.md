@@ -6,7 +6,7 @@
 - Share typed flag/value parsing with command-specific schemas, interspersed options, equals values and a literal `--` boundary.
 - Reject ambiguous, duplicate, missing, unknown and surplus arguments before command side effects; preserve all authored normalization text.
 - Add parser, both-host regression and installed conformance coverage; activate AR-05 with immutable AR-04 baseline evidence and keep later slices explicit.
-- Document the strict argument migration in `docs/migrations/ar-05a-cli-arguments.md`.
+- Document the strict argument migration in `docs/migrations/typed-cli-arguments.md`.
 
 All project source text is written in English. The changelog records architectural and behavioral changes while preserving the project boundary: Flow AI is an AI-first standardization layer for IT and DevOps automation intent, not a runtime executor, SDK platform, plugin lifecycle framework or target-specific public DSL.
 

@@ -37,4 +37,4 @@ and independent closure. EF-09 remains paused and AR-06/AR-07 remain planned.
 
 Validation results for this candidate are recorded in its pull request after execution.
 No local Kotlin result or future CI success is claimed. Public syntax changes and
-migration examples are documented in `docs/migrations/ar-05a-cli-arguments.md`.
+migration examples are documented in `docs/migrations/typed-cli-arguments.md`.
