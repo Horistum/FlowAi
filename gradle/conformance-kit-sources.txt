@@ -56,6 +56,8 @@ org/flowlang/conformance/ConformanceReports.kt
 org/flowlang/conformance/ConformanceRunner.kt
 org/flowlang/conformance/ConformanceSuiteInventory.kt
 org/flowlang/conformance/ConformanceVectorIndex.kt
+org/flowlang/conformance/ContractDistributionLifecycle.kt
+org/flowlang/conformance/ContractResourceIntegrityChecks.kt
 org/flowlang/conformance/CorePipelineSnapshotChecks.kt
 org/flowlang/conformance/DataOrchestrationBaseline.kt
 org/flowlang/conformance/DataOrchestrationFalsification.kt

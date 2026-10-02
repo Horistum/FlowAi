@@ -27,29 +27,29 @@ internal object StandardCliCommands {
         "scenario"
     )
 
-    fun run(command: String, args: CliArguments, output: CliOutputCollector) {
+    fun run(command: String, args: CliArguments, output: CliOutputCollector, contractRoot: File? = null) {
         when (command) {
-            "flow" -> runFlow(args, output)
+            "flow" -> runFlow(args, output, requireNotNull(contractRoot))
             "catalog" -> runCatalog(args, output)
-            "targets" -> runTargets(output)
-            "modules" -> runModules(output)
+            "targets" -> runTargets(output, requireNotNull(contractRoot))
+            "modules" -> runModules(output, requireNotNull(contractRoot))
             "scenarios" -> runScenarios(args, output)
             "scenario" -> runScenario(args, output)
             else -> error("Unsupported explicit standard command '$command'.")
         }
     }
 
-    private fun runFlow(args: CliArguments, output: CliOutputCollector) {
+    private fun runFlow(args: CliArguments, output: CliOutputCollector, contractRoot: File) {
         val source = args.positionals.singleOrNull()
             ?: error("flow requires a source .flow file.")
         val file = File(source)
         require(file.isFile) { "Flow file does not exist: $source" }
-        val modules = moduleRegistry()
+        val modules = moduleRegistry(contractRoot)
         val compilation = FlowSourceFrontend(FrontendCompilerComposition.compiler(modules))
             .compile(file)
             .requireAccepted()
         val plan = compilation.executionPlan
-        val targets = targetRegistry()
+        val targets = targetRegistry(contractRoot)
         output.section("FLOW AST", compilation.ast)
         output.section("VALIDATION REPORT", compilation.validation)
         output.section("EXECUTION PLAN", plan)
@@ -66,21 +66,21 @@ internal object StandardCliCommands {
         }
     }
 
-    private fun runTargets(output: CliOutputCollector) {
-        val targets = targetRegistry()
+    private fun runTargets(output: CliOutputCollector, contractRoot: File) {
+        val targets = targetRegistry(contractRoot)
         output.section("FLOW TARGET CAPABILITY MATRIX", targets.values.sortedBy { it.target })
         output.section(
             "FLOW TARGET MATURITY REPORT",
             AdapterTargetMaturityPublisher(
-                rootDir = File("."),
+                rootDir = contractRoot,
                 targets = targets,
                 projections = ReferenceTargetProjections.registry
             ).analyze()
         )
     }
 
-    private fun runModules(output: CliOutputCollector) {
-        output.section("FLOW CAPABILITY MODULE CONTRACT REPORT", ModuleContractAnalyzer.analyze(moduleRegistry()))
+    private fun runModules(output: CliOutputCollector, contractRoot: File) {
+        output.section("FLOW CAPABILITY MODULE CONTRACT REPORT", ModuleContractAnalyzer.analyze(moduleRegistry(contractRoot)))
     }
 
     private fun runScenarios(args: CliArguments, output: CliOutputCollector) {
@@ -104,13 +104,9 @@ internal object StandardCliCommands {
         }
     }
 
-    private fun moduleRegistry(): ModuleRegistry {
-        val directory = File("modules")
-        return if (directory.isDirectory) ModuleRegistry.fromDirectory(directory) else ModuleRegistry()
-    }
+    private fun moduleRegistry(root: File) = ModuleRegistry.fromDirectory(File(root, "modules"))
 
-    private fun targetRegistry() = TargetRegistryYamlLoader.loadDirectory(File("targets")).also {
-        require(it.isNotEmpty()) { "No target registry found under targets." }
+    private fun targetRegistry(root: File) = TargetRegistryYamlLoader.loadDirectory(File(root, "targets")).also {
+        require(it.isNotEmpty()) { "No target registry found in the selected contracts." }
     }
-
 }

@@ -1,5 +1,13 @@
 # Changelog
 
+## Packaged CLI contracts (AR-05B)
+
+- Package an explicit contract and adapter-evidence inventory in the reference distribution, with a generated SHA-256 index.
+- Resolve built-ins independently of the working directory; support complete explicit `--contracts` roots and publish per-file provenance through CLI output and `resources`.
+- Preserve target evidence checks through cleaned-up command-scoped snapshots; reject missing, duplicate, corrupt and symbolic resource inputs.
+- Extend physical product isolation to both relocated `installDist` and `distZip`, including actual executable artifact generation.
+- Accept AR-05A from PR #191 and actual merged-main CI; retain later AR-05 slices and independent milestone closure.
+
 ## AR-05A — typed CLI argument integrity
 
 - Consume option values before resolving positional sources across product and verification commands.

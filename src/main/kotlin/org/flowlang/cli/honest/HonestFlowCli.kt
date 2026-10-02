@@ -2,6 +2,7 @@ package org.flowlang.cli.honest
 
 import org.flowlang.frontend.FrontendCompilerComposition
 
+import org.flowlang.distribution.reference.ContractResourceResolver
 import java.io.File
 import kotlin.system.exitProcess
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
@@ -135,8 +136,20 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
                 printHelp(output, commands.names)
                 CliExecutionResult.Help(output.snapshot())
             }
-            "intent" -> runIntentCommand(ProductCliArguments.parse(command, args.drop(1)), output)
-            "normalize" -> runNormalizeCommand(ProductCliArguments.parse(command, args.drop(1)), output)
+            in contractCommands -> {
+                val parsed = ProductCliArguments.parse(command, args.drop(1))
+                ContractResourceResolver().open(parsed.value(CliValueOption.CONTRACTS)?.let(::File)).use { resources ->
+                    output.section("FLOW CONTRACT RESOURCE PROVENANCE", resources.provenance)
+                    when (command) {
+                        "intent" -> runIntentCommand(parsed, output, resources.root)
+                        "normalize" -> runNormalizeCommand(parsed, output, resources.root)
+                        else -> {
+                            if (command != "resources") StandardCliCommands.run(command, parsed, output, resources.root)
+                            CliExecutionResult.Completed(output.snapshot())
+                        }
+                    }
+                }
+            }
             "diagnostics" -> runDiagnosticsCommand(ProductCliArguments.parse(command, args.drop(1)), output)
             "standard-verify" -> runStandardVerifyCommand(ProductCliArguments.parse(command, args.drop(1)), output)
             in StandardCliCommands.names -> {
@@ -177,26 +190,27 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
 
 private fun runIntentCommand(
     args: CliArguments,
-    output: CliOutputCollector
+    output: CliOutputCollector,
+    contractRoot: File
 ): CliExecutionResult {
     val source = args.positionals.singleOrNull()
         ?: "examples/intent/build-test-deploy.intent.yaml"
     val strict = args.has(CliFlagOption.STRICT) || args.has(CliFlagOption.FAIL_ON_UNSUPPORTED)
     val renderRequested = args.has(CliFlagOption.RENDER)
     val outDir = args.value(CliValueOption.OUT)?.let(::File)
-    val file = File(source)
+    val file = if (args.positionals.isEmpty()) File(contractRoot, source) else File(source)
     require(file.isFile) { "Intent file does not exist: $source" }
 
-    val registry = moduleRegistry()
-    val targets = targetRegistry()
+    val registry = moduleRegistry(contractRoot)
+    val targets = targetRegistry(contractRoot)
     val selectionDecision = TargetSelectionAuthority.fromCliOption(args.value(CliValueOption.TARGET), targets)
     if (renderRequested) {
         TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
     }
 
-    val compilation = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
-        .compile(file)
-        .requireAccepted()
+    val frontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))
+    val compilation = (if (args.positionals.isEmpty())
+        frontend.compileText(file.readText(), "contract:$source") else frontend.compile(file)).requireAccepted()
     val intentEvidence = compilation.requireIntentEvidence()
     val intent = intentEvidence.intent
     val design = IntentDesignAnalyzer(registry).analyze(intent)
@@ -210,6 +224,7 @@ private fun runIntentCommand(
     if (compilation.workflowPlanSet.multiWorkflow) {
         return runMultiWorkflowIntentCompilation(
             compilation = compilation,
+            contractRoot = contractRoot,
             normalizedIntent = intent,
             intentDesign = design,
             intentDecision = decision,
@@ -257,7 +272,7 @@ private fun runIntentCommand(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry).evaluate(compilation, selection, strict, renderRequested)
+    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry, contractRoot).evaluate(compilation, selection, strict, renderRequested)
     printTargetEvidence(evidence, renderRequested, output)
     outDir?.let {
         writeIntentArtifacts(
@@ -287,7 +302,8 @@ private fun runIntentCommand(
 
 private fun runNormalizeCommand(
     args: CliArguments,
-    output: CliOutputCollector
+    output: CliOutputCollector,
+    contractRoot: File
 ): CliExecutionResult {
     val sourcePath = args.value(CliValueOption.FILE)
     val sourceFile = sourcePath?.let(::File)
@@ -297,7 +313,7 @@ private fun runNormalizeCommand(
     val strict = args.has(CliFlagOption.STRICT) || args.has(CliFlagOption.FAIL_ON_UNSUPPORTED)
     val renderRequested = args.has(CliFlagOption.RENDER)
     val lower = args.has(CliFlagOption.LOWER) || args.has(CliFlagOption.PIPELINE) || renderRequested
-    val targets = targetRegistry()
+    val targets = targetRegistry(contractRoot)
     val selectionDecision = TargetSelectionAuthority.fromCliOption(args.value(CliValueOption.TARGET), targets)
     if (renderRequested) {
         TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
@@ -323,7 +339,7 @@ private fun runNormalizeCommand(
     val response = ScenarioPackIntentNormalizer().normalize(request)
     output.section("AI INTENT NORMALIZATION REPORT", response.report)
     output.section("NORMALIZED INTENT JSON", response.normalizedIntent)
-    val registry = moduleRegistry()
+    val registry = moduleRegistry(contractRoot)
     val decision = IntentDecisionAnalyzer(registry).analyze(response.normalizedIntent)
     output.section("INTENT DECISION REPORT", decision)
     if (strict) response.assertUsableForLowering()
@@ -380,6 +396,7 @@ private fun runNormalizeCommand(
     if (compilation.workflowPlanSet.multiWorkflow) {
         return runMultiWorkflowIntentCompilation(
             compilation = compilation,
+            contractRoot = contractRoot,
             normalizedIntent = intent,
             intentDesign = design,
             intentDecision = decision,
@@ -429,7 +446,7 @@ private fun runNormalizeCommand(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry).evaluate(compilation, selection, strict, renderRequested)
+    val evidence = CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry, contractRoot).evaluate(compilation, selection, strict, renderRequested)
     printTargetEvidence(evidence, renderRequested, output)
     outputDir?.let {
         writeIntentArtifacts(
@@ -460,6 +477,7 @@ private fun runNormalizeCommand(
 
 private fun runMultiWorkflowIntentCompilation(
     compilation: CompilationUnit,
+    contractRoot: File,
     normalizedIntent: Any,
     intentDesign: Any,
     intentDecision: Any,
@@ -503,7 +521,7 @@ private fun runMultiWorkflowIntentCompilation(
     }
 
     val selection = TargetSelectionAuthority.requireSelected(selectionDecision, "Target materialization")
-    CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry).evaluate(compilation, selection, strict, renderRequested)
+    CliTargetEvidenceAuthority(targets, org.flowlang.distribution.reference.ReferenceTargetProjections.registry, contractRoot).evaluate(compilation, selection, strict, renderRequested)
     error(
         "Target '${selection.target}' unexpectedly accepted a multi-workflow compilation without " +
             "an explicit adapter contract."
@@ -908,21 +926,21 @@ private fun runStandardVerifyCommand(
     )
 }
 
-private fun moduleRegistry(): ModuleRegistry {
-    val directory = File("modules")
-    return if (directory.isDirectory) ModuleRegistry.fromDirectory(directory) else ModuleRegistry()
-}
+private fun moduleRegistry(root: File): ModuleRegistry = ModuleRegistry.fromDirectory(File(root, "modules"))
 
-private fun targetRegistry() = TargetRegistryYamlLoader.loadDirectory(File("targets")).also {
-    require(it.isNotEmpty()) { "No target registry found under targets." }
+private fun targetRegistry(root: File) = TargetRegistryYamlLoader.loadDirectory(File(root, "targets")).also {
+    require(it.isNotEmpty()) { "No target registry found in the selected contracts." }
 }
 
 private fun printHelp(output: CliOutputCollector, additionalCommands: Set<String>) {
     output.text("Flow CLI commands: ${(productCommands + additionalCommands).sorted().joinToString()}")
+    output.text("Contract commands use packaged resources; --contracts <root> explicitly replaces the complete resource set.")
     output.text("Target materialization requires --target. Rendering additionally requires --render.")
 }
 
-private val productCommands = setOf("intent", "normalize", "diagnostics", "standard-verify") +
+private val contractCommands = setOf("intent", "normalize", "flow", "targets", "modules", "resources")
+
+private val productCommands = setOf("resources", "intent", "normalize", "diagnostics", "standard-verify") +
     StandardCliCommands.names
 
 private val knownJsonArtifacts = setOf(

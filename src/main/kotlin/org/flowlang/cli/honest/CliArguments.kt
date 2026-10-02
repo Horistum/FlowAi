@@ -4,7 +4,7 @@ import java.util.Collections
 
 /** Value and flag tokens have different types; command hosts explicitly declare their syntax. */
 enum class CliValueOption(val token: String) {
-    OUT("--out"), TARGET("--target"), FILE("--file"), APP("--app"),
+    CONTRACTS("--contracts"), OUT("--out"), TARGET("--target"), FILE("--file"), APP("--app"),
     ENVIRONMENT("--environment"), REPO("--repo"), CHANNEL("--channel"),
     BUNDLE("--bundle"), INTENT("--intent"), SCENARIO_ID("--scenario-id"), TARGETS("--targets")
 }
@@ -109,9 +109,9 @@ class CliArgumentSchema(
 internal object ProductCliArguments {
     private val targetFlags = setOf(CliFlagOption.STRICT, CliFlagOption.FAIL_ON_UNSUPPORTED, CliFlagOption.RENDER)
     private val schemas = mapOf(
-        "intent" to CliArgumentSchema(setOf(CliValueOption.OUT, CliValueOption.TARGET), targetFlags, maxPositionals = 1),
+        "intent" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.TARGET), targetFlags, maxPositionals = 1),
         "normalize" to CliArgumentSchema(
-            setOf(CliValueOption.OUT, CliValueOption.TARGET, CliValueOption.FILE, CliValueOption.APP,
+            setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.TARGET, CliValueOption.FILE, CliValueOption.APP,
                 CliValueOption.ENVIRONMENT, CliValueOption.REPO, CliValueOption.CHANNEL),
             targetFlags + setOf(CliFlagOption.LOWER, CliFlagOption.PIPELINE, CliFlagOption.EXPLAIN, CliFlagOption.REPAIR),
             maxPositionals = Int.MAX_VALUE, positionalAlternative = CliValueOption.FILE, requireSource = true,
@@ -119,10 +119,11 @@ internal object ProductCliArguments {
         "diagnostics" to CliArgumentSchema(setOf(CliValueOption.OUT)),
         "standard-verify" to CliArgumentSchema(setOf(CliValueOption.OUT, CliValueOption.BUNDLE),
             maxPositionals = 1, positionalAlternative = CliValueOption.BUNDLE, requireSource = true),
-        "flow" to CliArgumentSchema(minPositionals = 1, maxPositionals = 1),
+        "flow" to CliArgumentSchema(values = setOf(CliValueOption.CONTRACTS), minPositionals = 1, maxPositionals = 1),
         "catalog" to CliArgumentSchema(flags = setOf(CliFlagOption.MARKDOWN)),
-        "targets" to CliArgumentSchema(),
-        "modules" to CliArgumentSchema(),
+        "targets" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS)),
+        "resources" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS)),
+        "modules" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS)),
         "scenarios" to CliArgumentSchema(flags = setOf(CliFlagOption.MARKDOWN)),
         "scenario" to CliArgumentSchema(flags = setOf(CliFlagOption.EXAMPLES), minPositionals = 1, maxPositionals = 1)
     )

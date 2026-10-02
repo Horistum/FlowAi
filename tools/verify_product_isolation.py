@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 from verify_semantic_kernel_isolation import initialize_report, regular_source
+from verify_relocated_product import RESOURCE_INVENTORY, RESOURCE_INPUTS, resource_paths, verify_relocated_product
 
 SOURCE_ROOT = Path("src/main/kotlin")
 MODULES = {
@@ -44,7 +45,7 @@ BUILD_INPUTS = (
     Path("gradle/wrapper/gradle-wrapper.properties"),
     Path("gradle/production-source-ownership.gradle.kts"),
     Path("gradle/production-module.gradle.kts"), Path("gradle/cli-application.gradle.kts"),
-    Path("src/main/resources/standard/compatibility/capability-aliases.yaml"),
+    Path("src/main/resources/standard/compatibility/capability-aliases.yaml"), RESOURCE_INVENTORY,
 ) + tuple(MODULES.values()) + tuple(Path(module) / "build.gradle.kts" for module in MODULES)
 OWNERSHIP_REPORT = Path("build/reports/module-ownership/source-ownership.json")
 INSTALL = Path("flow-cli/build/install/flow-core")
@@ -89,12 +90,18 @@ def prepare_isolated_project(root: Path, destination: Path) -> dict[str, str]:
         if not any(path.suffix == ".kt" for path in tests):
             raise ValueError(f"Missing actual test suite or test support: {test_root}")
         inputs += tests
-    # Deliberately no kit, root integration tests, fixtures, .git, roadmaps,
-    # registry descriptors, copied class outputs or cached task results.
+    # Witness source text is staged outside all compilation/test roots. No kit,
+    # root integration suites, fixtures, .git, class outputs or cached results.
     digests = {}
     for relative in inputs:
         source = regular_source(root, relative)
         target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        digests[relative.as_posix()] = hashlib.sha256(target.read_bytes()).hexdigest()
+    for relative in resource_paths(root):
+        source = regular_source(root, relative)
+        target = destination / RESOURCE_INPUTS / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
         digests[relative.as_posix()] = hashlib.sha256(target.read_bytes()).hexdigest()
@@ -217,11 +224,11 @@ def smoke_product(isolated: Path, report_dir: Path) -> dict:
 def verify(root: Path, report_dir: Path, offline: bool) -> None:
     initialize_report(report_dir)
     command = ["bash", "gradlew", "--no-daemon", "--console=plain", "--no-build-cache",
-               "-Pflow.isolatedBoundary=product"]
+               "-Pflow.isolatedBoundary=product", f"-Pflow.contractSourceRoot={RESOURCE_INPUTS}"]
     if offline:
         command.append("--offline")
     command += [f":{module}:clean" for module in MODULES]
-    command += [f":{module}:test" for module in TEST_MODULES] + [":flow-cli:installDist"]
+    command += [f":{module}:test" for module in TEST_MODULES] + [":flow-cli:installDist", ":flow-cli:distZip"]
     with tempfile.TemporaryDirectory(prefix="flow-product-isolation-") as temporary:
         isolated = Path(temporary)
         inputs = prepare_isolated_project(root, isolated)
@@ -235,11 +242,12 @@ def verify(root: Path, report_dir: Path, offline: bool) -> None:
         # A successful-looking install cannot authorize a failed compilation.
         distribution = inspect_distribution(isolated) if passed else None
         smoke = smoke_product(isolated, report_dir) if passed else None
+        relocated = verify_relocated_product(isolated, INSTALL, report_dir) if passed else None
         proof = {"status": "passed" if passed else "failed", "command": command,
                  "gradleExitCode": result.returncode, "modules": modules,
                  "productionSourceCounts": {module: len(paths) for module, paths in ownership.items()},
                  "verificationSourcesPresent": False, "rootIntegrationTestsPresent": False,
-                 "inputsSha256": inputs, "installedProduct": distribution, "installedCli": smoke}
+                 "inputsSha256": inputs, "installedProduct": distribution, "installedCli": smoke, "relocatedProduct": relocated}
         (report_dir / "proof.json").write_text(json.dumps(proof, indent=2, sort_keys=True) + "\n")
         if not passed:
             raise RuntimeError(f"Product isolation failed: exit={result.returncode}, results={modules}.")
