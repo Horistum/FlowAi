@@ -135,12 +135,12 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
                 printHelp(output, commands.names)
                 CliExecutionResult.Help(output.snapshot())
             }
-            "intent" -> runIntentCommand(args.drop(1), output)
-            "normalize" -> runNormalizeCommand(args.drop(1), output)
-            "diagnostics" -> runDiagnosticsCommand(args.drop(1), output)
-            "standard-verify" -> runStandardVerifyCommand(args.drop(1), output)
+            "intent" -> runIntentCommand(ProductCliArguments.parse(command, args.drop(1)), output)
+            "normalize" -> runNormalizeCommand(ProductCliArguments.parse(command, args.drop(1)), output)
+            "diagnostics" -> runDiagnosticsCommand(ProductCliArguments.parse(command, args.drop(1)), output)
+            "standard-verify" -> runStandardVerifyCommand(ProductCliArguments.parse(command, args.drop(1)), output)
             in StandardCliCommands.names -> {
-                StandardCliCommands.run(command, args.drop(1), output)
+                StandardCliCommands.run(command, ProductCliArguments.parse(command, args.drop(1)), output)
                 CliExecutionResult.Completed(output.snapshot())
             }
             in commands.names -> commands.execute(command, args.drop(1), output)
@@ -176,20 +176,20 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
 }
 
 private fun runIntentCommand(
-    args: List<String>,
+    args: CliArguments,
     output: CliOutputCollector
 ): CliExecutionResult {
-    val source = args.firstOrNull { !it.startsWith("--") }
+    val source = args.positionals.singleOrNull()
         ?: "examples/intent/build-test-deploy.intent.yaml"
-    val strict = "--strict" in args || "--fail-on-unsupported" in args
-    val renderRequested = "--render" in args
-    val outDir = parseOption(args, "--out")?.let(::File)
+    val strict = args.has(CliFlagOption.STRICT) || args.has(CliFlagOption.FAIL_ON_UNSUPPORTED)
+    val renderRequested = args.has(CliFlagOption.RENDER)
+    val outDir = args.value(CliValueOption.OUT)?.let(::File)
     val file = File(source)
     require(file.isFile) { "Intent file does not exist: $source" }
 
     val registry = moduleRegistry()
     val targets = targetRegistry()
-    val selectionDecision = TargetSelectionAuthority.fromCliOption(parseOption(args, "--target"), targets)
+    val selectionDecision = TargetSelectionAuthority.fromCliOption(args.value(CliValueOption.TARGET), targets)
     if (renderRequested) {
         TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
     }
@@ -286,37 +286,37 @@ private fun runIntentCommand(
 }
 
 private fun runNormalizeCommand(
-    args: List<String>,
+    args: CliArguments,
     output: CliOutputCollector
 ): CliExecutionResult {
-    val sourcePath = parseOption(args, "--file")
+    val sourcePath = args.value(CliValueOption.FILE)
     val sourceFile = sourcePath?.let(::File)
     val text = sourceFile?.readText()
-        ?: args.takeWhile { !it.startsWith("--") }.joinToString(" ").trim()
+        ?: args.positionals.joinToString(" ").trim()
     require(text.isNotBlank()) { "normalize requires text arguments or --file <path>." }
-    val strict = "--strict" in args || "--fail-on-unsupported" in args
-    val renderRequested = "--render" in args
-    val lower = "--lower" in args || "--pipeline" in args || renderRequested
+    val strict = args.has(CliFlagOption.STRICT) || args.has(CliFlagOption.FAIL_ON_UNSUPPORTED)
+    val renderRequested = args.has(CliFlagOption.RENDER)
+    val lower = args.has(CliFlagOption.LOWER) || args.has(CliFlagOption.PIPELINE) || renderRequested
     val targets = targetRegistry()
-    val selectionDecision = TargetSelectionAuthority.fromCliOption(parseOption(args, "--target"), targets)
+    val selectionDecision = TargetSelectionAuthority.fromCliOption(args.value(CliValueOption.TARGET), targets)
     if (renderRequested) {
         TargetSelectionAuthority.requireSelected(selectionDecision, "Target rendering")
     }
     val selectedTarget = (selectionDecision as? TargetSelectionDecision.Selected)?.selection?.target
     val mode = when {
-        "--strict" in args -> NormalizationMode.STRICT
-        "--explain" in args -> NormalizationMode.EXPLAIN
-        "--repair" in args -> NormalizationMode.REPAIR
+        args.has(CliFlagOption.STRICT) -> NormalizationMode.STRICT
+        args.has(CliFlagOption.EXPLAIN) -> NormalizationMode.EXPLAIN
+        args.has(CliFlagOption.REPAIR) -> NormalizationMode.REPAIR
         else -> NormalizationMode.DRAFT
     }
     val request = AiIntentRequest(
         text,
         AiIntentContext(
             target = selectedTarget,
-            defaultApplication = parseOption(args, "--app"),
-            defaultEnvironment = parseOption(args, "--environment"),
-            repositoryUrl = parseOption(args, "--repo"),
-            notificationChannel = parseOption(args, "--channel")
+            defaultApplication = args.value(CliValueOption.APP),
+            defaultEnvironment = args.value(CliValueOption.ENVIRONMENT),
+            repositoryUrl = args.value(CliValueOption.REPO),
+            notificationChannel = args.value(CliValueOption.CHANNEL)
         ),
         mode
     )
@@ -328,7 +328,7 @@ private fun runNormalizeCommand(
     output.section("INTENT DECISION REPORT", decision)
     if (strict) response.assertUsableForLowering()
 
-    val outputDir = parseOption(args, "--out")?.let(::File)
+    val outputDir = args.value(CliValueOption.OUT)?.let(::File)
     if (!lower) {
         val values = linkedMapOf<String, Any>(
             "standard-diagnostic-catalog.json" to StandardDiagnosticCatalog.report(),
@@ -870,12 +870,12 @@ private fun extractIssueDiagnostics(artifact: String, report: Any): List<Observe
 }
 
 private fun runDiagnosticsCommand(
-    args: List<String>,
+    args: CliArguments,
     output: CliOutputCollector
 ): CliExecutionResult {
     val catalog = StandardDiagnosticCatalog.report()
     output.section("FLOW STANDARD DIAGNOSTIC CATALOG", catalog)
-    val persisted = parseOption(args, "--out")?.let { out ->
+    val persisted = args.value(CliValueOption.OUT)?.let { out ->
         val directory = File(out)
         require(directory.mkdirs() || directory.isDirectory)
         File(directory, "standard-diagnostic-catalog.json").writeText(Json.mapper.writeValueAsString(catalog) + "\n")
@@ -888,15 +888,14 @@ private fun runDiagnosticsCommand(
 }
 
 private fun runStandardVerifyCommand(
-    args: List<String>,
+    args: CliArguments,
     output: CliOutputCollector
 ): CliExecutionResult {
-    val bundle = parseOption(args, "--bundle")
-        ?: args.firstOrNull { !it.startsWith("--") }
+    val bundle = args.source(CliValueOption.BUNDLE)
         ?: throw IllegalArgumentException("standard-verify requires --bundle <dir>")
     val report = StandardBundleVerifier().verify(File(bundle))
     output.section("FLOW STANDARD BUNDLE VERIFICATION", report)
-    val persisted = parseOption(args, "--out")?.let { out ->
+    val persisted = args.value(CliValueOption.OUT)?.let { out ->
         val directory = File(out)
         require(directory.mkdirs() || directory.isDirectory)
         File(directory, "standard-bundle-verification.json").writeText(Json.mapper.writeValueAsString(report) + "\n")
@@ -916,17 +915,6 @@ private fun moduleRegistry(): ModuleRegistry {
 
 private fun targetRegistry() = TargetRegistryYamlLoader.loadDirectory(File("targets")).also {
     require(it.isNotEmpty()) { "No target registry found under targets." }
-}
-
-private fun parseOption(args: List<String>, name: String): String? {
-    val index = args.indexOf(name)
-    if (index >= 0) {
-        require(index + 1 < args.size && !args[index + 1].startsWith("--")) { "$name requires a value." }
-        return args[index + 1]
-    }
-    return args.firstOrNull { it.startsWith("$name=") }?.substringAfter('=')?.also {
-        require(it.isNotBlank()) { "$name requires a value." }
-    }
 }
 
 private fun printHelp(output: CliOutputCollector, additionalCommands: Set<String>) {

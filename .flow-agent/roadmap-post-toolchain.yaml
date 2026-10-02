@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 12
+revision: 13
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -13,9 +13,9 @@ currentDecision:
   nextItem: "AR-05"
   nextItemName: "Artifact, Distribution, CLI and I/O Integrity"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
-  activationState: "not-activated"
-  workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
-  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. AR-05 is the next planned milestone and is not activated. EF-09 stays paused and F-20 remains AR-07-owned."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A implements typed argument parsing while later artifact and distribution slices remain planned. EF-09 stays paused and F-20 remains AR-07-owned."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
@@ -23,10 +23,10 @@ recoveryRoadmap:
   findingCount: 22
   groupedMilestoneCount: 8
   completedItem: "AR-04"
-  activeItem: ""
-  activeWorkPackage: ""
+  activeItem: "AR-05"
+  activeWorkPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
   nextItem: "AR-05"
-  activationState: "not-activated"
+  activationState: "active"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
 principles:
@@ -109,10 +109,10 @@ sequence:
     interrupts: "EF-09"
     roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
     completedItem: "AR-04"
-    activeItem: ""
+    activeItem: "AR-05"
     nextItem: "AR-05"
-    activationState: "not-activated"
-    workPackage: ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml"
+    activationState: "active"
+    workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."

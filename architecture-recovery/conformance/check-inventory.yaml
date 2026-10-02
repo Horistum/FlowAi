@@ -55,3 +55,5 @@ checks:
   - architecture-recovery.language.integrated-system-owners
   - architecture-recovery.language.integrated-semantic-identities
   - architecture-recovery.language.integrated-public-loaders
+  - "architecture-recovery.cli.option-values-never-become-source"
+  - "architecture-recovery.cli.invalid-arguments-have-no-side-effects"

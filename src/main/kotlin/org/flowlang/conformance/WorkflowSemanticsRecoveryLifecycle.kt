@@ -27,7 +27,9 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val strictLoaderSha256: String? = null,
     // Keep the immutable document: acceptance fingerprints and parses this same value.
     val integratedLanguageEvidence: String? = null,
-    val languageCompletionEvidence: String? = null
+    val languageCompletionEvidence: String? = null,
+    val artifactWorkPackage: Map<String, Any?> = emptyMap(),
+    val artifactActivationEvidence: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -101,7 +103,9 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             File(root, LanguageContractIntegrityLifecycle.INTEGRATED_EVIDENCE)
                 .takeIf { it.isFile }?.readText(Charsets.UTF_8),
             File(root, LanguageIntegrityCompletion.EVIDENCE)
-                .takeIf { it.isFile }?.readText(Charsets.UTF_8)
+                .takeIf { it.isFile }?.readText(Charsets.UTF_8),
+            optionalMap(root, ArtifactIntegrityLifecycle.WORK_PACKAGE),
+            File(root, ArtifactIntegrityLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
         )
     }
 
@@ -109,6 +113,10 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         File(root, path).let { if (it.isFile) FlowYaml.readMap(it) else emptyMap() }
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (map(snapshot.recovery["currentDecision"])["workPackage"] == ArtifactIntegrityLifecycle.WORK_PACKAGE) {
+            addAll(ArtifactIntegrityLifecycle.errors(snapshot))
+            return@buildList
+        }
         val work = snapshot.workPackage
         val complete = work["status"] == "complete"
         if (work["version"] != "AR-02" || work["status"] !in setOf("active", "complete")) {
