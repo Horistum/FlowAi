@@ -22,8 +22,14 @@ internal object CompilationSourceCapture {
     fun <T> capture(
         file: File,
         frontend: CompilationFrontend,
-        parse: (String, String) -> T,
-        sourceIdentity: String? = null
+        parse: (String, String) -> T
+    ): CapturedCompilationSource<T> = capture(file, frontend, null, parse)
+
+    fun <T> capture(
+        file: File,
+        frontend: CompilationFrontend,
+        sourceIdentity: String?,
+        parse: (String, String) -> T
     ): CapturedCompilationSource<T> {
         require(sourceIdentity == null || sourceIdentity.isNotBlank()) { "Compilation source identity must not be blank." }
         require(file.isFile) { "Compilation source does not exist: ${file.path}" }

@@ -111,3 +111,5 @@ writing output. Existing parser byte limits remain in force.
 The compiler direction check recognizes the optional logical identity while requiring
 the original file path and normalized absolute identity as fallbacks. Negative fixture
 mutations reject loss of either fallback; strict UTF-8 removal remains rejected.
+Logical-identity capture uses a separate overload, preserving the original three-argument
+capture signature and trailing-lambda calls used by existing frontend clients and tests.
