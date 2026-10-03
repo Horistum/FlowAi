@@ -23,6 +23,16 @@ class IntentYamlFrontend(
 
     fun compile(file: File): CompilationResult = compile(load(file))
 
+    /** Preserve strict byte capture while naming a selected packaged or external contract. */
+    fun compile(file: File, sourceIdentity: String): CompilationResult = compile(
+        CompilationSourceCapture.capture(
+            file = file,
+            frontend = CompilationFrontend.INTENT_YAML,
+            parse = IntentYamlLoader::loadText,
+            sourceIdentity = sourceIdentity
+        )
+    )
+
     fun compileText(text: String, sourceName: String = "<intent>"): CompilationResult = compile(
         CompilationSourceCapture.captureText(
             text = text,

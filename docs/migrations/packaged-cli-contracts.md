@@ -20,6 +20,10 @@ Local `modules`, `targets`, `adapters` or `examples` directories are never impli
 contract authorities. Previously these directories could change CLI behavior or make
 an installed command fail outside a checkout.
 
+The default intent retains strict UTF-8 decoding and existing parser byte limits,
+including when supplied by an external contract root. Its stable `contract:` source
+identity records the digest of the original selected bytes without text replacement.
+
 `intent`, `normalize`, `flow`, `modules`, `targets` and the new `resources` command
 accept `--contracts <root>` (also `--contracts=<root>`). This explicitly replaces the
 entire inventoried resource set. The directory must contain every relative path in

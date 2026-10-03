@@ -58,6 +58,30 @@ class ContractResourceTests {
         }
     }
 
+    @Test fun malformedDefaultIntentOverrideIsRejectedBeforeAnyOutputWrite() {
+        ContractResourceResolver().open().use { external ->
+            val path = "examples/intent/build-test-deploy.intent.yaml"
+            val file = File(external.root, path)
+            // Invalid UTF-8 inside a YAML comment would otherwise be replaced and ignored.
+            file.appendBytes(byteArrayOf(10, 35, 32, 0xc3.toByte(), 0x28, 10))
+            val output = File(external.root, "output")
+            val result = assertIs<CliExecutionResult.Rejected>(executeCli(arrayOf(
+                "intent", "--contracts", external.root.path, "--out", output.path
+            )))
+            assertEquals(CliDiagnosticCode.INVALID_INPUT, result.diagnostic.code)
+            assertEquals(2, result.exitCode)
+            assertTrue(result.diagnostic.message.contains("valid UTF-8: contract:$path"))
+            assertFalse(output.exists())
+            assertTrue(result.artifacts.isEmpty())
+            val sections = result.presentation.items.filterIsInstance<CliPresentationItem.Section>()
+            assertEquals(listOf("FLOW CONTRACT RESOURCE PROVENANCE", "CLI DIAGNOSTIC FAILURE"), sections.map { it.title })
+            val record = assertIs<List<*>>(sections.first().value)
+                .map { assertIs<ContractResourceProvenance>(it) }.single { it.path == path }
+            assertEquals(ContractResourceOrigin.EXTERNAL, record.origin)
+            assertEquals(digest(file.readBytes()), record.sha256)
+        }
+    }
+
     @Test fun externalSymbolicFilesAndDirectoriesCannotEscapeTheInventory() {
         ContractResourceResolver().open().use { external ->
             val modules = File(external.root, "modules")

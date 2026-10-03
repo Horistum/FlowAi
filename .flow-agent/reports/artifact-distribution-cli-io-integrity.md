@@ -100,3 +100,10 @@ fixtures. The invalid Flow source regression also checks the new contract proven
 section while retaining its invalid-input diagnostic, empty artifact set and unchanged
 input directory assertions. These corrections preserve the existing compiler and
 no-write guarantees; no production authorization check is relaxed.
+
+Default intent compilation now uses strict file-byte capture with an explicit logical
+contract identity. This avoids decoding malformed external UTF-8 through `readText`,
+which could replace invalid bytes before parsing and bind the compilation to different
+bytes from the resource receipt. Regressions require identical hashes and plans for
+valid files and reject malformed UTF-8, including bytes inside a YAML comment, before
+writing output. Existing parser byte limits remain in force.

@@ -58,6 +58,29 @@ class IntentFrontendConvergenceTests {
     }
 
     @Test
+    fun logicalContractIdentityPreservesStrictFileBytesAndCompiledMeaning() {
+        val baseline = frontend.compile(referenceIntent).requireAccepted()
+        val identity = "contract:examples/intent/build-test-deploy.intent.yaml"
+        val selected = frontend.compile(referenceIntent, identity).requireAccepted()
+        assertEquals(identity, selected.source.identity)
+        assertEquals(identity, selected.source.sourceName)
+        assertEquals(baseline.source.sha256, selected.source.sha256)
+        assertEquals(baseline.source.byteCount, selected.source.byteCount)
+        assertEquals(baseline.executionPlan, selected.executionPlan)
+        assertEquals(baseline.canonicalPlan, selected.canonicalPlan)
+        assertFailsWith<IllegalArgumentException> { frontend.compile(referenceIntent, " ") }
+
+        val directory = createTempDirectory("flow-intent-logical-source-").toFile()
+        try {
+            val malformed = File(directory, referenceIntent.name).apply {
+                writeBytes(referenceIntent.readBytes() + byteArrayOf(10, 35, 32, 0xc3.toByte(), 0x28, 10))
+            }
+            val failure = assertFailsWith<IllegalArgumentException> { frontend.compile(malformed, identity) }
+            assertTrue(failure.message.orEmpty().contains("valid UTF-8: $identity"))
+        } finally { directory.deleteRecursively() }
+    }
+
+    @Test
     fun authoredFormattingChangesProvenanceButNotCompiledMeaning() {
         val directory = createTempDirectory("flow-intent-formatting").toFile()
         val formatted = File(directory, referenceIntent.name).apply {

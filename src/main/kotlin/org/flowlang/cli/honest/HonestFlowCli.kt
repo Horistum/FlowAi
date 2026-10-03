@@ -211,7 +211,7 @@ private fun runIntentCommand(
 
     val frontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(registry, StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)))
     val compilation = (if (args.positionals.isEmpty())
-        frontend.compileText(file.readText(), "contract:$source") else frontend.compile(file)).requireAccepted()
+        frontend.compile(file, "contract:$source") else frontend.compile(file)).requireAccepted()
     val intentEvidence = compilation.requireIntentEvidence()
     val intent = intentEvidence.intent
     val design = IntentDesignAnalyzer(registry).analyze(intent)
