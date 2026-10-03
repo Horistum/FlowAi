@@ -23,12 +23,20 @@ internal object CompilationSourceCapture {
         file: File,
         frontend: CompilationFrontend,
         parse: (String, String) -> T
+    ): CapturedCompilationSource<T> = capture(file, frontend, null, parse)
+
+    fun <T> capture(
+        file: File,
+        frontend: CompilationFrontend,
+        sourceIdentity: String?,
+        parse: (String, String) -> T
     ): CapturedCompilationSource<T> {
+        require(sourceIdentity == null || sourceIdentity.isNotBlank()) { "Compilation source identity must not be blank." }
         require(file.isFile) { "Compilation source does not exist: ${file.path}" }
         val bytes = if (frontend == CompilationFrontend.INTENT_YAML) ContractReadPolicy.readBytes(file)
             else file.readBytes()
-        val sourceName = file.path
-        val identity = file.absoluteFile.toPath().normalize().toString()
+        val sourceName = sourceIdentity ?: file.path
+        val identity = sourceIdentity ?: file.absoluteFile.toPath().normalize().toString()
         val text = decodeUtf8(bytes, sourceName)
         return CapturedCompilationSource(
             source = CompilationSource.fromBytes(

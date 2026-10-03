@@ -57,3 +57,5 @@ checks:
   - architecture-recovery.language.integrated-public-loaders
   - "architecture-recovery.cli.option-values-never-become-source"
   - "architecture-recovery.cli.invalid-arguments-have-no-side-effects"
+  - architecture-recovery.resources.packaged-bytes-and-provenance
+  - architecture-recovery.resources.incomplete-override-never-falls-back

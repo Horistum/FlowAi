@@ -15,6 +15,10 @@ internal object ArtifactIntegrityLifecycle {
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
         val work = snapshot.artifactWorkPackage
+        if (work["selectedSlice"] == "AR-05B") {
+            addAll(ContractDistributionLifecycle.errors(snapshot))
+            return@buildList
+        }
         addAll(matchingFields("AR-05 work package", work, mapOf("version" to "AR-05", "name" to NAME,
             "status" to "active", "selectedSlice" to "AR-05A", "nextSlice" to "AR-05B")))
         addAll(matchingFields("AR-05 authorization", section(work["authorization"]), mapOf(

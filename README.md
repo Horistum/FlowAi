@@ -181,6 +181,7 @@ Export conformance artifacts:
 ```
 
 CLI argument syntax and strict validation rules are documented in [Typed CLI argument parsing](docs/migrations/typed-cli-arguments.md).
+See [packaged CLI contracts](docs/migrations/packaged-cli-contracts.md) for relocatable distributions, resource provenance and explicit contract overrides.
 
 Render a Jenkins artifact bundle from an intent file:
 

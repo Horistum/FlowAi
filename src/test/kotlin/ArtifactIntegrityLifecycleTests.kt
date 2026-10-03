@@ -5,7 +5,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class ArtifactIntegrityLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = cliArgumentCandidateSnapshot()
     @Suppress("UNCHECKED_CAST") private fun section(value: Any?) = value as Map<String, Any?>
     @Suppress("UNCHECKED_CAST") private fun records(value: Any?) = value as List<Map<String, Any?>>
     private fun reject(s: WorkflowSemanticsRecoveryLifecycleSnapshot) = assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())
@@ -83,4 +83,19 @@ class ArtifactIntegrityLifecycleTests {
             reject(WorkflowSemanticsRecoveryLifecycle.load(root))
         } finally { root.deleteRecursively() }
     }
+}
+
+/** Reconstruct the coherent historical CLI candidate without rewriting its immutable receipts. */
+internal fun cliArgumentCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
+    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    @Suppress("UNCHECKED_CAST")
+    val slices = current.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
+    return current.copy(artifactWorkPackage = current.artifactWorkPackage + mapOf(
+        "selectedSlice" to "AR-05A", "nextSlice" to "AR-05B",
+        "implementationSlices" to slices.mapIndexed { index, slice -> when (index) {
+            0 -> slice + mapOf("status" to "implemented", "acceptance" to mapOf("source" to "current-revision-ci",
+                "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
+            1 -> (slice - "acceptance") + ("status" to "planned")
+            else -> slice
+        } }))
 }

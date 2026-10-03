@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 13
+revision: 14
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -15,7 +15,7 @@ currentDecision:
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A implements typed argument parsing while later artifact and distribution slices remain planned. EF-09 stays paused and F-20 remains AR-07-owned."
+  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A is accepted from PR #191 and actual merged-main CI 36998199817. The maintainer selects AR-05B for packaged contracts and relocatable distributions; limits, publication and closure remain planned. EF-09 stays paused and F-20 remains AR-07-owned."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"

@@ -36,6 +36,8 @@ class ProductIsolationTests(unittest.TestCase):
             if module in isolation.TEST_MODULES:
                 self.write(Path(module) / "src/test/kotlin/Test.kt", f"class Tests{index}\n")
         self.write(Path("test-support/kotlin/Support.kt"), "class Support\n")
+        self.write(isolation.RESOURCE_INVENTORY, "modules/fixture.yaml\n")
+        self.write(Path("modules/fixture.yaml"), "contract fixture\n")
 
     def write(self, relative, contents):
         target = self.root / relative
@@ -51,9 +53,10 @@ class ProductIsolationTests(unittest.TestCase):
             self.write(Path(relative), "excluded")
         digests = isolation.prepare_isolated_project(self.root, self.destination)
         self.assertIn("gradle/cli-application.gradle.kts", digests)
-        self.assertEqual(len(isolation.BUILD_INPUTS) + len(isolation.MODULES) + len(isolation.TEST_MODULES) + 1, len(digests))
+        self.assertEqual(len(isolation.BUILD_INPUTS) + len(isolation.MODULES) + len(isolation.TEST_MODULES) + 2, len(digests))
         for relative in digests:
-            self.assertEqual((self.root / relative).read_bytes(), (self.destination / relative).read_bytes())
+            target = self.destination / (isolation.RESOURCE_INPUTS if relative == "modules/fixture.yaml" else Path()) / relative
+            self.assertEqual((self.root / relative).read_bytes(), target.read_bytes())
         for relative in excluded:
             self.assertFalse((self.destination / relative).exists(), relative)
 
@@ -140,10 +143,12 @@ class ProductIsolationTests(unittest.TestCase):
 
     def test_real_orchestration_requires_fresh_product_build_and_installed_smoke(self):
         with patch.object(isolation.subprocess, "run", side_effect=self.runner) as run, \
-             patch.object(isolation, "smoke_product", return_value={"controlled": True}) as smoke:
+             patch.object(isolation, "smoke_product", return_value={"controlled": True}) as smoke, \
+             patch.object(isolation, "verify_relocated_product", return_value={"controlled": True}) as relocated:
             isolation.verify(self.root, self.report, True)
         self.assertEqual(1, run.call_count)
         self.assertEqual(1, smoke.call_count)
+        self.assertEqual(1, relocated.call_count)
         proof = json.loads((self.report / "proof.json").read_text())
         self.assertEqual("passed", proof["status"])
         self.assertFalse(proof["verificationSourcesPresent"])

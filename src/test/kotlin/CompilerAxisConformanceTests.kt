@@ -23,11 +23,10 @@ class CompilerAxisConformanceTests {
     fun directIntentPlannerBypassFailsConvergence() {
         val root = copiedFixture()
         val cli = File(root, HONEST_CLI)
-        cli.writeText(
-            cli.readText().replace(
-                "IntentYamlFrontend(FrontendCompilerComposition.compiler(registry))",
-                "FrontendCompilerComposition.intentPlanner(registry)"
-            )
+        replaceExactlyOnce(
+            cli,
+            "IntentYamlFrontend(FrontendCompilerComposition.compiler(registry, StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)))",
+            "FrontendCompilerComposition.intentPlanner(registry)"
         )
 
         val check = CompilerAxisConformanceChecks(root).checks()
@@ -103,11 +102,10 @@ class CompilerAxisConformanceTests {
     fun directReviewedProposalReviewBypassFailsConvergence() {
         val root = copiedFixture()
         val cli = File(root, HONEST_CLI)
-        cli.writeText(
-            cli.readText().replace(
-                "ReviewedAiProposalFrontend(FrontendCompilerComposition.compiler(registry))",
-                "IntentProposalReview(registry)"
-            )
+        replaceExactlyOnce(
+            cli,
+            "ReviewedAiProposalFrontend(FrontendCompilerComposition.compiler(registry, StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)))",
+            "IntentProposalReview(registry)"
         )
 
         val check = CompilerAxisConformanceChecks(root).checks()
@@ -172,6 +170,27 @@ class CompilerAxisConformanceTests {
     }
 
     @Test
+    fun logicalSourceIdentityCannotDiscardTheAuthoredFileFallback() {
+        for ((expected, replacement) in listOf(
+            "val sourceName = sourceIdentity ?: file.path" to "val sourceName = sourceIdentity ?: \"<intent>\"",
+            "val identity = sourceIdentity ?: file.absoluteFile.toPath().normalize().toString()" to
+                "val identity = sourceIdentity ?: \"<intent>\""
+        )) {
+            val root = copiedFixture()
+            try {
+                val baseline = CompilerAxisConformanceChecks(root).checks()
+                    .single { it.name == CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+                assertTrue(baseline.passed, baseline.message)
+                replaceExactlyOnce(File(root, FRONTEND_SOURCE_CAPTURE), expected, replacement)
+                val check = CompilerAxisConformanceChecks(root).checks()
+                    .single { it.name == CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+                assertEquals(false, check.passed)
+                assertTrue(check.message.orEmpty().contains(expected), check.message)
+            } finally { root.deleteRecursively() }
+        }
+    }
+
+    @Test
     fun compilationInputConstructedOutsideItsFrontendFailsDirectionCheck() {
         val root = copiedFixture()
         File(root, "src/main/kotlin/org/flowlang/product/IntentBypass.kt").apply {
@@ -228,6 +247,15 @@ class CompilerAxisConformanceTests {
             .single { it.name == CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
         assertEquals(false, check.passed)
         assertTrue(check.message.orEmpty().contains("notes-backed SemanticActionGraph"), check.message)
+    }
+
+    private fun replaceExactlyOnce(file: File, expected: String, replacement: String) {
+        val source = file.readText()
+        assertEquals(1, Regex(Regex.escape(expected)).findAll(source).count(),
+            "Compiler bypass mutation must match exactly one live call site in ${file.name}.")
+        val mutated = source.replace(expected, replacement)
+        assertTrue(mutated != source, "Compiler bypass mutation must change the fixture.")
+        file.writeText(mutated)
     }
 
     private fun copiedFixture(): File {

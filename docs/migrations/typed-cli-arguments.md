@@ -56,3 +56,5 @@ Migration rules:
 This slice does not change artifact formats, source defaults or resource lookup.
 Classpath-owned contracts, relocatable packaging, centralized limits and atomic
 artifact publication belong to the remaining AR-05 slices.
+
+For packaged defaults and the later `--contracts` option, see [packaged CLI contracts](packaged-cli-contracts.md).

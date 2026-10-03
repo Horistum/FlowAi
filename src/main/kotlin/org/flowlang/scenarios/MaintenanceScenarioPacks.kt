@@ -2,6 +2,7 @@ package org.flowlang.scenarios
 
 import org.flowlang.ai.normalization.*
 import org.flowlang.intent.*
+import org.flowlang.safety.EnvironmentSafetyPolicy
 import org.flowlang.safety.EnvironmentParameterEvidence
 import org.flowlang.safety.EnvironmentSensitivity
 import org.flowlang.safety.EnvironmentValueKind
@@ -24,7 +25,10 @@ object KubernetesMaintenanceScenarioPack : BaseScenarioPack() {
         exampleRequests = listOf("Run Kubernetes maintenance in namespace payments, drain nodes with approval, dry-run first and verify pods are healthy.")
     )
 
-    override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult {
+    override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch): ScenarioNormalizationResult =
+        normalize(request, match, StandardEnvironmentSafetyPolicyNotes.policy())
+
+    override fun normalize(request: AiIntentRequest, match: ScenarioPackMatch, environmentPolicy: EnvironmentSafetyPolicy): ScenarioNormalizationResult {
         val text = request.userText
         val lower = normalizeText(text)
         val scope = kubernetesScopeEntity(text, request.context)
@@ -41,7 +45,7 @@ object KubernetesMaintenanceScenarioPack : BaseScenarioPack() {
         val environments = listOfNotNull(request.context.defaultEnvironment, sourceEnvironment)
             .map(String::trim).filter(String::isNotEmpty).distinctBy { it.lowercase() }
         val environment = environments.takeIf { it.isNotEmpty() }?.let { values ->
-            StandardEnvironmentSafetyPolicyNotes.policy().classify(values.map { value ->
+            environmentPolicy.classify(values.map { value ->
                 EnvironmentParameterEvidence("environment", EnvironmentValueKind.LITERAL, literalValue = value)
             })
         }

@@ -100,7 +100,7 @@ class CliTargetEvidenceAuthority(
     private val projections: TargetProjectionRegistry,
     rootDir: File = File(".")
 ) {
-    private val pipeline = TargetManifestGenerationPipeline(targets, projections, modules = org.flowlang.modules.ModuleRegistry())
+    private val pipeline = TargetManifestGenerationPipeline(targets, projections, modules = org.flowlang.modules.ModuleRegistry.fromDirectory(File(rootDir, "modules")))
     private val controlAuthority = ReferenceAdapterEvidence.control(rootDir, targets, projections)
     private val continuityAuthority = ReferenceAdapterEvidence.continuity(rootDir, targets, projections)
     private val triggerAuthority = ReferenceAdapterEvidence.trigger(rootDir, targets, projections)

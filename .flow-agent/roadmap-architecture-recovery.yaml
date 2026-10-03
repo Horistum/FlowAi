@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 13
+revision: 14
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Artifact, Distribution, CLI and I/O Integrity"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A implements typed argument parsing while later artifact and distribution slices remain planned. EF-09 stays paused and F-20 remains AR-07-owned."
+  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A is accepted from PR #191 and actual merged-main CI 36998199817. The maintainer selects AR-05B for packaged contracts and relocatable distributions; limits, publication and closure remain planned. EF-09 stays paused and F-20 remains AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

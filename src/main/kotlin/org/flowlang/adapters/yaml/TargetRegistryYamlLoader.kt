@@ -11,4 +11,6 @@ object TargetRegistryYamlLoader {
     fun load(file: File): TargetRegistryDocument = org.flowlang.targets.TargetRegistryYamlLoader.load(file)
     fun loadDirectory(dir: File): Map<String, TargetCapability> =
         org.flowlang.targets.TargetRegistryYamlLoader.loadDirectory(dir)
+    fun loadDirectory(dir: File, sourceIdentity: (File) -> String): Map<String, TargetCapability> =
+        org.flowlang.targets.TargetRegistryYamlLoader.loadDirectory(dir, sourceIdentity)
 }
