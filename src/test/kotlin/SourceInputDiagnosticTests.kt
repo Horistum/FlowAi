@@ -17,7 +17,12 @@ class SourceInputDiagnosticTests {
             assertTrue(result.diagnostic.message.contains("FLOW_DUPLICATE_DECLARATION"))
             assertTrue(result.diagnostic.message.contains("flow.steps[0].safety"))
             assertEquals(emptyList(), result.artifacts)
-            assertEquals(listOf("CLI DIAGNOSTIC FAILURE"), result.presentation.items.filterIsInstance<CliPresentationItem.Section>().map { it.title })
+            val sections = result.presentation.items.filterIsInstance<CliPresentationItem.Section>()
+            assertEquals(listOf("FLOW CONTRACT RESOURCE PROVENANCE", "CLI DIAGNOSTIC FAILURE"), sections.map { it.title })
+            val provenance = assertIs<List<*>>(sections.first().value)
+                .map { assertIs<org.flowlang.distribution.reference.ContractResourceProvenance>(it) }
+            assertTrue(provenance.isNotEmpty())
+            assertTrue(provenance.all { it.origin == org.flowlang.distribution.reference.ContractResourceOrigin.CLASSPATH })
             assertEquals(listOf("input.flow"), file.parentFile.list()!!.toList())
         }
     }

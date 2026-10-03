@@ -92,3 +92,11 @@ identities while preserving filesystem identities for existing repository caller
 Product commands use `contract:<path>#<anchor>` references tied to their selected
 provenance inventory; they never publish ephemeral snapshot paths as source identity.
 Repeated target reports must be byte-identical, without masking differing fields.
+
+Full-suite validation found two compiler bypass fixtures that no longer mutated the
+CLI after explicit safety-policy composition. Their mutation targets now match the
+live frontend calls and require exactly one replacement, preventing silent no-op
+fixtures. The invalid Flow source regression also checks the new contract provenance
+section while retaining its invalid-input diagnostic, empty artifact set and unchanged
+input directory assertions. These corrections preserve the existing compiler and
+no-write guarantees; no production authorization check is relaxed.
