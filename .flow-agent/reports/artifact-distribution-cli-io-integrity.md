@@ -107,3 +107,7 @@ which could replace invalid bytes before parsing and bind the compilation to dif
 bytes from the resource receipt. Regressions require identical hashes and plans for
 valid files and reject malformed UTF-8, including bytes inside a YAML comment, before
 writing output. Existing parser byte limits remain in force.
+
+The compiler direction check recognizes the optional logical identity while requiring
+the original file path and normalized absolute identity as fallbacks. Negative fixture
+mutations reject loss of either fallback; strict UTF-8 removal remains rejected.

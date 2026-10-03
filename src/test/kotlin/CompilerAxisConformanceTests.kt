@@ -170,6 +170,27 @@ class CompilerAxisConformanceTests {
     }
 
     @Test
+    fun logicalSourceIdentityCannotDiscardTheAuthoredFileFallback() {
+        for ((expected, replacement) in listOf(
+            "val sourceName = sourceIdentity ?: file.path" to "val sourceName = sourceIdentity ?: \"<intent>\"",
+            "val identity = sourceIdentity ?: file.absoluteFile.toPath().normalize().toString()" to
+                "val identity = sourceIdentity ?: \"<intent>\""
+        )) {
+            val root = copiedFixture()
+            try {
+                val baseline = CompilerAxisConformanceChecks(root).checks()
+                    .single { it.name == CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+                assertTrue(baseline.passed, baseline.message)
+                replaceExactlyOnce(File(root, FRONTEND_SOURCE_CAPTURE), expected, replacement)
+                val check = CompilerAxisConformanceChecks(root).checks()
+                    .single { it.name == CompilerAxisConformanceChecks.DEPENDENCY_DIRECTION_CHECK }
+                assertEquals(false, check.passed)
+                assertTrue(check.message.orEmpty().contains(expected), check.message)
+            } finally { root.deleteRecursively() }
+        }
+    }
+
+    @Test
     fun compilationInputConstructedOutsideItsFrontendFailsDirectionCheck() {
         val root = copiedFixture()
         File(root, "src/main/kotlin/org/flowlang/product/IntentBypass.kt").apply {
