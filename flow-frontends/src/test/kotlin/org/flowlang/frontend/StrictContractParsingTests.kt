@@ -78,7 +78,7 @@ class StrictContractParsingTests {
     }
 
     @Test fun tokenBudgetRejectsWideDocumentsBeforeBuildingObjectGraphs() {
-        val text = "{\"items\":[" + List(ContractReadLimits.MAX_TOKENS) { "0" }.joinToString(",") + "]}"
+        val text = "{\"items\":[" + List(ContractReadLimits.MAX_TOKENS / 1000) { "[" + List(1000) { "0" }.joinToString(",") + "]" }.joinToString(",") + "]}"
         assertContains(assertFailsWith<FlowYamlException> { FlowYaml.readMap(text) }.message.orEmpty(), "CONTRACT_TOKEN_LIMIT")
         assertContains(assertFailsWith<FlowJsonException> { FlowJson.readTree(text) }.message.orEmpty(), "CONTRACT_TOKEN_LIMIT")
     }

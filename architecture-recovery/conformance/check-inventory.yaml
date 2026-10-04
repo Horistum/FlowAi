@@ -59,3 +59,5 @@ checks:
   - "architecture-recovery.cli.invalid-arguments-have-no-side-effects"
   - architecture-recovery.resources.packaged-bytes-and-provenance
   - architecture-recovery.resources.incomplete-override-never-falls-back
+  - architecture-recovery.io.oversize-input-rejected-before-output
+  - architecture-recovery.io.streaming-output-byte-boundary

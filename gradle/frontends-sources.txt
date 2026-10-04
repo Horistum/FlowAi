@@ -11,6 +11,8 @@ org/flowlang/frontend/source/FlowSourceFrontend.kt
 org/flowlang/intent/IntentDecisionAnalyzer.kt
 org/flowlang/intent/IntentYamlLoader.kt
 org/flowlang/intent/StandardCapabilityCompatibility.kt
+org/flowlang/io/BoundedIo.kt
+org/flowlang/io/InputLimits.kt
 org/flowlang/modules/CanonicalModuleLoader.kt
 org/flowlang/modules/ModuleRegistry.kt
 org/flowlang/modules/ModuleYamlLoader.kt

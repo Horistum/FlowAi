@@ -1,5 +1,8 @@
 package org.flowlang.frontend.ai
 
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -85,13 +88,13 @@ private object ReviewedAiProposalSourceViewEncoder {
         .disable(SerializationFeature.INDENT_OUTPUT)
         .build()
 
-    fun encode(proposal: ReviewedAiProposal): ByteArray = mapper.writeValueAsBytes(
+    fun encode(proposal: ReviewedAiProposal): ByteArray = BoundedIo.encode(InputLimits.MAX_SOURCE_BYTES, "INPUT_BYTE_LIMIT") { output -> mapper.writeValue(output,
         ReviewedAiProposalSourceView(
             providerId = proposal.providerId,
             request = proposal.request,
             response = proposal.response
         )
-    )
+    ) }
 }
 
 /**

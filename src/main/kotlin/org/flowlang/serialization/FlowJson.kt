@@ -1,5 +1,7 @@
 package org.flowlang.serialization
 
+import org.flowlang.io.BoundedIo
+
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.core.StreamReadFeature
@@ -42,7 +44,7 @@ object FlowJson {
         throw error
     } catch (error: Exception) {
         val detail = (error as? JsonProcessingException)?.originalMessage ?: error.message ?: error.javaClass.simpleName
-        throw FlowJsonException("Invalid JSON in '$source': $detail", error)
+        throw FlowJsonException("Invalid JSON in '${BoundedIo.diagnostic(source)}': ${BoundedIo.diagnostic(detail)}", error)
     }
 }
 

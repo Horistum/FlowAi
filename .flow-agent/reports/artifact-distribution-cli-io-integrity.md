@@ -113,3 +113,42 @@ the original file path and normalized absolute identity as fallbacks. Negative f
 mutations reject loss of either fallback; strict UTF-8 removal remains rejected.
 Logical-identity capture uses a separate overload, preserving the original three-argument
 capture signature and trailing-lambda calls used by existing frontend clients and tests.
+
+## AR-05C: central input and output limits
+
+AR-05B is independently accepted from PR #192 (Flow CI #3317) and actual merged-main
+`48ae72336759c44afc5cbfe1eece4957f4c1b1c2` (Flow CI #3318, run 37163508408).
+All three candidates preserve the same 1,780 test identities and 268 ordered conformance
+checks. Actual-main isolation receipts were checked against every committed input hash,
+including 77 packaged resources and 44 relocated process invocations. The immutable
+acceptance document is `.flow-agent/evidence/contract-distribution-acceptance.json`.
+
+`InputLimits` and `BoundedIo` live in the frontend module, which already owns product
+serialization. They add no dependency to Core or the compiler. Product source capture,
+the direct Flow parser, normalization, contracts, descriptor directories, resource
+snapshots and adapter witness reads share bounded streams and strict UTF-8. Existing
+contract parser constants delegate to the central policy; collection cardinality and
+Flow lexer token budgets add limits before object-graph construction. Module, notes and
+target catalogs bound enumeration and aggregate bytes; packaged snapshots additionally
+bound the complete selected resource inventory.
+
+`Json.bytes` serializes through a bounded stream. CLI presentation accounts for encoded
+bytes and section headings. A complete artifact batch is preflighted, including its
+final newlines, before touching output paths. Boundary failures retain a small typed
+`CLI_LIMIT_EXCEEDED` diagnostic and exit 2. Tests cover exact limits and one-over mutants,
+UTF-8 widths, malformed encodings, infinite input streams, wrapped serialization errors,
+file and collection counts, aggregate arithmetic and preservation of existing output.
+The wide-token regression now spreads tokens over bounded subcollections so it still
+exercises the independent token limit rather than the new collection guard.
+
+The installed-product proof adds oversized intent, Flow, normalization and contract
+inputs, plus malformed normalization UTF-8, to both relocated distribution forms in
+both working-directory contexts: 64 real process invocations. Two appended conformance
+checks exercise oversized source rejection before output and streaming serialization.
+Historical CLI and distribution lifecycle tests replay their original coherent states;
+new negative controls enforce exact distribution acceptance before the C candidate.
+
+Public budgets and compatibility behavior are documented in
+`docs/migrations/bounded-product-io.md`. AR-05D retains write-failure rollback and atomic
+publication, and AR-05E retains integrated independent closure. Complete validation is
+recorded in the candidate PR after execution; no future CI result is claimed here.

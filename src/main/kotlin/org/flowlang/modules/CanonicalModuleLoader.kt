@@ -1,5 +1,9 @@
 package org.flowlang.modules
 
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+import org.flowlang.io.IoBudget
+
 import java.io.File
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.serialization.FlowYamlException
@@ -10,11 +14,14 @@ object CanonicalModuleLoader {
 
     fun loadDirectory(dir: File): List<FlowModule> {
         if (!dir.isDirectory) throw ContractException("Module directory does not exist: ${dir.path}")
-        val files = dir.listFiles { file -> file.isFile && file.extension in setOf("yaml", "yml") }
-            ?.sortedBy { it.name }
-            .orEmpty()
+        val files = BoundedIo.files(dir) { file -> file.isFile && file.extension in setOf("yaml", "yml") }
         if (files.isEmpty()) throw ContractException("Module directory is empty: ${dir.path}")
-        val modules = files.map(::loadFile)
+        val budget = IoBudget(InputLimits.MAX_TOTAL_INPUT_BYTES, code = "INPUT")
+        val modules = files.map { file ->
+            val bytes = BoundedIo.readBytes(file, minOf(InputLimits.MAX_SOURCE_BYTES, budget.remainingBytes()))
+            budget.add(bytes.size)
+            loadText(BoundedIo.decodeUtf8(bytes), file.path)
+        }
         return validateCatalog(modules)
     }
 
@@ -28,7 +35,12 @@ object CanonicalModuleLoader {
 
     fun loadTexts(texts: List<String>): List<FlowModule> {
         if (texts.isEmpty()) throw ContractException("At least one module descriptor is required.")
-        val modules = texts.mapIndexed { index, text -> loadText(text, "<module-${index + 1}>") }
+        BoundedIo.requireWithin(texts.size.toLong(), InputLimits.MAX_FILES, "INPUT_FILE_COUNT_LIMIT")
+        val budget = IoBudget(InputLimits.MAX_TOTAL_INPUT_BYTES, code = "INPUT")
+        val modules = texts.mapIndexed { index, text ->
+            budget.add(BoundedIo.textSize(text))
+            loadText(text, "<module-${index + 1}>")
+        }
         return validateCatalog(modules)
     }
 
