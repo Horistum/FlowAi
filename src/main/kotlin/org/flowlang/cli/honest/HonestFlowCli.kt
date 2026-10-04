@@ -5,6 +5,8 @@ import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.distribution.reference.ContractResourceResolver
 import java.io.File
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
 import kotlin.system.exitProcess
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -131,6 +133,9 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
     val output = CliOutputCollector()
     val command = args.firstOrNull()
     return try {
+        BoundedIo.requireWithin(args.size.toLong(), InputLimits.MAX_FILES, "INPUT_ARGUMENT_COUNT_LIMIT")
+        val argumentBudget = org.flowlang.io.IoBudget(InputLimits.MAX_SOURCE_BYTES, code = "INPUT_ARGUMENT")
+        args.forEach { argumentBudget.add(BoundedIo.textSize(it)) }
         commands.requireDisjoint(productCommands)
         when (command) {
             null -> {
@@ -164,7 +169,9 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
             )
         }
     } catch (failure: Exception) {
-        val code = when (failure) {
+        val limit = BoundedIo.limitFailure(failure)
+        var failureOutput = if (limit != null) CliOutputCollector() else output
+        val code = if (limit != null) CliDiagnosticCode.LIMIT_EXCEEDED else when (failure) {
             is CliTypedFailure -> failure.diagnosticCode
             is MissingExplicitTargetSelectionException -> CliDiagnosticCode.TARGET_REQUIRED_FOR_RENDER
             is IllegalArgumentException -> CliDiagnosticCode.INVALID_INPUT
@@ -173,19 +180,22 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
         }
         val diagnostic = CliExecutionDiagnostic(
             code = code,
-            message = failure.message ?: "CLI command failed without a diagnostic message.",
+            message = BoundedIo.diagnostic(limit?.message ?: failure.message ?: "CLI command failed without a diagnostic message."),
             causeType = failure::class.qualifiedName ?: failure::class.simpleName.orEmpty()
         )
-        output.section(
-            "CLI DIAGNOSTIC FAILURE",
-            CliCommandFailureReport(
-                code = code.wireCode,
-                command = command.orEmpty(),
-                message = diagnostic.message,
-                causeType = diagnostic.causeType.orEmpty()
-            )
+        val report = CliCommandFailureReport(
+            code = code.wireCode,
+            command = BoundedIo.diagnostic(command.orEmpty()),
+            message = diagnostic.message,
+            causeType = diagnostic.causeType.orEmpty()
         )
-        CliExecutionResult.Rejected(command.orEmpty(), diagnostic, output.snapshot())
+        try { failureOutput.section("CLI DIAGNOSTIC FAILURE", report) }
+        catch (_: org.flowlang.io.IoLimitException) {
+            // A full presentation must never prevent reporting the command's original failure.
+            failureOutput = CliOutputCollector()
+            failureOutput.section("CLI DIAGNOSTIC FAILURE", report)
+        }
+        CliExecutionResult.Rejected(BoundedIo.diagnostic(command.orEmpty()), diagnostic, failureOutput.snapshot())
     }
 }
 
@@ -308,8 +318,9 @@ private fun runNormalizeCommand(
 ): CliExecutionResult {
     val sourcePath = args.value(CliValueOption.FILE)
     val sourceFile = sourcePath?.let(::File)
-    val text = sourceFile?.readText()
+    val text = sourceFile?.let { BoundedIo.readText(it) }
         ?: args.positionals.joinToString(" ").trim()
+    BoundedIo.textSize(text)
     require(text.isNotBlank()) { "normalize requires text arguments or --file <path>." }
     val strict = args.has(CliFlagOption.STRICT) || args.has(CliFlagOption.FAIL_ON_UNSUPPORTED)
     val renderRequested = args.has(CliFlagOption.RENDER)
@@ -800,7 +811,6 @@ private fun writeMinimalBundle(
     values: LinkedHashMap<String, Any>,
     includeAiNormalization: Boolean
 ) {
-    require(directory.mkdirs() || directory.isDirectory) { "Cannot create output directory: ${directory.path}" }
     val bundleAnalyzer = FlowArtifactBundleAnalyzer()
     val renderedArtifact = values.keys.firstOrNull { it !in knownJsonArtifacts && !it.endsWith(".json") }
     val catalog = (if (values.containsKey("workflow-execution-plan-set.json")) {
@@ -862,13 +872,13 @@ private fun writeMinimalBundle(
     require(integrity.status == "PASS") {
         "CLI artifact integrity failed: ${integrity.issues.joinToString { it.code + ":" + it.artifact }}"
     }
-    File(directory, "standard-version.txt").writeText(FlowStandardVersions.FLOW_STANDARD_VERSION + "\n")
-    values.forEach { (name, value) ->
-        val text = if (value is String && !name.endsWith(".json")) value else Json.mapper.writeValueAsString(value)
-        File(directory, name).writeText(text + if (text.endsWith("\n")) "" else "\n")
-    }
-    File(directory, "artifact-integrity-report.json").writeText(Json.mapper.writeValueAsString(integrity) + "\n")
-    File(directory, "flow-artifact-bundle.json").writeText(Json.mapper.writeValueAsString(bundle) + "\n")
+    CliArtifactOutput.write(directory, linkedMapOf<String, Any>(
+        "standard-version.txt" to FlowStandardVersions.FLOW_STANDARD_VERSION
+    ).apply {
+        putAll(values)
+        put("artifact-integrity-report.json", integrity)
+        put("flow-artifact-bundle.json", bundle)
+    })
 }
 
 private fun extractIssueDiagnostics(artifact: String, report: Any): List<ObservedDiagnosticCode> {
@@ -896,8 +906,7 @@ private fun runDiagnosticsCommand(
     output.section("FLOW STANDARD DIAGNOSTIC CATALOG", catalog)
     val persisted = args.value(CliValueOption.OUT)?.let { out ->
         val directory = File(out)
-        require(directory.mkdirs() || directory.isDirectory)
-        File(directory, "standard-diagnostic-catalog.json").writeText(Json.mapper.writeValueAsString(catalog) + "\n")
+        CliArtifactOutput.write(directory, mapOf("standard-diagnostic-catalog.json" to catalog))
         true
     } ?: false
     return CliExecutionResult.Completed(
@@ -916,8 +925,7 @@ private fun runStandardVerifyCommand(
     output.section("FLOW STANDARD BUNDLE VERIFICATION", report)
     val persisted = args.value(CliValueOption.OUT)?.let { out ->
         val directory = File(out)
-        require(directory.mkdirs() || directory.isDirectory)
-        File(directory, "standard-bundle-verification.json").writeText(Json.mapper.writeValueAsString(report) + "\n")
+        CliArtifactOutput.write(directory, mapOf("standard-bundle-verification.json" to report))
         true
     } ?: false
     require(report.status == "PASS") { "Flow standard bundle verification failed." }

@@ -1,5 +1,7 @@
 package org.flowlang.adapters.binding
 
+import org.flowlang.io.BoundedIo
+
 import java.io.File
 import org.flowlang.intent.IntentBindingContractAuthority
 import org.flowlang.intent.IntentBindingEffectPolicy
@@ -320,7 +322,7 @@ class AdapterCapabilityBindingMigrationAuthority(
             }
 
         val frozenFile = File(rootDir, AdapterCapabilityBindingLoader.C04_FROZEN_PATH)
-        val frozenDigest = sha256(frozenFile.readBytes())
+        val frozenDigest = sha256(BoundedIo.readBytes(frozenFile))
         if (frozenDigest != C04_BINDING_SHA256) {
             findings += "Frozen C0.4 binding digest changed: observed=$frozenDigest expected=$C04_BINDING_SHA256."
         }

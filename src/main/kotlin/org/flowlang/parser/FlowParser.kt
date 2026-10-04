@@ -1,5 +1,8 @@
 package org.flowlang.parser
 
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+
 import org.flowlang.ast.*
 import java.io.File
 
@@ -14,10 +17,10 @@ class FlowParser {
     private var statementNestingDepth = 0
 
     companion object {
-        internal const val MAX_STATEMENT_NESTING_DEPTH = 128
+        internal const val MAX_STATEMENT_NESTING_DEPTH = InputLimits.MAX_FLOW_STATEMENT_DEPTH
     }
 
-    fun parse(file: File): FlowDocument = parse(file.readText(), file.path)
+    fun parse(file: File): FlowDocument = parse(BoundedIo.readText(file), file.path)
 
     fun parse(source: String, sourceFile: String? = null): FlowDocument {
         val ts = TokenStream.fromSource(source)

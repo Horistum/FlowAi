@@ -1,5 +1,8 @@
 package org.flowlang.parser
 
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+
 import org.flowlang.ast.SourceLocation
 
 /**
@@ -22,6 +25,7 @@ class Lexer(private val src: String) {
     private val decodedStringLocations = linkedMapOf<Token, List<SourceLocation>>()
 
     fun tokenize(): List<Token> {
+        BoundedIo.textSize(src)
         while (pos < src.length) {
             val c = src[pos]
             when {
@@ -74,7 +78,12 @@ class Lexer(private val src: String) {
     }
 
     private fun add(type: TokenType, text: String, raw: String? = null, isInt: Boolean = false) {
-        tokens += Token(type, text, line, col, raw, isInt)
+        appendToken(Token(type, text, line, col, raw, isInt))
+    }
+
+    private fun appendToken(token: Token) {
+        BoundedIo.requireWithin(tokens.size.toLong() + 1, InputLimits.MAX_TOKENS, "FLOW_TOKEN_LIMIT")
+        tokens += token
     }
 
     private fun emitNewline() {
@@ -95,7 +104,7 @@ class Lexer(private val src: String) {
         val startLine = line; val startCol = col
         val sb = StringBuilder()
         while (pos < src.length && isIdentPart(src[pos])) { sb.append(src[pos]); advance() }
-        tokens += Token(TokenType.IDENT, sb.toString(), startLine, startCol)
+        appendToken(Token(TokenType.IDENT, sb.toString(), startLine, startCol))
     }
 
     private fun lexNumber() {
@@ -116,7 +125,7 @@ class Lexer(private val src: String) {
             }
             sb.append(src[pos]); advance()
         }
-        tokens += Token(TokenType.NUMBER, sb.toString(), startLine, startCol, isInteger = isInt)
+        appendToken(Token(TokenType.NUMBER, sb.toString(), startLine, startCol, isInteger = isInt))
     }
 
     private fun lexString(quote: Char) {
@@ -154,7 +163,7 @@ class Lexer(private val src: String) {
         if (pos >= src.length) throw LexException("unterminated string literal", startLine, startCol)
         advance() // closing quote
         val token = Token(TokenType.STRING, sb.toString(), startLine, startCol, rawValue = sb.toString())
-        tokens += token
+        appendToken(token)
         decodedStringLocations[token] = DecodedStringLocations(startLine, sb.length, locationRuns.toList())
     }
 }

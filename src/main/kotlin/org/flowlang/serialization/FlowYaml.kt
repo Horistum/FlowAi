@@ -1,5 +1,8 @@
 package org.flowlang.serialization
 
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.core.StreamReadFeature
 import com.fasterxml.jackson.core.type.TypeReference
@@ -26,7 +29,7 @@ object FlowYaml {
             .loaderOptions(org.yaml.snakeyaml.LoaderOptions().apply {
                 codePointLimit = ContractReadLimits.MAX_DOCUMENT_BYTES
                 nestingDepthLimit = ContractReadLimits.MAX_DEPTH
-                maxAliasesForCollections = 0
+                maxAliasesForCollections = InputLimits.MAX_YAML_ALIASES
                 setAllowDuplicateKeys(false)
                 setAllowRecursiveKeys(false)
             })
@@ -86,7 +89,7 @@ object FlowYaml {
     } catch (error: Exception) {
         val detail = (error as? JsonProcessingException)?.originalMessage
             ?: error.message ?: error.javaClass.simpleName
-        throw FlowYamlException("Invalid YAML in '$source': $detail", error)
+        throw FlowYamlException("Invalid YAML in '${BoundedIo.diagnostic(source)}': ${BoundedIo.diagnostic(detail)}", error)
     }
 }
 

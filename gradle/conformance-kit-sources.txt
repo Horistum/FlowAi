@@ -39,6 +39,8 @@ org/flowlang/conformance/ArtifactIntegrityLifecycle.kt
 org/flowlang/conformance/BackupRestoreBaseline.kt
 org/flowlang/conformance/BackupRestoreFalsification.kt
 org/flowlang/conformance/BoundedDomainCorpusRoadmapLifecycleAuthority.kt
+org/flowlang/conformance/BoundedIoConformanceChecks.kt
+org/flowlang/conformance/BoundedIoLifecycle.kt
 org/flowlang/conformance/CanonicalExecutionPlanKindConformanceOracle.kt
 org/flowlang/conformance/CertificateLifecycleBaseline.kt
 org/flowlang/conformance/CertificateLifecycleFalsification.kt

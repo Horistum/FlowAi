@@ -1,6 +1,10 @@
 package org.flowlang.cli.honest
 
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
+import org.flowlang.cli.Json
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+import org.flowlang.io.IoBudget
 import org.flowlang.materialization.ExplicitTargetSelection
 import org.flowlang.materialization.TargetSelectionDecision
 
@@ -39,14 +43,19 @@ interface CliOutput {
 
 internal class CliOutputCollector : CliOutput {
     private val items = mutableListOf<CliPresentationItem>()
+    private val budget = IoBudget(InputLimits.MAX_TOTAL_OUTPUT_BYTES, code = "OUTPUT")
 
     override fun section(title: String, value: Any) {
         require(title.isNotBlank()) { "CLI presentation section title must not be blank." }
-        items += CliPresentationItem.Section(title, value)
+        val item = CliPresentationItem.Section(title, value)
+        budget.add(encodePresentationItem(item, minOf(InputLimits.MAX_ARTIFACT_BYTES, budget.remainingBytes())).size)
+        items += item
     }
 
     override fun text(value: String) {
-        items += CliPresentationItem.Text(value)
+        val item = CliPresentationItem.Text(value)
+        budget.add(encodePresentationItem(item, minOf(InputLimits.MAX_ARTIFACT_BYTES, budget.remainingBytes())).size)
+        items += item
     }
 
     override fun snapshot(): CliPresentation = CliPresentation(items.toList())
@@ -56,6 +65,7 @@ enum class CliDiagnosticCode(val wireCode: String) {
     TARGET_REQUIRED_FOR_RENDER("CLI_TARGET_REQUIRED_FOR_RENDER"),
     UNKNOWN_COMMAND("CLI_UNKNOWN_COMMAND"),
     INVALID_INPUT("CLI_INVALID_INPUT"),
+    LIMIT_EXCEEDED("CLI_LIMIT_EXCEEDED"),
     INTEGRITY_BLOCKED("CLI_INTEGRITY_BLOCKED"),
     INTERNAL_ERROR("CLI_INTERNAL_ERROR")
 }
@@ -198,6 +208,7 @@ sealed interface CliExecutionResult {
             CliDiagnosticCode.INTERNAL_ERROR -> CliProcessExit.INTERNAL_ERROR.code
             CliDiagnosticCode.TARGET_REQUIRED_FOR_RENDER,
             CliDiagnosticCode.UNKNOWN_COMMAND,
+            CliDiagnosticCode.LIMIT_EXCEEDED,
             CliDiagnosticCode.INVALID_INPUT -> CliProcessExit.INVALID_INPUT.code
         }
         override val artifacts: List<CliArtifact> = emptyList()
@@ -211,16 +222,22 @@ internal class CliTypedFailure(
     cause: Throwable? = null
 ) : IllegalArgumentException(message, cause)
 
+internal fun encodePresentationItem(item: CliPresentationItem, maximum: Int): ByteArray = BoundedIo.encode(maximum) { output ->
+    when (item) {
+        is CliPresentationItem.Section -> {
+            output.write(BoundedIo.encodeText("===== ${item.title} =====\n", InputLimits.MAX_DIAGNOSTIC_CHARS, "OUTPUT_BYTE_LIMIT"))
+            output.write(Json.bytes(item.value, maximum))
+        }
+        is CliPresentationItem.Text -> output.write(BoundedIo.encodeText(item.value, maximum, "OUTPUT_BYTE_LIMIT"))
+    }
+    output.write(10)
+}
+
 object CliPresenter {
     fun present(result: CliExecutionResult) {
-        result.presentation.items.forEach { item ->
-            when (item) {
-                is CliPresentationItem.Section -> {
-                    println("===== ${item.title} =====")
-                    println(org.flowlang.cli.Json.mapper.writeValueAsString(item.value))
-                }
-                is CliPresentationItem.Text -> println(item.value)
-            }
+        val bytes = BoundedIo.encode(InputLimits.MAX_TOTAL_OUTPUT_BYTES) { output ->
+            result.presentation.items.forEach { output.write(encodePresentationItem(it, InputLimits.MAX_ARTIFACT_BYTES)) }
         }
+        print(bytes.toString(Charsets.UTF_8))
     }
 }

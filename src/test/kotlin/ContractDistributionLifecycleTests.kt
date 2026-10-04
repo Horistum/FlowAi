@@ -5,7 +5,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class ContractDistributionLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = contractDistributionCandidateSnapshot()
     private fun reject(s: WorkflowSemanticsRecoveryLifecycleSnapshot) = assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())
 
     @Test fun resourcesFollowIndependentlyAcceptedCliWithoutClosingFindings() {
@@ -57,4 +57,19 @@ class ContractDistributionLifecycleTests {
             reject(WorkflowSemanticsRecoveryLifecycle.load(root))
         } finally { root.deleteRecursively() }
     }
+}
+
+/** Coherent historical resource candidate; current limits acceptance is checked separately. */
+internal fun contractDistributionCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
+    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    @Suppress("UNCHECKED_CAST")
+    val slices = current.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
+    return current.copy(artifactWorkPackage = current.artifactWorkPackage + mapOf(
+        "selectedSlice" to "AR-05B", "nextSlice" to "AR-05C",
+        "implementationSlices" to slices.mapIndexed { index, slice -> when (index) {
+            1 -> slice + mapOf("status" to "implemented", "acceptance" to mapOf("source" to "current-revision-ci",
+                "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
+            2 -> (slice - "acceptance") + ("status" to "planned")
+            else -> slice
+        } }))
 }

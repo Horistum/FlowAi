@@ -95,7 +95,7 @@ internal fun cliArgumentCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleS
         "implementationSlices" to slices.mapIndexed { index, slice -> when (index) {
             0 -> slice + mapOf("status" to "implemented", "acceptance" to mapOf("source" to "current-revision-ci",
                 "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
-            1 -> (slice - "acceptance") + ("status" to "planned")
+            1, 2 -> (slice - "acceptance") + ("status" to "planned")
             else -> slice
         } }))
 }

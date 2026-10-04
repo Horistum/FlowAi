@@ -9,8 +9,8 @@ authorization:
   predecessor: "AR-04"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-05"
   rule: "Maintainer explicitly authorizes AR-05. Its accepted AR-04 baseline is immutable; each implementation slice requires its own exact-head and synthetic-merge CI."
-selectedSlice: "AR-05B"
-nextSlice: "AR-05C"
+selectedSlice: "AR-05C"
+nextSlice: "AR-05D"
 implementationSlices:
   - id: "AR-05A"
     name: "Typed CLI argument parsing"
@@ -23,15 +23,20 @@ implementationSlices:
       workflowRunId: 36998199817
   - id: "AR-05B"
     name: "Packaged contract resources and relocatable distributions"
-    status: implemented
+    status: accepted
     ownsFindings: ["F-05"]
+    acceptance:
+      source: .flow-agent/evidence/contract-distribution-acceptance.json
+      sha256: b68ef5d56d983cd43a4571c1be1d53e0608eab1778496057464008125a7a9521
+      mainCommit: 48ae72336759c44afc5cbfe1eece4957f4c1b1c2
+      workflowRunId: 37163508408
+  - id: "AR-05C"
+    name: "Central input and output limits"
+    status: implemented
+    ownsFindings: ["F-22"]
     acceptance:
       source: current-revision-ci
       requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
-  - id: "AR-05C"
-    name: "Central input and output limits"
-    status: planned
-    ownsFindings: ["F-22"]
   - id: "AR-05D"
     name: "Atomic artifact publication and actual-byte receipts"
     status: planned
@@ -46,40 +51,40 @@ completionDecision:
   remainingFindings: ["F-03", "F-05", "F-19", "F-22"]
   nextItem: "AR-06"
   nextItemActivationState: not-activated
-architecturePurpose: "Reference distribution owns its packaged contracts and evidence. CLI explicitly selects a resource authority; Core and adapter evidence validators retain their existing semantics."
-universalInvariant: "Installed product behavior and contract bytes are independent of the working directory. An explicit external contract root is complete, recorded and fail-closed, never an implicit overlay."
+architecturePurpose: "One frontend-owned I/O policy bounds product inputs, parser complexity, contract collections and encoded CLI output without introducing filesystem dependencies into Core."
+universalInvariant: "Oversized inputs and outputs fail within fixed budgets with stable bounded diagnostics before publication starts; accepted bytes preserve source identity."
 scope:
   include:
-    - "A sorted, explicit distribution resource inventory with build-time byte hashes."
-    - "ContractResourceResolver for classpath resources and explicit external roots, with per-file provenance."
-    - "Private command-scoped materialization for existing File-based validators, with cleanup on success and failure."
-    - "Packaged default intent, module and target descriptors, and the evidence required by target authorities."
-    - "Both installDist and relocated distZip execution from empty and misleading working directories."
+    - "Central InputLimits, bounded stream reads, strict UTF-8 and aggregate collection budgets."
+    - "Flow, intent, normalization, descriptors, packaged and external contracts, and adapter witness inputs."
+    - "Parser depth, token, alias and collection limits with original strict contract semantics."
+    - "Bounded JSON serialization, presentation and complete output batch preflight before filesystem writes."
   exclude:
-    - "No input-limit or atomic artifact publication implementation; AR-05C and AR-05D retain those responsibilities."
-    - "No changed adapter support, runtime execution, verification-class dependency or finding closure."
+    - "Atomic publication, actual-byte receipts and write-failure rollback belong to AR-05D."
+    - "No target-support promotion, whole-milestone finding closure or downstream activation."
 expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/serialization/"
+  - "src/main/kotlin/org/flowlang/frontend/"
   - "src/main/kotlin/org/flowlang/cli/honest/"
-  - "src/main/kotlin/org/flowlang/distribution/reference/"
-  - "src/main/kotlin/org/flowlang/adapters/"
-  - "tools/verify_product_isolation.py"
 expectedFilesToChange:
-  - "flow-reference-distribution/build.gradle.kts"
-  - "src/main/kotlin/org/flowlang/cli/honest/"
-  - "tools/verify_product_isolation.py"
-expectedFilesToAdd:
   - "src/main/kotlin/org/flowlang/distribution/reference/ContractResourceResolver.kt"
-  - "gradle/reference-contract-resources.txt"
+  - "src/main/kotlin/org/flowlang/parser/"
+  - "tools/verify_relocated_product.py"
+expectedFilesToAdd:
+  - "src/main/kotlin/org/flowlang/io/InputLimits.kt"
+  - "src/main/kotlin/org/flowlang/io/BoundedIo.kt"
+  - "src/main/kotlin/org/flowlang/cli/honest/CliArtifactOutput.kt"
 testsToAddOrUpdate:
-  - "Classpath content identity, explicit override provenance, missing/corrupt/escaping resource rejection and cleanup."
-  - "Installed commands, actual output artifacts and unchanged target maturity after relocation."
-  - "Independent AR-05A acceptance and historical lifecycle regression coverage."
+  - "Exact-limit and one-over byte, UTF-8, token, collection, file-count and aggregate boundaries."
+  - "Oversized streaming serialization, unchanged existing destination and bounded diagnostic output."
+  - "Installed product limits through both relocated distribution forms."
+  - "Independent AR-05B acceptance and historical lifecycle regression coverage."
 conformanceToAddOrUpdate:
-  - "Append packaged-resource integrity and no-fallback checks without changing frozen inventories."
+  - "Append bounded input rejection and bounded serialization checks without changing frozen inventories."
 documentationToUpdate:
-  - "Document packaged contracts, resources command, explicit override semantics and distribution verification."
+  - "Publish fixed budgets, rejection behavior and the atomic-publication boundary."
 validationPlan:
-  - "Inspect PR #191 and actual merged-main artifacts before accepting AR-05A."
+  - "Inspect PR #192 and actual merged-main artifacts before accepting AR-05B."
   - "Run all tooling tests, structure validation and context generation."
   - "Run existing Flow CI physical isolation and complete tests/conformance on exact head and synthetic merge."
   - "Compare test identities and ordered conformance inventory against the accepted predecessor."

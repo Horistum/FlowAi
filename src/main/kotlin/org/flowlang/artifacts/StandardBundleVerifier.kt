@@ -1,5 +1,7 @@
 package org.flowlang.artifacts
 
+import org.flowlang.io.BoundedIo
+
 import org.flowlang.serialization.FlowJson
 import org.flowlang.standard.FlowStandardVersions
 import java.io.File
@@ -44,7 +46,7 @@ class StandardBundleVerifier {
 
         val observedVersion = File(bundleDir, "standard-version.txt")
             .takeIf { it.isFile }
-            ?.readText()
+            ?.let { BoundedIo.readText(it) }
             ?.trim()
             .orEmpty()
 
@@ -178,8 +180,12 @@ class StandardBundleVerifier {
         return issues.distinct().sorted()
     }
 
-    private fun <T> strictRead(file: File, type: Class<T>): T? =
-        runCatching { FlowJson.read(file, type) }.getOrNull()
+    private fun <T> strictRead(file: File, type: Class<T>): T? = try {
+        FlowJson.read(file, type)
+    } catch (failure: Exception) {
+        BoundedIo.limitFailure(failure)?.let { throw it }
+        null
+    }
 
     private fun check(id: String, missing: List<String>, passMessage: String, failMessage: String): StandardBundleVerificationCheck =
         StandardBundleVerificationCheck(
