@@ -180,8 +180,12 @@ class StandardBundleVerifier {
         return issues.distinct().sorted()
     }
 
-    private fun <T> strictRead(file: File, type: Class<T>): T? =
-        runCatching { FlowJson.read(file, type) }.getOrNull()
+    private fun <T> strictRead(file: File, type: Class<T>): T? = try {
+        FlowJson.read(file, type)
+    } catch (failure: Exception) {
+        BoundedIo.limitFailure(failure)?.let { throw it }
+        null
+    }
 
     private fun check(id: String, missing: List<String>, passMessage: String, failMessage: String): StandardBundleVerificationCheck =
         StandardBundleVerificationCheck(

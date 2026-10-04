@@ -26,6 +26,20 @@ class BoundedProductIoTests {
         } finally { root.deleteRecursively() }
     }
 
+    @Test fun oversizedBundleEvidenceCannotBecomeAPersistedVerificationReport() {
+        val root = createTempDirectory("bounded-verifier-").toFile()
+        try {
+            val bundle = File(root, "bundle").apply { mkdirs() }
+            val evidence = File(bundle, "conformance-manifest.json")
+            java.io.RandomAccessFile(evidence, "rw").use { it.setLength(InputLimits.MAX_SOURCE_BYTES.toLong() + 1) }
+            val out = File(root, "output")
+            val result = assertIs<CliExecutionResult.Rejected>(executeCli(arrayOf("standard-verify", "--bundle", bundle.path, "--out", out.path)))
+            assertEquals(CliDiagnosticCode.LIMIT_EXCEEDED, result.diagnostic.code)
+            assertFalse(out.exists())
+            assertTrue(result.artifacts.isEmpty())
+        } finally { root.deleteRecursively() }
+    }
+
     @Test fun normalizationFileRejectsMalformedUtf8() {
         val root = createTempDirectory("bounded-normalize-").toFile()
         try {
