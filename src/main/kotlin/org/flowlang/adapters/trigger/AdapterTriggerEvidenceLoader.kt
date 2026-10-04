@@ -1,6 +1,8 @@
 package org.flowlang.adapters.trigger
 
 import java.io.File
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
 import org.flowlang.serialization.FlowYaml
 
 /**
@@ -104,10 +106,17 @@ object AdapterTriggerEvidenceLoader {
         indexedFiles: List<File>
     ) {
         val indexedPaths = indexedFiles.map { file -> repositoryPath(repositoryRoot, file) }.toSet()
-        val discoveredPaths = targetDirectory.walkTopDown()
-            .filter { file -> file.isFile && file.extension == "yaml" }
-            .map { file -> repositoryPath(repositoryRoot, file.canonicalFile) }
-            .toSet()
+        val discoveredPaths = java.nio.file.Files.walk(targetDirectory.toPath(), InputLimits.MAX_DEPTH).use { paths ->
+            val selected = linkedSetOf<String>()
+            val iterator = paths.iterator()
+            var count = 0L
+            while (iterator.hasNext()) {
+                BoundedIo.requireWithin(++count, InputLimits.MAX_FILES, "INPUT_FILE_COUNT_LIMIT")
+                val file = iterator.next().toFile()
+                if (file.isFile && file.extension == "yaml") selected += repositoryPath(repositoryRoot, file.canonicalFile)
+            }
+            selected
+        }
 
         val missing = indexedPaths - discoveredPaths
         val unindexed = discoveredPaths - indexedPaths

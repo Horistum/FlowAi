@@ -1,5 +1,9 @@
 package org.flowlang.targets
 
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+import org.flowlang.io.IoBudget
+
 import java.io.File
 import org.flowlang.adapters.topology.AdapterTopologyEvidenceLoader
 import org.flowlang.adapters.topology.AdapterTopologyProfileFactory
@@ -33,15 +37,19 @@ object TargetRegistryYamlLoader {
     /** Logical identities let packaged callers retain source provenance after a temporary snapshot is removed. */
     fun loadDirectory(dir: File, sourceIdentity: (File) -> String): Map<String, TargetCapability> {
         if (!dir.isDirectory) return emptyMap()
-        val docs = dir.listFiles { file ->
+        val docs = BoundedIo.files(dir) { file ->
             file.isFile && (file.extension == "yaml" || file.extension == "yml")
-        }?.sortedBy { it.name } ?: emptyList()
+        }
+        val budget = IoBudget(InputLimits.MAX_TOTAL_INPUT_BYTES, code = "INPUT")
         val topologyProfiles = adapterTopologyProfiles(dir)
 
         val out = linkedMapOf<String, TargetCapability>()
         val identities = mutableSetOf<String>()
         docs.forEach { file ->
-            val document = load(file)
+            val bytes = BoundedIo.readBytes(file, minOf(InputLimits.MAX_SOURCE_BYTES, budget.remainingBytes()))
+            budget.add(bytes.size)
+            val document = FlowYaml.readStrict(BoundedIo.decodeUtf8(bytes), TargetRegistryDocument::class.java, file.path)
+            validateDocument(document, file)
             val identity = sourceIdentity(file)
             require(identity.isNotBlank() && '#' !in identity && identities.add(identity)) {
                 "Target registry source identities must be non-blank, fragment-free and unique."

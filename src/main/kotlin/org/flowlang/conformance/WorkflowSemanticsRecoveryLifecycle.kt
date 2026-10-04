@@ -30,7 +30,8 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val languageCompletionEvidence: String? = null,
     val artifactWorkPackage: Map<String, Any?> = emptyMap(),
     val artifactActivationEvidence: String? = null,
-    val cliArgumentAcceptanceEvidence: String? = null
+    val cliArgumentAcceptanceEvidence: String? = null,
+    val contractDistributionAcceptanceEvidence: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -107,7 +108,8 @@ internal object WorkflowSemanticsRecoveryLifecycle {
                 .takeIf { it.isFile }?.readText(Charsets.UTF_8),
             optionalMap(root, ArtifactIntegrityLifecycle.WORK_PACKAGE),
             File(root, ArtifactIntegrityLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
-            File(root, ContractDistributionLifecycle.CLI_EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
+            File(root, ContractDistributionLifecycle.CLI_EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
+            File(root, BoundedIoLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
         )
     }
 

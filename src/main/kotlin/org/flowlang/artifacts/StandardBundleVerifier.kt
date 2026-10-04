@@ -1,5 +1,7 @@
 package org.flowlang.artifacts
 
+import org.flowlang.io.BoundedIo
+
 import org.flowlang.serialization.FlowJson
 import org.flowlang.standard.FlowStandardVersions
 import java.io.File
@@ -44,7 +46,7 @@ class StandardBundleVerifier {
 
         val observedVersion = File(bundleDir, "standard-version.txt")
             .takeIf { it.isFile }
-            ?.readText()
+            ?.let { BoundedIo.readText(it) }
             ?.trim()
             .orEmpty()
 

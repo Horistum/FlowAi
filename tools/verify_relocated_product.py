@@ -100,6 +100,15 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
         flow.write_bytes(resources["examples/hello.flow"])
         invalid = root / "incomplete contracts"
         invalid.mkdir()
+        oversized = root / "oversized.source"
+        with oversized.open("wb") as stream:
+            stream.truncate(8 * 1024 * 1024 + 1)
+        malformed = root / "malformed.txt"
+        malformed.write_bytes(b"\xc3(")
+        oversized_contracts = root / "oversized contracts"
+        shutil.copytree(external, oversized_contracts)
+        with (oversized_contracts / "modules/standard.yaml").open("wb") as stream:
+            stream.truncate(8 * 1024 * 1024 + 1)
         runs = {}
         baselines = {}
         for form, distribution in (("installDist", installed), ("distZip", unzipped[0])):
@@ -118,7 +127,12 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                          ("normalize", ["normalize", "build and test", "--app", "shop"], 0),
                          ("maintenance", ["normalize", "Run Kubernetes maintenance in namespace payments with dry-run.", "--environment", "prod"], 0),
                          ("external", ["resources", "--contracts", str(external)], 0),
-                         ("missing-external", ["intent", "--contracts", str(invalid), "--out", "forbidden"], 2)]
+                         ("missing-external", ["intent", "--contracts", str(invalid), "--out", "forbidden"], 2),
+                         ("limit-intent", ["intent", str(oversized), "--out", "forbidden"], 2),
+                         ("limit-flow", ["flow", str(oversized)], 2),
+                         ("limit-normalize", ["normalize", "--file", str(oversized), "--out", "forbidden"], 2),
+                         ("limit-contracts", ["resources", "--contracts", str(oversized_contracts)], 2),
+                         ("malformed-normalize", ["normalize", "--file", str(malformed), "--out", "forbidden"], 2)]
                 for target in ("jenkins", "github-actions"):
                     cases.append((target, ["intent", str(authored), "--target", target, "--render", "--out", target], 0 if target == "jenkins" else 3))
                 for name, args, exit_code in cases:
@@ -129,7 +143,8 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                     (report_dir / f"{key}.stderr").write_text(result.stderr)
                     if result.returncode != exit_code or result.stderr:
                         raise ValueError(f"Relocated CLI {key} failed: exit={result.returncode}; {result.stdout[-1500:]} {result.stderr}")
-                    if name != "missing-external":
+                    rejected = name == "missing-external" or name.startswith("limit-") or name == "malformed-normalize"
+                    if not rejected:
                         document = sections(result.stdout)
                         records = document["FLOW CONTRACT RESOURCE PROVENANCE"]
                         if {r["path"] for r in records} != set(resources) or len(records) != len(resources):
@@ -140,8 +155,13 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                                 raise ValueError("CLI resource provenance does not bind the selected bytes.")
                         if name == "targets" and document["FLOW TARGET MATURITY REPORT"]["status"] != "PASS":
                             raise ValueError("Relocation invalidated adapter maturity evidence.")
-                    if name == "missing-external" and ((cwd / "forbidden").exists() or "CLI_INVALID_INPUT" not in result.stdout):
-                        raise ValueError("Incomplete override was not rejected before output writes.")
+                    if rejected:
+                        expected_code = "CLI_LIMIT_EXCEEDED" if name.startswith("limit-") else "CLI_INVALID_INPUT"
+                        failure = sections(result.stdout).get("CLI DIAGNOSTIC FAILURE", {})
+                        if (cwd / "forbidden").exists() or failure.get("code") != expected_code:
+                            raise ValueError("Invalid or oversized input was not rejected before output writes.")
+                        if name.startswith("limit-") and (len(result.stdout.encode()) > 4096 or len(failure.get("message", "")) > 2048):
+                            raise ValueError("Limit rejection produced an oversized diagnostic.")
                     if name in ("jenkins", "github-actions"):
                         executable = name == "jenkins"
                         artifact = cwd / name / ("Jenkinsfile" if executable else "flow-github-actions-review.yaml")
@@ -158,7 +178,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                             raise ValueError(f"Relocated {name} wrote different artifact bytes from its presentation.")
                     digest = hashlib.sha256(result.stdout.encode()).hexdigest()
                     # Only malformed input diagnostics contain invocation-specific paths.
-                    if name != "missing-external":
+                    if not rejected:
                         if name in baselines and baselines[name] != digest:
                             raise ValueError(f"Relocation or working directory changed {name} output.")
                         baselines[name] = digest

@@ -1,4 +1,5 @@
 org/flowlang/cli/honest/CliArguments.kt
+org/flowlang/cli/honest/CliArtifactOutput.kt
 org/flowlang/cli/honest/CliCommandCatalog.kt
 org/flowlang/cli/honest/CliExecution.kt
 org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt

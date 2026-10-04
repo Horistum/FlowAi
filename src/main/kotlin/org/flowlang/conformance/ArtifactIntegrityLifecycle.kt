@@ -15,6 +15,10 @@ internal object ArtifactIntegrityLifecycle {
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
         val work = snapshot.artifactWorkPackage
+        if (work["selectedSlice"] == "AR-05C") {
+            addAll(BoundedIoLifecycle.errors(snapshot))
+            return@buildList
+        }
         if (work["selectedSlice"] == "AR-05B") {
             addAll(ContractDistributionLifecycle.errors(snapshot))
             return@buildList

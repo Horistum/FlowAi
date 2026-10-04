@@ -1,5 +1,7 @@
 package org.flowlang.adapters.control
 
+import org.flowlang.io.BoundedIo
+
 import java.io.File
 import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.adapters.portfolio.AdapterPortfolioRole
@@ -289,7 +291,7 @@ internal class AdapterControlEvidenceIntegrityAuthority(
                             claim.family.name,
                             "Source evidence reference has a blank anchor: $reference"
                         )
-                    } else if (!candidate.toFile().readText().contains(anchor)) {
+                    } else if (!BoundedIo.readText(candidate.toFile()).contains(anchor)) {
                         finding(
                             findings,
                             "CONTROL_EVIDENCE_ANCHOR_UNRESOLVED",

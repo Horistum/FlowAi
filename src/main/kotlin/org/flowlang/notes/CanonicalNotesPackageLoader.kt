@@ -1,6 +1,9 @@
 package org.flowlang.notes
 
 import java.io.File
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+import org.flowlang.io.IoBudget
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.serialization.FlowYamlException
 
@@ -30,12 +33,15 @@ object CanonicalNotesPackageLoader {
             throw ContractException("Notes source directory escapes the repository root: $sourceDirectory")
         }
         if (!directory.isDirectory) throw ContractException("Notes source directory is missing: ${directory.path}")
-        val files = directory.listFiles { file -> file.isFile && file.extension in setOf("yaml", "yml") }
-            ?.sortedBy { it.name }
-            .orEmpty()
+        val files = BoundedIo.files(directory) { file -> file.isFile && file.extension in setOf("yaml", "yml") }
         if (files.isEmpty()) throw ContractException("Notes source directory is empty: ${directory.path}")
 
-        val contracts = files.map(::loadPackage)
+        val budget = IoBudget(InputLimits.MAX_TOTAL_INPUT_BYTES, code = "INPUT")
+        val contracts = files.map { file ->
+            val bytes = BoundedIo.readBytes(file, minOf(InputLimits.MAX_SOURCE_BYTES, budget.remainingBytes()))
+            budget.add(bytes.size)
+            loadPackage(file, FlowYaml.readMap(BoundedIo.decodeUtf8(bytes), file.path))
+        }
         val duplicateIds = contracts.groupBy { it.packageId }.filterValues { it.size > 1 }.keys.sorted()
         if (duplicateIds.isNotEmpty()) throw ContractException("Duplicate notes package ids: ${duplicateIds.joinToString()}")
         val ids = contracts.map { it.packageId }.toSet()
@@ -55,8 +61,7 @@ object CanonicalNotesPackageLoader {
         return contracts
     }
 
-    private fun loadPackage(file: File): NotesPackageContract {
-        val root = readMap(file)
+    private fun loadPackage(file: File, root: Map<String, Any?>): NotesPackageContract {
         rejectUnknownFields(root, PACKAGE_KEYS, file.path)
         if (root.containsKey("targetCapabilities") || root.containsKey("projectionRules")) {
             throw ContractException("${file.path} cannot own adapter target or projection evidence.")

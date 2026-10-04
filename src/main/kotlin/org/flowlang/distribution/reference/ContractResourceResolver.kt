@@ -1,5 +1,9 @@
 package org.flowlang.distribution.reference
 
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+import org.flowlang.io.IoBudget
+
 import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
@@ -31,7 +35,7 @@ class ContractResourceResolver(
     private val loader: ClassLoader = ContractResourceResolver::class.java.classLoader
 ) {
     fun open(externalRoot: File? = null): ContractResourceSnapshot {
-        val entries = resource(INDEX).toString(Charsets.UTF_8).lineSequence().filter { it.isNotEmpty() }.map { line ->
+        val entries = BoundedIo.decodeUtf8(resource(INDEX)).lineSequence().filter { it.isNotEmpty() }.take(InputLimits.MAX_FILES + 1).map { line ->
             val fields = line.split('\t')
             check(fields.size == 2 && fields[0].matches(Regex("[0-9a-f]{64}")) && validPath(fields[1])) {
                 "Invalid packaged contract resource index entry."
@@ -41,13 +45,15 @@ class ContractResourceResolver(
         check(entries.isNotEmpty() && entries.map { it.first } == entries.map { it.first }.distinct().sorted()) {
             "Contract resource index must be non-empty, sorted and unique."
         }
+        BoundedIo.requireWithin(entries.size.toLong(), InputLimits.MAX_FILES, "INPUT_FILE_COUNT_LIMIT")
+        val budget = IoBudget(InputLimits.MAX_TOTAL_INPUT_BYTES, code = "INPUT")
         val external = externalRoot?.absoluteFile?.toPath()?.normalize()?.also {
             require(Files.isDirectory(it) && !Files.isSymbolicLink(it)) { "External contract root must be a directory: $it" }
         }
         val root = Files.createTempDirectory("flow-contracts-").toFile()
         try {
             val provenance = entries.map { (path, expectedHash) ->
-                val bytes = if (external == null) resource("$PREFIX/$path") else {
+                val bytes = if (external == null) resource("$PREFIX/$path", minOf(InputLimits.MAX_SOURCE_BYTES, budget.remainingBytes())) else {
                     val file = external.resolve(path)
                     var component: java.nio.file.Path = external
                     for (part in external.relativize(file)) {
@@ -55,8 +61,9 @@ class ContractResourceResolver(
                         require(!Files.isSymbolicLink(component)) { "Symbolic contract resource is forbidden: $path" }
                     }
                     require(Files.isRegularFile(file)) { "Required external contract resource is missing: $path" }
-                    Files.readAllBytes(file)
+                    BoundedIo.readBytes(file.toFile(), minOf(InputLimits.MAX_SOURCE_BYTES, budget.remainingBytes()))
                 }
+                budget.add(bytes.size)
                 val digest = sha256(bytes)
                 check(external != null || digest == expectedHash) { "Packaged contract resource hash mismatch: $path" }
                 File(root, path).apply { parentFile.mkdirs(); writeBytes(bytes) }
@@ -72,10 +79,10 @@ class ContractResourceResolver(
         }
     }
 
-    private fun resource(path: String): ByteArray {
-        val matches = Collections.list(loader.getResources(path))
+    private fun resource(path: String, maximum: Int = InputLimits.MAX_SOURCE_BYTES): ByteArray {
+        val matches = loader.getResources(path).asSequence().take(2).toList()
         check(matches.size == 1) { "Expected exactly one classpath contract resource '$path', found ${matches.size}." }
-        return matches.single().openStream().use { it.readBytes() }
+        return matches.single().openStream().use { BoundedIo.readBytes(it, maximum) }
     }
 
     private fun validPath(path: String): Boolean =

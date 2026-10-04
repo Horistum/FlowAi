@@ -1,5 +1,7 @@
 package org.flowlang.intent
 
+import org.flowlang.io.BoundedIo
+
 import java.security.MessageDigest
 import org.flowlang.serialization.FlowYaml
 
@@ -31,7 +33,7 @@ object StandardCapabilityCompatibility {
         val loader = StandardCapabilityCompatibility::class.java.classLoader
         val source = requireNotNull(loader.getResourceAsStream(RESOURCE_PATH)) {
             "Missing standard capability compatibility manifest '$RESOURCE_PATH'."
-        }.bufferedReader().use { it.readText() }
+        }.use { BoundedIo.decodeUtf8(BoundedIo.readBytes(it)) }
         require(isSupportedManifestText(source)) {
             "Capability alias manifest '$RESOURCE_PATH' does not match the reviewed compatibility digest."
         }

@@ -103,6 +103,7 @@ object StandardDiagnosticCatalog {
         code("CLI_UNKNOWN_COMMAND", "cli", "error", "cli-target-outcome.json", "CLI rejected an unknown command without delegating to a legacy fallback."),
         code("CLI_INVALID_INPUT", "cli", "error", "cli-target-outcome.json", "CLI rejected invalid user input with structured diagnostics."),
         code("CLI_INTEGRITY_BLOCKED", "cli", "error", "cli-target-outcome.json", "CLI rejected a command because an integrity authority blocked the requested operation."),
+        code("CLI_LIMIT_EXCEEDED", "cli", "error", "cli-target-outcome.json", "A product input or output exceeded its bounded I/O budget; no output batch was started."),
         code("CLI_INTERNAL_ERROR", "cli", "error", "cli-target-outcome.json", "CLI reported an unexpected internal failure without exposing a stack trace as user output."),
         code("CLI_TARGET_DIAGNOSTIC_FALLBACK", "cli", "warning", "cli-target-outcome.json", "CLI generated diagnostic manifest evidence after expected target materialization was blocked."),
         code("CLI_RENDER_NOT_AUTHORIZED", "cli", "error", "cli-target-outcome.json", "CLI did not emit target syntax because concrete evidence did not authorize rendering."),

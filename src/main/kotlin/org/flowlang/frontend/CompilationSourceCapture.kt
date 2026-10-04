@@ -1,5 +1,8 @@
 package org.flowlang.frontend
 
+import org.flowlang.io.BoundedIo
+import org.flowlang.io.InputLimits
+
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
@@ -34,7 +37,7 @@ internal object CompilationSourceCapture {
         require(sourceIdentity == null || sourceIdentity.isNotBlank()) { "Compilation source identity must not be blank." }
         require(file.isFile) { "Compilation source does not exist: ${file.path}" }
         val bytes = if (frontend == CompilationFrontend.INTENT_YAML) ContractReadPolicy.readBytes(file)
-            else file.readBytes()
+            else BoundedIo.readBytes(file)
         val sourceName = sourceIdentity ?: file.path
         val identity = sourceIdentity ?: file.absoluteFile.toPath().normalize().toString()
         val text = decodeUtf8(bytes, sourceName)
@@ -56,7 +59,7 @@ internal object CompilationSourceCapture {
         parse: (String, String) -> T
     ): CapturedCompilationSource<T> {
         if (frontend == CompilationFrontend.INTENT_YAML) ContractReadPolicy.requireSize(text, identity)
-        val bytes = text.toByteArray(StandardCharsets.UTF_8)
+        val bytes = BoundedIo.encodeText(text)
         return CapturedCompilationSource(
             source = CompilationSource.fromBytes(
                 frontend = frontend,
@@ -75,7 +78,9 @@ internal object CompilationSourceCapture {
         sourceName: String,
         frontend: CompilationFrontend,
         value: T
-    ): CapturedCompilationSource<T> = CapturedCompilationSource(
+    ): CapturedCompilationSource<T> {
+        BoundedIo.requireWithin(bytes.size.toLong(), InputLimits.MAX_SOURCE_BYTES, "INPUT_BYTE_LIMIT")
+        return CapturedCompilationSource(
         source = CompilationSource.fromBytes(
             frontend = frontend,
             identity = identity,
@@ -83,7 +88,8 @@ internal object CompilationSourceCapture {
             sourceName = sourceName
         ),
         value = value
-    )
+        )
+    }
 
     private fun decodeUtf8(bytes: ByteArray, identity: String): String {
         val decoder = StandardCharsets.UTF_8.newDecoder()
