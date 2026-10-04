@@ -47,15 +47,15 @@ internal class CliOutputCollector : CliOutput {
 
     override fun section(title: String, value: Any) {
         require(title.isNotBlank()) { "CLI presentation section title must not be blank." }
-        val bytes = Json.bytes(value, minOf(InputLimits.MAX_ARTIFACT_BYTES, budget.remainingBytes()))
-        val heading = BoundedIo.textSize("===== $title =====\n", InputLimits.MAX_DIAGNOSTIC_CHARS, "OUTPUT_BYTE_LIMIT")
-        budget.add(bytes.size + heading + 1)
-        items += CliPresentationItem.Section(title, value)
+        val item = CliPresentationItem.Section(title, value)
+        budget.add(encodePresentationItem(item, minOf(InputLimits.MAX_ARTIFACT_BYTES, budget.remainingBytes())).size)
+        items += item
     }
 
     override fun text(value: String) {
-        budget.add(BoundedIo.textSize(value, InputLimits.MAX_ARTIFACT_BYTES, "OUTPUT_BYTE_LIMIT") + 1)
-        items += CliPresentationItem.Text(value)
+        val item = CliPresentationItem.Text(value)
+        budget.add(encodePresentationItem(item, minOf(InputLimits.MAX_ARTIFACT_BYTES, budget.remainingBytes())).size)
+        items += item
     }
 
     override fun snapshot(): CliPresentation = CliPresentation(items.toList())
@@ -222,19 +222,21 @@ internal class CliTypedFailure(
     cause: Throwable? = null
 ) : IllegalArgumentException(message, cause)
 
+internal fun encodePresentationItem(item: CliPresentationItem, maximum: Int): ByteArray = BoundedIo.encode(maximum) { output ->
+    when (item) {
+        is CliPresentationItem.Section -> {
+            output.write(BoundedIo.encodeText("===== ${item.title} =====\n", InputLimits.MAX_DIAGNOSTIC_CHARS, "OUTPUT_BYTE_LIMIT"))
+            output.write(Json.bytes(item.value, maximum))
+        }
+        is CliPresentationItem.Text -> output.write(BoundedIo.encodeText(item.value, maximum, "OUTPUT_BYTE_LIMIT"))
+    }
+    output.write(10)
+}
+
 object CliPresenter {
     fun present(result: CliExecutionResult) {
         val bytes = BoundedIo.encode(InputLimits.MAX_TOTAL_OUTPUT_BYTES) { output ->
-            result.presentation.items.forEach { item ->
-                when (item) {
-                    is CliPresentationItem.Section -> {
-                        output.write(BoundedIo.encodeText("===== ${item.title} =====\n"))
-                        output.write(Json.bytes(item.value))
-                    }
-                    is CliPresentationItem.Text -> output.write(BoundedIo.encodeText(item.value, InputLimits.MAX_ARTIFACT_BYTES, "OUTPUT_BYTE_LIMIT"))
-                }
-                output.write(10)
-            }
+            result.presentation.items.forEach { output.write(encodePresentationItem(it, InputLimits.MAX_ARTIFACT_BYTES)) }
         }
         print(bytes.toString(Charsets.UTF_8))
     }

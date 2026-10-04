@@ -83,6 +83,20 @@ class BoundedProductIoTests {
         }
     }
 
+    @Test fun fullPresentationStillReportsTheOriginalFailureAndCountsFinalNewlines() {
+        val collector = CliOutputCollector()
+        collector.text("x".repeat(InputLimits.MAX_ARTIFACT_BYTES - 1))
+        assertFailsWith<IoLimitException> { CliOutputCollector().text("x".repeat(InputLimits.MAX_ARTIFACT_BYTES)) }
+        val catalog = CliCommandCatalog.of("bounded" to CliCommandHandler { _, output ->
+            repeat(InputLimits.MAX_FILES) { output.text("small") }
+            throw IllegalArgumentException("original failure")
+        })
+        val result = assertIs<CliExecutionResult.Rejected>(executeCli(arrayOf("bounded"), catalog))
+        assertEquals(CliDiagnosticCode.INVALID_INPUT, result.diagnostic.code)
+        assertEquals("original failure", result.diagnostic.message)
+        assertEquals(1, result.presentation.items.size)
+    }
+
     @Test fun externalResourcesEnforcePerFileAndAggregateBudgets() {
         ContractResourceResolver().open().use { resources ->
             val file = File(resources.root, resources.provenance.first().path)

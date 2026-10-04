@@ -36,7 +36,7 @@ class ContractResourceResolver(
 ) {
     fun open(externalRoot: File? = null): ContractResourceSnapshot {
         val entries = BoundedIo.decodeUtf8(resource(INDEX)).lineSequence().filter { it.isNotEmpty() }.take(InputLimits.MAX_FILES + 1).map { line ->
-            val fields = line.split('\t')
+            val fields = line.split('\t', limit = 3)
             check(fields.size == 2 && fields[0].matches(Regex("[0-9a-f]{64}")) && validPath(fields[1])) {
                 "Invalid packaged contract resource index entry."
             }
@@ -86,7 +86,7 @@ class ContractResourceResolver(
     }
 
     private fun validPath(path: String): Boolean =
-        path.matches(Regex("[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+")) &&
+        path.length <= InputLimits.MAX_NAME_LENGTH && path.matches(Regex("[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+")) &&
             path.split('/').none { it == "." || it == ".." }
 
     companion object {

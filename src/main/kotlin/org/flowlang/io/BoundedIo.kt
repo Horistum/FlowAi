@@ -113,6 +113,7 @@ object BoundedIo {
 
 /** Command/catalog-scoped aggregate; reserve before retaining the next input or output. */
 class IoBudget(private val maximumBytes: Int, private val maximumItems: Int = InputLimits.MAX_FILES, private val code: String) {
+    init { require(maximumBytes >= 0 && maximumItems >= 0) }
     private var bytes = 0L
     private var items = 0L
     fun remainingBytes(): Int = (maximumBytes.toLong() - bytes).toInt()

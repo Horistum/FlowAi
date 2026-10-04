@@ -170,7 +170,7 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
         }
     } catch (failure: Exception) {
         val limit = BoundedIo.limitFailure(failure)
-        val failureOutput = if (limit != null) CliOutputCollector() else output
+        var failureOutput = if (limit != null) CliOutputCollector() else output
         val code = if (limit != null) CliDiagnosticCode.LIMIT_EXCEEDED else when (failure) {
             is CliTypedFailure -> failure.diagnosticCode
             is MissingExplicitTargetSelectionException -> CliDiagnosticCode.TARGET_REQUIRED_FOR_RENDER
@@ -183,15 +183,18 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
             message = BoundedIo.diagnostic(limit?.message ?: failure.message ?: "CLI command failed without a diagnostic message."),
             causeType = failure::class.qualifiedName ?: failure::class.simpleName.orEmpty()
         )
-        failureOutput.section(
-            "CLI DIAGNOSTIC FAILURE",
-            CliCommandFailureReport(
-                code = code.wireCode,
-                command = BoundedIo.diagnostic(command.orEmpty()),
-                message = diagnostic.message,
-                causeType = diagnostic.causeType.orEmpty()
-            )
+        val report = CliCommandFailureReport(
+            code = code.wireCode,
+            command = BoundedIo.diagnostic(command.orEmpty()),
+            message = diagnostic.message,
+            causeType = diagnostic.causeType.orEmpty()
         )
+        try { failureOutput.section("CLI DIAGNOSTIC FAILURE", report) }
+        catch (_: org.flowlang.io.IoLimitException) {
+            // A full presentation must never prevent reporting the command's original failure.
+            failureOutput = CliOutputCollector()
+            failureOutput.section("CLI DIAGNOSTIC FAILURE", report)
+        }
         CliExecutionResult.Rejected(BoundedIo.diagnostic(command.orEmpty()), diagnostic, failureOutput.snapshot())
     }
 }
