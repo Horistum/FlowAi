@@ -41,6 +41,8 @@ internal planner shape (`Task`, etc.). That filename now carries the existing
 canonical public ExecutionPlan 2.4 model (`task`, etc.), matching
 `canonical-execution-plan.json` and its declared schema. Internal planner types and
 target rendering semantics are unchanged.
+Release metadata also preserves the schema-required `nextCoreItem: null` when no
+next Core item exists; omitting that key is not a valid substitute for null.
 
 The public `standard-verify` command requires an actual-byte receipt. Missing,
 changed, added or deleted files fail verification; failed verification does not

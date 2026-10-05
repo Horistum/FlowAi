@@ -90,7 +90,7 @@ def verify_publication(directory: Path, resources: dict[str, bytes]) -> str:
             raise ValueError("Publication schema differs from installed schema.")
         if name.endswith(".json"):
             value = json.loads(data)
-            version = value.get("standardVersion", "") if isinstance(value, dict) else ""
+            version = value.get("standardVersion", value.get("publicStandardVersion", "")) if isinstance(value, dict) else ""
             if version != record.get("standardVersion"):
                 raise ValueError("Publication version differs from actual JSON.")
     return hashlib.sha256(raw).hexdigest()

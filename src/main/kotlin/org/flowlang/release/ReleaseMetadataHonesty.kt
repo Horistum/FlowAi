@@ -26,6 +26,7 @@ data class ReleaseMetadataHonestyReport(
     val closureStatus: String,
     val coreTrackStatus: String,
     val completedCoreItem: String,
+    @get:com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS)
     val nextCoreItem: String?,
     val status: String,
     val checks: List<ReleaseMetadataHonestyCheck>,
