@@ -294,11 +294,11 @@ class StagedArtifacts internal constructor(
                 if (name.endsWith(".json")) {
                     val tree = FlowJson.readTree(text, name)
                     validation = "JSON"
-                    tree.get("standardVersion")?.let {
+                    listOf("standardVersion", "publicStandardVersion").forEach { field -> tree.get(field)?.let {
                         require(it.isTextual) { "Artifact standardVersion must be text: $name" }
                         version = it.textValue()
                         require(version == FlowStandardVersions.FLOW_STANDARD_VERSION) { "Artifact standardVersion mismatch: $name" }
-                    }
+                    } }
                     if (schema.isNotBlank()) {
                         val schemaBytes = schemaLoader(schema)
                         try {

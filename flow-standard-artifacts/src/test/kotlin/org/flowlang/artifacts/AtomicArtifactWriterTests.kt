@@ -103,6 +103,7 @@ class AtomicArtifactWriterTests {
         val invalid = listOf(
             ArtifactContent("""{"value":"wrong"}""".toByteArray(), "schemas/payload.schema.json"),
             ArtifactContent("""{"value":1,"standardVersion":"wrong"}""".toByteArray()),
+            ArtifactContent("""{"value":1,"publicStandardVersion":"wrong"}""".toByteArray()),
             ArtifactContent("""{"value":1,"value":2}""".toByteArray()),
             ArtifactContent(byteArrayOf(0xc3.toByte(), 0x28)))
         for (content in invalid) {

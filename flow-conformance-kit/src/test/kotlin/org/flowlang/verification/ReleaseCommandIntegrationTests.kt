@@ -39,6 +39,7 @@ class ReleaseCommandIntegrationTests {
             .single { it.path("artifact").asText() == "release-metadata-honesty-report.json" }
         assertEquals("flow.release.metadata-honesty", provenance.path("producer").asText())
         assertEquals("PASS", StandardBundleVerifier().verify(exported).status)
+        assertTrue(Json.mapper.readTree(File(exported, "release-metadata-honesty-report.json")).path("nextCoreItem").isNull)
         val publication = ArtifactPublicationVerifier().verify(exported).publication!!
         assertTrue(publication.coveredFiles.any { it.path.startsWith("docs/") && it.validation == "BYTES" })
         assertTrue(publication.coveredFiles.any { it.path == "standard-compliance-report.json" && it.validation == "JSON_SCHEMA" })
