@@ -1,0 +1,29 @@
+version: "AR-05E"
+name: "Independent integrated product integrity acceptance"
+status: active
+stream: architecture-recovery
+parent: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+authorization:
+  source: "Maintainer reports PR #195 merged and requests the next roadmap step."
+  baseline: "cae75f57d10d3ce0a6ec789a81487e6b8acbda39"
+  predecessorPullRequest: 195
+invariant: "Integrated implementation acceptance binds the inspected PR and actual-main bytes; neither that receipt nor predecessor success can impersonate independent validation or completion."
+scope:
+  - "Compare exact-head, synthetic-merge and actual-main test identities, ordered conformance checks, artifact digests and source-bound isolation proofs."
+  - "Accept the integrated implementation through an immutable document and an exact implementation boundary."
+  - "Preserve historical candidates and acceptance documents, finding ownership and all installed-product behavioral probes."
+  - "Reject missing, altered, substituted or self-authenticated evidence and premature validation, closure or successor activation."
+nonGoals:
+  - "No finding closure, AR-06 activation, EF-09 resumption, target support promotion or public version change."
+  - "No current or future CI result recorded as an already accepted receipt."
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  scope: "This independent acceptance revision must pass its own CI and merge before a later completion transition can accept its validation and actual-main results."
+implementationAcceptance:
+  status: accepted-on-merged-main
+  pullRequest: 195
+  workflowRunId: 37272555478
+  postMergeWorkflowRunId: 37274339828
+  evidence: .flow-agent/evidence/integrated-product-implementation-acceptance.json
+  evidenceSha256: d521109b78b524f818b388200680df26b58098c1af3c7781e9c8349090c41f6f

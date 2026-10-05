@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "slice": "AR-05E",
+  "scope": "integrated-implementation",
+  "main": {
+    "status": "passed",
+    "event": "push",
+    "mergedPullRequest": 195,
+    "mainCommit": "cae75f57d10d3ce0a6ec789a81487e6b8acbda39",
+    "sourceTree": "c5d78674cb48b67d8b01c64c49f67ef2d7fbb046",
+    "workflowRunId": 37274339828,
+    "workflowRunNumber": 3330,
+    "exactHeadJobId": 111649588446,
+    "isolationJobId": 111648000453,
+    "toolingJobId": 111647942971,
+    "kotlinTests": 1822,
+    "toolingTests": 157,
+    "conformanceChecks": 274,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "acceptedPullRequest": {
+    "number": 195,
+    "workflowRunId": 37272555478,
+    "workflowRunNumber": 3329,
+    "base": "c389408a067ba18b7e66aea0b23f3b5e51ab73b8",
+    "exactHead": "6225a5915b4d0e8230f94d8e20cb23900d315f60",
+    "syntheticMerge": "9a22027438f306c2847b2917dd2e7b3ccfcd9918",
+    "sourceTree": "c5d78674cb48b67d8b01c64c49f67ef2d7fbb046",
+    "exactHeadJobId": 111644233786,
+    "mergeCandidateJobId": 111644233771,
+    "isolationJobId": 111642505985,
+    "toolingJobId": 111642465643
+  },
+  "junit": {
+    "tests": 1822,
+    "suites": 320,
+    "identitiesSha256": "8a1dc2292ce3a7b290295a6c2b189be0f3a1f47fd529a8e6068fcfdb98f267ec"
+  },
+  "conformance": {
+    "passed": 274,
+    "failed": 0,
+    "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+  },
+  "allThreeCandidateAndMainInventoriesIdentical": true,
+  "predecessorTestsPreserved": 1815,
+  "predecessorOrderedConformanceChecksPreserved": 272,
+  "physicalIsolation": {
+    "pullRequest": {
+      "revision": {
+        "revision": "6225a5915b4d0e8230f94d8e20cb23900d315f60",
+        "tree": "c5d78674cb48b67d8b01c64c49f67ef2d7fbb046",
+        "covers": "exact-head,merge-candidate",
+        "run": "37272555478",
+        "attempt": "1"
+      },
+      "proofs": {
+        "adapter-isolation/proof.json": {
+          "verifiedInputHashes": 217
+        },
+        "compiler-isolation/proof.json": {
+          "verifiedInputHashes": 95
+        },
+        "kernel-isolation/proof.json": {
+          "verifiedInputHashes": 19
+        },
+        "product-isolation/proof.json": {
+          "verifiedInputHashes": 422,
+          "tests": 68,
+          "invocations": 132,
+          "publicationManifests": 24,
+          "resourceCount": 142,
+          "rejectedIntegratedCases": 48,
+          "sourceInputsDeleted": true,
+          "distributionBytesIdentical": true
+        }
+      },
+      "archiveSha256": "afe75c8aec2b3c1451e4b7e589edc2c0150d5fba4fb90e0e9d128b76884082fa"
+    },
+    "actualMain": {
+      "revision": {
+        "revision": "cae75f57d10d3ce0a6ec789a81487e6b8acbda39",
+        "tree": "c5d78674cb48b67d8b01c64c49f67ef2d7fbb046",
+        "covers": "exact-head",
+        "run": "37274339828",
+        "attempt": "1"
+      },
+      "proofs": {
+        "adapter-isolation/proof.json": {
+          "verifiedInputHashes": 217
+        },
+        "compiler-isolation/proof.json": {
+          "verifiedInputHashes": 95
+        },
+        "kernel-isolation/proof.json": {
+          "verifiedInputHashes": 19
+        },
+        "product-isolation/proof.json": {
+          "verifiedInputHashes": 422,
+          "tests": 68,
+          "invocations": 132,
+          "publicationManifests": 24,
+          "resourceCount": 142,
+          "rejectedIntegratedCases": 48,
+          "sourceInputsDeleted": true,
+          "distributionBytesIdentical": true
+        }
+      },
+      "archiveSha256": "b3e50b33d23c4a9903c39a49eed8e131686189eb86747e51244f9bb2128b9f9f"
+    }
+  },
+  "artifacts": [
+    {
+      "boundary": "pullRequest",
+      "id": 11329840032,
+      "name": "flow-isolation-exact-head",
+      "sha256": "afe75c8aec2b3c1451e4b7e589edc2c0150d5fba4fb90e0e9d128b76884082fa"
+    },
+    {
+      "boundary": "pullRequest",
+      "id": 11329447684,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "sha256": "382a03a1bc5c47e3c12dc94bec33e6d545a7242c09047e8d9a8fe9d62b30b5bd"
+    },
+    {
+      "boundary": "pullRequest",
+      "id": 11329367013,
+      "name": "flow-ci-merge-candidate-gradle-logs",
+      "sha256": "34f8067257445960875732735fbc8de5abe38db0c6fc7115997289ab1f502a8e"
+    },
+    {
+      "boundary": "pullRequest",
+      "id": 11329157219,
+      "name": "flow-ci-merge-candidate-test-reports",
+      "sha256": "49cb7e2ef15edbaeda8309f3190e37a68353cdc01d7db5660c7b380f363687b5"
+    },
+    {
+      "boundary": "pullRequest",
+      "id": 11328864035,
+      "name": "flow-ci-exact-head-test-reports",
+      "sha256": "af458b8a62aa1b1c88a98ab7f98b2aa72d606fa62c0a71a025f26180570a7ecf"
+    },
+    {
+      "boundary": "actualMain",
+      "id": 11330037616,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "sha256": "4a349b317bb4500ee202a6d7cccb237f9f4786a557d8e68e81064e7bc4ade751"
+    },
+    {
+      "boundary": "actualMain",
+      "id": 11329987849,
+      "name": "flow-ci-exact-head-test-reports",
+      "sha256": "f9c76581bd2d8a6cbc95a64fb7ca86603a5bbddd75f4afa8e89603a42da4dfeb"
+    },
+    {
+      "boundary": "actualMain",
+      "id": 11328884033,
+      "name": "flow-isolation-exact-head",
+      "sha256": "b3e50b33d23c4a9903c39a49eed8e131686189eb86747e51244f9bb2128b9f9f"
+    }
+  ]
+}

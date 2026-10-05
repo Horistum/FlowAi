@@ -61,7 +61,7 @@ class ContractDistributionLifecycleTests {
 
 /** Coherent historical resource candidate; current limits acceptance is checked separately. */
 internal fun contractDistributionCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    val current = integratedProductCandidateSnapshot()
     @Suppress("UNCHECKED_CAST")
     val slices = current.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
     return current.copy(artifactWorkPackage = current.artifactWorkPackage + mapOf(

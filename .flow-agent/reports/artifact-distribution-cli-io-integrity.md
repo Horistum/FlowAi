@@ -213,3 +213,39 @@ See `docs/migrations/integrated-product-integrity.md`. Full candidate validation
 is recorded in its PR after execution. AR-05 remains active until independent
 integrated implementation acceptance, validation and completion receipts exist;
 F-03/F-05/F-19/F-22 are not closed by this candidate and AR-06 is not activated.
+
+
+## AR-05E: independent implementation acceptance
+
+PR #195 (Flow CI #3329, run 37272555478) and actual merged-main
+`cae75f57d10d3ce0a6ec789a81487e6b8acbda39` (Flow CI #3330, run
+37274339828) share source tree `c5d78674cb48b67d8b01c64c49f67ef2d7fbb046`.
+All three inspected candidates contain the same 1822 Kotlin test identities and
+274 ordered conformance checks, with zero failures, errors or skipped tests.
+All 1815 predecessor tests and 272 predecessor checks are preserved. Main also
+passed 157 tooling tests. The push correctly has no synthetic-merge execution.
+
+Archive SHA-256 digests match GitHub metadata. Both source-bound isolation archives
+bind 19 kernel, 95 compiler, 217 adapter and 422 product inputs to their respective
+commits. Product isolation passes 68 tests and 132 actual CLI invocations, with
+142 resources, 24 verified publication manifests and 48 integrated negative cases.
+The two distributions have identical bytes and run after staged inputs are deleted.
+The immutable evidence is
+`.flow-agent/evidence/integrated-product-implementation-acceptance.json`.
+
+All five implementation slices are now accepted. Lifecycle verification authenticates
+the complete integrated document before parsing it and compares every acceptance and
+implementation-boundary field. Six new regression tests reject missing, altered,
+substituted and self-authenticated evidence; swapped head/main/job identities; borrowed
+predecessor results; invented validation/completion; finding closure and successor
+activation. Original candidate tests replay their historical boundaries and retain
+their test identities. No accepted historical evidence bytes are changed.
+
+This revision performs independent acceptance and must pass fresh exact-head and
+synthetic-merge CI, physical isolation and full inventory comparison. Its results
+belong in its PR after execution. After this revision merges, a separate completion
+transition can bind its independent validation and actual-main receipts and close
+F-03/F-05/F-19/F-22. AR-05 remains active, AR-06 remains planned and EF-09 stays paused.
+Public versions, adapter support, runtime ownership and existing product behavior
+are unchanged. Local tooling/structure/context validation is available; full JVM
+validation runs in CI because the local JDK is 17 and the project requires JDK 25.
