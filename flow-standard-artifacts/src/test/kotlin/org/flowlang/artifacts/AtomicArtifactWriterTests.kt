@@ -109,6 +109,16 @@ class AtomicArtifactWriterTests {
             assertFails { writer().publish(File(root, "published"), mapOf("payload.json" to content)) }
             assertTrue(root.listFiles()!!.isEmpty())
         }
+        // Copied schema files must bind the same bytes used for validation, even when copied as
+        // reference inputs. A receipt cannot legitimize a conflicting schema shipped in the bundle.
+        assertFails { writer().publish(File(root, "published"), values() +
+            ("schemas/payload.schema.json" to ArtifactContent("false".toByteArray(), opaque = true))) }
+        assertTrue(root.listFiles()!!.isEmpty())
+        val included = listOf("schemas/payload.schema.json", AtomicArtifactWriter.MANIFEST_SCHEMA)
+            .associateWith { ArtifactContent(schemas(it), opaque = true) }
+        val destination = File(root, "matching")
+        val receipt = writer().publish(destination, values() + included)
+        assertEquals("PASS", ArtifactPublicationVerifier(schemas).verify(destination, receipt.manifest).status)
     }
 
     @Test fun receiptVerificationRejectsTamperingDeletionExtraFilesAndChangedManifest() = workspace { root ->

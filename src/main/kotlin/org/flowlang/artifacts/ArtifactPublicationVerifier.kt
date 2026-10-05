@@ -43,6 +43,10 @@ class ArtifactPublicationVerifier(private val schemaLoader: (String) -> ByteArra
         }
         val budget = IoBudget(InputLimits.MAX_TOTAL_OUTPUT_BYTES, InputLimits.MAX_RELEASE_FILES, "OUTPUT")
         budget.add(manifestBytes.size)
+        val records = evidence.coveredFiles.associateBy { it.path }
+        for (receipt in evidence.coveredFiles + manifestReceipt) records[receipt.schema]?.let { includedSchema ->
+            require(includedSchema.sha256 == receipt.schemaSha256) { "Included schema differs from validated schema bytes." }
+        }
         for (expected in evidence.coveredFiles) {
             AtomicArtifactWriter.requireArtifactPath(expected.path)
             val bytes = BoundedIo.readBytes(File(directory, expected.path), minOf(InputLimits.MAX_ARTIFACT_BYTES, budget.remainingBytes()))

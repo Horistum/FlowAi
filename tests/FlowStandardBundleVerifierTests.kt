@@ -22,6 +22,9 @@ class FlowStandardBundleVerifierTests {
         assertEquals("PASS", report.status, report.checks.filter { it.status != "PASS" }.joinToString { "${it.id}:${it.missing}" })
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, report.observedStandardVersion)
         assertTrue(report.checks.any { it.id == "bundle.release-gates-in-conformance-manifest" && it.status == "PASS" })
+        val publicVerification = StandardBundleVerifier().verify(bundle)
+        assertEquals("FAIL", publicVerification.status, "A structural fixture has no actual-byte publication receipt.")
+        assertTrue(publicVerification.checks.any { it.id == "bundle.actual-byte-publication" && it.status == "FAIL" })
     }
 
     @Test

@@ -22,9 +22,11 @@ class CliArgumentIntegrityTests {
                     arrayOf("intent", "--out", out.path, intent, "--target", "jenkins")
                 )) {
                     val result = execute(args)
-                    assertIs<CliExecutionResult.Targeted>(result)
+                    assertIs<CliExecutionResult.Targeted>(result, (result as? CliExecutionResult.Rejected)?.diagnostic?.message)
                     assertEquals(json(baseline), json(result))
                     assertTrue(File(out, "normalized-intent.json").isFile)
+                    // Each argument ordering gets a fresh publication destination.
+                    assertTrue(out.deleteRecursively())
                 }
             } finally { root.deleteRecursively() }
         }

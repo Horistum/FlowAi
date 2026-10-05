@@ -25,8 +25,9 @@ class ReleaseCommandIntegrationTests {
         // One actual assembly covers the release graph and publication gates. Do
         // not repeat its expensive conformance run for the same draft artifacts.
         val exported = File(directory, "exported")
-        val exportResult = assertIs<CliExecutionResult.Completed>(
-            executeVerificationCli(arrayOf("standard-export", "--out", exported.path)))
+        val result = executeVerificationCli(arrayOf("standard-export", "--out", exported.path))
+        val exportResult = assertIs<CliExecutionResult.Completed>(result,
+            (result as? CliExecutionResult.Rejected)?.diagnostic?.let { "${it.code}: ${it.message}" })
         assertTrue(exportResult.artifacts.all { it.persisted })
         for (name in listOf("flow-standard-draft.json", "release-metadata-honesty-report.json",
             "artifact-integrity-report.json", "standard-compliance-report.json", "conformance-manifest.json")) {

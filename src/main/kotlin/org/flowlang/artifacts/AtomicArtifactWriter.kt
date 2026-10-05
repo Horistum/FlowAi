@@ -181,7 +181,9 @@ class AtomicArtifactWriter(
         }
 
         private fun inferredBundle(receipts: List<ArtifactByteReceipt>): FlowArtifactBundleReport {
-            val entries = receipts.mapIndexed { index, receipt -> FlowArtifactEntry(receipt.path,
+            // Opaque copied reference inputs are covered by the byte manifest, outside the
+            // generated-output contract graph (including when no explicit graph was supplied).
+            val entries = receipts.filter { it.validation != "BYTES" }.mapIndexed { index, receipt -> FlowArtifactEntry(receipt.path,
                 if (receipt.path.endsWith(".json")) FlowArtifactRole.REPORT else FlowArtifactRole.RENDERED,
                 receipt.schema, required = true, derived = true, pipelineIndex = index + 1) }
             return FlowArtifactBundleReport(flowName = "", target = "", strict = false, artifacts = entries,
@@ -247,6 +249,11 @@ class StagedArtifacts internal constructor(
             val bytes = read(File(directory, name).toPath())
             check(bytes.size.toLong() == receipt.sizeBytes && AtomicArtifactWriter.sha256(bytes) == receipt.sha256) {
                 "Staged artifact changed after validation: $name"
+            }
+            receipts[receipt.schema]?.let { includedSchema ->
+                check(includedSchema.sha256 == receipt.schemaSha256) {
+                    "Included schema bytes differ from the schema used to validate $name"
+                }
             }
         }
         return receipts.values.filter { it.path != AtomicArtifactWriter.MANIFEST }.sortedBy { it.path }

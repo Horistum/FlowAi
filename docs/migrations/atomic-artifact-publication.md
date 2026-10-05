@@ -12,7 +12,7 @@ checks size, SHA-256, strict JSON, declared schema and observed standard version
 All files are re-read again before publication. The integrity manifest is written
 last. A single `ATOMIC_MOVE` publishes the directory on the same filesystem.
 Unsupported atomic moves fail; there is no non-atomic fallback or backup rename.
-Handled failures remove staging and leave the destination absent or unchanged.
+Handled failures attempt to remove staging and leave the destination absent or unchanged.
 
 Generated JSON with a declared schema must pass the installed schema. The shared
 validator supports Flow's explicit JSON Schema subset and rejects unsupported
@@ -22,6 +22,10 @@ external contract inputs cannot relax this output contract. JSON without a decla
 `JSON_SCHEMA`. Release reference documents and deliberately invalid conformance
 fixtures are labeled `BYTES` and receive hash/size validation, not output-schema
 validation. The installed schema resources are included in resource provenance.
+Explicit `--contracts` overrides remain complete snapshots: update older override
+roots with the newly inventoried schema files before using this distribution.
+When schema files are also shipped in a bundle, their actual hashes must match the
+schemas used to validate the outputs, including the final integrity manifest.
 
 `artifact-integrity-report.json` version `1.1` contains `publication.coveredFiles`
 with relative paths, actual lengths and hashes, validation kinds, schema hashes
