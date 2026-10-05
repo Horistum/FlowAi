@@ -179,3 +179,37 @@ verification requires publication receipts. See
 `docs/migrations/atomic-artifact-publication.md` for migration, receipt coverage,
 release dependency ordering, limits and filesystem guarantees. AR-05E remains
 planned; all findings and whole-milestone closure remain open.
+
+
+## AR-05E: integrated installed-product integrity
+
+AR-05D is accepted from PR #194 and actual-main CI 37270649521: all three
+archives contain identical 1815-test and 272-check inventories with no failures,
+errors or skips. Main passed 157 tooling tests and all four source-bound isolation
+proofs (64 product tests, 142 resources and 68 relocated CLI invocations). The
+receipt is `.flow-agent/evidence/atomic-publication-acceptance.json`.
+
+The integrated candidate composes accepted argument parsing, explicit contract
+selection, bounded reading and atomic publication. The product-only physical
+isolation proof adds sixteen cases to each relocated distribution/context pair:
+132 process invocations in total, including the original 68. New successful
+publications bind actual bytes; all negative probes require the expected typed
+failure, preserve prior output and leave no staging directories.
+
+A concrete gap was found at the file boundary: a byte-limited reader could block
+while opening a FIFO without a writer. File reads now require a regular file;
+the explicit stream overload remains available. The installed FIFO probe runs
+without a writer under a strict timeout, so unrelated errors and a hanging read
+cannot count as acceptance. Documentation records filesystem and concurrent
+replacement limitations instead of promising unconditional elapsed-time bounds.
+
+The two appended conformance probes exercise external-contract compilation through
+publication and invalid-source rejection against an already verified destination.
+Product tests cover normalization, path/options composition, tampering and malformed
+sources. Historical A/B/C/D lifecycle tests replay their accepted candidate states;
+new lifecycle checks reject modified predecessor evidence and invented completion.
+
+See `docs/migrations/integrated-product-integrity.md`. Full candidate validation
+is recorded in its PR after execution. AR-05 remains active until independent
+integrated implementation acceptance, validation and completion receipts exist;
+F-03/F-05/F-19/F-22 are not closed by this candidate and AR-06 is not activated.

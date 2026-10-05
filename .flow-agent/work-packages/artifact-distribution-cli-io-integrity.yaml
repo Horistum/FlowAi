@@ -9,8 +9,8 @@ authorization:
   predecessor: "AR-04"
   strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-05"
   rule: "Maintainer explicitly authorizes AR-05. Its accepted AR-04 baseline is immutable; each implementation slice requires its own exact-head and synthetic-merge CI."
-selectedSlice: "AR-05D"
-nextSlice: "AR-05E"
+selectedSlice: "AR-05E"
+nextSlice: ""
 implementationSlices:
   - id: "AR-05A"
     name: "Typed CLI argument parsing"
@@ -41,55 +41,58 @@ implementationSlices:
       workflowRunId: 37202358850
   - id: "AR-05D"
     name: "Atomic artifact publication and actual-byte receipts"
-    status: implemented
+    status: accepted
     ownsFindings: ["F-03", "F-22"]
+    acceptance:
+      source: .flow-agent/evidence/atomic-publication-acceptance.json
+      sha256: 77c7fd3a3ae317ac15d1a62677234bcfd845d5844696eeda3d8b3770b0cd882c
+      mainCommit: c389408a067ba18b7e66aea0b23f3b5e51ab73b8
+      workflowRunId: 37270649521
+  - id: "AR-05E"
+    name: "Integrated installed-product integrity and independent closure"
+    status: implemented
+    ownsFindings: ["F-03", "F-05", "F-19", "F-22"]
     acceptance:
       source: current-revision-ci
       requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
-  - id: "AR-05E"
-    name: "Integrated installed-product integrity and independent closure"
-    status: planned
-    ownsFindings: ["F-03", "F-05", "F-19", "F-22"]
 completionDecision:
   status: not-complete
   closesFindings: []
   remainingFindings: ["F-03", "F-05", "F-19", "F-22"]
   nextItem: "AR-06"
   nextItemActivationState: not-activated
-architecturePurpose: "One product-owned writer stages, forces, re-reads and validates files before atomic directory publication."
-universalInvariant: "No published integrity PASS is derived from expected filenames; actual written bytes, schemas, versions, sizes and hashes are checked before the manifest is written last."
+architecturePurpose: "Validate the integrated installed product using typed CLI invocations, exact contract provenance, bounded inputs and verified atomic publication."
+universalInvariant: "A rejected input never mutates existing output or publishes partial artifacts; successful installed-product outputs bind their actual bytes."
 scope:
   include:
-    - "Shared bounded AtomicArtifactWriter for product CLI and verification release exports."
-    - "Actual-byte receipts, installed schemas, final manifest coverage and post-publication verification."
-    - "Failure cleanup, preserved existing outputs and explicit atomic filesystem support requirements."
+    - "Composed process tests in both relocated distributions, with and without misleading checkout paths."
+    - "Finite regular-file inputs: reject FIFOs and devices before opening; retain the explicit stream API."
+    - "Immutable acceptance of AR-05D, historical lifecycle replay and fresh integrated validation."
   exclude:
-    - "AR-05E retains integrated independent closure; no finding closure or downstream activation."
-    - "No in-place replacement of nonempty destinations or unconditional crash-durability guarantee."
+    - "Future CI attestation, finding closure or AR-06 activation before independent acceptance."
+    - "Adapter support promotion, unconditional filesystem timing/durability guarantees and version changes."
 expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/io/BoundedIo.kt"
   - "src/main/kotlin/org/flowlang/artifacts/"
-  - "src/main/kotlin/org/flowlang/release/StandardReleaseAssembly.kt"
 expectedFilesToChange:
-  - "src/main/kotlin/org/flowlang/cli/honest/CliArtifactOutput.kt"
-  - "src/main/kotlin/org/flowlang/artifacts/StandardBundleVerifier.kt"
   - "tools/verify_relocated_product.py"
 expectedFilesToAdd:
-  - "src/main/kotlin/org/flowlang/artifacts/AtomicArtifactWriter.kt"
-  - "src/main/kotlin/org/flowlang/artifacts/ArtifactPublicationVerifier.kt"
+  - "src/main/kotlin/org/flowlang/conformance/IntegratedProductIntegrityChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt"
 testsToAddOrUpdate:
-  - "Injected write, force, read, manifest and atomic-move failures leave no published partial bundle."
-  - "Byte, schema, version, path, inventory and external manifest hash tampering fail closed."
-  - "Installed distribution receipts and nonempty destination preservation."
-  - "Independent AR-05C acceptance and historical lifecycle regression coverage."
+  - "Installed options/external contracts/publication integration and FIFO rejection without a writer."
+  - "Pathological source and output destination rejection preserves prior bytes and leaves no staging."
+  - "Normalization publication, external provenance, altered bytes and immutable predecessor receipts."
 conformanceToAddOrUpdate:
-  - "Append actual-byte verification and failed preparation rollback checks without changing frozen inventories."
+  - "Append composed explicit-contract publication and invalid-source preservation probes."
 documentationToUpdate:
-  - "Describe immutable destination migration, scope of receipts and filesystem durability limits."
+  - "Document the integrated matrix, finite-file correction and independent completion boundary."
 validationPlan:
-  - "Inspect PR #193 and actual merged-main CI 37202358850 before accepting AR-05C."
+  - "Accept AR-05D only after inspecting PR #194 and actual merged-main CI 37270649521."
   - "Run all tooling tests, structure validation and context generation."
   - "Run physical isolation and complete tests/conformance on exact head and synthetic merge."
-  - "Preserve all 1800 predecessor test identities and all 270 ordered conformance checks."
+  - "Preserve all 1815 predecessor test identities and all 272 ordered conformance checks."
+  - "Accept this integrated implementation only from its own PR and actual-main receipts; independent closure follows."
 
 lifecycle:
   activationBoundary:

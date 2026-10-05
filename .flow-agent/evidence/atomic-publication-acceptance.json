@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "slice": "AR-05D",
+  "main": {
+    "status": "passed",
+    "event": "push",
+    "mergedPullRequest": 194,
+    "mainCommit": "c389408a067ba18b7e66aea0b23f3b5e51ab73b8",
+    "sourceTree": "a6e97584f63005167b6743a12bb24b38a90bb460",
+    "workflowRunId": 37270649521,
+    "workflowRunNumber": 3328,
+    "exactHeadJobId": 111638214364,
+    "isolationJobId": 111636754114,
+    "kotlinTests": 1815,
+    "toolingTests": 157,
+    "conformanceChecks": 272,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "acceptedPullRequest": {
+    "number": 194,
+    "workflowRunId": 37261109220,
+    "workflowRunNumber": 3327,
+    "base": "21f769f62756bb9df3a75896f7aa4ba10591ccf5",
+    "exactHead": "5554d7c3736935d280b33319d9020ead79ed9d0f",
+    "syntheticMerge": "1bc208057bc880586f41b6f37adbd91dbbf1d11e",
+    "sourceTree": "a6e97584f63005167b6743a12bb24b38a90bb460",
+    "exactHeadJobId": 111610139803,
+    "mergeCandidateJobId": 111610139815
+  },
+  "junit": {
+    "tests": 1815,
+    "suites": 318,
+    "identitiesSha256": "cac394e84aad5f5bef1ceed791dff5b3ed9b24c11657260e73466915b5e80504"
+  },
+  "conformance": {
+    "passed": 272,
+    "failed": 0,
+    "orderedIdentitiesSha256": "0f34047970c3e50e7a7d53fee5fdf762dce8c7cf25c230d4171bb14e11efab9d"
+  },
+  "allThreeCandidateAndMainInventoriesIdentical": true,
+  "physicalIsolation": {
+    "revision": {
+      "revision": "c389408a067ba18b7e66aea0b23f3b5e51ab73b8",
+      "tree": "a6e97584f63005167b6743a12bb24b38a90bb460",
+      "covers": "exact-head",
+      "run": "37270649521",
+      "attempt": "1"
+    },
+    "proofs": {
+      "adapter-isolation/proof.json": {
+        "verifiedInputHashes": 217
+      },
+      "compiler-isolation/proof.json": {
+        "verifiedInputHashes": 95
+      },
+      "kernel-isolation/proof.json": {
+        "verifiedInputHashes": 19
+      },
+      "product-isolation/proof.json": {
+        "verifiedInputHashes": 421,
+        "existingOutputsPreserved": 4,
+        "installAndZipBytesIdentical": true,
+        "publicationManifestHashes": {
+          "distZip-empty-github-actions": "3528bb82bc09d06c34b0d64dc67c638af0e3a5f652f1dc17a62c18109148f849",
+          "distZip-empty-jenkins": "db9df973f6abbce15ed319dd50b8577b7eca5711a41989805e543cbaf31a115d",
+          "distZip-misleading-github-actions": "3528bb82bc09d06c34b0d64dc67c638af0e3a5f652f1dc17a62c18109148f849",
+          "distZip-misleading-jenkins": "db9df973f6abbce15ed319dd50b8577b7eca5711a41989805e543cbaf31a115d",
+          "installDist-empty-github-actions": "3528bb82bc09d06c34b0d64dc67c638af0e3a5f652f1dc17a62c18109148f849",
+          "installDist-empty-jenkins": "db9df973f6abbce15ed319dd50b8577b7eca5711a41989805e543cbaf31a115d",
+          "installDist-misleading-github-actions": "3528bb82bc09d06c34b0d64dc67c638af0e3a5f652f1dc17a62c18109148f849",
+          "installDist-misleading-jenkins": "db9df973f6abbce15ed319dd50b8577b7eca5711a41989805e543cbaf31a115d"
+        },
+        "resourceCount": 142,
+        "stagedResourceInputsDeletedBeforeLaunch": true,
+        "invocations": 68,
+        "tests": 64
+      }
+    },
+    "archiveSha256": "d36c6f3e0fedba0532a915a896ec732bbca34331de04bff86b319578fe3f508b"
+  },
+  "artifacts": [
+    {
+      "id": 11329300275,
+      "sha256": "dff873281df8367fc2422a6710e8fb258b2bcd0e2670db49a54f88edf661787f"
+    },
+    {
+      "id": 11329095554,
+      "sha256": "2fdffd36596d3ff92057b78e69c9bf6f99df8b28ef013f216ddd58a8749b0ea0"
+    },
+    {
+      "id": 11328392960,
+      "sha256": "d36c6f3e0fedba0532a915a896ec732bbca34331de04bff86b319578fe3f508b"
+    }
+  ]
+}

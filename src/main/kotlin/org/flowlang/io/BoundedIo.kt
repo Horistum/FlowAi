@@ -15,8 +15,12 @@ object BoundedIo {
         if (size > maximum.toLong()) throw IoLimitException(code)
     }
 
-    fun readBytes(file: File, maximum: Int = InputLimits.MAX_SOURCE_BYTES): ByteArray =
-        file.inputStream().use { readBytes(it, maximum) }
+    fun readBytes(file: File, maximum: Int = InputLimits.MAX_SOURCE_BYTES): ByteArray {
+        // A byte budget cannot bound an open/read on a FIFO or device. File inputs are
+        // regular files; streaming callers must explicitly use the stream API.
+        require(Files.isRegularFile(file.toPath())) { "INPUT_FILE_TYPE: input must be a regular file." }
+        return file.inputStream().use { readBytes(it, maximum) }
+    }
 
     /** Read at most limit + one sentinel byte; file metadata is never trusted. Does not close the stream. */
     fun readBytes(input: InputStream, maximum: Int = InputLimits.MAX_SOURCE_BYTES): ByteArray {
