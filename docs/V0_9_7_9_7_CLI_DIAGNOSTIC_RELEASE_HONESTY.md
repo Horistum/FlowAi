@@ -133,6 +133,12 @@ Every required JSON artifact declares a schema path, and every declared schema p
 
 ## Atomic publication
 
+AR-05D supersedes the original replacement procedure below with the shared
+`AtomicArtifactWriter`: only new/empty destinations are accepted, the manifest is
+derived from re-read bytes and written last, and publication requires an atomic
+directory move. See [the current migration](migrations/atomic-artifact-publication.md).
+The numbered procedure records the original v0.9.7.9.7 implementation.
+
 `standard-export` uses a sibling staging directory.
 
 The process is:

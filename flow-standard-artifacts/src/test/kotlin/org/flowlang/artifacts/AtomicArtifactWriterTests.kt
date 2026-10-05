@@ -146,6 +146,11 @@ class AtomicArtifactWriterTests {
             requiredArtifacts = listOf("missing.txt"), optionalArtifacts = emptyList(), pipeline = listOf("missing.txt"))
         assertFails { writer().publish(File(root, "missing"), values(), bundle) }
         assertFalse(File(root, "missing").exists())
+        val declared = bundle.copy(artifacts = listOf(FlowArtifactEntry("payload.json", FlowArtifactRole.REPORT,
+            "schemas/payload.schema.json", required = true, derived = true, pipelineIndex = 1)),
+            requiredArtifacts = listOf("payload.json"), pipeline = listOf("payload.json"))
+        assertFails { writer().publish(File(root, "bypass"), mapOf("payload.json" to ArtifactContent("{}".toByteArray())), declared) }
+        assertFalse(File(root, "bypass").exists())
     }
 
     private fun workspace(action: (File) -> Unit) {

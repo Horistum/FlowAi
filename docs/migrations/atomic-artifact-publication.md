@@ -17,7 +17,8 @@ Handled failures remove staging and leave the destination absent or unchanged.
 Generated JSON with a declared schema must pass the installed schema. The shared
 validator supports Flow's explicit JSON Schema subset and rejects unsupported
 assertion keywords. This is syntax validation; compiler/domain authorities still
-own semantic validity. JSON without a declared schema is labeled `JSON`, never
+own semantic validity. Output schemas always come from the installed distribution;
+external contract inputs cannot relax this output contract. JSON without a declared schema is labeled `JSON`, never
 `JSON_SCHEMA`. Release reference documents and deliberately invalid conformance
 fixtures are labeled `BYTES` and receive hash/size validation, not output-schema
 validation. The installed schema resources are included in resource provenance.
@@ -31,6 +32,12 @@ and absolute published directory after the atomic move. Receipts are integrity
 evidence, not signatures or authentication; consumers can pin the returned
 manifest receipt through `ArtifactPublicationVerifier.verify`.
 
+The schema check also corrects the former `execution-plan.json` export of the
+internal planner shape (`Task`, etc.). That filename now carries the existing
+canonical public ExecutionPlan 2.4 model (`task`, etc.), matching
+`canonical-execution-plan.json` and its declared schema. Internal planner types and
+target rendering semantics are unchanged.
+
 The public `standard-verify` command requires an actual-byte receipt. Missing,
 changed, added or deleted files fail verification; failed verification does not
 persist a report. Historical structural fixtures explicitly select
@@ -40,6 +47,11 @@ base artifact layer, then the final manifest covers compliance, draft and the
 structural verification report too. No persisted integrity report is made from
 expected names before writes. In-memory `ArtifactIntegrityAnalyzer` remains a
 logical contract-analysis API and emits no publication evidence.
+
+Structural verification reports carry `verificationVersion: 1.1-structure`;
+public verification uses `1.1` and includes the actual-byte publication check.
+`standard-draft` previews without `--out` use a temporary validated publication
+and remove it before returning a non-persisted draft presentation.
 
 Product limits remain 8 MiB/file, 32 MiB/batch and 256 files, including the final
 manifest. Release exports allow 1024 files for their documentation/reference tree,

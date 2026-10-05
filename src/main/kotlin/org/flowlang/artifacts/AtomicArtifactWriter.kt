@@ -169,7 +169,7 @@ class AtomicArtifactWriter(
         private fun forceDirectory(path: Path): Boolean = try {
             FileChannel.open(path, READ).use { it.force(true) }
             true
-        } catch (_: java.io.IOException) { false } catch (_: UnsupportedOperationException) { false }
+        } catch (_: Exception) { false }
 
         private fun forceDirectories(root: Path): Boolean = Files.walk(root).use { paths ->
             // Evaluate all attempts, even when a provider does not support directory fsync.
@@ -258,6 +258,13 @@ class StagedArtifacts internal constructor(
         val scope = bundle.copy(artifacts = bundle.artifacts.filter { it.name != AtomicArtifactWriter.MANIFEST },
             requiredArtifacts = bundle.requiredArtifacts.filter { it != AtomicArtifactWriter.MANIFEST },
             pipeline = bundle.pipeline.filter { it != AtomicArtifactWriter.MANIFEST })
+        val observed = actual.associateBy { it.path }
+        scope.artifacts.forEach { entry -> observed[entry.name]?.let { receipt ->
+            require(receipt.schema == entry.schema &&
+                (!entry.name.endsWith(".json") || receipt.validation in setOf("JSON", "JSON_SCHEMA"))) {
+                "Written artifact validation contradicts its bundle declaration: ${entry.name}"
+            }
+        } }
         val coverage = if ("diagnostic-coverage-report.json" in receipts)
             FlowJson.read(File(directory, "diagnostic-coverage-report.json"), DiagnosticCoverageReport::class.java)
         else DiagnosticCoverageAnalyzer().analyze(emptyList())
@@ -287,7 +294,11 @@ class StagedArtifacts internal constructor(
                     }
                     if (schema.isNotBlank()) {
                         val schemaBytes = schemaLoader(schema)
-                        ArtifactSchemaValidator.validate(tree, FlowJson.readTree(BoundedIo.decodeUtf8(schemaBytes), schema))
+                        try {
+                            ArtifactSchemaValidator.validate(tree, FlowJson.readTree(BoundedIo.decodeUtf8(schemaBytes), schema))
+                        } catch (failure: IllegalArgumentException) {
+                            throw IllegalArgumentException("Artifact schema validation failed for $name: ${failure.message}", failure)
+                        }
                         schemaHash = AtomicArtifactWriter.sha256(schemaBytes)
                         validation = "JSON_SCHEMA"
                     }

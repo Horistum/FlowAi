@@ -29,6 +29,18 @@ class ArtifactPublicationVerifier(private val schemaLoader: (String) -> ByteArra
         }
         require(report.requiredArtifactsExpected == report.requiredArtifactsPresent &&
             report.requiredArtifactsPresent.all { it in covered }) { "Publication required artifact coverage is incomplete." }
+        if ("flow-artifact-bundle.json" in covered) {
+            val bundle = FlowJson.read(File(directory, "flow-artifact-bundle.json"), FlowArtifactBundleReport::class.java)
+            require(bundle.requiredArtifacts.filter { it != AtomicArtifactWriter.MANIFEST }.sorted() == report.requiredArtifactsExpected) {
+                "Publication coverage contradicts the actual bundle declaration."
+            }
+            val records = evidence.coveredFiles.associateBy { it.path }
+            bundle.artifacts.filter { it.name != AtomicArtifactWriter.MANIFEST }.forEach { entry -> records[entry.name]?.let {
+                require(it.schema == entry.schema && (!entry.name.endsWith(".json") || it.validation in setOf("JSON", "JSON_SCHEMA"))) {
+                    "Publication schema validation contradicts the actual bundle declaration."
+                }
+            } }
+        }
         val budget = IoBudget(InputLimits.MAX_TOTAL_OUTPUT_BYTES, InputLimits.MAX_RELEASE_FILES, "OUTPUT")
         budget.add(manifestBytes.size)
         for (expected in evidence.coveredFiles) {

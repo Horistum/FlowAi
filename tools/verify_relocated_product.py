@@ -204,6 +204,8 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                             raise ValueError("Limit rejection produced an oversized diagnostic.")
                     if name in ("jenkins", "github-actions"):
                         publications[key] = verify_publication(cwd / name, resources)
+                        if (cwd / name / "execution-plan.json").read_bytes() != (cwd / name / "canonical-execution-plan.json").read_bytes():
+                            raise ValueError("Public execution-plan export differs from the schema-owned canonical model.")
                         if name == "jenkins":
                             previous_output = contents(cwd / name)
                         executable = name == "jenkins"

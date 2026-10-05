@@ -34,8 +34,8 @@ data class StandardBundleVerificationReport(
  * Verifies an exported Flow standard bundle.
  *
  * Public JSON evidence is parsed into its contract model with unknown fields and
- * duplicate keys rejected. A check id merely occurring somewhere in JSON text
- * is not conformance evidence.
+ * duplicate keys rejected. Public verification additionally requires actual-byte publication
+ * evidence. The explicit structural mode serves historical fixtures and pre-manifest staging.
  */
 class StandardBundleVerifier {
     fun verify(bundleDir: File, requirePublicationReceipt: Boolean = true): StandardBundleVerificationReport {
@@ -130,6 +130,7 @@ class StandardBundleVerifier {
         ) + if (requirePublicationReceipt) listOf(publicationCheck(bundleDir)) else emptyList()
 
         return StandardBundleVerificationReport(
+            verificationVersion = if (requirePublicationReceipt) "1.1" else "1.1-structure",
             bundlePath = bundleDir.path,
             status = if (checks.all { it.status == "PASS" }) "PASS" else "FAIL",
             observedStandardVersion = observedVersion,

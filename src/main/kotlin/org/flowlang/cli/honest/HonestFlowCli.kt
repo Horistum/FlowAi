@@ -672,7 +672,7 @@ private fun writePlanningArtifacts(
         "intent-capability-validation-report.json" to intentValidation,
         "flow-ast.json" to ast,
         "validation-report.json" to validation,
-        "execution-plan.json" to plan,
+        "execution-plan.json" to canonicalPlan,
         "canonical-execution-plan.json" to canonicalPlan,
         "target-neutral-planning-report.json" to planning
     )
@@ -772,7 +772,7 @@ private fun writeIntentArtifacts(
         "intent-capability-validation-report.json" to intentValidation,
         "flow-ast.json" to ast,
         "validation-report.json" to validation,
-        "execution-plan.json" to plan,
+        "execution-plan.json" to canonicalPlan,
         "canonical-execution-plan.json" to canonicalPlan,
         "target-selection-evidence.json" to evidence.targetSelection,
         "cli-target-outcome.json" to outcome,

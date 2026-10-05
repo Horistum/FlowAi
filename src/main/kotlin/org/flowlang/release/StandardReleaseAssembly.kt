@@ -37,7 +37,15 @@ data class StandardReleaseAssembly(
     val artifacts: Map<String, Any>,
     val releaseMetadata: ReleaseMetadataHonestyReport
 ) {
-    fun writeTo(directory: File): PublishedArtifactReceipt = publish(directory)
+    fun writeTo(directory: File): StandardReleaseAssembly {
+        val completed = artifacts.toMutableMap()
+        publish(directory) { staged ->
+            listOf("standard-compliance-report.json", "flow-standard-draft.json").forEach { name ->
+                completed[name] = FlowJson.readTree(File(staged.directory, name))
+            }
+        }
+        return copy(artifacts = completed)
+    }
 
     fun publish(directory: File, referenceFiles: Map<String, ArtifactContent> = emptyMap(),
         prepare: (StagedArtifacts) -> Unit = {}): PublishedArtifactReceipt {
@@ -146,7 +154,7 @@ class StandardReleaseAssemblyAuthority(private val rootDir: File = File(".")) {
         return StandardReleaseAssembly(bundle, artifacts, releaseMetadata)
     }
 
-    fun writeValidatedDraft(outputDir: File): StandardReleaseAssembly = assemble().also { it.writeTo(outputDir) }
+    fun writeValidatedDraft(outputDir: File): StandardReleaseAssembly = assemble().writeTo(outputDir)
 
     fun publishValidatedBundle(outputDir: File): StandardBundleVerificationReport {
         val assembly = assemble()
