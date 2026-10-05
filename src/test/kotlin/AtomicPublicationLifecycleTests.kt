@@ -54,7 +54,7 @@ class AtomicPublicationLifecycleTests {
 
 /** Replay publication acceptance without borrowing integrated candidate validation. */
 internal fun atomicPublicationCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    val current = integratedProductCandidateSnapshot()
     @Suppress("UNCHECKED_CAST")
     val slices = current.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
     return current.copy(artifactWorkPackage = current.artifactWorkPackage + mapOf(

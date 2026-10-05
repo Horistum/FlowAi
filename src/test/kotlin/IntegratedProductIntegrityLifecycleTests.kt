@@ -5,7 +5,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class IntegratedProductIntegrityLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = integratedProductCandidateSnapshot()
     private fun reject(s: WorkflowSemanticsRecoveryLifecycleSnapshot) = assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())
 
     @Test fun integrationFollowsAcceptedPublicationWithoutClaimingFutureClosure() {
@@ -50,4 +50,20 @@ class IntegratedProductIntegrityLifecycleTests {
             reject(WorkflowSemanticsRecoveryLifecycle.load(root))
         } finally { root.deleteRecursively() }
     }
+}
+
+/** Replay the integrated implementation candidate without borrowing later acceptance. */
+internal fun integratedProductCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
+    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    @Suppress("UNCHECKED_CAST")
+    val slices = current.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST")
+    val lifecycle = current.artifactWorkPackage["lifecycle"] as Map<String, Any?>
+    return current.copy(integratedProductAcceptanceEvidence = null,
+        artifactWorkPackage = current.artifactWorkPackage + mapOf(
+            "lifecycle" to (lifecycle + ("implementationBoundary" to mapOf("status" to "pending"))),
+            "implementationSlices" to slices.mapIndexed { index, slice -> if (index == 4)
+                slice + mapOf("status" to "implemented", "acceptance" to mapOf("source" to "current-revision-ci",
+                    "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
+                else slice }))
 }

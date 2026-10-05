@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 14
+revision: 15
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Artifact, Distribution, CLI and I/O Integrity"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A is accepted from PR #191 and actual merged-main CI 36998199817. AR-05B is accepted from PR #192 and actual merged-main CI 37163508408 with identical 1780-test and 268-check inventories. AR-05C is accepted from PR #193 and actual merged-main CI 37202358850 with identical 1800-test and 270-check inventories. AR-05D is accepted from PR #194 and actual merged-main CI 37270649521 with identical 1815-test and 272-check inventories. The maintainer selects AR-05E integrated installed-product validation; independent closure remains pending. EF-09 stays paused and F-20 remains AR-07-owned."
+  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A is accepted from PR #191 and actual merged-main CI 36998199817. AR-05B is accepted from PR #192 and actual merged-main CI 37163508408 with identical 1780-test and 268-check inventories. AR-05C is accepted from PR #193 and actual merged-main CI 37202358850 with identical 1800-test and 270-check inventories. AR-05D is accepted from PR #194 and actual merged-main CI 37270649521 with identical 1815-test and 272-check inventories. AR-05E implementation is accepted from PR #195 and actual merged-main CI 37274339828 with identical 1822-test and 274-check inventories, 132 relocated CLI invocations and exact archive/source hashes. Its independent acceptance revision requires fresh CI and actual-main validation before closure. EF-09 stays paused and F-20 remains AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

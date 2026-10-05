@@ -49,3 +49,23 @@ physical isolation proofs and full test/conformance inventory comparison.
 This implementation does not attest its own future CI or close AR-05. After it is
 merged, accept its actual-main result and record independent validation before the
 completion transition closes F-03/F-05/F-19/F-22. AR-06 and EF-09 remain inactive.
+
+
+## Independently accepted implementation
+
+The implementation is accepted from PR #195 and its actual merged-main run
+37274339828. The immutable integrated acceptance document binds all three source
+revisions to the same tree, 1822 test identities, 274 ordered conformance checks,
+artifact hashes and physical isolation evidence. Existing AR-05A through AR-05D
+receipts remain unchanged.
+
+The implementation boundary accepts only that exact document and exact receipt
+fields. Missing, altered or substituted evidence fails closed, including a changed
+document accompanied by its own new hash. Head, synthetic-merge and actual-main
+results cannot impersonate one another. Historical candidates remain valid without
+borrowing the later implementation receipt.
+
+Independent acceptance has its own work package and fresh CI requirement. Its
+validation and completion boundaries remain pending until its PR and actual-main
+results can be inspected by the subsequent completion transition. Implementation
+acceptance alone cannot close findings or activate AR-06.

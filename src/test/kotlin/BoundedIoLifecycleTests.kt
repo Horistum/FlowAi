@@ -53,7 +53,7 @@ class BoundedIoLifecycleTests {
 
 /** Replay the accepted limits candidate while retaining every earlier receipt. */
 internal fun boundedIoCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    val current = integratedProductCandidateSnapshot()
     @Suppress("UNCHECKED_CAST")
     val slices = current.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
     return current.copy(artifactWorkPackage = current.artifactWorkPackage + mapOf(

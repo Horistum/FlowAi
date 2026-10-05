@@ -50,49 +50,53 @@ implementationSlices:
       workflowRunId: 37270649521
   - id: "AR-05E"
     name: "Integrated installed-product integrity and independent closure"
-    status: implemented
+    status: accepted
     ownsFindings: ["F-03", "F-05", "F-19", "F-22"]
     acceptance:
-      source: current-revision-ci
-      requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+      source: .flow-agent/evidence/integrated-product-implementation-acceptance.json
+      sha256: d521109b78b524f818b388200680df26b58098c1af3c7781e9c8349090c41f6f
+      mainCommit: cae75f57d10d3ce0a6ec789a81487e6b8acbda39
+      workflowRunId: 37274339828
 completionDecision:
   status: not-complete
   closesFindings: []
   remainingFindings: ["F-03", "F-05", "F-19", "F-22"]
   nextItem: "AR-06"
   nextItemActivationState: not-activated
-architecturePurpose: "Validate the integrated installed product using typed CLI invocations, exact contract provenance, bounded inputs and verified atomic publication."
+architecturePurpose: "Accept the integrated installed product from independently inspected PR and actual-main evidence while retaining separate validation and completion boundaries."
 universalInvariant: "A rejected input never mutates existing output or publishes partial artifacts; successful installed-product outputs bind their actual bytes."
 scope:
   include:
-    - "Composed process tests in both relocated distributions, with and without misleading checkout paths."
-    - "Finite regular-file inputs: reject FIFOs and devices before opening; retain the explicit stream API."
-    - "Immutable acceptance of AR-05D, historical lifecycle replay and fresh integrated validation."
+    - "Independent acceptance of PR #195 and actual-main CI 37274339828, including complete inventory and artifact hash comparison."
+    - "Exact implementation receipt fields authenticated against immutable integrated evidence bytes."
+    - "Historical candidate replay and all existing installed-product behavior remain independently checked."
   exclude:
     - "Future CI attestation, finding closure or AR-06 activation before independent acceptance."
     - "Adapter support promotion, unconditional filesystem timing/durability guarantees and version changes."
 expectedFilesToInspect:
-  - "src/main/kotlin/org/flowlang/io/BoundedIo.kt"
-  - "src/main/kotlin/org/flowlang/artifacts/"
-expectedFilesToChange:
-  - "tools/verify_relocated_product.py"
-expectedFilesToAdd:
-  - "src/main/kotlin/org/flowlang/conformance/IntegratedProductIntegrityChecks.kt"
   - "src/main/kotlin/org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt"
+  - ".flow-agent/evidence/atomic-publication-acceptance.json"
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt"
+  - "src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt"
+expectedFilesToAdd:
+  - ".flow-agent/evidence/integrated-product-implementation-acceptance.json"
+  - ".flow-agent/work-packages/integrated-product-integrity-acceptance.yaml"
+  - "src/test/kotlin/IntegratedProductAcceptanceTests.kt"
 testsToAddOrUpdate:
-  - "Installed options/external contracts/publication integration and FIFO rejection without a writer."
-  - "Pathological source and output destination rejection preserves prior bytes and leaves no staging."
-  - "Normalization publication, external provenance, altered bytes and immutable predecessor receipts."
+  - "Reject missing, altered, substituted and self-authenticated integrated acceptance bytes and fields."
+  - "Keep PR head, synthetic merge and actual-main identities distinct; preserve all historical candidates."
+  - "Reject borrowed implementation evidence, premature finding closure and AR-06 activation."
 conformanceToAddOrUpdate:
-  - "Append composed explicit-contract publication and invalid-source preservation probes."
+  - "Existing lifecycle conformance exercises the new acceptance transition; retain all 274 ordered check identities."
 documentationToUpdate:
-  - "Document the integrated matrix, finite-file correction and independent completion boundary."
+  - "Record independent implementation acceptance and the remaining validation/completion transition."
 validationPlan:
-  - "Accept AR-05D only after inspecting PR #194 and actual merged-main CI 37270649521."
+  - "Accept AR-05E only after inspecting PR #195 and actual merged-main CI 37274339828."
   - "Run all tooling tests, structure validation and context generation."
   - "Run physical isolation and complete tests/conformance on exact head and synthetic merge."
-  - "Preserve all 1815 predecessor test identities and all 272 ordered conformance checks."
-  - "Accept this integrated implementation only from its own PR and actual-main receipts; independent closure follows."
+  - "Preserve all 1822 predecessor test identities and all 274 ordered conformance checks."
+  - "This acceptance revision requires its own PR and actual-main validation before independent closure."
 
 lifecycle:
   activationBoundary:
@@ -100,7 +104,32 @@ lifecycle:
     source: maintainer-request
     validation: current-revision-ci-required
   implementationBoundary:
-    status: pending
+    status: "passed"
+    conclusion: "success"
+    scope: "integrated-implementation"
+    pullRequest: 195
+    base: "c389408a067ba18b7e66aea0b23f3b5e51ab73b8"
+    exactHead: "6225a5915b4d0e8230f94d8e20cb23900d315f60"
+    syntheticMergeCandidate: "9a22027438f306c2847b2917dd2e7b3ccfcd9918"
+    sourceTree: "c5d78674cb48b67d8b01c64c49f67ef2d7fbb046"
+    workflowRunId: 37272555478
+    workflowRunNumber: 3329
+    exactHeadJobId: 111644233786
+    mergeCandidateJobId: 111644233771
+    isolationJobId: 111642505985
+    mainCommit: "cae75f57d10d3ce0a6ec789a81487e6b8acbda39"
+    postMergeWorkflowRunId: 37274339828
+    postMergeWorkflowRunNumber: 3330
+    mainExactHeadJobId: 111649588446
+    mainIsolationJobId: 111648000453
+    kotlinTests: 1822
+    toolingTests: 157
+    conformanceChecks: 274
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: ".flow-agent/evidence/integrated-product-implementation-acceptance.json"
+    evidenceSha256: "d521109b78b524f818b388200680df26b58098c1af3c7781e9c8349090c41f6f"
   validationBoundary:
     status: pending
   completionBoundary:
