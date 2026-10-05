@@ -57,8 +57,8 @@ class BoundedProductIoTests {
         try {
             val existing = File(root, "keep.txt").apply { writeText("original") }
             val exact = "x".repeat(InputLimits.MAX_ARTIFACT_BYTES - 1)
-            CliArtifactOutput.write(root, mapOf("exact.txt" to exact))
-            assertEquals(InputLimits.MAX_ARTIFACT_BYTES.toLong(), File(root, "exact.txt").length())
+            CliArtifactOutput.write(File(root, "fresh"), mapOf("exact.txt" to exact))
+            assertEquals(InputLimits.MAX_ARTIFACT_BYTES.toLong(), File(root, "fresh/exact.txt").length())
             assertFailsWith<IoLimitException> { CliArtifactOutput.write(root, linkedMapOf("keep.txt" to "changed", "large.txt" to exact + "x")) }
             assertEquals("original", existing.readText())
             assertFalse(File(root, "large.txt").exists())

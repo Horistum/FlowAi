@@ -15,7 +15,7 @@ class FlowStandardBundleVerifierTests {
     @Test
     fun completeStandardBundlePassesVerification() {
         val bundle = standardBundleFixture()
-        val report = StandardBundleVerifier().verify(bundle)
+        val report = StandardBundleVerifier().verify(bundle, requirePublicationReceipt = false)
 
         assertEquals("0.8.0", FlowStandardVersions.FLOW_STANDARD_VERSION)
         assertEquals(FlowStandardVersions.FLOW_STANDARD_VERSION, File(bundle, "standard-version.txt").readText().trim())
@@ -29,7 +29,7 @@ class FlowStandardBundleVerifierTests {
         val bundle = standardBundleFixture()
         File(bundle, "docs/IMPLEMENTER_GUIDE.md").delete()
 
-        val report = StandardBundleVerifier().verify(bundle)
+        val report = StandardBundleVerifier().verify(bundle, requirePublicationReceipt = false)
 
         assertEquals("FAIL", report.status)
         assertTrue(report.missingRequiredDocuments.contains("docs/IMPLEMENTER_GUIDE.md"))
@@ -47,7 +47,7 @@ class FlowStandardBundleVerifierTests {
         manifest.put("passed", manifest.path("passed").asInt() - 1)
         file.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest) + "\n")
 
-        val report = StandardBundleVerifier().verify(bundle)
+        val report = StandardBundleVerifier().verify(bundle, requirePublicationReceipt = false)
 
         assertEquals("FAIL", report.status)
         assertTrue(report.missingReleaseGateChecks.contains(removed))
@@ -65,7 +65,7 @@ class FlowStandardBundleVerifierTests {
         (manifest.withArray("failedChecks") as ArrayNode).add(requiredGate)
         file.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest) + "\n")
 
-        val report = StandardBundleVerifier().verify(bundle)
+        val report = StandardBundleVerifier().verify(bundle, requirePublicationReceipt = false)
 
         assertEquals("FAIL", report.status)
         assertTrue(report.missingReleaseGateChecks.contains("conformance-manifest.status"))
@@ -85,7 +85,7 @@ class FlowStandardBundleVerifierTests {
         export.put("packageName", "text-mentions-$missingArtifact")
         file.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(export) + "\n")
 
-        val report = StandardBundleVerifier().verify(bundle)
+        val report = StandardBundleVerifier().verify(bundle, requirePublicationReceipt = false)
 
         assertEquals("FAIL", report.status)
         assertTrue(report.missingStableSurfaceArtifactsInExportBundle.contains(missingArtifact))
@@ -97,7 +97,7 @@ class FlowStandardBundleVerifierTests {
         val gates = StandardReleaseProfile.report().requiredConformanceChecks.joinToString()
         File(bundle, "conformance-manifest.json").writeText("{ \"message\": \"$gates\", \"broken\": [ }")
 
-        val report = StandardBundleVerifier().verify(bundle)
+        val report = StandardBundleVerifier().verify(bundle, requirePublicationReceipt = false)
 
         assertEquals("FAIL", report.status)
         assertTrue(report.missingReleaseGateChecks.contains("conformance-manifest.json:invalid"))
@@ -110,7 +110,7 @@ class FlowStandardBundleVerifierTests {
         File(bundle, "standard-export-bundle.json")
             .writeText("{ \"message\": \"$artifacts\", \"requiredArtifacts\": [ }")
 
-        val report = StandardBundleVerifier().verify(bundle)
+        val report = StandardBundleVerifier().verify(bundle, requirePublicationReceipt = false)
 
         assertEquals("FAIL", report.status)
         assertTrue(

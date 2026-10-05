@@ -41,7 +41,7 @@ retain their strict contract diagnostics and exit 2. UTF-8 errors are invalid in
 The product does not silently truncate inputs, generated artifacts or source evidence;
 only displayed error messages and echoed command names are shortened.
 
-This slice does not provide rollback for filesystem failures or atomic publication.
-AR-05D owns staging, actual-byte integrity receipts and atomic publication; AR-05E owns
-independent integrated closure. Verification-host release assembly is outside this
-installed-product slice. No finding is closed and no adapter support is promoted here.
+AR-05D now adds staging, actual-byte integrity receipts and atomic publication to
+both product output and verification-host release assembly; see
+[the publication migration](atomic-artifact-publication.md). AR-05E retains
+independent integrated closure. No finding is closed or adapter support promoted.

@@ -859,26 +859,12 @@ private fun writeMinimalBundle(
         optionalArtifacts = emptyList(),
         pipeline = entries.map { it.name }
     )
-    val coverage = values["diagnostic-coverage-report.json"] as? DiagnosticCoverageReport
-        ?: DiagnosticCoverageAnalyzer().analyze(emptyList())
-    val integrity = ArtifactIntegrityAnalyzer().analyze(
-        bundle = bundle,
-        presentArtifacts = bundle.pipeline.toSet(),
-        standardVersionObservations = bundle.pipeline
-            .filter { it.endsWith(".json") || it == "standard-version.txt" }
-            .map { ArtifactIntegrityVersionObservation(it, FlowStandardVersions.FLOW_STANDARD_VERSION) },
-        diagnosticCoverage = coverage
-    )
-    require(integrity.status == "PASS") {
-        "CLI artifact integrity failed: ${integrity.issues.joinToString { it.code + ":" + it.artifact }}"
-    }
     CliArtifactOutput.write(directory, linkedMapOf<String, Any>(
         "standard-version.txt" to FlowStandardVersions.FLOW_STANDARD_VERSION
     ).apply {
         putAll(values)
-        put("artifact-integrity-report.json", integrity)
         put("flow-artifact-bundle.json", bundle)
-    })
+    }, bundle)
 }
 
 private fun extractIssueDiagnostics(artifact: String, report: Any): List<ObservedDiagnosticCode> {
@@ -921,14 +907,14 @@ private fun runStandardVerifyCommand(
 ): CliExecutionResult {
     val bundle = args.source(CliValueOption.BUNDLE)
         ?: throw IllegalArgumentException("standard-verify requires --bundle <dir>")
-    val report = StandardBundleVerifier().verify(File(bundle))
+    val report = StandardBundleVerifier().verify(File(bundle), requirePublicationReceipt = true)
     output.section("FLOW STANDARD BUNDLE VERIFICATION", report)
+    require(report.status == "PASS") { "Flow standard bundle verification failed." }
     val persisted = args.value(CliValueOption.OUT)?.let { out ->
         val directory = File(out)
         CliArtifactOutput.write(directory, mapOf("standard-bundle-verification.json" to report))
         true
     } ?: false
-    require(report.status == "PASS") { "Flow standard bundle verification failed." }
     return CliExecutionResult.Completed(
         presentation = output.snapshot(),
         artifacts = listOf(CliArtifact("standard-bundle-verification.json", CliArtifactRole.DIAGNOSTIC_EVIDENCE, persisted))

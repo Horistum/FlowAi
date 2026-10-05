@@ -28,7 +28,10 @@ data class ArtifactIntegrityReport(
     val standardVersionObservations: List<ArtifactIntegrityVersionObservation>,
     val standardVersionMismatches: List<ArtifactIntegrityVersionObservation>,
     val diagnosticCoverageStatus: String,
-    val issues: List<ArtifactIntegrityIssue>
+    val issues: List<ArtifactIntegrityIssue>,
+    // Absent on logical contract analyses; only AtomicArtifactWriter emits byte evidence.
+    @get:com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    val publication: ArtifactPublicationEvidence? = null
 )
 
 /**

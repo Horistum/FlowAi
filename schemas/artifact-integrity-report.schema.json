@@ -20,48 +20,201 @@
     "issues"
   ],
   "properties": {
-    "standardVersion": { "type": "string" },
-    "artifactIntegrityVersion": { "type": "string" },
-    "flowName": { "type": "string" },
-    "target": { "type": "string" },
-    "status": { "type": "string", "enum": ["PASS", "FAIL"] },
-    "requiredArtifactsExpected": { "type": "array", "items": { "type": "string" } },
-    "requiredArtifactsPresent": { "type": "array", "items": { "type": "string" } },
-    "missingRequiredArtifacts": { "type": "array", "items": { "type": "string" } },
-    "artifactsWithoutSchema": { "type": "array", "items": { "type": "string" } },
+    "standardVersion": {
+      "type": "string"
+    },
+    "artifactIntegrityVersion": {
+      "type": "string"
+    },
+    "flowName": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "requiredArtifactsExpected": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "requiredArtifactsPresent": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missingRequiredArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifactsWithoutSchema": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "standardVersionObservations": {
       "type": "array",
-      "items": { "$ref": "#/$defs/versionObservation" }
+      "items": {
+        "$ref": "#/$defs/versionObservation"
+      }
     },
     "standardVersionMismatches": {
       "type": "array",
-      "items": { "$ref": "#/$defs/versionObservation" }
+      "items": {
+        "$ref": "#/$defs/versionObservation"
+      }
     },
-    "diagnosticCoverageStatus": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "diagnosticCoverageStatus": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
     "issues": {
       "type": "array",
-      "items": { "$ref": "#/$defs/issue" }
+      "items": {
+        "$ref": "#/$defs/issue"
+      }
+    },
+    "publication": {
+      "$ref": "#/$defs/publication"
     }
   },
   "$defs": {
     "versionObservation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["artifact", "standardVersion"],
+      "required": [
+        "artifact",
+        "standardVersion"
+      ],
       "properties": {
-        "artifact": { "type": "string" },
-        "standardVersion": { "type": "string" }
+        "artifact": {
+          "type": "string"
+        },
+        "standardVersion": {
+          "type": "string"
+        }
       }
     },
     "issue": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["code", "severity", "artifact", "message"],
+      "required": [
+        "code",
+        "severity",
+        "artifact",
+        "message"
+      ],
       "properties": {
-        "code": { "type": "string" },
-        "severity": { "type": "string", "enum": ["error", "warning", "info"] },
-        "artifact": { "type": "string" },
-        "message": { "type": "string" }
+        "code": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ]
+        },
+        "artifact": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "byteReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sizeBytes",
+        "sha256",
+        "validation",
+        "schema",
+        "schemaSha256",
+        "standardVersion"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "validation": {
+          "enum": [
+            "BYTES",
+            "UTF8",
+            "JSON",
+            "JSON_SCHEMA",
+            "STANDARD_VERSION"
+          ]
+        },
+        "schema": {
+          "type": "string"
+        },
+        "schemaSha256": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{64})?$"
+        },
+        "standardVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "coveredFiles",
+        "excludedPaths",
+        "fileDataForced",
+        "stagingDirectoriesForced"
+      ],
+      "properties": {
+        "protocol": {
+          "const": "staged-atomic-directory-v1"
+        },
+        "coveredFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/byteReceipt"
+          }
+        },
+        "excludedPaths": {
+          "const": [
+            "artifact-integrity-report.json"
+          ]
+        },
+        "fileDataForced": {
+          "const": true
+        },
+        "stagingDirectoriesForced": {
+          "type": "boolean"
+        }
       }
     }
   }

@@ -59,6 +59,43 @@ def sections(stdout: str) -> dict:
             else json.loads(parts[i + 1]) for i in range(1, len(parts), 2)}
 
 
+def verify_publication(directory: Path, resources: dict[str, bytes]) -> str:
+    """Independently compare installed CLI receipts with the files left on disk."""
+    manifest = "artifact-integrity-report.json"
+    raw = (directory / manifest).read_bytes()
+    report = json.loads(raw)
+    evidence = report.get("publication", {})
+    if (report.get("status") != "PASS" or report.get("artifactIntegrityVersion") != "1.1"
+            or evidence.get("protocol") != "staged-atomic-directory-v1"
+            or evidence.get("excludedPaths") != [manifest] or evidence.get("fileDataForced") is not True):
+        raise ValueError("Missing actual-byte publication receipt.")
+    records = evidence.get("coveredFiles", [])
+    paths = [r["path"] for r in records]
+    files = [p for p in directory.rglob("*") if p.is_file()]
+    if (any(p.is_symlink() for p in directory.rglob("*")) or paths != sorted(set(paths))
+            or set(paths) | {manifest} != {p.relative_to(directory).as_posix() for p in files}
+            or manifest in paths or report.get("requiredArtifactsExpected") != report.get("requiredArtifactsPresent")
+            or not set(report.get("requiredArtifactsPresent", [])) <= set(paths)):
+        raise ValueError("Publication inventory differs from actual files.")
+    for record in records:
+        name = record["path"]
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", name) or any(p in (".", "..") for p in name.split("/")):
+            raise ValueError("Unsafe publication path.")
+        data = (directory / name).read_bytes()
+        if len(data) != record["sizeBytes"] or hashlib.sha256(data).hexdigest() != record["sha256"]:
+            raise ValueError("Publication bytes differ from receipt.")
+        schema = record.get("schema", "")
+        if schema and (record["validation"] != "JSON_SCHEMA" or schema not in resources
+                       or hashlib.sha256(resources[schema]).hexdigest() != record.get("schemaSha256")):
+            raise ValueError("Publication schema differs from installed schema.")
+        if name.endswith(".json"):
+            value = json.loads(data)
+            version = value.get("standardVersion", "") if isinstance(value, dict) else ""
+            if version != record.get("standardVersion"):
+                raise ValueError("Publication version differs from actual JSON.")
+    return hashlib.sha256(raw).hexdigest()
+
+
 def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) -> dict:
     archives = list((isolated / "flow-cli/build/distributions").glob("*.zip"))
     if len(archives) != 1:
@@ -111,6 +148,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
             stream.truncate(8 * 1024 * 1024 + 1)
         runs = {}
         baselines = {}
+        publications = {}
         for form, distribution in (("installDist", installed), ("distZip", unzipped[0])):
             for context in ("empty", "misleading"):
                 cwd = root / form / context
@@ -135,6 +173,8 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                          ("malformed-normalize", ["normalize", "--file", str(malformed), "--out", "forbidden"], 2)]
                 for target in ("jenkins", "github-actions"):
                     cases.append((target, ["intent", str(authored), "--target", target, "--render", "--out", target], 0 if target == "jenkins" else 3))
+                cases.append(("existing-output", ["diagnostics", "--out", "jenkins"], 2))
+                previous_output = None
                 for name, args, exit_code in cases:
                     result = subprocess.run(["bash", str(distribution / "bin/flow-core"), *args], cwd=cwd,
                                             capture_output=True, text=True, check=False, timeout=60)
@@ -143,7 +183,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                     (report_dir / f"{key}.stderr").write_text(result.stderr)
                     if result.returncode != exit_code or result.stderr:
                         raise ValueError(f"Relocated CLI {key} failed: exit={result.returncode}; {result.stdout[-1500:]} {result.stderr}")
-                    rejected = name == "missing-external" or name.startswith("limit-") or name == "malformed-normalize"
+                    rejected = name in ("missing-external", "malformed-normalize", "existing-output") or name.startswith("limit-")
                     if not rejected:
                         document = sections(result.stdout)
                         records = document["FLOW CONTRACT RESOURCE PROVENANCE"]
@@ -163,6 +203,9 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                         if name.startswith("limit-") and (len(result.stdout.encode()) > 4096 or len(failure.get("message", "")) > 2048):
                             raise ValueError("Limit rejection produced an oversized diagnostic.")
                     if name in ("jenkins", "github-actions"):
+                        publications[key] = verify_publication(cwd / name, resources)
+                        if name == "jenkins":
+                            previous_output = contents(cwd / name)
                         executable = name == "jenkins"
                         artifact = cwd / name / ("Jenkinsfile" if executable else "flow-github-actions-review.yaml")
                         if not artifact.is_file():
@@ -176,6 +219,9 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                         displayed = document[f"{title}: {artifact.name}"].removesuffix("\n")
                         if artifact.read_text() != displayed + ("" if displayed.endswith("\n") else "\n"):
                             raise ValueError(f"Relocated {name} wrote different artifact bytes from its presentation.")
+                    if name == "existing-output":
+                        if contents(cwd / "jenkins") != previous_output or list(cwd.glob(".*.staging-*")):
+                            raise ValueError("Rejected repeat publication changed a verified output or leaked staging.")
                     digest = hashlib.sha256(result.stdout.encode()).hexdigest()
                     # Only malformed input diagnostics contain invocation-specific paths.
                     if not rejected:
@@ -184,4 +230,5 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                         baselines[name] = digest
                     runs[key] = {"exitCode": result.returncode, "stdoutSha256": digest}
         return {"installAndZipBytesIdentical": True, "resourceCount": len(resources),
-                "stagedResourceInputsDeletedBeforeLaunch": True, "runs": runs}
+                "stagedResourceInputsDeletedBeforeLaunch": True, "publicationManifestHashes": publications,
+                "existingOutputsPreserved": 4, "runs": runs}

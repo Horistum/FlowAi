@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "slice": "AR-05C",
+  "main": {
+    "status": "passed",
+    "event": "push",
+    "mergedPullRequest": 193,
+    "mainCommit": "21f769f62756bb9df3a75896f7aa4ba10591ccf5",
+    "sourceTree": "ff2a0e528c74f097b1a53575334afb7229b633f0",
+    "workflowRunId": 37202358850,
+    "workflowRunNumber": 3323,
+    "exactHeadJobId": 111437842519,
+    "isolationJobId": 111436505413,
+    "kotlinTests": 1800,
+    "toolingTests": 155,
+    "conformanceChecks": 270,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "acceptedPullRequest": {
+    "number": 193,
+    "workflowRunId": 37178902027,
+    "workflowRunNumber": 3322,
+    "base": "48ae72336759c44afc5cbfe1eece4957f4c1b1c2",
+    "exactHead": "7d9a95ac4fb382a25305790a8ca40c873ee497b2",
+    "syntheticMerge": "6cf85fbe627c24e0ef0b30aa2cf43924cb8e8b32",
+    "sourceTree": "ff2a0e528c74f097b1a53575334afb7229b633f0",
+    "exactHeadJobId": 111368143672,
+    "mergeCandidateJobId": 111368143648
+  },
+  "junit": {
+    "tests": 1800,
+    "suites": 315,
+    "identitiesSha256": "b9c25ed532fb5d2daa6f22478bbbe0b86d8c01c2db3d84c9f8c7f95d238c66a9"
+  },
+  "conformance": {
+    "passed": 270,
+    "failed": 0,
+    "orderedIdentitiesSha256": "caa6d7b871d92bc5334186ec67fe4a172ffa8ef15509dad16965bd32f492698e"
+  },
+  "allThreeCandidateAndMainInventoriesIdentical": true,
+  "physicalIsolation": {
+    "revision": {
+      "revision": "21f769f62756bb9df3a75896f7aa4ba10591ccf5",
+      "tree": "ff2a0e528c74f097b1a53575334afb7229b633f0",
+      "covers": "exact-head",
+      "run": "37202358850",
+      "attempt": "1"
+    },
+    "proofs": {
+      "adapter-isolation/proof.json": {
+        "verifiedInputHashes": 217
+      },
+      "compiler-isolation/proof.json": {
+        "verifiedInputHashes": 95
+      },
+      "kernel-isolation/proof.json": {
+        "verifiedInputHashes": 19
+      },
+      "product-isolation/proof.json": {
+        "verifiedInputHashes": 351,
+        "installAndZipBytesIdentical": true,
+        "resourceCount": 77,
+        "stagedResourceInputsDeletedBeforeLaunch": true,
+        "invocations": 64,
+        "tests": 52
+      }
+    },
+    "archiveSha256": "80e2551189f14829e88336de7a3298bc068eca90d4ea5658968d1eab154616e7"
+  },
+  "artifacts": [
+    {
+      "id": 11303981199,
+      "sha256": "00351d1f3c40da859535c343a8b66e6f5e8ec5463da314aceb52cb773587f3e7"
+    },
+    {
+      "id": 11303806990,
+      "sha256": "7d29c76881b37dde627ca2dad00e12ee0ed2a3a320c01c2a6788b92604c8d318"
+    },
+    {
+      "id": 11302919382,
+      "sha256": "80e2551189f14829e88336de7a3298bc068eca90d4ea5658968d1eab154616e7"
+    }
+  ]
+}

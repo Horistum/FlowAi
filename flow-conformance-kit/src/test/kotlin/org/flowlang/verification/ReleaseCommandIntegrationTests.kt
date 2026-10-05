@@ -9,6 +9,7 @@ import kotlin.test.assertFails
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import org.flowlang.artifacts.FlowArtifactBundleReport
+import org.flowlang.artifacts.ArtifactPublicationVerifier
 import org.flowlang.artifacts.StandardBundleVerifier
 import org.flowlang.cli.Json
 import org.flowlang.cli.honest.CliExecutionResult
@@ -34,6 +35,10 @@ class ReleaseCommandIntegrationTests {
             .single { it.path("artifact").asText() == "release-metadata-honesty-report.json" }
         assertEquals("flow.release.metadata-honesty", provenance.path("producer").asText())
         assertEquals("PASS", StandardBundleVerifier().verify(exported).status)
+        val publication = ArtifactPublicationVerifier().verify(exported).publication!!
+        assertTrue(publication.coveredFiles.any { it.path.startsWith("docs/") && it.validation == "BYTES" })
+        assertTrue(publication.coveredFiles.any { it.path == "standard-compliance-report.json" && it.validation == "JSON_SCHEMA" })
+        assertEquals(exported.path, Json.mapper.readTree(File(exported, "standard-bundle-verification.json")).path("bundlePath").asText())
         assertIs<CliExecutionResult.Completed>(executeCli(arrayOf("standard-verify", "--bundle", exported.path)))
 
         // A generated bundle is not a blanket trust receipt. The product verifier
@@ -43,6 +48,9 @@ class ReleaseCommandIntegrationTests {
         changed.put("status", "FAIL")
         Json.mapper.writeValue(manifest, changed)
         assertEquals("FAIL", StandardBundleVerifier().verify(exported).status)
+        val rejectedOutput = File(directory, "rejected-output")
+        assertIs<CliExecutionResult.Rejected>(executeCli(arrayOf("standard-verify", "--bundle", exported.path, "--out", rejectedOutput.path)))
+        assertTrue(!rejectedOutput.exists())
         // Preserve the historical public standard-verify rejection status.
         assertEquals(2, assertIs<CliExecutionResult.Rejected>(
             executeCli(arrayOf("standard-verify", "--bundle", exported.path))).exitCode)

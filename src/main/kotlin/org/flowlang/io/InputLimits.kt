@@ -12,6 +12,8 @@ object InputLimits {
     const val MAX_YAML_ALIASES = 0
     const val MAX_FLOW_STATEMENT_DEPTH = 128
     const val MAX_FILES = 256
+    // Release exports also contain the bounded reference corpus and documentation tree.
+    const val MAX_RELEASE_FILES = 1024
     const val MAX_TOTAL_INPUT_BYTES = 32 * 1024 * 1024
     const val MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
     const val MAX_TOTAL_OUTPUT_BYTES = 32 * 1024 * 1024

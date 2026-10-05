@@ -15,7 +15,7 @@ currentDecision:
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A is accepted from PR #191 and actual merged-main CI 36998199817. AR-05B is accepted from PR #192 and actual merged-main CI 37163508408 with identical 1780-test and 268-check inventories. The maintainer selects AR-05C for central input/output limits; publication and closure remain planned. EF-09 stays paused and F-20 remains AR-07-owned."
+  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A is accepted from PR #191 and actual merged-main CI 36998199817. AR-05B is accepted from PR #192 and actual merged-main CI 37163508408 with identical 1780-test and 268-check inventories. AR-05C is accepted from PR #193 and actual merged-main CI 37202358850 with identical 1800-test and 270-check inventories. The maintainer selects AR-05D for atomic publication and actual-byte receipts; independent closure remains planned. EF-09 stays paused and F-20 remains AR-07-owned."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
