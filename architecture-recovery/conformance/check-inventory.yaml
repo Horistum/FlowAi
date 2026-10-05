@@ -63,3 +63,5 @@ checks:
   - architecture-recovery.io.streaming-output-byte-boundary
   - architecture-recovery.artifacts.actual-byte-publication
   - architecture-recovery.artifacts.failed-preparation-never-publishes
+  - architecture-recovery.product.explicit-contracts-to-verified-publication
+  - architecture-recovery.product.invalid-source-preserves-publication

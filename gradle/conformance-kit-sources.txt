@@ -80,6 +80,8 @@ org/flowlang/conformance/IncidentRemediationBaseline.kt
 org/flowlang/conformance/IncidentRemediationFalsification.kt
 org/flowlang/conformance/InfrastructureLifecycleBaseline.kt
 org/flowlang/conformance/InfrastructureLifecycleFalsification.kt
+org/flowlang/conformance/IntegratedProductIntegrityChecks.kt
+org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt
 org/flowlang/conformance/IntentSafetyChecks.kt
 org/flowlang/conformance/JsonSchemaSmokeValidator.kt
 org/flowlang/conformance/LanguageContractIntegrityLifecycle.kt

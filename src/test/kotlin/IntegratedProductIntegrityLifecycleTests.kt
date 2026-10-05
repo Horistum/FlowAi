@@ -4,14 +4,14 @@ import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
-class AtomicPublicationLifecycleTests {
-    private fun live() = atomicPublicationCandidateSnapshot()
+class IntegratedProductIntegrityLifecycleTests {
+    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
     private fun reject(s: WorkflowSemanticsRecoveryLifecycleSnapshot) = assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())
 
-    @Test fun publicationFollowsAcceptedLimitsWithoutClaimingClosure() {
+    @Test fun integrationFollowsAcceptedPublicationWithoutClaimingFutureClosure() {
         val s = live()
-        assertEquals("AR-05D", s.artifactWorkPackage["selectedSlice"])
-        assertEquals("AR-05E", s.artifactWorkPackage["nextSlice"])
+        assertEquals("AR-05E", s.artifactWorkPackage["selectedSlice"])
+        assertEquals("", s.artifactWorkPackage["nextSlice"])
         assertEquals(emptyList(), WorkflowSemanticsRecoveryLifecycle.errors(s))
         assertEquals(emptyList(), WorkflowSemanticsRecoveryLifecycle.errors(boundedIoCandidateSnapshot()))
         assertEquals(emptyList(), WorkflowSemanticsRecoveryLifecycle.errors(contractDistributionCandidateSnapshot()))
@@ -21,15 +21,15 @@ class AtomicPublicationLifecycleTests {
     @Test fun everyAcceptanceFieldAndTheUnmodifiedActualMainReceiptAreRequired() {
         val s = live()
         @Suppress("UNCHECKED_CAST") val slices = s.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
-        for (index in 0..3) {
+        for (index in 0..4) {
             @Suppress("UNCHECKED_CAST") val acceptance = slices[index]["acceptance"] as Map<String, Any?>
             for (key in acceptance.keys) for (value in listOf(null, "invented", -1)) {
                 val changed = slices.mapIndexed { i, slice -> if (i == index) slice + ("acceptance" to (acceptance + (key to value))) else slice }
                 reject(s.copy(artifactWorkPackage = s.artifactWorkPackage + ("implementationSlices" to changed)))
             }
         }
-        for (raw in listOf(null, "", s.cliArgumentAcceptanceEvidence, s.boundedIoAcceptanceEvidence + "\n")) {
-            reject(s.copy(boundedIoAcceptanceEvidence = raw))
+        for (raw in listOf(null, "", s.cliArgumentAcceptanceEvidence, s.atomicPublicationAcceptanceEvidence + "\n")) {
+            reject(s.copy(atomicPublicationAcceptanceEvidence = raw))
         }
         for (index in slices.indices) reject(s.copy(artifactWorkPackage = s.artifactWorkPackage +
             ("implementationSlices" to slices.mapIndexed { i, slice -> if (i == index) slice + ("status" to "complete") else slice })))
@@ -38,31 +38,16 @@ class AtomicPublicationLifecycleTests {
         }
     }
 
-    @Test fun loaderRejectsChangedAndMissingLimitsReceipt() {
+    @Test fun loaderRejectsChangedAndMissingPublicationReceipt() {
         val root = createTempDirectory("atomic-publication-lifecycle-").toFile()
         try {
             File(".flow-agent").copyRecursively(File(root, ".flow-agent"))
             assertEquals(emptyList(), WorkflowSemanticsRecoveryLifecycle.errors(WorkflowSemanticsRecoveryLifecycle.load(root)))
-            val file = File(root, AtomicPublicationLifecycle.EVIDENCE)
+            val file = File(root, IntegratedProductIntegrityLifecycle.EVIDENCE)
             file.appendText("\n")
             reject(WorkflowSemanticsRecoveryLifecycle.load(root))
             file.delete()
             reject(WorkflowSemanticsRecoveryLifecycle.load(root))
         } finally { root.deleteRecursively() }
     }
-}
-
-/** Replay publication acceptance without borrowing integrated candidate validation. */
-internal fun atomicPublicationCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
-    @Suppress("UNCHECKED_CAST")
-    val slices = current.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
-    return current.copy(artifactWorkPackage = current.artifactWorkPackage + mapOf(
-        "selectedSlice" to "AR-05D", "nextSlice" to "AR-05E",
-        "implementationSlices" to slices.mapIndexed { index, slice -> when (index) {
-            3 -> slice + mapOf("status" to "implemented", "acceptance" to mapOf("source" to "current-revision-ci",
-                "requiredChecks" to listOf("compile-test-conformance", "merge-candidate-compile-test-conformance")))
-            4 -> (slice - "acceptance") + ("status" to "planned")
-            else -> slice
-        } }))
 }

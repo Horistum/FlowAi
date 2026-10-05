@@ -96,6 +96,93 @@ def verify_publication(directory: Path, resources: dict[str, bytes]) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def verify_integrated_cases(distribution, cwd, external, resources, report_dir, prefix):
+    """Exercise interacting boundaries through the installed process, including a FIFO with no writer."""
+    import os
+
+    inputs = cwd / "integrated-inputs"
+    inputs.mkdir()
+    authored = inputs / "authored intent.yaml"
+    authored.write_bytes(resources["examples/intent/checkout-build-image.intent.yaml"])
+    dash = cwd / "--authored.intent.yaml"
+    dash.write_bytes(authored.read_bytes())
+    text = inputs / "requirements.txt"
+    text.write_text("build and test")
+    malformed = inputs / "malformed.yaml"
+    malformed.write_bytes(b"\xc3(")
+    alias = inputs / "alias.yaml"
+    alias.write_text("x: &anchor [1]\ny: *anchor\n")
+    deep = inputs / "deep.yaml"
+    deep.write_text("x: " + "[" * 70 + "0" + "]" * 70)
+    duplicate = inputs / "duplicate.yaml"
+    duplicate.write_text("x: 1\nx: 2\n")
+    fifo = inputs / "input.fifo"
+    os.mkfifo(fifo)
+    corrupt = inputs / "corrupt contracts"
+    shutil.copytree(external, corrupt)
+    (corrupt / "examples/intent/build-test-deploy.intent.yaml").write_bytes(b"\xc3(")
+    preserved = cwd / "integrated-preserved"
+    preserved.mkdir()
+    (preserved / "keep.txt").write_text("previous accepted bytes")
+    link = cwd / "integrated-link"
+    link.symlink_to(preserved, target_is_directory=True)
+    ordinary_file = cwd / "integrated-file"
+    ordinary_file.write_text("existing file")
+    cases = [
+        ("diagnostics", ["diagnostics", "--out=integrated diagnostics"], 0, "integrated diagnostics"),
+        ("normalize", ["normalize", "--out=integrated normalized", "--app=shop", "--file", str(text)], 0, "integrated normalized"),
+        ("external-intent", ["intent", "--out=integrated external", "--contracts", str(external), "--target=jenkins", "--render", "--", str(authored)], 0, "integrated external"),
+        ("dash-source", ["intent", "--out=integrated dash", "--target=jenkins", "--render", "--", dash.name], 0, "integrated dash"),
+        ("duplicate-option", ["intent", "--out", str(preserved), "--target=jenkins", "--target=github-actions", str(authored)], 2, None),
+        ("unknown-option", ["intent", "--out", str(preserved), "--unknown", str(authored)], 2, None),
+        ("missing-value", ["intent", "--out", str(preserved), "--target"], 2, None),
+        ("alias", ["intent", "--out", str(preserved), str(alias)], 2, None),
+        ("depth", ["intent", "--out", str(preserved), str(deep)], 2, None),
+        ("duplicate-key", ["intent", "--out", str(preserved), str(duplicate)], 2, None),
+        ("malformed-intent", ["intent", "--out", str(preserved), str(malformed)], 2, None),
+        ("fifo", ["normalize", "--out", str(preserved), "--file", str(fifo)], 2, None),
+        ("symlink-output", ["diagnostics", "--out", str(link)], 2, None),
+        ("file-output", ["diagnostics", "--out", str(ordinary_file)], 2, None),
+        ("corrupt-default", ["intent", "--out", str(preserved), "--contracts", str(corrupt)], 2, None),
+        ("incomplete-bundle", ["standard-verify", "--out", str(preserved), "--bundle=integrated diagnostics"], 2, None),
+    ]
+    runs, publications = {}, {}
+    for name, args, expected, output in cases:
+        # A blocked FIFO regression must fail promptly; no background writer masks the defect.
+        result = subprocess.run(["bash", str(distribution / "bin/flow-core"), *args], cwd=cwd,
+                                capture_output=True, text=True, check=False, timeout=15 if name == "fifo" else 60)
+        key = f"{prefix}-integrated-{name}"
+        (report_dir / f"{key}.stdout").write_text(result.stdout)
+        (report_dir / f"{key}.stderr").write_text(result.stderr)
+        if result.returncode != expected or result.stderr:
+            raise ValueError(f"Integrated CLI {key} failed: {result.returncode}: {result.stdout[-1500:]} {result.stderr}")
+        document = sections(result.stdout)
+        if expected == 2:
+            failure = document.get("CLI DIAGNOSTIC FAILURE", {})
+            if failure.get("code") != "CLI_INVALID_INPUT" or not 0 < len(failure.get("message", "")) <= 2048:
+                raise ValueError(f"Integrated failure has no bounded typed diagnostic: {key}")
+            if name == "fifo" and "INPUT_FILE_TYPE" not in failure["message"]:
+                raise ValueError("FIFO was not rejected at the finite-file boundary.")
+        if output:
+            publications[key] = verify_publication(cwd / output, resources)
+        if name in ("external-intent", "dash-source"):
+            outcome = document["CLI TARGET OUTCOME"]
+            if outcome["outcome"] != "EXECUTABLE" or outcome["renderAuthorized"] is not True:
+                raise ValueError("Integrated option parsing changed Jenkins authorization.")
+            records = document["FLOW CONTRACT RESOURCE PROVENANCE"]
+            expected_origin = "EXTERNAL" if name == "external-intent" else "CLASSPATH"
+            if len(records) != len(resources) or {r["path"] for r in records} != set(resources) or any(
+                    r["origin"] != expected_origin or r["sha256"] != hashlib.sha256(resources[r["path"]]).hexdigest() for r in records):
+                raise ValueError("Integrated publication selected incorrect contract bytes.")
+        if ({p.name: p.read_bytes() for p in preserved.iterdir()} != {"keep.txt": b"previous accepted bytes"}
+                or ordinary_file.read_bytes() != b"existing file" or not link.is_symlink()
+                or list(cwd.glob(".*.staging-*"))):
+            raise ValueError("Integrated rejection changed prior output or leaked staging.")
+        runs[key] = {"exitCode": result.returncode, "stdoutSha256": hashlib.sha256(result.stdout.encode()).hexdigest()}
+    return {"runs": runs, "publicationManifestHashes": publications,
+            "cases": [name for name, *_ in cases], "rejectedCases": sum(code == 2 for _, _, code, _ in cases)}
+
+
 def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) -> dict:
     archives = list((isolated / "flow-cli/build/distributions").glob("*.zip"))
     if len(archives) != 1:
@@ -149,6 +236,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
         runs = {}
         baselines = {}
         publications = {}
+        integrated = {}
         for form, distribution in (("installDist", installed), ("distZip", unzipped[0])):
             for context in ("empty", "misleading"):
                 cwd = root / form / context
@@ -231,6 +319,8 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                             raise ValueError(f"Relocation or working directory changed {name} output.")
                         baselines[name] = digest
                     runs[key] = {"exitCode": result.returncode, "stdoutSha256": digest}
-        return {"installAndZipBytesIdentical": True, "resourceCount": len(resources),
+                integrated[f"{form}-{context}"] = verify_integrated_cases(
+                    distribution, cwd, external, resources, report_dir, f"{form}-{context}")
+        return {"integratedIntegrity": integrated, "installAndZipBytesIdentical": True, "resourceCount": len(resources),
                 "stagedResourceInputsDeletedBeforeLaunch": True, "publicationManifestHashes": publications,
                 "existingOutputsPreserved": 4, "runs": runs}
