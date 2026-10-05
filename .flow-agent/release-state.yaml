@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 71
+stateVersion: 72
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -204,6 +204,17 @@ recoveryAcceptance:
   workflowRunId: 37280089103
   successorCandidate: "AR-06"
   candidateValidation: current-revision-ci-required
+
+recoveryPreparation:
+  candidate: "AR-06A"
+  status: candidate
+  workPackage: ".flow-agent/work-packages/adapter-certification-contract.yaml"
+  report: ".flow-agent/reports/adapter-certification-contract.md"
+  predecessorPullRequest: 197
+  predecessorHead: "397d22e2ee44150717e645f14854fb8683d4f708"
+  milestoneActivation: blocked-on-predecessor-merge-and-main-validation
+  validation: current-revision-ci-required
+  supportPromotion: false
 
 lastKnownValidation:
   flowAgentTooling: "passed-on-ar-02-closure-validation-boundary"

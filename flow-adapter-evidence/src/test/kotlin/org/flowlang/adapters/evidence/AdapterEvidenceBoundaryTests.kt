@@ -4,6 +4,17 @@ import kotlin.test.Test
 import org.flowlang.testing.ExternalCompilerProbe
 
 class AdapterEvidenceBoundaryTests {
+    @Test fun certificationAdmissionCompilesWithoutConcreteAdaptersOrConformance() {
+        ExternalCompilerProbe.accepts("""
+            import org.flowlang.adapters.certification.*
+            import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
+            fun admit(bundle: AdapterCertificationBundle, adapter: CertificationAdapterIdentity,
+                capabilities: Set<String>, provider: TargetNativeProjectionCatalog,
+                observations: List<CertificationExecutionObservation>, resolver: CertificationEvidenceResolver) =
+                AdapterCertificationAdmission.evaluate(bundle, adapter, capabilities, provider, observations, resolver)
+        """.trimIndent())
+    }
+
     @Test fun explicitCatalogEvidenceCompositionCompilesIndependently() {
         ExternalCompilerProbe.accepts("""
             import java.io.File
