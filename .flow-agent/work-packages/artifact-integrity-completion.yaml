@@ -1,0 +1,28 @@
+version: "AR-05"
+name: "Independent artifact integrity completion"
+status: active
+stream: architecture-recovery
+parent: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+authorization:
+  source: "Maintainer reports PR #196 merged and requests the next roadmap step."
+  baseline: "746ddd9d4d0d69c967884562c7793f6ce93e9a60"
+  predecessorPullRequest: 196
+invariant: "AR-05 closes exactly its four findings only against independent validation and actual-main receipts; historical evidence, other findings and successor authorization remain intact."
+scope:
+  - "Inspect all three PR #196 and actual-main inventories, artifact digests and source-bound isolation proofs."
+  - "Authenticate completion evidence before parsing and enforce distinct implementation, validation and completion boundaries."
+  - "Close F-03/F-05/F-19/F-22 and reconcile every roadmap pointer to completed AR-05 and unactivated AR-06."
+  - "Preserve all historical candidates and accepted evidence with negative regression controls."
+nonGoals:
+  - "No AR-06 activation, EF-09 resumption, public version change or adapter support promotion."
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  scope: "This closure transition needs its own CI; it does not attest its future merge or activate its successor."
+acceptedBaseline:
+  status: passed
+  pullRequest: 196
+  workflowRunId: 37276260349
+  postMergeWorkflowRunId: 37280089103
+  evidence: .flow-agent/evidence/artifact-integrity-completion-acceptance.json
+  evidenceSha256: 0dd21c793d1fca995a3b3c3d4685a0b1863c36dad710e2fa2ded920380a8c74d

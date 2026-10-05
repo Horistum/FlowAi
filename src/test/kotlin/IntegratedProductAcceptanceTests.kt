@@ -6,7 +6,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class IntegratedProductAcceptanceTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = artifactIntegrityImplementationSnapshot()
     @Suppress("UNCHECKED_CAST") private fun section(value: Any?) = value as Map<String, Any?>
     @Suppress("UNCHECKED_CAST") private fun records(value: Any?) = value as List<Map<String, Any?>>
     private fun reject(s: WorkflowSemanticsRecoveryLifecycleSnapshot) =
