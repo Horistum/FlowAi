@@ -105,17 +105,25 @@ internal class CliReleaseHonestyChecks(
             require(!releaseAssembly.contains("ADAPTER_CONTRACT_READY")) {
                 "Release assembly fabricates adapter-ready diagnostics without a target artifact."
             }
-            val publishMethod = releaseAssembly
-                .substringAfter("fun publishValidatedBundle")
-                .substringBefore("private fun releaseBundle")
-            val verifyIndex = publishMethod.indexOf("StandardBundleVerifier().verify(staging)")
-            val publishIndex = publishMethod.indexOf("publishDirectory(staging, outputDir)")
-            require(verifyIndex >= 0) {
-                "Release publication does not verify the staged bundle."
-            }
-            require(publishIndex >= 0 && verifyIndex < publishIndex) {
-                "Release bundle is published before staged verification."
-            }
+            // Exercise the production publication boundary used by the release assembler.
+            val workspace = java.nio.file.Files.createTempDirectory("release-publication-gate-").toFile()
+            try {
+                val destination = File(workspace, "published")
+                val failure = runCatching {
+                    org.flowlang.artifacts.AtomicArtifactWriter().publish(destination, mapOf(
+                        "base.txt" to org.flowlang.artifacts.ArtifactContent.encode("base.txt", "verified base"))) { staged ->
+                        require(File(staged.directory, "base.txt").isFile)
+                        error("injected release verification rejection")
+                    }
+                }
+                require(failure.isFailure && !destination.exists() && workspace.listFiles()!!.isEmpty()) {
+                    "Rejected staged release verification left a published or partial bundle."
+                }
+                require("assembly.publish(outputDir, readStandardDirectories())" in releaseAssembly &&
+                    "requirePublicationReceipt = false" in releaseAssembly) {
+                    "Release export must use the shared staged publication gate."
+                }
+            } finally { workspace.deleteRecursively() }
 
             listOf(
                 "src/main/kotlin/org/flowlang/capabilities/CompatibilityAnalyzer.kt",

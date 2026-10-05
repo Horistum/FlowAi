@@ -91,7 +91,10 @@ private fun runStandardDraftCommand(
 ): CliExecutionResult {
     val authority = StandardReleaseAssemblyAuthority()
     val destination = args.value(CliValueOption.OUT)
-    val assembly = if (destination == null) authority.assemble() else authority.writeValidatedDraft(File(destination))
+    val assembly = if (destination == null) {
+        val temporary = java.nio.file.Files.createTempDirectory("flow-draft-preview-").toFile()
+        try { authority.writeValidatedDraft(temporary) } finally { temporary.deleteRecursively() }
+    } else authority.writeValidatedDraft(File(destination))
     output.section("FLOW STANDARD DRAFT", assembly.artifacts.getValue("flow-standard-draft.json"))
     return CliExecutionResult.Completed(
         presentation = output.snapshot(),

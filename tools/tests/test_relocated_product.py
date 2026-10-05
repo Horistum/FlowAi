@@ -1,6 +1,7 @@
 """Negative controls for distribution byte and resource inventory verification."""
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -65,6 +66,35 @@ class RelocatedProductTests(unittest.TestCase):
                      "===== REPORT =====\n{}\n===== REPORT =====\n{}\n"):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 relocated.sections(text)
+
+    def test_publication_receipt_binds_bytes_inventory_and_installed_schema(self):
+        data = b'{"standardVersion":"0.8.0"}\n'
+        schema = b'{"type":"object"}'
+        (self.root / "value.json").write_bytes(data)
+        receipt = {"status": "PASS", "artifactIntegrityVersion": "1.1", "requiredArtifactsExpected": ["value.json"],
+                   "requiredArtifactsPresent": ["value.json"], "publication": {
+                       "protocol": "staged-atomic-directory-v1", "excludedPaths": ["artifact-integrity-report.json"],
+                       "fileDataForced": True, "coveredFiles": [{"path": "value.json", "sizeBytes": len(data),
+                           "sha256": hashlib.sha256(data).hexdigest(), "validation": "JSON_SCHEMA",
+                           "schema": "schemas/value.schema.json", "schemaSha256": hashlib.sha256(schema).hexdigest(),
+                           "standardVersion": "0.8.0"}]}}
+        (self.root / "artifact-integrity-report.json").write_text(json.dumps(receipt))
+        resources = {"schemas/value.schema.json": schema}
+        self.assertEqual(64, len(relocated.verify_publication(self.root, resources)))
+        (self.root / "value.json").write_bytes(data + b" ")
+        with self.assertRaisesRegex(ValueError, "bytes"):
+            relocated.verify_publication(self.root, resources)
+        (self.root / "value.json").write_bytes(data)
+        with self.assertRaisesRegex(ValueError, "schema"):
+            relocated.verify_publication(self.root, {"schemas/value.schema.json": b"false"})
+        (self.root / "extra.txt").write_text("extra")
+        with self.assertRaisesRegex(ValueError, "inventory"):
+            relocated.verify_publication(self.root, resources)
+
+    def test_logical_integrity_pass_is_not_a_publication_receipt(self):
+        (self.root / "artifact-integrity-report.json").write_text('{"status":"PASS"}')
+        with self.assertRaisesRegex(ValueError, "actual-byte"):
+            relocated.verify_publication(self.root, {})
 
 
 if __name__ == "__main__":

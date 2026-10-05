@@ -34,11 +34,11 @@ data class StandardBundleVerificationReport(
  * Verifies an exported Flow standard bundle.
  *
  * Public JSON evidence is parsed into its contract model with unknown fields and
- * duplicate keys rejected. A check id merely occurring somewhere in JSON text
- * is not conformance evidence.
+ * duplicate keys rejected. Public verification additionally requires actual-byte publication
+ * evidence. The explicit structural mode serves historical fixtures and pre-manifest staging.
  */
 class StandardBundleVerifier {
-    fun verify(bundleDir: File): StandardBundleVerificationReport {
+    fun verify(bundleDir: File, requirePublicationReceipt: Boolean = true): StandardBundleVerificationReport {
         val manifest = StandardSurface.standardExportManifest()
         val export = StandardSurface.standardExportBundle()
         val surface = StandardSurface.publicSurface()
@@ -51,13 +51,13 @@ class StandardBundleVerifier {
             .orEmpty()
 
         val missingDocuments = manifest.requiredDocuments.missingFiles(bundleDir)
-        val missingJsonArtifacts = manifest.requiredJsonArtifacts.missingFiles(bundleDir)
+        val missingJsonArtifacts = manifest.requiredJsonArtifacts.filter { requirePublicationReceipt || it != AtomicArtifactWriter.MANIFEST }.missingFiles(bundleDir)
         val missingSchemas = manifest.requiredSchemas.missingFiles(bundleDir)
         val missingDirectories = manifest.requiredDirectories
             .map { it.trimEnd('/') }
             .filterNot { File(bundleDir, it).isDirectory }
             .sorted()
-        val missingEvidence = manifest.evidenceArtifacts.missingFiles(bundleDir)
+        val missingEvidence = manifest.evidenceArtifacts.filter { requirePublicationReceipt || it != AtomicArtifactWriter.MANIFEST }.missingFiles(bundleDir)
         val missingReleaseChecks = missingReleaseChecks(
             file = File(bundleDir, "conformance-manifest.json"),
             required = releaseProfile.requiredConformanceChecks
@@ -66,7 +66,7 @@ class StandardBundleVerifier {
             file = File(bundleDir, "standard-export-bundle.json"),
             required = surface.stableArtifacts
         )
-        val missingExportRequiredFiles = export.requiredFiles.missingFiles(bundleDir)
+        val missingExportRequiredFiles = export.requiredFiles.filter { requirePublicationReceipt || it != AtomicArtifactWriter.MANIFEST }.missingFiles(bundleDir)
         val missingExportRequiredDirectories = export.requiredDirectories
             .map { it.trimEnd('/') }
             .filterNot { File(bundleDir, it).isDirectory }
@@ -127,9 +127,10 @@ class StandardBundleVerifier {
                 passMessage = "standard-version.txt matches the active Flow standard version.",
                 failMessage = "standard-version.txt does not match the active Flow standard version."
             )
-        )
+        ) + if (requirePublicationReceipt) listOf(publicationCheck(bundleDir)) else emptyList()
 
         return StandardBundleVerificationReport(
+            verificationVersion = if (requirePublicationReceipt) "1.1" else "1.1-structure",
             bundlePath = bundleDir.path,
             status = if (checks.all { it.status == "PASS" }) "PASS" else "FAIL",
             observedStandardVersion = observedVersion,
@@ -143,6 +144,15 @@ class StandardBundleVerifier {
             missingReleaseGateChecks = missingReleaseChecks,
             missingStableSurfaceArtifactsInExportBundle = missingSurfaceArtifacts
         )
+    }
+
+    private fun publicationCheck(directory: File): StandardBundleVerificationCheck = try {
+        ArtifactPublicationVerifier().verify(directory)
+        check("bundle.actual-byte-publication", emptyList(), "All published bytes match their validated receipt.", "")
+    } catch (failure: Exception) {
+        BoundedIo.limitFailure(failure)?.let { throw it }
+        check("bundle.actual-byte-publication", listOf(AtomicArtifactWriter.MANIFEST), "",
+            "Actual-byte publication evidence is missing, invalid or no longer matches the bundle.")
     }
 
     private fun missingReleaseChecks(file: File, required: List<String>): List<String> {

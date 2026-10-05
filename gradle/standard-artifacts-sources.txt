@@ -1,6 +1,9 @@
 org/flowlang/artifacts/ArtifactContractAuthority.kt
 org/flowlang/artifacts/ArtifactEvidence.kt
 org/flowlang/artifacts/ArtifactIntegrity.kt
+org/flowlang/artifacts/ArtifactPublicationVerifier.kt
+org/flowlang/artifacts/ArtifactSchemaValidator.kt
+org/flowlang/artifacts/AtomicArtifactWriter.kt
 org/flowlang/artifacts/ConformanceManifestReport.kt
 org/flowlang/artifacts/FlowArtifactBundle.kt
 org/flowlang/artifacts/PublicStandardDraft.kt

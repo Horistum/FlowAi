@@ -9,11 +9,15 @@ import kotlin.test.assertFails
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import org.flowlang.artifacts.FlowArtifactBundleReport
+import org.flowlang.artifacts.ArtifactPublicationVerifier
 import org.flowlang.artifacts.StandardBundleVerifier
 import org.flowlang.cli.Json
 import org.flowlang.cli.honest.CliExecutionResult
 import org.flowlang.cli.honest.executeCli
 import org.flowlang.release.StandardReleaseAssemblyAuthority
+import org.flowlang.release.StandardReleaseAssembly
+import org.flowlang.release.ReleaseMetadataHonestyReport
+import org.flowlang.serialization.FlowJson
 
 /** Uses the actual conformance runner and release gates, not success-shaped fixtures. */
 class ReleaseCommandIntegrationTests {
@@ -21,8 +25,9 @@ class ReleaseCommandIntegrationTests {
         // One actual assembly covers the release graph and publication gates. Do
         // not repeat its expensive conformance run for the same draft artifacts.
         val exported = File(directory, "exported")
-        val exportResult = assertIs<CliExecutionResult.Completed>(
-            executeVerificationCli(arrayOf("standard-export", "--out", exported.path)))
+        val result = executeVerificationCli(arrayOf("standard-export", "--out", exported.path))
+        val exportResult = assertIs<CliExecutionResult.Completed>(result,
+            (result as? CliExecutionResult.Rejected)?.diagnostic?.let { "${it.code}: ${it.message}" })
         assertTrue(exportResult.artifacts.all { it.persisted })
         for (name in listOf("flow-standard-draft.json", "release-metadata-honesty-report.json",
             "artifact-integrity-report.json", "standard-compliance-report.json", "conformance-manifest.json")) {
@@ -34,7 +39,23 @@ class ReleaseCommandIntegrationTests {
             .single { it.path("artifact").asText() == "release-metadata-honesty-report.json" }
         assertEquals("flow.release.metadata-honesty", provenance.path("producer").asText())
         assertEquals("PASS", StandardBundleVerifier().verify(exported).status)
+        assertTrue(Json.mapper.readTree(File(exported, "release-metadata-honesty-report.json")).path("nextCoreItem").isNull)
+        val publication = ArtifactPublicationVerifier().verify(exported).publication!!
+        assertTrue(publication.coveredFiles.any { it.path.startsWith("docs/") && it.validation == "BYTES" })
+        assertTrue(publication.coveredFiles.any { it.path == "standard-compliance-report.json" && it.validation == "JSON_SCHEMA" })
+        assertEquals(exported.path, Json.mapper.readTree(File(exported, "standard-bundle-verification.json")).path("bundlePath").asText())
         assertIs<CliExecutionResult.Completed>(executeCli(arrayOf("standard-verify", "--bundle", exported.path)))
+
+        // Reuse the real assembled base to exercise draft return values without a second
+        // expensive conformance run. Dependent reports must come back from staged bytes.
+        val deferred = setOf("standard-version.txt", "artifact-integrity-report.json", "standard-compliance-report.json", "flow-standard-draft.json")
+        val baseArtifacts = bundle.pipeline.filter { it !in deferred }.associateWith { FlowJson.readTree(File(exported, it)) }
+        val draftDirectory = File(directory, "draft")
+        val draftAssembly = StandardReleaseAssembly(bundle, baseArtifacts,
+            FlowJson.read(File(exported, "release-metadata-honesty-report.json"), ReleaseMetadataHonestyReport::class.java)).writeTo(draftDirectory)
+        assertEquals("PASS", Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
+            draftAssembly.artifacts.getValue("flow-standard-draft.json")).path("status").asText())
+        assertEquals("PASS", ArtifactPublicationVerifier().verify(draftDirectory).status)
 
         // A generated bundle is not a blanket trust receipt. The product verifier
         // still rejects its real conformance evidence when that evidence is changed.
@@ -43,6 +64,9 @@ class ReleaseCommandIntegrationTests {
         changed.put("status", "FAIL")
         Json.mapper.writeValue(manifest, changed)
         assertEquals("FAIL", StandardBundleVerifier().verify(exported).status)
+        val rejectedOutput = File(directory, "rejected-output")
+        assertIs<CliExecutionResult.Rejected>(executeCli(arrayOf("standard-verify", "--bundle", exported.path, "--out", rejectedOutput.path)))
+        assertTrue(!rejectedOutput.exists())
         // Preserve the historical public standard-verify rejection status.
         assertEquals(2, assertIs<CliExecutionResult.Rejected>(
             executeCli(arrayOf("standard-verify", "--bundle", exported.path))).exitCode)

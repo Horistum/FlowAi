@@ -61,3 +61,5 @@ checks:
   - architecture-recovery.resources.incomplete-override-never-falls-back
   - architecture-recovery.io.oversize-input-rejected-before-output
   - architecture-recovery.io.streaming-output-byte-boundary
+  - architecture-recovery.artifacts.actual-byte-publication
+  - architecture-recovery.artifacts.failed-preparation-never-publishes

@@ -66,7 +66,7 @@ internal class ExportManifestVerifierChecks(
         require(releaseProfile.requiredConformanceChecks.contains(requiredGate))
 
         val validBundle = StrictStandardBundleFixture.create(rootDir)
-        val passReport = StandardBundleVerifier().verify(validBundle)
+        val passReport = StandardBundleVerifier().verify(validBundle, requirePublicationReceipt = false)
         require(passReport.status == "PASS") {
             "A complete standard bundle fixture must pass verification: ${passReport.checks.filter { it.status != "PASS" }.joinToString { it.id + "=" + it.missing }}"
         }
@@ -80,7 +80,7 @@ internal class ExportManifestVerifierChecks(
         conformance.put("failed", 1)
         (conformance.withArray("failedChecks") as ArrayNode).add(requiredGate)
         conformanceFile.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(conformance) + "\n")
-        val failedConformanceReport = StandardBundleVerifier().verify(failedConformanceBundle)
+        val failedConformanceReport = StandardBundleVerifier().verify(failedConformanceBundle, requirePublicationReceipt = false)
         require(failedConformanceReport.status == "FAIL") {
             "A failing conformance manifest must not pass merely because gate ids occur in JSON."
         }
@@ -97,7 +97,7 @@ internal class ExportManifestVerifierChecks(
         retained.forEach { requiredArtifacts.add(it) }
         export.put("packageName", "mentions-$missingArtifact-but-does-not-declare-it")
         exportFile.writeText(Json.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(export) + "\n")
-        val substringReport = StandardBundleVerifier().verify(substringBundle)
+        val substringReport = StandardBundleVerifier().verify(substringBundle, requirePublicationReceipt = false)
         require(substringReport.status == "FAIL") {
             "A stable artifact mentioned outside requiredArtifacts must remain missing."
         }
@@ -107,7 +107,7 @@ internal class ExportManifestVerifierChecks(
         File(malformedBundle, "conformance-manifest.json").writeText(
             "{ \"message\": \"${releaseProfile.requiredConformanceChecks.joinToString()}\", \"broken\": [ }"
         )
-        val malformedReport = StandardBundleVerifier().verify(malformedBundle)
+        val malformedReport = StandardBundleVerifier().verify(malformedBundle, requirePublicationReceipt = false)
         require(malformedReport.status == "FAIL") {
             "Malformed JSON containing every gate as text must fail closed."
         }

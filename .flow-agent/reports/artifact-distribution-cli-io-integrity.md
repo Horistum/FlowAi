@@ -152,3 +152,30 @@ Public budgets and compatibility behavior are documented in
 `docs/migrations/bounded-product-io.md`. AR-05D retains write-failure rollback and atomic
 publication, and AR-05E retains integrated independent closure. Complete validation is
 recorded in the candidate PR after execution; no future CI result is claimed here.
+
+## AR-05D: atomic artifact publication and actual-byte receipts
+
+AR-05C is independently accepted from PR #193 and actual merged-main CI
+37202358850, commit `21f769f62756bb9df3a75896f7aa4ba10591ccf5`, tree
+`ff2a0e528c74f097b1a53575334afb7229b633f0`. All three inspected archives have
+identical 1800 Kotlin test identities and 270 ordered conformance checks, without
+failures, errors or skips; main also passed 155 tooling tests. The four physical
+isolation proofs bind their copied source hashes, with 52 product tests, 77
+resources and 64 relocated invocations. The immutable acceptance document is
+`.flow-agent/evidence/bounded-io-acceptance.json`; earlier receipts are unchanged.
+
+AR-05D is implemented and awaits current-revision exact-head and synthetic-merge
+CI. `AtomicArtifactWriter` stages bounded files, forces and re-reads actual bytes,
+validates declared schemas and versions, writes integrity evidence last and uses
+only an atomic directory move. Nonempty destinations are immutable. The product
+CLI and release assembler share this boundary. Public bundle verification requires
+actual-byte evidence, with schema resources carried in both installed forms.
+Failure injection covers writes, fsync, reads, manifest creation and publication;
+tampering and failed preparation cannot yield a published partial bundle.
+
+The two new conformance identities append to the accepted inventory. Historical
+structural-verifier fixtures explicitly retain their structural scope; installed
+verification requires publication receipts. See
+`docs/migrations/atomic-artifact-publication.md` for migration, receipt coverage,
+release dependency ordering, limits and filesystem guarantees. AR-05E remains
+planned; all findings and whole-milestone closure remain open.

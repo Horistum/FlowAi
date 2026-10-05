@@ -80,7 +80,7 @@ internal class SchemaScenarioCatalogChecks(
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.conformanceLevels()), FlowJson.readTree(File(schemaDir, "conformance-levels.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardSurface.standardExportManifest()), FlowJson.readTree(File(schemaDir, "standard-export-manifest.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(ConformanceVectorIndexBuilder(rootDir).build()), FlowJson.readTree(File(schemaDir, "conformance-vector-index.schema.json")))
-        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardBundleVerifier().verify(StrictStandardBundleFixture.create(rootDir))), FlowJson.readTree(File(schemaDir, "standard-bundle-verification.schema.json")))
+        JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(StandardBundleVerifier().verify(StrictStandardBundleFixture.create(rootDir), requirePublicationReceipt = false)), FlowJson.readTree(File(schemaDir, "standard-bundle-verification.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.standardIndex(core)), FlowJson.readTree(File(schemaDir, "standard-index.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(referenceConformanceSuite()), FlowJson.readTree(File(schemaDir, "conformance-suite.schema.json")))
         JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(neutral.draft(core, passingCompliance)), FlowJson.readTree(File(schemaDir, "flow-standard-draft.schema.json")))
