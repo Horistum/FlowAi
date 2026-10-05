@@ -1,0 +1,43 @@
+name: AR-05D release diagnostic
+on:
+  push:
+    branches: [agent/ar05d-release-diagnostic]
+permissions:
+  contents: read
+jobs:
+  release-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+      - name: Diagnose actual standard export
+        run: ./gradlew --no-daemon --no-build-cache :flow-conformance-kit:test --tests org.flowlang.verification.ReleaseCommandIntegrationTests.realExportContainsAValidatedDraftAndProductVerificationRejectsTampering --stacktrace
+      - name: Print precise failure evidence
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          for path in Path('flow-conformance-kit/build/test-results/test').glob('*.xml'):
+              root = ET.parse(path).getroot()
+              for case in root.findall('testcase'):
+                  for tag in ['failure', 'error']:
+                      error = case.find(tag)
+                      if error is not None:
+                          print(case.attrib['name'], error.attrib.get('message', ''))
+          PY
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ar05d-release-diagnostic
+          path: flow-conformance-kit/build/test-results/test/
+          retention-days: 7
