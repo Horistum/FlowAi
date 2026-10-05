@@ -1,6 +1,6 @@
 version: "AR-05E"
 name: "Independent integrated product integrity acceptance"
-status: active
+status: complete
 stream: architecture-recovery
 parent: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
 authorization:
@@ -17,9 +17,13 @@ nonGoals:
   - "No finding closure, AR-06 activation, EF-09 resumption, target support promotion or public version change."
   - "No current or future CI result recorded as an already accepted receipt."
 validation:
-  status: current-revision-ci-required
-  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
-  scope: "This independent acceptance revision must pass its own CI and merge before a later completion transition can accept its validation and actual-main results."
+  status: accepted-on-merged-main
+  pullRequest: 196
+  workflowRunId: 37276260349
+  postMergeWorkflowRunId: 37280089103
+  evidence: .flow-agent/evidence/artifact-integrity-completion-acceptance.json
+  scope: Independent validation and actual-main completion are accepted in the parent work package; the closure transition requires its own CI.
+
 implementationAcceptance:
   status: accepted-on-merged-main
   pullRequest: 195

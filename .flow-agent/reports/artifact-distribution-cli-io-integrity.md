@@ -249,3 +249,37 @@ F-03/F-05/F-19/F-22. AR-05 remains active, AR-06 remains planned and EF-09 stays
 Public versions, adapter support, runtime ownership and existing product behavior
 are unchanged. Local tooling/structure/context validation is available; full JVM
 validation runs in CI because the local JDK is 17 and the project requires JDK 25.
+
+
+## AR-05: independent completion
+
+All five implementation slices remain accepted. Independent validation PR #196
+(Flow CI #3331, run 37276260349) and actual merged main
+`746ddd9d4d0d69c967884562c7793f6ce93e9a60` (Flow CI #3332, run
+37280089103) have the same 1828 test identities and 274 ordered conformance checks,
+with no failures, errors or skipped tests. Eight archive hashes match GitHub metadata.
+Both source-bound isolation archives prove 68 product tests, 132 relocated CLI
+invocations, 142 resources, 24 publication manifests and 48 integrated negative cases.
+Actual main also passes 157 tooling tests; its push correctly skips the synthetic
+merge job rather than pretending to execute a second candidate.
+
+The immutable completion document binds independent validation and actual-main
+completion separately from the earlier implementation receipt. AR-05 closes only
+F-03/F-05/F-19/F-22. The full ordered inventory of 22 findings, all other owners and
+closure evidence, all five implementation receipts and historical Core/AR-01 through
+AR-04 acceptance remain intact. Roadmap pointers now identify completed AR-05 and
+unactivated AR-06. EF-09 remains paused and F-20 remains AR-07-owned.
+
+Nine regression tests cover every missing/changed/extra receipt field, swapped
+head/main identities, substituted and self-authenticated documents, missing files,
+incomplete implementations, finding omission/reordering/reclassification, pointer
+drift and successor activation. Historical fixtures replay the accepted states
+without borrowing later closure. Existing lifecycle conformance exercises this
+transition; no check identity is removed or replaced.
+
+This closure transition requires fresh exact-head and synthetic-merge CI, including
+all 1828 predecessor tests and all 274 checks. Its results are recorded in its PR
+after execution. It does not attest its own future merge. No public version, target
+support, compiler semantics or runtime ownership is changed. Full JVM validation
+runs under JDK 25 CI; the local JDK is 17. Accepted filesystem limitations remain
+those documented for bounded I/O and atomic publication.

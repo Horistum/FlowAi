@@ -54,7 +54,7 @@ class IntegratedProductIntegrityLifecycleTests {
 
 /** Replay the integrated implementation candidate without borrowing later acceptance. */
 internal fun integratedProductCandidateSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot {
-    val current = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    val current = artifactIntegrityImplementationSnapshot()
     @Suppress("UNCHECKED_CAST")
     val slices = current.artifactWorkPackage["implementationSlices"] as List<Map<String, Any?>>
     @Suppress("UNCHECKED_CAST")

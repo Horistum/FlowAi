@@ -1,14 +1,15 @@
 version: "AR-05"
 name: "Artifact, Distribution, CLI and I/O Integrity"
 type: "architecture-recovery-artifact-integrity"
-status: active
+status: complete
 stream: "architecture-recovery"
 objective: "Make installed CLI inputs unambiguous and bounded, resolve packaged contracts independently of the checkout, and publish artifacts only after validating actual written bytes."
 authorization:
-  status: active
-  predecessor: "AR-04"
-  strategicSource: ".flow-agent/roadmap-architecture-recovery.yaml#AR-05"
-  rule: "Maintainer explicitly authorizes AR-05. Its accepted AR-04 baseline is immutable; each implementation slice requires its own exact-head and synthetic-merge CI."
+  status: completed
+  predecessor: AR-04
+  strategicSource: .flow-agent/roadmap-architecture-recovery.yaml#AR-05
+  rule: Maintainer explicitly authorizes AR-05. Its accepted AR-04 baseline is immutable; each implementation slice requires its own exact-head and synthetic-merge CI.
+
 selectedSlice: "AR-05E"
 nextSlice: ""
 implementationSlices:
@@ -58,45 +59,55 @@ implementationSlices:
       mainCommit: cae75f57d10d3ce0a6ec789a81487e6b8acbda39
       workflowRunId: 37274339828
 completionDecision:
-  status: not-complete
-  closesFindings: []
-  remainingFindings: ["F-03", "F-05", "F-19", "F-22"]
-  nextItem: "AR-06"
+  status: complete
+  completedSlice: AR-05E
+  closesFindings:
+  - F-03
+  - F-05
+  - F-19
+  - F-22
+  remainingFindings: []
+  nextItem: AR-06
   nextItemActivationState: not-activated
-architecturePurpose: "Accept the integrated installed product from independently inspected PR and actual-main evidence while retaining separate validation and completion boundaries."
+
+architecturePurpose: "Close the accepted integrated product milestone against independent validation and actual-main evidence while preserving historical receipts and successor authorization."
 universalInvariant: "A rejected input never mutates existing output or publishes partial artifacts; successful installed-product outputs bind their actual bytes."
 scope:
   include:
-    - "Independent acceptance of PR #195 and actual-main CI 37274339828, including complete inventory and artifact hash comparison."
-    - "Exact implementation receipt fields authenticated against immutable integrated evidence bytes."
-    - "Historical candidate replay and all existing installed-product behavior remain independently checked."
+  - 'Authenticate independent PR #196 validation and actual-main completion receipts.'
+  - Close exactly F-03/F-05/F-19/F-22 while preserving every finding owner and historical acceptance.
+  - Reconcile completed AR-05 and unactivated AR-06 pointers; retain fresh CI for this closure transition.
   exclude:
-    - "Future CI attestation, finding closure or AR-06 activation before independent acceptance."
-    - "Adapter support promotion, unconditional filesystem timing/durability guarantees and version changes."
+  - AR-06 activation, EF-09 resumption, adapter support promotion and public version changes.
+  - Future CI attestation or stronger filesystem guarantees than the accepted implementation provides.
+
 expectedFilesToInspect:
   - "src/main/kotlin/org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt"
   - ".flow-agent/evidence/atomic-publication-acceptance.json"
 expectedFilesToChange:
-  - "src/main/kotlin/org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt"
-  - "src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt"
+- src/main/kotlin/org/flowlang/conformance/ArtifactIntegrityLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+- gradle/conformance-kit-sources.txt
+
 expectedFilesToAdd:
-  - ".flow-agent/evidence/integrated-product-implementation-acceptance.json"
-  - ".flow-agent/work-packages/integrated-product-integrity-acceptance.yaml"
-  - "src/test/kotlin/IntegratedProductAcceptanceTests.kt"
+- src/main/kotlin/org/flowlang/conformance/ArtifactIntegrityCompletion.kt
+- src/test/kotlin/ArtifactIntegrityCompletionTests.kt
+- .flow-agent/evidence/artifact-integrity-completion-acceptance.json
+
 testsToAddOrUpdate:
-  - "Reject missing, altered, substituted and self-authenticated integrated acceptance bytes and fields."
-  - "Keep PR head, synthetic merge and actual-main identities distinct; preserve all historical candidates."
-  - "Reject borrowed implementation evidence, premature finding closure and AR-06 activation."
+- Reject missing, altered, substituted or self-authenticated closure evidence and every changed receipt field.
+- Preserve all historical lifecycle states and reject incomplete implementation, incorrect ownership and successor activation.
+- Require distinct PR head, synthetic merge and actual-main identities and complete ordered finding preservation.
+
 conformanceToAddOrUpdate:
   - "Existing lifecycle conformance exercises the new acceptance transition; retain all 274 ordered check identities."
 documentationToUpdate:
   - "Record independent implementation acceptance and the remaining validation/completion transition."
 validationPlan:
-  - "Accept AR-05E only after inspecting PR #195 and actual merged-main CI 37274339828."
-  - "Run all tooling tests, structure validation and context generation."
-  - "Run physical isolation and complete tests/conformance on exact head and synthetic merge."
-  - "Preserve all 1822 predecessor test identities and all 274 ordered conformance checks."
-  - "This acceptance revision requires its own PR and actual-main validation before independent closure."
+- 'Accept independent PR #196 only after actual-main CI 37280089103 and all three 1828-test/274-check inventories are inspected.'
+- Run tooling, structure and context validation.
+- Run fresh isolation, exact-head and synthetic-merge compilation/tests/conformance for this closure transition.
+- Preserve all 1828 predecessor test identities and all 274 ordered conformance checks.
 
 lifecycle:
   activationBoundary:
@@ -131,9 +142,45 @@ lifecycle:
     evidence: ".flow-agent/evidence/integrated-product-implementation-acceptance.json"
     evidenceSha256: "d521109b78b524f818b388200680df26b58098c1af3c7781e9c8349090c41f6f"
   validationBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    sourceTree: 2ff93db0b3ace55bbf0f3c587e7c02cdc3d8628e
+    kotlinTests: 1828
+    toolingTests: 157
+    conformanceChecks: 274
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: .flow-agent/evidence/artifact-integrity-completion-acceptance.json
+    evidenceSha256: 0dd21c793d1fca995a3b3c3d4685a0b1863c36dad710e2fa2ded920380a8c74d
+    workflowRunId: 37276260349
+    workflowRunNumber: 3331
+    exactHead: 80cfe2623981115b9e463d968c26c3640ff26ba3
+    syntheticMergeCandidate: 9755f6207ae5aac46c2338e729a837642b6b79ec
+    base: cae75f57d10d3ce0a6ec789a81487e6b8acbda39
+    exactHeadJobId: 111655619264
+    mergeCandidateJobId: 111655619338
+    isolationJobId: 111653883020
   completionBoundary:
-    status: pending
+    status: passed
+    conclusion: success
+    sourceTree: 2ff93db0b3ace55bbf0f3c587e7c02cdc3d8628e
+    kotlinTests: 1828
+    toolingTests: 157
+    conformanceChecks: 274
+    failures: 0
+    errors: 0
+    skipped: 0
+    evidence: .flow-agent/evidence/artifact-integrity-completion-acceptance.json
+    evidenceSha256: 0dd21c793d1fca995a3b3c3d4685a0b1863c36dad710e2fa2ded920380a8c74d
+    event: push
+    mergedPullRequest: 196
+    mainCommit: 746ddd9d4d0d69c967884562c7793f6ce93e9a60
+    validatedHead: 80cfe2623981115b9e463d968c26c3640ff26ba3
+    workflowRunId: 37280089103
+    workflowRunNumber: 3332
+    exactHeadJobId: 111668794256
+    isolationJobId: 111665952063
 
 verifiedBaseline:
   status: passed
@@ -153,3 +200,6 @@ verifiedBaseline:
   skipped: 0
   evidence: .flow-agent/evidence/artifact-integrity-activation-baseline.json
   evidenceSha256: 28ee22ce6c628ca8166bd8a3dc70bf05f3b1579487287b61ea01a529f6afd5af
+acceptanceEvidence:
+  path: .flow-agent/evidence/artifact-integrity-completion-acceptance.json
+  sha256: 0dd21c793d1fca995a3b3c3d4685a0b1863c36dad710e2fa2ded920380a8c74d

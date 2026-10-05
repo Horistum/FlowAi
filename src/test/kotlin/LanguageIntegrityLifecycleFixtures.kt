@@ -52,7 +52,7 @@ internal fun languageIntegrityImplementationSnapshot(
 
 /** The completed AR-04 context is independent of later active milestone pointers. */
 internal fun languageIntegrityCompletedSnapshot(
-    current: WorkflowSemanticsRecoveryLifecycleSnapshot = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    current: WorkflowSemanticsRecoveryLifecycleSnapshot = artifactIntegrityImplementationSnapshot()
 ): WorkflowSemanticsRecoveryLifecycleSnapshot {
     fun section(value: Any?): Map<String, Any?> = (value as Map<*, *>).entries.associate { it.key.toString() to it.value }
     fun records(value: Any?) = (value as List<*>).map(::section)

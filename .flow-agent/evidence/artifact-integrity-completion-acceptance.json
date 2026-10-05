@@ -1,0 +1,403 @@
+{
+  "version": 1,
+  "status": "passed",
+  "repository": "Horistum/FlowAi",
+  "scope": "independent-artifact-validation-and-completion",
+  "pullRequest": 196,
+  "head": "80cfe2623981115b9e463d968c26c3640ff26ba3",
+  "syntheticMerge": "9755f6207ae5aac46c2338e729a837642b6b79ec",
+  "base": "cae75f57d10d3ce0a6ec789a81487e6b8acbda39",
+  "mergedMain": "746ddd9d4d0d69c967884562c7793f6ce93e9a60",
+  "sourceTree": "2ff93db0b3ace55bbf0f3c587e7c02cdc3d8628e",
+  "workflowRunId": 37276260349,
+  "workflowRunNumber": 3331,
+  "jobs": {
+    "exactHead": 111655619264,
+    "mergeCandidate": 111655619338,
+    "physicalIsolation": 111653883020,
+    "tooling": 111653828581
+  },
+  "postMerge": {
+    "workflowRunId": 37280089103,
+    "workflowRunNumber": 3332,
+    "exactHeadJobId": 111668794256,
+    "isolationJobId": 111665952063,
+    "toolingJobId": 111665895368
+  },
+  "toolingTests": 157,
+  "junit": {
+    "exactHead": {
+      "tests": 1828,
+      "suites": 321,
+      "identitiesSha256": "2ea5d249a9c52b25d5b386d169e93181b4aaf2a64e9beb3e79b23eda8a2d6606"
+    },
+    "mergeCandidate": {
+      "tests": 1828,
+      "suites": 321,
+      "identitiesSha256": "2ea5d249a9c52b25d5b386d169e93181b4aaf2a64e9beb3e79b23eda8a2d6606"
+    },
+    "actualMain": {
+      "tests": 1828,
+      "suites": 321,
+      "identitiesSha256": "2ea5d249a9c52b25d5b386d169e93181b4aaf2a64e9beb3e79b23eda8a2d6606"
+    }
+  },
+  "conformance": {
+    "exactHead": {
+      "passed": 274,
+      "failed": 0,
+      "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+    },
+    "mergeCandidate": {
+      "passed": 274,
+      "failed": 0,
+      "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+    },
+    "actualMain": {
+      "passed": 274,
+      "failed": 0,
+      "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+    }
+  },
+  "allThreeCandidateAndMainInventoriesIdentical": true,
+  "physicalIsolation": {
+    "pullRequest": {
+      "revision": {
+        "revision": "80cfe2623981115b9e463d968c26c3640ff26ba3",
+        "tree": "2ff93db0b3ace55bbf0f3c587e7c02cdc3d8628e",
+        "covers": "exact-head,merge-candidate",
+        "run": "37276260349",
+        "attempt": "1"
+      },
+      "proofs": {
+        "adapter-isolation/proof.json": {
+          "verifiedInputHashes": 217
+        },
+        "compiler-isolation/proof.json": {
+          "verifiedInputHashes": 95
+        },
+        "kernel-isolation/proof.json": {
+          "verifiedInputHashes": 19
+        },
+        "product-isolation/proof.json": {
+          "verifiedInputHashes": 422,
+          "tests": 68,
+          "invocations": 132,
+          "publicationManifests": 24,
+          "resourceCount": 142,
+          "rejectedIntegratedCases": 48,
+          "sourceInputsDeleted": true,
+          "distributionBytesIdentical": true
+        }
+      },
+      "archiveSha256": "9cbf7a1a1a7469bcb92145a6876d0597d15b0c6891f359a967d1119fd8b4ac78"
+    },
+    "actualMain": {
+      "revision": {
+        "revision": "746ddd9d4d0d69c967884562c7793f6ce93e9a60",
+        "tree": "2ff93db0b3ace55bbf0f3c587e7c02cdc3d8628e",
+        "covers": "exact-head",
+        "run": "37280089103",
+        "attempt": "1"
+      },
+      "proofs": {
+        "adapter-isolation/proof.json": {
+          "verifiedInputHashes": 217
+        },
+        "compiler-isolation/proof.json": {
+          "verifiedInputHashes": 95
+        },
+        "kernel-isolation/proof.json": {
+          "verifiedInputHashes": 19
+        },
+        "product-isolation/proof.json": {
+          "verifiedInputHashes": 422,
+          "tests": 68,
+          "invocations": 132,
+          "publicationManifests": 24,
+          "resourceCount": 142,
+          "rejectedIntegratedCases": 48,
+          "sourceInputsDeleted": true,
+          "distributionBytesIdentical": true
+        }
+      },
+      "archiveSha256": "b9a44ab56ac7fabf269b437720b4c95912cc64ac702269a3e217bb11fa5ff10c"
+    }
+  },
+  "artifacts": [
+    {
+      "boundary": "pullRequest",
+      "id": 11331130915,
+      "name": "flow-ci-exact-head-test-reports",
+      "sha256": "c76284bfa55f3a79f9bcb4f3a484cdbd0f03c95b4f5a63ae555ce7cedfb75a7f"
+    },
+    {
+      "boundary": "pullRequest",
+      "id": 11330877193,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "sha256": "d60af7002e9f9ebdde2edb9c14f15bc071cbc5a3fab2868fad779db1c786d6b1"
+    },
+    {
+      "boundary": "pullRequest",
+      "id": 11330733003,
+      "name": "flow-ci-merge-candidate-gradle-logs",
+      "sha256": "bac6bbba9671fe5d5b075a8acb0eebd1dbd6eccb3145015cd3a59c70884d8ea9"
+    },
+    {
+      "boundary": "pullRequest",
+      "id": 11330707970,
+      "name": "flow-ci-merge-candidate-test-reports",
+      "sha256": "9d9666a9e58333ab8c73991a39e46a2dd9d57fb1857360cce96cbe4d86a69f55"
+    },
+    {
+      "boundary": "pullRequest",
+      "id": 11330646440,
+      "name": "flow-isolation-exact-head",
+      "sha256": "9cbf7a1a1a7469bcb92145a6876d0597d15b0c6891f359a967d1119fd8b4ac78"
+    },
+    {
+      "boundary": "actualMain",
+      "id": 11332782132,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "sha256": "4bea1325195d311eaf7d9300a8c1f836801cfbc3469d6b8ae1207472b51dd40e"
+    },
+    {
+      "boundary": "actualMain",
+      "id": 11332731036,
+      "name": "flow-isolation-exact-head",
+      "sha256": "b9a44ab56ac7fabf269b437720b4c95912cc64ac702269a3e217bb11fa5ff10c"
+    },
+    {
+      "boundary": "actualMain",
+      "id": 11332329107,
+      "name": "flow-ci-exact-head-test-reports",
+      "sha256": "4767cf06f63bb21da8dba4ca8de3c7adc6b74f233383a10e53600318fc5a2d9f"
+    }
+  ],
+  "closesFindings": [
+    "F-03",
+    "F-05",
+    "F-19",
+    "F-22"
+  ],
+  "findingStateBeforeClosure": [
+    {
+      "id": "F-01",
+      "severity": "CRITICAL",
+      "title": "Jenkins executable rendering can change parallel, loop and match meaning.",
+      "containmentMilestone": "AR-00",
+      "closureMilestone": "AR-06"
+    },
+    {
+      "id": "F-02",
+      "severity": "HIGH",
+      "title": "Validation and planning are not flow-sensitive and confuse may-exist with must-exist values.",
+      "closureMilestone": "AR-02"
+    },
+    {
+      "id": "F-03",
+      "severity": "HIGH",
+      "title": "Artifact integrity is self-attested before files are written.",
+      "closureMilestone": "AR-05"
+    },
+    {
+      "id": "F-04",
+      "severity": "HIGH",
+      "title": "Flow Source and executable intent use different compiler axes.",
+      "closureMilestone": "AR-01"
+    },
+    {
+      "id": "F-05",
+      "severity": "HIGH",
+      "title": "CLI and authorities depend on repository-relative working-directory state.",
+      "closureMilestone": "AR-05"
+    },
+    {
+      "id": "F-06",
+      "severity": "HIGH",
+      "title": "Capability registry claims are not behaviorally bound to renderers.",
+      "containmentMilestone": "AR-00",
+      "closureMilestone": "AR-06"
+    },
+    {
+      "id": "F-07",
+      "severity": "HIGH",
+      "title": "Flow parsing silently keeps the last value for multiple duplicate declarations.",
+      "closureMilestone": "AR-04",
+      "status": "closed",
+      "closureEvidence": ".flow-agent/evidence/language-integrity-completion-acceptance.json"
+    },
+    {
+      "id": "F-08",
+      "severity": "MEDIUM",
+      "title": "The model declares multiple workflows while executable lowering supports one.",
+      "closureMilestone": "AR-02"
+    },
+    {
+      "id": "F-09",
+      "severity": "MEDIUM",
+      "title": "SemanticActionGraph is not the central execution IR it claims to be.",
+      "closureMilestone": "AR-01"
+    },
+    {
+      "id": "F-10",
+      "severity": "MEDIUM",
+      "title": "Architecture boundaries are not enforced by the compiler or build graph.",
+      "closureMilestone": "AR-03",
+      "status": "closed",
+      "closureEvidence": ".flow-agent/evidence/compiler-module-acceptance.json"
+    },
+    {
+      "id": "F-11",
+      "severity": "MEDIUM",
+      "title": "Declared target portfolio is much broader than executable certification.",
+      "containmentMilestone": "AR-00",
+      "closureMilestone": "AR-06"
+    },
+    {
+      "id": "F-12",
+      "severity": "MEDIUM",
+      "title": "Module schema types are open strings and defaults are not type-checked.",
+      "closureMilestone": "AR-04",
+      "status": "closed",
+      "closureEvidence": ".flow-agent/evidence/language-integrity-completion-acceptance.json"
+    },
+    {
+      "id": "F-13",
+      "severity": "MEDIUM",
+      "title": "Duplicate system types across modules are resolved by load order.",
+      "closureMilestone": "AR-04",
+      "status": "closed",
+      "closureEvidence": ".flow-agent/evidence/language-integrity-completion-acceptance.json"
+    },
+    {
+      "id": "F-14",
+      "severity": "MEDIUM",
+      "title": "Intent identities use lossy lowering and can collide across boundaries.",
+      "closureMilestone": "AR-04",
+      "status": "closed",
+      "closureEvidence": ".flow-agent/evidence/language-integrity-completion-acceptance.json"
+    },
+    {
+      "id": "F-15",
+      "severity": "MEDIUM",
+      "title": "Global error handling is encoded as a synthetic tail Try node.",
+      "closureMilestone": "AR-02"
+    },
+    {
+      "id": "F-16",
+      "severity": "MEDIUM",
+      "title": "AI normalization is heuristic, uncalibrated and loses provider provenance.",
+      "closureMilestone": "AR-07"
+    },
+    {
+      "id": "F-17",
+      "severity": "MEDIUM",
+      "title": "IR and report models are stringly typed and semantically redundant.",
+      "closureMilestone": "AR-01"
+    },
+    {
+      "id": "F-18",
+      "severity": "MEDIUM",
+      "title": "Test volume is high but critical execution behavior is underweighted.",
+      "containmentMilestone": "AR-00",
+      "closureMilestone": "AR-06"
+    },
+    {
+      "id": "F-19",
+      "severity": "LOW",
+      "title": "CLI option values can be mistaken for positional source arguments.",
+      "closureMilestone": "AR-05"
+    },
+    {
+      "id": "F-20",
+      "severity": "LOW",
+      "title": "Migration overlaps and compatibility wrappers create API ambiguity.",
+      "containmentMilestone": "AR-03",
+      "closureMilestone": "AR-07",
+      "status": "contained"
+    },
+    {
+      "id": "F-21",
+      "severity": "LOW",
+      "title": "A benevolent non-strict FlowYaml API remains publicly available.",
+      "closureMilestone": "AR-04",
+      "status": "closed",
+      "closureEvidence": ".flow-agent/evidence/language-integrity-completion-acceptance.json"
+    },
+    {
+      "id": "F-22",
+      "severity": "LOW",
+      "title": "Input limits and atomic I/O boundaries are not systematic.",
+      "closureMilestone": "AR-05"
+    }
+  ],
+  "predecessor": {
+    "authorization": {
+      "status": "active",
+      "predecessor": "AR-04",
+      "strategicSource": ".flow-agent/roadmap-architecture-recovery.yaml#AR-05",
+      "rule": "Maintainer explicitly authorizes AR-05. Its accepted AR-04 baseline is immutable; each implementation slice requires its own exact-head and synthetic-merge CI."
+    },
+    "completionDecision": {
+      "status": "not-complete",
+      "closesFindings": [],
+      "remainingFindings": [
+        "F-03",
+        "F-05",
+        "F-19",
+        "F-22"
+      ],
+      "nextItem": "AR-06",
+      "nextItemActivationState": "not-activated"
+    },
+    "recoveryDecision": {
+      "previousCompletedItem": "AR-04",
+      "previousCompletedItemName": "Language, Contract, Type and Identity Integrity",
+      "nextItem": "AR-05",
+      "nextItemName": "Artifact, Distribution, CLI and I/O Integrity",
+      "activationState": "active",
+      "workPackage": ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+    },
+    "postDecision": {
+      "completedItem": "AR-04",
+      "completedItemName": "Language, Contract, Type and Identity Integrity",
+      "nextItem": "AR-05",
+      "nextItemName": "Artifact, Distribution, CLI and I/O Integrity",
+      "activationState": "active",
+      "workPackage": ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+    },
+    "recoveryRoadmap": {
+      "completedItem": "AR-04",
+      "activeItem": "AR-05",
+      "activeWorkPackage": ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml",
+      "nextItem": "AR-05",
+      "activationState": "active"
+    },
+    "sequence": {
+      "status": "active",
+      "completedItem": "AR-04",
+      "activeItem": "AR-05",
+      "nextItem": "AR-05",
+      "activationState": "active",
+      "workPackage": ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+    },
+    "releaseState": {
+      "completedRecoveryItem": "AR-04",
+      "completedRecoveryItemName": "Language, Contract, Type and Identity Integrity",
+      "completedRecoveryWorkPackage": ".flow-agent/work-packages/language-contract-type-identity-integrity.yaml",
+      "activeRecoveryWorkPackage": ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml",
+      "nextRecoveryItem": "AR-05",
+      "nextRecoveryItemName": "Artifact, Distribution, CLI and I/O Integrity",
+      "nextRecoveryActivationState": "active"
+    },
+    "recoveryAcceptance": {
+      "completedItem": "AR-04",
+      "evidence": ".flow-agent/evidence/language-integrity-completion-acceptance.json",
+      "acceptedMain": "22c382b86351c8f7a17be8150ade0833653cce5d",
+      "workflowRunId": 36987070806,
+      "successorCandidate": "AR-05",
+      "candidateValidation": "current-revision-ci-required"
+    }
+  }
+}

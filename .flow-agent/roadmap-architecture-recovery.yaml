@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 15
+revision: 16
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -15,17 +15,17 @@ auditBaseline:
   coverageRule: "Every F-01 through F-22 finding has one explicit closure milestone. Findings with immediate safety impact also have a separate containment milestone. A finding may be reclassified only by reviewed production-code evidence; it may not disappear from the roadmap because an implementation is inconvenient."
 
 currentDecision:
-  previousCompletedItem: "AR-04"
-  previousCompletedItemName: "Language, Contract, Type and Identity Integrity"
+  previousCompletedItem: "AR-05"
+  previousCompletedItemName: "Artifact, Distribution, CLI and I/O Integrity"
   preemptedItem: "EF-09"
   preemptedItemName: "Human Approval and Change-Control Falsification"
   preemptedItemState: "active-after-evidence-admission"
   preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
-  nextItem: "AR-05"
-  nextItemName: "Artifact, Distribution, CLI and I/O Integrity"
-  activationState: "active"
+  nextItem: "AR-06"
+  nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
+  activationState: "not-activated"
   workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  decisionBasis: "AR-04 closes F-07/F-12/F-13/F-14/F-21 against accepted A-through-F implementations, separate PR #189 validation and actual merged-main CI 36987070806. The maintainer explicitly activates AR-05; AR-05A is accepted from PR #191 and actual merged-main CI 36998199817. AR-05B is accepted from PR #192 and actual merged-main CI 37163508408 with identical 1780-test and 268-check inventories. AR-05C is accepted from PR #193 and actual merged-main CI 37202358850 with identical 1800-test and 270-check inventories. AR-05D is accepted from PR #194 and actual merged-main CI 37270649521 with identical 1815-test and 272-check inventories. AR-05E implementation is accepted from PR #195 and actual merged-main CI 37274339828 with identical 1822-test and 274-check inventories, 132 relocated CLI invocations and exact archive/source hashes. Its independent acceptance revision requires fresh CI and actual-main validation before closure. EF-09 stays paused and F-20 remains AR-07-owned."
+  decisionBasis: "AR-05 closes F-03/F-05/F-19/F-22 against accepted A-through-E implementation, separate PR #196 validation and actual merged-main CI 37280089103. All three validation archives have identical 1828-test and 274-check inventories; source-bound isolation proves 132 relocated CLI invocations. AR-06 is the next candidate and requires separate activation after this closure transition passes its own CI. EF-09 stays paused; F-20 remains AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -199,7 +199,7 @@ milestones:
   - id: "AR-05"
     name: "Artifact, Distribution, CLI and I/O Integrity"
     order: 6
-    status: "active"
+    status: "completed"
     workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
     report: ".flow-agent/reports/artifact-distribution-cli-io-integrity.md"
     dependsOn: ["AR-03", "AR-04"]
@@ -278,6 +278,9 @@ findingRegister:
     severity: "HIGH"
     title: "Artifact integrity is self-attested before files are written."
     closureMilestone: "AR-05"
+    status: "closed"
+    closureEvidence: ".flow-agent/evidence/artifact-integrity-completion-acceptance.json"
+
   - id: "F-04"
     severity: "HIGH"
     title: "Flow Source and executable intent use different compiler axes."
@@ -286,6 +289,9 @@ findingRegister:
     severity: "HIGH"
     title: "CLI and authorities depend on repository-relative working-directory state."
     closureMilestone: "AR-05"
+    status: "closed"
+    closureEvidence: ".flow-agent/evidence/artifact-integrity-completion-acceptance.json"
+
   - id: "F-06"
     severity: "HIGH"
     title: "Capability registry claims are not behaviorally bound to renderers."
@@ -355,6 +361,9 @@ findingRegister:
     severity: "LOW"
     title: "CLI option values can be mistaken for positional source arguments."
     closureMilestone: "AR-05"
+    status: "closed"
+    closureEvidence: ".flow-agent/evidence/artifact-integrity-completion-acceptance.json"
+
   - id: "F-20"
     severity: "LOW"
     title: "Migration overlaps and compatibility wrappers create API ambiguity."
@@ -371,6 +380,8 @@ findingRegister:
     severity: "LOW"
     title: "Input limits and atomic I/O boundaries are not systematic."
     closureMilestone: "AR-05"
+    status: "closed"
+    closureEvidence: ".flow-agent/evidence/artifact-integrity-completion-acceptance.json"
 
 overallAcceptance:
   - "F-01 through F-22 each have exact production, test and validation evidence and no finding is closed by prose alone."

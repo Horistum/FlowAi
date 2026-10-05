@@ -69,3 +69,19 @@ Independent acceptance has its own work package and fresh CI requirement. Its
 validation and completion boundaries remain pending until its PR and actual-main
 results can be inspected by the subsequent completion transition. Implementation
 acceptance alone cannot close findings or activate AR-06.
+
+
+## Completed AR-05 boundary
+
+AR-05 is closed against the independently validated acceptance revision PR #196
+and actual-main run 37280089103. The completion document separately binds the
+PR head, synthetic merge and actual main; their complete inventories contain
+1828 tests and 274 conformance checks. Implementation acceptance remains its
+original immutable receipt and cannot substitute for validation or completion.
+
+Only F-03/F-05/F-19/F-22 change to closed. All 22 finding identities, their order,
+ownership and unrelated closure records are preserved exactly. Missing evidence,
+changed receipt fields, incomplete accepted slices or inconsistent roadmap pointers
+reject the transition. AR-06 remains a candidate requiring separate activation
+after the closure transition itself is validated. The accepted public product
+contract and its documented filesystem limitations remain unchanged.

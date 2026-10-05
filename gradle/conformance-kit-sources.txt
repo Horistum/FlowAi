@@ -35,6 +35,7 @@ org/flowlang/conformance/AdapterTopologyConformanceChecks.kt
 org/flowlang/conformance/AdapterTriggerConformanceChecks.kt
 org/flowlang/conformance/ArchitectureCoherenceChecks.kt
 org/flowlang/conformance/ArchitectureRecoveryConformanceChecks.kt
+org/flowlang/conformance/ArtifactIntegrityCompletion.kt
 org/flowlang/conformance/ArtifactIntegrityLifecycle.kt
 org/flowlang/conformance/AtomicPublicationConformanceChecks.kt
 org/flowlang/conformance/AtomicPublicationLifecycle.kt
