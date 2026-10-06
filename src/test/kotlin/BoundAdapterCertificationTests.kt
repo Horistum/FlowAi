@@ -5,6 +5,7 @@ import java.security.MessageDigest
 import kotlin.test.*
 import org.flowlang.adapters.certification.*
 import org.flowlang.adapters.testing.AdapterRuntimeTestFixtures
+import org.flowlang.compiler.requireAccepted
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.distribution.reference.ReferenceTargetProjections
