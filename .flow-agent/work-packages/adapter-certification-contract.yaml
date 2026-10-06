@@ -1,0 +1,35 @@
+version: "AR-06A"
+name: "Adapter certification bundle and evidence admission"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests continued roadmap development after preparation of PR #197."
+  predecessorPullRequest: 197
+  predecessorHead: "397d22e2ee44150717e645f14854fb8683d4f708"
+  milestoneActivation: blocked-on-predecessor-merge-and-main-validation
+invariant: "A certification candidate binds one adapter revision to explicit coverage, canonical scenarios and separately supplied execution observations; missing, mismatched or ineffective negative evidence fails admission."
+scope:
+  - "Define a typed AdapterCertificationBundle consuming the existing structural vocabulary and native catalog without another support registry."
+  - "Check exact provider leaf inventory, complete structural coverage and explicit semantic coverage."
+  - "Bind positive and negative runs to canonical graph, fixture, rendered artifact, runtime prerequisites and observable bytes."
+  - "Require successful baselines and behavior-changing mutants; runner failures are never killed mutants."
+  - "Keep evidence resolution injected and independent from bundle declarations."
+nonGoals:
+  - "No AR-06 activation or finding closure before predecessor merge and main validation."
+  - "No target support promotion, runtime execution, public artifact schema or version change."
+  - "No replacement of canonical semantics, existing C0.3 observation normalization or historical evidence."
+ownershipBoundary:
+  production: flow-adapter-evidence
+  concreteAdapters: unchanged
+  semanticKernel: unchanged
+  evidenceTrust: "The caller owns runner authentication and normalized observations; admission checks integrity and scope, not provenance authenticity."
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  negativeEvidence: "Wrong identities, missing evidence, stale digests, incomplete coverage, surviving mutants, failed baselines and infrastructure failures."
+  isolation: "Generic adapter tests execute after physical removal of concrete adapters, CLI, distribution and conformance sources."
+followUp:
+  - "Validate PR #197 actual main and activate AR-06 separately."
+  - "Populate real adapter-owned bundles and independent behavioral runners."
+  - "Derive public views from admitted evidence and prove equivalent scenarios on two materially different adapters."
