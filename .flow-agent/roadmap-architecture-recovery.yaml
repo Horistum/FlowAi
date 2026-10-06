@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 16
+revision: 17
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -23,9 +23,9 @@ currentDecision:
   preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
   nextItem: "AR-06"
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
-  activationState: "not-activated"
-  workPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  decisionBasis: "AR-05 closes F-03/F-05/F-19/F-22 against accepted A-through-E implementation, separate PR #196 validation and actual merged-main CI 37280089103. All three validation archives have identical 1828-test and 274-check inventories; source-bound isolation proves 132 relocated CLI invocations. AR-06 is the next candidate and requires separate activation after this closure transition passes its own CI. EF-09 stays paused; F-20 remains AR-07-owned."
+  activationState: "active"
+  workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+  decisionBasis: "AR-06 is active after PR #197 and PR #198 merged and actual-main CI 37404887172 passed. PR #198 exact-head, synthetic-merge and actual-main archives have identical 1859-test and 274-check inventories with source-bound isolation. AR-06A is accepted; AR-06B binds scenario inputs and occurrence scope to compiler and rendering authorities. All AR-06 findings remain open; EF-09 stays paused and F-20 stays AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -223,7 +223,7 @@ milestones:
   - id: "AR-06"
     name: "Behavioral Adapter Certification and Honest Target Portfolio"
     order: 7
-    status: "planned"
+    status: "active"
     dependsOn: ["AR-02", "AR-03", "AR-05"]
     closesFindings: ["F-01", "F-06", "F-11", "F-18"]
     purpose: "Replace handwritten support optimism with adapter-owned, behaviorally falsifiable certification over the canonical graph."

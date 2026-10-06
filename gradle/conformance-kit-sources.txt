@@ -23,6 +23,7 @@ org/flowlang/conformance/AbstractTopologyMatrixPlanFactory.kt
 org/flowlang/conformance/AbstractTopologyMatrixRoadmapLifecycleAuthority.kt
 org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt
 org/flowlang/conformance/AdapterBindingConformanceChecks.kt
+org/flowlang/conformance/AdapterCertificationLifecycle.kt
 org/flowlang/conformance/AdapterContinuityConformanceChecks.kt
 org/flowlang/conformance/AdapterControlConformanceChecks.kt
 org/flowlang/conformance/AdapterExecutableContinuityConformanceChecks.kt

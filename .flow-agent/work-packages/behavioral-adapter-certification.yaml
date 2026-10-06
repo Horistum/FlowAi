@@ -1,0 +1,35 @@
+version: "AR-06"
+name: "Behavioral Adapter Certification and Honest Target Portfolio"
+status: active
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap step after merging PR #197 and PR #198."
+  acceptedMain: "8972f0f583c2db7c4f8643d6a1c835149ae99c1f"
+  workflowRunId: 37404887172
+selectedSlice: "AR-06B"
+acceptedSlices: ["AR-06A"]
+invariant: "Certification scenario inputs and occurrence coverage come from an authorized compilation and executable rendering, never from candidate declarations alone."
+scope:
+  - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
+  - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
+  - "Activate AR-06 against independently verified PR and actual-main receipts while preserving every historical acceptance gate."
+nonGoals:
+  - "No runtime execution, runner authentication, semantic adequacy or portable-execution claim."
+  - "No support promotion, finding closure, public version change or EF-09 resumption."
+ownershipBoundary:
+  production: flow-adapter-evidence
+  semanticKernel: unchanged
+  concreteAdapters: unchanged
+  conformance: "Lifecycle validation and real-provider integration tests."
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  negativeEvidence: "Substituted source or artifacts, compatibility-only requests, invented and omitted occurrence coverage, cross-scenario borrowing and mutated lifecycle receipts."
+followUp:
+  - "Adapter-owned behavioral scenarios and authenticated execution observations."
+  - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."
+  - "Evidence-derived public views with separate profile, leaf and scenario claims."
+activationEvidence:
+  path: ".flow-agent/evidence/adapter-certification-activation-baseline.json"
+  sha256: "a6460739813c3f7b136888918e181e1bc3070ae08a5d6b5e909c7db14500f0f8"

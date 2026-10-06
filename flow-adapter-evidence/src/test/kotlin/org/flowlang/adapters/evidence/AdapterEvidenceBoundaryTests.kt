@@ -4,6 +4,27 @@ import kotlin.test.Test
 import org.flowlang.testing.ExternalCompilerProbe
 
 class AdapterEvidenceBoundaryTests {
+    @Test fun boundCertificationCompilesWithoutReferenceDistribution() {
+        ExternalCompilerProbe.accepts("""
+            import org.flowlang.adapters.certification.*
+            import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
+            import org.flowlang.generators.manifest.*
+            import org.flowlang.materialization.TargetMaterializationRequest
+            fun capture(source: ByteArray, request: TargetMaterializationRequest,
+                pipeline: TargetManifestGenerationPipeline, rendering: AdapterArtifactRenderingAuthority,
+                provider: TargetNativeProjectionCatalog) =
+                BoundCertificationScenario.capture("scenario", source, request, pipeline, rendering, provider)
+        """.trimIndent())
+    }
+
+    @Test fun callersCannotConstructTheirOwnBoundScenario() {
+        ExternalCompilerProbe.rejects("""
+            import org.flowlang.adapters.certification.*
+            fun forge(reference: CertificationEvidenceReference) = BoundCertificationScenario(
+                "forged", "target", "digest", reference, reference, reference, emptySet(), emptyMap())
+        """.trimIndent(), "private")
+    }
+
     @Test fun certificationAdmissionCompilesWithoutConcreteAdaptersOrConformance() {
         ExternalCompilerProbe.accepts("""
             import org.flowlang.adapters.certification.*

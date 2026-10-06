@@ -1,0 +1,255 @@
+{
+  "version": 1,
+  "repository": "Horistum/FlowAi",
+  "status": "passed",
+  "acceptedSlice": "AR-06A",
+  "pullRequest": 198,
+  "predecessorClosureMerge": "5666540cd632c32462a683e44b7f9de0f2ecd850",
+  "head": "3b1d1709fb88c36310d5474eca0f90aa0dea14b9",
+  "base": "5666540cd632c32462a683e44b7f9de0f2ecd850",
+  "syntheticMerge": "276dec52c739b74465aac2babf9aba33055893da",
+  "mergedMain": "8972f0f583c2db7c4f8643d6a1c835149ae99c1f",
+  "sourceTree": "9a6275f1b2532e7d04330f9b375db4cd52578248",
+  "workflowRunId": 37302086089,
+  "workflowRunNumber": 3336,
+  "postMerge": {
+    "event": "push",
+    "workflowRunId": 37404887172,
+    "workflowRunNumber": 3337
+  },
+  "jobs": {
+    "exactHead": 111739137299,
+    "mergeCandidate": 111739137401,
+    "physicalIsolation": 111737002770,
+    "tooling": 111736944233,
+    "mainExactHead": 112082610479,
+    "mainPhysicalIsolation": 112080174160,
+    "mainTooling": 112080128957
+  },
+  "verification": {
+    "archives": [
+      {
+        "id": 11387642974,
+        "name": "flow-ci-exact-head-test-reports",
+        "boundary": "main",
+        "sha256": "ee3bbdf6c3bfb3f7000c51ebbec57e15e2c27043af188349bef083371e8d2bec"
+      },
+      {
+        "id": 11387498293,
+        "name": "flow-ci-exact-head-gradle-logs",
+        "boundary": "main",
+        "sha256": "02efcc2c83de8587fa13d709e81907689b72e0e44f3967af19b05665fb6dba07"
+      },
+      {
+        "id": 11387446402,
+        "name": "flow-isolation-exact-head",
+        "boundary": "main",
+        "sha256": "24cbf4834cc1221e896669606965281570f1020124ce2545056a9192d41815cc"
+      },
+      {
+        "id": 11342656997,
+        "name": "flow-ci-merge-candidate-gradle-logs",
+        "boundary": "pr",
+        "sha256": "9cc25c1c5e552e44d34c32a8643965d9eec01b67e5c88c5dee688f659a45de59"
+      },
+      {
+        "id": 11342652604,
+        "name": "flow-ci-exact-head-gradle-logs",
+        "boundary": "pr",
+        "sha256": "fccc2406ac8bc89129d084626509294498c9c33eca02671c457356509a35bffc"
+      },
+      {
+        "id": 11342452860,
+        "name": "flow-ci-exact-head-test-reports",
+        "boundary": "pr",
+        "sha256": "e3df0d268f753b1ab0221830ab09d71e60d918b251988a4c5880dbf98117a403"
+      },
+      {
+        "id": 11342437170,
+        "name": "flow-ci-merge-candidate-test-reports",
+        "boundary": "pr",
+        "sha256": "ee3f95d99cd25b1f2f7276b08944b2c889a4d39429b1531920752973c428c5cc"
+      },
+      {
+        "id": 11342370740,
+        "name": "flow-isolation-exact-head",
+        "boundary": "pr",
+        "sha256": "163588a87046f04dd92543b79c7268b137924b40daddfb2354ff45347fabf325"
+      }
+    ],
+    "junit": {
+      "main/head": {
+        "tests": 1859,
+        "suites": 324,
+        "identitiesSha256": "4af90104d5c70dbdd9a0d5d3143cc904bc17659753af2aa4a85f53b580b2fc63"
+      },
+      "pr/head": {
+        "tests": 1859,
+        "suites": 324,
+        "identitiesSha256": "4af90104d5c70dbdd9a0d5d3143cc904bc17659753af2aa4a85f53b580b2fc63"
+      },
+      "pr/merge": {
+        "tests": 1859,
+        "suites": 324,
+        "identitiesSha256": "4af90104d5c70dbdd9a0d5d3143cc904bc17659753af2aa4a85f53b580b2fc63"
+      }
+    },
+    "conformance": {
+      "main/head": {
+        "passed": 274,
+        "failed": 0,
+        "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+      },
+      "pr/merge": {
+        "passed": 274,
+        "failed": 0,
+        "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+      },
+      "pr/head": {
+        "passed": 274,
+        "failed": 0,
+        "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+      }
+    },
+    "isolation": {
+      "main": {
+        "revision": {
+          "revision": "8972f0f583c2db7c4f8643d6a1c835149ae99c1f",
+          "tree": "9a6275f1b2532e7d04330f9b375db4cd52578248",
+          "covers": "exact-head",
+          "run": "37404887172",
+          "attempt": "1"
+        },
+        "proofs": {
+          "adapter-isolation/proof.json": {
+            "verifiedInputHashes": 220
+          },
+          "compiler-isolation/proof.json": {
+            "verifiedInputHashes": 95
+          },
+          "kernel-isolation/proof.json": {
+            "verifiedInputHashes": 19
+          },
+          "product-isolation/proof.json": {
+            "verifiedInputHashes": 424,
+            "tests": 68,
+            "invocations": 132,
+            "publicationManifests": 24,
+            "resourceCount": 142,
+            "rejectedIntegratedCases": 48,
+            "sourceInputsDeleted": true,
+            "distributionBytesIdentical": true
+          }
+        },
+        "archiveSha256": "24cbf4834cc1221e896669606965281570f1020124ce2545056a9192d41815cc"
+      },
+      "pr": {
+        "revision": {
+          "revision": "3b1d1709fb88c36310d5474eca0f90aa0dea14b9",
+          "tree": "9a6275f1b2532e7d04330f9b375db4cd52578248",
+          "covers": "exact-head,merge-candidate",
+          "run": "37302086089",
+          "attempt": "1"
+        },
+        "proofs": {
+          "adapter-isolation/proof.json": {
+            "verifiedInputHashes": 220
+          },
+          "compiler-isolation/proof.json": {
+            "verifiedInputHashes": 95
+          },
+          "kernel-isolation/proof.json": {
+            "verifiedInputHashes": 19
+          },
+          "product-isolation/proof.json": {
+            "verifiedInputHashes": 424,
+            "tests": 68,
+            "invocations": 132,
+            "publicationManifests": 24,
+            "resourceCount": 142,
+            "rejectedIntegratedCases": 48,
+            "sourceInputsDeleted": true,
+            "distributionBytesIdentical": true
+          }
+        },
+        "archiveSha256": "163588a87046f04dd92543b79c7268b137924b40daddfb2354ff45347fabf325"
+      }
+    }
+  },
+  "transition": {
+    "recoveryDecision": {
+      "before": {
+        "activationState": "not-activated",
+        "workPackage": ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+      },
+      "after": {
+        "activationState": "active",
+        "workPackage": ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+      }
+    },
+    "postDecision": {
+      "before": {
+        "activationState": "not-activated",
+        "workPackage": ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+      },
+      "after": {
+        "activationState": "active",
+        "workPackage": ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+      }
+    },
+    "recoveryRoadmap": {
+      "before": {
+        "activeItem": "",
+        "activeWorkPackage": "",
+        "activationState": "not-activated"
+      },
+      "after": {
+        "activeItem": "AR-06",
+        "activeWorkPackage": ".flow-agent/work-packages/behavioral-adapter-certification.yaml",
+        "activationState": "active"
+      }
+    },
+    "sequence": {
+      "before": {
+        "activeItem": "",
+        "activationState": "not-activated",
+        "workPackage": ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
+      },
+      "after": {
+        "activeItem": "AR-06",
+        "activationState": "active",
+        "workPackage": ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+      }
+    },
+    "releaseState": {
+      "before": {
+        "activeRecoveryWorkPackage": "",
+        "nextRecoveryActivationState": "not-activated"
+      },
+      "after": {
+        "activeRecoveryWorkPackage": ".flow-agent/work-packages/behavioral-adapter-certification.yaml",
+        "nextRecoveryActivationState": "active"
+      }
+    },
+    "milestone": {
+      "before": {
+        "status": "planned"
+      },
+      "after": {
+        "status": "active"
+      }
+    },
+    "preparation": {
+      "before": {
+        "status": "candidate",
+        "milestoneActivation": "blocked-on-predecessor-merge-and-main-validation",
+        "validation": "current-revision-ci-required"
+      },
+      "after": {
+        "status": "accepted",
+        "milestoneActivation": "active",
+        "validation": "accepted-main-ci"
+      }
+    }
+  }
+}
