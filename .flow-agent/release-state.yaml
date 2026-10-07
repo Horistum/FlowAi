@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 72
+stateVersion: 73
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -52,8 +52,8 @@ roadmapState:
   completedRecoveryWorkPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
   nextRecoveryItem: "AR-06"
   nextRecoveryItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
-  nextRecoveryActivationState: "not-activated"
-  activeRecoveryWorkPackage: ""
+  nextRecoveryActivationState: "active"
+  activeRecoveryWorkPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -207,13 +207,13 @@ recoveryAcceptance:
 
 recoveryPreparation:
   candidate: "AR-06A"
-  status: candidate
+  status: accepted
   workPackage: ".flow-agent/work-packages/adapter-certification-contract.yaml"
   report: ".flow-agent/reports/adapter-certification-contract.md"
   predecessorPullRequest: 197
   predecessorHead: "397d22e2ee44150717e645f14854fb8683d4f708"
-  milestoneActivation: blocked-on-predecessor-merge-and-main-validation
-  validation: current-revision-ci-required
+  milestoneActivation: active
+  validation: accepted-main-ci
   supportPromotion: false
 
 lastKnownValidation:

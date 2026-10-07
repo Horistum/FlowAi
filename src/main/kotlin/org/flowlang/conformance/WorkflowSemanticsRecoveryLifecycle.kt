@@ -35,7 +35,9 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val boundedIoAcceptanceEvidence: String? = null,
     val atomicPublicationAcceptanceEvidence: String? = null,
     val integratedProductAcceptanceEvidence: String? = null,
-    val artifactCompletionEvidence: String? = null
+    val artifactCompletionEvidence: String? = null,
+    val certificationWorkPackage: Map<String, Any?> = emptyMap(),
+    val certificationActivationEvidence: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -117,7 +119,9 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             File(root, AtomicPublicationLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
             File(root, IntegratedProductIntegrityLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
             File(root, IntegratedProductIntegrityLifecycle.IMPLEMENTATION_EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
-            File(root, ArtifactIntegrityCompletion.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
+            File(root, ArtifactIntegrityCompletion.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
+            optionalMap(root, AdapterCertificationLifecycle.WORK_PACKAGE),
+            File(root, AdapterCertificationLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
         )
     }
 
@@ -125,6 +129,10 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         File(root, path).let { if (it.isFile) FlowYaml.readMap(it) else emptyMap() }
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (map(snapshot.recovery["currentDecision"])["workPackage"] == AdapterCertificationLifecycle.WORK_PACKAGE) {
+            addAll(AdapterCertificationLifecycle.errors(snapshot))
+            return@buildList
+        }
         if (map(snapshot.recovery["currentDecision"])["workPackage"] == ArtifactIntegrityLifecycle.WORK_PACKAGE) {
             addAll(ArtifactIntegrityLifecycle.errors(snapshot))
             return@buildList

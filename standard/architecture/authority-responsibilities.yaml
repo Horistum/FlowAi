@@ -24,6 +24,7 @@ authorities:
     inputs: "Frozen neutral requirements plus adapter-owned target evidence/configuration; production API: analyze, render, requireValid."
     outputs: "Adapter assessment, support evidence, or reconciled diagnostic result without semantic rewriting."
     callers:
+      - "src/main/kotlin/org/flowlang/adapters/certification/BoundCertificationScenario.kt"
       - "src/main/kotlin/org/flowlang/adapters/trigger/AdapterTriggerAuthorizedRenderingAuthority.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt"

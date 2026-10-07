@@ -6,7 +6,7 @@ import org.flowlang.conformance.CompilerModuleAcceptance.section
 
 /** Replays accepted implementation with pending closure, retaining immutable historical receipt bytes. */
 internal fun artifactIntegrityImplementationSnapshot(
-    s: WorkflowSemanticsRecoveryLifecycleSnapshot = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    s: WorkflowSemanticsRecoveryLifecycleSnapshot = artifactIntegrityCompletedSnapshot()
 ): WorkflowSemanticsRecoveryLifecycleSnapshot {
     if (s.artifactWorkPackage["status"] != "complete") return s
     val evidence = FlowYaml.readMap(requireNotNull(s.artifactCompletionEvidence), ArtifactIntegrityCompletion.EVIDENCE)
@@ -30,3 +30,7 @@ internal fun artifactIntegrityImplementationSnapshot(
 
 private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }
 private fun records(value: Any?): List<Map<String, Any?>> = (value as? List<*>).orEmpty().map(::stringMap)
+
+/** Historical AR-05 assertions keep their pre-activation semantics. */
+internal fun artifactIntegrityCompletedSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot =
+    AdapterCertificationLifecycle.predecessorSnapshot(WorkflowSemanticsRecoveryLifecycle.load(File(".")))

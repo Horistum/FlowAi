@@ -74,3 +74,34 @@ these tests after deleting concrete adapters, distribution, CLI and conformance
 sources. An integration test checks the actual Jenkins, GitHub Actions and Tekton
 native inventories without certifying them. Existing standalone conformance
 checks and historical evidence remain in place.
+
+## AR-06B: compiler/rendering-bound scenario inputs
+
+After PR #197 and PR #198 merged and actual-main CI passed, AR-06 is active.
+The earlier activation restriction above describes the AR-06A preparation
+boundary. Its accepted receipt is preserved in
+`.flow-agent/evidence/adapter-certification-activation-baseline.json`.
+
+`BoundCertificationScenario.capture` accepts an authorized compilation request,
+original source bytes and explicit materialization/rendering authorities. It
+checks the compiler source digest, validates the graph before and after adapter
+processing and captures the generated executable artifact. A caller cannot
+construct a bound scenario from a self-authored manifest or receipt. Evidence
+resolution returns defensive copies. The graph evidence encoding is internal;
+its byte SHA is distinct from `graphDigest`, the existing compiler semantic
+identity. Neither is a new public graph schema.
+
+`BoundAdapterCertificationAdmission` derives semantic inventory and exact
+subject-to-scenario occurrence associations from these captures. Structures come
+from canonical node kinds; native leaves come from generated manifest payloads
+matched to the provider catalog. A leaf cannot stand in for a parent structure.
+Missing, additional or borrowed associations fail before external evidence I/O.
+It then delegates the existing independent observation and mutant checks to
+AR-06A, resolving captured inputs itself. The generic AR-06A API remains an
+integrity-only contract; it must not be relabeled as compiler-bound admission.
+
+This path binds inputs and occurrence scope, not semantic adequacy or execution
+provenance. Injected adapter composition and expected implementation identity
+remain trusted caller inputs. Runtime fixtures, controls and observable behavior
+still need independent conformance design and authenticated execution evidence.
+No support view consumes this candidate path yet, and no target is promoted.

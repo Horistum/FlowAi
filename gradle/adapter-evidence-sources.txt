@@ -2,6 +2,8 @@ org/flowlang/adapters/AdapterDiagnosticReconciliation.kt
 org/flowlang/adapters/binding/AdapterCapabilityBindingAuthority.kt
 org/flowlang/adapters/certification/AdapterCertificationAdmission.kt
 org/flowlang/adapters/certification/AdapterCertificationBundle.kt
+org/flowlang/adapters/certification/BoundAdapterCertificationAdmission.kt
+org/flowlang/adapters/certification/BoundCertificationScenario.kt
 org/flowlang/adapters/continuity/AdapterContinuityEvidenceIntegrityAuthority.kt
 org/flowlang/adapters/continuity/AdapterContinuityProjectionExecutionGate.kt
 org/flowlang/adapters/continuity/AdapterContinuitySatisfactionAuthority.kt
