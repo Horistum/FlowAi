@@ -50,3 +50,46 @@ Runtime setup follows the upstream [Jenkins Docker documentation](https://www.je
 Pinned dependencies: [Jenkins 2.580.1](https://www.jenkins.io/changelog-stable/2.580.1/),
 [Declarative Pipeline](https://plugins.jenkins.io/pipeline-model-definition/),
 [Git](https://plugins.jenkins.io/git/) and [Timestamper](https://plugins.jenkins.io/timestamper/).
+
+## Native failure propagation
+
+AR-06E adds a separate bounded scenario, `failure.intent.yaml`, with two checkout
+operations and an explicit dependency. The first requests a deliberately absent
+branch. The canonical workflow has `PROPAGATE` failure disposition. The unchanged
+generated Jenkinsfile must finish with `FAILURE` before the dependent checkout
+starts. Fresh workspace bytes, native step count and actual step error identity
+are observed from the controller, outside the pipeline.
+
+```sh
+./gradlew --no-daemon :flow-conformance-kit:verifyJenkinsFailureRuntime
+```
+
+Use a fresh `flow-conformance-kit/build/jenkins-failure-certification` directory.
+The dedicated `jenkins-failure-runtime` job uploads its evidence separately from
+the existing checkout scenario.
+
+| Run | Build result | Workspace marker | Executed checkout steps | Missing-revision errors |
+| --- | --- | --- | --- | --- |
+| Original artifact | FAILURE | Absent | 1 | 1 |
+| Omit the failing checkout | SUCCESS | `selected` | 1 | 0 |
+| Suppress its error | SUCCESS | `selected` | 2 | 1 |
+
+The observer uses the actual Jenkins execution graph and each native step's
+`ErrorAction`; a caught error remains visible. The expected exception is exactly
+`hudson.AbortException` with the pinned Git plugin's missing-revision diagnostic.
+Repository readiness independently confirms the selected and alternate branches
+exist and the missing branch does not. `COMPLETED` means a fully observed execution
+of the scenario, which can deliberately end in `FAILURE`. Only this scenario's
+specific native error qualifies; other errors, aborts, missing results and
+timeouts fail the proof. All original checkout-scenario builds still require
+`SUCCESS`. Expected observations remain in the independent `failure-matrix.json`.
+
+The `catchError` wrapper exists only in the negative mutant. This scenario does
+not certify general error-boundary or retry support, structural semantics,
+cross-adapter portability or production runner trust. It promotes no public
+support claim. The host key, exact input/artifact binding, runtime prerequisites
+and authenticated admission are shared with AR-06D.
+
+Observer API references: [FlowGraphWalker](https://javadoc.jenkins.io/plugin/workflow-api/org/jenkinsci/plugins/workflow/graph/FlowGraphWalker.html),
+[StepAtomNode](https://javadoc.jenkins.io/plugin/workflow-cps/org/jenkinsci/plugins/workflow/cps/nodes/StepAtomNode.html)
+and [ErrorAction](https://javadoc.jenkins.io/plugin/workflow-api/org/jenkinsci/plugins/workflow/actions/ErrorAction.html).

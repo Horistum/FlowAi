@@ -31,38 +31,51 @@ internal object JenkinsCheckoutRuntimeCertification {
     private val mapper = jacksonObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
         .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
     private val plugins = linkedMapOf("git" to "5.10.1", "pipeline-model-definition" to "2.2293.v6e7193cec599", "timestamper" to "1.30")
-    val runIds = listOf("baseline", "omitted-checkout", "substituted-branch")
-    private const val SCENARIO = "jenkins-checkout-runtime"
+    private const val MISSING_REVISION = "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+
+    internal enum class Scenario(val id: String, val source: String, val matrix: String, val runIds: List<String>, val version: String) {
+        CHECKOUT("jenkins-checkout-runtime", "checkout.intent.yaml", "behavior-matrix.json", listOf("baseline", "omitted-checkout", "substituted-branch"), "AR-06D"),
+        FAILURE("jenkins-failure-runtime", "failure.intent.yaml", "failure-matrix.json", listOf("baseline", "omitted-failure", "suppressed-failure"), "AR-06E")
+    }
 
     internal data class Prepared(
         val bound: BoundCertificationScenario,
         val bundle: AdapterCertificationBundle,
         val artifacts: Map<String, ByteArray>,
         val evidence: MutableMap<String, ByteArray>,
-        val runtime: List<CertificationRuntimePrerequisite>
+        val runtime: List<CertificationRuntimePrerequisite>,
+        val scenario: Scenario
     )
 
-    fun prepare(root: File, imageId: String): Prepared {
+    fun prepare(root: File, imageId: String, scenario: Scenario = Scenario.CHECKOUT): Prepared {
         require(Regex("sha256:[0-9a-f]{64}").matches(imageId))
-        val source = File(root, "$FIXTURE/checkout.intent.yaml").readBytes()
+        val source = File(root, "$FIXTURE/${scenario.source}").readBytes()
         val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
         val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
         val compilation = IntentYamlFrontend(FrontendCompilerComposition.compiler(modules))
-            .compileText(source.toString(Charsets.UTF_8), "checkout.intent.yaml").requireAccepted()
+            .compileText(source.toString(Charsets.UTF_8), scenario.source).requireAccepted()
         val selection = TargetSelectionAuthority.requireSelected(TargetSelectionAuthority.fromCliOption("jenkins", targets), "runtime certification")
         val provider = ReferenceTargetProjections.nativeCatalogs.getValue("jenkins")
-        val bound = BoundCertificationScenario.capture(SCENARIO, source, TargetMaterializationRequest.fromCompilation(compilation, selection),
+        val bound = BoundCertificationScenario.capture(scenario.id, source, TargetMaterializationRequest.fromCompilation(compilation, selection),
             ReferenceTargetProjections.pipeline(targets, rootDir = root, modules = modules),
             ReferenceAdapterEvidence.rendering(rootDir = root), provider)
         val original = requireNotNull(bound.resolve(bound.artifact))
         val text = original.toString(Charsets.UTF_8)
-        val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch:") }
-        require(checkout.trim() == "git branch: 'selected', url: 'git://127.0.0.1:9418/repository.git'")
+        val branch = if (scenario == Scenario.CHECKOUT) "selected" else "missing-revision"
+        val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
+        require(checkout.trim() == "git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'")
+        val indent = checkout.takeWhile(Char::isWhitespace)
+        if (scenario == Scenario.FAILURE) {
+            require(text.lineSequence().count { it.trimStart().startsWith("git branch:") } == 2)
+            require(text.indexOf(checkout) < text.indexOf("git branch: 'selected'"))
+        }
+        val runIds = scenario.runIds
         val artifacts = linkedMapOf("baseline" to original,
-            "omitted-checkout" to replaceOnce(text, checkout, checkout.takeWhile(Char::isWhitespace) + "echo 'Checkout intentionally omitted by certification mutant'").toByteArray(),
-            "substituted-branch" to replaceOnce(text, checkout, checkout.replace("branch: 'selected'", "branch: 'alternate'")).toByteArray())
-        val matrix = mapper.readTree(File(root, "$FIXTURE/behavior-matrix.json"))
-        require(matrix["version"].asInt() == 1 && matrix["scenario"].asText() == SCENARIO && matrix["target"].asText() == "jenkins")
+            runIds[1] to replaceOnce(text, checkout, indent + "echo 'Checkout intentionally omitted by certification mutant'").toByteArray(),
+            runIds[2] to replaceOnce(text, checkout, if (scenario == Scenario.CHECKOUT) checkout.replace("branch: 'selected'", "branch: 'alternate'")
+                else "${indent}catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {\n$indent    ${checkout.trim()}\n$indent}").toByteArray())
+        val matrix = mapper.readTree(File(root, "$FIXTURE/${scenario.matrix}"))
+        require(matrix["version"].asInt() == 1 && matrix["scenario"].asText() == scenario.id && matrix["target"].asText() == "jenkins")
         require(matrix["claim"].asText() == "native-leaf-only" && matrix["construct"].asText() == "git.checkout")
         val rows = listOf(matrix["positive"]) + matrix["mutants"].toList()
         require(rows.map { it["id"].asText() } == runIds)
@@ -71,25 +84,26 @@ internal object JenkinsCheckoutRuntimeCertification {
             evidence[id] = bytes.copyOf(); return CertificationEvidenceReference(id, sha256(bytes), bytes.size)
         }
         val expected = rows.associate { row ->
-            require(row["result"].asText() == "SUCCESS")
-            row["id"].asText() to ref("expected:${row["id"].asText()}", observationBytes(row))
+            val expectedResult = if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline") "FAILURE" else "SUCCESS"
+            require(row["result"].asText() == expectedResult)
+            row["id"].asText() to ref("expected:${row["id"].asText()}", observationBytes(row, scenario))
         }
         val runtime = listOf(CertificationRuntimePrerequisite("jenkins", "2.580.1"),
             CertificationRuntimePrerequisite("container-image", imageId)) + plugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) }
-        val scenario = bound.scenario(expected.getValue("baseline"), runtime, runIds.drop(1).map { id ->
+        val specification = bound.scenario(expected.getValue("baseline"), runtime, runIds.drop(1).map { id ->
             CertificationNegativeMutant(id, ref("artifact:$id", artifacts.getValue(id)), expected.getValue(id))
         })
         val implementation = File(root, "gradle/adapter-jenkins-sources.txt").readLines().filter(String::isNotBlank)
             .joinToString("\n") { path -> "$path:${sha256(File(root, "src/main/kotlin/$path").readBytes())}" }.toByteArray()
-        val adapter = CertificationAdapterIdentity("jenkins", "jenkins-native-checkout", "AR-06D", sha256(implementation))
+        val adapter = CertificationAdapterIdentity("jenkins", "jenkins-native-checkout", scenario.version, sha256(implementation))
         val subjects = bound.subjects + TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
             provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) }
         val limitations = matrix["limitations"].map { it.asText() }
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
-            if (subject in bound.subjects) listOf(bound.id) else emptyList(), "Native checkout occurrence only; see bounded runtime limitations.") },
-            listOf(scenario), limitations)
-        return Prepared(bound, bundle, artifacts, evidence, runtime)
+            if (subject in bound.subjects) listOf(bound.id) else emptyList(), "Native checkout occurrences only; see bounded runtime limitations.") },
+            listOf(specification), limitations)
+        return Prepared(bound, bundle, artifacts, evidence, runtime, scenario)
     }
 
     fun observations(prepared: Prepared, raw: ByteArray): List<CertificationExecutionObservation> {
@@ -99,6 +113,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(result["jenkins"]?.asText() == "2.580.1") { "Unexpected Jenkins version." }
         require(result["java"]?.asText()?.let { it == "25" || it.startsWith("25.") || it.startsWith("25+") } == true)
         require(plugins.all { (id, version) -> result["plugins"]?.get(id)?.asText() == version }) { "Unexpected runtime plugins." }
+        val runIds = prepared.scenario.runIds
         require(result["runs"]?.isArray == true && result["runs"].size() == runIds.size)
         val rows = result["runs"].toList()
         require(rows.map { it["id"]?.asText() }.toSet() == runIds.toSet()) { "Runtime run inventory is incomplete or duplicated." }
@@ -107,22 +122,40 @@ internal object JenkinsCheckoutRuntimeCertification {
             val id = row["id"].asText()
             val bytes = prepared.artifacts.getValue(id)
             require(row["artifactSha256"]?.asText() == sha256(bytes)) { "Executed script differs from the bound artifact." }
-            require(row["buildNumber"]?.isIntegralNumber == true && row["buildNumber"].asInt() == 1)
-            val observed = observationBytes(row)
+            require(row["buildNumber"]?.isIntegralNumber == true && row["buildNumber"].canConvertToInt() && row["buildNumber"].asInt() == 1)
+            if (prepared.scenario == Scenario.FAILURE) require(row["finished"]?.isBoolean == true && row["finished"].booleanValue())
+            val observed = observationBytes(row, prepared.scenario)
             val ref = CertificationEvidenceReference("observed:$id", sha256(observed), observed.size)
             prepared.evidence[ref.id] = observed
-            CertificationExecutionObservation(id, prepared.bundle.adapter, SCENARIO, id.takeUnless { it == "baseline" },
+            CertificationExecutionObservation(id, prepared.bundle.adapter, prepared.bound.id, id.takeUnless { it == "baseline" },
                 prepared.bound.canonicalGraph.sha256, prepared.bound.fixture.sha256,
                 if (id == "baseline") prepared.bound.artifact else scenario.negativeMutants.single { it.id == id }.artifact,
-                ref, prepared.runtime, if (row["result"].asText() == "SUCCESS") CertificationRunOutcome.COMPLETED else CertificationRunOutcome.INFRASTRUCTURE_FAILURE)
+                ref, prepared.runtime, if (completed(row, prepared.scenario)) CertificationRunOutcome.COMPLETED else CertificationRunOutcome.INFRASTRUCTURE_FAILURE)
         }
     }
 
-    private fun observationBytes(row: JsonNode): ByteArray {
+    private fun completed(row: JsonNode, scenario: Scenario): Boolean = row["result"].asText() == "SUCCESS" ||
+        scenario == Scenario.FAILURE && row["result"].asText() == "FAILURE" && row["checkoutErrors"].size() == 1 &&
+        row["checkoutErrors"][0]["type"].asText() == "hudson.AbortException" && row["checkoutErrors"][0]["message"].asText() == MISSING_REVISION
+
+    private fun observationBytes(row: JsonNode, scenario: Scenario): ByteArray {
         require(row["result"]?.isTextual == true && row.has("marker"))
         val marker = row["marker"]
         require(marker.isNull || marker.isTextual && marker.asText().length <= 1024)
-        return (mapper.writeValueAsString(linkedMapOf("result" to row["result"].asText(), "marker" to if (marker.isNull) null else marker.asText())) + "\n").toByteArray()
+        val observation = linkedMapOf<String, Any?>("result" to row["result"].asText(), "marker" to if (marker.isNull) null else marker.asText())
+        if (scenario == Scenario.FAILURE) {
+            require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() in 0..2)
+            val errors = row["checkoutErrors"]
+            require(errors?.isArray == true && errors.size() <= row["checkoutCount"].asInt())
+            observation["checkoutCount"] = row["checkoutCount"].asInt()
+            observation["checkoutErrors"] = errors.map { error ->
+                require(error.isObject && error.fieldNames().asSequence().toSet() == setOf("type", "message"))
+                require(error["type"].isTextual && error["type"].asText().length in 1..256)
+                require(error["message"].isTextual && error["message"].asText().length in 1..1024)
+                linkedMapOf("type" to error["type"].asText(), "message" to error["message"].asText())
+            }
+        }
+        return (mapper.writeValueAsString(observation) + "\n").toByteArray()
     }
 
     internal fun replaceOnce(source: String, old: String, replacement: String): String {
@@ -130,7 +163,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         return source.replace(old, replacement)
     }
 
-    fun run(root: File, output: File) {
+    fun run(root: File, output: File, scenario: Scenario = Scenario.CHECKOUT) {
         require(!output.exists()) { "Runtime evidence output must be fresh." }
         output.mkdirs()
         val container = "flow-certification-${UUID.randomUUID()}"
@@ -147,7 +180,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         // The assessment owner creates trust before the external runtime starts; the private key never enters its container.
         val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
         val challenge = UUID.randomUUID().toString().replace("-", "")
-        val runAuthorization = runIds.map { CertificationAuthorizedRun(it, SCENARIO, it.takeUnless { id -> id == "baseline" }, "isolated-jenkins-runner") }
+        val runAuthorization = scenario.runIds.map { CertificationAuthorizedRun(it, scenario.id, it.takeUnless { id -> id == "baseline" }, "isolated-jenkins-runner") }
         val trust = CertificationObservationTrust(challenge, mapOf("isolated-jenkins-runner" to key.public), runAuthorization)
         File(output, "trust.json").writeText(mapper.writeValueAsString(mapOf("challenge" to challenge,
             "publicKey" to Base64.getEncoder().encodeToString(key.public.encoded), "authorizedRuns" to runAuthorization)) + "\n")
@@ -155,7 +188,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             println("Building the pinned Jenkins test runtime")
             process("image-build", listOf("docker", "build", "--tag", imageTag, File(root, FIXTURE).absolutePath), 600)
             val imageId = process("image-identity", listOf("docker", "image", "inspect", "--format", "{{.Id}}", imageTag)).trim()
-            val prepared = prepare(root, imageId)
+            val prepared = prepare(root, imageId, scenario)
             val artifacts = File(output, "artifacts").apply { mkdirs() }
             prepared.artifacts.forEach { (id, bytes) -> File(artifacts, "$id.Jenkinsfile").writeBytes(bytes) }
             File(artifacts, "source.intent.yaml").writeBytes(requireNotNull(prepared.bound.resolve(prepared.bound.fixture)))
@@ -177,6 +210,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             Files.setPosixFilePermissions(evidence.toPath(), PosixFilePermissions.fromString("rwxrwxrwx"))
             println("Executing the original artifact and both mutants on isolated Jenkins")
             process("controller", listOf("docker", "run", "--rm", "--name", container, "--network", "none", "--memory", "3g", "--cpus", "2",
+                "--env", "FLOW_CERTIFICATION_SCENARIO=${scenario.id}",
                 "--mount", "type=bind,src=${fixture.absolutePath},dst=/fixture,readonly",
                 "--mount", "type=bind,src=${artifacts.absolutePath},dst=/artifacts,readonly",
                 "--mount", "type=bind,src=${evidence.absolutePath},dst=/evidence",
@@ -201,7 +235,7 @@ internal object JenkinsCheckoutRuntimeCertification {
                     "observation" to it.observation, "signature" to Base64.getEncoder().encodeToString(it.signature())) })
             File(output, "proof.json").writeText(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(proof) + "\n")
             prepared.evidence.forEach { (id, bytes) -> File(artifacts, id.replace(':', '-') + ".evidence").writeBytes(bytes) }
-            println("PASS: native checkout, omitted checkout and substituted branch; authenticated bounded admission")
+            println("PASS: ${scenario.id}, ${scenario.runIds.joinToString()}; authenticated bounded admission")
         } finally {
             // Only this invocation's disposable resources are removed, including on timeout.
             ProcessBuilder("docker", "rm", "--force", container).redirectOutput(ProcessBuilder.Redirect.DISCARD)
@@ -216,6 +250,8 @@ internal object JenkinsCheckoutRuntimeCertification {
 }
 
 fun main(args: Array<String>) {
-    require(args.size == 2) { "Expected repository root and fresh evidence directory." }
-    JenkinsCheckoutRuntimeCertification.run(File(args[0]).canonicalFile, File(args[1]).canonicalFile)
+    require(args.size in 2..3) { "Expected repository root, fresh evidence directory and optional scenario identity." }
+    val scenario = if (args.size == 2) JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT
+        else JenkinsCheckoutRuntimeCertification.Scenario.entries.single { it.id == args[2] }
+    JenkinsCheckoutRuntimeCertification.run(File(args[0]).canonicalFile, File(args[1]).canonicalFile, scenario)
 }

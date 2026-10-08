@@ -1,0 +1,31 @@
+intentVersion: "2.0"
+kind: FlowIntentDocument
+name: jenkins-failure-runtime
+description: A failed native checkout must prevent its dependent checkout from executing.
+systems:
+  - name: source
+    type: git
+    purpose: Disposable certification repository
+workflows:
+  - name: fail-fast-reference
+    kind: BUILD
+    steps:
+      - id: failing-checkout
+        capability: CHECKOUT
+        uses: git.checkout
+        params:
+          system: source
+          url: git://127.0.0.1:9418/repository.git
+          branch: missing-revision
+      - id: dependent-checkout
+        capability: CHECKOUT
+        uses: git.checkout
+        requires: [failing-checkout]
+        params:
+          system: source
+          url: git://127.0.0.1:9418/repository.git
+          branch: selected
+failure:
+  notify: false
+  rollback: false
+  stopOnError: true

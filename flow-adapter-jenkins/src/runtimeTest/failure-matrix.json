@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "scenario": "jenkins-failure-runtime",
+  "target": "jenkins",
+  "claim": "native-leaf-only",
+  "construct": "git.checkout",
+  "positive": {
+    "id": "baseline",
+    "result": "FAILURE",
+    "marker": null,
+    "checkoutCount": 1,
+    "checkoutErrors": [{"type": "hudson.AbortException", "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."}]
+  },
+  "mutants": [
+    {"id": "omitted-failure", "result": "SUCCESS", "marker": "selected\n", "checkoutCount": 1, "checkoutErrors": []},
+    {
+      "id": "suppressed-failure",
+      "result": "SUCCESS",
+      "marker": "selected\n",
+      "checkoutCount": 2,
+      "checkoutErrors": [{"type": "hudson.AbortException", "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."}]
+    }
+  ],
+  "limitations": [
+    "One native missing-revision failure and its dependent checkout; no general error-boundary, retry or structural claim.",
+    "Only the exact independently specified native error is an intentional failure; infrastructure errors and incomplete builds cannot satisfy the scenario.",
+    "A disposable Jenkins controller and local repository; no production deployment or cross-adapter portability claim."
+  ]
+}

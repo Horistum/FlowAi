@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 75
+stateVersion: 76
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -234,6 +234,18 @@ recoveryRuntimePreparation:
   predecessorPullRequest: 200
   predecessorHead: "febe35775a333d15f71ef39068527cb116a90427"
   activation: blocked-on-predecessor-merge-and-main-validation
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryFailurePreparation:
+  candidate: "AR-06E"
+  status: candidate
+  workPackage: ".flow-agent/work-packages/jenkins-failure-certification.yaml"
+  report: ".flow-agent/reports/jenkins-failure-certification.md"
+  predecessorPullRequest: 201
+  predecessorMerge: "2bfb2d84f907cbaa310debf7f87a5d906f09637f"
+  integrationPullRequest: 200
+  activation: blocked-on-integration-merge-and-main-validation
   validation: current-revision-ci-required
   supportPromotion: false
 
