@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "scenario": "jenkins-checkout-runtime",
+  "target": "jenkins",
+  "claim": "native-leaf-only",
+  "construct": "git.checkout",
+  "positive": {"id": "baseline", "result": "SUCCESS", "marker": "selected\n"},
+  "mutants": [
+    {"id": "omitted-checkout", "change": "Replace the native checkout with a harmless echo", "result": "SUCCESS", "marker": null},
+    {"id": "substituted-branch", "change": "Select a different existing branch", "result": "SUCCESS", "marker": "alternate\n"}
+  ],
+  "limitations": [
+    "One native checkout leaf and branch selection; no control-flow, credentials, shallow clone or multi-agent claim.",
+    "A disposable Jenkins controller and loopback Git daemon; no production Jenkins deployment is exercised.",
+    "No GitHub Actions execution or portable-execution claim in this slice."
+  ]
+}
