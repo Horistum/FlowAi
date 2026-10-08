@@ -18,10 +18,10 @@ class JenkinsFailureRuntimeCertificationTests {
     private fun prepare() = JenkinsCheckoutRuntimeCertification.prepare(File("."), "sha256:" + "a".repeat(64),
         JenkinsCheckoutRuntimeCertification.Scenario.FAILURE)
     private fun sha(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it.toInt() and 255) }
-    private fun record(p: JenkinsCheckoutRuntimeCertification.Prepared): ObjectNode = mapper.valueToTree(linkedMapOf(
+    private fun record(p: JenkinsCheckoutRuntimeCertification.Prepared): ObjectNode = mapper.valueToTree(linkedMapOf<String, Any?>(
         "status" to "completed", "jenkins" to "2.580.1", "java" to "25.0.1",
         "plugins" to mapOf("git" to "5.10.1", "pipeline-model-definition" to "2.2293.v6e7193cec599", "timestamper" to "1.30"),
-        "runs" to p.artifacts.map { (id, bytes) -> mapOf("id" to id, "result" to if (id == "baseline") "FAILURE" else "SUCCESS",
+        "runs" to p.artifacts.map { (id, bytes) -> mapOf<String, Any?>("id" to id, "result" to if (id == "baseline") "FAILURE" else "SUCCESS",
             "buildNumber" to 1, "finished" to true, "artifactSha256" to sha(bytes),
             "marker" to if (id == "baseline") null else "selected\n",
             "checkoutCount" to if (id == "suppressed-failure") 2 else 1,
