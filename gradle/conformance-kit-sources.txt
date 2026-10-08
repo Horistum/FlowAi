@@ -27,6 +27,7 @@ org/flowlang/conformance/AdapterCertificationLifecycle.kt
 org/flowlang/conformance/AdapterContinuityConformanceChecks.kt
 org/flowlang/conformance/AdapterControlConformanceChecks.kt
 org/flowlang/conformance/AdapterExecutableContinuityConformanceChecks.kt
+org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
 org/flowlang/conformance/AdapterPortfolioConformanceChecks.kt
 org/flowlang/conformance/AdapterProfileEvidenceAuthority.kt
 org/flowlang/conformance/AdapterProfileEvidenceConformanceChecks.kt
@@ -85,6 +86,7 @@ org/flowlang/conformance/InfrastructureLifecycleFalsification.kt
 org/flowlang/conformance/IntegratedProductIntegrityChecks.kt
 org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt
 org/flowlang/conformance/IntentSafetyChecks.kt
+org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
 org/flowlang/conformance/JsonSchemaSmokeValidator.kt
 org/flowlang/conformance/LanguageContractIntegrityLifecycle.kt
 org/flowlang/conformance/LanguageIntegrityCompletion.kt

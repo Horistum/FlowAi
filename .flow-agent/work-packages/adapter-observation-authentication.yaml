@@ -1,29 +1,28 @@
-version: "AR-06"
-name: "Behavioral Adapter Certification and Honest Target Portfolio"
+version: "AR-06C"
+name: "Authenticated Adapter Execution Observations"
 status: active
 stream: architecture-recovery
 roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+parentWorkPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
 authorization:
   source: "Maintainer requests the next roadmap step after merging PR #199."
   acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
   workflowRunId: 37636042462
-selectedSlice: "AR-06C"
-selectedWorkPackage: ".flow-agent/work-packages/adapter-observation-authentication.yaml"
-acceptedSlices: ["AR-06A", "AR-06B"]
 invariant: "Authenticated admission accepts only complete observations signed by an independently trusted runner for caller-pinned run identities and an assessment challenge, while retaining every compiler, artifact, runtime and mutant check."
 scope:
-  - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
-  - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
-  - "Authenticate every observation against caller-owned runner keys, assessment challenge and exact run inventory."
-  - "Accept AR-06B against independently verified PR and actual-main receipts while preserving every historical acceptance gate."
+  - "Domain-separated Ed25519 statements bind every execution-observation field, runner identity and caller-supplied challenge."
+  - "Exact caller-pinned run inventory and trusted public keys reject unsigned, substituted, unknown-runner and cross-assessment evidence before resolver I/O."
+  - "Delegate authenticated observations to the existing compiler/rendering-bound admission; signatures cannot bypass evidence bytes or mutation polarity."
+  - "Accept AR-06B from independently inspected final PR and actual-main evidence."
 nonGoals:
-  - "No runtime execution, semantic adequacy or portable-execution claim."
-  - "No support promotion, finding closure, public version change or EF-09 resumption."
+  - "No workflow execution, runner provisioning, key discovery, durable replay store or public support promotion."
+  - "No claim that a signature proves semantic adequacy, honest runner behavior, or execution on two real platforms."
+  - "No public wire format, package version change, finding closure or EF-09 resumption."
 ownershipBoundary:
   production: flow-adapter-evidence
   semanticKernel: unchanged
   concreteAdapters: unchanged
-  conformance: "Lifecycle validation and real-provider integration tests."
+  conformance: "Independent signing vectors, tampering tests and real-provider bound-admission integration."
 validation:
   status: current-revision-ci-required
   requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
@@ -32,9 +31,3 @@ followUp:
   - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
   - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."
   - "Evidence-derived public views with separate profile, leaf and scenario claims."
-activationEvidence:
-  path: ".flow-agent/evidence/adapter-certification-activation-baseline.json"
-  sha256: "a6460739813c3f7b136888918e181e1bc3070ae08a5d6b5e909c7db14500f0f8"
-bindingAcceptanceEvidence:
-  path: ".flow-agent/evidence/adapter-certification-binding-acceptance.json"
-  sha256: "31ccc9a76188bae91787ba5241f32c02a3c0ee6799aba256a4c178738d75c5e2"

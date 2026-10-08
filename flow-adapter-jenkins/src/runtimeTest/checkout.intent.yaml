@@ -1,0 +1,23 @@
+intentVersion: "2.0"
+kind: FlowIntentDocument
+name: jenkins-checkout-runtime
+description: Bounded native checkout behavior against a disposable local Git fixture.
+systems:
+  - name: source
+    type: git
+    purpose: Disposable certification repository
+workflows:
+  - name: checkout-reference
+    kind: BUILD
+    steps:
+      - id: checkout
+        capability: CHECKOUT
+        uses: git.checkout
+        params:
+          system: source
+          url: git://127.0.0.1:9418/repository.git
+          branch: selected
+failure:
+  notify: false
+  rollback: false
+  stopOnError: true
