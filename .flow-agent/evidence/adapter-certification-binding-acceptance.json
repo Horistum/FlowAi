@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "repository": "Horistum/FlowAi",
+  "acceptedSlice": "AR-06B",
+  "status": "passed",
+  "pullRequest": 199,
+  "head": "0c36449c84a87e364a67deafad078cdd01d8f8c1",
+  "base": "8972f0f583c2db7c4f8643d6a1c835149ae99c1f",
+  "syntheticMerge": "32fc04f03990f3455dc27e65bcee762613d4f1be",
+  "mergedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+  "sourceTree": "493929b175adfdb78a9bd97b4b40ac38580d33c6",
+  "workflowRunId": 37483446382,
+  "workflowRunNumber": 3342,
+  "postMerge": {
+    "event": "push",
+    "workflowRunId": 37636042462,
+    "workflowRunNumber": 3343
+  },
+  "jobs": {
+    "exactHead": 112342155860,
+    "mergeCandidate": 112342155865,
+    "physicalIsolation": 112337442157,
+    "tooling": 112337308261,
+    "mainExactHead": 112847135338,
+    "mainPhysicalIsolation": 112842496752,
+    "mainTooling": 112842416048
+  },
+  "verification": {
+    "archives": [
+      {
+        "id": 11424220413,
+        "name": "flow-ci-exact-head-test-reports",
+        "boundary": "pr",
+        "sha256": "465c04f20a1e0af39259ffc29128dd766476b84b15a3285904f5a9b117e15e4e"
+      },
+      {
+        "id": 11424090331,
+        "name": "flow-ci-merge-candidate-test-reports",
+        "boundary": "pr",
+        "sha256": "cc8ef0b3487e8b6ee292c038b4a3694b4ca4bccd5014a2e8ff97aa5e5b94cc6c"
+      },
+      {
+        "id": 11423217530,
+        "name": "flow-ci-exact-head-gradle-logs",
+        "boundary": "pr",
+        "sha256": "1d762104836e3e89457493b9954be369b386688b0abac30bd4b5f80b492cee9f"
+      },
+      {
+        "id": 11422926454,
+        "name": "flow-isolation-exact-head",
+        "boundary": "pr",
+        "sha256": "cb78e9619b3ad286eb65f3d1287583603996e5531ab3d315241befd54ae4c489"
+      },
+      {
+        "id": 11422334874,
+        "name": "flow-ci-merge-candidate-gradle-logs",
+        "boundary": "pr",
+        "sha256": "4e4753b11edbe0c1d59868bbf978584e441fd71b5448f60294bcb43191481dd2"
+      },
+      {
+        "id": 11491046435,
+        "name": "flow-isolation-exact-head",
+        "boundary": "main",
+        "sha256": "19bcc60fff1b73615ec880e7a42e1d018fa0f08f1fd057597ee718e0c58031ba"
+      },
+      {
+        "id": 11490549252,
+        "name": "flow-ci-exact-head-gradle-logs",
+        "boundary": "main",
+        "sha256": "474dc5d55ea5337965b59c9862d3df2fff681dc84db4c9dba33ae08ad8b36cd0"
+      },
+      {
+        "id": 11490309410,
+        "name": "flow-ci-exact-head-test-reports",
+        "boundary": "main",
+        "sha256": "a92ed6f83a8f11aefecb6010c44fa905d1c128d18898690953778c7e3469ff13"
+      }
+    ],
+    "junit": {
+      "pr/head": {
+        "tests": 1878,
+        "suites": 326,
+        "identitiesSha256": "99f3a6f63c776fde04edb0c107e2368ee80ec517e8bb39c7c026bc207b88070c"
+      },
+      "pr/merge": {
+        "tests": 1878,
+        "suites": 326,
+        "identitiesSha256": "99f3a6f63c776fde04edb0c107e2368ee80ec517e8bb39c7c026bc207b88070c"
+      },
+      "main/head": {
+        "tests": 1878,
+        "suites": 326,
+        "identitiesSha256": "99f3a6f63c776fde04edb0c107e2368ee80ec517e8bb39c7c026bc207b88070c"
+      }
+    },
+    "conformance": {
+      "pr/head": {
+        "passed": 274,
+        "failed": 0,
+        "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+      },
+      "pr/merge": {
+        "passed": 274,
+        "failed": 0,
+        "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+      },
+      "main/head": {
+        "passed": 274,
+        "failed": 0,
+        "orderedIdentitiesSha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+      }
+    },
+    "sourceBoundIsolation": {
+      "pr": {
+        "revision": {
+          "revision": "0c36449c84a87e364a67deafad078cdd01d8f8c1",
+          "tree": "493929b175adfdb78a9bd97b4b40ac38580d33c6",
+          "covers": "exact-head,merge-candidate",
+          "run": "37483446382",
+          "attempt": "1"
+        },
+        "proofs": {
+          "adapter-isolation/proof.json": {
+            "verifiedInputHashes": 222
+          },
+          "compiler-isolation/proof.json": {
+            "verifiedInputHashes": 95
+          },
+          "kernel-isolation/proof.json": {
+            "verifiedInputHashes": 19
+          },
+          "product-isolation/proof.json": {
+            "verifiedInputHashes": 426,
+            "tests": 68,
+            "invocations": 132,
+            "publicationManifests": 24,
+            "resourceCount": 142,
+            "rejectedIntegratedCases": 48,
+            "sourceInputsDeleted": true,
+            "distributionBytesIdentical": true
+          }
+        },
+        "archiveSha256": "cb78e9619b3ad286eb65f3d1287583603996e5531ab3d315241befd54ae4c489"
+      },
+      "main": {
+        "revision": {
+          "revision": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+          "tree": "493929b175adfdb78a9bd97b4b40ac38580d33c6",
+          "covers": "exact-head",
+          "run": "37636042462",
+          "attempt": "1"
+        },
+        "proofs": {
+          "adapter-isolation/proof.json": {
+            "verifiedInputHashes": 222
+          },
+          "compiler-isolation/proof.json": {
+            "verifiedInputHashes": 95
+          },
+          "kernel-isolation/proof.json": {
+            "verifiedInputHashes": 19
+          },
+          "product-isolation/proof.json": {
+            "verifiedInputHashes": 426,
+            "tests": 68,
+            "invocations": 132,
+            "publicationManifests": 24,
+            "resourceCount": 142,
+            "rejectedIntegratedCases": 48,
+            "sourceInputsDeleted": true,
+            "distributionBytesIdentical": true
+          }
+        },
+        "archiveSha256": "19bcc60fff1b73615ec880e7a42e1d018fa0f08f1fd057597ee718e0c58031ba"
+      }
+    },
+    "allPredecessorTestsAndOrderedChecksPreserved": true,
+    "addedTests": [
+      [
+        "org.flowlang.adapters.evidence.AdapterEvidenceBoundaryTests",
+        "boundCertificationCompilesWithoutReferenceDistribution()"
+      ],
+      [
+        "org.flowlang.adapters.evidence.AdapterEvidenceBoundaryTests",
+        "callersCannotConstructTheirOwnBoundScenario()"
+      ],
+      [
+        "org.flowlang.conformance.AdapterCertificationLifecycleTests",
+        "activationAcceptsMergedContractWithoutClosingBehavioralFindings()"
+      ],
+      [
+        "org.flowlang.conformance.AdapterCertificationLifecycleTests",
+        "activationCannotInventCompletionAcceptanceOrSupportPromotion()"
+      ],
+      [
+        "org.flowlang.conformance.AdapterCertificationLifecycleTests",
+        "duplicateMilestoneAndSequenceCannotDisappearDuringReplay()"
+      ],
+      [
+        "org.flowlang.conformance.AdapterCertificationLifecycleTests",
+        "everyChangedPointerMustMatchTheAuthenticatedTransition()"
+      ],
+      [
+        "org.flowlang.conformance.AdapterCertificationLifecycleTests",
+        "evidenceIsAuthenticatedBeforeParsingAndCannotBeSelfAttested()"
+      ],
+      [
+        "org.flowlang.conformance.AdapterCertificationLifecycleTests",
+        "realFileLoaderRejectsDeletedOrAlteredActivationEvidence()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "bindingDoesNotReplaceRuntimeEvidenceOrMutantPolarityChecks()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "boundAdmissionUsesCapturedBytesAndIndependentObservationReferences()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "capturedBytesAreDefensiveCopies()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "changedSourceAndWrongProviderCannotBeCaptured()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "compatibilityPlanCannotStandInForAnAuthorizedSource()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "eachCapturedInputRejectsSubstitutionBeforeExternalIo()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "everyActualSubjectMustRetainItsScenarioAssociation()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "inventedStructureOrUnrelatedLeafCannotBorrowScenarioEvidence()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "missingDuplicateAndWrongTargetBindingsFailAtomically()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "secondScenarioCannotLoseItsOwnCoverageEvenWhenFirstCoversTheSameSubject()"
+      ],
+      [
+        "org.flowlang.conformance.BoundAdapterCertificationTests",
+        "twoRealAdaptersBindOneCanonicalCompilationToDifferentArtifacts()"
+      ]
+    ],
+    "failuresErrorsSkipped": 0
+  },
+  "predecessorWorkFields": {
+    "selectedSlice": "AR-06B",
+    "acceptedSlices": [
+      "AR-06A"
+    ],
+    "authorization": {
+      "source": "Maintainer requests the next roadmap step after merging PR #197 and PR #198.",
+      "acceptedMain": "8972f0f583c2db7c4f8643d6a1c835149ae99c1f",
+      "workflowRunId": 37404887172
+    },
+    "validation": {
+      "status": "current-revision-ci-required",
+      "requiredChecks": [
+        "compile-test-conformance",
+        "merge-candidate-compile-test-conformance"
+      ],
+      "negativeEvidence": "Substituted source or artifacts, compatibility-only requests, invented and omitted occurrence coverage, cross-scenario borrowing and mutated lifecycle receipts."
+    }
+  },
+  "scope": "Compiler/rendering-bound inputs and occurrence coverage only; no runtime or public support certification."
+}

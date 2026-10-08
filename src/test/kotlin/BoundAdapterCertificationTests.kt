@@ -34,7 +34,7 @@ class BoundAdapterCertificationTests {
         private val bound by lazy { capture() }
     }
 
-    private class Fixture(val inputs: List<BoundCertificationScenario> = listOf(bound)) {
+    internal class Fixture(val inputs: List<BoundCertificationScenario> = listOf(bound)) {
         val provider = ReferenceTargetProjections.nativeCatalogs.getValue("jenkins")
         val identity = CertificationAdapterIdentity("jenkins", "binding-test", "test", "a".repeat(64))
         val bytes = linkedMapOf<String, ByteArray>()

@@ -4,6 +4,18 @@ import kotlin.test.Test
 import org.flowlang.testing.ExternalCompilerProbe
 
 class AdapterEvidenceBoundaryTests {
+    @Test fun authenticatedAdmissionCompilesWithoutConcreteAdaptersOrConformance() {
+        ExternalCompilerProbe.accepts("""
+            import org.flowlang.adapters.certification.*
+            import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
+            fun admit(bundle: AdapterCertificationBundle, adapter: CertificationAdapterIdentity,
+                captures: List<BoundCertificationScenario>, provider: TargetNativeProjectionCatalog,
+                observations: List<SignedCertificationObservation>, trust: CertificationObservationTrust,
+                resolver: CertificationEvidenceResolver) =
+                AuthenticatedAdapterCertificationAdmission.evaluate(bundle, adapter, captures, provider, observations, trust, resolver)
+        """.trimIndent())
+    }
+
     @Test fun boundCertificationCompilesWithoutReferenceDistribution() {
         ExternalCompilerProbe.accepts("""
             import org.flowlang.adapters.certification.*

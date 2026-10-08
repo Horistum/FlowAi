@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 73
+stateVersion: 74
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -214,6 +214,16 @@ recoveryPreparation:
   predecessorHead: "397d22e2ee44150717e645f14854fb8683d4f708"
   milestoneActivation: active
   validation: accepted-main-ci
+  supportPromotion: false
+
+recoveryCertification:
+  acceptedSlice: "AR-06B"
+  acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
+  workflowRunId: 37636042462
+  evidence: ".flow-agent/evidence/adapter-certification-binding-acceptance.json"
+  selectedSlice: "AR-06C"
+  workPackage: ".flow-agent/work-packages/adapter-observation-authentication.yaml"
+  validation: current-revision-ci-required
   supportPromotion: false
 
 lastKnownValidation:

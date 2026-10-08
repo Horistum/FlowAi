@@ -105,3 +105,45 @@ provenance. Injected adapter composition and expected implementation identity
 remain trusted caller inputs. Runtime fixtures, controls and observable behavior
 still need independent conformance design and authenticated execution evidence.
 No support view consumes this candidate path yet, and no target is promoted.
+
+## AR-06C: authenticated runner observations
+
+`AuthenticatedAdapterCertificationAdmission` adds runner-origin verification to
+the compiler/rendering-bound path. The assessment owner supplies a
+`CertificationObservationTrust` independently of the candidate: trusted Ed25519
+public keys, a fresh unpredictable challenge (32..128 URL-safe characters), and
+an exact `CertificationAuthorizedRun` inventory. Allocate at least 128 bits of
+randomness for each challenge, persist the authorized run mapping, and never
+reuse a challenge. This component has no durable replay store or key discovery.
+
+An external runner derives an observation from execution, obtains signing bytes
+from `CertificationObservationAuthentication.signingBytes`, signs them with its
+own Ed25519 private key, and submits a `SignedCertificationObservation`. The
+private key and signing operation stay outside Flow. Configure trusted public
+keys through an independent channel; a candidate-supplied key proves nothing.
+
+The internal version-1 signing input starts with UTF-8
+`Flow adapter execution observation`, a NUL byte, `v1`, and another NUL. It then
+encodes, in order: runner ID, assessment challenge, run ID, adapter target/ID/
+version/implementation SHA, scenario ID, mutant presence byte (0 or 1) and optional
+mutant ID, graph SHA, fixture SHA, artifact reference, observation reference,
+runtime count and ordered runtime ID/version pairs, and outcome enum name.
+Every string is strict UTF-8 preceded by its 32-bit big-endian byte length.
+References contain ID, SHA and a 32-bit big-endian size. Runtime count uses the
+same integer encoding. No separator concatenation or Unicode replacement occurs.
+The helper is the in-process format owner; this is not a published wire schema.
+
+Admission caps the run inventory at 256 and each statement at 65536 bytes, with
+4096 characters per field. It rejects wrong challenge/runner/run assignments,
+missing/duplicate/extra runs and invalid signatures before resolver I/O. Signature
+bytes, runtime lists and trusted inputs are copied. Only fully authenticated
+observations reach bound admission, whose byte, scope, runtime and mutant checks
+still apply. Runtime-list order is signed even though integrity admission compares
+runtime prerequisites as sets.
+
+Use this entry point when runner authentication is required. The earlier APIs
+retain their documented integrity-only meaning. A valid signature proves origin
+under the configured trust policy; it does not prove runner honesty, semantic
+adequacy or actual platform execution. Real behavioral runners, key provisioning,
+revocation, observation normalization and the construct/target/behavior/mutant
+matrix remain follow-up work. No public target support is promoted in this slice.

@@ -27,6 +27,7 @@ org/flowlang/conformance/AdapterCertificationLifecycle.kt
 org/flowlang/conformance/AdapterContinuityConformanceChecks.kt
 org/flowlang/conformance/AdapterControlConformanceChecks.kt
 org/flowlang/conformance/AdapterExecutableContinuityConformanceChecks.kt
+org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
 org/flowlang/conformance/AdapterPortfolioConformanceChecks.kt
 org/flowlang/conformance/AdapterProfileEvidenceAuthority.kt
 org/flowlang/conformance/AdapterProfileEvidenceConformanceChecks.kt

@@ -37,7 +37,9 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val integratedProductAcceptanceEvidence: String? = null,
     val artifactCompletionEvidence: String? = null,
     val certificationWorkPackage: Map<String, Any?> = emptyMap(),
-    val certificationActivationEvidence: String? = null
+    val certificationActivationEvidence: String? = null,
+    val observationAuthenticationWorkPackage: Map<String, Any?> = emptyMap(),
+    val certificationBindingEvidence: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -121,7 +123,9 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             File(root, IntegratedProductIntegrityLifecycle.IMPLEMENTATION_EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
             File(root, ArtifactIntegrityCompletion.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
             optionalMap(root, AdapterCertificationLifecycle.WORK_PACKAGE),
-            File(root, AdapterCertificationLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
+            File(root, AdapterCertificationLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
+            optionalMap(root, AdapterObservationAuthenticationLifecycle.WORK_PACKAGE),
+            File(root, AdapterObservationAuthenticationLifecycle.EVIDENCE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
         )
     }
 
@@ -130,7 +134,9 @@ internal object WorkflowSemanticsRecoveryLifecycle {
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
         if (map(snapshot.recovery["currentDecision"])["workPackage"] == AdapterCertificationLifecycle.WORK_PACKAGE) {
-            addAll(AdapterCertificationLifecycle.errors(snapshot))
+            if (snapshot.certificationWorkPackage["selectedSlice"] == "AR-06C" || snapshot.release.containsKey("recoveryCertification"))
+                addAll(AdapterObservationAuthenticationLifecycle.errors(snapshot))
+            else addAll(AdapterCertificationLifecycle.errors(snapshot))
             return@buildList
         }
         if (map(snapshot.recovery["currentDecision"])["workPackage"] == ArtifactIntegrityLifecycle.WORK_PACKAGE) {
