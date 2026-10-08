@@ -1,0 +1,33 @@
+version: "AR-06E"
+name: "Jenkins Native Failure Propagation Certification"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap step after merging PR #201."
+  predecessorPullRequest: 201
+  predecessorMerge: "2bfb2d84f907cbaa310debf7f87a5d906f09637f"
+  integrationPullRequest: 200
+  activation: blocked-on-integration-merge-and-main-validation
+invariant: "A bounded fail-fast claim requires the unchanged compiler-rendered artifact to fail for the intended native checkout error before its dependent checkout starts; completed omission and error-suppression mutants must expose the changed observable behavior."
+scope:
+  - "Add a two-checkout intent with an explicit dependency and stopOnError enabled."
+  - "Observe the actual Jenkins build result, workspace marker, executed native step count and step error identity outside the pipeline."
+  - "Distinguish the deliberately exercised missing-revision failure from infrastructure errors, aborts and timeouts."
+  - "Retain source, graph, artifact, runtime, signature and exact-run admission checks."
+nonGoals:
+  - "No general retry, error-boundary, structural support or portable-execution promotion."
+  - "No product executor, new public syntax, package version change or AR-06 finding closure."
+  - "No actual-main acceptance while PR #200 remains open."
+ownershipBoundary:
+  fixture: flow-adapter-jenkins
+  orchestration: flow-conformance-kit
+  semanticKernel: unchanged
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime]
+  negativeEvidence: "Omitted failing checkout, swallowed failure, unexpected native error, wrong step count, continued dependent checkout, incomplete build and tampered runtime record."
+followUp:
+  - "Execute equivalent canonical scenarios on a materially different adapter."
+  - "Extend the behavior matrix to control flow, continuity, secrets and approvals."
+  - "Generate public support views from accepted bounded runtime evidence."

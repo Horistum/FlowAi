@@ -162,3 +162,22 @@ This candidate is stacked on PR #200 until its merge and actual-main validation
 are observed. It establishes only native checkout behavior on the recorded runtime,
 not structural equivalence or portability to GitHub Actions. See the adapter's
 runtime-test README for execution, evidence and trust boundaries.
+
+## AR-06E: native failure propagation candidate
+
+The adapter-owned `failure.intent.yaml` adds two explicitly dependent checkout
+operations with propagating failure policy. Real Jenkins must report the exact
+missing-revision error and never execute the dependent checkout. Omission and
+error-suppression mutants must expose the changed marker, step count and error
+observations. The external controller observes these facts without instrumenting
+the positive Jenkinsfile.
+
+Run `:flow-conformance-kit:verifyJenkinsFailureRuntime` with JDK 25, Docker and a
+fresh output directory. CI publishes `jenkins-failure-runtime` evidence separately
+from the existing checkout proof. Deliberate scenario failure can be a completed
+execution; unexpected runtime errors, aborts and incomplete records remain
+rejected. The original checkout scenario still requires all builds to succeed.
+
+This is a stacked candidate after PR #201 merged into PR #200. Actual-main
+acceptance remains pending. No public schema, support/maturity label or version
+changes; general error-boundary, retry and portability claims remain unproven.

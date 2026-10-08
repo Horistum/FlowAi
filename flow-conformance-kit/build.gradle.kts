@@ -46,3 +46,13 @@ tasks.register<JavaExec>("verifyJenkinsCheckoutRuntime") {
     args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-runtime-certification").get().asFile.absolutePath)
     workingDir(rootProject.projectDir)
 }
+
+tasks.register<JavaExec>("verifyJenkinsFailureRuntime") {
+    group = "verification"
+    description = "Verify native failure propagation and its omission/suppression mutants on real Jenkins."
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+    args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-failure-certification").get().asFile.absolutePath, "jenkins-failure-runtime")
+    workingDir(rootProject.projectDir)
+}
