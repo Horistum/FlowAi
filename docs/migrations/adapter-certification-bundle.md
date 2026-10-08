@@ -147,3 +147,18 @@ under the configured trust policy; it does not prove runner honesty, semantic
 adequacy or actual platform execution. Real behavioral runners, key provisioning,
 revocation, observation normalization and the construct/target/behavior/mutant
 matrix remain follow-up work. No public target support is promoted in this slice.
+
+## AR-06D candidate: real Jenkins native checkout
+
+The first runtime fixture lives in `flow-adapter-jenkins/src/runtimeTest` and has
+an explicit behavior/mutant matrix. The dedicated
+`:flow-conformance-kit:verifyJenkinsCheckoutRuntime` task runs a disposable real
+Jenkins controller with the adapter's compiler-generated artifact. It observes
+workspace bytes for the baseline, an omitted checkout and a substituted branch,
+then admits signed observations through the AR-06C path. The ordinary unit suite
+does not start Jenkins. The separate runtime CI job is mandatory for this claim.
+
+This candidate is stacked on PR #200 until its merge and actual-main validation
+are observed. It establishes only native checkout behavior on the recorded runtime,
+not structural equivalence or portability to GitHub Actions. See the adapter's
+runtime-test README for execution, evidence and trust boundaries.

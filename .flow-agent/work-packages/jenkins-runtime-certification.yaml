@@ -1,0 +1,34 @@
+version: "AR-06D"
+name: "Jenkins Native Checkout Runtime Certification"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap step after AR-06C."
+  predecessorPullRequest: 200
+  predecessorHead: "febe35775a333d15f71ef39068527cb116a90427"
+  activation: blocked-on-predecessor-merge-and-main-validation
+invariant: "A bounded Jenkins checkout claim requires the compiler-rendered artifact to execute on real Jenkins, independently observed workspace content, and completed omission and branch-substitution mutants admitted through authenticated evidence."
+scope:
+  - "Add an adapter-owned checkout fixture and explicit behavior/mutant matrix."
+  - "Run the generated Jenkinsfile unchanged in an isolated real Jenkins controller with its Git and Declarative Pipeline plugins."
+  - "Run changed artifacts that omit checkout or select another existing branch; verify observed workspace bytes differ exactly as expected."
+  - "Sign externally collected observations and retain AR-06B input binding and AR-06C authentication during admission."
+  - "Record exact runtime, plugin and artifact identities with bounded execution and evidence collection."
+nonGoals:
+  - "No production execution engine, existing Jenkins deployment access, global support promotion or finding closure."
+  - "No two-adapter portability claim; GitHub Actions execution and structural scenarios remain follow-up work."
+  - "No AR-06C acceptance before its actual merge and main CI; this is a stacked candidate."
+ownershipBoundary:
+  fixture: flow-adapter-jenkins
+  runtime: "Disposable external Jenkins test container; absent from product dependencies."
+  orchestration: "Conformance tooling and a dedicated runtime CI workflow."
+  semanticKernel: unchanged
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime]
+  negativeEvidence: "Omitted checkout, branch substitution, tampered evidence and missing/incomplete runtime records; infrastructure failures cannot kill a mutant."
+followUp:
+  - "Execute equivalent canonical scenarios on GitHub Actions."
+  - "Extend the construct/target/behavior/mutant matrix to control flow, continuity, secrets and failure propagation."
+  - "Derive public support views only from accepted bounded runtime evidence."

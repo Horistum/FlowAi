@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 74
+stateVersion: 75
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -223,6 +223,17 @@ recoveryCertification:
   evidence: ".flow-agent/evidence/adapter-certification-binding-acceptance.json"
   selectedSlice: "AR-06C"
   workPackage: ".flow-agent/work-packages/adapter-observation-authentication.yaml"
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryRuntimePreparation:
+  candidate: "AR-06D"
+  status: candidate
+  workPackage: ".flow-agent/work-packages/jenkins-runtime-certification.yaml"
+  report: ".flow-agent/reports/jenkins-runtime-certification.md"
+  predecessorPullRequest: 200
+  predecessorHead: "febe35775a333d15f71ef39068527cb116a90427"
+  activation: blocked-on-predecessor-merge-and-main-validation
   validation: current-revision-ci-required
   supportPromotion: false
 

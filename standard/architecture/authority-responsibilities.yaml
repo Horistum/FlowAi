@@ -720,6 +720,7 @@ authorities:
       - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt"
+      - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
       - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt"
       - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
       - "src/main/kotlin/org/flowlang/conformance/SemanticImplementationObservationAuthority.kt"

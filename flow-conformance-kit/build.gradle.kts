@@ -35,3 +35,14 @@ sourceSets.main {
     resources.exclude("standard/compatibility/capability-aliases.yaml")
 }
 tasks.test { workingDir(rootProject.projectDir) }
+
+// Opt-in external runtime proof. Root tests and product distributions never start Docker or Jenkins.
+tasks.register<JavaExec>("verifyJenkinsCheckoutRuntime") {
+    group = "verification"
+    description = "Execute the adapter-owned checkout artifact and mutants on disposable real Jenkins."
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+    args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-runtime-certification").get().asFile.absolutePath)
+    workingDir(rootProject.projectDir)
+}
