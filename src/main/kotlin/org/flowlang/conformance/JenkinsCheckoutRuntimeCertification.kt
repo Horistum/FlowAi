@@ -42,8 +42,11 @@ internal object JenkinsCheckoutRuntimeCertification {
         ERROR_FAILURE("jenkins-error-failure-runtime", "error-failure.flow", "error-matrix.json", listOf("baseline", "omitted-handler", "suppressed-propagation"), "AR-06H"),
         ERROR_SUCCESS("jenkins-error-success-runtime", "error-success.flow", "error-matrix.json", listOf("baseline", "unconditional-handler", "omitted-body"), "AR-06H"),
         RECOVERY_FAILURE("jenkins-recovery-failure-runtime", "recovery-failure.flow", "recovery-matrix.json", listOf("baseline", "omitted-handler", "rethrown-failure", "omitted-continuation"), "AR-06I"),
-        RECOVERY_SUCCESS("jenkins-recovery-success-runtime", "recovery-success.flow", "recovery-matrix.json", listOf("baseline", "unconditional-handler", "omitted-continuation"), "AR-06I");
+        RECOVERY_SUCCESS("jenkins-recovery-success-runtime", "recovery-success.flow", "recovery-matrix.json", listOf("baseline", "unconditional-handler", "omitted-continuation"), "AR-06I"),
+        APPROVAL_APPROVE("jenkins-approval-approve-runtime", "approval.flow", "approval-matrix.json", listOf("baseline", "omitted-approval", "late-approval"), "AR-06J"),
+        APPROVAL_REJECT("jenkins-approval-reject-runtime", "approval.flow", "approval-matrix.json", listOf("baseline", "omitted-approval", "late-approval", "suppressed-rejection"), "AR-06J");
 
+        val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
         val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE
         val errorBoundary: Boolean get() = this == ERROR_FAILURE || this == ERROR_SUCCESS
         val localRecovery: Boolean get() = this == RECOVERY_FAILURE || this == RECOVERY_SUCCESS
@@ -79,7 +82,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val original = requireNotNull(bound.resolve(bound.artifact))
         val text = original.toString(Charsets.UTF_8)
         val runIds = scenario.runIds
-        val artifacts = if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
+        val artifacts = if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
             val branch = if (scenario == Scenario.FAILURE) "missing-revision" else "selected"
             val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
             require(checkout.trim() == "git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'")
@@ -96,9 +99,9 @@ internal object JenkinsCheckoutRuntimeCertification {
         }
         val matrix = mapper.readTree(File(root, "$FIXTURE/${scenario.matrix}"))
         require(matrix["version"].asInt() == 1 && matrix["target"].asText() == "jenkins")
-        val construct = when { scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
+        val construct = when { scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
         require(matrix["claim"].asText() == scenario.claim && matrix["construct"].asText() == construct)
-        val scenarioMatrix = if (scenario.conditional || scenario.terminalEvidence) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
+        val scenarioMatrix = if (scenario.conditional || scenario.terminalEvidence || scenario.approval) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
         require(scenarioMatrix["scenario"].asText() == scenario.id)
         val rows = listOf(scenarioMatrix["positive"]) + scenarioMatrix["mutants"].toList()
         require(rows.map { it["id"].asText() } == runIds)
@@ -107,28 +110,31 @@ internal object JenkinsCheckoutRuntimeCertification {
             evidence[id] = bytes.copyOf(); return CertificationEvidenceReference(id, sha256(bytes), bytes.size)
         }
         val expected = rows.associate { row ->
-            val expectedResult = if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
+            val expectedResult = if (scenario == Scenario.APPROVAL_REJECT && row["id"].asText() in listOf("baseline", "late-approval")) "ABORTED" else if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
                 scenario == Scenario.ERROR_FAILURE && row["id"].asText() != "suppressed-propagation" ||
                 scenario == Scenario.RECOVERY_FAILURE && row["id"].asText() == "rethrown-failure") "FAILURE" else "SUCCESS"
             require(row["result"].asText() == expectedResult)
             row["id"].asText() to ref("expected:${row["id"].asText()}", observationBytes(row, scenario))
         }
+        val runtimePlugins = plugins + if (scenario.approval) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()
         val runtime = listOf(CertificationRuntimePrerequisite("jenkins", "2.580.1"),
-            CertificationRuntimePrerequisite("container-image", imageId)) + plugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) }
+            CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) }
         val specification = bound.scenario(expected.getValue("baseline"), runtime, runIds.drop(1).map { id ->
             CertificationNegativeMutant(id, ref("artifact:$id", artifacts.getValue(id)), expected.getValue(id))
         })
         val implementation = File(root, "gradle/adapter-jenkins-sources.txt").readLines().filter(String::isNotBlank)
             .joinToString("\n") { path -> "$path:${sha256(File(root, "src/main/kotlin/$path").readBytes())}" }.toByteArray()
-        val adapterId = when { scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
+        val adapterId = when { scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
         val adapter = CertificationAdapterIdentity("jenkins", adapterId, scenario.version, sha256(implementation))
         val subjects = bound.subjects + TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
-            provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) }
+            (provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
+                provider.approvalDefinitions.map { CertificationSubject.Leaf(it.kind, it.reference) })
         val limitations = matrix["limitations"].map { it.asText() }
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
             if (subject in bound.subjects) listOf(bound.id) else emptyList(),
-            if (scenario.localRecovery) "Local recovery occurrence and continuation with native checkout children only; see bounded runtime limitations."
+            if (scenario.approval) "Manual input occurrence before one protected native checkout; automated decisions, no human authorization claim."
+            else if (scenario.localRecovery) "Local recovery occurrence and continuation with native checkout children only; see bounded runtime limitations."
             else if (scenario.errorBoundary) "Workflow error-handler occurrence with native checkout children only; see bounded runtime limitations."
             else if (scenario.conditional) "Boolean equality guards with native checkout children only; see bounded runtime limitations."
             else "Native checkout occurrences only; see bounded runtime limitations.") },
@@ -143,6 +149,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(result["jenkins"]?.asText() == "2.580.1") { "Unexpected Jenkins version." }
         require(result["java"]?.asText()?.let { it == "25" || it.startsWith("25.") || it.startsWith("25+") } == true)
         require(plugins.all { (id, version) -> result["plugins"]?.get(id)?.asText() == version }) { "Unexpected runtime plugins." }
+        if (prepared.scenario.approval) require(result["plugins"]?.get("pipeline-input-step")?.asText() == "534.v352f0a_e98918")
         val runIds = prepared.scenario.runIds
         require(result["runs"]?.isArray == true && result["runs"].size() == runIds.size)
         val rows = result["runs"].toList()
@@ -165,6 +172,12 @@ internal object JenkinsCheckoutRuntimeCertification {
     }
 
     private fun completed(row: JsonNode, scenario: Scenario): Boolean = row["result"].asText() == "SUCCESS" ||
+        scenario == Scenario.APPROVAL_REJECT && row["result"].asText() == "ABORTED" &&
+            row["approval"]["decision"].asText() == "reject" &&
+            row["approval"]["inputErrors"].size() == 1 &&
+            expectedRejection(row["approval"]["inputErrors"][0]) &&
+            expectedRejection(row["approval"]["terminalError"]) &&
+            row["approval"]["terminalError"]["inputIndex"]?.asInt() == 1 ||
         (scenario == Scenario.FAILURE || scenario == Scenario.ERROR_FAILURE || scenario == Scenario.RECOVERY_FAILURE) && row["result"].asText() == "FAILURE" && row["checkoutErrors"].size() == 1 &&
         row["checkoutErrors"][0]["type"].asText() == "hudson.AbortException" && row["checkoutErrors"][0]["message"].asText() == MISSING_REVISION &&
         (!scenario.terminalEvidence || row["terminalError"]?.let { terminal ->
@@ -189,6 +202,7 @@ internal object JenkinsCheckoutRuntimeCertification {
                 linkedMapOf("type" to error["type"].asText(), "message" to error["message"].asText())
             }
         }
+        if (scenario.approval) observation["approval"] = approvalObservation(row["approval"])
         if (scenario.localRecovery) {
             val indices = row["checkoutErrorIndices"]
             require(indices?.isArray == true && indices.size() == row["checkoutErrors"].size())
@@ -213,6 +227,78 @@ internal object JenkinsCheckoutRuntimeCertification {
             }
         }
         return (mapper.writeValueAsString(observation) + "\n").toByteArray()
+    }
+
+    private fun expectedRejection(error: JsonNode): Boolean =
+        error["type"]?.asText() == "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException" &&
+            error["result"]?.asText() == "ABORTED" && error["causes"]?.let { causes ->
+                causes.size() == 1 && causes[0].asText() == "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+            } == true
+
+    private fun approvalObservation(value: JsonNode?): Map<String, Any?> {
+        require(value?.isObject == true && value.fieldNames().asSequence().toSet() ==
+            setOf("inputCount", "inputErrors", "pending", "decision", "terminalError"))
+        val row = requireNotNull(value)
+        fun count(node: JsonNode?): Int {
+            require(node?.isIntegralNumber == true && node.canConvertToInt() && node.asInt() in 0..1)
+            return node.asInt()
+        }
+        fun error(node: JsonNode, terminal: Boolean): Map<String, Any?> {
+            require(node.isObject && node.fieldNames().asSequence().toSet() ==
+                setOf("type", "result", "causes") + if (terminal) setOf("inputIndex") else emptySet())
+            require(node["type"].isTextual && node["type"].asText().length in 1..256)
+            require(node["result"].isNull || node["result"].isTextual && node["result"].asText().length in 1..32)
+            require(node["causes"].isArray && node["causes"].size() <= 4)
+            val causes = node["causes"].map { cause ->
+                require(cause.isTextual && cause.asText().length in 1..256); cause.asText()
+            }
+            return linkedMapOf<String, Any?>("type" to node["type"].asText(),
+                "result" to if (node["result"].isNull) null else node["result"].asText(), "causes" to causes).apply {
+                if (terminal) {
+                    val index = node["inputIndex"]
+                    require(index.isNull || count(index) == 1 && row["inputCount"].asInt() == 1)
+                    put("inputIndex", if (index.isNull) null else index.asInt())
+                }
+            }
+        }
+        val inputs = count(row["inputCount"])
+        require(row["inputErrors"].isArray && row["inputErrors"].size() <= inputs)
+        val pending = row["pending"].let { node ->
+            if (node.isNull) null else {
+                require(node.isObject && node.fieldNames().asSequence().toSet() ==
+                    setOf("message", "activeInputs", "paused", "checkoutCount", "marker", "building", "complete"))
+                require(node["message"].isTextual && node["message"].asText().length in 1..1024)
+                require(count(node["activeInputs"]) == 1 && inputs == 1)
+                require(node["paused"].isBoolean && node["paused"].booleanValue())
+                require(node["marker"].isNull || node["marker"].isTextual && node["marker"].asText().length <= 1024)
+                require(node["building"].isBoolean && node["building"].booleanValue())
+                require(node["complete"].isBoolean && !node["complete"].booleanValue())
+                linkedMapOf("message" to node["message"].asText(), "activeInputs" to 1, "paused" to true,
+                    "checkoutCount" to count(node["checkoutCount"]),
+                    "marker" to if (node["marker"].isNull) null else node["marker"].asText(), "building" to true, "complete" to false)
+            }
+        }
+        require(row["decision"].isTextual && row["decision"].asText() in setOf("none", "approve", "reject"))
+        require((pending == null) == (row["decision"].asText() == "none"))
+        require(pending != null || inputs == 0)
+        return linkedMapOf("inputCount" to inputs, "inputErrors" to row["inputErrors"].map { error(it, false) },
+            "pending" to pending, "decision" to row["decision"].asText(),
+            "terminalError" to if (row["terminalError"].isNull) null else error(row["terminalError"], true))
+    }
+
+    private fun approvalArtifacts(text: String, original: ByteArray, scenario: Scenario): Map<String, ByteArray> {
+        val gate = text.lineSequence().single { it.trimStart().startsWith("input message:") }
+        require(gate.trim() == "input message: 'Allow the protected checkout?'")
+        val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch:") }
+        require(checkout.trim() == "git branch: 'selected', url: 'git://127.0.0.1:9418/repository.git'")
+        val indent = gate.takeWhile(Char::isWhitespace)
+        require(checkout.takeWhile(Char::isWhitespace) == indent && text.indexOf(gate) < text.indexOf(checkout))
+        val omitted = replaceOnce(text, gate, indent + "echo 'Approval intentionally omitted by certification mutant'")
+        val late = replaceOnce(replaceOnce(text, gate + "\n", ""), checkout, "$checkout\n$gate")
+        return linkedMapOf("baseline" to original, "omitted-approval" to omitted.toByteArray(), "late-approval" to late.toByteArray()).apply {
+            if (scenario == Scenario.APPROVAL_REJECT) put("suppressed-rejection", replaceOnce(text, gate,
+                "${indent}try {\n$indent    ${gate.trim()}\n$indent} catch (flowError) {\n$indent    echo 'Rejection intentionally suppressed'\n$indent}").toByteArray())
+        }
     }
 
     internal fun replaceOnce(source: String, old: String, replacement: String): String {

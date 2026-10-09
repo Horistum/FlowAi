@@ -7,10 +7,10 @@ authorization:
   source: "Maintainer requests the next roadmap step after merging PR #199."
   acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
   workflowRunId: 37636042462
-selectedSlice: "AR-06I"
-selectedWorkPackage: ".flow-agent/work-packages/jenkins-local-recovery-certification.yaml"
+selectedSlice: "AR-06J"
+selectedWorkPackage: ".flow-agent/work-packages/jenkins-approval-certification.yaml"
 acceptedSlices: ["AR-06A", "AR-06B"]
-invariant: "A local error boundary handles a failing body once, skips the rest of that body and continues after recovery; a successful body skips its handler and also continues."
+invariant: "A manual approval pauses before its protected operation; approval resumes it once and rejection prevents it from executing."
 scope:
   - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
   - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
@@ -18,11 +18,12 @@ scope:
   - "Accept AR-06B against independently verified PR and actual-main receipts while preserving every historical acceptance gate."
   - "Retain compiler-owned workflow failure-boundary occurrences and independently observe handler routing and terminal error origin."
   - "Observe bounded local recovery, skipped failed-body successors and continuation independently on real Jenkins."
+  - "Observe a pending manual input, approval and rejection before one protected checkout, including omitted, late and suppressed-rejection mutants."
 nonGoals:
   - "No product runtime execution, general semantic adequacy or portable-execution claim."
   - "No support promotion, finding closure, public version change or EF-09 resumption."
 ownershipBoundary:
-  production: unchanged
+  production: flow-adapter-evidence
   semanticKernel: unchanged
   concreteAdapters: unchanged
   conformance: "Lifecycle validation and real-provider integration tests."
@@ -36,8 +37,9 @@ validation:
   - jenkins-condition-runtime
   - jenkins-error-boundary-runtime
   - jenkins-local-recovery-runtime
-  negativeEvidence: Omitted or unconditional handler, unexpected rethrow, omitted continuation, resumed failed body, surviving
-    mutants, incorrect native errors, malformed records, substituted artifacts and historical receipt tampering.
+  - jenkins-approval-runtime
+  negativeEvidence: Omitted or late approval, suppressed rejection, premature protected execution, surviving mutants, wrong
+    input error origin, malformed records, substituted artifacts and historical receipt tampering.
 followUp:
   - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
   - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."

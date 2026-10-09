@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "target": "jenkins",
+  "construct": "approval.manual",
+  "claim": "native-leaf-only",
+  "scenarios": [
+    {
+      "scenario": "jenkins-approval-approve-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 1,
+        "checkoutErrors": [],
+        "approval": {
+          "inputCount": 1,
+          "inputErrors": [],
+          "pending": {
+            "message": "Allow the protected checkout?",
+            "activeInputs": 1,
+            "checkoutCount": 0,
+            "marker": null,
+            "building": true,
+            "complete": false,
+            "paused": true
+          },
+          "decision": "approve",
+          "terminalError": null
+        }
+      },
+      "mutants": [
+        {
+          "id": "omitted-approval",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 0,
+            "inputErrors": [],
+            "pending": null,
+            "decision": "none",
+            "terminalError": null
+          }
+        },
+        {
+          "id": "late-approval",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 1,
+            "inputErrors": [],
+            "pending": {
+              "message": "Allow the protected checkout?",
+              "activeInputs": 1,
+              "checkoutCount": 1,
+              "marker": "selected\n",
+              "building": true,
+              "complete": false,
+              "paused": true
+            },
+            "decision": "approve",
+            "terminalError": null
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-approval-reject-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "ABORTED",
+        "marker": null,
+        "checkoutCount": 0,
+        "checkoutErrors": [],
+        "approval": {
+          "inputCount": 1,
+          "inputErrors": [
+            {
+              "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+              "result": "ABORTED",
+              "causes": [
+                "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+              ]
+            }
+          ],
+          "pending": {
+            "message": "Allow the protected checkout?",
+            "activeInputs": 1,
+            "checkoutCount": 0,
+            "marker": null,
+            "building": true,
+            "complete": false,
+            "paused": true
+          },
+          "decision": "reject",
+          "terminalError": {
+            "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+            "result": "ABORTED",
+            "causes": [
+              "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+            ],
+            "inputIndex": 1
+          }
+        }
+      },
+      "mutants": [
+        {
+          "id": "omitted-approval",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 0,
+            "inputErrors": [],
+            "pending": null,
+            "decision": "none",
+            "terminalError": null
+          }
+        },
+        {
+          "id": "late-approval",
+          "result": "ABORTED",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 1,
+            "inputErrors": [
+              {
+                "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+                "result": "ABORTED",
+                "causes": [
+                  "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+                ]
+              }
+            ],
+            "pending": {
+              "message": "Allow the protected checkout?",
+              "activeInputs": 1,
+              "checkoutCount": 1,
+              "marker": "selected\n",
+              "building": true,
+              "complete": false,
+              "paused": true
+            },
+            "decision": "reject",
+            "terminalError": {
+              "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+              "result": "ABORTED",
+              "causes": [
+                "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+              ],
+              "inputIndex": 1
+            }
+          }
+        },
+        {
+          "id": "suppressed-rejection",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 1,
+            "inputErrors": [
+              {
+                "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+                "result": "ABORTED",
+                "causes": [
+                  "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+                ]
+              }
+            ],
+            "pending": {
+              "message": "Allow the protected checkout?",
+              "activeInputs": 1,
+              "checkoutCount": 0,
+              "marker": null,
+              "building": true,
+              "complete": false,
+              "paused": true
+            },
+            "decision": "reject",
+            "terminalError": null
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "One manual input before one native checkout on the recorded Jenkins runtime only.",
+    "Decisions are submitted by an isolated test controller; human identity, roles, submitter authorization and approval policy adequacy are not certified.",
+    "Timeouts, restarts, nested or concurrent approvals and cross-target portability remain unobserved.",
+    "No public support promotion or general protected-operation binding claim."
+  ]
+}

@@ -1,0 +1,534 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Observed merged-main baseline for the AR-06J candidate; not AR-06 milestone completion or validation of AR-06J.",
+  "mergedMain": "761191c6ebadeef99544f3418d29899795588397",
+  "tree": "ad337c9d514cbd28f39ab1e1c538912fb2ef4d16",
+  "predecessorPullRequest": 206,
+  "flowCiRunId": 37960137752,
+  "runtimeRunId": 37960137918,
+  "junit": {
+    "tests": 1963,
+    "suites": 339,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "identitySha256": "a0e98bea0db26eb848e4c611ea9116de341a89eafbb789cfd3ec7955fbd5ba91"
+  },
+  "conformance": {
+    "passed": 274,
+    "failed": 0,
+    "orderedIdentitySha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+  },
+  "isolationInputsVerified": {
+    "kernel": 19,
+    "compiler": 95,
+    "adapter": 226,
+    "product": 429
+  },
+  "runtimeScenarios": {
+    "jenkins-condition-true-runtime": {
+      "imageId": "sha256:d8f2861a7d216fa6843f45fa69015d16627082c4fbddb44136ab9d80248a24b3",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "flattened-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": []
+        },
+        {
+          "id": "inverted-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "3f81ef36a027132b767f8b15f74076b7373000d513e3df0d8c1c3371e060b385",
+        "evidence-view.md": "c6e71016648323e9b3369ab251b1f4c5965de778c9e4ed4afafdd001a311a4f8"
+      }
+    },
+    "jenkins-condition-false-runtime": {
+      "imageId": "sha256:d8f2861a7d216fa6843f45fa69015d16627082c4fbddb44136ab9d80248a24b3",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "flattened-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": []
+        },
+        {
+          "id": "inverted-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "228faff12ecb28a62554de18c142e4a518c0a226e8380649b1f7008d1e34dbcf",
+        "evidence-view.md": "d50ac44907cc00b627ef3a0ebff7a88a9beb20ba4c3dcf8bb0f457bbb1a0a49b"
+      }
+    },
+    "jenkins-failure-runtime": {
+      "imageId": "sha256:539370a8936f834cb1ce083456a768cca7077a4e5415fee42d9e603bcaf1acaf",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 1,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ]
+        },
+        {
+          "id": "omitted-failure",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "suppressed-failure",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ]
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "928c7e5c048b5b60ef44c83822e3a9a3e9725efc18b10ca657c07cf8007d73a2",
+        "evidence-view.md": "996bae68efda5ff7a9eb7e6203036d4e4c5a82a0e49600311964ead929089607"
+      }
+    },
+    "jenkins-checkout-runtime": {
+      "imageId": "sha256:4c75610950ec5ab389d9b449307fd1e9ea1376863afbc557c0eb40bb4d391981",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "omitted-checkout",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 0,
+          "checkoutErrors": []
+        },
+        {
+          "id": "substituted-branch",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "bd7ead8befbafde183adda1b1b71c114a4b16df52ed4e3103f1d173de970fbaf",
+        "evidence-view.md": "0c2e3c66443a4a69b24c38515400d00f4e8d0b55e9b138b0c96641434eaa7d4b"
+      }
+    },
+    "jenkins-error-failure-runtime": {
+      "imageId": "sha256:c61537f65f568829fe6958ad36f7df5de2c8a857d534195b5db7e324e06f696c",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "omitted-handler",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 1,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "suppressed-propagation",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "terminalError": null
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "99a78c11b4b35d172dc6549d677b23bb3c275510ea88a6a8cf109a686ca7628c",
+        "evidence-view.md": "1aa9e66c446dd2ff5d7c06ea579c93610573d5c553a30cc1d8e30439c53d0721"
+      }
+    },
+    "jenkins-error-success-runtime": {
+      "imageId": "sha256:c61537f65f568829fe6958ad36f7df5de2c8a857d534195b5db7e324e06f696c",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "terminalError": null
+        },
+        {
+          "id": "unconditional-handler",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-body",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 0,
+          "checkoutErrors": [],
+          "terminalError": null
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "54d394a8f9ca489537e0797e3f65436312539db62ea558f90ba13830de83ac69",
+        "evidence-view.md": "a1ed200a3f09ad9297f6a415e4e49f548393deb3ddd91d07ec35f3917551fbee"
+      }
+    },
+    "jenkins-recovery-failure-runtime": {
+      "imageId": "sha256:ea0e15bbb03177926c94f9cc1895a14ff5c43ecfa68784070c6faba660155bf5",
+      "verifiedSignatures": 4,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 3,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-handler",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        },
+        {
+          "id": "rethrown-failure",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "omitted-continuation",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "82250a30a23a6c958143c9031b7e502b092aba2c19af08422edfa547fc04a647",
+        "evidence-view.md": "57e92eda02d9bc52735db3a7c1500acf617e8f7f52bd3d164e47eac86656b90d"
+      }
+    },
+    "jenkins-recovery-success-runtime": {
+      "imageId": "sha256:ea0e15bbb03177926c94f9cc1895a14ff5c43ecfa68784070c6faba660155bf5",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "unconditional-handler",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 3,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-continuation",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "f256a28fee984b76c5251c9da8cc6ef313b94f90eb24a1a9969a02dfa5e05abf",
+        "evidence-view.md": "ffa61f85f70809eaed5cd765f48a0122d3cff1f86ccb92e7e89c92658afa266a"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "id": 11629978426,
+      "name": "jenkins-condition-runtime",
+      "runId": 37960137918,
+      "sha256": "954f4ea538530e0c00b913e837eef4fc2753d2500c7471232ee70af59a61cbe6"
+    },
+    {
+      "id": 11630138360,
+      "name": "jenkins-failure-runtime",
+      "runId": 37960137918,
+      "sha256": "190ad7ce19d17c088195cf8033b0b12ad1ef4b8bbc33ae81a3ab5db847143296"
+    },
+    {
+      "id": 11630138425,
+      "name": "jenkins-checkout-runtime",
+      "runId": 37960137918,
+      "sha256": "a673c22dd6c4e002ad4fe433ecb12484794a07442778893828fb01a224aefa1a"
+    },
+    {
+      "id": 11630158612,
+      "name": "jenkins-error-boundary-runtime",
+      "runId": 37960137918,
+      "sha256": "3196e662d33523df0f059c579713058334206efedcab915aec4c69bff05704cc"
+    },
+    {
+      "id": 11631194424,
+      "name": "flow-isolation-exact-head",
+      "runId": 37960137752,
+      "sha256": "8dac6154a9defdbbcfb6b54af364391c14e58a0e518a0bb3d8dbb644afb2be1d"
+    },
+    {
+      "id": 11631353001,
+      "name": "jenkins-local-recovery-runtime",
+      "runId": 37960137918,
+      "sha256": "2e753d85f55296e731a501703341b9aa7f1a56400d5ab082f35cdff7086fa7f3"
+    },
+    {
+      "id": 11632001589,
+      "name": "flow-ci-exact-head-test-reports",
+      "runId": 37960137752,
+      "sha256": "128ec93adbe882b5136cbf61a4f0962b31d360264dfb28bebd349f5eb1a4d0c0"
+    },
+    {
+      "id": 11632526443,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "runId": 37960137752,
+      "sha256": "2a7e79d892ea789eada8f760ea8b643b291e684acb4b98d1c22be9cecb83a039"
+    }
+  ],
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06I",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-local-recovery-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime"
+          ],
+          "negativeEvidence": "Omitted or unconditional handler, unexpected rethrow, omitted continuation, resumed failed body, surviving mutants, incorrect native errors, malformed records, substituted artifacts and historical receipt tampering."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06J",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-approval-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime"
+          ],
+          "negativeEvidence": "Omitted or late approval, suppressed rejection, premature protected execution, surviving mutants, wrong input error origin, malformed records, substituted artifacts and historical receipt tampering."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06I",
+        "workPackage": ".flow-agent/work-packages/jenkins-local-recovery-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06J",
+        "workPackage": ".flow-agent/work-packages/jenkins-approval-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR #206.",
+    "predecessorPullRequest": 206,
+    "mergedMain": "761191c6ebadeef99544f3418d29899795588397",
+    "mainWorkflowRunId": 37960137752,
+    "runtimeWorkflowRunId": 37960137918
+  },
+  "limitations": [
+    "Existing runtime evidence covers checkout/failure, boolean conditions, workflow error handlers and local recovery on Jenkins.",
+    "New approval/rejection scenarios and approval leaf coverage require their own current-revision CI.",
+    "Public support, portable execution and formal AR-06 completion are not promoted."
+  ]
+}

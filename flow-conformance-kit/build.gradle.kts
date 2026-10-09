@@ -110,3 +110,21 @@ tasks.register("verifyJenkinsLocalRecoveryRuntime") {
     description = "Execute local recovery and its handler/continuation mutants on real Jenkins."
     dependsOn(localRecoveryRuntimeTasks)
 }
+
+val approvalRuntimeTasks = listOf("approve", "reject").map { outcome ->
+    tasks.register<JavaExec>("verifyJenkinsApproval${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Verify a manual input with a test $outcome decision on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-approval-certification/$outcome").get().asFile.absolutePath,
+            "jenkins-approval-$outcome-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsApprovalRuntime") {
+    group = "verification"
+    description = "Execute manual approval and its omission, ordering and rejection mutants on real Jenkins."
+    dependsOn(approvalRuntimeTasks)
+}

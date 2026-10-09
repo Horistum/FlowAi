@@ -14,7 +14,8 @@ class AdapterCertificationProviderInventoryTests {
             // This synthetic identity tests inventory admission, not adapter certification.
             val identity = CertificationAdapterIdentity(target, "inventory-test", "test", "a".repeat(64))
             val rows = TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
-                catalog.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) }
+                (catalog.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
+                catalog.approvalDefinitions.map { CertificationSubject.Leaf(it.kind, it.reference) })
             val candidate = AdapterCertificationBundle(identity,
                 rows.map { CertificationCoverage(it, emptyList(), "No AR-06 runtime evidence admitted.") },
                 emptyList(), listOf("Inventory inspection only."))

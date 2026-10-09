@@ -17,6 +17,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val ERROR_BOUNDARY_BASELINE = ".flow-agent/evidence/jenkins-error-boundary-baseline.json"
     const val LOCAL_RECOVERY_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-local-recovery-certification.yaml"
     const val LOCAL_RECOVERY_BASELINE = ".flow-agent/evidence/jenkins-local-recovery-baseline.json"
+    const val APPROVAL_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-approval-certification.yaml"
+    const val APPROVAL_BASELINE = ".flow-agent/evidence/jenkins-approval-baseline.json"
+    private const val APPROVAL_BASELINE_SHA256 = "b2dc9f7a63755c9960bc71f4a8b4a2f136ca7b918c06ad4969ff1d14c31348ba"
     private const val LOCAL_RECOVERY_BASELINE_SHA256 = "691b289deb07f766f0a247a015f5117e42f3731fb4b51e2de36aca3e500b2b8c"
     private const val ERROR_BOUNDARY_BASELINE_SHA256 = "cc117ba5c48c2a2abfc4b069eb709ecf0564b8f83e3790d344d4aaa109be8375"
     private const val CONDITION_BASELINE_SHA256 = "05261471566c273815b3e6d9d518f7bb5378ca0ad593060bff8c7825f825131c"
@@ -28,6 +31,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06J" || s.release.containsKey("recoveryApprovalPreparation")) {
+            val raw = s.certificationApprovalBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != APPROVAL_BASELINE_SHA256) {
+                add("Manual approval certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), APPROVAL_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Manual approval selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Manual approval release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Manual approval work", s.certificationApprovalWorkPackage, mapOf("version" to "AR-06J", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Manual approval authorization", section(s.certificationApprovalWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Manual approval validation", section(s.certificationApprovalWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Manual approval candidate", section(s.release["recoveryApprovalPreparation"]), mapOf(
+                "candidate" to "AR-06J", "status" to "candidate", "workPackage" to APPROVAL_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/jenkins-approval-certification.md", "baselineEvidence" to APPROVAL_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(approvalPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06I" || s.release.containsKey("recoveryLocalRecoveryPreparation")) {
             val raw = s.certificationLocalRecoveryBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -202,12 +230,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun localRecoveryPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryApprovalPreparation") || s.certificationWorkPackage["selectedSlice"] == "AR-06J")
+            return localRecoveryPredecessor(approvalPredecessor(s))
         if (!s.release.containsKey("recoveryLocalRecoveryPreparation") && s.certificationWorkPackage["selectedSlice"] != "AR-06I") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationLocalRecoveryBaseline), LOCAL_RECOVERY_BASELINE)["transition"])
         return s.copy(
             certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
             release = (s.release - "recoveryLocalRecoveryPreparation") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
             certificationLocalRecoveryWorkPackage = emptyMap(), certificationLocalRecoveryBaseline = null)
+    }
+
+    internal fun approvalPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryApprovalPreparation") && s.certificationWorkPackage["selectedSlice"] != "AR-06J") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationApprovalBaseline), APPROVAL_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryApprovalPreparation") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationApprovalWorkPackage = emptyMap(), certificationApprovalBaseline = null)
     }
 
     private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }

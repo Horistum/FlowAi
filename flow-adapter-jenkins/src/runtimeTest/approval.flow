@@ -1,0 +1,22 @@
+version "1.0"
+
+use module "git" version "1.0"
+
+flow "jenkins-manual-approval-runtime" {
+  systems {
+    system "source" {
+      type: git
+    }
+  }
+
+  steps {
+    approve manual {
+      message: "Allow the protected checkout?"
+    } -> approval
+
+    git.checkout source {
+      url: "git://127.0.0.1:9418/repository.git"
+      branch: "selected"
+    } -> protectedCheckout
+  }
+}

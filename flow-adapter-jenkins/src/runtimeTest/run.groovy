@@ -6,6 +6,9 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
 import org.jenkinsci.plugins.workflow.actions.ErrorAction
+import org.jenkinsci.plugins.workflow.support.steps.input.InputAction
+import org.jenkinsci.plugins.workflow.support.actions.PauseAction
+import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
@@ -24,7 +27,9 @@ Thread.start('checkout-certification') {
             'jenkins-error-failure-runtime': ['baseline', 'omitted-handler', 'suppressed-propagation'],
             'jenkins-error-success-runtime': ['baseline', 'unconditional-handler', 'omitted-body'],
             'jenkins-recovery-failure-runtime': ['baseline', 'omitted-handler', 'rethrown-failure', 'omitted-continuation'],
-            'jenkins-recovery-success-runtime': ['baseline', 'unconditional-handler', 'omitted-continuation']
+            'jenkins-recovery-success-runtime': ['baseline', 'unconditional-handler', 'omitted-continuation'],
+            'jenkins-approval-approve-runtime': ['baseline', 'omitted-approval', 'late-approval'],
+            'jenkins-approval-reject-runtime': ['baseline', 'omitted-approval', 'late-approval', 'suppressed-rejection']
         ]
         if (!inventories.containsKey(scenario)) throw new IllegalArgumentException('Unknown certification scenario')
         def jenkins = Jenkins.get()
@@ -54,19 +59,64 @@ Thread.start('checkout-certification') {
         }
         if (!available) throw new IllegalStateException('Fixture Git server is unavailable')
         def results = []
+        def nativeSteps = { build, name ->
+            new FlowGraphWalker(build.getExecution()).findAll {
+                it instanceof StepAtomNode && it.getDescriptor()?.getFunctionName() == name
+            }.sort { Integer.parseInt(it.getId()) }
+        }
+        def readMarker = { workspace ->
+            def file = workspace.child('marker.txt')
+            if (file.exists() && file.length() > 1024) throw new IllegalStateException('Oversized workspace observation')
+            file.exists() ? file.readToString() : null
+        }
+        def inputFailure = { error ->
+            [type: error.getClass().getName(),
+             result: error instanceof FlowInterruptedException ? error.getResult().toString() : null,
+             causes: error instanceof FlowInterruptedException ? error.getCauses().collect { it.getClass().getName() } : []]
+        }
         inventories[scenario].each { id ->
             def artifact = new File('/artifacts/' + id + '.Jenkinsfile').getText('UTF-8')
             def job = jenkins.createProject(WorkflowJob, id)
             job.setDefinition(new CpsFlowDefinition(artifact, true))
-            def build = job.scheduleBuild2(0).get(120, TimeUnit.SECONDS)
+            def future = job.scheduleBuild2(0)
+            def pending = null
+            def decision = 'none'
+            if (scenario.startsWith('jenkins-approval-')) {
+                def started = future.getStartCondition().get(60, TimeUnit.SECONDS)
+                long inputDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60)
+                while (!future.isDone()) {
+                    if (System.nanoTime() > inputDeadline) throw new IllegalStateException('Input observation timed out')
+                    def action = started.getAction(InputAction)
+                    def inputs = action == null ? [] : action.getExecutions().findAll { !it.isSettled() }
+                    if (!inputs.isEmpty()) {
+                        if (inputs.size() != 1) throw new IllegalStateException('Unexpected pending input inventory')
+                        def input = inputs[0]
+                        def inputNodes = nativeSteps(started, 'input')
+                        if (inputNodes.size() != 1 || !PauseAction.isPaused(inputNodes[0])) {
+                            Thread.sleep(100)
+                            continue
+                        }
+                        // Observe the actual pending input before submitting a test decision.
+                        // The generated pipeline is never instrumented or modified by the observer.
+                        pending = [message: input.getInput().getMessage(), activeInputs: inputs.size(), paused: true,
+                            checkoutCount: nativeSteps(started, 'git').size(), marker: readMarker(jenkins.getWorkspaceFor(job)),
+                            building: started.isBuilding(), complete: started.getExecution().isComplete()]
+                        if (!pending.building || pending.complete) throw new IllegalStateException('Input is not pending')
+                        decision = scenario == 'jenkins-approval-approve-runtime' ? 'approve' : 'reject'
+                        if (decision == 'approve') input.doProceedEmpty()
+                        else input.doAbort()
+                        break
+                    }
+                    Thread.sleep(100)
+                }
+            }
+            def build = future.get(120, TimeUnit.SECONDS)
             if (build.isBuilding() || !build.getExecution().isComplete()) throw new IllegalStateException('Incomplete pipeline build')
             def workspace = jenkins.getWorkspaceFor(job)
             def marker = workspace.child('marker.txt')
             if (marker.exists() && marker.length() > 1024) throw new IllegalStateException('Oversized workspace observation')
             // Inspect actual executed native steps, including caught errors, without changing pipeline bytes.
-            def checkouts = new FlowGraphWalker(build.getExecution()).findAll {
-                it instanceof StepAtomNode && it.getDescriptor()?.getFunctionName() == 'git'
-            }.sort { Integer.parseInt(it.getId()) }
+            def checkouts = nativeSteps(build, 'git')
             def errors = checkouts.findAll { it.getError() != null }.collect {
                 def error = it.getError().getError()
                 [type: error.getClass().getName(), message: error.getMessage()]
@@ -76,6 +126,16 @@ Thread.start('checkout-certification') {
                 checkoutCount: checkouts.size(), checkoutErrors: errors,
                 artifactSha256: sha256(job.getDefinition().getScript().getBytes('UTF-8')),
                 buildNumber: build.getNumber()]
+            if (scenario.startsWith('jenkins-approval-')) {
+                def inputs = nativeSteps(build, 'input')
+                def terminal = build.getExecution().getCauseOfFailure()
+                def origin = terminal == null ? null : ErrorAction.findOrigin(terminal, build.getExecution())
+                def inputIndex = origin == null ? -1 : inputs.findIndexOf { it.getId() == origin.getId() }
+                record.approval = [inputCount: inputs.size(),
+                    inputErrors: inputs.findAll { it.getError() != null }.collect { inputFailure(it.getError().getError()) },
+                    pending: pending, decision: decision,
+                    terminalError: terminal == null ? null : inputFailure(terminal) + [inputIndex: inputIndex < 0 ? null : inputIndex + 1]]
+            }
             if (scenario in ['jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime']) {
                 record.checkoutErrorIndices = checkouts.withIndex().findAll { node, index -> node.getError() != null }
                     .collect { node, index -> index + 1 }

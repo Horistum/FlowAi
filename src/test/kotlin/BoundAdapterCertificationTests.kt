@@ -50,7 +50,8 @@ class BoundAdapterCertificationTests {
                 evidence("${input.id}:negative-expected", "missing action")))) }
         val subjects = inputs.flatMap { it.subjects }.toSet() +
             TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
-            provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) }
+            (provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
+                provider.approvalDefinitions.map { CertificationSubject.Leaf(it.kind, it.reference) })
         val bundle = AdapterCertificationBundle(identity, subjects.map { subject -> CertificationCoverage(subject,
             inputs.filter { subject in it.subjects }.map { it.id }, "Occurrence only; synthetic test observations.") },
             scenarios, listOf("No runtime certification."))

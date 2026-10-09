@@ -195,3 +195,35 @@ The evidence covers these local boundary occurrences only. It does not certify
 nested handlers, retries, cancellation, error-value binding, general workspace or
 state continuity, or portable execution. Previous scenario observation formats
 and public support claims remain unchanged.
+## Manual approval (AR-06J)
+
+`approval.flow` is compiled once per decision through the production pipeline.
+Both scenarios execute identical, uninstrumented compiler output. The external
+controller observes a pending native `input` and workspace before submitting a
+test decision through `InputStepExecution.doProceedEmpty()` or `doAbort()`.
+No human account, permission policy or UI interaction is being certified.
+
+| Decision / artifact | Pending checkout count | Final result | Final checkout count |
+| --- | ---: | --- | ---: |
+| Approve / original | 0 | SUCCESS | 1 |
+| Approve / omitted approval | no input | SUCCESS | 1 |
+| Approve / late approval | 1 | SUCCESS | 1 |
+| Reject / original | 0 | ABORTED | 0 |
+| Reject / omitted approval | no input | SUCCESS | 1 |
+| Reject / late approval | 1 | ABORTED | 1 |
+| Reject / suppressed rejection | 0 | SUCCESS | 1 |
+
+`approval-matrix.json` records exact expected observations independently from the
+runtime observer. Raw records include the pending message, native `PauseAction` and execution state,
+decision, native input/checkout counts, error causes and terminal input origin.
+Unrelated aborts, malformed observations and surviving mutants fail admission.
+
+Run `./gradlew :flow-conformance-kit:verifyJenkinsApprovalRuntime` with JDK 25 and
+Docker. Evidence is written under
+`flow-conformance-kit/build/jenkins-approval-certification/{approve,reject}`;
+each output directory must be fresh. The dedicated CI job archives raw logs,
+source, graph, scripts, signed observations and derived bounded evidence views.
+
+This covers one manual gate before one native checkout. Human authorization,
+timeouts, restarts, concurrent/nested approvals, general protected-operation
+binding and portable execution remain outside the claim.

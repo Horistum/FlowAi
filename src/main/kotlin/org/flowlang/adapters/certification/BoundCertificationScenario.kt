@@ -89,7 +89,8 @@ class BoundCertificationScenario private constructor(
                     CertificationSubject.Structural(TargetStructuralProjectionKind.ERROR_BOUNDARY)
                 }
             }
-            val nativeLeaves = provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) }.toSet()
+            val nativeLeaves = (provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
+                provider.approvalDefinitions.map { CertificationSubject.Leaf(it.kind, it.reference) }).toSet()
             fun leaves(step: TargetStep): List<CertificationSubject.Leaf> =
                 listOfNotNull(step.rendererPayload?.let { CertificationSubject.Leaf(it.kind, it.reference) }
                     ?.takeIf { it in nativeLeaves }) + step.children.flatMap(::leaves)
