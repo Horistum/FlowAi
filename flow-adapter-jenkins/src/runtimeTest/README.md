@@ -126,4 +126,41 @@ The signing key stays outside the runtime container.
 
 This is bounded structural-occurrence evidence, not a support/maturity promotion.
 External parameter overrides, other expression forms, error boundaries and a
-second adapter remain separate follow-up work.
+second adapter are outside these condition scenarios. Workflow handlers are
+covered separately below.
+
+## Workflow error boundaries
+
+AR-06H adds `error-failure.flow` and `error-success.flow`. Both use the existing
+workflow-level `on error` contract with `PROPAGATE` disposition. The failing body
+requests a missing revision before a later checkout; its handler checks out the
+alternate branch. The successful body checks out the selected branch and must
+skip the handler. The original compiler/rendering output executes unchanged.
+
+Run `:flow-conformance-kit:verifyJenkinsErrorBoundaryRuntime` with a fresh
+`flow-conformance-kit/build/jenkins-error-boundary-certification` directory.
+The `jenkins-error-boundary-runtime` job publishes separate `failure/` and
+`success/` proofs, authenticated views and runtime records.
+
+| Body | Run | Result | Marker | Checkouts | Native errors | Terminal origin |
+| --- | --- | --- | --- | --- | --- | --- |
+| Failure | Original | FAILURE | alternate | 2 | 1 | First checkout |
+| Failure | Omit handler | FAILURE | absent | 1 | 1 | First checkout |
+| Failure | Suppress propagation | SUCCESS | alternate | 2 | 1 | None |
+| Success | Original | SUCCESS | selected | 1 | 0 | None |
+| Success | Run handler unconditionally | SUCCESS | alternate | 2 | 0 | None |
+| Success | Omit body | SUCCESS | absent | 0 | 0 | None |
+
+The failure result alone cannot detect an omitted handler. The marker and native
+step count alone cannot detect a swallowed error. The independent matrix checks
+all these observations together. `FlowExecution.getCauseOfFailure()` and
+`ErrorAction.findOrigin()` bind the terminal error to its originating checkout;
+the signed observation retains its exact type, message and one-based checkout
+index. An unrelated terminal error cannot satisfy intentional native failure.
+Missing, malformed or unfinished records fail admission.
+
+Certification derives the error-boundary occurrence from the compiler's typed
+workflow failure policy. It does not invent a local try node or infer universal
+meaning from target syntax. The JSON/Markdown view remains bounded: local
+recovery, retries, cancellation, arbitrary exception semantics and cross-adapter
+equivalence are not certified, and public support is not promoted.
