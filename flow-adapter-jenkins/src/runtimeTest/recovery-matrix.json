@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "target": "jenkins",
+  "claim": "bounded-structural-occurrence",
+  "construct": "local-recovery",
+  "scenarios": [
+    {
+      "scenario": "jenkins-recovery-failure-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 3,
+        "checkoutErrors": [
+          {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+          }
+        ],
+        "checkoutErrorIndices": [
+          1
+        ],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "omitted-handler",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        },
+        {
+          "id": "rethrown-failure",
+          "result": "FAILURE",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "omitted-continuation",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-recovery-success-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 2,
+        "checkoutErrors": [],
+        "checkoutErrorIndices": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "unconditional-handler",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 3,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-continuation",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Local try/on error with literal native Git checkouts and normal continuation on the recorded Jenkins runtime only.",
+    "No nested handlers, cancellation, retry, arbitrary exception or error-value binding claim.",
+    "Public support, general workspace or value/state continuity and portable execution are not promoted."
+  ]
+}

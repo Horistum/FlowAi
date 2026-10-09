@@ -164,3 +164,34 @@ workflow failure policy. It does not invent a local try node or infer universal
 meaning from target syntax. The JSON/Markdown view remains bounded: local
 recovery, retries, cancellation, arbitrary exception semantics and cross-adapter
 equivalence are not certified, and public support is not promoted.
+
+## Local recovery and continuation (AR-06I)
+
+`recovery-failure.flow` and `recovery-success.flow` exercise local `try` / `on error`
+through the production compiler and unchanged renderer. The failing body contains
+a later checkout that must remain unreachable. Both paths continue outside the
+boundary; only the failing path executes its handler.
+
+| Body | Run | Result | Final marker | Checkouts / errors |
+| --- | --- | --- | --- | --- |
+| Failure | Original | SUCCESS | selected | 3 / 1 |
+| Failure | Omit handler | SUCCESS | selected | 2 / 1 |
+| Failure | Rethrow caught error | FAILURE | alternate | 2 / 1 |
+| Failure | Omit continuation | SUCCESS | alternate | 2 / 1 |
+| Success | Original | SUCCESS | selected | 2 / 0 |
+| Success | Unconditional handler | SUCCESS | selected | 3 / 0 |
+| Success | Omit continuation | SUCCESS | selected | 1 / 0 |
+
+Run `./gradlew :flow-conformance-kit:verifyJenkinsLocalRecoveryRuntime` with fresh
+`flow-conformance-kit/build/jenkins-local-recovery-certification/{failure,success}`
+outputs. The `jenkins-local-recovery-runtime` CI job retains both proofs and views.
+The independent observer records the ordered one-based checkout positions carrying
+native errors, as well as terminal error identity/origin. The expected error is
+always the first checkout's missing revision; only the rethrow mutant terminates
+with that error. Final result and workspace bytes alone cannot distinguish every
+mutant, so checkout counts are part of the authenticated observation.
+
+The evidence covers these local boundary occurrences only. It does not certify
+nested handlers, retries, cancellation, error-value binding, general workspace or
+state continuity, or portable execution. Previous scenario observation formats
+and public support claims remain unchanged.

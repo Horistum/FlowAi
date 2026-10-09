@@ -281,3 +281,18 @@ These are bounded workflow-handler observations. Local recovery, retries,
 cancellation, general exception semantics and equivalent execution on another
 adapter remain separate obligations. Public support/maturity and version claims
 remain unchanged.
+
+### AR-06I: bounded local recovery
+
+The conformance-only Jenkins runner now includes successful and failing local
+`try` / `on error` scenarios with normal continuation. Five mutants falsify lost
+handlers, accidental propagation, missing continuation and unconditional handler
+execution. This uses the existing local canonical error boundary and renderer;
+it changes no public syntax, schema, product runtime or support claim.
+
+The new scenarios authenticate ordered native checkout error positions together
+with completion, result, workspace marker, checkout counts/errors and terminal
+error origin. Existing scenario observation formats remain unchanged. Evidence
+views remain bounded to the recorded occurrence and runtime. Run the new
+`verifyJenkinsLocalRecoveryRuntime` task with fresh evidence directories as
+described in the adapter runtime README; ordinary tests never start Jenkins.

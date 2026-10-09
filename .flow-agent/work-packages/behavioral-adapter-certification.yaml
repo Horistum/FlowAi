@@ -7,21 +7,22 @@ authorization:
   source: "Maintainer requests the next roadmap step after merging PR #199."
   acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
   workflowRunId: 37636042462
-selectedSlice: "AR-06H"
-selectedWorkPackage: ".flow-agent/work-packages/jenkins-error-boundary-certification.yaml"
+selectedSlice: "AR-06I"
+selectedWorkPackage: ".flow-agent/work-packages/jenkins-local-recovery-certification.yaml"
 acceptedSlices: ["AR-06A", "AR-06B"]
-invariant: "A generated workflow error handler runs only on failure, preserves its native operation, and propagates the original failure after handling; certification coverage retains the compiler-owned workflow boundary."
+invariant: "A local error boundary handles a failing body once, skips the rest of that body and continues after recovery; a successful body skips its handler and also continues."
 scope:
   - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
   - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
   - "Authenticate every observation against caller-owned runner keys, assessment challenge and exact run inventory."
   - "Accept AR-06B against independently verified PR and actual-main receipts while preserving every historical acceptance gate."
   - "Retain compiler-owned workflow failure-boundary occurrences and independently observe handler routing and terminal error origin."
+  - "Observe bounded local recovery, skipped failed-body successors and continuation independently on real Jenkins."
 nonGoals:
   - "No product runtime execution, general semantic adequacy or portable-execution claim."
   - "No support promotion, finding closure, public version change or EF-09 resumption."
 ownershipBoundary:
-  production: flow-adapter-evidence
+  production: unchanged
   semanticKernel: unchanged
   concreteAdapters: unchanged
   conformance: "Lifecycle validation and real-provider integration tests."
@@ -34,8 +35,9 @@ validation:
   - jenkins-failure-runtime
   - jenkins-condition-runtime
   - jenkins-error-boundary-runtime
-  negativeEvidence: Omitted or unconditional handler, swallowed failure, omitted body, substituted artifact bytes, incorrect
-    native errors, incomplete or malformed runtime records and historical receipt tampering.
+  - jenkins-local-recovery-runtime
+  negativeEvidence: Omitted or unconditional handler, unexpected rethrow, omitted continuation, resumed failed body, surviving
+    mutants, incorrect native errors, malformed records, substituted artifacts and historical receipt tampering.
 followUp:
   - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
   - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."

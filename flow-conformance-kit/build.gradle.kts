@@ -92,3 +92,21 @@ tasks.register("verifyJenkinsErrorBoundaryRuntime") {
     description = "Execute successful/failing workflow handlers and their omission/propagation mutants on real Jenkins."
     dependsOn(errorBoundaryRuntimeTasks)
 }
+
+val localRecoveryRuntimeTasks = listOf("failure", "success").map { outcome ->
+    tasks.register<JavaExec>("verifyJenkinsRecovery${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Verify local recovery for a $outcome body on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-local-recovery-certification/$outcome").get().asFile.absolutePath,
+            "jenkins-recovery-$outcome-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsLocalRecoveryRuntime") {
+    group = "verification"
+    description = "Execute local recovery and its handler/continuation mutants on real Jenkins."
+    dependsOn(localRecoveryRuntimeTasks)
+}

@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 79
+stateVersion: 80
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -221,8 +221,8 @@ recoveryCertification:
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
   evidence: .flow-agent/evidence/adapter-certification-binding-acceptance.json
-  selectedSlice: AR-06H
-  workPackage: .flow-agent/work-packages/jenkins-error-boundary-certification.yaml
+  selectedSlice: AR-06I
+  workPackage: .flow-agent/work-packages/jenkins-local-recovery-certification.yaml
   validation: current-revision-ci-required
   supportPromotion: false
 
@@ -313,5 +313,14 @@ recoveryErrorBoundaryPreparation:
   workPackage: .flow-agent/work-packages/jenkins-error-boundary-certification.yaml
   report: .flow-agent/reports/jenkins-error-boundary-certification.md
   baselineEvidence: .flow-agent/evidence/jenkins-error-boundary-baseline.json
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryLocalRecoveryPreparation:
+  candidate: AR-06I
+  status: candidate
+  workPackage: .flow-agent/work-packages/jenkins-local-recovery-certification.yaml
+  report: .flow-agent/reports/jenkins-local-recovery-certification.md
+  baselineEvidence: .flow-agent/evidence/jenkins-local-recovery-baseline.json
   validation: current-revision-ci-required
   supportPromotion: false

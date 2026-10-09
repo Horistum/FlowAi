@@ -22,7 +22,9 @@ Thread.start('checkout-certification') {
             'jenkins-condition-true-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions'],
             'jenkins-condition-false-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions'],
             'jenkins-error-failure-runtime': ['baseline', 'omitted-handler', 'suppressed-propagation'],
-            'jenkins-error-success-runtime': ['baseline', 'unconditional-handler', 'omitted-body']
+            'jenkins-error-success-runtime': ['baseline', 'unconditional-handler', 'omitted-body'],
+            'jenkins-recovery-failure-runtime': ['baseline', 'omitted-handler', 'rethrown-failure', 'omitted-continuation'],
+            'jenkins-recovery-success-runtime': ['baseline', 'unconditional-handler', 'omitted-continuation']
         ]
         if (!inventories.containsKey(scenario)) throw new IllegalArgumentException('Unknown certification scenario')
         def jenkins = Jenkins.get()
@@ -74,7 +76,12 @@ Thread.start('checkout-certification') {
                 checkoutCount: checkouts.size(), checkoutErrors: errors,
                 artifactSha256: sha256(job.getDefinition().getScript().getBytes('UTF-8')),
                 buildNumber: build.getNumber()]
-            if (scenario in ['jenkins-error-failure-runtime', 'jenkins-error-success-runtime']) {
+            if (scenario in ['jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime']) {
+                record.checkoutErrorIndices = checkouts.withIndex().findAll { node, index -> node.getError() != null }
+                    .collect { node, index -> index + 1 }
+            }
+            if (scenario in ['jenkins-error-failure-runtime', 'jenkins-error-success-runtime',
+                             'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime']) {
                 def terminal = build.getExecution().getCauseOfFailure()
                 def origin = terminal == null ? null : ErrorAction.findOrigin(terminal, build.getExecution())
                 def checkoutIndex = origin == null ? -1 : checkouts.findIndexOf { it.getId() == origin.getId() }

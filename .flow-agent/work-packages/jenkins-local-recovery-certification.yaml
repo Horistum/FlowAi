@@ -1,0 +1,54 @@
+version: "AR-06I"
+name: "Real Jenkins Local Recovery Certification"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap slice after merging PR #205."
+  predecessorPullRequest: 205
+  mergedMain: "ffcbf16b27f6ccd176038a13927638c435499a88"
+  mainWorkflowRunId: 37944211606
+  runtimeWorkflowRunId: 37944211585
+invariant: "A local error boundary handles a failing body once, skips the rest of that body and continues after recovery; a successful body skips its handler and also continues."
+scope:
+  - "Compile adapter-owned local recovery fixtures through the production compiler and unchanged Jenkins renderer."
+  - "Execute original artifacts and omitted-handler, rethrow, omitted-continuation and unconditional-handler mutants on isolated real Jenkins."
+  - "Authenticate exact source, graph, artifact, completion, workspace marker, native checkout count/errors and terminal error origin."
+nonGoals:
+  - "No new Core semantics, renderer support, public support promotion or portable-execution claim."
+  - "No nested recovery, cancellation, retry, arbitrary exception or error-value binding claim."
+  - "No AR-06 completion, finding closure, package version change or EF-09 resumption."
+ownershipBoundary:
+  fixtures: flow-adapter-jenkins
+  externalRunner: flow-conformance-kit
+  semanticKernel: unchanged
+  productRuntime: unchanged
+expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/adapters/certification/BoundCertificationScenario.kt"
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
+  - "flow-adapter-jenkins/src/runtimeTest/run.groovy"
+  - "flow-conformance-kit/build.gradle.kts"
+  - ".github/workflows/adapter-runtime-check.yml"
+expectedFilesToAdd:
+  - "flow-adapter-jenkins/src/runtimeTest/recovery-failure.flow"
+  - "flow-adapter-jenkins/src/runtimeTest/recovery-success.flow"
+  - "flow-adapter-jenkins/src/runtimeTest/recovery-matrix.json"
+  - "src/test/kotlin/JenkinsLocalRecoveryRuntimeCertificationTests.kt"
+testsToAddOrUpdate:
+  - "Compiler-owned local boundary, unchanged originals, recovered failure and successful body continuation."
+  - "Mutant distinction even when final status and marker match, exact native error origin, malformed and substituted observations."
+  - "Lifecycle selection preserving historical receipts and open findings."
+conformanceToAddOrUpdate:
+  - "Extend the existing certification lifecycle gate while preserving the 274-check inventory."
+documentationToUpdate:
+  - "docs/migrations/adapter-certification-bundle.md"
+  - "flow-adapter-jenkins/src/runtimeTest/README.md"
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime]
+  negativeEvidence: "Omitted or unconditional handler, unexpected rethrow, omitted continuation, resumed failed body, surviving mutants, incorrect native errors, malformed records, substituted artifacts and historical receipt tampering."
+followUp:
+  - "Execute equivalent canonical scenarios on a materially different adapter."
+  - "Complete the remaining construct/behavior/mutant matrix before deriving public support."
